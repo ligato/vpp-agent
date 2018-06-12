@@ -1,0 +1,1204 @@
+2018-06-06T10:41:28.770540895Z  2018-06-06 10:41:28,770 CRIT Supervisor running as root (no user in config file)
+2018-06-06T10:41:28.776025921Z  2018-06-06 10:41:28,775 INFO supervisord started with pid 2647
+2018-06-06T10:41:29.777448160Z  2018-06-06 10:41:29,776 INFO spawned: 'vpp_or_agent_not_running' with pid 2661
+2018-06-06T10:41:29.780537308Z  2018-06-06 10:41:29,779 INFO spawned: 'vpp' with pid 2662
+2018-06-06T10:41:29.786576339Z  2018-06-06 10:41:29,783 INFO spawned: 'agent' with pid 2663
+2018-06-06T10:41:29.804101731Z  2018-06-06 10:41:29,803 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.804116415Z  vlib_plugin_early_init:359: plugin path /usr/lib/vpp_plugins
+2018-06-06T10:41:29.804119217Z  
+2018-06-06T10:41:29.804121513Z  2018-06-06 10:41:29,803 INFO success: agent entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2018-06-06T10:41:29.806646374Z  2018-06-06 10:41:29,806 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.806657527Z  load_one_plugin:187: Loaded plugin: acl_plugin.so (Access Control Lists)
+2018-06-06T10:41:29.806660349Z  
+2018-06-06T10:41:29.806662629Z  2018-06-06 10:41:29,806 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.806664909Z  Starting vpp-agent..
+2018-06-06T10:41:29.806667124Z  
+2018-06-06T10:41:29.807647340Z  2018-06-06 10:41:29,807 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.807677423Z  load_one_plugin:187: Loaded plugin: avf_plugin.so (Intel Adaptive Virtual Function (AVF) Device Plugin)
+2018-06-06T10:41:29.807680623Z  
+2018-06-06T10:41:29.808649944Z  2018-06-06 10:41:29,808 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.808659212Z  load_one_plugin:189: Loaded plugin: cdp_plugin.so
+2018-06-06T10:41:29.808661861Z  
+2018-06-06T10:41:29.817731583Z  2018-06-06 10:41:29,816 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.817746291Z  time="2018-06-06 10:41:29.81679" level=debug msg="initial log level: debug" loc="logrus/registry.go(36)" logger=defaultLogger
+2018-06-06T10:41:29.817749600Z  
+2018-06-06T10:41:29.829224295Z  2018-06-06 10:41:29,828 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.829742876Z  load_one_plugin:106: Plugin disabled: dpdk_plugin.so
+2018-06-06T10:41:29.829751806Z  
+2018-06-06T10:41:29.830200244Z  2018-06-06 10:41:29,829 DEBG 'vpp_or_agent_not_running' stdout output:
+2018-06-06T10:41:29.830208452Z  READY
+2018-06-06T10:41:29.830211094Z  
+2018-06-06T10:41:29.830213415Z  2018-06-06 10:41:29,830 DEBG vpp_or_agent_not_running: ACKNOWLEDGED -> READY
+2018-06-06T10:41:29.830678504Z  2018-06-06 10:41:29,830 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.830699855Z  load_one_plugin:187: Loaded plugin: flowprobe_plugin.so (Flow per Packet)
+2018-06-06T10:41:29.831167248Z  
+2018-06-06T10:41:29.831703818Z  2018-06-06 10:41:29,831 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.831719240Z  load_one_plugin:187: Loaded plugin: gbp_plugin.so (Group Based Policy)
+2018-06-06T10:41:29.831722394Z  
+2018-06-06T10:41:29.832715672Z  2018-06-06 10:41:29,832 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.832737718Z  load_one_plugin:187: Loaded plugin: gtpu_plugin.so (GTPv1-U)
+2018-06-06T10:41:29.832740490Z  
+2018-06-06T10:41:29.833212640Z  2018-06-06 10:41:29,832 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.833220064Z  load_one_plugin:187: Loaded plugin: igmp_plugin.so (IGMP messaging)
+2018-06-06T10:41:29.833222713Z  
+2018-06-06T10:41:29.833224952Z  2018-06-06 10:41:29,833 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.833764222Z  load_one_plugin:187: Loaded plugin: ila_plugin.so (Identifier-locator addressing for IPv6)
+2018-06-06T10:41:29.833772963Z  
+2018-06-06T10:41:29.835211099Z  2018-06-06 10:41:29,834 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.835220438Z  load_one_plugin:187: Loaded plugin: ioam_plugin.so (Inbound OAM)
+2018-06-06T10:41:29.835223260Z  
+2018-06-06T10:41:29.835226433Z  2018-06-06 10:41:29,835 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.835228732Z  load_one_plugin:117: Plugin disabled (default): ixge_plugin.so
+2018-06-06T10:41:29.835714320Z  
+2018-06-06T10:41:29.836210282Z  2018-06-06 10:41:29,835 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.836219806Z  time="2018-06-06 10:41:29.83551" level=info msg="Starting agent v1.4.0-123-gb785a06" BuildDate="2018-06-04T14:26+00:00" CommitHash=b785a063242b72452d8ffb4b15dff9d370274892 loc="core/agent_core.go(195)" logger=agentcore
+2018-06-06T10:41:29.836227430Z  
+2018-06-06T10:41:29.837153331Z  2018-06-06 10:41:29,836 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.837162346Z  load_one_plugin:187: Loaded plugin: kubeproxy_plugin.so (kube-proxy data plane)
+2018-06-06T10:41:29.837165281Z  
+2018-06-06T10:41:29.837777635Z  2018-06-06 10:41:29,837 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.837785672Z  load_one_plugin:187: Loaded plugin: l2e_plugin.so (L2 Emulation)
+2018-06-06T10:41:29.837788292Z  
+2018-06-06T10:41:29.838240152Z  2018-06-06 10:41:29,838 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.838247472Z  load_one_plugin:187: Loaded plugin: lacp_plugin.so (Link Aggregation Control Protocol)
+2018-06-06T10:41:29.838264270Z  
+2018-06-06T10:41:29.838755399Z  2018-06-06 10:41:29,838 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.838781998Z  load_one_plugin:187: Loaded plugin: lb_plugin.so (Load Balancer)
+2018-06-06T10:41:29.838784692Z  
+2018-06-06T10:41:29.839757283Z  2018-06-06 10:41:29,839 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.839765294Z  load_one_plugin:187: Loaded plugin: memif_plugin.so (Packet Memory Interface (experimetal))
+2018-06-06T10:41:29.839776287Z  
+2018-06-06T10:41:29.840206562Z  2018-06-06 10:41:29,840 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.840701048Z  time="2018-06-06 10:41:29.83999" level=debug msg="logs config: &{DefaultLevel: Loggers:[]}" loc="logmanager/plugin_impl_log_manager.go(92)" logger=logs
+2018-06-06T10:41:29.840709364Z  
+2018-06-06T10:41:29.840711964Z  2018-06-06 10:41:29,840 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.840714374Z  time="2018-06-06 10:41:29.84032" level=info msg="plugin Logs: Init took 455.468µs" durationInNs=455468 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.840717620Z  
+2018-06-06T10:41:29.840719873Z  2018-06-06 10:41:29,840 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.840722178Z  time="2018-06-06 10:41:29.84050" level=debug msg="Microservice label is set to agent_vpp_1" loc="servicelabel/plugin_impl_servicelabel.go(49)" logger=defaultLogger
+2018-06-06T10:41:29.840724972Z  
+2018-06-06T10:41:29.841216337Z  2018-06-06 10:41:29,840 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.841225772Z  time="2018-06-06 10:41:29.84080" level=info msg="plugin ServiceLabel: Init took 292.308µs" durationInNs=292308 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.841229038Z  
+2018-06-06T10:41:29.841231260Z  2018-06-06 10:41:29,841 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.841233583Z  time="2018-06-06 10:41:29.84099" level=info msg="plugin StatusCheck: Init took 2.581µs" durationInNs=2581 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.841236225Z  
+2018-06-06T10:41:29.843265867Z  2018-06-06 10:41:29,842 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.843278948Z  time="2018-06-06 10:41:29.84260" level=info msg="Connecting to etcd took 1.112706ms" durationInNs=1112706 loc="etcd/bytes_broker_impl.go(84)" logger=etcd
+2018-06-06T10:41:29.843282286Z  
+2018-06-06T10:41:29.843284575Z  2018-06-06 10:41:29,843 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.843286925Z  time="2018-06-06 10:41:29.84294" level=debug msg="NewEtcdConnectionWithBytes&{0xc42027a440 0xc42027a450 0xc4200cba00 0xc420282450 0xc42027a480 0xc420261360 0xc420274300 0xc420081860 {[172.17.0.1:2379] 0 1000000000 <nil>   false [] <nil>} <nil> 0xc4202680a0 0x8f0260 0x8f0590 0xc42007dc80 0x54a700   <nil>}" loc="etcd/bytes_broker_impl.go(96)" logger=etcd
+2018-06-06T10:41:29.843292925Z  
+2018-06-06T10:41:29.843713024Z  2018-06-06 10:41:29,843 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.843720439Z  time="2018-06-06 10:41:29.84335" level=info msg="Plugin etcd: status check probe registered" loc="statuscheck/plugin_impl_statuscheck.go(144)" logger=status-check
+2018-06-06T10:41:29.843723515Z  
+2018-06-06T10:41:29.843725711Z  2018-06-06 10:41:29,843 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.844213113Z  time="2018-06-06 10:41:29.84354" level=info msg="plugin ETCD: Init took 2.257636ms" durationInNs=2257636 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.844228922Z  
+2018-06-06T10:41:29.844231751Z  2018-06-06 10:41:29,843 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.844234187Z  time="2018-06-06 10:41:29.84383" level=info msg="plugin ETCDDataSync: Init took 1.375µs" durationInNs=1375 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.844237121Z  
+2018-06-06T10:41:29.844239255Z  2018-06-06 10:41:29,844 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.844753785Z  time="2018-06-06 10:41:29.84404" level=info msg="Consul config not found, skip loading this plugin" loc="consul/plugin.go(72)" logger=consul
+2018-06-06T10:41:29.844762214Z  
+2018-06-06T10:41:29.844764709Z  2018-06-06 10:41:29,844 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.844767074Z  time="2018-06-06 10:41:29.84434" level=info msg="plugin Consul: Init took 335.668µs" durationInNs=335668 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.844770043Z  
+2018-06-06T10:41:29.844772287Z  2018-06-06 10:41:29,844 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.844774653Z  time="2018-06-06 10:41:29.84451" level=info msg="plugin ConsulDataSync: Init took 1.369µs" durationInNs=1369 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.844777377Z  
+2018-06-06T10:41:29.845217425Z  2018-06-06 10:41:29,845 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.845224784Z  time="2018-06-06 10:41:29.84503" level=debug msg="Creating new consumer" loc="client/consumer.go(141)" logger=kafka
+2018-06-06T10:41:29.845805197Z  
+2018-06-06T10:41:29.845830600Z  2018-06-06 10:41:29,845 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.845833985Z  load_one_plugin:187: Loaded plugin: nat_plugin.so (Network Address Translation)
+2018-06-06T10:41:29.845836519Z  
+2018-06-06T10:41:29.846762685Z  2018-06-06 10:41:29,846 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.846771452Z  load_one_plugin:187: Loaded plugin: pppoe_plugin.so (PPPoE)
+2018-06-06T10:41:29.846774106Z  
+2018-06-06T10:41:29.847227842Z  2018-06-06 10:41:29,846 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.847235891Z  load_one_plugin:187: Loaded plugin: srv6ad_plugin.so (Dynamic SRv6 proxy)
+2018-06-06T10:41:29.847238670Z  
+2018-06-06T10:41:29.847773825Z  2018-06-06 10:41:29,847 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.847795863Z  load_one_plugin:187: Loaded plugin: srv6am_plugin.so (Masquerading SRv6 proxy)
+2018-06-06T10:41:29.847798698Z  
+2018-06-06T10:41:29.848280615Z  2018-06-06 10:41:29,847 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.848287793Z  load_one_plugin:187: Loaded plugin: srv6as_plugin.so (Static SRv6 proxy)
+2018-06-06T10:41:29.848290439Z  
+2018-06-06T10:41:29.848769738Z  2018-06-06 10:41:29,848 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.848777328Z  load_one_plugin:187: Loaded plugin: stn_plugin.so (VPP Steals the NIC for Container integration)
+2018-06-06T10:41:29.848787890Z  
+2018-06-06T10:41:29.849233012Z  2018-06-06 10:41:29,848 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.849240736Z  load_one_plugin:187: Loaded plugin: tlsmbedtls_plugin.so (mbedtls based TLS Engine)
+2018-06-06T10:41:29.849243308Z  
+2018-06-06T10:41:29.849807428Z  2018-06-06 10:41:29,849 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.849815564Z  load_one_plugin:187: Loaded plugin: tlsopenssl_plugin.so (openssl based TLS Engine)
+2018-06-06T10:41:29.849818184Z  
+2018-06-06T10:41:29.850989495Z  2018-06-06 10:41:29,850 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.850998013Z  time="2018-06-06 10:41:29.85030" level=debug msg="AsyncProducer config: &client.Config{Logger:(*logging.pluginLogger)(0xc4201c7ca0), Config:(*cluster.Config)(0xc4200d81e0), Context:context.Context(nil), Cancel:(context.CancelFunc)(nil), Brokers:[]string{\"172.17.0.1:9092\"}, GroupID:\"agent_vpp_1\", Debug:false, Topics:[]string{\"status-check\"}, Partition:-1, Partitioner:(sarama.PartitionerConstructor)(0xa09f40), InitialOffset:-1, RequiredAcks:-32768, RecvNotification:false, RecvNotificationChan:(chan *cluster.Notification)(nil), RecvError:false, RecvErrorChan:(chan error)(nil), RecvMessageChan:(chan *client.ConsumerMessage)(0xc42008b2c0), SendSuccess:true, SuccessChan:(chan *client.ProducerMessage)(0xc42008b320), SendError:true, ErrorChan:(chan *client.ProducerError)(0xc42008b380)}" loc="client/consumer.go(170)" logger=kafka
+2018-06-06T10:41:29.851005852Z  
+2018-06-06T10:41:29.862325614Z  2018-06-06 10:41:29,862 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.862354621Z  time="2018-06-06 10:41:29.86149" level=debug msg="Creating new consumer" loc="client/consumer.go(141)" logger=kafka
+2018-06-06T10:41:29.862377281Z  time="2018-06-06 10:41:29.86155" level=debug msg="AsyncProducer config: &client.Config{Logger:(*logging.pluginLogger)(0xc4201c7ca0), Config:(*cluster.Config)(0xc4200d81e0), Context:context.Context(nil), Cancel:(context.CancelFunc)(nil), Brokers:[]string{\"172.17.0.1:9092\"}, GroupID:\"agent_vpp_1\", Debug:false, Topics:[]string{\"status-check\"}, Partition:-1, Partitioner:(sarama.PartitionerConstructor)(0xa09f40), InitialOffset:-1, RequiredAcks:-32768, RecvNotification:false, RecvNotificationChan:(chan *cluster.Notification)(nil), RecvError:false, RecvErrorChan:(chan error)(nil), RecvMessageChan:(chan *client.ConsumerMessage)(0xc42008b2c0), SendSuccess:true, SuccessChan:(chan *client.ProducerMessage)(0xc42008b6e0), SendError:true, ErrorChan:(chan *client.ProducerError)(0xc42008b740)}" loc="client/consumer.go(170)" logger=kafka
+2018-06-06T10:41:29.862382140Z  
+2018-06-06T10:41:29.873424291Z  2018-06-06 10:41:29,873 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.873457772Z  time="2018-06-06 10:41:29.87168" level=info msg="Group ID is set to agent_vpp_1" loc="kafka/plugin_impl_kafka.go(95)" logger=kafka
+2018-06-06T10:41:29.873461763Z  time="2018-06-06 10:41:29.87174" level=debug msg="Kafka connecting" addrs="[0xc420280b00]" loc="mux/config.go(112)" logger=kafka
+2018-06-06T10:41:29.873464593Z  time="2018-06-06 10:41:29.87179" level=debug msg="entering NewSyncProducer ..." loc="client/syncproducer.go(48)" logger=kafka
+2018-06-06T10:41:29.873467428Z  time="2018-06-06 10:41:29.87182" level=debug msg="Entering NewAsyncProducer ..." loc="client/asyncproducer.go(51)" logger=kafka
+2018-06-06T10:41:29.873475280Z  time="2018-06-06 10:41:29.87186" level=debug msg="entering NewSyncProducer ..." loc="client/syncproducer.go(48)" logger=kafka
+2018-06-06T10:41:29.873478158Z  time="2018-06-06 10:41:29.87189" level=info msg="Invalid partition -1 - defaulting to 0" loc="client/config.go(254)" logger=kafka
+2018-06-06T10:41:29.873480763Z  time="2018-06-06 10:41:29.87193" level=debug msg="Entering NewAsyncProducer ..." loc="client/asyncproducer.go(51)" logger=kafka
+2018-06-06T10:41:29.873483228Z  time="2018-06-06 10:41:29.87196" level=info msg="Connecting to kafka took 178.285µs" durationInNs=178285 loc="mux/config.go(150)" logger=kafka
+2018-06-06T10:41:29.873500864Z  time="2018-06-06 10:41:29.87199" level=debug msg="Default multiplexer initialized" loc="kafka/plugin_impl_kafka.go(100)" logger=kafka
+2018-06-06T10:41:29.873901249Z  time="2018-06-06 10:41:29.87202" level=info msg="plugin Kafka: Init took 27.189074ms" durationInNs=27189074 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.873909557Z  time="2018-06-06 10:41:29.87211" level=info msg="Redis config not found, skip loading this plugin" loc="redis/plugin_impl_redis.go(107)" logger=redis
+2018-06-06T10:41:29.873912349Z  time="2018-06-06 10:41:29.87214" level=info msg="plugin Redis: Init took 95.998µs" durationInNs=95998 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.873915062Z  time="2018-06-06 10:41:29.87216" level=info msg="plugin RedisDataSync: Init took 1.054µs" durationInNs=1054 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.873936413Z  time="2018-06-06 10:41:29.87221" level=info msg="cassandra client config not found  - skip loading this plugin" loc="cassandra/plugin_impl_cassa.go(72)" logger=cassandra
+2018-06-06T10:41:29.874321504Z  time="2018-06-06 10:41:29.87227" level=info msg="plugin Cassandra: Init took 53.134µs" durationInNs=53134 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874328980Z  time="2018-06-06 10:41:29.87229" level=info msg="plugin ResyncOrch: Init took 360ns" durationInNs=360 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874331747Z  time="2018-06-06 10:41:29.87235" level=info msg="plugin HTTP: Init took 27.553µs" durationInNs=27553 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874334220Z  time="2018-06-06 10:41:29.87238" level=info msg=init loc="rest/plugin_impl_fork.go(65)" logger=http-probe probePort=9191
+2018-06-06T10:41:29.874336639Z  time="2018-06-06 10:41:29.87240" level=info msg="plugin HTTPProbe: Init took 33.996µs" durationInNs=33996 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874339136Z  time="2018-06-06 10:41:29.87242" level=info msg="plugin Prometheus: Init took 916ns" durationInNs=916 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874341549Z  time="2018-06-06 10:41:29.87243" level=info msg="plugin HealthRPC: Init took 379ns" durationInNs=379 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874343938Z  time="2018-06-06 10:41:29.87248" level=info msg="GaugeFunc('service_health') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-06-06T10:41:29.874352005Z  time="2018-06-06 10:41:29.87252" level=info msg="GaugeFunc('service_info') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-06-06T10:41:29.874354726Z  time="2018-06-06 10:41:29.87254" level=info msg="plugin PrometheusRPC: Init took 92.037µs" durationInNs=92037 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874357174Z  time="2018-06-06 10:41:29.87258" level=info msg="GRPC config not found, skip loading this plugin" loc="grpc/plugin_impl_grpc.go(142)" logger=grpc
+2018-06-06T10:41:29.874359551Z  time="2018-06-06 10:41:29.87260" level=info msg="plugin GRPC: Init took 39.077µs" durationInNs=39077 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874361921Z  time="2018-06-06 10:41:29.87261" level=info msg="plugin IfStatePub: Init took 243ns" durationInNs=243 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.874364732Z  time="2018-06-06 10:41:29.87282" level=debug msg="Setting govpp parameters{1s 100ms 1 1s }" loc="govppmux/plugin_impl_govppmux.go(113)" logger=govpp
+2018-06-06T10:41:29.874367241Z  
+2018-06-06T10:41:29.874879416Z  2018-06-06 10:41:29,874 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.874887017Z  time="2018-06-06 10:41:29.87359" level=debug msg="starting success handler ..." loc="client/asyncproducer.go(193)" logger=kafka
+2018-06-06T10:41:29.874889968Z  time="2018-06-06 10:41:29.87361" level=debug msg="starting error handler ..." loc="client/asyncproducer.go(219)" logger=kafka
+2018-06-06T10:41:29.874892606Z  time="2018-06-06 10:41:29.87364" level=debug msg="starting success handler ..." loc="client/asyncproducer.go(193)" logger=kafka
+2018-06-06T10:41:29.874895605Z  time="2018-06-06 10:41:29.87367" level=debug msg="starting error handler ..." loc="client/asyncproducer.go(219)" logger=kafka
+2018-06-06T10:41:29.874898109Z  
+2018-06-06T10:41:29.892520674Z  2018-06-06 10:41:29,891 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.892553765Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_trace_test_plugin.so
+2018-06-06T10:41:29.892556972Z  
+2018-06-06T10:41:29.892559279Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_trace_test_plugin.so
+2018-06-06T10:41:29.892561809Z  2018-06-06 10:41:29,892 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.892564155Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/acl_test_plugin.so
+2018-06-06T10:41:29.892566629Z  
+2018-06-06T10:41:29.892568880Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/acl_test_plugin.so
+2018-06-06T10:41:29.892873407Z  2018-06-06 10:41:29,892 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.892881150Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/memif_test_plugin.so
+2018-06-06T10:41:29.892883885Z  
+2018-06-06T10:41:29.893371787Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/memif_test_plugin.so
+2018-06-06T10:41:29.893387361Z  2018-06-06 10:41:29,893 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.893390140Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/vxlan_gpe_ioam_export_test_plugin.so
+2018-06-06T10:41:29.893392437Z  
+2018-06-06T10:41:29.893394589Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/vxlan_gpe_ioam_export_test_plugin.so
+2018-06-06T10:41:29.893982197Z  2018-06-06 10:41:29,893 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.893990362Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/lb_test_plugin.so
+2018-06-06T10:41:29.894006920Z  
+2018-06-06T10:41:29.894009254Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/lb_test_plugin.so
+2018-06-06T10:41:29.894515566Z  2018-06-06 10:41:29,894 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.894541317Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/lacp_test_plugin.so
+2018-06-06T10:41:29.894544106Z  
+2018-06-06T10:41:29.894938014Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/lacp_test_plugin.so
+2018-06-06T10:41:29.895387851Z  2018-06-06 10:41:29,895 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.895395916Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/cdp_test_plugin.so
+2018-06-06T10:41:29.895398696Z  
+2018-06-06T10:41:29.895400845Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/cdp_test_plugin.so
+2018-06-06T10:41:29.895913354Z  2018-06-06 10:41:29,895 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.895921477Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/flowprobe_test_plugin.so
+2018-06-06T10:41:29.895925868Z  
+2018-06-06T10:41:29.895927984Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/flowprobe_test_plugin.so
+2018-06-06T10:41:29.896383846Z  2018-06-06 10:41:29,895 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.896391533Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/stn_test_plugin.so
+2018-06-06T10:41:29.896394220Z  
+2018-06-06T10:41:29.896396479Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/stn_test_plugin.so
+2018-06-06T10:41:29.896923753Z  2018-06-06 10:41:29,896 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.896931076Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/nat_test_plugin.so
+2018-06-06T10:41:29.896933825Z  
+2018-06-06T10:41:29.896936012Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/nat_test_plugin.so
+2018-06-06T10:41:29.896938484Z  2018-06-06 10:41:29,896 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.896948882Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/pppoe_test_plugin.so
+2018-06-06T10:41:29.896951588Z  
+2018-06-06T10:41:29.897400374Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/pppoe_test_plugin.so
+2018-06-06T10:41:29.897407819Z  2018-06-06 10:41:29,897 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.897410326Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/dpdk_test_plugin.so
+2018-06-06T10:41:29.897412651Z  
+2018-06-06T10:41:29.897414905Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/dpdk_test_plugin.so
+2018-06-06T10:41:29.897897993Z  2018-06-06 10:41:29,897 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.897906058Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/udp_ping_test_plugin.so
+2018-06-06T10:41:29.897908692Z  
+2018-06-06T10:41:29.897910901Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/udp_ping_test_plugin.so
+2018-06-06T10:41:29.898383901Z  2018-06-06 10:41:29,897 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.898391438Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_export_test_plugin.so
+2018-06-06T10:41:29.898394113Z  
+2018-06-06T10:41:29.898396286Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_export_test_plugin.so
+2018-06-06T10:41:29.898398628Z  2018-06-06 10:41:29,898 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.898400832Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/kubeproxy_test_plugin.so
+2018-06-06T10:41:29.898403206Z  
+2018-06-06T10:41:29.898887814Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/kubeproxy_test_plugin.so
+2018-06-06T10:41:29.898895424Z  2018-06-06 10:41:29,898 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.898897919Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_pot_test_plugin.so
+2018-06-06T10:41:29.898900709Z  
+2018-06-06T10:41:29.898902884Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_pot_test_plugin.so
+2018-06-06T10:41:29.899389389Z  2018-06-06 10:41:29,898 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.899396842Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/gtpu_test_plugin.so
+2018-06-06T10:41:29.899399549Z  
+2018-06-06T10:41:29.899401743Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/gtpu_test_plugin.so
+2018-06-06T10:41:29.899404062Z  2018-06-06 10:41:29,899 DEBG 'vpp' stdout output:
+2018-06-06T10:41:29.899406261Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_vxlan_gpe_test_plugin.so
+2018-06-06T10:41:29.899414396Z  
+2018-06-06T10:41:29.899892786Z  /usr/bin/vpp[2662]: load_one_plugin:67: Loaded plugin: /usr/lib/vpp_api_test_plugins/ioam_vxlan_gpe_test_plugin.so
+2018-06-06T10:41:29.938068228Z  2018-06-06 10:41:29,937 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.938082020Z  time="2018-06-06 10:41:29.93709" level=info msg="Connected to VPP."
+2018-06-06T10:41:29.938085192Z  time="2018-06-06 10:41:29.93716" level=info msg="Connecting to VPP took 64.292998ms" durationInNs=64292998 loc="govppmux/plugin_impl_govppmux.go(135)" logger=govpp
+2018-06-06T10:41:29.938088009Z  
+2018-06-06T10:41:29.942065225Z  2018-06-06 10:41:29,941 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.942078812Z  time="2018-06-06 10:41:29.94112" level=debug msg="version info: &{Program:vpe Version:18.04-11~g2302d0d BuildDate:Thu May 31 18:01:41 UTC 2018 BuildDirectory:/opt/vpp-agent/dev/vpp}" loc="govppmux/plugin_impl_govppmux.go(235)" logger=govpp
+2018-06-06T10:41:29.942082594Z  time="2018-06-06 10:41:29.94118" level=info msg="VPP version: 18.04-11~g2302d0d (Thu May 31 18:01:41 UTC 2018)" loc="govppmux/plugin_impl_govppmux.go(236)" logger=govpp
+2018-06-06T10:41:29.942085464Z  time="2018-06-06 10:41:29.94121" level=info msg="Plugin govpp: status check probe registered" loc="statuscheck/plugin_impl_statuscheck.go(144)" logger=status-check
+2018-06-06T10:41:29.942088142Z  time="2018-06-06 10:41:29.94126" level=info msg="Agent plugin state update." lastErr="<nil>" loc="statuscheck/plugin_impl_statuscheck.go(189)" logger=status-check plugin=govpp state=ok
+2018-06-06T10:41:29.942091047Z  time="2018-06-06 10:41:29.94130" level=debug msg="govpp connect success &{0xc4202bae00 1 0x1957870 {{0 0} 0 0 0 0} map[control_ping_51077d14:763 control_ping_reply_f6b0b8ca:764 show_version_51077d14:773 show_version_reply_8b5a13b4:774] {{0 0} 0 0 0 0} map[1:0xc42029fc80 2:0xc42029fec0] {{0 0} 0 0 0 0} map[] 2 763 764}" loc="govppmux/plugin_impl_govppmux.go(141)" logger=govpp
+2018-06-06T10:41:29.942094171Z  time="2018-06-06 10:41:29.94134" level=info msg="plugin GoVPP: Init took 68.700565ms" durationInNs=68700565 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.942096838Z  time="2018-06-06 10:41:29.94137" level=debug msg="Initializing Linux plugins" loc="linux/linuxplugin_init.go(104)" logger=linux-plugin
+2018-06-06T10:41:29.942099405Z  
+2018-06-06T10:41:29.943018997Z  2018-06-06 10:41:29,942 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.943029118Z  time="2018-06-06 10:41:29.94194" level=debug msg="Linuxplugin config found" loc="linux/linuxplugin_init.go(225)" logger=linux-plugin
+2018-06-06T10:41:29.943032264Z  time="2018-06-06 10:41:29.94216" level=info msg="stopwatch enabled for linux-plugin" loc="linux/linuxplugin_init.go(113)" logger=linux-plugin
+2018-06-06T10:41:29.943035070Z  time="2018-06-06 10:41:29.94220" level=info msg="Init Linux namespace handler" loc="linux/linuxplugin_init.go(175)" logger=linux-plugin
+2018-06-06T10:41:29.943038354Z  time="2018-06-06 10:41:29.94224" level=info msg="Initializing namespace handler plugin" loc="nsplugin/ns_impl.go(75)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.943041120Z  time="2018-06-06 10:41:29.94231" level=debug msg="Using docker client endpoint: unix:///var/run/docker.sock" loc="nsplugin/ns_impl.go(103)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.943051049Z  time="2018-06-06 10:41:29.94236" level=debug msg="namespace not found" loc="nsplugin/namespaces.go(301)" logger=linux-plugin-ns-handler namespace=veth-cfg-ns
+2018-06-06T10:41:29.943054067Z  time="2018-06-06 10:41:29.94239" level=debug msg="Creating new named Linux namespace" loc="nsplugin/namespaces.go(185)" logger=linux-plugin-ns-handler namespace=veth-cfg-ns
+2018-06-06T10:41:29.943056653Z  
+2018-06-06T10:41:29.944053122Z  2018-06-06 10:41:29,943 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.944061979Z  time="2018-06-06 10:41:29.94340" level=info msg="Init Linux interface plugin" loc="linux/linuxplugin_init.go(183)" logger=linux-plugin
+2018-06-06T10:41:29.944065191Z  
+2018-06-06T10:41:29.944521528Z  2018-06-06 10:41:29,944 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.944529630Z  time="2018-06-06 10:41:29.94376" level=debug msg="Initializing Linux Interface configurator" loc="ifplugin/interface_config.go(81)" logger=linux-plugin-if-conf
+2018-06-06T10:41:29.944532694Z  time="2018-06-06 10:41:29.94380" level=debug msg="Initializing Linux Interface State Updater" loc="ifplugin/interface_state.go(56)" logger=linux-plugin-if-state
+2018-06-06T10:41:29.944535423Z  time="2018-06-06 10:41:29.94387" level=info msg="Init Linux L3 plugin" loc="linux/linuxplugin_init.go(202)" logger=linux-plugin
+2018-06-06T10:41:29.944537994Z  time="2018-06-06 10:41:29.94391" level=debug msg="Initializing Linux ARP configurator" loc="l3plugin/arp_config.go(77)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:29.944540485Z  time="2018-06-06 10:41:29.94394" level=debug msg="Initializing Linux Route configurator" loc="l3plugin/route_config.go(75)" logger=linux-plugin-route-conf
+2018-06-06T10:41:29.944543009Z  
+2018-06-06T10:41:29.944545115Z  2018-06-06 10:41:29,944 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.944547335Z  time="2018-06-06 10:41:29.94431" level=debug msg="subscribeWatcher begin" loc="linux/data_resync.go(152)" logger=linux-plugin
+2018-06-06T10:41:29.944549862Z  
+2018-06-06T10:41:29.945532455Z  2018-06-06 10:41:29,945 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.945541790Z  time="2018-06-06 10:41:29.94462" level=debug msg="Watch linux-plugin" loc="mem/inmemory_name_mapping.go(148)" logger=linux-plugin
+2018-06-06T10:41:29.945544925Z  time="2018-06-06 10:41:29.94465" level=debug msg="data watcher watch finished" loc="linux/data_resync.go(163)" logger=linux-plugin
+2018-06-06T10:41:29.945547570Z  time="2018-06-06 10:41:29.94468" level=info msg="plugin Linux: Init took 3.317074ms" durationInNs=3317074 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.945550166Z  time="2018-06-06 10:41:29.94470" level=debug msg="Initializing default plugins" loc="vpp/plugin_impl_vpp.go(261)" logger=vpp-plugin
+2018-06-06T10:41:29.945552750Z  time="2018-06-06 10:41:29.94487" level=debug msg="vpp-plugin config found: &{Mtu:0 Stopwatch:true Strategy: StatusPublishers:[]}" loc="vpp/plugin_impl_vpp.go(665)" logger=vpp-plugin
+2018-06-06T10:41:29.945582682Z  time="2018-06-06 10:41:29.94489" level=debug msg="status publishers from env: etcd" loc="vpp/plugin_impl_vpp.go(668)" logger=vpp-plugin
+2018-06-06T10:41:29.945585704Z  time="2018-06-06 10:41:29.94492" level=info msg="Added status publisher \"etcd\" from config" loc="vpp/plugin_impl_vpp.go(631)" logger=vpp-plugin
+2018-06-06T10:41:29.945588498Z  time="2018-06-06 10:41:29.94494" level=info msg="stopwatch enabled for vpp-plugin" loc="vpp/plugin_impl_vpp.go(640)" logger=vpp-plugin
+2018-06-06T10:41:29.945591068Z  
+2018-06-06T10:41:29.946025249Z  2018-06-06 10:41:29,945 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.946037064Z  time="2018-06-06 10:41:29.94537" level=info msg="Resync strategy  is not known, setting up the full resync" loc="vpp/plugin_impl_vpp.go(385)" logger=vpp-plugin
+2018-06-06T10:41:29.946040030Z  
+2018-06-06T10:41:29.946042198Z  2018-06-06 10:41:29,945 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.946523909Z  time="2018-06-06 10:41:29.94578" level=info msg="VPP resync strategy is set to full" loc="vpp/plugin_impl_vpp.go(646)" logger=vpp-plugin
+2018-06-06T10:41:29.946532099Z  
+2018-06-06T10:41:29.947077540Z  2018-06-06 10:41:29,946 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.947099439Z  time="2018-06-06 10:41:29.94616" level=info msg="Init interface plugin" loc="vpp/plugin_impl_vpp.go(410)" logger=vpp-plugin
+2018-06-06T10:41:29.947102885Z  time="2018-06-06 10:41:29.94622" level=debug msg="Initializing Interface configurator" loc="ifplugin/interface_config.go(79)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:29.947105476Z  time="2018-06-06 10:41:29.94632" level=info msg="Initializing AF-Packet configurator" loc="ifplugin/afpacket_config.go(78)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:29.947108034Z  
+2018-06-06T10:41:29.947110158Z  2018-06-06 10:41:29,946 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.947112357Z  time="2018-06-06 10:41:29.94669" level=debug msg="Linux interface state watcher started" loc="ifplugin/interface_config.go(757)" logger=linux-plugin-if-conf
+2018-06-06T10:41:29.947114825Z  time="2018-06-06 10:41:29.94672" level=debug msg="Watching on linux link notifications" loc="ifplugin/interface_state.go(90)" logger=linux-plugin-if-state
+2018-06-06T10:41:29.947117280Z  
+2018-06-06T10:41:29.953207195Z  2018-06-06 10:41:29,951 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.953225978Z  time="2018-06-06 10:41:29.94817" level=debug msg="Memif socket dump completed, found 1 entries" loc="vppdump/dump_vppcalls.go(172)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:29.953229673Z  time="2018-06-06 10:41:29.94821" level=debug msg="ifConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(425)" logger=vpp-plugin
+2018-06-06T10:41:29.953232452Z  time="2018-06-06 10:41:29.94825" level=info msg="Initializing InterfaceStateUpdater" loc="ifplugin/interface_state.go(94)" logger=vpp-plugin-if-state
+2018-06-06T10:41:29.953235117Z  time="2018-06-06 10:41:29.94831" level=debug msg="Watch ifplugin_ifstate" loc="mem/inmemory_name_mapping.go(148)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:29.953244897Z  time="2018-06-06 10:41:29.94833" level=debug msg="ifStateUpdater Initialized" loc="vpp/plugin_impl_vpp.go(441)" logger=vpp-plugin
+2018-06-06T10:41:29.953248022Z  time="2018-06-06 10:41:29.94836" level=info msg="Initializing BFD configurator" loc="ifplugin/bfd_config.go(60)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:29.953250622Z  time="2018-06-06 10:41:29.94841" level=debug msg="bfdConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(448)" logger=vpp-plugin
+2018-06-06T10:41:29.953253094Z  time="2018-06-06 10:41:29.94844" level=debug msg="Initializing STN configurator" loc="ifplugin/stn_config.go(71)" logger=vpp-plugin-stn-conf
+2018-06-06T10:41:29.953255599Z  time="2018-06-06 10:41:29.94847" level=debug msg="stnConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(455)" logger=vpp-plugin
+2018-06-06T10:41:29.953258018Z  time="2018-06-06 10:41:29.94850" level=debug msg="Initializing NAT configurator" loc="ifplugin/nat_config.go(89)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:29.953260600Z  time="2018-06-06 10:41:29.94860" level=debug msg="natConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(462)" logger=vpp-plugin
+2018-06-06T10:41:29.953263163Z  time="2018-06-06 10:41:29.94863" level=info msg="Init IPSec plugin" loc="vpp/plugin_impl_vpp.go(468)" logger=vpp-plugin
+2018-06-06T10:41:29.953265664Z  time="2018-06-06 10:41:29.94866" level=debug msg="Initializing IPSec configurator" loc="ipsecplugin/ipsec_config.go(73)" logger=vpp-plugin-ipsec-plugin
+2018-06-06T10:41:29.953268147Z  time="2018-06-06 10:41:29.94871" level=debug msg="ipSecConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(476)" logger=vpp-plugin
+2018-06-06T10:41:29.953271411Z  time="2018-06-06 10:41:29.94873" level=info msg="Init ACL plugin" loc="vpp/plugin_impl_vpp.go(481)" logger=vpp-plugin
+2018-06-06T10:41:29.953288000Z  time="2018-06-06 10:41:29.94875" level=info msg="Initializing ACL configurator" loc="aclplugin/acl_config.go(83)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:41:29.953290469Z  time="2018-06-06 10:41:29.94883" level=debug msg="Started watcher on DHCP notifications" loc="ifplugin/interface_config.go(909)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:29.953292949Z  time="2018-06-06 10:41:29.94917" level=info msg="watchVPPNotifications starting" loc="ifplugin/interface_state.go(207)" logger=vpp-plugin-if-state
+2018-06-06T10:41:29.953314493Z  time="2018-06-06 10:41:29.94961" level=info msg="Docker ping check OK" loc="nsplugin/microservices.go(255)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.953317087Z  time="2018-06-06 10:41:29.95150" level=debug msg="processing new container 49f58df8eaed3c4421d26e427a93c08ca39ad711e1c56f7085f4d968811e7601 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.953319819Z  
+2018-06-06T10:41:29.954431380Z  2018-06-06 10:41:29,953 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.954441374Z  time="2018-06-06 10:41:29.95352" level=debug msg="detected container as microservice: Name=/agent_vpp_1 ID=49f58df8eaed3c4421d26e427a93c08ca39ad711e1c56f7085f4d968811e7601 Created=2018-06-06 10:41:28.002004999 +0000 UTC State.StartedAt=2018-06-06 10:41:28.677225218 +0000 UTC" loc="nsplugin/microservices.go(166)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.954451244Z  
+2018-06-06T10:41:29.955176482Z  2018-06-06 10:41:29,954 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.955185491Z  time="2018-06-06 10:41:29.95355" level=debug msg="Discovered new microservice" id=49f58df8eaed3c4421d26e427a93c08ca39ad711e1c56f7085f4d968811e7601 label=agent_vpp_1 loc="nsplugin/microservices.go(191)" logger=linux-plugin-ns-handler pid=2608
+2018-06-06T10:41:29.955188844Z  
+2018-06-06T10:41:29.955831207Z  2018-06-06 10:41:29,955 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.955838847Z  time="2018-06-06 10:41:29.95489" level=debug msg="processing new container 468fca3e6229930499f0f5b6116571a733bb7134eb2f395d4c88461c34d76fc0 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.955842133Z  
+2018-06-06T10:41:29.956662241Z  2018-06-06 10:41:29,956 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.956671488Z  time="2018-06-06 10:41:29.95621" level=debug msg="processing new container 2eb84692c6e09a55ceef80ecb139a691c102ba333ed39f3a069c5e0a6916fb99 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.956674902Z  
+2018-06-06T10:41:29.957713606Z  2018-06-06 10:41:29,957 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.957722242Z  time="2018-06-06 10:41:29.95730" level=debug msg="processing new container 608973f2a92c5eb268aa4d0663ac8dac94e2e66311c9a5105f5bc9741786c3e8 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:29.957725723Z  
+2018-06-06T10:41:29.960171668Z  2018-06-06 10:41:29,959 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.960182901Z  time="2018-06-06 10:41:29.95971" level=info msg="VPP ACL plugin version is 1.3" loc="aclplugin/acl_config.go(119)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:41:29.960186337Z  
+2018-06-06T10:41:29.960697740Z  2018-06-06 10:41:29,960 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.960720162Z  time="2018-06-06 10:41:29.96000" level=debug msg="aclConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(489)" logger=vpp-plugin
+2018-06-06T10:41:29.960723279Z  time="2018-06-06 10:41:29.96003" level=info msg="Init L2 plugin" loc="vpp/plugin_impl_vpp.go(495)" logger=vpp-plugin
+2018-06-06T10:41:29.960725919Z  
+2018-06-06T10:41:29.961162152Z  2018-06-06 10:41:29,960 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.961169916Z  time="2018-06-06 10:41:29.96008" level=debug msg="Initializing L2 Bridge domains configurator" loc="l2plugin/bd_config.go(75)" logger=vpp-plugin-l2-bd-conf
+2018-06-06T10:41:29.961173058Z  time="2018-06-06 10:41:29.96043" level=debug msg="bdConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(504)" logger=vpp-plugin
+2018-06-06T10:41:29.961175700Z  time="2018-06-06 10:41:29.96047" level=info msg="Initializing BridgeDomainStateUpdater" loc="l2plugin/bd_state.go(68)" logger=vpp-plugin-l2-bd-state
+2018-06-06T10:41:29.961178322Z  time="2018-06-06 10:41:29.96051" level=debug msg="Watch bdplugin_bdstate" loc="mem/inmemory_name_mapping.go(148)" logger=vpp-plugin-l2-bd-conf
+2018-06-06T10:41:29.961186426Z  time="2018-06-06 10:41:29.96054" level=debug msg="Initializing L2 Bridge domains" loc="l2plugin/fib_config.go(63)" logger=vpp-plugin-l2-fib-conf
+2018-06-06T10:41:29.961189187Z  
+2018-06-06T10:41:29.961760139Z  2018-06-06 10:41:29,961 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.961768380Z  time="2018-06-06 10:41:29.96094" level=debug msg="fibConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(529)" logger=vpp-plugin
+2018-06-06T10:41:29.961771318Z  time="2018-06-06 10:41:29.96098" level=info msg="Initializing L2 xConnect configurator" loc="l2plugin/xconnect_config.go(52)" logger=vpp-plugin-xc-conf
+2018-06-06T10:41:29.961773862Z  time="2018-06-06 10:41:29.96103" level=debug msg="xcConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(536)" logger=vpp-plugin
+2018-06-06T10:41:29.961776303Z  time="2018-06-06 10:41:29.96105" level=info msg="Init L3 plugin" loc="vpp/plugin_impl_vpp.go(542)" logger=vpp-plugin
+2018-06-06T10:41:29.961778753Z  
+2018-06-06T10:41:29.962163800Z  2018-06-06 10:41:29,961 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.962171255Z  time="2018-06-06 10:41:29.96139" level=debug msg="Initializing ARP configurator" loc="l3plugin/arp_config.go(65)" logger=vpp-plugin-l3-arp-conf
+2018-06-06T10:41:29.962174135Z  time="2018-06-06 10:41:29.96143" level=debug msg="arpConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(549)" logger=vpp-plugin
+2018-06-06T10:41:29.962176603Z  time="2018-06-06 10:41:29.96147" level=debug msg="Initializing proxy ARP configurator" loc="l3plugin/arp_proxy_config.go(64)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:29.962179153Z  time="2018-06-06 10:41:29.96152" level=debug msg="proxyArpConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(556)" logger=vpp-plugin
+2018-06-06T10:41:29.962181550Z  time="2018-06-06 10:41:29.96154" level=debug msg="Initializing L3 Route configurator" loc="l3plugin/route_config.go(61)" logger=vpp-plugin-l3-route-conf
+2018-06-06T10:41:29.962184039Z  time="2018-06-06 10:41:29.96157" level=debug msg="routeConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(563)" logger=vpp-plugin
+2018-06-06T10:41:29.962186450Z  
+2018-06-06T10:41:29.962702183Z  2018-06-06 10:41:29,962 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.962709686Z  time="2018-06-06 10:41:29.96222" level=info msg="Init L4 plugin" loc="vpp/plugin_impl_vpp.go(569)" logger=vpp-plugin
+2018-06-06T10:41:29.962712482Z  
+2018-06-06T10:41:29.963210386Z  2018-06-06 10:41:29,962 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.963218005Z  time="2018-06-06 10:41:29.96250" level=debug msg="Initializing L4 configurator" loc="l4plugin/appns_config.go(62)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:29.963220932Z  
+2018-06-06T10:41:29.964223842Z  2018-06-06 10:41:29,963 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.964231669Z  time="2018-06-06 10:41:29.96334" level=debug msg="l4Configurator Initialized" loc="vpp/plugin_impl_vpp.go(576)" logger=vpp-plugin
+2018-06-06T10:41:29.964240648Z  time="2018-06-06 10:41:29.96336" level=info msg="Init SR plugin" loc="vpp/plugin_impl_vpp.go(582)" logger=vpp-plugin
+2018-06-06T10:41:29.964243698Z  time="2018-06-06 10:41:29.96340" level=debug msg="SRConfigurator Initialized" loc="vpp/plugin_impl_vpp.go(603)" logger=vpp-plugin
+2018-06-06T10:41:29.964246195Z  time="2018-06-06 10:41:29.96342" level=debug msg="subscribeWatcher begin" loc="vpp/data_resync.go(747)" logger=vpp-plugin
+2018-06-06T10:41:29.964248605Z  time="2018-06-06 10:41:29.96346" level=debug msg="Watch vpp-plugin" loc="mem/inmemory_name_mapping.go(148)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:29.964251054Z  time="2018-06-06 10:41:29.96348" level=debug msg="swIfIndexes watch registration finished" loc="vpp/data_resync.go(749)" logger=vpp-plugin
+2018-06-06T10:41:29.964253506Z  time="2018-06-06 10:41:29.96351" level=debug msg="Watch vpp-plugin" loc="mem/inmemory_name_mapping.go(148)" logger=vpp-plugin-l2-bd-conf
+2018-06-06T10:41:29.964255974Z  time="2018-06-06 10:41:29.96353" level=debug msg="bdIndexes watch registration finished" loc="vpp/data_resync.go(751)" logger=vpp-plugin
+2018-06-06T10:41:29.964258428Z  time="2018-06-06 10:41:29.96355" level=debug msg="Watch vpp-plugin" loc="mem/inmemory_name_mapping.go(148)" logger=linux-plugin
+2018-06-06T10:41:29.964260937Z  time="2018-06-06 10:41:29.96357" level=debug msg="linuxIfIndexes watch registration finished" loc="vpp/data_resync.go(754)" logger=vpp-plugin
+2018-06-06T10:41:29.964263426Z  
+2018-06-06T10:41:29.964746126Z  2018-06-06 10:41:29,964 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.964768580Z  time="2018-06-06 10:41:29.96429" level=debug msg="data Transport watch finished" loc="vpp/data_resync.go(790)" logger=vpp-plugin
+2018-06-06T10:41:29.964771715Z  
+2018-06-06T10:41:29.964773980Z  2018-06-06 10:41:29,964 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.964776269Z  time="2018-06-06 10:41:29.96449" level=info msg="plugin VPP: Init took 19.771263ms" durationInNs=19771263 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.964778944Z  
+2018-06-06T10:41:29.965749807Z  2018-06-06 10:41:29,965 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.965758982Z  time="2018-06-06 10:41:29.96492" level=info msg="plugin GRPCSvcPlugin: Init took 30.805µs" durationInNs=30805 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.965762635Z  time="2018-06-06 10:41:29.96496" level=info msg="plugin RESTAPIPlugin: Init took 1µs" durationInNs=1000 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.965765365Z  
+2018-06-06T10:41:29.966204459Z  2018-06-06 10:41:29,965 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.966212051Z  time="2018-06-06 10:41:29.96587" level=info msg="plugin TelemetryPlugin: Init took 876.466µs" durationInNs=876466 loc="core/agent_core.go(295)" logger=agentcore
+2018-06-06T10:41:29.966215336Z  
+2018-06-06T10:41:29.966678968Z  2018-06-06 10:41:29,966 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.966691953Z  time="2018-06-06 10:41:29.96632" level=debug msg="Register handler /log/{logger}/{level:debug|info|warning|error|fatal|panic}" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:29.966695335Z  
+2018-06-06T10:41:29.967209517Z  2018-06-06 10:41:29,966 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.967216949Z  time="2018-06-06 10:41:29.96681" level=debug msg="Register handler /log/list" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:29.967219892Z  
+2018-06-06T10:41:29.970331575Z  2018-06-06 10:41:29,969 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.970363350Z  time="2018-06-06 10:41:29.96728" level=info msg="plugin Logs: AfterInit took 992.662µs" durationInNs=992662 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:29.970369219Z  time="2018-06-06 10:41:29.96730" level=info msg="plugin ServiceLabel: not implement AfterInit" loc="core/agent_core.go(348)" logger=agentcore
+2018-06-06T10:41:29.970392500Z  time="2018-06-06 10:41:29.96734" level=info msg="plugin StatusCheck: AfterInit took 11.171µs" durationInNs=11171 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:29.970395643Z  time="2018-06-06 10:41:29.96736" level=info msg="plugin ETCD: not implement AfterInit" loc="core/agent_core.go(348)" logger=agentcore
+2018-06-06T10:41:29.970398383Z  
+2018-06-06T10:41:29.970414840Z  2018-06-06 10:41:29,969 DEBG 'agent' stdout output:
+2018-06-06T10:41:29.970417386Z  time="2018-06-06 10:41:29.96326" level=info msg="watchVPPNotifications for bridge domain state started" loc="l2plugin/bd_state.go(104)" logger=vpp-plugin-l2-bd-state
+2018-06-06T10:41:29.970420078Z  
+2018-06-06T10:41:30.005863376Z  2018-06-06 10:41:30,005 DEBG 'agent' stdout output:
+2018-06-06T10:41:30.005877163Z  time="2018-06-06 10:41:30.00519" level=info msg="plugin ETCDDataSync: AfterInit took 37.792034ms" durationInNs=37792034 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:30.005880702Z  
+2018-06-06T10:41:30.006329558Z  2018-06-06 10:41:30,005 DEBG 'agent' stdout output:
+2018-06-06T10:41:30.006338616Z  time="2018-06-06 10:41:30.00565" level=info msg="plugin Consul: not implement AfterInit" loc="core/agent_core.go(348)" logger=agentcore
+2018-06-06T10:41:30.006343919Z  
+2018-06-06T10:41:30.006346322Z  2018-06-06 10:41:30,006 DEBG 'agent' stdout output:
+2018-06-06T10:41:30.006348710Z  time="2018-06-06 10:41:30.00600" level=info msg="plugin ConsulDataSync: AfterInit took 860ns" durationInNs=860 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:30.006351439Z  
+2018-06-06T10:41:30.006827555Z  2018-06-06 10:41:30,006 DEBG 'agent' stdout output:
+2018-06-06T10:41:30.006835533Z  time="2018-06-06 10:41:30.00619" level=debug msg="Consuming started" hashTopics="[]" loc="mux/multiplexer.go(191)" logger=kafka manualTopics="[]"
+2018-06-06T10:41:30.006838785Z  
+2018-06-06T10:41:30.006841115Z  2018-06-06 10:41:30,006 DEBG 'agent' stdout output:
+2018-06-06T10:41:30.006852496Z  time="2018-06-06 10:41:30.00652" level=debug msg="entering NewConsumer ..." loc="client/consumer.go(59)" logger=kafka
+2018-06-06T10:41:30.006855650Z  
+2018-06-06T10:41:30.007452804Z  2018-06-06 10:41:30,006 DEBG 'agent' stdout output:
+2018-06-06T10:41:30.007461212Z  time="2018-06-06 10:41:30.00673" level=debug msg="Consumer config: &client.Config{Logger:(*logging.pluginLogger)(0xc4201c7ca0), Config:(*cluster.Config)(0xc4200d81e0), Context:context.Context(nil), Cancel:(context.CancelFunc)(nil), Brokers:[]string{\"172.17.0.1:9092\"}, GroupID:\"agent_vpp_1\", Debug:false, Topics:[]string(nil), Partition:0, Partitioner:(sarama.PartitionerConstructor)(0xa09bf0), InitialOffset:-2, RequiredAcks:-1, RecvNotification:false, RecvNotificationChan:(chan *cluster.Notification)(nil), RecvError:false, RecvErrorChan:(chan error)(nil), RecvMessageChan:(chan *client.ConsumerMessage)(0xc42044aea0), SendSuccess:true, SuccessChan:(chan *client.ProducerMessage)(0xc42008b6e0), SendError:true, ErrorChan:(chan *client.ProducerError)(0xc42008b740)}" loc="client/consumer.go(63)" logger=kafka
+2018-06-06T10:41:30.007466225Z  
+2018-06-06T10:41:30.010372008Z  2018-06-06 10:41:30,009 DEBG 'agent' stdout output:
+2018-06-06T10:41:30.010384895Z  time="2018-06-06 10:41:30.00963" level=debug msg="new client created successfully ..." loc="client/consumer.go(75)" logger=kafka
+2018-06-06T10:41:30.010388325Z  
+2018-06-06T10:41:31.011637313Z  2018-06-06 10:41:31,011 INFO success: vpp_or_agent_not_running entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2018-06-06T10:41:31.011651269Z  2018-06-06 10:41:31,011 INFO success: vpp entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2018-06-06T10:41:33.452927567Z  2018-06-06 10:41:33,452 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.452941537Z  time="2018-06-06 10:41:33.45141" level=debug msg="No topics for hash partitioner" loc="mux/multiplexer.go(198)" logger=kafka
+2018-06-06T10:41:33.452944991Z  time="2018-06-06 10:41:33.45144" level=debug msg="No topics for manual partitioner" loc="mux/multiplexer.go(205)" logger=kafka
+2018-06-06T10:41:33.452947512Z  
+2018-06-06T10:41:33.460966846Z  2018-06-06 10:41:33,458 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.461913062Z  time="2018-06-06 10:41:33.45302" level=debug msg="Generic Consumer started" loc="mux/multiplexer.go(311)" logger=kafka
+2018-06-06T10:41:33.461925147Z  time="2018-06-06 10:41:33.45590" level=debug msg="Generic Consumer started" loc="mux/multiplexer.go(294)" logger=kafka
+2018-06-06T10:41:33.461928220Z  time="2018-06-06 10:41:33.45604" level=info msg="Plugin kafka: status check probe registered" loc="statuscheck/plugin_impl_statuscheck.go(144)" logger=status-check
+2018-06-06T10:41:33.461930907Z  time="2018-06-06 10:41:33.45606" level=info msg="plugin Kafka: AfterInit took 3.449881484s" durationInNs=3449881484 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.461933492Z  time="2018-06-06 10:41:33.45608" level=info msg="plugin Redis: not implement AfterInit" loc="core/agent_core.go(348)" logger=agentcore
+2018-06-06T10:41:33.461936005Z  time="2018-06-06 10:41:33.45610" level=info msg="plugin RedisDataSync: AfterInit took 1.018µs" durationInNs=1018 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.461947732Z  time="2018-06-06 10:41:33.45612" level=info msg="plugin Cassandra: AfterInit took 302ns" durationInNs=302 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.461950506Z  time="2018-06-06 10:41:33.45615" level=info msg="Resync order[linuxplugin Config VPP default plug:IF/L2/L3 Status VPP default plug:IF/L2/L3]" loc="resync/plugin_impl_resync.go(103)" logger=resync-orch
+2018-06-06T10:41:33.461953200Z  
+2018-06-06T10:41:33.464411741Z  2018-06-06 10:41:33,462 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.464424777Z  time="2018-06-06 10:41:33.46165" level=debug msg="Received RESYNC key linux/config/v1/interface/" loc="linux/data_resync.go(81)" logger=linux-plugin
+2018-06-06T10:41:33.464428594Z  time="2018-06-06 10:41:33.46170" level=debug msg="Received RESYNC key linux/config/v1/arp/" loc="linux/data_resync.go(81)" logger=linux-plugin
+2018-06-06T10:41:33.464431252Z  time="2018-06-06 10:41:33.46173" level=debug msg="Received RESYNC key linux/config/v1/route/" loc="linux/data_resync.go(81)" logger=linux-plugin
+2018-06-06T10:41:33.464433673Z  time="2018-06-06 10:41:33.46175" level=debug msg="Received RESYNC interface values 0" loc="linux/data_resync.go(86)" logger=linux-plugin
+2018-06-06T10:41:33.464436079Z  time="2018-06-06 10:41:33.46177" level=debug msg="Received RESYNC ARP entry values 0" loc="linux/data_resync.go(89)" logger=linux-plugin
+2018-06-06T10:41:33.464438444Z  time="2018-06-06 10:41:33.46179" level=debug msg="Received RESYNC route values 0" loc="linux/data_resync.go(92)" logger=linux-plugin
+2018-06-06T10:41:33.464440815Z  
+2018-06-06T10:41:33.464947383Z  2018-06-06 10:41:33,464 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.464955585Z  time="2018-06-06 10:41:33.46292" level=info msg="resync the Linux Configuration" loc="linux/data_resync.go(51)" logger=linux-plugin
+2018-06-06T10:41:33.464958515Z  time="2018-06-06 10:41:33.46296" level=debug msg="RESYNC Linux interface begin." loc="ifplugin/data_resync.go(51)" logger=linux-plugin-if-conf
+2018-06-06T10:41:33.464961130Z  time="2018-06-06 10:41:33.46312" level=debug msg="publish add to vpp-plugin{{lo false false linux_if_indexes} 0xc4204914c0}" loc="mem/inmemory_name_mapping.go(246)" logger=linux-plugin
+2018-06-06T10:41:33.464963771Z  time="2018-06-06 10:41:33.46318" level=debug msg="publish add to linux-plugin{{lo false false linux_if_indexes} 0xc4204914c0}" loc="mem/inmemory_name_mapping.go(246)" logger=linux-plugin
+2018-06-06T10:41:33.464966372Z  time="2018-06-06 10:41:33.46322" level=debug msg="RESYNC Interface end. []" cfg="&{0xc4200c5cb0 <nil> 0xc4202cdcd0 2 map[] map[] 0xc4202e66c0 0xc4202e6660 {0 0} 0xc4202b6a00 0x54a700 {{} [0 0 0 0 1 0 0 0 0 0 0 0] 0} 0xc4202aaf00 0xc4202d5900}" loc="ifplugin/data_resync.go(161)" logger=linux-plugin-if-conf
+2018-06-06T10:41:33.464969873Z  time="2018-06-06 10:41:33.46327" level=debug msg="RESYNC ARPs begin." cfg="&{0xc4200c5ef0 0xc4202cdcd0 0xc42031c050 map[] 1 0xc4202aaf00 0xc4202d5e00}" loc="l3plugin/data_resync.go(31)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.464972607Z  time="2018-06-06 10:41:33.46330" level=info msg="Browsing Linux ARP entries" loc="l3plugin/arp_config.go(329)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.464999716Z  
+2018-06-06T10:41:33.466442958Z  2018-06-06 10:41:33,465 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.466461366Z  time="2018-06-06 10:41:33.46464" level=debug msg="Reading ARP entries" loc="linuxcalls/arp_linuxcalls.go(83)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.466464529Z  time="2018-06-06 10:41:33.46481" level=debug msg="Found new static linux ARP entry" interface=819 loc="l3plugin/arp_config.go(338)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.466467095Z  
+2018-06-06T10:41:33.467418320Z  2018-06-06 10:41:33,466 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.467427495Z  time="2018-06-06 10:41:33.46608" level=debug msg="ARP entry registered as iface819-172.17.0.1-02:42:05:9a:f1:2b" loc="l3plugin/arp_config.go(354)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467430725Z  time="2018-06-06 10:41:33.46612" level=debug msg="Found new static linux ARP entry" interface=819 loc="l3plugin/arp_config.go(338)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467433262Z  time="2018-06-06 10:41:33.46615" level=debug msg="ARP entry registered as iface819-ff02::1:ff11:5-33:33:ff:11:00:05" loc="l3plugin/arp_config.go(354)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467435896Z  time="2018-06-06 10:41:33.46618" level=debug msg="Found new static linux ARP entry" interface=819 loc="l3plugin/arp_config.go(338)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467438366Z  time="2018-06-06 10:41:33.46620" level=debug msg="ARP entry registered as iface819-ff02::16-33:33:00:00:00:16" loc="l3plugin/arp_config.go(354)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467440813Z  time="2018-06-06 10:41:33.46623" level=debug msg="Found new static linux ARP entry" interface=819 loc="l3plugin/arp_config.go(338)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467443191Z  time="2018-06-06 10:41:33.46625" level=debug msg="ARP entry registered as iface819-ff02::2-33:33:00:00:00:02" loc="l3plugin/arp_config.go(354)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467445574Z  time="2018-06-06 10:41:33.46627" level=debug msg="RESYNC ARPs end. " cfg="&{0xc4200c5ef0 0xc4202cdcd0 0xc42031c050 map[] 5 0xc4202aaf00 0xc4202d5e00}" loc="l3plugin/data_resync.go(55)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.467448356Z  time="2018-06-06 10:41:33.46631" level=debug msg="RESYNC static routes begin." cfg="&{0xc42031a090 0xc4202cdcd0 0xc42031c150 0xc42031c170 0xc42031c190 map[] 0 0xc4202aaf00 <nil>}" loc="l3plugin/data_resync.go(63)" logger=linux-plugin-route-conf
+2018-06-06T10:41:33.467451189Z  
+2018-06-06T10:41:33.471989813Z  2018-06-06 10:41:33,469 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.472003845Z  time="2018-06-06 10:41:33.46719" level=info msg="Resync of linuxplugin took 10.988746ms" durationInNs=10988746 loc="resync/plugin_impl_resync.go(114)" logger=resync-orch
+2018-06-06T10:41:33.472007334Z  
+2018-06-06T10:41:33.473976043Z  2018-06-06 10:41:33,471 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.474506827Z  time="2018-06-06 10:41:33.47002" level=info msg="New Linux interface was created" hostIfName=lo ifIdx=1 ifName=lo loc="ifplugin/interface_config.go(835)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.474538676Z  time="2018-06-06 10:41:33.47012" level=debug msg="Linux ARP configurator: resolve created interface lo" loc="l3plugin/arp_config.go(363)" logger=linux-plugin-arp-conf
+2018-06-06T10:41:33.474542269Z  time="2018-06-06 10:41:33.47015" level=info msg="Linux static route configurator: resolve new interface lo (idx 1)" loc="l3plugin/route_config.go(382)" logger=linux-plugin-route-conf
+2018-06-06T10:41:33.474564363Z  time="2018-06-06 10:41:33.47020" level=debug msg="Processing automatic interfaces for lo" loc="l3plugin/route_config.go(616)" logger=linux-plugin-route-conf
+2018-06-06T10:41:33.474567129Z  
+2018-06-06T10:41:33.499507608Z  2018-06-06 10:41:33,498 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.499536915Z  time="2018-06-06 10:41:33.49808" level=debug msg="Received RESYNC key vpp/config/v1/bd/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.499540511Z  
+2018-06-06T10:41:33.501054874Z  2018-06-06 10:41:33,500 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.501067515Z  time="2018-06-06 10:41:33.49921" level=debug msg="Received RESYNC key vpp/config/v1/l4/features/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501070835Z  time="2018-06-06 10:41:33.49925" level=debug msg="Received RESYNC key vpp/config/v1/l4/namespaces/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501073599Z  time="2018-06-06 10:41:33.49927" level=debug msg="Received RESYNC key vpp/config/v1/stn/rules/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501076215Z  time="2018-06-06 10:41:33.49929" level=debug msg="Received RESYNC key vpp/config/v1/srv6/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501078668Z  time="2018-06-06 10:41:33.49931" level=debug msg="Received RESYNC key vpp/config/v1/bfd/auth-key/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501081115Z  time="2018-06-06 10:41:33.49933" level=debug msg="Received RESYNC key vpp/config/v1/nat/global/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501083579Z  time="2018-06-06 10:41:33.49935" level=debug msg="Received RESYNC key vpp/config/v1/nat/dnat/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501086022Z  time="2018-06-06 10:41:33.49937" level=debug msg="Received RESYNC key vpp/config/v1/ipsec/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501088521Z  time="2018-06-06 10:41:33.49939" level=debug msg="Received RESYNC key vpp/config/v1/interface/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501090986Z  time="2018-06-06 10:41:33.49941" level=debug msg="Received RESYNC key vpp/config/v1/bfd/session/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.501093465Z  
+2018-06-06T10:41:33.502018504Z  2018-06-06 10:41:33,501 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.502027744Z  time="2018-06-06 10:41:33.50084" level=debug msg="Received RESYNC key vpp/config/v1/xconnect/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.502038908Z  time="2018-06-06 10:41:33.50088" level=debug msg="Received RESYNC key vpp/config/v1/vrf/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.502041937Z  time="2018-06-06 10:41:33.50090" level=debug msg="Received RESYNC key vpp/config/v1/arp/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.502044541Z  
+2018-06-06T10:41:33.503010153Z  2018-06-06 10:41:33,502 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.503018787Z  time="2018-06-06 10:41:33.50093" level=debug msg="Received RESYNC key vpp/config/v1/proxyarp/interface/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.503022103Z  time="2018-06-06 10:41:33.50174" level=debug msg="Received RESYNC key vpp/config/v1/acl/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.503024672Z  time="2018-06-06 10:41:33.50176" level=debug msg="Received RESYNC key vpp/config/v1/bfd/echo-function" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.503027180Z  time="2018-06-06 10:41:33.50179" level=debug msg="Received RESYNC key vpp/config/v1/proxyarp/range/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.503030343Z  time="2018-06-06 10:41:33.50181" level=debug msg="Received RESYNC key vpp/config/v1/nat/snat/" loc="vpp/data_resync.go(275)" logger=vpp-plugin
+2018-06-06T10:41:33.503032853Z  time="2018-06-06 10:41:33.50184" level=debug msg="Received RESYNC BFD Auth Key values 0" loc="vpp/data_resync.go(292)" logger=vpp-plugin
+2018-06-06T10:41:33.503035237Z  time="2018-06-06 10:41:33.50186" level=debug msg="Received RESYNC NAT global config" loc="vpp/data_resync.go(327)" logger=vpp-plugin
+2018-06-06T10:41:33.503037637Z  time="2018-06-06 10:41:33.50189" level=debug msg="Received RESYNC DNAT configs 0" loc="vpp/data_resync.go(333)" logger=vpp-plugin
+2018-06-06T10:41:33.503040076Z  time="2018-06-06 10:41:33.50191" level=debug msg="Received RESYNC VRF values 0" loc="vpp/data_resync.go(305)" logger=vpp-plugin
+2018-06-06T10:41:33.503042563Z  
+2018-06-06T10:41:33.504039123Z  2018-06-06 10:41:33,503 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.504051676Z  time="2018-06-06 10:41:33.50274" level=debug msg="Received RESYNC L3 FIB values 0" loc="vpp/data_resync.go(306)" logger=vpp-plugin
+2018-06-06T10:41:33.504055141Z  time="2018-06-06 10:41:33.50278" level=debug msg="Received RESYNC ARP values 0" loc="vpp/data_resync.go(309)" logger=vpp-plugin
+2018-06-06T10:41:33.504057925Z  time="2018-06-06 10:41:33.50281" level=debug msg="Received RESYNC proxy ARP interface values 0" loc="vpp/data_resync.go(312)" logger=vpp-plugin
+2018-06-06T10:41:33.504060541Z  time="2018-06-06 10:41:33.50283" level=debug msg="Received RESYNC IPSec configs 0" loc="vpp/data_resync.go(336)" logger=vpp-plugin
+2018-06-06T10:41:33.504063091Z  time="2018-06-06 10:41:33.50286" level=debug msg="Received RESYNC interface values 0" loc="vpp/data_resync.go(286)" logger=vpp-plugin
+2018-06-06T10:41:33.504065629Z  time="2018-06-06 10:41:33.50288" level=debug msg="Received RESYNC BFD Session values 0" loc="vpp/data_resync.go(289)" logger=vpp-plugin
+2018-06-06T10:41:33.504088775Z  
+2018-06-06T10:41:33.506591410Z  2018-06-06 10:41:33,506 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.506604322Z  time="2018-06-06 10:41:33.50582" level=debug msg="Received RESYNC XConnects values 0" loc="vpp/data_resync.go(302)" logger=vpp-plugin
+2018-06-06T10:41:33.506607721Z  time="2018-06-06 10:41:33.50589" level=debug msg="Received RESYNC SNAT configs 0" loc="vpp/data_resync.go(330)" logger=vpp-plugin
+2018-06-06T10:41:33.506610421Z  time="2018-06-06 10:41:33.50593" level=debug msg="Received RESYNC ACL values 0" loc="vpp/data_resync.go(283)" logger=vpp-plugin
+2018-06-06T10:41:33.506612950Z  
+2018-06-06T10:41:33.507028761Z  2018-06-06 10:41:33,506 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.507036617Z  time="2018-06-06 10:41:33.50632" level=debug msg="Received RESYNC BFD Echo values 0" loc="vpp/data_resync.go(295)" logger=vpp-plugin
+2018-06-06T10:41:33.507039597Z  time="2018-06-06 10:41:33.50636" level=debug msg="Received RESYNC proxy ARP range values 0" loc="vpp/data_resync.go(315)" logger=vpp-plugin
+2018-06-06T10:41:33.507042223Z  time="2018-06-06 10:41:33.50641" level=debug msg="Received RESYNC STN rules values 0" loc="vpp/data_resync.go(324)" logger=vpp-plugin
+2018-06-06T10:41:33.507044682Z  time="2018-06-06 10:41:33.50645" level=debug msg="Received RESYNC SR configs 0" loc="vpp/data_resync.go(339)" logger=vpp-plugin
+2018-06-06T10:41:33.507047264Z  
+2018-06-06T10:41:33.507528557Z  2018-06-06 10:41:33,507 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.507536613Z  time="2018-06-06 10:41:33.50685" level=debug msg="Received RESYNC BD values 0" loc="vpp/data_resync.go(298)" logger=vpp-plugin
+2018-06-06T10:41:33.507539823Z  time="2018-06-06 10:41:33.50688" level=debug msg="Received RESYNC L2 FIB values 0" loc="vpp/data_resync.go(299)" logger=vpp-plugin
+2018-06-06T10:41:33.507542380Z  time="2018-06-06 10:41:33.50691" level=debug msg="Received RESYNC AppNs feature flag" loc="vpp/data_resync.go(318)" logger=vpp-plugin
+2018-06-06T10:41:33.507545074Z  time="2018-06-06 10:41:33.50694" level=debug msg="Received RESYNC AppNamespace values 0" loc="vpp/data_resync.go(321)" logger=vpp-plugin
+2018-06-06T10:41:33.507547572Z  
+2018-06-06T10:41:33.508037203Z  2018-06-06 10:41:33,507 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.508044800Z  time="2018-06-06 10:41:33.50727" level=info msg="resync the VPP Configuration begin" loc="vpp/data_resync.go(127)" logger=vpp-plugin
+2018-06-06T10:41:33.508047802Z  time="2018-06-06 10:41:33.50732" level=debug msg="RESYNC Interface begin for []" cfg="&{0xc42031a2d0 0xc420256128 0xc42031f450 0xc42031ccb0 0xc42031ccd0 map[] map[/run/vpp/memif.sock:0] 0 0xc4202e7080 0xc4202e6e40 0xc4202e6de0 0xc4202e77a0}" loc="ifplugin/data_resync.go(45)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.508050974Z  
+2018-06-06T10:41:33.511551890Z  2018-06-06 10:41:33,511 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.511563804Z  time="2018-06-06 10:41:33.51121" level=debug msg="Getting VRF for interface 0" loc="vppcalls/vrf_vppcalls.go(28)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.511575982Z  
+2018-06-06T10:41:33.516633349Z  2018-06-06 10:41:33,516 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.516645958Z  time="2018-06-06 10:41:33.51611" level=debug msg="Memif socket dump completed, found 1 entries" loc="vppdump/dump_vppcalls.go(172)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.516649164Z  
+2018-06-06T10:41:33.521574885Z  2018-06-06 10:41:33,520 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.521589319Z  time="2018-06-06 10:41:33.52015" level=debug msg="publish add to ifplugin_ifstate{{local0 false false sw_if_indexes} 0xc420195620}" loc="mem/inmemory_name_mapping.go(246)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.521592795Z  time="2018-06-06 10:41:33.52028" level=debug msg="publish add to vpp-plugin{{local0 false false sw_if_indexes} 0xc420195620}" loc="mem/inmemory_name_mapping.go(246)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.521595660Z  
+2018-06-06T10:41:33.522578431Z  2018-06-06 10:41:33,522 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.522588217Z  time="2018-06-06 10:41:33.52173" level=debug msg="RESYNC interfaces: registered interface local0 (index 0)" loc="ifplugin/data_resync.go(990)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.522591385Z  time="2018-06-06 10:41:33.52177" level=debug msg="RESYNC Interface end." cfg="&{0xc42031a2d0 0xc420256128 0xc42031f450 0xc42031ccb0 0xc42031ccd0 map[] map[/run/vpp/memif.sock:0] 0 0xc4202e7080 0xc4202e6e40 0xc4202e6de0 0xc4202e77a0}" loc="ifplugin/data_resync.go(171)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.522594515Z  time="2018-06-06 10:41:33.52183" level=info msg="vxlan.VxlanTunnelDump call took 980.498µs" conf=InterfaceConfigurator durationInNs=980498 loc="measure/stopwatch.go(148)" logger=vpp-plugin-if-conf wasCalled=1
+2018-06-06T10:41:33.522597549Z  time="2018-06-06 10:41:33.52191" level=info msg="interfaces.SwInterfaceTagAddDel call took 1.384324ms" conf=InterfaceConfigurator durationInNs=1384324 loc="measure/stopwatch.go(148)" logger=vpp-plugin-if-conf wasCalled=1
+2018-06-06T10:41:33.522600173Z  time="2018-06-06 10:41:33.52197" level=info msg="interfaces.SwInterfaceDump call took 3.801251ms" conf=InterfaceConfigurator durationInNs=3801251 loc="measure/stopwatch.go(148)" logger=vpp-plugin-if-conf wasCalled=1
+2018-06-06T10:41:33.522602798Z  
+2018-06-06T10:41:33.523075216Z  2018-06-06 10:41:33,522 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.523083078Z  time="2018-06-06 10:41:33.52240" level=info msg="ip.IPAddressDump call took 949.441µs" conf=InterfaceConfigurator durationInNs=949441 loc="measure/stopwatch.go(148)" logger=vpp-plugin-if-conf wasCalled=2
+2018-06-06T10:41:33.523086283Z  time="2018-06-06 10:41:33.52244" level=info msg="memif.MemifDump call took 1.578025ms" conf=InterfaceConfigurator durationInNs=1578025 loc="measure/stopwatch.go(148)" logger=vpp-plugin-if-conf wasCalled=2
+2018-06-06T10:41:33.523088940Z  time="2018-06-06 10:41:33.52247" level=info msg="tap.SwInterfaceTapDump call took 1.996093ms" conf=InterfaceConfigurator durationInNs=1996093 loc="measure/stopwatch.go(148)" logger=vpp-plugin-if-conf wasCalled=1
+2018-06-06T10:41:33.523091568Z  
+2018-06-06T10:41:33.523093649Z  2018-06-06 10:41:33,522 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.523102433Z  time="2018-06-06 10:41:33.52280" level=info msg="partial resync time is 13.2171ms" conf=InterfaceConfigurator durationInNs=13217100 loc="measure/stopwatch.go(164)" logger=vpp-plugin-if-conf
+2018-06-06T10:41:33.523105280Z  time="2018-06-06 10:41:33.52284" level=debug msg="Resync ACLs started" loc="aclplugin/data_resync.go(26)" logger=vpp-plugin
+2018-06-06T10:41:33.523107821Z  
+2018-06-06T10:41:33.527654325Z  2018-06-06 10:41:33,527 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.527668219Z  time="2018-06-06 10:41:33.52663" level=info msg="*acl.ACLInterfaceListDump call took 1.019406ms" conf=ACLConfigurator durationInNs=1019406 loc="measure/stopwatch.go(148)" logger=vpp-plugin-acl-plugin wasCalled=1
+2018-06-06T10:41:33.527671579Z  time="2018-06-06 10:41:33.52667" level=info msg="acl.MacipACLDump call took 963.58µs" conf=ACLConfigurator durationInNs=963580 loc="measure/stopwatch.go(148)" logger=vpp-plugin-acl-plugin wasCalled=1
+2018-06-06T10:41:33.527675413Z  time="2018-06-06 10:41:33.52671" level=info msg="acl.ACLInterfaceListDump call took 1.009819ms" conf=ACLConfigurator durationInNs=1009819 loc="measure/stopwatch.go(148)" logger=vpp-plugin-acl-plugin wasCalled=1
+2018-06-06T10:41:33.527678013Z  time="2018-06-06 10:41:33.52674" level=info msg="acl.ACLInterfaceSetACLList call took 0s" conf=ACLConfigurator durationInNs=0 loc="measure/stopwatch.go(148)" logger=vpp-plugin-acl-plugin wasCalled=0
+2018-06-06T10:41:33.527680510Z  time="2018-06-06 10:41:33.52676" level=info msg="acl.ACLPluginGetVersion call took 10.888257ms" conf=ACLConfigurator durationInNs=10888257 loc="measure/stopwatch.go(148)" logger=vpp-plugin-acl-plugin wasCalled=1
+2018-06-06T10:41:33.527683203Z  time="2018-06-06 10:41:33.52679" level=info msg="acl.ACLDump call took 717.852µs" conf=ACLConfigurator durationInNs=717852 loc="measure/stopwatch.go(148)" logger=vpp-plugin-acl-plugin wasCalled=1
+2018-06-06T10:41:33.527685734Z  time="2018-06-06 10:41:33.52682" level=info msg="partial resync time is 14.598914ms" conf=ACLConfigurator durationInNs=14598914 loc="measure/stopwatch.go(164)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:41:33.527688328Z  time="2018-06-06 10:41:33.52685" level=debug msg="RESYNC BFD Keys begin." cfg="&{0xc42031a750 0xc42031ccb0 1 0xc42031fa90 0xc420324aa0 0xc420324ac0 0xc420324ae0 0xc4202e7a40}" loc="ifplugin/data_resync.go(274)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:33.527691156Z  
+2018-06-06T10:41:33.528142494Z  2018-06-06 10:41:33,527 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.528164217Z  time="2018-06-06 10:41:33.52775" level=debug msg="RESYNC BFD Keys end. <nil>" cfg="&{0xc42031a750 0xc42031ccb0 1 0xc42031fa90 0xc420324aa0 0xc420324ac0 0xc420324ae0 0xc4202e7a40}" loc="ifplugin/data_resync.go(326)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:33.528167802Z  time="2018-06-06 10:41:33.52780" level=info msg="bfd.BfdAuthKeysDump call took 841.059µs" conf=BFDConfigurator durationInNs=841059 loc="measure/stopwatch.go(148)" logger=vpp-plugin-bfd-conf wasCalled=1
+2018-06-06T10:41:33.528602837Z  time="2018-06-06 10:41:33.52783" level=info msg="partial resync time is 841.059µs" conf=BFDConfigurator durationInNs=841059 loc="measure/stopwatch.go(164)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:33.528618228Z  time="2018-06-06 10:41:33.52785" level=debug msg="RESYNC BFD Session begin." cfg="&{0xc42031a750 0xc42031ccb0 1 0xc42031fa90 0xc420324aa0 0xc420324ac0 0xc420324ae0 0xc4202e7a40}" loc="ifplugin/data_resync.go(214)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:33.528621683Z  
+2018-06-06T10:41:33.530098999Z  2018-06-06 10:41:33,529 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.530108655Z  time="2018-06-06 10:41:33.52921" level=debug msg="RESYNC BFD Session end. <nil>" cfg="&{0xc42031a750 0xc42031ccb0 1 0xc42031fa90 0xc420324aa0 0xc420324ac0 0xc420324ae0 0xc4202e7a40}" loc="ifplugin/data_resync.go(267)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:33.530112184Z  time="2018-06-06 10:41:33.52930" level=info msg="bfd.BfdUDPSessionDump call took 1.269087ms" conf=BFDConfigurator durationInNs=1269087 loc="measure/stopwatch.go(148)" logger=vpp-plugin-bfd-conf wasCalled=1
+2018-06-06T10:41:33.530114897Z  time="2018-06-06 10:41:33.52934" level=info msg="partial resync time is 1.269087ms" conf=BFDConfigurator durationInNs=1269087 loc="measure/stopwatch.go(164)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:33.530117532Z  time="2018-06-06 10:41:33.52937" level=debug msg="RESYNC BFD Echo source begin." cfg="&{0xc42031a750 0xc42031ccb0 1 0xc42031fa90 0xc420324aa0 0xc420324ac0 0xc420324ae0 0xc4202e7a40}" loc="ifplugin/data_resync.go(333)" logger=vpp-plugin-bfd-conf
+2018-06-06T10:41:33.530120342Z  time="2018-06-06 10:41:33.52941" level=debug msg="RESYNC BDs begin." cfg="&{0xc42031b950 0xc42031ccb0 0xc42035d0b0 1 1 0xc4203965a0 0xc420396540 0xc42033f770}" loc="l2plugin/data_resync.go(29)" logger=vpp-plugin-l2-bd-conf
+2018-06-06T10:41:33.530123053Z  
+2018-06-06T10:41:33.530597908Z  2018-06-06 10:41:33,530 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.530605969Z  time="2018-06-06 10:41:33.53020" level=info msg="l2.BridgeDomainDump call took 738.245µs" conf=ACLConfigurator durationInNs=738245 loc="measure/stopwatch.go(148)" logger=vpp-plugin-l2-bd-conf wasCalled=1
+2018-06-06T10:41:33.530609328Z  time="2018-06-06 10:41:33.53024" level=info msg="partial resync time is 738.245µs" conf=ACLConfigurator durationInNs=738245 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l2-bd-conf
+2018-06-06T10:41:33.530612074Z  time="2018-06-06 10:41:33.53027" level=debug msg="RESYNC FIBs begin." cfg="&{0xc42031bcb0 0xc42031ccb0 0xc42035d0b0 0xc42035d460 0xc42035d480 0xc42035d4a0 1 0xc4203ac570 0xc4203969c0 0xc420396ba0 0xc42033fcc0}" loc="l2plugin/data_resync.go(161)" logger=vpp-plugin-l2-fib-conf
+2018-06-06T10:41:33.530615037Z  
+2018-06-06T10:41:33.531665797Z  2018-06-06 10:41:33,531 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.531675677Z  time="2018-06-06 10:41:33.53110" level=debug msg="RESYNC FIBs end." cfg="&{0xc42031bcb0 0xc42031ccb0 0xc42035d0b0 0xc42035d460 0xc42035d480 0xc42035d4a0 1 0xc4203ac570 0xc4203969c0 0xc420396ba0 0xc42033fcc0}" loc="l2plugin/data_resync.go(247)" logger=vpp-plugin-l2-fib-conf
+2018-06-06T10:41:33.531679358Z  time="2018-06-06 10:41:33.53115" level=info msg="l2.L2FibTableDump call took 786.137µs" conf=FIBConfigurator durationInNs=786137 loc="measure/stopwatch.go(148)" logger=vpp-plugin-l2-fib-conf wasCalled=1
+2018-06-06T10:41:33.531695468Z  time="2018-06-06 10:41:33.53117" level=info msg="partial resync time is 786.137µs" conf=FIBConfigurator durationInNs=786137 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l2-fib-conf
+2018-06-06T10:41:33.531705344Z  time="2018-06-06 10:41:33.53120" level=debug msg="RESYNC XConnect begin." cfg="&{0xc42031bdd0 0xc42031ccb0 0xc42035d650 0xc42035d670 0xc42035d690 1 0xc420396d80 0xc42033ff90}" loc="l2plugin/data_resync.go(254)" logger=vpp-plugin-xc-conf
+2018-06-06T10:41:33.531708264Z  
+2018-06-06T10:41:33.533127768Z  2018-06-06 10:41:33,532 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.533140035Z  time="2018-06-06 10:41:33.53219" level=debug msg="RESYNC XConnect end. <nil>" cfg="&{0xc42031bdd0 0xc42031ccb0 0xc42035d650 0xc42035d670 0xc42035d690 1 0xc420396d80 0xc42033ff90}" loc="l2plugin/data_resync.go(307)" logger=vpp-plugin-xc-conf
+2018-06-06T10:41:33.533143789Z  time="2018-06-06 10:41:33.53224" level=info msg="l2.L2XconnectDump call took 929.243µs" conf=BFDConfigurator durationInNs=929243 loc="measure/stopwatch.go(148)" logger=vpp-plugin-xc-conf wasCalled=1
+2018-06-06T10:41:33.533146751Z  time="2018-06-06 10:41:33.53227" level=info msg="partial resync time is 929.243µs" conf=BFDConfigurator durationInNs=929243 loc="measure/stopwatch.go(164)" logger=vpp-plugin-xc-conf
+2018-06-06T10:41:33.533149374Z  time="2018-06-06 10:41:33.53231" level=debug msg="RESYNC routes begin. " cfg="&{0xc4203bc1b0 0xc42031ccb0 0xc42035dc90 0xc42035dcb0 1 0xc420397380 0xc4203b8910}" loc="l3plugin/data_resync.go(26)" logger=vpp-plugin-l3-route-conf
+2018-06-06T10:41:33.533152193Z  
+2018-06-06T10:41:33.536728373Z  2018-06-06 10:41:33,536 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.536744548Z  time="2018-06-06 10:41:33.53523" level=debug msg="Found 7 routes configured on the VPP" loc="l3plugin/data_resync.go(39)" logger=vpp-plugin-l3-route-conf
+2018-06-06T10:41:33.536747943Z  time="2018-06-06 10:41:33.53528" level=debug msg="RESYNC routes end. <nil>" cfg="&{0xc4203bc1b0 0xc42031ccb0 0xc42035dc90 0xc42035dcb0 1 0xc420397380 0xc4203b8910}" loc="l3plugin/data_resync.go(113)" logger=vpp-plugin-l3-route-conf
+2018-06-06T10:41:33.536751355Z  time="2018-06-06 10:41:33.53533" level=info msg="ip.IPFibDump call took 2.870336ms" conf=RouteConfigurator durationInNs=2870336 loc="measure/stopwatch.go(148)" logger=vpp-plugin-l3-route-conf wasCalled=1
+2018-06-06T10:41:33.536754305Z  time="2018-06-06 10:41:33.53536" level=info msg="partial resync time is 2.870336ms" conf=RouteConfigurator durationInNs=2870336 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l3-route-conf
+2018-06-06T10:41:33.536757148Z  time="2018-06-06 10:41:33.53539" level=debug msg="RESYNC arp begin. " cfg="&{0xc42031bef0 0xc42031ccb0 0xc42035d8f0 0xc42035d910 0xc42035d930 1 0xc420396f60 0xc4203b8370}" loc="l3plugin/data_resync.go(119)" logger=vpp-plugin-l3-arp-conf
+2018-06-06T10:41:33.536760020Z  time="2018-06-06 10:41:33.53542" level=debug msg="RESYNC arp end. <nil>" cfg="&{0xc42031bef0 0xc42031ccb0 0xc42035d8f0 0xc42035d910 0xc42035d930 1 0xc420396f60 0xc4203b8370}" loc="l3plugin/data_resync.go(134)" logger=vpp-plugin-l3-arp-conf
+2018-06-06T10:41:33.536763044Z  time="2018-06-06 10:41:33.53545" level=info msg="stopwatch has no entries" conf=ARPConfigurator loc="measure/stopwatch.go(161)" logger=vpp-plugin-l3-arp-conf
+2018-06-06T10:41:33.536765699Z  time="2018-06-06 10:41:33.53547" level=info msg="partial resync time is 0s" conf=ARPConfigurator durationInNs=0 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l3-arp-conf
+2018-06-06T10:41:33.536775127Z  time="2018-06-06 10:41:33.53550" level=debug msg="RESYNC proxy ARP interfaces begin. " loc="l3plugin/data_resync.go(140)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536777980Z  time="2018-06-06 10:41:33.53552" level=debug msg="RESYNC proxy ARP interface end. <nil>" loc="l3plugin/data_resync.go(156)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536781741Z  time="2018-06-06 10:41:33.53559" level=info msg="stopwatch has no entries" conf=ProxyARPConfigurator loc="measure/stopwatch.go(161)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536784481Z  time="2018-06-06 10:41:33.53565" level=info msg="partial resync time is 0s" conf=ProxyARPConfigurator durationInNs=0 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536787078Z  time="2018-06-06 10:41:33.53568" level=debug msg="RESYNC proxy ARP ranges begin. " loc="l3plugin/data_resync.go(162)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536789607Z  time="2018-06-06 10:41:33.53570" level=debug msg="RESYNC proxy ARP ranges end. <nil>" loc="l3plugin/data_resync.go(178)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536792151Z  time="2018-06-06 10:41:33.53573" level=info msg="stopwatch has no entries" conf=ProxyARPConfigurator loc="measure/stopwatch.go(161)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536794708Z  time="2018-06-06 10:41:33.53576" level=info msg="partial resync time is 0s" conf=ProxyARPConfigurator durationInNs=0 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.536797274Z  time="2018-06-06 10:41:33.53578" level=debug msg="RESYNC L4Features begin. " cfg="&{0xc4203bc2d0 0xc42031ccb0 0xc42035dfc0 0xc42035dfe0 1 0xc420397a40 0xc4203b8dc0 false}" loc="l4plugin/data_resync.go(48)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.536800053Z  time="2018-06-06 10:41:33.53583" level=info msg="Setting up L4 features" loc="l4plugin/appns_config.go(101)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.536802572Z  time="2018-06-06 10:41:33.53586" level=info msg="Removing L4 features" loc="l4plugin/appns_config.go(131)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.536805081Z  
+2018-06-06T10:41:33.538338165Z  2018-06-06 10:41:33,537 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.538359866Z  time="2018-06-06 10:41:33.53716" level=info msg="L4 features disabled" loc="l4plugin/appns_config.go(139)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538366249Z  time="2018-06-06 10:41:33.53720" level=debug msg="RESYNC L4Features end." cfg="&{0xc4203bc2d0 0xc42031ccb0 0xc42035dfc0 0xc42035dfe0 1 0xc420397a40 0xc4203b8dc0 false}" loc="l4plugin/data_resync.go(64)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538388786Z  time="2018-06-06 10:41:33.53724" level=info msg="stopwatch has no entries" conf=AppNsConfigurator loc="measure/stopwatch.go(161)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538393790Z  time="2018-06-06 10:41:33.53727" level=info msg="partial resync time is 0s" conf=AppNsConfigurator durationInNs=0 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538415084Z  time="2018-06-06 10:41:33.53730" level=debug msg="RESYNC application namespaces begin. " cfg="&{0xc4203bc2d0 0xc42031ccb0 0xc42035dfc0 0xc42035dfe0 1 0xc420397a40 0xc4203b8dc0 false}" loc="l4plugin/data_resync.go(23)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538421039Z  time="2018-06-06 10:41:33.53732" level=debug msg="RESYNC application namespaces end." cfg="&{0xc4203bc2d0 0xc42031ccb0 0xc42035dfc0 0xc42035dfe0 1 0xc420397a40 0xc4203b8dc0 false}" loc="l4plugin/data_resync.go(41)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538425988Z  time="2018-06-06 10:41:33.53735" level=info msg="stopwatch has no entries" conf=AppNsConfigurator loc="measure/stopwatch.go(161)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538430275Z  time="2018-06-06 10:41:33.53738" level=info msg="partial resync time is 0s" conf=AppNsConfigurator durationInNs=0 loc="measure/stopwatch.go(164)" logger=vpp-plugin-l4-plugin
+2018-06-06T10:41:33.538434745Z  time="2018-06-06 10:41:33.53741" level=debug msg="RESYNC stn rules begin. " cfg="&{0xc42031a870 0xc42031ccb0 0xc420324c20 1 0xc420324c40 1 0xc4202e7c20 0xc42031fe00}" loc="ifplugin/data_resync.go(355)" logger=vpp-plugin-stn-conf
+2018-06-06T10:41:33.538439577Z  
+2018-06-06T10:41:33.539708565Z  2018-06-06 10:41:33,539 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.539720640Z  time="2018-06-06 10:41:33.53873" level=debug msg="found 0 configured STN rules" loc="ifplugin/stn_config.go(201)" logger=vpp-plugin-stn-conf
+2018-06-06T10:41:33.539724056Z  time="2018-06-06 10:41:33.53881" level=info msg="stn.StnRulesDump call took 1.247265ms" conf=stnConfigurator durationInNs=1247265 loc="measure/stopwatch.go(148)" logger=vpp-plugin-stn-conf wasCalled=1
+2018-06-06T10:41:33.539726880Z  time="2018-06-06 10:41:33.53886" level=info msg="partial resync time is 1.247265ms" conf=stnConfigurator durationInNs=1247265 loc="measure/stopwatch.go(164)" logger=vpp-plugin-stn-conf
+2018-06-06T10:41:33.539729578Z  time="2018-06-06 10:41:33.53889" level=debug msg="RESYNC nat global config." loc="ifplugin/data_resync.go(435)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.539732076Z  time="2018-06-06 10:41:33.53894" level=debug msg="dumping Nat44Global" loc="vppdump/dump_nat_vppcalls.go(34)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.539734547Z  
+2018-06-06T10:41:33.540139427Z  2018-06-06 10:41:33,539 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.540147262Z  time="2018-06-06 10:41:33.53980" level=debug msg="NAT44 forwarding dump complete, is enabled: false" loc="vppdump/dump_nat_vppcalls.go(408)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.540150288Z  
+2018-06-06T10:41:33.540641934Z  2018-06-06 10:41:33,540 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.540649744Z  time="2018-06-06 10:41:33.54023" level=debug msg="NAT44 interface dump complete, found 0 entries" loc="vppdump/dump_nat_vppcalls.go(350)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.540652808Z  
+2018-06-06T10:41:33.541693683Z  2018-06-06 10:41:33,541 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.541702329Z  time="2018-06-06 10:41:33.54113" level=debug msg="NAT44 interface with output feature dump complete, found 0 entries" loc="vppdump/dump_nat_vppcalls.go(389)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.541712877Z  
+2018-06-06T10:41:33.542645102Z  2018-06-06 10:41:33,542 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.542653680Z  time="2018-06-06 10:41:33.54214" level=debug msg="NAT44 address pool dump complete, found 0 entries" loc="vppdump/dump_nat_vppcalls.go(153)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.542657032Z  time="2018-06-06 10:41:33.54218" level=debug msg="dumped Nat44Global" loc="vppdump/dump_nat_vppcalls.go(71)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.542659780Z  time="2018-06-06 10:41:33.54220" level=info msg="Modifying NAT global config" loc="ifplugin/nat_config.go(238)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.542662363Z  time="2018-06-06 10:41:33.54223" level=debug msg="Modifying NAT global config done" loc="ifplugin/nat_config.go(274)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.542664856Z  time="2018-06-06 10:41:33.54225" level=debug msg="RESYNC DNAT config." loc="ifplugin/data_resync.go(454)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.542667290Z  time="2018-06-06 10:41:33.54228" level=debug msg="dumping DNat" loc="vppdump/dump_nat_vppcalls.go(87)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.542669810Z  
+2018-06-06T10:41:33.543672633Z  2018-06-06 10:41:33,543 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.543681665Z  time="2018-06-06 10:41:33.54314" level=debug msg="NAT44 static mapping dump complete, found 0 entries" loc="vppdump/dump_nat_vppcalls.go(206)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.543684806Z  
+2018-06-06T10:41:33.544707359Z  2018-06-06 10:41:33,544 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.544717543Z  time="2018-06-06 10:41:33.54419" level=debug msg="NAT44 lb-static mapping dump complete, found 0 entries" loc="vppdump/dump_nat_vppcalls.go(257)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.544720714Z  
+2018-06-06T10:41:33.546227285Z  2018-06-06 10:41:33,545 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.546238980Z  time="2018-06-06 10:41:33.54525" level=debug msg="NAT44 identity mapping dump complete, found 0 entries" loc="vppdump/dump_nat_vppcalls.go(304)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.546242314Z  time="2018-06-06 10:41:33.54529" level=debug msg="dumped 0 NAT44DNat configs" loc="vppdump/dump_nat_vppcalls.go(117)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.546244911Z  time="2018-06-06 10:41:33.54534" level=debug msg="RESYNC IPSec begin." loc="ipsecplugin/data_resync.go(21)" logger=vpp-plugin-ipsec-plugin
+2018-06-06T10:41:33.546247440Z  time="2018-06-06 10:41:33.54536" level=debug msg="RESYNC IPSec end." loc="ipsecplugin/data_resync.go(52)" logger=vpp-plugin-ipsec-plugin
+2018-06-06T10:41:33.546250562Z  time="2018-06-06 10:41:33.54539" level=info msg="stopwatch has no entries" conf=IPSecConfigurator loc="measure/stopwatch.go(161)" logger=vpp-plugin-ipsec-plugin
+2018-06-06T10:41:33.546253116Z  time="2018-06-06 10:41:33.54543" level=info msg="partial resync time is 0s" conf=IPSecConfigurator durationInNs=0 loc="measure/stopwatch.go(164)" logger=vpp-plugin-ipsec-plugin
+2018-06-06T10:41:33.546262337Z  time="2018-06-06 10:41:33.54546" level=debug msg="RESYNC SR begin." loc="srplugin/data_resync.go(34)" logger=vpp-plugin-sr-plugin
+2018-06-06T10:41:33.546265109Z  time="2018-06-06 10:41:33.54549" level=debug msg="RESYNC SR end." loc="srplugin/data_resync.go(66)" logger=vpp-plugin-sr-plugin
+2018-06-06T10:41:33.546267618Z  time="2018-06-06 10:41:33.54551" level=info msg="resync the VPP Configuration end in 38.205715ms" durationInNs=38205715 loc="vpp/data_resync.go(131)" logger=vpp-plugin
+2018-06-06T10:41:33.546270160Z  time="2018-06-06 10:41:33.54554" level=debug msg="ACL configurator: resolving new interface local0" loc="aclplugin/acl_config.go(400)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:41:33.546272652Z  time="2018-06-06 10:41:33.54556" level=debug msg="ACL configurator: new interface local0 resolution done" loc="aclplugin/acl_config.go(433)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:41:33.546275155Z  time="2018-06-06 10:41:33.54558" level=debug msg="ARP configurator: resolving new interface local0" loc="l3plugin/arp_config.go(232)" logger=vpp-plugin-l3-arp-conf
+2018-06-06T10:41:33.546277619Z  
+2018-06-06T10:41:33.546739754Z  2018-06-06 10:41:33,546 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.546747700Z  time="2018-06-06 10:41:33.54561" level=debug msg="Proxy ARP: handling new interface local0" loc="l3plugin/arp_proxy_config.go(378)" logger=vpp-plugin-l3-proxy-arp-conf
+2018-06-06T10:41:33.546750722Z  time="2018-06-06 10:41:33.54605" level=info msg="Assigning new interface local0 to bridge domain" loc="l2plugin/bd_config.go(318)" logger=vpp-plugin-l2-bd-conf
+2018-06-06T10:41:33.546753314Z  time="2018-06-06 10:41:33.54608" level=debug msg="Interface local0 does not belong to any bridge domain" loc="l2plugin/bd_config.go(322)" logger=vpp-plugin-l2-bd-conf
+2018-06-06T10:41:33.546755852Z  time="2018-06-06 10:41:33.54610" level=info msg="FIB configurator: resolving registered interface local0" loc="l2plugin/fib_config.go(237)" logger=vpp-plugin-l2-fib-conf
+2018-06-06T10:41:33.546758396Z  
+2018-06-06T10:41:33.547200366Z  2018-06-06 10:41:33,546 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.547208788Z  time="2018-06-06 10:41:33.54651" level=info msg="FIB: resolution of created interface local0 is done" loc="l2plugin/fib_config.go(243)" logger=vpp-plugin-l2-fib-conf
+2018-06-06T10:41:33.547211905Z  time="2018-06-06 10:41:33.54654" level=debug msg="XConnect configurator: resolving created interface local0" loc="l2plugin/xconnect_config.go(223)" logger=vpp-plugin-xc-conf
+2018-06-06T10:41:33.547214494Z  time="2018-06-06 10:41:33.54657" level=debug msg="STN plugin: resolving created interface: local0" loc="ifplugin/stn_config.go(110)" logger=vpp-plugin-stn-conf
+2018-06-06T10:41:33.547217009Z  time="2018-06-06 10:41:33.54660" level=debug msg="Rule exists: false returned rule: 0xc42031c4b0" loc="ifplugin/stn_config.go(297)" logger=vpp-plugin-stn-conf
+2018-06-06T10:41:33.547219519Z  
+2018-06-06T10:41:33.548750538Z  2018-06-06 10:41:33,548 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.548760506Z  time="2018-06-06 10:41:33.54695" level=debug msg="NAT configurator: resolving registered interface local0" loc="ifplugin/nat_config.go(418)" logger=vpp-plugin-nat-conf
+2018-06-06T10:41:33.548770694Z  time="2018-06-06 10:41:33.54700" level=info msg="Resync of Config VPP default plug:IF/L2/L3 took 79.761959ms" durationInNs=79761959 loc="resync/plugin_impl_resync.go(114)" logger=resync-orch
+2018-06-06T10:41:33.548773700Z  
+2018-06-06T10:41:33.550748635Z  2018-06-06 10:41:33,550 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.550759052Z  time="2018-06-06 10:41:33.55005" level=debug msg="trying to delete obsolete status for key vpp/status/v1/interface/ begin " loc="vpp/watch_events.go(100)" logger=vpp-plugin
+2018-06-06T10:41:33.550762302Z  time="2018-06-06 10:41:33.55009" level=debug msg="trying to delete obsolete status for key vpp/status/v1/bd/ begin " loc="vpp/watch_events.go(100)" logger=vpp-plugin
+2018-06-06T10:41:33.550764983Z  time="2018-06-06 10:41:33.55020" level=info msg="Resync of Status VPP default plug:IF/L2/L3 took 3.169836ms" durationInNs=3169836 loc="resync/plugin_impl_resync.go(114)" logger=resync-orch
+2018-06-06T10:41:33.550767712Z  time="2018-06-06 10:41:33.55023" level=info msg="Resync took 94.052386ms" durationInNs=94052386 loc="resync/plugin_impl_resync.go(120)" logger=resync-orch
+2018-06-06T10:41:33.550770202Z  time="2018-06-06 10:41:33.55025" level=info msg="plugin ResyncOrch: AfterInit took 94.104918ms" durationInNs=94104918 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.550772652Z  time="2018-06-06 10:41:33.55028" level=info msg="Listening on http://0.0.0.0:9191" loc="rest/plugin_impl_rest.go(129)" logger=http
+2018-06-06T10:41:33.550775153Z  
+2018-06-06T10:41:33.652619741Z  2018-06-06 10:41:33,651 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.652634360Z  time="2018-06-06 10:41:33.65057" level=info msg="plugin HTTP: AfterInit took 100.237782ms" durationInNs=100237782 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.652637922Z  time="2018-06-06 10:41:33.65064" level=info msg="plugin HTTPProbe: AfterInit took 179ns" durationInNs=179 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.652640702Z  time="2018-06-06 10:41:33.65068" level=debug msg="Register handler /metrics" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.652643640Z  time="2018-06-06 10:41:33.65073" level=info msg="Serving /metrics on port 9191" loc="prometheus/plugin_impl_prometheus.go(84)" logger=prometheus
+2018-06-06T10:41:33.652646360Z  time="2018-06-06 10:41:33.65075" level=debug msg="Register handler /health" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.652648822Z  time="2018-06-06 10:41:33.65078" level=info msg="Serving /health on port 9191" loc="prometheus/plugin_impl_prometheus.go(84)" logger=prometheus
+2018-06-06T10:41:33.652651355Z  time="2018-06-06 10:41:33.65080" level=debug msg="Register handler /vpp" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.652653817Z  time="2018-06-06 10:41:33.65083" level=info msg="Serving /vpp on port 9191" loc="prometheus/plugin_impl_prometheus.go(84)" logger=prometheus
+2018-06-06T10:41:33.652656301Z  time="2018-06-06 10:41:33.65085" level=info msg="plugin Prometheus: AfterInit took 180.878µs" durationInNs=180878 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.652664162Z  time="2018-06-06 10:41:33.65087" level=info msg="Starting health http-probe on port 9191" loc="probe/plugin_impl_probes.go(44)" logger=health-rpc
+2018-06-06T10:41:33.652666933Z  time="2018-06-06 10:41:33.65090" level=debug msg="Register handler /liveness" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.652669350Z  time="2018-06-06 10:41:33.65098" level=debug msg="Register handler /readiness" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.652671809Z  time="2018-06-06 10:41:33.65103" level=info msg="plugin HealthRPC: AfterInit took 160.141µs" durationInNs=160141 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.652675106Z  time="2018-06-06 10:41:33.65111" level=info msg="k=etcd, v=last_change:1528281689 last_update:1528281689 , state=INIT" loc="probe/plugin_impl_prometheus.go(114)" logger=health-prometheus-rpc
+2018-06-06T10:41:33.652677795Z  time="2018-06-06 10:41:33.65117" level=info msg="DependencyHealth for plugin etcd: 0" loc="probe/plugin_impl_prometheus.go(152)" logger=health-prometheus-rpc
+2018-06-06T10:41:33.652680287Z  time="2018-06-06 10:41:33.65121" level=info msg="GaugeFunc('service_dependency_health') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-06-06T10:41:33.652682802Z  time="2018-06-06 10:41:33.65124" level=info msg="k=govpp, v=state:OK last_change:1528281689 last_update:1528281689 , state=OK" loc="probe/plugin_impl_prometheus.go(114)" logger=health-prometheus-rpc
+2018-06-06T10:41:33.652685413Z  time="2018-06-06 10:41:33.65126" level=info msg="DependencyHealth for plugin govpp: 1" loc="probe/plugin_impl_prometheus.go(152)" logger=health-prometheus-rpc
+2018-06-06T10:41:33.652687848Z  time="2018-06-06 10:41:33.65129" level=info msg="GaugeFunc('service_dependency_health') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-06-06T10:41:33.652690333Z  time="2018-06-06 10:41:33.65131" level=info msg="k=kafka, v=last_change:1528281693 last_update:1528281693 , state=INIT" loc="probe/plugin_impl_prometheus.go(114)" logger=health-prometheus-rpc
+2018-06-06T10:41:33.652692888Z  time="2018-06-06 10:41:33.65133" level=info msg="DependencyHealth for plugin kafka: 0" loc="probe/plugin_impl_prometheus.go(152)" logger=health-prometheus-rpc
+2018-06-06T10:41:33.652695317Z  time="2018-06-06 10:41:33.65136" level=info msg="GaugeFunc('service_dependency_health') registered." loc="prometheus/plugin_impl_prometheus.go(189)" logger=prometheus
+2018-06-06T10:41:33.652697746Z  time="2018-06-06 10:41:33.65138" level=info msg="plugin PrometheusRPC: AfterInit took 327.652µs" durationInNs=327652 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.652700289Z  time="2018-06-06 10:41:33.65140" level=info msg="exposing GRPC services over HTTP port 9191 /service " loc="grpc/plugin_impl_grpc.go(95)" logger=grpc
+2018-06-06T10:41:33.652702715Z  time="2018-06-06 10:41:33.65146" level=debug msg="Register handler service" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.652705140Z  time="2018-06-06 10:41:33.65151" level=info msg="plugin GRPC: AfterInit took 98.675µs" durationInNs=98675 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.652709639Z  time="2018-06-06 10:41:33.65155" level=info msg="plugin IfStatePub: AfterInit took 3.113µs" durationInNs=3113 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.652712351Z  time="2018-06-06 10:41:33.65157" level=info msg="plugin GoVPP: not implement AfterInit" loc="core/agent_core.go(348)" logger=agentcore
+2018-06-06T10:41:33.652714764Z  time="2018-06-06 10:41:33.65159" level=info msg="plugin Linux: not implement AfterInit" loc="core/agent_core.go(348)" logger=agentcore
+2018-06-06T10:41:33.652717306Z  time="2018-06-06 10:41:33.65161" level=debug msg="vpp plugins AfterInit begin" loc="vpp/plugin_impl_vpp.go(332)" logger=vpp-plugin
+2018-06-06T10:41:33.652719798Z  
+2018-06-06T10:41:33.653546445Z  2018-06-06 10:41:33,652 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.653576099Z  time="2018-06-06 10:41:33.65281" level=debug msg="wantInterfaceEventsReply: &{0} <nil>" loc="ifplugin/interface_state.go(157)" logger=vpp-plugin-if-state
+2018-06-06T10:41:33.653580981Z  
+2018-06-06T10:41:33.655520299Z  2018-06-06 10:41:33,655 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.655532490Z  time="2018-06-06 10:41:33.65369" level=debug msg="wantStatsReply: &{0} <nil>" loc="ifplugin/interface_state.go(171)" logger=vpp-plugin-if-state
+2018-06-06T10:41:33.655536206Z  
+2018-06-06T10:41:33.656004619Z  2018-06-06 10:41:33,655 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.656013523Z  time="2018-06-06 10:41:33.65537" level=info msg="Plugin vpp-plugin: status check probe registered" loc="statuscheck/plugin_impl_statuscheck.go(144)" logger=status-check
+2018-06-06T10:41:33.656016870Z  time="2018-06-06 10:41:33.65541" level=debug msg="vpp plugins AfterInit finished successfully" loc="vpp/plugin_impl_vpp.go(348)" logger=vpp-plugin
+2018-06-06T10:41:33.656019575Z  
+2018-06-06T10:41:33.656518572Z  2018-06-06 10:41:33,656 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.656526873Z  time="2018-06-06 10:41:33.65574" level=info msg="plugin VPP: AfterInit took 3.814328ms" durationInNs=3814328 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.656529911Z  time="2018-06-06 10:41:33.65577" level=info msg="plugin GRPCSvcPlugin: AfterInit took 894ns" durationInNs=894 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.656532587Z  time="2018-06-06 10:41:33.65580" level=debug msg="REST API Plugin is up and running" loc="rest/plugin_impl_rest.go(64)" logger=rest
+2018-06-06T10:41:33.656535125Z  time="2018-06-06 10:41:33.65582" level=debug msg="Register handler /interfaces" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.656537651Z  time="2018-06-06 10:41:33.65587" level=debug msg="Register handler /bridgedomains" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.656540069Z  time="2018-06-06 10:41:33.65590" level=debug msg="Register handler /bridgedomainids" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.656542575Z  
+2018-06-06T10:41:33.657006206Z  2018-06-06 10:41:33,656 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.657033168Z  time="2018-06-06 10:41:33.65625" level=debug msg="Register handler /l2fibs" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657036542Z  time="2018-06-06 10:41:33.65630" level=debug msg="Register handler /xconnectpairs" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657039180Z  time="2018-06-06 10:41:33.65633" level=debug msg="Register handler /staticroutes" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657041807Z  time="2018-06-06 10:41:33.65636" level=debug msg="Register handler /acl/interface/{swindex:[0-9]+}" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657046314Z  time="2018-06-06 10:41:33.65641" level=debug msg="Register handler /acl/ip" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657048819Z  
+2018-06-06T10:41:33.657506911Z  2018-06-06 10:41:33,657 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.657514966Z  time="2018-06-06 10:41:33.65676" level=debug msg="Register handler /acl/ip" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657517970Z  time="2018-06-06 10:41:33.65680" level=debug msg="Register handler /acl/ip/example" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657520584Z  time="2018-06-06 10:41:33.65684" level=debug msg="Register handler /acl/macip" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657523037Z  time="2018-06-06 10:41:33.65686" level=debug msg="Register handler /acl/macip" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657525468Z  time="2018-06-06 10:41:33.65689" level=debug msg="Register handler /acl/macip/example" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.657527955Z  
+2018-06-06T10:41:33.658067373Z  2018-06-06 10:41:33,657 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.658089044Z  time="2018-06-06 10:41:33.65692" level=debug msg="Register handler /command" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.658091975Z  time="2018-06-06 10:41:33.65729" level=debug msg="Register handler /telemetry" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.658094435Z  time="2018-06-06 10:41:33.65732" level=debug msg="Register handler /telemetry/memory" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.658097022Z  time="2018-06-06 10:41:33.65736" level=debug msg="Register handler /telemetry/runtime" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.658099586Z  time="2018-06-06 10:41:33.65739" level=debug msg="Register handler /telemetry/nodecount" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.658102042Z  time="2018-06-06 10:41:33.65741" level=debug msg="Register handler /" loc="rest/plugin_impl_rest.go(102)" logger=http
+2018-06-06T10:41:33.658104450Z  
+2018-06-06T10:41:33.658552359Z  2018-06-06 10:41:33,658 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.658560171Z  time="2018-06-06 10:41:33.65812" level=info msg="plugin RESTAPIPlugin: AfterInit took 2.128758ms" durationInNs=2128758 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.658570221Z  
+2018-06-06T10:41:33.659012297Z  2018-06-06 10:41:33,658 DEBG 'agent' stdout output:
+2018-06-06T10:41:33.659019765Z  time="2018-06-06 10:41:33.65833" level=info msg="plugin TelemetryPlugin: AfterInit took 8.255µs" durationInNs=8255 loc="core/agent_core.go(345)" logger=agentcore
+2018-06-06T10:41:33.659023179Z  time="2018-06-06 10:41:33.65837" level=info msg="All plugins initialized successfully, took 3.818492318s" durationInNs=3818492318 loc="core/agent_core.go(365)" logger=agentcore
+2018-06-06T10:41:33.659025848Z  time="2018-06-06 10:41:33.65839" level=info msg="Agent Init took 126.400371ms" durationInNs=126400371 loc="core/agent_core.go(366)" logger=agentcore
+2018-06-06T10:41:33.659028304Z  time="2018-06-06 10:41:33.65841" level=info msg="Agent AfterInit took 3.692091947s" durationInNs=3692091947 loc="core/agent_core.go(367)" logger=agentcore
+2018-06-06T10:41:33.659030799Z  
+2018-06-06T10:41:34.970795733Z  2018-06-06 10:41:34,970 DEBG 'agent' stdout output:
+2018-06-06T10:41:34.971263190Z  time="2018-06-06 10:41:34.97012" level=info msg="Agent plugin state update." lastErr="<nil>" loc="statuscheck/plugin_impl_statuscheck.go(189)" logger=status-check plugin=etcd state=ok
+2018-06-06T10:41:34.971272897Z  
+2018-06-06T10:41:35.268512884Z  2018-06-06 10:41:35,266 DEBG 'agent' stdout output:
+2018-06-06T10:41:35.268529965Z  time="2018-06-06 10:41:35.26574" level=info msg="Agent plugin state update." lastErr="<nil>" loc="statuscheck/plugin_impl_statuscheck.go(189)" logger=status-check plugin=kafka state=ok
+2018-06-06T10:41:35.268533780Z  
+2018-06-06T10:41:45.295060434Z  2018-06-06 10:41:45,294 DEBG 'agent' stdout output:
+2018-06-06T10:41:45.295075035Z  time="2018-06-06 10:41:45.29201" level=error msg="dial tcp: lookup 608973f2a92c on 173.38.200.100:53: no such host" loc="vpp/publish.go(79)" logger=vpp-plugin
+2018-06-06T10:41:45.295078418Z  time="2018-06-06 10:41:45.29206" level=info msg="Agent plugin state update." lastErr="<nil>" loc="statuscheck/plugin_impl_statuscheck.go(189)" logger=status-check plugin=vpp-plugin state=ok
+2018-06-06T10:41:45.295081492Z  
+2018-06-06T10:41:45.296390321Z  2018-06-06 10:41:45,296 DEBG 'agent' stdout output:
+2018-06-06T10:41:45.296401006Z  time="2018-06-06 10:41:45.29564" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:41:45.296404462Z  
+2018-06-06T10:41:52.593517423Z  2018-06-06 10:41:52,593 DEBG 'agent' stdout output:
+2018-06-06T10:41:52.593531099Z  time="2018-06-06 10:41:52.59311" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:41:52.593534620Z  
+2018-06-06T10:41:56.982858488Z  2018-06-06 10:41:56,981 DEBG 'agent' stdout output:
+2018-06-06T10:41:56.982878563Z  time="2018-06-06 10:41:56.98118" level=debug msg="processing new container 2c6503cc9654ff8afcf62a381bc454182e6d64b100fd4ad86fc7af09337982c9 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:56.982882374Z  
+2018-06-06T10:41:56.983987689Z  2018-06-06 10:41:56,983 DEBG 'agent' stdout output:
+2018-06-06T10:41:56.983996815Z  time="2018-06-06 10:41:56.98315" level=debug msg="detected container as microservice: Name=/node_1 ID=2c6503cc9654ff8afcf62a381bc454182e6d64b100fd4ad86fc7af09337982c9 Created=2018-06-06 10:41:54.0761666 +0000 UTC State.StartedAt=2018-06-06 10:41:54.975164971 +0000 UTC" loc="nsplugin/microservices.go(166)" logger=linux-plugin-ns-handler
+2018-06-06T10:41:56.984000279Z  time="2018-06-06 10:41:56.98319" level=debug msg="Discovered new microservice" id=2c6503cc9654ff8afcf62a381bc454182e6d64b100fd4ad86fc7af09337982c9 label=node_1 loc="nsplugin/microservices.go(191)" logger=linux-plugin-ns-handler pid=3061
+2018-06-06T10:41:56.984003047Z  
+2018-06-06T10:42:00.404613438Z  2018-06-06 10:42:00,403 DEBG 'agent' stdout output:
+2018-06-06T10:42:00.405644929Z  time="2018-06-06 10:42:00.40301" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:42:00.405654840Z  
+2018-06-06T10:42:02.999033411Z  2018-06-06 10:42:02,998 DEBG 'agent' stdout output:
+2018-06-06T10:42:02.999051391Z  time="2018-06-06 10:42:02.99851" level=debug msg="processing new container ad2ab803b637ceac0498c8218642140b980929171a56cf29ad9cacc48f2eda77 with state created" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:42:02.999055055Z  
+2018-06-06T10:42:05.998057505Z  2018-06-06 10:42:05,997 DEBG 'agent' stdout output:
+2018-06-06T10:42:05.998068196Z  time="2018-06-06 10:42:05.99764" level=debug msg="detected container as microservice: Name=/node_2 ID=ad2ab803b637ceac0498c8218642140b980929171a56cf29ad9cacc48f2eda77 Created=2018-06-06 10:42:02.161465551 +0000 UTC State.StartedAt=2018-06-06 10:42:03.159507739 +0000 UTC" loc="nsplugin/microservices.go(166)" logger=linux-plugin-ns-handler
+2018-06-06T10:42:05.998072372Z  
+2018-06-06T10:42:05.999050037Z  2018-06-06 10:42:05,998 DEBG 'agent' stdout output:
+2018-06-06T10:42:05.999058548Z  time="2018-06-06 10:42:05.99817" level=debug msg="Discovered new microservice" id=ad2ab803b637ceac0498c8218642140b980929171a56cf29ad9cacc48f2eda77 label=node_2 loc="nsplugin/microservices.go(191)" logger=linux-plugin-ns-handler pid=3286
+2018-06-06T10:42:05.999061962Z  
+2018-06-06T10:42:10.410200383Z  2018-06-06 10:42:10,405 DEBG 'agent' stdout output:
+2018-06-06T10:42:10.410216018Z  time="2018-06-06 10:42:10.40537" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:42:10.410219930Z  
+2018-06-06T10:42:12.038018820Z  2018-06-06 10:42:12,035 DEBG 'agent' stdout output:
+2018-06-06T10:42:12.038056579Z  time="2018-06-06 10:42:12.03547" level=debug msg="processing new container 31a9384076b4e3f9c6d0499d95a9428a6784e522a40ae466147bd685ed8fcf2b with state created" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:42:12.038077524Z  
+2018-06-06T10:42:23.514561109Z  2018-06-06 10:42:23,514 DEBG 'agent' stdout output:
+2018-06-06T10:42:23.514573055Z  time="2018-06-06 10:42:23.51375" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl1_tcp" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:42:23.514576635Z  
+2018-06-06T10:42:23.515493620Z  2018-06-06 10:42:23,515 DEBG 'agent' stdout output:
+2018-06-06T10:42:23.515502409Z  time="2018-06-06 10:42:23.51511" level=debug msg="dataChangeAcl false Put acl_name:\"acl1_tcp\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:42:23.515507823Z  time="2018-06-06 10:42:23.51517" level=info msg="Configuring new ACL acl1_tcp" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:23.515510860Z  
+2018-06-06T10:42:23.516499149Z  2018-06-06 10:42:23,516 DEBG 'agent' stdout output:
+2018-06-06T10:42:23.516507192Z  time="2018-06-06 10:42:23.51598" level=info msg="1 Ip ACL rule(s) written for ACL acl1_tcp with index 0" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:23.516510459Z  time="2018-06-06 10:42:23.51606" level=debug msg="ACL acl1_tcp registered with index 1" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:23.516513831Z  time="2018-06-06 10:42:23.51610" level=debug msg="Interface  (ingress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:23.516516597Z  time="2018-06-06 10:42:23.51613" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:23.516519317Z  time="2018-06-06 10:42:23.51616" level=debug msg="Interface  (egress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:23.516522064Z  time="2018-06-06 10:42:23.51620" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:23.516999465Z  
+2018-06-06T10:42:23.625216714Z  2018-06-06 10:42:23,624 DEBG 'agent' stdout output:
+2018-06-06T10:42:23.625231686Z  time="2018-06-06 10:42:23.62466" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:42:23.625235712Z  
+2018-06-06T10:42:30.645113031Z  2018-06-06 10:42:30,644 DEBG 'agent' stdout output:
+2018-06-06T10:42:30.645137759Z  time="2018-06-06 10:42:30.64450" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:42:30.645141891Z  
+2018-06-06T10:42:32.396434051Z  2018-06-06 10:42:32,395 DEBG 'agent' stdout output:
+2018-06-06T10:42:32.396451438Z  time="2018-06-06 10:42:32.39368" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl2_tcp" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:42:32.396454994Z  
+2018-06-06T10:42:32.397093999Z  2018-06-06 10:42:32,396 DEBG 'agent' stdout output:
+2018-06-06T10:42:32.397102901Z  time="2018-06-06 10:42:32.39607" level=debug msg="dataChangeAcl false Put acl_name:\"acl2_tcp\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:2000 upper_port:2200 > source_port_range:<lower_port:20010 upper_port:20020 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:42:32.397108091Z  time="2018-06-06 10:42:32.39615" level=info msg="Configuring new ACL acl2_tcp" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:32.397110841Z  
+2018-06-06T10:42:32.398804203Z  2018-06-06 10:42:32,397 DEBG 'agent' stdout output:
+2018-06-06T10:42:32.398817002Z  time="2018-06-06 10:42:32.39745" level=info msg="1 Ip ACL rule(s) written for ACL acl2_tcp with index 1" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:32.398820385Z  time="2018-06-06 10:42:32.39751" level=debug msg="ACL acl2_tcp registered with index 2" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:32.398823113Z  time="2018-06-06 10:42:32.39755" level=debug msg="Interface  (ingress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:32.398825738Z  time="2018-06-06 10:42:32.39758" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:32.398828317Z  time="2018-06-06 10:42:32.39761" level=debug msg="Interface  (egress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:32.398830881Z  time="2018-06-06 10:42:32.39765" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:32.398833411Z  
+2018-06-06T10:42:41.386646634Z  2018-06-06 10:42:41,386 DEBG 'agent' stdout output:
+2018-06-06T10:42:41.386662440Z  time="2018-06-06 10:42:41.38561" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl1_tcp" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:42:41.386666160Z  
+2018-06-06T10:42:41.387583993Z  2018-06-06 10:42:41,387 DEBG 'agent' stdout output:
+2018-06-06T10:42:41.387609941Z  time="2018-06-06 10:42:41.38693" level=debug msg="dataChangeAcl true Put acl_name:\"acl1_tcp\" rules:<acl_action:REFLECT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" >  acl_name:\"acl1_tcp\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" > " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:42:41.387618577Z  
+2018-06-06T10:42:41.387620935Z  2018-06-06 10:42:41,387 DEBG 'agent' stdout output:
+2018-06-06T10:42:41.387623323Z  time="2018-06-06 10:42:41.38727" level=info msg="Modifying ACL acl1_tcp" loc="aclplugin/acl_config.go(193)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:41.387626356Z  
+2018-06-06T10:42:41.389059817Z  2018-06-06 10:42:41,388 DEBG 'agent' stdout output:
+2018-06-06T10:42:41.389071129Z  time="2018-06-06 10:42:41.38809" level=info msg="1 Ip ACL rule(s) written for ACL acl1_tcp with index 0" loc="vppcalls/acl_vppcalls.go(175)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:41.389074329Z  time="2018-06-06 10:42:41.38814" level=debug msg="Interface  (ingress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:41.389077019Z  time="2018-06-06 10:42:41.38818" level=debug msg="Interface  (egress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:41.389079718Z  
+2018-06-06T10:42:42.588261986Z  2018-06-06 10:42:42,587 DEBG 'agent' stdout output:
+2018-06-06T10:42:42.588276346Z  time="2018-06-06 10:42:42.58771" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:42:42.588280231Z  
+2018-06-06T10:42:50.200491737Z  2018-06-06 10:42:50,200 DEBG 'agent' stdout output:
+2018-06-06T10:42:50.200506243Z  time="2018-06-06 10:42:50.19917" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl2_tcp" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:42:50.200509662Z  
+2018-06-06T10:42:50.201002932Z  2018-06-06 10:42:50,200 DEBG 'agent' stdout output:
+2018-06-06T10:42:50.201010829Z  time="2018-06-06 10:42:50.20036" level=debug msg="dataChangeAcl true Delete  acl_name:\"acl2_tcp\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:2000 upper_port:2200 > source_port_range:<lower_port:20010 upper_port:20020 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" > " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:42:50.201024060Z  
+2018-06-06T10:42:50.202044620Z  2018-06-06 10:42:50,201 DEBG 'agent' stdout output:
+2018-06-06T10:42:50.202055038Z  time="2018-06-06 10:42:50.20122" level=info msg="Deleting ACL acl2_tcp" loc="aclplugin/acl_config.go(290)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:50.202058295Z  time="2018-06-06 10:42:50.20127" level=debug msg="Removing IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(67)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:50.202061017Z  
+2018-06-06T10:42:50.202063383Z  2018-06-06 10:42:50,201 DEBG 'agent' stdout output:
+2018-06-06T10:42:50.202066574Z  time="2018-06-06 10:42:50.20161" level=debug msg="Removing IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(89)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:50.202069392Z  
+2018-06-06T10:42:50.203004265Z  2018-06-06 10:42:50,202 DEBG 'agent' stdout output:
+2018-06-06T10:42:50.203018420Z  time="2018-06-06 10:42:50.20255" level=info msg="L3/L4 ACL 1 removed" loc="vppcalls/acl_vppcalls.go(235)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:50.203021474Z  time="2018-06-06 10:42:50.20263" level=info msg="Error status log: unknown type of prefix: vpp/config/v1/acl/" loc="vpp/error_status.go(259)" logger=vpp-plugin
+2018-06-06T10:42:50.203024180Z  
+2018-06-06T10:42:50.397957585Z  2018-06-06 10:42:50,397 DEBG 'agent' stdout output:
+2018-06-06T10:42:50.397971364Z  time="2018-06-06 10:42:50.39749" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:42:50.397975475Z  
+2018-06-06T10:42:58.955074369Z  2018-06-06 10:42:58,954 DEBG 'agent' stdout output:
+2018-06-06T10:42:58.955086857Z  time="2018-06-06 10:42:58.95340" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl1_tcp" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:42:58.955090339Z  
+2018-06-06T10:42:58.956100947Z  2018-06-06 10:42:58,955 DEBG 'agent' stdout output:
+2018-06-06T10:42:58.956109843Z  time="2018-06-06 10:42:58.95517" level=debug msg="dataChangeAcl true Delete  acl_name:\"acl1_tcp\" rules:<acl_action:REFLECT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" > " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:42:58.956115342Z  time="2018-06-06 10:42:58.95522" level=info msg="Deleting ACL acl1_tcp" loc="aclplugin/acl_config.go(290)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:58.956118211Z  time="2018-06-06 10:42:58.95527" level=debug msg="Removing IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(67)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:58.956129282Z  time="2018-06-06 10:42:58.95530" level=debug msg="Removing IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(89)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:58.956132577Z  
+2018-06-06T10:42:58.957574763Z  2018-06-06 10:42:58,957 DEBG 'agent' stdout output:
+2018-06-06T10:42:58.957583799Z  time="2018-06-06 10:42:58.95714" level=info msg="L3/L4 ACL 0 removed" loc="vppcalls/acl_vppcalls.go(235)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:42:58.957586977Z  time="2018-06-06 10:42:58.95719" level=info msg="Error status log: unknown type of prefix: vpp/config/v1/acl/" loc="vpp/error_status.go(259)" logger=vpp-plugin
+2018-06-06T10:42:58.957589861Z  
+2018-06-06T10:43:04.352481395Z  2018-06-06 10:43:04,351 DEBG 'agent' stdout output:
+2018-06-06T10:43:04.352495019Z  time="2018-06-06 10:43:04.35180" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:43:04.352498600Z  
+2018-06-06T10:43:07.606728086Z  2018-06-06 10:43:07,605 DEBG 'agent' stdout output:
+2018-06-06T10:43:07.606741163Z  time="2018-06-06 10:43:07.60369" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl3_UDP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:43:07.606744685Z  time="2018-06-06 10:43:07.60397" level=debug msg="dataChangeAcl false Put acl_name:\"acl3_UDP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:43:07.606749594Z  
+2018-06-06T10:43:07.607427051Z  2018-06-06 10:43:07,607 DEBG 'agent' stdout output:
+2018-06-06T10:43:07.607434532Z  time="2018-06-06 10:43:07.60650" level=info msg="Configuring new ACL acl3_UDP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.607437632Z  
+2018-06-06T10:43:07.608739199Z  2018-06-06 10:43:07,608 DEBG 'agent' stdout output:
+2018-06-06T10:43:07.608748162Z  time="2018-06-06 10:43:07.60780" level=info msg="1 Ip ACL rule(s) written for ACL acl3_UDP with index 0" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608751746Z  time="2018-06-06 10:43:07.60785" level=debug msg="ACL acl3_UDP registered with index 1" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608754505Z  time="2018-06-06 10:43:07.60789" level=debug msg="Interface  (ingress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608802582Z  time="2018-06-06 10:43:07.60792" level=debug msg="Interface  (ingress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608822550Z  time="2018-06-06 10:43:07.60807" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608833321Z  time="2018-06-06 10:43:07.60811" level=debug msg="Interface  (egress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608836532Z  time="2018-06-06 10:43:07.60814" level=debug msg="Interface  (egress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608839140Z  time="2018-06-06 10:43:07.60817" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:07.608841909Z  
+2018-06-06T10:43:10.414497461Z  2018-06-06 10:43:10,414 DEBG 'agent' stdout output:
+2018-06-06T10:43:10.414512149Z  time="2018-06-06 10:43:10.41401" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:43:10.414515820Z  
+2018-06-06T10:43:16.398527588Z  2018-06-06 10:43:16,397 DEBG 'agent' stdout output:
+2018-06-06T10:43:16.398539350Z  time="2018-06-06 10:43:16.39730" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl4_UDP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:43:16.398542762Z  
+2018-06-06T10:43:16.398545082Z  2018-06-06 10:43:16,398 DEBG 'agent' stdout output:
+2018-06-06T10:43:16.398987731Z  time="2018-06-06 10:43:16.39810" level=debug msg="dataChangeAcl false Put acl_name:\"acl4_UDP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:43:16.398998227Z  time="2018-06-06 10:43:16.39814" level=info msg="Configuring new ACL acl4_UDP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.399001149Z  
+2018-06-06T10:43:16.400459999Z  2018-06-06 10:43:16,399 DEBG 'agent' stdout output:
+2018-06-06T10:43:16.400471054Z  time="2018-06-06 10:43:16.39910" level=info msg="1 Ip ACL rule(s) written for ACL acl4_UDP with index 1" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400474352Z  time="2018-06-06 10:43:16.39915" level=debug msg="ACL acl4_UDP registered with index 2" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400477076Z  time="2018-06-06 10:43:16.39919" level=debug msg="Interface  (ingress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400479632Z  time="2018-06-06 10:43:16.39926" level=debug msg="Interface  (ingress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400493859Z  time="2018-06-06 10:43:16.39929" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400496838Z  time="2018-06-06 10:43:16.39934" level=debug msg="Interface  (egress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400499429Z  time="2018-06-06 10:43:16.39949" level=debug msg="Interface  (egress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400501957Z  time="2018-06-06 10:43:16.39955" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:16.400504527Z  
+2018-06-06T10:43:22.943334260Z  2018-06-06 10:43:22,942 DEBG 'agent' stdout output:
+2018-06-06T10:43:22.943359020Z  time="2018-06-06 10:43:22.94195" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:43:22.943364944Z  
+2018-06-06T10:43:25.408270524Z  2018-06-06 10:43:25,407 DEBG 'agent' stdout output:
+2018-06-06T10:43:25.408282552Z  time="2018-06-06 10:43:25.40734" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl4_UDP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:43:25.408285935Z  time="2018-06-06 10:43:25.40749" level=debug msg="dataChangeAcl true Delete  acl_name:\"acl4_UDP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" > " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:43:25.408290898Z  time="2018-06-06 10:43:25.40754" level=info msg="Deleting ACL acl4_UDP" loc="aclplugin/acl_config.go(290)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:25.408293605Z  time="2018-06-06 10:43:25.40758" level=debug msg="Removing IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(67)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:25.408296232Z  time="2018-06-06 10:43:25.40761" level=debug msg="Removing IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(89)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:25.408298787Z  
+2018-06-06T10:43:25.415294777Z  2018-06-06 10:43:25,414 DEBG 'agent' stdout output:
+2018-06-06T10:43:25.415308753Z  time="2018-06-06 10:43:25.41477" level=info msg="L3/L4 ACL 1 removed" loc="vppcalls/acl_vppcalls.go(235)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:25.415311935Z  time="2018-06-06 10:43:25.41483" level=info msg="Error status log: unknown type of prefix: vpp/config/v1/acl/" loc="vpp/error_status.go(259)" logger=vpp-plugin
+2018-06-06T10:43:25.415314574Z  
+2018-06-06T10:43:31.629671674Z  2018-06-06 10:43:31,629 DEBG 'agent' stdout output:
+2018-06-06T10:43:31.629695734Z  time="2018-06-06 10:43:31.62921" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:43:31.629699875Z  
+2018-06-06T10:43:34.242172206Z  2018-06-06 10:43:34,241 DEBG 'agent' stdout output:
+2018-06-06T10:43:34.242199980Z  time="2018-06-06 10:43:34.24029" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl3_UDP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:43:34.242203345Z  
+2018-06-06T10:43:34.242707015Z  2018-06-06 10:43:34,242 DEBG 'agent' stdout output:
+2018-06-06T10:43:34.242729248Z  time="2018-06-06 10:43:34.24044" level=debug msg="dataChangeAcl true Delete  acl_name:\"acl3_UDP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" > " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:43:34.242734733Z  time="2018-06-06 10:43:34.24190" level=info msg="Deleting ACL acl3_UDP" loc="aclplugin/acl_config.go(290)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:34.242737430Z  time="2018-06-06 10:43:34.24194" level=debug msg="Removing IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(67)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:34.242740191Z  time="2018-06-06 10:43:34.24198" level=debug msg="Removing IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(89)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:34.242742829Z  
+2018-06-06T10:43:34.244136193Z  2018-06-06 10:43:34,243 DEBG 'agent' stdout output:
+2018-06-06T10:43:34.244145182Z  time="2018-06-06 10:43:34.24371" level=info msg="L3/L4 ACL 0 removed" loc="vppcalls/acl_vppcalls.go(235)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:34.244148279Z  time="2018-06-06 10:43:34.24375" level=info msg="Error status log: unknown type of prefix: vpp/config/v1/acl/" loc="vpp/error_status.go(259)" logger=vpp-plugin
+2018-06-06T10:43:34.244150960Z  
+2018-06-06T10:43:41.921715556Z  2018-06-06 10:43:41,920 DEBG 'agent' stdout output:
+2018-06-06T10:43:41.921736006Z  time="2018-06-06 10:43:41.92024" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:43:41.921742256Z  
+2018-06-06T10:43:43.080468201Z  2018-06-06 10:43:43,079 DEBG 'agent' stdout output:
+2018-06-06T10:43:43.080481670Z  time="2018-06-06 10:43:43.07916" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl5_ICMP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:43:43.080485109Z  
+2018-06-06T10:43:43.080487509Z  2018-06-06 10:43:43,080 DEBG 'agent' stdout output:
+2018-06-06T10:43:43.080489928Z  time="2018-06-06 10:43:43.08009" level=debug msg="dataChangeAcl false Put acl_name:\"acl5_ICMP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:43:43.080935829Z  time="2018-06-06 10:43:43.08015" level=info msg="Configuring new ACL acl5_ICMP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.080944170Z  
+2018-06-06T10:43:43.081967796Z  2018-06-06 10:43:43,081 DEBG 'agent' stdout output:
+2018-06-06T10:43:43.081976684Z  time="2018-06-06 10:43:43.08114" level=info msg="1 Ip ACL rule(s) written for ACL acl5_ICMP with index 0" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.081979939Z  time="2018-06-06 10:43:43.08119" level=debug msg="ACL acl5_ICMP registered with index 1" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.081982534Z  time="2018-06-06 10:43:43.08122" level=debug msg="Interface  (ingress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.081985068Z  time="2018-06-06 10:43:43.08126" level=debug msg="Interface  (ingress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.081987673Z  time="2018-06-06 10:43:43.08129" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.081990217Z  
+2018-06-06T10:43:43.082447623Z  2018-06-06 10:43:43,081 DEBG 'agent' stdout output:
+2018-06-06T10:43:43.082455279Z  time="2018-06-06 10:43:43.08155" level=debug msg="Interface  (egress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.082458183Z  time="2018-06-06 10:43:43.08159" level=debug msg="Interface  (egress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.082460844Z  time="2018-06-06 10:43:43.08162" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:43.082463549Z  
+2018-06-06T10:43:50.416188096Z  2018-06-06 10:43:50,415 DEBG 'agent' stdout output:
+2018-06-06T10:43:50.416202012Z  time="2018-06-06 10:43:50.41522" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:43:50.416205880Z  
+2018-06-06T10:43:51.988840060Z  2018-06-06 10:43:51,987 DEBG 'agent' stdout output:
+2018-06-06T10:43:51.988850796Z  time="2018-06-06 10:43:51.98660" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl6_ICMP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:43:51.988854101Z  time="2018-06-06 10:43:51.98677" level=debug msg="dataChangeAcl false Put acl_name:\"acl6_ICMP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:43:51.988865808Z  time="2018-06-06 10:43:51.98682" level=info msg="Configuring new ACL acl6_ICMP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.988868692Z  
+2018-06-06T10:43:51.990321127Z  2018-06-06 10:43:51,990 DEBG 'agent' stdout output:
+2018-06-06T10:43:51.990852878Z  time="2018-06-06 10:43:51.98983" level=info msg="1 Ip ACL rule(s) written for ACL acl6_ICMP with index 1" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990860826Z  time="2018-06-06 10:43:51.98988" level=debug msg="ACL acl6_ICMP registered with index 2" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990863730Z  time="2018-06-06 10:43:51.98992" level=debug msg="Interface  (ingress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990866338Z  time="2018-06-06 10:43:51.98995" level=debug msg="Interface  (ingress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990868759Z  time="2018-06-06 10:43:51.98998" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990871180Z  time="2018-06-06 10:43:51.99002" level=debug msg="Interface  (egress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990873582Z  time="2018-06-06 10:43:51.99005" level=debug msg="Interface  (egress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990875960Z  time="2018-06-06 10:43:51.99008" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:43:51.990878390Z  
+2018-06-06T10:44:00.361850966Z  2018-06-06 10:44:00,360 DEBG 'agent' stdout output:
+2018-06-06T10:44:00.361864218Z  time="2018-06-06 10:44:00.36057" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:44:00.361868030Z  
+2018-06-06T10:44:00.963336807Z  2018-06-06 10:44:00,963 DEBG 'agent' stdout output:
+2018-06-06T10:44:00.963350103Z  time="2018-06-06 10:44:00.96244" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl6_ICMP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:00.963353247Z  
+2018-06-06T10:44:00.965342343Z  2018-06-06 10:44:00,964 DEBG 'agent' stdout output:
+2018-06-06T10:44:00.965372229Z  time="2018-06-06 10:44:00.96381" level=debug msg="dataChangeAcl true Delete  acl_name:\"acl6_ICMP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" > " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:00.965378205Z  time="2018-06-06 10:44:00.96388" level=info msg="Deleting ACL acl6_ICMP" loc="aclplugin/acl_config.go(290)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:00.965380917Z  time="2018-06-06 10:44:00.96393" level=debug msg="Removing IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(67)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:00.965383414Z  time="2018-06-06 10:44:00.96396" level=debug msg="Removing IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(89)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:00.965385938Z  
+2018-06-06T10:44:00.970788144Z  2018-06-06 10:44:00,970 DEBG 'agent' stdout output:
+2018-06-06T10:44:00.970803235Z  time="2018-06-06 10:44:00.96992" level=info msg="L3/L4 ACL 1 removed" loc="vppcalls/acl_vppcalls.go(235)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:00.970806628Z  time="2018-06-06 10:44:00.96998" level=info msg="Error status log: unknown type of prefix: vpp/config/v1/acl/" loc="vpp/error_status.go(259)" logger=vpp-plugin
+2018-06-06T10:44:00.970809375Z  
+2018-06-06T10:44:09.823557106Z  2018-06-06 10:44:09,822 DEBG 'agent' stdout output:
+2018-06-06T10:44:09.823572053Z  time="2018-06-06 10:44:09.82193" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl5_ICMP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:09.823575578Z  
+2018-06-06T10:44:09.823578199Z  2018-06-06 10:44:09,823 DEBG 'agent' stdout output:
+2018-06-06T10:44:09.823580792Z  time="2018-06-06 10:44:09.82270" level=debug msg="dataChangeAcl true Delete  acl_name:\"acl5_ICMP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" > " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:09.823585792Z  time="2018-06-06 10:44:09.82276" level=info msg="Deleting ACL acl5_ICMP" loc="aclplugin/acl_config.go(290)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:09.823588526Z  time="2018-06-06 10:44:09.82282" level=debug msg="Removing IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(67)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:09.823591315Z  time="2018-06-06 10:44:09.82287" level=debug msg="Removing IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(89)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:09.823594031Z  
+2018-06-06T10:44:09.824083541Z  2018-06-06 10:44:09,823 DEBG 'agent' stdout output:
+2018-06-06T10:44:09.824101039Z  time="2018-06-06 10:44:09.82365" level=info msg="L3/L4 ACL 0 removed" loc="vppcalls/acl_vppcalls.go(235)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:09.824104350Z  time="2018-06-06 10:44:09.82369" level=info msg="Error status log: unknown type of prefix: vpp/config/v1/acl/" loc="vpp/error_status.go(259)" logger=vpp-plugin
+2018-06-06T10:44:09.824107107Z  
+2018-06-06T10:44:10.401677498Z  2018-06-06 10:44:10,401 DEBG 'agent' stdout output:
+2018-06-06T10:44:10.401691237Z  time="2018-06-06 10:44:10.40122" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:44:10.401695064Z  
+2018-06-06T10:44:18.740778833Z  2018-06-06 10:44:18,740 DEBG 'agent' stdout output:
+2018-06-06T10:44:18.740791585Z  time="2018-06-06 10:44:18.73981" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl1_tcp" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:18.740794816Z  time="2018-06-06 10:44:18.73996" level=debug msg="dataChangeAcl false Put acl_name:\"acl1_tcp\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:18.740799487Z  time="2018-06-06 10:44:18.74001" level=info msg="Configuring new ACL acl1_tcp" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:18.740802026Z  
+2018-06-06T10:44:18.744400216Z  2018-06-06 10:44:18,743 DEBG 'agent' stdout output:
+2018-06-06T10:44:18.744412297Z  time="2018-06-06 10:44:18.74284" level=info msg="1 Ip ACL rule(s) written for ACL acl1_tcp with index 0" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:18.744415535Z  time="2018-06-06 10:44:18.74291" level=debug msg="ACL acl1_tcp registered with index 1" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:18.744418092Z  time="2018-06-06 10:44:18.74296" level=debug msg="Interface  (ingress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:18.744420616Z  time="2018-06-06 10:44:18.74303" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:18.744423109Z  time="2018-06-06 10:44:18.74310" level=debug msg="Interface  (egress) not found for ACL 0, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:18.744425503Z  time="2018-06-06 10:44:18.74315" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:18.744428021Z  
+2018-06-06T10:44:20.404028054Z  2018-06-06 10:44:20,403 DEBG 'agent' stdout output:
+2018-06-06T10:44:20.404053868Z  time="2018-06-06 10:44:20.40347" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:44:20.404058192Z  
+2018-06-06T10:44:21.872589310Z  2018-06-06 10:44:21,872 DEBG 'agent' stdout output:
+2018-06-06T10:44:21.872600338Z  time="2018-06-06 10:44:21.87158" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl2_tcp" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:21.872603830Z  time="2018-06-06 10:44:21.87170" level=debug msg="dataChangeAcl false Put acl_name:\"acl2_tcp\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > tcp:<destination_port_range:<lower_port:2000 upper_port:2200 > source_port_range:<lower_port:20010 upper_port:20020 > tcp_flags_mask:20 tcp_flags_value:10 > > > > interfaces:<egress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:21.872608535Z  
+2018-06-06T10:44:21.872610847Z  2018-06-06 10:44:21,872 DEBG 'agent' stdout output:
+2018-06-06T10:44:21.872613120Z  time="2018-06-06 10:44:21.87229" level=info msg="Configuring new ACL acl2_tcp" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:21.872615678Z  
+2018-06-06T10:44:21.876768915Z  2018-06-06 10:44:21,876 DEBG 'agent' stdout output:
+2018-06-06T10:44:21.876779511Z  time="2018-06-06 10:44:21.87577" level=info msg="1 Ip ACL rule(s) written for ACL acl2_tcp with index 1" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:21.876783003Z  time="2018-06-06 10:44:21.87587" level=debug msg="ACL acl2_tcp registered with index 2" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:21.876785641Z  time="2018-06-06 10:44:21.87591" level=debug msg="Interface  (ingress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:21.876788263Z  time="2018-06-06 10:44:21.87594" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:21.876790884Z  time="2018-06-06 10:44:21.87597" level=debug msg="Interface  (egress) not found for ACL 1, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:21.876793357Z  time="2018-06-06 10:44:21.87601" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:21.876795855Z  
+2018-06-06T10:44:24.952846556Z  2018-06-06 10:44:24,952 DEBG 'agent' stdout output:
+2018-06-06T10:44:24.953353256Z  time="2018-06-06 10:44:24.95161" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl3_UDP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:24.953362054Z  time="2018-06-06 10:44:24.95179" level=debug msg="dataChangeAcl false Put acl_name:\"acl3_UDP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:24.953376570Z  
+2018-06-06T10:44:24.953842382Z  2018-06-06 10:44:24,953 DEBG 'agent' stdout output:
+2018-06-06T10:44:24.953850757Z  time="2018-06-06 10:44:24.95184" level=info msg="Configuring new ACL acl3_UDP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.953854025Z  
+2018-06-06T10:44:24.955300186Z  2018-06-06 10:44:24,954 DEBG 'agent' stdout output:
+2018-06-06T10:44:24.955308868Z  time="2018-06-06 10:44:24.95468" level=info msg="1 Ip ACL rule(s) written for ACL acl3_UDP with index 2" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955312239Z  
+2018-06-06T10:44:24.955802581Z  2018-06-06 10:44:24,955 DEBG 'agent' stdout output:
+2018-06-06T10:44:24.955810237Z  time="2018-06-06 10:44:24.95498" level=debug msg="ACL acl3_UDP registered with index 3" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955813239Z  time="2018-06-06 10:44:24.95502" level=debug msg="Interface  (ingress) not found for ACL 2, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955815836Z  time="2018-06-06 10:44:24.95506" level=debug msg="Interface  (ingress) not found for ACL 2, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955818392Z  time="2018-06-06 10:44:24.95509" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955820913Z  time="2018-06-06 10:44:24.95513" level=debug msg="Interface  (egress) not found for ACL 2, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955823503Z  time="2018-06-06 10:44:24.95516" level=debug msg="Interface  (egress) not found for ACL 2, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955826127Z  time="2018-06-06 10:44:24.95519" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:24.955828715Z  
+2018-06-06T10:44:28.038684618Z  2018-06-06 10:44:28,037 DEBG 'agent' stdout output:
+2018-06-06T10:44:28.038731905Z  time="2018-06-06 10:44:28.03716" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl4_UDP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:28.038735442Z  
+2018-06-06T10:44:28.038737800Z  2018-06-06 10:44:28,038 DEBG 'agent' stdout output:
+2018-06-06T10:44:28.038756528Z  time="2018-06-06 10:44:28.03769" level=debug msg="dataChangeAcl false Put acl_name:\"acl4_UDP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:28.038785030Z  time="2018-06-06 10:44:28.03774" level=info msg="Configuring new ACL acl4_UDP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.038788165Z  
+2018-06-06T10:44:28.040504770Z  2018-06-06 10:44:28,040 DEBG 'agent' stdout output:
+2018-06-06T10:44:28.041428303Z  time="2018-06-06 10:44:28.03969" level=info msg="1 Ip ACL rule(s) written for ACL acl4_UDP with index 3" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041439509Z  time="2018-06-06 10:44:28.03980" level=debug msg="ACL acl4_UDP registered with index 4" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041442538Z  time="2018-06-06 10:44:28.03986" level=debug msg="Interface  (ingress) not found for ACL 3, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041445245Z  time="2018-06-06 10:44:28.03992" level=debug msg="Interface  (ingress) not found for ACL 3, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041447872Z  time="2018-06-06 10:44:28.03997" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041450389Z  time="2018-06-06 10:44:28.04001" level=debug msg="Interface  (egress) not found for ACL 3, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041452886Z  time="2018-06-06 10:44:28.04004" level=debug msg="Interface  (egress) not found for ACL 3, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041455393Z  time="2018-06-06 10:44:28.04009" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:28.041457913Z  
+2018-06-06T10:44:30.408889623Z  2018-06-06 10:44:30,407 DEBG 'agent' stdout output:
+2018-06-06T10:44:30.408904043Z  time="2018-06-06 10:44:30.40764" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:44:30.408907730Z  
+2018-06-06T10:44:31.147712870Z  2018-06-06 10:44:31,146 DEBG 'agent' stdout output:
+2018-06-06T10:44:31.147724516Z  time="2018-06-06 10:44:31.14617" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl5_ICMP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:31.147727868Z  
+2018-06-06T10:44:31.147730190Z  2018-06-06 10:44:31,147 DEBG 'agent' stdout output:
+2018-06-06T10:44:31.147732585Z  time="2018-06-06 10:44:31.14710" level=debug msg="dataChangeAcl false Put acl_name:\"acl5_ICMP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:31.147758974Z  time="2018-06-06 10:44:31.14715" level=info msg="Configuring new ACL acl5_ICMP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.147761900Z  
+2018-06-06T10:44:31.149623906Z  2018-06-06 10:44:31,148 DEBG 'agent' stdout output:
+2018-06-06T10:44:31.149633954Z  time="2018-06-06 10:44:31.14842" level=info msg="1 Ip ACL rule(s) written for ACL acl5_ICMP with index 4" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.149637086Z  time="2018-06-06 10:44:31.14847" level=debug msg="ACL acl5_ICMP registered with index 5" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.149639625Z  
+2018-06-06T10:44:31.149641726Z  2018-06-06 10:44:31,149 DEBG 'agent' stdout output:
+2018-06-06T10:44:31.150585605Z  time="2018-06-06 10:44:31.14893" level=debug msg="Interface  (ingress) not found for ACL 4, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.150593242Z  time="2018-06-06 10:44:31.14903" level=debug msg="Interface  (ingress) not found for ACL 4, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.150595958Z  time="2018-06-06 10:44:31.14907" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.150598415Z  time="2018-06-06 10:44:31.14914" level=debug msg="Interface  (egress) not found for ACL 4, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.150600845Z  time="2018-06-06 10:44:31.14920" level=debug msg="Interface  (egress) not found for ACL 4, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.150603261Z  time="2018-06-06 10:44:31.14927" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:31.150605714Z  
+2018-06-06T10:44:34.267246354Z  2018-06-06 10:44:34,265 DEBG 'agent' stdout output:
+2018-06-06T10:44:34.267267753Z  time="2018-06-06 10:44:34.26533" level=debug msg="Start processing change for key: vpp/config/v1/acl/acl6_ICMP" loc="vpp/data_change.go(41)" logger=vpp-plugin
+2018-06-06T10:44:34.267273125Z  time="2018-06-06 10:44:34.26546" level=debug msg="dataChangeAcl false Put acl_name:\"acl6_ICMP\" rules:<acl_action:PERMIT match:<ip_rule:<ip:<destination_network:\"10.0.0.0/32\" source_network:\"10.0.0.0/32\" > udp:<destination_port_range:<lower_port:80 upper_port:1000 > source_port_range:<lower_port:10 upper_port:2000 > > > > > interfaces:<egress:\"\" egress:\"\" ingress:\"\" ingress:\"\" >  " loc="vpp/data_change.go(375)" logger=vpp-plugin
+2018-06-06T10:44:34.267293398Z  time="2018-06-06 10:44:34.26551" level=info msg="Configuring new ACL acl6_ICMP" loc="aclplugin/acl_config.go(132)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.267298737Z  
+2018-06-06T10:44:34.269953306Z  2018-06-06 10:44:34,269 DEBG 'agent' stdout output:
+2018-06-06T10:44:34.269965998Z  time="2018-06-06 10:44:34.26864" level=info msg="1 Ip ACL rule(s) written for ACL acl6_ICMP with index 5" loc="vppcalls/acl_vppcalls.go(101)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269969409Z  time="2018-06-06 10:44:34.26870" level=debug msg="ACL acl6_ICMP registered with index 6" loc="aclplugin/acl_config.go(160)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269972076Z  time="2018-06-06 10:44:34.26874" level=debug msg="Interface  (ingress) not found for ACL 5, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269974759Z  time="2018-06-06 10:44:34.26878" level=debug msg="Interface  (ingress) not found for ACL 5, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269977306Z  
+2018-06-06T10:44:34.269979476Z  2018-06-06 10:44:34,269 DEBG 'agent' stdout output:
+2018-06-06T10:44:34.269981754Z  time="2018-06-06 10:44:34.26881" level=debug msg="Setting up IP ingress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(56)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269984275Z  time="2018-06-06 10:44:34.26956" level=debug msg="Interface  (egress) not found for ACL 5, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269986752Z  time="2018-06-06 10:44:34.26959" level=debug msg="Interface  (egress) not found for ACL 5, moving to cache" loc="aclplugin/acl_config.go(516)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269989227Z  time="2018-06-06 10:44:34.26963" level=debug msg="Setting up IP egress ACL from interfaces: [] " loc="vppcalls/interfaces_vppcalls.go(78)" logger=vpp-plugin-acl-plugin
+2018-06-06T10:44:34.269991768Z  
+2018-06-06T10:44:41.634282857Z  2018-06-06 10:44:41,628 DEBG 'agent' stdout output:
+2018-06-06T10:44:41.634304509Z  time="2018-06-06 10:44:41.62797" level=debug msg="Interface without internal name skipped for global status. Data: status:\"UNKNOWN_STATUS\" " loc="statuscheck/plugin_impl_statuscheck.go(226)" logger=status-check
+2018-06-06T10:44:41.634308990Z  
+2018-06-06T10:44:42.102255530Z  2018-06-06 10:44:42,101 DEBG 'agent' stdout output:
+2018-06-06T10:44:42.102267827Z  time="2018-06-06 10:44:42.10164" level=debug msg="clearing 'since' %s31a9384076b4e3f9c6d0499d95a9428a6784e522a40ae466147bd685ed8fcf2b" loc="nsplugin/microservices.go(120)" logger=linux-plugin-ns-handler
+2018-06-06T10:44:42.102272150Z  
+2018-06-06T10:44:42.105787600Z  2018-06-06 10:44:42,105 DEBG 'agent' stdout output:
+2018-06-06T10:44:42.105801942Z  time="2018-06-06 10:44:42.10524" level=debug msg="processing new container ad2ab803b637ceac0498c8218642140b980929171a56cf29ad9cacc48f2eda77 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:44:42.105816441Z  
+2018-06-06T10:44:42.106254172Z  2018-06-06 10:44:42,105 DEBG 'agent' stdout output:
+2018-06-06T10:44:42.106262629Z  time="2018-06-06 10:44:42.10562" level=debug msg="processing new container 2c6503cc9654ff8afcf62a381bc454182e6d64b100fd4ad86fc7af09337982c9 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:44:42.106265915Z  
+2018-06-06T10:44:42.106269551Z  2018-06-06 10:44:42,106 DEBG 'agent' stdout output:
+2018-06-06T10:44:42.106271879Z  time="2018-06-06 10:44:42.10600" level=debug msg="processing new container 49f58df8eaed3c4421d26e427a93c08ca39ad711e1c56f7085f4d968811e7601 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:44:42.106274568Z  
+2018-06-06T10:44:42.106803702Z  2018-06-06 10:44:42,106 DEBG 'agent' stdout output:
+2018-06-06T10:44:42.106811568Z  time="2018-06-06 10:44:42.10617" level=debug msg="processing new container 468fca3e6229930499f0f5b6116571a733bb7134eb2f395d4c88461c34d76fc0 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:44:42.106814723Z  
+2018-06-06T10:44:42.106817047Z  2018-06-06 10:44:42,106 DEBG 'agent' stdout output:
+2018-06-06T10:44:42.106819330Z  time="2018-06-06 10:44:42.10647" level=debug msg="processing new container 2eb84692c6e09a55ceef80ecb139a691c102ba333ed39f3a069c5e0a6916fb99 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:44:42.106822063Z  time="2018-06-06 10:44:42.10650" level=debug msg="processing new container 608973f2a92c5eb268aa4d0663ac8dac94e2e66311c9a5105f5bc9741786c3e8 with state running" loc="nsplugin/microservices.go(133)" logger=linux-plugin-ns-handler
+2018-06-06T10:44:42.106824731Z  

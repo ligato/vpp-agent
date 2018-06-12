@@ -133,6 +133,16 @@ func (plugin *ACLConfigurator) clearMapping() {
 	plugin.l3l4AclIndexes.Clear()
 }
 
+// GetL2AclIfIndexes exposes l2 acl interface name-to-index mapping
+func (plugin *ACLConfigurator) GetL2AclIfIndexes() aclidx.AclIndexRW {
+	return plugin.l2AclIndexes
+}
+
+// GetL3L4AclIfIndexes exposes l3/l4 acl interface name-to-index mapping
+func (plugin *ACLConfigurator) GetL3L4AclIfIndexes() aclidx.AclIndexRW {
+	return plugin.l3l4AclIndexes
+}
+
 // ConfigureACL creates access list with provided rules and sets this list to every relevant interface.
 func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 	plugin.log.Infof("Configuring new ACL %v", acl.AclName)
