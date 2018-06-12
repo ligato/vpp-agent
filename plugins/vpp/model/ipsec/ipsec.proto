@@ -116,6 +116,8 @@ message SecurityAssociations {
 
         string tunnel_src_addr = 10;
         string tunnel_dst_addr = 11;
+
+        bool enable_udp_encap = 12; /* Enable UDP encapsulation for NAT traversal */
     }
     repeated SA sas = 1;
 }
