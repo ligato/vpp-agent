@@ -298,19 +298,19 @@ func TestDumpIPACL(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '1'},
+		Tag:      []byte("acl1"),
 		Count:    1,
 		R:        []acl_api.ACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 1,
-		Tag:      []byte{'a', 'c', 'l', '2'},
+		Tag:      []byte("acl2"),
 		Count:    2,
 		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
 		ACLIndex: 2,
-		Tag:      []byte{'a', 'c', 'l', '3'},
+		Tag:      []byte("acl3"),
 		Count:    3,
 		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 	})
@@ -335,19 +335,19 @@ func TestDumpMACIPACL(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '4'},
+		Tag:      []byte("acl4"),
 		Count:    1,
 		R:        []acl_api.MacipACLRule{{IsPermit: 1}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 1,
-		Tag:      []byte{'a', 'c', 'l', '5'},
+		Tag:      []byte("acl5"),
 		Count:    2,
 		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
 	})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
 		ACLIndex: 2,
-		Tag:      []byte{'a', 'c', 'l', '6'},
+		Tag:      []byte("acl6"),
 		Count:    3,
 		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
 	})
@@ -429,9 +429,11 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	plugin := &aclplugin.ACLConfigurator{}
-
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logging.ForPlugin("test-log", logrus.NewLogRegistry()), "acl-plugin", nil))
+	// Logger
+	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
+	log.SetLevel(logging.DebugLevel)
+	// Interface indices
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "acl-plugin", nil))
 	if createIfs {
 		ifIndexes.RegisterName("if1", 1, nil)
 		ifIndexes.RegisterName("if2", 2, nil)
@@ -439,8 +441,10 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 		ifIndexes.RegisterName("if4", 4, nil)
 	}
 
-	ctx.MockVpp.MockReply(&acl_api.ACLPluginGetVersionReply{})
-	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection, ifIndexes, false)
+	// Configurator
+	ctx.MockVpp.MockReply(&acl_api.ACLPluginGetVersionReply{1, 0})
+	plugin := &aclplugin.ACLConfigurator{}
+	err = plugin.Init(log, connection, ifIndexes, false)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin

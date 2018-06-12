@@ -60,12 +60,13 @@ type ACLToInterface struct {
 func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel VPPChannel,
 	stopwatch *measure.Stopwatch) ([]*ACLEntry, error) {
 
-	var ACLs []*ACLEntry
-
 	ruleIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with IP ruleData
-	IPRuleACLs, _ := DumpIPAcls(log, vppChannel, stopwatch)
+	IPRuleACLs, err := DumpIPAcls(log, vppChannel, stopwatch)
+	if len(IPRuleACLs) < 1 || err != nil {
+		return nil, err
+	}
 
 	// resolve IP rules for every ACL
 	// Note: currently ACL may have only IP ruleData or only MAC IP ruleData
@@ -98,6 +99,8 @@ func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel VP
 	if err != nil {
 		return nil, err
 	}
+
+	var ACLs []*ACLEntry
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for identifier, rules := range ruleIPData {
 		log.Info("acl index : %v", identifier.ACLIndex)
@@ -120,13 +123,11 @@ func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel VP
 func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel VPPChannel,
 	stopwatch *measure.Stopwatch) ([]*ACLEntry, error) {
 
-	var ACLs []*ACLEntry
-
 	ruleMACIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with MACIP ruleData
 	MACIPRuleACLs, err := DumpMacIPAcls(log, vppChannel, stopwatch)
-	if err != nil {
+	if len(MACIPRuleACLs) < 1 || err != nil {
 		return nil, err
 	}
 
@@ -161,6 +162,7 @@ func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel
 		return nil, err
 	}
 
+	var ACLs []*ACLEntry
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for identifier, rules := range ruleMACIPData {
 		ACLs = append(ACLs, &ACLEntry{
