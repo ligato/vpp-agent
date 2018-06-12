@@ -17,5 +17,5 @@ Resource    vpp_ctl.robot
 Resource    rest_api.robot
 Resource    vxlan.robot
 Resource    linux.robot
-Resource    kubernetes/all_kube_libs.robot
+# Resource    kubernetes/all_kube_libs.robot
 Resource    SshCommons.robot
