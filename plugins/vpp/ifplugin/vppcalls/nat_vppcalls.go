@@ -185,9 +185,9 @@ func handleNat44StaticMapping(ctx *StaticMappingContext, isAdd, addrOnly bool, v
 		ExternalSwIfIndex: ctx.ExternalIfIdx,
 		VrfID:             ctx.Vrf,
 		TwiceNat:          boolToUint(ctx.TwiceNat),
-		//SelfTwiceNat:      boolToUint(ctx.SelfTwiceNat), // Not yet officially supported! (probably in 18.07)
-		Out2inOnly: 1,
-		IsAdd:      boolToUint(isAdd),
+		SelfTwiceNat:      boolToUint(ctx.SelfTwiceNat),
+		Out2inOnly:        1,
+		IsAdd:             boolToUint(isAdd),
 	}
 	if addrOnly {
 		req.AddrOnly = 1
@@ -233,9 +233,9 @@ func handleNat44StaticMappingLb(ctx *StaticMappingLbContext, isAdd bool, vppChan
 		Protocol:     ctx.Protocol,
 		VrfID:        ctx.Vrf,
 		TwiceNat:     boolToUint(ctx.TwiceNat),
-		//SelfTwiceNat: boolToUint(ctx.SelfTwiceNat), // Not yet officially supported! (probably in 18.07)
-		Out2inOnly: 1,
-		IsAdd:      boolToUint(isAdd),
+		SelfTwiceNat: boolToUint(ctx.SelfTwiceNat),
+		Out2inOnly:   1,
+		IsAdd:        boolToUint(isAdd),
 	}
 
 	reply := &nat.Nat44AddDelLbStaticMappingReply{}
