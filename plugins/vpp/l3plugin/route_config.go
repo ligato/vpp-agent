@@ -86,6 +86,16 @@ func (plugin *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	return nil
 }
 
+// GetRouteIndexes exposes rtIndexes mapping
+func (plugin *RouteConfigurator) GetRouteIndexes() l3idx.RouteIndex {
+	return plugin.rtIndexes
+}
+
+// GetCachedRouteIndexes exposes rtCachedIndexes mapping
+func (plugin *RouteConfigurator) GetCachedRouteIndexes() l3idx.RouteIndex {
+	return plugin.rtCachedIndexes
+}
+
 // Close GOVPP channel.
 func (plugin *RouteConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
@@ -152,17 +162,17 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 	plugin.log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 
 	routeID := routeIdentifier(oldConfig.VrfId, oldConfig.DstIpAddr, oldConfig.NextHopAddr)
-
 	if newConfig.OutgoingInterface != "" {
 		_, _, existsNewOutgoing := plugin.ifIndexes.LookupIdx(newConfig.OutgoingInterface)
+		newrouteID := routeIdentifier(newConfig.VrfId, newConfig.DstIpAddr, newConfig.NextHopAddr)
 		if existsNewOutgoing {
-			plugin.log.Debugf("Route %s unregistered from cache", routeID)
-			plugin.rtCachedIndexes.UnregisterName(routeID)
+			plugin.log.Debugf("Route %s unregistered from cache", newrouteID)
+			plugin.rtCachedIndexes.UnregisterName(newrouteID)
 		} else {
 			if routeIdx, _, isCached := plugin.rtCachedIndexes.LookupIdx(routeID); isCached {
-				plugin.rtCachedIndexes.RegisterName(routeID, routeIdx, newConfig)
+				plugin.rtCachedIndexes.RegisterName(newrouteID, routeIdx, newConfig)
 			} else {
-				plugin.rtCachedIndexes.RegisterName(routeID, plugin.rtIndexSeq, newConfig)
+				plugin.rtCachedIndexes.RegisterName(newrouteID, plugin.rtIndexSeq, newConfig)
 				plugin.rtIndexSeq++
 			}
 		}
@@ -176,7 +186,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 
-	plugin.log.Infof("Route %v -> %v modified", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	plugin.log.Infof("Route %v -> %v modified", oldConfig.DstIpAddr, newConfig.DstIpAddr)
 	return nil
 }
 
