@@ -122,6 +122,7 @@ func (f *Flavor) Inject() bool {
 	f.VPP.Deps.GRPCSvc = &f.GRPCSvcPlugin
 
 	f.Linux.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("linux-plugin", local.WithConf())
+	f.Linux.Deps.VPP = &f.VPP
 	f.Linux.Deps.Watcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
 		local_sync.Get(),
 		&f.AllConnectorsFlavor.ETCDDataSync,

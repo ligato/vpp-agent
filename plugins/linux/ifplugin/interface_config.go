@@ -33,6 +33,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	vppIf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
@@ -56,8 +57,7 @@ type LinuxInterfaceConfigurator struct {
 	ifsByMs   map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
 
 	// Channels
-	ifMsNotif   chan *nsplugin.MicroserviceEvent
-	ifStateChan chan *LinuxInterfaceStateNotification
+	ifMsNotif chan *nsplugin.MicroserviceEvent
 
 	// Go routine management
 	cfgLock sync.Mutex
@@ -75,7 +75,7 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linux plugin and start go routines.
 func (plugin *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, stateChan chan *LinuxInterfaceStateNotification, ifNotif chan *nsplugin.MicroserviceEvent, stopwatch *measure.Stopwatch) (err error) {
+	ifIndexes ifaceidx.LinuxIfIndexRW, ifNotif chan *nsplugin.MicroserviceEvent, stopwatch *measure.Stopwatch) (err error) {
 	// Logger
 	plugin.log = logging.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Linux Interface configurator")
@@ -87,7 +87,6 @@ func (plugin *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifH
 	plugin.ifIdxSeq = 1
 
 	// Init channel
-	plugin.ifStateChan = stateChan
 	plugin.ifMsNotif = ifNotif
 
 	plugin.ctx, plugin.cancel = context.WithCancel(context.Background())
@@ -101,9 +100,6 @@ func (plugin *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifH
 
 	// Start watching on microservice events
 	go plugin.watchMicroservices(plugin.ctx)
-
-	// Start watching on state updater events
-	go plugin.watchLinuxStateUpdater()
 
 	return err
 }
@@ -784,75 +780,6 @@ func (plugin *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *nsplug
 	return nil
 }
 
-// Watcher receives events from state updater about created/removed linux interfaces and performs appropriate actions
-func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
-	plugin.log.Debugf("Linux interface state watcher started")
-
-	for {
-		linuxIf := <-plugin.ifStateChan
-		if linuxIf == nil || linuxIf.attributes == nil {
-			continue
-		}
-		linuxIfName := linuxIf.attributes.Name
-
-		switch {
-		case linuxIf.interfaceType == tap:
-			if linuxIf.interfaceState == netlink.OperDown {
-				// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
-				for _, indexedName := range plugin.ifIndexes.GetMapping().ListNames() {
-					_, ifConfigMeta, found := plugin.ifIndexes.LookupIdx(indexedName)
-					if !found {
-						// Should not happen
-						plugin.log.Warnf("Interface %v not found in the mapping", indexedName)
-						continue
-					}
-					if ifConfigMeta == nil {
-						// Should not happen
-						plugin.log.Warnf("Interface %v metadata does not exist", indexedName)
-						continue
-					}
-					if ifConfigMeta.Data.HostIfName == "" {
-						plugin.log.Warnf("No info about host name for %v", indexedName)
-						continue
-					}
-					if ifConfigMeta.Data.HostIfName == linuxIfName {
-						// Registered Linux TAP interface was removed. However it should not be removed from cache
-						// because the configuration still exists in the VPP
-						plugin.ifIndexes.UnregisterName(linuxIfName)
-					}
-				}
-			} else {
-				// Event that TAP interface was created.
-				plugin.log.Debugf("Received data about linux TAP interface %s", linuxIfName)
-
-				// Look for TAP which is using this interface as the other end
-				for _, ifConfig := range plugin.ifByName {
-					if ifConfig == nil || ifConfig.config == nil {
-						plugin.log.Warnf("Cached config for interface %v is empty", linuxIfName)
-						continue
-					}
-
-					if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == linuxIfName) ||
-						ifConfig.config.HostIfName == linuxIfName {
-						// Skip processed interfaces
-						_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
-						if exists {
-							continue
-						}
-						// Host interface was found, configure linux TAP
-						err := plugin.ConfigureLinuxInterface(ifConfig.config)
-						if err != nil {
-							plugin.log.Error(err)
-						}
-					}
-				}
-			}
-		default:
-			plugin.log.Debugf("Linux interface type %v state processing skipped", linuxIf.interfaceType)
-		}
-	}
-}
-
 // getInterfaceConfig returns cached configuration of a given interface.
 func (plugin *LinuxInterfaceConfigurator) getInterfaceConfig(ifName string) *LinuxInterfaceConfig {
 	config, ok := plugin.ifByName[ifName]
@@ -991,4 +918,85 @@ func addressExists(configured []netlink.Addr, provided *net.IPNet) bool {
 		}
 	}
 	return false
+}
+
+// ResolveCreatedInterface resolves a new vpp interfaces
+func (plugin *LinuxInterfaceConfigurator) ResolveCreatedInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
+	plugin.log.Warnf("Linux IF configurator: resolve created vpp interface %v", ifConfigMetaData)
+
+	if ifConfigMetaData.Type != vppIf.InterfaceType_TAP_INTERFACE {
+		return nil
+	}
+
+	var hostIfName string
+	if ifConfigMetaData.Tap != nil && ifConfigMetaData.Tap.HostIfName != "" {
+		hostIfName = ifConfigMetaData.Tap.HostIfName
+	} else if ifConfigMetaData != nil && ifConfigMetaData.Name != "" {
+		hostIfName = ifConfigMetaData.Tap.HostIfName
+	} else {
+		return nil
+	}
+
+	// Look for TAP which is using this interface as the other end
+	for _, ifConfig := range plugin.ifByName {
+		if ifConfig == nil || ifConfig.config == nil {
+			plugin.log.Warnf("Cached config for interface %v is empty", hostIfName)
+			continue
+		}
+
+		if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == hostIfName) ||
+			ifConfig.config.HostIfName == hostIfName {
+			// Skip processed interfaces
+			_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
+			if exists {
+				plugin.log.Warnf("Linux tap %v already configured", hostIfName)
+				continue
+			}
+			// Host interface was found, configure linux TAP
+			plugin.log.Warnf("Configuring linux tap for hostname %v", hostIfName)
+			err := plugin.ConfigureLinuxInterface(ifConfig.config)
+			if err != nil {
+				plugin.log.Error(err)
+			}
+		}
+	}
+	return nil
+}
+
+// ResolveDeletedInterface resolves removed vpp interfaces
+func (plugin *LinuxInterfaceConfigurator) ResolveDeletedInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
+	plugin.log.Warnf("Linux IF configurator: resolve deleted vpp interface %v", ifConfigMetaData)
+
+	if ifConfigMetaData.Type != vppIf.InterfaceType_TAP_INTERFACE {
+		return nil
+	}
+
+	var hostIfName string
+	if ifConfigMetaData.Tap != nil && ifConfigMetaData.Tap.HostIfName != "" {
+		hostIfName = ifConfigMetaData.Tap.HostIfName
+	} else if ifConfigMetaData != nil && ifConfigMetaData.Name != "" {
+		hostIfName = ifConfigMetaData.Tap.HostIfName
+	} else {
+		return nil
+	}
+
+	// Look for TAP which is using this interface as the other end
+	for _, ifConfig := range plugin.ifByName {
+		if ifConfig == nil || ifConfig.config == nil {
+			plugin.log.Warnf("Cached config for interface %v is empty", hostIfName)
+			continue
+		}
+
+		if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == hostIfName) ||
+			ifConfig.config.HostIfName == hostIfName {
+			_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
+			if exists {
+				// Unregister TAP from the in-memory map
+				plugin.log.Warnf("Unregistering linux tap interface %v", ifConfig.config.Name)
+				plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
+			}
+		}
+	}
+
+	return nil
 }
