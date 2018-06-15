@@ -48,6 +48,12 @@ message Interfaces {
         }
         RxModeSettings rx_mode_settings = 12;
 
+        message RxPlacementSettings {
+            uint32 queue = 1;
+            uint32 worker = 2;
+        }
+        RxPlacementSettings rx_placement_settings = 13;
+
         message Memif {
             enum MemifMode {
                 ETHERNET = 0;
