@@ -20,8 +20,8 @@ List All Loggers
 
 Change Logger Level
     #Change Log Level On agent_vpp_1 From debug To info On defaultLogger
-    Change Log Level On agent_vpp_1 From debug To info On default-plugins
-    Change Log Level On agent_vpp_1 From debug To info On default-plugins-if-conf
+    Change Log Level On agent_vpp_1 From debug To info On vpp-plugin
+    Change Log Level On agent_vpp_1 From debug To info On vpp-plugin-if-conf
     ${from_now}=  Get Time     epoch
     Log Many     ${from_now}
     vpp_ctl: Put Loopback Interface With IP    agent_vpp_1    loop0   8a:f1:be:90:00:03    10.1.1.1
