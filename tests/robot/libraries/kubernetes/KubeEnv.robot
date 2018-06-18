@@ -197,6 +197,15 @@ Remove_Pod_And_Verify_Removed
     KubeCtl.Delete_F    ${ssh_session}    ${pod_file}
     Wait_Until_Pod_Removed    ${ssh_session}    ${pod_name}
 
+Verify_Pod_Not_Terminating
+    [Arguments]    ${ssh_session}    ${pod_name}    ${namespace}=default
+    [Documentation]    Get pods of \${namespace}, parse status of \${pod_name}, check it is not Terminating.
+    BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${namespace}
+    &{pods} =     KubeCtl.Get_Pods    ${ssh_session}    namespace=${namespace}
+    Return From Keyword If    "${pod_name}" not in ${pods}.keys()
+    ${status} =    BuiltIn.Evaluate    &{pods}[${pod_name}]['STATUS']
+    BuiltIn.Should_Not_Be_Equal_As_Strings    ${status}    Terminating
+
 Verify_Pod_Running_And_Ready
     [Arguments]    ${ssh_session}    ${pod_name}    ${namespace}=default
     [Documentation]    Get pods of \${namespace}, parse status of \${pod_name}, check it is Running, parse for ready containes of \${pod_name}, check it is all of them.
@@ -276,11 +285,9 @@ Get_Into_Container_Prompt_In_Pod
     [Documentation]    Configure if prompt, execute interactive bash in ${pod_name}, read until prompt, log and return output.
     BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${prompt}
     # TODO: PodBash.robot?
-    ${docker} =    BuiltIn.Set_Variable    ${K8_CLUSTER_${CLUSTER_ID}_DOCKER_COMMAND}
-    ${container_id} =    KubeCtl.Get_Container_Id    ${ssh_session}    ${pod_name}
-    # That already switched the ssh session.
-    BuiltIn.Run_Keyword_If    """${prompt}""" != """${EMPTY}"""    SSHLibrary.Set_Client_Configuration    prompt=${prompt}
-    ${command} =    BuiltIn.Set_Variable    ${docker} exec -i -t --privileged=true ${container_id} /bin/sh
+    SSHLibrary.Switch_Connection    ${ssh_session}
+    SSHLibrary.Set_Client_Configuration    prompt=${prompt}
+    ${command} =    BuiltIn.Set_Variable    kubectl exec -i -t ${pod_name} /bin/sh
     SSHLibrary.Write    ${command}
     ${output} =     SSHLibrary.Read_Until_Prompt
     SshCommons.Append_Command_Log    ${command}    ${output}

@@ -29,6 +29,15 @@ def yaml_replace_line(yaml_string, line_identifier, replacement):
 
 class YamlConfigGenerator(object):
     def __init__(self, vnf_count, novpp_count, template_folder):
+        """Initialize config generator with topology parameters.
+
+        :param vnf_count: Number of VNF nodes.
+        :param novpp_count: Number of non-VPP nodes.
+        :param template_folder: Path to .yaml config templates.
+        :type vnf_count: int
+        :type novpp_count: int
+        :type template_folder: str
+        """
         self.vnf_count = int(vnf_count)
         self.novpp_count = int(novpp_count)
         self.templates = {}
@@ -44,6 +53,11 @@ class YamlConfigGenerator(object):
             self.templates["novpp"] = novpp.read()
 
     def generate_config(self, output_path):
+        """Generate topology config .yaml files for Kubernetes.
+
+        :param output_path: Path to where the output files should be placed.
+        :type output_path: str
+        """
         self.generate_sfc_config()
         self.generate_vnf_config()
         self.generate_novpp_config()
@@ -57,8 +71,8 @@ class YamlConfigGenerator(object):
             new_element = {
                 "container": "vnf-vpp-{index}".format(index=vnf_index),
                 "port_label": "vnf{index}_memif0".format(index=vnf_index),
-                "mac_addr": "10.01.01.01.01.{0}".format(mac_hex(vnf_index)),
-                "ipv4_addr": "192.168.5.{0}".format(vnf_index),
+                "mac_addr": "02:01:01:01:01:{0}".format(mac_hex(vnf_index + 1)),
+                "ipv4_addr": "192.168.5.{0}".format(vnf_index + 1),
                 "type": 2,
                 "etcd_vpp_switch_key": "agent_vpp_vswitch"
             }
@@ -68,8 +82,8 @@ class YamlConfigGenerator(object):
             new_element = {
                 "container": "novpp-{index}".format(index=novpp_index),
                 "port_label": "veth_novpp{index}".format(index=novpp_index),
-                "mac_addr": "10.01.01.01.01.{0}".format(mac_hex(index)),
-                "ipv4_addr": "192.168.5.{0}".format(index),
+                "mac_addr": "02:01:01:01:01:{0}".format(mac_hex(index + 1)),
+                "ipv4_addr": "192.168.5.{0}".format(index + 1),
                 "type": 3,
                 "etcd_vpp_switch_key": "agent_vpp_vswitch"
             }
@@ -78,8 +92,8 @@ class YamlConfigGenerator(object):
         new_element = {
             "container": "agent_vpp_vswitch",
             "port_label": "L2-bridge",
-            "l2fib_macs": ["10.01.01.01.01.{0}".format(
-                mac_hex(x)) for x in range(len(elements_list))],
+            "l2fib_macs": ["02:01:01:01:01:{0}".format(
+                mac_hex(x + 1)) for x in range(len(elements_list))],
             "etcd_vpp_switch_key": "agent_vpp_vswitch"
         }
         elements_list.append(new_element)
