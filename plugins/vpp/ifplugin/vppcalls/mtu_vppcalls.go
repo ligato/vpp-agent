@@ -22,18 +22,18 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-// SetInterfaceMtu calls SwInterfaceSetMtu bin API with desired MTU value.
+// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
 func SetInterfaceMtu(ifIdx uint32, mtu uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &interfaces.SwInterfaceSetMtu{
+	req := &interfaces.HwInterfaceSetMtu{
 		SwIfIndex: ifIdx,
 		Mtu:       uint16(mtu),
 	}
 
-	reply := &interfaces.SwInterfaceSetMtuReply{}
+	reply := &interfaces.HwInterfaceSetMtuReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
