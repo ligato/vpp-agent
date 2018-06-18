@@ -50,6 +50,7 @@ Check TAP1 Interface Is Created
 Add TAP2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP2}
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP2}    mac=${MAC_TAP2}    ip=${IP_TAP2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP2}
+    Sleep     5
 
 Check TAP2 Interface Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}

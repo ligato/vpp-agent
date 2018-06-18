@@ -24,6 +24,8 @@ Configure Environment
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
     Add Agent VPP Node    agent_vpp_3
+    ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
+    Set Suite Variable          ${DATA_FOLDER}
     Start SFC Controller Container With Own Config    basic.conf
     Sleep    ${SYNC_SLEEP}
 

@@ -56,6 +56,8 @@ ${NO_ACL}=
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
+    ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
+    Set Suite Variable          ${DATA_FOLDER}
     Configure Environment 2        acl_basic.conf
     Set Suite Variable    ${API_HANDLER}    ${api_handler}
 

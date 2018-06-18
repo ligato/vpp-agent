@@ -281,7 +281,7 @@ Start SFC Controller Container With Own Config
     Log                    ${config}
     Open SSH Connection    sfc_controller    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine     sfc_controller    ${DOCKER_COMMAND} create -it --name sfc_controller ${SFC_CONTROLLER_IMAGE_NAME}
-    SSHLibrary.Put_file    ${TEST_DATA_FOLDER}/${config}	/tmp/
+    SSHLibrary.Put_file    ${DATA_FOLDER}/${config}	    /tmp/
     Execute On Machine     sfc_controller    ${DOCKER_COMMAND} cp /tmp/${config} sfc_controller:${SFC_CONTROLLER_CONF_PATH}
     Write To Machine       sfc_controller    ${DOCKER_COMMAND} start -i sfc_controller
     #Sleep                  400s

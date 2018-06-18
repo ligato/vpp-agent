@@ -128,7 +128,7 @@ ${RESULTS_FOLDER}                  results
 ${RESULTS_FOLDER_SUITE}            ${RESULTS_FOLDER}/${SUITE_NAME}
 ${TEST_DATA_FOLDER}                test_data
 ${REST_CALL_SLEEP}                 0
-${SSH_READ_DELAY}                  3
+${SSH_READ_DELAY}                  6
 
 ${EXAMPLE_PLUGIN_NAME}             example_plugin.so
 
@@ -147,7 +147,6 @@ ${K8_CLUSTER_INTEGRATION1_VM_1_PROMPT}      $
 ${K8_CLUSTER_INTEGRATION1_DOCKER_COMMAND}   docker
 ${K8_GENERATED_CONFIG_FOLDER}         generated_config
 
-${SSH_READ_DELAY}                     5
 ${SSH_TIMEOUT}                        30
 ${SSH_LOG_OUTPUTS_TIMEOUT}            30
 ${POD_DEPLOY_TIMEOUT}                 60
