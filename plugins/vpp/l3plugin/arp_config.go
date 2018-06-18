@@ -96,6 +96,21 @@ func (plugin *ArpConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
+// GetArpIndexes exposes arpIndexes mapping
+func (plugin *ArpConfigurator) GetArpIndexes() l3idx.ARPIndexRW {
+	return plugin.arpIndexes
+}
+
+// GetArpCache exposes list of cached ARP entries (present in ETCD but not in VPP)
+func (plugin *ArpConfigurator) GetArpCache() l3idx.ARPIndexRW {
+	return plugin.arpCache
+}
+
+// GetArpDeleted exposes arppDeleted mapping (unsuccessfully deleted ARP entries)
+func (plugin *ArpConfigurator) GetArpDeleted() l3idx.ARPIndexRW {
+	return plugin.arpDeleted
+}
+
 // Creates unique identifier which serves as a name in name to index mapping
 func arpIdentifier(iface, ip, mac string) string {
 	return fmt.Sprintf("arp-iface-%v-%v-%v", iface, ip, mac)
@@ -234,13 +249,12 @@ func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) err
 	entriesToAdd := plugin.arpCache.LookupNamesByInterface(interfaceName)
 	entriesToRemove := plugin.arpDeleted.LookupNamesByInterface(interfaceName)
 
-	var wasErr error
 	// Configure all cached ARP entriesToAdd which can be configured
 	for _, entry := range entriesToAdd {
 		// ARP entry identifier. Every entry in cache was already validated
 		arpID := arpIdentifier(entry.Interface, entry.PhysAddress, entry.IpAddress)
 		if err := plugin.AddArp(entry); err != nil {
-			wasErr = err
+			return err
 		}
 
 		// remove from cache
@@ -252,7 +266,7 @@ func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) err
 	for _, entry := range entriesToRemove {
 		arpID := arpIdentifier(entry.Interface, entry.PhysAddress, entry.IpAddress)
 		if err := plugin.DeleteArp(entry); err != nil {
-			wasErr = err
+			return err
 		}
 
 		// remove from list of deleted
@@ -260,7 +274,7 @@ func (plugin *ArpConfigurator) ResolveCreatedInterface(interfaceName string) err
 		plugin.log.Infof("Deprecated ARP entry %v was removed", arpID)
 	}
 
-	return wasErr
+	return nil
 }
 
 // ResolveDeletedInterface handles case when interface is removed from the config

@@ -199,7 +199,7 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 				LocalPort: uint32(msg.LocalPort),
 			}),
 			Protocol: getNatProtocol(msg.Protocol, log),
-			//TwiceNat: getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log), // Not yet officially supported! (probably in 18.07)
+			TwiceNat: getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
 		}
 	}
 
@@ -250,7 +250,7 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan vppcalls.VPPChannel,
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps:     locals,
 			Protocol:     getNatProtocol(msg.Protocol, log),
-			//TwiceNat:     getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log), // Not yet officially supported! (probably in 18.07)
+			TwiceNat:     getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
 		}
 	}
 

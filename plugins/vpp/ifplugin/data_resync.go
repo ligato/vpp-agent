@@ -756,8 +756,8 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 			nbIf.SetDhcpClient, vppIf.SetDhcpClient)
 		return true
 	}
-	//  MTU value
-	if nbIf.Mtu != vppIf.Mtu {
+	//  MTU value (not valid for VxLAN)
+	if nbIf.Mtu != vppIf.Mtu && nbIf.Type != intf.InterfaceType_VXLAN_TUNNEL {
 		plugin.log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
 			nbIf.Mtu, vppIf.Mtu)
 		return true
@@ -770,7 +770,7 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		return true
 	}
 	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
-	// todo unnumbered data cannot be dumped
+	// todo dump unnumbered data
 	if nbIf.Unnumbered != nil {
 		plugin.log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
 		vppIf.IpAddresses = nil
@@ -965,6 +965,12 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 			if nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
 				plugin.log.Debugf("Interface RESYNC comparison: VxLAN dst address changed (NB: %s, VPP: %s)",
 					nbIf.Vxlan.DstAddress, vppIf.Vxlan.DstAddress)
+				return true
+			}
+			// VxLAN Multicast
+			if nbIf.Vxlan.Multicast != vppIf.Vxlan.Multicast {
+				plugin.log.Debugf("Interface RESYNC comparison: VxLAN multicast address changed (NB: %s, VPP: %s)",
+					nbIf.Vxlan.Multicast, vppIf.Vxlan.Multicast)
 				return true
 			}
 		}

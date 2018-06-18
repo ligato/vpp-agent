@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/ipsec --gogo_out=../common/model/ipsec ../common/model/ipsec/ipsec.proto
+//go:generate protoc --proto_path=../model/ipsec --gogo_out=../model/ipsec ../model/ipsec/ipsec.proto
 
 // Package ipsecplugin implements the IPSec plugin that handles management of IPSec for VPP.
 package ipsecplugin

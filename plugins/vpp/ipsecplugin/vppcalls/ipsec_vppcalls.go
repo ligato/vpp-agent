@@ -274,6 +274,7 @@ func sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool, 
 		IntegrityKeyLength:        uint8(len(integKey)),
 		UseExtendedSequenceNumber: boolToUint(sa.UseEsn),
 		UseAntiReplay:             boolToUint(sa.UseAntiReplay),
+		UDPEncap:                  boolToUint(sa.EnableUdpEncap),
 	}
 	if sa.TunnelSrcAddr != "" {
 		req.IsTunnel = 1

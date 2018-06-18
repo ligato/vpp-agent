@@ -15,15 +15,14 @@
 package aclplugin
 
 import (
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
 // Resync writes ACLs to the empty VPP.
-func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging.Logger) error {
-	log.Debug("Resync ACLs started")
+func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
+	plugin.log.Debug("Resync ACLs started")
 	// Calculate and log acl resync.
 	defer func() {
 		if plugin.stopwatch != nil {
@@ -45,7 +44,6 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	// Remove all configured VPP ACLs
 	// Note: due to inability to dump ACL interfaces, it is not currently possible to correctly
 	// calculate difference between configs
-	var wasErr error
 	for _, vppIpACL := range vppIpACLs {
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
@@ -54,9 +52,11 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 
 		if ipRulesExist {
 			if err := vppcalls.DeleteIPAcl(vppIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
-				log.Error(err)
-				wasErr = err
+				plugin.log.Error(err)
+				return err
 			}
+			// Unregister.
+			plugin.l3l4AclIndexes.UnregisterName(vppIpACL.ACLDetails.AclName)
 			continue
 		}
 	}
@@ -65,9 +65,11 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 
 		if ipRulesExist {
 			if err := vppcalls.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
-				log.Error(err)
-				wasErr = err
+				plugin.log.Error(err)
+				return err
 			}
+			// Unregister.
+			plugin.l2AclIndexes.UnregisterName(vppMacIpACL.ACLDetails.AclName)
 			continue
 		}
 	}
@@ -76,9 +78,9 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl, log logging
 	for _, nbACL := range nbACLs {
 		if err := plugin.ConfigureACL(nbACL); err != nil {
 			plugin.log.Error(err)
-			wasErr = err
+			return err
 		}
 	}
 
-	return wasErr
+	return nil
 }

@@ -28,9 +28,11 @@ func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan VPPC
 	}(time.Now())
 
 	req := &dhcp.DhcpClientConfig{
-		SwIfIndex:     ifIdx,
-		Hostname:      []byte(hostName),
-		WantDhcpEvent: 1,
+		Client: dhcp.DhcpClient{
+			SwIfIndex:     ifIdx,
+			Hostname:      []byte(hostName),
+			WantDhcpEvent: 1,
+		},
 	}
 	if isAdd {
 		req.IsAdd = 1

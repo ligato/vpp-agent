@@ -6,7 +6,7 @@ package interfaces
 import "git.fd.io/govpp.git/api"
 
 // VlibCounter represents the VPP binary API data type 'vlib_counter'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1247:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1248:
 //
 //            "vlib_counter",
 //            [
@@ -34,7 +34,7 @@ func (*VlibCounter) GetCrcString() string {
 }
 
 // VnetCombinedCounter represents the VPP binary API data type 'vnet_combined_counter'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1261:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1262:
 //
 //            "vnet_combined_counter",
 //            [
@@ -137,7 +137,7 @@ func (*VnetCombinedCounter) GetCrcString() string {
 }
 
 // VnetSimpleCounter represents the VPP binary API data type 'vnet_simple_counter'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1335:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1336:
 //
 //            "vnet_simple_counter",
 //            [
@@ -205,7 +205,7 @@ func (*VnetSimpleCounter) GetCrcString() string {
 }
 
 // SwInterfaceSetFlags represents the VPP binary API message 'sw_interface_set_flags'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 75:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 4:
 //
 //            "sw_interface_set_flags",
 //            [
@@ -251,7 +251,7 @@ func NewSwInterfaceSetFlags() api.Message {
 }
 
 // SwInterfaceSetFlagsReply represents the VPP binary API message 'sw_interface_set_flags_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 101:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 30:
 //
 //            "sw_interface_set_flags_reply",
 //            [
@@ -288,7 +288,7 @@ func NewSwInterfaceSetFlagsReply() api.Message {
 }
 
 // SwInterfaceSetMtu represents the VPP binary API message 'sw_interface_set_mtu'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 119:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 48:
 //
 //            "sw_interface_set_mtu",
 //            [
@@ -334,7 +334,7 @@ func NewSwInterfaceSetMtu() api.Message {
 }
 
 // SwInterfaceSetMtuReply represents the VPP binary API message 'sw_interface_set_mtu_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 145:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 74:
 //
 //            "sw_interface_set_mtu_reply",
 //            [
@@ -371,7 +371,7 @@ func NewSwInterfaceSetMtuReply() api.Message {
 }
 
 // SwInterfaceEvent represents the VPP binary API message 'sw_interface_event'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 163:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 92:
 //
 //            "sw_interface_event",
 //            [
@@ -428,7 +428,7 @@ func NewSwInterfaceEvent() api.Message {
 }
 
 // WantInterfaceEvents represents the VPP binary API message 'want_interface_events'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 197:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 126:
 //
 //            "want_interface_events",
 //            [
@@ -474,7 +474,7 @@ func NewWantInterfaceEvents() api.Message {
 }
 
 // WantInterfaceEventsReply represents the VPP binary API message 'want_interface_events_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 223:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 152:
 //
 //            "want_interface_events_reply",
 //            [
@@ -511,7 +511,7 @@ func NewWantInterfaceEventsReply() api.Message {
 }
 
 // SwInterfaceDetails represents the VPP binary API message 'sw_interface_details'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 241:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 170:
 //
 //            "sw_interface_details",
 //            [
@@ -698,7 +698,7 @@ func NewSwInterfaceDetails() api.Message {
 }
 
 // SwInterfaceDump represents the VPP binary API message 'sw_interface_dump'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 380:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 309:
 //
 //            "sw_interface_dump",
 //            [
@@ -745,7 +745,7 @@ func NewSwInterfaceDump() api.Message {
 }
 
 // SwInterfaceAddDelAddress represents the VPP binary API message 'sw_interface_add_del_address'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 407:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 336:
 //
 //            "sw_interface_add_del_address",
 //            [
@@ -812,7 +812,7 @@ func NewSwInterfaceAddDelAddress() api.Message {
 }
 
 // SwInterfaceAddDelAddressReply represents the VPP binary API message 'sw_interface_add_del_address_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 450:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 379:
 //
 //            "sw_interface_add_del_address_reply",
 //            [
@@ -849,7 +849,7 @@ func NewSwInterfaceAddDelAddressReply() api.Message {
 }
 
 // SwInterfaceSetTable represents the VPP binary API message 'sw_interface_set_table'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 468:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 397:
 //
 //            "sw_interface_set_table",
 //            [
@@ -900,7 +900,7 @@ func NewSwInterfaceSetTable() api.Message {
 }
 
 // SwInterfaceSetTableReply represents the VPP binary API message 'sw_interface_set_table_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 498:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 427:
 //
 //            "sw_interface_set_table_reply",
 //            [
@@ -937,7 +937,7 @@ func NewSwInterfaceSetTableReply() api.Message {
 }
 
 // SwInterfaceGetTable represents the VPP binary API message 'sw_interface_get_table'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 516:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 445:
 //
 //            "sw_interface_get_table",
 //            [
@@ -983,7 +983,7 @@ func NewSwInterfaceGetTable() api.Message {
 }
 
 // SwInterfaceGetTableReply represents the VPP binary API message 'sw_interface_get_table_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 542:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 471:
 //
 //            "sw_interface_get_table_reply",
 //            [
@@ -1025,7 +1025,7 @@ func NewSwInterfaceGetTableReply() api.Message {
 }
 
 // SwInterfaceSetUnnumbered represents the VPP binary API message 'sw_interface_set_unnumbered'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 564:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 493:
 //
 //            "sw_interface_set_unnumbered",
 //            [
@@ -1076,7 +1076,7 @@ func NewSwInterfaceSetUnnumbered() api.Message {
 }
 
 // SwInterfaceSetUnnumberedReply represents the VPP binary API message 'sw_interface_set_unnumbered_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 594:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 523:
 //
 //            "sw_interface_set_unnumbered_reply",
 //            [
@@ -1113,7 +1113,7 @@ func NewSwInterfaceSetUnnumberedReply() api.Message {
 }
 
 // SwInterfaceClearStats represents the VPP binary API message 'sw_interface_clear_stats'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 612:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 541:
 //
 //            "sw_interface_clear_stats",
 //            [
@@ -1154,7 +1154,7 @@ func NewSwInterfaceClearStats() api.Message {
 }
 
 // SwInterfaceClearStatsReply represents the VPP binary API message 'sw_interface_clear_stats_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 634:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 563:
 //
 //            "sw_interface_clear_stats_reply",
 //            [
@@ -1191,7 +1191,7 @@ func NewSwInterfaceClearStatsReply() api.Message {
 }
 
 // SwInterfaceTagAddDel represents the VPP binary API message 'sw_interface_tag_add_del'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 652:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 581:
 //
 //            "sw_interface_tag_add_del",
 //            [
@@ -1243,7 +1243,7 @@ func NewSwInterfaceTagAddDel() api.Message {
 }
 
 // SwInterfaceTagAddDelReply represents the VPP binary API message 'sw_interface_tag_add_del_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 683:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 612:
 //
 //            "sw_interface_tag_add_del_reply",
 //            [
@@ -1280,7 +1280,7 @@ func NewSwInterfaceTagAddDelReply() api.Message {
 }
 
 // SwInterfaceSetMacAddress represents the VPP binary API message 'sw_interface_set_mac_address'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 701:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 630:
 //
 //            "sw_interface_set_mac_address",
 //            [
@@ -1327,7 +1327,7 @@ func NewSwInterfaceSetMacAddress() api.Message {
 }
 
 // SwInterfaceSetMacAddressReply represents the VPP binary API message 'sw_interface_set_mac_address_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 728:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 657:
 //
 //            "sw_interface_set_mac_address_reply",
 //            [
@@ -1364,7 +1364,7 @@ func NewSwInterfaceSetMacAddressReply() api.Message {
 }
 
 // SwInterfaceGetMacAddress represents the VPP binary API message 'sw_interface_get_mac_address'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 746:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 675:
 //
 //            "sw_interface_get_mac_address",
 //            [
@@ -1405,7 +1405,7 @@ func NewSwInterfaceGetMacAddress() api.Message {
 }
 
 // SwInterfaceGetMacAddressReply represents the VPP binary API message 'sw_interface_get_mac_address_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 768:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 697:
 //
 //            "sw_interface_get_mac_address_reply",
 //            [
@@ -1448,7 +1448,7 @@ func NewSwInterfaceGetMacAddressReply() api.Message {
 }
 
 // SwInterfaceSetRxMode represents the VPP binary API message 'sw_interface_set_rx_mode'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 791:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 720:
 //
 //            "sw_interface_set_rx_mode",
 //            [
@@ -1504,7 +1504,7 @@ func NewSwInterfaceSetRxMode() api.Message {
 }
 
 // SwInterfaceSetRxModeReply represents the VPP binary API message 'sw_interface_set_rx_mode_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 825:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 754:
 //
 //            "sw_interface_set_rx_mode_reply",
 //            [
@@ -1541,7 +1541,7 @@ func NewSwInterfaceSetRxModeReply() api.Message {
 }
 
 // InterfaceNameRenumber represents the VPP binary API message 'interface_name_renumber'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 843:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 772:
 //
 //            "interface_name_renumber",
 //            [
@@ -1587,7 +1587,7 @@ func NewInterfaceNameRenumber() api.Message {
 }
 
 // InterfaceNameRenumberReply represents the VPP binary API message 'interface_name_renumber_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 869:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 798:
 //
 //            "interface_name_renumber_reply",
 //            [
@@ -1624,7 +1624,7 @@ func NewInterfaceNameRenumberReply() api.Message {
 }
 
 // CreateSubif represents the VPP binary API message 'create_subif'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 887:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 816:
 //
 //            "create_subif",
 //            [
@@ -1720,7 +1720,7 @@ func NewCreateSubif() api.Message {
 }
 
 // CreateSubifReply represents the VPP binary API message 'create_subif_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 953:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 882:
 //
 //            "create_subif_reply",
 //            [
@@ -1762,7 +1762,7 @@ func NewCreateSubifReply() api.Message {
 }
 
 // CreateVlanSubif represents the VPP binary API message 'create_vlan_subif'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 975:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 904:
 //
 //            "create_vlan_subif",
 //            [
@@ -1808,7 +1808,7 @@ func NewCreateVlanSubif() api.Message {
 }
 
 // CreateVlanSubifReply represents the VPP binary API message 'create_vlan_subif_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1001:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 930:
 //
 //            "create_vlan_subif_reply",
 //            [
@@ -1850,7 +1850,7 @@ func NewCreateVlanSubifReply() api.Message {
 }
 
 // DeleteSubif represents the VPP binary API message 'delete_subif'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1023:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 952:
 //
 //            "delete_subif",
 //            [
@@ -1891,7 +1891,7 @@ func NewDeleteSubif() api.Message {
 }
 
 // DeleteSubifReply represents the VPP binary API message 'delete_subif_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1045:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 974:
 //
 //            "delete_subif_reply",
 //            [
@@ -1928,7 +1928,7 @@ func NewDeleteSubifReply() api.Message {
 }
 
 // CreateLoopback represents the VPP binary API message 'create_loopback'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1063:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 992:
 //
 //            "create_loopback",
 //            [
@@ -1970,7 +1970,7 @@ func NewCreateLoopback() api.Message {
 }
 
 // CreateLoopbackReply represents the VPP binary API message 'create_loopback_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1086:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1015:
 //
 //            "create_loopback_reply",
 //            [
@@ -2012,7 +2012,7 @@ func NewCreateLoopbackReply() api.Message {
 }
 
 // CreateLoopbackInstance represents the VPP binary API message 'create_loopback_instance'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1108:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1037:
 //
 //            "create_loopback_instance",
 //            [
@@ -2064,7 +2064,7 @@ func NewCreateLoopbackInstance() api.Message {
 }
 
 // CreateLoopbackInstanceReply represents the VPP binary API message 'create_loopback_instance_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1139:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1068:
 //
 //            "create_loopback_instance_reply",
 //            [
@@ -2106,7 +2106,7 @@ func NewCreateLoopbackInstanceReply() api.Message {
 }
 
 // DeleteLoopback represents the VPP binary API message 'delete_loopback'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1161:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1090:
 //
 //            "delete_loopback",
 //            [
@@ -2147,7 +2147,7 @@ func NewDeleteLoopback() api.Message {
 }
 
 // DeleteLoopbackReply represents the VPP binary API message 'delete_loopback_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1183:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1112:
 //
 //            "delete_loopback_reply",
 //            [
@@ -2184,7 +2184,7 @@ func NewDeleteLoopbackReply() api.Message {
 }
 
 // CollectDetailedInterfaceStats represents the VPP binary API message 'collect_detailed_interface_stats'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1201:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1130:
 //
 //            "collect_detailed_interface_stats",
 //            [
@@ -2230,7 +2230,7 @@ func NewCollectDetailedInterfaceStats() api.Message {
 }
 
 // CollectDetailedInterfaceStatsReply represents the VPP binary API message 'collect_detailed_interface_stats_reply'.
-// Generated from '/usr/share/vpp/api/interface.api.json', line 1227:
+// Generated from '/usr/share/vpp/api/interface.api.json', line 1156:
 //
 //            "collect_detailed_interface_stats_reply",
 //            [

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../common/model/acl --gogo_out=../common/model/acl ../common/model/acl/acl.proto
+//go:generate protoc --proto_path=../model/acl --gogo_out=../model/acl ../model/acl/acl.proto
 
 // Package aclplugin implements the ACL Plugin that handles management of VPP
 // Access lists.
@@ -125,6 +125,16 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 func (plugin *ACLConfigurator) Close() error {
 	_, err := safeclose.CloseAll(plugin.vppChan, plugin.vppDumpChan)
 	return err
+}
+
+// GetL2AclIfIndexes exposes l2 acl interface name-to-index mapping
+func (plugin *ACLConfigurator) GetL2AclIfIndexes() aclidx.AclIndexRW {
+	return plugin.l2AclIndexes
+}
+
+// GetL3L4AclIfIndexes exposes l3/l4 acl interface name-to-index mapping
+func (plugin *ACLConfigurator) GetL3L4AclIfIndexes() aclidx.AclIndexRW {
+	return plugin.l3l4AclIndexes
 }
 
 // ConfigureACL creates access list with provided rules and sets this list to every relevant interface.
