@@ -178,7 +178,7 @@ func TestInterfacesConfigureTapV1(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
@@ -211,7 +211,7 @@ func TestInterfacesConfigureTapV2(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
@@ -244,7 +244,7 @@ func TestInterfacesConfigureMemif(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
@@ -279,7 +279,7 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{ // Configure memif interface
@@ -289,7 +289,7 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Configure loopback with IP address for unnumbered memif
@@ -300,7 +300,7 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{}) // After unnumbered registration
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
@@ -374,7 +374,7 @@ func TestInterfacesConfigureVxLANWithMulticast(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // VxLAN
 		SwIfIndex: 2,
@@ -416,7 +416,7 @@ func TestInterfacesConfigureVxLANWithMulticastCache(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // VxLAN
 		SwIfIndex: 2,
@@ -480,7 +480,7 @@ func TestInterfacesConfigureVxLANWithMulticastError(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
@@ -508,7 +508,7 @@ func TestInterfacesConfigureVxLANWithMulticastIPError(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
@@ -538,7 +538,7 @@ func TestInterfacesConfigureLoopback(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
@@ -564,7 +564,7 @@ func TestInterfacesConfigureEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
@@ -609,7 +609,7 @@ func TestInterfacesConfigureAfPacket(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
@@ -665,7 +665,7 @@ func TestInterfacesConfigureInterfaceErrors(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{
 		Retval: 1, // Container IP error
 	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{
 		Retval: 1, // MTU error
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
@@ -695,7 +695,7 @@ func TestInterfacesConfigureInterfaceAdminUpError(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{
 		Retval: 1,
 	})
@@ -719,7 +719,7 @@ func TestInterfacesModifyTapV1WithoutTapData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	tapData := getTestTapInterface(1, "if1")
@@ -762,7 +762,7 @@ func TestInterfacesModifyTapV1TapData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
@@ -831,7 +831,7 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Modify - delete old data
@@ -846,7 +846,7 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
@@ -886,7 +886,7 @@ func TestInterfacesModifyVxLanSimple(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{}) // Modify - delete old data
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, true, "", 0)
@@ -997,14 +997,14 @@ func TestInterfacesModifyLoopback(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 0)
 	oldData.Vrf = 1
@@ -1038,7 +1038,7 @@ func TestInterfacesModifyEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
@@ -1078,13 +1078,13 @@ func TestInterfacesModifyAfPacket(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{}) // Modify
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	// Data
 	oldData := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
 	oldData.RxModeSettings = getTestRxModeSettings(if_api.RxModeType_POLLING)
@@ -1145,7 +1145,7 @@ func TestInterfacesModifyAfPacketRecreate(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{}) // Modify
@@ -1154,7 +1154,7 @@ func TestInterfacesModifyAfPacketRecreate(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
@@ -1293,7 +1293,7 @@ func TestInterfacesDeleteAfPacketInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Delete
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
@@ -1321,7 +1321,7 @@ func TestInterfacesDeletePendingAfPacketInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{}) // Delete
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
