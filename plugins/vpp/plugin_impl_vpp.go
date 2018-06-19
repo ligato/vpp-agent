@@ -170,6 +170,9 @@ type linuxpluginAPI interface {
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
 	GetLinuxIfIndexes() ifaceLinux.LinuxIfIndex
+
+	// Inject VPP interface indexes directly instead of letting Linux plugin to get them itself,
+	// so they are available at resync time.
 	InjectVppIfIndexes(index ifaceidx.SwIfIndex)
 }
 
@@ -425,7 +428,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
 
-	// Get interface indexes
+	// Injects VPP interface index mapping into Linux plugin
 	plugin.swIfIndexes = plugin.ifConfigurator.GetSwIfIndexes()
 	if plugin.Linux != nil {
 		plugin.Linux.InjectVppIfIndexes(plugin.swIfIndexes)

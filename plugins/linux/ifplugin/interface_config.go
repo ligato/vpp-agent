@@ -34,6 +34,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	vppIf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
@@ -55,6 +56,9 @@ type LinuxInterfaceConfigurator struct {
 	ifIdxSeq  uint32
 	ifByName  map[string]*LinuxInterfaceConfig   // interface name -> interface configuration
 	ifsByMs   map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
+
+	ifCachedConfigs	ifaceidx.LinuxIfIndexRW
+	pIfCachedConfigSeq uint32
 
 	// Channels
 	ifMsNotif chan *nsplugin.MicroserviceEvent
@@ -85,6 +89,8 @@ func (plugin *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifH
 	plugin.ifByName = make(map[string]*LinuxInterfaceConfig)
 	plugin.ifsByMs = make(map[string][]*LinuxInterfaceConfig)
 	plugin.ifIdxSeq = 1
+	plugin.ifCachedConfigs = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(plugin.log, "linux_if_cache", nil))
+	plugin.pIfCachedConfigSeq = 1
 
 	// Init channel
 	plugin.ifMsNotif = ifNotif
@@ -124,6 +130,11 @@ func (plugin *LinuxInterfaceConfigurator) GetInterfaceByMsCache() map[string][]*
 	return plugin.ifsByMs
 }
 
+// GetCachedLinuxIfIndexes gives access to mapping of not configurated interface indexes.
+func (plugin *LinuxInterfaceConfigurator) GetCachedLinuxIfIndexes() ifaceidx.LinuxIfIndex {
+	return plugin.ifCachedConfigs
+}
+
 // ConfigureLinuxInterface reacts to a new northbound Linux interface config by creating and configuring
 // the interface in the host network stack through Netlink API.
 func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *interfaces.LinuxInterfaces_Interface) error {
@@ -145,10 +156,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 
 		return plugin.configureVethInterface(ifConfig, peerConfig)
 	case interfaces.LinuxInterfaces_AUTO_TAP:
-		// TAP (auto) interface looks for existing interface with the same host name or temp name (cached without peer)
-		ifConfig := plugin.addToCache(linuxIf, nil)
-
-		return plugin.configureTapInterface(ifConfig)
+		return plugin.configureTapInterface(linuxIf.HostIfName, linuxIf)
 	default:
 		return fmt.Errorf("unknown linux interface type: %v", linuxIf.Type)
 	}
@@ -256,6 +264,13 @@ func (plugin *LinuxInterfaceConfigurator) DeleteLinuxInterface(linuxIf *interfac
 		peerConfig = oldConfig.peer
 	}
 
+	if _, _, exists := plugin.ifCachedConfigs.LookupIdx(linuxIf.HostIfName); exists {
+		// Unregister TAP from the in-memory map
+		plugin.log.Infof("Removing Linux Tap interface %v from cache", linuxIf.HostIfName)
+		plugin.ifCachedConfigs.UnregisterName(linuxIf.HostIfName)
+		return nil
+	}
+
 	if linuxIf.Type == interfaces.LinuxInterfaces_AUTO_TAP {
 		return plugin.deleteTapInterface(oldConfig)
 	} else if linuxIf.Type == interfaces.LinuxInterfaces_VETH {
@@ -316,13 +331,36 @@ func (plugin *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerC
 
 // Validate and apply linux TAP configuration to the interface. The interface is not created here, it is added
 // to the default namespace when it's VPP end is configured
-func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxInterfaceConfig) error {
+//func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxInterfaceConfig) error {
+func (plugin *LinuxInterfaceConfigurator) configureTapInterface(hostIfNameX string, linuxIf *interfaces.LinuxInterfaces_Interface) error {
+	// TAP (auto) interface looks for existing interface with the same host name or temp name (cached without peer)
+	var ifConfig *LinuxInterfaceConfig
+	_, ifConfigData, exists := plugin.ifCachedConfigs.LookupIdx(hostIfNameX)
+	if exists {
+		ifConfig = plugin.addToCache(ifConfigData.Data, nil)
+		ifConfig.config = ifConfigData.Data
+		plugin.log.Infof("Using existing Linux Tap interface %v configuration entry %v", hostIfNameX, ifConfig.config)
+	} else {
+		if linuxIf != nil {
+			ifConfig = plugin.addToCache(linuxIf, nil)
+			plugin.ifCachedConfigs.RegisterName(hostIfNameX, plugin.pIfCachedConfigSeq, &ifaceidx.IndexedLinuxInterface{
+				Index: plugin.pIfCachedConfigSeq,
+				Data:  ifConfig.config,
+			})
+			plugin.pIfCachedConfigSeq++
+			plugin.log.Infof("Creating new Linux Tap interface  %v configuration entry %v", hostIfNameX, ifConfig.config)
+		} else {
+			plugin.log.Infof("There is no Linux Tap configuration entry for interface %v", hostIfNameX)
+			return nil
+		}
+	}
+
 	plugin.log.WithFields(logging.Fields{"name": ifConfig.config.Name,
 		"hostName": ifConfig.config.HostIfName}).Debug("Applying new Linux TAP interface configuration")
 
 	// Tap interfaces can be processed directly using config and also via linux interface events. This check
 	// should prevent to process the same interface multiple times.
-	_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
+	_, _, exists = plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
 	if exists {
 		plugin.log.Debugf("TAP interface %v already processed", ifConfig.config.Name)
 		return nil
@@ -369,6 +407,8 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(ifConfig *LinuxI
 			ifConfig.config.Tap.TempIfName)
 		return nil
 	}
+
+	plugin.ifCachedConfigs.UnregisterName(ifConfig.config.HostIfName)
 
 	return plugin.configureLinuxInterface(nsMgmtCtx, ifConfig.config)
 }
@@ -624,22 +664,16 @@ func (plugin *LinuxInterfaceConfigurator) deleteVethInterface(ifConfig, peerConf
 	return nil
 }
 
-// Un-configure TAP interface, set original name and return it to the default namespace (do not delete,
-// the interface will be removed together with the peer (VPP TAP))
-func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInterfaceConfig) error {
-	if ifConfig == nil || ifConfig.config == nil {
-		plugin.log.Warn("Unable to remove linux TAP configuration: no data available")
-		return nil
-	}
-	plugin.log.Debugf("Removing Linux TAP configuration %v from interface %v ", ifConfig.config.Name, ifConfig.config.HostIfName)
-	if !plugin.nsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
-		plugin.log.Warnf("Unable to remove linux TAP configuration: cannot access namespace %v", ifConfig.config.Namespace.Name)
+func (plugin *LinuxInterfaceConfigurator) moveTapInterfaceToDefaultNamespace(ifConfig *interfaces.LinuxInterfaces_Interface) error {
+	plugin.log.Infof("moving linux tap interface %v to default namespace", ifConfig.HostIfName)
+	if !plugin.nsHandler.IsNamespaceAvailable(ifConfig.Namespace) {
+		plugin.log.Warnf("Unable to remove linux TAP configuration: cannot access namespace %v", ifConfig.Namespace.Name)
 		return nil
 	}
 
 	// Move to the namespace with the interface.
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
-	revertNs, err := plugin.nsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.config.Namespace)
+	revertNs, err := plugin.nsHandler.SwitchToNamespace(nsMgmtCtx, ifConfig.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to switch network namespace: %v", err)
 	}
@@ -650,7 +684,7 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	var ipAddresses []*net.IPNet
 	link, err := plugin.ifHandler.GetLinkList()
 	for _, linuxIf := range link {
-		if linuxIf.Attrs().Name == ifConfig.config.HostIfName {
+		if linuxIf.Attrs().Name == ifConfig.HostIfName {
 			IPlist, err := plugin.ifHandler.GetAddressList(linuxIf.Attrs().Name)
 			if err != nil {
 				return err
@@ -664,46 +698,62 @@ func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInte
 	// Remove all IP addresses from the TAP
 	var wasErr error
 	for _, ipAddress := range ipAddresses {
-		if err := plugin.ifHandler.DelInterfaceIP(ifConfig.config.HostIfName, ipAddress); err != nil {
+		if err := plugin.ifHandler.DelInterfaceIP(ifConfig.HostIfName, ipAddress); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
 		}
 	}
 
 	// Move back to default namespace
-	if ifConfig.config.Type == interfaces.LinuxInterfaces_AUTO_TAP {
+	if ifConfig.Type == interfaces.LinuxInterfaces_AUTO_TAP {
 		// Rename to its original name (if possible)
-		if ifConfig.config.Tap == nil || ifConfig.config.Tap.TempIfName == "" {
-			plugin.log.Warnf("Cannot restore linux TAP %v interface state, original name (temp) is not available", ifConfig.config.HostIfName)
-			ifConfig.config.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
-				TempIfName: ifConfig.config.HostIfName,
+		if ifConfig.Tap == nil || ifConfig.Tap.TempIfName == "" {
+			plugin.log.Warnf("Cannot restore linux TAP %v interface state, original name (temp) is not available", ifConfig.HostIfName)
+			ifConfig.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
+				TempIfName: ifConfig.HostIfName,
 			}
 		}
-		if ifConfig.config.Tap.TempIfName == ifConfig.config.HostIfName {
-			plugin.log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.config.HostIfName)
+		if ifConfig.Tap.TempIfName == ifConfig.HostIfName {
+			plugin.log.Debugf("Renaming of TAP interface %v skipped, host name is the same as temporary", ifConfig.HostIfName)
 		} else {
-			if err := plugin.ifHandler.RenameInterface(ifConfig.config.HostIfName, ifConfig.config.Tap.TempIfName); err != nil {
+			if err := plugin.ifHandler.RenameInterface(ifConfig.HostIfName, ifConfig.Tap.TempIfName); err != nil {
 
-				plugin.log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.config.HostIfName,
-					ifConfig.config.Tap.TempIfName, err)
+				plugin.log.Errorf("Failed to rename TAP interface from %s to %s: %v", ifConfig.HostIfName,
+					ifConfig.Tap.TempIfName, err)
 				wasErr = err
 			}
 		}
-		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
+		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
 		if err != nil {
-			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.config.Tap.TempIfName, "default", err)
+			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.Tap.TempIfName, "default", err)
 		}
 	} else {
-		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.config.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
+		err = plugin.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
 		if err != nil {
-			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.config.HostIfName, "default", err)
+			return fmt.Errorf("failed to set Linux TAP interface %s to namespace %s: %v", ifConfig.HostIfName, "default", err)
 		}
 	}
-
-	// Unregister TAP from the in-memory map
-	plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
-
 	return wasErr
+}
+
+// Un-configure TAP interface, set original name and return it to the default namespace (do not delete,
+// the interface will be removed together with the peer (VPP TAP))
+func (plugin *LinuxInterfaceConfigurator) deleteTapInterface(ifConfig *LinuxInterfaceConfig) error {
+	if ifConfig == nil || ifConfig.config == nil {
+		plugin.log.Warn("Unable to remove linux TAP configuration: no data available")
+		return nil
+	}
+	plugin.log.Debugf("Removing Linux TAP configuration %v from interface %v ", ifConfig.config.Name, ifConfig.config.HostIfName)
+
+	// Move to default namespace
+	err := plugin.moveTapInterfaceToDefaultNamespace(ifConfig.config)
+
+	if err == nil {
+		// Unregister TAP from the in-memory map
+		plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
+	}
+
+	return err
 }
 
 // removeObsoleteVeth deletes VETH interface which should no longer exist.
@@ -921,8 +971,8 @@ func addressExists(configured []netlink.Addr, provided *net.IPNet) bool {
 }
 
 // ResolveCreatedInterface resolves a new vpp interfaces
-func (plugin *LinuxInterfaceConfigurator) ResolveCreatedInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
-	plugin.log.Warnf("Linux IF configurator: resolve created vpp interface %v", ifConfigMetaData)
+func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
+	plugin.log.Infof("Linux IF configurator: resolve created vpp interface %v", ifConfigMetaData)
 
 	if ifConfigMetaData.Type != vppIf.InterfaceType_TAP_INTERFACE {
 		return nil
@@ -932,40 +982,16 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedInterface(ifConfigMetaDa
 	if ifConfigMetaData.Tap != nil && ifConfigMetaData.Tap.HostIfName != "" {
 		hostIfName = ifConfigMetaData.Tap.HostIfName
 	} else if ifConfigMetaData != nil && ifConfigMetaData.Name != "" {
-		hostIfName = ifConfigMetaData.Tap.HostIfName
+		hostIfName = ifConfigMetaData.Name
 	} else {
 		return nil
 	}
-
-	// Look for TAP which is using this interface as the other end
-	for _, ifConfig := range plugin.ifByName {
-		if ifConfig == nil || ifConfig.config == nil {
-			plugin.log.Warnf("Cached config for interface %v is empty", hostIfName)
-			continue
-		}
-
-		if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == hostIfName) ||
-			ifConfig.config.HostIfName == hostIfName {
-			// Skip processed interfaces
-			_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
-			if exists {
-				plugin.log.Warnf("Linux tap %v already configured", hostIfName)
-				continue
-			}
-			// Host interface was found, configure linux TAP
-			plugin.log.Warnf("Configuring linux tap for hostname %v", hostIfName)
-			err := plugin.ConfigureLinuxInterface(ifConfig.config)
-			if err != nil {
-				plugin.log.Error(err)
-			}
-		}
-	}
-	return nil
+	return plugin.configureTapInterface(hostIfName, nil)
 }
 
 // ResolveDeletedInterface resolves removed vpp interfaces
-func (plugin *LinuxInterfaceConfigurator) ResolveDeletedInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
-	plugin.log.Warnf("Linux IF configurator: resolve deleted vpp interface %v", ifConfigMetaData)
+func (plugin *LinuxInterfaceConfigurator) ResolveDeletedVPPInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
+	plugin.log.Infof("Linux IF configurator: resolve deleted vpp interface %v", ifConfigMetaData)
 
 	if ifConfigMetaData.Type != vppIf.InterfaceType_TAP_INTERFACE {
 		return nil
@@ -975,27 +1001,27 @@ func (plugin *LinuxInterfaceConfigurator) ResolveDeletedInterface(ifConfigMetaDa
 	if ifConfigMetaData.Tap != nil && ifConfigMetaData.Tap.HostIfName != "" {
 		hostIfName = ifConfigMetaData.Tap.HostIfName
 	} else if ifConfigMetaData != nil && ifConfigMetaData.Name != "" {
-		hostIfName = ifConfigMetaData.Tap.HostIfName
+		hostIfName = ifConfigMetaData.Name
 	} else {
 		return nil
 	}
 
-	// Look for TAP which is using this interface as the other end
-	for _, ifConfig := range plugin.ifByName {
-		if ifConfig == nil || ifConfig.config == nil {
-			plugin.log.Warnf("Cached config for interface %v is empty", hostIfName)
-			continue
-		}
+	plugin.log.Infof("Resolving linux tap interface host(%v), name(%v)", hostIfName, ifConfigMetaData.Name)
+	_, ifConfig, exists := plugin.ifIndexes.LookupIdx(ifConfigMetaData.Name)
+	if exists {
+		// Move linux tap configuration to cache
+		plugin.log.Infof("Registering linux tap interface configuration %v", ifConfig.Data.Name)
+		plugin.ifCachedConfigs.RegisterName(hostIfName, plugin.pIfCachedConfigSeq, &ifaceidx.IndexedLinuxInterface{
+			Index: plugin.pIfCachedConfigSeq,
+			Data:  ifConfig.Data,
+		})
+		// Unregister TAP from the in-memory map
+		plugin.log.Infof("Unregistering linux tap interface %v", ifConfig.Data.Name)
+		plugin.ifIndexes.UnregisterName(ifConfig.Data.Name)
 
-		if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == hostIfName) ||
-			ifConfig.config.HostIfName == hostIfName {
-			_, _, exists := plugin.ifIndexes.LookupIdx(ifConfig.config.Name)
-			if exists {
-				// Unregister TAP from the in-memory map
-				plugin.log.Warnf("Unregistering linux tap interface %v", ifConfig.config.Name)
-				plugin.ifIndexes.UnregisterName(ifConfig.config.Name)
-			}
-		}
+		plugin.log.Infof("Linux interface configuration entry %v moved to cache : %v", ifConfig.Data.Name, ifConfig.Data)
+		plugin.pIfCachedConfigSeq++
+		plugin.moveTapInterfaceToDefaultNamespace(ifConfig.Data)
 	}
 
 	return nil

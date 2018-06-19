@@ -107,6 +107,7 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 	return plugin.routeConfigurator.GetRouteIndexes()
 }
 
+// InjectVppIfIndexes injects VPP interfaces mapping into Linux plugin
 func (plugin *Plugin) InjectVppIfIndexes(indexes ifaceVPP.SwIfIndex) {
 	plugin.swIfIndexes = indexes
 	plugin.swIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.vppIfIndexesWatchChan)
