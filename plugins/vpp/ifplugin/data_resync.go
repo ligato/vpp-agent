@@ -168,6 +168,9 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		}
 	}
 
+	// update the interfaces state data in memory
+	plugin.PropagateIfDetailsToStatus()
+
 	plugin.log.WithField("cfg", plugin).Debug("RESYNC Interface end.")
 
 	return
