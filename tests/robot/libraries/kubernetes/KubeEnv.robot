@@ -10,6 +10,8 @@ Documentation     This is a library to handle actions related to kubernetes clus
 ...               #${client_pod_name} client pod name assigned by k8s in 1-node 2-pod scenario.
 ...               #${server_pod_name} server pod name assigned by k8s in 1-node 2-pod scenario.
 Resource          ${CURDIR}/../all_libs.robot
+Resource          KubeCtl.robot
+Library           kube_parser.py
 
 *** Variables ***
 ${robot_root}                ${CURDIR}/../..
@@ -237,16 +239,15 @@ Wait_Until_Pod_Removed
     BuiltIn.Wait_Until_Keyword_Succeeds    ${timeout}    ${check_period}    Verify_Pod_Not_Present    ${ssh_session}    ${pod_name}    namespace=${namespace}
 
 Run Command In Pod
-    [Arguments]    ${command}    ${ssh_session}=${EMPTY}    ${prompt}=${EMPTY}
+    [Arguments]    ${command}    ${pod_name}    ${prompt}=${EMPTY}
     [Documentation]    Switch if \${ssh_session}, configure if \${prompt}, write \${command}, read until prompt, log and return text output.
-    BuiltIn.Log_Many    ${command}     ${ssh_session}     ${prompt}
+    BuiltIn.Log_Many    ${command}     ${pod_name}     ${prompt}
     BuiltIn.Comment    TODO: Do not mention pods and move to SshCommons.robot or similar.
-    BuiltIn.Run_Keyword_If    """${ssh_session}""" != """${EMPTY}"""     SSHLibrary.Switch_Connection    ${ssh_session}
-    BuiltIn.Run_Keyword_If    """${prompt}""" != """${EMPTY}"""    SSHLibrary.Set_Client_Configuration    prompt=${prompt}
-    SSHLibrary.Write    ${command}
-    ${output} =     SSHLibrary.Read_Until_Prompt
+    SSHLibrary.Switch Connection    ${testbed_connection}
+    ${output} =    SSHLibrary.Execute Command    kubectl exec ${pod_name} -- ${command}    return_stdout=True    return_stderr=True    return_rc=True
+    BuiltIn.Should_Be_Equal_As_integers    ${output[2]}    ${0}
     SshCommons.Append_Command_Log    ${command}    ${output}
-    [Return]    ${output}
+    [Return]    ${output[0]}
 
 Init_Infinite_Command_In_Pod
     [Arguments]    ${command}    ${ssh_session}=${EMPTY}    ${prompt}=${EMPTY}

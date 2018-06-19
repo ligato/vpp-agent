@@ -19,7 +19,7 @@ Verify Pod Connectivity - VPP Ping
 Trigger Pod Restart - VPP SIGSEGV
     [Arguments]    ${pod_name}
     BuiltIn.Log    ${pod_name}
-    ${stdout} =    Run Command In Pod    ${pod_name}    pkill --signal 11 -f vpp
+    ${stdout} =    Run Command In Pod    pkill --signal 11 -f vpp    ${pod_name}
     log    ${stdout}
 
 Trigger Pod Restart - Pod Deletion
