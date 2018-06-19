@@ -253,7 +253,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		errs = append(errs, err)
 	}
 
-	// rx placement todo simplify implementation when the binary api call will be available (remove dump)
+	// TODO: simplify implementation for rx placement when the binary api call will be available (remove dump)
 	if iface.RxPlacementSettings != nil {
 		// Required in order to get vpp internal name. Must be called from here, calling in vppcalls causes
 		// import cycle
