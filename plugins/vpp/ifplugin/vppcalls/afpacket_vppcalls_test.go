@@ -32,7 +32,7 @@ func TestAddAfPacketInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	ifIndex, err := vppcalls.AddAfPacketInterface("if1", &if_api.Interfaces_Interface_Afpacket{
+	ifIndex, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
 	}, ctx.MockChannel, nil)
 
@@ -58,7 +58,7 @@ func TestAddAfPacketInterfaceError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
 
-	_, err := vppcalls.AddAfPacketInterface("if1", &if_api.Interfaces_Interface_Afpacket{
+	_, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
 	}, ctx.MockChannel, nil)
 
@@ -74,7 +74,7 @@ func TestAddAfPacketInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := vppcalls.AddAfPacketInterface("if1", &if_api.Interfaces_Interface_Afpacket{
+	_, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
 	}, ctx.MockChannel, nil)
 

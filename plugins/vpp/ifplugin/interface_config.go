@@ -281,8 +281,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
-	// configure optional mac address
-	if iface.PhysAddress != "" {
+	// configure optional mac address (for af packet it is configured in different way)
+	if iface.PhysAddress != "" && iface.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
 		if err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.vppCh, plugin.stopwatch); err != nil {
 			errs = append(errs, err)
 		}
