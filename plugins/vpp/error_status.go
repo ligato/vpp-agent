@@ -42,6 +42,9 @@ func (plugin *Plugin) changePropagateError() {
 		select {
 		case errorState := <-plugin.errorChannel:
 			change := errorState.change
+			if change == nil {
+				continue
+			}
 			errInfo := errorState.errInfo
 			key := change.GetKey()
 			changeType := change.GetChangeType()
