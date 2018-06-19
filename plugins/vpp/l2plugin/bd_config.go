@@ -109,6 +109,11 @@ func (plugin *BDConfigurator) Close() error {
 	return err
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *BDConfigurator) clearMapping() {
+	plugin.bdIndexes.Clear()
+}
+
 // ConfigureBridgeDomain handles the creation of new bridge domain including interfaces, ARP termination
 // entries and pushes status update notification.
 func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_BridgeDomain) error {

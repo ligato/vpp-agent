@@ -94,7 +94,7 @@ func vppAddDelProxyArpRange(firstIP, lastIP []byte, vppChan VPPChannel, isAdd bo
 	}
 	req.Proxy = ip.ProxyArp{
 		LowAddress: firstIP,
-		HiAddress: lastIP,
+		HiAddress:  lastIP,
 	}
 
 	// Send message

@@ -48,6 +48,9 @@ type XcIndexRW interface {
 
 	// UpdateMetadata updates metadata in existing cross connect entry.
 	UpdateMetadata(name string, metadata *l2.XConnectPairs_XConnectPair) (success bool)
+
+	// Clear removes all cross connects from the mapping.
+	Clear()
 }
 
 // xcIndex is type-safe implementation of mapping between cross connect receive interface and index.
@@ -87,6 +90,11 @@ func (xc *xcIndex) UnregisterName(name string) (idx uint32, metadata *l2.XConnec
 // UpdateMetadata updates metadata in existing cross connect entry.
 func (xc *xcIndex) UpdateMetadata(name string, metadata *l2.XConnectPairs_XConnectPair) (success bool) {
 	return xc.mapping.UpdateMetadata(name, metadata)
+}
+
+// Clear removes all cross connects from the cache.
+func (xc *xcIndex) Clear() {
+	xc.mapping.Clear()
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

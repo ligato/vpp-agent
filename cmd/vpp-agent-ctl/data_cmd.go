@@ -273,6 +273,10 @@ func (ctl *VppAgentCtl) createEthernet() {
 					"192.168.1.1",
 					"2001:db8:0:0:0:ff00:5168:2bc8/48",
 				},
+				//RxPlacementSettings: &interfaces.Interfaces_Interface_RxPlacementSettings{
+				//	Queue: 0,
+				//	Worker: 1,
+				//},
 				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
 				//	IsUnnumbered: true,
 				//	InterfaceWithIP: "memif1",

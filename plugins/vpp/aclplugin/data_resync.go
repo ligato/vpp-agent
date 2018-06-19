@@ -30,6 +30,9 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.clearMapping()
+
 	// Retrieve existing IpACL config
 	vppIpACLs, err := vppdump.DumpIPACL(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
 	if err != nil {

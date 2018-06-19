@@ -8,9 +8,9 @@ to get its own, potentially customized, communication channel to running VPP ins
 Behind the scenes, all channels share the same connection created during the plugin
 initialization using govpp core.
 
-**API**
+## API
 
-*Connection*
+### Connection
 
 By default, GoVPP connects to that instance of VPP which uses the default shared memory segment prefix. 
 This is because it is assumed that there is only a single VPP running in a sand-boxed environment 
@@ -19,7 +19,7 @@ or there are several VPP instances running, GoVPP needs to know the prefix in or
 correct VPP instance - the prefix has to be put in the govppmux configuration file (govpp.conf) with 
 key `shm-prefix` and value matching VPP shared memory prefix.
 
-*Multiplexing*
+### Multiplexing
 
 `NewAPIChannel` returns a new API channel for communication with VPP via govpp core.
 It uses default buffer sizes for the request and reply Go channels (by default both are 100 messages long).
@@ -32,7 +32,7 @@ is also used to carry VPP notifications and statistics which may temporarily rap
 and frequency. By increasing the reply channel size, the probability of dropping messages from VPP
 decreases at the cost of increased memory footprint.
 
-**Example**
+### Example 
 
 The following example shows how to dump VPP interfaces using a multi-response request:
 ```
@@ -65,7 +65,7 @@ for {
 
 ```
 
-**Configuration**
+## Configuration
 
 The plugin allows to configure parameters of vpp health-check probe.
 The items that can be configured are:
@@ -78,14 +78,4 @@ until an error is reported
 elapses, the request fails
 - *shm-prefix* - used for connection to a VPP instance which is not using 
 default shared memory prefix
-
-
-Example govpp.conf:
-
-```
-health-check-probe-interval: 1000000000
-health-check-reply-timeout: 100000000
-health-check-threshold: 1
-reply-timeout: 1000000000
-shm-prefix: vpp1
-```
+- *resync-after-reconnect* - allows to run resync after recoonection

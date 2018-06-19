@@ -95,6 +95,12 @@ func (plugin *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	return nil
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *StnConfigurator) clearMapping() {
+	plugin.allIndexes.Clear()
+	plugin.unstoredIndexes.Clear()
+}
+
 // ResolveDeletedInterface resolves when interface is deleted. If there exist a rule for this interface
 // the rule will be deleted also.
 func (plugin *StnConfigurator) ResolveDeletedInterface(interfaceName string) {

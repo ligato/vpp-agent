@@ -104,6 +104,23 @@ func TestXCUpdateMetadata(t *testing.T) {
 	Expect(metadata.ReceiveInterface).To(Equal("if1"))
 }
 
+// Tests index mapping clear
+func TestXCClear(t *testing.T) {
+	mapping, index, _ := testInitialization(t, nil)
+
+	// Register entries
+	index.RegisterName("xc1", 0, nil)
+	index.RegisterName("xc2", 1, nil)
+	index.RegisterName("xc3", 2, nil)
+	names := mapping.ListNames()
+	Expect(names).To(HaveLen(3))
+
+	// Clear
+	index.Clear()
+	names = mapping.ListNames()
+	Expect(names).To(BeEmpty())
+}
+
 // Tests lookup by index
 func TestXCLookupByIndex(t *testing.T) {
 	_, index, data := xcIndexTestInitialization(t)

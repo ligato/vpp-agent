@@ -26,6 +26,8 @@ func (plugin *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SP
 		}
 	}()
 
+	plugin.clearMapping()
+
 	// TODO: dump existing configuration from VPP
 
 	for _, sa := range sas {

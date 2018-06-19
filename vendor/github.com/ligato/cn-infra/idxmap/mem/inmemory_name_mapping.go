@@ -92,6 +92,14 @@ func (mem *memNamedMapping) Delete(name string) (value interface{}, found bool) 
 	return nil, false
 }
 
+// Clear removes all entries from name-to-index mapping
+func (mem *memNamedMapping) Clear() {
+	names := mem.ListAllNames()
+	for _, item := range names {
+		mem.removeNameIdxSync(item)
+	}
+}
+
 // GetRegistryTitle returns the title assigned to the registry.
 func (mem *memNamedMapping) GetRegistryTitle() string {
 	return mem.title

@@ -76,8 +76,7 @@ func (s *suiteMemif) TC02EmptyVppResyncAtStartup() {
 	s.setupTestingFlavor(s.SetupDefault())
 	defer s.Teardown()
 
-	s.When.ResyncIf(&iftst.Memif100011Slave)
-	s.When.ResyncIf(&iftst.Memif100012)
+	s.When.ResyncIf(&iftst.Memif100011Slave, &iftst.Memif100012)
 	s.Then.SwIfIndexes().ContainsName(iftst.Memif100011Slave.Name)
 	s.Then.SwIfIndexes().ContainsName(iftst.Memif100012.Name)
 }

@@ -25,6 +25,7 @@ import (
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 
+	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
@@ -44,7 +45,9 @@ type GOVPPPlugin struct {
 	vppAdapter adapter.VppAdapter
 	vppConChan chan govpp.ConnectionEvent
 
-	replyTimeout time.Duration
+	replyTimeout    time.Duration
+	reconnectResync bool
+	lastConnErr     error
 
 	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	cancel context.CancelFunc
@@ -56,6 +59,7 @@ type GOVPPPlugin struct {
 // so that they do not mix with other plugin fields.
 type Deps struct {
 	local.PluginInfraDeps // inject
+	Resync                *resync.Plugin
 }
 
 // Config groups the configurable parameter of GoVpp.
@@ -66,7 +70,8 @@ type Config struct {
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
-	ShmPrefix string `json:"shm-prefix"`
+	ShmPrefix       string `json:"shm-prefix"`
+	ReconnectResync bool   `json:"resync-after-reconnect"`
 }
 
 func defaultConfig() Config {
@@ -109,6 +114,7 @@ func (plugin *GOVPPPlugin) Init() error {
 		govpp.SetHealthCheckReplyTimeout(cfg.HealthCheckReplyTimeout)
 		govpp.SetHealthCheckThreshold(cfg.HealthCheckThreshold)
 		plugin.replyTimeout = cfg.ReplyTimeout
+		plugin.reconnectResync = cfg.ReconnectResync
 		shmPrefix = cfg.ShmPrefix
 		plugin.Log.Debug("Setting govpp parameters", cfg)
 	}
@@ -200,16 +206,24 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
 
-	// TODO: support for VPP reconnect
-
 	for {
 		select {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
 				plugin.retrieveVersion()
+				if plugin.reconnectResync && plugin.lastConnErr != nil {
+					plugin.Log.Info("Starting resync after VPP reconnect")
+					if plugin.Resync != nil {
+						plugin.Resync.DoResync()
+						plugin.lastConnErr = nil
+					} else {
+						plugin.Log.Warn("Expected resync after VPP reconnect could not start because of missing Resync plugin")
+					}
+				}
 				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
 			} else {
-				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.Error, errors.New("VPP disconnected"))
+				plugin.lastConnErr = errors.New("VPP disconnected")
+				plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.Error, plugin.lastConnErr)
 			}
 
 		case <-ctx.Done():
