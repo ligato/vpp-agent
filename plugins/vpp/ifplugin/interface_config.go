@@ -28,6 +28,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -250,6 +251,23 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// rx mode
 	if err := plugin.configRxModeForInterface(iface, ifIdx); err != nil {
 		errs = append(errs, err)
+	}
+
+	// TODO: simplify implementation for rx placement when the binary api call will be available (remove dump)
+	if iface.RxPlacementSettings != nil {
+		// Required in order to get vpp internal name. Must be called from here, calling in vppcalls causes
+		// import cycle
+		ifMap, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), plugin.vppCh, plugin.stopwatch)
+		if err != nil {
+			return err
+		}
+		ifData, ok := ifMap[ifIdx]
+		if !ok || ifData == nil {
+			return fmt.Errorf("set rx-placement failed, no data available for interface index %d", ifIdx)
+		}
+		if err := vppcalls.SetRxPlacement(ifData.VPPInternalName, iface.RxPlacementSettings, plugin.vppCh, plugin.stopwatch); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	// configure optional mac address
@@ -558,6 +576,23 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 	// rx mode
 	if !(oldConfig.RxModeSettings == nil && newConfig.RxModeSettings == nil) {
 		wasError = plugin.modifyRxModeForInterfaces(oldConfig, newConfig, ifIdx)
+	}
+
+	// rx placement
+	if newConfig.RxPlacementSettings != nil {
+		// Required in order to get vpp internal name. Must be called from here, calling in vppcalls causes
+		// import cycle
+		ifMap, err := vppdump.DumpInterfaces(logrus.DefaultLogger(), plugin.vppCh, plugin.stopwatch)
+		if err != nil {
+			return err
+		}
+		ifData, ok := ifMap[ifIdx]
+		if !ok || ifData == nil {
+			return fmt.Errorf("set rx-placement for new config failed, no data available for interface index %d", ifIdx)
+		}
+		if err := vppcalls.SetRxPlacement(ifData.VPPInternalName, newConfig.RxPlacementSettings, plugin.vppCh, plugin.stopwatch); err != nil {
+			wasError = err
+		}
 	}
 
 	// admin status
