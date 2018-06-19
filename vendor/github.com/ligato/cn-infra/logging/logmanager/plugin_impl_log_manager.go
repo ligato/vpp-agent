@@ -133,7 +133,7 @@ func (lm *Plugin) Close() error {
 
 // ListLoggers lists all registered loggers.
 func (lm *Plugin) listLoggers() []LoggerData {
-	loggers := []LoggerData{}
+	var loggers []LoggerData
 
 	lgs := lm.LogRegistry.ListLoggers()
 	for lg, lvl := range lgs {
