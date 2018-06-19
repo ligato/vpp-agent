@@ -31,6 +31,9 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.clearMapping()
+
 	// Retrieve VPP route configuration
 	vppRoutes, err := vppdump.DumpStaticRoutes(plugin.log, plugin.vppChan, measure.GetTimeLog(l3ba.IPFibDump{}, plugin.stopwatch))
 	if err != nil {
@@ -124,6 +127,9 @@ func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error 
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.clearMapping()
+
 	var wasError error
 	if len(arpEntries) > 0 {
 		for _, entry := range arpEntries {
@@ -143,6 +149,9 @@ func (plugin *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyAr
 			plugin.stopwatch.PrintLog()
 		}
 	}()
+
+	// Re-initialize cache
+	plugin.clearMapping()
 
 	// Todo: dump proxy arp
 

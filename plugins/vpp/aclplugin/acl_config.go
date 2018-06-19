@@ -127,6 +127,12 @@ func (plugin *ACLConfigurator) Close() error {
 	return err
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *ACLConfigurator) clearMapping() {
+	plugin.l2AclIndexes.Clear()
+	plugin.l3l4AclIndexes.Clear()
+}
+
 // GetL2AclIfIndexes exposes l2 acl interface name-to-index mapping
 func (plugin *ACLConfigurator) GetL2AclIfIndexes() aclidx.AclIndexRW {
 	return plugin.l2AclIndexes

@@ -44,6 +44,9 @@ type RouteIndexRW interface {
 
 	// UnregisterName removes an item identified by name from mapping
 	UnregisterName(name string) (idx uint32, metadata *l3.StaticRoutes_Route, exists bool)
+
+	// Clear removes all Routes from the mapping.
+	Clear()
 }
 
 // routeIndex is type-safe implementation of mapping between routeId and route data.
@@ -107,6 +110,11 @@ func (routeIndex *routeIndex) RegisterName(name string, idx uint32, ifMeta *l3.S
 func (routeIndex *routeIndex) UnregisterName(name string) (idx uint32, metadata *l3.StaticRoutes_Route, exists bool) {
 	idx, meta, exists := routeIndex.mapping.UnregisterName(name)
 	return idx, routeIndex.castMetadata(meta), exists
+}
+
+// Clear removes all Routes from the cache.
+func (routeIndex *routeIndex) Clear() {
+	routeIndex.mapping.Clear()
 }
 
 func (routeIndex *routeIndex) castMetadata(meta interface{}) *l3.StaticRoutes_Route {

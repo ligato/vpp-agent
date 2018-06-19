@@ -60,6 +60,23 @@ func TestRegisterAndUnregisterName(t *testing.T) {
 	Expect(names).To(BeEmpty())
 }
 
+// Tests index mapping clear
+func TestClear(t *testing.T) {
+	mapping, index := aclIndexTestInitialization(t)
+
+	// Register entries
+	index.RegisterName("acl1", 0, nil)
+	index.RegisterName("acl2", 1, nil)
+	index.RegisterName("acl3", 2, nil)
+	names := mapping.ListNames()
+	Expect(names).To(HaveLen(3))
+
+	// Clear
+	index.Clear()
+	names = mapping.ListNames()
+	Expect(names).To(BeEmpty())
+}
+
 func TestLookupIndex(t *testing.T) {
 	RegisterTestingT(t)
 

@@ -57,6 +57,9 @@ type DhcpIndexRW interface {
 
 	// UnregisterName removes an item identified by name from mapping.
 	UnregisterName(name string) (idx uint32, metadata *DHCPSettings, exists bool)
+
+	// Clear removes all DHCP entries from the mapping.
+	Clear()
 }
 
 // dhcpIndex is type-safe implementation of mapping. It holds metadata of type *DhcpIndex as well.
@@ -103,6 +106,11 @@ func (dhcp *dhcpIndex) RegisterName(name string, idx uint32, ifMeta *DHCPSetting
 func (dhcp *dhcpIndex) UnregisterName(name string) (idx uint32, metadata *DHCPSettings, exists bool) {
 	idx, meta, exists := dhcp.mapping.UnregisterName(name)
 	return idx, dhcp.castMetadata(meta), exists
+}
+
+// Clear removes all DHCP entries from the mapping.
+func (dhcp *dhcpIndex) Clear() {
+	dhcp.mapping.Clear()
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

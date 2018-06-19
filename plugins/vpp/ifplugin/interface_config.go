@@ -80,10 +80,6 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	plugin.log = logger.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Interface configurator")
 
-	// Mappings
-	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
-	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
-
 	// State notification channel
 	plugin.NotifChan = notifChan
 
@@ -98,19 +94,20 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 		return err
 	}
 
+	// Mappings
+	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
+	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
+	plugin.uIfaceCache = make(map[string]string)
+	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
+	if plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
+		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch)); err != nil {
+		return err
+	}
+
 	// Init AF-packet configurator
 	plugin.linux = linux
 	plugin.afPacketConfigurator = &AFPacketConfigurator{}
 	plugin.afPacketConfigurator.Init(plugin.log, plugin.vppCh, plugin.linux, plugin.swIfIndexes, plugin.stopwatch)
-
-	plugin.uIfaceCache = make(map[string]string)
-	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
-	// Obtain registered socket filenames
-	plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
-		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch))
-	if err != nil {
-		return err
-	}
 
 	// DHCP channel
 	plugin.DhcpChan = make(chan govppapi.Message, 1)
@@ -130,6 +127,20 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 func (plugin *InterfaceConfigurator) Close() error {
 	_, err := safeclose.CloseAll(plugin.vppCh, plugin.DhcpChan)
 	return err
+}
+
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *InterfaceConfigurator) clearMapping() error {
+	plugin.swIfIndexes.Clear()
+	plugin.dhcpIndexes.Clear()
+	plugin.uIfaceCache = make(map[string]string)
+	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
+	var err error
+	if plugin.memifScCache, err = vppdump.DumpMemifSocketDetails(plugin.log, plugin.vppCh,
+		measure.GetTimeLog(memif.MemifSocketFilenameDump{}, plugin.stopwatch)); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetSwIfIndexes exposes interface name-to-index mapping

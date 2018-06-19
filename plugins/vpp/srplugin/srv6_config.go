@@ -90,6 +90,21 @@ func (plugin *SRv6Configurator) Close() error {
 	return err
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *SRv6Configurator) clearMapping() {
+	// Clear caches
+	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
+	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)
+	plugin.steeringCache = cache.NewSteeringCache(plugin.Log)
+	plugin.createdPolicies = make(map[string]struct{})
+
+	// Clear indexes
+	plugin.policySegmentIndexSeq = newSequence()
+	plugin.policySegmentIndexes.Clear()
+	plugin.policyIndexSeq = newSequence()
+	plugin.policyIndexes.Clear()
+}
+
 // AddLocalSID adds new Local SID into VPP using VPP's binary api
 func (plugin *SRv6Configurator) AddLocalSID(value *srv6.LocalSID) error {
 	sid, err := ParseIPv6(value.GetSid())

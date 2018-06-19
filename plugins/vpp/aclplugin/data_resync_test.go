@@ -317,23 +317,19 @@ func TestResyncErr1(t *testing.T) {
 	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
 
 	err := plugin.Resync(acls)
-	Expect(err).To(Not(BeNil()))
+	Expect(err).ToNot(BeNil())
 
-	Expect(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
-	Expect(plugin.GetL2AclIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
+	Expect(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetL2AclIfIndexes().GetMapping().ListNames()).To(HaveLen(0))
 
-	// old acls are still there, no change in acl config
+	// Old ACLs should be removed during resync
 	_, _, found := plugin.GetL3L4AclIfIndexes().LookupIdx("acl3")
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx("acl4")
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.GetL3L4AclIfIndexes().LookupIdx(acls[0].AclName)
 	Expect(found).To(BeFalse())
-	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx(acls[1].AclName)
+	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx("acl4")
 	Expect(found).To(BeFalse())
 }
 
-// Test Resync with error when removnig existing IP ACL
+// Test Resync with error when removing existing IP ACL
 func TestResyncErr2(t *testing.T) {
 	// Setup
 	ctx, connection, plugin := aclTestSetup(t, false)
@@ -397,21 +393,16 @@ func TestResyncErr2(t *testing.T) {
 	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
 
 	err := plugin.Resync(acls)
-	Expect(err).To(Not(BeNil()))
+	Expect(err).ToNot(BeNil())
 
-	// IP acl has been removed
+	// Both ACLs were removed
 	Expect(plugin.GetL3L4AclIfIndexes().GetMapping().ListNames()).To(HaveLen(0))
-	// but MACIP acl not (wrong msg)
-	Expect(plugin.GetL2AclIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
+	Expect(plugin.GetL2AclIfIndexes().GetMapping().ListNames()).To(HaveLen(0))
 
-	// old MACIP acl is still there
+	// All old ACLs should be removed from mapping s
 	_, _, found := plugin.GetL3L4AclIfIndexes().LookupIdx("acl3")
 	Expect(found).To(BeFalse())
 	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx("acl4")
-	Expect(found).To(BeTrue())
-	_, _, found = plugin.GetL3L4AclIfIndexes().LookupIdx(acls[0].AclName)
-	Expect(found).To(BeFalse())
-	_, _, found = plugin.GetL2AclIfIndexes().LookupIdx(acls[1].AclName)
 	Expect(found).To(BeFalse())
 }
 

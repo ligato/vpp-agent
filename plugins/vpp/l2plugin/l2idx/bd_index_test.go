@@ -225,6 +225,23 @@ func TestUpdateMetadata(t *testing.T) {
 	Expect(names).To(BeEmpty())
 }
 
+// Tests index mapping clear
+func TestClearBD(t *testing.T) {
+	mapping, index, _ := testInitialization(t, nil)
+
+	// Register entries
+	index.RegisterName("bd1", 0, nil)
+	index.RegisterName("bd2", 1, nil)
+	index.RegisterName("bd3", 2, nil)
+	names := mapping.ListNames()
+	Expect(names).To(HaveLen(3))
+
+	// Clear
+	index.Clear()
+	names = mapping.ListNames()
+	Expect(names).To(BeEmpty())
+}
+
 /**
 TestLookupIndex tests method:
 * LookupIndex

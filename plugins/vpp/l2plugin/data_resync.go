@@ -34,6 +34,9 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.clearMapping()
+
 	// Dump current state of the VPP bridge domains
 	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan, plugin.stopwatch)
 	if err != nil {
@@ -166,6 +169,9 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 		}
 	}()
 
+	// Re-initialize cache
+	plugin.clearMapping()
+
 	// Get all FIB entries configured on the VPP
 	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.syncVppChannel, plugin.stopwatch)
 	if err != nil {
@@ -258,6 +264,9 @@ func (plugin *XConnectConfigurator) Resync(nbXConns []*l2.XConnectPairs_XConnect
 			plugin.stopwatch.PrintLog()
 		}
 	}()
+
+	// Re-initialize cache
+	plugin.clearMapping()
 
 	// Read cross connects from the VPP
 	vppXConns, err := vppdump.DumpXConnectPairs(plugin.vppChan, plugin.stopwatch)
