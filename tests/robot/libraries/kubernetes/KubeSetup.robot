@@ -12,6 +12,7 @@ Documentation     Contains keywords used to setup and teardown Kubernetes tests.
 Kubernetes Suite Setup
     [Arguments]    ${cluster_id}
     [Documentation]    Perform actions common for setup of every suite.
+    BuiltIn.Log    ${cluster_id}
     setup-teardown.Discard Old Results
     Create_Connections_To_Kube_Cluster      ${cluster_id}
     BuiltIn.Set_Suite_Variable    ${testbed_connection}    vm_1
@@ -19,6 +20,7 @@ Kubernetes Suite Setup
 Kubernetes Suite Teardown
     [Arguments]    ${cluster_id}
     [Documentation]    Perform actions common for teardown of every suite.
+    BuiltIn.Log    ${cluster_id}
     Kubernetes Log SSH Output    ${cluster_id}
     SSHLibrary.Get_Connections
     SSHLibrary.Close_All_Connections
@@ -27,6 +29,7 @@ Kubernetes Log SSH Output
     [Arguments]    ${cluster_id}
     [Documentation]    Call Log_\${vm}_Output for every cluster node.
     [Timeout]    ${SSH_LOG_OUTPUTS_TIMEOUT}
+    BuiltIn.Log    ${cluster_id}
     : FOR    ${index}    IN RANGE    1    ${K8_CLUSTER_${cluster_id}_NODES}+1
     \    Kubernetes Log ${VM_SSH_ALIAS_PREFIX}${index} Output
 
@@ -59,6 +62,7 @@ Get Kubernetes VM Status
 Create Connections To Kube Cluster
     [Arguments]    ${cluster_id}
     [Documentation]    Create connection and log machine status for each node.
+    BuiltIn.Log    ${cluster_id}
     : FOR    ${index}    IN RANGE    1    ${K8_CLUSTER_${cluster_id}_NODES}+1
     \    SshCommons.Open_Ssh_Connection_Kube    ${VM_SSH_ALIAS_PREFIX}${index}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PUBLIC_IP}    ${K8_CLUSTER_${cluster_id}_VM_${index}_USER}    ${K8_CLUSTER_${cluster_id}_VM_${index}_PSWD}
     \    SSHLibrary.Set_Client_Configuration    prompt=${K8_CLUSTER_${cluster_id}_VM_${index}_PROMPT}
