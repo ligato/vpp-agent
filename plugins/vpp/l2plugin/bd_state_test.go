@@ -15,21 +15,21 @@
 package l2plugin_test
 
 import (
-	"testing"
-	"git.fd.io/govpp.git/core"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	"git.fd.io/govpp.git/adapter/mock"
+	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	l2api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	l2api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	. "github.com/onsi/gomega"
+	"golang.org/x/net/context"
+	"testing"
 )
 
 func bdStateTestInitialization(t *testing.T) (*core.Connection, l2idx.BDIndexRW, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, chan *l2plugin.BridgeDomainStateNotification, error) {
@@ -147,9 +147,7 @@ func TestBridgeDomainStateUpdater_watchVppNotifications(t *testing.T) {
 	// Register bridge domain name
 	bdIndex.RegisterName("bdTest", 1, &l2idx.BdMetadata{
 		ConfiguredInterfaces: []string{"test"},
-		BridgeDomain: &l2.BridgeDomains_BridgeDomain{
-
-		},
+		BridgeDomain:         &l2.BridgeDomains_BridgeDomain{},
 	})
 
 	// Test notifications

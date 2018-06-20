@@ -105,6 +105,23 @@ func TestRegisterAndUnregisterName(t *testing.T) {
 	Expect(names).To(BeEmpty())
 }
 
+// Tests index mapping clear
+func TestClearInterfaces(t *testing.T) {
+	mapping, index, _ := testInitialization(t, nil)
+
+	// Register entries
+	index.RegisterName("if1", 0, nil)
+	index.RegisterName("if2", 1, nil)
+	index.RegisterName("if3", 2, nil)
+	names := mapping.ListNames()
+	Expect(names).To(HaveLen(3))
+
+	// Clear
+	index.Clear()
+	names = mapping.ListNames()
+	Expect(names).To(BeEmpty())
+}
+
 // Tests updating of metadata
 func TestUpdateMetadata(t *testing.T) {
 	// Constants

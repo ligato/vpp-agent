@@ -15,13 +15,13 @@
 package vppdump_test
 
 import (
-	"testing"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
 	"github.com/ligato/cn-infra/logging/logrus"
-	. "github.com/onsi/gomega"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	. "github.com/onsi/gomega"
+	"testing"
 )
 
 // Test dumping routes
@@ -30,11 +30,11 @@ func TestDumpStaticRoutes(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPFibDetails{
-		Path: []ip.FibPath{ { SwIfIndex: 3, },},
+		Path: []ip.FibPath{{SwIfIndex: 3}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&ip.IP6FibDetails{
-		Path: []ip.FibPath{ { SwIfIndex: 2, },},
+		Path: []ip.FibPath{{SwIfIndex: 2}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 

@@ -22,6 +22,8 @@ Configure Environment
     [Tags]    setup
     Add Agent VPP Node    agent_vpp_1
     Add Agent VPP Node    agent_vpp_2
+    ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
+    Set Suite Variable          ${DATA_FOLDER}
     Start SFC Controller Container With Own Config    simpleIPv6.conf
     Sleep    15s
 

@@ -94,6 +94,12 @@ func (plugin *ProxyArpConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *ProxyArpConfigurator) clearMapping() {
+	plugin.pArpIfIndexes.Clear()
+	plugin.pArpRngIndexes.Clear()
+}
+
 // GetArpIfIndexes exposes list of proxy ARP interface indexes
 func (plugin *ProxyArpConfigurator) GetArpIfIndexes() idxvpp.NameToIdxRW {
 	return plugin.pArpIfIndexes

@@ -105,6 +105,13 @@ func (plugin *FIBConfigurator) Close() error {
 	return err
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *FIBConfigurator) clearMapping() {
+	plugin.fibIndexes.Clear()
+	plugin.addCacheIndexes.Clear()
+	plugin.delCacheIndexes.Clear()
+}
+
 // GetFibIndexes returns FIB memory indexes
 func (plugin *FIBConfigurator) GetFibIndexes() l2idx.FIBIndexRW {
 	return plugin.fibIndexes

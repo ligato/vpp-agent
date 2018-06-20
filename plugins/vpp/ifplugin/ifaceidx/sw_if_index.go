@@ -53,6 +53,9 @@ type SwIfIndexRW interface {
 
 	// UpdateMetadata updates metadata in existing interface entry.
 	UpdateMetadata(name string, metadata *intf.Interfaces_Interface) (success bool)
+
+	// Clear removes all DHCP entries from the mapping.
+	Clear()
 }
 
 // swIfIndex is type-safe implementation of mapping between Software interface index
@@ -111,6 +114,11 @@ func (swi *swIfIndex) UnregisterName(name string) (idx uint32, metadata *intf.In
 // UpdateMetadata updates metadata in existing interface entry.
 func (swi *swIfIndex) UpdateMetadata(name string, metadata *intf.Interfaces_Interface) (success bool) {
 	return swi.mapping.UpdateMetadata(name, metadata)
+}
+
+// Clear removes all interface entries from the cache.
+func (swi *swIfIndex) Clear() {
+	swi.mapping.Clear()
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

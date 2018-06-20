@@ -33,6 +33,9 @@ type NamedSteering struct {
 func (plugin *SRv6Configurator) Resync(localSids []*srv6.LocalSID, policies []*srv6.Policy, namedSegments []*NamedPolicySegment, namedSteerings []*NamedSteering) error {
 	plugin.Log.Debug("RESYNC SR begin.")
 
+	// Re-initialize cache
+	plugin.clearMapping()
+
 	// TODO: dump existing configuration from VPP, compare it with etcd and change vpp according to etcd (now is handled only case when VPP is clean, i.e. from starting)
 
 	for _, localsid := range localSids {

@@ -83,6 +83,13 @@ func (plugin *XConnectConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *XConnectConfigurator) clearMapping() {
+	plugin.xcIndexes.Clear()
+	plugin.xcAddCacheIndexes.Clear()
+	plugin.xcDelCacheIndexes.Clear()
+}
+
 // GetXcIndexes returns cross connect memory indexes
 func (plugin *XConnectConfigurator) GetXcIndexes() l2idx.XcIndexRW {
 	return plugin.xcIndexes

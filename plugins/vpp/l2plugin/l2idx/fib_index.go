@@ -48,6 +48,9 @@ type FIBIndexRW interface {
 
 	// UpdateMetadata updates metadata in existing FIB entry.
 	UpdateMetadata(name string, metadata *l2.FibTable_FibEntry) (success bool)
+
+	// Clear removes all FIB entries from the mapping.
+	Clear()
 }
 
 // fibIndex is type-safe implementation of mapping between FIB physical address and index.
@@ -87,6 +90,11 @@ func (fib *fibIndex) UnregisterName(name string) (idx uint32, metadata *l2.FibTa
 // UpdateMetadata updates metadata in existing FIB entry.
 func (fib *fibIndex) UpdateMetadata(name string, metadata *l2.FibTable_FibEntry) (success bool) {
 	return fib.mapping.UpdateMetadata(name, metadata)
+}
+
+// Clear removes all FIB entries from the cache.
+func (fib *fibIndex) Clear() {
+	fib.mapping.Clear()
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

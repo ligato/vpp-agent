@@ -86,6 +86,7 @@ func (f *Flavor) Inject() bool {
 	f.injectEmbedded()
 
 	f.GoVPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("govpp", local.WithConf())
+	f.GoVPP.Deps.Resync = &f.ResyncOrch
 	f.VPP.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("vpp-plugin", local.WithConf())
 	f.VPP.Deps.Linux = &f.Linux
 	f.VPP.Deps.GoVppmux = &f.GoVPP

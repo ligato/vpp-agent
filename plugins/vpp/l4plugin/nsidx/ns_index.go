@@ -51,6 +51,9 @@ type AppNsIndexRW interface {
 
 	// UnregisterName removes an item identified by name from mapping
 	UnregisterName(name string) (idx uint32, metadata *l4.AppNamespaces_AppNamespace, exists bool)
+
+	// Clear removes all ACL entries from the mapping.
+	Clear()
 }
 
 // appNsIndex is type-safe implementation of mapping between AppNamespace index
@@ -72,44 +75,49 @@ func NewAppNsIndex(mapping idxvpp.NameToIdxRW) AppNsIndexRW {
 }
 
 // GetMapping returns internal read-only mapping. It is used in tests to inspect the content of the appNsIndex.
-func (swi *appNsIndex) GetMapping() idxvpp.NameToIdxRW {
-	return swi.mapping
+func (appNs *appNsIndex) GetMapping() idxvpp.NameToIdxRW {
+	return appNs.mapping
 }
 
 // RegisterName adds new item into name-to-index mapping.
-func (swi *appNsIndex) RegisterName(name string, idx uint32, appNsMeta *l4.AppNamespaces_AppNamespace) {
-	swi.mapping.RegisterName(name, idx, appNsMeta)
+func (appNs *appNsIndex) RegisterName(name string, idx uint32, appNsMeta *l4.AppNamespaces_AppNamespace) {
+	appNs.mapping.RegisterName(name, idx, appNsMeta)
 }
 
 // UnregisterName removes an item identified by name from mapping
-func (swi *appNsIndex) UnregisterName(name string) (idx uint32, metadata *l4.AppNamespaces_AppNamespace, exists bool) {
-	idx, meta, exists := swi.mapping.UnregisterName(name)
-	return idx, swi.castMetadata(meta), exists
+func (appNs *appNsIndex) UnregisterName(name string) (idx uint32, metadata *l4.AppNamespaces_AppNamespace, exists bool) {
+	idx, meta, exists := appNs.mapping.UnregisterName(name)
+	return idx, appNs.castMetadata(meta), exists
+}
+
+// Clear removes all ACL entries from the cache.
+func (appNs *appNsIndex) Clear() {
+	appNs.mapping.Clear()
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.
-func (swi *appNsIndex) LookupIdx(name string) (idx uint32, metadata *l4.AppNamespaces_AppNamespace, exists bool) {
-	idx, meta, exists := swi.mapping.LookupIdx(name)
+func (appNs *appNsIndex) LookupIdx(name string) (idx uint32, metadata *l4.AppNamespaces_AppNamespace, exists bool) {
+	idx, meta, exists := appNs.mapping.LookupIdx(name)
 	if exists {
-		metadata = swi.castMetadata(meta)
+		metadata = appNs.castMetadata(meta)
 	}
 	return idx, metadata, exists
 }
 
 // LookupName looks up previously stored item identified by name in mapping.
-func (swi *appNsIndex) LookupName(idx uint32) (name string, metadata *l4.AppNamespaces_AppNamespace, exists bool) {
-	name, meta, exists := swi.mapping.LookupName(idx)
+func (appNs *appNsIndex) LookupName(idx uint32) (name string, metadata *l4.AppNamespaces_AppNamespace, exists bool) {
+	name, meta, exists := appNs.mapping.LookupName(idx)
 	if exists {
-		metadata = swi.castMetadata(meta)
+		metadata = appNs.castMetadata(meta)
 	}
 	return name, metadata, exists
 }
 
 // LookupNamesByInterface returns all names related to the provided interface
-func (swi *appNsIndex) LookupNamesByInterface(ifName string) []*l4.AppNamespaces_AppNamespace {
+func (appNs *appNsIndex) LookupNamesByInterface(ifName string) []*l4.AppNamespaces_AppNamespace {
 	var match []*l4.AppNamespaces_AppNamespace
-	for _, name := range swi.mapping.ListNames() {
-		_, meta, found := swi.LookupIdx(name)
+	for _, name := range appNs.mapping.ListNames() {
+		_, meta, found := appNs.LookupIdx(name)
 		if found && meta != nil && meta.Interface == ifName {
 			match = append(match, meta)
 		}
@@ -118,26 +126,26 @@ func (swi *appNsIndex) LookupNamesByInterface(ifName string) []*l4.AppNamespaces
 }
 
 // ListNames returns all names in the mapping.
-func (swi *appNsIndex) ListNames() (names []string) {
-	return swi.mapping.ListNames()
+func (appNs *appNsIndex) ListNames() (names []string) {
+	return appNs.mapping.ListNames()
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in appNsIndex mapping
-func (swi *appNsIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
+func (appNs *appNsIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
-	swi.mapping.Watch(subscriber, nametoidx.ToChan(ch))
+	appNs.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {
 		for c := range ch {
 			pluginChannel <- ChangeDto{
 				NameToIdxDtoWithoutMeta: c.NameToIdxDtoWithoutMeta,
-				Metadata:                swi.castMetadata(c.Metadata),
+				Metadata:                appNs.castMetadata(c.Metadata),
 			}
 
 		}
 	}()
 }
 
-func (swi *appNsIndex) castMetadata(meta interface{}) *l4.AppNamespaces_AppNamespace {
+func (appNs *appNsIndex) castMetadata(meta interface{}) *l4.AppNamespaces_AppNamespace {
 	appNsMeta, ok := meta.(*l4.AppNamespaces_AppNamespace)
 	if !ok {
 		return nil
@@ -145,7 +153,7 @@ func (swi *appNsIndex) castMetadata(meta interface{}) *l4.AppNamespaces_AppNames
 	return appNsMeta
 }
 
-func (swi *appNsIndex) castIfMetadata(meta interface{}) string {
+func (appNs *appNsIndex) castIfMetadata(meta interface{}) string {
 	ifMeta, ok := meta.(string)
 	if !ok {
 		return ""

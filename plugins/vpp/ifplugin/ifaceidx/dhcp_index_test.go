@@ -90,6 +90,23 @@ func TestDHCPRegisterAndUnregisterName(t *testing.T) {
 	Expect(names).To(BeEmpty())
 }
 
+// Tests index mapping clear
+func TestClearDHCP(t *testing.T) {
+	mapping, index, _ := dhcpTestInitialization(t)
+
+	// Register entries
+	index.RegisterName("dhcp1", 0, nil)
+	index.RegisterName("dhcp2", 1, nil)
+	index.RegisterName("dhcp3", 2, nil)
+	names := mapping.ListNames()
+	Expect(names).To(HaveLen(3))
+
+	// Clear
+	index.Clear()
+	names = mapping.ListNames()
+	Expect(names).To(BeEmpty())
+}
+
 // Tests lookup by index
 func TestDHCPLookupByIndex(t *testing.T) {
 	_, index, data := dhcpTestInitialization(t)

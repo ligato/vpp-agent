@@ -29,6 +29,12 @@ type Config struct {
 	// Endpoint is an address of GRPC netListener
 	Endpoint string `json:"endpoint"`
 
+	// Three or four-digit permission setup for unix domain socket file (if used)
+	Permission int `json:"permission"`
+
+	// If set and unix type network is used, the existing socket file will be always removed and re-created
+	ForceSocketRemoval bool `json:"force-socket-removal"`
+
 	// Network defaults to "tcp" if unset, and can be set to one of the following values:
 	// "tcp", "tcp4", "tcp6", "unix", "unixpacket" or any other value accepted by net.Listen
 	Network string `json:"network"`

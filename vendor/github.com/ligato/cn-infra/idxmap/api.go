@@ -65,6 +65,9 @@ type NamedMappingRW interface {
 
 	// Delete removes an item associated with the <name> from the mapping.
 	Delete(name string) (value interface{}, exists bool)
+
+	// Clear removes all entries from the mapping
+	Clear()
 }
 
 // NamedMappingEvent is a part of the change notification. It is a generic
