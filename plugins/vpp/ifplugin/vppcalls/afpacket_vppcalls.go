@@ -21,17 +21,29 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"net"
 )
 
 // AddAfPacketInterface calls AfPacketCreate VPP binary API.
-func AddAfPacketInterface(ifName string, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(af_packet.AfPacketCreate{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &af_packet.AfPacketCreate{
-		HostIfName:      []byte(afPacketIntf.HostIfName),
-		UseRandomHwAddr: 1,
+		HostIfName: []byte(afPacketIntf.HostIfName),
+	}
+
+	if hwAddr == "" {
+		req.UseRandomHwAddr = 1
+	} else {
+		mac, err := net.ParseMAC(hwAddr)
+
+		if err != nil {
+			return 0, err
+		}
+
+		req.HwAddr = mac
 	}
 
 	reply := &af_packet.AfPacketCreateReply{}

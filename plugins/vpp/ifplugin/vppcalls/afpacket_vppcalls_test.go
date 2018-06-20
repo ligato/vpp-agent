@@ -16,6 +16,7 @@ package vppcalls_test
 
 import (
 	"testing"
+	"net"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -32,7 +33,7 @@ func TestAddAfPacketInterface(t *testing.T) {
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	ifIndex, err := vppcalls.AddAfPacketInterface("if1", &if_api.Interfaces_Interface_Afpacket{
+	ifIndex, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
 	}, ctx.MockChannel, nil)
 
@@ -58,7 +59,7 @@ func TestAddAfPacketInterfaceError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
 
-	_, err := vppcalls.AddAfPacketInterface("if1", &if_api.Interfaces_Interface_Afpacket{
+	_, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
 	}, ctx.MockChannel, nil)
 
@@ -74,7 +75,7 @@ func TestAddAfPacketInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := vppcalls.AddAfPacketInterface("if1", &if_api.Interfaces_Interface_Afpacket{
+	_, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
 	}, ctx.MockChannel, nil)
 
@@ -132,4 +133,35 @@ func TestDeleteAfPacketInterfaceRetval(t *testing.T) {
 	}, ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
+}
+
+func TestAddAfPacketInterfaceMac(t *testing.T) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
+
+	ifIndex, err := vppcalls.AddAfPacketInterface("if1", "a2:01:01:01:01:01", &if_api.Interfaces_Interface_Afpacket{
+		HostIfName: "host1",
+	}, ctx.MockChannel, nil)
+
+	Expect(err).To(BeNil())
+	Expect(ifIndex).ToNot(BeNil())
+	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(2))
+
+	mac, err := net.ParseMAC("a2:01:01:01:01:01")
+	Expect(err).To(BeNil())
+
+	for i, msg := range ctx.MockChannel.Msgs {
+		if i == 0 {
+			vppMsg, ok := msg.(*af_packet.AfPacketCreate)
+			Expect(ok).To(BeTrue())
+			Expect(vppMsg).To(Equal(&af_packet.AfPacketCreate{
+				HostIfName:      []byte("host1"),
+				HwAddr:          mac,
+				UseRandomHwAddr: 0,
+			}))
+		}
+	}
 }
