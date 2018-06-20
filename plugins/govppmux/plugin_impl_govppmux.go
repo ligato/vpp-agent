@@ -107,7 +107,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	}
 
 	if plugin.vppAdapter == nil {
-		plugin.vppAdapter = NewVppAdapter()
+		plugin.vppAdapter = NewVppAdapter("")
 	} else {
 		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing purposes
 	}
