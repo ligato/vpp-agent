@@ -38,6 +38,8 @@ import (
 type Plugin struct {
 	Deps
 
+	disabled bool
+
 	// Configurators
 	ifConfigurator    *ifplugin.LinuxInterfaceConfigurator
 	arpConfigurator   *l3plugin.LinuxArpConfigurator
@@ -82,7 +84,8 @@ type Deps struct {
 
 // LinuxConfig holds the linuxplugin configuration.
 type LinuxConfig struct {
-	Stopwatch bool `json:"Stopwatch"`
+	Stopwatch bool `json:"stopwatch"`
+	Disabled  bool `json:"disabled"`
 }
 
 // GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration)
@@ -105,13 +108,18 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 
 // Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
 func (plugin *Plugin) Init() error {
-	plugin.Log.Debug("Initializing Linux plugins")
+	plugin.Log.Debug("Initializing Linux plugin")
 
 	config, err := plugin.retrieveLinuxConfig()
 	if err != nil {
 		return err
 	}
 	if config != nil {
+		if config.Disabled {
+			plugin.disabled = true
+			plugin.Log.Infof("Disabling Linux plugin")
+			return nil
+		}
 		if config.Stopwatch {
 			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
 			plugin.stopwatch = measure.NewStopwatch("LinuxPlugin", plugin.Log)
@@ -156,6 +164,10 @@ func (plugin *Plugin) Init() error {
 
 // Close cleans up the resources.
 func (plugin *Plugin) Close() error {
+	if plugin.disabled {
+		return nil
+	}
+
 	plugin.cancel()
 	plugin.wg.Wait()
 
