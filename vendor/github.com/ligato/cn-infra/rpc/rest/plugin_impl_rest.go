@@ -15,17 +15,18 @@
 package rest
 
 import (
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
-	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/unrolled/render"
+
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/unrolled/render"
-	"strings"
 )
 
 const (
@@ -137,8 +138,7 @@ func (plugin *Plugin) AfterInit() (err error) {
 
 // Close stops the HTTP server.
 func (plugin *Plugin) Close() error {
-	_, err := safeclose.CloseAll(plugin.server)
-	return err
+	return safeclose.Close(plugin.server)
 }
 
 // String returns plugin name (if not set defaults to "HTTP")

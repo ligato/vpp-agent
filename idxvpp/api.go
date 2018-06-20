@@ -77,10 +77,13 @@ type NameToIdxRW interface {
 	UnregisterName(name string) (idx uint32, metadata interface{}, exists bool)
 
 	// UpdateMetadata replaces metadata value in existing name-to-index
-	// mapping entry. Unlike registration, this function does not create
-	// any notification. If mapping associated with the name does not
+	// mapping entry. If mapping associated with the name does not
 	// exist, it is not created.
 	UpdateMetadata(name string, metadata interface{}) (success bool)
+
+	// Clear removes all entries present in the name-to-index mapping.
+	// This action does not trigger any notification.
+	Clear()
 }
 
 // NameToIdx is the "user API" to the NameToIdx registry. It provides

@@ -25,9 +25,9 @@ type WhenIface struct {
 }
 
 // ResyncIf stores configuration of a given interface in ETCD.
-func (when *WhenIface) ResyncIf(data *intf.Interfaces_Interface, opts ...interface{}) {
+func (when *WhenIface) ResyncIf(data1, data2 *intf.Interfaces_Interface) {
 	when.Log.Debug("When_ResyncIf begin")
-	err := when.NewResync(pluginName).Interface(data).Send().ReceiveReply()
+	err := when.NewResync(pluginName).Interface(data1).Interface(data2).Send().ReceiveReply()
 	if err != nil {
 		when.Log.Panic(err)
 	}

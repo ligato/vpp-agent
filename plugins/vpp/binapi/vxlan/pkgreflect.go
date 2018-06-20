@@ -9,6 +9,8 @@ var Types = map[string]reflect.Type{
 	"SwInterfaceSetVxlanBypassReply": reflect.TypeOf((*SwInterfaceSetVxlanBypassReply)(nil)).Elem(),
 	"VxlanAddDelTunnel": reflect.TypeOf((*VxlanAddDelTunnel)(nil)).Elem(),
 	"VxlanAddDelTunnelReply": reflect.TypeOf((*VxlanAddDelTunnelReply)(nil)).Elem(),
+	"VxlanOffloadRx": reflect.TypeOf((*VxlanOffloadRx)(nil)).Elem(),
+	"VxlanOffloadRxReply": reflect.TypeOf((*VxlanOffloadRxReply)(nil)).Elem(),
 	"VxlanTunnelDetails": reflect.TypeOf((*VxlanTunnelDetails)(nil)).Elem(),
 	"VxlanTunnelDump": reflect.TypeOf((*VxlanTunnelDump)(nil)).Elem(),
 }
@@ -18,6 +20,8 @@ var Functions = map[string]reflect.Value{
 	"NewSwInterfaceSetVxlanBypassReply": reflect.ValueOf(NewSwInterfaceSetVxlanBypassReply),
 	"NewVxlanAddDelTunnel": reflect.ValueOf(NewVxlanAddDelTunnel),
 	"NewVxlanAddDelTunnelReply": reflect.ValueOf(NewVxlanAddDelTunnelReply),
+	"NewVxlanOffloadRx": reflect.ValueOf(NewVxlanOffloadRx),
+	"NewVxlanOffloadRxReply": reflect.ValueOf(NewVxlanOffloadRxReply),
 	"NewVxlanTunnelDetails": reflect.ValueOf(NewVxlanTunnelDetails),
 	"NewVxlanTunnelDump": reflect.ValueOf(NewVxlanTunnelDump),
 }

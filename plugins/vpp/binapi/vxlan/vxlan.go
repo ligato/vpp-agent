@@ -337,3 +337,91 @@ func (*SwInterfaceSetVxlanBypassReply) GetCrcString() string {
 func NewSwInterfaceSetVxlanBypassReply() api.Message {
 	return &SwInterfaceSetVxlanBypassReply{}
 }
+
+// VxlanOffloadRx represents the VPP binary API message 'vxlan_offload_rx'.
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 204:
+//
+//            "vxlan_offload_rx",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "hw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "enable"
+//            ],
+//            {
+//                "crc": "0xf0b08786"
+//            }
+//
+type VxlanOffloadRx struct {
+	HwIfIndex uint32
+	SwIfIndex uint32
+	Enable    uint8
+}
+
+func (*VxlanOffloadRx) GetMessageName() string {
+	return "vxlan_offload_rx"
+}
+func (*VxlanOffloadRx) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*VxlanOffloadRx) GetCrcString() string {
+	return "f0b08786"
+}
+func NewVxlanOffloadRx() api.Message {
+	return &VxlanOffloadRx{}
+}
+
+// VxlanOffloadRxReply represents the VPP binary API message 'vxlan_offload_rx_reply'.
+// Generated from '/usr/share/vpp/api/vxlan.api.json', line 234:
+//
+//            "vxlan_offload_rx_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type VxlanOffloadRxReply struct {
+	Retval int32
+}
+
+func (*VxlanOffloadRxReply) GetMessageName() string {
+	return "vxlan_offload_rx_reply"
+}
+func (*VxlanOffloadRxReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*VxlanOffloadRxReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewVxlanOffloadRxReply() api.Message {
+	return &VxlanOffloadRxReply{}
+}

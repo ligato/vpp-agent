@@ -91,6 +91,12 @@ func (plugin *AppNsConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *AppNsConfigurator) clearMapping() {
+	plugin.appNsIndexes.Clear()
+	plugin.appNsCached.Clear()
+}
+
 // GetAppNsIndexes returns application namespace memory indexes
 func (plugin *AppNsConfigurator) GetAppNsIndexes() nsidx.AppNsIndexRW {
 	return plugin.appNsIndexes

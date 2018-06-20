@@ -5,6 +5,14 @@ package dhcp
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Dhcp6ClientsEnableDisable": reflect.TypeOf((*Dhcp6ClientsEnableDisable)(nil)).Elem(),
+	"Dhcp6ClientsEnableDisableReply": reflect.TypeOf((*Dhcp6ClientsEnableDisableReply)(nil)).Elem(),
+	"Dhcp6DuidLlSet": reflect.TypeOf((*Dhcp6DuidLlSet)(nil)).Elem(),
+	"Dhcp6DuidLlSetReply": reflect.TypeOf((*Dhcp6DuidLlSetReply)(nil)).Elem(),
+	"Dhcp6PdPrefixInfo": reflect.TypeOf((*Dhcp6PdPrefixInfo)(nil)).Elem(),
+	"Dhcp6PdReplyEvent": reflect.TypeOf((*Dhcp6PdReplyEvent)(nil)).Elem(),
+	"Dhcp6PdSendClientMessage": reflect.TypeOf((*Dhcp6PdSendClientMessage)(nil)).Elem(),
+	"Dhcp6PdSendClientMessageReply": reflect.TypeOf((*Dhcp6PdSendClientMessageReply)(nil)).Elem(),
 	"DhcpClient": reflect.TypeOf((*DhcpClient)(nil)).Elem(),
 	"DhcpClientConfig": reflect.TypeOf((*DhcpClientConfig)(nil)).Elem(),
 	"DhcpClientConfigReply": reflect.TypeOf((*DhcpClientConfigReply)(nil)).Elem(),
@@ -19,9 +27,18 @@ var Types = map[string]reflect.Type{
 	"DhcpProxySetVss": reflect.TypeOf((*DhcpProxySetVss)(nil)).Elem(),
 	"DhcpProxySetVssReply": reflect.TypeOf((*DhcpProxySetVssReply)(nil)).Elem(),
 	"DhcpServer": reflect.TypeOf((*DhcpServer)(nil)).Elem(),
+	"WantDhcp6PdReplyEvents": reflect.TypeOf((*WantDhcp6PdReplyEvents)(nil)).Elem(),
+	"WantDhcp6PdReplyEventsReply": reflect.TypeOf((*WantDhcp6PdReplyEventsReply)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
+	"NewDhcp6ClientsEnableDisable": reflect.ValueOf(NewDhcp6ClientsEnableDisable),
+	"NewDhcp6ClientsEnableDisableReply": reflect.ValueOf(NewDhcp6ClientsEnableDisableReply),
+	"NewDhcp6DuidLlSet": reflect.ValueOf(NewDhcp6DuidLlSet),
+	"NewDhcp6DuidLlSetReply": reflect.ValueOf(NewDhcp6DuidLlSetReply),
+	"NewDhcp6PdReplyEvent": reflect.ValueOf(NewDhcp6PdReplyEvent),
+	"NewDhcp6PdSendClientMessage": reflect.ValueOf(NewDhcp6PdSendClientMessage),
+	"NewDhcp6PdSendClientMessageReply": reflect.ValueOf(NewDhcp6PdSendClientMessageReply),
 	"NewDhcpClientConfig": reflect.ValueOf(NewDhcpClientConfig),
 	"NewDhcpClientConfigReply": reflect.ValueOf(NewDhcpClientConfigReply),
 	"NewDhcpClientDetails": reflect.ValueOf(NewDhcpClientDetails),
@@ -33,6 +50,8 @@ var Functions = map[string]reflect.Value{
 	"NewDhcpProxyDump": reflect.ValueOf(NewDhcpProxyDump),
 	"NewDhcpProxySetVss": reflect.ValueOf(NewDhcpProxySetVss),
 	"NewDhcpProxySetVssReply": reflect.ValueOf(NewDhcpProxySetVssReply),
+	"NewWantDhcp6PdReplyEvents": reflect.ValueOf(NewWantDhcp6PdReplyEvents),
+	"NewWantDhcp6PdReplyEventsReply": reflect.ValueOf(NewWantDhcp6PdReplyEventsReply),
 }
 
 var Variables = map[string]reflect.Value{

@@ -95,6 +95,13 @@ func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh vppcalls.V
 	return nil
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *AFPacketConfigurator) clearMapping() {
+	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
+	plugin.afPacketByName = make(map[string]*AfPacketConfig)
+	plugin.hostInterfaces = make(map[string]struct{})
+}
+
 // ConfigureAfPacketInterface creates a new Afpacket interface or marks it as pending if the target host interface doesn't exist yet.
 func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.Interfaces_Interface) (swIndex uint32, pending bool, err error) {
 	if afpacket.Type != intf.InterfaceType_AF_PACKET_INTERFACE {

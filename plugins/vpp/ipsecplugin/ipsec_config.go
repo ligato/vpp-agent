@@ -105,6 +105,13 @@ func (plugin *IPSecConfigurator) Close() error {
 	return safeclose.Close(plugin.vppCh)
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *IPSecConfigurator) clearMapping() {
+	plugin.spdIndexes.Clear()
+	plugin.cachedSpdIndexes.Clear()
+	plugin.saIndexes.Clear()
+}
+
 // GetSaIndexes returns security association indexes
 func (plugin *IPSecConfigurator) GetSaIndexes() idxvpp.NameToIdxRW {
 	return plugin.saIndexes

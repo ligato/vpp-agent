@@ -54,6 +54,9 @@ type BDIndexRW interface {
 
 	// UpdateMetadata updates metadata in existing bridge domain entry.
 	UpdateMetadata(name string, metadata *BdMetadata) (success bool)
+
+	// Clear removes all bridge domains from the mapping.
+	Clear()
 }
 
 // bdIndex is type-safe implementation of mapping between bridge domain name and index.
@@ -129,6 +132,11 @@ func (bdi *bdIndex) UnregisterName(name string) (idx uint32, metadata *BdMetadat
 // UpdateMetadata updates metadata in existing bridge domain entry.
 func (bdi *bdIndex) UpdateMetadata(name string, metadata *BdMetadata) (success bool) {
 	return bdi.mapping.UpdateMetadata(name, metadata)
+}
+
+// Clear removes all bridge domains from the cache.
+func (bdi *bdIndex) Clear() {
+	bdi.mapping.Clear()
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

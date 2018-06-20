@@ -27,12 +27,12 @@ func TestSetInterfaceMtu(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 
 	err := vppcalls.SetInterfaceMtu(1, 1500, ctx.MockChannel, nil)
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetMtu)
+	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.HwInterfaceSetMtu)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Mtu).To(BeEquivalentTo(1500))
@@ -42,7 +42,7 @@ func TestSetInterfaceMtuError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtu{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtu{})
 
 	err := vppcalls.SetInterfaceMtu(1, 1500, ctx.MockChannel, nil)
 
@@ -53,7 +53,7 @@ func TestSetInterfaceMtuRetval(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{
 		Retval: 1,
 	})
 

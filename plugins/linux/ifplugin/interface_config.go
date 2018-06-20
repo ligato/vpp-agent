@@ -790,6 +790,9 @@ func (plugin *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
 
 	for {
 		linuxIf := <-plugin.ifStateChan
+		if linuxIf == nil || linuxIf.attributes == nil {
+			continue
+		}
 		linuxIfName := linuxIf.attributes.Name
 
 		switch {
@@ -910,6 +913,9 @@ func (plugin *LinuxInterfaceConfigurator) watchMicroservices(ctx context.Context
 	for {
 		select {
 		case msEvent := <-plugin.ifMsNotif:
+			if msEvent == nil {
+				continue
+			}
 			microservice := msEvent.Microservice
 			if microservice == nil {
 				plugin.log.Error("Empty microservice event")

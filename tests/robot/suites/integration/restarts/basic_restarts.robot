@@ -6,7 +6,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Library    SSHLibrary
 
-Suite Setup       Basic Restarts Setup with ${1} VNFs and ${1} non-VPP containers
+Suite Setup       Basic Restarts Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
 Suite Teardown    Basic Restarts Teardown
 Test Setup        Ping Until Success - Unix Ping    ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
 Test Teardown     Recreate Topology If Test Failed
@@ -24,8 +24,8 @@ Documentation    Test suite for Kubernetes pod restarts using a single VNF pod
 ${VARIABLES}=       common
 ${ENV}=             common
 ${CLUSTER_ID}=      INTEGRATION1
-${vnf0_ip}=         192.168.5.1
-${novpp0_ip}=       192.168.5.2
+${vnf0_ip}=         192.168.1.1
+${novpp0_ip}=       192.168.1.2
 @{novpp_pods}=      novpp-0
 @{vnf_pods}=        vnf-vpp-0
 
@@ -169,4 +169,5 @@ Recreate Topology If Test Failed
     ...    and create it again.
     BuiltIn.Run Keyword If Test Failed    Run Keywords
     ...    Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
-    ...    AND    Basic Restarts Setup with ${1} VNFs and ${1} non-VPP containers
+    ...    AND    Basic Restarts Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
+

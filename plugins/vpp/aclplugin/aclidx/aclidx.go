@@ -46,6 +46,9 @@ type AclIndexRW interface {
 
 	// UnregisterName removes an item identified by name from mapping.
 	UnregisterName(name string) (idx uint32, metadata *acl_model.AccessLists_Acl, exists bool)
+
+	// Clear removes all ACL entries from the mapping.
+	Clear()
 }
 
 // aclIndex is type-safe implementation of mapping between ACL index and name. It holds metadata
@@ -80,6 +83,11 @@ func (acl *aclIndex) RegisterName(name string, idx uint32, ifMeta *acl_model.Acc
 func (acl *aclIndex) UnregisterName(name string) (idx uint32, metadata *acl_model.AccessLists_Acl, exists bool) {
 	idx, meta, exists := acl.mapping.UnregisterName(name)
 	return idx, acl.castMetadata(meta), exists
+}
+
+// Clear removes all ACL entries from the cache.
+func (acl *aclIndex) Clear() {
+	acl.mapping.Clear()
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.

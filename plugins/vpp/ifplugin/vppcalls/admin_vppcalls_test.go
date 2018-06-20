@@ -42,7 +42,7 @@ func TestInterfaceAdminDownError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	err := vppcalls.InterfaceAdminDown(1, ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
@@ -79,7 +79,7 @@ func TestInterfaceAdminUpError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	err := vppcalls.InterfaceAdminDown(1, ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
@@ -116,7 +116,7 @@ func TestInterfaceSetTagError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	err := vppcalls.SetInterfaceTag("tag", 1, ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())
@@ -153,7 +153,7 @@ func TestInterfaceRemoveTagError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	err := vppcalls.RemoveInterfaceTag("tag", 1, ctx.MockChannel, nil)
 
 	Expect(err).ToNot(BeNil())

@@ -46,6 +46,9 @@ type SPDIndexRW interface {
 
 	// UnregisterName removes an item identified by name from mapping
 	UnregisterName(name string) (idx uint32, metadata *ipsec.SecurityPolicyDatabases_SPD, exists bool)
+
+	// Clear removes all SPD entries from the mapping.
+	Clear()
 }
 
 // spdIndex is type-safe implementation of mapping between spdID and SPD data.
@@ -126,6 +129,11 @@ func (index *spdIndex) RegisterName(name string, idx uint32, metadata *ipsec.Sec
 func (index *spdIndex) UnregisterName(name string) (idx uint32, metadata *ipsec.SecurityPolicyDatabases_SPD, exists bool) {
 	idx, meta, exists := index.mapping.UnregisterName(name)
 	return idx, index.castMetadata(meta), exists
+}
+
+// Clear removes all SPD entries from the cache.
+func (index *spdIndex) Clear() {
+	index.mapping.Clear()
 }
 
 func (index *spdIndex) castMetadata(meta interface{}) *ipsec.SecurityPolicyDatabases_SPD {

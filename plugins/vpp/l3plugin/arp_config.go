@@ -96,6 +96,13 @@ func (plugin *ArpConfigurator) Close() error {
 	return safeclose.Close(plugin.vppChan)
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (plugin *ArpConfigurator) clearMapping() {
+	plugin.arpIndexes.Clear()
+	plugin.arpCache.Clear()
+	plugin.arpDeleted.Clear()
+}
+
 // GetArpIndexes exposes arpIndexes mapping
 func (plugin *ArpConfigurator) GetArpIndexes() l3idx.ARPIndexRW {
 	return plugin.arpIndexes
