@@ -569,8 +569,6 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
-	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-	case intf.InterfaceType_ETHERNET_CSMACD:
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		recreate, err := plugin.afPacketConfigurator.ModifyAfPacketInterface(newConfig, oldConfig)
 		if err != nil || recreate {
@@ -581,6 +579,8 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
+	case intf.InterfaceType_SOFTWARE_LOOPBACK:
+	case intf.InterfaceType_ETHERNET_CSMACD:
 	}
 
 	var wasError error
