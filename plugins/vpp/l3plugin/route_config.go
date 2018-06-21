@@ -186,7 +186,7 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 		return err
 	}
 
-	plugin.log.Infof("Route %v -> %v modified", oldConfig.DstIpAddr, newConfig.DstIpAddr)
+	plugin.log.Infof("Route %v -> %v modified", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 	return nil
 }
 
