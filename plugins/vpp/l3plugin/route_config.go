@@ -267,7 +267,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	if found {
 		plugin.log.Debugf("Route entry %v found in cache, removed", routeID)
 		plugin.rtCachedIndexes.UnregisterName(routeID)
-		// Cached ARP is not configured on the VPP, return
+		// Cached route is not configured on the VPP, return
 		return nil
 	}
 
