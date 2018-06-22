@@ -177,8 +177,7 @@ func TestDeleteCachedRoute(t *testing.T) {
 		OutgoingInterface: "tap1",
 	}, "0")
 	Expect(err).ShouldNot(HaveOccurred())
-	// TODO : uncomment after LUNAR-1440 fix
-	// Expect(plugin.GetCachedRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetCachedRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	Expect(plugin.GetRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
 }
 
@@ -251,9 +250,8 @@ func TestModifyCachedRoute(t *testing.T) {
 
 	Expect(plugin.GetRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	routes = plugin.GetCachedRouteIndexes().GetMapping().ListNames()
-	// TODO : uncomment after LUNAR-1440 fix
-	//Expect(routes).To(HaveLen(1))
-	//Expect(routes[0]).To(Equal("vrf0-fd21:dead:abcd::/48-fd21:cdef:dead::"))
+	Expect(routes).To(HaveLen(1))
+	Expect(routes[0]).To(Equal("vrf0-fd21:dead:abcd::/48-fd21:cdef:dead::"))
 }
 
 // Test modify of cached route
@@ -292,13 +290,12 @@ func TestModifyCachedRouteInterface(t *testing.T) {
 		Weight:            6,
 		OutgoingInterface: "tap1",
 	}, "0")
-	// TODO : uncomment after LUNAR-1440 fix
-	//Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred())
 
-	//Expect(plugin.GetCachedRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
-	//routes = plugin.GetRouteIndexes().GetMapping().ListNames()
-	//Expect(routes).To(HaveLen(1))
-	//Expect(routes[0]).To(Equal("vrf0-fd21:dead:abcd::/48-fd21:cdef:dead::"))
+	Expect(plugin.GetCachedRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
+	routes = plugin.GetRouteIndexes().GetMapping().ListNames()
+	Expect(routes).To(HaveLen(1))
+	Expect(routes[0]).To(Equal("vrf0-fd21:dead:abcd::/48-fd21:cdef:dead::"))
 }
 
 // Test modify of existing route from no-default VRF
