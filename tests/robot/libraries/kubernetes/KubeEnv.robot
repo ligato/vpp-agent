@@ -239,9 +239,9 @@ Wait_Until_Pod_Removed
     BuiltIn.Wait_Until_Keyword_Succeeds    ${timeout}    ${check_period}    Verify_Pod_Not_Present    ${ssh_session}    ${pod_name}    namespace=${namespace}
 
 Run Command In Pod
-    [Arguments]    ${command}    ${pod_name}    ${prompt}=${EMPTY}
-    [Documentation]    Switch if \${ssh_session}, configure if \${prompt}, write \${command}, read until prompt, log and return text output.
-    BuiltIn.Log_Many    ${command}     ${pod_name}     ${prompt}
+    [Arguments]    ${command}    ${pod_name}
+    [Documentation]    Execute command on the pod, log and return retval, stdout, stderr.
+    BuiltIn.Log_Many    ${command}     ${pod_name}
     BuiltIn.Comment    TODO: Do not mention pods and move to SshCommons.robot or similar.
     SSHLibrary.Switch Connection    ${testbed_connection}
     ${output} =    SSHLibrary.Execute Command    kubectl exec ${pod_name} -- ${command}    return_stdout=True    return_stderr=True    return_rc=True
@@ -346,7 +346,7 @@ Log_Etcd
     KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=default
 
 Log_Vswitch
-    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
+    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${K8_CLUSTER_${CLUSTER_ID}_NODES}
     [Documentation]    Check there is expected number of vswitch pods, get logs from them an cn-infra containers
     ...    (and do nothing except the implicit Log).
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
@@ -354,25 +354,23 @@ Log_Vswitch
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    ${exp_nr_vswitch}
     : FOR    ${vswitch_pod}    IN    @{pod_list}
-    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default    container=vswitch
-
-Log_Kube_Dns
-    [Arguments]    ${ssh_session}
-    [Documentation]    Check there is exactly one dns pod, get logs from kubedns, dnsmasq and sidecar containers
-    ...    (and do nothing with them, except the implicit Log).
-    Builtin.Log_Many    ${ssh_session}
-    ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    kube-dns-
-    BuiltIn.Log    ${pod_list}
-    BuiltIn.Length_Should_Be    ${pod_list}    1
-    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=default    container=kubedns
+    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default
 
 Log_Pods_For_Debug
-    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
+    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${K8_CLUSTER_${CLUSTER_ID}_NODES}
     [Documentation]    Call multiple keywords to get various logs
     ...    (and do nothing with them, except the implicit Log).
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
     Log_Etcd    ${ssh_session}
     Log_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
+    :FOR    ${vnf_pod}    IN    @{vnf_pods}
+    \    Run Command In Pod    vppctl show int              ${vnf_pod}
+    \    Run Command In Pod    vppctl show int address      ${vnf_pod}
+    \    Run Command In Pod    vppctl show errors           ${vnf_pod}
+    :FOR    ${novpp_pod}    IN    @{novpp_pods}
+    \    Run Command In Pod    ip link        ${novpp_pod}
+    \    Run Command In Pod    ip address     ${novpp_pod}
+    \    Run Command In Pod    ip neighbor    ${novpp_pod}
 
 Open_Connection_To_Node
     [Arguments]    ${name}    ${cluster_id}    ${node_index}
