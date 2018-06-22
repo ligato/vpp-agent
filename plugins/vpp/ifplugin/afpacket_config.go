@@ -115,7 +115,7 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 			return 0, true, nil
 		}
 	}
-	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Name, afpacket.Afpacket, plugin.vppCh, plugin.stopwatch)
+	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Name, afpacket.PhysAddress, afpacket.Afpacket, plugin.vppCh, plugin.stopwatch)
 	if err != nil {
 		plugin.addToCache(afpacket, true)
 		return 0, true, err

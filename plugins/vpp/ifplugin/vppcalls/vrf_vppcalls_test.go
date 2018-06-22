@@ -65,6 +65,9 @@ func TestSetInterfaceVRF(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
+	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 
 	err := vppcalls.SetInterfaceVRF(1, 2, logrus.DefaultLogger(), ctx.MockChannel)
@@ -79,16 +82,22 @@ func TestSetInterfaceVRFError(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
+	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTable{})
 
 	err := vppcalls.SetInterfaceVRF(1, 2, logrus.DefaultLogger(), ctx.MockChannel)
-	Expect(err).ToNot(BeNil())
+	Expect(err).To(HaveOccurred())
 }
 
 func TestSetInterfaceVRFRetval(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
+	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{
 		Retval: 1,
 	})

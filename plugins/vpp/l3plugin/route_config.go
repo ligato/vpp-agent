@@ -181,6 +181,16 @@ func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, o
 }
 
 func (plugin *RouteConfigurator) deleteOldRoute(oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
+	// Check if route entry is not just cached
+	routeID := routeIdentifier(oldConfig.VrfId, oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	_, _, found := plugin.rtCachedIndexes.LookupIdx(routeID)
+	if found {
+		plugin.log.Debugf("Route entry %v found in cache, removed", routeID)
+		plugin.rtCachedIndexes.UnregisterName(routeID)
+		// Cached route is not configured on the VPP, return
+		return nil
+	}
+
 	swIdx, err := resolveInterfaceSwIndex(oldConfig.OutgoingInterface, plugin.ifIndexes)
 	if err != nil {
 		return err
@@ -203,7 +213,7 @@ func (plugin *RouteConfigurator) deleteOldRoute(oldConfig *l3.StaticRoutes_Route
 
 	oldRouteIdentifier := routeIdentifier(oldRoute.VrfID, oldRoute.DstAddr.String(), oldRoute.NextHopAddr.String())
 
-	_, _, found := plugin.rtIndexes.UnregisterName(oldRouteIdentifier)
+	_, _, found = plugin.rtIndexes.UnregisterName(oldRouteIdentifier)
 	if found {
 		plugin.log.Infof("Old route %v unregistered", oldRouteIdentifier)
 	} else {
@@ -245,9 +255,20 @@ func (plugin *RouteConfigurator) addNewRoute(newConfig *l3.StaticRoutes_Route, v
 // DeleteRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
 	plugin.log.Infof("Removing route %v -> %v", config.DstIpAddr, config.NextHopAddr)
+
 	// Validate VRF index from key and it's value in data.
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err
+	}
+
+	// Check if route entry is not just cached
+	routeID := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
+	_, _, found := plugin.rtCachedIndexes.LookupIdx(routeID)
+	if found {
+		plugin.log.Debugf("Route entry %v found in cache, removed", routeID)
+		plugin.rtCachedIndexes.UnregisterName(routeID)
+		// Cached route is not configured on the VPP, return
+		return nil
 	}
 
 	swIdx, err := resolveInterfaceSwIndex(config.OutgoingInterface, plugin.ifIndexes)
@@ -271,7 +292,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	}
 
 	routeIdentifier := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
-	_, _, found := plugin.rtIndexes.UnregisterName(routeIdentifier)
+	_, _, found = plugin.rtIndexes.UnregisterName(routeIdentifier)
 	if found {
 		plugin.log.Infof("Route %v unregistered", routeIdentifier)
 	} else {
