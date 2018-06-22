@@ -2,9 +2,9 @@
 Resource                          common_variables.robot
 
 *** Variables ***
-${DOCKER_HOST_IP}                 192.168.100.21
-${DOCKER_HOST_USER}               andrej
-${DOCKER_HOST_PSWD}               kilo
+${DOCKER_HOST_IP}                 192.168.100.20
+${DOCKER_HOST_USER}               marcel
+${DOCKER_HOST_PSWD}               Heslo9999
 ${AGENT_VPP_IMAGE_NAME}           ligato/vpp-agent:pantheon-dev
 
 ${vpp1_DOCKER_IMAGE}              ${AGENT_VPP_IMAGE_NAME}
