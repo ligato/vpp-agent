@@ -262,6 +262,30 @@ vpp_ctl: Put Static Fib Entry
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
+vpp_ctl: Create IPsec With SA And Json
+    [Arguments]     ${node}    ${interface}    ${file_name}    ${name}    ${spi}    ${crypto_key}    ${integ_key}
+    Log Many        ${node}    ${interface}    ${file_name}    ${name}    ${spi}    ${crypto_key}    ${integ_key}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
+    Log Many        ${data}
+    ${data}=        replace variables           ${data}
+    Log Many        ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/sa/${interface}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
+    Log Many        ${out}
+
+vpp_ctl: Create IPsec With SPD And Json
+    [Arguments]     ${node}    ${spd_name}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
+    Log Many        ${node}    ${spd_name}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
+    Log Many        ${data}
+    ${data}=        replace variables           ${data}
+    Log Many        ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/spd/${spd_name}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
+    Log Many        ${out}
+
 vpp_ctl: Delete Bridge Domain
     [Arguments]    ${node}    ${name}
     Log Many     ${node}    ${name}
@@ -295,8 +319,8 @@ vpp_ctl: Delete Routes
     [Return]       ${out}
 
 vpp_ctl: Delete IPsec
-    [Arguments]    ${node}    ${id}
-    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/${id}
+    [Arguments]    ${node}    ${prefix}    ${name}
+    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/${prefix}/${name}
     Log Many        ${uri}
     ${out}=         vpp_ctl: Delete key  ${uri}
     Log Many        ${out}

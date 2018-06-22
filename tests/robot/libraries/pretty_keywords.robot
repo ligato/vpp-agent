@@ -69,33 +69,9 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vr
     ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
     Log Many        ${out}
 
-Create IPsec With SA And Json
-    [Arguments]     ${node}    ${interface}    ${file_name}    ${name}    ${spi}    ${crypto_key}    ${integ_key}
-    Log Many        ${node}    ${interface}    ${file_name}    ${name}    ${spi}    ${crypto_key}    ${integ_key}
-    ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
-    Log Many        ${data}
-    ${data}=        replace variables           ${data}
-    Log Many        ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/sa/${interface}
-    Log Many        ${uri}
-    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
-    Log Many        ${out}
-
-Create IPsec With SPD And Json
-    [Arguments]     ${node}    ${spd_name}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
-    Log Many        ${node}    ${spd_name}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
-    ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
-    Log Many        ${data}
-    ${data}=        replace variables           ${data}
-    Log Many        ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/ipsec/spd/${spd_name}
-    Log Many        ${uri}
-    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
-    Log Many        ${out}
-
-Delete IPsec On ${node} And ${id}
-    Log Many        ${node}    ${id}
-    vpp_ctl: Delete IPsec    ${node}    ${id}
+Delete IPsec On ${node} With Prefix ${prefix} And Name ${name}
+    Log Many        ${node}    ${prefix}    ${name}
+    vpp_ctl: Delete IPsec    ${node}    ${prefix}    ${name}
 
 Create VXLan ${name} From ${src_ip} To ${dst_ip} With Vni ${vni} On ${node}
     Log Many    ${name}    ${src_ip}    ${dst_ip}    ${vni}    ${node}
