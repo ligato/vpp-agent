@@ -17,8 +17,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${CONFIG_SLEEP}=       1s
-${RESYNC_SLEEP}=       1s
+${CONFIG_SLEEP}=       10s
+${RESYNC_SLEEP}=       15s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s
 ${VETH_IP1}=              fd33::1:b:0:0:1
@@ -37,30 +37,34 @@ Show Interfaces Before Setup
     Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
 
 Setup Interfaces
-    vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns1    name=ns1_veth1    host_if_name=ns1_veth1_linux    mac=d2:74:8c:12:67:d2    peer=ns2_veth2    ip=${VETH_IP1}
-    vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns2    name=ns2_veth2    host_if_name=ns2_veth2_linux    mac=92:c7:42:67:ab:cd    peer=ns1_veth1    ip=${VETH_IP2}
+    vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns1    name=ns1_veth1    host_if_name=ns1_veth1_linux    mac=d2:74:8c:12:67:d2    peer=ns2_veth2    ip=${VETH_IP1}     prefix=64
+    vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns2    name=ns2_veth2    host_if_name=ns2_veth2_linux    mac=92:c7:42:67:ab:cd    peer=ns1_veth1    ip=${VETH_IP2}     prefix=64
 
     Sleep    ${CONFIG_SLEEP}
 
+Chceck Interfaces
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1
     Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2
 
+Ping
     # This should work by default after veth interface setup
     Ping6 in namespace    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP2}
     Ping6 in namespace    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP1}
 
 Create Linux Routes
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pingingveth2    ip=${VETH_IP2}    prefix=64    next_hop=${VETH_IP1}
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pingingveth1    ip=${VETH_IP1}    prefix=64    next_hop=${VETH_IP2}
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=${GOOGLE_IP}    prefix=64    next_hop=${VETH_IP1}
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=${QUAD9_IP}    prefix=64    next_hop=${VETH_IP2}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pingingveth2    ip=${VETH_IP2}    prefix=128    next_hop=${VETH_IP1}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pingingveth1    ip=${VETH_IP1}    prefix=128    next_hop=${VETH_IP2}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=${GOOGLE_IP}    prefix=128    next_hop=${VETH_IP1}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=${QUAD9_IP}    prefix=128    next_hop=${VETH_IP2}
 
     Sleep    ${CONFIG_SLEEP}
 
+Check Linux Routes
     Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP2}
     Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP1}
     Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${GOOGLE_IP}
     Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
+
 
     # created routes should not exist in other namespace
     Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP2}
@@ -76,7 +80,7 @@ Read Route Information From Setup Database
 
 Change Linux Routes Without Deleting Key (Changing Metric)
     # changing of gateway - this is incorrect/ the record would not be put in the database  - Let us change metric
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=${GOOGLE_IP}    prefix=64    next_hop=${VETH_IP1}    metric=55
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=${GOOGLE_IP}    prefix=128    next_hop=${VETH_IP1}    metric=55
     Sleep    ${CONFIG_SLEEP}
 
     # testing if there is the new metric
@@ -89,7 +93,7 @@ Change Linux Routes At First Deleting Key And Putting The Same Secondly Deleting
     Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
 
     # we create exactly the same as deleted route
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=${QUAD9_IP}    prefix=64    next_hop=${VETH_IP2}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=${QUAD9_IP}    prefix=128    next_hop=${VETH_IP2}
     Sleep    ${CONFIG_SLEEP}
 
     Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
@@ -101,17 +105,17 @@ Change Linux Routes At First Deleting Key And Putting The Same Secondly Deleting
     Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
 
     # we try to transfer route to other namespace - there is also need to change appropriately gateway
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinging9    ip=${QUAD9_IP}    prefix=64    next_hop=${VETH_IP1}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinging9    ip=${QUAD9_IP}    prefix=128    next_hop=${VETH_IP1}
     Sleep    ${CONFIG_SLEEP}
 
     Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
     Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=${QUAD9_IP}    next_hop=${VETH_IP1}
 
 At first create route and after that create inteface in namespace 3
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns2_veth3    ip=${VETH_IP4}    prefix=64    next_hop=${VETH_IP3}
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns2_veth2    ip=${VETH_IP2}    prefix=64    next_hop=${VETH_IP3}
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns1_veth1    ip=${VETH_IP1}    prefix=64    next_hop=${VETH_IP3}
-    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3    routename=pingingns3_veth3    ip=${VETH_IP3}    prefix=64    next_hop=${VETH_IP4}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns2_veth3    ip=${VETH_IP4}    prefix=128    next_hop=${VETH_IP3}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns2_veth2    ip=${VETH_IP2}    prefix=128   next_hop=${VETH_IP3}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns1_veth1    ip=${VETH_IP1}    prefix=128    next_hop=${VETH_IP3}
+    vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3    routename=pingingns3_veth3    ip=${VETH_IP3}    prefix=128    next_hop=${VETH_IP4}
     Sleep    ${CONFIG_SLEEP}
 
     vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns3    name=ns3_veth3    host_if_name=ns3_veth3_linux    mac=92:c7:42:67:ab:ce    peer=ns2_veth3    ip=${VETH_IP3}

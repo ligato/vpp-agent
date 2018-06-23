@@ -67,7 +67,7 @@ Add ARPs
     vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  ${ARP_IP1}    32:51:51:51:51:51
     vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  ${ARP_IP2}    32:51:51:51:51:52
     vpp_ctl: Put Linux ARP    agent_vpp_1    lo          loopback_arp  ${ARP_IP2}    32:51:51:51:51:52
-    vpp_ctl: Put Linux ARP    agent_vpp_1    eth0        eth_arp  ${ARP_IP2}    32:51:51:51:51:52
+    #vpp_ctl: Put Linux ARP    agent_vpp_1    eth0        eth_arp  ${ARP_IP2}    32:51:51:51:51:52
     Sleep    ${SYNC_SLEEP}
 
 Check ARPSs
@@ -75,14 +75,14 @@ Check ARPSs
     Log           ${out}
     Should Contain     ${out}    ${ARP_IP2} dev vpp1_veth2 lladdr 32:51:51:51:51:52 PERMANENT
     Should Contain     ${out}    ${ARP_IP1} dev vpp1_veth1 lladdr 32:51:51:51:51:51 PERMANENT
-    Should Contain     ${out}    ${ARP_IP2} dev eth0 lladdr 32:51:51:51:51:52 PERMANENT
+    #Should Contain     ${out}    ${ARP_IP2} dev eth0 lladdr 32:51:51:51:51:52 PERMANENT
     Should Contain     ${out}    ${ARP_IP2} dev lo lladdr 32:51:51:51:51:52 PERMANENT
 
 Change ARPs
     vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  ${ARP_IP3}    32:61:51:51:51:51
     vpp_ctl: Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  ${ARP_IP4}    32:61:51:51:51:52
     vpp_ctl: Put Linux ARP    agent_vpp_1    lo          loopback_arp  ${ARP_IP4}    32:61:51:51:51:52
-    vpp_ctl: Put Linux ARP    agent_vpp_1    eth0        eth_arp  ${ARP_IP4}    32:61:51:51:51:52
+    #vpp_ctl: Put Linux ARP    agent_vpp_1    eth0        eth_arp  ${ARP_IP4}    32:61:51:51:51:52
     Sleep    ${SYNC_SLEEP}
 
 Check ARPSs Again
@@ -90,21 +90,21 @@ Check ARPSs Again
     Log           ${out}
     Should Contain     ${out}    ${ARP_IP4} dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Should Contain     ${out}    ${ARP_IP3} dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
-    Should Contain     ${out}    ${ARP_IP4} dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
+    #Should Contain     ${out}    ${ARP_IP4} dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
     Should Contain     ${out}    ${ARP_IP4} dev lo lladdr 32:61:51:51:51:52 PERMANENT
 
 Delete ARPs
     vpp_ctl: Delete Linux ARP    agent_vpp_1    veth1_arp
     vpp_ctl: Delete Linux ARP    agent_vpp_1    veth2_arp
     vpp_ctl: Delete Linux ARP    agent_vpp_1    loopback_arp
-    vpp_ctl: Delete Linux ARP    agent_vpp_1    eth_arp
+    #vpp_ctl: Delete Linux ARP    agent_vpp_1    eth_arp
 
 Check ARPSs After Delete
     ${out}=       Execute In Container    agent_vpp_1    ip neigh
     Log           ${out}
     Should Not Contain     ${out}    ${ARP_IP4} dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Should Not Contain     ${out}    ${ARP_IP3} dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
-    Should Not Contain     ${out}    ${ARP_IP4} dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
+    #Should Not Contain     ${out}    ${ARP_IP4} dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
     Should Not Contain     ${out}    ${ARP_IP4} dev lo lladdr 32:61:51:51:51:52 PERMANENT
 
 
