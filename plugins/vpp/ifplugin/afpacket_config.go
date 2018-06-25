@@ -34,7 +34,7 @@ type AFPacketConfigurator struct {
 	// Caches
 	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
 	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
-	hostInterfaces   map[string]struct{}        // a set of available host interfaces
+	linuxHostInterfaces   map[string]struct{}        // a set of available host (Linux) interfaces
 
 	vppCh     vppcalls.VPPChannel // govpp channel used by InterfaceConfigurator
 	stopwatch *measure.Stopwatch  // from InterfaceConfigurator
@@ -67,7 +67,7 @@ func (plugin *AFPacketConfigurator) GetAfPacketStatusByHost(hostIf string) (exis
 
 // GetHostInterfacesEntry looks for cached host interface and returns true if exists
 func (plugin *AFPacketConfigurator) GetHostInterfacesEntry(hostIf string) bool {
-	_, ok := plugin.hostInterfaces[hostIf]
+	_, ok := plugin.linuxHostInterfaces[hostIf]
 	return ok
 }
 
@@ -87,7 +87,7 @@ func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh vppcalls.V
 	plugin.ifIndexes = indexes
 	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
 	plugin.afPacketByName = make(map[string]*AfPacketConfig)
-	plugin.hostInterfaces = make(map[string]struct{})
+	plugin.linuxHostInterfaces = make(map[string]struct{})
 
 	// Stopwatch
 	plugin.stopwatch = stopwatch
@@ -99,7 +99,6 @@ func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh vppcalls.V
 func (plugin *AFPacketConfigurator) clearMapping() {
 	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
 	plugin.afPacketByName = make(map[string]*AfPacketConfig)
-	plugin.hostInterfaces = make(map[string]struct{})
 }
 
 // ConfigureAfPacketInterface creates a new Afpacket interface or marks it as pending if the target host interface doesn't exist yet.
@@ -109,7 +108,7 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 	}
 
 	if plugin.linux != nil {
-		_, hostIfAvail := plugin.hostInterfaces[afpacket.Afpacket.HostIfName]
+		_, hostIfAvail := plugin.linuxHostInterfaces[afpacket.Afpacket.HostIfName]
 		if !hostIfAvail {
 			plugin.addToCache(afpacket, true)
 			return 0, true, nil
@@ -172,7 +171,7 @@ func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName, 
 			Warn("Unexpectedly learned about a new Linux interface")
 		return nil
 	}
-	plugin.hostInterfaces[hostIfName] = struct{}{}
+	plugin.linuxHostInterfaces[hostIfName] = struct{}{}
 
 	afpacket, found := plugin.afPacketByHostIf[hostIfName]
 	if found {
@@ -196,7 +195,7 @@ func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName, 
 			Warn("Unexpectedly learned about removed Linux interface")
 		return
 	}
-	delete(plugin.hostInterfaces, hostIfName)
+	delete(plugin.linuxHostInterfaces, hostIfName)
 
 	afpacket, found := plugin.afPacketByHostIf[hostIfName]
 	if found {
