@@ -12,6 +12,10 @@ Suite Teardown    Testsuite Teardown
 
 *** Variables ***
 ${ENV}=                common
+${REMOTE_ADDR_1}=      fd30::1:1:0:0:1
+${LOCAL_ADDR_1}=       fd30::1:1:0:0:2
+${REMOTE_ADDR_2}=      fd30::1:1:0:0:3
+${LOCAL_ADDR_2}=       fd30::1:1:0:0:4
 
 *** Test Cases ***
 # CRUD tests for IPsec
@@ -32,7 +36,7 @@ Add SA2 Into VPP
 
 Add SPD1 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA spd 1
-    vpp_ctl: Create IPsec With SPD And Json  agent_vpp_1    spd1    ipsec-spd.json    afp1    10.0.0.1    10.0.0.2    sa10  sa20
+    vpp_ctl: Create IPsec With SPD And Json  agent_vpp_1    spd1    ipsec-spd.json    afp1    ${REMOTE_ADDR_1}    ${LOCAL_ADDR_1}    sa10  sa20
     IP Sec On agent_vpp_1 Should Contain SA spd 1
 
 Check IPsec config_1 On VPP
@@ -50,7 +54,7 @@ Add SA4 Into VPP
 
 Add SPD2 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA spd 2
-    vpp_ctl: Create IPsec With SPD And Json  agent_vpp_1    spd2    ipsec-spd.json    afp2    10.0.0.3    10.0.0.4    sa30  sa40
+    vpp_ctl: Create IPsec With SPD And Json  agent_vpp_1    spd2    ipsec-spd.json    afp2    ${REMOTE_ADDR_2}    ${LOCAL_ADDR_2}    sa30  sa40
     IP Sec On agent_vpp_1 Should Contain SA spd 2
 
 Check IPsec config_1 On VPP After Add SPD2
