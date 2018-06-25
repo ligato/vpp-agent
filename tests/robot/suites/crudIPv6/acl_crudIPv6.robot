@@ -19,6 +19,7 @@ Test Teardown     TestTeardown
 ${REPLY_DATA_FOLDER}            replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
+${api_handler}=     215
 ${ACL1_NAME}=       acl1_tcp
 ${ACL2_NAME}=       acl2_tcp
 ${ACL3_NAME}=       acl3_UDP
@@ -29,12 +30,12 @@ ${E_INTF1}=
 ${I_INTF1}=
 ${E_INTF2}=
 ${I_INTF2}=
-${RULE_NM1_1}=         acl1_rule1
-${RULE_NM2_1}=         acl2_rule1
-${RULE_NM3_1}=         acl3_rule1
-${RULE_NM4_1}=         acl4_rule1
-${RULE_NM5_1}=         acl5_rule1
-${RULE_NM6_1}=         acl6_rule1
+#${RULE_NM1_1}=         acl1_rule1
+#${RULE_NM2_1}=         acl2_rule1
+#${RULE_NM3_1}=         acl3_rule1
+#${RULE_NM4_1}=         acl4_rule1
+#${RULE_NM5_1}=         acl5_rule1
+#${RULE_NM6_1}=         acl6_rule1
 ${ACTION_DENY}=     1
 ${ACTION_PERMIT}=   2
 ${DEST_NTW}=        fd30:0000:0000:0001:000e:0000:0000:0000/64
@@ -63,7 +64,7 @@ Show ACL Before Setup
     vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
 
 Add ACL1_TCP
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
     Sleep    ${SYNC_SLEEP}
 
 Check ACL1 is created
@@ -71,7 +72,7 @@ Check ACL1 is created
 
 
 Add ACL2_TCP
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL2_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM2_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${2DEST_PORT_L}   ${2DEST_PORT_U}    ${2SRC_PORT_L}     ${2SRC_PORT_U}
+    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL2_NAME}    ${E_INTF1}    ${I_INTF1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${2DEST_PORT_L}   ${2DEST_PORT_U}    ${2SRC_PORT_L}     ${2SRC_PORT_U}
     Sleep    ${SYNC_SLEEP}
 
 Check ACL2 is created and ACL1 still Configured
@@ -80,7 +81,7 @@ Check ACL2 is created and ACL1 still Configured
 
 
 Update ACL1
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}     ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_PERMIT}     ${DEST_NTW}    ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}     ${I_INTF1}      ${ACTION_PERMIT}     ${DEST_NTW}    ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
     Sleep    ${SYNC_SLEEP}
 
 Check ACL1 Is Changed and ACL2 not changed
@@ -102,14 +103,14 @@ Check ACL1 Is Deleted
 
 
 ADD ACL3_UDP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM3_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
     Sleep    ${SYNC_SLEEP}
 
 Check ACL3 Is Created
     vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL3_NAME}    ${REPLY_DATA_FOLDER}/reply_acl3IPv6_udp.txt    ${REPLY_DATA_FOLDER}/reply_acl3IPv6_udp_term.txt
 
 ADD ACL4_UDP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL4_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM4_1}     ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL4_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}     ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
     Sleep    ${SYNC_SLEEP}
 
 Check ACL4 Is Created And ACL3 Still Configured
@@ -130,14 +131,14 @@ Check ACL3 Is Deleted
     vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL3_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
 
 ADD ACL5_ICMP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL5_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM5_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL5_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
     Sleep    ${SYNC_SLEEP}
 
 Check ACL5 Is Created
     vpp_ctl: Check ACL Reply    agent_vpp_1    ${ACL5_NAME}   ${REPLY_DATA_FOLDER}/reply_acl5IPv6_icmp.txt    ${REPLY_DATA_FOLDER}/reply_acl5IPv6_icmp_term.txt
 
 ADD ACL6_ICMP
-    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL6_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM6_1}    ${ACTION_DENY}  ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL UDP    agent_vpp_1    ${ACL6_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${ACTION_DENY}  ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
     Sleep    ${SYNC_SLEEP}
 
 Check ACL6 Is Created And ACL5 Still Configured
@@ -159,12 +160,12 @@ Check ACL5 Is Deleted
 
 
 Add 6 ACL
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM1_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL2_NAME}    ${E_INTF1}    ${I_INTF1}   ${RULE_NM2_1}    ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${2DEST_PORT_L}   ${2DEST_PORT_U}    ${2SRC_PORT_L}     ${2SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM3_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL4_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM4_1}     ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL5_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM5_1}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL6_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${RULE_NM6_1}    ${ACTION_DENY}  ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}    ${I_INTF1}     ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL TCP   agent_vpp_1   ${ACL2_NAME}    ${E_INTF1}    ${I_INTF1}     ${ACTION_DENY}     ${DEST_NTW}     ${SRC_NTW}   ${2DEST_PORT_L}   ${2DEST_PORT_U}    ${2SRC_PORT_L}     ${2SRC_PORT_U}
+    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL4_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}   ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL5_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}   ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+    vpp_ctl: Put ACL UDP   agent_vpp_1    ${ACL6_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}   ${ACTION_DENY}  ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
 
 Check All 6 ACLs Added
     Check ACL All Reply    agent_vpp_1     ${REPLY_DATA_FOLDER}/reply_aclIPv6_all.txt        ${REPLY_DATA_FOLDER}/reply_aclIPv6_all_term.txt
@@ -179,8 +180,14 @@ Check ACL All Reply
     ${term_d_lines}=    Split To Lines    ${term_d}
     Log                 ${term_d_lines}
     ${data}=            OperatingSystem.Get File    ${reply_json}
+    Log                 ${data}
+    ${data}=            Replace Variables      ${data}
+    Log                 ${data}
     Should Be Equal     ${data}   ${acl_d}
     ${data}=            OperatingSystem.Get File    ${reply_term}
+    Log                 ${data}
+    ${data}=            Replace Variables      ${data}
+    Log                 ${data}
     ${t_data_lines}=    Split To Lines    ${data}
     Log                 ${t_data_lines}
     List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
