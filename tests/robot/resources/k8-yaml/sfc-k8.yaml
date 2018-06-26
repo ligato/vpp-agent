@@ -25,7 +25,7 @@ spec:
   containers:
     - name: "sfc-controller"
       image: ligato/prod_sfc_controller:latest
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       securityContext:
         privileged: true
       volumeMounts:

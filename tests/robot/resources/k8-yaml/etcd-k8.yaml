@@ -7,6 +7,7 @@ spec:
   hostNetwork: true
   containers:
   - image: quay.io/coreos/etcd:v3.0.16
+    imagePullPolicy: IfNotPresent
     name: etcd
     command:
     - /usr/local/bin/etcd
