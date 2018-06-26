@@ -1,12 +1,13 @@
 import yaml
 import os
+import math
 """Generates YAML config files for use with kubernetes."""
 
 
 def mac_hex(number):
     """Convert integer to hexadecimal for incrementing MAC addresses."""
     temp = hex(number)[2:]
-    if number < 10:
+    if number < 16:
         temp = "0{0}".format(temp)
     elif number > 99:
         raise NotImplementedError(
@@ -28,7 +29,7 @@ def yaml_replace_line(yaml_string, line_identifier, replacement):
 
 
 class YamlConfigGenerator(object):
-    def __init__(self, vnf_count, novpp_count, template_folder):
+    def __init__(self, vnf_count, novpp_count, memif_per_vnf, template_folder):
         """Initialize config generator with topology parameters.
 
         :param vnf_count: Number of VNF nodes.
@@ -38,11 +39,17 @@ class YamlConfigGenerator(object):
         :type novpp_count: int
         :type template_folder: str
         """
+
         self.vnf_count = int(vnf_count)
         self.novpp_count = int(novpp_count)
+        self.memif_per_vnf = int(memif_per_vnf)
         self.templates = {}
         self.output = {}
         self.load_templates(template_folder)
+
+        if self.novpp_count % self.memif_per_vnf != 0:
+            raise NotImplementedError("Number of non-VPP containers must be"
+                                      " a multiple of bridge domain count.")
 
     def load_templates(self, template_folder):
         with open("{0}/sfc-k8.yaml".format(template_folder), "r") as sfc:
@@ -65,45 +72,79 @@ class YamlConfigGenerator(object):
 
     def generate_sfc_config(self):
 
-        elements_list = []
+        entities_list = []
 
-        for vnf_index in range(self.vnf_count):
-            new_element = {
-                "container": "vnf-vpp-{index}".format(index=vnf_index),
-                "port_label": "vnf{index}_memif0".format(index=vnf_index),
-                "mac_addr": "02:01:01:01:01:{0}".format(mac_hex(vnf_index + 1)),
-                "ipv4_addr": "192.168.5.{0}".format(vnf_index + 1),
-                "type": 2,
-                "etcd_vpp_switch_key": "agent_vpp_vswitch"
-            }
-            elements_list.append(new_element)
-        for index in range(self.vnf_count, self.vnf_count + self.novpp_count):
-            novpp_index = index - self.vnf_count
-            new_element = {
-                "container": "novpp-{index}".format(index=novpp_index),
-                "port_label": "veth_novpp{index}".format(index=novpp_index),
-                "mac_addr": "02:01:01:01:01:{0}".format(mac_hex(index + 1)),
-                "ipv4_addr": "192.168.5.{0}".format(index + 1),
+        for bridge_index in range(self.memif_per_vnf):
+            entity = {
+                "name": "L2Bridge-{0}".format(bridge_index),
+                "description": "TODO",
                 "type": 3,
-                "etcd_vpp_switch_key": "agent_vpp_vswitch"
+                "bd_parms": {
+                    "learn": True,
+                    "flood": True,
+                    "forward": True,
+                    "unknown_unicast_flood": True
+                },
+                "elements": [{
+                    "container": "agent_vpp_vswitch",
+                    "port_label": "L2Bridge-{0}".format(bridge_index),
+                    "etcd_vpp_switch_key": "agent_vpp_vswitch",
+                    "type": 5
+                }]
             }
-            elements_list.append(new_element)
 
-        new_element = {
-            "container": "agent_vpp_vswitch",
-            "port_label": "L2-bridge",
-            "l2fib_macs": ["02:01:01:01:01:{0}".format(
-                mac_hex(x + 1)) for x in range(len(elements_list))],
-            "etcd_vpp_switch_key": "agent_vpp_vswitch"
-        }
-        elements_list.append(new_element)
+            for vnf_index in range(self.vnf_count):
+                new_element = {
+                    "container": "vnf-vpp-{index}".format(index=vnf_index),
+                    "port_label": "vnf{0}_memif{1}".format(vnf_index,
+                                                           bridge_index),
+                    "mac_addr": "02:01:01:01:{0}:{1}".format(
+                        mac_hex(bridge_index + 1),
+                        mac_hex(vnf_index + 1)),
+                    "ipv4_addr": "192.168.{0}.{1}".format(
+                        bridge_index + 1,
+                        vnf_index + 1),
+                    "l2fib_macs": [
+                        "192.168.{0}.{1}".format(
+                            bridge_index + 1,
+                            vnf_index + 1)
+                    ],
+                    "type": 2,
+                    "etcd_vpp_switch_key": "agent_vpp_vswitch"
+                }
+
+                entity["elements"].append(new_element)
+            novpp_range = int(math.ceil(
+                float(self.novpp_count) / float(self.memif_per_vnf)
+            ))
+
+            bridge_novpp_index = self.vnf_count + 1
+            for novpp_index in range(
+                            novpp_range * bridge_index,
+                            (novpp_range * bridge_index) + novpp_range):
+                new_element = {
+                    "container": "novpp-{index}".format(index=novpp_index),
+                    "port_label": "veth_novpp{index}".format(index=novpp_index),
+                    "mac_addr": "02:01:01:01:{0}:{1}".format(
+                        mac_hex(bridge_index + 1),
+                        mac_hex(novpp_index + self.vnf_count + 1)),
+                    "ipv4_addr": "192.168.{0}.{1}".format(
+                        bridge_index + 1,
+                        bridge_novpp_index),
+                    "type": 3,
+                    "etcd_vpp_switch_key": "agent_vpp_vswitch"
+                }
+                entity["elements"].append(new_element)
+                bridge_novpp_index += 1
+
+            entities_list.append(entity)
 
         output = ""
         for line in yaml.dump(
-                elements_list,
+                entities_list,
                 default_flow_style=False
         ).splitlines():
-            output += " "*8 + line + "\n"
+            output += " "*6 + line + "\n"
 
         template = self.templates["sfc"]
         if "---" in template:
@@ -143,9 +184,11 @@ class YamlConfigGenerator(object):
             novpp.write(self.output["novpp"])
 
 
-def generate_config(vnf_count, novpp_count, template_path, output_path):
+def generate_config(
+        vnf_count, novpp_count, memif_per_vnf, template_path, output_path):
     generator = YamlConfigGenerator(
         vnf_count,
         novpp_count,
+        memif_per_vnf,
         template_path)
     generator.generate_config(output_path)

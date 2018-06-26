@@ -7,11 +7,11 @@ Resource    ${CURDIR}/KubeCtl.robot
 Resource    ${CURDIR}/../SshCommons.robot
 
 *** Keywords ***
-Basic Restarts Setup with ${vnf_count} VNFs and ${novpp_count} non-VPP containers
+Basic Restarts Setup with ${vnf_count} VNFs at ${memif_per_vnf} memifs each and ${novpp_count} non-VPP containers
     [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
     KubeSetup.Kubernetes Suite Setup   ${CLUSTER_ID}
     Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
-    Generate YAML Config Files    ${vnf_count}    ${novpp_count}
+    Generate YAML Config Files    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
     KubeEnv.Deploy_Etcd_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${vnf_count}
@@ -94,6 +94,6 @@ Close_Restarts_Connections
     \   SSHLibrary.Close_Connection
 
 Generate YAML Config Files
-    [Arguments]    ${vnf_count}    ${novpp_count}
-    BuiltIn.Log Many    ${vnf_count}    ${novpp_count}
-    kube_config_gen.generate_config    ${vnf_count}    ${novpp_count}    ${CURDIR}/../../resources/k8-yaml    ${K8_GENERATED_CONFIG_FOLDER}
+    [Arguments]    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
+    BuiltIn.Log Many    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
+    kube_config_gen.generate_config    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}    ${CURDIR}/../../resources/k8-yaml    ${K8_GENERATED_CONFIG_FOLDER}

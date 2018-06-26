@@ -64,6 +64,7 @@ spec:
     spec:
       restartPolicy: Always
       hostNetwork: false
+      terminationGracePeriodSeconds: 3
       containers:
         - name: "vnf"
           image: ligato/dev-vpp-agent:pantheon-dev
