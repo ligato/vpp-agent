@@ -6,7 +6,9 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Library    SSHLibrary
 
-Suite Setup       Basic Restarts Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
+Suite Setup       Run Keywords
+...    KubeSetup.Kubernetes Suite Setup    ${CLUSTER_ID}
+...    AND    Basic Restarts Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
 Suite Teardown    Basic Restarts Teardown
 Test Teardown     Recreate Topology If Test Failed
 

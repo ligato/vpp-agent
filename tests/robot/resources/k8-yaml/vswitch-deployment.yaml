@@ -96,7 +96,7 @@ spec:
       containers:
         - name: "vswitch"
           image: ligato/dev-vpp-agent:pantheon-dev
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
           ports:
