@@ -109,10 +109,12 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 
 	for {
 		select {
-		case notif := <-plugin.notificationChan:
-			msg := notif.Message
+		case notif, ok := <-plugin.notificationChan:
+			if !ok {
+				continue
+			}
 			bdName := notif.Name
-			switch msg := msg.(type) {
+			switch msg := notif.Message.(type) {
 			case *l2_api.BridgeDomainDetails:
 				bdState := plugin.processBridgeDomainDetailsNotification(msg, bdName)
 				if bdState != nil {
@@ -121,8 +123,9 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 					})
 				}
 			default:
-				plugin.log.WithFields(logging.Fields{"MessageName": msg.GetMessageName()}).Debug("L2Plugin: Ignoring unknown VPP notification")
+				plugin.log.Debugf("L2Plugin: Ignoring unknown VPP notification: %v", msg)
 			}
+
 		case bdIdxDto := <-plugin.bdIdxChan:
 			bdIdxDto.Done()
 

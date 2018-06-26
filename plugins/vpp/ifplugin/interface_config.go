@@ -281,8 +281,8 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
-	// configure optional mac address
-	if iface.PhysAddress != "" {
+	// configure optional mac address (for af packet it is configured in different way)
+	if iface.PhysAddress != "" && iface.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
 		if err := vppcalls.SetInterfaceMac(ifIdx, iface.PhysAddress, plugin.vppCh, plugin.stopwatch); err != nil {
 			errs = append(errs, err)
 		}
@@ -569,8 +569,6 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
-	case intf.InterfaceType_SOFTWARE_LOOPBACK:
-	case intf.InterfaceType_ETHERNET_CSMACD:
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		recreate, err := plugin.afPacketConfigurator.ModifyAfPacketInterface(newConfig, oldConfig)
 		if err != nil || recreate {
@@ -581,6 +579,8 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 				Debug("modifyVPPInterface end. ", err)
 			return err
 		}
+	case intf.InterfaceType_SOFTWARE_LOOPBACK:
+	case intf.InterfaceType_ETHERNET_CSMACD:
 	}
 
 	var wasError error
@@ -836,12 +836,12 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	plugin.log.WithFields(logging.Fields{"ifname": oldConfig.Name, "swIfIndex": ifIdx}).
 		Debug("deleteVPPInterface begin")
 
-	// Skip setting interface to ADMIN_DOWN unless the type ETHERNET_CSMACD because that one cannot be removed
-	// so at least put it down
-	if oldConfig.Type == intf.InterfaceType_ETHERNET_CSMACD {
+	// Skip setting interface to ADMIN_DOWN unless the type AF_PACKET_INTERFACE
+	if oldConfig.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
+		plugin.log.Infof("Setting interface %v down", oldConfig.Name)
 		// Let's try to do following even if previously error occurred
 		if err := vppcalls.InterfaceAdminDown(ifIdx, plugin.vppCh, plugin.stopwatch); err != nil {
-			plugin.log.Error(err)
+			plugin.log.Errorf("Setting interface down failed: %v", err)
 			wasError = err
 		}
 	}
