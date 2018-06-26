@@ -226,14 +226,15 @@ Wait_Until_Pod_Running
     BuiltIn.Wait_Until_Keyword_Succeeds    ${timeout}    ${check_period}    Verify_Pod_Running_And_Ready    ${ssh_session}    ${pod_name}    namespace=${namespace}
 
 Verify_Pod_Not_Present
-    [Arguments]    ${ssh_session}    ${pod_name}    ${namespace}=default
+    [Arguments]    ${ssh_session}    ${pod_name}=${NONE}    ${namespace}=default
     [Documentation]    Get pods for \${namespace}, check \${pod_name} is not one of them.
     BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${namespace}
     ${pods} =     KubeCtl.Get_Pods    ${ssh_session}    namespace=${namespace}
-    Collections.Dictionary_Should_Not_Contain_Key     ${pods}    ${pod_name}
+    BuiltIn.Run_Keyword_If    "${pod_name}" == "${NONE}"    BuiltIn.Should_Be_Empty    ${pods}
+    ...    ELSE    Collections.Dictionary_Should_Not_Contain_Key     ${pods}    ${pod_name}
 
 Wait_Until_Pod_Removed
-    [Arguments]    ${ssh_session}    ${pod_name}    ${timeout}=${POD_REMOVE_DEFAULT_TIMEOUT}    ${check_period}=5s    ${namespace}=default
+    [Arguments]    ${ssh_session}    ${pod_name}=${NONE}    ${timeout}=${POD_REMOVE_DEFAULT_TIMEOUT}    ${check_period}=5s    ${namespace}=default
     [Documentation]    WUKS around Verify_Pod_Not_Present.
     BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${timeout}    ${check_period}    ${namespace}
     BuiltIn.Wait_Until_Keyword_Succeeds    ${timeout}    ${check_period}    Verify_Pod_Not_Present    ${ssh_session}    ${pod_name}    namespace=${namespace}

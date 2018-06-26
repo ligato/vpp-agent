@@ -9,7 +9,6 @@ Resource    ${CURDIR}/../SshCommons.robot
 *** Keywords ***
 Basic Restarts Setup with ${vnf_count} VNFs at ${memif_per_vnf} memifs each and ${novpp_count} non-VPP containers
     [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
-    KubeSetup.Kubernetes Suite Setup   ${CLUSTER_ID}
     Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
     Generate YAML Config Files    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
     KubeEnv.Deploy_Etcd_And_Verify_Running    ${testbed_connection}
@@ -30,6 +29,7 @@ Cleanup_Basic_Restarts_Deployment_On_Cluster
     [Documentation]    Assuming active SSH connection, delete all Kubernetes elements and wait for completion.
     SSHLibrary.Switch_Connection  ${testbed_connection}
     SshCommons.Execute_Command_And_Log    kubectl delete all --all --namespace=default
+    Wait_Until_Pod_Removed    ${testbed_connection}
 
 Setup_Hosts_Connections
     [Documentation]    Open and store two more SSH connections to master host, in them open
