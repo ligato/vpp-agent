@@ -114,7 +114,7 @@ vpp_term: Check Ping
 vpp_term: Check Ping6
     [Arguments]        ${node}    ${ip}     ${count}=5
     Log Many           ${node}    ${ip}     ${count}
-    ${out}=            vpp_term: Issue Command    ${node}    ping6 ${ip} repeat ${count}   delay=10s
+    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} repeat ${count}   delay=10s
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 

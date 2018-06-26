@@ -56,7 +56,7 @@ Check VPP1_TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
     Log                  ${interfaces}
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
-    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ipv6=${IP_VPP1_TAP1}/${PREFIX}    state=${UP_STATE}
+    ${actual_state}=    vpp_term: Check TAP IP6 interface State    agent_vpp_1    ${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ipv6=${IP_VPP1_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Check Ping Between VPP1 and linux_VPP1_TAP1 Interface
     linux: Check Ping    node=agent_vpp_1    ip=${IP_VPP1_TAP1}
@@ -76,7 +76,7 @@ Check VPP2_TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
     Log                  ${interfaces}
     vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
-    ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_2    ${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ipv6=${IP_VPP2_TAP1}/${PREFIX}    state=${UP_STATE}
+    ${actual_state}=    vpp_term: Check TAP IP6 interface State    agent_vpp_2    ${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ipv6=${IP_VPP2_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Check Ping Between VPP2 And linux_VPP2_TAP1 Interface
     linux: Check Ping    node=agent_vpp_2    ip=${IP_VPP2_TAP1}
@@ -109,13 +109,13 @@ Add Static Route From VPP1 Linux To VPP2
     linux: Add Route    node=agent_vpp_1    destination_ip=${IP_VPP2_TAP1_NETWORK}    prefix=${PREFIX}    next_hop_ip=${IP_VPP1_TAP1}
 
 Add Static Route From VPP1 To VPP2
-    Create Route On agent_vpp_1 With IP 20.20.1.0/24 With Next Hop 192.168.1.2 And Vrf Id 0
+    Create Route On agent_vpp_1 With IP ${IP_VPP2_TAP1_NETWORK}/${PREFIX} With Next Hop ${IP_VPP2_MEMIF1} And Vrf Id 0
 
 Add Static Route From VPP2 Linux To VPP1
     linux: Add Route    node=agent_vpp_2    destination_ip=${IP_VPP1_TAP1_NETWORK}    prefix=${PREFIX}    next_hop_ip=${IP_VPP2_TAP1}
 
 Add Static Route From VPP2 To VPP1
-    Create Route On agent_vpp_2 With IP 10.10.1.0/24 With Next Hop 192.168.1.1 And Vrf Id 0
+    Create Route On agent_vpp_2 With IP ${IP_VPP2_TAP1_NETWORK}/${PREFIX} With Next Hop ${IP_VPP1_MEMIF1} And Vrf Id 0
 
 Check Ping From VPP1 Linux To VPP2_TAP1 And LINUX_VPP2_TAP1
     linux: Check Ping    node=agent_vpp_1    ip=${IP_VPP2_TAP1}
