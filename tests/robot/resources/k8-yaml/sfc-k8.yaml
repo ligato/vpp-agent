@@ -16,10 +16,6 @@ data:
     - name: agent_vpp_vswitch
 
     sfc_entities:
-    - name: l2bridge-0
-      description: abc
-      type: 2
-      elements:
 ---
 apiVersion: v1
 kind: Pod

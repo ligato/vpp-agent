@@ -49,11 +49,16 @@ func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan VPPChannel) (vrfI
 }
 
 // SetInterfaceVRF retrieves VRF table from interface
-func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger, vppChan VPPChannel) error {
-	log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfIndex)
+func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan VPPChannel) error {
+	if err := CreateVrfIfNeeded(vrfID, vppChan); err != nil {
+		log.Warnf("creating VRF failed: %v", err)
+		return err
+	}
+
+	log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfID)
 
 	req := &interfaces.SwInterfaceSetTable{
-		VrfID:     vrfIndex,
+		VrfID:     vrfID,
 		SwIfIndex: ifaceIndex,
 	}
 	/*if table.IsIPv6 {
@@ -77,18 +82,19 @@ func SetInterfaceVRF(ifaceIndex, vrfIndex uint32, log logging.Logger, vppChan VP
 // TODO: manage VRF tables globally in separate configurator
 
 // CreateVrfIfNeeded checks if VRF exists and creates it if not
-func CreateVrfIfNeeded(vrf uint32, vppChan VPPChannel) error {
-	if vrf == 0 {
+func CreateVrfIfNeeded(vrfID uint32, vppChan VPPChannel) error {
+	if vrfID == 0 {
 		return nil
 	}
 
 	tables, err := dumpVrfTables(vppChan)
 	if err != nil {
+		logrus.DefaultLogger().Warnf("dumping VRF tables failed: %v", err)
 		return err
 	}
-	if _, ok := tables[vrf]; !ok {
-		logrus.DefaultLogger().Warnf("VXLAN: VRF table %v does not exists, creating it", vrf)
-		return vppAddIPTable(vrf, vppChan)
+	if _, ok := tables[vrfID]; !ok {
+		logrus.DefaultLogger().Warnf("VRF table %v does not exists, creating it", vrfID)
+		return vppAddIPTable(vrfID, vppChan)
 	}
 
 	return nil
@@ -122,7 +128,7 @@ func vppAddIPTable(tableID uint32, vppChan VPPChannel) error {
 	}
 
 	// Send message
-	reply := new(ip.IPTableAddDelReply)
+	reply := &ip.IPTableAddDelReply{}
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

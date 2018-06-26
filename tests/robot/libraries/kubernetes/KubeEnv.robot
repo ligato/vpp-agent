@@ -10,6 +10,8 @@ Documentation     This is a library to handle actions related to kubernetes clus
 ...               #${client_pod_name} client pod name assigned by k8s in 1-node 2-pod scenario.
 ...               #${server_pod_name} server pod name assigned by k8s in 1-node 2-pod scenario.
 Resource          ${CURDIR}/../all_libs.robot
+Resource          KubeCtl.robot
+Library           kube_parser.py
 
 *** Variables ***
 ${robot_root}                ${CURDIR}/../..
@@ -197,6 +199,15 @@ Remove_Pod_And_Verify_Removed
     KubeCtl.Delete_F    ${ssh_session}    ${pod_file}
     Wait_Until_Pod_Removed    ${ssh_session}    ${pod_name}
 
+Verify_Pod_Not_Terminating
+    [Arguments]    ${ssh_session}    ${pod_name}    ${namespace}=default
+    [Documentation]    Get pods of \${namespace}, parse status of \${pod_name}, check it is not Terminating.
+    BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${namespace}
+    &{pods} =     KubeCtl.Get_Pods    ${ssh_session}    namespace=${namespace}
+    Return From Keyword If    "${pod_name}" not in ${pods}.keys()
+    ${status} =    BuiltIn.Evaluate    &{pods}[${pod_name}]['STATUS']
+    BuiltIn.Should_Not_Be_Equal_As_Strings    ${status}    Terminating
+
 Verify_Pod_Running_And_Ready
     [Arguments]    ${ssh_session}    ${pod_name}    ${namespace}=default
     [Documentation]    Get pods of \${namespace}, parse status of \${pod_name}, check it is Running, parse for ready containes of \${pod_name}, check it is all of them.
@@ -228,16 +239,15 @@ Wait_Until_Pod_Removed
     BuiltIn.Wait_Until_Keyword_Succeeds    ${timeout}    ${check_period}    Verify_Pod_Not_Present    ${ssh_session}    ${pod_name}    namespace=${namespace}
 
 Run Command In Pod
-    [Arguments]    ${command}    ${ssh_session}=${EMPTY}    ${prompt}=${EMPTY}
-    [Documentation]    Switch if \${ssh_session}, configure if \${prompt}, write \${command}, read until prompt, log and return text output.
-    BuiltIn.Log_Many    ${command}     ${ssh_session}     ${prompt}
+    [Arguments]    ${command}    ${pod_name}
+    [Documentation]    Execute command on the pod, log and return retval, stdout, stderr.
+    BuiltIn.Log_Many    ${command}     ${pod_name}
     BuiltIn.Comment    TODO: Do not mention pods and move to SshCommons.robot or similar.
-    BuiltIn.Run_Keyword_If    """${ssh_session}""" != """${EMPTY}"""     SSHLibrary.Switch_Connection    ${ssh_session}
-    BuiltIn.Run_Keyword_If    """${prompt}""" != """${EMPTY}"""    SSHLibrary.Set_Client_Configuration    prompt=${prompt}
-    SSHLibrary.Write    ${command}
-    ${output} =     SSHLibrary.Read_Until_Prompt
+    SSHLibrary.Switch Connection    ${testbed_connection}
+    ${output} =    SSHLibrary.Execute Command    kubectl exec ${pod_name} -- ${command}    return_stdout=True    return_stderr=True    return_rc=True
+    BuiltIn.Should_Be_Equal_As_integers    ${output[2]}    ${0}
     SshCommons.Append_Command_Log    ${command}    ${output}
-    [Return]    ${output}
+    [Return]    ${output[0]}
 
 Init_Infinite_Command_In_Pod
     [Arguments]    ${command}    ${ssh_session}=${EMPTY}    ${prompt}=${EMPTY}
@@ -276,11 +286,9 @@ Get_Into_Container_Prompt_In_Pod
     [Documentation]    Configure if prompt, execute interactive bash in ${pod_name}, read until prompt, log and return output.
     BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${prompt}
     # TODO: PodBash.robot?
-    ${docker} =    BuiltIn.Set_Variable    ${K8_CLUSTER_${CLUSTER_ID}_DOCKER_COMMAND}
-    ${container_id} =    KubeCtl.Get_Container_Id    ${ssh_session}    ${pod_name}
-    # That already switched the ssh session.
-    BuiltIn.Run_Keyword_If    """${prompt}""" != """${EMPTY}"""    SSHLibrary.Set_Client_Configuration    prompt=${prompt}
-    ${command} =    BuiltIn.Set_Variable    ${docker} exec -i -t --privileged=true ${container_id} /bin/sh
+    SSHLibrary.Switch_Connection    ${ssh_session}
+    SSHLibrary.Set_Client_Configuration    prompt=${prompt}
+    ${command} =    BuiltIn.Set_Variable    kubectl exec -i -t ${pod_name} /bin/sh
     SSHLibrary.Write    ${command}
     ${output} =     SSHLibrary.Read_Until_Prompt
     SshCommons.Append_Command_Log    ${command}    ${output}
@@ -338,7 +346,7 @@ Log_Etcd
     KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=default
 
 Log_Vswitch
-    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
+    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${K8_CLUSTER_${CLUSTER_ID}_NODES}
     [Documentation]    Check there is expected number of vswitch pods, get logs from them an cn-infra containers
     ...    (and do nothing except the implicit Log).
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
@@ -346,25 +354,23 @@ Log_Vswitch
     BuiltIn.Log    ${pod_list}
     BuiltIn.Length_Should_Be    ${pod_list}    ${exp_nr_vswitch}
     : FOR    ${vswitch_pod}    IN    @{pod_list}
-    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default    container=vswitch
-
-Log_Kube_Dns
-    [Arguments]    ${ssh_session}
-    [Documentation]    Check there is exactly one dns pod, get logs from kubedns, dnsmasq and sidecar containers
-    ...    (and do nothing with them, except the implicit Log).
-    Builtin.Log_Many    ${ssh_session}
-    ${pod_list} =    Get_Pod_Name_List_By_Prefix    ${ssh_session}    kube-dns-
-    BuiltIn.Log    ${pod_list}
-    BuiltIn.Length_Should_Be    ${pod_list}    1
-    KubeCtl.Logs    ${ssh_session}    @{pod_list}[0]    namespace=default    container=kubedns
+    \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default
 
 Log_Pods_For_Debug
-    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${KUBE_CLUSTER_${CLUSTER_ID}_NODES}
+    [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${K8_CLUSTER_${CLUSTER_ID}_NODES}
     [Documentation]    Call multiple keywords to get various logs
     ...    (and do nothing with them, except the implicit Log).
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
     Log_Etcd    ${ssh_session}
     Log_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
+    :FOR    ${vnf_pod}    IN    @{vnf_pods}
+    \    Run Command In Pod    vppctl show int              ${vnf_pod}
+    \    Run Command In Pod    vppctl show int address      ${vnf_pod}
+    \    Run Command In Pod    vppctl show errors           ${vnf_pod}
+    :FOR    ${novpp_pod}    IN    @{novpp_pods}
+    \    Run Command In Pod    ip link        ${novpp_pod}
+    \    Run Command In Pod    ip address     ${novpp_pod}
+    \    Run Command In Pod    ip neighbor    ${novpp_pod}
 
 Open_Connection_To_Node
     [Arguments]    ${name}    ${cluster_id}    ${node_index}

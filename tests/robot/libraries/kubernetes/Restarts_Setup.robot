@@ -7,11 +7,11 @@ Resource    ${CURDIR}/KubeCtl.robot
 Resource    ${CURDIR}/../SshCommons.robot
 
 *** Keywords ***
-Basic Restarts Setup with ${vnf_count} VNFs and ${novpp_count} non-VPP containers
+Basic Restarts Setup with ${vnf_count} VNFs at ${memif_per_vnf} memifs each and ${novpp_count} non-VPP containers
     [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
     KubeSetup.Kubernetes Suite Setup   ${CLUSTER_ID}
     Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
-    Generate YAML Config Files    ${vnf_count}    ${novpp_count}
+    Generate YAML Config Files    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
     KubeEnv.Deploy_Etcd_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
     KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${vnf_count}
@@ -22,10 +22,7 @@ Basic Restarts Setup with ${vnf_count} VNFs and ${novpp_count} non-VPP container
 Basic Restarts Teardown
     [Documentation]    Log leftover output from pods, remove pods, execute common teardown.
     KubeEnv.Log_Pods_For_Debug    ${testbed_connection}    exp_nr_vswitch=1
-    KubeEnv.Remove_ETCD_Pod_And_Verify_Removed    ${testbed_connection}
-    KubeEnv.Remove_VSwitch_Pod_And_Verify_Removed   ${testbed_connection}
-    KubeEnv.Remove_SFC_Pod_And_Verify_Removed   ${testbed_connection}
-    # TODO: Remove vnf and novpp pods.
+    Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
     KubeSetup.Kubernetes Suite Teardown    ${CLUSTER_ID}
 
 Cleanup_Basic_Restarts_Deployment_On_Cluster
@@ -45,8 +42,7 @@ Teardown_Hosts_Connections
 
 Open_Restarts_Connections
     [Arguments]    ${vnf_count}    ${novpp_count}    ${node_index}=1    ${cluster_id}=INTEGRATION1
-    BuiltIn.Log    ${node_index}
-    BuiltIn.Log    ${cluster_id}
+    BuiltIn.Log Many    ${vnf_count}    ${novpp_count}    ${node_index}    ${cluster_id}
 
     ${etcd_connection}=    KubeEnv.Open_Connection_To_Node    etcd    ${cluster_id}     ${node_index}
     BuiltIn.Set_Suite_Variable    ${etcd_connection}
@@ -75,6 +71,7 @@ Open_Restarts_Connections
     BuiltIn.Set_Suite_Variable    ${novpp_connections}
 
 Close_Restarts_Connections
+    BuiltIn.Log Many    @{vnf_connections}
     KubeEnv.Leave_Container_Prompt_In_Pod    ${vswitch_connection}
     KubeEnv.Leave_Container_Prompt_In_Pod    ${sfc_connection}
     KubeEnv.Leave_Container_Prompt_In_Pod    ${etcd_connection}
@@ -97,5 +94,6 @@ Close_Restarts_Connections
     \   SSHLibrary.Close_Connection
 
 Generate YAML Config Files
-    [Arguments]    ${vnf_count}    ${novpp_count}
-    kube_config_gen.generate_config    ${vnf_count}    ${novpp_count}    ${CURDIR}/../../resources/k8-yaml    ${K8_GENERATED_CONFIG_FOLDER}
+    [Arguments]    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
+    BuiltIn.Log Many    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
+    kube_config_gen.generate_config    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}    ${CURDIR}/../../resources/k8-yaml    ${K8_GENERATED_CONFIG_FOLDER}
