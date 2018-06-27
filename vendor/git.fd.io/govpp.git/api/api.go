@@ -87,7 +87,7 @@ type MessageIdentifier interface {
 // methods  provided inside of this package. Do not use the same channel from multiple goroutines concurrently,
 // otherwise the responses could mix! Use multiple channels instead.
 type Channel struct {
-	ID        uint16 // channel ID
+	ID uint16 // channel ID
 
 	ReqChan   chan *VppRequest // channel for sending the requests to VPP, closing this channel releases all resources in the ChannelProvider
 	ReplyChan chan *VppReply   // channel where VPP replies are delivered to
@@ -134,13 +134,13 @@ type NotifSubscription struct {
 
 // RequestCtx is a context of a ongoing request (simple one - only one response is expected).
 type RequestCtx struct {
-	ch *Channel
+	ch     *Channel
 	seqNum uint16
 }
 
 // MultiRequestCtx is a context of a ongoing multipart request (multiple responses are expected).
 type MultiRequestCtx struct {
-	ch *Channel
+	ch     *Channel
 	seqNum uint16
 }
 
@@ -151,7 +151,7 @@ const defaultReplyTimeout = time.Second * 1 // default timeout for replies from 
 // Use ChannelProvider to get an API channel ready for communication with VPP.
 func NewChannelInternal(id uint16) *Channel {
 	return &Channel{
-		ID: id,
+		ID:           id,
 		replyTimeout: defaultReplyTimeout,
 	}
 }
@@ -175,7 +175,7 @@ func (ch *Channel) SendRequest(msg Message) *RequestCtx {
 	ch.lastSeqNum++
 	ch.ReqChan <- &VppRequest{
 		Message: msg,
-		SeqNum: ch.lastSeqNum,
+		SeqNum:  ch.lastSeqNum,
 	}
 	return &RequestCtx{ch: ch, seqNum: ch.lastSeqNum}
 }
@@ -266,7 +266,7 @@ func (ch *Channel) processReply(reply *VppReply, expSeqNum uint16, msg Message) 
 		ignore = true
 		return
 	}
-	if cmpSeqNums == 1  {
+	if cmpSeqNums == 1 {
 		ch.delayedReply = reply
 		err = fmt.Errorf("missing binary API reply with sequence number: %d", expSeqNum)
 		return
@@ -298,8 +298,8 @@ func (ch *Channel) processReply(reply *VppReply, expSeqNum uint16, msg Message) 
 			msgNameCrc = nameCrc
 		}
 
-		err = fmt.Errorf("received invalid message ID (seq-num=%d), expected %d (%s), but got %d (%s) " +
-		"(check if multiple goroutines are not sharing single GoVPP channel)",
+		err = fmt.Errorf("received invalid message ID (seq-num=%d), expected %d (%s), but got %d (%s) "+
+			"(check if multiple goroutines are not sharing single GoVPP channel)",
 			reply.SeqNum, expMsgID, msg.GetMessageName(), reply.MessageID, msgNameCrc)
 		return
 	}
