@@ -104,24 +104,25 @@ func TestDumpIPACL(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '1'},
-		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 1,
-		Tag:      []byte{'a', 'c', 'l', '2'},
-		Count:    2,
-		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 2,
-		Tag:      []byte{'a', 'c', 'l', '3'},
-		Count:    3,
-		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
-	})
+	ctx.MockVpp.MockReply(
+		&acl_api.ACLDetails{
+			ACLIndex: 0,
+			Tag:      []byte{'a', 'c', 'l', '1'},
+			Count:    1,
+			R:        []acl_api.ACLRule{{IsPermit: 1}},
+		},
+		&acl_api.ACLDetails{
+			ACLIndex: 1,
+			Tag:      []byte{'a', 'c', 'l', '2'},
+			Count:    2,
+			R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
+		},
+		&acl_api.ACLDetails{
+			ACLIndex: 2,
+			Tag:      []byte{'a', 'c', 'l', '3'},
+			Count:    3,
+			R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 1,
@@ -148,24 +149,25 @@ func TestDumpMACIPACL(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte{'a', 'c', 'l', '1'},
-		Count:    1,
-		R:        []acl_api.MacipACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 1,
-		Tag:      []byte{'a', 'c', 'l', '2'},
-		Count:    2,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 2,
-		Tag:      []byte{'a', 'c', 'l', '3'},
-		Count:    3,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
-	})
+	ctx.MockVpp.MockReply(
+		&acl_api.MacipACLDetails{
+			ACLIndex: 0,
+			Tag:      []byte{'a', 'c', 'l', '1'},
+			Count:    1,
+			R:        []acl_api.MacipACLRule{{IsPermit: 1}},
+		},
+		&acl_api.MacipACLDetails{
+			ACLIndex: 1,
+			Tag:      []byte{'a', 'c', 'l', '2'},
+			Count:    2,
+			R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
+		},
+		&acl_api.MacipACLDetails{
+			ACLIndex: 2,
+			Tag:      []byte{'a', 'c', 'l', '3'},
+			Count:    3,
+			R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
 		SwIfIndex: 1,
@@ -289,7 +291,6 @@ func TestDumpInterfaceIPAcls(t *testing.T) {
 		Count:    1,
 		R:        []acl_api.ACLRule{{IsPermit: 2}, {IsPermit: 0}},
 	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	ACLs, err := DumpInterfaceIPAcls(logrus.DefaultLogger(), 0, ctx.MockChannel, nil)
 	Expect(err).To(Succeed())
@@ -315,7 +316,6 @@ func TestDumpInterfaceMACIPAcls(t *testing.T) {
 		Count:    1,
 		R:        []acl_api.MacipACLRule{{IsPermit: 2}, {IsPermit: 1}},
 	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	ACLs, err := DumpInterfaceMACIPAcls(logrus.DefaultLogger(), 0, ctx.MockChannel, nil)
 	Expect(err).To(Succeed())
@@ -360,35 +360,36 @@ func TestDumpInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
-		SwIfIndex: 0,
-		Count:     2,
-		NInput:    1,
-		Acls:      []uint32{0, 1},
-	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
-		SwIfIndex: 1,
-		Count:     1,
-		NInput:    1,
-		Acls:      []uint32{2},
-	})
-	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
-		SwIfIndex: 2,
-		Count:     2,
-		NInput:    1,
-		Acls:      []uint32{3, 4},
-	})
+	ctx.MockVpp.MockReply(
+		&acl_api.ACLInterfaceListDetails{
+			SwIfIndex: 0,
+			Count:     2,
+			NInput:    1,
+			Acls:      []uint32{0, 1},
+		},
+		&acl_api.ACLInterfaceListDetails{
+			SwIfIndex: 1,
+			Count:     1,
+			NInput:    1,
+			Acls:      []uint32{2},
+		},
+		&acl_api.ACLInterfaceListDetails{
+			SwIfIndex: 2,
+			Count:     2,
+			NInput:    1,
+			Acls:      []uint32{3, 4},
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
 		SwIfIndex: 3,
 		Count:     2,
 		Acls:      []uint32{6, 7},
-	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
-		SwIfIndex: 4,
-		Count:     1,
-		Acls:      []uint32{5},
-	})
+	},
+		&acl_api.MacipACLInterfaceListDetails{
+			SwIfIndex: 4,
+			Count:     1,
+			Acls:      []uint32{5},
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	IPacls, MACIPacls, err := DumpInterfaces(ctx.MockChannel, nil)

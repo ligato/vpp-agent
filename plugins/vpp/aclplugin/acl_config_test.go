@@ -296,24 +296,25 @@ func TestDumpIPACL(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte("acl1"),
-		Count:    1,
-		R:        []acl_api.ACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 1,
-		Tag:      []byte("acl2"),
-		Count:    2,
-		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.ACLDetails{
-		ACLIndex: 2,
-		Tag:      []byte("acl3"),
-		Count:    3,
-		R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
-	})
+	ctx.MockVpp.MockReply(
+		&acl_api.ACLDetails{
+			ACLIndex: 0,
+			Tag:      []byte("acl1"),
+			Count:    1,
+			R:        []acl_api.ACLRule{{IsPermit: 1}},
+		},
+		&acl_api.ACLDetails{
+			ACLIndex: 1,
+			Tag:      []byte("acl2"),
+			Count:    2,
+			R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 2}},
+		},
+		&acl_api.ACLDetails{
+			ACLIndex: 2,
+			Tag:      []byte("acl3"),
+			Count:    3,
+			R:        []acl_api.ACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 1,
@@ -333,24 +334,25 @@ func TestDumpMACIPACL(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 0,
-		Tag:      []byte("acl4"),
-		Count:    1,
-		R:        []acl_api.MacipACLRule{{IsPermit: 1}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 1,
-		Tag:      []byte("acl5"),
-		Count:    2,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
-	})
-	ctx.MockVpp.MockReply(&acl_api.MacipACLDetails{
-		ACLIndex: 2,
-		Tag:      []byte("acl6"),
-		Count:    3,
-		R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
-	})
+	ctx.MockVpp.MockReply(
+		&acl_api.MacipACLDetails{
+			ACLIndex: 0,
+			Tag:      []byte("acl4"),
+			Count:    1,
+			R:        []acl_api.MacipACLRule{{IsPermit: 1}},
+		},
+		&acl_api.MacipACLDetails{
+			ACLIndex: 1,
+			Tag:      []byte("acl5"),
+			Count:    2,
+			R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 2}},
+		},
+		&acl_api.MacipACLDetails{
+			ACLIndex: 2,
+			Tag:      []byte("acl6"),
+			Count:    3,
+			R:        []acl_api.MacipACLRule{{IsPermit: 0}, {IsPermit: 1}, {IsPermit: 2}},
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{
 		SwIfIndex: 1,

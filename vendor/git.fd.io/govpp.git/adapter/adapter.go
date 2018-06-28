@@ -26,7 +26,7 @@ type VppAdapter interface {
 	GetMsgID(msgName string, msgCrc string) (uint16, error)
 
 	// SendMsg sends a binary-encoded message to VPP.
-	SendMsg(clientID uint32, data []byte) error
+	SendMsg(context uint32, data []byte) error
 
 	// SetMsgCallback sets a callback function that will be called by the adapter whenever a message comes from VPP.
 	SetMsgCallback(func(context uint32, msgId uint16, data []byte))

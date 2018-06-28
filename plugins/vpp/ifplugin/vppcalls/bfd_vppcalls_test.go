@@ -597,28 +597,29 @@ func TestDumpBfdUDPSessionsWithID(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	// Authenticated wiht ID 1
-	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
-		SwIfIndex:       1,
-		LocalAddr:       net.ParseIP("10.0.0.1"),
-		PeerAddr:        net.ParseIP("20.0.0.1"),
-		IsAuthenticated: 1,
-		BfdKeyID:        1,
-	})
-	// Authenticated with ID 2 (filtered)
-	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
-		SwIfIndex:       2,
-		LocalAddr:       net.ParseIP("10.0.0.2"),
-		PeerAddr:        net.ParseIP("20.0.0.2"),
-		IsAuthenticated: 1,
-		BfdKeyID:        2,
-	})
-	// Not authenticated
-	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
-		SwIfIndex:       3,
-		LocalAddr:       net.ParseIP("10.0.0.3"),
-		PeerAddr:        net.ParseIP("20.0.0.3"),
-		IsAuthenticated: 0,
-	})
+	ctx.MockVpp.MockReply(
+		&bfd_api.BfdUDPSessionDetails{
+			SwIfIndex:       1,
+			LocalAddr:       net.ParseIP("10.0.0.1"),
+			PeerAddr:        net.ParseIP("20.0.0.1"),
+			IsAuthenticated: 1,
+			BfdKeyID:        1,
+		},
+		// Authenticated with ID 2 (filtered)
+		&bfd_api.BfdUDPSessionDetails{
+			SwIfIndex:       2,
+			LocalAddr:       net.ParseIP("10.0.0.2"),
+			PeerAddr:        net.ParseIP("20.0.0.2"),
+			IsAuthenticated: 1,
+			BfdKeyID:        2,
+		},
+		// Not authenticated
+		&bfd_api.BfdUDPSessionDetails{
+			SwIfIndex:       3,
+			LocalAddr:       net.ParseIP("10.0.0.3"),
+			PeerAddr:        net.ParseIP("20.0.0.3"),
+			IsAuthenticated: 0,
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	sessions, err := vppcalls.DumpBfdUDPSessionsWithID(1, ctx.MockChannel, nil)
@@ -796,12 +797,12 @@ func TestDumpBfdKeys(t *testing.T) {
 		ConfKeyID: 1,
 		UseCount:  0,
 		AuthType:  4,
-	})
-	ctx.MockVpp.MockReply(&bfd_api.BfdAuthKeysDetails{
-		ConfKeyID: 2,
-		UseCount:  1,
-		AuthType:  5,
-	})
+	},
+		&bfd_api.BfdAuthKeysDetails{
+			ConfKeyID: 2,
+			UseCount:  1,
+			AuthType:  5,
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	keys, err := vppcalls.DumpBfdKeys(ctx.MockChannel, nil)

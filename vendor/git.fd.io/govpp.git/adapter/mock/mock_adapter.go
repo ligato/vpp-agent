@@ -48,10 +48,10 @@ type VppAdapter struct {
 	binAPITypes  map[string]reflect.Type
 	access       sync.RWMutex
 
-	replies       []api.Message  // FIFO queue of messages
-	replyHandlers []ReplyHandler // callbacks that are able to calculate mock responses
-	repliesLock   sync.Mutex     // mutex for the queue
-	mode          replyMode      // mode in which the mock operates
+	replies       []reply            // FIFO queue of messages
+	replyHandlers []ReplyHandler     // callbacks that are able to calculate mock responses
+	repliesLock   sync.Mutex         // mutex for the queue
+	mode          replyMode          // mode in which the mock operates
 }
 
 // defaultReply is a default reply message that mock adapter returns for a request.
@@ -65,6 +65,21 @@ type MessageDTO struct {
 	MsgName  string
 	ClientID uint32
 	Data     []byte
+}
+
+// reply for one request (can be multipart, contain replies to previously timeouted requests, etc.)
+type reply struct {
+	msgs []MsgWithContext
+}
+
+// MsgWithContext encapsulates reply message with possibly sequence number and is-multipart flag.
+type MsgWithContext struct {
+	Msg       api.Message
+	SeqNum    uint16
+	Multipart bool
+
+	/* set by mock adapter */
+	hasCtx    bool
 }
 
 // ReplyHandler is a type that allows to extend the behaviour of VPP mock.
@@ -246,30 +261,32 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 		a.repliesLock.Lock()
 		defer a.repliesLock.Unlock()
 
-		// pop all replies from queue
-		for i, reply := range a.replies {
-			if i > 0 && reply.GetMessageName() == "control_ping_reply" {
-				// hack - do not send control_ping_reply immediately, leave it for the the next callback
-				a.replies = a.replies[i:]
-				return nil
-			}
-			msgID, _ := a.GetMsgID(reply.GetMessageName(), reply.GetCrcString())
-			buf := new(bytes.Buffer)
-			if reply.GetMessageType() == api.ReplyMessage {
-				struc.Pack(buf, &core.VppReplyHeader{VlMsgID: msgID, Context: clientID})
-			} else if reply.GetMessageType() == api.EventMessage {
-				struc.Pack(buf, &core.VppEventHeader{VlMsgID: msgID, Context: clientID})
-			} else if reply.GetMessageType() == api.RequestMessage {
-				struc.Pack(buf, &core.VppRequestHeader{VlMsgID: msgID, Context: clientID})
-			} else {
-				struc.Pack(buf, &core.VppOtherHeader{VlMsgID: msgID})
-			}
-			struc.Pack(buf, reply)
-			a.callback(clientID, msgID, buf.Bytes())
-		}
+		// pop the first reply
 		if len(a.replies) > 0 {
-			a.replies = []api.Message{}
-			if len(a.replyHandlers) > 0 {
+			reply := a.replies[0]
+			for _, msg := range reply.msgs {
+				msgID, _ := a.GetMsgID(msg.Msg.GetMessageName(), msg.Msg.GetCrcString())
+				buf := new(bytes.Buffer)
+				context := clientID
+				if msg.hasCtx {
+					context = setMultipart(context, msg.Multipart)
+					context = setSeqNum(context, msg.SeqNum)
+				}
+				if msg.Msg.GetMessageType() == api.ReplyMessage {
+					struc.Pack(buf, &core.VppReplyHeader{VlMsgID: msgID, Context: context})
+				} else if msg.Msg.GetMessageType() == api.EventMessage {
+					struc.Pack(buf, &core.VppEventHeader{VlMsgID: msgID, Context: context})
+				} else if msg.Msg.GetMessageType() == api.RequestMessage {
+					struc.Pack(buf, &core.VppRequestHeader{VlMsgID: msgID, Context: context})
+				} else {
+					struc.Pack(buf, &core.VppOtherHeader{VlMsgID: msgID})
+				}
+				struc.Pack(buf, msg.Msg)
+				a.callback(context, msgID, buf.Bytes())
+			}
+
+			a.replies = a.replies[1:]
+			if len(a.replies) == 0 && len(a.replyHandlers) > 0 {
 				// Switch back to handlers once the queue is empty to revert back
 				// the fallthrough effect.
 				a.mode = useReplyHandlers
@@ -299,14 +316,56 @@ func (a *VppAdapter) WaitReady() error {
 	return nil
 }
 
-// MockReply stores a message to be returned when the next request comes. It is a FIFO queue - multiple replies
-// can be pushed into it, the first one will be popped when some request comes.
-// Using of this method automatically switches the mock into th useRepliesQueue mode.
-func (a *VppAdapter) MockReply(msg api.Message) {
+// MockReply stores a message or a list of multipart messages to be returned when
+// the next request comes. It is a FIFO queue - multiple replies can be pushed into it,
+// the first message or the first set of multi-part messages will be popped when
+// some request comes.
+// Using of this method automatically switches the mock into the useRepliesQueue mode.
+//
+// Note: multipart requests are implemented using two requests actually - the multipart
+// request itself followed by control ping used to tell which multipart message
+// is the last one. A mock reply to a multipart request has to thus consist of
+// exactly two calls of this method.
+// For example:
+//
+//    mockVpp.MockReply(  // push multipart messages all at once
+// 			&interfaces.SwInterfaceDetails{SwIfIndex:1},
+// 			&interfaces.SwInterfaceDetails{SwIfIndex:2},
+// 			&interfaces.SwInterfaceDetails{SwIfIndex:3},
+//    )
+//    mockVpp.MockReply(&vpe.ControlPingReply{})
+//
+// Even if the multipart request has no replies, MockReply has to be called twice:
+//
+//    mockVpp.MockReply()  // zero multipart messages
+//    mockVpp.MockReply(&vpe.ControlPingReply{})
+func (a *VppAdapter) MockReply(msgs ...api.Message) {
 	a.repliesLock.Lock()
 	defer a.repliesLock.Unlock()
 
-	a.replies = append(a.replies, msg)
+	r := reply{}
+	for _, msg := range msgs {
+		r.msgs = append(r.msgs, MsgWithContext{Msg: msg, hasCtx: false})
+	}
+	a.replies = append(a.replies, r)
+	a.mode = useRepliesQueue
+}
+
+// MockReplyWithContext queues next reply like MockReply() does, except that the
+// sequence number and multipart flag (= context minus channel ID) can be customized
+// and not necessarily match with the request.
+// The purpose of this function is to test handling of sequence numbers and as such
+// it is not really meant to be used outside the govpp UTs.
+func (a *VppAdapter) MockReplyWithContext(msgs ...MsgWithContext) {
+	a.repliesLock.Lock()
+	defer a.repliesLock.Unlock()
+
+	r := reply{}
+	for _, msg := range msgs {
+		r.msgs = append(r.msgs,
+			MsgWithContext{Msg: msg.Msg, SeqNum: msg.SeqNum, Multipart: msg.Multipart, hasCtx: true})
+	}
+	a.replies = append(a.replies, r)
 	a.mode = useRepliesQueue
 }
 
@@ -319,3 +378,18 @@ func (a *VppAdapter) MockReplyHandler(replyHandler ReplyHandler) {
 	a.replyHandlers = append(a.replyHandlers, replyHandler)
 	a.mode = useReplyHandlers
 }
+
+func setSeqNum(context uint32, seqNum uint16) (newContext uint32) {
+	context &= 0xffff0000
+	context |= uint32(seqNum)
+	return context
+}
+
+func setMultipart(context uint32, isMultipart bool) (newContext uint32) {
+	context &= 0xfffeffff
+	if isMultipart {
+		context |= 1 << 16
+	}
+	return context
+}
+
