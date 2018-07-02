@@ -156,7 +156,14 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 
 		return plugin.configureVethInterface(ifConfig, peerConfig)
 	case interfaces.LinuxInterfaces_AUTO_TAP:
-		return plugin.configureTapInterface(linuxIf.HostIfName, linuxIf)
+		var hostIfName string = ""
+		if linuxIf.Tap != nil  {
+			hostIfName = linuxIf.GetTap().GetTempIfName()
+		}
+		if hostIfName == "" {
+			hostIfName = linuxIf.GetHostIfName()
+		}
+		return plugin.configureTapInterface(hostIfName, linuxIf)
 	default:
 		return fmt.Errorf("unknown linux interface type: %v", linuxIf.Type)
 	}
@@ -347,7 +354,7 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(hostIfName strin
 				Data:  ifConfig.config,
 			})
 			plugin.pIfCachedConfigSeq++
-			plugin.log.Infof("Creating new Linux Tap interface  %v configuration entry %v", hostIfName, ifConfig.config)
+			plugin.log.Infof("Creating new Linux Tap interface %v configuration entry %v", hostIfName, ifConfig.config)
 		} else {
 			plugin.log.Infof("There is no Linux Tap configuration entry for interface %v", hostIfName)
 			return nil
@@ -993,7 +1000,14 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMet
 		plugin.log.Warn("Unable to resolve created VPP interfaces, incomplete Linux TAP configuration data")
 		return nil
 	}
-	return plugin.configureTapInterface(hostIfName, nil)
+
+	var linuxIf *interfaces.LinuxInterfaces_Interface = nil
+	_, data, exists := plugin.ifCachedConfigs.LookupIdx(hostIfName)
+	if exists && data != nil {
+		linuxIf = data.Data
+	}
+
+	return plugin.configureTapInterface(hostIfName, linuxIf)
 }
 
 // ResolveDeletedInterface resolves removed vpp interfaces

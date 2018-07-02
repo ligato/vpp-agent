@@ -461,6 +461,43 @@ func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
+// Configure Tap with hostIfName
+func TestLinuxConfiguratorAddTap_TempIfName(t *testing.T) {
+	plugin, _, nsMock, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+
+	data := getTapInterface("tap1", "", "TempIfName")
+	err := plugin.ConfigureLinuxInterface(data)
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
+	// Verify registration
+	_, _, found := plugin.GetCachedLinuxIfIndexes().LookupIdx("TempIfName")
+	Expect(found).To(BeTrue())
+
+}
+
+// Configure Tap with hostIfName
+func TestLinuxConfiguratorAddTap_HostIfName(t *testing.T) {
+	plugin, _, nsMock, msChan, msNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, msChan, msNotif)
+
+	// Linux/namespace calls
+	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+
+	data := getTapInterface("tap1", "HostIfName", "")
+	err := plugin.ConfigureLinuxInterface(data)
+	Expect(err).ShouldNot(HaveOccurred())
+	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
+	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
+	// Verify registration
+	_, _, found := plugin.GetCachedLinuxIfIndexes().LookupIdx("HostIfName")
+	Expect(found).To(BeTrue())
+}
+
 // Todo
 
 /* Interface Test Setup */
@@ -518,6 +555,22 @@ func getVethInterface(ifName, peerName string, namespaceType interfaces.LinuxInt
 		}(namespaceType),
 		Veth: &interfaces.LinuxInterfaces_Interface_Veth{
 			PeerIfName: peerName,
+		},
+	}
+}
+
+func getTapInterface(ifName, hostIfName string, tempIfName string) *interfaces.LinuxInterfaces_Interface {
+	return &interfaces.LinuxInterfaces_Interface{
+		Name:        ifName,
+		Enabled:     true,
+		Type:        interfaces.LinuxInterfaces_AUTO_TAP,
+		PhysAddress: "12:E4:0E:D5:BC:DC",
+		IpAddresses: []string{
+			"192.168.20.3/24",
+		},
+		HostIfName: hostIfName,
+		Tap: &interfaces.LinuxInterfaces_Interface_Tap{
+			TempIfName: tempIfName,
 		},
 	}
 }
