@@ -82,6 +82,29 @@ type MessageIdentifier interface {
 	LookupByID(ID uint16) (string, error)
 }
 
+// VPPChannel provides methods for direct communication with VPP channel.
+type VPPChannel interface {
+	// SendRequest asynchronously sends a request to VPP. Returns a request context, that can be used to call ReceiveReply.
+	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
+	SendRequest(msg Message) *RequestCtx
+	// SendMultiRequest asynchronously sends a multipart request (request to which multiple responses are expected) to VPP.
+	// Returns a multipart request context, that can be used to call ReceiveReply.
+	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
+	SendMultiRequest(msg Message) *MultiRequestCtx
+	// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel.
+	// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
+	// buffer is full, the notifications will not be delivered into it.
+	SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error)
+	// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription.
+	UnsubscribeNotification(subscription *NotifSubscription) error
+	// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
+	// which the library is connected to.
+	CheckMessageCompatibility(messages ...Message) error
+	// SetReplyTimeout sets the timeout for replies from VPP. It represents the maximum time the API waits for a reply
+	// from VPP before returning an error.
+	SetReplyTimeout(timeout time.Duration)
+}
+
 // Channel is the main communication interface with govpp core. It contains two Go channels, one for sending the requests
 // to VPP and one for receiving the replies from it. The user can access the Go channels directly, or use the helper
 // methods  provided inside of this package. Do not use the same channel from multiple goroutines concurrently,
@@ -156,8 +179,6 @@ func NewChannelInternal(id uint16) *Channel {
 	}
 }
 
-// SetReplyTimeout sets the timeout for replies from VPP. It represents the maximum time the API waits for a reply
-// from VPP before returning an error.
 func (ch *Channel) SetReplyTimeout(timeout time.Duration) {
 	ch.replyTimeout = timeout
 }
@@ -169,8 +190,6 @@ func (ch *Channel) Close() {
 	}
 }
 
-// SendRequest asynchronously sends a request to VPP. Returns a request context, that can be used to call ReceiveReply.
-// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
 func (ch *Channel) SendRequest(msg Message) *RequestCtx {
 	ch.lastSeqNum++
 	ch.ReqChan <- &VppRequest{
@@ -195,9 +214,6 @@ func (req *RequestCtx) ReceiveReply(msg Message) error {
 	return err
 }
 
-// SendMultiRequest asynchronously sends a multipart request (request to which multiple responses are expected) to VPP.
-// Returns a multipart request context, that can be used to call ReceiveReply.
-// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
 func (ch *Channel) SendMultiRequest(msg Message) *MultiRequestCtx {
 	ch.lastSeqNum++
 	ch.ReqChan <- &VppRequest{
@@ -330,9 +346,6 @@ func compareSeqNumbers(seqNum1, seqNum2 uint16) int {
 	return 1
 }
 
-// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel.
-// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
-// buffer is full, the notifications will not be delivered into it.
 func (ch *Channel) SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error) {
 	subscription := &NotifSubscription{
 		NotifChan:  notifChan,
@@ -345,7 +358,6 @@ func (ch *Channel) SubscribeNotification(notifChan chan Message, msgFactory func
 	return subscription, <-ch.NotifSubsReplyChan
 }
 
-// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription.
 func (ch *Channel) UnsubscribeNotification(subscription *NotifSubscription) error {
 	ch.NotifSubsChan <- &NotifSubscribeRequest{
 		Subscription: subscription,
@@ -354,8 +366,6 @@ func (ch *Channel) UnsubscribeNotification(subscription *NotifSubscription) erro
 	return <-ch.NotifSubsReplyChan
 }
 
-// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
-// which the library is connected to.
 func (ch *Channel) CheckMessageCompatibility(messages ...Message) error {
 	for _, msg := range messages {
 		_, err := ch.MsgIdentifier.GetMessageID(msg)
