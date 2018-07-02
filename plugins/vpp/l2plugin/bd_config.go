@@ -47,7 +47,7 @@ type BDConfigurator struct {
 	regIfCounter uint32
 
 	// VPP channel
-	vppChan *govppapi.Channel
+	vppChan govppapi.VPPChannel
 
 	// State notification channel
 	notificationChan chan BridgeDomainStateMessage

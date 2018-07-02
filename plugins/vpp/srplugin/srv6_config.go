@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strings"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -45,7 +46,7 @@ type SRv6Configurator struct {
 	VppCalls    vppcalls.SRv6Calls
 
 	// channels
-	vppChannel vppcalls.VPPChannel // channel to communicate with VPP
+	vppChannel govppapi.VPPChannel // channel to communicate with VPP
 
 	// caches
 	policyCache         *cache.PolicyCache        // Cache for SRv6 policies

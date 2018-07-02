@@ -49,8 +49,8 @@ type FIBConfigurator struct {
 	vppcalls *vppcalls.L2FibVppCalls
 
 	// VPP channels
-	syncVppChannel  *govppapi.Channel
-	asyncVppChannel *govppapi.Channel
+	syncVppChannel  govppapi.VPPChannel
+	asyncVppChannel govppapi.VPPChannel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch

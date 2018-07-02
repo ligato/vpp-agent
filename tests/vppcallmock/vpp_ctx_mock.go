@@ -21,6 +21,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 // TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
@@ -96,4 +97,9 @@ func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, m
 // UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription
 func (m *mockedChannel) UnsubscribeNotification(subscription *govppapi.NotifSubscription) error {
 	return m.channel.UnsubscribeNotification(subscription)
+}
+
+// SetReplyTimeout sets the timeout for replies from VPP
+func (m *mockedChannel) SetReplyTimeout(timeout time.Duration) {
+	m.channel.SetReplyTimeout(timeout)
 }
