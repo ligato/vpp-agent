@@ -57,15 +57,15 @@ type DataType interface {
 	GetCrcString() string
 }
 
-// ChannelProvider provides the communication channel with govpp core.
+// ChannelProvider provides the communication ChannelCtx with govpp core.
 type ChannelProvider interface {
-	// NewAPIChannel returns a new channel for communication with VPP via govpp core.
+	// NewAPIChannel returns a new ChannelCtx for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	NewAPIChannel() (*Channel, error)
+	NewAPIChannel() (Channel, error)
 
-	// NewAPIChannelBuffered returns a new channel for communication with VPP via govpp core.
+	// NewAPIChannelBuffered returns a new ChannelCtx for communication with VPP via govpp core.
 	// It allows to specify custom buffer sizes for the request and reply Go channels.
-	NewAPIChannelBuffered() (*Channel, error)
+	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (Channel, error)
 }
 
 // MessageDecoder provides functionality for decoding binary data to generated API messages.
@@ -82,8 +82,8 @@ type MessageIdentifier interface {
 	LookupByID(ID uint16) (string, error)
 }
 
-// VPPChannel provides methods for direct communication with VPP channel.
-type VPPChannel interface {
+// Channel provides methods for direct communication with VPP ChannelCtx.
+type Channel interface {
 	// SendRequest asynchronously sends a request to VPP. Returns a request context, that can be used to call ReceiveReply.
 	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
 	SendRequest(msg Message) *RequestCtx
@@ -91,8 +91,8 @@ type VPPChannel interface {
 	// Returns a multipart request context, that can be used to call ReceiveReply.
 	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
 	SendMultiRequest(msg Message) *MultiRequestCtx
-	// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel.
-	// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
+	// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go ChannelCtx.
+	// Note that the caller is responsible for creating the Go ChannelCtx with preferred buffer size. If the ChannelCtx's
 	// buffer is full, the notifications will not be delivered into it.
 	SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error)
 	// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription.
@@ -103,28 +103,20 @@ type VPPChannel interface {
 	// SetReplyTimeout sets the timeout for replies from VPP. It represents the maximum time the API waits for a reply
 	// from VPP before returning an error.
 	SetReplyTimeout(timeout time.Duration)
-}
-
-// Channel is the main communication interface with govpp core. It contains two Go channels, one for sending the requests
-// to VPP and one for receiving the replies from it. The user can access the Go channels directly, or use the helper
-// methods  provided inside of this package. Do not use the same channel from multiple goroutines concurrently,
-// otherwise the responses could mix! Use multiple channels instead.
-type Channel struct {
-	ID uint16 // channel ID
-
-	ReqChan   chan *VppRequest // channel for sending the requests to VPP, closing this channel releases all resources in the ChannelProvider
-	ReplyChan chan *VppReply   // channel where VPP replies are delivered to
-
-	NotifSubsChan      chan *NotifSubscribeRequest // channel for sending notification subscribe requests
-	NotifSubsReplyChan chan error                  // channel where replies to notification subscribe requests are delivered to
-
-	MsgDecoder    MessageDecoder    // used to decode binary data to generated API messages
-	MsgIdentifier MessageIdentifier // used to retrieve message ID of a message
-
-	lastSeqNum uint16 // sequence number of the last sent request
-
-	delayedReply *VppReply     // reply already taken from ReplyChan, buffered for later delivery
-	replyTimeout time.Duration // maximum time that the API waits for a reply from VPP before returning an error, can be set with SetReplyTimeout
+	// GetRequestChannel returns request go ChannelCtx of the VPP ChannelCtx
+	GetRequestChannel() chan<- *VppRequest
+	// GetReplyChannel returns reply go ChannelCtx of the VPP ChannelCtx
+	GetReplyChannel() <-chan *VppReply
+	// GetNotificationChannel returns notification go ChannelCtx of the VPP ChannelCtx
+	GetNotificationChannel() chan<- *NotifSubscribeRequest
+	// GetNotificationReplyChannel returns notification reply go ChannelCtx of the VPP ChannelCtx
+	GetNotificationReplyChannel() <-chan error
+	// GetMessageDecoder returns message decoder instance
+	GetMessageDecoder() MessageDecoder
+	// GetID returns ChannelCtx's ID
+	GetID() uint16
+	// Close closes the API ChannelCtx and releases all API ChannelCtx-related resources in the ChannelProvider.
+	Close()
 }
 
 // VppRequest is a request that will be sent to VPP.
@@ -151,52 +143,138 @@ type NotifSubscribeRequest struct {
 
 // NotifSubscription represents a subscription for delivery of specific notification messages.
 type NotifSubscription struct {
-	NotifChan  chan Message   // channel where notification messages will be delivered to
+	NotifChan  chan Message   // ChannelCtx where notification messages will be delivered to
 	MsgFactory func() Message // function that returns a new instance of the specific message that is expected as a notification
 }
 
 // RequestCtx is a context of a ongoing request (simple one - only one response is expected).
 type RequestCtx struct {
-	ch     *Channel
+	ch     *ChannelCtx
 	seqNum uint16
 }
 
 // MultiRequestCtx is a context of a ongoing multipart request (multiple responses are expected).
 type MultiRequestCtx struct {
-	ch     *Channel
+	ch     *ChannelCtx
 	seqNum uint16
+}
+
+// ChannelCtx is the main communication interface with govpp core. It contains four Go channels, one for sending the requests
+// to VPP, one for receiving the replies from it and the same set for notifications. The user can access the Go channels
+// via methods provided by Channel interface in this package. Do not use the same ChannelCtx from multiple goroutines
+// concurrently, otherwise the responses could mix! Use multiple channels instead.
+type ChannelCtx struct {
+	ID uint16 // ChannelCtx ID
+
+	ReqChan   chan *VppRequest // ChannelCtx for sending the requests to VPP, closing this ChannelCtx releases all resources in the ChannelProvider
+	ReplyChan chan *VppReply   // ChannelCtx where VPP replies are delivered to
+
+	NotifSubsChan      chan *NotifSubscribeRequest // ChannelCtx for sending notification subscribe requests
+	NotifSubsReplyChan chan error                  // ChannelCtx where replies to notification subscribe requests are delivered to
+
+	MsgDecoder    MessageDecoder    // used to decode binary data to generated API messages
+	MsgIdentifier MessageIdentifier // used to retrieve message ID of a message
+
+	lastSeqNum uint16 // sequence number of the last sent request
+
+	delayedReply *VppReply     // reply already taken from ReplyChan, buffered for later delivery
+	replyTimeout time.Duration // maximum time that the API waits for a reply from VPP before returning an error, can be set with SetReplyTimeout
 }
 
 const defaultReplyTimeout = time.Second * 1 // default timeout for replies from VPP, can be changed with SetReplyTimeout
 
-// NewChannelInternal returns a new channel structure.
-// Note that this is just a raw channel not yet connected to VPP, it is not intended to be used directly.
-// Use ChannelProvider to get an API channel ready for communication with VPP.
-func NewChannelInternal(id uint16) *Channel {
-	return &Channel{
-		ID:           id,
-		replyTimeout: defaultReplyTimeout,
-	}
-}
-
-func (ch *Channel) SetReplyTimeout(timeout time.Duration) {
-	ch.replyTimeout = timeout
-}
-
-// Close closes the API channel and releases all API channel-related resources in the ChannelProvider.
-func (ch *Channel) Close() {
-	if ch.ReqChan != nil {
-		close(ch.ReqChan)
-	}
-}
-
-func (ch *Channel) SendRequest(msg Message) *RequestCtx {
+func (ch *ChannelCtx) SendRequest(msg Message) *RequestCtx {
 	ch.lastSeqNum++
 	ch.ReqChan <- &VppRequest{
 		Message: msg,
 		SeqNum:  ch.lastSeqNum,
 	}
 	return &RequestCtx{ch: ch, seqNum: ch.lastSeqNum}
+}
+
+func (ch *ChannelCtx) SendMultiRequest(msg Message) *MultiRequestCtx {
+	ch.lastSeqNum++
+	ch.ReqChan <- &VppRequest{
+		Message:   msg,
+		Multipart: true,
+		SeqNum:    ch.lastSeqNum,
+	}
+	return &MultiRequestCtx{ch: ch, seqNum: ch.lastSeqNum}
+}
+
+func (ch *ChannelCtx) SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error) {
+	subscription := &NotifSubscription{
+		NotifChan:  notifChan,
+		MsgFactory: msgFactory,
+	}
+	ch.NotifSubsChan <- &NotifSubscribeRequest{
+		Subscription: subscription,
+		Subscribe:    true,
+	}
+	return subscription, <-ch.NotifSubsReplyChan
+}
+
+func (ch *ChannelCtx) UnsubscribeNotification(subscription *NotifSubscription) error {
+	ch.NotifSubsChan <- &NotifSubscribeRequest{
+		Subscription: subscription,
+		Subscribe:    false,
+	}
+	return <-ch.NotifSubsReplyChan
+}
+
+func (ch *ChannelCtx) CheckMessageCompatibility(messages ...Message) error {
+	for _, msg := range messages {
+		_, err := ch.MsgIdentifier.GetMessageID(msg)
+		if err != nil {
+			return fmt.Errorf("message %s with CRC %s is not compatible with the VPP we are connected to",
+				msg.GetMessageName(), msg.GetCrcString())
+		}
+	}
+	return nil
+}
+
+func (ch *ChannelCtx) SetReplyTimeout(timeout time.Duration) {
+	ch.replyTimeout = timeout
+}
+
+func (ch *ChannelCtx) GetRequestChannel() chan<- *VppRequest {
+	return ch.ReqChan
+}
+
+func (ch *ChannelCtx) GetReplyChannel() <-chan *VppReply {
+	return ch.ReplyChan
+}
+
+func (ch *ChannelCtx) GetNotificationChannel() chan<- *NotifSubscribeRequest {
+	return ch.NotifSubsChan
+}
+
+func (ch *ChannelCtx) GetNotificationReplyChannel() <-chan error {
+	return ch.NotifSubsReplyChan
+}
+
+func (ch *ChannelCtx) GetMessageDecoder() MessageDecoder {
+	return ch.MsgDecoder
+}
+
+func (ch *ChannelCtx) GetID() uint16 {
+	return ch.ID
+}
+
+func (ch *ChannelCtx) Close() {
+	if ch.ReqChan != nil {
+		close(ch.ReqChan)
+	}
+}
+
+// NewChannelInternal returns a new ChannelCtx structure.
+// Note that this is just a raw ChannelCtx not yet connected to VPP, it is not intended to be used directly.
+// Use ChannelProvider to get an API ChannelCtx ready for communication with VPP.
+func NewChannelInternal(id uint16) *ChannelCtx {
+	return &ChannelCtx{
+		ID:           id,
+		replyTimeout: defaultReplyTimeout,
+	}
 }
 
 // ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
@@ -214,16 +292,6 @@ func (req *RequestCtx) ReceiveReply(msg Message) error {
 	return err
 }
 
-func (ch *Channel) SendMultiRequest(msg Message) *MultiRequestCtx {
-	ch.lastSeqNum++
-	ch.ReqChan <- &VppRequest{
-		Message:   msg,
-		Multipart: true,
-		SeqNum:    ch.lastSeqNum,
-	}
-	return &MultiRequestCtx{ch: ch, seqNum: ch.lastSeqNum}
-}
-
 // ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
 // The reply will be decoded into the msg argument. If the last reply has been already consumed, lastReplyReceived is
 // set to true. Do not use the message itself if lastReplyReceived is true - it won't be filled with actual data.
@@ -236,8 +304,8 @@ func (req *MultiRequestCtx) ReceiveReply(msg Message) (lastReplyReceived bool, e
 	return req.ch.receiveReplyInternal(msg, req.seqNum)
 }
 
-// receiveReplyInternal receives a reply from the reply channel into the provided msg structure.
-func (ch *Channel) receiveReplyInternal(msg Message, expSeqNum uint16) (lastReplyReceived bool, err error) {
+// receiveReplyInternal receives a reply from the reply ChannelCtx into the provided msg structure.
+func (ch *ChannelCtx) receiveReplyInternal(msg Message, expSeqNum uint16) (lastReplyReceived bool, err error) {
 	var ignore bool
 	if msg == nil {
 		return false, errors.New("nil message passed in")
@@ -272,7 +340,7 @@ func (ch *Channel) receiveReplyInternal(msg Message, expSeqNum uint16) (lastRepl
 	return
 }
 
-func (ch *Channel) processReply(reply *VppReply, expSeqNum uint16, msg Message) (ignore bool, lastReplyReceived bool, err error) {
+func (ch *ChannelCtx) processReply(reply *VppReply, expSeqNum uint16, msg Message) (ignore bool, lastReplyReceived bool, err error) {
 	// check the sequence number
 	cmpSeqNums := compareSeqNumbers(reply.SeqNum, expSeqNum)
 	if cmpSeqNums == -1 {
@@ -315,7 +383,7 @@ func (ch *Channel) processReply(reply *VppReply, expSeqNum uint16, msg Message) 
 		}
 
 		err = fmt.Errorf("received invalid message ID (seq-num=%d), expected %d (%s), but got %d (%s) "+
-			"(check if multiple goroutines are not sharing single GoVPP channel)",
+			"(check if multiple goroutines are not sharing single GoVPP ChannelCtx)",
 			reply.SeqNum, expMsgID, msg.GetMessageName(), reply.MessageID, msgNameCrc)
 		return
 	}
@@ -344,35 +412,4 @@ func compareSeqNumbers(seqNum1, seqNum2 uint16) int {
 		return -1
 	}
 	return 1
-}
-
-func (ch *Channel) SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error) {
-	subscription := &NotifSubscription{
-		NotifChan:  notifChan,
-		MsgFactory: msgFactory,
-	}
-	ch.NotifSubsChan <- &NotifSubscribeRequest{
-		Subscription: subscription,
-		Subscribe:    true,
-	}
-	return subscription, <-ch.NotifSubsReplyChan
-}
-
-func (ch *Channel) UnsubscribeNotification(subscription *NotifSubscription) error {
-	ch.NotifSubsChan <- &NotifSubscribeRequest{
-		Subscription: subscription,
-		Subscribe:    false,
-	}
-	return <-ch.NotifSubsReplyChan
-}
-
-func (ch *Channel) CheckMessageCompatibility(messages ...Message) error {
-	for _, msg := range messages {
-		_, err := ch.MsgIdentifier.GetMessageID(msg)
-		if err != nil {
-			return fmt.Errorf("message %s with CRC %s is not compatible with the VPP we are connected to",
-				msg.GetMessageName(), msg.GetCrcString())
-		}
-	}
-	return nil
 }

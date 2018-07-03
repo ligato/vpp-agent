@@ -76,8 +76,8 @@ type Connection struct {
 	msgIDsLock sync.RWMutex      // lock for the message IDs map
 	msgIDs     map[string]uint16 // map of message IDs indexed by message name + CRC
 
-	channelsLock sync.RWMutex            // lock for the channels map
-	channels     map[uint16]*api.Channel // map of all API channels indexed by the channel ID
+	channelsLock sync.RWMutex               // lock for the channels map
+	channels     map[uint16]*api.ChannelCtx // map of all API channels indexed by the channel ID
 
 	notifSubscriptionsLock sync.RWMutex                        // lock for the subscriptions map
 	notifSubscriptions     map[uint16][]*api.NotifSubscription // map od all notification subscriptions indexed by message ID
@@ -198,7 +198,7 @@ func newConnection(vppAdapter adapter.VppAdapter) (*Connection, error) {
 	conn = &Connection{
 		vpp:                vppAdapter,
 		codec:              &MsgCodec{},
-		channels:           make(map[uint16]*api.Channel),
+		channels:           make(map[uint16]*api.ChannelCtx),
 		msgIDs:             make(map[string]uint16),
 		notifSubscriptions: make(map[uint16][]*api.NotifSubscription),
 	}
@@ -290,18 +290,18 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 
 		// try draining probe replies from previous request before sending next one
 		select {
-		case <-ch.ReplyChan:
+		case <-ch.GetReplyChannel():
 			log.Debug("drained old probe reply from reply channel")
 		default:
 		}
 
 		// send the control ping request
-		ch.ReqChan <- &api.VppRequest{Message: msgControlPing}
+		ch.GetRequestChannel() <- &api.VppRequest{Message: msgControlPing}
 
 		for {
 			// expect response within timeout period
 			select {
-			case vppReply := <-ch.ReplyChan:
+			case vppReply := <-ch.GetReplyChannel():
 				err = vppReply.Error
 
 			case <-time.After(healthCheckReplyTimeout):
@@ -351,7 +351,7 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 
 // NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 // It uses default buffer sizes for the request and reply Go channels.
-func (c *Connection) NewAPIChannel() (*api.Channel, error) {
+func (c *Connection) NewAPIChannel() (api.Channel, error) {
 	if c == nil {
 		return nil, errors.New("nil connection passed in")
 	}
@@ -360,7 +360,7 @@ func (c *Connection) NewAPIChannel() (*api.Channel, error) {
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
 // It allows to specify custom buffer sizes for the request and reply Go channels.
-func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (*api.Channel, error) {
+func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (api.Channel, error) {
 	if c == nil {
 		return nil, errors.New("nil connection passed in")
 	}
@@ -388,13 +388,13 @@ func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int)
 }
 
 // releaseAPIChannel releases API channel that needs to be closed.
-func (c *Connection) releaseAPIChannel(ch *api.Channel) {
+func (c *Connection) releaseAPIChannel(ch api.Channel) {
 	log.WithFields(logger.Fields{
-		"ID": ch.ID,
+		"ID": ch.GetID(),
 	}).Debug("API channel closed.")
 
 	// delete the channel from channels map
 	c.channelsLock.Lock()
-	delete(c.channels, ch.ID)
+	delete(c.channels, ch.GetID())
 	c.channelsLock.Unlock()
 }

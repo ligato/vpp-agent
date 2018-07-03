@@ -24,7 +24,7 @@ import (
 )
 
 // processNotifSubscribeRequest processes a notification subscribe request.
-func (c *Connection) processNotifSubscribeRequest(ch *api.Channel, req *api.NotifSubscribeRequest) error {
+func (c *Connection) processNotifSubscribeRequest(ch *api.ChannelCtx, req *api.NotifSubscribeRequest) error {
 	var err error
 
 	// subscribe / unsubscribe

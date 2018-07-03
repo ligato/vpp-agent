@@ -61,11 +61,11 @@
 // the following replacement of the SendRequest / ReceiveReply API:
 //
 // 	req := &acl.ACLPluginGetVersion{}
-// 	// send the request to the request go channel
-// 	ch.ReqChan <- &api.VppRequest{Message: req}
+// 	// send the request to the request go Channel
+// 	ch.GetRequestChannel <- &api.VppRequest{Message: req}
 //
-// 	// receive a reply from the reply go channel
-// 	vppReply := <-ch.ReplyChan
+// 	// receive a reply from the reply go Channel
+// 	vppReply := <-ch.GetReplyChannel
 //
 // 	// decode the message
 // 	reply := &acl.ACLPluginGetVersionReply{}
@@ -76,7 +76,7 @@
 //
 // Notifications API
 //
-// to subscribe for receiving of the specified notification messages via provided Go channel, use the
+// to subscribe for receiving of the specified notification messages via provided Go Channel, use the
 // SubscribeNotification API:
 //
 // 	// subscribe for specific notification message
@@ -88,7 +88,7 @@
 //
 //	ch.UnsubscribeNotification(subs)
 //
-// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
+// Note that the caller is responsible for creating the Go Channel with preferred buffer size. If the ChannelCtx's
 // buffer is full, the notifications will not be delivered into it.
 //
 package api
