@@ -195,6 +195,8 @@ func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.In
 		return stop
 	}
 
+	plugin.log.Infof("dumped %d interfaces", len(vppIfaces))
+
 	// The strategy is optimize-cold-start, so look over all dumped VPP interfaces and check for the configured ones
 	// (leave out the local0). If there are any other interfaces, return true (resync will continue).
 	// If not, return a false flag which cancels the VPP resync operation.

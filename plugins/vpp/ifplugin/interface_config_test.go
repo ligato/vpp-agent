@@ -1014,7 +1014,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 }
 
 // Modify loopback interface
-/*func TestInterfacesModifyLoopback(t *testing.T) {
+func TestInterfacesModifyLoopback(t *testing.T) {
 	// TODO: fix mock adapter to only send single reply for normal request
 	// Setup
 	ctx, connection, plugin := ifTestSetup(t)
@@ -1034,7 +1034,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
-    ctx.MockVpp.MockReply() // Do not propagate interface details
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
 	//ctx.MockVpp.MockReply(&ip.IPFibDetails{})
@@ -1043,7 +1043,8 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	//ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	//ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	//ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	//ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply()
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	// Data
@@ -1067,7 +1068,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	Expect(found).To(BeTrue())
 	Expect(meta).ToNot(BeNil())
 	Expect(meta.IpAddresses).To(HaveLen(2))
-}*/
+}
 
 // Modify existing Ethernet interface
 func TestInterfacesModifyEthernet(t *testing.T) {

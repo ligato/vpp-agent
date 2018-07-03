@@ -290,6 +290,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure optional vrf
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
+		plugin.log.Warnf("calling SetInterfaceVRF: ifIdx:%v vrfID:%v", ifIdx, iface.Vrf)
 		if err := vppcalls.SetInterfaceVRF(ifIdx, iface.Vrf, plugin.log, plugin.vppCh); err != nil {
 			errs = append(errs, err)
 		}
@@ -349,8 +350,9 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// NOTE: needs to be called after RegisterName, otherwise interface up/down notification won't map to a valid interface
 	if iface.Enabled {
 		if err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.stopwatch); err != nil {
-			l.Debugf("setting interface up failed: %v", err)
-			return err
+			l.Warnf("setting interface up failed: %v", err)
+			errs = append(errs, err)
+			return fmt.Errorf("found %d errors: %v", len(errs), errs)
 		}
 	}
 

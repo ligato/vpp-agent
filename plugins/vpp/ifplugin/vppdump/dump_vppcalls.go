@@ -92,12 +92,11 @@ func DumpInterfaces(log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *
 		ifs[ifDetails.SwIfIndex] = iface
 
 		if iface.Type == ifnb.InterfaceType_AF_PACKET_INTERFACE {
-			err := dumpAFPacketDetails(ifs, ifDetails.SwIfIndex, iface.VPPInternalName)
-			if err != nil {
-				return nil, err
-			}
+			fillAFPacketDetails(ifs, ifDetails.SwIfIndex, iface.VPPInternalName)
 		}
 	}
+
+	log.Debugf("dumped %d interfaces", len(ifs))
 
 	// SwInterfaceDump time
 	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, stopwatch)
@@ -235,13 +234,12 @@ func processIPDetails(ifs map[uint32]*Interface, ipDetails *ip.IPAddressDetails)
 	ifs[ipDetails.SwIfIndex].IpAddresses = append(ifs[ipDetails.SwIfIndex].IpAddresses, ipAddr)
 }
 
-// dumpAFPacketDetails fills af_packet interface details into the provided interface map.
-func dumpAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName string) error {
+// fillAFPacketDetails fills af_packet interface details into the provided interface map.
+func fillAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName string) {
 	ifs[swIfIndex].Afpacket = &ifnb.Interfaces_Interface_Afpacket{
 		HostIfName: strings.TrimPrefix(ifName, "host-"),
 	}
 	ifs[swIfIndex].Type = ifnb.InterfaceType_AF_PACKET_INTERFACE
-	return nil
 }
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
