@@ -42,7 +42,6 @@ var testDataInMessagesBDs = []govppapi.Message{
 			{SwIfIndex: 8},
 		},
 	},
-	&vpe.ControlPingReply{},
 }
 
 var testDataOutMessage = []*BridgeDomain{
@@ -80,9 +79,8 @@ func TestDumpBridgeDomainIDs(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	for _, msg := range testDataInMessagesBDs {
-		ctx.MockVpp.MockReply(msg)
-	}
+	ctx.MockVpp.MockReply(testDataInMessagesBDs...)
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	activeDomains, err := DumpBridgeDomainIDs(ctx.MockChannel, nil)
 
@@ -101,9 +99,8 @@ func TestDumpBridgeDomains(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	for _, msg := range testDataInMessagesBDs {
-		ctx.MockVpp.MockReply(msg)
-	}
+	ctx.MockVpp.MockReply(testDataInMessagesBDs...)
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	bridgeDomains, err := DumpBridgeDomains(ctx.MockChannel, nil)
 
@@ -128,7 +125,6 @@ var testDataInMessagesFIBs = []govppapi.Message{
 		Mac:    []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB},
 		BviMac: 0, SwIfIndex: 2, FilterMac: 0, StaticMac: 0,
 	},
-	&vpe.ControlPingReply{},
 }
 
 var testDataOutFIBs = []*FIBTableEntry{
@@ -161,9 +157,8 @@ func TestDumpFIBTableEntries(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	for _, msg := range testDataInMessagesFIBs {
-		ctx.MockVpp.MockReply(msg)
-	}
+	ctx.MockVpp.MockReply(testDataInMessagesFIBs...)
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	fibTable, err := DumpFIBTableEntries(ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
@@ -179,7 +174,6 @@ func TestDumpFIBTableEntries(t *testing.T) {
 var testDataInXConnect = []govppapi.Message{
 	&l2ba.L2XconnectDetails{1, 2},
 	&l2ba.L2XconnectDetails{3, 4},
-	&vpe.ControlPingReply{},
 }
 
 var testDataOutXconnect = []*XConnectPairs{
@@ -194,9 +188,8 @@ func TestDumpXConnectPairs(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	for _, msg := range testDataInXConnect {
-		ctx.MockVpp.MockReply(msg)
-	}
+	ctx.MockVpp.MockReply(testDataInXConnect...)
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	xConnectPairs, err := DumpXConnectPairs(ctx.MockChannel, nil)
 

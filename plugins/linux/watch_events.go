@@ -17,6 +17,7 @@ package linux
 import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	ifaceVPP "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"golang.org/x/net/context"
 )
 
@@ -55,6 +56,11 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 				plugin.onLinuxIfaceEvent(e)
 			})
 
+		case e := <-plugin.vppIfIndexesWatchChan:
+			runWithMutex(func() {
+				plugin.onVppIfaceEvent(e)
+			})
+
 		case <-ctx.Done():
 			plugin.Log.Debug("Stop watching events")
 			return
@@ -80,6 +86,15 @@ func (plugin *Plugin) onLinuxIfaceEvent(e ifaceidx.LinuxIfIndexDto) {
 	} else {
 		plugin.arpConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+	}
+	e.Done()
+}
+
+func (plugin *Plugin) onVppIfaceEvent(e ifaceVPP.SwIfIdxDto) {
+	if e.IsDelete() {
+		plugin.ifConfigurator.ResolveDeletedVPPInterface(e.Metadata)
+	} else {
+		plugin.ifConfigurator.ResolveCreatedVPPInterface(e.Metadata)
 	}
 	e.Done()
 }

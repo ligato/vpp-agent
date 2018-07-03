@@ -132,3 +132,4 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 		plugin.log.Warn("Unable to send to the linux if state notification channel - buffer is full.")
 	}
 }
+

@@ -128,12 +128,13 @@ func TestInterfaceConfiguratorPropagateIfDetailsToStatus(t *testing.T) {
 	defer ifTestTeardown(connection, plugin)
 
 	// Reply set
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceDetails{
-		SwIfIndex: 1,
-	})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceDetails{
-		SwIfIndex: 2,
-	})
+	ctx.MockVpp.MockReply(
+		&interfaces.SwInterfaceDetails{
+			SwIfIndex: 1,
+		},
+		&interfaces.SwInterfaceDetails{
+			SwIfIndex: 2,
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	// Register
@@ -180,6 +181,7 @@ func TestInterfacesConfigureTapV1(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1000)
@@ -213,6 +215,7 @@ func TestInterfacesConfigureTapV2(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{}, true, "46:06:18:DB:05:3A", 1500)
@@ -246,6 +249,7 @@ func TestInterfacesConfigureMemif(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{}, false, "46:06:18:DB:05:3A", 1500)
@@ -281,6 +285,7 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{ // Configure memif interface
 		SwIfIndex: 2,
@@ -291,6 +296,7 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Configure loopback with IP address for unnumbered memif
 		SwIfIndex: 3,
@@ -302,6 +308,7 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	initialData := getTestInterface("if0", if_api.InterfaceType_MEMORY_INTERFACE, []string{}, false, "51:07:28:DB:05:B4", 1000)
@@ -348,6 +355,7 @@ func TestInterfacesConfigureVxLAN(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
@@ -376,6 +384,8 @@ func TestInterfacesConfigureVxLANWithMulticast(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                              // Do not propagate interface details
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})       // Break status propagation
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // VxLAN
 		SwIfIndex: 2,
 	})
@@ -383,6 +393,7 @@ func TestInterfacesConfigureVxLANWithMulticast(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
@@ -418,6 +429,8 @@ func TestInterfacesConfigureVxLANWithMulticastCache(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                              // Do not propagate interface details
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})       // Break status propagation
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // VxLAN
 		SwIfIndex: 2,
 	})
@@ -425,6 +438,7 @@ func TestInterfacesConfigureVxLANWithMulticastCache(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
@@ -540,6 +554,7 @@ func TestInterfacesConfigureLoopback(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 0)
@@ -566,6 +581,7 @@ func TestInterfacesConfigureEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
@@ -611,6 +627,7 @@ func TestInterfacesConfigureAfPacket(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
@@ -669,6 +686,7 @@ func TestInterfacesConfigureInterfaceErrors(t *testing.T) {
 		Retval: 1, // MTU error
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
@@ -720,6 +738,7 @@ func TestInterfacesModifyTapV1WithoutTapData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	tapData := getTestTapInterface(1, "if1")
@@ -765,6 +784,7 @@ func TestInterfacesModifyTapV1TapData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_TAP_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
@@ -796,6 +816,7 @@ func TestInterfacesModifyMemifWithoutMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	memifData := getTestMemifInterface(true, 1)
@@ -834,6 +855,7 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Modify - delete old data
@@ -850,6 +872,7 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_MEMORY_INTERFACE, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
@@ -886,9 +909,11 @@ func TestInterfacesModifyVxLanSimple(t *testing.T) {
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{}) // Modify - delete old data
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, true, "", 0)
@@ -920,6 +945,7 @@ func TestInterfacesModifyVxLanMulticast(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, true, "", 0)
@@ -952,6 +978,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Modify - delete old data
@@ -963,6 +990,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{}, false, "", 0)
@@ -1006,6 +1034,7 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+    ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
 	//ctx.MockVpp.MockReply(&ip.IPFibDetails{})
@@ -1054,6 +1083,7 @@ func TestInterfacesModifyEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
@@ -1093,6 +1123,7 @@ func TestInterfacesModifyAfPacket(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{}) // Modify
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
@@ -1161,6 +1192,7 @@ func TestInterfacesModifyAfPacketRecreate(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{}) // Modify
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -1170,6 +1202,7 @@ func TestInterfacesModifyAfPacketRecreate(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
+	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Data
 	oldData := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
@@ -1371,6 +1404,7 @@ func TestModifyRxMode(t *testing.T) {
 	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
+	ctx.MockVpp.MockReply()                        // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{}) // Break status propagation
 
 	// Data

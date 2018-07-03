@@ -316,16 +316,17 @@ func TestBfdConfiguratorDumpBfdSessions(t *testing.T) {
 	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
-		SwIfIndex: 1,
-		LocalAddr: net.ParseIP("10.0.0.1").To4(),
-		PeerAddr:  net.ParseIP("10.0.0.2").To4(),
-	})
-	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
-		SwIfIndex: 2,
-		LocalAddr: net.ParseIP("10.0.0.3").To4(),
-		PeerAddr:  net.ParseIP("10.0.0.4").To4(),
-	})
+	ctx.MockVpp.MockReply(
+		&bfd_api.BfdUDPSessionDetails{
+			SwIfIndex: 1,
+			LocalAddr: net.ParseIP("10.0.0.1").To4(),
+			PeerAddr:  net.ParseIP("10.0.0.2").To4(),
+		},
+		&bfd_api.BfdUDPSessionDetails{
+			SwIfIndex: 2,
+			LocalAddr: net.ParseIP("10.0.0.3").To4(),
+			PeerAddr:  net.ParseIP("10.0.0.4").To4(),
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Register (only first interface)
 	ifIndexes.RegisterName("if1", 1, nil)
@@ -378,7 +379,8 @@ func TestBfdConfiguratorModifyUnusedAuthKey(t *testing.T) {
 	ctx, connection, plugin, _ := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})       // Session dump
+	ctx.MockVpp.MockReply() // Session dump
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthDelKeyReply{}) // Authentication key delete/create
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
 	// Data
@@ -418,7 +420,8 @@ func TestBfdConfiguratorDeleteUnusedAuthKey(t *testing.T) {
 	ctx, connection, plugin, _ := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})       // Session dump
+	ctx.MockVpp.MockReply() // Session dump
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthDelKeyReply{}) // Authentication key delete
 	// Data
 	data := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
@@ -455,14 +458,15 @@ func TestBfdConfiguratorDumpAuthKey(t *testing.T) {
 	ctx, connection, plugin, _ := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
 	// Reply set
-	ctx.MockVpp.MockReply(&bfd_api.BfdAuthKeysDetails{
-		ConfKeyID: 1,
-		AuthType:  4, // Means KEYED SHA1
-	})
-	ctx.MockVpp.MockReply(&bfd_api.BfdAuthKeysDetails{
-		ConfKeyID: 2,
-		AuthType:  1, // Any other number is METICULOUS KEYED SHA1
-	})
+	ctx.MockVpp.MockReply(
+		&bfd_api.BfdAuthKeysDetails{
+			ConfKeyID: 1,
+			AuthType:  4, // Means KEYED SHA1
+		},
+		&bfd_api.BfdAuthKeysDetails{
+			ConfKeyID: 2,
+			AuthType:  1, // Any other number is METICULOUS KEYED SHA1
+		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Test authentication key dump
 	keys, err := plugin.DumpBFDAuthKeys()
