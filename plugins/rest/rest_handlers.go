@@ -512,7 +512,7 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 	}
 }
 
-func (plugin *Plugin) sendCommand(ch *api.Channel, command string) ([]byte, error) {
+func (plugin *Plugin) sendCommand(ch api.Channel, command string) ([]byte, error) {
 	r := &vpe.CliInband{
 		Length: uint32(len(command)),
 		Cmd:    []byte(command),

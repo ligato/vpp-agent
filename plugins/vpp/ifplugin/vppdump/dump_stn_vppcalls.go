@@ -23,7 +23,7 @@ import (
 )
 
 // DumpStnRules returns a list of all STN rules configured on the VPP
-func DumpStnRules(vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) (rules []*stn.StnRulesDetails, err error) {
+func DumpStnRules(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (rules []*stn.StnRulesDetails, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(stn.StnRulesDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

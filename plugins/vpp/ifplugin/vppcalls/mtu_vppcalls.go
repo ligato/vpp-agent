@@ -24,7 +24,7 @@ import (
 )
 
 // SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
-func SetInterfaceMtu(ifIdx uint32, mtu uint32, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func SetInterfaceMtu(ifIdx uint32, mtu uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.HwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

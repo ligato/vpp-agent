@@ -58,13 +58,13 @@ type ACLToInterface struct {
 	EgressACL  []uint32
 }
 
-func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel api.VPPChannel,
+func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, Channel api.Channel,
 	stopwatch *measure.Stopwatch) ([]*ACLEntry, error) {
 
 	ruleIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with IP ruleData
-	IPRuleACLs, err := DumpIPAcls(log, vppChannel, stopwatch)
+	IPRuleACLs, err := DumpIPAcls(log, Channel, stopwatch)
 	if len(IPRuleACLs) < 1 || err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel ap
 	}
 
 	// Get all ACL indices with ingress and egress interfaces
-	interfaceData, err := DumpIPACLInterfaces(indices, swIfIndices, log, vppChannel, stopwatch)
+	interfaceData, err := DumpIPACLInterfaces(indices, swIfIndices, log, Channel, stopwatch)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +121,13 @@ func DumpIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel ap
 	return ACLs, wasErr
 }
 
-func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel api.VPPChannel,
+func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, Channel api.Channel,
 	stopwatch *measure.Stopwatch) ([]*ACLEntry, error) {
 
 	ruleMACIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with MACIP ruleData
-	MACIPRuleACLs, err := DumpMacIPAcls(log, vppChannel, stopwatch)
+	MACIPRuleACLs, err := DumpMacIPAcls(log, Channel, stopwatch)
 	if len(MACIPRuleACLs) < 1 || err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel
 	}
 
 	// Get all ACL indices with ingress and egress interfaces
-	interfaceData, err := DumpMACIPACLInterfaces(indices, swIfIndices, log, vppChannel, stopwatch)
+	interfaceData, err := DumpMACIPACLInterfaces(indices, swIfIndices, log, Channel, stopwatch)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel
 }
 
 // DumpACLInterfaces returns a map of IP ACL indices with interfaces
-func DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel api.VPPChannel,
+func DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log logging.Logger, Channel api.Channel,
 	stopwatch *measure.Stopwatch) (map[uint32]*acl.AccessLists_Acl_Interfaces, error) {
 	defer func(start time.Time) {
 		stopwatch.TimeLog(&acl_api.ACLInterfaceListDump{}).LogTimeEntry(time.Since(start))
@@ -200,7 +200,7 @@ func DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log l
 	msgIP := &acl_api.ACLInterfaceListDump{
 		SwIfIndex: 0xffffffff, // dump all
 	}
-	reqIP := vppChannel.SendMultiRequest(msgIP)
+	reqIP := Channel.SendMultiRequest(msgIP)
 	for {
 		replyIP := &acl_api.ACLInterfaceListDetails{}
 		stop, err := reqIP.ReceiveReply(replyIP)
@@ -267,7 +267,7 @@ func DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log l
 }
 
 // DumpMACIPACLInterfaces returns a map of MACIP ACL indices with interfaces
-func DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChannel api.VPPChannel,
+func DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, log logging.Logger, Channel api.Channel,
 	stopwatch *measure.Stopwatch) (
 	map[uint32]*acl.AccessLists_Acl_Interfaces, error) {
 	defer func(start time.Time) {
@@ -286,7 +286,7 @@ func DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, lo
 	msgMACIP := &acl_api.MacipACLInterfaceListDump{
 		SwIfIndex: 0xffffffff, // dump all
 	}
-	reqMACIP := vppChannel.SendMultiRequest(msgMACIP)
+	reqMACIP := Channel.SendMultiRequest(msgMACIP)
 	for {
 		replyMACIP := &acl_api.MacipACLInterfaceListDetails{}
 		stop, err := reqMACIP.ReceiveReply(replyMACIP)
@@ -334,7 +334,7 @@ func DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex, lo
 }
 
 // DumpIPAcls returns a list of all configured ACLs with IP-type ruleData.
-func DumpIPAcls(log logging.Logger, vch api.VPPChannel,
+func DumpIPAcls(log logging.Logger, vch api.Channel,
 	stopwatch *measure.Stopwatch) (map[ACLIdentifier][]acl_api.ACLRule, error) {
 	defer func(start time.Time) {
 		stopwatch.TimeLog(acl_api.ACLDump{}).LogTimeEntry(time.Since(start))
@@ -370,7 +370,7 @@ func DumpIPAcls(log logging.Logger, vch api.VPPChannel,
 }
 
 // DumpMacIPAcls returns a list of all configured ACL with IPMAC-type ruleData.
-func DumpMacIPAcls(log logging.Logger, vppChannel api.VPPChannel,
+func DumpMacIPAcls(log logging.Logger, Channel api.Channel,
 	stopwatch *measure.Stopwatch) (map[ACLIdentifier][]acl_api.MacipACLRule, error) {
 	defer func(start time.Time) {
 		stopwatch.TimeLog(acl_api.MacipACLDump{}).LogTimeEntry(time.Since(start))
@@ -381,7 +381,7 @@ func DumpMacIPAcls(log logging.Logger, vppChannel api.VPPChannel,
 
 	req := &acl_api.MacipACLDump{}
 	req.ACLIndex = 0xffffffff
-	reqContext := vppChannel.SendMultiRequest(req)
+	reqContext := Channel.SendMultiRequest(req)
 	for {
 		msg := &acl_api.MacipACLDetails{}
 		stop, err := reqContext.ReceiveReply(msg)
@@ -424,13 +424,13 @@ func getIPRuleDetails(rule acl_api.ACLRule) (*acl.AccessLists_Acl_Rule, error) {
 
 // getIPACLDetails gets details for a given IP ACL from VPP and translates
 // them from the binary VPP API format into the ACL Plugin's NB format.
-func getIPACLDetails(vppChannel api.VPPChannel, idx uint32) (aclRule *acl.AccessLists_Acl, err error) {
+func getIPACLDetails(Channel api.Channel, idx uint32) (aclRule *acl.AccessLists_Acl, err error) {
 	req := &acl_api.ACLDump{
 		ACLIndex: uint32(idx),
 	}
 
 	reply := &acl_api.ACLDetails{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
@@ -477,13 +477,13 @@ func getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.AccessLists_Acl_Rule, 
 
 // getMACIPACLDetails gets details for a given MACIP ACL from VPP and translates
 // them from the binary VPP API format into the ACL Plugin's NB format.
-func getMACIPACLDetails(vppChannel api.VPPChannel, idx uint32) (aclRule *acl.AccessLists_Acl, err error) {
+func getMACIPACLDetails(Channel api.Channel, idx uint32) (aclRule *acl.AccessLists_Acl, err error) {
 	req := &acl_api.MacipACLDump{
 		ACLIndex: uint32(idx),
 	}
 
 	reply := &acl_api.MacipACLDetails{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
@@ -621,13 +621,13 @@ func resolveRuleAction(isPermit uint8) (acl.AclAction, error) {
 }
 
 // DumpInterfaceAcls finds interface in VPP and returns its ACL configuration
-//func DumpInterfaceIPAclsDetails(log logging.Logger, swIndex uint32, vppChannel VPPChannel, stopwatch *measure.Stopwatch) (acl.AccessLists, error) {
-func DumpInterfaceIPAcls(log logging.Logger, swIndex uint32, vppChannel api.VPPChannel, stopwatch *measure.Stopwatch) (acl.AccessLists, error) {
+//func DumpInterfaceIPAclsDetails(log logging.Logger, swIndex uint32, Channel Channel, stopwatch *measure.Stopwatch) (acl.AccessLists, error) {
+func DumpInterfaceIPAcls(log logging.Logger, swIndex uint32, Channel api.Channel, stopwatch *measure.Stopwatch) (acl.AccessLists, error) {
 	alAcls := acl.AccessLists{
 		Acls: []*acl.AccessLists_Acl{},
 	}
 
-	res, err := DumpInterfaceIPACLs(swIndex, vppChannel, stopwatch)
+	res, err := DumpInterfaceIPACLs(swIndex, Channel, stopwatch)
 	log.Infof("Res: %+v\n", res)
 	if err != nil {
 		return alAcls, err
@@ -638,7 +638,7 @@ func DumpInterfaceIPAcls(log logging.Logger, swIndex uint32, vppChannel api.VPPC
 	}
 
 	for aidx := range res.Acls {
-		ipACL, err := getIPACLDetails(vppChannel, uint32(aidx))
+		ipACL, err := getIPACLDetails(Channel, uint32(aidx))
 		if err != nil {
 			log.Error(err)
 		} else {
@@ -649,12 +649,12 @@ func DumpInterfaceIPAcls(log logging.Logger, swIndex uint32, vppChannel api.VPPC
 }
 
 // DumpInterfaceMACIPAcls finds interface in VPP and returns its MACIP ACL configuration
-func DumpInterfaceMACIPAcls(log logging.Logger, swIndex uint32, vppChannel api.VPPChannel, stopwatch *measure.Stopwatch) (acl.AccessLists, error) {
+func DumpInterfaceMACIPAcls(log logging.Logger, swIndex uint32, Channel api.Channel, stopwatch *measure.Stopwatch) (acl.AccessLists, error) {
 	alAcls := acl.AccessLists{
 		Acls: []*acl.AccessLists_Acl{},
 	}
 
-	resMacIp, err := DumpInterfaceMACIPACLs(swIndex, vppChannel, stopwatch)
+	resMacIp, err := DumpInterfaceMACIPACLs(swIndex, Channel, stopwatch)
 	log.Infof("Res: %+v\n", resMacIp)
 	if err != nil {
 		return alAcls, err
@@ -665,7 +665,7 @@ func DumpInterfaceMACIPAcls(log logging.Logger, swIndex uint32, vppChannel api.V
 	}
 
 	for aidx := range resMacIp.Acls {
-		macipACL, err := getMACIPACLDetails(vppChannel, uint32(aidx))
+		macipACL, err := getMACIPACLDetails(Channel, uint32(aidx))
 		if err != nil {
 			log.Error(err)
 		} else {
@@ -676,7 +676,7 @@ func DumpInterfaceMACIPAcls(log logging.Logger, swIndex uint32, vppChannel api.V
 }
 
 // DumpInterface finds interface in VPP and returns its IP ACL configuration.
-func DumpInterfaceIPACLs(swIndex uint32, vppChannel api.VPPChannel, stopwatch *measure.Stopwatch) (*acl_api.ACLInterfaceListDetails, error) {
+func DumpInterfaceIPACLs(swIndex uint32, Channel api.Channel, stopwatch *measure.Stopwatch) (*acl_api.ACLInterfaceListDetails, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLInterfaceListDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -686,7 +686,7 @@ func DumpInterfaceIPACLs(swIndex uint32, vppChannel api.VPPChannel, stopwatch *m
 	}
 
 	reply := &acl_api.ACLInterfaceListDetails{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
@@ -694,7 +694,7 @@ func DumpInterfaceIPACLs(swIndex uint32, vppChannel api.VPPChannel, stopwatch *m
 }
 
 // DumpInterface finds interface in VPP and returns its MACIP ACL configuration.
-func DumpInterfaceMACIPACLs(swIndex uint32, vppChannel api.VPPChannel, stopwatch *measure.Stopwatch) (*acl_api.MacipACLInterfaceListDetails, error) {
+func DumpInterfaceMACIPACLs(swIndex uint32, Channel api.Channel, stopwatch *measure.Stopwatch) (*acl_api.MacipACLInterfaceListDetails, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.MacipACLInterfaceListDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -704,7 +704,7 @@ func DumpInterfaceMACIPACLs(swIndex uint32, vppChannel api.VPPChannel, stopwatch
 	}
 
 	reply := &acl_api.MacipACLInterfaceListDetails{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, err
 	}
 
@@ -712,7 +712,7 @@ func DumpInterfaceMACIPACLs(swIndex uint32, vppChannel api.VPPChannel, stopwatch
 }
 
 // DumpInterfaces finds  all interfaces in VPP and returns their ACL configurations
-func DumpInterfaces(vppChannel api.VPPChannel, stopwatch *measure.Stopwatch) ([]*acl_api.ACLInterfaceListDetails, []*acl_api.MacipACLInterfaceListDetails, error) {
+func DumpInterfaces(Channel api.Channel, stopwatch *measure.Stopwatch) ([]*acl_api.ACLInterfaceListDetails, []*acl_api.MacipACLInterfaceListDetails, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLInterfaceListDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -721,7 +721,7 @@ func DumpInterfaces(vppChannel api.VPPChannel, stopwatch *measure.Stopwatch) ([]
 		SwIfIndex: 0xffffffff, // dump all
 	}
 
-	reqIPACL := vppChannel.SendMultiRequest(msgIPACL)
+	reqIPACL := Channel.SendMultiRequest(msgIPACL)
 
 	var IPaclInterfaces []*acl_api.ACLInterfaceListDetails
 	for {
@@ -741,7 +741,7 @@ func DumpInterfaces(vppChannel api.VPPChannel, stopwatch *measure.Stopwatch) ([]
 		SwIfIndex: 0xffffffff, // dump all
 	}
 
-	reqMACIPACL := vppChannel.SendMultiRequest(msgMACIPACL)
+	reqMACIPACL := Channel.SendMultiRequest(msgMACIPACL)
 
 	var MACIPaclInterfaces []*acl_api.MacipACLInterfaceListDetails
 	for {

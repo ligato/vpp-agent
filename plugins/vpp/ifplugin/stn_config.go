@@ -47,7 +47,7 @@ type StnConfigurator struct {
 	unstoredIndexes  idxvpp.NameToIdxRW
 	unstoredIndexSeq uint32
 	// VPP
-	vppChan govppapi.VPPChannel
+	vppChan govppapi.Channel
 	// Stopwatch
 	stopwatch *measure.Stopwatch
 }

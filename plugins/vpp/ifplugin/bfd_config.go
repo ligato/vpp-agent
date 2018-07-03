@@ -50,7 +50,7 @@ type BFDConfigurator struct {
 	keysIndexes       idxvpp.NameToIdxRW
 	echoFunctionIndex idxvpp.NameToIdxRW
 
-	vppChan govppapi.VPPChannel
+	vppChan govppapi.Channel
 }
 
 // Init members and channels

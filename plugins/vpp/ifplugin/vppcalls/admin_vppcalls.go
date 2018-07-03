@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceSetFlagsReply{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -49,16 +49,16 @@ func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan govppapi.VPPChannel, 
 }
 
 // InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
-func InterfaceAdminDown(ifIdx uint32, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func InterfaceAdminDown(ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return interfaceSetFlags(ifIdx, false, vppChan, stopwatch)
 }
 
 // InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
-func InterfaceAdminUp(ifIdx uint32, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func InterfaceAdminUp(ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return interfaceSetFlags(ifIdx, true, vppChan, stopwatch)
 }
 
-func handleInterfaceTag(tag string, ifIdx uint32, isAdd bool, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func handleInterfaceTag(tag string, ifIdx uint32, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceTagAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -85,12 +85,12 @@ func handleInterfaceTag(tag string, ifIdx uint32, isAdd bool, vppChan govppapi.V
 }
 
 // SetInterfaceTag registers new interface index/tag pair
-func SetInterfaceTag(tag string, ifIdx uint32, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func SetInterfaceTag(tag string, ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return handleInterfaceTag(tag, ifIdx, true, vppChan, stopwatch)
 }
 
 // RemoveInterfaceTag un-registers new interface index/tag pair
-func RemoveInterfaceTag(tag string, ifIdx uint32, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func RemoveInterfaceTag(tag string, ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return handleInterfaceTag(tag, ifIdx, false, vppChan, stopwatch)
 }
 

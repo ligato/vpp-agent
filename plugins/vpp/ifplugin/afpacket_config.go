@@ -37,7 +37,7 @@ type AFPacketConfigurator struct {
 	afPacketByName      map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
 	linuxHostInterfaces map[string]struct{}        // a set of available host (Linux) interfaces
 
-	vppCh     govppapi.VPPChannel // govpp channel used by InterfaceConfigurator
+	vppCh     govppapi.Channel // govpp channel used by InterfaceConfigurator
 	stopwatch *measure.Stopwatch  // from InterfaceConfigurator
 }
 
@@ -73,7 +73,7 @@ func (plugin *AFPacketConfigurator) GetHostInterfacesEntry(hostIf string) bool {
 }
 
 // Init members of AFPacketConfigurator.
-func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh govppapi.VPPChannel, linux interface{},
+func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh govppapi.Channel, linux interface{},
 	indexes ifaceidx.SwIfIndexRW, stopwatch *measure.Stopwatch) (err error) {
 	plugin.log = logger
 	plugin.log.Infof("Initializing AF-Packet configurator")

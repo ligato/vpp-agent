@@ -30,7 +30,7 @@ import (
 
 // SetRxPlacement
 func SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings,
-	vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+	vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

@@ -84,7 +84,7 @@ const (
 type Plugin struct {
 	Deps
 
-	vppCh *api.Channel
+	vppCh api.Channel
 
 	runtimeGaugeVecs map[string]*prometheus.GaugeVec
 	runtimeStats     map[string]*runtimeStats

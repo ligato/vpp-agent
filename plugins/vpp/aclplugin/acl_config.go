@@ -68,8 +68,8 @@ type ACLConfigurator struct {
 	vppCalls *vppcalls.ACLInterfacesVppCalls
 
 	// VPP channels
-	vppChan     *api.Channel
-	vppDumpChan *api.Channel
+	vppChan     api.Channel
+	vppDumpChan api.Channel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch

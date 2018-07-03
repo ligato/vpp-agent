@@ -34,7 +34,7 @@ type VersionInfo struct {
 }
 
 // GetVersionInfo retrieves version info
-func GetVersionInfo(vppChan VPPChannel) (*VersionInfo, error) {
+func GetVersionInfo(vppChan Channel) (*VersionInfo, error) {
 	req := &vpe.ShowVersion{}
 	reply := &vpe.ShowVersionReply{}
 
@@ -55,7 +55,7 @@ func GetVersionInfo(vppChan VPPChannel) (*VersionInfo, error) {
 }
 
 // RunCliCommand executes CLI command and returns output
-func RunCliCommand(vppChan VPPChannel, cmd string) ([]byte, error) {
+func RunCliCommand(vppChan Channel, cmd string) ([]byte, error) {
 	req := &vpe.CliInband{
 		Cmd:    []byte(cmd),
 		Length: uint32(len(cmd)),
@@ -95,7 +95,7 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info
-func GetMemory(vppChan VPPChannel) (*MemoryInfo, error) {
+func GetMemory(vppChan Channel) (*MemoryInfo, error) {
 	data, err := RunCliCommand(vppChan, "show memory")
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info
-func GetNodeCounters(vppChan VPPChannel) (*NodeCounterInfo, error) {
+func GetNodeCounters(vppChan Channel) (*NodeCounterInfo, error) {
 	data, err := RunCliCommand(vppChan, "show node counters")
 	if err != nil {
 		return nil, err
@@ -239,7 +239,7 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info
-func GetRuntimeInfo(vppChan VPPChannel) (*RuntimeInfo, error) {
+func GetRuntimeInfo(vppChan Channel) (*RuntimeInfo, error) {
 	data, err := RunCliCommand(vppChan, "show runtime")
 	if err != nil {
 		return nil, err
@@ -317,7 +317,7 @@ var (
 )
 
 // GetBuffersInfo retrieves buffers info
-func GetBuffersInfo(vppChan VPPChannel) (*BuffersInfo, error) {
+func GetBuffersInfo(vppChan Channel) (*BuffersInfo, error) {
 	data, err := RunCliCommand(vppChan, "show buffers")
 	if err != nil {
 		return nil, err
@@ -387,7 +387,7 @@ func cleanBytes(b []byte) []byte {
 	return bytes.SplitN(b, []byte{0x00}, 2)[0]
 }
 
-// VPPChannel is interface for send request to VPP channel
-type VPPChannel interface {
+// Channel is interface for send request to VPP channel
+type Channel interface {
 	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
 }

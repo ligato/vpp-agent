@@ -28,14 +28,14 @@ import (
 // DumpBridgeDomainIDs lists all configured bridge domains. Auxiliary method for LookupFIBEntries.
 // returns list of bridge domain IDs (BD IDs). First element of returned slice is 0. It is default BD to which all
 // interfaces belong
-func DumpBridgeDomainIDs(vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) ([]uint32, error) {
+func DumpBridgeDomainIDs(Channel govppapi.Channel, stopwatch *measure.Stopwatch) ([]uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	activeDomains := make([]uint32, 1)
-	reqCtx := vppChannel.SendMultiRequest(req)
+	reqCtx := Channel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.BridgeDomainDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
@@ -70,7 +70,7 @@ type BridgeDomainInterface struct {
 // LIMITATIONS:
 // - not able to dump ArpTerminationTable - missing binary API
 //
-func DumpBridgeDomains(vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) (map[uint32]*BridgeDomain, error) {
+func DumpBridgeDomains(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*BridgeDomain, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -126,7 +126,7 @@ type FIBTableEntry struct {
 
 // DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
 // map indexed by destination MAC address.
-func DumpFIBTableEntries(vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) (map[string]*FIBTableEntry, error) {
+func DumpFIBTableEntries(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[string]*FIBTableEntry, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -176,7 +176,7 @@ type XConnectPairs struct {
 
 // DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure
 // map indexed by rx interface index.
-func DumpXConnectPairs(vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) (map[uint32]*XConnectPairs, error) {
+func DumpXConnectPairs(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*XConnectPairs, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

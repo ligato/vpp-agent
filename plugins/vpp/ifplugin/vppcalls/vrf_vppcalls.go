@@ -25,7 +25,7 @@ import (
 )
 
 // GetInterfaceVRF assigns VRF table to interface
-func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan govppapi.VPPChannel) (vrfID uint32, err error) {
+func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan govppapi.Channel) (vrfID uint32, err error) {
 	log.Debugf("Getting VRF for interface %v", ifIdx)
 
 	req := &interfaces.SwInterfaceGetTable{
@@ -50,7 +50,7 @@ func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan govppapi.VPPChann
 }
 
 // SetInterfaceVRF retrieves VRF table from interface
-func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan govppapi.VPPChannel) error {
+func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan govppapi.Channel) error {
 	if err := CreateVrfIfNeeded(vrfID, vppChan); err != nil {
 		log.Warnf("creating VRF failed: %v", err)
 		return err
@@ -83,7 +83,7 @@ func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan govpp
 // TODO: manage VRF tables globally in separate configurator
 
 // CreateVrfIfNeeded checks if VRF exists and creates it if not
-func CreateVrfIfNeeded(vrfID uint32, vppChan govppapi.VPPChannel) error {
+func CreateVrfIfNeeded(vrfID uint32, vppChan govppapi.Channel) error {
 	if vrfID == 0 {
 		return nil
 	}
@@ -101,7 +101,7 @@ func CreateVrfIfNeeded(vrfID uint32, vppChan govppapi.VPPChannel) error {
 	return nil
 }
 
-func dumpVrfTables(vppChan govppapi.VPPChannel) (map[uint32][]*ip.IPFibDetails, error) {
+func dumpVrfTables(vppChan govppapi.Channel) (map[uint32][]*ip.IPFibDetails, error) {
 	fibs := map[uint32][]*ip.IPFibDetails{}
 
 	reqCtx := vppChan.SendMultiRequest(&ip.IPFibDump{})
@@ -122,7 +122,7 @@ func dumpVrfTables(vppChan govppapi.VPPChannel) (map[uint32][]*ip.IPFibDetails, 
 	return fibs, nil
 }
 
-func vppAddIPTable(tableID uint32, vppChan govppapi.VPPChannel) error {
+func vppAddIPTable(tableID uint32, vppChan govppapi.Channel) error {
 	req := &ip.IPTableAddDel{
 		TableID: tableID,
 		IsAdd:   1,

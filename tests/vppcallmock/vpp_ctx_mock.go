@@ -28,7 +28,7 @@ import (
 type TestCtx struct {
 	MockVpp     *mock.VppAdapter
 	conn        *core.Connection
-	channel     *govppapi.Channel
+	channel     govppapi.Channel
 	MockChannel *mockedChannel
 }
 
@@ -60,7 +60,7 @@ func (ctx *TestCtx) TeardownTestCtx() {
 
 // MockedChannel implements ChannelIntf for testing purposes
 type mockedChannel struct {
-	channel *govppapi.Channel
+	channel govppapi.Channel
 
 	//last message which passed through method SendRequest
 	Msg govppapi.Message
@@ -102,4 +102,39 @@ func (m *mockedChannel) UnsubscribeNotification(subscription *govppapi.NotifSubs
 // SetReplyTimeout sets the timeout for replies from VPP
 func (m *mockedChannel) SetReplyTimeout(timeout time.Duration) {
 	m.channel.SetReplyTimeout(timeout)
+}
+
+// GetNotificationChannel returns notification channel
+func (m *mockedChannel) GetReplyChannel() <-chan *govppapi.VppReply {
+	return m.channel.GetReplyChannel()
+}
+
+// GetRequestChannel returns notification channel
+func (m *mockedChannel) GetRequestChannel() chan<- *govppapi.VppRequest {
+	return m.channel.GetRequestChannel()
+}
+
+// GetNotificationChannel returns notification channel
+func (m *mockedChannel) GetNotificationChannel() chan<- *govppapi.NotifSubscribeRequest {
+	return m.channel.GetNotificationChannel()
+}
+
+// GetNotificationReplyChannel returns notification reply channel
+func (m *mockedChannel) GetNotificationReplyChannel() <-chan error {
+	return m.channel.GetNotificationReplyChannel()
+}
+
+// GetMessageDecoder returns message decoder
+func (m *mockedChannel) GetMessageDecoder() govppapi.MessageDecoder {
+	return m.channel.GetMessageDecoder()
+}
+
+// GetID returns channel's ID
+func (m *mockedChannel) GetID() uint16 {
+	return m.channel.GetID()
+}
+
+// Close closes channel
+func (m *mockedChannel) Close() {
+	m.channel.Close()
 }

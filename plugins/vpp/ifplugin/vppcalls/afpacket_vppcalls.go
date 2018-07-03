@@ -26,7 +26,7 @@ import (
 )
 
 // AddAfPacketInterface calls AfPacketCreate VPP binary API.
-func AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(af_packet.AfPacketCreate{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -59,7 +59,7 @@ func AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Inter
 }
 
 // DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-func DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(af_packet.AfPacketDelete{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

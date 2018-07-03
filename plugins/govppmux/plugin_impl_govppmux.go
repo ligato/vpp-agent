@@ -173,7 +173,7 @@ func (plugin *GOVPPPlugin) Close() error {
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannel()
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannel() (*api.Channel, error) {
+func (plugin *GOVPPPlugin) NewAPIChannel() (api.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (*api.Channel, error) {
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (*api.Channel, error) {
+func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (api.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 	if err != nil {
 		return nil, err

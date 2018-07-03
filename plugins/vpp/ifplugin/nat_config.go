@@ -76,8 +76,8 @@ type NatConfigurator struct {
 	notDisabledIfs map[string]*nat.Nat44Global_NatInterface
 
 	// VPP channels
-	vppChan     govppapi.VPPChannel
-	vppDumpChan govppapi.VPPChannel
+	vppChan     govppapi.Channel
+	vppDumpChan govppapi.Channel
 
 	stopwatch *measure.Stopwatch
 }

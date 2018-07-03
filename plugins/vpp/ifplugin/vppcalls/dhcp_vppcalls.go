@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 )
 
-func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(dhcp.DhcpClientConfig{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -51,11 +51,11 @@ func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan govp
 }
 
 // SetInterfaceAsDHCPClient sets provided interface as a DHCP client
-func SetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) (err error) {
+func SetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
 	return handleInterfaceDHCP(ifIdx, hostName, true, vppChan, stopwatch)
 }
 
 // UnsetInterfaceAsDHCPClient un-sets interface as DHCP client
-func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.VPPChannel, stopwatch *measure.Stopwatch) (err error) {
+func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
 	return handleInterfaceDHCP(ifIdx, hostName, false, vppChan, stopwatch)
 }

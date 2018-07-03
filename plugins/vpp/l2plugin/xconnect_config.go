@@ -40,7 +40,7 @@ type XConnectConfigurator struct {
 	xcDelCacheIndexes l2idx.XcIndexRW
 	xcIndexSeq        uint32
 
-	vppChan   govppapi.VPPChannel
+	vppChan   govppapi.Channel
 	stopwatch *measure.Stopwatch // Timer used to measure and store time
 }
 

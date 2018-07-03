@@ -59,7 +59,7 @@ type IPSecConfigurator struct {
 	spdIfCache []SPDIfCacheEntry
 
 	// VPP channel
-	vppCh govppapi.VPPChannel
+	vppCh govppapi.Channel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch

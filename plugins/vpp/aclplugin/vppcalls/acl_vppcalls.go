@@ -56,7 +56,7 @@ var AclMessages = []govppapi.Message{
 }
 
 // GetAclPluginVersion returns version of the VPP ACL plugin
-func GetAclPluginVersion(vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) (string, error) {
+func GetAclPluginVersion(Channel govppapi.Channel, stopwatch *measure.Stopwatch) (string, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLPluginGetVersion{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -64,7 +64,7 @@ func GetAclPluginVersion(vppChannel govppapi.VPPChannel, stopwatch *measure.Stop
 	req := &acl_api.ACLPluginGetVersion{}
 	reply := &acl_api.ACLPluginGetVersionReply{}
 	// Does not return retval
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
 	}
 
@@ -73,7 +73,7 @@ func GetAclPluginVersion(vppChannel govppapi.VPPChannel, stopwatch *measure.Stop
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
 func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) (uint32, error) {
+	Channel govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -95,7 +95,7 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 	}
 
 	reply := &acl_api.ACLAddReplaceReply{}
-	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
@@ -109,7 +109,7 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 
 // AddMacIPAcl creates new L2 MAC IP ACL. VPP provides index in reply.
 func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) (uint32, error) {
+	Channel govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.MacipACLAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -131,7 +131,7 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 	}
 
 	reply := &acl_api.MacipACLAddReply{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
@@ -145,7 +145,7 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 
 // ModifyIPAcl uses index (provided by VPP) to identify ACL which is modified.
 func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+	Channel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
@@ -169,7 +169,7 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 	}
 
 	reply := &acl_api.ACLAddReplaceReply{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
@@ -183,7 +183,7 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 
 // ModifyMACIPAcl uses index (provided by VPP) to identify ACL which is modified.
 func ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+	Channel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
@@ -206,7 +206,7 @@ func ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName 
 	}
 
 	reply := &acl_api.MacipACLAddReplaceReply{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
@@ -219,7 +219,7 @@ func ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName 
 }
 
 // DeleteIPAcl removes L3/L4 ACL.
-func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteIPAcl(aclIndex uint32, log logging.Logger, Channel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -229,7 +229,7 @@ func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.VPPCha
 	}
 
 	reply := &acl_api.ACLDelReply{}
-	if err := vppChannel.SendRequest(msg).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(msg).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L3/L4 ACL %v: %v", aclIndex, err)
 	}
 	if reply.Retval != 0 {
@@ -242,7 +242,7 @@ func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.VPPCha
 }
 
 // DeleteMacIPAcl removes L2 ACL.
-func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, Channel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.MacipACLDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -252,7 +252,7 @@ func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.VPP
 	}
 
 	reply := &acl_api.MacipACLDelReply{}
-	if err := vppChannel.SendRequest(msg).ReceiveReply(reply); err != nil {
+	if err := Channel.SendRequest(msg).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L2 ACL %v: %v", aclIndex, err)
 	}
 	if reply.Retval != 0 {
