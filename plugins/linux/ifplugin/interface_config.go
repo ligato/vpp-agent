@@ -156,7 +156,7 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 
 		return plugin.configureVethInterface(ifConfig, peerConfig)
 	case interfaces.LinuxInterfaces_AUTO_TAP:
-		var hostIfName string = ""
+		var hostIfName string
 		if linuxIf.Tap != nil  {
 			hostIfName = linuxIf.GetTap().GetTempIfName()
 		}
@@ -989,7 +989,7 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMet
 		return nil
 	}
 
-	var hostIfName string = ""
+	var hostIfName string
 	if ifConfigMetaData.Tap != nil  {
 		hostIfName = ifConfigMetaData.GetTap().GetHostIfName()
 	}
@@ -1001,7 +1001,7 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMet
 		return nil
 	}
 
-	var linuxIf *interfaces.LinuxInterfaces_Interface = nil
+	var linuxIf *interfaces.LinuxInterfaces_Interface
 	_, data, exists := plugin.ifCachedConfigs.LookupIdx(hostIfName)
 	if exists && data != nil {
 		linuxIf = data.Data
@@ -1023,7 +1023,7 @@ func (plugin *LinuxInterfaceConfigurator) ResolveDeletedVPPInterface(ifConfigMet
 		return nil
 	}
 
-	var hostIfName string = ""
+	var hostIfName string
 	if ifConfigMetaData.Tap != nil  {
 		hostIfName = ifConfigMetaData.GetTap().GetHostIfName()
 	}
