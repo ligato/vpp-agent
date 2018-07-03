@@ -31,7 +31,7 @@ var (
 )
 
 // watchRequests watches for requests on the request API channel and forwards them as messages to VPP.
-func (c *Connection) watchRequests(ch *api.ChannelCtx) {
+func (c *Connection) watchRequests(ch *channel) {
 	for {
 		select {
 		case req, ok := <-ch.ReqChan:
@@ -51,12 +51,12 @@ func (c *Connection) watchRequests(ch *api.ChannelCtx) {
 }
 
 // processRequest processes a single request received on the request channel.
-func (c *Connection) processRequest(ch *api.ChannelCtx, req *api.VppRequest) error {
+func (c *Connection) processRequest(ch *channel, req *VppRequest) error {
 	// check whether we are connected to VPP
 	if atomic.LoadUint32(&c.connected) == 0 {
 		err := ErrNotConnected
 		log.Error(err)
-		sendReply(ch, &api.VppReply{SeqNum: req.SeqNum, Error: err})
+		sendReply(ch, &VppReply{SeqNum: req.SeqNum, Error: err})
 		return err
 	}
 
@@ -69,7 +69,7 @@ func (c *Connection) processRequest(ch *api.ChannelCtx, req *api.VppRequest) err
 			"msg_crc":  req.Message.GetCrcString(),
 			"seq_num":  req.SeqNum,
 		}).Error(err)
-		sendReply(ch, &api.VppReply{SeqNum: req.SeqNum, Error: err})
+		sendReply(ch, &VppReply{SeqNum: req.SeqNum, Error: err})
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (c *Connection) processRequest(ch *api.ChannelCtx, req *api.VppRequest) err
 			"msg_id":  msgID,
 			"seq_num": req.SeqNum,
 		}).Error(err)
-		sendReply(ch, &api.VppReply{SeqNum: req.SeqNum, Error: err})
+		sendReply(ch, &VppReply{SeqNum: req.SeqNum, Error: err})
 		return err
 	}
 
@@ -106,7 +106,7 @@ func (c *Connection) processRequest(ch *api.ChannelCtx, req *api.VppRequest) err
 			"msg_id":  msgID,
 			"seq_num": req.SeqNum,
 		}).Error(err)
-		sendReply(ch, &api.VppReply{SeqNum: req.SeqNum, Error: err})
+		sendReply(ch, &VppReply{SeqNum: req.SeqNum, Error: err})
 		return err
 	}
 
@@ -174,7 +174,7 @@ func msgCallback(context uint32, msgID uint16, data []byte) {
 	}
 
 	// send the data to the channel
-	sendReply(ch, &api.VppReply{
+	sendReply(ch, &VppReply{
 		MessageID:         msgID,
 		SeqNum:            seqNum,
 		Data:              data,
@@ -189,7 +189,7 @@ func msgCallback(context uint32, msgID uint16, data []byte) {
 
 // sendReply sends the reply into the go channel, if it cannot be completed without blocking, otherwise
 // it logs the error and do not send the message.
-func sendReply(ch *api.ChannelCtx, reply *api.VppReply) {
+func sendReply(ch *channel, reply *VppReply) {
 	select {
 	case ch.ReplyChan <- reply:
 		// reply sent successfully

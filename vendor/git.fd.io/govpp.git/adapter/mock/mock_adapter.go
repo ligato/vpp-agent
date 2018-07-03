@@ -25,8 +25,8 @@ import (
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/adapter/mock/binapi"
 	"git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
 
+	"git.fd.io/govpp.git/codec"
 	"github.com/lunixbochs/struc"
 )
 
@@ -48,10 +48,10 @@ type VppAdapter struct {
 	binAPITypes  map[string]reflect.Type
 	access       sync.RWMutex
 
-	replies       []reply            // FIFO queue of messages
-	replyHandlers []ReplyHandler     // callbacks that are able to calculate mock responses
-	repliesLock   sync.Mutex         // mutex for the queue
-	mode          replyMode          // mode in which the mock operates
+	replies       []reply        // FIFO queue of messages
+	replyHandlers []ReplyHandler // callbacks that are able to calculate mock responses
+	repliesLock   sync.Mutex     // mutex for the queue
+	mode          replyMode      // mode in which the mock operates
 }
 
 // defaultReply is a default reply message that mock adapter returns for a request.
@@ -79,7 +79,7 @@ type MsgWithContext struct {
 	Multipart bool
 
 	/* set by mock adapter */
-	hasCtx    bool
+	hasCtx bool
 }
 
 // ReplyHandler is a type that allows to extend the behaviour of VPP mock.
@@ -178,7 +178,7 @@ func (a *VppAdapter) ReplyBytes(request MessageDTO, reply api.Message) ([]byte, 
 	log.Println("ReplyBytes ", replyMsgID, " ", reply.GetMessageName(), " clientId: ", request.ClientID)
 
 	buf := new(bytes.Buffer)
-	struc.Pack(buf, &core.VppReplyHeader{VlMsgID: replyMsgID, Context: request.ClientID})
+	struc.Pack(buf, &codec.VppReplyHeader{VlMsgID: replyMsgID, Context: request.ClientID})
 	struc.Pack(buf, reply)
 
 	return buf.Bytes(), nil
@@ -238,7 +238,7 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 			replyHandler := a.replyHandlers[i]
 
 			buf := bytes.NewReader(data)
-			reqHeader := core.VppRequestHeader{}
+			reqHeader := codec.VppRequestHeader{}
 			struc.Unpack(buf, &reqHeader)
 
 			a.access.Lock()
@@ -273,13 +273,13 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 					context = setSeqNum(context, msg.SeqNum)
 				}
 				if msg.Msg.GetMessageType() == api.ReplyMessage {
-					struc.Pack(buf, &core.VppReplyHeader{VlMsgID: msgID, Context: context})
+					struc.Pack(buf, &codec.VppReplyHeader{VlMsgID: msgID, Context: context})
 				} else if msg.Msg.GetMessageType() == api.EventMessage {
-					struc.Pack(buf, &core.VppEventHeader{VlMsgID: msgID, Context: context})
+					struc.Pack(buf, &codec.VppEventHeader{VlMsgID: msgID, Context: context})
 				} else if msg.Msg.GetMessageType() == api.RequestMessage {
-					struc.Pack(buf, &core.VppRequestHeader{VlMsgID: msgID, Context: context})
+					struc.Pack(buf, &codec.VppRequestHeader{VlMsgID: msgID, Context: context})
 				} else {
-					struc.Pack(buf, &core.VppOtherHeader{VlMsgID: msgID})
+					struc.Pack(buf, &codec.VppOtherHeader{VlMsgID: msgID})
 				}
 				struc.Pack(buf, msg.Msg)
 				a.callback(context, msgID, buf.Bytes())
@@ -299,7 +299,7 @@ func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 		// return default reply
 		buf := new(bytes.Buffer)
 		msgID := uint16(defaultReplyMsgID)
-		struc.Pack(buf, &core.VppReplyHeader{VlMsgID: msgID, Context: clientID})
+		struc.Pack(buf, &codec.VppReplyHeader{VlMsgID: msgID, Context: clientID})
 		struc.Pack(buf, &defaultReply{})
 		a.callback(clientID, msgID, buf.Bytes())
 	}
@@ -392,4 +392,3 @@ func setMultipart(context uint32, isMultipart bool) (newContext uint32) {
 	}
 	return context
 }
-
