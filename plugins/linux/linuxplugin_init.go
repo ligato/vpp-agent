@@ -178,7 +178,7 @@ func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	_, err := safeclose.CloseAll(
+	return safeclose.Close(
 		// Configurators
 		plugin.ifConfigurator, plugin.arpConfigurator, plugin.routeConfigurator,
 		// Channels
@@ -187,8 +187,6 @@ func (plugin *Plugin) Close() error {
 		// Registrations
 		plugin.watchDataReg,
 	)
-
-	return err
 }
 
 // Initialize namespace handler plugin

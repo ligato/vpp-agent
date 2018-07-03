@@ -69,8 +69,7 @@ func (plugin *LinuxInterfaceStateUpdater) Init(logger logging.PluginLogger, ctx 
 
 // Close watcher channel (state chan is closed in LinuxInterfaceConfigurator)
 func (plugin *LinuxInterfaceStateUpdater) Close() error {
-	_, err := safeclose.CloseAll(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
-	return err
+	return safeclose.Close(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
 }
 
 // Subscribe to linux default namespace
@@ -132,4 +131,3 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 		plugin.log.Warn("Unable to send to the linux if state notification channel - buffer is full.")
 	}
 }
-

@@ -101,8 +101,7 @@ func (plugin *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 // Close vpp channel.
 func (plugin *FIBConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.syncVppChannel, plugin.asyncVppChannel)
-	return err
+	return safeclose.Close(plugin.syncVppChannel, plugin.asyncVppChannel)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.

@@ -50,7 +50,7 @@ type BDConfigurator struct {
 	vppChan *govppapi.Channel
 
 	// State notification channel
-	notificationChan chan BridgeDomainStateMessage
+	notificationChan chan BridgeDomainStateMessage // Injected, do not close here
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -105,8 +105,7 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 
 // Close GOVPP channel.
 func (plugin *BDConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChan, plugin.notificationChan)
-	return err
+	return safeclose.Close(plugin.vppChan)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.

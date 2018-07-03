@@ -135,10 +135,8 @@ func (plugin *ExamplePlugin) AfterInit() error {
 func (plugin *ExamplePlugin) Close() error {
 	plugin.wg.Wait()
 
-	var wasErr error
-	_, wasErr = safeclose.CloseAll(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
 		plugin.linuxIfIdxLocal, plugin.linuxIfIdxAgent1, plugin.linuxIfIdxAgent2, plugin.closeChannel)
-	return wasErr
 }
 
 // publish propagates example configuration to etcd.

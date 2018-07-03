@@ -15,8 +15,8 @@
 package vppcalls_test
 
 import (
-	"testing"
 	"net"
+	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
