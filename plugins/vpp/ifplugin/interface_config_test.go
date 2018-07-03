@@ -1015,7 +1015,6 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 
 // Modify loopback interface
 func TestInterfacesModifyLoopback(t *testing.T) {
-	// TODO: fix mock adapter to only send single reply for normal request
 	// Setup
 	ctx, connection, plugin := ifTestSetup(t)
 	defer ifTestTeardown(connection, plugin)
@@ -1026,9 +1025,6 @@ func TestInterfacesModifyLoopback(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
-	//ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	//ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	//ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
@@ -1037,22 +1033,15 @@ func TestInterfacesModifyLoopback(t *testing.T) {
 	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
-	//ctx.MockVpp.MockReply(&ip.IPFibDetails{})
-	//ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	//ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
-	//ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
-	//ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
-	//ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply()
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	// Data
-	oldData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 0)
-	//oldData.Vrf = 1
-	newData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK, []string{"10.0.0.1/24", "10.0.0.2/24"},
-		false, "46:06:18:DB:05:3A", 0)
-	//newData.Vrf = 2
+	oldData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK,
+		[]string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 0)
+	newData := getTestInterface("if1", if_api.InterfaceType_SOFTWARE_LOOPBACK,
+		[]string{"10.0.0.1/24", "10.0.0.2/24"}, false, "46:06:18:DB:05:3A", 0)
 
 	// Test configure loopback
 	var err error
