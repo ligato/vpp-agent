@@ -18,13 +18,14 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
+	"git.fd.io/govpp.git/api"
 )
 
 // AppNsMessages is list of used VPP messages for compatibility check
-var AppNsMessages = []govppapi.Message{
+var AppNsMessages = []api.Message{
 	&session.AppNamespaceAddDel{},
 	&session.AppNamespaceAddDelReply{},
 	&session.SessionEnableDisable{},

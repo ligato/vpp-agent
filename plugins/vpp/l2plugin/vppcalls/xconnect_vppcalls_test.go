@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/api"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -26,7 +26,7 @@ import (
 var setTestDataInXConnect = []struct {
 	receiveIfaceIndex  uint32
 	transmitIfaceIndex uint32
-	message            govppapi.Message
+	message            api.Message
 }{
 	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{}},
 	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{Retval: 1}},
@@ -71,7 +71,7 @@ func TestVppSetL2XConnect(t *testing.T) {
 var unsetTestDataInXConnect = []struct {
 	receiveIfaceIndex  uint32
 	transmitIfaceIndex uint32
-	message            govppapi.Message
+	message            api.Message
 }{
 	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{}},
 	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{Retval: 1}},

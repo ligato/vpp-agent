@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/adapter/mock"
-	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -52,7 +52,7 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 	connection, _ := core.Connect(ctx.MockVpp)
 	defer connection.Disconnect()
 	plugin := &ifplugin.InterfaceConfigurator{}
-	ifVppNotifChan := make(chan govppapi.Message, 100)
+	ifVppNotifChan := make(chan api.Message, 100)
 	// Reply set
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameDetails{
 		SocketID:       1,
@@ -1442,7 +1442,7 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugi
 	log.SetLevel(logging.DebugLevel)
 	// Configurator
 	plugin := &ifplugin.InterfaceConfigurator{}
-	notifChan := make(chan govppapi.Message, 5)
+	notifChan := make(chan api.Message, 5)
 	err = plugin.Init(log, connection, 1, notifChan, 1500, false)
 	Expect(err).To(BeNil())
 

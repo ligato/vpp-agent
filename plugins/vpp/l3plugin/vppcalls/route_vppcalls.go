@@ -19,14 +19,15 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"git.fd.io/govpp.git/api"
 )
 
-var RouteMessages = []govppapi.Message{
+var RouteMessages = []api.Message{
 	&ip.IPAddDelRoute{},
 	&ip.IPAddDelRouteReply{},
 	&ip.IPFibDump{},

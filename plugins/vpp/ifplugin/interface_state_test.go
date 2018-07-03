@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
-	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -34,11 +34,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater, chan govppapi.Message, chan *intf.InterfaceNotification, error) {
+func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater, chan api.Message, chan *intf.InterfaceNotification, error) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
-	notifChan := make(chan govppapi.Message, 100)
+	notifChan := make(chan api.Message, 100)
 
 	// Initialize index
 	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "interface_state_test", ifaceidx.IndexMetadata)

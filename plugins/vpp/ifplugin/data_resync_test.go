@@ -15,8 +15,10 @@
 package ifplugin_test
 
 import (
+	"testing"
+
 	"git.fd.io/govpp.git/adapter/mock"
-	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -40,13 +42,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 type vppReplyMock struct {
 	ID      uint16
 	Ping    bool
-	Message govppapi.Message
+	Message api.Message
 }
 
 func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.ReplyHandler {
@@ -205,7 +206,7 @@ func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock
 	connection, _ := core.Connect(ctx.MockVpp)
 	plugin := &ifplugin.InterfaceConfigurator{}
 
-	ifVppNotifChan := make(chan govppapi.Message, 100)
+	ifVppNotifChan := make(chan api.Message, 100)
 
 	// Test init
 	err := plugin.Init(

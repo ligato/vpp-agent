@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -32,6 +32,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifnb "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"git.fd.io/govpp.git/api"
 )
 
 // Default VPP MTU value
@@ -177,7 +178,7 @@ func DumpMemifSocketDetails(log logging.Logger, vppChan govppapi.Channel, timeLo
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
 func dumpIPAddressDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
 	// TODO: workaround for incorrect ip.IPAddressDetails message
-	notifChan := make(chan govppapi.Message, 100)
+	notifChan := make(chan api.Message, 100)
 	subs, _ := vppChan.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
 
 	// Dump IP addresses of each interface.

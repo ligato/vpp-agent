@@ -17,7 +17,7 @@ package ifplugin
 import (
 	"errors"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"

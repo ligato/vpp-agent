@@ -20,15 +20,16 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	"git.fd.io/govpp.git/api"
 )
 
 // IPSecMessages is list of used VPP messages for compatibility check
-var IPSecMessages = []govppapi.Message{
+var IPSecMessages = []api.Message{
 	&ipsec_api.IpsecSpdAddDel{},
 	&ipsec_api.IpsecSpdAddDelReply{},
 	&ipsec_api.IpsecInterfaceAddDelSpd{},

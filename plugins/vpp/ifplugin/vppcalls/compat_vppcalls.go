@@ -15,7 +15,7 @@
 package vppcalls
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
@@ -27,11 +27,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	"git.fd.io/govpp.git/api"
 )
 
 // CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
+	msgs := []api.Message{
 		&memif.MemifCreate{},
 		&memif.MemifCreateReply{},
 		&memif.MemifDelete{},
@@ -92,7 +93,7 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Chan
 
 // CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
 func CheckMsgCompatibilityForBfd(vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
+	msgs := []api.Message{
 		&bfd.BfdUDPAdd{},
 		&bfd.BfdUDPAddReply{},
 		&bfd.BfdUDPMod{},
@@ -109,7 +110,7 @@ func CheckMsgCompatibilityForBfd(vppChan govppapi.Channel) error {
 
 // CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
 func CheckMsgCompatibilityForNat(vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
+	msgs := []api.Message{
 		&nat.Nat44AddDelAddressRange{},
 		&nat.Nat44AddDelAddressRangeReply{},
 		&nat.Nat44ForwardingEnableDisable{},
@@ -126,7 +127,7 @@ func CheckMsgCompatibilityForNat(vppChan govppapi.Channel) error {
 
 // CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
 func CheckMsgCompatibilityForStn(vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
+	msgs := []api.Message{
 		&stn.StnAddDelRule{},
 		&stn.StnAddDelRuleReply{},
 	}

@@ -17,7 +17,7 @@ package vppdump
 import (
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
+	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var testDataInMessagesBDs = []govppapi.Message{
+var testDataInMessagesBDs = []api.Message{
 	&l2ba.BridgeDomainDetails{
 		BdID:  4,
 		Flood: 1, UuFlood: 1, Forward: 1, Learn: 1, ArpTerm: 1, MacAge: 140,
@@ -114,7 +114,7 @@ func TestDumpBridgeDomains(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
-var testDataInMessagesFIBs = []govppapi.Message{
+var testDataInMessagesFIBs = []api.Message{
 	&l2ba.L2FibTableDetails{
 		BdID:   10,
 		Mac:    []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
@@ -171,7 +171,7 @@ func TestDumpFIBTableEntries(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
-var testDataInXConnect = []govppapi.Message{
+var testDataInXConnect = []api.Message{
 	&l2ba.L2XconnectDetails{1, 2},
 	&l2ba.L2XconnectDetails{3, 4},
 }

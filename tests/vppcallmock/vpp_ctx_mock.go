@@ -17,17 +17,18 @@ package vppcallmock
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
-	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
-	. "github.com/onsi/gomega"
 	"time"
+
+	"git.fd.io/govpp.git/adapter/mock"
+	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
+	. "github.com/onsi/gomega"
 )
 
 // TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
 type TestCtx struct {
 	MockVpp     *mock.VppAdapter
-	conn        *core.Connection
+	conn        *govppapi.Connection
 	channel     govppapi.Channel
 	MockChannel *mockedChannel
 }
@@ -41,7 +42,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	}
 
 	var err error
-	ctx.conn, err = core.Connect(ctx.MockVpp)
+	ctx.conn, err = govppapi.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.channel, err = ctx.conn.NewAPIChannel()
@@ -63,21 +64,21 @@ type mockedChannel struct {
 	channel govppapi.Channel
 
 	//last message which passed through method SendRequest
-	Msg govppapi.Message
+	Msg api.Message
 
 	//list of all messages which passed through method SendRequest
-	Msgs []govppapi.Message
+	Msgs []api.Message
 }
 
 // SendRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendRequest(msg govppapi.Message) *govppapi.RequestCtx {
+func (m *mockedChannel) SendRequest(msg api.Message) *govppapi.RequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendRequest(msg)
 }
 
 // SendMultiRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx {
+func (m *mockedChannel) SendMultiRequest(msg api.Message) *govppapi.MultiRequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendMultiRequest(msg)
@@ -85,12 +86,12 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) *govppapi.MultiRe
 
 // CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
 // which the library is connected to
-func (m *mockedChannel) CheckMessageCompatibility(msgs ...govppapi.Message) error {
+func (m *mockedChannel) CheckMessageCompatibility(msgs ...api.Message) error {
 	return m.channel.CheckMessageCompatibility(msgs...)
 }
 
 // SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel
-func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, msgFactory func() govppapi.Message) (*govppapi.NotifSubscription, error) {
+func (m *mockedChannel) SubscribeNotification(notifChan chan api.Message, msgFactory func() api.Message) (*govppapi.NotifSubscription, error) {
 	return m.channel.SubscribeNotification(notifChan, msgFactory)
 }
 

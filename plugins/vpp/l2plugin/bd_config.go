@@ -20,7 +20,7 @@ package l2plugin
 import (
 	"fmt"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"git.fd.io/govpp.git/api"
 )
 
 // BDConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -59,7 +60,7 @@ type BDConfigurator struct {
 // BridgeDomainStateMessage is message with bridge domain state + bridge domain name (since a state message does not
 // contain it). This state is sent to the bd_state.go to further processing after every change.
 type BridgeDomainStateMessage struct {
-	Message govppapi.Message
+	Message api.Message
 	Name    string
 }
 

@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"fmt"
 
-	govppapi "git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
 

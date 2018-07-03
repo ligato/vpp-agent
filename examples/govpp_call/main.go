@@ -17,7 +17,7 @@ package main
 import (
 	"time"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
@@ -62,8 +62,8 @@ type ExamplePlugin struct {
 
 	VPP vpp.API
 
-	exampleIDSeq uint32      // Plugin-specific ID initialization
-	vppChannel   api.Channel // Vpp channel to communicate with VPP
+	exampleIDSeq uint32           // Plugin-specific ID initialization
+	vppChannel   govppapi.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
 }

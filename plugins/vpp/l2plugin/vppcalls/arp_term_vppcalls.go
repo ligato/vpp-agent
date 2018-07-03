@@ -19,7 +19,7 @@ import (
 	"net"
 	"time"
 
-	govppmux "git.fd.io/govpp.git/api"
+	govppmux "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
