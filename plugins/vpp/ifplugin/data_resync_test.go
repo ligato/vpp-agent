@@ -45,7 +45,6 @@ import (
 )
 
 type vppReplyMock struct {
-	//ID      uint16
 	Name     string
 	Ping     bool
 	Message  govppapi.Message
@@ -96,7 +95,6 @@ func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.Rep
 		}
 
 		for _, dataMock := range dataList {
-			//if request.MsgID == dataMock.ID {
 			if request.MsgName == dataMock.Name {
 				// Send control ping next iteration if set
 				sendControlPing = dataMock.Ping
@@ -128,125 +126,12 @@ func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.Rep
 	}
 }
 
-func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock, merge bool) (*ifplugin.InterfaceConfigurator, *core.Connection) {
+func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.InterfaceConfigurator, *core.Connection) {
 	// Setup
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
-	}
-
-	if merge {
-		mocks = append(mocks, []*vppReplyMock{
-			/*{
-				//ID:      200,
-				Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
-				Ping:    true,
-				Message: &interfaces.SwInterfaceDetails{},
-			},
-			{
-				//ID:      1001,
-				Name: (&memif.MemifCreate{}).GetMessageName(),
-				Ping:    false,
-				Message: &memif.MemifCreateReply{},
-			},
-			{
-				//ID:      1003,
-				Message: &memif.MemifDeleteReply{},
-			},*/
-			/*{
-				//ID:      1005,
-				Name:    (&memif.MemifDump{}).GetMessageName(),
-				Ping:    true,
-				Message: &memif.MemifDetails{},
-			},*/
-			/*{
-				//ID:      1007,
-				Message: &vxlan.VxlanAddDelTunnelReply{},
-			},*/
-			/*{
-				//ID:      1009,
-				Name:    (&vxlan.VxlanTunnelDump{}).GetMessageName(),
-				Ping:    true,
-				Message: &vxlan.VxlanTunnelDetails{},
-			},*/
-			/*{
-				//ID:      1011,
-				Ping:    false,
-				Message: &af_packet.AfPacketCreateReply{},
-			},
-			{
-				//ID:      1013,
-				Message: &af_packet.AfPacketDeleteReply{},
-			},*/
-			/*{
-				//ID:      1019,
-				Name:    (&tap.SwInterfaceTapDump{}).GetMessageName(),
-				Ping:    true,
-				Message: &tap.SwInterfaceTapDetails{},
-			},*/
-			/*{
-				//ID:      1021,
-				Message: &tapv2.TapCreateV2Reply{},
-			},
-			{
-				//ID:      1023,
-				Message: &tapv2.TapDeleteV2Reply{},
-			},*/
-			/*{
-				//ID:      1047,
-				Name:    (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
-				Ping:    true,
-				Message: &tapv2.SwInterfaceTapV2Details{},
-			},*/
-			/*{
-				//ID:      1026,
-				Ping:    false,
-				Message: &interfaces.SwInterfaceSetFlagsReply{},
-			},
-			{
-				//ID:      1028,
-				Ping:    false,
-				Message: &interfaces.SwInterfaceAddDelAddressReply{},
-			},
-			{
-				//ID:      1032,
-				Ping:    false,
-				Message: &interfaces.SwInterfaceSetTableReply{},
-			},
-			{
-				//ID:      1034,
-				Ping:    false,
-				Message: &interfaces.SwInterfaceGetTableReply{},
-			},
-			{
-				//ID:      1036,
-				Ping:    false,
-				Message: &interfaces.SwInterfaceSetUnnumberedReply{},
-			},*/
-			/*{
-				//ID:      1038,
-				Name:    (&ip.IPAddressDump{}).GetMessageName(),
-				Ping:    true,
-				Message: &ip.IPAddressDetails{},
-			},
-			{
-				//ID:      1044,
-				Name:    (&memif.MemifSocketFilenameDump{}).GetMessageName(),
-				Ping:    true,
-				Message: &memif.MemifSocketFilenameDetails{},
-			},*/
-			/*{
-				//ID:      1047,
-				Ping:    true,
-				Message: &tapv2.SwInterfaceTapV2Details{},
-			},
-			{
-				//ID:      1049,
-				Ping:    false,
-				Message: &interfaces.SwInterfaceTagAddDelReply{},
-			},*/
-		}...)
 	}
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
@@ -371,7 +256,6 @@ func TestDataResyncResync(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -383,7 +267,6 @@ func TestDataResyncResync(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -391,7 +274,7 @@ func TestDataResyncResync(t *testing.T) {
 				SocketFilename: []byte("testsocket"),
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -427,7 +310,6 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -439,7 +321,6 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -447,7 +328,7 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 				SocketFilename: []byte("test"),
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -481,7 +362,6 @@ func TestDataResyncResyncSameName(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -493,7 +373,6 @@ func TestDataResyncResyncSameName(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -501,7 +380,7 @@ func TestDataResyncResyncSameName(t *testing.T) {
 				SocketFilename: []byte("test"),
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -533,7 +412,6 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -544,7 +422,6 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -552,7 +429,7 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 				SocketFilename: []byte("test"),
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -586,7 +463,6 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -598,7 +474,6 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -607,7 +482,6 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1009,
 			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 			Message: &vxlan.VxlanTunnelDetails{
@@ -617,7 +491,7 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 				DstAddress: []byte("192.168.10.1"),
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -655,7 +529,6 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -667,7 +540,6 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -676,7 +548,6 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1047,
 			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
 			Ping: true,
 			Message: &tapv2.SwInterfaceTapV2Details{
@@ -685,7 +556,7 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 				TxRingSz:   20,
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -723,7 +594,6 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -735,7 +605,6 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -743,7 +612,7 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 				SocketFilename: []byte("test"),
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -779,7 +648,6 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -791,7 +659,6 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -800,7 +667,6 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1005,
 			Name: (&memif.MemifDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifDetails{
@@ -811,7 +677,7 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 				Mode:      1,
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -850,7 +716,6 @@ func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
@@ -861,7 +726,6 @@ func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -869,7 +733,7 @@ func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
 				SocketFilename: []byte("test"),
 			},
 		},
-	}, true)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -896,7 +760,6 @@ func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
 	// Setup
 	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   200,
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Messages: []govppapi.Message{
@@ -913,7 +776,6 @@ func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
 				},
 			},
 		}, {
-			//ID:   1044,
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
 			Ping: true,
 			Message: &memif.MemifSocketFilenameDetails{
@@ -921,7 +783,7 @@ func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
 				SocketFilename: []byte("test"),
 			},
 		},
-	}, false)
+	})
 
 	defer plugin.Close()
 	defer conn.Disconnect()
@@ -940,22 +802,18 @@ func TestDataResyncResyncSession(t *testing.T) {
 	// Setup
 	plugin, conn, index := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1001,
 			Name:    (&bfdApi.BfdUDPAdd{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPAddReply{},
 		},
 		{
-			//ID:      1003,
 			Name:    (&bfdApi.BfdUDPMod{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPModReply{},
 		},
 		{
-			//ID:      1005,
 			Name:    (&bfdApi.BfdUDPDel{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPDelReply{},
 		},
 		{
-			//ID:      1011,
 			Name:    (&bfdApi.BfdUDPSessionDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &bfdApi.BfdUDPSessionDetails{},
@@ -991,22 +849,18 @@ func TestDataResyncResyncSessionSameData(t *testing.T) {
 	// Setup
 	plugin, conn, index := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1001,
 			Name:    (&bfdApi.BfdUDPAdd{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPAddReply{},
 		},
 		{
-			//ID:      1003,
 			Name:    (&bfdApi.BfdUDPMod{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPModReply{},
 		},
 		{
-			//ID:      1005,
 			Name:    (&bfdApi.BfdUDPDel{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPDelReply{},
 		},
 		{
-			//ID:   1011,
 			Name: (&bfdApi.BfdUDPSessionDump{}).GetMessageName(),
 			Ping: true,
 			Message: &bfdApi.BfdUDPSessionDetails{
@@ -1047,24 +901,20 @@ func TestDataResyncResyncAuthKey(t *testing.T) {
 	// Setup
 	plugin, conn, _ := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1011,
 			Name:    (&bfdApi.BfdAuthKeysDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &bfdApi.BfdAuthKeysDetails{},
 		},
 		{
-			//ID:      1013,
 			Name:    (&bfdApi.BfdUDPSessionDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &bfdApi.BfdUDPSessionDetails{},
 		},
 		{
-			//ID:      1009,
 			Name:    (&bfdApi.BfdAuthDelKey{}).GetMessageName(),
 			Message: &bfdApi.BfdAuthDelKeyReply{},
 		},
 		{
-			//ID:      1007,
 			Name:    (&bfdApi.BfdAuthSetKey{}).GetMessageName(),
 			Message: &bfdApi.BfdAuthSetKeyReply{},
 		},
@@ -1092,7 +942,6 @@ func TestDataResyncResyncAuthKeyNoMatch(t *testing.T) {
 	// Setup
 	plugin, conn, _ := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:   1011,
 			Name: (&bfdApi.BfdAuthKeysDump{}).GetMessageName(),
 			Ping: true,
 			Message: &bfdApi.BfdAuthKeysDetails{
@@ -1100,18 +949,15 @@ func TestDataResyncResyncAuthKeyNoMatch(t *testing.T) {
 			},
 		},
 		{
-			//ID:      1013,
 			Name:    (&bfdApi.BfdUDPSessionDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &bfdApi.BfdUDPSessionDetails{},
 		},
 		{
-			//ID:      1009,
 			Name:    (&bfdApi.BfdAuthDelKey{}).GetMessageName(),
 			Message: &bfdApi.BfdAuthDelKeyReply{},
 		},
 		{
-			//ID:      1007,
 			Name:    (&bfdApi.BfdAuthSetKey{}).GetMessageName(),
 			Message: &bfdApi.BfdAuthSetKeyReply{},
 		},
@@ -1140,7 +986,6 @@ func TestDataResyncResyncEchoFunction(t *testing.T) {
 	// Setup
 	plugin, conn, index := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1011,
 			Name:    (&bfdApi.BfdUDPSetEchoSource{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPSetEchoSourceReply{},
 		},
@@ -1174,13 +1019,11 @@ func TestDataResyncResyncStn(t *testing.T) {
 	// Setup
 	plugin, conn := stnConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1003,
 			Name:    (&stnApi.StnRulesDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &stnApi.StnRulesDetails{},
 		},
 		{
-			//ID:      1001,
 			Name:    (&stnApi.StnAddDelRule{}).GetMessageName(),
 			Message: &stnApi.StnAddDelRuleReply{},
 		},
@@ -1209,36 +1052,30 @@ func TestDataResyncResyncNatGlobal(t *testing.T) {
 	// Setup
 	plugin, _, conn := natConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1011,
 			Name:    (&natApi.Nat44ForwardingIsEnabled{}).GetMessageName(),
 			Message: &natApi.Nat44ForwardingIsEnabledReply{},
 		},
 		{
-			//ID:      1013,
 			Name:    (&natApi.Nat44InterfaceDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &natApi.Nat44InterfaceDetails{},
 		},
 		{
-			//ID:      1014,
 			Name:    (&natApi.Nat44InterfaceOutputFeatureDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &natApi.Nat44InterfaceOutputFeatureDetails{},
 		},
 		{
-			//ID:      1015,
 			Name:    (&natApi.Nat44InterfaceOutputFeatureDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &natApi.Nat44InterfaceOutputFeatureDetails{},
 		},
 		{
-			//ID:      1017,
 			Name:    (&natApi.Nat44AddressDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &natApi.Nat44AddressDetails{},
 		},
 		{
-			//ID:      1001,
 			Name:    (&natApi.Nat44AddDelAddressRange{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelAddressRangeReply{},
 		},
@@ -1286,17 +1123,14 @@ func TestDataResyncResyncDNat(t *testing.T) {
 	// Setup
 	plugin, index, conn := natConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1007,
 			Name:    (&natApi.Nat44AddDelStaticMapping{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelStaticMappingReply{},
 		},
 		{
-			//ID:      1017,
 			Name:    (&natApi.Nat44AddDelIdentityMapping{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelIdentityMappingReply{},
 		},
 		{
-			//ID:   1011,
 			Name: (&natApi.Nat44StaticMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44StaticMappingDetails{
@@ -1308,7 +1142,6 @@ func TestDataResyncResyncDNat(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1013,
 			Name: (&natApi.Nat44LbStaticMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44LbStaticMappingDetails{
@@ -1319,7 +1152,6 @@ func TestDataResyncResyncDNat(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1015,
 			Name: (&natApi.Nat44IdentityMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44IdentityMappingDetails{
@@ -1438,22 +1270,18 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 	// Setup
 	plugin, index, conn := natConfiguratorTestInitialization(t, []*vppReplyMock{
 		{
-			//ID:      1007,
 			Name:    (&natApi.Nat44AddDelStaticMapping{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelStaticMappingReply{},
 		},
 		{
-			//ID:      1009,
 			Name:    (&natApi.Nat44AddDelLbStaticMapping{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelLbStaticMappingReply{},
 		},
 		{
-			//ID:      1017,
 			Name:    (&natApi.Nat44AddDelIdentityMappingReply{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelIdentityMappingReply{},
 		},
 		{
-			//ID:   1011,
 			Name: (&natApi.Nat44StaticMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44StaticMappingDetails{
@@ -1462,7 +1290,6 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1013,
 			Name: (&natApi.Nat44LbStaticMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44LbStaticMappingDetails{
@@ -1471,7 +1298,6 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 			},
 		},
 		{
-			//ID:   1015,
 			Name: (&natApi.Nat44IdentityMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44IdentityMappingDetails{
