@@ -28,14 +28,14 @@ import (
 // DumpBridgeDomainIDs lists all configured bridge domains. Auxiliary method for LookupFIBEntries.
 // returns list of bridge domain IDs (BD IDs). First element of returned slice is 0. It is default BD to which all
 // interfaces belong
-func DumpBridgeDomainIDs(Channel govppapi.Channel, stopwatch *measure.Stopwatch) ([]uint32, error) {
+func DumpBridgeDomainIDs(vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) ([]uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	activeDomains := make([]uint32, 1)
-	reqCtx := Channel.SendMultiRequest(req)
+	reqCtx := vppChannel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.BridgeDomainDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)

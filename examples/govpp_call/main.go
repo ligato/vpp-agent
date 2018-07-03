@@ -31,7 +31,7 @@ import (
 // data to a binary api message and demonstration of sending the message
 // to the VPP with:
 //
-// requestContext = goChannel.SendRequest(requestMessage)
+// requestContext = goVppChannel.SendRequest(requestMessage)
 // requestContext.ReceiveReply(replyMessage)
 //
 // Note: this example shows how to work with VPP, so real proto message
@@ -62,8 +62,8 @@ type ExamplePlugin struct {
 
 	VPP vpp.API
 
-	exampleIDSeq uint32       // Plugin-specific ID initialization
-	Channel   api.Channel // Vpp channel to communicate with VPP
+	exampleIDSeq uint32      // Plugin-specific ID initialization
+	vppChannel   api.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
 }
@@ -72,7 +72,7 @@ type ExamplePlugin struct {
 func (plugin *ExamplePlugin) Init() (err error) {
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	plugin.Channel, err = plugin.GoVppmux.NewAPIChannel()
+	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
 
 	plugin.Log.Info("Default plugin plugin ready")
 
@@ -87,7 +87,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	return safeclose.Close(plugin.GoVppmux, plugin.Channel)
+	return safeclose.Close(plugin.GoVppmux, plugin.vppChannel)
 }
 
 /***********
@@ -120,11 +120,11 @@ func (plugin *ExamplePlugin) VppCall() {
 	plugin.Log.Info("Sending data to VPP ...")
 
 	// 1. Send the request and receive a reply directly (in one line).
-	plugin.Channel.SendRequest(req1).ReceiveReply(reply)
+	plugin.vppChannel.SendRequest(req1).ReceiveReply(reply)
 
 	// 2. Send multiple different requests. Every request returns it's own request context.
-	reqCtx2 := plugin.Channel.SendRequest(req2)
-	reqCtx3 := plugin.Channel.SendRequest(req3)
+	reqCtx2 := plugin.vppChannel.SendRequest(req2)
+	reqCtx3 := plugin.vppChannel.SendRequest(req3)
 	// The context can be used later to get reply.
 	reqCtx2.ReceiveReply(reply)
 	reqCtx3.ReceiveReply(reply)
