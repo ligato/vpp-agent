@@ -475,9 +475,9 @@ func TestLinuxConfiguratorAddTap_TempIfName(t *testing.T) {
 	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	// Verify registration
-	_, _, found := plugin.GetCachedLinuxIfIndexes().LookupIdx("TempIfName")
+	_, metadata, found := plugin.GetCachedLinuxIfIndexes().LookupIdx("TempIfName")
 	Expect(found).To(BeTrue())
-
+	Expect(metadata).ToNot(BeNil())
 }
 
 // Configure Tap with hostIfName
@@ -494,8 +494,9 @@ func TestLinuxConfiguratorAddTap_HostIfName(t *testing.T) {
 	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	// Verify registration
-	_, _, found := plugin.GetCachedLinuxIfIndexes().LookupIdx("HostIfName")
+	_, metadata, found := plugin.GetCachedLinuxIfIndexes().LookupIdx("HostIfName")
 	Expect(found).To(BeTrue())
+	Expect(metadata).ToNot(BeNil())
 }
 
 // Todo

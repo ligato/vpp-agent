@@ -156,14 +156,11 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 
 		return plugin.configureVethInterface(ifConfig, peerConfig)
 	case interfaces.LinuxInterfaces_AUTO_TAP:
-		var hostIfName string
-		if linuxIf.Tap != nil  {
-			hostIfName = linuxIf.GetTap().GetTempIfName()
+		if linuxIf.Tap != nil && linuxIf.Tap.TempIfName != "" {
+			return plugin.configureTapInterface(linuxIf.Tap.TempIfName, linuxIf)
+		} else {
+			return plugin.configureTapInterface(linuxIf.HostIfName, linuxIf)
 		}
-		if hostIfName == "" {
-			hostIfName = linuxIf.GetHostIfName()
-		}
-		return plugin.configureTapInterface(hostIfName, linuxIf)
 	default:
 		return fmt.Errorf("unknown linux interface type: %v", linuxIf.Type)
 	}
