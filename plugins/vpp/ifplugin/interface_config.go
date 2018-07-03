@@ -125,8 +125,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 
 // Close GOVPP channel
 func (plugin *InterfaceConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppCh, plugin.DhcpChan)
-	return err
+	return safeclose.Close(plugin.vppCh, plugin.DhcpChan)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.

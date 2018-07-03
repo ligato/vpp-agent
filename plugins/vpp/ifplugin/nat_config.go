@@ -122,8 +122,7 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 // Close used resources
 func (plugin *NatConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChan, plugin.vppDumpChan)
-	return err
+	return safeclose.Close(plugin.vppChan, plugin.vppDumpChan)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.

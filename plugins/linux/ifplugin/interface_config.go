@@ -30,11 +30,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	vppIf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
@@ -57,7 +57,7 @@ type LinuxInterfaceConfigurator struct {
 	ifByName  map[string]*LinuxInterfaceConfig   // interface name -> interface configuration
 	ifsByMs   map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
 
-	ifCachedConfigs	ifaceidx.LinuxIfIndexRW
+	ifCachedConfigs    ifaceidx.LinuxIfIndexRW
 	pIfCachedConfigSeq uint32
 
 	// Channels
@@ -987,7 +987,7 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMet
 	}
 
 	var hostIfName string
-	if ifConfigMetaData.Tap != nil  {
+	if ifConfigMetaData.Tap != nil {
 		hostIfName = ifConfigMetaData.GetTap().GetHostIfName()
 	}
 	if hostIfName == "" {
@@ -1021,7 +1021,7 @@ func (plugin *LinuxInterfaceConfigurator) ResolveDeletedVPPInterface(ifConfigMet
 	}
 
 	var hostIfName string
-	if ifConfigMetaData.Tap != nil  {
+	if ifConfigMetaData.Tap != nil {
 		hostIfName = ifConfigMetaData.GetTap().GetHostIfName()
 	}
 	if hostIfName == "" {

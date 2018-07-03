@@ -32,9 +32,9 @@ type AFPacketConfigurator struct {
 	ifIndexes ifaceidx.SwIfIndexRW
 
 	// Caches
-	afPacketByHostIf map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
-	afPacketByName   map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
-	linuxHostInterfaces   map[string]struct{}        // a set of available host (Linux) interfaces
+	afPacketByHostIf    map[string]*AfPacketConfig // host interface name -> Af Packet interface configuration
+	afPacketByName      map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
+	linuxHostInterfaces map[string]struct{}        // a set of available host (Linux) interfaces
 
 	vppCh     vppcalls.VPPChannel // govpp channel used by InterfaceConfigurator
 	stopwatch *measure.Stopwatch  // from InterfaceConfigurator
