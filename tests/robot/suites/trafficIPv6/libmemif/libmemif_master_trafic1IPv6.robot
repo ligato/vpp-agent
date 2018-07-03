@@ -109,7 +109,7 @@ Check Memif1 Interface On VPP1 Connected After Master Deleted and Created
 
 Check Ping VPP1 -> Agent Libmemif 1 After Delete and Create
     vpp_term: Check Ping    agent_vpp_1    ${LIBMEMIF_IP1}
-    Sleep    850s
+    Sleep     10s
 
 ###### Here VPP crashes
 Modify Memif1 Interface On VPP1 While Connected
@@ -121,7 +121,7 @@ Check Memif1 Interface On VPP1 Modified
     vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=slave  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Final Sleep
-    Sleep    250s
+    Sleep    1s
 ###########################################################
 
 
