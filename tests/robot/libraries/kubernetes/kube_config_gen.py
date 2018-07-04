@@ -65,10 +65,11 @@ class YamlConfigGenerator(object):
         :param output_path: Path to where the output files should be placed.
         :type output_path: str
         """
-        self.generate_sfc_config()
+        topology = self.generate_sfc_config()
         self.generate_vnf_config()
         self.generate_novpp_config()
         self.write_config_files(output_path)
+        return topology
 
     def generate_sfc_config(self):
 
@@ -77,7 +78,7 @@ class YamlConfigGenerator(object):
         for bridge_index in range(self.memif_per_vnf):
             entity = {
                 "name": "L2Bridge-{0}".format(bridge_index),
-                "description": "TODO",
+                "description": "Vswitch L2 bridge.",
                 "type": 3,
                 "bd_parms": {
                     "learn": True,
@@ -156,6 +157,21 @@ class YamlConfigGenerator(object):
         else:
             self.output["sfc"] = template + output
 
+        topology = []
+        for bridge_segment in entities_list:
+            segment_topology = {"vnf":[], "novpp":[]}
+            for element in bridge_segment["elements"]:
+                if element["container"].startswith("vnf-vpp"):
+                    segment_topology["vnf"].append(
+                        {"name": element["container"],
+                         "ip": element["ipv4_addr"]})
+                elif element["container"].startswith("novpp"):
+                    segment_topology["novpp"].append(
+                        {"name": element["container"],
+                         "ip": element["ipv4_addr"]})
+            topology.append(segment_topology)
+        return topology
+
     def generate_vnf_config(self):
         template = self.templates["vnf"]
         output = yaml_replace_line(
@@ -191,4 +207,5 @@ def generate_config(
         novpp_count,
         memif_per_vnf,
         template_path)
-    generator.generate_config(output_path)
+    topology = generator.generate_config(output_path)
+    return topology

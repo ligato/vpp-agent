@@ -93,14 +93,14 @@ Deploy_VNF_Pods
     [Arguments]    ${ssh_session}    ${replicas}    ${cn-infra_file}=${VNF_YAML_FILE_PATH}
     [Documentation]     Deploy VNF pods, verify running and store their names.
     BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
-    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    vnf-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_TIMEOUT}
+    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    vnf-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_MULTIREPLICA_TIMEOUT}
     BuiltIn.Set_Suite_Variable    ${cn_infra_pod_name}
 
 Deploy_NoVPP_Pods
     [Arguments]    ${ssh_session}    ${replicas}    ${cn-infra_file}=${NOVPP_YAML_FILE_PATH}
     [Documentation]     Deploy NoVPP pods, verify running and store their names.
     BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
-    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    novpp-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_TIMEOUT}
+    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    novpp-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_MULTIREPLICA_TIMEOUT}
     BuiltIn.Set_Suite_Variable    ${cn_infra_pod_name}
 
 Remove_VSwitch_Pod_And_Verify_Removed
@@ -239,13 +239,13 @@ Wait_Until_Pod_Removed
     BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${timeout}    ${check_period}    ${namespace}
     BuiltIn.Wait_Until_Keyword_Succeeds    ${timeout}    ${check_period}    Verify_Pod_Not_Present    ${ssh_session}    ${pod_name}    namespace=${namespace}
 
-Run Command In Pod
+Run_Command_In_Pod
     [Arguments]    ${command}    ${pod_name}
     [Documentation]    Execute command on the pod, log and return retval, stdout, stderr.
     BuiltIn.Log_Many    ${command}     ${pod_name}
     BuiltIn.Comment    TODO: Do not mention pods and move to SshCommons.robot or similar.
     SSHLibrary.Switch Connection    ${testbed_connection}
-    ${output} =    SSHLibrary.Execute Command    kubectl exec ${pod_name} -- ${command}    return_stdout=True    return_stderr=True    return_rc=True
+    ${output} =    SSHLibrary.Execute Command    kubectl exec -it ${pod_name} -- ${command}    return_stdout=True    return_stderr=True    return_rc=True
     BuiltIn.Should_Be_Equal_As_integers    ${output[2]}    ${0}
     SshCommons.Append_Command_Log    ${command}    ${output}
     [Return]    ${output[0]}
@@ -364,14 +364,14 @@ Log_Pods_For_Debug
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
     Log_Etcd    ${ssh_session}
     Log_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
-    :FOR    ${vnf_pod}    IN    @{vnf_pods}
-    \    Run Command In Pod    vppctl show int              ${vnf_pod}
-    \    Run Command In Pod    vppctl show int address      ${vnf_pod}
-    \    Run Command In Pod    vppctl show errors           ${vnf_pod}
-    :FOR    ${novpp_pod}    IN    @{novpp_pods}
-    \    Run Command In Pod    ip link        ${novpp_pod}
-    \    Run Command In Pod    ip address     ${novpp_pod}
-    \    Run Command In Pod    ip neighbor    ${novpp_pod}
+    :FOR    ${vnf_index}    IN RANGE    ${vnf_count-1}
+    \    Run Command In Pod    vppctl show int              vnf-vpp-${vnf_index}
+    \    Run Command In Pod    vppctl show int address      vnf-vpp-${vnf_index}
+    \    Run Command In Pod    vppctl show errors           vnf-vpp-${vnf_index}
+    :FOR    ${novpp_index}    IN    ${novpp_count-1}
+    \    Run Command In Pod    ip link        novpp-${novpp_index}
+    \    Run Command In Pod    ip address     novpp-${novpp_index}
+    \    Run Command In Pod    ip neighbor    novpp-${novpp_index}
 
 Open_Connection_To_Node
     [Arguments]    ${name}    ${cluster_id}    ${node_index}
