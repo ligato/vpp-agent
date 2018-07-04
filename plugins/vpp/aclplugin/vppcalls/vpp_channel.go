@@ -23,4 +23,6 @@ type VPPChannel interface {
 	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
 
 	SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx
+
+	CheckMessageCompatibility(messages ...govppapi.Message) error
 }

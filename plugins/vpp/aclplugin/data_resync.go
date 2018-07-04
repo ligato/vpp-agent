@@ -15,8 +15,9 @@
 package aclplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
+	"time"
+
+	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
@@ -24,22 +25,20 @@ import (
 func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	plugin.log.Debug("Resync ACLs started")
 	// Calculate and log acl resync.
-	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
-		}
-	}()
+	defer func(t time.Time) {
+		plugin.stopwatch.TimeLog(acl_api.MacipACLDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// Re-initialize cache
 	plugin.clearMapping()
 
 	// Retrieve existing IpACL config
-	vppIpACLs, err := vppdump.DumpIPACL(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
+	vppIpACLs, err := plugin.aclHandler.DumpIPACL(plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
 	// Retrieve existing MacIpACL config
-	vppMacIpACLs, err := vppdump.DumpMACIPACL(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
+	vppMacIpACLs, err := plugin.aclHandler.DumpMACIPACL(plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
@@ -54,7 +53,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 		ipRulesExist := len(vppIpACL.ACLDetails.Rules) > 0 && vppIpACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteIPAcl(vppIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
+			if err := plugin.aclHandler.DeleteIPAcl(vppIpACL.Identifier.ACLIndex); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
@@ -67,7 +66,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 		ipRulesExist := len(vppMacIpACL.ACLDetails.Rules) > 0 && vppMacIpACL.ACLDetails.Rules[0].GetMatch().GetMacipRule() != nil
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
+			if err := plugin.aclHandler.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex); err != nil {
 				plugin.log.Error(err)
 				return err
 			}

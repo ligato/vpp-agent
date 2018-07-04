@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppdump
+package vppcalls
 
 import (
 	"testing"
@@ -28,7 +28,9 @@ import (
 
 // Test translation of IP rule into ACL Plugin's format
 func TestGetIPRuleMatch(t *testing.T) {
-	icmpV4Rule := getIPRuleMatches(acl_api.ACLRule{
+	aclHandler := NewAclVppHandler(nil, nil, nil)
+
+	icmpV4Rule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -39,7 +41,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have icmp match")
 	}
 
-	icmpV6Rule := getIPRuleMatches(acl_api.ACLRule{
+	icmpV6Rule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		IsIpv6:         1,
 		SrcIPAddr:      []byte{'d', 'e', 'd', 'd', 1},
 		SrcIPPrefixLen: 64,
@@ -51,7 +53,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have icmpv6 match")
 	}
 
-	tcpRule := getIPRuleMatches(acl_api.ACLRule{
+	tcpRule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -62,7 +64,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 		t.Fatal("should have tcp match")
 	}
 
-	udpRule := getIPRuleMatches(acl_api.ACLRule{
+	udpRule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
 		SrcIPAddr:      []byte{10, 0, 0, 1},
 		SrcIPPrefixLen: 24,
 		DstIPAddr:      []byte{20, 0, 0, 1},
@@ -76,7 +78,9 @@ func TestGetIPRuleMatch(t *testing.T) {
 
 // Test translation of MACIP rule into ACL Plugin's format
 func TestGetMACIPRuleMatches(t *testing.T) {
-	macipV4Rule := getMACIPRuleMatches(acl_api.MacipACLRule{
+	aclHandler := NewAclVppHandler(nil, nil, nil)
+
+	macipV4Rule := aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
 		IsPermit:       1,
 		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
 		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
@@ -86,7 +90,7 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 	if macipV4Rule.GetSourceMacAddress() == "" {
 		t.Fatal("should have mac match")
 	}
-	macipV6Rule := getMACIPRuleMatches(acl_api.MacipACLRule{
+	macipV6Rule := aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
 		IsPermit:       0,
 		IsIpv6:         1,
 		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
@@ -132,10 +136,12 @@ func TestDumpIPACL(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := DumpIPACL(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	ifaces, err := aclHandler.DumpIPACL(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(3))
 	//Expect(ifaces[0].Identifier.ACLIndex).To(Equal(uint32(0)))
@@ -176,10 +182,12 @@ func TestDumpMACIPACL(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := DumpMACIPACL(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	ifaces, err := aclHandler.DumpMACIPACL(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(3))
 	//Expect(ifaces[0].Identifier.ACLIndex).To(Equal(uint32(0)))
@@ -201,11 +209,13 @@ func TestDumpACLInterfaces(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	indexes := []uint32{0, 2}
-	ifaces, err := DumpIPACLInterfaces(indexes, swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	ifaces, err := aclHandler.DumpIPACLInterfaces(indexes, swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].Ingress).To(Equal([]string{"if0"}))
@@ -224,11 +234,13 @@ func TestDumpMACIPACLInterfaces(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
 	indexes := []uint32{0, 1}
-	ifaces, err := DumpMACIPACLInterfaces(indexes, swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	ifaces, err := aclHandler.DumpMACIPACLInterfaces(indexes, swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].Ingress).To(Equal([]string{"if0"}))
@@ -249,7 +261,9 @@ func TestDumpIPAcls(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	IPRuleACLs, err := DumpIPAcls(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
+	IPRuleACLs, err := aclHandler.DumpIPAcls()
 	Expect(err).To(Succeed())
 	Expect(IPRuleACLs).To(HaveLen(1))
 }
@@ -266,7 +280,9 @@ func TestDumpMacIPAcls(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	MacIPRuleACLs, err := DumpMacIPAcls(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
+	MacIPRuleACLs, err := aclHandler.DumpMacIPAcls()
 	Expect(err).To(Succeed())
 	Expect(MacIPRuleACLs).To(HaveLen(1))
 }
@@ -292,7 +308,9 @@ func TestDumpInterfaceIPAcls(t *testing.T) {
 		R:        []acl_api.ACLRule{{IsPermit: 2}, {IsPermit: 0}},
 	})
 
-	ACLs, err := DumpInterfaceIPAcls(logrus.DefaultLogger(), 0, ctx.MockChannel, nil)
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
+	ACLs, err := aclHandler.DumpInterfaceIPAcls(0)
 	Expect(err).To(Succeed())
 	Expect(ACLs.Acls).To(HaveLen(2))
 }
@@ -317,7 +335,9 @@ func TestDumpInterfaceMACIPAcls(t *testing.T) {
 		R:        []acl_api.MacipACLRule{{IsPermit: 2}, {IsPermit: 1}},
 	})
 
-	ACLs, err := DumpInterfaceMACIPAcls(logrus.DefaultLogger(), 0, ctx.MockChannel, nil)
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
+	ACLs, err := aclHandler.DumpInterfaceMACIPAcls(0)
 	Expect(err).To(Succeed())
 	Expect(ACLs.Acls).To(HaveLen(2))
 }
@@ -326,18 +346,20 @@ func TestDumpInterface(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 0,
 		Count:     2,
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	IPacls, err := DumpInterfaceIPACLs(0, ctx.MockChannel, nil)
+	IPacls, err := aclHandler.DumpInterfaceIPACLs(0)
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(2))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{})
-	IPacls, err = DumpInterfaceIPACLs(0, ctx.MockChannel, nil)
+	IPacls, err = aclHandler.DumpInterfaceIPACLs(0)
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(0))
 
@@ -346,12 +368,12 @@ func TestDumpInterface(t *testing.T) {
 		Count:     2,
 		Acls:      []uint32{0, 1},
 	})
-	MACIPacls, err := DumpInterfaceMACIPACLs(0, ctx.MockChannel, nil)
+	MACIPacls, err := aclHandler.DumpInterfaceMACIPACLs(0)
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(2))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{})
-	MACIPacls, err = DumpInterfaceMACIPACLs(0, ctx.MockChannel, nil)
+	MACIPacls, err = aclHandler.DumpInterfaceMACIPACLs(0)
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(0))
 }
@@ -392,7 +414,9 @@ func TestDumpInterfaces(t *testing.T) {
 		})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	IPacls, MACIPacls, err := DumpInterfaces(ctx.MockChannel, nil)
+	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+
+	IPacls, MACIPacls, err := aclHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(IPacls).To(HaveLen(3))
 	Expect(MACIPacls).To(HaveLen(2))
