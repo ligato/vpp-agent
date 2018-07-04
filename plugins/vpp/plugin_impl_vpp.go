@@ -359,7 +359,7 @@ func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	_, err := safeclose.CloseAll(
+	return safeclose.Close(
 		// Configurators
 		plugin.aclConfigurator, plugin.ifConfigurator, plugin.bfdConfigurator, plugin.natConfigurator, plugin.stnConfigurator,
 		plugin.ipSecConfigurator, plugin.bdConfigurator, plugin.fibConfigurator, plugin.xcConfigurator, plugin.arpConfigurator,
@@ -367,13 +367,12 @@ func (plugin *Plugin) Close() error {
 		// State updaters
 		plugin.ifStateUpdater, plugin.bdStateUpdater,
 		// Channels
-		plugin.ifStateChan, plugin.ifVppNotifChan, plugin.ifIdxWatchCh, plugin.bdStateChan, plugin.bdVppNotifChan, plugin.bdIdxWatchCh, plugin.linuxIfIdxWatchCh, plugin.resyncStatusChan, plugin.resyncConfigChan,
+		plugin.ifStateChan, plugin.ifVppNotifChan, plugin.ifIdxWatchCh, plugin.bdStateChan, plugin.bdVppNotifChan,
+		plugin.bdIdxWatchCh, plugin.linuxIfIdxWatchCh, plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.changeChan, plugin.errorChannel,
 		// Registrations
 		plugin.watchStatusReg, plugin.watchConfigReg,
 	)
-
-	return err
 }
 
 // Resolves resync strategy. Skip resync flag is also evaluated here and it has priority regardless

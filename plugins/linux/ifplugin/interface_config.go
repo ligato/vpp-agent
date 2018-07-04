@@ -30,11 +30,11 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	vppIf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
 
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
@@ -57,7 +57,7 @@ type LinuxInterfaceConfigurator struct {
 	ifByName  map[string]*LinuxInterfaceConfig   // interface name -> interface configuration
 	ifsByMs   map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
 
-	ifCachedConfigs	ifaceidx.LinuxIfIndexRW
+	ifCachedConfigs    ifaceidx.LinuxIfIndexRW
 	pIfCachedConfigSeq uint32
 
 	// Channels
@@ -156,7 +156,11 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 
 		return plugin.configureVethInterface(ifConfig, peerConfig)
 	case interfaces.LinuxInterfaces_AUTO_TAP:
-		return plugin.configureTapInterface(linuxIf.HostIfName, linuxIf)
+		if linuxIf.Tap != nil && linuxIf.Tap.TempIfName != "" {
+			return plugin.configureTapInterface(linuxIf.Tap.TempIfName, linuxIf)
+		} else {
+			return plugin.configureTapInterface(linuxIf.HostIfName, linuxIf)
+		}
 	default:
 		return fmt.Errorf("unknown linux interface type: %v", linuxIf.Type)
 	}
@@ -347,7 +351,7 @@ func (plugin *LinuxInterfaceConfigurator) configureTapInterface(hostIfName strin
 				Data:  ifConfig.config,
 			})
 			plugin.pIfCachedConfigSeq++
-			plugin.log.Infof("Creating new Linux Tap interface  %v configuration entry %v", hostIfName, ifConfig.config)
+			plugin.log.Infof("Creating new Linux Tap interface %v configuration entry %v", hostIfName, ifConfig.config)
 		} else {
 			plugin.log.Infof("There is no Linux Tap configuration entry for interface %v", hostIfName)
 			return nil
@@ -982,8 +986,8 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMet
 		return nil
 	}
 
-	var hostIfName string = ""
-	if ifConfigMetaData.Tap != nil  {
+	var hostIfName string
+	if ifConfigMetaData.Tap != nil {
 		hostIfName = ifConfigMetaData.GetTap().GetHostIfName()
 	}
 	if hostIfName == "" {
@@ -993,7 +997,14 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMet
 		plugin.log.Warn("Unable to resolve created VPP interfaces, incomplete Linux TAP configuration data")
 		return nil
 	}
-	return plugin.configureTapInterface(hostIfName, nil)
+
+	var linuxIf *interfaces.LinuxInterfaces_Interface
+	_, data, exists := plugin.ifCachedConfigs.LookupIdx(hostIfName)
+	if exists && data != nil {
+		linuxIf = data.Data
+	}
+
+	return plugin.configureTapInterface(hostIfName, linuxIf)
 }
 
 // ResolveDeletedInterface resolves removed vpp interfaces
@@ -1009,8 +1020,8 @@ func (plugin *LinuxInterfaceConfigurator) ResolveDeletedVPPInterface(ifConfigMet
 		return nil
 	}
 
-	var hostIfName string = ""
-	if ifConfigMetaData.Tap != nil  {
+	var hostIfName string
+	if ifConfigMetaData.Tap != nil {
 		hostIfName = ifConfigMetaData.GetTap().GetHostIfName()
 	}
 	if hostIfName == "" {

@@ -86,8 +86,7 @@ func (plugin *SRv6Configurator) Init() (err error) {
 
 // Close closes GOVPP channel
 func (plugin *SRv6Configurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChannel)
-	return err
+	return safeclose.Close(plugin.vppChannel)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
