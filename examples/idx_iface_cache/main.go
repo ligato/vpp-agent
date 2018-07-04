@@ -103,10 +103,8 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	var wasErr error
-	_, wasErr = safeclose.CloseAll(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
 		plugin.swIfIdxLocal, plugin.swIfIdxAgent1, plugin.swIfIdxAgent2, plugin.closeChannel)
-	return wasErr
 }
 
 // Test data are published to different agents (including local).

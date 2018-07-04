@@ -32,6 +32,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
 	l3Linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	ifaceVPP "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 // Plugin implements Plugin interface, therefore it can be loaded with other plugins.
@@ -45,23 +47,21 @@ type Plugin struct {
 	arpConfigurator   *l3plugin.LinuxArpConfigurator
 	routeConfigurator *l3plugin.LinuxRouteConfigurator
 
-	// State updaters
-	ifLinuxStateUpdater *ifplugin.LinuxInterfaceStateUpdater
-
 	// Shared indexes
-	ifIndexes ifaceidx.LinuxIfIndexRW
+	ifIndexes    ifaceidx.LinuxIfIndexRW
+	vppIfIndexes ifaceVPP.SwIfIndex
 
 	// Interface/namespace handling
 	ifHandler ifLinuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
 
 	// Channels (watch, notification, ...) which should be closed
-	ifStateChan         chan *ifplugin.LinuxInterfaceStateNotification
-	ifIndexesWatchChan  chan ifaceidx.LinuxIfIndexDto
-	ifMicroserviceNotif chan *nsplugin.MicroserviceEvent
-	resyncChan          chan datasync.ResyncEvent
-	changeChan          chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
-	msChan              chan *nsplugin.MicroserviceCtx
+	ifIndexesWatchChan    chan ifaceidx.LinuxIfIndexDto
+	vppIfIndexesWatchChan chan ifaceVPP.SwIfIdxDto
+	ifMicroserviceNotif   chan *nsplugin.MicroserviceEvent
+	resyncChan            chan datasync.ResyncEvent
+	changeChan            chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
+	msChan                chan *nsplugin.MicroserviceCtx
 
 	// Registrations
 	watchDataReg datasync.WatchRegistration
@@ -79,6 +79,7 @@ type Plugin struct {
 type Deps struct {
 	local.PluginInfraDeps                             // injected
 	Watcher               datasync.KeyValProtoWatcher // injected
+	VPP                   *vpp.Plugin
 	WatchEventsMutex      *sync.Mutex
 }
 
@@ -106,6 +107,12 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 	return plugin.routeConfigurator.GetRouteIndexes()
 }
 
+// InjectVppIfIndexes injects VPP interfaces mapping into Linux plugin
+func (plugin *Plugin) InjectVppIfIndexes(indexes ifaceVPP.SwIfIndex) {
+	plugin.vppIfIndexes = indexes
+	plugin.vppIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.vppIfIndexesWatchChan)
+}
+
 // Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing Linux plugin")
@@ -130,12 +137,12 @@ func (plugin *Plugin) Init() error {
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 	}
 
-	plugin.ifStateChan = make(chan *ifplugin.LinuxInterfaceStateNotification, 100)
 	plugin.resyncChan = make(chan datasync.ResyncEvent)
 	plugin.changeChan = make(chan datasync.ChangeEvent)
 	plugin.msChan = make(chan *nsplugin.MicroserviceCtx)
 	plugin.ifMicroserviceNotif = make(chan *nsplugin.MicroserviceEvent, 100)
 	plugin.ifIndexesWatchChan = make(chan ifaceidx.LinuxIfIndexDto, 100)
+	plugin.vppIfIndexesWatchChan = make(chan ifaceVPP.SwIfIdxDto, 100)
 
 	// Create plugin context and save cancel function into the plugin handle.
 	var ctx context.Context
@@ -171,19 +178,15 @@ func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	_, err := safeclose.CloseAll(
+	return safeclose.Close(
 		// Configurators
 		plugin.ifConfigurator, plugin.arpConfigurator, plugin.routeConfigurator,
-		// State updaters
-		plugin.ifLinuxStateUpdater,
 		// Channels
-		plugin.ifStateChan, plugin.ifIndexesWatchChan, plugin.ifMicroserviceNotif, plugin.changeChan, plugin.resyncChan,
-		plugin.msChan,
+		plugin.ifIndexesWatchChan, plugin.ifMicroserviceNotif, plugin.changeChan, plugin.resyncChan,
+		plugin.msChan, plugin.vppIfIndexesWatchChan,
 		// Registrations
 		plugin.watchDataReg,
 	)
-
-	return err
 }
 
 // Initialize namespace handler plugin
@@ -208,14 +211,12 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// Linux interface configurator
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes, plugin.ifStateChan,
+	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes,
 		plugin.ifMicroserviceNotif, plugin.stopwatch); err != nil {
 		return err
 	}
 
-	// Linux interface state updater
-	plugin.ifLinuxStateUpdater = &ifplugin.LinuxInterfaceStateUpdater{}
-	return plugin.ifLinuxStateUpdater.Init(plugin.Log, ctx, plugin.ifIndexes, plugin.ifStateChan)
+	return nil
 }
 
 // Initialize linux L3 plugin

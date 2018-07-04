@@ -32,7 +32,7 @@ required = [
 
 [[constraint]]
   name = "git.fd.io/govpp.git"
-  revision = "061e24913927c85cac21c79b206f409592a0f6a9"
+  revision = "5276b9439d0f902e125a5113bfa4f1b6622aea18"
 
 [[constraint]]
   name = "github.com/ligato/cn-infra"

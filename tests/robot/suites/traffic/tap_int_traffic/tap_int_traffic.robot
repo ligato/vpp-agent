@@ -109,13 +109,14 @@ Add Static Route From VPP1 Linux To VPP2
     linux: Add Route    node=agent_vpp_1    destination_ip=${IP_VPP2_TAP1_NETWORK}    prefix=${PREFIX}    next_hop_ip=${IP_VPP1_TAP1}
 
 Add Static Route From VPP1 To VPP2
-    Create Route On agent_vpp_1 With IP 20.20.1.0/24 With Next Hop 192.168.1.2 And Vrf Id 0
+    Create Route On agent_vpp_1 With IP ${IP_VPP2_TAP1_NETWORK}/${PREFIX} With Next Hop ${IP_VPP2_MEMIF1} And Vrf Id 0
 
 Add Static Route From VPP2 Linux To VPP1
     linux: Add Route    node=agent_vpp_2    destination_ip=${IP_VPP1_TAP1_NETWORK}    prefix=${PREFIX}    next_hop_ip=${IP_VPP2_TAP1}
 
 Add Static Route From VPP2 To VPP1
-    Create Route On agent_vpp_2 With IP 10.10.1.0/24 With Next Hop 192.168.1.1 And Vrf Id 0
+    Create Route On agent_vpp_2 With IP ${IP_VPP1_TAP1_NETWORK}/${PREFIX} With Next Hop ${IP_VPP2_MEMIF1} And Vrf Id 0
+     Sleep     ${SYNC_SLEEP}
 
 Check Ping From VPP1 Linux To VPP2_TAP1 And LINUX_VPP2_TAP1
     linux: Check Ping    node=agent_vpp_1    ip=${IP_VPP2_TAP1}
@@ -169,7 +170,8 @@ Add Static Route From VPP1 Linux To VPP2 After Resync
 
 Add Static Route From VPP2 Linux To VPP1 After Resync
     linux: Add Route    node=agent_vpp_2    destination_ip=${IP_VPP1_TAP1_NETWORK}    prefix=${PREFIX}    next_hop_ip=${IP_VPP2_TAP1}
-
+    Sleep       ${SYNC_SLEEP}
+    
 Check Ping From VPP1 Linux To VPP2_TAP1 And LINUX_VPP2_TAP1 After Resync
     linux: Check Ping    node=agent_vpp_1    ip=${IP_VPP2_TAP1}
     linux: Check Ping    node=agent_vpp_1    ip=${IP_LINUX_VPP2_TAP1}

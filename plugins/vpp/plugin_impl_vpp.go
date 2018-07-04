@@ -170,6 +170,10 @@ type linuxpluginAPI interface {
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
 	GetLinuxIfIndexes() ifaceLinux.LinuxIfIndex
+
+	// Inject VPP interface indexes directly instead of letting Linux plugin to get them itself,
+	// so they are available at resync time.
+	InjectVppIfIndexes(index ifaceidx.SwIfIndex)
 }
 
 // DisableResync can be used to disable resync for one or more key prefixes
@@ -355,7 +359,7 @@ func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	_, err := safeclose.CloseAll(
+	return safeclose.Close(
 		// Configurators
 		plugin.aclConfigurator, plugin.ifConfigurator, plugin.bfdConfigurator, plugin.natConfigurator, plugin.stnConfigurator,
 		plugin.ipSecConfigurator, plugin.bdConfigurator, plugin.fibConfigurator, plugin.xcConfigurator, plugin.arpConfigurator,
@@ -363,13 +367,12 @@ func (plugin *Plugin) Close() error {
 		// State updaters
 		plugin.ifStateUpdater, plugin.bdStateUpdater,
 		// Channels
-		plugin.ifStateChan, plugin.ifVppNotifChan, plugin.ifIdxWatchCh, plugin.bdStateChan, plugin.bdVppNotifChan, plugin.bdIdxWatchCh, plugin.linuxIfIdxWatchCh, plugin.resyncStatusChan, plugin.resyncConfigChan,
+		plugin.ifStateChan, plugin.ifVppNotifChan, plugin.ifIdxWatchCh, plugin.bdStateChan, plugin.bdVppNotifChan,
+		plugin.bdIdxWatchCh, plugin.linuxIfIdxWatchCh, plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.changeChan, plugin.errorChannel,
 		// Registrations
 		plugin.watchStatusReg, plugin.watchConfigReg,
 	)
-
-	return err
 }
 
 // Resolves resync strategy. Skip resync flag is also evaluated here and it has priority regardless
@@ -424,9 +427,11 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
 
-	// Get interface indexes
+	// Injects VPP interface index mapping into Linux plugin
 	plugin.swIfIndexes = plugin.ifConfigurator.GetSwIfIndexes()
-
+	if plugin.Linux != nil {
+		plugin.Linux.InjectVppIfIndexes(plugin.swIfIndexes)
+	}
 	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
 	plugin.ifStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {

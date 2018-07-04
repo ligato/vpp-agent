@@ -34,6 +34,8 @@ ${ENV}=             common
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
+    ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
+    Set Suite Variable          ${DATA_FOLDER}
     Configure Environment 4     veth_basicIPv6.conf
     Sleep    ${SYNC_SLEEP}
     Show Interfaces And Other Objects
@@ -395,9 +397,9 @@ Check Stuff
     vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    enabled=1
     vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_nod2_veth    enabled=1
     vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_3_nod3_veth    enabled=1
-    linux: Interface With IP Is Created    node=node_1    mac=${AGENT1_VETH_MAC}      ipv6=${IP_1}/64
-    linux: Interface With IP Is Created    node=node_2    mac=${AGENT2_VETH_MAC}      ipv6=${IP_2}/64
-    linux: Interface With IP Is Created    node=node_3    mac=${AGENT3_VETH_MAC}      ipv6=${IP_3}/64
+    linux: Interface With IP Is Created    node_1    ${AGENT1_VETH_MAC}      ${IP_1}/64
+    linux: Interface With IP Is Created    node_2    ${AGENT2_VETH_MAC}      ${IP_2}/64
+    linux: Interface With IP Is Created    node_3    ${AGENT3_VETH_MAC}      ${IP_3}/64
     vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    IF_AFPIF_VSWITCH_node_2_nod2_veth    IF_AFPIF_VSWITCH_node_3_nod3_veth
 
 

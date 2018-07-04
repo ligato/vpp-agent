@@ -77,23 +77,17 @@ type Connection struct {
 	msgIDs     map[string]uint16 // map of message IDs indexed by message name + CRC
 
 	channelsLock sync.RWMutex            // lock for the channels map
-	channels     map[uint32]*api.Channel // map of all API channels indexed by the channel ID
+	channels     map[uint16]*api.Channel // map of all API channels indexed by the channel ID
 
 	notifSubscriptionsLock sync.RWMutex                        // lock for the subscriptions map
 	notifSubscriptions     map[uint16][]*api.NotifSubscription // map od all notification subscriptions indexed by message ID
 
-	maxChannelID uint32 // maximum used client ID
+	maxChannelID uint32 // maximum used channel ID (the real limit is 2^15, 32-bit is used for atomic operations)
 	pingReqID    uint16 // ID if the ControlPing message
 	pingReplyID  uint16 // ID of the ControlPingReply message
 
 	lastReplyLock sync.Mutex // lock for the last reply
 	lastReply     time.Time  // time of the last received reply from VPP
-}
-
-// channelMetadata contains core-local metadata of an API channel.
-type channelMetadata struct {
-	id        uint32 // channel ID
-	multipart uint32 // 1 if multipart request is being processed, 0 otherwise
 }
 
 var (
@@ -204,7 +198,7 @@ func newConnection(vppAdapter adapter.VppAdapter) (*Connection, error) {
 	conn = &Connection{
 		vpp:                vppAdapter,
 		codec:              &MsgCodec{},
-		channels:           make(map[uint32]*api.Channel),
+		channels:           make(map[uint16]*api.Channel),
 		msgIDs:             make(map[string]uint16),
 		notifSubscriptions: make(map[uint16][]*api.NotifSubscription),
 	}
@@ -370,10 +364,9 @@ func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int)
 	if c == nil {
 		return nil, errors.New("nil connection passed in")
 	}
-	chID := atomic.AddUint32(&c.maxChannelID, 1)
-	chMeta := &channelMetadata{id: chID}
 
-	ch := api.NewChannelInternal(chMeta)
+	chID := uint16(atomic.AddUint32(&c.maxChannelID, 1) & 0x7fff)
+	ch := api.NewChannelInternal(chID)
 	ch.MsgDecoder = c.codec
 	ch.MsgIdentifier = c
 
@@ -389,19 +382,19 @@ func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int)
 	c.channelsLock.Unlock()
 
 	// start watching on the request channel
-	go c.watchRequests(ch, chMeta)
+	go c.watchRequests(ch)
 
 	return ch, nil
 }
 
 // releaseAPIChannel releases API channel that needs to be closed.
-func (c *Connection) releaseAPIChannel(ch *api.Channel, chMeta *channelMetadata) {
+func (c *Connection) releaseAPIChannel(ch *api.Channel) {
 	log.WithFields(logger.Fields{
-		"context": chMeta.id,
+		"ID": ch.ID,
 	}).Debug("API channel closed.")
 
 	// delete the channel from channels map
 	c.channelsLock.Lock()
-	delete(c.channels, chMeta.id)
+	delete(c.channels, ch.ID)
 	c.channelsLock.Unlock()
 }

@@ -314,7 +314,7 @@ func (ctl *VppAgentCtl) createTap() {
 				//	InterfaceWithIP: "memif1",
 				//},
 				Tap: &interfaces.Interfaces_Interface_Tap{
-					HostIfName: "tap1",
+					HostIfName: "tap-host",
 				},
 			},
 		},
