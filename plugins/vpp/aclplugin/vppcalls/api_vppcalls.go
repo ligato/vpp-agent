@@ -73,7 +73,7 @@ type AclVppAPI interface {
 	DumpInterfaces() ([]*acl_api.ACLInterfaceListDetails, []*acl_api.MacipACLInterfaceListDetails, error)
 }
 
-// netLinkHandler is accessor for acl-related vppcalls methods
+// aclVppHandler is accessor for acl-related vppcalls methods
 type aclVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel VPPChannel
