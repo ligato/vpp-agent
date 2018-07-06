@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -29,8 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 )
 
-// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Channel) error {
+func (handler *ifVppHandler) CheckMsgCompatibilityForInterface() error {
 	msgs := []govppapi.Message{
 		&memif.MemifCreate{},
 		&memif.MemifCreateReply{},
@@ -97,15 +95,10 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Chan
 		&ip.IPContainerProxyAddDel{},
 		&ip.IPContainerProxyAddDelReply{},
 	}
-	err := vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		log.Error(err)
-	}
-	return err
+	return handler.callsChannel.CheckMessageCompatibility(msgs...)
 }
 
-// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForBfd(vppChan govppapi.Channel) error {
+func (handler *bfdVppHandler) CheckMsgCompatibilityForBfd() error {
 	msgs := []govppapi.Message{
 		&bfd.BfdUDPAdd{},
 		&bfd.BfdUDPAddReply{},
@@ -118,11 +111,10 @@ func CheckMsgCompatibilityForBfd(vppChan govppapi.Channel) error {
 		&bfd.BfdAuthDelKey{},
 		&bfd.BfdAuthDelKeyReply{},
 	}
-	return vppChan.CheckMessageCompatibility(msgs...)
+	return handler.callsChannel.CheckMessageCompatibility(msgs...)
 }
 
-// CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
-func CheckMsgCompatibilityForNat(vppChan govppapi.Channel) error {
+func (handler *natVppHandler) CheckMsgCompatibilityForNat() error {
 	msgs := []govppapi.Message{
 		&nat.Nat44AddDelAddressRange{},
 		&nat.Nat44AddDelAddressRangeReply{},
@@ -135,14 +127,13 @@ func CheckMsgCompatibilityForNat(vppChan govppapi.Channel) error {
 		&nat.Nat44AddDelLbStaticMapping{},
 		&nat.Nat44AddDelLbStaticMappingReply{},
 	}
-	return vppChan.CheckMessageCompatibility(msgs...)
+	return handler.callsChannel.CheckMessageCompatibility(msgs...)
 }
 
-// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
-func CheckMsgCompatibilityForStn(vppChan govppapi.Channel) error {
+func (handler *stnVppHandler) CheckMsgCompatibilityForStn() error {
 	msgs := []govppapi.Message{
 		&stn.StnAddDelRule{},
 		&stn.StnAddDelRuleReply{},
 	}
-	return vppChan.CheckMessageCompatibility(msgs...)
+	return handler.callsChannel.CheckMessageCompatibility(msgs...)
 }

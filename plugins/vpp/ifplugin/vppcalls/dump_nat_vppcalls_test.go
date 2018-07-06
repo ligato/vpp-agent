@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppdump
+package vppcalls_test
 
 import (
 	"testing"
@@ -24,11 +24,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	. "github.com/onsi/gomega"
 )
 
 func TestNat44InterfaceDump(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bin_api.Nat44InterfaceDetails{
@@ -40,14 +42,14 @@ func TestNat44InterfaceDump(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := nat44InterfaceDump(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(1))
 	Expect(ifaces[0].IsInside).To(BeFalse())
 }
 
 func TestNat44InterfaceDump2(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bin_api.Nat44InterfaceDetails{
@@ -59,14 +61,14 @@ func TestNat44InterfaceDump2(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := nat44InterfaceDump(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(1))
 	Expect(ifaces[0].IsInside).To(BeTrue())
 }
 
 func TestNat44InterfaceDump3(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bin_api.Nat44InterfaceDetails{
@@ -78,9 +80,16 @@ func TestNat44InterfaceDump3(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := nat44InterfaceDump(swIfIndexes, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].IsInside).To(BeFalse())
 	Expect(ifaces[1].IsInside).To(BeTrue())
+}
+
+func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	log := logrus.NewLogger("test-log")
+	natHandler := vppcalls.NewNatVppHandler(ctx.MockChannel, ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	return ctx, natHandler
 }

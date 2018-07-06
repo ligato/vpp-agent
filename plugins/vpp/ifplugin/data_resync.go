@@ -21,8 +21,6 @@ import (
 	"strings"
 
 	_ "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
@@ -57,7 +55,7 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	plugin.afPacketConfigurator.clearMapping()
 
 	// Dump current state of the VPP interfaces
-	vppIfs, err := vppdump.DumpInterfaces(plugin.log, plugin.vppCh, plugin.stopwatch)
+	vppIfs, err := plugin.ifHandler.DumpInterfaces()
 	if err != nil {
 		return []error{err}
 	}
@@ -190,7 +188,7 @@ func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.In
 	var stop bool
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := vppdump.DumpInterfaces(plugin.log, plugin.vppCh, plugin.stopwatch)
+	vppIfaces, err := plugin.ifHandler.DumpInterfaces()
 	if err != nil {
 		return stop
 	}
@@ -401,7 +399,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
-			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.vppChan, nil); err != nil {
+			if err := plugin.stnHandler.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP); err != nil {
 				plugin.log.Error(err)
 				wasErr = err
 			}
@@ -423,7 +421,7 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
-			if err := vppcalls.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP, plugin.vppChan, nil); err != nil {
+			if err := plugin.stnHandler.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP); err != nil {
 				plugin.log.Error(err)
 				wasErr = err
 			}
@@ -454,7 +452,7 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 	// Re-initialize cache
 	plugin.clearMapping()
 
-	vppNatGlobal, err := vppdump.Nat44GlobalConfigDump(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
+	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump(plugin.ifIndexes)
 	if err != nil {
 		return fmt.Errorf("failed to dump NAT44 global config: %v", err)
 	}
@@ -473,7 +471,7 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := vppdump.NAT44DNatDump(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
+	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump(plugin.ifIndexes)
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}
@@ -1003,7 +1001,7 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 // Register interface to mapping and add tag/index to the VPP
 func (plugin *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
 	plugin.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
-	if err := vppcalls.SetInterfaceTag(ifName, ifIdx, plugin.vppCh, plugin.stopwatch); err != nil {
+	if err := plugin.ifHandler.SetInterfaceTag(ifName, ifIdx); err != nil {
 		return fmt.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
 	}
 	// Add AF-packet type interface to local cache

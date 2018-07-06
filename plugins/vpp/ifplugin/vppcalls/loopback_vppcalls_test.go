@@ -18,13 +18,11 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestAddLoopbackInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{
@@ -32,70 +30,70 @@ func TestAddLoopbackInterface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := vppcalls.AddLoopbackInterface("loopback", ctx.MockChannel, nil)
+	swIfIdx, err := ifHandler.AddLoopbackInterface("loopback")
 
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 }
 
 func TestAddLoopbackInterfaceError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopback{})
 
-	swIfIdx, err := vppcalls.AddLoopbackInterface("loopback", ctx.MockChannel, nil)
+	swIfIdx, err := ifHandler.AddLoopbackInterface("loopback")
 
 	Expect(err).ToNot(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(0))
 }
 
 func TestAddLoopbackInterfaceRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{
 		Retval: 1,
 	})
 
-	swIfIdx, err := vppcalls.AddLoopbackInterface("loopback", ctx.MockChannel, nil)
+	swIfIdx, err := ifHandler.AddLoopbackInterface("loopback")
 
 	Expect(err).ToNot(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(0))
 }
 
 func TestDeleteLoopbackInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.DeleteLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := vppcalls.DeleteLoopbackInterface("loopback", 1, ctx.MockChannel, nil)
+	err := ifHandler.DeleteLoopbackInterface("loopback", 1)
 
 	Expect(err).To(BeNil())
 }
 
 func TestDeleteLoopbackInterfaceError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.DeleteLoopback{})
 
-	err := vppcalls.DeleteLoopbackInterface("loopback", 1, ctx.MockChannel, nil)
+	err := ifHandler.DeleteLoopbackInterface("loopback", 1)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDeleteLoopbackInterfaceRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.DeleteLoopbackReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.DeleteLoopbackInterface("loopback", 1, ctx.MockChannel, nil)
+	err := ifHandler.DeleteLoopbackInterface("loopback", 1)
 
 	Expect(err).ToNot(BeNil())
 }

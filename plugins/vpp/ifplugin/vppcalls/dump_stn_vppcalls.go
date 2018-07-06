@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump
+package vppcalls
 
 import (
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 )
 
-// DumpStnRules returns a list of all STN rules configured on the VPP
-func DumpStnRules(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (rules []*stn.StnRulesDetails, err error) {
+func (handler *stnVppHandler) DumpStnRules() (rules []*stn.StnRulesDetails, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(stn.StnRulesDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(stn.StnRulesDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &stn.StnRulesDump{}
-	reqCtx := vppChan.SendMultiRequest(req)
+	reqCtx := handler.callsChannel.SendMultiRequest(req)
 	for {
 		msg := &stn.StnRulesDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)

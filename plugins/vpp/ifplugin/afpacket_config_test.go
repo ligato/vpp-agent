@@ -21,12 +21,14 @@ import (
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	ap_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	if_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -42,7 +44,9 @@ func TestAfPacketConfiguratorInit(t *testing.T) {
 	plugin := &ifplugin.AFPacketConfigurator{}
 	vppCh, err := connection.NewAPIChannel()
 	Expect(err).To(BeNil())
-	err = plugin.Init(logrus.DefaultLogger(), vppCh, struct{}{}, nil, nil)
+	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
+	ifHandler := vppcalls.NewIfVppHandler(vppCh, logrus.DefaultLogger(), stopwatch)
+	err = plugin.Init(logrus.DefaultLogger(), ifHandler, struct{}{}, nil)
 	Expect(err).To(BeNil())
 	connection.Disconnect()
 }
@@ -407,7 +411,9 @@ func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	err := plugin.Init(log, ctx.MockChannel, nil, swIfIndices, nil)
+	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
+	err := plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Test registered linux interface
 	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
@@ -462,7 +468,9 @@ func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	err := plugin.Init(log, ctx.MockChannel, nil, swIfIndices, nil)
+	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
+	err := plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Prepare
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
@@ -513,7 +521,9 @@ func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.AFPacketCo
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	err := plugin.Init(log, ctx.MockChannel, struct{}{}, swIfIndices, nil)
+	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
+	err := plugin.Init(log, ifHandler, struct{}{}, swIfIndices)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, swIfIndices

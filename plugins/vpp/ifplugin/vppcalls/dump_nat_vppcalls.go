@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump
+package vppcalls
 
 import (
 	"bytes"
@@ -21,34 +21,27 @@ import (
 	"strings"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
-// Nat44GlobalConfigDump returns global config in NB format
-func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan govppapi.Channel,
-	stopwatch *measure.Stopwatch) (*nat.Nat44Global, error) {
-	log.Debug("dumping Nat44Global")
-
+func (handler *natVppHandler) Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error) {
+	handler.log.Debug("dumping Nat44Global")
 	// Dump all necessary data to reconstruct global NAT configuration
-	isEnabled, err := nat44IsForwardingEnabled(log, vppChan, stopwatch)
+	isEnabled, err := handler.nat44IsForwardingEnabled()
 	if err != nil {
 		return nil, err
 	}
-	natInterfaces, err := nat44InterfaceDump(swIfIndices, log, vppChan, stopwatch)
+	natInterfaces, err := handler.Nat44InterfaceDump(swIfIndices)
 	if err != nil {
 		return nil, err
 	}
-	natOutputFeature, err := nat44InterfaceOutputFeatureDump(swIfIndices, log, vppChan, stopwatch)
+	natOutputFeature, err := handler.nat44InterfaceOutputFeatureDump(swIfIndices)
 	if err != nil {
 		return nil, err
 	}
-	natAddressPools, err := nat44AddressDump(log, vppChan, stopwatch)
+	natAddressPools, err := handler.nat44AddressDump()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +63,7 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 		})
 	}
 
-	log.Debug("dumped Nat44Global")
+	handler.log.Debug("dumped Nat44Global")
 
 	// Set fields
 	return &nat.Nat44Global{
@@ -80,58 +73,52 @@ func Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, v
 	}, nil
 }
 
-// NAT44NatDump dumps all types of mappings, sorts it according to tag (DNAT label) and creates a set of DNAT configurations
-func NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (*nat.Nat44DNat, error) {
+func (handler *natVppHandler) NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error) {
 	// List od DNAT configs
 	var dNatCfgs []*nat.Nat44DNat_DNatConfig
-	var wasErr error
 
-	log.Debug("dumping DNat")
+	handler.log.Debug("dumping DNat")
 
 	// Static mappings
-	natStMappings, err := nat44StaticMappingDump(swIfIndices, log, vppChan, stopwatch)
+	natStMappings, err := handler.nat44StaticMappingDump(swIfIndices)
 	if err != nil {
-		log.Errorf("Failed to dump NAT44 static mappings: %v", err)
-		wasErr = err
+		return nil, fmt.Errorf("failed to dump NAT44 static mappings: %v", err)
 	}
 	for tag, data := range natStMappings {
-		processDNatData(tag, data, &dNatCfgs, log)
+		handler.processDNatData(tag, data, &dNatCfgs)
 	}
 	// Static mappings with load balancer
-	natStLbMappings, err := nat44StaticMappingLbDump(log, vppChan, stopwatch)
+	natStLbMappings, err := handler.nat44StaticMappingLbDump()
 	if err != nil {
-		log.Errorf("Failed to dump NAT44 static mappings with load balancer: %v", err)
-		wasErr = err
+		return nil, fmt.Errorf("failed to dump NAT44 static mappings with load balancer: %v", err)
 	}
 	for tag, data := range natStLbMappings {
-		processDNatData(tag, data, &dNatCfgs, log)
+		handler.processDNatData(tag, data, &dNatCfgs)
 	}
 	// Identity mappings
-	natIdMappings, err := nat44IdentityMappingDump(swIfIndices, log, vppChan, stopwatch)
+	natIdMappings, err := handler.nat44IdentityMappingDump(swIfIndices)
 	if err != nil {
-		log.Errorf("Failed to dump NAT44 identity mappings: %v", err)
-		wasErr = err
+		return nil, fmt.Errorf("failed to dump NAT44 identity mappings: %v", err)
 	}
 	for tag, data := range natIdMappings {
-		processDNatData(tag, data, &dNatCfgs, log)
+		handler.processDNatData(tag, data, &dNatCfgs)
 	}
 
-	log.Debugf("dumped %d NAT44DNat configs", len(dNatCfgs))
+	handler.log.Debugf("dumped %d NAT44DNat configs", len(dNatCfgs))
 
 	return &nat.Nat44DNat{
 		DnatConfigs: dNatCfgs,
-	}, wasErr
+	}, nil
 }
 
 // nat44AddressDump returns a list of NAT44 address pools configured in the VPP
-func nat44AddressDump(log logging.Logger, vppChan govppapi.Channel,
-	stopwatch *measure.Stopwatch) (addresses []*nat.Nat44Global_AddressPool, err error) {
+func (handler *natVppHandler) nat44AddressDump() (addresses []*nat.Nat44Global_AddressPool, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bin_api.Nat44AddressDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bin_api.Nat44AddressDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bin_api.Nat44AddressDump{}
-	reqContext := vppChan.SendMultiRequest(req)
+	reqContext := handler.dumpChannel.SendMultiRequest(req)
 
 	for {
 		msg := &bin_api.Nat44AddressDetails{}
@@ -152,21 +139,20 @@ func nat44AddressDump(log logging.Logger, vppChan govppapi.Channel,
 		})
 	}
 
-	log.Debugf("NAT44 address pool dump complete, found %d entries", len(addresses))
+	handler.log.Debugf("NAT44 address pool dump complete, found %d entries", len(addresses))
 
 	return
 }
 
 // nat44StaticMappingDump returns a map of static mapping tag/data pairs
-func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan govppapi.Channel,
-	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
+func (handler *natVppHandler) nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bin_api.Nat44StaticMappingDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bin_api.Nat44StaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMapping)
 	req := &bin_api.Nat44StaticMappingDump{}
-	reqContext := vppChan.SendMultiRequest(req)
+	reqContext := handler.dumpChannel.SendMultiRequest(req)
 
 	for {
 		msg := &bin_api.Nat44StaticMappingDetails{}
@@ -190,7 +176,7 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 			ExternalInterface: func(ifIdx uint32) string {
 				ifName, _, found := swIfIndices.LookupName(ifIdx)
 				if !found && ifIdx != 0xffffffff {
-					log.Warnf("Interface with index %v not found in the mapping", ifIdx)
+					handler.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
 				}
 				return ifName
 			}(msg.ExternalSwIfIndex),
@@ -200,26 +186,25 @@ func nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, 
 				LocalIp:   lcIPAddress.To4().String(),
 				LocalPort: uint32(msg.LocalPort),
 			}),
-			Protocol: getNatProtocol(msg.Protocol, log),
-			TwiceNat: getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
+			Protocol: handler.getNatProtocol(msg.Protocol),
+			TwiceNat: handler.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 		}
 	}
 
-	log.Debugf("NAT44 static mapping dump complete, found %d entries", len(entries))
+	handler.log.Debugf("NAT44 static mapping dump complete, found %d entries", len(entries))
 
 	return entries, nil
 }
 
 // nat44StaticMappingLbDump returns a map of static mapping tag/data pairs with load balancer
-func nat44StaticMappingLbDump(log logging.Logger, vppChan govppapi.Channel,
-	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
+func (handler *natVppHandler) nat44StaticMappingLbDump() (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bin_api.Nat44LbStaticMappingDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bin_api.Nat44LbStaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	entries = make(map[string]*nat.Nat44DNat_DNatConfig_StaticMapping)
 	req := &bin_api.Nat44LbStaticMappingDump{}
-	reqContext := vppChan.SendMultiRequest(req)
+	reqContext := handler.dumpChannel.SendMultiRequest(req)
 
 	for {
 		msg := &bin_api.Nat44LbStaticMappingDetails{}
@@ -251,26 +236,25 @@ func nat44StaticMappingLbDump(log logging.Logger, vppChan govppapi.Channel,
 			ExternalIp:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps:     locals,
-			Protocol:     getNatProtocol(msg.Protocol, log),
-			TwiceNat:     getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat, log),
+			Protocol:     handler.getNatProtocol(msg.Protocol),
+			TwiceNat:     handler.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 		}
 	}
 
-	log.Debugf("NAT44 lb-static mapping dump complete, found %d entries", len(entries))
+	handler.log.Debugf("NAT44 lb-static mapping dump complete, found %d entries", len(entries))
 
 	return entries, nil
 }
 
 // nat44IdentityMappingDump returns a map of identity mapping tag/data pairs
-func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan govppapi.Channel,
-	stopwatch *measure.Stopwatch) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping, err error) {
+func (handler *natVppHandler) nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	entries = make(map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping)
 	req := &bin_api.Nat44IdentityMappingDump{}
-	reqContext := vppChan.SendMultiRequest(req)
+	reqContext := handler.dumpChannel.SendMultiRequest(req)
 
 	for {
 		msg := &bin_api.Nat44IdentityMappingDetails{}
@@ -293,30 +277,28 @@ func nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger
 			AddressedInterface: func(ifIdx uint32) string {
 				ifName, _, found := swIfIndices.LookupName(ifIdx)
 				if !found && ifIdx != 0xffffffff {
-					log.Warnf("Interface with index %v not found in the mapping", ifIdx)
+					handler.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
 				}
 				return ifName
 			}(msg.SwIfIndex),
 			IpAddress: ipAddress.To4().String(),
 			Port:      uint32(msg.Port),
-			Protocol:  getNatProtocol(msg.Protocol, log),
+			Protocol:  handler.getNatProtocol(msg.Protocol),
 		}
 	}
 
-	log.Debugf("NAT44 identity mapping dump complete, found %d entries", len(entries))
+	handler.log.Debugf("NAT44 identity mapping dump complete, found %d entries", len(entries))
 
 	return entries, nil
 }
 
-// nat44InterfaceDump returns a list of interfaces enabled for NAT44
-func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan govppapi.Channel,
-	stopwatch *measure.Stopwatch) (interfaces []*nat.Nat44Global_NatInterface, err error) {
+func (handler *natVppHandler) Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bin_api.Nat44InterfaceDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bin_api.Nat44InterfaceDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bin_api.Nat44InterfaceDump{}
-	reqContext := vppChan.SendMultiRequest(req)
+	reqContext := handler.dumpChannel.SendMultiRequest(req)
 
 	for {
 		msg := &bin_api.Nat44InterfaceDetails{}
@@ -331,7 +313,7 @@ func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppC
 		// Find interface name
 		ifName, _, found := swIfIndices.LookupName(msg.SwIfIndex)
 		if !found {
-			log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+			handler.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
 			continue
 		}
 
@@ -349,20 +331,19 @@ func nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppC
 		}
 	}
 
-	log.Debugf("NAT44 interface dump complete, found %d entries", len(interfaces))
+	handler.log.Debugf("NAT44 interface dump complete, found %d entries", len(interfaces))
 
 	return
 }
 
 // nat44InterfaceOutputFeatureDump returns a list of interfaces with output feature set
-func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging.Logger,
-	vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (ifaces []*nat.Nat44Global_NatInterface, err error) {
+func (handler *natVppHandler) nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex) (ifaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bin_api.Nat44InterfaceOutputFeatureDump{}
-	reqContext := vppChan.SendMultiRequest(req)
+	reqContext := handler.dumpChannel.SendMultiRequest(req)
 
 	for {
 		msg := &bin_api.Nat44InterfaceOutputFeatureDetails{}
@@ -377,7 +358,7 @@ func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging
 		// Find interface name
 		ifName, _, found := swIfIndices.LookupName(msg.SwIfIndex)
 		if !found {
-			log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
+			handler.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
 			continue
 		}
 
@@ -388,37 +369,37 @@ func nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex, log logging
 		})
 	}
 
-	log.Debugf("NAT44 interface with output feature dump complete, found %d entries", len(ifaces))
+	handler.log.Debugf("NAT44 interface with output feature dump complete, found %d entries", len(ifaces))
 
 	return ifaces, nil
 }
 
 // Nat44IsForwardingEnabled returns a list of interfaces enabled for NAT44
-func nat44IsForwardingEnabled(log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (isEnabled bool, err error) {
+func (handler *natVppHandler) nat44IsForwardingEnabled() (isEnabled bool, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bin_api.Nat44ForwardingIsEnabled{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bin_api.Nat44ForwardingIsEnabled{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bin_api.Nat44ForwardingIsEnabled{}
 
 	reply := &bin_api.Nat44ForwardingIsEnabledReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.dumpChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return false, fmt.Errorf("failed to dump forwarding: %v", err)
 	}
 
 	isEnabled = uintToBool(reply.Enabled)
-	log.Debugf("NAT44 forwarding dump complete, is enabled: %v", isEnabled)
+	handler.log.Debugf("NAT44 forwarding dump complete, is enabled: %v", isEnabled)
 
 	return isEnabled, nil
 }
 
 // Common function can process all static and identity mappings
-func processDNatData(tag string, data interface{}, dNatCfgs *[]*nat.Nat44DNat_DNatConfig, log logging.Logger) {
+func (handler *natVppHandler) processDNatData(tag string, data interface{}, dNatCfgs *[]*nat.Nat44DNat_DNatConfig) {
 	if tag == "" {
-		log.Errorf("Cannot process DNAT config without tag")
+		handler.log.Errorf("Cannot process DNAT config without tag")
 		return
 	}
-	label := getDnatLabel(tag, log)
+	label := handler.getDnatLabel(tag)
 
 	// Look for DNAT config using tag
 	var dNat *nat.Nat44DNat_DNatConfig
@@ -436,39 +417,39 @@ func processDNatData(tag string, data interface{}, dNatCfgs *[]*nat.Nat44DNat_DN
 			IdMappings: make([]*nat.Nat44DNat_DNatConfig_IdentityMapping, 0),
 		}
 		*dNatCfgs = append(*dNatCfgs, dNat)
-		log.Debugf("Created new DNAT configuration %s", label)
+		handler.log.Debugf("Created new DNAT configuration %s", label)
 	}
 
 	// Add data to config
 	switch mapping := data.(type) {
 	case *nat.Nat44DNat_DNatConfig_StaticMapping:
-		log.Debugf("Static mapping added to DNAT %s", label)
+		handler.log.Debugf("Static mapping added to DNAT %s", label)
 		dNat.StMappings = append(dNat.StMappings, mapping)
 	case *nat.Nat44DNat_DNatConfig_IdentityMapping:
-		log.Debugf("Identity mapping added to DNAT %s", label)
+		handler.log.Debugf("Identity mapping added to DNAT %s", label)
 		dNat.IdMappings = append(dNat.IdMappings, mapping)
 	}
 }
 
 // returns NAT numeric representation of provided protocol value
-func getNatProtocol(protocol uint8, log logging.Logger) (proto nat.Protocol) {
+func (handler *natVppHandler) getNatProtocol(protocol uint8) (proto nat.Protocol) {
 	switch protocol {
-	case vppcalls.TCP:
+	case TCP:
 		return nat.Protocol_TCP
-	case vppcalls.UDP:
+	case UDP:
 		return nat.Protocol_UDP
-	case vppcalls.ICMP:
+	case ICMP:
 		return nat.Protocol_ICMP
 	default:
-		log.Warnf("Unknown protocol %v", protocol)
+		handler.log.Warnf("Unknown protocol %v", protocol)
 		return 0
 	}
 }
 
-func getTwiceNatMode(twiceNat, selfTwiceNat uint8, log logging.Logger) nat.TwiceNatMode {
+func (handler *natVppHandler) getTwiceNatMode(twiceNat, selfTwiceNat uint8) nat.TwiceNatMode {
 	if twiceNat > 0 {
 		if selfTwiceNat > 0 {
-			log.Warnf("Both TwiceNAT and self-TwiceNAT are enabled")
+			handler.log.Warnf("Both TwiceNAT and self-TwiceNAT are enabled")
 			return 0
 		}
 		return nat.TwiceNatMode_ENABLED
@@ -487,15 +468,15 @@ func uintToBool(value uint8) bool {
 }
 
 // Obtain DNAT label from provided tag
-func getDnatLabel(tag string, log logging.Logger) (label string) {
+func (handler *natVppHandler) getDnatLabel(tag string) (label string) {
 	parts := strings.Split(tag, "|")
 	// Tag should be in format label|mappingType|index
 	if len(parts) == 0 {
-		log.Errorf("Unable to obtain DNAT label, incorrect mapping tag format: '%s'", tag)
+		handler.log.Errorf("Unable to obtain DNAT label, incorrect mapping tag format: '%s'", tag)
 		return
 	}
 	if len(parts) != 3 {
-		log.Warnf("Mapping tag has unexpected format: %s. Resolved DNAT label may not be correct", tag)
+		handler.log.Warnf("Mapping tag has unexpected format: %s. Resolved DNAT label may not be correct", tag)
 	}
 	return parts[0]
 }

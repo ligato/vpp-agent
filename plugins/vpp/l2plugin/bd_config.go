@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
 // BDConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -51,6 +52,9 @@ type BDConfigurator struct {
 
 	// State notification channel
 	notificationChan chan BridgeDomainStateMessage // Injected, do not close here
+
+	// VPP API handlers
+	ifHandler ifvppcalls.IfVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -93,6 +97,9 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	if enableStopwatch {
 		plugin.stopwatch = measure.NewStopwatch("ACLConfigurator", plugin.log)
 	}
+
+	// VPP API handlers
+	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
 
 	// Message compatibility
 	err = plugin.vppChan.CheckMessageCompatibility(vppcalls.BridgeDomainMessages...)

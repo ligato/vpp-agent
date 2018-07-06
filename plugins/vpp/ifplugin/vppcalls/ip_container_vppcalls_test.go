@@ -19,18 +19,16 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestAddContainerIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 
-	err := vppcalls.AddContainerIP(1, "10.0.0.1/24", ctx.MockChannel, nil)
+	err := ifHandler.AddContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
@@ -43,12 +41,12 @@ func TestAddContainerIP(t *testing.T) {
 }
 
 func TestAddContainerIPv6(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 
-	err := vppcalls.AddContainerIP(1, "2001:db8:0:1:1:1:1:1/128", ctx.MockChannel, nil)
+	err := ifHandler.AddContainerIP(1, "2001:db8:0:1:1:1:1:1/128")
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
@@ -61,47 +59,47 @@ func TestAddContainerIPv6(t *testing.T) {
 }
 
 func TestAddContainerIPInvalidIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPAddressDetails{})
 
-	err := vppcalls.AddContainerIP(1, "invalid-ip", ctx.MockChannel, nil)
+	err := ifHandler.AddContainerIP(1, "invalid-ip")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddContainerIPError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPAddressDetails{})
 
-	err := vppcalls.AddContainerIP(1, "10.0.0.1/24", ctx.MockChannel, nil)
+	err := ifHandler.AddContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddContainerIPRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.AddContainerIP(1, "10.0.0.1/24", ctx.MockChannel, nil)
+	err := ifHandler.AddContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDelContainerIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 
-	err := vppcalls.DelContainerIP(1, "10.0.0.1/24", ctx.MockChannel, nil)
+	err := ifHandler.DelContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
@@ -114,12 +112,12 @@ func TestDelContainerIP(t *testing.T) {
 }
 
 func TestDelContainerIPv6(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 
-	err := vppcalls.DelContainerIP(1, "2001:db8:0:1:1:1:1:1/128", ctx.MockChannel, nil)
+	err := ifHandler.DelContainerIP(1, "2001:db8:0:1:1:1:1:1/128")
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*ip.IPContainerProxyAddDel)
@@ -132,25 +130,25 @@ func TestDelContainerIPv6(t *testing.T) {
 }
 
 func TestDelContainerIPError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPAddressDetails{})
 
-	err := vppcalls.DelContainerIP(1, "10.0.0.1/24", ctx.MockChannel, nil)
+	err := ifHandler.DelContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDelContainerIPRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.DelContainerIP(1, "10.0.0.1/24", ctx.MockChannel, nil)
+	err := ifHandler.DelContainerIP(1, "10.0.0.1/24")
 
 	Expect(err).ToNot(BeNil())
 }

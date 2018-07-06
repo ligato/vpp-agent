@@ -24,6 +24,7 @@ import (
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	dhcp_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -60,8 +61,9 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Test init
+	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
 	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, ifVppNotifChan, 0, false)
+		nil, ifVppNotifChan, 0, stopwatch)
 	Expect(err).To(BeNil())
 	Expect(plugin.IsSocketFilenameCached("test-socket-filename")).To(BeTrue())
 	// Test close
@@ -1433,7 +1435,8 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govpp.Connection, *ifplug
 	// Configurator
 	plugin := &ifplugin.InterfaceConfigurator{}
 	notifChan := make(chan govppapi.Message, 5)
-	err = plugin.Init(log, connection, 1, notifChan, 1500, false)
+	stopwatch := measure.NewStopwatch("test-stopwatch", log)
+	err = plugin.Init(log, connection, 1, notifChan, 1500, stopwatch)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin

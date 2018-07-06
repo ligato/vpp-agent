@@ -51,7 +51,8 @@ func (plugin *Plugin) interfacesGetHandler(formatter *render.Render) http.Handle
 		}
 		defer ch.Close()
 
-		res, err := ifplugin.DumpInterfaces(plugin.Log, ch, nil)
+		ifHandler := ifcalls.NewIfVppHandler(ch, plugin.Log, nil)
+		res, err := ifHandler.DumpInterfaces()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)

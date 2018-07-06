@@ -17,7 +17,6 @@ package l2plugin
 import (
 	"strings"
 
-	if_dump "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
@@ -99,7 +98,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 
 			// todo currently it is not possible to dump interfaces. In order to prevent BD removal, unset all available interfaces
 			// Dump all interfaces
-			interfaceMap, err := if_dump.DumpInterfaces(plugin.log, plugin.vppChan, nil)
+			interfaceMap, err := plugin.ifHandler.DumpInterfaces()
 			if err != nil {
 				plugin.log.Error(err)
 				wasErr = err

@@ -19,14 +19,12 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestAddMasterMemifInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
@@ -34,12 +32,12 @@ func TestAddMasterMemifInterface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := vppcalls.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
 		Id:     1,
 		Mode:   ifModel.Interfaces_Interface_Memif_IP,
 		Secret: "secret",
 		Master: true,
-	}, 5, ctx.MockChannel, nil)
+	}, 5)
 
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
@@ -60,7 +58,7 @@ func TestAddMasterMemifInterface(t *testing.T) {
 }
 
 func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
@@ -68,12 +66,12 @@ func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := vppcalls.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
 		Id:     1,
 		Mode:   ifModel.Interfaces_Interface_Memif_IP,
 		Secret: "secret",
 		Master: false,
-	}, 5, ctx.MockChannel, nil)
+	}, 5)
 
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
@@ -89,24 +87,24 @@ func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
 }
 
 func TestAddMasterMemifInterfaceError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifCreate{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := vppcalls.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	_, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
 		Id:     1,
 		Mode:   ifModel.Interfaces_Interface_Memif_IP,
 		Secret: "secret",
 		Master: false,
-	}, 5, ctx.MockChannel, nil)
+	}, 5)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddMasterMemifInterfaceRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
@@ -114,42 +112,42 @@ func TestAddMasterMemifInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := vppcalls.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	_, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
 		Id:     1,
 		Mode:   ifModel.Interfaces_Interface_Memif_IP,
 		Secret: "secret",
 		Master: false,
-	}, 5, ctx.MockChannel, nil)
+	}, 5)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDeleteMemifInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := vppcalls.DeleteMemifInterface("memif", 1, ctx.MockChannel, nil)
+	err := ifHandler.DeleteMemifInterface("memif", 1)
 
 	Expect(err).To(BeNil())
 }
 
 func TestDeleteMemifInterfaceError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifDelete{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := vppcalls.DeleteMemifInterface("memif", 1, ctx.MockChannel, nil)
+	err := ifHandler.DeleteMemifInterface("memif", 1)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDeleteMemifInterfaceRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifDeleteReply{
@@ -157,18 +155,18 @@ func TestDeleteMemifInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := vppcalls.DeleteMemifInterface("memif", 1, ctx.MockChannel, nil)
+	err := ifHandler.DeleteMemifInterface("memif", 1)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestRegisterMemifSocketFilename(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{})
 
-	err := vppcalls.RegisterMemifSocketFilename([]byte("filename"), 1, ctx.MockChannel, nil)
+	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*memif.MemifSocketFilenameAddDel)
@@ -179,25 +177,25 @@ func TestRegisterMemifSocketFilename(t *testing.T) {
 }
 
 func TestRegisterMemifSocketFilenameError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDel{})
 
-	err := vppcalls.RegisterMemifSocketFilename([]byte("filename"), 1, ctx.MockChannel, nil)
+	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestRegisterMemifSocketFilenameRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.RegisterMemifSocketFilename([]byte("filename"), 1, ctx.MockChannel, nil)
+	err := ifHandler.RegisterMemifSocketFilename([]byte("filename"), 1)
 
 	Expect(err).ToNot(BeNil())
 }

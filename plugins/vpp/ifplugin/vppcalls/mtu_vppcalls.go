@@ -18,15 +18,12 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.
-func SetInterfaceMtu(ifIdx uint32, mtu uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.HwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(interfaces.HwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.HwInterfaceSetMtu{
@@ -35,7 +32,7 @@ func SetInterfaceMtu(ifIdx uint32, mtu uint32, vppChan govppapi.Channel, stopwat
 	}
 
 	reply := &interfaces.HwInterfaceSetMtuReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
