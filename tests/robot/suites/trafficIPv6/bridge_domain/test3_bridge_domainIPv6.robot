@@ -34,28 +34,44 @@ ${IP_5}=               fd31::1:b:0:0:2
 ${PREFIX}=             64
 ${SYNC_SLEEP}=         15s
 *** Test Cases ***
-Create Bridge Domain without autolearn
-    [Setup]     Test Setup
-    [Teardown]  Test Teardown
 
+Start Agents
     Add Agent VPP Node                 agent_vpp_1
     Add Agent VPP Node                 agent_vpp_2
-    # setup first agent
+    Sleep    ${SYNC_SLEEP}
+
+Setup first agent
     Create Loopback Interface bvi_loop0 On agent_vpp_1 With Ip ${IP_1}/64 And Mac ${MAC_LOOP1}
     Create Master memif0 On agent_vpp_1 With MAC ${MAC_MEMIF1}, Key 1 And m1.sock Socket
+
+Create Bridge Domain without autolearn on Agent1
     Create Bridge Domain bd1 Without Autolearn On agent_vpp_1 With Interfaces bvi_loop0, memif0
-    # setup second agent
+
+Setup second agent
     Create Loopback Interface bvi_loop0 On agent_vpp_2 With Ip ${IP_2}/64 And Mac ${MAC_LOOP2}
     Create Slave memif0 On agent_vpp_2 With MAC ${MAC_MEMIF2}, Key 1 And m1.sock Socket
+
+Create Bridge Domain without autolearn on Agent2
     Create Bridge Domain bd1 Without Autolearn On agent_vpp_2 With Interfaces bvi_loop0, memif0
-    # without static fib entries ping should fail
+    Sleep    ${SYNC_SLEEP}
+
+Check Created Interfaces
+    vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop0    enabled=1     mac=${MAC_LOOP1}   ipv6=${IP_1}/${PREFIX}
+    vat_term: Check Loopback Interface State    agent_vpp_2    bvi_loop0    enabled=1     mac=${MAC_LOOP2}   ipv6=${IP_2}/${PREFIX}
+    vat_term: Check Memif Interface State     agent_vpp_1  memif0  mac=${MAC_MEMIF1}  role=master  id=1   connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m1.sock
+    vat_term: Check Memif Interface State     agent_vpp_2  memif0  mac=${MAC_MEMIF2}  role=slave  id=1   connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m1.sock
+
+Ping should fail
     Command: Ping From agent_vpp_1 To ${IP_2} should fail
     Command: Ping From agent_vpp_2 To ${IP_1} should fail
+
+Add FIB Entries
     Add fib entry for ${MAC_LOOP2} in bd1 over memif0 on agent_vpp_1
     Add fib entry for ${MAC_MEMIF2} in bd1 over memif0 on agent_vpp_1
     Add fib entry for ${MAC_LOOP1} in bd1 over memif0 on agent_vpp_2
     Add fib entry for ${MAC_MEMIF1} in bd1 over memif0 on agent_vpp_2
-    # and now ping must pass
+
+Ping must pass
     Ping6 From agent_vpp_1 To ${IP_2}
     Ping6 From agent_vpp_2 To ${IP_1}
 
