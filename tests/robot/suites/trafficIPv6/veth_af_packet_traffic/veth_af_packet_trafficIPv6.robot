@@ -18,8 +18,8 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${FINAL_SLEEP}=        5s
-${SYNC_SLEEP}=         20s
-${RESYNC_SLEEP}=       45s
+${SYNC_SLEEP}=         40s
+${RESYNC_SLEEP}=       450s
 
 ${AGENT1_VETH_MAC}=    02:00:00:00:00:01
 ${AGENT2_VETH_MAC}=    02:00:00:00:00:02
@@ -29,6 +29,7 @@ ${IP_2}=         fd30::1:a:0:0:2
 ${IP_3}=         fd30::1:a:0:0:3
 ${VARIABLES}=       common
 ${ENV}=             common
+${PREFIX}=          128
 
 
 *** Test Cases ***
@@ -397,9 +398,9 @@ Check Stuff
     vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    enabled=1
     vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_nod2_veth    enabled=1
     vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_3_nod3_veth    enabled=1
-    linux: Interface With IP Is Created    node_1    ${AGENT1_VETH_MAC}      ${IP_1}/64
-    linux: Interface With IP Is Created    node_2    ${AGENT2_VETH_MAC}      ${IP_2}/64
-    linux: Interface With IP Is Created    node_3    ${AGENT3_VETH_MAC}      ${IP_3}/64
+    linux: Interface With IP Is Created    node_1    ${AGENT1_VETH_MAC}      ${IP_1}/${PREFIX}
+    linux: Interface With IP Is Created    node_2    ${AGENT2_VETH_MAC}      ${IP_2}/${PREFIX}
+    linux: Interface With IP Is Created    node_3    ${AGENT3_VETH_MAC}      ${IP_3}/${PREFIX}
     vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    IF_AFPIF_VSWITCH_node_2_nod2_veth    IF_AFPIF_VSWITCH_node_3_nod3_veth
 
 
