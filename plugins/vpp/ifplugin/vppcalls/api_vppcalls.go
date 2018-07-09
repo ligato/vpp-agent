@@ -29,7 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
-// IfVppAPI provides methods for creating and managing BFD
+// IfVppAPI provides methods for creating and managing interface plugin
 type IfVppAPI interface {
 	IfVppWrite
 	IfVppRead
