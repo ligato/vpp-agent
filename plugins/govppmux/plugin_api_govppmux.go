@@ -15,7 +15,7 @@
 package govppmux
 
 import (
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 )
 
 // API for other plugins to get connectivity to VPP.

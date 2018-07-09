@@ -15,7 +15,7 @@
 package vppcalls
 
 import (
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"

@@ -21,8 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"git.fd.io/govpp.git/api"
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
@@ -31,7 +30,7 @@ import (
 )
 
 // AclMessages is list of used VPP messages for compatibility check
-var AclMessages = []api.Message{
+var AclMessages = []govppapi.Message{
 	&acl_api.ACLAddReplace{},
 	&acl_api.ACLAddReplaceReply{},
 	&acl_api.ACLDel{},

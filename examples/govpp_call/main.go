@@ -17,7 +17,7 @@ package main
 import (
 	"time"
 
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"

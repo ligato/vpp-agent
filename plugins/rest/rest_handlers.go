@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strconv"
 
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/gorilla/mux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"

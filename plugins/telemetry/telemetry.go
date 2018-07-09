@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/flavors/local"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
 	"github.com/ligato/vpp-agent/plugins/govppmux"

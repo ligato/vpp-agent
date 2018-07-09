@@ -21,9 +21,10 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/adapter"
-	govpp "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 
+	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -115,7 +116,7 @@ func (plugin *GOVPPPlugin) Init() error {
 		plugin.replyTimeout = cfg.ReplyTimeout
 		plugin.reconnectResync = cfg.ReconnectResync
 		shmPrefix = cfg.ShmPrefix
-		plugin.Log.Debug("Setting govpp parameters", cfg)
+		plugin.Log.Debug("Setting govppapi parameters", cfg)
 	}
 
 	if plugin.vppAdapter == nil {
@@ -143,7 +144,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
 	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
-	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
+	plugin.Log.Debug("govppapi connect success ", plugin.vppConn)
 
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
@@ -166,13 +167,13 @@ func (plugin *GOVPPPlugin) Close() error {
 	return nil
 }
 
-// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
+// NewAPIChannel returns a new API channel for communication with VPP via govppapi core.
 // It uses default buffer sizes for the request and reply Go channels.
 //
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannel()
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannel() (govpp.Channel, error) {
+func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		return nil, err
@@ -183,13 +184,13 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (govpp.Channel, error) {
 	return ch, nil
 }
 
-// NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
+// NewAPIChannelBuffered returns a new API channel for communication with VPP via govppapi core.
 // It allows to specify custom buffer sizes for the request and reply Go channels.
 //
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govpp.Channel, error) {
+func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 	if err != nil {
 		return nil, err

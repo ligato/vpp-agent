@@ -21,14 +21,15 @@ import (
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/api"
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
+	"git.fd.io/govpp.git/core"
 )
 
 // TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
 type TestCtx struct {
 	MockVpp     *mock.VppAdapter
-	conn        *govppapi.Connection
+	conn        *core.Connection
 	channel     govppapi.Channel
 	MockChannel *mockedChannel
 }
@@ -42,7 +43,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	}
 
 	var err error
-	ctx.conn, err = govppapi.Connect(ctx.MockVpp)
+	ctx.conn, err = core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.channel, err = ctx.conn.NewAPIChannel()
@@ -71,14 +72,14 @@ type mockedChannel struct {
 }
 
 // SendRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendRequest(msg api.Message) *govppapi.RequestCtx {
+func (m *mockedChannel) SendRequest(msg api.Message) govppapi.RequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendRequest(msg)
 }
 
 // SendMultiRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendMultiRequest(msg api.Message) *govppapi.MultiRequestCtx {
+func (m *mockedChannel) SendMultiRequest(msg api.Message) govppapi.MultiRequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendMultiRequest(msg)

@@ -20,7 +20,7 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/core"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
