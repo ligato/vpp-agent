@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
@@ -28,7 +28,7 @@ import (
 type vppReplyMock struct {
 	Id      uint16
 	Ping    bool
-	Message api.Message
+	Message govppapi.Message
 }
 
 func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.ReplyHandler {
