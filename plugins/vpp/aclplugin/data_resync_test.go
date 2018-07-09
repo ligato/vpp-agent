@@ -15,13 +15,14 @@
 package aclplugin_test
 
 import (
+	"testing"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 type vppReplyMock struct {

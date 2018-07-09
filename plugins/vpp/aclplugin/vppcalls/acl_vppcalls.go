@@ -56,7 +56,7 @@ var AclMessages = []govppapi.Message{
 }
 
 // GetAclPluginVersion returns version of the VPP ACL plugin
-func GetAclPluginVersion(vppChannel vppdump.VPPChannel, stopwatch *measure.Stopwatch) (string, error) {
+func GetAclPluginVersion(vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) (string, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLPluginGetVersion{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -73,7 +73,7 @@ func GetAclPluginVersion(vppChannel vppdump.VPPChannel, stopwatch *measure.Stopw
 
 // AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
 func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel vppdump.VPPChannel, stopwatch *measure.Stopwatch) (uint32, error) {
+	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -109,7 +109,7 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 
 // AddMacIPAcl creates new L2 MAC IP ACL. VPP provides index in reply.
 func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel vppdump.VPPChannel, stopwatch *measure.Stopwatch) (uint32, error) {
+	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.MacipACLAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -145,7 +145,7 @@ func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.
 
 // ModifyIPAcl uses index (provided by VPP) to identify ACL which is modified.
 func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel vppdump.VPPChannel, stopwatch *measure.Stopwatch) error {
+	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
@@ -183,7 +183,7 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 
 // ModifyMACIPAcl uses index (provided by VPP) to identify ACL which is modified.
 func ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel vppdump.VPPChannel, stopwatch *measure.Stopwatch) error {
+	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
@@ -219,7 +219,7 @@ func ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName 
 }
 
 // DeleteIPAcl removes L3/L4 ACL.
-func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel vppdump.VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.ACLDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -242,7 +242,7 @@ func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel vppdump.VPPChan
 }
 
 // DeleteMacIPAcl removes L2 ACL.
-func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel vppdump.VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(acl_api.MacipACLDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

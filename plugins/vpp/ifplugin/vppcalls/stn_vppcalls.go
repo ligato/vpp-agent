@@ -19,6 +19,7 @@ import (
 	"net"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
@@ -30,7 +31,7 @@ type StnRule struct {
 	IfaceIdx  uint32
 }
 
-func addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(stn.StnAddDelRule{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -66,12 +67,12 @@ func addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool, vppChan VPPChannel, s
 }
 
 // AddStnRule calls StnAddDelRule bin API with IsAdd=1
-func AddStnRule(ifIdx uint32, addr *net.IP, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func AddStnRule(ifIdx uint32, addr *net.IP, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return addDelStnRule(ifIdx, addr, true, vppChan, stopwatch)
 
 }
 
 // DelStnRule calls StnAddDelRule bin API with IsAdd=0
-func DelStnRule(ifIdx uint32, addr *net.IP, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func DelStnRule(ifIdx uint32, addr *net.IP, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return addDelStnRule(ifIdx, addr, false, vppChan, stopwatch)
 }

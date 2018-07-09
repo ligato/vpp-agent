@@ -49,7 +49,7 @@ var IPSecMessages = []govppapi.Message{
 	&ipsec_api.IpsecTunnelIfSetSaReply{},
 }
 
-func tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+func tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecTunnelIfAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -103,18 +103,18 @@ func tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool, vppChan *
 }
 
 // AddSPD adds SPD to VPP via binary API
-func AddTunnelInterface(tunnel *ipsec.TunnelInterfaces_Tunnel, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+func AddTunnelInterface(tunnel *ipsec.TunnelInterfaces_Tunnel, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
 	return tunnelIfAddDel(tunnel, true, vppChan, stopwatch)
 }
 
 // DelSPD deletes SPD from VPP via binary API
-func DelTunnelInterface(ifIdx uint32, tunnel *ipsec.TunnelInterfaces_Tunnel, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DelTunnelInterface(ifIdx uint32, tunnel *ipsec.TunnelInterfaces_Tunnel, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	// Note: ifIdx is not used now, tunnel shiould be matched based on paramters
 	_, err := tunnelIfAddDel(tunnel, false, vppChan, stopwatch)
 	return err
 }
 
-func spdAddDel(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func spdAddDel(spdID uint32, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecSpdAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -136,16 +136,16 @@ func spdAddDel(spdID uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *m
 }
 
 // AddSPD adds SPD to VPP via binary API
-func AddSPD(spdID uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func AddSPD(spdID uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDel(spdID, true, vppChan, stopwatch)
 }
 
 // DelSPD deletes SPD from VPP via binary API
-func DelSPD(spdID uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DelSPD(spdID uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDel(spdID, false, vppChan, stopwatch)
 }
 
-func interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecInterfaceAddDelSpd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -168,16 +168,16 @@ func interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool, vppChan *govppapi.Cha
 }
 
 // InterfaceAddSPD adds SPD interface assignment to VPP via binary API
-func InterfaceAddSPD(spdID, swIfIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func InterfaceAddSPD(spdID, swIfIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return interfaceAddDelSpd(spdID, swIfIdx, true, vppChan, stopwatch)
 }
 
 // InterfaceDelSPD deletes SPD interface assignment from VPP via binary API
-func InterfaceDelSPD(spdID, swIfIdx uint32, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func InterfaceDelSPD(spdID, swIfIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return interfaceAddDelSpd(spdID, swIfIdx, false, vppChan, stopwatch)
 }
 
-func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecSpdAddDelEntry{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -238,16 +238,16 @@ func spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_P
 }
 
 // AddSPDEntry adds SPD policy entry to VPP via binary API
-func AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDelEntry(spdID, saID, spd, true, vppChan, stopwatch)
 }
 
 // DelSPDEntry deletes SPD policy entry from VPP via binary API
-func DelSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DelSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return spdAddDelEntry(spdID, saID, spd, false, vppChan, stopwatch)
 }
 
-func sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ipsec_api.IpsecSadAddDelEntry{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -305,12 +305,12 @@ func sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool, 
 }
 
 // AddSAEntry adds SA to VPP via binary API
-func AddSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func AddSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return sadAddDelEntry(saID, sa, true, vppChan, stopwatch)
 }
 
 // DelSAEntry deletes SA from VPP via binary API
-func DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return sadAddDelEntry(saID, sa, false, vppChan, stopwatch)
 }
 

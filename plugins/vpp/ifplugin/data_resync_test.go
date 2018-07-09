@@ -19,7 +19,7 @@ import (
 
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
+	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -126,7 +126,7 @@ func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.Rep
 	}
 }
 
-func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.InterfaceConfigurator, *core.Connection) {
+func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.InterfaceConfigurator, *govpp.Connection) {
 	// Setup
 	RegisterTestingT(t)
 
@@ -136,7 +136,7 @@ func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
 
-	conn, err := core.Connect(ctx.MockVpp)
+	conn, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// Test init
@@ -151,7 +151,7 @@ func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock
 	return plugin, conn
 }
 
-func bfdConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.BFDConfigurator, *core.Connection, ifaceidx.SwIfIndexRW) {
+func bfdConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.BFDConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
 	// Setup
 	RegisterTestingT(t)
 
@@ -161,7 +161,7 @@ func bfdConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
 
-	connection, _ := core.Connect(ctx.MockVpp)
+	connection, _ := govpp.Connect(ctx.MockVpp)
 	plugin := &ifplugin.BFDConfigurator{}
 
 	// initialize index
@@ -185,7 +185,7 @@ func bfdConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 	return plugin, connection, index
 }
 
-func stnConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.StnConfigurator, *core.Connection) {
+func stnConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.StnConfigurator, *govpp.Connection) {
 	// Setup
 	RegisterTestingT(t)
 
@@ -195,7 +195,7 @@ func stnConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
 
-	connection, _ := core.Connect(ctx.MockVpp)
+	connection, _ := govpp.Connect(ctx.MockVpp)
 	plugin := &ifplugin.StnConfigurator{}
 
 	// initialize index
@@ -218,7 +218,7 @@ func stnConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 	return plugin, connection
 }
 
-func natConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.NatConfigurator, ifaceidx.SwIfIndexRW, *core.Connection) {
+func natConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.NatConfigurator, ifaceidx.SwIfIndexRW, *govpp.Connection) {
 	// Setup
 	RegisterTestingT(t)
 
@@ -228,7 +228,7 @@ func natConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
 
-	connection, _ := core.Connect(ctx.MockVpp)
+	connection, _ := govpp.Connect(ctx.MockVpp)
 	plugin := &ifplugin.NatConfigurator{}
 
 	// initialize index

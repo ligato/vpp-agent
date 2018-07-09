@@ -40,7 +40,7 @@ type ArpEntry struct {
 }
 
 // vppAddDelArp adds or removes ARP entry according to provided input
-func vppAddDelArp(entry *ArpEntry, vppChan VPPChannel, delete bool, stopwatch *measure.Stopwatch) error {
+func vppAddDelArp(entry *ArpEntry, vppChan govppapi.Channel, delete bool, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(ip.IPNeighborAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -85,11 +85,11 @@ func vppAddDelArp(entry *ArpEntry, vppChan VPPChannel, delete bool, stopwatch *m
 }
 
 // VppAddArp adds ARP entry according to provided input
-func VppAddArp(entry *ArpEntry, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func VppAddArp(entry *ArpEntry, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return vppAddDelArp(entry, vppChan, false, stopwatch)
 }
 
 // VppDelArp removes old ARP entry according to provided input
-func VppDelArp(entry *ArpEntry, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func VppDelArp(entry *ArpEntry, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return vppAddDelArp(entry, vppChan, true, stopwatch)
 }

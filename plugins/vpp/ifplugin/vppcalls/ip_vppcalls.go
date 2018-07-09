@@ -19,6 +19,7 @@ import (
 	"net"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -29,7 +30,7 @@ const (
 	delInterfaceIP uint8 = 0
 )
 
-func addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd uint8, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd uint8, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceAddDelAddress{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -66,12 +67,12 @@ func addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd uint8, vppChan VPPCh
 }
 
 // AddInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=1.
-func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func AddInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return addDelInterfaceIP(ifIdx, addr, addInterfaceIP, vppChan, stopwatch)
 }
 
 // DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00.
-func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func DelInterfaceIP(ifIdx uint32, addr *net.IPNet, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return addDelInterfaceIP(ifIdx, addr, delInterfaceIP, vppChan, stopwatch)
 }
 
@@ -80,7 +81,7 @@ const (
 	unsetUnnumberedIP uint8 = 0
 )
 
-func setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceSetUnnumbered{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -104,11 +105,11 @@ func setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8, vppCha
 }
 
 // SetUnnumberedIP sets interface as un-numbered, linking IP address of the another interface (ifIdxWithIP)
-func SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return setUnsetUnnumberedIP(uIfIdx, ifIdxWithIP, setUnnumberedIP, vppChan, stopwatch)
 }
 
 // UnsetUnnumberedIP unset provided interface as un-numbered. IP address of the linked interface is removed
-func UnsetUnnumberedIP(uIfIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func UnsetUnnumberedIP(uIfIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return setUnsetUnnumberedIP(uIfIdx, 0, unsetUnnumberedIP, vppChan, stopwatch)
 }

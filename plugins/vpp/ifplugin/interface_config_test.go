@@ -21,7 +21,7 @@ import (
 
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
+	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
@@ -49,7 +49,7 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
-	connection, _ := core.Connect(ctx.MockVpp)
+	connection, _ := govpp.Connect(ctx.MockVpp)
 	defer connection.Disconnect()
 	plugin := &ifplugin.InterfaceConfigurator{}
 	ifVppNotifChan := make(chan govppapi.Message, 100)
@@ -1419,12 +1419,12 @@ func TestModifyRxMode(t *testing.T) {
 
 /* Interface Test Setup */
 
-func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.InterfaceConfigurator) {
+func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govpp.Connection, *ifplugin.InterfaceConfigurator) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	connection, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Logger
@@ -1439,7 +1439,7 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugi
 	return ctx, connection, plugin
 }
 
-func ifTestTeardown(connection *core.Connection, plugin *ifplugin.InterfaceConfigurator) {
+func ifTestTeardown(connection *govpp.Connection, plugin *ifplugin.InterfaceConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())

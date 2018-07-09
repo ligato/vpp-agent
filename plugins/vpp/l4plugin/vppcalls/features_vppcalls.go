@@ -22,7 +22,7 @@ import (
 )
 
 // EnableL4Features sets L4 feature flag on VPP to true
-func EnableL4Features(vppChan *govppapi.Channel) error {
+func EnableL4Features(vppChan govppapi.Channel) error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 1,
 	}
@@ -39,7 +39,7 @@ func EnableL4Features(vppChan *govppapi.Channel) error {
 }
 
 // DisableL4Features sets L4 feature flag on VPP to false
-func DisableL4Features(vppChan *govppapi.Channel) error {
+func DisableL4Features(vppChan govppapi.Channel) error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 0,
 	}

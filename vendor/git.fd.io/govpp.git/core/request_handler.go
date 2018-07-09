@@ -31,10 +31,10 @@ var (
 )
 
 // watchRequests watches for requests on the request API channel and forwards them as messages to VPP.
-func (c *Connection) watchRequests(ch *api.Channel) {
+func (c *Connection) watchRequests(ch *channel) {
 	for {
 		select {
-		case req, ok := <-ch.ReqChan:
+		case req, ok := <-ch.reqChan:
 			// new request on the request channel
 			if !ok {
 				// after closing the request channel, release API channel and return
@@ -43,7 +43,7 @@ func (c *Connection) watchRequests(ch *api.Channel) {
 			}
 			c.processRequest(ch, req)
 
-		case req := <-ch.NotifSubsChan:
+		case req := <-ch.notifSubsChan:
 			// new request on the notification subscribe channel
 			c.processNotifSubscribeRequest(ch, req)
 		}
@@ -51,7 +51,7 @@ func (c *Connection) watchRequests(ch *api.Channel) {
 }
 
 // processRequest processes a single request received on the request channel.
-func (c *Connection) processRequest(ch *api.Channel, req *api.VppRequest) error {
+func (c *Connection) processRequest(ch *channel, req *api.VppRequest) error {
 	// check whether we are connected to VPP
 	if atomic.LoadUint32(&c.connected) == 0 {
 		err := ErrNotConnected
@@ -78,7 +78,7 @@ func (c *Connection) processRequest(ch *api.Channel, req *api.VppRequest) error 
 	if err != nil {
 		err = fmt.Errorf("unable to encode the messge: %v", err)
 		log.WithFields(logger.Fields{
-			"channel": ch.ID,
+			"channel": ch.id,
 			"msg_id":  msgID,
 			"seq_num": req.SeqNum,
 		}).Error(err)
@@ -88,7 +88,7 @@ func (c *Connection) processRequest(ch *api.Channel, req *api.VppRequest) error 
 
 	if log.Level == logger.DebugLevel { // for performance reasons - logrus does some processing even if debugs are disabled
 		log.WithFields(logger.Fields{
-			"channel":  ch.ID,
+			"channel":  ch.id,
 			"msg_id":   msgID,
 			"msg_size": len(data),
 			"msg_name": req.Message.GetMessageName(),
@@ -97,7 +97,7 @@ func (c *Connection) processRequest(ch *api.Channel, req *api.VppRequest) error 
 	}
 
 	// send the request to VPP
-	context := packRequestContext(ch.ID, req.Multipart, req.SeqNum)
+	context := packRequestContext(ch.id, req.Multipart, req.SeqNum)
 	err = c.vpp.SendMsg(context, data)
 	if err != nil {
 		err = fmt.Errorf("unable to send the message: %v", err)
@@ -189,9 +189,9 @@ func msgCallback(context uint32, msgID uint16, data []byte) {
 
 // sendReply sends the reply into the go channel, if it cannot be completed without blocking, otherwise
 // it logs the error and do not send the message.
-func sendReply(ch *api.Channel, reply *api.VppReply) {
+func sendReply(ch *channel, reply *api.VppReply) {
 	select {
-	case ch.ReplyChan <- reply:
+	case ch.replyChan <- reply:
 		// reply sent successfully
 	case <-time.After(time.Millisecond * 100):
 		// receiver still not ready

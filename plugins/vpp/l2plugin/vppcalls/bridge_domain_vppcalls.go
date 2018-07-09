@@ -35,7 +35,7 @@ var BridgeDomainMessages = []govppapi.Message{
 }
 
 // VppAddBridgeDomain adds new bridge domain.
-func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -64,7 +64,7 @@ func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan
 }
 
 // VppDeleteBridgeDomain removes existing bridge domain.
-func VppDeleteBridgeDomain(bdIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func VppDeleteBridgeDomain(bdIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -83,4 +83,11 @@ func VppDeleteBridgeDomain(bdIdx uint32, vppChan VPPChannel, stopwatch *measure.
 	}
 
 	return nil
+}
+
+func boolToUint(value bool) uint8 {
+	if value {
+		return 1
+	}
+	return 0
 }

@@ -74,7 +74,7 @@ type InterfaceStateUpdater struct {
 	ifState map[uint32]*intf.InterfacesState_Interface // swIfIndex to state data map
 	access  sync.Mutex                                 // lock for the state data map
 
-	vppCh                   *govppapi.Channel
+	vppCh                   govppapi.Channel
 	vppNotifSubs            *govppapi.NotifSubscription
 	vppCountersSubs         *govppapi.NotifSubscription
 	vppCombinedCountersSubs *govppapi.NotifSubscription

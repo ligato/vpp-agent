@@ -17,6 +17,7 @@ package ifplugin
 import (
 	"errors"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -36,8 +37,8 @@ type AFPacketConfigurator struct {
 	afPacketByName      map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
 	linuxHostInterfaces map[string]struct{}        // a set of available host (Linux) interfaces
 
-	vppCh     vppcalls.VPPChannel // govpp channel used by InterfaceConfigurator
-	stopwatch *measure.Stopwatch  // from InterfaceConfigurator
+	vppCh     govppapi.Channel   // govpp channel used by InterfaceConfigurator
+	stopwatch *measure.Stopwatch // from InterfaceConfigurator
 }
 
 // AfPacketConfig wraps the proto formatted configuration of an Afpacket interface together with a flag
@@ -72,7 +73,7 @@ func (plugin *AFPacketConfigurator) GetHostInterfacesEntry(hostIf string) bool {
 }
 
 // Init members of AFPacketConfigurator.
-func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh vppcalls.VPPChannel, linux interface{},
+func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh govppapi.Channel, linux interface{},
 	indexes ifaceidx.SwIfIndexRW, stopwatch *measure.Stopwatch) (err error) {
 	plugin.log = logger
 	plugin.log.Infof("Initializing AF-Packet configurator")

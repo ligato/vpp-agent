@@ -66,7 +66,7 @@ type InterfaceConfigurator struct {
 
 	afPacketConfigurator *AFPacketConfigurator
 
-	vppCh vppcalls.VPPChannel
+	vppCh govppapi.Channel
 
 	// Notification channels
 	NotifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go

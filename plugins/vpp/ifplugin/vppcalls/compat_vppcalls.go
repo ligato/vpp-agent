@@ -30,7 +30,7 @@ import (
 )
 
 // CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan VPPChannel) error {
+func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&memif.MemifCreate{},
 		&memif.MemifCreateReply{},
@@ -105,7 +105,7 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan VPPChannel) e
 }
 
 // CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForBfd(vppChan VPPChannel) error {
+func CheckMsgCompatibilityForBfd(vppChan govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&bfd.BfdUDPAdd{},
 		&bfd.BfdUDPAddReply{},
@@ -122,7 +122,7 @@ func CheckMsgCompatibilityForBfd(vppChan VPPChannel) error {
 }
 
 // CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
-func CheckMsgCompatibilityForNat(vppChan VPPChannel) error {
+func CheckMsgCompatibilityForNat(vppChan govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&nat.Nat44AddDelAddressRange{},
 		&nat.Nat44AddDelAddressRangeReply{},
@@ -139,7 +139,7 @@ func CheckMsgCompatibilityForNat(vppChan VPPChannel) error {
 }
 
 // CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
-func CheckMsgCompatibilityForStn(vppChan VPPChannel) error {
+func CheckMsgCompatibilityForStn(vppChan govppapi.Channel) error {
 	msgs := []govppapi.Message{
 		&stn.StnAddDelRule{},
 		&stn.StnAddDelRuleReply{},

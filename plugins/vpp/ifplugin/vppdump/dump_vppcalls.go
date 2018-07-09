@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"git.fd.io/govpp.git/api"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -50,7 +51,7 @@ type Interface struct {
 // - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
 // - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
 //
-func DumpInterfaces(log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (map[uint32]*Interface, error) {
+func DumpInterfaces(log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*Interface, error) {
 	start := time.Now()
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*Interface)
@@ -141,7 +142,7 @@ func DumpInterfaces(log logging.Logger, vppChan vppcalls.VPPChannel, stopwatch *
 }
 
 // DumpMemifSocketDetails dumps memif socket details from the VPP
-func DumpMemifSocketDetails(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog measure.StopWatchEntry) (map[string]uint32, error) {
+func DumpMemifSocketDetails(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) (map[string]uint32, error) {
 	// MemifSocketFilenameDump time measurement
 	start := time.Now()
 	defer func() {
@@ -174,9 +175,9 @@ func DumpMemifSocketDetails(log logging.Logger, vppChan vppcalls.VPPChannel, tim
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
-func dumpIPAddressDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
+func dumpIPAddressDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
 	// TODO: workaround for incorrect ip.IPAddressDetails message
-	notifChan := make(chan govppapi.Message, 100)
+	notifChan := make(chan api.Message, 100)
 	subs, _ := vppChan.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
 
 	// Dump IP addresses of each interface.
@@ -243,7 +244,7 @@ func fillAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName str
 }
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
-func dumpMemifDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
+func dumpMemifDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
 	// MemifDetails time measurement
 	start := time.Now()
 	defer func() {
@@ -299,7 +300,7 @@ func dumpMemifDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[u
 }
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.
-func dumpTapDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
+func dumpTapDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
 	// SwInterfaceTapDump time measurement
 	start := time.Now()
 	defer func() {
@@ -360,7 +361,7 @@ func dumpTapDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[uin
 }
 
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
-func dumpVxlanDetails(log logging.Logger, vppChan vppcalls.VPPChannel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
+func dumpVxlanDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
 	// VxlanTunnelDump time measurement
 	start := time.Now()
 	defer func() {
