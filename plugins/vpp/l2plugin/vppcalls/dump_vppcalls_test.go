@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump
+package vppcalls_test
 
 import (
 	"testing"
@@ -20,8 +20,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
@@ -44,9 +44,9 @@ var testDataInMessagesBDs = []govppapi.Message{
 	},
 }
 
-var testDataOutMessage = []*BridgeDomain{
+var testDataOutMessage = []*vppcalls.BridgeDomain{
 	{
-		Interfaces: []*BridgeDomainInterface{
+		Interfaces: []*vppcalls.BridgeDomainInterface{
 			{SwIfIndex: 5},
 			{SwIfIndex: 7},
 		},
@@ -58,7 +58,7 @@ var testDataOutMessage = []*BridgeDomain{
 			ArpTermination:      true,
 			MacAge:              140},
 	}, {
-		Interfaces: []*BridgeDomainInterface{
+		Interfaces: []*vppcalls.BridgeDomainInterface{
 			{SwIfIndex: 5},
 			{SwIfIndex: 8},
 		},
@@ -76,19 +76,19 @@ var testDataOutMessage = []*BridgeDomain{
 // - 2 bridge domains + 1 default in VPP
 // TestDumpBridgeDomainIDs tests DumpBridgeDomainIDs method
 func TestDumpBridgeDomainIDs(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, bdHandler := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(testDataInMessagesBDs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	activeDomains, err := DumpBridgeDomainIDs(ctx.MockChannel, nil)
+	activeDomains, err := bdHandler.DumpBridgeDomainIDs()
 
 	Expect(err).To(BeNil())
 	Expect(activeDomains).To(Equal([]uint32{0, 4, 5}))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	_, err = DumpBridgeDomainIDs(ctx.MockChannel, nil)
+	_, err = bdHandler.DumpBridgeDomainIDs()
 	Expect(err).Should(HaveOccurred())
 }
 
@@ -96,13 +96,13 @@ func TestDumpBridgeDomainIDs(t *testing.T) {
 // - 2 bridge domains + 1 default in VPP
 // TestDumpBridgeDomains tests DumpBridgeDomains method
 func TestDumpBridgeDomains(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, bdHandler := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(testDataInMessagesBDs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	bridgeDomains, err := DumpBridgeDomains(ctx.MockChannel, nil)
+	bridgeDomains, err := bdHandler.DumpBridgeDomains()
 
 	Expect(err).To(BeNil())
 	Expect(bridgeDomains).To(HaveLen(2))
@@ -110,7 +110,7 @@ func TestDumpBridgeDomains(t *testing.T) {
 	Expect(bridgeDomains[5]).To(Equal(testDataOutMessage[1]))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	_, err = DumpBridgeDomains(ctx.MockChannel, nil)
+	_, err = bdHandler.DumpBridgeDomains()
 	Expect(err).Should(HaveOccurred())
 }
 
@@ -127,7 +127,7 @@ var testDataInMessagesFIBs = []govppapi.Message{
 	},
 }
 
-var testDataOutFIBs = []*FIBTableEntry{
+var testDataOutFIBs = []*vppcalls.FIBTableEntry{
 	{
 		BridgeDomainIdx:          10,
 		OutgoingInterfaceSwIfIdx: 1,
@@ -154,20 +154,20 @@ var testDataOutFIBs = []*FIBTableEntry{
 // - 2 FIB entries in VPP
 // TestDumpFIBTableEntries tests DumpFIBTableEntries method
 func TestDumpFIBTableEntries(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, fibHandler := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(testDataInMessagesFIBs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	fibTable, err := DumpFIBTableEntries(ctx.MockChannel, nil)
+	fibTable, err := fibHandler.DumpFIBTableEntries()
 	Expect(err).To(BeNil())
 	Expect(fibTable).To(HaveLen(2))
 	Expect(fibTable["aa:aa:aa:aa:aa:aa"]).To(Equal(testDataOutFIBs[0]))
 	Expect(fibTable["bb:bb:bb:bb:bb:bb"]).To(Equal(testDataOutFIBs[1]))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	_, err = DumpFIBTableEntries(ctx.MockChannel, nil)
+	_, err = fibHandler.DumpFIBTableEntries()
 	Expect(err).Should(HaveOccurred())
 }
 
@@ -176,7 +176,7 @@ var testDataInXConnect = []govppapi.Message{
 	&l2ba.L2XconnectDetails{3, 4},
 }
 
-var testDataOutXconnect = []*XConnectPairs{
+var testDataOutXconnect = []*vppcalls.XConnectPairs{
 	{1, 2},
 	{3, 4},
 }
@@ -185,13 +185,13 @@ var testDataOutXconnect = []*XConnectPairs{
 // - 2 Xconnect entries in VPP
 // TestDumpXConnectPairs tests DumpXConnectPairs method
 func TestDumpXConnectPairs(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, xcHandler := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(testDataInXConnect...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	xConnectPairs, err := DumpXConnectPairs(ctx.MockChannel, nil)
+	xConnectPairs, err := xcHandler.DumpXConnectPairs()
 
 	Expect(err).To(BeNil())
 	Expect(xConnectPairs).To(HaveLen(2))
@@ -199,7 +199,7 @@ func TestDumpXConnectPairs(t *testing.T) {
 	Expect(xConnectPairs[3]).To(Equal(testDataOutXconnect[1]))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	_, err = DumpXConnectPairs(ctx.MockChannel, nil)
+	_, err = xcHandler.DumpXConnectPairs()
 	Expect(err).Should(HaveOccurred())
 }
 
