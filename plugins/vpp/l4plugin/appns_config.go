@@ -47,7 +47,7 @@ type AppNsConfigurator struct {
 	appNsIdxSeq  uint32
 
 	// VPP channel
-	vppChan   *govppapi.Channel
+	vppChan   govppapi.Channel
 	stopwatch *measure.Stopwatch
 
 	// Feature flag - internal state whether the L4 features are enabled or disabled

@@ -11,6 +11,8 @@ Resource    ../../../libraries/pretty_keywords.robot
 Force Tags        trafficIPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 
 *** Variables ***
 ${VARIABLES}=               common
@@ -41,7 +43,6 @@ ${RESYNC_WAIT}=        50s
 
 *** Test Cases ***
 Configure Environment
-    [Tags]    setup
     Configure Environment 1
 
 Show Interfaces Before Setup
@@ -217,3 +218,8 @@ Linux_VPP2_TAP1 Routes Are Configured Equally In Both Config Orders
     Should Be Equal    ${linux_vpp2_tap1_route1}    ${linux_vpp2_tap1_route2}
 
 *** Keywords ***
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown

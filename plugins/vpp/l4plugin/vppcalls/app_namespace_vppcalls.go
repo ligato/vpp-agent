@@ -32,7 +32,7 @@ var AppNsMessages = []govppapi.Message{
 }
 
 // AddAppNamespace calls respective VPP binary api to configure AppNamespace
-func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, vppChan *govppapi.Channel, stopwatch *measure.Stopwatch) (appNsIdx uint32, err error) {
+func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (appNsIdx uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(session.AppNamespaceAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

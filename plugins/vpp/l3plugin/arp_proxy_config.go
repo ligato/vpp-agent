@@ -50,7 +50,7 @@ type ProxyArpConfigurator struct {
 	pArpIndexSeq uint32
 
 	// VPP channel
-	vppChan *govppapi.Channel
+	vppChan govppapi.Channel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch

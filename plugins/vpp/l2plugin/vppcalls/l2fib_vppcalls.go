@@ -50,13 +50,13 @@ type FibLogicalReq struct {
 // L2FibVppCalls aggregates vpp calls related to l2 fib.
 type L2FibVppCalls struct {
 	log         logging.Logger
-	vppChan     VPPChannel
+	vppChan     govppapi.Channel
 	stopwatch   *measure.Stopwatch
 	requestChan chan *FibLogicalReq
 }
 
 // NewL2FibVppCalls is a constructor.
-func NewL2FibVppCalls(log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
+func NewL2FibVppCalls(log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
 	return &L2FibVppCalls{
 		log:         log,
 		vppChan:     vppChan,
@@ -114,7 +114,7 @@ func (fib *L2FibVppCalls) WatchFIBReplies() {
 	}
 }
 
-func l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) (err error) {
+func l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

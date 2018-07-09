@@ -20,6 +20,7 @@ import (
 
 	"strconv"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -28,7 +29,8 @@ import (
 )
 
 // SetRxPlacement
-func SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings,
+	vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

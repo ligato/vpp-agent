@@ -32,16 +32,16 @@ var XConnectMessages = []govppapi.Message{
 }
 
 // AddL2XConnect creates xConnect between two existing interfaces.
-func AddL2XConnect(rxIfIdx uint32, txIfIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func AddL2XConnect(rxIfIdx uint32, txIfIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return addDelXConnect(rxIfIdx, txIfIdx, true, vppChan, stopwatch)
 }
 
 // DeleteL2XConnect removes xConnect between two interfaces.
-func DeleteL2XConnect(rxIfIdx uint32, txIfIdx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteL2XConnect(rxIfIdx uint32, txIfIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	return addDelXConnect(rxIfIdx, txIfIdx, false, vppChan, stopwatch)
 }
 
-func addDelXConnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func addDelXConnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Xconnect{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

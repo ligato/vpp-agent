@@ -49,8 +49,8 @@ type FIBConfigurator struct {
 	vppcalls *vppcalls.L2FibVppCalls
 
 	// VPP channels
-	syncVppChannel  *govppapi.Channel
-	asyncVppChannel *govppapi.Channel
+	syncChannel  govppapi.Channel
+	asyncChannel govppapi.Channel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -71,11 +71,11 @@ func (plugin *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	plugin.fibIndexSeq = 1
 
 	// VPP channels
-	plugin.syncVppChannel, err = goVppMux.NewAPIChannel()
+	plugin.syncChannel, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
-	plugin.asyncVppChannel, err = goVppMux.NewAPIChannel()
+	plugin.asyncChannel, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return err
 	}
@@ -86,12 +86,12 @@ func (plugin *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// Message compatibility
-	if err := plugin.syncVppChannel.CheckMessageCompatibility(vppcalls.L2FibMessages...); err != nil {
+	if err := plugin.syncChannel.CheckMessageCompatibility(vppcalls.L2FibMessages...); err != nil {
 		return err
 	}
 
 	// VPP calls helper object
-	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.log, plugin.asyncVppChannel, plugin.stopwatch)
+	plugin.vppcalls = vppcalls.NewL2FibVppCalls(plugin.log, plugin.asyncChannel, plugin.stopwatch)
 
 	// FIB reply watcher
 	go plugin.vppcalls.WatchFIBReplies()
@@ -101,7 +101,7 @@ func (plugin *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 // Close vpp channel.
 func (plugin *FIBConfigurator) Close() error {
-	return safeclose.Close(plugin.syncVppChannel, plugin.asyncVppChannel)
+	return safeclose.Close(plugin.syncChannel, plugin.asyncChannel)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.

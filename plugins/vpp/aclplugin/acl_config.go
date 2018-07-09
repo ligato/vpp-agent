@@ -21,7 +21,7 @@ package aclplugin
 import (
 	"fmt"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -68,8 +68,8 @@ type ACLConfigurator struct {
 	vppCalls *vppcalls.ACLInterfacesVppCalls
 
 	// VPP channels
-	vppChan     *api.Channel
-	vppDumpChan *api.Channel
+	vppChan     govppapi.Channel
+	vppDumpChan govppapi.Channel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
@@ -26,7 +27,7 @@ import (
 )
 
 // AddTapInterface calls TapConnect bin API.
-func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIfIdx uint32, err error) {
+func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (swIfIdx uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(tap.TapConnect{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -83,7 +84,7 @@ func AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap, 
 }
 
 // DeleteTapInterface calls TapDelete bin API.
-func DeleteTapInterface(ifName string, idx uint32, version uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteTapInterface(ifName string, idx uint32, version uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(tap.TapDelete{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

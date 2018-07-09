@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/gorilla/mux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
@@ -512,7 +512,7 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 	}
 }
 
-func (plugin *Plugin) sendCommand(ch *api.Channel, command string) ([]byte, error) {
+func (plugin *Plugin) sendCommand(ch govppapi.Channel, command string) ([]byte, error) {
 	r := &vpe.CliInband{
 		Length: uint32(len(command)),
 		Cmd:    []byte(command),
