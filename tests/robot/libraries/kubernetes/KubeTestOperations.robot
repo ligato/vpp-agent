@@ -6,7 +6,7 @@ Resource    ../SshCommons.robot
 Verify Pod Connectivity - Unix Ping
     [Documentation]    Execute ping on the connection provided
     [Arguments]    ${source_pod_name}    ${destination_ip}     ${count}=5
-    ${stdout} =    Run Command In Pod    ping -c ${count} ${destination_ip}    ${source_pod_name}
+    ${stdout} =    Run Command In Pod    ping -c ${count} -s 1400 ${destination_ip}    ${source_pod_name}
     BuiltIn.Log Many    ${source_pod_name}    ${destination_ip}     ${count}
     BuiltIn.Should Contain    ${stdout}    ${count} received, 0% packet loss
 
@@ -59,7 +59,7 @@ Get Vswitch Pod Name
 Restart Topology With Startup Sequence
     [Arguments]    @{sequence}
     BuiltIn.Log Many    @{sequence}
-    Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
+    Cleanup_Restarts_Deployment_On_Cluster    ${testbed_connection}
     :FOR    ${item}    IN    @{sequence}
     \    Run Keyword If    "${item}"=="etcd"       KubeEnv.Deploy_Etcd_And_Verify_Running    ${testbed_connection}
     \    Run Keyword If    "${item}"=="vswitch"    KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
