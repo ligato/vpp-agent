@@ -38,6 +38,11 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Chan
 		&memif.MemifDeleteReply{},
 		&memif.MemifDump{},
 		&memif.MemifDetails{},
+		&memif.MemifSocketFilenameDump{},
+		&memif.MemifSocketFilenameDetails{},
+
+		&interfaces.CreateLoopback{},
+		&interfaces.CreateLoopbackReply{},
 
 		&vxlan.VxlanAddDelTunnel{},
 		&vxlan.VxlanAddDelTunnelReply{},
@@ -61,6 +66,8 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Chan
 		&tapv2.TapDeleteV2{},
 		&tapv2.TapDeleteV2Reply{},
 
+		&interfaces.SwInterfaceDump{},
+		&interfaces.SwInterfaceDetails{},
 		&interfaces.SwInterfaceEvent{},
 		&interfaces.SwInterfaceSetFlags{},
 		&interfaces.SwInterfaceSetFlagsReply{},
@@ -68,13 +75,18 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Chan
 		&interfaces.SwInterfaceAddDelAddressReply{},
 		&interfaces.SwInterfaceSetMacAddress{},
 		&interfaces.SwInterfaceSetMacAddressReply{},
-		&interfaces.SwInterfaceDetails{},
 		&interfaces.SwInterfaceSetTable{},
 		&interfaces.SwInterfaceSetTableReply{},
 		&interfaces.SwInterfaceGetTable{},
 		&interfaces.SwInterfaceGetTableReply{},
 		&interfaces.SwInterfaceSetUnnumbered{},
 		&interfaces.SwInterfaceSetUnnumberedReply{},
+		&interfaces.SwInterfaceTagAddDel{},
+		&interfaces.SwInterfaceTagAddDelReply{},
+		&interfaces.SwInterfaceSetMtu{},
+		&interfaces.SwInterfaceSetMtuReply{},
+		&interfaces.HwInterfaceSetMtu{},
+		&interfaces.HwInterfaceSetMtuReply{},
 
 		&ip.IPAddressDump{},
 		&ip.IPAddressDetails{},
@@ -82,6 +94,8 @@ func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Chan
 		&ip.IPFibDetails{},
 		&ip.IPTableAddDel{},
 		&ip.IPTableAddDelReply{},
+		&ip.IPContainerProxyAddDel{},
+		&ip.IPContainerProxyAddDelReply{},
 	}
 	err := vppChan.CheckMessageCompatibility(msgs...)
 	if err != nil {
