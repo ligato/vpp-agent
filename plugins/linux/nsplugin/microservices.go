@@ -230,7 +230,7 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer func() {
 		plugin.wg.Done()
-		plugin.log.Debugf("trackMicroservices done")
+		plugin.log.Debugf("Microservice tracking ended")
 	}()
 
 	msCtx := &MicroserviceCtx{
