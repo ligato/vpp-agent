@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -75,8 +76,8 @@ type NatConfigurator struct {
 	notDisabledIfs map[string]*nat.Nat44Global_NatInterface
 
 	// VPP channels
-	vppChan     vppcalls.VPPChannel
-	vppDumpChan vppcalls.VPPChannel
+	vppChan     govppapi.Channel
+	vppDumpChan govppapi.Channel
 
 	stopwatch *measure.Stopwatch
 }

@@ -228,7 +228,10 @@ func (plugin *NsHandler) processTerminatedMicroservice(nsMgmtCtx *NamespaceMgmtC
 // trackMicroservices is running in the background and maintains a map of microservice labels to container info.
 func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 	plugin.wg.Add(1)
-	defer plugin.wg.Done()
+	defer func() {
+		plugin.wg.Done()
+		plugin.log.Debugf("Microservice tracking ended")
+	}()
 
 	msCtx := &MicroserviceCtx{
 		nsMgmtCtx: NewNamespaceMgmtCtx(),
@@ -264,7 +267,11 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 			}
 			clientOk = true
 
-			plugin.microserviceChan <- msCtx
+			select {
+			case plugin.microserviceChan <- msCtx:
+			case <-plugin.ctx.Done():
+				return
+			}
 
 			// Sleep before another refresh.
 			timer.Reset(dockerRefreshPeriod)

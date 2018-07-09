@@ -19,12 +19,13 @@ import (
 	"net"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf, multicastIf uint32, isAdd bool, vppChan VPPChannel,
+func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf, multicastIf uint32, isAdd bool, vppChan govppapi.Channel,
 	stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(vxlan.VxlanAddDelTunnel{}).LogTimeEntry(time.Since(t))
@@ -72,7 +73,7 @@ func addDelVxlanTunnel(iface *intf.Interfaces_Interface_Vxlan, encVrf, multicast
 }
 
 // AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1.
-func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf, multicastIf uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, encapVrf, multicastIf uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	swIfIdx, err := addDelVxlanTunnel(vxlanIntf, encapVrf, multicastIf, true, vppChan, stopwatch)
 	if err != nil {
 		return 0, err
@@ -81,7 +82,7 @@ func AddVxlanTunnel(ifName string, vxlanIntf *intf.Interfaces_Interface_Vxlan, e
 }
 
 // DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0.
-func DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *intf.Interfaces_Interface_Vxlan, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	if _, err := addDelVxlanTunnel(vxlanIntf, 0, 0, false, vppChan, stopwatch); err != nil {
 		return err
 	}

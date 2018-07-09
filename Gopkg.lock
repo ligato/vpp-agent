@@ -10,10 +10,11 @@
     "adapter/vppapiclient",
     "api",
     "cmd/binapi-generator",
+    "codec",
     "core",
     "core/bin_api/vpe"
   ]
-  revision = "5276b9439d0f902e125a5113bfa4f1b6622aea18"
+  revision = "f1bef4a3c66f4408afdeb64cda62ccd8562d0fc6"
 
 [[projects]]
   branch = "master"
@@ -654,6 +655,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3e0f2912990504b7f7df546649b2dd974923d1edde19b114f4bd5b0aad9fcd3c"
+  inputs-digest = "9f13feb64c4899ecea85bb8520776de4771e3a8eec132426901132e2e636c5d5"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -173,7 +173,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 	plugin.clearMapping()
 
 	// Get all FIB entries configured on the VPP
-	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.syncVppChannel, plugin.stopwatch)
+	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.syncChannel, plugin.stopwatch)
 	if err != nil {
 		return err
 	}

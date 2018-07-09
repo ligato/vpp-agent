@@ -19,13 +19,14 @@ import (
 	"net"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
-func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.BdIPMacAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -71,7 +72,7 @@ func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string, vppChan V
 }
 
 // VppAddArpTerminationTableEntry creates ARP termination entry for bridge domain.
-func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Info("Adding ARP termination entry")
 
 	err := callBdIPMacAddDel(true, bdID, mac, ip, vppChan, stopwatch)
@@ -86,7 +87,7 @@ func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string, log logg
 }
 
 // VppRemoveArpTerminationTableEntry removes ARP termination entry from bridge domain
-func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	log.Info("Removing ARP termination entry")
 
 	err := callBdIPMacAddDel(false, bdID, mac, ip, vppChan, stopwatch)

@@ -18,12 +18,13 @@ import (
 	"fmt"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
 // AddLoopbackInterface calls CreateLoopback bin API.
-func AddLoopbackInterface(ifName string, vppChan VPPChannel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func AddLoopbackInterface(ifName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.CreateLoopback{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -42,7 +43,7 @@ func AddLoopbackInterface(ifName string, vppChan VPPChannel, stopwatch *measure.
 }
 
 // DeleteLoopbackInterface calls DeleteLoopback bin API.
-func DeleteLoopbackInterface(ifName string, idx uint32, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
+func DeleteLoopbackInterface(ifName string, idx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(interfaces.DeleteLoopback{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

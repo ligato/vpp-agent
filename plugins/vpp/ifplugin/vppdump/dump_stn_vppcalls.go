@@ -17,13 +17,13 @@ package vppdump
 import (
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
 // DumpStnRules returns a list of all STN rules configured on the VPP
-func DumpStnRules(vppChan vppcalls.VPPChannel, stopwatch *measure.Stopwatch) (rules []*stn.StnRulesDetails, err error) {
+func DumpStnRules(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (rules []*stn.StnRulesDetails, err error) {
 	defer func(t time.Time) {
 		stopwatch.TimeLog(stn.StnRulesDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

@@ -20,7 +20,7 @@ import (
 
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
+	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -34,7 +34,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater, chan govppapi.Message, chan *intf.InterfaceNotification, error) {
+func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater,
+	chan govppapi.Message, chan *intf.InterfaceNotification, error) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -60,7 +61,7 @@ func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIf
 
 	// Create connection
 	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
-	connection, err := core.Connect(mockCtx.MockVpp)
+	connection, err := govpp.Connect(mockCtx.MockVpp)
 
 	if err != nil {
 		return nil, nil, nil, nil, nil, err

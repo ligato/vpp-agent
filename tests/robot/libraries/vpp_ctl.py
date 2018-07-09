@@ -9,5 +9,3 @@ def create_interfaces_json_from_list(interfaces):
     return ints_json
 
 
-
-#create_interfaces_json_from_list(["int1","int2","bvi123","bvi_int5","int6","bvi_"])

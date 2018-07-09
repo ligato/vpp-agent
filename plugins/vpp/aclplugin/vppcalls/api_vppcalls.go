@@ -15,6 +15,7 @@
 package vppcalls
 
 import (
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -76,12 +77,12 @@ type AclVppAPI interface {
 // aclVppHandler is accessor for acl-related vppcalls methods
 type aclVppHandler struct {
 	stopwatch    *measure.Stopwatch
-	callsChannel VPPChannel
-	dumpChannel  VPPChannel
+	callsChannel govppapi.Channel
+	dumpChannel  govppapi.Channel
 }
 
 // NewAclVppHandler creates new instance of acl vppcalls handler
-func NewAclVppHandler(callsChan, dumpChan VPPChannel, stopwatch *measure.Stopwatch) *aclVppHandler {
+func NewAclVppHandler(callsChan, dumpChan govppapi.Channel, stopwatch *measure.Stopwatch) *aclVppHandler {
 	return &aclVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
