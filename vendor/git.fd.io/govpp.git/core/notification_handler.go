@@ -19,10 +19,12 @@ import (
 	"reflect"
 
 	logger "github.com/sirupsen/logrus"
+
+	"git.fd.io/govpp.git/api"
 )
 
 // processNotifSubscribeRequest processes a notification subscribe request.
-func (c *Connection) processNotifSubscribeRequest(ch *channel, req *NotifSubscribeRequest) error {
+func (c *Connection) processNotifSubscribeRequest(ch *api.Channel, req *api.NotifSubscribeRequest) error {
 	var err error
 
 	// subscribe / unsubscribe
@@ -47,7 +49,7 @@ func (c *Connection) processNotifSubscribeRequest(ch *channel, req *NotifSubscri
 }
 
 // addNotifSubscription adds the notification subscription into the subscriptions map of the connection.
-func (c *Connection) addNotifSubscription(subs *NotifSubscription) error {
+func (c *Connection) addNotifSubscription(subs *api.NotifSubscription) error {
 	// get message ID of the notification message
 	msgID, err := c.getSubscriptionMessageID(subs)
 	if err != nil {
@@ -69,7 +71,7 @@ func (c *Connection) addNotifSubscription(subs *NotifSubscription) error {
 }
 
 // removeNotifSubscription removes the notification subscription from the subscriptions map of the connection.
-func (c *Connection) removeNotifSubscription(subs *NotifSubscription) error {
+func (c *Connection) removeNotifSubscription(subs *api.NotifSubscription) error {
 	// get message ID of the notification message
 	msgID, err := c.getSubscriptionMessageID(subs)
 	if err != nil {
@@ -164,7 +166,7 @@ func (c *Connection) sendNotifications(msgID uint16, data []byte) {
 }
 
 // getSubscriptionMessageID returns ID of the message the subscription is tied to.
-func (c *Connection) getSubscriptionMessageID(subs *NotifSubscription) (uint16, error) {
+func (c *Connection) getSubscriptionMessageID(subs *api.NotifSubscription) (uint16, error) {
 	msg := subs.MsgFactory()
 	msgID, err := c.GetMessageID(msg)
 

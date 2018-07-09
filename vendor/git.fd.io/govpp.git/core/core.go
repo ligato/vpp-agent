@@ -27,7 +27,6 @@ import (
 
 	"git.fd.io/govpp.git/adapter"
 	"git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/codec"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 )
 
@@ -72,16 +71,16 @@ type ConnectionEvent struct {
 type Connection struct {
 	vpp       adapter.VppAdapter // VPP adapter
 	connected uint32             // non-zero if the adapter is connected to VPP
-	codec     *codec.MsgCodec    // message codec
+	codec     *MsgCodec          // message codec
 
 	msgIDsLock sync.RWMutex      // lock for the message IDs map
 	msgIDs     map[string]uint16 // map of message IDs indexed by message name + CRC
 
-	channelsLock sync.RWMutex        // lock for the channels map
-	channels     map[uint16]*channel // map of all API channels indexed by the channel ID
+	channelsLock sync.RWMutex            // lock for the channels map
+	channels     map[uint16]*api.Channel // map of all API channels indexed by the channel ID
 
-	notifSubscriptionsLock sync.RWMutex                    // lock for the subscriptions map
-	notifSubscriptions     map[uint16][]*NotifSubscription // map od all notification subscriptions indexed by message ID
+	notifSubscriptionsLock sync.RWMutex                        // lock for the subscriptions map
+	notifSubscriptions     map[uint16][]*api.NotifSubscription // map od all notification subscriptions indexed by message ID
 
 	maxChannelID uint32 // maximum used channel ID (the real limit is 2^15, 32-bit is used for atomic operations)
 	pingReqID    uint16 // ID if the ControlPing message
@@ -198,10 +197,10 @@ func newConnection(vppAdapter adapter.VppAdapter) (*Connection, error) {
 
 	conn = &Connection{
 		vpp:                vppAdapter,
-		codec:              &codec.MsgCodec{},
-		channels:           make(map[uint16]*channel),
+		codec:              &MsgCodec{},
+		channels:           make(map[uint16]*api.Channel),
 		msgIDs:             make(map[string]uint16),
-		notifSubscriptions: make(map[uint16][]*NotifSubscription),
+		notifSubscriptions: make(map[uint16][]*api.NotifSubscription),
 	}
 
 	conn.vpp.SetMsgCallback(msgCallback)
@@ -291,18 +290,18 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 
 		// try draining probe replies from previous request before sending next one
 		select {
-		case <-ch.GetReplyChannel():
+		case <-ch.ReplyChan:
 			log.Debug("drained old probe reply from reply channel")
 		default:
 		}
 
 		// send the control ping request
-		ch.GetRequestChannel() <- &VppRequest{Message: msgControlPing}
+		ch.ReqChan <- &api.VppRequest{Message: msgControlPing}
 
 		for {
 			// expect response within timeout period
 			select {
-			case vppReply := <-ch.GetReplyChannel():
+			case vppReply := <-ch.ReplyChan:
 				err = vppReply.Error
 
 			case <-time.After(healthCheckReplyTimeout):
@@ -352,7 +351,7 @@ func (c *Connection) healthCheckLoop(connChan chan ConnectionEvent) {
 
 // NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 // It uses default buffer sizes for the request and reply Go channels.
-func (c *Connection) NewAPIChannel() (Channel, error) {
+func (c *Connection) NewAPIChannel() (*api.Channel, error) {
 	if c == nil {
 		return nil, errors.New("nil connection passed in")
 	}
@@ -361,20 +360,20 @@ func (c *Connection) NewAPIChannel() (Channel, error) {
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
 // It allows to specify custom buffer sizes for the request and reply Go channels.
-func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (Channel, error) {
+func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (*api.Channel, error) {
 	if c == nil {
 		return nil, errors.New("nil connection passed in")
 	}
 
 	chID := uint16(atomic.AddUint32(&c.maxChannelID, 1) & 0x7fff)
-	ch := NewChannelInternal(chID)
+	ch := api.NewChannelInternal(chID)
 	ch.MsgDecoder = c.codec
 	ch.MsgIdentifier = c
 
 	// create the communication channels
-	ch.ReqChan = make(chan *VppRequest, reqChanBufSize)
-	ch.ReplyChan = make(chan *VppReply, replyChanBufSize)
-	ch.NotifSubsChan = make(chan *NotifSubscribeRequest, reqChanBufSize)
+	ch.ReqChan = make(chan *api.VppRequest, reqChanBufSize)
+	ch.ReplyChan = make(chan *api.VppReply, replyChanBufSize)
+	ch.NotifSubsChan = make(chan *api.NotifSubscribeRequest, reqChanBufSize)
 	ch.NotifSubsReplyChan = make(chan error, replyChanBufSize)
 
 	// store API channel within the client
@@ -389,13 +388,13 @@ func (c *Connection) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int)
 }
 
 // releaseAPIChannel releases API channel that needs to be closed.
-func (c *Connection) releaseAPIChannel(ch Channel) {
+func (c *Connection) releaseAPIChannel(ch *api.Channel) {
 	log.WithFields(logger.Fields{
-		"ID": ch.GetID(),
+		"ID": ch.ID,
 	}).Debug("API channel closed.")
 
 	// delete the channel from channels map
 	c.channelsLock.Lock()
-	delete(c.channels, ch.GetID())
+	delete(c.channels, ch.ID)
 	c.channelsLock.Unlock()
 }

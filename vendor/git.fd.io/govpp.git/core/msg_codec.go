@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package codec
+package core
 
 import (
 	"bytes"
@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"git.fd.io/govpp.git/api"
 	"github.com/lunixbochs/struc"
+	logger "github.com/sirupsen/logrus"
+
+	"git.fd.io/govpp.git/api"
 )
 
 // MsgCodec provides encoding and decoding functionality of `api.Message` structs into/from
@@ -80,14 +82,22 @@ func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
 	}
 	err := struc.Pack(buf, header)
 	if err != nil {
-		return nil, fmt.Errorf("unable to encode message: header: %v, error %v", header, err)
+		log.WithFields(logger.Fields{
+			"error":  err,
+			"header": header,
+		}).Error("Unable to encode the message header: ", err)
+		return nil, fmt.Errorf("unable to encode the message header: %v", err)
 	}
 
 	// encode message content
 	if reflect.Indirect(reflect.ValueOf(msg)).NumField() > 0 {
 		err := struc.Pack(buf, msg)
 		if err != nil {
-			return nil, fmt.Errorf("unable to encode message: header %v, error %v", header, err)
+			log.WithFields(logger.Fields{
+				"error":   err,
+				"message": msg,
+			}).Error("Unable to encode the message: ", err)
+			return nil, fmt.Errorf("unable to encode the message: %v", err)
 		}
 	}
 
@@ -117,7 +127,11 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 	// decode message header
 	err := struc.Unpack(buf, header)
 	if err != nil {
-		return fmt.Errorf("unable to decode message: data %v, error %v", data, err)
+		log.WithFields(logger.Fields{
+			"error": err,
+			"data":  data,
+		}).Error("Unable to decode header of the message.")
+		return fmt.Errorf("unable to decode the message header: %v", err)
 	}
 
 	// get rid of the message header
@@ -134,7 +148,11 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 	// decode message content
 	err = struc.Unpack(buf, msg)
 	if err != nil {
-		return fmt.Errorf("unable to decode message: data %v, error %v", data, err)
+		log.WithFields(logger.Fields{
+			"error": err,
+			"data":  buf,
+		}).Error("Unable to decode the message.")
+		return fmt.Errorf("unable to decode the message: %v", err)
 	}
 
 	return nil
