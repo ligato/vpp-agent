@@ -5,22 +5,19 @@ package stn
 import "reflect"
 
 var Types = map[string]reflect.Type{
-	"StnAddDelRule": reflect.TypeOf((*StnAddDelRule)(nil)).Elem(),
+	"StnAddDelRule":      reflect.TypeOf((*StnAddDelRule)(nil)).Elem(),
 	"StnAddDelRuleReply": reflect.TypeOf((*StnAddDelRuleReply)(nil)).Elem(),
-	"StnRulesDetails": reflect.TypeOf((*StnRulesDetails)(nil)).Elem(),
-	"StnRulesDump": reflect.TypeOf((*StnRulesDump)(nil)).Elem(),
+	"StnRulesDetails":    reflect.TypeOf((*StnRulesDetails)(nil)).Elem(),
+	"StnRulesDump":       reflect.TypeOf((*StnRulesDump)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
-	"NewStnAddDelRule": reflect.ValueOf(NewStnAddDelRule),
+	"NewStnAddDelRule":      reflect.ValueOf(NewStnAddDelRule),
 	"NewStnAddDelRuleReply": reflect.ValueOf(NewStnAddDelRuleReply),
-	"NewStnRulesDetails": reflect.ValueOf(NewStnRulesDetails),
-	"NewStnRulesDump": reflect.ValueOf(NewStnRulesDump),
+	"NewStnRulesDetails":    reflect.ValueOf(NewStnRulesDetails),
+	"NewStnRulesDump":       reflect.ValueOf(NewStnRulesDump),
 }
 
-var Variables = map[string]reflect.Value{
-}
+var Variables = map[string]reflect.Value{}
 
-var Consts = map[string]reflect.Value{
-}
-
+var Consts = map[string]reflect.Value{}

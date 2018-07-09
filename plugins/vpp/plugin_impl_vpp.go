@@ -19,6 +19,7 @@ import (
 	"os"
 	"sync"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -45,7 +46,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/namsral/flag"
-	"git.fd.io/govpp.git/api"
 )
 
 // vpp-plugin specific flags
@@ -110,7 +110,7 @@ type Plugin struct {
 	// Channels (watch, notification, ...) which should be closed
 	ifStateChan       chan *intf.InterfaceNotification
 	ifIdxWatchCh      chan ifaceidx.SwIfIdxDto
-	ifVppNotifChan    chan api.Message
+	ifVppNotifChan    chan govppapi.Message
 	bdStateChan       chan *l2plugin.BridgeDomainStateNotification
 	bdIdxWatchCh      chan l2idx.BdChangeDto
 	bdVppNotifChan    chan l2plugin.BridgeDomainStateMessage
@@ -420,7 +420,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 
 	// Interface configurator
-	plugin.ifVppNotifChan = make(chan api.Message, 100)
+	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
 		return err

@@ -22,11 +22,10 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"git.fd.io/govpp.git/api"
 )
 
 // BridgeDomainMessages is list of used VPP messages for compatibility check
-var BridgeDomainMessages = []api.Message{
+var BridgeDomainMessages = []govppapi.Message{
 	&l2ba.BridgeDomainAddDel{},
 	&l2ba.BridgeDomainAddDelReply{},
 	&l2ba.BdIPMacAddDel{},

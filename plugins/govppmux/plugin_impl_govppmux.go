@@ -116,7 +116,7 @@ func (plugin *GOVPPPlugin) Init() error {
 		plugin.replyTimeout = cfg.ReplyTimeout
 		plugin.reconnectResync = cfg.ReconnectResync
 		shmPrefix = cfg.ShmPrefix
-		plugin.Log.Debug("Setting govppapi parameters", cfg)
+		plugin.Log.Debug("Setting govpp parameters", cfg)
 	}
 
 	if plugin.vppAdapter == nil {
@@ -144,7 +144,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
 	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
-	plugin.Log.Debug("govppapi connect success ", plugin.vppConn)
+	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
 
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
@@ -167,7 +167,7 @@ func (plugin *GOVPPPlugin) Close() error {
 	return nil
 }
 
-// NewAPIChannel returns a new API channel for communication with VPP via govppapi core.
+// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 // It uses default buffer sizes for the request and reply Go channels.
 //
 // Example of binary API call from some plugin using GOVPP:
@@ -184,7 +184,7 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
 	return ch, nil
 }
 
-// NewAPIChannelBuffered returns a new API channel for communication with VPP via govppapi core.
+// NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
 // It allows to specify custom buffer sizes for the request and reply Go channels.
 //
 // Example of binary API call from some plugin using GOVPP:

@@ -22,11 +22,10 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"git.fd.io/govpp.git/api"
 )
 
 // ProxyArpMessages is list of used VPP messages for compatibility check
-var ProxyArpMessages = []api.Message{
+var ProxyArpMessages = []govppapi.Message{
 	&ip.ProxyArpIntfcEnableDisable{},
 	&ip.ProxyArpIntfcEnableDisableReply{},
 	&ip.ProxyArpAddDel{},

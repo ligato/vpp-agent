@@ -21,11 +21,10 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"git.fd.io/govpp.git/api"
 )
 
 // XConnectMessages is list of used VPP messages for compatibility check
-var XConnectMessages = []api.Message{
+var XConnectMessages = []govppapi.Message{
 	&l2ba.L2XconnectDump{},
 	&l2ba.L2XconnectDetails{},
 	&l2ba.SwInterfaceSetL2Xconnect{},

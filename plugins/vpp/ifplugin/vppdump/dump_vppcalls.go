@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"git.fd.io/govpp.git/api"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
@@ -32,7 +33,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifnb "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"git.fd.io/govpp.git/api"
 )
 
 // Default VPP MTU value

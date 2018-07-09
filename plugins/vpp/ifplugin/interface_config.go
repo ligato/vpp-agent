@@ -41,7 +41,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"git.fd.io/govpp.git/api"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -70,13 +69,13 @@ type InterfaceConfigurator struct {
 	vppCh govppapi.Channel
 
 	// Notification channels
-	NotifChan chan api.Message // to publish SwInterfaceDetails to interface_state.go
-	DhcpChan  chan api.Message // channel to receive DHCP notifications
+	NotifChan chan govppapi.Message // to publish SwInterfaceDetails to interface_state.go
+	DhcpChan  chan govppapi.Message // channel to receive DHCP notifications
 }
 
 // Init members (channels...) and start go routines
 func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, linux interface{},
-	notifChan chan api.Message, defaultMtu uint32, enableStopwatch bool) (err error) {
+	notifChan chan govppapi.Message, defaultMtu uint32, enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Interface configurator")
@@ -111,7 +110,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	plugin.afPacketConfigurator.Init(plugin.log, plugin.vppCh, plugin.linux, plugin.swIfIndexes, plugin.stopwatch)
 
 	// DHCP channel
-	plugin.DhcpChan = make(chan api.Message, 1)
+	plugin.DhcpChan = make(chan govppapi.Message, 1)
 	if _, err := plugin.vppCh.SubscribeNotification(plugin.DhcpChan, dhcp.NewDhcpComplEvent); err != nil {
 		return err
 	}

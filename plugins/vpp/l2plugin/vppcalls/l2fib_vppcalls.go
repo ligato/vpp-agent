@@ -23,11 +23,10 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"git.fd.io/govpp.git/api"
 )
 
 // L2FibMessages is list of used VPP messages for compatibility check
-var L2FibMessages = []api.Message{
+var L2FibMessages = []govppapi.Message{
 	&l2ba.BridgeDomainDump{},
 	&l2ba.BridgeDomainDetails{},
 	&l2ba.L2FibTableDump{},

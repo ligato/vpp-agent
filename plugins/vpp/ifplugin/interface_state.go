@@ -24,7 +24,6 @@ import (
 
 	"bytes"
 
-	"git.fd.io/govpp.git/api"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
@@ -79,7 +78,7 @@ type InterfaceStateUpdater struct {
 	vppNotifSubs            *govppapi.NotifSubscription
 	vppCountersSubs         *govppapi.NotifSubscription
 	vppCombinedCountersSubs *govppapi.NotifSubscription
-	notifChan               chan api.Message
+	notifChan               chan govppapi.Message
 	swIdxChan               chan ifaceidx.SwIfIdxDto
 
 	cancel context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
@@ -88,7 +87,7 @@ type InterfaceStateUpdater struct {
 
 // Init members (channels, maps...) and start go routines
 func (plugin *InterfaceStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context,
-	swIfIndexes ifaceidx.SwIfIndex, notifChan chan api.Message,
+	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-if-state")

@@ -37,8 +37,8 @@ type AFPacketConfigurator struct {
 	afPacketByName      map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
 	linuxHostInterfaces map[string]struct{}        // a set of available host (Linux) interfaces
 
-	vppCh     govppapi.Channel // govpp channel used by InterfaceConfigurator
-	stopwatch *measure.Stopwatch  // from InterfaceConfigurator
+	vppCh     govppapi.Channel   // govpp channel used by InterfaceConfigurator
+	stopwatch *measure.Stopwatch // from InterfaceConfigurator
 }
 
 // AfPacketConfig wraps the proto formatted configuration of an Afpacket interface together with a flag

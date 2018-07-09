@@ -24,10 +24,9 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"git.fd.io/govpp.git/api"
 )
 
-var RouteMessages = []api.Message{
+var RouteMessages = []govppapi.Message{
 	&ip.IPAddDelRoute{},
 	&ip.IPAddDelRouteReply{},
 	&ip.IPFibDump{},

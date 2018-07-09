@@ -19,7 +19,7 @@ import (
 	"net"
 	"testing"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/sr"
@@ -356,14 +356,14 @@ func TestDeleteLocalSID(t *testing.T) {
 		Name      string
 		Fail      bool
 		Sid       net.IP
-		MockReply api.Message
-		Verify    func(error, api.Message)
+		MockReply govppapi.Message
+		Verify    func(error, govppapi.Message)
 	}{
 		{
 			Name:      "simple delete of local sid",
 			Sid:       sidA,
 			MockReply: &sr.SrLocalsidAddDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrLocalsidAddDel{
 					IsDel:        1,
@@ -375,7 +375,7 @@ func TestDeleteLocalSID(t *testing.T) {
 			Name:      "failure propagation from VPP",
 			Sid:       sidA,
 			MockReply: &sr.SrLocalsidAddDelReply{Retval: 1},
-			Verify: func(err error, msg api.Message) {
+			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -409,14 +409,14 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 		Name      string
 		Fail      bool
 		Address   string
-		MockReply api.Message
-		Verify    func(error, api.Message)
+		MockReply govppapi.Message
+		Verify    func(error, govppapi.Message)
 	}{
 		{
 			Name:      "simple SetEncapsSourceAddress",
 			Address:   nextHop.String(),
 			MockReply: &sr.SrSetEncapSourceReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSetEncapSource{
 					EncapsSource: nextHop,
@@ -427,7 +427,7 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 			Name:      "invalid IP address",
 			Address:   invalidIPAddress,
 			MockReply: &sr.SrSetEncapSourceReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -435,7 +435,7 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 			Name:      "failure propagation from VPP",
 			Address:   nextHop.String(),
 			MockReply: &sr.SrSetEncapSourceReply{Retval: 1},
-			Verify: func(err error, msg api.Message) {
+			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -463,8 +463,8 @@ func TestAddPolicy(t *testing.T) {
 		BSID          net.IP
 		Policy        *srv6.Policy
 		PolicySegment *srv6.PolicySegment
-		MockReply     api.Message
-		Verify        func(error, api.Message)
+		MockReply     govppapi.Message
+		Verify        func(error, govppapi.Message)
 	}{
 		{
 			Name:          "simple SetAddPolicy",
@@ -472,7 +472,7 @@ func TestAddPolicy(t *testing.T) {
 			Policy:        policy(10, false, true),
 			PolicySegment: policySegment(1, sidA, sidB, sidC),
 			MockReply:     &sr.SrPolicyAddReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrPolicyAdd{
 					BsidAddr:  sidA,
@@ -494,7 +494,7 @@ func TestAddPolicy(t *testing.T) {
 				Segments: []string{sidA.String(), invalidIPAddress, sidC.String()},
 			},
 			MockReply: &sr.SrPolicyAddReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -504,7 +504,7 @@ func TestAddPolicy(t *testing.T) {
 			Policy:        policy(0, true, true),
 			PolicySegment: policySegment(1, sidA, sidB, sidC),
 			MockReply:     &sr.SrPolicyAddReply{Retval: 1},
-			Verify: func(err error, msg api.Message) {
+			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -529,14 +529,14 @@ func TestDeletePolicy(t *testing.T) {
 	cases := []struct {
 		Name      string
 		BSID      net.IP
-		MockReply api.Message
-		Verify    func(error, api.Message)
+		MockReply govppapi.Message
+		Verify    func(error, govppapi.Message)
 	}{
 		{
 			Name:      "simple delete of policy",
 			BSID:      sidA,
 			MockReply: &sr.SrPolicyDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrPolicyDel{
 					BsidAddr: sidA,
@@ -547,7 +547,7 @@ func TestDeletePolicy(t *testing.T) {
 			Name:      "failure propagation from VPP",
 			BSID:      sidA,
 			MockReply: &sr.SrPolicyDelReply{Retval: 1},
-			Verify: func(err error, msg api.Message) {
+			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -578,8 +578,8 @@ func TestAddPolicySegment(t *testing.T) {
 		BSID          net.IP
 		Policy        *srv6.Policy
 		PolicySegment *srv6.PolicySegment
-		MockReply     api.Message
-		Verify        func(error, api.Message)
+		MockReply     govppapi.Message
+		Verify        func(error, govppapi.Message)
 	}{
 		{
 			Name:          "simple addition of policy segment",
@@ -587,7 +587,7 @@ func TestAddPolicySegment(t *testing.T) {
 			Policy:        policy(10, false, true),
 			PolicySegment: policySegment(1, sidA, sidB, sidC),
 			MockReply:     &sr.SrPolicyModReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrPolicyMod{
 					BsidAddr:  sidA,
@@ -608,7 +608,7 @@ func TestAddPolicySegment(t *testing.T) {
 				Segments: []string{sidA.String(), invalidIPAddress, sidC.String()},
 			},
 			MockReply: &sr.SrPolicyModReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -618,7 +618,7 @@ func TestAddPolicySegment(t *testing.T) {
 			Policy:        policy(0, true, true),
 			PolicySegment: policySegment(1, sidA, sidB, sidC),
 			MockReply:     &sr.SrPolicyModReply{Retval: 1},
-			Verify: func(err error, msg api.Message) {
+			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -646,8 +646,8 @@ func TestDeletePolicySegment(t *testing.T) {
 		Policy        *srv6.Policy
 		PolicySegment *srv6.PolicySegment
 		SegmentIndex  uint32
-		MockReply     api.Message
-		Verify        func(error, api.Message)
+		MockReply     govppapi.Message
+		Verify        func(error, govppapi.Message)
 	}{
 		{
 			Name:          "simple deletion of policy segment",
@@ -656,7 +656,7 @@ func TestDeletePolicySegment(t *testing.T) {
 			PolicySegment: policySegment(1, sidA, sidB, sidC),
 			SegmentIndex:  111,
 			MockReply:     &sr.SrPolicyModReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrPolicyMod{
 					BsidAddr:  sidA,
@@ -679,7 +679,7 @@ func TestDeletePolicySegment(t *testing.T) {
 			},
 			SegmentIndex: 111,
 			MockReply:    &sr.SrPolicyModReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -690,7 +690,7 @@ func TestDeletePolicySegment(t *testing.T) {
 			PolicySegment: policySegment(1, sidA, sidB, sidC),
 			SegmentIndex:  111,
 			MockReply:     &sr.SrPolicyModReply{Retval: 1},
-			Verify: func(err error, msg api.Message) {
+			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -728,8 +728,8 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 	cases := []struct {
 		Name      string
 		Steering  *srv6.Steering
-		MockReply api.Message
-		Verify    func(error, api.Message)
+		MockReply govppapi.Message
+		Verify    func(error, govppapi.Message)
 	}{
 		{
 			Name: action + " of IPv6 L3 steering",
@@ -741,7 +741,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 			},
 			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
 					IsDel:       boolToUint(removal),
@@ -763,7 +763,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 			},
 			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
 					IsDel:       boolToUint(removal),
@@ -784,7 +784,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 			},
 			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(catchedMsg).To(Equal(&sr.SrSteeringAddDel{
 					IsDel:       boolToUint(removal),
@@ -804,7 +804,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 			},
 			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -817,7 +817,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 			},
 			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -831,7 +831,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 			},
 			MockReply: &sr.SrSteeringAddDelReply{},
-			Verify: func(err error, catchedMsg api.Message) {
+			Verify: func(err error, catchedMsg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
@@ -845,7 +845,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 				},
 			},
 			MockReply: &sr.SrSteeringAddDelReply{Retval: 1},
-			Verify: func(err error, msg api.Message) {
+			Verify: func(err error, msg govppapi.Message) {
 				Expect(err).Should(HaveOccurred())
 			},
 		},
