@@ -348,8 +348,9 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 	// NOTE: needs to be called after RegisterName, otherwise interface up/down notification won't map to a valid interface
 	if iface.Enabled {
 		if err := vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.stopwatch); err != nil {
-			l.Debugf("setting interface up failed: %v", err)
-			return err
+			l.Warnf("setting interface up failed: %v", err)
+			errs = append(errs, err)
+			return fmt.Errorf("found %d errors: %v", len(errs), errs)
 		}
 	}
 

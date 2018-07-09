@@ -15,20 +15,21 @@
 package nsplugin_test
 
 import (
+	"testing"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/tests/linuxmock"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 /* Linux namespace handler init and close */
 
 // Test init function
 func TestNsHandlerInit(t *testing.T) {
-	plugin, _, _, msChan, ifNotif := nsHandlerTestSetup(t)
-	defer nsHandlerTestTeardown(plugin, msChan, ifNotif)
+	plugin, _, _, _, _ := nsHandlerTestSetup(t)
+	defer nsHandlerTestTeardown(plugin)
 
 	// Base fields
 	Expect(plugin).ToNot(BeNil())
@@ -63,9 +64,6 @@ func nsHandlerTestSetup(t *testing.T) (*nsplugin.NsHandler, *linuxmock.IfNetlink
 	return plugin, ifHandler, sysHandler, msChan, ifNotif
 }
 
-func nsHandlerTestTeardown(plugin *nsplugin.NsHandler, msCHan chan *nsplugin.MicroserviceCtx, ifNotif chan *nsplugin.MicroserviceEvent) {
-	close(msCHan)
-	close(ifNotif)
-	err := plugin.Close()
-	Expect(err).To(BeNil())
+func nsHandlerTestTeardown(plugin *nsplugin.NsHandler) {
+	Expect(plugin.Close()).To(Succeed())
 }
