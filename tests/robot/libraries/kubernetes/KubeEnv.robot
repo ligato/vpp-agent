@@ -356,6 +356,9 @@ Log_Vswitch
     BuiltIn.Length_Should_Be    ${pod_list}    ${exp_nr_vswitch}
     : FOR    ${vswitch_pod}    IN    @{pod_list}
     \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default
+    \    Run Command In Pod    vppctl show int    ${vswitch_pod}
+    \    Run Command In Pod    vppctl show int address   ${vswitch_pod}
+    \    Run Command In Pod    vppctl show errors    ${vswitch_pod}
 
 Log_Pods_For_Debug
     [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${K8_CLUSTER_${CLUSTER_ID}_NODES}
@@ -364,11 +367,11 @@ Log_Pods_For_Debug
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
     Log_Etcd    ${ssh_session}
     Log_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
-    :FOR    ${vnf_index}    IN RANGE    ${vnf_count-1}
+    :FOR    ${vnf_index}    IN RANGE    ${vnf_count}
     \    Run Command In Pod    vppctl show int              vnf-vpp-${vnf_index}
     \    Run Command In Pod    vppctl show int address      vnf-vpp-${vnf_index}
     \    Run Command In Pod    vppctl show errors           vnf-vpp-${vnf_index}
-    :FOR    ${novpp_index}    IN    ${novpp_count-1}
+    :FOR    ${novpp_index}    IN RANGE    ${novpp_count}
     \    Run Command In Pod    ip link        novpp-${novpp_index}
     \    Run Command In Pod    ip address     novpp-${novpp_index}
     \    Run Command In Pod    ip neighbor    novpp-${novpp_index}

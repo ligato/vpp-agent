@@ -67,20 +67,23 @@ Restart Topology With Startup Sequence
     \    Run Keyword If    "${item}"=="vnf"        KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${1}
     \    Run Keyword If    "${item}"=="novpp"      KubeEnv.Deploy_NoVPP_Pods    ${testbed_connection}    ${1}
 
-Scale Ping Until Success - Unix Ping
-    [Arguments]    ${timeout}=6h
+Scale Verify Connectivity - Unix Ping
+    [Arguments]    ${timeout}=30m
     [Timeout]    ${timeout}
     BuiltIn.Log Many    ${topology}    ${timeout}
     :FOR    ${bridge_segment}    IN    @{topology}
-    \    Iterate_Over_VNFs    ${bridge_segment}    ${timeout}
+    \    Iterate_Over_VNFs    ${bridge_segment}
 
 Iterate_Over_VNFs
-    [Arguments]    ${bridge_segment}    ${timeout}    ${timeout}=1h
+    [Arguments]    ${bridge_segment}    ${timeout}=10m
+    [Timeout]    ${timeout}
+    BuiltIn.Log Many    ${bridge_segment}    ${timeout}
     :FOR    ${vnf_pod}    IN    @{bridge_segment["vnf"]}
-    \    Iterate_Over_Novpps    ${bridge_segment}    ${vnf_pod}    ${timeout}
+    \    Iterate_Over_Novpps    ${bridge_segment}    ${vnf_pod}
 
 Iterate_Over_Novpps
     [Arguments]    ${bridge_segment}    ${vnf_pod}    ${timeout}=10s
+    BuiltIn.Log Many    ${bridge_segment}    ${vnf_pod}    ${timeout}
     :FOR    ${novpp_pod}    IN    @{bridge_segment["novpp"]}
     \    Ping Until Success - Unix Ping    ${novpp_pod["name"]}    ${vnf_pod["ip"]}    ${timeout}
 
@@ -90,7 +93,7 @@ Wait For Reconnect - Unix Ping
     ${start_time} =    DateTime.Get Current Date    result_format=epoch
     Ping Until Success - Unix Ping    ${source_pod_Name}     ${destination_ip}    ${timeout}
     ${end_time} =    DateTime.Get Current Date    result_format=epoch
-    ${duration} =    Datetime.Subtract Date from Date    ${start_time}    ${end_time}   results_format=verbose
+    ${duration} =    Datetime.Subtract Date from Date    ${start_time}    ${end_time}   result_format=verbose
     Collections.Append To List    ${duration_list_name}    ${duration}
 
 Wait For Reconnect - VPP Ping
@@ -99,5 +102,29 @@ Wait For Reconnect - VPP Ping
     ${start_time} =    DateTime.Get Current Date    result_format=epoch
     Ping Until Success - VPP Ping    ${source_pod_Name}     ${destination_ip}    ${timeout}
     ${end_time} =    DateTime.Get Current Date    result_format=epoch
-    ${duration} =    Datetime.Subtract Date from Date    ${start_time}    ${end_time}   results_format=verbose
+    ${duration} =    Datetime.Subtract Date from Date    ${start_time}    ${end_time}   result_format=verbose
     Collections.Append To List    ${duration_list_name}    ${duration}
+
+Scale Pod Restart - Pod Deletion
+    [Arguments]    ${pod_type}
+    Log Many    ${topology}    ${pod_type}
+    :FOR    ${bridge_segment}    IN    @{topology}
+    \    Trigger Pod Restart - Pod Deletion    ${testbed_connection}    ${bridge_segment["${pod_type}"][0]["name"]}
+
+Scale Pod Restart - VPP SIGSEGV
+    [Arguments]    ${pod_type}
+    Log Many    ${topology}    ${pod_type}
+    :FOR    ${bridge_segment}    IN    @{topology}
+    \    Trigger Pod Restart - VPP SIGSEGV    ${testbed_connection}    ${bridge_segment["${pod_type}"][0]["name"]}
+
+Scale Wait For Reconnect - Unix Ping
+    [Arguments]    ${timeout_per_bridge}=120s
+    Log Many    ${topology}    ${timeout_per_bridge}
+    :FOR    ${bridge_segment}    IN    @{topology}
+    \    Ping Until Success - Unix Ping    ${bridge_segment["novpp"][0]["name"]}    ${bridge_segment["vnf"][0]["ip"]}    ${timeout_per_bridge}
+
+Scale Wait For Reconnect - VPP Ping
+    [Arguments]    ${timeout_per_bridge}=120s
+    Log Many    ${topology}    ${timeout_per_bridge}
+    :FOR    ${bridge_segment}    IN    @{topology}
+    \    Ping Until Success - VPP Ping    ${bridge_segment["vnf"][0]["name"]}    ${bridge_segment["novpp"][0]["ip"]}    ${timeout_per_bridge}
