@@ -76,7 +76,7 @@ type ACLConfigurator struct {
 
 // Init goroutines, channels and mappings.
 func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	stopwatch *measure.Stopwatch) (err error) {
+	enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-acl-plugin")
 	plugin.log.Infof("Initializing ACL configurator")
@@ -96,17 +96,17 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 		return err
 	}
 
+	// Configurator-wide stopwatch instance
+	plugin.stopwatch = measure.NewStopwatch("ACL-configurator", plugin.log)
+
 	// ACL binary api handler
-	plugin.aclHandler = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, stopwatch)
+	plugin.aclHandler = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch)
 
 	// Message compatibility
 	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.AclMessages...); err != nil {
 		plugin.log.Error(err)
 		return err
 	}
-
-	// Configurator-wide stopwatch instance
-	plugin.stopwatch = stopwatch
 
 	// Get VPP ACL plugin version
 	var aclVersion string

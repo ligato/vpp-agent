@@ -56,7 +56,6 @@ type ACLToInterface struct {
 }
 
 func (handler *aclVppHandler) DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLEntry, error) {
-
 	ruleIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with IP ruleData

@@ -15,9 +15,6 @@
 package aclplugin
 
 import (
-	"time"
-
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
@@ -25,9 +22,11 @@ import (
 func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	plugin.log.Debug("Resync ACLs started")
 	// Calculate and log acl resync.
-	defer func(t time.Time) {
-		plugin.stopwatch.TimeLog(acl_api.MacipACLDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
+	defer func() {
+		if plugin.stopwatch != nil {
+			plugin.stopwatch.PrintLog()
+		}
+	}()
 
 	// Re-initialize cache
 	plugin.clearMapping()

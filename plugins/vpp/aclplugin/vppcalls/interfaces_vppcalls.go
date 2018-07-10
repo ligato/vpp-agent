@@ -67,10 +67,11 @@ func (handler *aclVppHandler) SetMacIPAclToInterface(aclIndex uint32, ifIndices 
 		// Measure MacipACLInterfaceAddDel time
 		start := time.Now()
 
-		req := &acl_api.MacipACLInterfaceAddDel{}
-		req.ACLIndex = aclIndex
-		req.IsAdd = 1
-		req.SwIfIndex = ingressIfIdx
+		req := &acl_api.MacipACLInterfaceAddDel{
+			ACLIndex:  aclIndex,
+			IsAdd:     1,
+			SwIfIndex: ingressIfIdx,
+		}
 
 		reply := &acl_api.MacipACLInterfaceAddDelReply{}
 
@@ -97,10 +98,11 @@ func (handler *aclVppHandler) RemoveMacIPIngressACLFromInterfaces(removedACLInde
 		// Measure MacipACLInterfaceAddDel time.
 		start := time.Now()
 
-		req := &acl_api.MacipACLInterfaceAddDel{}
-		req.ACLIndex = removedACLIndex
-		req.SwIfIndex = ifIdx
-		req.IsAdd = 0
+		req := &acl_api.MacipACLInterfaceAddDel{
+			ACLIndex:  removedACLIndex,
+			SwIfIndex: ifIdx,
+			IsAdd:     0,
+		}
 
 		reply := &acl_api.MacipACLInterfaceAddDelReply{}
 
@@ -159,11 +161,12 @@ func (handler *aclVppHandler) requestSetACLToInterfaces(logicalReq *ACLInterface
 		// Measure ACLInterfaceSetACLList time
 		start := time.Now()
 
-		msg := &acl_api.ACLInterfaceSetACLList{}
-		msg.Acls = ACLs
-		msg.Count = uint8(len(ACLs))
-		msg.SwIfIndex = aclIfIdx
-		msg.NInput = nInput
+		msg := &acl_api.ACLInterfaceSetACLList{
+			Acls:      ACLs,
+			Count:     uint8(len(ACLs)),
+			SwIfIndex: aclIfIdx,
+			NInput:    nInput,
+		}
 
 		reply := &acl_api.ACLInterfaceSetACLListReply{}
 		err = handler.callsChannel.SendRequest(msg).ReceiveReply(reply)
@@ -217,11 +220,12 @@ func (handler *aclVppHandler) requestRemoveInterfacesFromACL(logicalReq *ACLInte
 		// Measure ACLInterfaceSetACLList time
 		start := time.Now()
 
-		msg := &acl_api.ACLInterfaceSetACLList{}
-		msg.Acls = ACLs
-		msg.Count = uint8(len(ACLs))
-		msg.SwIfIndex = aclIfIdx
-		msg.NInput = nInput
+		msg := &acl_api.ACLInterfaceSetACLList{
+			Acls:      ACLs,
+			Count:     uint8(len(ACLs)),
+			SwIfIndex: aclIfIdx,
+			NInput:    nInput,
+		}
 
 		reply := &acl_api.ACLInterfaceSetACLListReply{}
 		err = handler.callsChannel.SendRequest(msg).ReceiveReply(reply)
