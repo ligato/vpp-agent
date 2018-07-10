@@ -27,7 +27,7 @@ Trigger Pod Restart - Pod Deletion
     BuiltIn.Log Many    ${ssh_session}    ${pod_name}    ${vswitch}
     ${stdout} =    Switch_And_Execute_Command    ${ssh_session}    kubectl delete pod ${pod_name}
     log    ${stdout}
-    Wait Until Keyword Succeeds    90sec    5sec    KubeEnv.Verify_Pod_Not_Terminating    ${ssh_session}    ${pod_name}
+    Wait Until Keyword Succeeds    20sec    1sec    KubeEnv.Verify_Pod_Not_Terminating    ${ssh_session}    ${pod_name}
     Run Keyword If    ${vswitch}    Get Vswitch Pod Name    ${ssh_session}
 
 Reconnect To Pod
@@ -83,3 +83,21 @@ Iterate_Over_Novpps
     [Arguments]    ${bridge_segment}    ${vnf_pod}    ${timeout}=10s
     :FOR    ${novpp_pod}    IN    @{bridge_segment["novpp"]}
     \    Ping Until Success - Unix Ping    ${novpp_pod["name"]}    ${vnf_pod["ip"]}    ${timeout}
+
+Wait For Reconnect - Unix Ping
+    [Arguments]    ${source_pod_Name}     ${destination_ip}    ${timeout}    ${duration_list_name}
+    BuiltIn.Log Many    ${source_pod_Name}     ${destination_ip}    ${timeout}
+    ${start_time} =    DateTime.Get Current Date    result_format=epoch
+    Ping Until Success - Unix Ping    ${source_pod_Name}     ${destination_ip}    ${timeout}
+    ${end_time} =    DateTime.Get Current Date    result_format=epoch
+    ${duration} =    Datetime.Subtract Date from Date    ${start_time}    ${end_time}   results_format=verbose
+    Collections.Append To List    ${duration_list_name}    ${duration}
+
+Wait For Reconnect - VPP Ping
+    [Arguments]    ${source_pod_Name}     ${destination_ip}    ${timeout}    ${duration_list_name}
+    BuiltIn.Log Many    ${source_pod_Name}     ${destination_ip}    ${timeout}
+    ${start_time} =    DateTime.Get Current Date    result_format=epoch
+    Ping Until Success - VPP Ping    ${source_pod_Name}     ${destination_ip}    ${timeout}
+    ${end_time} =    DateTime.Get Current Date    result_format=epoch
+    ${duration} =    Datetime.Subtract Date from Date    ${start_time}    ${end_time}   results_format=verbose
+    Collections.Append To List    ${duration_list_name}    ${duration}

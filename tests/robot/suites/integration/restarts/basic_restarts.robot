@@ -10,7 +10,12 @@ Suite Setup       Run Keywords
 ...    KubeSetup.Kubernetes Suite Setup    ${CLUSTER_ID}
 ...    AND    Restarts Suite Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
 Suite Teardown    Restarts Suite Teardown
-Test Teardown     Recreate Topology If Test Failed
+Test Setup        Run Keywords
+...           Set Test Variable    @{upgrade_durations}    @{EMPTY}
+...    AND    Set Test Variable    @{restart_durations}    @{EMPTY}
+Test Teardown     Run Keywords
+...           Log Many    ${upgrade_durations}    ${restart_durations}
+...    AND    Recreate Topology If Test Failed
 
 Documentation    Test suite for Kubernetes pod restarts using a single VNF pod
 ...    and a single non-VPP pod.
@@ -81,12 +86,12 @@ Basic restart scenario - VNF
 
     Ping Until Success - Unix Ping    ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    vnf-vpp-0
-    Ping Until Success - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
+    Wait For Reconnect - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s    duration_list_name=${upgrade_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
     Trigger Pod Restart - VPP SIGSEGV        ${vnf_pods[0]}
-    Ping Until Success - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
+    Wait For Reconnect - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s    duration_list_name=${restart_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
@@ -96,7 +101,7 @@ Basic restart scenario - noVPP
 
     Ping Until Success - Unix Ping    ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
+    Wait For Reconnect - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s    duration_list_name=${upgrade_durations}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}           ${novpp0_ip}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}         ${vnf0_ip}
 
@@ -107,12 +112,12 @@ Basic restart scenario - VSwitch
 
     Ping Until Success - Unix Ping    ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
+    Wait For Reconnect - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s    duration_list_name=${upgrade_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
+    Wait For Reconnect - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s    duration_list_name=${restart_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
@@ -124,13 +129,13 @@ Basic Restart Scenario - VSwitch and VNF
     Ping Until Success - Unix Ping    ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    vnf-vpp-0
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
+    Wait For Reconnect - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s    duration_list_name=${upgrade_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
     Trigger Pod Restart - VPP SIGSEGV        ${vnf_pods[0]}
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
+    Wait For Reconnect - Unix Ping           ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s    duration_list_name=${restart_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
@@ -142,13 +147,13 @@ Basic Restart Scenario - VSwitch and noVPP
     Ping Until Success - Unix Ping    ${novpp_pods[0]}    ${vnf0_ip}    timeout=120s
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
+    Wait For Reconnect - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s    duration_list_name=${upgrade_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
+    Wait For Reconnect - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s    duration_list_name=${restart_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
@@ -161,14 +166,14 @@ Basic Restart Scenario - VSwitch, noVPP and VNF
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    vnf-vpp-0
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
+    Wait For Reconnect - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s    duration_list_name=${upgrade_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
     Trigger Pod Restart - VPP SIGSEGV        ${vnf_pods[0]}
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
+    Wait For Reconnect - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s    duration_list_name=${restart_durations}
     Verify Pod Connectivity - Unix Ping      ${novpp_pods[0]}    ${vnf0_ip}
     Verify Pod Connectivity - VPP Ping       ${vnf_pods[0]}      ${novpp0_ip}
 
