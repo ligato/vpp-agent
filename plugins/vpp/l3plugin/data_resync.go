@@ -16,10 +16,8 @@ package l3plugin
 
 import (
 	"fmt"
-	"github.com/ligato/cn-infra/logging/measure"
-	l3ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
@@ -37,7 +35,7 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 	plugin.clearMapping()
 
 	// Retrieve VPP route configuration
-	vppRoutes, err := vppdump.DumpStaticRoutes(plugin.log, plugin.vppChan, measure.GetTimeLog(l3ba.IPFibDump{}, plugin.stopwatch))
+	vppRoutes, err := plugin.rtHandler.DumpStaticRoutes()
 	if err != nil {
 		return err
 	}

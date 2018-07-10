@@ -20,8 +20,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -74,9 +72,9 @@ const (
 )
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
-func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwatch *measure.Stopwatch) error {
+func (handler *routeHandler) vppAddDelRoute(route *Route, delete bool) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ip.IPAddDelRoute{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(ip.IPAddDelRoute{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &ip.IPAddDelRoute{}
@@ -124,7 +122,7 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 
 	// Send message
 	reply := &ip.IPAddDelRouteReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -134,12 +132,7 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 	return nil
 }
 
-// VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
-func VppAddRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	ifHandler, err := ifvppcalls.NewIfVppHandler(vppChan, logrus.DefaultLogger(), stopwatch) // TODO temp change
-	if err != nil {
-		return err
-	}
+func (handler *routeHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *Route) error {
 	if err := ifHandler.CreateVrfIfNeeded(route.VrfID); err != nil {
 		return err
 	}
@@ -148,10 +141,9 @@ func VppAddRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stop
 			return err
 		}
 	}
-	return vppAddDelRoute(route, vppChan, false, stopwatch)
+	return handler.vppAddDelRoute(route, false)
 }
 
-// VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
-func VppDelRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return vppAddDelRoute(route, vppChan, true, stopwatch)
+func (handler *routeHandler) VppDelRoute(route *Route) error {
+	return handler.vppAddDelRoute(route, true)
 }

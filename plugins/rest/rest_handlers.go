@@ -32,7 +32,7 @@ import (
 	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
-	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
+	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
@@ -191,7 +191,13 @@ func (plugin *Plugin) arpGetHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		defer ch.Close()
 
-		res, err := l3plugin.DumpArps(plugin.Log, ch, nil)
+		l3Handler, err := l3plugin.NewArpVppHandler(ch, plugin.Log, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error creating VPP handler: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		res, err := l3Handler.DumpArpEntries()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -218,7 +224,13 @@ func (plugin *Plugin) staticRoutesGetHandler(formatter *render.Render) http.Hand
 		}
 		defer ch.Close()
 
-		res, err := l3plugin.DumpStaticRoutes(plugin.Log, ch, nil)
+		l3Handler, err := l3plugin.NewRouteVppHandler(ch, plugin.Log, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error creating VPP handler: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		res, err := l3Handler.DumpStaticRoutes()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)

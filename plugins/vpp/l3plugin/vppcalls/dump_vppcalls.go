@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump
+package vppcalls
 
 import (
 	"bytes"
@@ -21,28 +21,21 @@ import (
 
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
+	"git.fd.io/govpp.git/examples/bin_api/ip"
 	"github.com/ligato/cn-infra/utils/addrs"
 	l3ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
-// DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) ([]*vppcalls.Route, error) {
+func (handler *routeHandler) DumpStaticRoutes() ([]*Route, error) {
 	// IPFibDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(ip.IPFibDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	var routes []*vppcalls.Route
+	var routes []*Route
 
 	// Dump IPv4 l3 FIB.
-	reqCtx := vppChan.SendMultiRequest(&l3ba.IPFibDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&l3ba.IPFibDump{})
 	for {
 		fibDetails := &l3ba.IPFibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -50,14 +43,13 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
 			return nil, err
 		}
 		if len(fibDetails.Path) > 0 && fibDetails.Path[0].IsDrop == 1 {
 			// skip drop routes, not supported by vpp-agent
 			continue
 		}
-		ipv4Route, err := dumpStaticRouteIPv4Details(fibDetails)
+		ipv4Route, err := handler.dumpStaticRouteIPv4Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +57,7 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 	}
 
 	// Dump IPv6 l3 FIB.
-	reqCtx = vppChan.SendMultiRequest(&l3ba.IP6FibDump{})
+	reqCtx = handler.callsChannel.SendMultiRequest(&l3ba.IP6FibDump{})
 	for {
 		fibDetails := &l3ba.IP6FibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -73,14 +65,13 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 			break // break out of the loop
 		}
 		if err != nil {
-			log.Error(err)
 			return nil, err
 		}
 		if len(fibDetails.Path) > 0 && fibDetails.Path[0].IsDrop == 1 {
 			// skip drop routes, not supported by vpp-agent
 			continue
 		}
-		ipv6Route, err := dumpStaticRouteIPv6Details(fibDetails)
+		ipv6Route, err := handler.dumpStaticRouteIPv6Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -90,16 +81,16 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 	return routes, nil
 }
 
-func dumpStaticRouteIPv4Details(fibDetails *l3ba.IPFibDetails) (*vppcalls.Route, error) {
-	return dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
+func (handler *routeHandler) dumpStaticRouteIPv4Details(fibDetails *l3ba.IPFibDetails) (*Route, error) {
+	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 }
 
-func dumpStaticRouteIPv6Details(fibDetails *l3ba.IP6FibDetails) (*vppcalls.Route, error) {
-	return dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
+func (handler *routeHandler) dumpStaticRouteIPv6Details(fibDetails *l3ba.IP6FibDetails) (*Route, error) {
+	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
 // dumpStaticRouteIPDetails processes static route details and returns a route object
-func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, path []l3ba.FibPath, ipv6 bool) (*vppcalls.Route, error) {
+func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, path []l3ba.FibPath, ipv6 bool) (*Route, error) {
 	// route details
 	var ipAddr string
 	if ipv6 {
@@ -108,8 +99,8 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(address[:4]).To4().String(), uint32(prefixLen))
 	}
 
-	rt := &vppcalls.Route{
-		Type: vppcalls.IntraVrf, // default
+	rt := &Route{
+		Type: IntraVrf, // default
 	}
 
 	// IP net
@@ -134,9 +125,9 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 
 		rt.NextHopAddr = nextHopAddr
 
-		if path[0].SwIfIndex == vppcalls.NextHopOutgoingIfUnset && path[0].TableID != tableID {
+		if path[0].SwIfIndex == NextHopOutgoingIfUnset && path[0].TableID != tableID {
 			// outgoing interface not specified and path table id not equal to route table id = inter-VRF route
-			rt.Type = vppcalls.InterVrf
+			rt.Type = InterVrf
 			rt.ViaVrfId = path[0].TableID
 		}
 
@@ -148,20 +139,16 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 	return rt, nil
 }
 
-// DumpArps dumps ARPs from VPP and fills them into the provided static route map.
-func DumpArps(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) ([]*vppcalls.ArpEntry, error) {
-	// IPFibDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+func (handler *arpVppHandler) DumpArpEntries() ([]*ArpEntry, error) {
+	// ArpDump time measurement
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(ip.IPFibDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	var arps []*vppcalls.ArpEntry
+	var arps []*ArpEntry
 
 	// Dump ARPs.
-	reqCtx := vppChan.SendMultiRequest(&l3ba.IPNeighborDump{
+	reqCtx := handler.callsChannel.SendMultiRequest(&l3ba.IPNeighborDump{
 		SwIfIndex: 0xffffffff,
 	})
 	for {
@@ -171,12 +158,12 @@ func DumpArps(log logging.Logger, vppChan govppapi.Channel, timeLog measure.Stop
 			break
 		}
 		if err != nil {
-			log.Error(err)
+			handler.log.Error(err)
 			return nil, err
 		}
 
 		var mac net.HardwareAddr = arpDetails.MacAddress
-		arp := &vppcalls.ArpEntry{
+		arp := &ArpEntry{
 			Interface:  arpDetails.SwIfIndex,
 			MacAddress: mac.String(),
 			Static:     uintToBool(arpDetails.IsStatic),
