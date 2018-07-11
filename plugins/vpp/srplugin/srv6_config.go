@@ -24,6 +24,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -40,13 +41,14 @@ import (
 // modelled by the proto file "../model/srv6/srv6.proto" and stored in ETCD under the key "/vnf-agent/{vnf-agent}/vpp/config/v1/srv6".
 type SRv6Configurator struct {
 	// injectable/public fields
-	Log         logging.Logger
-	GoVppmux    govppmux.API
-	SwIfIndexes ifaceidx.SwIfIndex // SwIfIndexes from default plugins
-	VppCalls    vppcalls.SRv6Calls
+	log         logging.Logger
+	swIfIndexes ifaceidx.SwIfIndex // SwIfIndexes from default plugins
 
 	// channels
-	Channel govppapi.Channel // channel to communicate with VPP
+	vppChan govppapi.Channel // channel to communicate with VPP
+
+	// vpp api handler
+	srHandler vppcalls.SRv6VppAPI
 
 	// caches
 	policyCache         *cache.PolicyCache        // Cache for SRv6 policies
@@ -59,43 +61,67 @@ type SRv6Configurator struct {
 	policyIndexes         idxvpp.NameToIdxRW // Mapping between policy bsid and index inside VPP
 	policySegmentIndexSeq *gaplessSequence
 	policySegmentIndexes  idxvpp.NameToIdxRW // Mapping between policy segment name as defined in ETCD key and index inside VPP
+
+	// stopwatch
+	stopwatch *measure.Stopwatch
 }
 
 // Init members
-func (plugin *SRv6Configurator) Init() (err error) {
+func (plugin *SRv6Configurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+	enableStopwatch bool, srHandler vppcalls.SRv6VppAPI) (err error) {
+	// Logger
+	plugin.log = logger.NewLogger("-sr-plugin")
+
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	plugin.Channel, err = plugin.GoVppmux.NewAPIChannel()
+	plugin.vppChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return
 	}
 
+	// Init stopwatch
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("SRConfigurator", plugin.log)
+	}
+
+	// VPP API handler
+	if srHandler != nil {
+		plugin.srHandler = srHandler
+	} else {
+		if plugin.srHandler, err = vppcalls.NewSRv6VppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+			return err
+		}
+	}
+
+	// Interface indexes
+	plugin.swIfIndexes = swIfIndexes
+
 	// Create caches
-	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
-	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)
-	plugin.steeringCache = cache.NewSteeringCache(plugin.Log)
+	plugin.policyCache = cache.NewPolicyCache(plugin.log)
+	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.log)
+	plugin.steeringCache = cache.NewSteeringCache(plugin.log)
 	plugin.createdPolicies = make(map[string]struct{})
 
 	// Create indexes
 	plugin.policySegmentIndexSeq = newSequence()
-	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-segment-indexes", nil)
+	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.log, "policy-segment-indexes", nil)
 	plugin.policyIndexSeq = newSequence()
-	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.Log, "policy-indexes", nil)
+	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.log, "policy-indexes", nil)
 
 	return
 }
 
 // Close closes GOVPP channel
 func (plugin *SRv6Configurator) Close() error {
-	return safeclose.Close(plugin.Channel)
+	return safeclose.Close(plugin.vppChan)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
 func (plugin *SRv6Configurator) clearMapping() {
 	// Clear caches
-	plugin.policyCache = cache.NewPolicyCache(plugin.Log)
-	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.Log)
-	plugin.steeringCache = cache.NewSteeringCache(plugin.Log)
+	plugin.policyCache = cache.NewPolicyCache(plugin.log)
+	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.log)
+	plugin.steeringCache = cache.NewSteeringCache(plugin.log)
 	plugin.createdPolicies = make(map[string]struct{})
 
 	// Clear indexes
@@ -111,7 +137,7 @@ func (plugin *SRv6Configurator) AddLocalSID(value *srv6.LocalSID) error {
 	if err != nil {
 		return fmt.Errorf("sid should be valid ipv6 address: %v", err)
 	}
-	return plugin.VppCalls.AddLocalSid(sid, value, plugin.SwIfIndexes, plugin.Channel)
+	return plugin.srHandler.AddLocalSid(sid, value, plugin.swIfIndexes)
 }
 
 // DeleteLocalSID removes Local SID from VPP using VPP's binary api
@@ -120,7 +146,7 @@ func (plugin *SRv6Configurator) DeleteLocalSID(value *srv6.LocalSID) error {
 	if err != nil {
 		return fmt.Errorf("sid should be valid ipv6 address: %v", err)
 	}
-	return plugin.VppCalls.DeleteLocalSid(sid, plugin.Channel)
+	return plugin.srHandler.DeleteLocalSid(sid)
 }
 
 // ModifyLocalSID modifies Local SID from <prevValue> to <value> in VPP using VPP's binary api
@@ -145,13 +171,13 @@ func (plugin *SRv6Configurator) AddPolicy(policy *srv6.Policy) error {
 	plugin.policyCache.Put(bsid, policy)
 	segments, segmentNames := plugin.policySegmentsCache.LookupByPolicy(bsid)
 	if len(segments) == 0 {
-		plugin.Log.Debugf("addition of policy (%v) postponed until first policy segment is defined for it", bsid.String())
+		plugin.log.Debugf("addition of policy (%v) postponed until first policy segment is defined for it", bsid.String())
 		return nil
 	}
 
 	plugin.addPolicyToIndexes(bsid)
 	plugin.addSegmentToIndexes(bsid, segmentNames[0])
-	err = plugin.VppCalls.AddPolicy(bsid, policy, segments[0], plugin.Channel)
+	err = plugin.srHandler.AddPolicy(bsid, policy, segments[0])
 	if err != nil {
 		return fmt.Errorf("can't write policy (%v) with first segment (%v): %v", bsid, segments[0].Segments, err)
 	}
@@ -211,7 +237,7 @@ func (plugin *SRv6Configurator) RemovePolicy(policy *srv6.Policy) error {
 			plugin.policySegmentIndexSeq.delete(index)
 		}
 	}
-	return plugin.VppCalls.DeletePolicy(bsid, plugin.Channel) // expecting that policy delete will also delete policy segments in vpp
+	return plugin.srHandler.DeletePolicy(bsid) // expecting that policy delete will also delete policy segments in vpp
 }
 
 // ModifyPolicy modifies policy in VPP using VPP's binary api
@@ -247,7 +273,7 @@ func (plugin *SRv6Configurator) AddPolicySegment(segmentName string, policySegme
 	plugin.policySegmentsCache.Put(bsid, segmentName, policySegment)
 	policy, exists := plugin.policyCache.GetValue(bsid)
 	if !exists {
-		plugin.Log.Debugf("addition of policy segment (%v) postponed until policy with %v bsid is created", policySegment.GetSegments(), bsid.String())
+		plugin.log.Debugf("addition of policy segment (%v) postponed until policy with %v bsid is created", policySegment.GetSegments(), bsid.String())
 		return nil
 	}
 
@@ -266,7 +292,7 @@ func (plugin *SRv6Configurator) AddPolicySegment(segmentName string, policySegme
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if addition fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.addSegmentToIndexes(bsid, segmentName)
-	return plugin.VppCalls.AddPolicySegment(bsid, policy, policySegment, plugin.Channel)
+	return plugin.srHandler.AddPolicySegment(bsid, policy, policySegment)
 }
 
 // RemovePolicySegment removes policy segment <policySegment> with name <segmentName> from referenced policy in VPP using
@@ -282,7 +308,7 @@ func (plugin *SRv6Configurator) RemovePolicySegment(segmentName string, policySe
 
 	siblings, _ := plugin.policySegmentsCache.LookupByPolicy(bsid) // sibling segments in the same policy
 	if len(siblings) == 0 {                                        // last segment for policy
-		plugin.Log.Debugf("removal of policy segment (%v) postponed until policy with %v bsid is deleted", policySegment.GetSegments(), bsid.String())
+		plugin.log.Debugf("removal of policy segment (%v) postponed until policy with %v bsid is deleted", policySegment.GetSegments(), bsid.String())
 		return nil
 	}
 
@@ -296,7 +322,7 @@ func (plugin *SRv6Configurator) RemovePolicySegment(segmentName string, policySe
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if removal fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.policySegmentIndexSeq.delete(index)
-	return plugin.VppCalls.DeletePolicySegment(bsid, policy, policySegment, index, plugin.Channel)
+	return plugin.srHandler.DeletePolicySegment(bsid, policy, policySegment, index)
 }
 
 // ModifyPolicySegment modifies existing policy segment with name <segmentName> from <prevValue> to <value> in referenced policy.
@@ -356,7 +382,7 @@ func (plugin *SRv6Configurator) AddSteering(name string, steering *srv6.Steering
 		var exists bool
 		bsidStr, _, exists = plugin.policyIndexes.LookupName(steering.PolicyIndex)
 		if !exists {
-			plugin.Log.Debugf("addition of steering (index %v) postponed until referenced policy is defined", steering.PolicyIndex)
+			plugin.log.Debugf("addition of steering (index %v) postponed until referenced policy is defined", steering.PolicyIndex)
 			return nil
 		}
 	}
@@ -366,17 +392,17 @@ func (plugin *SRv6Configurator) AddSteering(name string, steering *srv6.Steering
 		return fmt.Errorf("can't parse policy BSID string ('%v') into IPv6 address", steering.PolicyBsid)
 	}
 	if _, exists := plugin.policyCache.GetValue(bsid); !exists {
-		plugin.Log.Debugf("addition of steering (bsid %v) postponed until referenced policy is defined", name)
+		plugin.log.Debugf("addition of steering (bsid %v) postponed until referenced policy is defined", name)
 		return nil
 	}
 
-	return plugin.VppCalls.AddSteering(steering, plugin.SwIfIndexes, plugin.Channel)
+	return plugin.srHandler.AddSteering(steering, plugin.swIfIndexes)
 }
 
 // RemoveSteering removes steering from VPP using VPP's binary api
 func (plugin *SRv6Configurator) RemoveSteering(name string, steering *srv6.Steering) error {
 	plugin.steeringCache.Delete(name)
-	return plugin.VppCalls.RemoveSteering(steering, plugin.SwIfIndexes, plugin.Channel)
+	return plugin.srHandler.RemoveSteering(steering, plugin.swIfIndexes)
 }
 
 // ModifySteering modifies existing steering in VPP using VPP's binary api
