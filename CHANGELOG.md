@@ -1,3 +1,17 @@
+# Release v1.4.1 (2018-06-11)
+
+## Compatibility
+- VPP v18.04 (2302d0d)
+- cn-infra v1.3
+
+A minor release using newer VPP v18.04 version.
+
+## Bugfix
+- VPP submodule was removed from the project. It should prevent various problems with dependency
+  resolution.
+- Fixed known bug present in previous version of the VPP, issued as
+  [VPP-1280](https://jira.fd.io/browse/VPP-1280). Current version contains appropriate fix.  
+
 # Release v1.4 (2018-05-24)
 
 ## Compatibility
@@ -18,7 +32,10 @@
 - [GRPC](plugins/vpp/rpc) 
   * Vpp-agent itself can act as a GRPC server (no need for external executable)
   * All configuration types are supported (incl. linux interfaces, routes and ARP)
-  * Client can read VPP notifications via vpp-agent.      
+  * Client can read VPP notifications via vpp-agent.
+- [SR plugin](plugins/defaultplugins/srplugin)
+  * New plugin with support for Segment Routing.
+    More information in the [readme](plugins/defaultplugins/srplugin/README.md).
 
 ## Improvements
 - [ifplugin](plugins/vpp/ifplugin) 
@@ -36,7 +53,6 @@
 - [localclient_linux](examples/localclient_linux) now contains two examples, the old one demonstrating 
   [veth](examples/localclient_linux/veth) interface usage was moved to package and new example for linux
   [tap](examples/localclient_linux/tap) was added.
-
 
 ## Bugfix
   * Fixed case where creation of linux route with unreachable gateway thrown error. The route is 
