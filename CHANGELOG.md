@@ -10,12 +10,20 @@
 ## New Features
 - [LinuxPlugin](plugins/linux)
   * Is now optional and can be disabled via configuration file.
+- [ifplugin](plugins/vpp/ifplugin)
+  * Added support for VxLAN multicast
+  * Rx-placement can be configured on VPP interfaces
+- [IPsec](plugins/vpp/ipsecplugin)
+  * IPsec UDP encapsulation can now be set (NAT traversal)  
+    
 
 ## Bugfix
 - Fixed few issues with parsing VPP metrics from CLI for [Telemetry](plugins/telemetry).
 - Fixed bug in GoVPP ocurring after some request timed out, causing
   the channel to receive replies from previous request and always returning error.
 - Fixed issue which prevented setting interface to non-existing VRF.
+- Fixed bug where removal of an af-packet interface caused attached Veth to go DOWN.
+- Fixed NAT44 address pool resolution which was not correct in some cases
 
 ## Docker Images
 - Replace `START_AGENT` with `OMIT_AGENT` to match `RETAIN_SUPERVISOR`
@@ -62,9 +70,9 @@ A minor release using newer VPP v18.04 version.
   * Vpp-agent itself can act as a GRPC server (no need for external executable)
   * All configuration types are supported (incl. linux interfaces, routes and ARP)
   * Client can read VPP notifications via vpp-agent.
-- [SR plugin](plugins/defaultplugins/srplugin)
+- [SR plugin](plugins/vpp/srplugin)
   * New plugin with support for Segment Routing.
-    More information in the [readme](plugins/defaultplugins/srplugin/README.md).
+    More information in the [readme](plugins/vpp/srplugin/README.md).
 
 ## Improvements
 - [ifplugin](plugins/vpp/ifplugin) 
