@@ -23,13 +23,13 @@ env:
   - GO_BUILD_TAGS=mockvpp
 
 before_install:
-  - make get-linkcheck || true
+  - make get-linkcheck
   - make get-linters
   - make get-dep
   - go get github.com/mattn/goveralls
 
 script:
-  - make check-links
+  - make check-links || true
   - make lint
   - make verify-binapi
   - make dep-check
