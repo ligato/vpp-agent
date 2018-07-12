@@ -8,6 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
+Force Tags        crudIPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -22,8 +23,8 @@ ${MAC_TAP1}=         12:21:21:11:11:11
 ${MAC_TAP1_2}=       22:21:21:11:11:11
 ${MAC_TAP2}=         22:21:21:22:22:22
 ${IP_TAP1}=          20.20.1.1
-${IP_TAP1_2}=        21.20.1.1
-${IP_TAP2}=          20.20.1.2
+${IP_TAP1_2}=        21.20.1.2
+${IP_TAP2}=          20.20.2.1
 ${PREFIX}=           24
 ${MTU}=              4800
 ${UP_STATE}=         up
@@ -49,6 +50,7 @@ Check TAP1 Interface Is Created
 Add TAP2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP2}
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP2}    mac=${MAC_TAP2}    ip=${IP_TAP2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP2}
+    Sleep     5
 
 Check TAP2 Interface Is Created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}

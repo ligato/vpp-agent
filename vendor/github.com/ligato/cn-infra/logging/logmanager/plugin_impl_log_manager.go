@@ -67,8 +67,8 @@ func NewConf() *Conf {
 
 // Conf is a binding that supports to define default log levels for multiple loggers
 type Conf struct {
-	DefaultLevel string
-	Loggers      []ConfLogger
+	DefaultLevel string       `json:"default-level"`
+	Loggers      []ConfLogger `json:"loggers"`
 }
 
 // ConfLogger is configuration of a particular logger.
@@ -133,7 +133,7 @@ func (lm *Plugin) Close() error {
 
 // ListLoggers lists all registered loggers.
 func (lm *Plugin) listLoggers() []LoggerData {
-	loggers := []LoggerData{}
+	var loggers []LoggerData
 
 	lgs := lm.LogRegistry.ListLoggers()
 	for lg, lvl := range lgs {

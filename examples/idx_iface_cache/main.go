@@ -17,10 +17,10 @@ package main
 import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/ifplugin/ifaceidx"
+	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 )
 
@@ -30,12 +30,12 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor.
-	vppFlavor := vpp.Flavor{}
+	flavor := vppFlavor.Flavor{}
 	exampleFlavor := ExampleFlavor{
 		IdxIfaceCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:               &vppFlavor, // inject VPP flavor
+		Flavor:               &flavor, // inject VPP flavor
 	}
-	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
 
 	core.EventLoopWithInterrupt(agent, exampleFinished)
 }
@@ -45,7 +45,7 @@ type ExamplePlugin struct {
 	Deps
 
 	// Linux plugin dependency
-	VPP defaultplugins.API
+	VPP vpp.API
 
 	swIfIdxLocal  ifaceidx.SwIfIndex
 	swIfIdxAgent1 ifaceidx.SwIfIndex
@@ -103,10 +103,8 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	var wasErr error
-	_, wasErr = safeclose.CloseAll(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
 		plugin.swIfIdxLocal, plugin.swIfIdxAgent1, plugin.swIfIdxAgent2, plugin.closeChannel)
-	return wasErr
 }
 
 // Test data are published to different agents (including local).

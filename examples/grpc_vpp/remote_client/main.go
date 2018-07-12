@@ -26,20 +26,26 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/remoteclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/rpc"
+	"github.com/ligato/vpp-agent/clientv1/vpp/remoteclient"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
+
+	"fmt"
 
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 )
 
-const defaultAddress = "localhost:9111"
+const (
+	defaultAddress = "localhost:9111"
+	defaultSocket  = "tcp"
+)
 
 var address = defaultAddress
+var socketType string
 
 // init sets the default logging level
 func init() {
@@ -57,6 +63,7 @@ func main() {
 	closeChannel := make(chan struct{}, 1)
 
 	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
+	flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
 
 	// Example plugin
 	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
@@ -95,9 +102,12 @@ type ExamplePlugin struct {
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() (err error) {
 	// Set up connection to the server.
-	plugin.conn, err = grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		return err
+	switch socketType {
+	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
+		plugin.conn, err = grpc.Dial("unix", grpc.WithInsecure(),
+			grpc.WithDialer(dialer(socketType, address, 2*time.Second)))
+	default:
+		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
 	}
 
 	// Apply initial VPP configuration.
@@ -125,6 +135,16 @@ func (plugin *ExamplePlugin) Close() error {
 
 	log.DefaultLogger().Info("Closed example plugin")
 	return nil
+}
+
+// Dialer for unix domain socket
+func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
+	return func(addr string, timeout time.Duration) (net.Conn, error) {
+		// Pass values
+		addr, timeout = address, timeoutVal
+		// Dial with timeout
+		return net.DialTimeout(socket, addr, timeoutVal)
+	}
 }
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.

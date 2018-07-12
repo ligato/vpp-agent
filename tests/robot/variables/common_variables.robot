@@ -125,26 +125,28 @@ ${AGENT_LIBMEMIF_4_MEMIF_SOCKET_FOLDER}    /run/vpp
 # Other variables
 ${VAT_START_COMMAND}               vpp_api_test json
 ${RESULTS_FOLDER}                  results
+${RESULTS_FOLDER_SUITE}            ${RESULTS_FOLDER}/${SUITE_NAME}
 ${TEST_DATA_FOLDER}                test_data
 ${REST_CALL_SLEEP}                 0
-${SSH_READ_DELAY}                  3
+${SSH_READ_DELAY}                  6
 
 ${EXAMPLE_PLUGIN_NAME}             example_plugin.so
 
 # temporary vars
 ${DEV_IMAGE}                       dev_vpp_agent
 
-# CCMTS VM 1 node BASIC
-${K8_CLUSTER_CCMTS1_NODES}            1
-${K8_CLUSTER_CCMTS1_VM_1_PUBLIC_IP}   localhost
-${K8_CLUSTER_CCMTS1_VM_1_LOCAL_IP}    localhost
-${K8_CLUSTER_CCMTS1_VM_1_HOST_NAME}   dp-profile-master-01
-${K8_CLUSTER_CCMTS1_VM_1_USER}        jenkins_ccmts
-${K8_CLUSTER_CCMTS1_VM_1_PSWD}        ccmts_jenkins
-${K8_CLUSTER_CCMTS1_VM_1_LABEL}       ccmts_node
-${K8_CLUSTER_CCMTS1_VM_1_PROMPT}      $
-${K8_CLUSTER_CCMTS1_DOCKER_COMMAND}   docker
+# Integration test VM 1 node BASIC
+${K8_CLUSTER_INTEGRATION1_NODES}            1
+${K8_CLUSTER_INTEGRATION1_VM_1_PUBLIC_IP}   localhost
+${K8_CLUSTER_INTEGRATION1_VM_1_LOCAL_IP}    localhost
+${K8_CLUSTER_INTEGRATION1_VM_1_HOST_NAME}   dp-profile-master-01
+${K8_CLUSTER_INTEGRATION1_VM_1_USER}        jenkins_ccmts
+${K8_CLUSTER_INTEGRATION1_VM_1_PSWD}        rsa_id
+${K8_CLUSTER_INTEGRATION1_VM_1_PROMPT}      $
+${K8_CLUSTER_INTEGRATION1_DOCKER_COMMAND}   docker
+${K8_GENERATED_CONFIG_FOLDER}         generated_config
 
-${SSH_READ_DELAY}                  3
-${SSH_TIMEOUT}                     30
-${POD_DEPLOY_TIMEOUT}       600
+${SSH_TIMEOUT}                        30
+${SSH_LOG_OUTPUTS_TIMEOUT}            30
+${POD_DEPLOY_TIMEOUT}                 60
+${POD_DEPLOY_MULTIREPLICA_TIMEOUT}    60

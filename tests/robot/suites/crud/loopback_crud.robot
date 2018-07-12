@@ -8,6 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
+Force Tags        crudIPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -22,8 +23,8 @@ ${MAC_LOOP1}=       12:21:21:11:11:11
 ${MAC_LOOP1_2}=     22:21:21:11:11:11
 ${MAC_LOOP2}=       32:21:21:11:11:11
 ${IP_LOOP1}=        20.20.1.1
-${IP_LOOP1_2}=      21.20.1.1
-${IP_LOOP2}=        20.20.1.2
+${IP_LOOP1_2}=      21.20.1.2
+${IP_LOOP2}=        20.20.2.2
 ${PREFIX}=          24
 ${MTU}=             4800
 ${SYNC_SLEEP}=      12s

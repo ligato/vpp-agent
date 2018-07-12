@@ -145,8 +145,8 @@ func (a *vppAPIClientAdapter) GetMsgID(msgName string, msgCrc string) (uint16, e
 }
 
 // SendMsg sends a binary-encoded message to VPP.
-func (a *vppAPIClientAdapter) SendMsg(clientID uint32, data []byte) error {
-	rc := C.govpp_send(C.uint32_t(clientID), unsafe.Pointer(&data[0]), C.size_t(len(data)))
+func (a *vppAPIClientAdapter) SendMsg(context uint32, data []byte) error {
+	rc := C.govpp_send(C.uint32_t(context), unsafe.Pointer(&data[0]), C.size_t(len(data)))
 	if rc != 0 {
 		return fmt.Errorf("unable to send the message (error=%d)", rc)
 	}

@@ -27,7 +27,7 @@ import (
 
 type vppAPIClientAdapter struct{}
 
-func NewVppAdapter() adapter.VppAdapter {
+func NewVppAdapter(string) adapter.VppAdapter {
 	return &vppAPIClientAdapter{}
 }
 
@@ -51,6 +51,6 @@ func (a *vppAPIClientAdapter) SetMsgCallback(cb func(context uint32, msgID uint1
 	// no op
 }
 
-func (a *vppAPIClientAdapter) WaitReady() func() error {
-	return func() error { return nil }
+func (a *vppAPIClientAdapter) WaitReady() error {
+	return nil
 }

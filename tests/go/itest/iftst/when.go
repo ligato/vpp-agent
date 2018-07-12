@@ -5,11 +5,11 @@ import (
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	vppclient "github.com/ligato/vpp-agent/clientv1/defaultplugins"
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/interfaces"
-	intf "github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
+	vppclient "github.com/ligato/vpp-agent/clientv1/vpp"
+	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 const pluginName = core.PluginName("when_iface")
@@ -20,14 +20,14 @@ type WhenIface struct {
 	NewChange func(name core.PluginName) vppclient.DataChangeDSL
 	NewResync func(name core.PluginName) vppclient.DataResyncDSL
 	Log       logging.Logger
-	VPP       defaultplugins.API
+	VPP       vpp.API
 	MockVpp   *govppmock.VppAdapter
 }
 
 // ResyncIf stores configuration of a given interface in ETCD.
-func (when *WhenIface) ResyncIf(data *intf.Interfaces_Interface, opts ...interface{}) {
+func (when *WhenIface) ResyncIf(data1, data2 *intf.Interfaces_Interface) {
 	when.Log.Debug("When_ResyncIf begin")
-	err := when.NewResync(pluginName).Interface(data).Send().ReceiveReply()
+	err := when.NewResync(pluginName).Interface(data1).Interface(data2).Send().ReceiveReply()
 	if err != nil {
 		when.Log.Panic(err)
 	}

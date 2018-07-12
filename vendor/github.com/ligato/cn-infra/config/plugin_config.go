@@ -52,7 +52,7 @@ type PluginConfig interface {
 func ForPlugin(pluginName string, opts ...string) PluginConfig {
 	flgName := pluginName + FlagSuffix
 	flg := flag.CommandLine.Lookup(flgName)
-	if flg == nil && len(opts) > 0 {
+	if flg == nil {
 		var flagDefault, flagUsage string
 
 		if len(opts) > 0 && opts[0] != "" {

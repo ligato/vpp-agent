@@ -15,9 +15,14 @@
 package grpc
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"time"
+
+	"os"
+	"strconv"
+	"strings"
 
 	"google.golang.org/grpc"
 )
@@ -35,9 +40,36 @@ func FromExistingServer(listenAndServe ListenAndServe) *Plugin {
 
 // ListenAndServeGRPC starts a netListener.
 func ListenAndServeGRPC(config *Config, grpcServer *grpc.Server) (netListener net.Listener, err error) {
-	netListener, err = net.Listen("tcp", config.Endpoint)
-	if err != nil {
-		return nil, err
+
+	// Default to tcp socket type of not specified for backward compatibility
+	socketType := config.Network
+	if socketType == "" {
+		socketType = "tcp"
+	}
+
+	if socketType == "unix" || socketType == "unixpacket" {
+		permissions, err := getUnixSocketFilePermissions(config.Permission)
+		if err != nil {
+			return nil, err
+		}
+		if err := checkUnixSocketFileAndDirectory(config.Endpoint, config.ForceSocketRemoval); err != nil {
+			return nil, err
+		}
+
+		netListener, err = net.Listen(socketType, config.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		// Set permissions to the socket file
+		if err := os.Chmod(config.Endpoint, permissions); err != nil {
+			return nil, err
+		}
+	} else {
+		netListener, err = net.Listen(socketType, config.Endpoint)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var errCh chan error
@@ -58,4 +90,42 @@ func ListenAndServeGRPC(config *Config, grpcServer *grpc.Server) (netListener ne
 		//everything is probably fine
 		return netListener, nil
 	}
+}
+
+// Resolve permissions and return FileMode
+func getUnixSocketFilePermissions(permissions int) (os.FileMode, error) {
+	if permissions > 0 {
+		if permissions > 7777 {
+			return 0, fmt.Errorf("incorrect unix socket file/path permission value '%d'", permissions)
+		}
+		// Convert to correct mode format
+		mode, err := strconv.ParseInt(strconv.Itoa(permissions), 8, 32)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse socket file permissions %d", permissions)
+		}
+		return os.FileMode(mode), nil
+	}
+	return os.ModePerm, nil
+}
+
+// Check old socket file/directory of the unix domain socket. Remove old socket file if exists or create the directory
+// path if does not exist.
+func checkUnixSocketFileAndDirectory(endpoint string, forceRemoval bool) error {
+	_, err := os.Stat(endpoint)
+	if err == nil && forceRemoval {
+		// Remove old socket file if required
+		if err := os.Remove(endpoint); err != nil {
+			return err
+		}
+	}
+	if os.IsNotExist(err) {
+		// Create the directory
+		lastIdx := strings.LastIndex(endpoint, "/")
+		path := endpoint[:lastIdx]
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

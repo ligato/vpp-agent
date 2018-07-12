@@ -104,6 +104,13 @@ vpp_term: Show Bridge-Domain Detail
     ${out}=            vpp_term: Issue Command  ${node}    show bridge-domain ${id} detail
     [Return]           ${out}
 
+vpp_term: Show IPsec
+    [Arguments]        ${node}
+    [Documentation]    Show IPsec output
+    Log Many           ${node}
+    ${out}=            vpp_term: Issue Command  ${node}    show ipsec
+    [Return]           ${out}
+
 vpp_term: Check Ping
     [Arguments]        ${node}    ${ip}     ${count}=5
     Log Many           ${node}    ${ip}     ${count}
@@ -114,7 +121,7 @@ vpp_term: Check Ping
 vpp_term: Check Ping6
     [Arguments]        ${node}    ${ip}     ${count}=5
     Log Many           ${node}    ${ip}     ${count}
-    ${out}=            vpp_term: Issue Command    ${node}    ping6 ${ip} repeat ${count}   delay=10s
+    ${out}=            vpp_term: Issue Command    ${node}    ping ${ip} repeat ${count}   delay=10s
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 

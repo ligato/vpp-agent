@@ -8,6 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 Resource    ../../../libraries/all_libs.robot
 Resource    ../../../libraries/pretty_keywords.robot
 
+Force Tags        trafficIPv4
 Suite Setup       Run Keywords    Discard old results
 
 *** Variables ***
@@ -93,7 +94,7 @@ Start Two Agents And Then Configure One With Non Default VRF
     Create Master memif0 on agent_vpp_1 with IP 10.1.1.1, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
     Create Slave memif0 on agent_vpp_2 with VRF 2, IP 10.1.1.2, MAC 02:f1:be:90:00:02, key 1 and m0.sock socket
 
-    Sleep    10
+    Sleep    14
 
     List of interfaces On agent_vpp_1 Should Contain Interface memif1/1
     List of interfaces On agent_vpp_2 Should Contain Interface memif1/1

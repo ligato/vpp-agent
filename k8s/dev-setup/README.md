@@ -52,7 +52,7 @@ kubectl describe pods
 
 Write some config into ETCD (using etcd.conf that refers to the port 22379):
 ```
-export ETCDV3_CONFIG=./etcd.conf
+export ETCD_CONFIG=./etcd.conf
 ../../cmd/vpp-agent-ctl/topology.sh
 ```
 

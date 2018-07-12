@@ -17,17 +17,19 @@ package vppcallmock
 import (
 	"testing"
 
+	"time"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	"git.fd.io/govpp.git/core"
+	govpp "git.fd.io/govpp.git/core"
 	. "github.com/onsi/gomega"
 )
 
 // TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
 type TestCtx struct {
 	MockVpp     *mock.VppAdapter
-	conn        *core.Connection
-	channel     *govppapi.Channel
+	conn        *govpp.Connection
+	channel     govppapi.Channel
 	MockChannel *mockedChannel
 }
 
@@ -40,7 +42,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	}
 
 	var err error
-	ctx.conn, err = core.Connect(ctx.MockVpp)
+	ctx.conn, err = govpp.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	ctx.channel, err = ctx.conn.NewAPIChannel()
@@ -59,24 +61,24 @@ func (ctx *TestCtx) TeardownTestCtx() {
 
 // MockedChannel implements ChannelIntf for testing purposes
 type mockedChannel struct {
-	channel *govppapi.Channel
+	channel govppapi.Channel
 
-	//last message which passed through method SendRequest
+	// Last message which passed through method SendRequest
 	Msg govppapi.Message
 
-	//list of all messages which passed through method SendRequest
+	// List of all messages which passed through method SendRequest
 	Msgs []govppapi.Message
 }
 
 // SendRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendRequest(msg govppapi.Message) *govppapi.RequestCtx {
+func (m *mockedChannel) SendRequest(msg govppapi.Message) govppapi.RequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendRequest(msg)
 }
 
 // SendMultiRequest just save input argument to structure field for future check
-func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) *govppapi.MultiRequestCtx {
+func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiRequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
 	return m.channel.SendMultiRequest(msg)
@@ -96,4 +98,44 @@ func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, m
 // UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription
 func (m *mockedChannel) UnsubscribeNotification(subscription *govppapi.NotifSubscription) error {
 	return m.channel.UnsubscribeNotification(subscription)
+}
+
+// SetReplyTimeout sets the timeout for replies from VPP
+func (m *mockedChannel) SetReplyTimeout(timeout time.Duration) {
+	m.channel.SetReplyTimeout(timeout)
+}
+
+// GetNotificationChannel returns notification channel
+func (m *mockedChannel) GetReplyChannel() <-chan *govppapi.VppReply {
+	return m.channel.GetReplyChannel()
+}
+
+// GetRequestChannel returns notification channel
+func (m *mockedChannel) GetRequestChannel() chan<- *govppapi.VppRequest {
+	return m.channel.GetRequestChannel()
+}
+
+// GetNotificationChannel returns notification channel
+func (m *mockedChannel) GetNotificationChannel() chan<- *govppapi.NotifSubscribeRequest {
+	return m.channel.GetNotificationChannel()
+}
+
+// GetNotificationReplyChannel returns notification reply channel
+func (m *mockedChannel) GetNotificationReplyChannel() <-chan error {
+	return m.channel.GetNotificationReplyChannel()
+}
+
+// GetMessageDecoder returns message decoder
+func (m *mockedChannel) GetMessageDecoder() govppapi.MessageDecoder {
+	return m.channel.GetMessageDecoder()
+}
+
+// GetID returns channel's ID
+func (m *mockedChannel) GetID() uint16 {
+	return m.channel.GetID()
+}
+
+// Close closes channel
+func (m *mockedChannel) Close() {
+	m.channel.Close()
 }

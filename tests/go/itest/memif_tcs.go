@@ -6,10 +6,10 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/syncbase"
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins"
-	"github.com/ligato/vpp-agent/clientv1/defaultplugins/localclient"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/ipsec"
+	"github.com/ligato/vpp-agent/clientv1/vpp"
+	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
 	"github.com/ligato/vpp-agent/tests/go/itest/testutil"
 )
@@ -44,7 +44,7 @@ func (s *suiteMemif) setupTestingFlavor(flavor *testutil.VppOnlyTestingFlavor) {
 	mockVpp := &mock.VppAdapter{}
 	flavor.GoVPP = *testutil.VppMock(mockVpp, iftst.RepliesSuccess)
 	//mockVpp.MockReplyHandler(iftst.VppMockHandler(mockVpp))
-	/*s.When.NewChange = func(caller core.PluginName) defaultplugins.DataChangeDSL {
+	/*s.When.NewChange = func(caller core.PluginName) vppplugin.DataChangeDSL {
 		return dbadapter.NewDataChangeDSL(local.NewProtoTxn(local.Get().PropagateChanges))
 	}*/
 	s.Setup(flavor)
@@ -76,8 +76,7 @@ func (s *suiteMemif) TC02EmptyVppResyncAtStartup() {
 	s.setupTestingFlavor(s.SetupDefault())
 	defer s.Teardown()
 
-	s.When.ResyncIf(&iftst.Memif100011Slave)
-	s.When.ResyncIf(&iftst.Memif100012)
+	s.When.ResyncIf(&iftst.Memif100011Slave, &iftst.Memif100012)
 	s.Then.SwIfIndexes().ContainsName(iftst.Memif100011Slave.Name)
 	s.Then.SwIfIndexes().ContainsName(iftst.Memif100012.Name)
 }
@@ -112,13 +111,13 @@ func (s *suiteMemif) TC04() {
 	s.setupTestingFlavor(s.SetupDefault())
 	defer s.Teardown()
 
-	s.When.Put(func(put defaultplugins.PutDSL) defaultplugins.PutDSL {
+	s.When.Put(func(put vppclient.PutDSL) vppclient.PutDSL {
 		return put.IPSecSA(&IPsecSA20)
 	})
-	s.When.Put(func(put defaultplugins.PutDSL) defaultplugins.PutDSL {
+	s.When.Put(func(put vppclient.PutDSL) vppclient.PutDSL {
 		return put.IPSecSA(&IPsecSA10)
 	})
-	s.When.Put(func(put defaultplugins.PutDSL) defaultplugins.PutDSL {
+	s.When.Put(func(put vppclient.PutDSL) vppclient.PutDSL {
 		return put.IPSecSPD(&IPsecSPD1)
 	})
 	s.Then.ContainsIPSecSA(IPsecSA10.Name)

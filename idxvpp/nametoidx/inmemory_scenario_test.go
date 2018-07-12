@@ -179,3 +179,55 @@ func TestOldIndexRemove(t *testing.T) {
 	gomega.Expect(found).To(gomega.BeFalse())
 	gomega.Expect(name).To(gomega.BeEquivalentTo(""))
 }
+
+func TestUpdateMetadata(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	idxm := NewNameToIdx(logrus.DefaultLogger(), "title", nil)
+
+	idxm.RegisterName(string(eth0), idx1, nil)
+
+	idx, meta, found := idxm.LookupIdx(string(eth0))
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(idx).To(gomega.BeEquivalentTo(idx1))
+	gomega.Expect(meta).To(gomega.BeNil())
+
+	success := idxm.UpdateMetadata(string(eth0), "dummy-meta")
+	gomega.Expect(success).To(gomega.BeTrue())
+
+	idx, meta, found = idxm.LookupIdx(string(eth0))
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(idx).To(gomega.BeEquivalentTo(idx1))
+	gomega.Expect(meta).ToNot(gomega.BeNil())
+}
+
+func TestClearMapping(t *testing.T) {
+	gomega.RegisterTestingT(t)
+	idxm := NewNameToIdx(logrus.DefaultLogger(), "title", nil)
+
+	idxm.RegisterName(string(eth0), idx1, nil)
+	idxm.RegisterName(string(eth1), idx2, nil)
+	idxm.RegisterName(string(eth2), idx3, nil)
+
+	idx, _, found := idxm.LookupIdx(string(eth0))
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(idx).To(gomega.BeEquivalentTo(idx1))
+
+	idx, _, found = idxm.LookupIdx(string(eth1))
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(idx).To(gomega.BeEquivalentTo(idx2))
+
+	idx, _, found = idxm.LookupIdx(string(eth2))
+	gomega.Expect(found).To(gomega.BeTrue())
+	gomega.Expect(idx).To(gomega.BeEquivalentTo(idx3))
+
+	idxm.Clear()
+
+	_, _, found = idxm.LookupIdx(string(eth0))
+	gomega.Expect(found).To(gomega.BeFalse())
+
+	_, _, found = idxm.LookupIdx(string(eth1))
+	gomega.Expect(found).To(gomega.BeFalse())
+
+	_, _, found = idxm.LookupIdx(string(eth2))
+	gomega.Expect(found).To(gomega.BeFalse())
+}

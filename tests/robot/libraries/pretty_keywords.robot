@@ -69,6 +69,10 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vr
     ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
     Log Many        ${out}
 
+Delete IPsec On ${node} With Prefix ${prefix} And Name ${name}
+    Log Many        ${node}    ${prefix}    ${name}
+    vpp_ctl: Delete IPsec    ${node}    ${prefix}    ${name}
+
 Create VXLan ${name} From ${src_ip} To ${dst_ip} With Vni ${vni} On ${node}
     Log Many    ${name}    ${src_ip}    ${dst_ip}    ${vni}    ${node}
     vpp_ctl: Put VXLan Interface    ${node}    ${name}    ${src_ip}    ${dst_ip}    ${vni}

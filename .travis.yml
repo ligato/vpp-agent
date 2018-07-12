@@ -1,38 +1,43 @@
 dist: trusty
 sudo: required
 language: go
+go:
+  - 1.10.x
 
 addons:
   apt:
     update: true
 
-go_import_path: github.com/ligato/vpp-agent
-
 git:
   depth: 1
   submodules: false
 
-go:
-  - 1.10.x
-
 cache:
   directories:
     - $HOME/build-cache
+    - node_modules
+
+go_import_path: github.com/ligato/vpp-agent
 
 env:
   - GO_BUILD_TAGS=mockvpp
 
 before_install:
-  - make get-linkcheck
+  - make get-linkcheck || true
   - make get-linters
-  - make get-covtools
-  - go get -v github.com/mattn/goveralls
+  - make get-dep
+  - go get github.com/mattn/goveralls
 
 script:
-  - make check-links || true
+  - make check-links
   - make lint
+  - make verify-binapi
+  - make dep-check
   - make
   - make test-cover
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
+
+notifications:
+    slack: ligato:xLH4aTwGx1dexPaloAegQ74O

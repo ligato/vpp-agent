@@ -8,6 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
 
+Force Tags        trafficIPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -19,7 +20,7 @@ ${CONFIG_SLEEP}=       1s
 ${RESYNC_SLEEP}=       1s
 ${SYNC_SLEEP}=         10s
 # wait for resync vpps after restart
-${RESYNC_WAIT}=        20s
+${RESYNC_WAIT}=        25s
 
 *** Test Cases ***
 Configure Environment

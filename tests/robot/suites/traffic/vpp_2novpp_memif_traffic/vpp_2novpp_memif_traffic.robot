@@ -8,6 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 Resource     ../../../libraries/all_libs.robot
 Resource     ../../../libraries/pretty_keywords.robot
 
+Force Tags        trafficIPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 
@@ -19,6 +20,8 @@ ${ENV}=                common
 
 Configure Environment
     [Tags]    setup
+    ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
+    Set Suite Variable          ${DATA_FOLDER}
     Configure Environment 2       acl_basic.conf
     Sleep    ${SYNC_SLEEP}
     Show Interfaces And Other Objects
