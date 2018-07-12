@@ -23,7 +23,7 @@ Restarts Suite Setup with ${vnf_count} VNFs at ${memif_per_vnf} memifs each and 
     KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${vnf_count}
     KubeEnv.Deploy_NoVPP_Pods    ${testbed_connection}    ${novpp_count}
     KubeEnv.Deploy_SFC_Pod_And_Verify_Running    ${testbed_connection}
-    Open_Restarts_Connections    ${vnf_count}    ${novpp_count}    node_index=1    cluster_id=${CLUSTER_ID}
+    Open_Restarts_Connections    node_index=1    cluster_id=${CLUSTER_ID}
 
 Restarts_Suite_Teardown
     [Documentation]    Log leftover output from pods, remove pods, execute common teardown.
@@ -41,8 +41,8 @@ Cleanup_Restarts_Deployment_On_Cluster
 
 Open_Restarts_Connections
     [Documentation]    Open and save SSH connections to ETCD and SFC pods.
-    [Arguments]    ${vnf_count}    ${novpp_count}    ${node_index}=1    ${cluster_id}=INTEGRATION1
-    BuiltIn.Log Many    ${vnf_count}    ${novpp_count}    ${node_index}    ${cluster_id}
+    [Arguments]    ${node_index}=1    ${cluster_id}=INTEGRATION1
+    BuiltIn.Log Many    ${node_index}    ${cluster_id}
 
     ${etcd_connection}=    KubeEnv.Open_Connection_To_Node    etcd    ${cluster_id}     ${node_index}
     BuiltIn.Set_Suite_Variable    ${etcd_connection}
