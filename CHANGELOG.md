@@ -23,7 +23,8 @@
   the channel to receive replies from previous request and always returning error.
 - Fixed issue which prevented setting interface to non-existing VRF.
 - Fixed bug where removal of an af-packet interface caused attached Veth to go DOWN.
-- Fixed NAT44 address pool resolution which was not correct in some cases
+- Fixed NAT44 address pool resolution which was not correct in some cases.
+- Fixed bug with adding SR policies causing incomplete configuration.
 
 ## Docker Images
 - Replace `START_AGENT` with `OMIT_AGENT` to match `RETAIN_SUPERVISOR`
