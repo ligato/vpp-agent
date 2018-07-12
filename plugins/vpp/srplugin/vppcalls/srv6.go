@@ -390,8 +390,10 @@ func (calls *srv6Calls) convertNextSidList(nextSidList []string) (uint8, []sr.Sr
 		}
 
 		// add sid to segment list
-		ipv6Segment := sr.SrIP6Address{}
-		copy(ipv6Segment.Data[:], parserSid) // sr.SrIP6Address.Data = [16]byte
+		ipv6Segment := sr.SrIP6Address{
+			Data: make([]byte, 16), // sr.SrIP6Address.Data = [16]byte
+		}
+		copy(ipv6Segment.Data, parserSid)
 		segments = append(segments, ipv6Segment)
 	}
 	return uint8(len(nextSidList)), segments, nil

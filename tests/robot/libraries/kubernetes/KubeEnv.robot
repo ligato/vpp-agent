@@ -17,7 +17,7 @@ Library           kube_parser.py
 ${robot_root}                ${CURDIR}/../..
 ${ETCD_YAML_FILE_PATH}       ${robot_root}/resources/k8-yaml/etcd-k8.yaml
 ${SFC_YAML_FILE_PATH}        ${K8_GENERATED_CONFIG_FOLDER}/sfc.yaml
-${VSWITCH_YAML_FILE_PATH}    ${robot_root}/resources/k8-yaml/vswitch-deployment.yaml
+${VSWITCH_YAML_FILE_PATH}    ${K8_GENERATED_CONFIG_FOLDER}/vswitch.yaml
 ${VNF_YAML_FILE_PATH}        ${K8_GENERATED_CONFIG_FOLDER}/vnf.yaml
 ${NOVPP_YAML_FILE_PATH}      ${K8_GENERATED_CONFIG_FOLDER}/novpp.yaml
 ${PULL_IMAGES_PATH}          ${robot_root}/resources/k8-scripts/pull-images.sh
@@ -26,17 +26,6 @@ ${POD_DEPLOY_APPEARS_TIMEOUT}    30s
 ${POD_REMOVE_DEFAULT_TIMEOUT}    60s
 
 *** Keywords ***
-Docker Pull Images
-    [Arguments]    ${normal_tag}    ${vpp_tag}
-    [Documentation]    Execute bash after applying edits to pull-images.sh.
-    BuiltIn.Log_Many    ${normal_tag}    ${vpp_tag}
-    ${file_path} =    BuiltIn.Set_Variable    ${RESULTS_FOLDER}/pull-images.sh
-    # TODO: Add error checking for OperatingSystem calls.
-    OperatingSystem.Run    cp -f ${PULL_IMAGES_PATH} ${file_path}
-    OperatingSystem.Run    sed -i 's@vswitch:latest@vswitch:${vpp_tag}@g' ${file_path}
-    OperatingSystem.Run    sed -i 's@:latest@:${normal_tag}@g' ${file_path}
-    SshCommons.Execute_Command_With_Copied_File    ${file_path}    bash
-
 Verify_All_Pods_Running
     [Arguments]    ${ssh_session}    ${excluded_pod_prefix}=invalid-pod-prefix-
     [Documentation]     Iterate over all pods of all namespaces (skipping \${excluded_pod_prefix} matches) and check running state.
@@ -93,14 +82,14 @@ Deploy_VNF_Pods
     [Arguments]    ${ssh_session}    ${replicas}    ${cn-infra_file}=${VNF_YAML_FILE_PATH}
     [Documentation]     Deploy VNF pods, verify running and store their names.
     BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
-    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    vnf-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_TIMEOUT}
+    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    vnf-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_MULTIREPLICA_TIMEOUT}
     BuiltIn.Set_Suite_Variable    ${cn_infra_pod_name}
 
 Deploy_NoVPP_Pods
     [Arguments]    ${ssh_session}    ${replicas}    ${cn-infra_file}=${NOVPP_YAML_FILE_PATH}
     [Documentation]     Deploy NoVPP pods, verify running and store their names.
     BuiltIn.Log_Many    ${ssh_session}    ${cn-infra_file}
-    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    novpp-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_TIMEOUT}
+    ${cn_infra_pod_name} =    Deploy_Multireplica_Pods_And_Verify_Running    ${ssh_session}    ${cn-infra_file}    novpp-    ${replicas}    namespace=default    timeout=${POD_DEPLOY_MULTIREPLICA_TIMEOUT}
     BuiltIn.Set_Suite_Variable    ${cn_infra_pod_name}
 
 Remove_VSwitch_Pod_And_Verify_Removed
@@ -239,16 +228,14 @@ Wait_Until_Pod_Removed
     BuiltIn.Log_Many    ${ssh_session}    ${pod_name}    ${timeout}    ${check_period}    ${namespace}
     BuiltIn.Wait_Until_Keyword_Succeeds    ${timeout}    ${check_period}    Verify_Pod_Not_Present    ${ssh_session}    ${pod_name}    namespace=${namespace}
 
-Run Command In Pod
+Run_Command_In_Pod
     [Arguments]    ${command}    ${pod_name}
     [Documentation]    Execute command on the pod, log and return retval, stdout, stderr.
     BuiltIn.Log_Many    ${command}     ${pod_name}
     BuiltIn.Comment    TODO: Do not mention pods and move to SshCommons.robot or similar.
     SSHLibrary.Switch Connection    ${testbed_connection}
-    ${output} =    SSHLibrary.Execute Command    kubectl exec ${pod_name} -- ${command}    return_stdout=True    return_stderr=True    return_rc=True
-    ${accepted_codes}=    BuiltIn.Create_List    ${0}    ${141}
-    # TODO: Find out why vppctl sometimes returns code 141 pipe error, even though the command executes correctly.
-    BuiltIn.Should_Contain    ${accepted_codes}    ${output[2]}
+    ${output} =    SSHLibrary.Execute Command    kubectl exec -it ${pod_name} -- ${command}    return_stdout=True    return_stderr=True    return_rc=True
+    BuiltIn.Should_Be_Equal_As_integers    ${output[2]}    ${0}
     SshCommons.Append_Command_Log    ${command}    ${output}
     [Return]    ${output[0]}
 
@@ -358,6 +345,9 @@ Log_Vswitch
     BuiltIn.Length_Should_Be    ${pod_list}    ${exp_nr_vswitch}
     : FOR    ${vswitch_pod}    IN    @{pod_list}
     \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default
+    \    Run Command In Pod    vppctl show int    ${vswitch_pod}
+    \    Run Command In Pod    vppctl show int address   ${vswitch_pod}
+    \    Run Command In Pod    vppctl show errors    ${vswitch_pod}
 
 Log_Pods_For_Debug
     [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${K8_CLUSTER_${CLUSTER_ID}_NODES}
@@ -366,14 +356,14 @@ Log_Pods_For_Debug
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
     Log_Etcd    ${ssh_session}
     Log_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
-    :FOR    ${vnf_pod}    IN    @{vnf_pods}
-    \    Run Command In Pod    vppctl show int              ${vnf_pod}
-    \    Run Command In Pod    vppctl show int address      ${vnf_pod}
-    \    Run Command In Pod    vppctl show errors           ${vnf_pod}
-    :FOR    ${novpp_pod}    IN    @{novpp_pods}
-    \    Run Command In Pod    ip link        ${novpp_pod}
-    \    Run Command In Pod    ip address     ${novpp_pod}
-    \    Run Command In Pod    ip neighbor    ${novpp_pod}
+    :FOR    ${vnf_index}    IN RANGE    ${vnf_count}
+    \    Run Command In Pod    vppctl show int              vnf-vpp-${vnf_index}
+    \    Run Command In Pod    vppctl show int address      vnf-vpp-${vnf_index}
+    \    Run Command In Pod    vppctl show errors           vnf-vpp-${vnf_index}
+    :FOR    ${novpp_index}    IN RANGE    ${novpp_count}
+    \    Run Command In Pod    ip link        novpp-${novpp_index}
+    \    Run Command In Pod    ip address     novpp-${novpp_index}
+    \    Run Command In Pod    ip neighbor    novpp-${novpp_index}
 
 Open_Connection_To_Node
     [Arguments]    ${name}    ${cluster_id}    ${node_index}

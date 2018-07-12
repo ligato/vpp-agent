@@ -5,8 +5,7 @@ Resource                          common_variables.robot
 ${DOCKER_HOST_IP}                 172.22.127.216
 ${DOCKER_HOST_USER}               jenkins_ccmts
 ${DOCKER_HOST_PSWD}               rsa_id
-${DOCKER_COMMAND}                 docker
 
 ${AGENT_VPP_IMAGE_NAME}           ligato/vpp-agent:pantheon-dev
-
-${vpp1_DOCKER_IMAGE}              ${AGENT_VPP_IMAGE_NAME}
+${VNF_IMAGE_NAME}                 ligato/vpp-agent:pantheon-dev
+${SFC_CONTROLLER_IMAGE_NAME}      ligato/prod_sfc_controller:latest
