@@ -6,7 +6,7 @@ Resource    ../SshCommons.robot
 Verify Pod Connectivity - Unix Ping
     [Documentation]    Execute ping on the connection provided
     [Arguments]    ${source_pod_name}    ${destination_ip}     ${count}=5
-    ${stdout} =    Run Command In Pod    ping -c ${count} ${destination_ip}    ${source_pod_name}
+    ${stdout} =    Run Command In Pod    ping -c ${count} -s 1400 ${destination_ip}    ${source_pod_name}
     BuiltIn.Log Many    ${source_pod_name}    ${destination_ip}     ${count}
     BuiltIn.Should Contain    ${stdout}    ${count} received, 0% packet loss
 
@@ -19,7 +19,7 @@ Verify Pod Connectivity - VPP Ping
 Trigger Pod Restart - VPP SIGSEGV
     [Arguments]    ${pod_name}
     BuiltIn.Log    ${pod_name}
-    ${stdout} =    Run Command In Pod    pkill --signal 11 -f vpp    ${pod_name}
+    ${stdout} =    Run Command In Pod    pkill --signal 11 -f /usr/bin/vpp    ${pod_name}
     log    ${stdout}
 
 Trigger Pod Restart - Pod Deletion
@@ -59,10 +59,27 @@ Get Vswitch Pod Name
 Restart Topology With Startup Sequence
     [Arguments]    @{sequence}
     BuiltIn.Log Many    @{sequence}
-    Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
+    Cleanup_Restarts_Deployment_On_Cluster    ${testbed_connection}
     :FOR    ${item}    IN    @{sequence}
     \    Run Keyword If    "${item}"=="etcd"       KubeEnv.Deploy_Etcd_And_Verify_Running    ${testbed_connection}
     \    Run Keyword If    "${item}"=="vswitch"    KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
     \    Run Keyword If    "${item}"=="sfc"        KubeEnv.Deploy_SFC_Pod_And_Verify_Running    ${testbed_connection}
     \    Run Keyword If    "${item}"=="vnf"        KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${1}
     \    Run Keyword If    "${item}"=="novpp"      KubeEnv.Deploy_NoVPP_Pods    ${testbed_connection}    ${1}
+
+Scale Ping Until Success - Unix Ping
+    [Arguments]    ${timeout}=6h
+    [Timeout]    ${timeout}
+    BuiltIn.Log Many    ${topology}    ${timeout}
+    :FOR    ${bridge_segment}    IN    @{topology}
+    \    Iterate_Over_VNFs    ${bridge_segment}    ${timeout}
+
+Iterate_Over_VNFs
+    [Arguments]    ${bridge_segment}    ${timeout}    ${timeout}=1h
+    :FOR    ${vnf_pod}    IN    @{bridge_segment["vnf"]}
+    \    Iterate_Over_Novpps    ${bridge_segment}    ${vnf_pod}    ${timeout}
+
+Iterate_Over_Novpps
+    [Arguments]    ${bridge_segment}    ${vnf_pod}    ${timeout}=10s
+    :FOR    ${novpp_pod}    IN    @{bridge_segment["novpp"]}
+    \    Ping Until Success - Unix Ping    ${novpp_pod["name"]}    ${vnf_pod["ip"]}    ${timeout}

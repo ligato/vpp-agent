@@ -8,8 +8,8 @@ Library    SSHLibrary
 
 Suite Setup       Run Keywords
 ...    KubeSetup.Kubernetes Suite Setup    ${CLUSTER_ID}
-...    AND    Basic Restarts Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
-Suite Teardown    Basic Restarts Teardown
+...    AND    Restarts Suite Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
+Suite Teardown    Restarts Suite Teardown
 Test Teardown     Recreate Topology If Test Failed
 
 Documentation    Test suite for Kubernetes pod restarts using a single VNF pod
@@ -63,7 +63,6 @@ Basic Restart Scenario - full topology in sequence etcd-sfc-vswitch-pods
 Basic Restart Scenario - full topology in sequence etcd-sfc-pods-vswitch
     Repeat Keyword    ${repeats}    Basic Restart Scenario - full topology in sequence etcd-sfc-pods-vswitch
 
-#TODO: scale up to 16 VNFs with 6 memifs each and 48 non-VPP containers.
 #TODO: verify connectivity with traffic (iperf,tcpkali,...) longer than memif ring size
 #TODO: measure pod restart time
 
@@ -73,8 +72,8 @@ Recreate Topology If Test Failed
     ...    and create it again.
     BuiltIn.Run Keyword If Test Failed    Run Keywords
     ...    Log Pods For Debug    ${testbed_connection}
-    ...    AND    Cleanup_Basic_Restarts_Deployment_On_Cluster    ${testbed_connection}
-    ...    AND    Basic Restarts Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
+    ...    AND    Cleanup_Restarts_Deployment_On_Cluster    ${testbed_connection}
+    ...    AND    Restarts Suite Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
 
 Basic restart scenario - VNF
     [Documentation]    Restart VNF node, ping it's IP address from the non-VPP
