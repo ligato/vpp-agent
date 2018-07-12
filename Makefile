@@ -136,6 +136,7 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi/vxlan && pkgreflect
 	@echo "=> applying fix patch"
 	patch -p1 -i plugins/vpp/binapi/fixapi.patch
+	patch -p1 -i plugins/vpp/binapi/fixapi-sr.patch
 
 verify-binapi:
 	@echo "=> verifying binary api"
