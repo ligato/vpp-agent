@@ -69,31 +69,31 @@ Recreate Topology If Test Failed
     BuiltIn.Run Keyword If Test Failed    Run Keywords
     ...    Log Pods For Debug    ${testbed_connection}
     ...    AND    Cleanup_Restarts_Deployment_On_Cluster    ${testbed_connection}
-    ...    AND    Restarts Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers
+    ...    AND    Restarts Suite Setup with ${16} VNFs at ${6} memifs each and ${48} non-VPP containers
 
 Scale restart scenario - VNF
     [Documentation]    Restart all VNF nodes, ping their IP addresses from the non-VPP
     ...    nodes until each receives a reply, then verify connectivity both ways.
 
     Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    vnf-vpp-0
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Verify Connectivity - Unix Ping
+    Scale Pod Restart - Pod Deletion       vnf
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
-    Trigger Pod Restart - VPP SIGSEGV        ${vnf_pods[0]}
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Pod Restart - VPP SIGSEGV        vnf
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale restart scenario - noVPP
     [Documentation]    Restart non-VPP node, ping it's IP address from the VNF
     ...    node until a reply is received, then verify connectivity both ways.
 
     Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Verify Connectivity - Unix Ping
+    Scale Pod Restart - Pod Deletion       novpp
+    Scale Wait For Reconnect - VPP Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale restart scenario - VSwitch
     [Documentation]    Restart the vswitch, ping the VNF's IP address from
@@ -101,14 +101,14 @@ Scale restart scenario - VSwitch
     ...    both ways.
 
     Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Verify Connectivity - Unix Ping
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale Restart Scenario - VSwitch and VNF
     [Documentation]    Restart vswitch and VNF, ping the VNF's IP address from
@@ -116,16 +116,16 @@ Scale Restart Scenario - VSwitch and VNF
     ...    both ways.
 
     Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    vnf-vpp-0
+    Scale Verify Connectivity - Unix Ping
+    Scale Pod Restart - Pod Deletion       vnf
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
-    Trigger Pod Restart - VPP SIGSEGV        ${vnf_pods[0]}
+    Scale Pod Restart - VPP SIGSEGV        vnf
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale Restart Scenario - VSwitch and noVPP
     [Documentation]    Restart vswitch and non-VPP pod, ping the non-VPP
@@ -133,16 +133,16 @@ Scale Restart Scenario - VSwitch and noVPP
     ...    verify connectivity both ways.
 
     Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
+    Scale Verify Connectivity - Unix Ping
+    Scale Pod Restart - Pod Deletion       novpp
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - VPP Ping
+    Scale Verify Connectivity - Unix Ping
 
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
+    Scale Pod Restart - Pod Deletion       novpp
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - VPP Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale Restart Scenario - VSwitch, noVPP and VNF
     [Documentation]    Restart vswitch, VNF and non-VPP pod, ping the non-VPP
@@ -150,59 +150,59 @@ Scale Restart Scenario - VSwitch, noVPP and VNF
     ...    verify connectivity both ways.
 
     Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    vnf-vpp-0
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
+    Scale Verify Connectivity - Unix Ping
+    Scale Pod Restart - Pod Deletion       vnf
+    Scale Pod Restart - Pod Deletion       novpp
     Trigger Pod Restart - Pod Deletion       ${testbed_connection}    ${vswitch_pod_name}    vswitch=${TRUE}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - VPP Ping
+    Scale Verify Connectivity - Unix Ping
 
-    Trigger Pod Restart - VPP SIGSEGV        ${vnf_pods[0]}
-    Trigger Pod Restart - Pod Deletion       ${testbed_connection}    novpp-0
+    Scale Pod Restart - VPP SIGSEGV        vnf
+    Scale Pod Restart - Pod Deletion       novpp
     Trigger Pod Restart - VPP SIGSEGV        ${vswitch_pod_name}
-    Ping Until Success - VPP Ping            ${vnf_pods[0]}           ${novpp0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - VPP Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale Restart Scenario - full topology in sequence etcd-vswitch-pods-sfc
     [Documentation]    Restart the full topology, then bring it back up in the
     ...    specified sequence and verify connectivity between VNF and non-VPP
     ...    pods.
 
-    Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
     Restart Topology With Startup Sequence    etcd    vswitch    vnf    novpp    sfc
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale Restart Scenario - full topology in sequence etcd-vswitch-sfc-pods
     [Documentation]    Restart the full topology, then bring it back up in the
     ...    specified sequence and verify connectivity between VNF and non-VPP
     ...    pods.
 
-    Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
     Restart Topology With Startup Sequence    etcd    vswitch    sfc    vnf    novpp
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale Restart Scenario - full topology in sequence etcd-sfc-vswitch-pods
     [Documentation]    Restart the full topology, then bring it back up in the
     ...    specified sequence and verify connectivity between VNF and non-VPP
     ...    pods.
 
-    Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
     Restart Topology With Startup Sequence    etcd    sfc    vswitch    vnf    novpp
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
 
 Scale Restart Scenario - full topology in sequence etcd-sfc-pods-vswitch
     [Documentation]    Restart the full topology, then bring it back up in the
     ...    specified sequence and verify connectivity between VNF and non-VPP
     ...    pods.
 
-    Ping Until Success - Unix Ping    novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping
     Restart Topology With Startup Sequence    etcd    sfc    vnf    novpp    vswitch
-    Ping Until Success - Unix Ping           novpp-0    ${vnf0_ip}    timeout=120s
-    Scale Ping Until Success - Unix Ping
+    Scale Wait For Reconnect - Unix Ping
+    Scale Verify Connectivity - Unix Ping

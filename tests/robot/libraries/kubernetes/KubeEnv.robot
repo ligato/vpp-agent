@@ -17,7 +17,7 @@ Library           kube_parser.py
 ${robot_root}                ${CURDIR}/../..
 ${ETCD_YAML_FILE_PATH}       ${robot_root}/resources/k8-yaml/etcd-k8.yaml
 ${SFC_YAML_FILE_PATH}        ${K8_GENERATED_CONFIG_FOLDER}/sfc.yaml
-${VSWITCH_YAML_FILE_PATH}    ${robot_root}/resources/k8-yaml/vswitch-deployment.yaml
+${VSWITCH_YAML_FILE_PATH}    ${K8_GENERATED_CONFIG_FOLDER}/vswitch.yaml
 ${VNF_YAML_FILE_PATH}        ${K8_GENERATED_CONFIG_FOLDER}/vnf.yaml
 ${NOVPP_YAML_FILE_PATH}      ${K8_GENERATED_CONFIG_FOLDER}/novpp.yaml
 ${PULL_IMAGES_PATH}          ${robot_root}/resources/k8-scripts/pull-images.sh
@@ -26,17 +26,6 @@ ${POD_DEPLOY_APPEARS_TIMEOUT}    30s
 ${POD_REMOVE_DEFAULT_TIMEOUT}    60s
 
 *** Keywords ***
-Docker Pull Images
-    [Arguments]    ${normal_tag}    ${vpp_tag}
-    [Documentation]    Execute bash after applying edits to pull-images.sh.
-    BuiltIn.Log_Many    ${normal_tag}    ${vpp_tag}
-    ${file_path} =    BuiltIn.Set_Variable    ${RESULTS_FOLDER}/pull-images.sh
-    # TODO: Add error checking for OperatingSystem calls.
-    OperatingSystem.Run    cp -f ${PULL_IMAGES_PATH} ${file_path}
-    OperatingSystem.Run    sed -i 's@vswitch:latest@vswitch:${vpp_tag}@g' ${file_path}
-    OperatingSystem.Run    sed -i 's@:latest@:${normal_tag}@g' ${file_path}
-    SshCommons.Execute_Command_With_Copied_File    ${file_path}    bash
-
 Verify_All_Pods_Running
     [Arguments]    ${ssh_session}    ${excluded_pod_prefix}=invalid-pod-prefix-
     [Documentation]     Iterate over all pods of all namespaces (skipping \${excluded_pod_prefix} matches) and check running state.
@@ -356,6 +345,9 @@ Log_Vswitch
     BuiltIn.Length_Should_Be    ${pod_list}    ${exp_nr_vswitch}
     : FOR    ${vswitch_pod}    IN    @{pod_list}
     \    KubeCtl.Logs    ${ssh_session}    ${vswitch_pod}    namespace=default
+    \    Run Command In Pod    vppctl show int    ${vswitch_pod}
+    \    Run Command In Pod    vppctl show int address   ${vswitch_pod}
+    \    Run Command In Pod    vppctl show errors    ${vswitch_pod}
 
 Log_Pods_For_Debug
     [Arguments]    ${ssh_session}    ${exp_nr_vswitch}=${K8_CLUSTER_${CLUSTER_ID}_NODES}
@@ -364,11 +356,11 @@ Log_Pods_For_Debug
     Builtin.Log_Many    ${ssh_session}    ${exp_nr_vswitch}
     Log_Etcd    ${ssh_session}
     Log_Vswitch    ${ssh_session}    ${exp_nr_vswitch}
-    :FOR    ${vnf_index}    IN RANGE    ${vnf_count-1}
+    :FOR    ${vnf_index}    IN RANGE    ${vnf_count}
     \    Run Command In Pod    vppctl show int              vnf-vpp-${vnf_index}
     \    Run Command In Pod    vppctl show int address      vnf-vpp-${vnf_index}
     \    Run Command In Pod    vppctl show errors           vnf-vpp-${vnf_index}
-    :FOR    ${novpp_index}    IN    ${novpp_count-1}
+    :FOR    ${novpp_index}    IN RANGE    ${novpp_count}
     \    Run Command In Pod    ip link        novpp-${novpp_index}
     \    Run Command In Pod    ip address     novpp-${novpp_index}
     \    Run Command In Pod    ip neighbor    novpp-${novpp_index}
