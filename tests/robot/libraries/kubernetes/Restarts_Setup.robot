@@ -5,10 +5,12 @@ Resource    ${CURDIR}/KubeEnv.robot
 Resource    ${CURDIR}/KubeSetup.robot
 Resource    ${CURDIR}/KubeCtl.robot
 Resource    ${CURDIR}/../SshCommons.robot
+Documentation    Contains keywords uset to setup and teardown test suites
+...    focused on restart scenarios.
 
 *** Keywords ***
 Restarts Suite Setup with ${vnf_count} VNFs at ${memif_per_vnf} memifs each and ${novpp_count} non-VPP containers
-    [Documentation]    Execute common setup, clean 1node cluster, deploy pods.
+    [Documentation]    Clear any existing Kubernetes elements and deploy the topology.
     ${vnf_count}=    BuiltIn.Convert_to_Integer    ${vnf_count}
     ${novpp_count}=    BuiltIn.Convert_to_Integer    ${novpp_count}
     Cleanup_Restarts_Deployment_On_Cluster    ${testbed_connection}
@@ -32,7 +34,7 @@ Restarts_Suite_Teardown
 
 Cleanup_Restarts_Deployment_On_Cluster
     [Arguments]    ${testbed_connection}
-    [Documentation]    Assuming active SSH connection, delete all Kubernetes elements and wait for completion.
+    [Documentation]    Delete all Kubernetes elements and wait for completion.
     SSHLibrary.Switch_Connection  ${testbed_connection}
     SshCommons.Execute_Command_And_Log    kubectl delete all --all --namespace=default
     Wait_Until_Pod_Removed    ${testbed_connection}
@@ -62,7 +64,11 @@ Close_Restarts_Connections
     SSHLibrary.Close_Connection
 
 Generate_YAML_Config_Files
+    [Documentation]    Generate YAML config files for the desired topology.
     [Arguments]    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
     BuiltIn.Log Many    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
-    ${topology}=    kube_config_gen.generate_config    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}    ${CURDIR}/../../resources/k8-yaml    ${K8_GENERATED_CONFIG_FOLDER}
+    ${topology}=    kube_config_gen.generate_config
+    ...    ${vnf_count}    ${novpp_count}    ${memif_per_vnf}
+    ...    ${CURDIR}/../../resources/k8-yaml    ${K8_GENERATED_CONFIG_FOLDER}
+    ...    ${AGENT_VPP_IMAGE_NAME}    ${VNF_IMAGE_NAME}    ${SFC_CONTROLLER_IMAGE_NAME}
     [Return]    ${topology}
