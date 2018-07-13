@@ -1,68 +1,60 @@
-## Development Docker Image
+# Dev Docker Image
 
-This image can be used to get started with the vpp-agent Go code. It 
-contains:
+This image is used for development and debugging.
 
-- The development environment with all libs & dependencies required 
-  to build both the VPP itself and the VPP Agent
-- A pre-built vpp ready to be used
-- A pre-built VPP Agent
+#### What is included:
+- **VPP-Agent** with default config files and ready to use
+- **VPP** (compatible with VPP-Agent) including source code and build artifacts
+- development environment with all requirements needed
+  to build both the **VPP** and **VPP-Agent** itself
+- code generation tools for **proto models** (gogoprotobuf) 
+  and also **VPP binary API** using GoVPP generator)
+- several other development utilities (agentctl, vpp-agent-ctl)
 
-### Getting an Image from Dockerhub
-For a quick start with the Development image, you can use pre-built 
-Development docker images that contain pre-built VPP Agent, VPP, and 
-tools, the Ligato and VPP source code, Git, and build tools for both 
-the VPP Agent and VPP. The pre-built Development docker images are 
-available from [Dockerhub](https://hub.docker.com/r/ligato/dev-vpp-agent/),
-or you can just type:
-```
-docker pull ligato/dev-vpp-agent
-```
-Then you can start the downloaded Development image as described [here][1].
+## Get the official image
 
-### Building Locally
-To build the docker image on your local machine,  type:
-```
-./build.sh
-```
-This will build dev_vpp_agent image with default parameters:  
-- vpp-agent - latest commit number from the cloned repo,
-- vpp - commit number specified in vpp submodule. 
-  
-To build specific commits (one or both), use `build.sh` with parameters:  
-- `-a` or `--agent` to specify vpp-agent commit number, 
-- `-v` or `--vpp` to specify vpp commit number.
+For a quick start with the development image, you can download 
+the [official image](https://hub.docker.com/r/ligato/dev-vpp-agent/) from **DockerHub**.
 
-Example:
-```
-./build.sh --agent 9c35e43e9bfad377f3c2186f30d9853e3f3db3ad --vpp f3bcdbf071c98ed676591bd22c3d3f8601009fa8
+```sh
+$ docker pull docker.io/ligato/dev-vpp-agent	// latest release (stable)
+$ docker pull docker.io/ligato/dev-vpp-agent:pantheon-dev	// bleeding edge (unstable)
 ```
 
-You can still build image using docker build command, but you must 
-explicitly specify the agent and vpp commit numbers:
-```
-sudo docker build -t dev_vpp_agent --build-arg AGENT_COMMIT=2c2b0df32201c9bc814a167e0318329c78165b5c --build-arg VPP_COMMIT=f3bcdbf071c98ed676591bd22c3d3f8601009fa8 --no-cache .
-```
-In addition, these environment variables can be set in Dockerfile:
-- `OMIT_AGENT` - whether the start of vpp-agent should be omitted (default is unset, agent will be started normally)
-- `RETAIN_SUPERVISOR` - whether the supervisord should quit on unexpected exit of vpp or vpp-agent (default is unset, supervisord will quit)
+List of all available docker image tags for development image can be found [here](https://hub.docker.com/r/ligato/dev-vpp-agent/tags/).
 
-Their values can be also changed before image start with `docker -e` to have desired behavior
+## Building the image locally
 
-### Building VPP .deb Packages in Debug or Release Mode
-You can build VPP .deb packages with debug or release mode. By default the image is built for release mode.
-The environmental variable `VPP_DEBUG_DEB=y` can be used to build VPP .deb packages with debug mode.
-
-To build the image with VPP .deb packages with debug mode:
-```
-VPP_DEBUG_DEB=y ./build.sh
-```
-
-#### Verifying a Created or Downloaded Image
-You can verify the newly built or downloaded image as follows:
+To build the docker image on your local machine run:
 
 ```
-docker images
+$ ./build.sh
+```
+
+This will by default build image with name `dev_vpp_agent` 
+and use following sources:
+- **VPP-Agent** version from local repository
+- **VPP** from repository and commit specified in `vpp.env` file
+
+### Build VPP in _debug_ mode
+
+By default the image builds **VPP** _.deb_ packages in **release** mode. 
+You can change mode to **debug** by setting the environmental variable:
+
+```
+$ VPP_DEBUG_DEB=y ./build.sh
+```
+
+*Note:* This will only build the _.deb_ packages in **debug** mode. 
+The running mode of the **VPP** can be changed to **debug** by 
+setting `RUN_VPP_DEBUG=y` environmental variable for the container.
+
+### Verifying the built image
+
+You can verify the newly built image using:
+
+```
+$ docker images
 ``` 
 
 You should see something like this:
@@ -72,36 +64,18 @@ REPOSITORY                       TAG                 IMAGE ID            CREATED
 dev_vpp_agent                    latest              0692f574f21a        11 minutes ago      3.58 GB
 ...
 ```
-Get the details of the newly built or downloaded image:
+
+To inspect the details or see the history of the image use:
 
 ```
-docker image inspect dev_vpp_agent
-docker image history dev_vpp_agent
+$ docker image inspect dev_vpp_agent
+$ docker image history dev_vpp_agent
 ```
 
-### Shrinking the Image
-Dev_vpp_agent image can be shrunk by typing the command:
-
-```
-./shrink.sh
-```
-
-This will build a new image with the name `dev_vpp_agent_shrink`, where
-vpp sources and build related files have been removed (in total about 2GB).
-
-The `shrink.sh` script is using docker export and import command, but due
-[Docker issue](https://github.com/moby/moby/issues/26173) it will fail on
-docker older than 1.13.
-
-```
-$ docker images
-REPOSITORY                                            TAG                 IMAGE ID            CREATED             SIZE
-dev_vpp_agent                                         latest              442771972e4a        8 hours ago         3.57 GB
-dev_vpp_agent_shrink                                  latest              bd2e76980236        8 hours ago         1.68 GB
-```
 ---
 
 ## Starting the Image
+
 By default, the VPP & the Agent processes will be started automatically 
 in the container. This is useful e.g. for deployments with Kubernetes, 
 as described in [this README](../../k8s/dev-setup/README.md). However, this option is
@@ -117,7 +91,12 @@ To open another terminal into the image:
 sudo docker exec -it vpp_agent bash
 ```
 
-### Running VPP in Debug or Release Mode
+These environment variables can be set:
+- `OMIT_AGENT` - whether the start of vpp-agent should be omitted (default is unset, agent will be started normally)
+- `RETAIN_SUPERVISOR` - whether the supervisord should quit on unexpected exit of vpp or vpp-agent (default is unset, supervisord will quit)
+
+## Running VPP in Debug or Release Mode
+
 You can run VPP in debug or release mode. By default the image runs in release mode.
 The environmental variable `RUN_VPP_DEBUG=y` can be used to run VPP in debug mode.
 
@@ -126,7 +105,8 @@ To start the image with VPP in debug mode:
 sudo docker run -it --env RUN_VPP_DEBUG=y --rm --privileged dev_vpp_agent bash
 ```
 
-### Mounting VPP Build Using Volume
+## Mounting VPP Build Using Volume
+
 You can run custom build of VPP by using volume mount. The VPP build in the image is located at `/opt/vpp-agent/dev/vpp`.
 
 To start the image with custom VPP build mounted from host:
@@ -134,7 +114,7 @@ To start the image with custom VPP build mounted from host:
 sudo docker run -it --volume $HOME/myvpp:/opt/vpp-agent/dev/vpp --rm --privileged dev_vpp_agent bash
 ```
 
-### Running VPP and the Agent
+## Running VPP and the Agent
 
 **NOTE: The Agent will terminate if it cannot connect to VPP and to a Etcd
 server. If Kafka config is specified, a successful connection to Kafka is
@@ -197,7 +177,8 @@ networking settings.*
 vpp-agent --etcd-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf
 ```
 
-### Running Etcd Server on Local Host
+## Running Etcd Server on Local Host
+
 You can run an ETCD server in a separate container on your local
 host as follows:
 ```
@@ -215,14 +196,15 @@ vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 ```
 
-### Running Kafka on Local Host
+## Running Kafka on Local Host
+
 You can start Kafka in a separate container:
 ```
 sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
  --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
 ```
 
-### Rebuilding the Agent
+## Rebuilding the Agent
 ```
 cd $GOPATH/src/github.com/ligato/vpp-agent/
 git pull      # if needed
@@ -233,13 +215,15 @@ make install
 
 This should update the `agent` binary in yor `$GOPATH/bin` directory.
 
-### Rebuilding of the container image:
+## Rebuilding of the container image:
+
 Use the `--no-cache` flag for `docker build`:
 ```
 sudo docker build --no-cache -t dev_vpp_agent .
 ```
 
-### Mounting of a host directory into the Docker container:
+## Mounting of a host directory into the Docker container:
+
 Use `-v` option of the docker command:
 ```
 sudo docker run -v /host/folder:/container/folder -it --name vpp_agent --privileged --rm dev_vpp_agent bash
@@ -257,6 +241,7 @@ building and testing it.
 ---
 
 ## Example: Using the Development Environment on a MacBook with Gogland
+
 This section describes the setup of a lightweight, portable development
 environment on your local notebook (MacBook or MacBook Pro in this example).
 The MacBook will be the host for the Development Environment container 
@@ -264,7 +249,7 @@ and the folder containing the agent sources will be shared between the
 host and the container. Then, you can run the IDE, git, and other tools 
 on the host and the compilations/testing in the container.
 
-#### Prerequisites
+### Prerequisites
 
 1. Get [Docker for Mac](https://docs.docker.com/docker-for-mac/). If you
    don't have it already installed, follow these
@@ -279,7 +264,8 @@ on the host and the compilations/testing in the container.
 2. Once you have Docker up & running on your Mac, build and verify the 
    Development Environment container [as described above](#getting-the-image).
 
-#### Building and Running the Agent
+### Building and Running the Agent
+
 For the mixed host-container environment, the folder holding the 
 Agent source code must be setup properly on both the host and in
  the container. You must also set GOPATH and GOROOT appropriately
@@ -344,5 +330,3 @@ console.
  
 - Use the newly built agent as described in Section
   '[Running VPP and the Agent](#running-vpp-and-the-agent)'.
-
-[1]: #starting-the-image
