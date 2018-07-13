@@ -43,7 +43,7 @@ var (
 	sidB        = *sid("B::")
 	sidC        = *sid("C::")
 	nextHop     = net.ParseIP("B::").To16()
-	nextHopIPv4 = net.ParseIP("1.2.3.4")
+	nextHopIPv4 = net.ParseIP("1.2.3.4").To4()
 )
 
 var swIfIndex = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_indexes", ifaceidx.IndexMetadata))
@@ -80,7 +80,7 @@ func TestAddLocalSID(t *testing.T) {
 			},
 		},
 		{
-			Name: "addition with endX behaviour",
+			Name: "addition with endX behaviour (ipv6 next hop address)",
 			Input: &srv6.LocalSID{
 				FibTableId: 10,
 				EndFunction_X: &srv6.LocalSID_EndX{
@@ -100,6 +100,26 @@ func TestAddLocalSID(t *testing.T) {
 			},
 		},
 		{
+			Name: "addition with endX behaviour (ipv4 next hop address)",
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_X: &srv6.LocalSID_EndX{
+					Psp:               true,
+					NextHop:           nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+				},
+			},
+			Expected: &sr.SrLocalsidAddDel{
+				IsDel:     0,
+				Localsid:  sidA,
+				Behavior:  vppcalls.BehaviorX,
+				FibTable:  10,
+				EndPsp:    1,
+				SwIfIndex: swIndexA,
+				NhAddr4:   nextHopIPv4,
+			},
+		},
+		{
 			Name: "addition with endT behaviour",
 			Input: &srv6.LocalSID{
 				FibTableId: 10,
@@ -116,7 +136,7 @@ func TestAddLocalSID(t *testing.T) {
 			},
 		},
 		{
-			Name: "addition with endDX2 behaviour",
+			Name: "addition with endDX2 behaviour (ipv6 next hop address)",
 			Input: &srv6.LocalSID{
 				FibTableId: 10,
 				EndFunction_DX2: &srv6.LocalSID_EndDX2{
@@ -134,6 +154,27 @@ func TestAddLocalSID(t *testing.T) {
 				VlanIndex: 1,
 				SwIfIndex: swIndexA,
 				NhAddr6:   nextHop,
+			},
+		},
+		{
+			Name: "addition with endDX2 behaviour (ipv4 next hop address)",
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_DX2: &srv6.LocalSID_EndDX2{
+					VlanTag:           1,
+					NextHop:           nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+				},
+			},
+			Expected: &sr.SrLocalsidAddDel{
+				IsDel:     0,
+				Localsid:  sidA,
+				Behavior:  vppcalls.BehaviorDX2,
+				FibTable:  10,
+				EndPsp:    0,
+				VlanIndex: 1,
+				SwIfIndex: swIndexA,
+				NhAddr4:   nextHopIPv4,
 			},
 		},
 		{

@@ -217,10 +217,11 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 		if err != nil {
 			return err
 		}
-		if nhAddr.To4() == nil {
+		nhAddr4 := nhAddr.To4()
+		if nhAddr4 == nil {
 			return fmt.Errorf("next hop of DX4 end function (%v) is not valid IPv4 address", localSID.EndFunction_DX4.NextHop)
 		}
-		req.NhAddr4 = []byte(nhAddr)
+		req.NhAddr4 = []byte(nhAddr4)
 	} else if localSID.EndFunction_DX6 != nil {
 		req.Behavior = BehaviorDX6
 		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunction_DX6.OutgoingInterface)
