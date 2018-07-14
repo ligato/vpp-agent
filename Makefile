@@ -203,12 +203,11 @@ check-links: get-linkcheck
 # TRAVIS_JOB_ID: The id of the current job that Travis CI uses internally.
 # TRAVIS_JOB_NUMBER: The number of the current job (for example, “4.1”).
 travis:
-	@echo "=> running travis"
-	@echo "Type: $(TRAVIS_EVENT_TYPE) PR: $(TRAVIS_PULL_REQUEST)"
-	@echo "Build ID: $(TRAVIS_BUILD_ID) ($(TRAVIS_JOB_ID)) Number: $(TRAVIS_BUILD_NUMBER) ($(TRAVIS_JOB_NUMBER))"
-	@echo "Commit: $(TRAVIS_COMMIT)"
-	@echo " - message:	$(TRAVIS_COMMIT_MESSAGE)"
-	@echo " - range:	$(TRAVIS_COMMIT_RANGE)"
+	@echo "=> TRAVIS INFO:"
+	@echo "Build ID: $$TRAVIS_BUILD_ID ($$TRAVIS_JOB_ID) Number: $$TRAVIS_BUILD_NUMBER ($$TRAVIS_JOB_NUMBER)"
+	@echo "Type: $$TRAVIS_EVENT_TYPE PR: $$TRAVIS_PULL_REQUEST"
+	@echo "Commit: $$TRAVIS_COMMIT (range: $$TRAVIS_COMMIT_RANGE)"
+	@echo " $$TRAVIS_COMMIT_MESSAGE"
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
