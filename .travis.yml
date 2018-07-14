@@ -13,9 +13,11 @@ git:
   submodules: false
 
 cache:
+  apt: true
   directories:
     - $HOME/build-cache
-    - node_modules
+    - $HOME/.npm
+    - $(npm config get prefix)/lib/node_modules
 
 go_import_path: github.com/ligato/vpp-agent
 
