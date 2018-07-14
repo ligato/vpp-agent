@@ -21,14 +21,14 @@ clean: clean-cmd clean-examples
 
 # Install commands
 install:
-	@echo "=> installing commands"
+	@echo "=> installing commands ${VERSION}"
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
 # Build commands
 cmd:
-	@echo "=> building commands"
+	@echo "=> building commands ${VERSION}"
 	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/agentctl 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
@@ -194,10 +194,27 @@ get-linkcheck:
 check-links: get-linkcheck
 	./scripts/check_links.sh
 
+# TRAVIS_BUILD_ID: The id of the current build that Travis CI uses internally.
+# TRAVIS_BUILD_NUMBER: The number of the current build (for example, “4”).
+# TRAVIS_COMMIT: The commit that the current build is testing.
+# TRAVIS_COMMIT_MESSAGE: The commit subject and body, unwrapped.
+# TRAVIS_COMMIT_RANGE: The range of commits that were included in the push or pull request. (Note that this is empty for builds triggered by the initial commit of a new branch.)
+# TRAVIS_EVENT_TYPE: Indicates how the build was triggered. One of push, pull_request, api, cron.
+# TRAVIS_JOB_ID: The id of the current job that Travis CI uses internally.
+# TRAVIS_JOB_NUMBER: The number of the current job (for example, “4.1”).
+travis:
+	@echo "=> running travis"
+	@echo "Type: $(TRAVIS_EVENT_TYPE) PR: $(TRAVIS_PULL_REQUEST)"
+	@echo "Build ID: $(TRAVIS_BUILD_ID) ($(TRAVIS_JOB_ID)) Number: $(TRAVIS_BUILD_NUMBER) ($(TRAVIS_JOB_NUMBER))"
+	@echo "Commit: $(TRAVIS_COMMIT)"
+	@echo " - message:	$(TRAVIS_COMMIT_MESSAGE)"
+	@echo " - range:	$(TRAVIS_COMMIT_RANGE)"
+
 .PHONY: build clean \
 	install cmd examples clean-examples test \
 	test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
-	get-linkcheck check-links
+	get-linkcheck check-links \
+	travis
