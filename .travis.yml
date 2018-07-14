@@ -53,5 +53,8 @@ notifications:
     on_success: change
     on_failure: always
     template:
-      - "Repo *%{repository_name}*@%{branch} (<%{compare_url}|%{commit}>) build <%{build_url}|#%{build_number}> %{result} in PR <%{pull_request_url}|#%{pull_request_number}> by %{author}"
-      - "%{result} in *%{duration}*"
+      - "*%{repository_name}* on %{branch} (<%{compare_url}|%{commit}>) in PR <%{pull_request_url}|#%{pull_request_number}>"
+      - "> %{commit_subject}"
+      - "> by %{author}"
+      - "Build <%{build_url}|#%{build_number}> *%{result}* in _%{elapsed_time}_"
+      - "${message} (took _%{duration}_)"

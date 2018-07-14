@@ -196,15 +196,16 @@ check-links: get-linkcheck
 
 # Travis
 travis:
-	@echo "=> TRAVIS BUILD: #$$TRAVIS_BUILD_NUMBER ($$TRAVIS_BUILD_ID) $$TRAVIS_BUILD_STAGE_NAME"
-	@echo "Job: #$$TRAVIS_JOB_NUMBER ($$TRAVIS_JOB_ID) AllowFailure: $$TRAVIS_ALLOW_FAILURE ($$TRAVIS_TEST_RESULT)"
-	@echo "Repo: $$TRAVIS_REPO_SLUG"
+	@echo "=> TRAVIS: $$TRAVIS_BUILD_STAGE_NAME"
+	@echo "Build: #$$TRAVIS_BUILD_NUMBER ($$TRAVIS_BUILD_ID)"
+	@echo "Job: #$$TRAVIS_JOB_NUMBER ($$TRAVIS_JOB_ID)"
+	@echo "AllowFailure: $$TRAVIS_ALLOW_FAILURE TestResult: $$TRAVIS_TEST_RESULT"
 	@echo "Type: $$TRAVIS_EVENT_TYPE PullRequest: $$TRAVIS_PULL_REQUEST"
-	@echo "Branch: $$TRAVIS_BRANCH"
+	@echo "Repo: $$TRAVIS_REPO_SLUG Branch: $$TRAVIS_BRANCH"
 	@echo "Commit: $$TRAVIS_COMMIT"
-	@echo
-	@echo "Range: $$TRAVIS_COMMIT_RANGE"
 	@echo "$$TRAVIS_COMMIT_MESSAGE"
+	@echo "Range: $$TRAVIS_COMMIT_RANGE"
+	@echo "$$(git diff --name-only $$TRAVIS_COMMIT_RANGE)"
 
 
 .PHONY: build clean \
