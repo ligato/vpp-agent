@@ -2,7 +2,7 @@
 
 This image is used for development and debugging.
 
-#### What is included:
+### What is included:
 - **VPP-Agent** with default config files and ready to use
 - **VPP** (compatible with VPP-Agent) including source code and build artifacts
 - development environment with all requirements needed
@@ -17,11 +17,12 @@ For a quick start with the development image, you can download
 the [official image](https://hub.docker.com/r/ligato/dev-vpp-agent/) from **DockerHub**.
 
 ```sh
-$ docker pull docker.io/ligato/dev-vpp-agent	// latest release (stable)
-$ docker pull docker.io/ligato/dev-vpp-agent:pantheon-dev	// bleeding edge (unstable)
+$ docker pull docker.io/ligato/dev-vpp-agent	# latest release (stable)
+$ docker pull docker.io/ligato/dev-vpp-agent:pantheon-dev	# bleeding edge (unstable)
 ```
 
-List of all available docker image tags for development image can be found [here](https://hub.docker.com/r/ligato/dev-vpp-agent/tags/).
+List of all available docker image tags for development image can 
+be found [here](https://hub.docker.com/r/ligato/dev-vpp-agent/tags/).
 
 ## Building the image locally
 
