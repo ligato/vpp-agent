@@ -40,6 +40,11 @@ after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
 
 notifications:
-  slack: ligato:xLH4aTwGx1dexPaloAegQ74O
+  slack:
+    rooms:
+      - ligato:xLH4aTwGx1dexPaloAegQ74O
+    on_success: change
+    on_failure: always
     template:
-      - "Build <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>) of %{repository_slug}@%{branch} by %{author} %{result} in %{duration}"
+      - "Repo *%{repository_name}*@%{branch} (<%{compare_url}|%{commit}>) build <%{build_url}|#%{build_number}> %{result} in PR <%{pull_request_url}|#%{pull_request_number}> by %{author}"
+      - "%{result} in *%{duration}*"
