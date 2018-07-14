@@ -50,7 +50,7 @@ notifications:
   slack:
     rooms:
       - ligato:xLH4aTwGx1dexPaloAegQ74O
-    on_success: change
+    on_success: always
     on_failure: always
     template:
       - "*%{repository_name}* on %{branch} (<%{compare_url}|%{commit}>) in PR <%{pull_request_url}|#%{pull_request_number}>"
