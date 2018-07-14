@@ -14,7 +14,7 @@ addons:
         - npm
 
 git:
-  depth: 1
+  depth: 10
   submodules: false
 
 cache:
