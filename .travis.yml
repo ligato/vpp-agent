@@ -1,8 +1,11 @@
 dist: trusty
 sudo: required
+
 language: go
 go:
-  - 1.10.x
+  - "1.10.x"
+
+go_import_path: github.com/ligato/vpp-agent
 
 addons:
   apt:
@@ -18,8 +21,6 @@ cache:
     - $HOME/build-cache
     - $HOME/.npm
     - $(npm config get prefix)/lib/node_modules
-
-go_import_path: github.com/ligato/vpp-agent
 
 env:
   - GO_BUILD_TAGS=mockvpp
