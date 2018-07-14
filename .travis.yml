@@ -53,6 +53,6 @@ notifications:
     on_success: always
     on_failure: always
     template:
-      - "Build <%{build_url}|#%{build_number}> of %{repository_slug}* on branch _%{branch}_ in PR: <%{pull_request_url}|#%{pull_request_number}>"
+      - "Build <%{build_url}|#%{build_number}> of *%{repository_slug}* on branch _%{branch}_ in PR: <%{pull_request_url}|#%{pull_request_number}>"
       - "> `%{commit_subject}` _by %{author}_ (<%{compare_url}|%{commit}>)"
-      - "%{message} (_%{duration}_)"
+      - "*%{message}* (_%{duration}_)"
