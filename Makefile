@@ -194,20 +194,18 @@ get-linkcheck:
 check-links: get-linkcheck
 	./scripts/check_links.sh
 
-# TRAVIS_BUILD_ID: The id of the current build that Travis CI uses internally.
-# TRAVIS_BUILD_NUMBER: The number of the current build (for example, “4”).
-# TRAVIS_COMMIT: The commit that the current build is testing.
-# TRAVIS_COMMIT_MESSAGE: The commit subject and body, unwrapped.
-# TRAVIS_COMMIT_RANGE: The range of commits that were included in the push or pull request. (Note that this is empty for builds triggered by the initial commit of a new branch.)
-# TRAVIS_EVENT_TYPE: Indicates how the build was triggered. One of push, pull_request, api, cron.
-# TRAVIS_JOB_ID: The id of the current job that Travis CI uses internally.
-# TRAVIS_JOB_NUMBER: The number of the current job (for example, “4.1”).
+# Travis
 travis:
-	@echo "=> TRAVIS INFO:"
-	@echo "Build ID: $$TRAVIS_BUILD_ID ($$TRAVIS_JOB_ID) Number: $$TRAVIS_BUILD_NUMBER ($$TRAVIS_JOB_NUMBER)"
-	@echo "Type: $$TRAVIS_EVENT_TYPE PR: $$TRAVIS_PULL_REQUEST"
-	@echo "Commit: $$TRAVIS_COMMIT (range: $$TRAVIS_COMMIT_RANGE)"
-	@echo " $$TRAVIS_COMMIT_MESSAGE"
+	@echo "=> TRAVIS BUILD: #$$TRAVIS_BUILD_NUMBER ($$TRAVIS_BUILD_ID) $$TRAVIS_BUILD_STAGE_NAME"
+	@echo "Job: #$$TRAVIS_JOB_NUMBER ($$TRAVIS_JOB_ID) AllowFailure: $$TRAVIS_ALLOW_FAILURE ($$TRAVIS_TEST_RESULT)"
+	@echo "Repo: $$TRAVIS_REPO_SLUG"
+	@echo "Type: $$TRAVIS_EVENT_TYPE PullRequest: $$TRAVIS_PULL_REQUEST"
+	@echo "Branch: $$TRAVIS_BRANCH"
+	@echo "Commit: $$TRAVIS_COMMIT"
+	@echo
+	@echo "Range: $$TRAVIS_COMMIT_RANGE"
+	@echo "$$TRAVIS_COMMIT_MESSAGE"
+
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
