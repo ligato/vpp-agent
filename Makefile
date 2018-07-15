@@ -21,14 +21,14 @@ clean: clean-cmd clean-examples
 
 # Install commands
 install:
-	@echo "=> installing commands"
+	@echo "=> installing commands ${VERSION}"
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
 	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
 
 # Build commands
 cmd:
-	@echo "=> building commands"
+	@echo "=> building commands ${VERSION}"
 	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
 	cd cmd/agentctl 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
@@ -194,10 +194,25 @@ get-linkcheck:
 check-links: get-linkcheck
 	./scripts/check_links.sh
 
+# Travis
+travis:
+	@echo "=> TRAVIS: $$TRAVIS_BUILD_STAGE_NAME"
+	@echo "Build: #$$TRAVIS_BUILD_NUMBER ($$TRAVIS_BUILD_ID)"
+	@echo "Job: #$$TRAVIS_JOB_NUMBER ($$TRAVIS_JOB_ID)"
+	@echo "AllowFailure: $$TRAVIS_ALLOW_FAILURE TestResult: $$TRAVIS_TEST_RESULT"
+	@echo "Type: $$TRAVIS_EVENT_TYPE PullRequest: $$TRAVIS_PULL_REQUEST"
+	@echo "Repo: $$TRAVIS_REPO_SLUG Branch: $$TRAVIS_BRANCH"
+	@echo "Commit: $$TRAVIS_COMMIT"
+	@echo "$$TRAVIS_COMMIT_MESSAGE"
+	@echo "Range: $$TRAVIS_COMMIT_RANGE"
+	@echo "$$(git diff --name-only $$TRAVIS_COMMIT_RANGE)"
+
+
 .PHONY: build clean \
 	install cmd examples clean-examples test \
 	test-cover test-cover-html test-cover-xml \
 	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
-	get-linkcheck check-links
+	get-linkcheck check-links \
+	travis
