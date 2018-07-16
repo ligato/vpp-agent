@@ -143,8 +143,8 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi/tapv2 && pkgreflect
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
-	@echo "=> applying patches"
-	patch -p1 -i plugins/vpp/binapi/*.patch
+	@echo "=> applying fix patches"
+	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch -p1 -i {} \;
 
 verify-binapi:
 	@echo "=> verifying binary api"
