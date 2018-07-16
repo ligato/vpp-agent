@@ -218,7 +218,7 @@ class YamlConfigGenerator(object):
 
         topology = []
         for bridge_segment in entities_list:
-            segment_topology = {"vnf":[], "novpp":[]}
+            segment_topology = {"vnf": [], "novpp": []}
             for element in bridge_segment["elements"]:
                 if element["container"].startswith("vnf-vpp"):
                     segment_topology["vnf"].append(

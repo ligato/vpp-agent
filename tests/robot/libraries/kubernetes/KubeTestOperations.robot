@@ -71,8 +71,8 @@ Restart Topology With Startup Sequence
     \    Run Keyword If    "${item}"=="etcd"       KubeEnv.Deploy_Etcd_And_Verify_Running    ${testbed_connection}
     \    Run Keyword If    "${item}"=="vswitch"    KubeEnv.Deploy_Vswitch_Pod_And_Verify_Running    ${testbed_connection}
     \    Run Keyword If    "${item}"=="sfc"        KubeEnv.Deploy_SFC_Pod_And_Verify_Running    ${testbed_connection}
-    \    Run Keyword If    "${item}"=="vnf"        KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${1}
-    \    Run Keyword If    "${item}"=="novpp"      KubeEnv.Deploy_NoVPP_Pods    ${testbed_connection}    ${1}
+    \    Run Keyword If    "${item}"=="vnf"        KubeEnv.Deploy_VNF_Pods    ${testbed_connection}    ${vnf_count}
+    \    Run Keyword If    "${item}"=="novpp"      KubeEnv.Deploy_NoVPP_Pods    ${testbed_connection}    ${novpp_count}
 
 Scale Verify Connectivity - Unix Ping
     [Documentation]    Verify connectivity between pods in scale test scenario.
@@ -132,7 +132,7 @@ Scale Pod Restart - VPP SIGSEGV
     [Arguments]    ${pod_type}
     Log Many    ${topology}    ${pod_type}
     :FOR    ${bridge_segment}    IN    @{topology}
-    \    Trigger Pod Restart - VPP SIGSEGV    ${testbed_connection}    ${bridge_segment["${pod_type}"][0]["name"]}
+    \    Trigger Pod Restart - VPP SIGSEGV    ${bridge_segment["${pod_type}"][0]["name"]}
 
 Scale Wait For Reconnect - Unix Ping
     [Documentation]    Run "Ping Until Success" sequentially for each pod
