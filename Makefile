@@ -4,11 +4,15 @@ VERSION	?= $(shell git describe --always --tags --dirty)
 COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
-CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
-LDFLAGS	= -X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)
+CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
+LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
 
 ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
+endif
+
+ifeq ($(V),1)
+GO_BUILD_ARGS += -v
 endif
 
 COVER_DIR ?= /tmp
@@ -22,16 +26,16 @@ clean: clean-cmd clean-examples
 # Install commands
 install:
 	@echo "=> installing commands ${VERSION}"
-	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
-	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
-	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent-ctl
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
 # Build commands
 cmd:
 	@echo "=> building commands ${VERSION}"
-	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
-	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
-	cd cmd/agentctl 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
+	cd cmd/vpp-agent 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/vpp-agent-ctl	&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/agentctl 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean commands
 clean-cmd:
@@ -43,17 +47,18 @@ clean-cmd:
 # Build examples
 examples:
 	@echo "=> building examples"
-	cd examples/govpp_call 		    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_bd_cache 	    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_iface_cache     	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_lookup  	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_watcher     && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_linux/veth 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_linux/tap 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp/plugins && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp/nat     && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/grpc_vpp/remote_client  && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/grpc_vpp/notifications  && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/govpp_call 		    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_bd_cache 	    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_iface_cache     	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_mapping_lookup  	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_mapping_watcher     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_veth_cache			&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/tap 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/veth 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/nat     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/plugins && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/remote_client  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/notifications  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean examples
 clean-examples:
@@ -63,9 +68,13 @@ clean-examples:
 	rm -f examples/idx_iface_cache/idx_iface_cache
 	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
 	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-	rm -f examples/localclient_linux/veth/veth
+	rm -f examples/idx_veth_cache/idx_veth_cache
 	rm -f examples/localclient_linux/tap/tap
-	rm -r examples/localclient_vpp/localclient_vpp
+	rm -f examples/localclient_linux/veth/veth
+	rm -f examples/localclient_vpp/nat/nat
+	rm -f examples/localclient_vpp/plugins/plugins
+	rm -f examples/grpc_vpp/notifications/notifications
+	rm -f examples/grpc_vpp/remote_client/remote_client
 
 # Run tests
 test:
@@ -91,7 +100,7 @@ generate: generate-proto generate-binapi
 
 # Get generator tools
 get-proto-generators:
-	go install -v ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+	go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
 
 # Generate proto models
 generate-proto: get-proto-generators
@@ -109,8 +118,8 @@ generate-proto: get-proto-generators
 
 # Get generator tools
 get-binapi-generators:
-	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
-	go install -v ./vendor/github.com/ungerik/pkgreflect
+	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	go install ./vendor/github.com/ungerik/pkgreflect
 
 # Generate binary api
 generate-binapi: get-binapi-generators
@@ -134,15 +143,15 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi/tapv2 && pkgreflect
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
-	@echo "=> applying fix patch"
-	patch -p1 -i plugins/vpp/binapi/fixapi.patch
+	@echo "=> applying patches"
+	patch -p1 -i plugins/vpp/binapi/*.patch
 
 verify-binapi:
 	@echo "=> verifying binary api"
-	cd docker/dev && docker build --file Dockerfile --target verify \
-			--build-arg VPP_REPO_URL=${VPP_REPO_URL} \
-			--build-arg VPP_COMMIT=${VPP_COMMIT} \
-	 	../..
+	docker build -f docker/dev/Dockerfile \
+		--build-arg VPP_REPO_URL=${VPP_REPO_URL} \
+		--build-arg VPP_COMMIT=${VPP_COMMIT} \
+		--target verify-stage .
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...
@@ -205,6 +214,7 @@ travis:
 	@echo "Commit: $$TRAVIS_COMMIT"
 	@echo "$$TRAVIS_COMMIT_MESSAGE"
 	@echo "Range: $$TRAVIS_COMMIT_RANGE"
+	@echo "Files:"
 	@echo "$$(git diff --name-only $$TRAVIS_COMMIT_RANGE)"
 
 
