@@ -38,8 +38,8 @@ before_install:
 script:
   - make check-links || true
   - make lint
-  - make verify-binapi
   - make dep-check
+  - make verify-binapi
   - make
   - make test-cover
 

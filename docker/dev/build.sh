@@ -27,7 +27,8 @@ echo "base image: ${BASE_IMG}"
 echo "image tag:  ${IMAGE_TAG}"
 echo "=============================="
 
-sudo docker build --tag ${IMAGE_TAG} --file ${DOCKERFILE} \
+docker build -f ${DOCKERFILE} \
+    --tag ${IMAGE_TAG} \
     --build-arg BASE_IMG=${BASE_IMG} \
     --build-arg VPP_COMMIT=${VPP_COMMIT} \
     --build-arg VPP_REPO_URL=${VPP_REPO_URL} \
@@ -35,5 +36,4 @@ sudo docker build --tag ${IMAGE_TAG} --file ${DOCKERFILE} \
     --build-arg GOLANG_OS_ARCH=${GOLANG_OS_ARCH} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
-    ${DOCKER_BUILD_ARGS} \
- ../..
+    ${DOCKER_BUILD_ARGS} ../..
