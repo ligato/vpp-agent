@@ -15,7 +15,7 @@
 package govppmux
 
 import (
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 )
 
 // API for other plugins to get connectivity to VPP.
@@ -26,7 +26,7 @@ type API interface {
 	// Example of binary API call from some plugin using GOVPP:
 	//      ch, _ := govpp_mux.NewAPIChannel()
 	//      ch.SendRequest(req).ReceiveReply
-	NewAPIChannel() (*api.Channel, error)
+	NewAPIChannel() (govppapi.Channel, error)
 
 	// NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
 	// It allows to specify custom buffer sizes for the request and reply Go channels.
@@ -34,5 +34,5 @@ type API interface {
 	// Example of binary API call from some plugin using GOVPP:
 	//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 	//      ch.SendRequest(req).ReceiveReply
-	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (*api.Channel, error)
+	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error)
 }

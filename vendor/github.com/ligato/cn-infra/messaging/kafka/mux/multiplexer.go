@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging/kafka/client"
@@ -46,7 +47,6 @@ type Multiplexer struct {
 
 	// factory that crates Consumer used in the Multiplexer
 	consumerFactory func(topics []string, groupId string) (*client.Consumer, error)
-	closeCh         chan struct{}
 }
 
 // ConsumerSubscription contains all information about subscribed kafka consumer/watcher
@@ -98,7 +98,6 @@ func NewMultiplexer(consumerFactory ConsumerFactory, producers multiplexerProduc
 		Logger:               log,
 		name:                 name,
 		mapping:              []*consumerSubscription{},
-		closeCh:              make(chan struct{}),
 		multiplexerProducers: producers,
 		config:               clientCfg,
 	}
@@ -232,8 +231,12 @@ func (mux *Multiplexer) Start() error {
 
 // Close cleans up the resources used by the Multiplexer
 func (mux *Multiplexer) Close() {
-	close(mux.closeCh)
-	safeclose.CloseAll(mux.Consumer, mux.hashSyncProducer, mux.hashAsyncProducer, mux.manSyncProducer, mux.manAsyncProducer)
+	safeclose.Close(
+		mux.Consumer,
+		mux.hashSyncProducer,
+		mux.hashAsyncProducer,
+		mux.manSyncProducer,
+		mux.manAsyncProducer)
 }
 
 // NewBytesConnection creates instance of the BytesConnectionStr that provides access to shared

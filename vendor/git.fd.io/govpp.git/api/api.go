@@ -15,11 +15,7 @@
 package api
 
 import (
-	"errors"
-	"fmt"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 // MessageType represents the type of a VPP message.
@@ -61,11 +57,11 @@ type DataType interface {
 type ChannelProvider interface {
 	// NewAPIChannel returns a new channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	NewAPIChannel() (*Channel, error)
+	NewAPIChannel() (Channel, error)
 
 	// NewAPIChannelBuffered returns a new channel for communication with VPP via govpp core.
 	// It allows to specify custom buffer sizes for the request and reply Go channels.
-	NewAPIChannelBuffered() (*Channel, error)
+	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (Channel, error)
 }
 
 // MessageDecoder provides functionality for decoding binary data to generated API messages.
@@ -82,27 +78,62 @@ type MessageIdentifier interface {
 	LookupByID(ID uint16) (string, error)
 }
 
-// Channel is the main communication interface with govpp core. It contains two Go channels, one for sending the requests
-// to VPP and one for receiving the replies from it. The user can access the Go channels directly, or use the helper
-// methods  provided inside of this package. Do not use the same channel from multiple goroutines concurrently,
-// otherwise the responses could mix! Use multiple channels instead.
-type Channel struct {
-	ReqChan   chan *VppRequest // channel for sending the requests to VPP, closing this channel releases all resources in the ChannelProvider
-	ReplyChan chan *VppReply   // channel where VPP replies are delivered to
+// Channel provides methods for direct communication with VPP channel.
+type Channel interface {
+	// SendRequest asynchronously sends a request to VPP. Returns a request context, that can be used to call ReceiveReply.
+	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
+	SendRequest(msg Message) RequestCtx
+	// SendMultiRequest asynchronously sends a multipart request (request to which multiple responses are expected) to VPP.
+	// Returns a multipart request context, that can be used to call ReceiveReply.
+	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
+	SendMultiRequest(msg Message) MultiRequestCtx
+	// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel.
+	// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
+	// buffer is full, the notifications will not be delivered into it.
+	SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error)
+	// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription.
+	UnsubscribeNotification(subscription *NotifSubscription) error
+	// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
+	// which the library is connected to.
+	CheckMessageCompatibility(messages ...Message) error
+	// SetReplyTimeout sets the timeout for replies from VPP. It represents the maximum time the API waits for a reply
+	// from VPP before returning an error.
+	SetReplyTimeout(timeout time.Duration)
+	// GetRequestChannel returns request go channel of the VPP channel
+	GetRequestChannel() chan<- *VppRequest
+	// GetReplyChannel returns reply go channel of the VPP channel
+	GetReplyChannel() <-chan *VppReply
+	// GetNotificationChannel returns notification go channel of the VPP channel
+	GetNotificationChannel() chan<- *NotifSubscribeRequest
+	// GetNotificationReplyChannel returns notification reply go channel of the VPP channel
+	GetNotificationReplyChannel() <-chan error
+	// GetMessageDecoder returns message decoder instance
+	GetMessageDecoder() MessageDecoder
+	// GetID returns channel's ID
+	GetID() uint16
+	// Close closes the API channel and releases all API channel-related resources in the ChannelProvider.
+	Close()
+}
 
-	NotifSubsChan      chan *NotifSubscribeRequest // channel for sending notification subscribe requests
-	NotifSubsReplyChan chan error                  // channel where replies to notification subscribe requests are delivered to
+// RequestCtx is helper interface which allows to receive reply on request context data
+type RequestCtx interface {
+	// ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
+	// The reply will be decoded into the msg argument. Error will be returned if the response cannot be received or decoded.
+	ReceiveReply(msg Message) error
+}
 
-	MsgDecoder    MessageDecoder    // used to decode binary data to generated API messages
-	MsgIdentifier MessageIdentifier // used to retrieve message ID of a message
-
-	replyTimeout time.Duration // maximum time that the API waits for a reply from VPP before returning an error, can be set with SetReplyTimeout
-	metadata     interface{}   // opaque metadata of the API channel
-	lastTimedOut bool          // wether last request timed out
+// MultiRequestCtx is helper interface which allows to receive reply on multi-request context data
+type MultiRequestCtx interface {
+	// ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
+	// The reply will be decoded into the msg argument. If the last reply has been already consumed, lastReplyReceived is
+	// set to true. Do not use the message itself if lastReplyReceived is true - it won't be filled with actual data.
+	// Error will be returned if the response cannot be received or decoded.
+	ReceiveReply(msg Message) (lastReplyReceived bool, err error)
 }
 
 // VppRequest is a request that will be sent to VPP.
 type VppRequest struct {
+	SeqNum    uint16  // sequence number
 	Message   Message // binary API message to be send to VPP
 	Multipart bool    // true if multipart response is expected, false otherwise
 }
@@ -110,6 +141,7 @@ type VppRequest struct {
 // VppReply is a reply received from VPP.
 type VppReply struct {
 	MessageID         uint16 // ID of the message
+	SeqNum            uint16 // sequence number
 	Data              []byte // encoded data with the message - MessageDecoder can be used for decoding
 	LastReplyReceived bool   // in case of multipart replies, true if the last reply has been already received and this one should be ignored
 	Error             error  // in case of error, data is nil and this member contains error description
@@ -125,189 +157,4 @@ type NotifSubscribeRequest struct {
 type NotifSubscription struct {
 	NotifChan  chan Message   // channel where notification messages will be delivered to
 	MsgFactory func() Message // function that returns a new instance of the specific message that is expected as a notification
-}
-
-// RequestCtx is a context of a ongoing request (simple one - only one response is expected).
-type RequestCtx struct {
-	ch *Channel
-}
-
-// MultiRequestCtx is a context of a ongoing multipart request (multiple responses are expected).
-type MultiRequestCtx struct {
-	ch *Channel
-}
-
-const defaultReplyTimeout = time.Second * 1 // default timeout for replies from VPP, can be changed with SetReplyTimeout
-
-// NewChannelInternal returns a new channel structure with metadata field filled in with the provided argument.
-// Note that this is just a raw channel not yet connected to VPP, it is not intended to be used directly.
-// Use ChannelProvider to get an API channel ready for communication with VPP.
-func NewChannelInternal(metadata interface{}) *Channel {
-	return &Channel{
-		replyTimeout: defaultReplyTimeout,
-		metadata:     metadata,
-	}
-}
-
-// Metadata returns the metadata stored within the channel structure by the NewChannelInternal call.
-func (ch *Channel) Metadata() interface{} {
-	return ch.metadata
-}
-
-// SetReplyTimeout sets the timeout for replies from VPP. It represents the maximum time the API waits for a reply
-// from VPP before returning an error.
-func (ch *Channel) SetReplyTimeout(timeout time.Duration) {
-	ch.replyTimeout = timeout
-}
-
-// Close closes the API channel and releases all API channel-related resources in the ChannelProvider.
-func (ch *Channel) Close() {
-	if ch.ReqChan != nil {
-		close(ch.ReqChan)
-	}
-}
-
-// SendRequest asynchronously sends a request to VPP. Returns a request context, that can be used to call ReceiveReply.
-// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
-func (ch *Channel) SendRequest(msg Message) *RequestCtx {
-	ch.ReqChan <- &VppRequest{
-		Message: msg,
-	}
-	return &RequestCtx{ch: ch}
-}
-
-// ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
-// The reply will be decoded into the msg argument. Error will be returned if the response cannot be received or decoded.
-func (req *RequestCtx) ReceiveReply(msg Message) error {
-	if req == nil || req.ch == nil {
-		return errors.New("invalid request context")
-	}
-
-	lastReplyReceived, err := req.ch.receiveReplyInternal(msg)
-
-	if lastReplyReceived {
-		err = errors.New("multipart reply recieved while a simple reply expected")
-	}
-	return err
-}
-
-// SendMultiRequest asynchronously sends a multipart request (request to which multiple responses are expected) to VPP.
-// Returns a multipart request context, that can be used to call ReceiveReply.
-// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
-func (ch *Channel) SendMultiRequest(msg Message) *MultiRequestCtx {
-	ch.ReqChan <- &VppRequest{
-		Message:   msg,
-		Multipart: true,
-	}
-	return &MultiRequestCtx{ch: ch}
-}
-
-// ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
-// The reply will be decoded into the msg argument. If the last reply has been already consumed, LastReplyReceived is
-// set to true. Do not use the message itself if LastReplyReceived is true - it won't be filled with actual data.
-// Error will be returned if the response cannot be received or decoded.
-func (req *MultiRequestCtx) ReceiveReply(msg Message) (LastReplyReceived bool, err error) {
-	if req == nil || req.ch == nil {
-		return false, errors.New("invalid request context")
-	}
-
-	return req.ch.receiveReplyInternal(msg)
-}
-
-// receiveReplyInternal receives a reply from the reply channel into the provided msg structure.
-func (ch *Channel) receiveReplyInternal(msg Message) (LastReplyReceived bool, err error) {
-	if msg == nil {
-		return false, errors.New("nil message passed in")
-	}
-
-	timer := time.NewTimer(ch.replyTimeout)
-	for {
-		select {
-		// blocks until a reply comes to ReplyChan or until timeout expires
-		case vppReply := <-ch.ReplyChan:
-			if vppReply.Error != nil {
-				err = vppReply.Error
-				return
-			}
-			if vppReply.LastReplyReceived {
-				LastReplyReceived = true
-				return
-			}
-
-			// message checks
-			expMsgID, err := ch.MsgIdentifier.GetMessageID(msg)
-			if err != nil {
-				err = fmt.Errorf("message %s with CRC %s is not compatible with the VPP we are connected to",
-					msg.GetMessageName(), msg.GetCrcString())
-				return false, err
-			}
-
-			if vppReply.MessageID != expMsgID {
-				var msgNameCrc string
-				if nameCrc, err := ch.MsgIdentifier.LookupByID(vppReply.MessageID); err != nil {
-					msgNameCrc = err.Error()
-				} else {
-					msgNameCrc = nameCrc
-				}
-
-				if ch.lastTimedOut {
-					logrus.Warnf("received invalid message ID, expected %d (%s), but got %d (%s) (probably timed out reply from previous request)",
-						expMsgID, msg.GetMessageName(), vppReply.MessageID, msgNameCrc)
-					continue
-				}
-
-				err = fmt.Errorf("received invalid message ID, expected %d (%s), but got %d (%s) (check if multiple goroutines are not sharing single GoVPP channel)",
-					expMsgID, msg.GetMessageName(), vppReply.MessageID, msgNameCrc)
-				return false, err
-			}
-
-			ch.lastTimedOut = false
-			// decode the message
-			err = ch.MsgDecoder.DecodeMsg(vppReply.Data, msg)
-			return false, err
-
-		case <-timer.C:
-			ch.lastTimedOut = true
-			err = fmt.Errorf("no reply received within the timeout period %s", ch.replyTimeout)
-			return false, err
-		}
-	}
-	return
-}
-
-// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel.
-// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
-// buffer is full, the notifications will not be delivered into it.
-func (ch *Channel) SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error) {
-	subscription := &NotifSubscription{
-		NotifChan:  notifChan,
-		MsgFactory: msgFactory,
-	}
-	ch.NotifSubsChan <- &NotifSubscribeRequest{
-		Subscription: subscription,
-		Subscribe:    true,
-	}
-	return subscription, <-ch.NotifSubsReplyChan
-}
-
-// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription.
-func (ch *Channel) UnsubscribeNotification(subscription *NotifSubscription) error {
-	ch.NotifSubsChan <- &NotifSubscribeRequest{
-		Subscription: subscription,
-		Subscribe:    false,
-	}
-	return <-ch.NotifSubsReplyChan
-}
-
-// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
-// which the library is connected to.
-func (ch *Channel) CheckMessageCompatibility(messages ...Message) error {
-	for _, msg := range messages {
-		_, err := ch.MsgIdentifier.GetMessageID(msg)
-		if err != nil {
-			return fmt.Errorf("message %s with CRC %s is not compatible with the VPP we are connected to",
-				msg.GetMessageName(), msg.GetCrcString())
-		}
-	}
-	return nil
 }

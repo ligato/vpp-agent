@@ -1,15 +1,21 @@
-VERSION	:= $(shell git describe --always --tags --dirty)
-COMMIT	:= $(shell git rev-parse HEAD)
+include vpp.env
+
+VERSION	?= $(shell git describe --always --tags --dirty)
+COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
-CNINFRA_CORE := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
-LDFLAGS	= -X $(CNINFRA_CORE).BuildVersion=$(VERSION) -X $(CNINFRA_CORE).CommitHash=$(COMMIT) -X $(CNINFRA_CORE).BuildDate=$(DATE)
+CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
+LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
 
-ifeq ($(STRIP), y)
+ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
 endif
 
-COVER_DIR ?= /tmp/
+ifeq ($(V),1)
+GO_BUILD_ARGS += -v
+endif
+
+COVER_DIR ?= /tmp
 
 # Build all
 build: cmd examples
@@ -19,17 +25,17 @@ clean: clean-cmd clean-examples
 
 # Install commands
 install:
-	@echo "=> installing commands"
-	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent
-	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/vpp-agent-ctl
-	go install -v -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ./cmd/agentctl
+	@echo "=> installing commands ${VERSION}"
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent-ctl
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
 # Build commands
 cmd:
-	@echo "=> building commands"
-	cd cmd/vpp-agent 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
-	cd cmd/vpp-agent-ctl	&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
-	cd cmd/agentctl 		&& go build -v -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}"
+	@echo "=> building commands ${VERSION}"
+	cd cmd/vpp-agent 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/vpp-agent-ctl	&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/agentctl 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean commands
 clean-cmd:
@@ -41,17 +47,18 @@ clean-cmd:
 # Build examples
 examples:
 	@echo "=> building examples"
-	cd examples/govpp_call 		    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_bd_cache 	    	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_iface_cache     	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_lookup  	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/idx_mapping_watcher     && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_linux/veth 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_linux/tap 	&& go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp/plugins && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/localclient_vpp/nat     && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/grpc_vpp/remote_client  && go build -v -i -tags="${GO_BUILD_TAGS}"
-	cd examples/grpc_vpp/notifications  && go build -v -i -tags="${GO_BUILD_TAGS}"
+	cd examples/govpp_call 		    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_bd_cache 	    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_iface_cache     	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_mapping_lookup  	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_mapping_watcher     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_veth_cache			&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/tap 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/veth 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/nat     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/plugins && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/remote_client  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/notifications  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean examples
 clean-examples:
@@ -61,115 +68,90 @@ clean-examples:
 	rm -f examples/idx_iface_cache/idx_iface_cache
 	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
 	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-	rm -f examples/localclient_linux/veth/veth
+	rm -f examples/idx_veth_cache/idx_veth_cache
 	rm -f examples/localclient_linux/tap/tap
-	rm -r examples/localclient_vpp/localclient_vpp
+	rm -f examples/localclient_linux/veth/veth
+	rm -f examples/localclient_vpp/nat/nat
+	rm -f examples/localclient_vpp/plugins/plugins
+	rm -f examples/grpc_vpp/notifications/notifications
+	rm -f examples/grpc_vpp/remote_client/remote_client
 
 # Run tests
 test:
-	@echo "=> running scenario tests"
-	go test -tags="${GO_BUILD_TAGS}" ./tests/go/itest
 	@echo "=> running unit tests"
-	go test ./cmd/agentctl/utils
-	go test ./idxvpp/nametoidx
-	go test ./plugins/defaultplugins/aclplugin/vppdump
-	go test ./plugins/defaultplugins/ifplugin
-	go test ./plugins/defaultplugins/ifplugin/vppcalls
-	go test ./plugins/defaultplugins/ifplugin/vppdump
-	go test ./plugins/defaultplugins/l2plugin
-	go test ./plugins/defaultplugins/l2plugin/l2idx
-	go test ./plugins/defaultplugins/l2plugin/vppcalls
-	go test ./plugins/defaultplugins/l2plugin/vppdump
-	go test ./plugins/defaultplugins/rpc
-	go test ./plugins/defaultplugins/srplugin
-	go test ./plugins/defaultplugins/srplugin/vppcalls
-
-# Get coverage report tools
-get-covtools:
-	go get -v github.com/wadey/gocovmerge
+	go test -tags="${GO_BUILD_TAGS}" ./...
 
 # Run coverage report
-test-cover: get-covtools
-	@echo "=> running unit tests with coverage analysis"
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_scenario.out -tags="${GO_BUILD_TAGS}" ./tests/go/itest
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit1.out ./cmd/agentctl/utils
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_unit2.out ./idxvpp/nametoidx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_aclplugin_vppdump.out ./plugins/defaultplugins/aclplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin.out -tags=mockvpp ./plugins/defaultplugins/ifplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppcalls.out ./plugins/defaultplugins/ifplugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_ifplugin_vppdump.out ./plugins/defaultplugins/ifplugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin.out -tags=mockvpp ./plugins/defaultplugins/l2plugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_l2idx.out ./plugins/defaultplugins/l2plugin/l2idx
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppcalls.out ./plugins/defaultplugins/l2plugin/vppcalls
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_l2plugin_vppdump.out ./plugins/defaultplugins/l2plugin/vppdump
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_rpc.out ./plugins/defaultplugins/rpc
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin
-	go test -covermode=count -coverprofile=${COVER_DIR}coverage_srplugin_vppcalls.out -tags="${GO_BUILD_TAGS}" ./plugins/defaultplugins/srplugin/vppcalls
-	@echo "=> merging coverage results"
-	gocovmerge \
-			${COVER_DIR}coverage_scenario.out \
-			${COVER_DIR}coverage_unit1.out \
-			${COVER_DIR}coverage_unit2.out \
-			${COVER_DIR}coverage_aclplugin_vppdump.out  \
-			${COVER_DIR}coverage_ifplugin.out \
-			${COVER_DIR}coverage_ifplugin_vppcalls.out \
-			${COVER_DIR}coverage_ifplugin_vppdump.out \
-			${COVER_DIR}coverage_l2plugin.out \
-			${COVER_DIR}coverage_l2plugin_l2idx.out \
-			${COVER_DIR}coverage_l2plugin_vppcalls.out \
-			${COVER_DIR}coverage_l2plugin_vppdump.out  \
-			${COVER_DIR}coverage_rpc.out  \
-			${COVER_DIR}coverage_srplugin.out  \
-			${COVER_DIR}coverage_srplugin_vppcalls.out  \
-		> ${COVER_DIR}coverage.out
-	@echo "=> coverage data generated into ${COVER_DIR}coverage.out"
+test-cover:
+	@echo "=> running unit tests with coverage"
+	go test -tags="${GO_BUILD_TAGS}" -covermode=count -coverprofile=${COVER_DIR}/coverage.out ./...
+	@echo "=> coverage data generated into ${COVER_DIR}/coverage.out"
 
 test-cover-html: test-cover
-	go tool cover -html=${COVER_DIR}coverage.out -o ${COVER_DIR}coverage.html
-	@echo "=> coverage report generated into ${COVER_DIR}coverage.html"
+	go tool cover -html=${COVER_DIR}/coverage.out -o ${COVER_DIR}/coverage.html
+	@echo "=> coverage report generated into ${COVER_DIR}/coverage.html"
 
 test-cover-xml: test-cover
-	gocov convert ${COVER_DIR}coverage.out | gocov-xml > ${COVER_DIR}coverage.xml
-	@echo "=> coverage report generated into ${COVER_DIR}coverage.xml"
+	gocov convert ${COVER_DIR}/coverage.out | gocov-xml > ${COVER_DIR}/coverage.xml
+	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
+
+# Code generation
+generate: generate-proto generate-binapi
 
 # Get generator tools
-get-generators:
-	go install -v ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
-	go install -v ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
-	go install -v ./vendor/github.com/ungerik/pkgreflect
+get-proto-generators:
+	go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
 
-# Generate sources
-generate: get-generators
-	@echo "=> generating sources"
-	cd plugins/linuxplugin && go generate
-	cd plugins/defaultplugins/aclplugin && go generate
-	cd plugins/defaultplugins/ifplugin && go generate
-	cd plugins/defaultplugins/ipsecplugin && go generate
-	cd plugins/defaultplugins/l2plugin && go generate
-	cd plugins/defaultplugins/l3plugin && go generate
-	cd plugins/defaultplugins/l4plugin && go generate
-	cd plugins/defaultplugins/srplugin && go generate
-	cd plugins/defaultplugins/rpc && go generate
-	cd plugins/linuxplugin/ifplugin && go generate
-	cd plugins/linuxplugin/l3plugin && go generate
-	cd plugins/defaultplugins/common/bin_api/acl && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/af_packet && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/bfd && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/dhcp && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/interfaces && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/ip && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/ipsec && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/l2 && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/memif && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/nat && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/session && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/stats && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/stn && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/tap && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/tapv2 && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/vpe && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/vxlan && pkgreflect
-	cd plugins/defaultplugins/common/bin_api/sr && pkgreflect
+# Generate proto models
+generate-proto: get-proto-generators
+	@echo "=> generating proto"
+	cd plugins/linux/ifplugin && go generate
+	cd plugins/linux/l3plugin && go generate
+	cd plugins/vpp/aclplugin && go generate
+	cd plugins/vpp/ifplugin && go generate
+	cd plugins/vpp/ipsecplugin && go generate
+	cd plugins/vpp/l2plugin && go generate
+	cd plugins/vpp/l3plugin && go generate
+	cd plugins/vpp/l4plugin && go generate
+	cd plugins/vpp/rpc && go generate
+	cd plugins/vpp/srplugin && go generate
+
+# Get generator tools
+get-binapi-generators:
+	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	go install ./vendor/github.com/ungerik/pkgreflect
+
+# Generate binary api
+generate-binapi: get-binapi-generators
+	@echo "=> generating binapi"
+	cd plugins/vpp/binapi && go generate
+	cd plugins/vpp/binapi/acl && pkgreflect
+	cd plugins/vpp/binapi/af_packet && pkgreflect
+	cd plugins/vpp/binapi/bfd && pkgreflect
+	cd plugins/vpp/binapi/dhcp && pkgreflect
+	cd plugins/vpp/binapi/interfaces && pkgreflect
+	cd plugins/vpp/binapi/ip && pkgreflect
+	cd plugins/vpp/binapi/ipsec && pkgreflect
+	cd plugins/vpp/binapi/l2 && pkgreflect
+	cd plugins/vpp/binapi/memif && pkgreflect
+	cd plugins/vpp/binapi/nat && pkgreflect
+	cd plugins/vpp/binapi/session && pkgreflect
+	cd plugins/vpp/binapi/sr && pkgreflect
+	cd plugins/vpp/binapi/stats && pkgreflect
+	cd plugins/vpp/binapi/stn && pkgreflect
+	cd plugins/vpp/binapi/tap && pkgreflect
+	cd plugins/vpp/binapi/tapv2 && pkgreflect
+	cd plugins/vpp/binapi/vpe && pkgreflect
+	cd plugins/vpp/binapi/vxlan && pkgreflect
+	@echo "=> applying patches"
+	patch -p1 -i plugins/vpp/binapi/*.patch
+
+verify-binapi:
+	@echo "=> verifying binary api"
+	docker build -f docker/dev/Dockerfile \
+		--build-arg VPP_REPO_URL=${VPP_REPO_URL} \
+		--build-arg VPP_COMMIT=${VPP_COMMIT} \
+		--target verify-stage .
 
 get-bindata:
 	go get -v github.com/jteeuwen/go-bindata/...
@@ -181,16 +163,21 @@ bindata: get-bindata
 # Get dependency manager tool
 get-dep:
 	go get -v github.com/golang/dep/cmd/dep
+	dep version
 
 # Install the project's dependencies
 dep-install: get-dep
 	@echo "=> installing project's dependencies"
-	dep ensure
+	dep ensure -v
 
 # Update the locked versions of all dependencies
 dep-update: get-dep
 	@echo "=> updating all dependencies"
 	dep ensure -update
+
+# Check state of dependencies
+dep-check: get-dep
+	dep ensure -dry-run -no-vendor
 
 # Get linter tools
 get-linters:
@@ -217,10 +204,26 @@ get-linkcheck:
 check-links: get-linkcheck
 	./scripts/check_links.sh
 
+# Travis
+travis:
+	@echo "=> TRAVIS: $$TRAVIS_BUILD_STAGE_NAME"
+	@echo "Build: #$$TRAVIS_BUILD_NUMBER ($$TRAVIS_BUILD_ID)"
+	@echo "Job: #$$TRAVIS_JOB_NUMBER ($$TRAVIS_JOB_ID)"
+	@echo "AllowFailure: $$TRAVIS_ALLOW_FAILURE TestResult: $$TRAVIS_TEST_RESULT"
+	@echo "Type: $$TRAVIS_EVENT_TYPE PullRequest: $$TRAVIS_PULL_REQUEST"
+	@echo "Repo: $$TRAVIS_REPO_SLUG Branch: $$TRAVIS_BRANCH"
+	@echo "Commit: $$TRAVIS_COMMIT"
+	@echo "$$TRAVIS_COMMIT_MESSAGE"
+	@echo "Range: $$TRAVIS_COMMIT_RANGE"
+	@echo "Files:"
+	@echo "$$(git diff --name-only $$TRAVIS_COMMIT_RANGE)"
+
+
 .PHONY: build clean \
 	install cmd examples clean-examples test \
-	get-covtools test-cover test-cover-html test-cover-xml \
-	get-generators generate \
-	get-dep dep-install dep-update \
+	test-cover test-cover-html test-cover-xml \
+	generate genereate-binapi generate-proto get-binapi-generators get-proto-generators \
+	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
-	get-linkcheck check-links
+	get-linkcheck check-links \
+	travis

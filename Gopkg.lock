@@ -10,10 +10,11 @@
     "adapter/vppapiclient",
     "api",
     "cmd/binapi-generator",
+    "codec",
     "core",
     "core/bin_api/vpe"
   ]
-  revision = "3da2b73ec5ce77abf796ebeae6dfc149c8d3c698"
+  revision = "f1bef4a3c66f4408afdeb64cda62ccd8562d0fc6"
 
 [[projects]]
   branch = "master"
@@ -326,7 +327,7 @@
     "datasync/syncbase",
     "db/keyval",
     "db/keyval/consul",
-    "db/keyval/etcdv3",
+    "db/keyval/etcd",
     "db/keyval/kvproto",
     "db/keyval/redis",
     "db/sql",
@@ -356,8 +357,8 @@
     "utils/safeclose",
     "utils/structs"
   ]
-  revision = "08a0f1c21c3b06b0a797fbbfe58b6acb7595c666"
-  version = "v1.3.0"
+  revision = "99b1f3ef1874097c64653096589cd5c166e37d81"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -655,6 +656,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b5e9232659e389b3ee3666d5f809d5994b0564d68d44031d6ef3b8eda3c6049d"
+  inputs-digest = "52dc7c071cf89d7cbda30b6904f92c012092f798f1f6ce60586f65c535da162a"
   solver-name = "gps-cdcl"
   solver-version = 1

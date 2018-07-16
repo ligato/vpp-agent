@@ -17,4 +17,8 @@ vpp-agent --grpc-config=/opt/vpp-agent/dev/grpc.conf
 go run main.go
 ```
 
+Two flags can be set:
+* `-address=<address>` - for grpc server address/socket-file (otherwise localhost will be used)
+* `-socket-type=<type>` - options are tcp, tcp4, tcp6, unix or unixpacket. Defaults to tcp if not set
+
 The example creates resync request with configuration which is then updated with data change request.

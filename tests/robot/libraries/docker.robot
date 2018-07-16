@@ -42,7 +42,7 @@ Add Agent VPP Node
     ${add_params}=    Set Variable If    ${vswitch}    --pid=host -v "/var/run/docker.sock:/var/run/docker.sock"    ${EMPTY}
     Log    ${add_params}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e DP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e VPP_STATUS_PUBLISHERS=etcd -e INITIAL_LOGLVL=debug --sysctl net.ipv6.conf.all.disable_ipv6=0 -it --privileged -v "${VPP_AGENT_HOST_MEMIF_SOCKET_FOLDER}:${${node}_MEMIF_SOCKET_FOLDER}" -v "${DOCKER_SOCKET_FOLDER}:${${node}_SOCKET_FOLDER}" -p ${${node}_VPP_HOST_PORT}:${${node}_VPP_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${add_params} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
     Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
@@ -85,7 +85,9 @@ Add Agent VPP Node With Physical Int
     ${data}=               Replace Variables             ${data}
     Log                    ${data}
     Create File            ${RESULTS_FOLDER}/vpp-${node}.conf    ${data}
+    Create File            ${RESULTS_FOLDER_SUITE}/vpp-${node}.conf    ${data}
     Execute On Machine     ${node}    ${DOCKER_COMMAND} cp ${EXECDIR}/${RESULTS_FOLDER}/vpp-${node}.conf ${node}:${VPP_CONF_PATH}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} cp ${EXECDIR}/${RESULTS_FOLDER_SUITE}/vpp-${node}.conf ${node}:${VPP_CONF_PATH}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
     Open SSH Connection    ${node}_term    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
@@ -114,6 +116,7 @@ Remove Node
     Log    ${node}
     ${log}=    Execute On Machine    docker    ${DOCKER_COMMAND} logs --details -t ${node}    log=false
     Append To File    ${RESULTS_FOLDER}/output_${node}_container_agent.log    ${log}
+    Append To File    ${RESULTS_FOLDER_SUITE}/output_${node}_container_agent.log    ${log}
     Log ${node} Output
     Switch Connection    ${node}
     Close Connection
@@ -171,7 +174,9 @@ Execute In Container
     ${status}=               Run Keyword And Return Status    Should be Empty    ${stderr}
     Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} in container ${container}    level=WARN
     Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}***
+    Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}***
     Run Keyword If           ${status}==False         Append To File           ${RESULTS_FOLDER}/output_${container}.log      *** Error: ${stderr}${\n}
+    Run Keyword If           ${status}==False         Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log      *** Error: ${stderr}${\n}
     [Return]                 ${out}
 
 Execute In Container Background
@@ -185,7 +190,9 @@ Execute In Container Background
     ${status}=               Run Keyword And Return Status    Should be Empty    ${stderr}
     Run Keyword If           ${status}==False         Log     One or more error occured during execution of a command ${command} in container ${container}    level=WARN
     Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}
+    Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${\n}
     Run Keyword If           ${status}==False         Append To File           ${RESULTS_FOLDER}/output_${container}.log      *** Error: ${stderr}${\n}
+    Run Keyword If           ${status}==False         Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log      *** Error: ${stderr}${\n}
     [Return]                 ${out}
 
 Write To Container Until Prompt
@@ -202,6 +209,7 @@ Write To Container Until Prompt
                        ${out2}=                 Read                     delay=${delay}
                        Log                      ${out2}
                        Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${out2}${\n}
+                       Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${out2}${\n}
                        [Return]                 ${out}${out2}
 
 Write Command to Container
@@ -219,6 +227,7 @@ Write Command to Container
                        ${out2}=                 Read        delay=${delay}
                        Log                      ${out2}
                        Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${out2}${\n}
+                       Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}${out}${out2}${\n}
                        [Return]                 ${out}${out2}
 
 
@@ -272,7 +281,7 @@ Start SFC Controller Container With Own Config
     Log                    ${config}
     Open SSH Connection    sfc_controller    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine     sfc_controller    ${DOCKER_COMMAND} create -it --name sfc_controller ${SFC_CONTROLLER_IMAGE_NAME}
-    SSHLibrary.Put_file    ${TEST_DATA_FOLDER}/${config}	/tmp/
+    SSHLibrary.Put_file    ${DATA_FOLDER}/${config}	    /tmp/
     Execute On Machine     sfc_controller    ${DOCKER_COMMAND} cp /tmp/${config} sfc_controller:${SFC_CONTROLLER_CONF_PATH}
     Write To Machine       sfc_controller    ${DOCKER_COMMAND} start -i sfc_controller
     #Sleep                  400s

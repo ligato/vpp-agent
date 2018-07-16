@@ -1,0 +1,141 @@
+// Copyright (c) 2017 Cisco and/or its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at:
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package codec
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"reflect"
+
+	"git.fd.io/govpp.git/api"
+	"github.com/lunixbochs/struc"
+)
+
+// MsgCodec provides encoding and decoding functionality of `api.Message` structs into/from
+// binary format as accepted by VPP.
+type MsgCodec struct{}
+
+// VppRequestHeader struct contains header fields implemented by all VPP requests.
+type VppRequestHeader struct {
+	VlMsgID     uint16
+	ClientIndex uint32
+	Context     uint32
+}
+
+// VppReplyHeader struct contains header fields implemented by all VPP replies.
+type VppReplyHeader struct {
+	VlMsgID uint16
+	Context uint32
+}
+
+// VppEventHeader struct contains header fields implemented by all VPP events.
+type VppEventHeader struct {
+	VlMsgID uint16
+	Context uint32
+}
+
+// VppOtherHeader struct contains header fields implemented by other VPP messages (not requests nor replies).
+type VppOtherHeader struct {
+	VlMsgID uint16
+}
+
+const (
+	vppRequestHeaderSize = 10 // size of a VPP request header
+	vppReplyHeaderSize   = 6  // size of a VPP reply header
+	vppEventHeaderSize   = 6  // size of a VPP event header
+	vppOtherHeaderSize   = 2  // size of the header of other VPP messages
+)
+
+// EncodeMsg encodes provided `Message` structure into its binary-encoded data representation.
+func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
+	if msg == nil {
+		return nil, errors.New("nil message passed in")
+	}
+
+	buf := new(bytes.Buffer)
+
+	// encode message header
+	var header interface{}
+	if msg.GetMessageType() == api.RequestMessage {
+		header = &VppRequestHeader{VlMsgID: msgID}
+	} else if msg.GetMessageType() == api.ReplyMessage {
+		header = &VppReplyHeader{VlMsgID: msgID}
+	} else if msg.GetMessageType() == api.EventMessage {
+		header = &VppEventHeader{VlMsgID: msgID}
+	} else {
+		header = &VppOtherHeader{VlMsgID: msgID}
+	}
+	err := struc.Pack(buf, header)
+	if err != nil {
+		return nil, fmt.Errorf("unable to encode message: header: %v, error %v", header, err)
+	}
+
+	// encode message content
+	if reflect.Indirect(reflect.ValueOf(msg)).NumField() > 0 {
+		err := struc.Pack(buf, msg)
+		if err != nil {
+			return nil, fmt.Errorf("unable to encode message: header %v, error %v", header, err)
+		}
+	}
+
+	return buf.Bytes(), nil
+}
+
+// DecodeMsg decodes binary-encoded data of a message into provided `Message` structure.
+func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
+	if msg == nil {
+		return errors.New("nil message passed in")
+	}
+
+	buf := bytes.NewReader(data)
+
+	// check which header is expected
+	var header interface{}
+	if msg.GetMessageType() == api.RequestMessage {
+		header = &VppRequestHeader{}
+	} else if msg.GetMessageType() == api.ReplyMessage {
+		header = &VppReplyHeader{}
+	} else if msg.GetMessageType() == api.EventMessage {
+		header = &VppEventHeader{}
+	} else {
+		header = &VppOtherHeader{}
+	}
+
+	// decode message header
+	err := struc.Unpack(buf, header)
+	if err != nil {
+		return fmt.Errorf("unable to decode message: data %v, error %v", data, err)
+	}
+
+	// get rid of the message header
+	if msg.GetMessageType() == api.RequestMessage {
+		buf = bytes.NewReader(data[vppRequestHeaderSize:])
+	} else if msg.GetMessageType() == api.ReplyMessage {
+		buf = bytes.NewReader(data[vppReplyHeaderSize:])
+	} else if msg.GetMessageType() == api.EventMessage {
+		buf = bytes.NewReader(data[vppEventHeaderSize:])
+	} else {
+		buf = bytes.NewReader(data[vppOtherHeaderSize:])
+	}
+
+	// decode message content
+	err = struc.Unpack(buf, msg)
+	if err != nil {
+		return fmt.Errorf("unable to decode message: data %v, error %v", data, err)
+	}
+
+	return nil
+}

@@ -9,6 +9,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
+Force Tags        crudIPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 Test Setup        TestSetup
@@ -29,12 +30,12 @@ ${E_INTF1}=
 ${I_INTF1}=
 ${E_INTF2}=
 ${I_INTF2}=
-${RULE_NM1_1}=         acl1_rule1
-${RULE_NM2_1}=         acl2_rule1
-${RULE_NM3_1}=         acl3_rule1
-${RULE_NM4_1}=         acl4_rule1
-${RULE_NM5_1}=         acl5_rule1
-${RULE_NM6_1}=         acl6_rule1
+#${RULE_NM1_1}=         acl1_rule1
+#${RULE_NM2_1}=         acl2_rule1
+#${RULE_NM3_1}=         acl3_rule1
+#${RULE_NM4_1}=         acl4_rule1
+#${RULE_NM5_1}=         acl5_rule1
+#${RULE_NM6_1}=         acl6_rule1
 ${ACTION_DENY}=     1
 ${ACTION_PERMIT}=   2
 ${DEST_NTW}=        10.0.0.0/32
@@ -55,6 +56,8 @@ ${NO_ACL}=
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
+    ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
+    Set Suite Variable          ${DATA_FOLDER}
     Configure Environment 2        acl_basic.conf
     Set Suite Variable    ${API_HANDLER}    ${api_handler}
 

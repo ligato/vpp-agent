@@ -25,9 +25,9 @@ import (
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/linuxplugin"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
-	linux_if "github.com/ligato/vpp-agent/plugins/linuxplugin/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linux"
+	linux_if "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 )
 
 // *************************************************************************
@@ -70,7 +70,7 @@ type ExamplePlugin struct {
 	Deps
 
 	// Linux plugin dependency
-	Linux linuxplugin.API
+	Linux linux.API
 
 	linuxIfIdxLocal  linux_if.LinuxIfIndex
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex
@@ -105,8 +105,8 @@ func (plugin *ExamplePlugin) Init() error {
 	go plugin.consume()
 
 	// Cache the agent1/agent2 name-to-idx mapping to separate mapping within plugin example.
-	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.Agent1, plugin.PluginName)
-	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.Agent2, plugin.PluginName)
+	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.Agent1)
+	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.Agent2)
 
 	log.DefaultLogger().Info("Initialization of the example plugin has completed")
 
@@ -135,10 +135,8 @@ func (plugin *ExamplePlugin) AfterInit() error {
 func (plugin *ExamplePlugin) Close() error {
 	plugin.wg.Wait()
 
-	var wasErr error
-	_, wasErr = safeclose.CloseAll(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
 		plugin.linuxIfIdxLocal, plugin.linuxIfIdxAgent1, plugin.linuxIfIdxAgent2, plugin.closeChannel)
-	return wasErr
 }
 
 // publish propagates example configuration to etcd.

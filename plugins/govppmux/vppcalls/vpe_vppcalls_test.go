@@ -12,12 +12,13 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppcalls
+package vppcalls_test
 
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -29,7 +30,7 @@ func TestGetBuffers(t *testing.T) {
 	const reply = `Thread             Name                 Index       Size        Alloc       Free       #Alloc       #Free  
      0                       default           0        2048    576k       42.75k        256         19    
      0                 lacp-ethernet           1         256    1.13m        27k         512         12    
-     0               marker-ethernet           2         256      0           0           0           0    
+     0               marker-ethernet           2         256    1.11g         0           0           0    
      0                       ip4 arp           3         256      0           0           0           0    
      0        ip6 neighbor discovery           4         256      0           0           0           0    
      0                  cdp-ethernet           5         256      0           0           0           0    
@@ -41,11 +42,11 @@ func TestGetBuffers(t *testing.T) {
 		Length: uint32(len(reply)),
 	})
 
-	info, err := GetBuffersInfo(ctx.MockChannel)
+	info, err := vppcalls.GetBuffersInfo(ctx.MockChannel)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Items).To(HaveLen(9))
-	Expect(info.Items[0]).To(Equal(BuffersItem{
+	Expect(info.Items[0]).To(Equal(vppcalls.BuffersItem{
 		ThreadID: 0,
 		Name:     "default",
 		Index:    0,
@@ -55,7 +56,7 @@ func TestGetBuffers(t *testing.T) {
 		NumAlloc: 256,
 		NumFree:  19,
 	}))
-	Expect(info.Items[1]).To(Equal(BuffersItem{
+	Expect(info.Items[1]).To(Equal(vppcalls.BuffersItem{
 		ThreadID: 0,
 		Name:     "lacp-ethernet",
 		Index:    1,
@@ -64,6 +65,16 @@ func TestGetBuffers(t *testing.T) {
 		Free:     27000,
 		NumAlloc: 512,
 		NumFree:  12,
+	}))
+	Expect(info.Items[2]).To(Equal(vppcalls.BuffersItem{
+		ThreadID: 0,
+		Name:     "marker-ethernet",
+		Index:    2,
+		Size:     256,
+		Alloc:    1110000000,
+		Free:     0,
+		NumAlloc: 0,
+		NumFree:  0,
 	}))
 }
 
@@ -129,12 +140,12 @@ unix-epoll-input                 polling          20563870               0      
 		Length: uint32(len(reply)),
 	})
 
-	info, err := GetRuntimeInfo(ctx.MockChannel)
+	info, err := vppcalls.GetRuntimeInfo(ctx.MockChannel)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Threads).To(HaveLen(3))
 	Expect(info.Threads[0].Items).To(HaveLen(36))
-	Expect(info.Threads[0].Items[0]).To(Equal(RuntimeItem{
+	Expect(info.Threads[0].Items[0]).To(Equal(vppcalls.RuntimeItem{
 		Name:           "acl-plugin-fa-cleaner-process",
 		State:          "event wait",
 		Calls:          0,
@@ -161,11 +172,11 @@ Thread 2 vpp_wk_1
 		Length: uint32(len(reply)),
 	})
 
-	info, err := GetMemory(ctx.MockChannel)
+	info, err := vppcalls.GetMemory(ctx.MockChannel)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(info.Threads).To(HaveLen(3))
-	Expect(info.Threads[0]).To(Equal(MemoryThread{
+	Expect(info.Threads[0]).To(Equal(vppcalls.MemoryThread{
 		ID:        0,
 		Name:      "vpp_main",
 		Objects:   22991,
@@ -176,7 +187,7 @@ Thread 2 vpp_wk_1
 		Overhead:  361000,
 		Capacity:  1048572000,
 	}))
-	Expect(info.Threads[1]).To(Equal(MemoryThread{
+	Expect(info.Threads[1]).To(Equal(vppcalls.MemoryThread{
 		ID:        1,
 		Name:      "vpp_wk_0",
 		Objects:   22991,
@@ -202,29 +213,35 @@ func TestGetNodeCounters(t *testing.T) {
         14             ethernet-input             l3 mac mismatch
          1                arp-input               ARP replies sent
          4                ip4-input               ip4 spoofed local-address packet drops
+         2             memif1/1-output            interface is down
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
 		Reply:  []byte(reply),
 		Length: uint32(len(reply)),
 	})
 
-	info, err := GetNodeCounters(ctx.MockChannel)
+	info, err := vppcalls.GetNodeCounters(ctx.MockChannel)
 
 	Expect(err).ShouldNot(HaveOccurred())
-	Expect(info.Counters).To(HaveLen(8))
-	Expect(info.Counters[0]).To(Equal(NodeCounter{
+	Expect(info.Counters).To(HaveLen(9))
+	Expect(info.Counters[0]).To(Equal(vppcalls.NodeCounter{
 		Count:  32,
 		Node:   "ipsec-output-ip4",
 		Reason: "IPSec policy protect",
 	}))
-	Expect(info.Counters[6]).To(Equal(NodeCounter{
+	Expect(info.Counters[6]).To(Equal(vppcalls.NodeCounter{
 		Count:  1,
 		Node:   "arp-input",
 		Reason: "ARP replies sent",
 	}))
-	Expect(info.Counters[7]).To(Equal(NodeCounter{
+	Expect(info.Counters[7]).To(Equal(vppcalls.NodeCounter{
 		Count:  4,
 		Node:   "ip4-input",
 		Reason: "ip4 spoofed local-address packet drops",
+	}))
+	Expect(info.Counters[8]).To(Equal(vppcalls.NodeCounter{
+		Count:  2,
+		Node:   "memif1/1-output",
+		Reason: "interface is down",
 	}))
 }

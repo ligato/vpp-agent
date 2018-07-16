@@ -23,20 +23,21 @@ import (
 	"os"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/etcdv3"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/acl"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l2"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l3"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/l4"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/nat"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/model/stn"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxplugin/common/model/l3"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/namsral/flag"
 )
 
@@ -45,7 +46,7 @@ type VppAgentCtl struct {
 	Log             logging.Logger
 	Commands        []string
 	serviceLabel    servicelabel.Plugin
-	bytesConnection *etcdv3.BytesConnectionEtcd
+	bytesConnection *etcd.BytesConnectionEtcd
 	broker          keyval.ProtoBroker
 }
 
@@ -272,6 +273,10 @@ func (ctl *VppAgentCtl) createEthernet() {
 					"192.168.1.1",
 					"2001:db8:0:0:0:ff00:5168:2bc8/48",
 				},
+				//RxPlacementSettings: &interfaces.Interfaces_Interface_RxPlacementSettings{
+				//	Queue: 0,
+				//	Worker: 1,
+				//},
 				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
 				//	IsUnnumbered: true,
 				//	InterfaceWithIP: "memif1",
@@ -309,7 +314,7 @@ func (ctl *VppAgentCtl) createTap() {
 				//	InterfaceWithIP: "memif1",
 				//},
 				Tap: &interfaces.Interfaces_Interface_Tap{
-					HostIfName: "tap1",
+					HostIfName: "tap-host",
 				},
 			},
 		},
@@ -417,6 +422,7 @@ func (ctl *VppAgentCtl) createVxlan() {
 				//	InterfaceWithIP: "memif1",
 				//},
 				Vxlan: &interfaces.Interfaces_Interface_Vxlan{
+					//Multicast:  "if1",
 					SrcAddress: "192.168.42.1",
 					DstAddress: "192.168.42.2",
 					Vni:        13,
@@ -566,6 +572,108 @@ func (ctl *VppAgentCtl) deleteLinuxTap() {
 
 	ctl.Log.Println("Deleting", linuxTapKey)
 	ctl.broker.Delete(linuxTapKey)
+}
+
+// IPsec
+
+// createIPsecSPD puts STD configuration to the ETCD
+func (ctl *VppAgentCtl) createIPsecSPD() {
+	spd := ipsec.SecurityPolicyDatabases_SPD{
+		Name: "spd1",
+		Interfaces: []*ipsec.SecurityPolicyDatabases_SPD_Interface{
+			{
+				Name: "tap1",
+			},
+			{
+				Name: "loop1",
+			},
+		},
+		PolicyEntries: []*ipsec.SecurityPolicyDatabases_SPD_PolicyEntry{
+			{
+				Priority:   100,
+				IsOutbound: false,
+				Action:     0,
+				Protocol:   50,
+			},
+			{
+				Priority:   100,
+				IsOutbound: true,
+				Action:     0,
+				Protocol:   50,
+			},
+			{
+				Priority:        10,
+				IsOutbound:      false,
+				RemoteAddrStart: "10.0.0.1",
+				RemoteAddrStop:  "10.0.0.1",
+				LocalAddrStart:  "10.0.0.2",
+				LocalAddrStop:   "10.0.0.2",
+				Action:          3,
+				Sa:              "sa1",
+			},
+			{
+				Priority:        10,
+				IsOutbound:      true,
+				RemoteAddrStart: "10.0.0.1",
+				RemoteAddrStop:  "10.0.0.1",
+				LocalAddrStart:  "10.0.0.2",
+				LocalAddrStop:   "10.0.0.2",
+				Action:          3,
+				Sa:              "sa2",
+			},
+		},
+	}
+
+	ctl.Log.Println(spd)
+	ctl.broker.Put(ipsec.SPDKey(spd.Name), &spd)
+}
+
+// deleteIPsecSPD removes STD configuration from the ETCD
+func (ctl *VppAgentCtl) deleteIPsecSPD() {
+	stdKey := ipsec.SPDKey("spd1")
+
+	ctl.Log.Println("Deleting", stdKey)
+	ctl.broker.Delete(stdKey)
+}
+
+// creteIPsecSA puts two security association configurations to the ETCD
+func (ctl *VppAgentCtl) createIPsecSA() {
+	sa1 := ipsec.SecurityAssociations_SA{
+		Name:           "sa1",
+		Spi:            1001,
+		Protocol:       1,
+		CryptoAlg:      1,
+		CryptoKey:      "4a506a794f574265564551694d653768",
+		IntegAlg:       2,
+		IntegKey:       "4339314b55523947594d6d3547666b45764e6a58",
+		EnableUdpEncap: true,
+	}
+	sa2 := ipsec.SecurityAssociations_SA{
+		Name:           "sa2",
+		Spi:            1000,
+		Protocol:       1,
+		CryptoAlg:      1,
+		CryptoKey:      "4a506a794f574265564551694d653768",
+		IntegAlg:       2,
+		IntegKey:       "4339314b55523947594d6d3547666b45764e6a58",
+		EnableUdpEncap: false,
+	}
+
+	ctl.Log.Println(sa1)
+	ctl.broker.Put(ipsec.SAKey(sa1.Name), &sa1)
+	ctl.Log.Println(sa2)
+	ctl.broker.Put(ipsec.SAKey(sa2.Name), &sa2)
+}
+
+// deleteIPsecSA removes SA configuration from the ETCD
+func (ctl *VppAgentCtl) deleteIPsecSA() {
+	saKey1 := ipsec.SPDKey("sa1")
+	saKey2 := ipsec.SPDKey("sa2")
+
+	ctl.Log.Println("Deleting", saKey1)
+	ctl.broker.Delete(saKey1)
+	ctl.Log.Println("Deleting", saKey2)
+	ctl.broker.Delete(saKey2)
 }
 
 // STN

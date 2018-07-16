@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/defaultplugins/common/bin_api/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 // VersionInfo contains values returned from ShowVersion
@@ -34,7 +34,7 @@ type VersionInfo struct {
 }
 
 // GetVersionInfo retrieves version info
-func GetVersionInfo(vppChan VPPChannel) (*VersionInfo, error) {
+func GetVersionInfo(vppChan govppapi.Channel) (*VersionInfo, error) {
 	req := &vpe.ShowVersion{}
 	reply := &vpe.ShowVersionReply{}
 
@@ -55,7 +55,7 @@ func GetVersionInfo(vppChan VPPChannel) (*VersionInfo, error) {
 }
 
 // RunCliCommand executes CLI command and returns output
-func RunCliCommand(vppChan VPPChannel, cmd string) ([]byte, error) {
+func RunCliCommand(vppChan govppapi.Channel, cmd string) ([]byte, error) {
 	req := &vpe.CliInband{
 		Cmd:    []byte(cmd),
 		Length: uint32(len(cmd)),
@@ -91,11 +91,11 @@ type MemoryThread struct {
 
 var (
 	// Regular expression to parse output from `show memory`
-	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkm\.]+) of ([\dkm\.]+) used, ([\dkm\.]+) free, ([\dkm\.]+) reclaimed, ([\dkm\.]+) overhead, ([\dkm\.]+) capacity`)
+	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkmg\.]+) of ([\dkmg\.]+) used, ([\dkmg\.]+) free, ([\dkmg\.]+) reclaimed, ([\dkmg\.]+) overhead, ([\dkmg\.]+) capacity`)
 )
 
 // GetNodeCounters retrieves node counters info
-func GetMemory(vppChan VPPChannel) (*MemoryInfo, error) {
+func GetMemory(vppChan govppapi.Channel) (*MemoryInfo, error) {
 	data, err := RunCliCommand(vppChan, "show memory")
 	if err != nil {
 		return nil, err
@@ -148,12 +148,11 @@ type NodeCounter struct {
 
 var (
 	// Regular expression to parse output from `show node counters`
-	nodeCountersRe = regexp.MustCompile(
-		`^\s+(\d+)\s+([\w-]+)\s+([\w- ]+)$`)
+	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-\/]+)\s+([\w- ]+)$`)
 )
 
 // GetNodeCounters retrieves node counters info
-func GetNodeCounters(vppChan VPPChannel) (*NodeCounterInfo, error) {
+func GetNodeCounters(vppChan govppapi.Channel) (*NodeCounterInfo, error) {
 	data, err := RunCliCommand(vppChan, "show node counters")
 	if err != nil {
 		return nil, err
@@ -240,7 +239,7 @@ var (
 )
 
 // GetNodeCounters retrieves node counters info
-func GetRuntimeInfo(vppChan VPPChannel) (*RuntimeInfo, error) {
+func GetRuntimeInfo(vppChan govppapi.Channel) (*RuntimeInfo, error) {
 	data, err := RunCliCommand(vppChan, "show runtime")
 	if err != nil {
 		return nil, err
@@ -314,11 +313,11 @@ type BuffersItem struct {
 
 var (
 	// Regular expression to parse output from `show buffers`
-	buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+([\dkm\.]+)\s+([\dkm\.]+)\s+(\d+)\s+(\d+).*$`)
+	buffersRe = regexp.MustCompile(`^\s+(\d+)\s+(\w+(?:[ \-]\w+)*)\s+(\d+)\s+(\d+)\s+([\dkmg\.]+)\s+([\dkmg\.]+)\s+(\d+)\s+(\d+).*$`)
 )
 
 // GetBuffersInfo retrieves buffers info
-func GetBuffersInfo(vppChan VPPChannel) (*BuffersInfo, error) {
+func GetBuffersInfo(vppChan govppapi.Channel) (*BuffersInfo, error) {
 	data, err := RunCliCommand(vppChan, "show buffers")
 	if err != nil {
 		return nil, err
@@ -371,6 +370,7 @@ func strToFloat64(s string) float64 {
 	// Replace 'k' (thousands) with 'e3' to make it parsable with strconv
 	s = strings.Replace(s, "k", "e3", 1)
 	s = strings.Replace(s, "m", "e6", 1)
+	s = strings.Replace(s, "g", "e9", 1)
 
 	num, err := strconv.ParseFloat(s, 10)
 	if err != nil {
@@ -385,9 +385,4 @@ func strToUint64(s string) uint64 {
 
 func cleanBytes(b []byte) []byte {
 	return bytes.SplitN(b, []byte{0x00}, 2)[0]
-}
-
-// VPPChannel is interface for send request to VPP channel
-type VPPChannel interface {
-	SendRequest(msg govppapi.Message) *govppapi.RequestCtx
 }

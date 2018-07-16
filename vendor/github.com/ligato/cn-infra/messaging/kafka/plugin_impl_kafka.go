@@ -16,7 +16,9 @@ package kafka
 
 import (
 	"fmt"
+
 	"github.com/Shopify/sarama"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -32,7 +34,8 @@ const topic = "status-check"
 
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
-	Deps         // inject
+	Deps // inject
+
 	mux          *mux.Multiplexer
 	subscription chan *client.ConsumerMessage
 
@@ -136,8 +139,7 @@ func (plugin *Plugin) AfterInit() error {
 
 // Close is called at plugin cleanup phase.
 func (plugin *Plugin) Close() error {
-	_, err := safeclose.CloseAll(plugin.hsClient, plugin.manClient, plugin.mux)
-	return err
+	return safeclose.Close(plugin.hsClient, plugin.manClient, plugin.mux)
 }
 
 // NewBytesConnection returns a new instance of a connection to access kafka brokers. The connection allows to create
