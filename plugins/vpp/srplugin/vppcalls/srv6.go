@@ -388,16 +388,12 @@ func (calls *srv6Calls) modPolicy(operation uint8, bindingSid net.IP, policy *sr
 }
 
 func (calls *srv6Calls) convertPolicySegment(policySegment *srv6.PolicySegment) (*sr.Srv6SidList, error) {
-	segments := make([]sr.Srv6Sid, 0)
+	var segments []sr.Srv6Sid
 	for _, sid := range policySegment.Segments {
 		// parse to IPv6 address
 		parserSid, err := parseIPv6(sid)
 		if err != nil {
-			return &sr.Srv6SidList{
-				NumSids: 0,
-				Weight:  0,
-				Sids:    []sr.Srv6Sid{},
-			}, err
+			return nil, err
 		}
 
 		// add sid to segment list
@@ -447,7 +443,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 	}
 
 	// converting policy reference
-	bsidAddr := make([]byte, 0)
+	var bsidAddr []byte
 	if len(strings.Trim(steering.PolicyBsid, " ")) > 0 {
 		bsid, err := parseIPv6(steering.PolicyBsid)
 		if err != nil {
