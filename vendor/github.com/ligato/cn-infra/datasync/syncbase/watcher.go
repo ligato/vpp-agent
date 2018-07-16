@@ -153,6 +153,7 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 
 // PropagateResync fills registered channels with the data.
 func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue) error {
+	adapter.lastRev.Cleanup()
 	for _, sub := range adapter.subscriptions {
 		resyncEv := NewResyncEventDB(map[string]datasync.KeyValIterator{})
 
