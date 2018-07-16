@@ -1,4 +1,4 @@
-# Release v1.5 (2018-07-xx)
+# Release v1.5 (2018-07-16)
 
 ## Compatibility
 - VPP 18.07-rc0~358-ga5ee900

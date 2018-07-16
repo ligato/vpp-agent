@@ -13,3 +13,13 @@ Log manager plugin allows to view and modify log levels of loggers using REST AP
    
 `<host>` and `<port>` are determined by configuration of rest.Plugin.
  
+**Config file**
+
+- Logger config file is composed of two parts: the default level applied for all plugins, 
+  and a map where every logger can have its own log level defined. See config file 
+  [example](/logging/logging.conf) to learn how to define it.
+  
+  **Note:** initial log level can be set using environmental variable `INITIAL_LOGLVL`. The 
+  variable replaces default-level from configuration file. However, loggers (partial definition)
+  replace default value set by environmental variable for specific loggers defined.  
+ 
