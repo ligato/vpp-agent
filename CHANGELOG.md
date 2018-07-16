@@ -1,3 +1,55 @@
+# Release v1.5 (2018-07-16)
+
+## Compatibility
+- VPP 18.07-rc0~358-ga5ee900
+- cn-infra v1.4
+
+## Breaking Changes
+- The package `etcdv3` was renamed to `etcd`, along with it's flag and configuration file.
+
+## New Features
+- [LinuxPlugin](plugins/linux)
+  * Is now optional and can be disabled via configuration file.
+- [ifplugin](plugins/vpp/ifplugin)
+  * Added support for VxLAN multicast
+  * Rx-placement can be configured on VPP interfaces
+- [IPsec](plugins/vpp/ipsecplugin)
+  * IPsec UDP encapsulation can now be set (NAT traversal)  
+    
+
+## Bugfix
+- Fixed few issues with parsing VPP metrics from CLI for [Telemetry](plugins/telemetry).
+- Fixed bug in GoVPP ocurring after some request timed out, causing
+  the channel to receive replies from previous request and always returning error.
+- Fixed issue which prevented setting interface to non-existing VRF.
+- Fixed bug where removal of an af-packet interface caused attached Veth to go DOWN.
+- Fixed NAT44 address pool resolution which was not correct in some cases.
+- Fixed bug with adding SR policies causing incomplete configuration.
+
+## Docker Images
+- Replace `START_AGENT` with `OMIT_AGENT` to match `RETAIN_SUPERVISOR`
+  and keep both unset by default.
+- Refactored and cleaned up execute scripts and remove unused scripts.
+- Fixed some issues with `RETAIN_SUPERVISOR` option.
+- Location of supervisord pid file is now explicitely set to
+  `/run/supervisord.pid` in *supervisord.conf* file.
+- The vpp-agent is now started  with single flag `--config-dir=/opt/vpp-agent/dev`,
+  and will automatically load all configuration from that directory.
+
+# Release v1.4.1 (2018-06-11)
+
+## Compatibility
+- VPP v18.04 (2302d0d)
+- cn-infra v1.3
+
+A minor release using newer VPP v18.04 version.
+
+## Bugfix
+- VPP submodule was removed from the project. It should prevent various problems with dependency
+  resolution.
+- Fixed known bug present in previous version of the VPP, issued as
+  [VPP-1280](https://jira.fd.io/browse/VPP-1280). Current version contains appropriate fix.  
+
 # Release v1.4 (2018-05-24)
 
 ## Compatibility
@@ -18,7 +70,10 @@
 - [GRPC](plugins/vpp/rpc) 
   * Vpp-agent itself can act as a GRPC server (no need for external executable)
   * All configuration types are supported (incl. linux interfaces, routes and ARP)
-  * Client can read VPP notifications via vpp-agent.      
+  * Client can read VPP notifications via vpp-agent.
+- [SR plugin](plugins/vpp/srplugin)
+  * New plugin with support for Segment Routing.
+    More information in the [readme](plugins/vpp/srplugin/README.md).
 
 ## Improvements
 - [ifplugin](plugins/vpp/ifplugin) 
@@ -37,15 +92,14 @@
   [veth](examples/localclient_linux/veth) interface usage was moved to package and new example for linux
   [tap](examples/localclient_linux/tap) was added.
 
-
 ## Bugfix
   * Fixed case where creation of linux route with unreachable gateway thrown error. The route is 
     now appropriately cached and created when possible. 
   * Fixed issue with GoVPP channels returning errors after timeout.
   * Fixed various issues related to caching and resync in L2 cross-connect
   * Split horizon group is now correctly assigned if interface is created after bridge domain
-  * Fixed issue where creation of FIB while interface was not a part of the bridge domain returned
-    error
+  * Fixed issue where creation of FIB while interface was not a part of
+    the bridge domain returned error.
 
 ## Other
   * Overall redundancy cleanup and corrected naming for all proto models.
