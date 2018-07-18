@@ -15,6 +15,7 @@
 package vppdump
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 
@@ -108,7 +109,7 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		return nil, err
 	}
 
-	rt.TableName = string(tableName)
+	rt.TableName = string(bytes.SplitN(tableName, []byte{0x00}, 2)[0])
 	rt.VrfID = tableID
 	rt.DstAddr = *parsedIP
 
