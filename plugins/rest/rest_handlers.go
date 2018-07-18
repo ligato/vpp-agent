@@ -172,6 +172,33 @@ func (plugin *Plugin) xconnectPairsGetHandler(formatter *render.Render) http.Han
 }
 
 // staticRoutesGetHandler - used to get list of all static routes
+func (plugin *Plugin) arpGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Log.Debug("Getting list of all ARPs")
+
+		// create an API channel
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		res, err := l3plugin.DumpArps(plugin.Log, ch, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
+	}
+}
+
+// staticRoutesGetHandler - used to get list of all static routes
 func (plugin *Plugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 

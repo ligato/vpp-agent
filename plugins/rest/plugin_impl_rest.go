@@ -52,6 +52,7 @@ func (plugin *Plugin) Init() (err error) {
 		{Name: "Bridge domains", Path: "/bridgedomains"},
 		{Name: "L2Fibs", Path: "/l2fibs"},
 		{Name: "XConnectorPairs", Path: "/xconnectpairs"},
+		{Name: "ARPs", Path: "/arps"},
 		{Name: "Static routes", Path: "/staticroutes"},
 		{Name: "ACL IP", Path: "/acl/ip"},
 		{Name: "Telemetry", Path: "/telemetry"},
@@ -68,6 +69,7 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomainids", plugin.bridgeDomainIdsGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/l2fibs", plugin.fibTableEntriesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/xconnectpairs", plugin.xconnectPairsGetHandler, "GET")
+	plugin.HTTPHandlers.RegisterHTTPHandler("/arps", plugin.arpGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler(fmt.Sprintf("/acl/interface/{%s:[0-9]+}", swIndexVarName),
 		plugin.interfaceACLGetHandler, "GET")
