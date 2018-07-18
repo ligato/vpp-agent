@@ -319,14 +319,10 @@ func isValidARP(arpInput *l3.ArpTable_ArpEntry, log logging.Logger) bool {
 // transformArp converts raw entry data to ARP object
 func transformArp(arpInput *l3.ArpTable_ArpEntry, ifIndex uint32) (*vppcalls.ArpEntry, error) {
 	ipAddr := net.ParseIP(arpInput.IpAddress)
-	macAddr, err := net.ParseMAC(arpInput.PhysAddress)
-	if err != nil {
-		return nil, err
-	}
 	arp := &vppcalls.ArpEntry{
 		Interface:  ifIndex,
 		IPAddress:  ipAddr,
-		MacAddress: macAddr,
+		MacAddress: arpInput.PhysAddress,
 		Static:     arpInput.Static,
 	}
 	return arp, nil

@@ -128,3 +128,58 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 
 	return rt, nil
 }
+
+// DumpArps dumps ARPs from VPP and fills them into the provided static route map.
+func DumpArps(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) ([]*vppcalls.ArpEntry, error) {
+	// IPFibDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	var arps []*vppcalls.ArpEntry
+
+	// Dump ARPs.
+	reqCtx := vppChan.SendMultiRequest(&l3ba.IPNeighborDump{
+		SwIfIndex: 0xffffffff,
+	})
+	for {
+		arpDetails := &l3ba.IPNeighborDetails{}
+		stop, err := reqCtx.ReceiveReply(arpDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+
+		var mac net.HardwareAddr = arpDetails.MacAddress
+		arp := &vppcalls.ArpEntry{
+			Interface:  arpDetails.SwIfIndex,
+			MacAddress: mac.String(),
+			Static:     uintToBool(arpDetails.IsStatic),
+		}
+
+		var address net.IP
+		if arpDetails.IsIpv6 == 1 {
+			address = net.IP(arpDetails.IPAddress).To16()
+		} else {
+			address = net.IP(arpDetails.IPAddress[:4]).To4()
+		}
+		arp.IPAddress = address
+
+		arps = append(arps, arp)
+	}
+
+	return arps, nil
+}
+
+func uintToBool(value uint8) bool {
+	if value == 0 {
+		return false
+	}
+	return true
+}
