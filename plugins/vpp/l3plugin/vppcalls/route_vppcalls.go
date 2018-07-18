@@ -38,13 +38,15 @@ var RouteMessages = []govppapi.Message{
 // Route represents a forward IP route entry with the parameters of gateway
 // to which packets should be forwarded when a given routing table entry is applied.
 type Route struct {
-	VrfID       uint32    `json:"vrf_id"`
-	TableName   string    `json:"table_name"`
-	DstAddr     net.IPNet `json:"dst_addr"`
-	NextHopAddr net.IP    `json:"next_hop_addr"`
-	OutIface    uint32    `json:"out_iface"`
-	Weight      uint32    `json:"weight"`
-	Preference  uint32    `json:"preference"`
+	VrfID        uint32    `json:"vrf_id"`
+	TableName    string    `json:"table_name"`
+	DstAddr      net.IPNet `json:"dst_addr"`
+	NextHopAddr  net.IP    `json:"next_hop_addr"`
+	NextHopVrfId uint32    `json:"next_hop_vrf_id"`
+	OutIface     uint32    `json:"out_iface"`
+	LookupVrfID  uint32    `json:"lookup_vrf_id"`
+	Weight       uint32    `json:"weight"`
+	Preference   uint32    `json:"preference"`
 }
 
 const (
@@ -95,13 +97,18 @@ func vppAddDelRoute(route *Route, vppChan VPPChannel, delete bool, stopwatch *me
 	req.NextHopSwIfIndex = route.OutIface
 	req.NextHopWeight = uint8(route.Weight)
 	req.NextHopPreference = uint8(route.Preference)
-	req.NextHopTableID = route.VrfID
 	req.NextHopViaLabel = NextHopViaLabelUnset
 	req.ClassifyTableIndex = ClassifyTableIndexUnset
 	req.IsDrop = 0
 
 	// VRF
 	req.TableID = route.VrfID
+	if isVrfLookupRoute(route) {
+		// next hop not specified = VRF lookup
+		req.NextHopTableID = route.LookupVrfID
+	} else {
+		req.NextHopTableID = route.NextHopVrfId
+	}
 
 	// Multi path is always true
 	req.IsMultipath = 1
@@ -123,10 +130,19 @@ func VppAddRoute(route *Route, vppChan ifvppcalls.VPPChannel, stopwatch *measure
 	if err := ifvppcalls.CreateVrfIfNeeded(route.VrfID, vppChan); err != nil {
 		return err
 	}
+	if isVrfLookupRoute(route) {
+		if err := ifvppcalls.CreateVrfIfNeeded(route.LookupVrfID, vppChan); err != nil {
+			return err
+		}
+	}
 	return vppAddDelRoute(route, vppChan, false, stopwatch)
 }
 
 // VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
 func VppDelRoute(route *Route, vppChan VPPChannel, stopwatch *measure.Stopwatch) error {
 	return vppAddDelRoute(route, vppChan, true, stopwatch)
+}
+
+func isVrfLookupRoute(r *Route) bool {
+	return r.OutIface == NextHopOutgoingIfUnset && r.VrfID != r.LookupVrfID
 }

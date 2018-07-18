@@ -109,13 +109,15 @@ func (plugin *RouteConfigurator) clearMapping() {
 
 // Create unique identifier which serves as a name in name-to-index mapping.
 func routeIdentifier(vrf uint32, destination string, nextHop string) string {
+	if nextHop == "<nil>" {
+		nextHop = ""
+	}
 	return fmt.Sprintf("vrf%v-%v-%v", vrf, destination, nextHop)
 }
 
 // ConfigureRoute processes the NB config and propagates it to bin api calls.
 func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, vrfFromKey string) error {
 	plugin.log.Infof("Configuring new route %v -> %v", config.DstIpAddr, config.NextHopAddr)
-
 	// Validate VRF index from key and it's value in data.
 	if err := plugin.validateVrfFromKey(config, vrfFromKey); err != nil {
 		return err

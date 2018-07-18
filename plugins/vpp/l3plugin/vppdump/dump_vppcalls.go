@@ -51,7 +51,6 @@ func DumpStaticRoutes(log logging.Logger, vppChan vppcalls.VPPChannel, timeLog m
 			log.Error(err)
 			return nil, err
 		}
-
 		ipv4Route, err := dumpStaticRouteIPv4Details(fibDetails)
 		if err != nil {
 			return nil, err
@@ -120,6 +119,14 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		}
 
 		rt.NextHopAddr = nextHopAddr
+
+		if nextHopAddr.IsUnspecified() && path[0].SwIfIndex == vppcalls.NextHopOutgoingIfUnset {
+			// next hop IP nor outgoing interface is specified = VRF lookup route
+			rt.LookupVrfID = path[0].TableID
+		} else {
+			rt.NextHopVrfId = path[0].TableID
+		}
+
 		rt.OutIface = path[0].SwIfIndex
 		rt.Preference = uint32(path[0].Preference)
 		rt.Weight = uint32(path[0].Weight)

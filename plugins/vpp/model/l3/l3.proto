@@ -11,9 +11,13 @@ message StaticRoutes {
         string description = 2;              /* optional description */
         string dst_ip_addr = 3;              /* ip address + prefix in format <address>/<prefix> */
         string next_hop_addr = 4;            /* next hop address */
-        string outgoing_interface = 5;       /* outgoing interface name */
-        uint32 weight = 6;                   /* weight (used for unequal cost load balncing) */
-        uint32 preference = 7;               /* The preference of the path. Lowest preference is preferred.  */
+        uint32 next_hop_vrf_id = 5;          /* Next hop VRF ID. Should be equal to the vrf_id unless inter-VRF
+                                                routing is needed. */
+        string outgoing_interface = 6;       /* outgoing interface name */
+        uint32 lookup_vrf_id = 7;            /* Do a lookup in the specified VRF. In effect only if the next_hop_addr
+                                                nor the outgoing_interface is set. */
+        uint32 weight = 8;                   /* weight (used for unequal cost load balncing) */
+        uint32 preference = 9;               /* The preference of the path. Lowest preference is preferred.  */
                                              /* Only paths with the best preference contribute to forwarding. */
                                              /* (a poor man's primary and backup) */
     }

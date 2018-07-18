@@ -15,8 +15,10 @@
 package l3plugin
 
 import (
+	"fmt"
 	"github.com/ligato/cn-infra/logging/measure"
 	l3ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
@@ -46,10 +48,15 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 		nbRouteID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
 		nbIfIdx, _, found := plugin.ifIndexes.LookupIdx(nbRoute.OutgoingInterface)
 		if !found {
-			plugin.log.Debugf("RESYNC routes: outgoing interface not found for %s", nbRouteID)
-			plugin.rtCachedIndexes.RegisterName(nbRouteID, plugin.rtIndexSeq, nbRoute)
-			plugin.rtIndexSeq++
-			continue
+			if isVrfLookupRoute(nbRoute) {
+				// expected by VRF lookup route
+				nbIfIdx = vppcalls.NextHopOutgoingIfUnset
+			} else {
+				plugin.log.Debugf("RESYNC routes: outgoing interface not found for %s", nbRouteID)
+				plugin.rtCachedIndexes.RegisterName(nbRouteID, plugin.rtIndexSeq, nbRoute)
+				plugin.rtIndexSeq++
+				continue
+			}
 		}
 		// Default VPP value for weight in case it is not set
 		if nbRoute.Weight == 0 {
@@ -85,8 +92,23 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 				continue
 			}
 			if vppRoute.NextHopAddr.String() != nbRoute.NextHopAddr {
-				plugin.log.Debugf("RESYNC routes: next hop address is different (NB: %d, VPP %d)",
-					nbRoute.NextHopAddr, vppRoute.NextHopAddr.String())
+				if nbRoute.NextHopAddr == "" && vppRoute.NextHopAddr.IsUnspecified() {
+					plugin.log.Debugf("RESYNC routes: empty next hop address matched (NB: %s, VPP %s)",
+						nbRoute.NextHopAddr, vppRoute.NextHopAddr.String())
+				} else {
+					plugin.log.Debugf("RESYNC routes: next hop address is different (NB: %s, VPP %s)",
+						nbRoute.NextHopAddr, vppRoute.NextHopAddr.String())
+					continue
+				}
+			}
+			if vppRoute.NextHopVrfId != nbRoute.NextHopVrfId {
+				plugin.log.Debugf("RESYNC routes: next hop VRF ID is different (NB: %d, VPP %d)",
+					nbRoute.NextHopVrfId, vppRoute.NextHopVrfId)
+				continue
+			}
+			if vppRoute.LookupVrfID != nbRoute.LookupVrfId {
+				plugin.log.Debugf("RESYNC routes: Lookup VRF ID is different (NB: %d, VPP %d)",
+					nbRoute.LookupVrfId, vppRoute.LookupVrfID)
 				continue
 			}
 			// Register existing routes
@@ -106,7 +128,7 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 			if !found {
 				// create new route if does not exist yet. VRF ID is already validated at this point.
 				plugin.log.Debugf("RESYNC routes: route %s not found and will be configured", routeID)
-				if err := plugin.ConfigureRoute(nbRoute, string(nbRoute.VrfId)); err != nil {
+				if err := plugin.ConfigureRoute(nbRoute, fmt.Sprintf("%d", nbRoute.VrfId)); err != nil {
 					plugin.log.Error(err)
 					wasError = err
 				}
