@@ -35,7 +35,7 @@ RUN apt-get update \
     autoconf automake build-essential ca-certificates curl gdb git \
     inetutils-traceroute iproute2 ipsec-tools iputils-ping \
     libapr1 libmbedcrypto0 libmbedtls10 libmbedx509-0 libtool \
-    make netcat python software-properties-common sudo supervisor \
+    make mc nano netcat python software-properties-common sudo supervisor \
     telnet unzip wget \
  && rm -rf /var/lib/apt/lists/*
 
