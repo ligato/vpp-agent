@@ -48,8 +48,8 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 		nbRouteID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
 		nbIfIdx, _, found := plugin.ifIndexes.LookupIdx(nbRoute.OutgoingInterface)
 		if !found {
-			if isVrfLookupRoute(nbRoute) {
-				// expected by VRF lookup route
+			if nbRoute.Type == l3.StaticRoutes_Route_INTER_VRF {
+				// expected by inter VRF-routes
 				nbIfIdx = vppcalls.NextHopOutgoingIfUnset
 			} else {
 				plugin.log.Debugf("RESYNC routes: outgoing interface not found for %s", nbRouteID)
@@ -66,6 +66,11 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 		for _, vppRoute := range vppRoutes {
 			vppRouteID := routeIdentifier(vppRoute.VrfID, vppRoute.DstAddr.String(), vppRoute.NextHopAddr.String())
 			plugin.log.Debugf("RESYNC routes: comparing %s and %s", nbRouteID, vppRouteID)
+			if int32(vppRoute.Type) != int32(nbRoute.Type) {
+				plugin.log.Debugf("RESYNC routes: route type is different (NB: %d, VPP %d)",
+					nbRoute.Type, vppRoute.Type)
+				continue
+			}
 			if vppRoute.OutIface != nbIfIdx {
 				plugin.log.Debugf("RESYNC routes: interface index is different (NB: %d, VPP %d)",
 					nbIfIdx, vppRoute.OutIface)
@@ -101,14 +106,9 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 					continue
 				}
 			}
-			if vppRoute.NextHopVrfId != nbRoute.NextHopVrfId {
-				plugin.log.Debugf("RESYNC routes: next hop VRF ID is different (NB: %d, VPP %d)",
-					nbRoute.NextHopVrfId, vppRoute.NextHopVrfId)
-				continue
-			}
-			if vppRoute.LookupVrfID != nbRoute.LookupVrfId {
-				plugin.log.Debugf("RESYNC routes: Lookup VRF ID is different (NB: %d, VPP %d)",
-					nbRoute.LookupVrfId, vppRoute.LookupVrfID)
+			if vppRoute.ViaVrfId != nbRoute.ViaVrfId {
+				plugin.log.Debugf("RESYNC routes: via VRF ID is different (NB: %d, VPP %d)",
+					nbRoute.ViaVrfId, vppRoute.ViaVrfId)
 				continue
 			}
 			// Register existing routes

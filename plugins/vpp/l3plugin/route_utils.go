@@ -50,18 +50,21 @@ func (arr SortedRoutes) Less(i, j int) bool {
 }
 
 func eqRoutes(a *vppcalls.Route, b *vppcalls.Route) bool {
-	return a.VrfID == b.VrfID &&
+	return a.Type == b.Type &&
+		a.VrfID == b.VrfID &&
 		bytes.Equal(a.DstAddr.IP, b.DstAddr.IP) &&
 		bytes.Equal(a.DstAddr.Mask, b.DstAddr.Mask) &&
 		bytes.Equal(a.NextHopAddr, b.NextHopAddr) &&
-		a.NextHopVrfId == b.VrfID &&
+		a.ViaVrfId == b.ViaVrfId &&
 		a.OutIface == b.OutIface &&
-		a.LookupVrfID == b.LookupVrfID &&
 		a.Weight == b.Weight &&
 		a.Preference == b.Preference
 }
 
 func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
+	if a.Type != b.Type {
+		return a.Type < b.Type
+	}
 	if a.VrfID != b.VrfID {
 		return a.VrfID < b.VrfID
 	}
@@ -74,14 +77,11 @@ func lessRoute(a *vppcalls.Route, b *vppcalls.Route) bool {
 	if !bytes.Equal(a.NextHopAddr, b.NextHopAddr) {
 		return bytes.Compare(a.NextHopAddr, b.NextHopAddr) < 0
 	}
-	if a.NextHopVrfId != b.NextHopVrfId {
-		return a.NextHopVrfId < b.NextHopVrfId
+	if a.ViaVrfId != b.ViaVrfId {
+		return a.ViaVrfId < b.ViaVrfId
 	}
 	if a.OutIface != b.OutIface {
 		return a.OutIface < b.OutIface
-	}
-	if a.LookupVrfID != b.LookupVrfID {
-		return a.LookupVrfID < b.LookupVrfID
 	}
 	if a.Preference != b.Preference {
 		return a.Preference < b.Preference
@@ -97,8 +97,8 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, swIndex uint32, log loggi
 		return nil, nil
 	}
 	if routeInput.DstIpAddr == "" {
-		if !isVrfLookupRoute(routeInput) {
-			// no destination address is only allowed for VRF lookup route
+		if routeInput.Type != l3.StaticRoutes_Route_INTER_VRF {
+			// no destination address is only allowed for inter-VRF routes
 			log.Infof("Route does not contain destination address")
 			return nil, nil
 		}
@@ -116,14 +116,14 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, swIndex uint32, log loggi
 		nextHopIP = nextHopIP.To4()
 	}
 	route := &vppcalls.Route{
-		VrfID:        vrfID,
-		DstAddr:      *parsedDestIP,
-		NextHopAddr:  nextHopIP,
-		NextHopVrfId: routeInput.NextHopVrfId,
-		OutIface:     swIndex,
-		LookupVrfID:  routeInput.LookupVrfId,
-		Weight:       routeInput.Weight,
-		Preference:   routeInput.Preference,
+		Type:        vppcalls.RouteType(routeInput.Type),
+		VrfID:       vrfID,
+		DstAddr:     *parsedDestIP,
+		NextHopAddr: nextHopIP,
+		ViaVrfId:    routeInput.ViaVrfId,
+		OutIface:    swIndex,
+		Weight:      routeInput.Weight,
+		Preference:  routeInput.Preference,
 	}
 	return route, nil
 }
@@ -172,8 +172,4 @@ func (plugin *RouteConfigurator) diffRoutes(new []*vppcalls.Route, old []*vppcal
 		toBeDeleted = append(toBeDeleted, oldSorted[j])
 	}
 	return
-}
-
-func isVrfLookupRoute(r *l3.StaticRoutes_Route) bool {
-	return r.OutgoingInterface == "" && r.VrfId != r.LookupVrfId
 }
