@@ -49,6 +49,8 @@ type GOVPPPlugin struct {
 	reconnectResync bool
 	lastConnErr     error
 
+	config *Config
+
 	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	cancel context.CancelFunc
 	// Wait group allows to wait until all goroutines of the plugin have finished.
@@ -72,10 +74,14 @@ type Config struct {
 	// shared memory segments are created directly in the SHM directory /dev/shm.
 	ShmPrefix       string `json:"shm-prefix"`
 	ReconnectResync bool   `json:"resync-after-reconnect"`
+	// How many times can be request resent in case vpp is suddenly disconnected.
+	RetryRequestCount int `json:"retry-request-count"`
+	// Time between request resend attempts. Default is 500ms.
+	RetryRequestTimeout time.Duration `json:"retry-request-timeout"`
 }
 
-func defaultConfig() Config {
-	return Config{
+func defaultConfig() *Config {
+	return &Config{
 		HealthCheckProbeInterval: time.Second,
 		HealthCheckReplyTimeout:  100 * time.Millisecond,
 		HealthCheckThreshold:     1,
@@ -103,20 +109,20 @@ func (plugin *GOVPPPlugin) Init() error {
 
 	plugin.PluginName = plugin.Deps.PluginName
 
-	cfg := defaultConfig()
-	found, err := plugin.PluginConfig.GetValue(&cfg)
+	plugin.config = defaultConfig()
+	found, err := plugin.PluginConfig.GetValue(plugin.config)
 	if err != nil {
 		return err
 	}
 	var shmPrefix string
 	if found {
-		govpp.SetHealthCheckProbeInterval(cfg.HealthCheckProbeInterval)
-		govpp.SetHealthCheckReplyTimeout(cfg.HealthCheckReplyTimeout)
-		govpp.SetHealthCheckThreshold(cfg.HealthCheckThreshold)
-		plugin.replyTimeout = cfg.ReplyTimeout
-		plugin.reconnectResync = cfg.ReconnectResync
-		shmPrefix = cfg.ShmPrefix
-		plugin.Log.Debug("Setting govpp parameters", cfg)
+		govpp.SetHealthCheckProbeInterval(plugin.config.HealthCheckProbeInterval)
+		govpp.SetHealthCheckReplyTimeout(plugin.config.HealthCheckReplyTimeout)
+		govpp.SetHealthCheckThreshold(plugin.config.HealthCheckThreshold)
+		plugin.replyTimeout = plugin.config.ReplyTimeout
+		plugin.reconnectResync = plugin.config.ReconnectResync
+		shmPrefix = plugin.config.ShmPrefix
+		plugin.Log.Debug("Setting govpp parameters", plugin.config)
 	}
 
 	if plugin.vppAdapter == nil {
@@ -181,7 +187,12 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
 	if plugin.replyTimeout > 0 {
 		ch.SetReplyTimeout(plugin.replyTimeout)
 	}
-	return ch, nil
+	retryCfg := &retryConfig{}
+	if plugin.config != nil {
+		retryCfg.attempts = plugin.config.RetryRequestCount
+		retryCfg.timeout = plugin.config.RetryRequestTimeout
+	}
+	return &goVppChan{ch, retryCfg}, nil
 }
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
@@ -198,7 +209,12 @@ func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSiz
 	if plugin.replyTimeout > 0 {
 		ch.SetReplyTimeout(plugin.replyTimeout)
 	}
-	return ch, nil
+	retryCfg := &retryConfig{}
+	if plugin.config != nil {
+		retryCfg.attempts = plugin.config.RetryRequestCount
+		retryCfg.timeout = plugin.config.RetryRequestTimeout
+	}
+	return &goVppChan{ch, retryCfg}, nil
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
