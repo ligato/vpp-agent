@@ -77,10 +77,10 @@ func (handler *aclVppHandler) SetMacIPAclToInterface(aclIndex uint32, ifIndices 
 
 		err := handler.callsChannel.SendRequest(req).ReceiveReply(reply)
 		if err != nil {
-			return fmt.Errorf("failed to set interface %v to L2 ACL %v", ingressIfIdx, aclIndex)
+			return fmt.Errorf("failed to set interface %d to L2 ACL %d: %v", ingressIfIdx, aclIndex, err)
 		}
 		if reply.Retval != 0 {
-			return fmt.Errorf("set interface %v to L2 ACL %v returned %v", ingressIfIdx, aclIndex, reply.Retval)
+			return fmt.Errorf("set interface %d to L2 ACL %d returned %d", ingressIfIdx, aclIndex, reply.Retval)
 		}
 
 		// Log MacipACLInterfaceAddDel time measurement results.
@@ -108,10 +108,10 @@ func (handler *aclVppHandler) RemoveMacIPIngressACLFromInterfaces(removedACLInde
 
 		err := handler.callsChannel.SendRequest(req).ReceiveReply(reply)
 		if err != nil {
-			return fmt.Errorf("failed to remove L2 ACL %v from interface %v", removedACLIndex, ifIdx)
+			return fmt.Errorf("failed to remove L2 ACL %d from interface %d: %v", removedACLIndex, ifIdx, err)
 		}
 		if reply.Retval != 0 {
-			return fmt.Errorf("remove L2 ACL %v from interface %v returned error %v", removedACLIndex,
+			return fmt.Errorf("remove L2 ACL %d from interface %d returned error %d", removedACLIndex,
 				removedACLIndex, reply.Retval)
 		}
 
