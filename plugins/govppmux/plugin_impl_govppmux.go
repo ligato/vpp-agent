@@ -86,6 +86,7 @@ func defaultConfig() *Config {
 		HealthCheckReplyTimeout:  100 * time.Millisecond,
 		HealthCheckThreshold:     1,
 		ReplyTimeout:             time.Second,
+		RetryRequestTimeout:      500 * time.Millisecond,
 	}
 }
 
@@ -187,7 +188,7 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
 	if plugin.replyTimeout > 0 {
 		ch.SetReplyTimeout(plugin.replyTimeout)
 	}
-	retryCfg := &retryConfig{}
+	retryCfg := retryConfig{}
 	if plugin.config != nil {
 		retryCfg.attempts = plugin.config.RetryRequestCount
 		retryCfg.timeout = plugin.config.RetryRequestTimeout
@@ -209,7 +210,7 @@ func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSiz
 	if plugin.replyTimeout > 0 {
 		ch.SetReplyTimeout(plugin.replyTimeout)
 	}
-	retryCfg := &retryConfig{}
+	retryCfg := retryConfig{}
 	if plugin.config != nil {
 		retryCfg.attempts = plugin.config.RetryRequestCount
 		retryCfg.timeout = plugin.config.RetryRequestTimeout
