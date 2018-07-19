@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strings"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -45,7 +46,7 @@ type SRv6Configurator struct {
 	VppCalls    vppcalls.SRv6Calls
 
 	// channels
-	vppChannel vppcalls.VPPChannel // channel to communicate with VPP
+	Channel govppapi.Channel // channel to communicate with VPP
 
 	// caches
 	policyCache         *cache.PolicyCache        // Cache for SRv6 policies
@@ -64,7 +65,7 @@ type SRv6Configurator struct {
 func (plugin *SRv6Configurator) Init() (err error) {
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	plugin.Channel, err = plugin.GoVppmux.NewAPIChannel()
 	if err != nil {
 		return
 	}
@@ -86,8 +87,7 @@ func (plugin *SRv6Configurator) Init() (err error) {
 
 // Close closes GOVPP channel
 func (plugin *SRv6Configurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChannel)
-	return err
+	return safeclose.Close(plugin.Channel)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
@@ -111,7 +111,7 @@ func (plugin *SRv6Configurator) AddLocalSID(value *srv6.LocalSID) error {
 	if err != nil {
 		return fmt.Errorf("sid should be valid ipv6 address: %v", err)
 	}
-	return plugin.VppCalls.AddLocalSid(sid, value, plugin.SwIfIndexes, plugin.vppChannel)
+	return plugin.VppCalls.AddLocalSid(sid, value, plugin.SwIfIndexes, plugin.Channel)
 }
 
 // DeleteLocalSID removes Local SID from VPP using VPP's binary api
@@ -120,7 +120,7 @@ func (plugin *SRv6Configurator) DeleteLocalSID(value *srv6.LocalSID) error {
 	if err != nil {
 		return fmt.Errorf("sid should be valid ipv6 address: %v", err)
 	}
-	return plugin.VppCalls.DeleteLocalSid(sid, plugin.vppChannel)
+	return plugin.VppCalls.DeleteLocalSid(sid, plugin.Channel)
 }
 
 // ModifyLocalSID modifies Local SID from <prevValue> to <value> in VPP using VPP's binary api
@@ -151,7 +151,7 @@ func (plugin *SRv6Configurator) AddPolicy(policy *srv6.Policy) error {
 
 	plugin.addPolicyToIndexes(bsid)
 	plugin.addSegmentToIndexes(bsid, segmentNames[0])
-	err = plugin.VppCalls.AddPolicy(bsid, policy, segments[0], plugin.vppChannel)
+	err = plugin.VppCalls.AddPolicy(bsid, policy, segments[0], plugin.Channel)
 	if err != nil {
 		return fmt.Errorf("can't write policy (%v) with first segment (%v): %v", bsid, segments[0].Segments, err)
 	}
@@ -211,7 +211,7 @@ func (plugin *SRv6Configurator) RemovePolicy(policy *srv6.Policy) error {
 			plugin.policySegmentIndexSeq.delete(index)
 		}
 	}
-	return plugin.VppCalls.DeletePolicy(bsid, plugin.vppChannel) // expecting that policy delete will also delete policy segments in vpp
+	return plugin.VppCalls.DeletePolicy(bsid, plugin.Channel) // expecting that policy delete will also delete policy segments in vpp
 }
 
 // ModifyPolicy modifies policy in VPP using VPP's binary api
@@ -266,7 +266,7 @@ func (plugin *SRv6Configurator) AddPolicySegment(segmentName string, policySegme
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if addition fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.addSegmentToIndexes(bsid, segmentName)
-	return plugin.VppCalls.AddPolicySegment(bsid, policy, policySegment, plugin.vppChannel)
+	return plugin.VppCalls.AddPolicySegment(bsid, policy, policySegment, plugin.Channel)
 }
 
 // RemovePolicySegment removes policy segment <policySegment> with name <segmentName> from referenced policy in VPP using
@@ -296,7 +296,7 @@ func (plugin *SRv6Configurator) RemovePolicySegment(segmentName string, policySe
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if removal fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
 	plugin.policySegmentIndexSeq.delete(index)
-	return plugin.VppCalls.DeletePolicySegment(bsid, policy, policySegment, index, plugin.vppChannel)
+	return plugin.VppCalls.DeletePolicySegment(bsid, policy, policySegment, index, plugin.Channel)
 }
 
 // ModifyPolicySegment modifies existing policy segment with name <segmentName> from <prevValue> to <value> in referenced policy.
@@ -370,13 +370,13 @@ func (plugin *SRv6Configurator) AddSteering(name string, steering *srv6.Steering
 		return nil
 	}
 
-	return plugin.VppCalls.AddSteering(steering, plugin.SwIfIndexes, plugin.vppChannel)
+	return plugin.VppCalls.AddSteering(steering, plugin.SwIfIndexes, plugin.Channel)
 }
 
 // RemoveSteering removes steering from VPP using VPP's binary api
 func (plugin *SRv6Configurator) RemoveSteering(name string, steering *srv6.Steering) error {
 	plugin.steeringCache.Delete(name)
-	return plugin.VppCalls.RemoveSteering(steering, plugin.SwIfIndexes, plugin.vppChannel)
+	return plugin.VppCalls.RemoveSteering(steering, plugin.SwIfIndexes, plugin.Channel)
 }
 
 // ModifySteering modifies existing steering in VPP using VPP's binary api

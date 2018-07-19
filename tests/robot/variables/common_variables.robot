@@ -146,7 +146,10 @@ ${K8_CLUSTER_INTEGRATION1_VM_1_PROMPT}      $
 ${K8_CLUSTER_INTEGRATION1_DOCKER_COMMAND}   docker
 ${K8_GENERATED_CONFIG_FOLDER}         generated_config
 
+# Can use separate image for vswitch and VNF agents
+${VNF_IMAGE_NAME}                 ligato/vpp-agent:pantheon-dev
+
 ${SSH_TIMEOUT}                        30
 ${SSH_LOG_OUTPUTS_TIMEOUT}            30
 ${POD_DEPLOY_TIMEOUT}                 60
-${POD_DEPLOY_MULTIREPLICA_TIMEOUT}    60
+${POD_DEPLOY_MULTIREPLICA_TIMEOUT}    600

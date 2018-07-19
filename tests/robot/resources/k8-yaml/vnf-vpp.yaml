@@ -34,7 +34,7 @@ data:
     priority=1
 
     [program:agent]
-    command=/go/bin/vpp-agent --etcd-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --vpp-plugin-config=/opt/vpp-agent/dev/vpp-plugin.conf --linux-plugin-config=/opt/vpp-agent/dev/linuxplugin.conf
+    command=/bin/vpp-agent --etcd-config=/opt/vpp-agent/dev/etcd.conf --kafka-config=/opt/vpp-agent/dev/kafka.conf --vpp-plugin-config=/opt/vpp-agent/dev/vpp-plugin.conf --linux-plugin-config=/opt/vpp-agent/dev/linuxplugin.conf
     autorestart=false
     redirect_stderr=true
     priority=2
@@ -67,7 +67,7 @@ spec:
       terminationGracePeriodSeconds: 3
       containers:
         - name: "vnf"
-          image: ligato/dev-vpp-agent:pantheon-dev
+          image: ligato/vpp-agent:pantheon-dev
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

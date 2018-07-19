@@ -21,6 +21,7 @@ import (
 	"net"
 	"strings"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -46,7 +47,7 @@ type StnConfigurator struct {
 	unstoredIndexes  idxvpp.NameToIdxRW
 	unstoredIndexSeq uint32
 	// VPP
-	vppChan vppcalls.VPPChannel
+	vppChan govppapi.Channel
 	// Stopwatch
 	stopwatch *measure.Stopwatch
 }

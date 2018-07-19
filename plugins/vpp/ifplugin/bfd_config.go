@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -49,7 +50,7 @@ type BFDConfigurator struct {
 	keysIndexes       idxvpp.NameToIdxRW
 	echoFunctionIndex idxvpp.NameToIdxRW
 
-	vppChan vppcalls.VPPChannel
+	vppChan govppapi.Channel
 }
 
 // Init members and channels

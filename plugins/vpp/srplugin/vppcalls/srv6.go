@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/sr"
@@ -60,23 +61,23 @@ const (
 // SRv6Calls is API boundary for vppcall package access, introduced to properly test code dependent on vppcalls package
 type SRv6Calls interface {
 	// AddLocalSid adds local sid given by <sidAddr> and <localSID> into VPP
-	AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, vppChan VPPChannel) error
+	AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, vppChan govppapi.Channel) error
 	// DeleteLocalSid delets local sid given by <sidAddr> in VPP
-	DeleteLocalSid(sidAddr net.IP, vppChan VPPChannel) error
+	DeleteLocalSid(sidAddr net.IP, vppChan govppapi.Channel) error
 	// SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
-	SetEncapsSourceAddress(address string, vppChan VPPChannel) error
+	SetEncapsSourceAddress(address string, vppChan govppapi.Channel) error
 	// AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
-	AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan VPPChannel) error
+	AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan govppapi.Channel) error
 	// DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
-	DeletePolicy(bindingSid net.IP, vppChan VPPChannel) error
+	DeletePolicy(bindingSid net.IP, vppChan govppapi.Channel) error
 	// AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
-	AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan VPPChannel) error
+	AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan govppapi.Channel) error
 	// DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
-	DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, segmentIndex uint32, vppChan VPPChannel) error
+	DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, segmentIndex uint32, vppChan govppapi.Channel) error
 	// AddSteering sets in VPP steering into SRv6 policy.
-	AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan VPPChannel) error
+	AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan govppapi.Channel) error
 	// RemoveSteering removes in VPP steering into SRv6 policy.
-	RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan VPPChannel) error
+	RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan govppapi.Channel) error
 }
 
 type srv6Calls struct {
@@ -93,16 +94,16 @@ func NewSRv6Calls(log logging.Logger, stopwatch *measure.Stopwatch) SRv6Calls {
 }
 
 // AddLocalSid adds local sid given by <sidAddr> and <localSID> into VPP
-func (calls *srv6Calls) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, vppChan VPPChannel) error {
+func (calls *srv6Calls) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, vppChan govppapi.Channel) error {
 	return calls.addDelLocalSid(false, sidAddr, localSID, swIfIndex, vppChan)
 }
 
 // DeleteLocalSid delets local sid given by <sidAddr> in VPP
-func (calls *srv6Calls) DeleteLocalSid(sidAddr net.IP, vppChan VPPChannel) error {
+func (calls *srv6Calls) DeleteLocalSid(sidAddr net.IP, vppChan govppapi.Channel) error {
 	return calls.addDelLocalSid(true, sidAddr, nil, nil, vppChan)
 }
 
-func (calls *srv6Calls) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, vppChan VPPChannel) error {
+func (calls *srv6Calls) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex, vppChan govppapi.Channel) error {
 	calls.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "FIB table ID": calls.fibTableID(localSID), "end function": calls.endFunction(localSID)}).
 		Debug("Adding/deleting Local SID", sidAddr)
 	defer func(t time.Time) {
@@ -235,7 +236,7 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 }
 
 // SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
-func (calls *srv6Calls) SetEncapsSourceAddress(address string, vppChan VPPChannel) error {
+func (calls *srv6Calls) SetEncapsSourceAddress(address string, vppChan govppapi.Channel) error {
 	calls.log.Debugf("Configuring encapsulation source address to address %v", address)
 	defer func(t time.Time) {
 		calls.stopwatch.TimeLog(sr.SrSetEncapSource{}).LogTimeEntry(time.Since(t))
@@ -264,7 +265,7 @@ func (calls *srv6Calls) SetEncapsSourceAddress(address string, vppChan VPPChanne
 }
 
 // AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
-func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan VPPChannel) error {
+func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan govppapi.Channel) error {
 	calls.log.Debugf("Adding SR policy with binding SID %v and list of next SIDs %v", bindingSid, policySegment.Segments)
 	defer func(t time.Time) {
 		calls.stopwatch.TimeLog(sr.SrPolicyAdd{}).LogTimeEntry(time.Since(t))
@@ -299,7 +300,7 @@ func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policy
 }
 
 // DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
-func (calls *srv6Calls) DeletePolicy(bindingSid net.IP, vppChan VPPChannel) error {
+func (calls *srv6Calls) DeletePolicy(bindingSid net.IP, vppChan govppapi.Channel) error {
 	calls.log.Debugf("Deleting SR policy with binding SID %v ", bindingSid)
 	defer func(t time.Time) {
 		calls.stopwatch.TimeLog(sr.SrPolicyDel{}).LogTimeEntry(time.Since(t))
@@ -324,7 +325,7 @@ func (calls *srv6Calls) DeletePolicy(bindingSid net.IP, vppChan VPPChannel) erro
 }
 
 // AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
-func (calls *srv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan VPPChannel) error {
+func (calls *srv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment, vppChan govppapi.Channel) error {
 	calls.log.Debugf("Adding segment %v to SR policy with binding SID %v", policySegment.Segments, bindingSid)
 	err := calls.modPolicy(AddSRList, bindingSid, policy, policySegment, 0, vppChan)
 	if err == nil {
@@ -336,7 +337,7 @@ func (calls *srv6Calls) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy,
 
 // DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
 func (calls *srv6Calls) DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
-	segmentIndex uint32, vppChan VPPChannel) error {
+	segmentIndex uint32, vppChan govppapi.Channel) error {
 	calls.log.Debugf("Removing segment %v (index %v) from SR policy with binding SID %v", policySegment.Segments, segmentIndex, bindingSid)
 	err := calls.modPolicy(DeleteSRList, bindingSid, policy, policySegment, segmentIndex, vppChan)
 	if err == nil {
@@ -347,7 +348,7 @@ func (calls *srv6Calls) DeletePolicySegment(bindingSid net.IP, policy *srv6.Poli
 }
 
 func (calls *srv6Calls) modPolicy(operation uint8, bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
-	segmentIndex uint32, vppChan VPPChannel) error {
+	segmentIndex uint32, vppChan govppapi.Channel) error {
 	defer func(t time.Time) {
 		calls.stopwatch.TimeLog(sr.SrPolicyMod{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -389,8 +390,10 @@ func (calls *srv6Calls) convertNextSidList(nextSidList []string) (uint8, []sr.Sr
 		}
 
 		// add sid to segment list
-		ipv6Segment := sr.SrIP6Address{}
-		copy(ipv6Segment.Data[:], parserSid) // sr.SrIP6Address.Data = [16]byte
+		ipv6Segment := sr.SrIP6Address{
+			Data: make([]byte, 16), // sr.SrIP6Address.Data = [16]byte
+		}
+		copy(ipv6Segment.Data, parserSid)
 		segments = append(segments, ipv6Segment)
 	}
 	return uint8(len(nextSidList)), segments, nil
@@ -398,17 +401,17 @@ func (calls *srv6Calls) convertNextSidList(nextSidList []string) (uint8, []sr.Sr
 
 // AddSteering sets in VPP steering into SRv6 policy.
 func (calls *srv6Calls) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex,
-	vppChan VPPChannel) error {
+	vppChan govppapi.Channel) error {
 	return calls.addDelSteering(false, steering, swIfIndex, vppChan)
 }
 
 // RemoveSteering removes in VPP steering into SRv6 policy.
 func (calls *srv6Calls) RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex,
-	vppChan VPPChannel) error {
+	vppChan govppapi.Channel) error {
 	return calls.addDelSteering(true, steering, swIfIndex, vppChan)
 }
 
-func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan VPPChannel) error {
+func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex, vppChan govppapi.Channel) error {
 	defer func(t time.Time) {
 		calls.stopwatch.TimeLog(sr.SrSteeringAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

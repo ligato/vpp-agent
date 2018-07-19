@@ -18,13 +18,12 @@ import (
 	"fmt"
 	"reflect"
 
-	logger "github.com/sirupsen/logrus"
-
 	"git.fd.io/govpp.git/api"
+	logger "github.com/sirupsen/logrus"
 )
 
 // processNotifSubscribeRequest processes a notification subscribe request.
-func (c *Connection) processNotifSubscribeRequest(ch *api.Channel, req *api.NotifSubscribeRequest) error {
+func (c *Connection) processNotifSubscribeRequest(ch *channel, req *api.NotifSubscribeRequest) error {
 	var err error
 
 	// subscribe / unsubscribe
@@ -36,7 +35,7 @@ func (c *Connection) processNotifSubscribeRequest(ch *api.Channel, req *api.Noti
 
 	// send the reply into the go channel
 	select {
-	case ch.NotifSubsReplyChan <- err:
+	case ch.notifSubsReplyChan <- err:
 		// reply sent successfully
 	default:
 		// unable to write into the channel without blocking

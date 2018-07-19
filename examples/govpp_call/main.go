@@ -17,7 +17,7 @@ package main
 import (
 	"time"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
@@ -62,8 +62,8 @@ type ExamplePlugin struct {
 
 	VPP vpp.API
 
-	exampleIDSeq uint32       // Plugin-specific ID initialization
-	vppChannel   *api.Channel // Vpp channel to communicate with VPP
+	exampleIDSeq uint32           // Plugin-specific ID initialization
+	vppChannel   govppapi.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
 }
@@ -87,8 +87,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	safeclose.CloseAll(plugin.GoVppmux, plugin.vppChannel)
-	return nil
+	return safeclose.Close(plugin.GoVppmux, plugin.vppChannel)
 }
 
 /***********

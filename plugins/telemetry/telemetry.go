@@ -18,9 +18,10 @@ import (
 	"strconv"
 	"time"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/flavors/local"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/prometheus/client_golang/prometheus"
@@ -84,7 +85,7 @@ const (
 type Plugin struct {
 	Deps
 
-	vppCh *api.Channel
+	vppCh govppapi.Channel
 
 	runtimeGaugeVecs map[string]*prometheus.GaugeVec
 	runtimeStats     map[string]*runtimeStats
@@ -429,6 +430,5 @@ func (p *Plugin) AfterInit() error {
 
 // Close is used to clean up resources used by Telemetry Plugin
 func (p *Plugin) Close() error {
-	p.vppCh.Close()
-	return nil
+	return safeclose.Close(p.vppCh)
 }

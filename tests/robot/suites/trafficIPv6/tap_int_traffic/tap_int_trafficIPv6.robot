@@ -11,7 +11,8 @@ Resource    ../../../libraries/pretty_keywords.robot
 Force Tags        trafficIPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
-
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=               common
 ${ENV}=                     common
@@ -39,7 +40,6 @@ ${RESYNC_WAIT}=        50s
 
 *** Test Cases ***
 Configure Environment
-    [Tags]    setup
     Configure Environment 1
 
 Show Interfaces Before Setup
@@ -65,7 +65,10 @@ Check Ping Between VPP1 and linux_VPP1_TAP1 Interface
 Add VPP1_memif1 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=${NAME_VPP1_MEMIF1}    mac=${MAC_VPP1_MEMIF1}    master=true    id=1    ip=${IP_VPP1_MEMIF1}    prefix=24    socket=memif.sock
+
+Check Memif on Agent1 is created
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
+    vat_term: Check Memif Interface State     agent_vpp_1  ${NAME_VPP1_MEMIF1}  mac=${MAC_VPP1_MEMIF1}  role=master  id=1   connected=0  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Add VPP2_TAP1 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
@@ -179,3 +182,9 @@ Check Ping From VPP2 Linux To VPP1_TAP1 And LINUX_VPP1_TAP1 After Resync
     linux: Check Ping    node=agent_vpp_2    ip=${IP_LINUX_VPP1_TAP1}
 
 #*** Keywords ***
+*** Keywords ***
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown

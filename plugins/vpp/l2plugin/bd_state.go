@@ -45,13 +45,13 @@ type BridgeDomainStateUpdater struct {
 	bdState        map[uint32]*l2.BridgeDomainState_BridgeDomain
 
 	// VPP channel
-	vppCh *govppapi.Channel
+	vppCh govppapi.Channel
 
 	// Notification subscriptions
 	vppNotifSubs            *govppapi.NotifSubscription
 	vppCountersSubs         *govppapi.NotifSubscription
 	vppCombinedCountersSubs *govppapi.NotifSubscription
-	notificationChan        chan BridgeDomainStateMessage
+	notificationChan        chan BridgeDomainStateMessage // Injected, do not close here
 	bdIdxChan               chan l2idx.BdChangeDto
 }
 

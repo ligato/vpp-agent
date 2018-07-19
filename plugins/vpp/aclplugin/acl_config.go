@@ -21,7 +21,7 @@ package aclplugin
 import (
 	"fmt"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -68,8 +68,8 @@ type ACLConfigurator struct {
 	vppCalls *vppcalls.ACLInterfacesVppCalls
 
 	// VPP channels
-	vppChan     *api.Channel
-	vppDumpChan *api.Channel
+	vppChan     govppapi.Channel
+	vppDumpChan govppapi.Channel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -123,8 +123,7 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 // Close GOVPP channel.
 func (plugin *ACLConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChan, plugin.vppDumpChan)
-	return err
+	return safeclose.Close(plugin.vppChan, plugin.vppDumpChan)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.

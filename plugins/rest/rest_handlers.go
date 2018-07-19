@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"git.fd.io/govpp.git/api"
+	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
 	"github.com/gorilla/mux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
@@ -164,6 +164,33 @@ func (plugin *Plugin) xconnectPairsGetHandler(formatter *render.Render) http.Han
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
+		}
+
+		plugin.Log.Debug(res)
+		formatter.JSON(w, http.StatusOK, res)
+	}
+}
+
+// staticRoutesGetHandler - used to get list of all static routes
+func (plugin *Plugin) arpGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+
+		plugin.Log.Debug("Getting list of all ARPs")
+
+		// create an API channel
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		res, err := l3plugin.DumpArps(plugin.Log, ch, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, nil)
+			return
 		}
 
 		plugin.Log.Debug(res)
@@ -512,7 +539,7 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 	}
 }
 
-func (plugin *Plugin) sendCommand(ch *api.Channel, command string) ([]byte, error) {
+func (plugin *Plugin) sendCommand(ch govppapi.Channel, command string) ([]byte, error) {
 	r := &vpe.CliInband{
 		Length: uint32(len(command)),
 		Cmd:    []byte(command),

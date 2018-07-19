@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -28,7 +29,7 @@ import (
 // SetInterfacesToBridgeDomain attempts to set all provided interfaces to bridge domain. It returns a list of interfaces
 // which were successfully set.
 func SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) (ifs []string, wasErr error) {
+	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (ifs []string, wasErr error) {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
@@ -61,7 +62,7 @@ func SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.Bridge
 // UnsetInterfacesFromBridgeDomain removes all interfaces from bridge domain. It returns a list of interfaces
 // which were successfully unset.
 func UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan VPPChannel, stopwatch *measure.Stopwatch) (ifs []string, wasErr error) {
+	swIfIndices ifaceidx.SwIfIndex, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (ifs []string, wasErr error) {
 
 	defer func(t time.Time) {
 		stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
@@ -92,7 +93,7 @@ func UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.Br
 }
 
 func addDelInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
-	ifIdx uint32, log logging.Logger, vppChan VPPChannel, add bool) error {
+	ifIdx uint32, log logging.Logger, vppChan govppapi.Channel, add bool) error {
 	req := &l2ba.SwInterfaceSetL2Bridge{
 		BdID:        bdIdx,
 		RxSwIfIndex: ifIdx,

@@ -132,3 +132,11 @@ func (r *PrevRevisions) ListKeys() []string {
 
 	return ret
 }
+
+// Cleanup removes all data from the registry
+func (r *PrevRevisions) Cleanup() {
+	r.Lock()
+	defer r.Unlock()
+
+	r.revisions = map[string]datasync.LazyValueWithRev{}
+}

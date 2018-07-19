@@ -16,7 +16,6 @@ Kubernetes Suite Setup
     setup-teardown.Discard Old Results
     Create_Connections_To_Kube_Cluster      ${cluster_id}
     BuiltIn.Set_Suite_Variable    ${testbed_connection}    vm_1
-    Pull Docker Images
 
 Kubernetes Suite Teardown
     [Arguments]    ${cluster_id}
@@ -73,7 +72,7 @@ Create Connections To Kube Cluster
 
 Make K8 ETCD Snapshots
     [Arguments]    ${tag}=notag
-    [Documentation]    Log ${tag}, compute next prefix (and do nothing with it).
+    [Documentation]    Log ${tag}, compute next prefix and log ETCD status with the prefix.
     BuiltIn.Log_Many    ${tag}
     ${prefix} =    Create_K8_Next_Snapshot_Prefix
     setup-teardown.Take ETCD Snapshots    ${prefix}_${tag}    ${testbed_connection}
@@ -84,10 +83,3 @@ Create_K8_Next_Snapshot_Prefix
     ${snapshot_num} =    BuiltIn.Evaluate    ${snapshot_num}+1
     BuiltIn.Set_Global_Variable    ${snapshot_num}
     [Return]    ${prefix}
-
-Pull Docker Images
-    [Documentation]    Copy over and run the pull-images.sh script.
-    Switch_And_Execute_With_Copied_File
-    ...    ${testbed_connection}
-    ...    ../../../resources/k8-scripts/pull-images.sh
-    ...    sh

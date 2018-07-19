@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -75,8 +76,8 @@ type NatConfigurator struct {
 	notDisabledIfs map[string]*nat.Nat44Global_NatInterface
 
 	// VPP channels
-	vppChan     vppcalls.VPPChannel
-	vppDumpChan vppcalls.VPPChannel
+	vppChan     govppapi.Channel
+	vppDumpChan govppapi.Channel
 
 	stopwatch *measure.Stopwatch
 }
@@ -122,8 +123,7 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 // Close used resources
 func (plugin *NatConfigurator) Close() error {
-	_, err := safeclose.CloseAll(plugin.vppChan, plugin.vppDumpChan)
-	return err
+	return safeclose.Close(plugin.vppChan, plugin.vppDumpChan)
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.

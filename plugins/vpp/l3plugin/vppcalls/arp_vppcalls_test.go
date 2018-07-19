@@ -26,19 +26,19 @@ var arpEntries = []vppcalls.ArpEntry{
 	{
 		Interface:  1,
 		IPAddress:  []byte{192, 168, 10, 21},
-		MacAddress: []byte{0x59, 0x6C, 0xde, 0xad, 0x00, 0x01},
+		MacAddress: "59:6C:45:59:8E:BD",
 		Static:     true,
 	},
 	{
 		Interface:  1,
 		IPAddress:  []byte{192, 168, 10, 22},
-		MacAddress: []byte{0x59, 0x6C, 0xde, 0xad, 0x00, 0x02},
+		MacAddress:"6C:45:59:59:8E:BD",
 		Static:     false,
 	},
 	{
 		Interface:  1,
 		IPAddress:  []byte{0xde, 0xad, 0, 0, 0, 0, 0, 0, 0xde, 0xad, 0, 0, 0, 0, 0, 1},
-		MacAddress: []byte{0x59, 0x6C, 0xde, 0xad, 0x00, 0x02},
+		MacAddress: "8E:BD:6C:45:59:59",
 		Static:     false,
 	},
 }

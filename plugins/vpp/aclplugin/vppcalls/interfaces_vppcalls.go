@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
@@ -35,14 +36,14 @@ type ACLInterfaceLogicalReq struct {
 // ACLInterfacesVppCalls aggregates vpp calls related to the IP ACL interfaces
 type ACLInterfacesVppCalls struct {
 	log             logging.Logger
-	vppChan         vppdump.VPPChannel
+	vppChan         govppapi.Channel
 	swIfIndexes     ifaceidx.SwIfIndex
 	stopwatch       *measure.Stopwatch
 	setACLStopwatch measure.StopWatchEntry
 }
 
 // NewACLInterfacesVppCalls constructs IP ACL interfaces vpp calls object
-func NewACLInterfacesVppCalls(log logging.Logger, vppChan vppdump.VPPChannel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
+func NewACLInterfacesVppCalls(log logging.Logger, vppChan govppapi.Channel, swIfIndexes ifaceidx.SwIfIndex, stopwatch *measure.Stopwatch) *ACLInterfacesVppCalls {
 	return &ACLInterfacesVppCalls{
 		log:             log,
 		vppChan:         vppChan,

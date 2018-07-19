@@ -47,7 +47,7 @@ type RouteConfigurator struct {
 	rtIndexSeq      uint32
 
 	// VPP channels
-	vppChan *govppapi.Channel
+	vppChan govppapi.Channel
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
