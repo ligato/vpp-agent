@@ -28,10 +28,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Period between metric updates
-var updatePeriod = time.Second * 5
-
 const (
+	// Default update - period between metric updates
+	defaultUpdatePeriod = time.Second * 30
 
 	// Registry path for telemetry metrics
 	registryPath = "/vpp"
@@ -100,7 +99,9 @@ type Plugin struct {
 	nodeCounterGaugeVecs map[string]*prometheus.GaugeVec
 	nodeCounterStats     map[string]*nodeCounterStats
 
-	config *Config
+	// From config file
+	updatePeriod time.Duration
+	disabled     bool
 }
 
 // Deps represents dependencies of Telemetry Plugin
@@ -139,20 +140,23 @@ type nodeCounterStats struct {
 // Init initializes Telemetry Plugin
 func (p *Plugin) Init() error {
 	// Telemetry config file
-	var err error
-	p.config, err = p.getConfig()
+	config, err := p.getConfig()
 	if err != nil {
 		return err
 	}
-	if p.config != nil {
+	if config != nil {
 		// If telemetry is not enabled, skip plugin initialization
-		if p.config.Disabled {
+		if config.Disabled {
 			p.Log.Info("Telemetry plugin disabled via config file")
+			p.disabled = true
 			return nil
 		}
-		if p.config.PollingInterval > 0 {
-			updatePeriod = p.config.PollingInterval
-			p.Log.Infof("Telemetry polling period changed to %v", updatePeriod)
+		if config.PollingInterval > 0 {
+			p.updatePeriod = config.PollingInterval
+			p.Log.Infof("Telemetry polling period changed to %v", p.updatePeriod)
+		} else {
+			// Set default value
+			p.updatePeriod = defaultUpdatePeriod
 		}
 	}
 
@@ -301,7 +305,7 @@ func (p *Plugin) Init() error {
 // AfterInit executes after initializion of Telemetry Plugin
 func (p *Plugin) AfterInit() error {
 	// Do not start polling if telemetry is disabled
-	if p.config != nil && p.config.Disabled {
+	if p.disabled {
 		return nil
 	}
 
@@ -448,7 +452,7 @@ func (p *Plugin) AfterInit() error {
 			}
 
 			// Delay period between updates
-			time.Sleep(updatePeriod)
+			time.Sleep(p.updatePeriod)
 		}
 	}()
 	return nil

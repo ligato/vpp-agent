@@ -18,7 +18,7 @@ import "time"
 
 // Config file representation for telemetry plugin
 type Config struct {
-	// Custom polling interval, default value is 5s
+	// Custom polling interval, default value is 30s
 	PollingInterval time.Duration `json:"polling-interval"`
 	// Allows to disable plugin
 	Disabled bool `json:"disabled"`
