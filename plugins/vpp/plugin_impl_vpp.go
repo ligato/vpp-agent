@@ -129,9 +129,9 @@ type Plugin struct {
 	omittedPrefixes  []string // list of keys which won't be resynced
 
 	// From config file
+	enableStopwatch bool
 	ifMtu           uint32
 	resyncStrategy  string
-	enableStopwatch bool
 
 	// Common
 	statusCheckReg bool
@@ -640,11 +640,12 @@ func (plugin *Plugin) fromConfigFile() {
 			plugin.ifMtu = config.Mtu
 			plugin.Log.Infof("Default MTU set to %v", plugin.ifMtu)
 		}
-		plugin.enableStopwatch = config.Stopwatch
-		if plugin.enableStopwatch {
-			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
+
+		if config.Stopwatch {
+			plugin.enableStopwatch = true
+			plugin.Log.Info("stopwatch enabled for VPP plugins")
 		} else {
-			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+			plugin.Log.Info("stopwatch disabled VPP plugins")
 		}
 		// return skip (if set) or value from config
 		plugin.resyncStrategy = plugin.resolveResyncStrategy(config.Strategy)
