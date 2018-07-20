@@ -45,11 +45,7 @@ type GOVPPPlugin struct {
 	vppAdapter adapter.VppAdapter
 	vppConChan chan govpp.ConnectionEvent
 
-	replyTimeout        time.Duration
-	reconnectResync     bool
-	retryRequestCount   int
-	retryRequestTimeout time.Duration
-	lastConnErr         error
+	lastConnErr error
 
 	config *Config
 
@@ -117,21 +113,14 @@ func (plugin *GOVPPPlugin) Init() error {
 	if err != nil {
 		return err
 	}
-	var shmPrefix string
 	if found {
 		govpp.SetHealthCheckProbeInterval(plugin.config.HealthCheckProbeInterval)
 		govpp.SetHealthCheckReplyTimeout(plugin.config.HealthCheckReplyTimeout)
 		govpp.SetHealthCheckThreshold(plugin.config.HealthCheckThreshold)
-		plugin.replyTimeout = plugin.config.ReplyTimeout
-		plugin.reconnectResync = plugin.config.ReconnectResync
-		shmPrefix = plugin.config.ShmPrefix
-		plugin.retryRequestCount = plugin.config.RetryRequestCount
-		plugin.retryRequestTimeout = plugin.config.RetryRequestTimeout
-		plugin.Log.Debug("Setting govpp parameters", plugin.config)
 	}
 
 	if plugin.vppAdapter == nil {
-		plugin.vppAdapter = NewVppAdapter(shmPrefix)
+		plugin.vppAdapter = NewVppAdapter(plugin.config.ShmPrefix)
 	} else {
 		plugin.Log.Info("Reusing existing vppAdapter") //this is used for testing purposes
 	}
@@ -189,12 +178,12 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
 	if err != nil {
 		return nil, err
 	}
-	if plugin.replyTimeout > 0 {
-		ch.SetReplyTimeout(plugin.replyTimeout)
+	if plugin.config.ReplyTimeout > 0 {
+		ch.SetReplyTimeout(plugin.config.ReplyTimeout)
 	}
 	retryCfg := retryConfig{
-		plugin.retryRequestCount,
-		plugin.retryRequestTimeout,
+		plugin.config.RetryRequestCount,
+		plugin.config.RetryRequestTimeout,
 	}
 	return &goVppChan{ch, retryCfg}, nil
 }
@@ -210,12 +199,12 @@ func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSiz
 	if err != nil {
 		return nil, err
 	}
-	if plugin.replyTimeout > 0 {
-		ch.SetReplyTimeout(plugin.replyTimeout)
+	if plugin.config.ReplyTimeout > 0 {
+		ch.SetReplyTimeout(plugin.config.ReplyTimeout)
 	}
 	retryCfg := retryConfig{
-		plugin.retryRequestCount,
-		plugin.retryRequestTimeout,
+		plugin.config.RetryRequestCount,
+		plugin.config.RetryRequestTimeout,
 	}
 	return &goVppChan{ch, retryCfg}, nil
 }
@@ -230,7 +219,7 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
 				plugin.retrieveVersion()
-				if plugin.reconnectResync && plugin.lastConnErr != nil {
+				if plugin.config.ReconnectResync && plugin.lastConnErr != nil {
 					plugin.Log.Info("Starting resync after VPP reconnect")
 					if plugin.Resync != nil {
 						plugin.Resync.DoResync()
