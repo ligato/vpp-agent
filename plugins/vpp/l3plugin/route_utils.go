@@ -97,11 +97,8 @@ func TransformRoute(routeInput *l3.StaticRoutes_Route, swIndex uint32, log loggi
 		return nil, nil
 	}
 	if routeInput.DstIpAddr == "" {
-		if routeInput.Type != l3.StaticRoutes_Route_INTER_VRF {
-			// no destination address is only allowed for inter-VRF routes
-			log.Infof("Route does not contain destination address")
-			return nil, nil
-		}
+		log.Infof("Route does not contain destination address")
+		return nil, nil
 	}
 	parsedDestIP, isIpv6, err := addrs.ParseIPWithPrefix(routeInput.DstIpAddr)
 	if err != nil {
