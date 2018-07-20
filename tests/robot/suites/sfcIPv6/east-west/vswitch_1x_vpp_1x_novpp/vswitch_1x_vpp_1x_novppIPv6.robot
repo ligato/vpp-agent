@@ -18,7 +18,7 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${FINAL_SLEEP}=        3s
-${SYNC_SLEEP}=         10s
+${SYNC_SLEEP}=         12s
 ${IP_1}=               fd30::1:b:0:0:1
 ${IP_2}=               fd30::1:b:0:0:10
 *** Test Cases ***
