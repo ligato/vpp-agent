@@ -1,3 +1,16 @@
+# Release v1.5.1 (2018-07-20)
+- VPP 18.07-rc0~358-ga5ee900
+- cn-infra v1.4
+
+## New Features
+- [Telemetry](plugins/telemetry)
+  * Default polling interval was raised to 30s.
+  * Added option to use telemetry config file to change polling interval, or turn the polling off,
+  disabling the telemetry plugin. The change was added due to several reports where often polling 
+  is suspicious of interrupting VPP worker threads and causing packet drops and/or other 
+  negative impacts. More information how to use the config file can be found 
+  in the [readme](plugins/telemetry/README.md)
+
 # Release v1.5 (2018-07-16)
 
 ## Compatibility
@@ -6,6 +19,7 @@
 
 ## Breaking Changes
 - The package `etcdv3` was renamed to `etcd`, along with it's flag and configuration file.
+- The package `defaultplugins` was renamed to `vpp` to make the purpose of the package clear
 
 ## New Features
 - [LinuxPlugin](plugins/linux)
