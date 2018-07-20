@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
+	"net"
 	"testing"
 )
 
@@ -30,7 +31,9 @@ func TestDumpStaticRoutes(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPFibDetails{
-		Path: []ip.FibPath{{SwIfIndex: 3}},
+		Path: []ip.FibPath{
+			{SwIfIndex: 3, NextHop: []byte{10, 20, 30, 40}},
+			{SwIfIndex: 1, NextHop: []byte{10, 20, 30, 50}}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&ip.IP6FibDetails{
@@ -41,6 +44,11 @@ func TestDumpStaticRoutes(t *testing.T) {
 	routes, err := vppdump.DumpStaticRoutes(logrus.DefaultLogger(), ctx.MockChannel, nil)
 	Expect(err).To(Succeed())
 	Expect(routes).To(HaveLen(2))
-	Expect(routes[0].OutIface).To(Equal(uint32(3)))
-	Expect(routes[1].OutIface).To(Equal(uint32(2)))
+	Expect(routes[0]).To(HaveLen(2))
+	Expect(routes[0][0].OutIface).To(Equal(uint32(3)))
+	Expect(routes[0][0].NextHopAddr).To(Equal((net.IP)([]byte{10, 20, 30, 40})))
+	Expect(routes[0][1].OutIface).To(Equal(uint32(1)))
+	Expect(routes[0][1].NextHopAddr).To(Equal((net.IP)([]byte{10, 20, 30, 50})))
+	Expect(routes[1]).To(HaveLen(1))
+	Expect(routes[1][0].OutIface).To(Equal(uint32(2)))
 }

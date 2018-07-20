@@ -30,7 +30,7 @@ import (
 )
 
 // DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) ([]*vppcalls.Route, error) {
+func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) ([][]*vppcalls.Route, error) {
 	// IPFibDump time measurement
 	start := time.Now()
 	defer func() {
@@ -39,7 +39,7 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 		}
 	}()
 
-	var routes []*vppcalls.Route
+	var routes [][]*vppcalls.Route
 
 	// Dump IPv4 l3 FIB.
 	reqCtx := vppChan.SendMultiRequest(&l3ba.IPFibDump{})
@@ -83,16 +83,16 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 	return routes, nil
 }
 
-func dumpStaticRouteIPv4Details(fibDetails *l3ba.IPFibDetails) (*vppcalls.Route, error) {
+func dumpStaticRouteIPv4Details(fibDetails *l3ba.IPFibDetails) ([]*vppcalls.Route, error) {
 	return dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 }
 
-func dumpStaticRouteIPv6Details(fibDetails *l3ba.IP6FibDetails) (*vppcalls.Route, error) {
+func dumpStaticRouteIPv6Details(fibDetails *l3ba.IP6FibDetails) ([]*vppcalls.Route, error) {
 	return dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
 // dumpStaticRouteIPDetails processes static route details and returns a route object
-func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, path []l3ba.FibPath, ipv6 bool) (*vppcalls.Route, error) {
+func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3ba.FibPath, ipv6 bool) ([]*vppcalls.Route, error) {
 	// route details
 	var ipAddr string
 	if ipv6 {
@@ -101,7 +101,7 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(address[:4]).To4().String(), uint32(prefixLen))
 	}
 
-	rt := &vppcalls.Route{}
+	rts := []*vppcalls.Route{}
 
 	// IP net
 	parsedIP, _, err := addrs.ParseIPWithPrefix(ipAddr)
@@ -109,25 +109,27 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		return nil, err
 	}
 
-	rt.TableName = string(bytes.SplitN(tableName, []byte{0x00}, 2)[0])
-	rt.VrfID = tableID
-	rt.DstAddr = *parsedIP
+	for _, path := range paths {
+		rt := &vppcalls.Route{}
 
-	if len(path) > 0 {
+		rt.TableName = string(bytes.SplitN(tableName, []byte{0x00}, 2)[0])
+		rt.VrfID = tableID
+		rt.DstAddr = *parsedIP
+
 		var nextHopAddr net.IP
 		if ipv6 {
-			nextHopAddr = net.IP(path[0].NextHop).To16()
+			nextHopAddr = net.IP(path.NextHop).To16()
 		} else {
-			nextHopAddr = net.IP(path[0].NextHop[:4]).To4()
+			nextHopAddr = net.IP(path.NextHop[:4]).To4()
 		}
-
 		rt.NextHopAddr = nextHopAddr
-		rt.OutIface = path[0].SwIfIndex
-		rt.Preference = uint32(path[0].Preference)
-		rt.Weight = uint32(path[0].Weight)
-	}
+		rt.OutIface = path.SwIfIndex
+		rt.Preference = uint32(path.Preference)
+		rt.Weight = uint32(path.Weight)
 
-	return rt, nil
+		rts = append(rts, rt)
+	}
+	return rts, nil
 }
 
 // DumpArps dumps ARPs from VPP and fills them into the provided static route map.
