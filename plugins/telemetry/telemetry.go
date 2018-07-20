@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	// Period between metric updates
-	updatePeriod = time.Second * 5
+	// Default update - period between metric updates
+	defaultUpdatePeriod = time.Second * 30
 
 	// Registry path for telemetry metrics
 	registryPath = "/vpp"
@@ -98,6 +98,10 @@ type Plugin struct {
 
 	nodeCounterGaugeVecs map[string]*prometheus.GaugeVec
 	nodeCounterStats     map[string]*nodeCounterStats
+
+	// From config file
+	updatePeriod time.Duration
+	disabled     bool
 }
 
 // Deps represents dependencies of Telemetry Plugin
@@ -135,8 +139,29 @@ type nodeCounterStats struct {
 
 // Init initializes Telemetry Plugin
 func (p *Plugin) Init() error {
+	// Telemetry config file
+	config, err := p.getConfig()
+	if err != nil {
+		return err
+	}
+	if config != nil {
+		// If telemetry is not enabled, skip plugin initialization
+		if config.Disabled {
+			p.Log.Info("Telemetry plugin disabled via config file")
+			p.disabled = true
+			return nil
+		}
+		if config.PollingInterval > 0 {
+			p.updatePeriod = config.PollingInterval
+			p.Log.Infof("Telemetry polling period changed to %v", p.updatePeriod)
+		} else {
+			// Set default value
+			p.updatePeriod = defaultUpdatePeriod
+		}
+	}
+
 	// Register '/vpp' registry path
-	err := p.Prometheus.NewRegistry(registryPath, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
+	err = p.Prometheus.NewRegistry(registryPath, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
 	if err != nil {
 		return err
 	}
@@ -279,6 +304,11 @@ func (p *Plugin) Init() error {
 
 // AfterInit executes after initializion of Telemetry Plugin
 func (p *Plugin) AfterInit() error {
+	// Do not start polling if telemetry is disabled
+	if p.disabled {
+		return nil
+	}
+
 	// Periodically update data
 	go func() {
 		for {
@@ -422,7 +452,7 @@ func (p *Plugin) AfterInit() error {
 			}
 
 			// Delay period between updates
-			time.Sleep(updatePeriod)
+			time.Sleep(p.updatePeriod)
 		}
 	}()
 	return nil

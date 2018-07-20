@@ -4,7 +4,7 @@ The `telemetry` plugin is a core Agent Plugin for exporting telemetry
 statistics from VPP for Prometheus.
 
 Statistics are published via registry path `/vpp` on port `9191` and
-updated every 5 seconds.
+updated every 30 seconds.
 
 ### Exported data
 
@@ -186,3 +186,11 @@ updated every 5 seconds.
     vpp_node_counter_count{agent="agent1",item="ipsec-input-ip4",reason="IPSEC pkts received"} 128027
     vpp_node_counter_count{agent="agent1",item="ipsec-output-ip4",reason="IPSec policy protect"} 124669
     ```
+    
+### Configuration file
+
+Telemetry plugin configuration file allows to change polling interval, or turn the polling off. 
+
+`polling-interval` is time in nanoseconds between reads from the VPP.
+
+`disabled` can be set to `true` in order to disable the plugin.    
