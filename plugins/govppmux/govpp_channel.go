@@ -48,15 +48,18 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 	if err = r.requestCtx.ReceiveReply(reply); err != nil && err == core.ErrNotConnected && maxAttempts > 0 {
 		// Try to re-sent requests
 		for attemptIdx := 1; attemptIdx <= maxAttempts; attemptIdx++ {
-			logrus.DefaultLogger().Warnf("Retrying message %v, attempt: %d", r.requestMsg.GetMessageName(), attemptIdx)
-			if err = r.sendRequest(r.requestMsg).ReceiveReply(reply); err != nil && err == core.ErrNotConnected && attemptIdx != maxAttempts {
-				time.Sleep(timeout)
-				continue
-			} else if err != nil {
-				return err
-			} else {
-				return nil
+			// Wait, then try again
+			time.Sleep(timeout)
+			logrus.DefaultLogger().Warnf("Govppmux: retrying binary API message %v, attempt: %d",
+				r.requestMsg.GetMessageName(), attemptIdx)
+			if err = r.sendRequest(r.requestMsg).ReceiveReply(reply); err != nil {
+				if err == core.ErrNotConnected && attemptIdx != maxAttempts {
+					continue
+				} else {
+					return err
+				}
 			}
+			return nil
 		}
 	}
 
