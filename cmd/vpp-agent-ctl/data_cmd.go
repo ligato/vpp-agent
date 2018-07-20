@@ -942,11 +942,28 @@ func (ctl *VppAgentCtl) createRoute() {
 				Weight:            6,
 				OutgoingInterface: "tap1",
 			},
+			// inter-vrf route without next hop addr (recursive lookup)
+			//{
+			//	Type:      l3.StaticRoutes_Route_INTER_VRF,
+			//	VrfId:     0,
+			//	DstIpAddr: "1.2.3.4/32",
+			//	ViaVrfId:  1,
+			//},
+			// inter-vrf route with next hop addr
+			//{
+			//	Type:        l3.StaticRoutes_Route_INTER_VRF,
+			//	VrfId:       1,
+			//	DstIpAddr:   "10.1.1.3/32",
+			//	NextHopAddr: "192.168.1.13",
+			//	ViaVrfId:    0,
+			//},
 		},
 	}
 
-	ctl.Log.Print(routes.Routes[0])
-	ctl.broker.Put(l3.RouteKey(routes.Routes[0].VrfId, routes.Routes[0].DstIpAddr, routes.Routes[0].NextHopAddr), routes.Routes[0])
+	for _, r := range routes.Routes {
+		ctl.Log.Print(r)
+		ctl.broker.Put(l3.RouteKey(r.VrfId, r.DstIpAddr, r.NextHopAddr), r)
+	}
 }
 
 // DeleteRoute removes VPP route configuration from the ETCD
