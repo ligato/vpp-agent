@@ -151,13 +151,18 @@ func (p *Plugin) Init() error {
 			p.disabled = true
 			return nil
 		}
-		if config.PollingInterval > 0 {
+		// This prevents setting the update period to less than 5 seconds,
+		// which can have significant performerance hit.
+		if config.PollingInterval > time.Second*5 {
 			p.updatePeriod = config.PollingInterval
 			p.Log.Infof("Telemetry polling period changed to %v", p.updatePeriod)
-		} else {
-			// Set default value
-			p.updatePeriod = defaultUpdatePeriod
+		} else if config.PollingInterval > 0 {
+			p.Log.Warnf("Telemetry polling period has to be at least 5s, using default: %v", defaultUpdatePeriod)
 		}
+	}
+	// This serves as fallback if the config was not found or if the value is not set in config.
+	if p.updatePeriod == 0 {
+		p.updatePeriod = defaultUpdatePeriod
 	}
 
 	// Register '/vpp' registry path
