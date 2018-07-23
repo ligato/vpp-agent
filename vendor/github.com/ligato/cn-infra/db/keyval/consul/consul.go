@@ -67,7 +67,7 @@ func NewClient(cfg *api.Config) (store *Client, err error) {
 
 // Put stores given data for the key.
 func (c *Client) Put(key string, data []byte, opts ...datasync.PutOption) error {
-	consulLogger.Debugf("put: %q\n", key)
+	consulLogger.Debugf("Put: %q", key)
 	p := &api.KVPair{Key: transformKey(key), Value: data}
 	_, err := c.client.KV().Put(p, nil)
 	if err != nil {
@@ -86,7 +86,7 @@ func (c *Client) NewTxn() keyval.BytesTxn {
 
 // GetValue returns data for the given key.
 func (c *Client) GetValue(key string) (data []byte, found bool, revision int64, err error) {
-	consulLogger.Debugf("get value: %q\n", key)
+	consulLogger.Debugf("GetValue: %q", key)
 	pair, _, err := c.client.KV().Get(transformKey(key), nil)
 	if err != nil {
 		return nil, false, 0, err
@@ -119,7 +119,7 @@ func (c *Client) ListKeys(prefix string) (keyval.BytesKeyIterator, error) {
 
 // Delete deletes given key.
 func (c *Client) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
-	consulLogger.Debugf("delete: %q\n", key)
+	consulLogger.Debugf("Delete: %q", key)
 	if _, err := c.client.KV().Delete(transformKey(key), nil); err != nil {
 		return false, err
 	}
@@ -171,18 +171,20 @@ func (resp *watchResp) GetRevision() int64 {
 }
 
 func (c *Client) watch(resp func(watchResp keyval.BytesWatchResp), closeCh chan string, prefix string) error {
-	consulLogger.Debug("WATCH:", prefix)
+	consulLogger.Debug("watch:", prefix)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	recvChan := c.watchPrefix(ctx, prefix)
 
 	go func(regPrefix string) {
+		defer cancel()
 		for {
 			select {
 			case wr, ok := <-recvChan:
 				if !ok {
-					consulLogger.WithField("prefix", prefix).Debug("Watch recv chan was closed")
+					consulLogger.WithField("prefix", prefix).
+						Debug("Watch recv chan was closed")
 					return
 				}
 				for _, ev := range wr.Events {
@@ -211,8 +213,8 @@ func (c *Client) watch(resp func(watchResp keyval.BytesWatchResp), closeCh chan 
 				}
 			case closeVal, ok := <-closeCh:
 				if !ok || closeVal == regPrefix {
-					consulLogger.WithField("prefix", prefix).Debug("Watch ended")
-					cancel()
+					consulLogger.WithField("prefix", prefix).
+						Debug("Watch ended")
 					return
 				}
 			}
@@ -252,9 +254,9 @@ func (c *Client) watchPrefix(ctx context.Context, prefix string) <-chan watchRes
 	oldIndex := qm.LastIndex
 	oldPairsMap := make(map[string]*api.KVPair)
 
-	consulLogger.Debugf("..retrieved: %v old pairs (old index: %v)", len(oldPairs), oldIndex)
+	consulLogger.Debugf("prefix %v listing %v pairs (last index: %v)", prefix, len(oldPairs), oldIndex)
 	for _, pair := range oldPairs {
-		consulLogger.Debugf(" - key: %q create: %v modify: %v", pair.Key, pair.CreateIndex, pair.ModifyIndex)
+		consulLogger.Debugf(" - key: %q create: %v modify: %v value: %v", pair.Key, pair.CreateIndex, pair.ModifyIndex, len(pair.Value))
 		oldPairsMap[pair.Key] = pair
 	}
 
@@ -279,9 +281,9 @@ func (c *Client) watchPrefix(ctx context.Context, prefix string) <-chan watchRes
 				continue
 			}
 
-			consulLogger.Debugf("prefix %q: %v new pairs (new index: %v) %+v", prefix, len(newPairs), newIndex, qm)
+			consulLogger.Debugf("prefix %q: listing %v new pairs, new index: %v (old index: %v)", prefix, len(newPairs), newIndex, oldIndex)
 			for _, pair := range newPairs {
-				consulLogger.Debugf(" + key: %q create: %v modify: %v", pair.Key, pair.CreateIndex, pair.ModifyIndex)
+				consulLogger.Debugf(" + key: %q create: %v modify: %v value: %v", pair.Key, pair.CreateIndex, pair.ModifyIndex, len(pair.Value))
 			}
 
 			var evs []*watchEvent
@@ -293,6 +295,7 @@ func (c *Client) watchPrefix(ctx context.Context, prefix string) <-chan watchRes
 					if oldPair, ok := oldPairsMap[pair.Key]; ok {
 						prevVal = oldPair.Value
 					}
+					consulLogger.Debugf(" * modified key: %v prevValue: %v prevModify: %v", pair.Key, len(pair.Value), len(prevVal))
 					evs = append(evs, &watchEvent{
 						Type:      datasync.Put,
 						Key:       pair.Key,
@@ -392,7 +395,7 @@ func (pdb *BrokerWatcher) GetValue(key string) (data []byte, found bool, revisio
 // KeyPrefix defined in constructor is prepended to the key argument.
 // The prefix is removed from the keys of the returned values.
 func (pdb *BrokerWatcher) ListValues(key string) (keyval.BytesKeyValIterator, error) {
-	pairs, _, err := pdb.client.KV().List(pdb.prefixKey(transformKey(key)), nil)
+	pairs, _, err := pdb.client.KV().List(pdb.prefixKey(key), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -403,7 +406,7 @@ func (pdb *BrokerWatcher) ListValues(key string) (keyval.BytesKeyValIterator, er
 // ListKeys calls 'ListKeys' function of the underlying BytesConnectionEtcd.
 // KeyPrefix defined in constructor is prepended to the argument.
 func (pdb *BrokerWatcher) ListKeys(prefix string) (keyval.BytesKeyIterator, error) {
-	keys, qm, err := pdb.client.KV().Keys(pdb.prefixKey(transformKey(prefix)), "", nil)
+	keys, qm, err := pdb.client.KV().Keys(pdb.prefixKey(prefix), "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -451,6 +454,9 @@ func (it *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
 	}
 
 	key = string(it.keys[it.index])
+	if !strings.HasPrefix(key, "/") && strings.HasPrefix(it.prefix, "/") {
+		key = "/" + key
+	}
 	if it.prefix != "" {
 		key = strings.TrimPrefix(key, it.prefix)
 	}
@@ -483,6 +489,9 @@ func (it *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, stop bool) {
 	}
 
 	key := string(it.pairs[it.index].Key)
+	if !strings.HasPrefix(key, "/") && strings.HasPrefix(it.prefix, "/") {
+		key = "/" + key
+	}
 	if it.prefix != "" {
 		key = strings.TrimPrefix(key, it.prefix)
 	}
