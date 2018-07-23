@@ -151,7 +151,7 @@ func (p *Plugin) Init() error {
 			return nil
 		}
 		// This prevents setting the update period to less than 5 seconds,
-		// which can have significant performerance hit.
+		// which can have significant performance hit.
 		if config.PollingInterval > time.Second*5 {
 			p.updatePeriod = config.PollingInterval
 			p.Log.Infof("Telemetry polling period changed to %v", p.updatePeriod)
