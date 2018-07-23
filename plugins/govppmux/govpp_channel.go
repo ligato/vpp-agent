@@ -52,10 +52,9 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 			time.Sleep(timeout)
 			logrus.DefaultLogger().Warnf("Govppmux: retrying binary API message %v, attempt: %d",
 				r.requestMsg.GetMessageName(), attemptIdx)
-			if err = r.sendRequest(r.requestMsg).ReceiveReply(reply); err == core.ErrNotConnected {
-				continue
+			if err = r.sendRequest(r.requestMsg).ReceiveReply(reply); err != core.ErrNotConnected {
+				return err
 			}
-			return err
 		}
 	}
 
