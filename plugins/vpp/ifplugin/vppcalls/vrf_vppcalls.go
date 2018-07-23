@@ -94,7 +94,7 @@ func CreateVrfIfNeeded(vrfID uint32, vppChan govppapi.Channel) error {
 		return err
 	}
 	if _, ok := tables[vrfID]; !ok {
-		logrus.DefaultLogger().Warnf("VRF table %v does not exists, creating it", vrfID)
+		logrus.DefaultLogger().Infof("VRF table %v does not exists, creating it", vrfID)
 		return vppAddIPTable(vrfID, vppChan)
 	}
 

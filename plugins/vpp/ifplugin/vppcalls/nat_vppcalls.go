@@ -274,7 +274,7 @@ func handleNat44IdentityMapping(ctx *IdentityMappingContext, isAdd bool, vppChan
 			}
 			return ifIdx
 		}(ctx.IfIdx),
-		VrfID: ctx.IfIdx,
+		VrfID: ctx.Vrf,
 		IsAdd: boolToUint(isAdd),
 	}
 

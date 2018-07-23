@@ -35,14 +35,25 @@ var RouteMessages = []govppapi.Message{
 	&ip.IP6FibDetails{},
 }
 
+type RouteType int32
+
+const (
+	// IntraVrf route forwards in the specified vrf_id only
+	IntraVrf RouteType = iota
+	// InterVrf route forwards using the lookup in the via_vrf_id
+	InterVrf
+)
+
 // Route represents a forward IP route entry with the parameters of gateway
 // to which packets should be forwarded when a given routing table entry is applied.
 type Route struct {
+	Type        RouteType `json:"type"`
 	VrfID       uint32    `json:"vrf_id"`
 	TableName   string    `json:"table_name"`
 	DstAddr     net.IPNet `json:"dst_addr"`
 	NextHopAddr net.IP    `json:"next_hop_addr"`
 	OutIface    uint32    `json:"out_iface"`
+	ViaVrfId    uint32    `json:"via_vrf_id"`
 	Weight      uint32    `json:"weight"`
 	Preference  uint32    `json:"preference"`
 }
@@ -95,13 +106,17 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 	req.NextHopSwIfIndex = route.OutIface
 	req.NextHopWeight = uint8(route.Weight)
 	req.NextHopPreference = uint8(route.Preference)
-	req.NextHopTableID = route.VrfID
 	req.NextHopViaLabel = NextHopViaLabelUnset
 	req.ClassifyTableIndex = ClassifyTableIndexUnset
 	req.IsDrop = 0
 
 	// VRF
 	req.TableID = route.VrfID
+	if route.Type == InterVrf {
+		req.NextHopTableID = route.ViaVrfId
+	} else {
+		req.NextHopTableID = route.VrfID
+	}
 
 	// Multi path is always true
 	req.IsMultipath = 1
@@ -122,6 +137,11 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 func VppAddRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
 	if err := ifvppcalls.CreateVrfIfNeeded(route.VrfID, vppChan); err != nil {
 		return err
+	}
+	if route.Type == InterVrf {
+		if err := ifvppcalls.CreateVrfIfNeeded(route.ViaVrfId, vppChan); err != nil {
+			return err
+		}
 	}
 	return vppAddDelRoute(route, vppChan, false, stopwatch)
 }

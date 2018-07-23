@@ -35,7 +35,7 @@ var ArpMessages = []govppapi.Message{
 type ArpEntry struct {
 	Interface  uint32
 	IPAddress  net.IP
-	MacAddress net.HardwareAddr
+	MacAddress string
 	Static     bool
 }
 
@@ -68,7 +68,11 @@ func vppAddDelArp(entry *ArpEntry, vppChan govppapi.Channel, delete bool, stopwa
 	} else {
 		req.IsStatic = 0
 	}
-	req.MacAddress = []byte(entry.MacAddress)
+	macAddr, err := net.ParseMAC(entry.MacAddress)
+	if err != nil {
+		return err
+	}
+	req.MacAddress = []byte(macAddr)
 	req.IsNoAdjFib = 1
 	req.SwIfIndex = entry.Interface
 

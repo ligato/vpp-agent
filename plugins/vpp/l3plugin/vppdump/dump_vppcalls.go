@@ -15,6 +15,7 @@
 package vppdump
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 
@@ -52,7 +53,10 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 			log.Error(err)
 			return nil, err
 		}
-
+		if len(fibDetails.Path) > 0 && fibDetails.Path[0].IsDrop == 1 {
+			// skip drop routes, not supported by vpp-agent
+			continue
+		}
 		ipv4Route, err := dumpStaticRouteIPv4Details(fibDetails)
 		if err != nil {
 			return nil, err
@@ -71,6 +75,10 @@ func DumpStaticRoutes(log logging.Logger, vppChan govppapi.Channel, timeLog meas
 		if err != nil {
 			log.Error(err)
 			return nil, err
+		}
+		if len(fibDetails.Path) > 0 && fibDetails.Path[0].IsDrop == 1 {
+			// skip drop routes, not supported by vpp-agent
+			continue
 		}
 		ipv6Route, err := dumpStaticRouteIPv6Details(fibDetails)
 		if err != nil {
@@ -100,7 +108,9 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(address[:4]).To4().String(), uint32(prefixLen))
 	}
 
-	rt := &vppcalls.Route{}
+	rt := &vppcalls.Route{
+		Type: vppcalls.IntraVrf, // default
+	}
 
 	// IP net
 	parsedIP, _, err := addrs.ParseIPWithPrefix(ipAddr)
@@ -108,11 +118,13 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		return nil, err
 	}
 
-	rt.TableName = string(tableName)
+	rt.TableName = string(bytes.SplitN(tableName, []byte{0x00}, 2)[0])
 	rt.VrfID = tableID
 	rt.DstAddr = *parsedIP
 
 	if len(path) > 0 {
+		// TODO: if len(path) > 1, it means multiple NB routes (load-balancing) - not implemented properly
+
 		var nextHopAddr net.IP
 		if ipv6 {
 			nextHopAddr = net.IP(path[0].NextHop).To16()
@@ -121,10 +133,72 @@ func dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, 
 		}
 
 		rt.NextHopAddr = nextHopAddr
+
+		if path[0].SwIfIndex == vppcalls.NextHopOutgoingIfUnset && path[0].TableID != tableID {
+			// outgoing interface not specified and path table id not equal to route table id = inter-VRF route
+			rt.Type = vppcalls.InterVrf
+			rt.ViaVrfId = path[0].TableID
+		}
+
 		rt.OutIface = path[0].SwIfIndex
 		rt.Preference = uint32(path[0].Preference)
 		rt.Weight = uint32(path[0].Weight)
 	}
 
 	return rt, nil
+}
+
+// DumpArps dumps ARPs from VPP and fills them into the provided static route map.
+func DumpArps(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) ([]*vppcalls.ArpEntry, error) {
+	// IPFibDump time measurement
+	start := time.Now()
+	defer func() {
+		if timeLog != nil {
+			timeLog.LogTimeEntry(time.Since(start))
+		}
+	}()
+
+	var arps []*vppcalls.ArpEntry
+
+	// Dump ARPs.
+	reqCtx := vppChan.SendMultiRequest(&l3ba.IPNeighborDump{
+		SwIfIndex: 0xffffffff,
+	})
+	for {
+		arpDetails := &l3ba.IPNeighborDetails{}
+		stop, err := reqCtx.ReceiveReply(arpDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+
+		var mac net.HardwareAddr = arpDetails.MacAddress
+		arp := &vppcalls.ArpEntry{
+			Interface:  arpDetails.SwIfIndex,
+			MacAddress: mac.String(),
+			Static:     uintToBool(arpDetails.IsStatic),
+		}
+
+		var address net.IP
+		if arpDetails.IsIpv6 == 1 {
+			address = net.IP(arpDetails.IPAddress).To16()
+		} else {
+			address = net.IP(arpDetails.IPAddress[:4]).To4()
+		}
+		arp.IPAddress = address
+
+		arps = append(arps, arp)
+	}
+
+	return arps, nil
+}
+
+func uintToBool(value uint8) bool {
+	if value == 0 {
+		return false
+	}
+	return true
 }

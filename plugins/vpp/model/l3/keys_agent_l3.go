@@ -88,6 +88,10 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr str
 			if mask, err := strconv.Atoi(routeComps[3]); err == nil {
 				return true, routeComps[0], routeComps[2], mask, routeComps[4]
 			}
+		} else if len(routeComps) == 4 && routeComps[1] == "fib" {
+			if mask, err := strconv.Atoi(routeComps[3]); err == nil {
+				return true, routeComps[0], routeComps[2], mask, ""
+			}
 		}
 	}
 	return false, "", "", 0, ""
