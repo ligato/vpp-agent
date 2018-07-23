@@ -45,7 +45,7 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 
 	var err error
 	// Receive reply from original send
-	if err = r.requestCtx.ReceiveReply(reply); err != nil && err == core.ErrNotConnected && maxAttempts > 0 {
+	if err = r.requestCtx.ReceiveReply(reply); err == core.ErrNotConnected && maxAttempts > 0 {
 		// Try to re-sent requests
 		for attemptIdx := 1; attemptIdx <= maxAttempts; attemptIdx++ {
 			// Wait, then try again
