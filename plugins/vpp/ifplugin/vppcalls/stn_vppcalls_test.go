@@ -18,8 +18,6 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
@@ -117,8 +115,7 @@ func TestDelStnRule(t *testing.T) {
 
 func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.StnVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	log := logrus.NewLogger("test-log")
-	stnHandler, err := vppcalls.NewStnVppHandler(ctx.MockChannel, measure.NewStopwatch("test-stopwatch", log))
+	stnHandler, err := vppcalls.NewStnVppHandler(ctx.MockChannel, nil)
 	Expect(err).To(BeNil())
 	return ctx, stnHandler
 }

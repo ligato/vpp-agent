@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
@@ -176,7 +175,7 @@ func TestInterfaceRemoveTagRetval(t *testing.T) {
 func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.IfVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifHandler, err := vppcalls.NewIfVppHandler(ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	ifHandler, err := vppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
 	Expect(err).To(BeNil())
 	return ctx, ifHandler
 }

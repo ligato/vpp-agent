@@ -250,7 +250,7 @@ func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measu
 		stopwatch:    stopwatch,
 		log:          log,
 	}
-	if err := handler.CheckMsgCompatibilityForInterface(); err != nil {
+	if err := handler.callsChannel.CheckMessageCompatibility(InterfaceMessages...); err != nil {
 		return nil, err
 	}
 
@@ -264,7 +264,7 @@ func NewBfdVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *meas
 		stopwatch:    stopwatch,
 		log:          log,
 	}
-	if err := handler.CheckMsgCompatibilityForBfd(); err != nil {
+	if err := handler.callsChannel.CheckMessageCompatibility(BfdMessages...); err != nil {
 		return nil, err
 	}
 
@@ -279,7 +279,7 @@ func NewNatVppHandler(callsChan, dumpChan api.Channel, log logging.Logger, stopw
 		stopwatch:    stopwatch,
 		log:          log,
 	}
-	if err := handler.CheckMsgCompatibilityForNat(); err != nil {
+	if err := handler.callsChannel.CheckMessageCompatibility(NatMessages...); err != nil {
 		return nil, err
 	}
 
@@ -292,7 +292,7 @@ func NewStnVppHandler(callsChan api.Channel, stopwatch *measure.Stopwatch) (*stn
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 	}
-	if err := handler.CheckMsgCompatibilityForStn(); err != nil {
+	if err := handler.callsChannel.CheckMessageCompatibility(StnMessages...); err != nil {
 		return nil, err
 	}
 

@@ -41,7 +41,6 @@ func TestBfdConfiguratorInit(t *testing.T) {
 	RegisterTestingT(t)
 	connection, _ := core.Connect(&mock.VppAdapter{})
 	defer connection.Disconnect()
-
 	plugin := &ifplugin.BFDConfigurator{}
 	err := plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
 		nil, true)

@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
@@ -917,7 +916,7 @@ func TestDeleteBfdEchoFunctionRetval(t *testing.T) {
 func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BfdVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	bfdHandler, err := vppcalls.NewBfdVppHandler(ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	bfdHandler, err := vppcalls.NewBfdVppHandler(ctx.MockChannel, log, nil)
 	Expect(err).To(BeNil())
 	return ctx, bfdHandler
 }
