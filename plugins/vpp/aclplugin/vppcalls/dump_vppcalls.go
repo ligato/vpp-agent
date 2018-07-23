@@ -34,17 +34,16 @@ const (
 	ICMPv6Proto = 58
 )
 
-// ACLIdentifier contains fields for ACL index and Tag (used as a name in the configuration)
-type ACLIdentifier struct {
-	ACLIndex uint32 `json:"acl_index"`
-	Tag      string `json:"acl_tag"`
+// AclDetails is combination of proto-modelled ACL data and VPP provided metadata
+type AclDetails struct {
+	Acl  *acl.AccessLists_Acl `json:"acl"`
+	Meta *AclMeta             `json:"acl_meta"`
 }
 
-// ACLEntry is cumulative object with ACL identification and details with all ruleData and
-// interfaces belonging to the ACL
-type ACLEntry struct {
-	Identifier *ACLIdentifier
-	ACLDetails *acl.AccessLists_Acl `json:"acl_details"`
+// AclMeta holds VPP-specific metadata
+type AclMeta struct {
+	Index uint32 `json:"acl_index"`
+	Tag   string `json:"acl_tag"`
 }
 
 // ACLToInterface is definition of interface and all ACLs which are bound to
@@ -55,8 +54,8 @@ type ACLToInterface struct {
 	EgressACL  []uint32
 }
 
-func (handler *aclVppHandler) DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLEntry, error) {
-	ruleIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
+func (handler *aclVppHandler) DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*AclDetails, error) {
+	ruleIPData := make(map[AclMeta][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with IP ruleData
 	IPRuleACLs, err := handler.DumpIPAcls()
@@ -85,7 +84,7 @@ func (handler *aclVppHandler) DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLE
 	// Prepare separate list of all active ACL indices on the VPP
 	var indices []uint32
 	for identifier := range ruleIPData {
-		indices = append(indices, identifier.ACLIndex)
+		indices = append(indices, identifier.Index)
 	}
 
 	// Get all ACL indices with ingress and egress interfaces
@@ -94,18 +93,18 @@ func (handler *aclVppHandler) DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLE
 		return nil, err
 	}
 
-	var ACLs []*ACLEntry
+	var ACLs []*AclDetails
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for identifier, rules := range ruleIPData {
-		ACLs = append(ACLs, &ACLEntry{
-			Identifier: &ACLIdentifier{
-				ACLIndex: identifier.ACLIndex,
-				Tag:      identifier.Tag,
-			},
-			ACLDetails: &acl.AccessLists_Acl{
+		ACLs = append(ACLs, &AclDetails{
+			Acl: &acl.AccessLists_Acl{
 				AclName:    identifier.Tag,
 				Rules:      rules,
-				Interfaces: interfaceData[identifier.ACLIndex],
+				Interfaces: interfaceData[identifier.Index],
+			},
+			Meta: &AclMeta{
+				Index: identifier.Index,
+				Tag:   identifier.Tag,
 			},
 		})
 	}
@@ -113,9 +112,9 @@ func (handler *aclVppHandler) DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLE
 	return ACLs, wasErr
 }
 
-func (handler *aclVppHandler) DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLEntry, error) {
+func (handler *aclVppHandler) DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*AclDetails, error) {
 
-	ruleMACIPData := make(map[ACLIdentifier][]*acl.AccessLists_Acl_Rule)
+	ruleMACIPData := make(map[AclMeta][]*acl.AccessLists_Acl_Rule)
 
 	// get all ACLs with MACIP ruleData
 	MACIPRuleACLs, err := handler.DumpMacIPAcls()
@@ -125,7 +124,7 @@ func (handler *aclVppHandler) DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*A
 
 	// resolve MACIP rules for every ACL
 	var wasErr error
-	for identifier, MACIPRules := range MACIPRuleACLs {
+	for metadata, MACIPRules := range MACIPRuleACLs {
 		var rulesDetails []*acl.AccessLists_Acl_Rule
 
 		if len(MACIPRules) > 0 {
@@ -137,13 +136,13 @@ func (handler *aclVppHandler) DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*A
 				rulesDetails = append(rulesDetails, ruleDetails)
 			}
 		}
-		ruleMACIPData[identifier] = rulesDetails
+		ruleMACIPData[metadata] = rulesDetails
 	}
 
 	// Prepare separate list of all active ACL indices on the VPP
 	var indices []uint32
 	for identifier := range ruleMACIPData {
-		indices = append(indices, identifier.ACLIndex)
+		indices = append(indices, identifier.Index)
 	}
 
 	// Get all ACL indices with ingress and egress interfaces
@@ -152,18 +151,18 @@ func (handler *aclVppHandler) DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*A
 		return nil, err
 	}
 
-	var ACLs []*ACLEntry
+	var ACLs []*AclDetails
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
-	for identifier, rules := range ruleMACIPData {
-		ACLs = append(ACLs, &ACLEntry{
-			Identifier: &ACLIdentifier{
-				ACLIndex: identifier.ACLIndex,
-				Tag:      identifier.Tag,
-			},
-			ACLDetails: &acl.AccessLists_Acl{
-				AclName:    identifier.Tag,
+	for metadata, rules := range ruleMACIPData {
+		ACLs = append(ACLs, &AclDetails{
+			Acl: &acl.AccessLists_Acl{
+				AclName:    metadata.Tag,
 				Rules:      rules,
-				Interfaces: interfaceData[identifier.ACLIndex],
+				Interfaces: interfaceData[metadata.Index],
+			},
+			Meta: &AclMeta{
+				Index: metadata.Index,
+				Tag:   metadata.Tag,
 			},
 		})
 	}
@@ -310,12 +309,12 @@ func (handler *aclVppHandler) DumpMACIPACLInterfaces(indices []uint32, swIfIndic
 	return aclsWithInterfaces, wasErr
 }
 
-func (handler *aclVppHandler) DumpIPAcls() (map[ACLIdentifier][]acl_api.ACLRule, error) {
+func (handler *aclVppHandler) DumpIPAcls() (map[AclMeta][]acl_api.ACLRule, error) {
 	defer func(start time.Time) {
 		handler.stopwatch.TimeLog(acl_api.ACLDump{}).LogTimeEntry(time.Since(start))
 	}(time.Now())
 
-	aclIPRules := make(map[ACLIdentifier][]acl_api.ACLRule)
+	aclIPRules := make(map[AclMeta][]acl_api.ACLRule)
 	var wasErr error
 
 	req := &acl_api.ACLDump{}
@@ -331,23 +330,23 @@ func (handler *aclVppHandler) DumpIPAcls() (map[ACLIdentifier][]acl_api.ACLRule,
 			break
 		}
 
-		identifier := ACLIdentifier{
-			ACLIndex: msg.ACLIndex,
-			Tag:      string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0]),
+		metadata := AclMeta{
+			Index: msg.ACLIndex,
+			Tag:   string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0]),
 		}
 
-		aclIPRules[identifier] = msg.R
+		aclIPRules[metadata] = msg.R
 	}
 
 	return aclIPRules, wasErr
 }
 
-func (handler *aclVppHandler) DumpMacIPAcls() (map[ACLIdentifier][]acl_api.MacipACLRule, error) {
+func (handler *aclVppHandler) DumpMacIPAcls() (map[AclMeta][]acl_api.MacipACLRule, error) {
 	defer func(start time.Time) {
 		handler.stopwatch.TimeLog(acl_api.MacipACLDump{}).LogTimeEntry(time.Since(start))
 	}(time.Now())
 
-	aclMACIPRules := make(map[ACLIdentifier][]acl_api.MacipACLRule)
+	aclMACIPRules := make(map[AclMeta][]acl_api.MacipACLRule)
 	var wasErr error
 
 	req := &acl_api.MacipACLDump{}
@@ -363,12 +362,12 @@ func (handler *aclVppHandler) DumpMacIPAcls() (map[ACLIdentifier][]acl_api.Macip
 			break
 		}
 
-		identifier := ACLIdentifier{
-			ACLIndex: msg.ACLIndex,
-			Tag:      string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0]),
+		metadata := AclMeta{
+			Index: msg.ACLIndex,
+			Tag:   string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0]),
 		}
 
-		aclMACIPRules[identifier] = msg.R
+		aclMACIPRules[metadata] = msg.R
 	}
 	return aclMACIPRules, wasErr
 }

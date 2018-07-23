@@ -14,7 +14,20 @@
 
 package acl
 
-const aclPrefix = "vpp/config/v1/acl/"
+import "github.com/ligato/vpp-agent/plugins/vpp/model"
+
+const (
+	// DB key prefix
+	aclPrefix = "vpp/config" + model.ProtoApiVersion + "acl/"
+	// REST Acl IP prefix
+	restAclIP = model.ProtoApiVersion + "acl/ip"
+	// REST Acl IP example prefix
+	restAclIPExample = model.ProtoApiVersion + "acl/ip/example"
+	// REST Acl MACIP prefix
+	restAclMACIP = model.ProtoApiVersion + "acl/macip"
+	// REST Acl MACIP example prefix
+	restAclMACIPExample = model.ProtoApiVersion + "acl/macip/example"
+)
 
 // KeyPrefix returns the prefix used in ETCD to store vpp ACLs config.
 func KeyPrefix() string {
@@ -25,4 +38,24 @@ func KeyPrefix() string {
 // of a particular ACL in selected vpp instance.
 func Key(aclName string) string {
 	return aclPrefix + aclName
+}
+
+// RestIPKey returns prefix used in REST to dump ACL IP config
+func RestIPKey() string {
+	return restAclIP
+}
+
+// RestIPExampleKey returns prefix used in REST to dump ACL IP example config
+func RestIPExampleKey() string {
+	return restAclIPExample
+}
+
+// RestMACIPKey returns prefix used in REST to dump ACL MACIP config
+func RestMACIPKey() string {
+	return restAclMACIP
+}
+
+// RestMACIPExampleKey returns prefix used in REST to dump ACL MACIP example config
+func RestMACIPExampleKey() string {
+	return restAclMACIPExample
 }

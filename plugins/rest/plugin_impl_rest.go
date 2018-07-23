@@ -20,10 +20,17 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
 const (
 	swIndexVarName = "swindex"
+)
+
+// REST api methods
+const (
+	POST = "POST"
+	GET  = "GET"
 )
 
 // Plugin registers Rest Plugin
@@ -64,6 +71,14 @@ func (plugin *Plugin) Init() (err error) {
 func (plugin *Plugin) AfterInit() (err error) {
 	plugin.Log.Debug("REST API Plugin is up and running")
 
+	// Access lists
+	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestIPKey(), plugin.ipACLPostHandler, POST)
+	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestIPKey(), plugin.ipACLGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestIPExampleKey(), plugin.exampleIpACLGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestMACIPKey(), plugin.macipACLPostHandler, POST)
+	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestMACIPKey(), plugin.macipACLGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestMACIPExampleKey(), plugin.exampleMacIpACLGetHandler, GET)
+
 	plugin.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainsGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomainids", plugin.bridgeDomainIdsGetHandler, "GET")
@@ -73,12 +88,6 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler(fmt.Sprintf("/acl/interface/{%s:[0-9]+}", swIndexVarName),
 		plugin.interfaceACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLPostHandler, "POST")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip/example", plugin.exampleIpACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/macip", plugin.macipACLPostHandler, "POST")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/macip", plugin.macipACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/macip/example", plugin.exampleMacIpACLGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/command", plugin.commandHandler, "POST")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry", plugin.telemetryHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry/memory", plugin.telemetryMemoryHandler, "GET")
