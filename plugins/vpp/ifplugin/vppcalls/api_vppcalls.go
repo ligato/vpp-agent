@@ -17,19 +17,28 @@ package vppcalls
 import (
 	"net"
 
+	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 )
 
 // IfVppAPI provides methods for creating and managing BFD
 type IfVppAPI interface {
+	IfVppWrite
+	IfVppRead
+	// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
+	CheckMsgCompatibilityForInterface() error
+}
+
+// IfVppWrite provides write methods for interface plugin
+type IfVppWrite interface {
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
 	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.Interfaces_Interface_Afpacket) (swIndex uint32, err error)
 	// DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
@@ -50,13 +59,6 @@ type IfVppAPI interface {
 	AddVxlanTunnel(ifName string, vxlanIntf *interfaces.Interfaces_Interface_Vxlan, encapVrf, multicastIf uint32) (swIndex uint32, err error)
 	// DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0.
 	DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *interfaces.Interfaces_Interface_Vxlan) error
-	// DumpInterfaces dumps VPP interface data into the northbound API data structure
-	// map indexed by software interface index.
-	//
-	// LIMITATIONS:
-	// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
-	// - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
-	DumpInterfaces() (map[uint32]*Interface, error)
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
 	InterfaceAdminDown(ifIdx uint32) error
 	// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
@@ -91,20 +93,37 @@ type IfVppAPI interface {
 	SetRxMode(ifIdx uint32, rxModeSettings *interfaces.Interfaces_Interface_RxModeSettings) error
 	// SetRxPlacement configures rx-placement for interface
 	SetRxPlacement(vppInternalName string, rxPlacement *interfaces.Interfaces_Interface_RxPlacementSettings) error
-	// GetInterfaceVRF assigns VRF table to interface
-	GetInterfaceVRF(ifIdx uint32) (vrfID uint32, err error)
 	// SetInterfaceVRF retrieves VRF table from interface
 	SetInterfaceVRF(ifaceIndex, vrfID uint32) error
 	// CreateVrfIfNeeded checks if VRF exists and creates it if not
 	CreateVrfIfNeeded(vrfID uint32) error
+}
+
+// IfVppRead provides read methods for interface plugin
+type IfVppRead interface {
+	// DumpInterfaces dumps VPP interface data into the northbound API data structure
+	// map indexed by software interface index.
+	//
+	// LIMITATIONS:
+	// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
+	// - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
+	DumpInterfaces() (map[uint32]*Interface, error)
+	// GetInterfaceVRF assigns VRF table to interface
+	GetInterfaceVRF(ifIdx uint32) (vrfID uint32, err error)
 	// DumpMemifSocketDetails dumps memif socket details from the VPP
 	DumpMemifSocketDetails() (map[string]uint32, error)
-	// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
-	CheckMsgCompatibilityForInterface() error
 }
 
 // BfdVppAPI provides methods for managing BFD
 type BfdVppAPI interface {
+	BfdVppWrite
+	BfdVppRead
+	// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
+	CheckMsgCompatibilityForBfd() error
+}
+
+// BfdVppWrite provides write methods for BFD
+type BfdVppWrite interface {
 	// AddBfdUDPSession adds new BFD session with authentication if available.
 	AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyIndexes idxvpp.NameToIdx) error
 	// AddBfdUDPSessionFromDetails adds new BFD session with authentication if available.
@@ -113,26 +132,36 @@ type BfdVppAPI interface {
 	ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex) error
 	// DeleteBfdUDPSession removes an existing BFD session.
 	DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress string) error
-	// DumpBfdUDPSessions returns a list of BFD session's metadata
-	DumpBfdUDPSessions() ([]*bfd_api.BfdUDPSessionDetails, error)
-	// DumpBfdUDPSessionsWithID returns a list of BFD session's metadata filtered according to provided authentication key
-	DumpBfdUDPSessionsWithID(authKeyIndex uint32) ([]*bfd_api.BfdUDPSessionDetails, error)
 	// SetBfdUDPAuthenticationKey creates new authentication key.
 	SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error
 	// DeleteBfdUDPAuthenticationKey removes the authentication key.
 	DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error
-	// DumpBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
-	DumpBfdKeys() (keys []*bfd_api.BfdAuthKeysDetails, err error)
 	// AddBfdEchoFunction sets up an echo function for the interface.
 	AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex) error
 	// DeleteBfdEchoFunction removes an echo function.
 	DeleteBfdEchoFunction() error
-	// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
-	CheckMsgCompatibilityForBfd() error
+}
+
+// BfdVppRead provides read methods for BFD
+type BfdVppRead interface {
+	// DumpBfdUDPSessions returns a list of BFD session's metadata
+	DumpBfdUDPSessions() ([]*bfd_api.BfdUDPSessionDetails, error)
+	// DumpBfdUDPSessionsWithID returns a list of BFD session's metadata filtered according to provided authentication key
+	DumpBfdUDPSessionsWithID(authKeyIndex uint32) ([]*bfd_api.BfdUDPSessionDetails, error)
+	// DumpBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
+	DumpBfdKeys() (keys []*bfd_api.BfdAuthKeysDetails, err error)
 }
 
 // NatVppAPI provides methods for managing NAT
 type NatVppAPI interface {
+	NatVppWrite
+	NatVppRead
+	// CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
+	CheckMsgCompatibilityForNat() error
+}
+
+// NatVppWrite provides write methods for NAT
+type NatVppWrite interface {
 	// SetNat44Forwarding configures global forwarding setup for NAT44
 	SetNat44Forwarding(enableFwd bool) error
 	// EnableNat44Interface enables NAT feature for provided interface
@@ -160,58 +189,70 @@ type NatVppAPI interface {
 	AddNat44StaticMappingLb(ctx *StaticMappingLbContext) error
 	// DelNat44StaticMappingLb removes existing static mapping entry with load balancer
 	DelNat44StaticMappingLb(ctx *StaticMappingLbContext) error
+}
+
+// NatVppRead provides read methods for NAT
+type NatVppRead interface {
 	// Nat44GlobalConfigDump returns global config in NB format
 	Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error)
 	// NAT44NatDump dumps all types of mappings, sorts it according to tag (DNAT label) and creates a set of DNAT configurations
 	NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error)
 	// Nat44InterfaceDump returns a list of interfaces enabled for NAT44
 	Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error)
-	// CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
-	CheckMsgCompatibilityForNat() error
 }
 
 // StnVppAPI provides methods for managing STN
 type StnVppAPI interface {
+	StnVppWrite
+	StnVppRead
+	// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
+	CheckMsgCompatibilityForStn() error
+}
+
+// StnVppWrite provides write methods for STN
+type StnVppWrite interface {
 	// AddStnRule calls StnAddDelRule bin API with IsAdd=1
 	AddStnRule(ifIdx uint32, addr *net.IP) error
 	// DelStnRule calls StnAddDelRule bin API with IsAdd=0
 	DelStnRule(ifIdx uint32, addr *net.IP) error
+}
+
+// StnVppRead provides read methods for STN
+type StnVppRead interface {
 	// DumpStnRules returns a list of all STN rules configured on the VPP
 	DumpStnRules() (rules []*stn.StnRulesDetails, err error)
-	// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
-	CheckMsgCompatibilityForStn() error
 }
 
 // ifVppHandler is accessor for interface-related vppcalls methods
 type ifVppHandler struct {
 	stopwatch    *measure.Stopwatch
-	callsChannel VPPChannel
+	callsChannel api.Channel
 	log          logging.Logger
 }
 
 // bfdVppHandler is accessor for BFD-related vppcalls methods
 type bfdVppHandler struct {
 	stopwatch    *measure.Stopwatch
-	callsChannel VPPChannel
+	callsChannel api.Channel
 	log          logging.Logger
 }
 
 // natVppHandler is accessor for NAT-related vppcalls methods
 type natVppHandler struct {
 	stopwatch    *measure.Stopwatch
-	callsChannel VPPChannel
-	dumpChannel  VPPChannel
+	callsChannel api.Channel
+	dumpChannel  api.Channel
 	log          logging.Logger
 }
 
 // stnVppHandler is accessor for STN-related vppcalls methods
 type stnVppHandler struct {
 	stopwatch    *measure.Stopwatch
-	callsChannel VPPChannel
+	callsChannel api.Channel
 }
 
 // NewIfVppHandler creates new instance of interface vppcalls handler
-func NewIfVppHandler(callsChan VPPChannel, log logging.Logger, stopwatch *measure.Stopwatch) *ifVppHandler {
+func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *ifVppHandler {
 	return &ifVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
@@ -220,7 +261,7 @@ func NewIfVppHandler(callsChan VPPChannel, log logging.Logger, stopwatch *measur
 }
 
 // NewBfdVppHandler creates new instance of BFD vppcalls handler
-func NewBfdVppHandler(callsChan VPPChannel, log logging.Logger, stopwatch *measure.Stopwatch) *bfdVppHandler {
+func NewBfdVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *bfdVppHandler {
 	return &bfdVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
@@ -229,7 +270,7 @@ func NewBfdVppHandler(callsChan VPPChannel, log logging.Logger, stopwatch *measu
 }
 
 // NewNatVppHandler creates new instance of NAT vppcalls handler
-func NewNatVppHandler(callsChan, dumpChan VPPChannel, log logging.Logger, stopwatch *measure.Stopwatch) *natVppHandler {
+func NewNatVppHandler(callsChan, dumpChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *natVppHandler {
 	return &natVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
@@ -239,7 +280,7 @@ func NewNatVppHandler(callsChan, dumpChan VPPChannel, log logging.Logger, stopwa
 }
 
 // NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(callsChan VPPChannel, stopwatch *measure.Stopwatch) *stnVppHandler {
+func NewStnVppHandler(callsChan api.Channel, stopwatch *measure.Stopwatch) *stnVppHandler {
 	return &stnVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,

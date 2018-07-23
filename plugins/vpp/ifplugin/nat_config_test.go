@@ -21,7 +21,6 @@ import (
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	nat_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
@@ -40,9 +39,8 @@ func TestNatConfiguratorInit(t *testing.T) {
 	defer connection.Disconnect()
 
 	plugin := &ifplugin.NatConfigurator{}
-	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
 	err := plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, stopwatch)
+		nil, true)
 	Expect(err).To(BeNil())
 
 	err = plugin.Close()
@@ -1225,8 +1223,7 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "nat", nil))
 	// Configurator
 	plugin := &ifplugin.NatConfigurator{}
-	stopwatch := measure.NewStopwatch("test-stopwatch", log)
-	err = plugin.Init(log, connection, swIfIndices, stopwatch)
+	err = plugin.Init(log, connection, swIfIndices, true)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

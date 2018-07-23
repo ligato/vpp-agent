@@ -20,11 +20,11 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 var RouteMessages = []govppapi.Message{
@@ -141,7 +141,7 @@ func VppAddRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stop
 		return err
 	}
 	if route.Type == InterVrf {
-		if err := ifvppcalls.CreateVrfIfNeeded(route.ViaVrfId, vppChan); err != nil {
+		if err := ifHandler.CreateVrfIfNeeded(route.ViaVrfId); err != nil {
 			return err
 		}
 	}

@@ -422,7 +422,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Interface configurator
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, nil); err != nil {
+	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
@@ -447,21 +447,21 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// BFD configurator
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
-	if err := plugin.bfdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, nil); err != nil {
+	if err := plugin.bfdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
 	// STN configurator
 	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
-	if err := plugin.stnConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, nil); err != nil {
+	if err := plugin.stnConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT configurator
 	plugin.natConfigurator = &ifplugin.NatConfigurator{}
-	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, nil); err != nil {
+	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("natConfigurator Initialized")

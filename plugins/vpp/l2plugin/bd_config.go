@@ -28,10 +28,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
 // BDConfigurator runs in the background in its own goroutine where it watches for any changes

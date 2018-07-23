@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
@@ -88,4 +86,11 @@ func (handler *ifVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd 
 	}
 
 	return nil
+}
+
+func boolToUint(input bool) uint8 {
+	if input {
+		return 1
+	}
+	return 0
 }

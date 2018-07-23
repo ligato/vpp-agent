@@ -86,13 +86,15 @@ type NatConfigurator struct {
 
 // Init NAT configurator
 func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
-	stopwatch *measure.Stopwatch) (err error) {
+	enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-nat-conf")
 	plugin.log.Debug("Initializing NAT configurator")
 
-	// Stopwatch
-	plugin.stopwatch = stopwatch
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("NAT-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = ifIndexes

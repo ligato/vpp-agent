@@ -75,13 +75,15 @@ type InterfaceConfigurator struct {
 
 // Init members (channels...) and start go routines
 func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, linux interface{},
-	notifChan chan govppapi.Message, defaultMtu uint32, stopwatch *measure.Stopwatch) (err error) {
+	notifChan chan govppapi.Message, defaultMtu uint32, enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-if-conf")
 	plugin.log.Debug("Initializing Interface configurator")
 
-	// Stopwatch instance
-	plugin.stopwatch = stopwatch
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("Interface-configurator", plugin.log)
+	}
 
 	// State notification channel
 	plugin.NotifChan = notifChan

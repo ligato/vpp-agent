@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/api"
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -83,14 +82,11 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*Interface, error) {
 		ifs[ifDetails.SwIfIndex] = iface
 
 		if iface.Type == ifnb.InterfaceType_AF_PACKET_INTERFACE {
-			err := handler.dumpAFPacketDetails(ifs, ifDetails.SwIfIndex, iface.VPPInternalName)
-			if err != nil {
-				return nil, err
-			}
+			fillAFPacketDetails(ifs, ifDetails.SwIfIndex, iface.VPPInternalName)
 		}
 	}
 
-	log.Debugf("dumped %d interfaces", len(ifs))
+	handler.log.Debugf("dumped %d interfaces", len(ifs))
 
 	// SwInterfaceDump time
 	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, handler.stopwatch)
@@ -222,8 +218,8 @@ func (handler *ifVppHandler) processIPDetails(ifs map[uint32]*Interface, ipDetai
 	ifs[ipDetails.SwIfIndex].IpAddresses = append(ifs[ipDetails.SwIfIndex].IpAddresses, ipAddr)
 }
 
-// dumpAFPacketDetails fills af_packet interface details into the provided interface map.
-func (handler *ifVppHandler) dumpAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName string) error {
+// fillAFPacketDetails fills af_packet interface details into the provided interface map.
+func fillAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName string) {
 	ifs[swIfIndex].Afpacket = &ifnb.Interfaces_Interface_Afpacket{
 		HostIfName: strings.TrimPrefix(ifName, "host-"),
 	}

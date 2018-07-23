@@ -19,9 +19,6 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"

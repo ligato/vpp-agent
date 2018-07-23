@@ -28,6 +28,7 @@ type AclVppAPI interface {
 	AclVppRead
 }
 
+// AclVppWrite provides write methods for ACL plugin
 type AclVppWrite interface {
 	// AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
 	AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error)
@@ -55,6 +56,7 @@ type AclVppWrite interface {
 	RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error
 }
 
+// AclVppRead provides read methods for ACL plugin
 type AclVppRead interface {
 	// GetAclPluginVersion returns version of the VPP ACL plugin
 	GetAclPluginVersion() (string, error)

@@ -50,7 +50,7 @@ type BFDConfigurator struct {
 	keysIndexes       idxvpp.NameToIdxRW
 	echoFunctionIndex idxvpp.NameToIdxRW
 
-	vppChan govppapi.VPPChannel
+	vppChan govppapi.Channel
 
 	// VPP API handler
 	bfdHandler vppcalls.BfdVppAPI
@@ -58,13 +58,15 @@ type BFDConfigurator struct {
 
 // Init members and channels
 func (plugin *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	stopwatch *measure.Stopwatch) (err error) {
+	enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-bfd-conf")
 	plugin.log.Infof("Initializing BFD configurator")
 
-	// Stopwatch
-	plugin.stopwatch = stopwatch
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("BFD-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes

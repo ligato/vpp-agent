@@ -22,7 +22,6 @@ import (
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	bfdApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
@@ -146,7 +145,7 @@ func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock
 	ifVppNotifCh := make(chan govppapi.Message, 100)
 	plugLog := logging.ForPlugin("tests", logrus.NewLogRegistry())
 
-	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, false)
+	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, true)
 	Expect(err).To(BeNil())
 
 	return plugin, conn
@@ -179,7 +178,7 @@ func bfdConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 			logrus.NewLogRegistry()),
 		connection,
 		index,
-		measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger()))
+		true)
 
 	Expect(err).To(BeNil())
 
@@ -213,7 +212,7 @@ func stnConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 			logrus.NewLogRegistry()),
 		connection,
 		index,
-		measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger()))
+		true)
 
 	Expect(err).To(BeNil())
 	return plugin, connection
@@ -246,7 +245,7 @@ func natConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 			logrus.NewLogRegistry()),
 		connection,
 		index,
-		measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger()))
+		true)
 
 	Expect(err).To(BeNil())
 	return plugin, index, connection

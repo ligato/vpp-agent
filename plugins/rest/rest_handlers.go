@@ -30,7 +30,7 @@ import (
 	"github.com/unrolled/render"
 
 	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
+	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
 	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
@@ -51,7 +51,7 @@ func (plugin *Plugin) interfacesGetHandler(formatter *render.Render) http.Handle
 		}
 		defer ch.Close()
 
-		ifHandler := ifcalls.NewIfVppHandler(ch, plugin.Log, nil)
+		ifHandler := ifplugin.NewIfVppHandler(ch, plugin.Log, nil)
 		res, err := ifHandler.DumpInterfaces()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)

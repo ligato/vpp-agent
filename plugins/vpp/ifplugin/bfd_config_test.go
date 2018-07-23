@@ -23,7 +23,6 @@ import (
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
@@ -44,9 +43,8 @@ func TestBfdConfiguratorInit(t *testing.T) {
 	defer connection.Disconnect()
 
 	plugin := &ifplugin.BFDConfigurator{}
-	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
 	err := plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, stopwatch)
+		nil, true)
 	Expect(err).To(BeNil())
 
 	err = plugin.Close()
@@ -577,8 +575,7 @@ func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn", nil))
 	// Configurator
 	plugin := &ifplugin.BFDConfigurator{}
-	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
-	err = plugin.Init(log, connection, swIfIndices, stopwatch)
+	err = plugin.Init(log, connection, swIfIndices, true)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

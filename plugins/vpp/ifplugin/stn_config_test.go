@@ -22,7 +22,6 @@ import (
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	stn_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
@@ -42,9 +41,8 @@ func TestStnConfiguratorInit(t *testing.T) {
 	defer connection.Disconnect()
 
 	plugin := &ifplugin.StnConfigurator{}
-	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
 	err := plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, stopwatch)
+		nil, true)
 	Expect(err).To(BeNil())
 
 	err = plugin.Close()
@@ -423,8 +421,7 @@ func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn", nil))
 	// Configurator
 	plugin := &ifplugin.StnConfigurator{}
-	stopwatch := measure.NewStopwatch("test-stopwatch", log)
-	err = plugin.Init(log, connection, swIfIndices, stopwatch)
+	err = plugin.Init(log, connection, swIfIndices, true)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

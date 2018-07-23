@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"net"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )

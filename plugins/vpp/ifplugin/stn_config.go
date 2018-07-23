@@ -46,7 +46,7 @@ type StnConfigurator struct {
 	unstoredIndexes  idxvpp.NameToIdxRW
 	unstoredIndexSeq uint32
 	// VPP
-	vppChan govppapi.VPPChannel
+	vppChan govppapi.Channel
 	// VPP API handler
 	stnHandler vppcalls.StnVppAPI
 	// Stopwatch
@@ -67,13 +67,15 @@ func (plugin *StnConfigurator) UnstoredIndexExistsFor(name string) bool {
 
 // Init initializes STN configurator
 func (plugin *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
-	stopwatch *measure.Stopwatch) (err error) {
+	enableStopwatch bool) (err error) {
 	// Init logger
 	plugin.log = logger.NewLogger("-stn-conf")
 	plugin.log.Debug("Initializing STN configurator")
 
-	// Stopwatch
-	plugin.stopwatch = stopwatch
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("STN-configurator", plugin.log)
+	}
 
 	// Init VPP API channel
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
