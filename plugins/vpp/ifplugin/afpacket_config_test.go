@@ -45,7 +45,8 @@ func TestAfPacketConfiguratorInit(t *testing.T) {
 	vppCh, err := connection.NewAPIChannel()
 	Expect(err).To(BeNil())
 	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
-	ifHandler := vppcalls.NewIfVppHandler(vppCh, logrus.DefaultLogger(), stopwatch)
+	ifHandler, err := vppcalls.NewIfVppHandler(vppCh, logrus.DefaultLogger(), stopwatch)
+	Expect(err).To(BeNil())
 	err = plugin.Init(logrus.DefaultLogger(), ifHandler, struct{}{}, nil)
 	Expect(err).To(BeNil())
 	connection.Disconnect()
@@ -412,8 +413,9 @@ func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
 	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
-	err := plugin.Init(log, ifHandler, nil, swIfIndices)
+	ifHandler, err := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
+	Expect(err).To(BeNil())
+	err = plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Test registered linux interface
 	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
@@ -469,8 +471,9 @@ func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
 	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
-	err := plugin.Init(log, ifHandler, nil, swIfIndices)
+	ifHandler, err := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
+	Expect(err).To(BeNil())
+	err = plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Prepare
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
@@ -522,8 +525,9 @@ func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.AFPacketCo
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
 	stopwatch := measure.NewStopwatch("test-stopwatch", logrus.DefaultLogger())
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
-	err := plugin.Init(log, ifHandler, struct{}{}, swIfIndices)
+	ifHandler, err := vppcalls.NewIfVppHandler(ctx.MockChannel, log, stopwatch)
+	Expect(err).To(BeNil())
+	err = plugin.Init(log, ifHandler, struct{}{}, swIfIndices)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, swIfIndices

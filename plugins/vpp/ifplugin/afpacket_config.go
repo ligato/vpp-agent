@@ -35,7 +35,7 @@ type AFPacketConfigurator struct {
 	afPacketByName      map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
 	linuxHostInterfaces map[string]struct{}        // a set of available host (Linux) interfaces
 
-	ifHandler vppcalls.IfVppAPI // govpp channel used by InterfaceConfigurator
+	ifHandler vppcalls.IfVppAPI // handler used by InterfaceConfigurator
 }
 
 // AfPacketConfig wraps the proto formatted configuration of an Afpacket interface together with a flag

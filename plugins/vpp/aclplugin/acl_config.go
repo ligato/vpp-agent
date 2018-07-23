@@ -102,11 +102,7 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// ACL binary api handler
-	plugin.aclHandler = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch)
-
-	// Message compatibility
-	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.AclMessages...); err != nil {
-		plugin.log.Error(err)
+	if plugin.aclHandler, err = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch); err != nil {
 		return err
 	}
 

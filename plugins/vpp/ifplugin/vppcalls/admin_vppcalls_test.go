@@ -176,6 +176,7 @@ func TestInterfaceRemoveTagRetval(t *testing.T) {
 func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.IfVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	ifHandler, err := vppcalls.NewIfVppHandler(ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	Expect(err).To(BeNil())
 	return ctx, ifHandler
 }

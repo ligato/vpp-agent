@@ -33,8 +33,6 @@ import (
 type IfVppAPI interface {
 	IfVppWrite
 	IfVppRead
-	// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
-	CheckMsgCompatibilityForInterface() error
 }
 
 // IfVppWrite provides write methods for interface plugin
@@ -118,8 +116,6 @@ type IfVppRead interface {
 type BfdVppAPI interface {
 	BfdVppWrite
 	BfdVppRead
-	// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
-	CheckMsgCompatibilityForBfd() error
 }
 
 // BfdVppWrite provides write methods for BFD
@@ -156,8 +152,6 @@ type BfdVppRead interface {
 type NatVppAPI interface {
 	NatVppWrite
 	NatVppRead
-	// CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
-	CheckMsgCompatibilityForNat() error
 }
 
 // NatVppWrite provides write methods for NAT
@@ -205,8 +199,6 @@ type NatVppRead interface {
 type StnVppAPI interface {
 	StnVppWrite
 	StnVppRead
-	// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
-	CheckMsgCompatibilityForStn() error
 }
 
 // StnVppWrite provides write methods for STN
@@ -252,37 +244,57 @@ type stnVppHandler struct {
 }
 
 // NewIfVppHandler creates new instance of interface vppcalls handler
-func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *ifVppHandler {
-	return &ifVppHandler{
+func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*ifVppHandler, error) {
+	handler := &ifVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		log:          log,
 	}
+	if err := handler.CheckMsgCompatibilityForInterface(); err != nil {
+		return nil, err
+	}
+
+	return handler, nil
 }
 
 // NewBfdVppHandler creates new instance of BFD vppcalls handler
-func NewBfdVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *bfdVppHandler {
-	return &bfdVppHandler{
+func NewBfdVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*bfdVppHandler, error) {
+	handler := &bfdVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		log:          log,
 	}
+	if err := handler.CheckMsgCompatibilityForBfd(); err != nil {
+		return nil, err
+	}
+
+	return handler, nil
 }
 
 // NewNatVppHandler creates new instance of NAT vppcalls handler
-func NewNatVppHandler(callsChan, dumpChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *natVppHandler {
-	return &natVppHandler{
+func NewNatVppHandler(callsChan, dumpChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*natVppHandler, error) {
+	handler := &natVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
 		stopwatch:    stopwatch,
 		log:          log,
 	}
+	if err := handler.CheckMsgCompatibilityForNat(); err != nil {
+		return nil, err
+	}
+
+	return handler, nil
 }
 
 // NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(callsChan api.Channel, stopwatch *measure.Stopwatch) *stnVppHandler {
-	return &stnVppHandler{
+func NewStnVppHandler(callsChan api.Channel, stopwatch *measure.Stopwatch) (*stnVppHandler, error) {
+	handler := &stnVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 	}
+	if err := handler.CheckMsgCompatibilityForStn(); err != nil {
+		return nil, err
+	}
+
+	return handler, nil
 }

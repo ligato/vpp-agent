@@ -97,8 +97,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	}
 
 	// VPP API handler
-	plugin.ifHandler = vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch)
-	if err := plugin.ifHandler.CheckMsgCompatibilityForInterface(); err != nil {
+	if plugin.ifHandler, err = vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 

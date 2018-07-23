@@ -118,6 +118,7 @@ func TestDelStnRule(t *testing.T) {
 func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.StnVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	stnHandler := vppcalls.NewStnVppHandler(ctx.MockChannel, measure.NewStopwatch("test-stopwatch", log))
+	stnHandler, err := vppcalls.NewStnVppHandler(ctx.MockChannel, measure.NewStopwatch("test-stopwatch", log))
+	Expect(err).To(BeNil())
 	return ctx, stnHandler
 }

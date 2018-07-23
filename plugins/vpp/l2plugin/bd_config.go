@@ -99,7 +99,9 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	}
 
 	// VPP API handlers
-	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
+	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+		return err
+	}
 
 	// Message compatibility
 	err = plugin.vppChan.CheckMessageCompatibility(vppcalls.BridgeDomainMessages...)

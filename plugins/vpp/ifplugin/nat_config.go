@@ -116,8 +116,7 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	plugin.natHandler = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.log, plugin.stopwatch)
-	if err := plugin.natHandler.CheckMsgCompatibilityForNat(); err != nil {
+	if plugin.natHandler, err = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 

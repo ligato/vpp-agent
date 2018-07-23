@@ -136,7 +136,10 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 
 // VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
 func VppAddRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	ifHandler := ifvppcalls.NewIfVppHandler(vppChan, logrus.DefaultLogger(), stopwatch) // TODO temp change
+	ifHandler, err := ifvppcalls.NewIfVppHandler(vppChan, logrus.DefaultLogger(), stopwatch) // TODO temp change
+	if err != nil {
+		return err
+	}
 	if err := ifHandler.CreateVrfIfNeeded(route.VrfID); err != nil {
 		return err
 	}

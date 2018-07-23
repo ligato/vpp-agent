@@ -917,6 +917,7 @@ func TestDeleteBfdEchoFunctionRetval(t *testing.T) {
 func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BfdVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	bfdHandler := vppcalls.NewBfdVppHandler(ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	bfdHandler, err := vppcalls.NewBfdVppHandler(ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	Expect(err).To(BeNil())
 	return ctx, bfdHandler
 }

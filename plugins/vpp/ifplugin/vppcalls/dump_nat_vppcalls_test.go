@@ -90,6 +90,7 @@ func TestNat44InterfaceDump3(t *testing.T) {
 func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	natHandler := vppcalls.NewNatVppHandler(ctx.MockChannel, ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	natHandler, err := vppcalls.NewNatVppHandler(ctx.MockChannel, ctx.MockChannel, log, measure.NewStopwatch("test-stopwatch", log))
+	Expect(err).To(BeNil())
 	return ctx, natHandler
 }

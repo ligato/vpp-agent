@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 )
 
+// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
 func (handler *ifVppHandler) CheckMsgCompatibilityForInterface() error {
 	msgs := []govppapi.Message{
 		&memif.MemifCreate{},
@@ -98,6 +99,7 @@ func (handler *ifVppHandler) CheckMsgCompatibilityForInterface() error {
 	return handler.callsChannel.CheckMessageCompatibility(msgs...)
 }
 
+// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
 func (handler *bfdVppHandler) CheckMsgCompatibilityForBfd() error {
 	msgs := []govppapi.Message{
 		&bfd.BfdUDPAdd{},
@@ -114,6 +116,7 @@ func (handler *bfdVppHandler) CheckMsgCompatibilityForBfd() error {
 	return handler.callsChannel.CheckMessageCompatibility(msgs...)
 }
 
+// CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
 func (handler *natVppHandler) CheckMsgCompatibilityForNat() error {
 	msgs := []govppapi.Message{
 		&nat.Nat44AddDelAddressRange{},
@@ -130,6 +133,7 @@ func (handler *natVppHandler) CheckMsgCompatibilityForNat() error {
 	return handler.callsChannel.CheckMessageCompatibility(msgs...)
 }
 
+// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
 func (handler *stnVppHandler) CheckMsgCompatibilityForStn() error {
 	msgs := []govppapi.Message{
 		&stn.StnAddDelRule{},
