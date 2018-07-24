@@ -84,10 +84,9 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiReq
 	return m.channel.SendMultiRequest(msg)
 }
 
-// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
-// which the library is connected to
+// CheckMessageCompatibility does nothing for mocked channel
 func (m *mockedChannel) CheckMessageCompatibility(msgs ...govppapi.Message) error {
-	return m.channel.CheckMessageCompatibility(msgs...)
+	return nil
 }
 
 // SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel

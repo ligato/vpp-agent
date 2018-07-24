@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -29,120 +28,104 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 )
 
-// CheckMsgCompatibilityForInterface checks if interface CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForInterface(log logging.Logger, vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
-		&memif.MemifCreate{},
-		&memif.MemifCreateReply{},
-		&memif.MemifDelete{},
-		&memif.MemifDeleteReply{},
-		&memif.MemifDump{},
-		&memif.MemifDetails{},
-		&memif.MemifSocketFilenameDump{},
-		&memif.MemifSocketFilenameDetails{},
+// InterfaceMessages checks if interface CRSs are compatible with VPP in runtime.
+var InterfaceMessages = []govppapi.Message{
+	&memif.MemifCreate{},
+	&memif.MemifCreateReply{},
+	&memif.MemifDelete{},
+	&memif.MemifDeleteReply{},
+	&memif.MemifDump{},
+	&memif.MemifDetails{},
+	&memif.MemifSocketFilenameDump{},
+	&memif.MemifSocketFilenameDetails{},
 
-		&interfaces.CreateLoopback{},
-		&interfaces.CreateLoopbackReply{},
+	&interfaces.CreateLoopback{},
+	&interfaces.CreateLoopbackReply{},
 
-		&vxlan.VxlanAddDelTunnel{},
-		&vxlan.VxlanAddDelTunnelReply{},
-		&vxlan.VxlanTunnelDump{},
-		&vxlan.VxlanTunnelDetails{},
+	&vxlan.VxlanAddDelTunnel{},
+	&vxlan.VxlanAddDelTunnelReply{},
+	&vxlan.VxlanTunnelDump{},
+	&vxlan.VxlanTunnelDetails{},
 
-		&af_packet.AfPacketCreate{},
-		&af_packet.AfPacketCreateReply{},
-		&af_packet.AfPacketDelete{},
-		&af_packet.AfPacketDeleteReply{},
+	&af_packet.AfPacketCreate{},
+	&af_packet.AfPacketCreateReply{},
+	&af_packet.AfPacketDelete{},
+	&af_packet.AfPacketDeleteReply{},
 
-		&tap.TapConnect{},
-		&tap.TapConnectReply{},
-		&tap.TapDelete{},
-		&tap.TapDeleteReply{},
-		&tap.SwInterfaceTapDump{},
-		&tap.SwInterfaceTapDetails{},
+	&tap.TapConnect{},
+	&tap.TapConnectReply{},
+	&tap.TapDelete{},
+	&tap.TapDeleteReply{},
+	&tap.SwInterfaceTapDump{},
+	&tap.SwInterfaceTapDetails{},
 
-		&tapv2.TapCreateV2{},
-		&tapv2.TapCreateV2Reply{},
-		&tapv2.TapDeleteV2{},
-		&tapv2.TapDeleteV2Reply{},
+	&tapv2.TapCreateV2{},
+	&tapv2.TapCreateV2Reply{},
+	&tapv2.TapDeleteV2{},
+	&tapv2.TapDeleteV2Reply{},
 
-		&interfaces.SwInterfaceDump{},
-		&interfaces.SwInterfaceDetails{},
-		&interfaces.SwInterfaceEvent{},
-		&interfaces.SwInterfaceSetFlags{},
-		&interfaces.SwInterfaceSetFlagsReply{},
-		&interfaces.SwInterfaceAddDelAddress{},
-		&interfaces.SwInterfaceAddDelAddressReply{},
-		&interfaces.SwInterfaceSetMacAddress{},
-		&interfaces.SwInterfaceSetMacAddressReply{},
-		&interfaces.SwInterfaceSetTable{},
-		&interfaces.SwInterfaceSetTableReply{},
-		&interfaces.SwInterfaceGetTable{},
-		&interfaces.SwInterfaceGetTableReply{},
-		&interfaces.SwInterfaceSetUnnumbered{},
-		&interfaces.SwInterfaceSetUnnumberedReply{},
-		&interfaces.SwInterfaceTagAddDel{},
-		&interfaces.SwInterfaceTagAddDelReply{},
-		&interfaces.SwInterfaceSetMtu{},
-		&interfaces.SwInterfaceSetMtuReply{},
-		&interfaces.HwInterfaceSetMtu{},
-		&interfaces.HwInterfaceSetMtuReply{},
+	&interfaces.SwInterfaceDump{},
+	&interfaces.SwInterfaceDetails{},
+	&interfaces.SwInterfaceEvent{},
+	&interfaces.SwInterfaceSetFlags{},
+	&interfaces.SwInterfaceSetFlagsReply{},
+	&interfaces.SwInterfaceAddDelAddress{},
+	&interfaces.SwInterfaceAddDelAddressReply{},
+	&interfaces.SwInterfaceSetMacAddress{},
+	&interfaces.SwInterfaceSetMacAddressReply{},
+	&interfaces.SwInterfaceSetTable{},
+	&interfaces.SwInterfaceSetTableReply{},
+	&interfaces.SwInterfaceGetTable{},
+	&interfaces.SwInterfaceGetTableReply{},
+	&interfaces.SwInterfaceSetUnnumbered{},
+	&interfaces.SwInterfaceSetUnnumberedReply{},
+	&interfaces.SwInterfaceTagAddDel{},
+	&interfaces.SwInterfaceTagAddDelReply{},
+	&interfaces.SwInterfaceSetMtu{},
+	&interfaces.SwInterfaceSetMtuReply{},
+	&interfaces.HwInterfaceSetMtu{},
+	&interfaces.HwInterfaceSetMtuReply{},
 
-		&ip.IPAddressDump{},
-		&ip.IPAddressDetails{},
-		&ip.IPFibDump{},
-		&ip.IPFibDetails{},
-		&ip.IPTableAddDel{},
-		&ip.IPTableAddDelReply{},
-		&ip.IPContainerProxyAddDel{},
-		&ip.IPContainerProxyAddDelReply{},
-	}
-	err := vppChan.CheckMessageCompatibility(msgs...)
-	if err != nil {
-		log.Error(err)
-	}
-	return err
+	&ip.IPAddressDump{},
+	&ip.IPAddressDetails{},
+	&ip.IPFibDump{},
+	&ip.IPFibDetails{},
+	&ip.IPTableAddDel{},
+	&ip.IPTableAddDelReply{},
+	&ip.IPContainerProxyAddDel{},
+	&ip.IPContainerProxyAddDelReply{},
 }
 
-// CheckMsgCompatibilityForBfd checks if bfd CRSs are compatible with VPP in runtime.
-func CheckMsgCompatibilityForBfd(vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
-		&bfd.BfdUDPAdd{},
-		&bfd.BfdUDPAddReply{},
-		&bfd.BfdUDPMod{},
-		&bfd.BfdUDPModReply{},
-		&bfd.BfdUDPDel{},
-		&bfd.BfdUDPDelReply{},
-		&bfd.BfdAuthSetKey{},
-		&bfd.BfdAuthSetKeyReply{},
-		&bfd.BfdAuthDelKey{},
-		&bfd.BfdAuthDelKeyReply{},
-	}
-	return vppChan.CheckMessageCompatibility(msgs...)
+// BfdMessages checks if bfd CRSs are compatible with VPP in runtime.
+var BfdMessages = []govppapi.Message{
+	&bfd.BfdUDPAdd{},
+	&bfd.BfdUDPAddReply{},
+	&bfd.BfdUDPMod{},
+	&bfd.BfdUDPModReply{},
+	&bfd.BfdUDPDel{},
+	&bfd.BfdUDPDelReply{},
+	&bfd.BfdAuthSetKey{},
+	&bfd.BfdAuthSetKeyReply{},
+	&bfd.BfdAuthDelKey{},
+	&bfd.BfdAuthDelKeyReply{},
 }
 
-// CheckMsgCompatibilityForNat verifies compatibility of used binary API calls
-func CheckMsgCompatibilityForNat(vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
-		&nat.Nat44AddDelAddressRange{},
-		&nat.Nat44AddDelAddressRangeReply{},
-		&nat.Nat44ForwardingEnableDisable{},
-		&nat.Nat44ForwardingEnableDisableReply{},
-		&nat.Nat44InterfaceAddDelFeature{},
-		&nat.Nat44InterfaceAddDelFeatureReply{},
-		&nat.Nat44AddDelStaticMapping{},
-		&nat.Nat44AddDelStaticMappingReply{},
-		&nat.Nat44AddDelLbStaticMapping{},
-		&nat.Nat44AddDelLbStaticMappingReply{},
-	}
-	return vppChan.CheckMessageCompatibility(msgs...)
+// NatMessages verifies compatibility of used binary API calls
+var NatMessages = []govppapi.Message{
+	&nat.Nat44AddDelAddressRange{},
+	&nat.Nat44AddDelAddressRangeReply{},
+	&nat.Nat44ForwardingEnableDisable{},
+	&nat.Nat44ForwardingEnableDisableReply{},
+	&nat.Nat44InterfaceAddDelFeature{},
+	&nat.Nat44InterfaceAddDelFeatureReply{},
+	&nat.Nat44AddDelStaticMapping{},
+	&nat.Nat44AddDelStaticMappingReply{},
+	&nat.Nat44AddDelLbStaticMapping{},
+	&nat.Nat44AddDelLbStaticMappingReply{},
 }
 
-// CheckMsgCompatibilityForStn verifies compatibility of used binary API calls
-func CheckMsgCompatibilityForStn(vppChan govppapi.Channel) error {
-	msgs := []govppapi.Message{
-		&stn.StnAddDelRule{},
-		&stn.StnAddDelRuleReply{},
-	}
-	return vppChan.CheckMessageCompatibility(msgs...)
+// StnMessages verifies compatibility of used binary API calls
+var StnMessages = []govppapi.Message{
+	&stn.StnAddDelRule{},
+	&stn.StnAddDelRuleReply{},
 }

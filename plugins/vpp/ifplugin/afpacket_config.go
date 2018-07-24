@@ -17,9 +17,7 @@ package ifplugin
 import (
 	"errors"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -37,8 +35,7 @@ type AFPacketConfigurator struct {
 	afPacketByName      map[string]*AfPacketConfig // af packet name -> Af Packet interface configuration
 	linuxHostInterfaces map[string]struct{}        // a set of available host (Linux) interfaces
 
-	vppCh     govppapi.Channel   // govpp channel used by InterfaceConfigurator
-	stopwatch *measure.Stopwatch // from InterfaceConfigurator
+	ifHandler vppcalls.IfVppAPI // handler used by InterfaceConfigurator
 }
 
 // AfPacketConfig wraps the proto formatted configuration of an Afpacket interface together with a flag
@@ -73,13 +70,13 @@ func (plugin *AFPacketConfigurator) GetHostInterfacesEntry(hostIf string) bool {
 }
 
 // Init members of AFPacketConfigurator.
-func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh govppapi.Channel, linux interface{},
-	indexes ifaceidx.SwIfIndexRW, stopwatch *measure.Stopwatch) (err error) {
+func (plugin *AFPacketConfigurator) Init(logger logging.Logger, ifHandler vppcalls.IfVppAPI, linux interface{},
+	indexes ifaceidx.SwIfIndexRW) (err error) {
 	plugin.log = logger
 	plugin.log.Infof("Initializing AF-Packet configurator")
 
-	// VPP channel
-	plugin.vppCh = vppCh
+	// VPP API handler
+	plugin.ifHandler = ifHandler
 
 	// Linux
 	plugin.linux = linux
@@ -89,9 +86,6 @@ func (plugin *AFPacketConfigurator) Init(logger logging.Logger, vppCh govppapi.C
 	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
 	plugin.afPacketByName = make(map[string]*AfPacketConfig)
 	plugin.linuxHostInterfaces = make(map[string]struct{})
-
-	// Stopwatch
-	plugin.stopwatch = stopwatch
 
 	return nil
 }
@@ -115,7 +109,7 @@ func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.In
 			return 0, true, nil
 		}
 	}
-	swIdx, err := vppcalls.AddAfPacketInterface(afpacket.Name, afpacket.PhysAddress, afpacket.Afpacket, plugin.vppCh, plugin.stopwatch)
+	swIdx, err := plugin.ifHandler.AddAfPacketInterface(afpacket.Name, afpacket.PhysAddress, afpacket.Afpacket)
 	if err != nil {
 		plugin.addToCache(afpacket, true)
 		return 0, true, err
@@ -156,7 +150,7 @@ func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Inter
 
 	config, found := plugin.afPacketByName[afpacket.Name]
 	if !found || !config.pending {
-		err = vppcalls.DeleteAfPacketInterface(afpacket.Name, ifIdx, afpacket.GetAfpacket(), plugin.vppCh, plugin.stopwatch)
+		err = plugin.ifHandler.DeleteAfPacketInterface(afpacket.Name, ifIdx, afpacket.GetAfpacket())
 		// unregister interface to let other plugins know that it is removed from the vpp
 		plugin.ifIndexes.UnregisterName(afpacket.Name)
 	}

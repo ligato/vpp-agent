@@ -61,7 +61,7 @@ func TestInterfaceConfiguratorInit(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	// Test init
 	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, ifVppNotifChan, 0, false)
+		nil, ifVppNotifChan, 0, true)
 	Expect(err).To(BeNil())
 	Expect(plugin.IsSocketFilenameCached("test-socket-filename")).To(BeTrue())
 	// Test close
@@ -1433,7 +1433,7 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govpp.Connection, *ifplug
 	// Configurator
 	plugin := &ifplugin.InterfaceConfigurator{}
 	notifChan := make(chan govppapi.Message, 5)
-	err = plugin.Init(log, connection, 1, notifChan, 1500, false)
+	err = plugin.Init(log, connection, 1, notifChan, 1500, true)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin

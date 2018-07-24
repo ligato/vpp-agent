@@ -32,7 +32,7 @@ var arpEntries = []vppcalls.ArpEntry{
 	{
 		Interface:  1,
 		IPAddress:  []byte{192, 168, 10, 22},
-		MacAddress:"6C:45:59:59:8E:BD",
+		MacAddress: "6C:45:59:59:8E:BD",
 		Static:     false,
 	},
 	{

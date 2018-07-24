@@ -97,14 +97,12 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// Configurator-wide stopwatch instance
-	plugin.stopwatch = measure.NewStopwatch("ACL-configurator", plugin.log)
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("ACL-configurator", plugin.log)
+	}
 
 	// ACL binary api handler
-	plugin.aclHandler = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch)
-
-	// Message compatibility
-	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.AclMessages...); err != nil {
-		plugin.log.Error(err)
+	if plugin.aclHandler, err = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch); err != nil {
 		return err
 	}
 

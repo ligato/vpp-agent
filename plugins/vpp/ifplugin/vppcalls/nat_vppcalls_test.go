@@ -21,16 +21,15 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestSetNat44Forwarding(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44ForwardingEnableDisableReply{})
-	err := vppcalls.SetNat44Forwarding(true, ctx.MockChannel, nil)
+	err := natHandler.SetNat44Forwarding(true)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -41,11 +40,11 @@ func TestSetNat44Forwarding(t *testing.T) {
 }
 
 func TestUnsetNat44Forwarding(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44ForwardingEnableDisableReply{})
-	err := vppcalls.SetNat44Forwarding(false, ctx.MockChannel, nil)
+	err := natHandler.SetNat44Forwarding(false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -56,34 +55,34 @@ func TestUnsetNat44Forwarding(t *testing.T) {
 }
 
 func TestSetNat44ForwardingError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
-	err := vppcalls.SetNat44Forwarding(true, ctx.MockChannel, nil)
+	err := natHandler.SetNat44Forwarding(true)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestSetNat44ForwardingRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44ForwardingEnableDisableReply{
 		Retval: 1,
 	})
-	err := vppcalls.SetNat44Forwarding(true, ctx.MockChannel, nil)
+	err := natHandler.SetNat44Forwarding(true)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestEnableNat44InterfaceAsInside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelFeatureReply{})
-	err := vppcalls.EnableNat44Interface(1, true, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44Interface(1, true)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -96,11 +95,11 @@ func TestEnableNat44InterfaceAsInside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceAsOutside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelFeatureReply{})
-	err := vppcalls.EnableNat44Interface(2, false, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44Interface(2, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -113,34 +112,34 @@ func TestEnableNat44InterfaceAsOutside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelAddressRangeReply{})
-	err := vppcalls.EnableNat44Interface(2, false, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44Interface(2, false)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestEnableNat44InterfaceRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelFeatureReply{
 		Retval: 1,
 	})
-	err := vppcalls.EnableNat44Interface(2, false, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44Interface(2, false)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestDisableNat44InterfaceAsInside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelFeatureReply{})
-	err := vppcalls.DisableNat44Interface(1, true, ctx.MockChannel, nil)
+	err := natHandler.DisableNat44Interface(1, true)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -153,11 +152,11 @@ func TestDisableNat44InterfaceAsInside(t *testing.T) {
 }
 
 func TestDisableNat44InterfaceAsOutside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelFeatureReply{})
-	err := vppcalls.DisableNat44Interface(2, false, ctx.MockChannel, nil)
+	err := natHandler.DisableNat44Interface(2, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -170,11 +169,11 @@ func TestDisableNat44InterfaceAsOutside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceOutputAsInside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelOutputFeatureReply{})
-	err := vppcalls.EnableNat44InterfaceOutput(1, true, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44InterfaceOutput(1, true)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -187,11 +186,11 @@ func TestEnableNat44InterfaceOutputAsInside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceOutputAsOutside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelOutputFeatureReply{})
-	err := vppcalls.EnableNat44InterfaceOutput(2, false, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44InterfaceOutput(2, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -204,34 +203,34 @@ func TestEnableNat44InterfaceOutputAsOutside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceOutputError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
-	err := vppcalls.EnableNat44InterfaceOutput(2, false, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44InterfaceOutput(2, false)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestEnableNat44InterfaceOutputRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelOutputFeatureReply{
 		Retval: 1,
 	})
-	err := vppcalls.EnableNat44InterfaceOutput(2, false, ctx.MockChannel, nil)
+	err := natHandler.EnableNat44InterfaceOutput(2, false)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestDisableNat44InterfaceOutputAsInside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelOutputFeatureReply{})
-	err := vppcalls.DisableNat44InterfaceOutput(1, true, ctx.MockChannel, nil)
+	err := natHandler.DisableNat44InterfaceOutput(1, true)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -244,11 +243,11 @@ func TestDisableNat44InterfaceOutputAsInside(t *testing.T) {
 }
 
 func TestDisableNat44InterfaceOutputAsOutside(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelOutputFeatureReply{})
-	err := vppcalls.DisableNat44InterfaceOutput(2, false, ctx.MockChannel, nil)
+	err := natHandler.DisableNat44InterfaceOutput(2, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -261,14 +260,14 @@ func TestDisableNat44InterfaceOutputAsOutside(t *testing.T) {
 }
 
 func TestAddNat44AddressPool(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	firstIP := net.ParseIP("10.0.0.1").To4()
 	lastIP := net.ParseIP("10.0.0.2").To4()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelAddressRangeReply{})
-	err := vppcalls.AddNat44AddressPool(firstIP, lastIP, 0, false, ctx.MockChannel, nil)
+	err := natHandler.AddNat44AddressPool(firstIP, lastIP, 0, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -282,7 +281,7 @@ func TestAddNat44AddressPool(t *testing.T) {
 }
 
 func TestAddNat44AddressPoolError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	firstIP := net.ParseIP("10.0.0.1").To4()
@@ -290,13 +289,13 @@ func TestAddNat44AddressPoolError(t *testing.T) {
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
-	err := vppcalls.AddNat44AddressPool(firstIP, lastIP, 0, false, ctx.MockChannel, nil)
+	err := natHandler.AddNat44AddressPool(firstIP, lastIP, 0, false)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestAddNat44AddressPoolRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	firstIP := net.ParseIP("10.0.0.1").To4()
@@ -305,20 +304,20 @@ func TestAddNat44AddressPoolRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelAddressRangeReply{
 		Retval: 1,
 	})
-	err := vppcalls.AddNat44AddressPool(firstIP, lastIP, 0, false, ctx.MockChannel, nil)
+	err := natHandler.AddNat44AddressPool(firstIP, lastIP, 0, false)
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestDelNat44AddressPool(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	firstIP := net.ParseIP("10.0.0.1").To4()
 	lastIP := net.ParseIP("10.0.0.2").To4()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelAddressRangeReply{})
-	err := vppcalls.DelNat44AddressPool(firstIP, lastIP, 0, false, ctx.MockChannel, nil)
+	err := natHandler.DelNat44AddressPool(firstIP, lastIP, 0, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -332,7 +331,7 @@ func TestDelNat44AddressPool(t *testing.T) {
 }
 
 func TestAddNat44StaticMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	localIP := net.ParseIP("10.0.0.1").To4()
@@ -353,7 +352,7 @@ func TestAddNat44StaticMapping(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
-	err := vppcalls.AddNat44StaticMapping(stmCtx, ctx.MockChannel, nil)
+	err := natHandler.AddNat44StaticMapping(stmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -374,7 +373,7 @@ func TestAddNat44StaticMapping(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	localIP := net.ParseIP("10.0.0.1").To4()
@@ -389,7 +388,7 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
-	err := vppcalls.AddNat44StaticMapping(stmCtx, ctx.MockChannel, nil)
+	err := natHandler.AddNat44StaticMapping(stmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -403,30 +402,30 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelLbStaticMappingReply{})
-	err := vppcalls.AddNat44StaticMapping(&vppcalls.StaticMappingContext{}, ctx.MockChannel, nil)
+	err := natHandler.AddNat44StaticMapping(&vppcalls.StaticMappingContext{})
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestAddNat44StaticMappingRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{
 		Retval: 1,
 	})
-	err := vppcalls.AddNat44StaticMapping(&vppcalls.StaticMappingContext{}, ctx.MockChannel, nil)
+	err := natHandler.AddNat44StaticMapping(&vppcalls.StaticMappingContext{})
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestDelNat44StaticMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	localIP := net.ParseIP("10.0.0.1").To4()
@@ -441,7 +440,7 @@ func TestDelNat44StaticMapping(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
-	err := vppcalls.DelNat44StaticMapping(stmCtx, ctx.MockChannel, nil)
+	err := natHandler.DelNat44StaticMapping(stmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -455,7 +454,7 @@ func TestDelNat44StaticMapping(t *testing.T) {
 }
 
 func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	localIP := net.ParseIP("10.0.0.1").To4()
@@ -470,7 +469,7 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
-	err := vppcalls.DelNat44StaticMapping(stmCtx, ctx.MockChannel, nil)
+	err := natHandler.DelNat44StaticMapping(stmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -484,7 +483,7 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingLb(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	externalIP := net.ParseIP("10.0.0.1").To4()
@@ -503,7 +502,7 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelLbStaticMappingReply{})
-	err := vppcalls.AddNat44StaticMappingLb(stmCtx, ctx.MockChannel, nil)
+	err := natHandler.AddNat44StaticMappingLb(stmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -533,30 +532,30 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingLbError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
-	err := vppcalls.AddNat44StaticMappingLb(&vppcalls.StaticMappingLbContext{}, ctx.MockChannel, nil)
+	err := natHandler.AddNat44StaticMappingLb(&vppcalls.StaticMappingLbContext{})
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestAddNat44StaticMappingLbRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelLbStaticMappingReply{
 		Retval: 1,
 	})
-	err := vppcalls.AddNat44StaticMappingLb(&vppcalls.StaticMappingLbContext{}, ctx.MockChannel, nil)
+	err := natHandler.AddNat44StaticMappingLb(&vppcalls.StaticMappingLbContext{})
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestDelNat44StaticMappingLb(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	externalIP := net.ParseIP("10.0.0.1").To4()
@@ -575,7 +574,7 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelLbStaticMappingReply{})
-	err := vppcalls.DelNat44StaticMappingLb(stmCtx, ctx.MockChannel, nil)
+	err := natHandler.DelNat44StaticMappingLb(stmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -605,7 +604,7 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 }
 
 func TestAddNat44IdentityMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	address := net.ParseIP("10.0.0.1").To4()
@@ -621,7 +620,7 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
-	err := vppcalls.AddNat44IdentityMapping(idmCtx, ctx.MockChannel, nil)
+	err := natHandler.AddNat44IdentityMapping(idmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -638,7 +637,7 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 }
 
 func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// DataContext (IPAddress == nil and Port == 0 means it's address only)
@@ -650,7 +649,7 @@ func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
-	err := vppcalls.AddNat44IdentityMapping(idmCtx, ctx.MockChannel, nil)
+	err := natHandler.AddNat44IdentityMapping(idmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -662,7 +661,7 @@ func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 }
 
 func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	address := net.ParseIP("10.0.0.1").To4()
@@ -677,7 +676,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
-	err := vppcalls.AddNat44IdentityMapping(idmCtx, ctx.MockChannel, nil)
+	err := natHandler.AddNat44IdentityMapping(idmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -691,30 +690,30 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 }
 
 func TestAddNat44IdentityMappingError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
-	err := vppcalls.AddNat44IdentityMapping(&vppcalls.IdentityMappingContext{}, ctx.MockChannel, nil)
+	err := natHandler.AddNat44IdentityMapping(&vppcalls.IdentityMappingContext{})
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestAddNat44IdentityMappingRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{
 		Retval: 1,
 	})
-	err := vppcalls.AddNat44IdentityMapping(&vppcalls.IdentityMappingContext{}, ctx.MockChannel, nil)
+	err := natHandler.AddNat44IdentityMapping(&vppcalls.IdentityMappingContext{})
 
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestDelNat44IdentityMapping(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	address := net.ParseIP("10.0.0.1").To4()
@@ -729,7 +728,7 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
-	err := vppcalls.DelNat44IdentityMapping(idmCtx, ctx.MockChannel, nil)
+	err := natHandler.DelNat44IdentityMapping(idmCtx)
 
 	Expect(err).ShouldNot(HaveOccurred())
 

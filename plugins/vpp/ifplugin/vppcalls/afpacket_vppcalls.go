@@ -18,17 +18,15 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
+	"net"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"net"
 )
 
-// AddAfPacketInterface calls AfPacketCreate VPP binary API.
-func AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func (handler *ifVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket) (swIndex uint32, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(af_packet.AfPacketCreate{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(af_packet.AfPacketCreate{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &af_packet.AfPacketCreate{
@@ -48,20 +46,19 @@ func AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Inter
 	}
 
 	reply := &af_packet.AfPacketCreateReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, stopwatch)
+	return reply.SwIfIndex, handler.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-func DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interfaces_Interface_Afpacket, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interfaces_Interface_Afpacket) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(af_packet.AfPacketDelete{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(af_packet.AfPacketDelete{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &af_packet.AfPacketDelete{
@@ -69,12 +66,12 @@ func DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Inter
 	}
 
 	reply := &af_packet.AfPacketDeleteReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return RemoveInterfaceTag(ifName, idx, vppChan, stopwatch)
+	return handler.RemoveInterfaceTag(ifName, idx)
 }

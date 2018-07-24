@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump
+package vppcalls
 
 import (
 	"bytes"
@@ -22,8 +22,6 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/api"
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -31,7 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifnb "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
@@ -44,20 +41,13 @@ type Interface struct {
 	ifnb.Interfaces_Interface
 }
 
-// DumpInterfaces dumps VPP interface data into the northbound API data structure
-// map indexed by software interface index.
-//
-// LIMITATIONS:
-// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
-// - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
-//
-func DumpInterfaces(log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*Interface, error) {
+func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*Interface, error) {
 	start := time.Now()
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*Interface)
 
 	// First, dump all interfaces to create initial data.
-	reqCtx := vppChan.SendMultiRequest(&interfaces.SwInterfaceDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&interfaces.SwInterfaceDump{})
 
 	for {
 		ifDetails := &interfaces.SwInterfaceDetails{}
@@ -66,8 +56,7 @@ func DumpInterfaces(log logging.Logger, vppChan govppapi.Channel, stopwatch *mea
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
-			return nil, err
+			return nil, fmt.Errorf("failed to dump interface: %v", err)
 		}
 
 		iface := &Interface{
@@ -97,43 +86,43 @@ func DumpInterfaces(log logging.Logger, vppChan govppapi.Channel, stopwatch *mea
 		}
 	}
 
-	log.Debugf("dumped %d interfaces", len(ifs))
+	handler.log.Debugf("dumped %d interfaces", len(ifs))
 
 	// SwInterfaceDump time
-	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, stopwatch)
+	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, handler.stopwatch)
 	if timeLog != nil {
 		timeLog.LogTimeEntry(time.Since(start))
 	}
 
 	for idx := range ifs {
-		vrfID, err := vppcalls.GetInterfaceVRF(idx, log, vppChan)
+		vrfID, err := handler.GetInterfaceVRF(idx)
 		if err != nil {
 			return nil, err
 		}
 		ifs[idx].Vrf = vrfID
 	}
 
-	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, stopwatch)
-	err := dumpIPAddressDetails(log, vppChan, ifs, 0, timeLog)
+	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, handler.stopwatch)
+	err := handler.dumpIPAddressDetails(ifs, 0, timeLog)
 	if err != nil {
 		return nil, err
 	}
-	err = dumpIPAddressDetails(log, vppChan, ifs, 1, timeLog)
-	if err != nil {
-		return nil, err
-	}
-
-	err = dumpMemifDetails(log, vppChan, ifs, measure.GetTimeLog(memif.MemifDump{}, stopwatch))
+	err = handler.dumpIPAddressDetails(ifs, 1, timeLog)
 	if err != nil {
 		return nil, err
 	}
 
-	err = dumpTapDetails(log, vppChan, ifs, measure.GetTimeLog(tap.SwInterfaceTapDump{}, stopwatch))
+	err = handler.dumpMemifDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
 
-	err = dumpVxlanDetails(log, vppChan, ifs, measure.GetTimeLog(vxlan.VxlanTunnelDump{}, stopwatch))
+	err = handler.dumpTapDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = handler.dumpVxlanDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -141,19 +130,15 @@ func DumpInterfaces(log logging.Logger, vppChan govppapi.Channel, stopwatch *mea
 	return ifs, nil
 }
 
-// DumpMemifSocketDetails dumps memif socket details from the VPP
-func DumpMemifSocketDetails(log logging.Logger, vppChan govppapi.Channel, timeLog measure.StopWatchEntry) (map[string]uint32, error) {
+func (handler *ifVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
 	// MemifSocketFilenameDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(memif.MemifSocketFilenameDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	memifSocketMap := make(map[string]uint32)
 
-	reqCtx := vppChan.SendMultiRequest(&memif.MemifSocketFilenameDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&memif.MemifSocketFilenameDump{})
 	for {
 		socketDetails := &memif.MemifSocketFilenameDetails{}
 		stop, err := reqCtx.ReceiveReply(socketDetails)
@@ -161,31 +146,30 @@ func DumpMemifSocketDetails(log logging.Logger, vppChan govppapi.Channel, timeLo
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
-			return memifSocketMap, err
+			return memifSocketMap, fmt.Errorf("failed to dump memif socket filename details: %v", err)
 		}
 
 		filename := string(bytes.SplitN(socketDetails.SocketFilename, []byte{0x00}, 2)[0])
 		memifSocketMap[filename] = socketDetails.SocketID
 	}
 
-	log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
+	handler.log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
 
 	return memifSocketMap, nil
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
-func dumpIPAddressDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
+func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*Interface, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
 	// TODO: workaround for incorrect ip.IPAddressDetails message
 	notifChan := make(chan api.Message, 100)
-	subs, _ := vppChan.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
+	subs, _ := handler.callsChannel.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
 
 	// Dump IP addresses of each interface.
 	for idx := range ifs {
 		// IPAddressDetails time measurement
 		start := time.Now()
 
-		reqCtx := vppChan.SendMultiRequest(&ip.IPAddressDump{SwIfIndex: idx, IsIpv6: isIPv6})
+		reqCtx := handler.callsChannel.SendMultiRequest(&ip.IPAddressDump{SwIfIndex: idx, IsIpv6: isIPv6})
 		for {
 			ipDetails := &ip.IPAddressDetails{}
 			stop, err := reqCtx.ReceiveReply(ipDetails)
@@ -193,16 +177,15 @@ func dumpIPAddressDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[
 				break // Break from the loop.
 			}
 			if err != nil {
-				log.Error(err)
-				return err
+				return fmt.Errorf("failed to dump interface %d IP address details: %v", idx, err)
 			}
-			processIPDetails(ifs, ipDetails)
+			handler.processIPDetails(ifs, ipDetails)
 		}
 
 		// TODO: workaround for incorrect ip.IPAddressDetails message
 		for len(notifChan) > 0 {
 			notifMsg := <-notifChan
-			processIPDetails(ifs, notifMsg.(*ip.IPAddressDetails))
+			handler.processIPDetails(ifs, notifMsg.(*ip.IPAddressDetails))
 		}
 
 		// IPAddressDump time
@@ -212,13 +195,13 @@ func dumpIPAddressDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[
 	}
 
 	// TODO: workaround for incorrect ip.IPAddressDetails message
-	vppChan.UnsubscribeNotification(subs)
+	handler.callsChannel.UnsubscribeNotification(subs)
 
 	return nil
 }
 
 // processIPDetails processes ip.IPAddressDetails binary API message and fills the details into the provided interface map.
-func processIPDetails(ifs map[uint32]*Interface, ipDetails *ip.IPAddressDetails) {
+func (handler *ifVppHandler) processIPDetails(ifs map[uint32]*Interface, ipDetails *ip.IPAddressDetails) {
 	_, ifIdxExists := ifs[ipDetails.SwIfIndex]
 	if !ifIdxExists {
 		return
@@ -244,22 +227,19 @@ func fillAFPacketDetails(ifs map[uint32]*Interface, swIfIndex uint32, ifName str
 }
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
-func dumpMemifDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
+func (handler *ifVppHandler) dumpMemifDetails(ifs map[uint32]*Interface) error {
 	// MemifDetails time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(memif.MemifDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// Dump all memif sockets
-	memifSocketMap, err := DumpMemifSocketDetails(log, vppChan, timeLog)
+	memifSocketMap, err := handler.DumpMemifSocketDetails()
 	if err != nil {
 		return err
 	}
 
-	reqCtx := vppChan.SendMultiRequest(&memif.MemifDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&memif.MemifDump{})
 	for {
 		memifDetails := &memif.MemifDetails{}
 		stop, err := reqCtx.ReceiveReply(memifDetails)
@@ -267,8 +247,7 @@ func dumpMemifDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("failed to dump memif interface: %v", err)
 		}
 		_, ifIdxExists := ifs[memifDetails.SwIfIndex]
 		if !ifIdxExists {
@@ -286,7 +265,7 @@ func dumpMemifDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint
 					}
 				}
 				// Socket for configured memif should exist
-				log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
+				handler.log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
 				return
 			}(memifSocketMap),
 			RingSize:   memifDetails.RingSize,
@@ -300,17 +279,14 @@ func dumpMemifDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint
 }
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.
-func dumpTapDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
+func (handler *ifVppHandler) dumpTapDetails(ifs map[uint32]*Interface) error {
 	// SwInterfaceTapDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(tap.SwInterfaceTapDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	// Original TAP.
-	reqCtx := vppChan.SendMultiRequest(&tap.SwInterfaceTapDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&tap.SwInterfaceTapDump{})
 	for {
 		tapDetails := &tap.SwInterfaceTapDetails{}
 		stop, err := reqCtx.ReceiveReply(tapDetails)
@@ -318,8 +294,7 @@ func dumpTapDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("failed to dump TAP interface details: %v", err)
 		}
 		_, ifIdxExists := ifs[tapDetails.SwIfIndex]
 		if !ifIdxExists {
@@ -333,7 +308,7 @@ func dumpTapDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32
 	}
 
 	// TAP v.2
-	reqCtx = vppChan.SendMultiRequest(&tapv2.SwInterfaceTapV2Dump{})
+	reqCtx = handler.callsChannel.SendMultiRequest(&tapv2.SwInterfaceTapV2Dump{})
 	for {
 		tapDetails := &tapv2.SwInterfaceTapV2Details{}
 		stop, err := reqCtx.ReceiveReply(tapDetails)
@@ -341,8 +316,7 @@ func dumpTapDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("failed to dump TAPv2 interface details: %v", err)
 		}
 		_, ifIdxExists := ifs[tapDetails.SwIfIndex]
 		if !ifIdxExists {
@@ -361,16 +335,13 @@ func dumpTapDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32
 }
 
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
-func dumpVxlanDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint32]*Interface, timeLog measure.StopWatchEntry) error {
+func (handler *ifVppHandler) dumpVxlanDetails(ifs map[uint32]*Interface) error {
 	// VxlanTunnelDump time measurement
-	start := time.Now()
-	defer func() {
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
-		}
-	}()
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(vxlan.VxlanTunnelDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	reqCtx := vppChan.SendMultiRequest(&vxlan.VxlanTunnelDump{SwIfIndex: ^uint32(0)})
+	reqCtx := handler.callsChannel.SendMultiRequest(&vxlan.VxlanTunnelDump{SwIfIndex: ^uint32(0)})
 	for {
 		vxlanDetails := &vxlan.VxlanTunnelDetails{}
 		stop, err := reqCtx.ReceiveReply(vxlanDetails)
@@ -378,8 +349,7 @@ func dumpVxlanDetails(log logging.Logger, vppChan govppapi.Channel, ifs map[uint
 			break // Break from the loop.
 		}
 		if err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("failed to dump VxLAN tunnel interface details: %v", err)
 		}
 		_, ifIdxExists := ifs[vxlanDetails.SwIfIndex]
 		if !ifIdxExists {

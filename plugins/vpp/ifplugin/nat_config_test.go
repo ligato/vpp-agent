@@ -1223,7 +1223,7 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "nat", nil))
 	// Configurator
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices, false)
+	err = plugin.Init(log, connection, swIfIndices, true)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

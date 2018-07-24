@@ -20,22 +20,20 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	if_api "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestAddAfPacketInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	ifIndex, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
+	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).To(BeNil())
 	Expect(ifIndex).ToNot(BeNil())
@@ -54,20 +52,20 @@ func TestAddAfPacketInterface(t *testing.T) {
 }
 
 func TestAddAfPacketInterfaceError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
 
-	_, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
+	_, err := ifHandler.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddAfPacketInterfaceRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{
@@ -75,23 +73,23 @@ func TestAddAfPacketInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := vppcalls.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
+	_, err := ifHandler.AddAfPacketInterface("if1", "", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDeleteAfPacketInterface(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := vppcalls.DeleteAfPacketInterface("if1", 0, &if_api.Interfaces_Interface_Afpacket{
+	err := ifHandler.DeleteAfPacketInterface("if1", 0, &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).To(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(2))
@@ -107,20 +105,20 @@ func TestDeleteAfPacketInterface(t *testing.T) {
 }
 
 func TestDeleteAfPacketInterfaceError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
 
-	err := vppcalls.DeleteAfPacketInterface("if1", 0, &if_api.Interfaces_Interface_Afpacket{
+	err := ifHandler.DeleteAfPacketInterface("if1", 0, &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDeleteAfPacketInterfaceRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{
@@ -128,23 +126,23 @@ func TestDeleteAfPacketInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := vppcalls.DeleteAfPacketInterface("if1", 0, &if_api.Interfaces_Interface_Afpacket{
+	err := ifHandler.DeleteAfPacketInterface("if1", 0, &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddAfPacketInterfaceMac(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	ifIndex, err := vppcalls.AddAfPacketInterface("if1", "a2:01:01:01:01:01", &if_api.Interfaces_Interface_Afpacket{
+	ifIndex, err := ifHandler.AddAfPacketInterface("if1", "a2:01:01:01:01:01", &if_api.Interfaces_Interface_Afpacket{
 		HostIfName: "host1",
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).To(BeNil())
 	Expect(ifIndex).ToNot(BeNil())

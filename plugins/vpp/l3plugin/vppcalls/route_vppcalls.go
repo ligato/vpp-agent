@@ -20,6 +20,7 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -135,11 +136,15 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 
 // VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
 func VppAddRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	if err := ifvppcalls.CreateVrfIfNeeded(route.VrfID, vppChan); err != nil {
+	ifHandler, err := ifvppcalls.NewIfVppHandler(vppChan, logrus.DefaultLogger(), stopwatch) // TODO temp change
+	if err != nil {
+		return err
+	}
+	if err := ifHandler.CreateVrfIfNeeded(route.VrfID); err != nil {
 		return err
 	}
 	if route.Type == InterVrf {
-		if err := ifvppcalls.CreateVrfIfNeeded(route.ViaVrfId, vppChan); err != nil {
+		if err := ifHandler.CreateVrfIfNeeded(route.ViaVrfId); err != nil {
 			return err
 		}
 	}

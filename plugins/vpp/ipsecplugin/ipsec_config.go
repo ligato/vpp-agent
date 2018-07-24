@@ -61,6 +61,9 @@ type IPSecConfigurator struct {
 	// VPP channel
 	vppCh govppapi.Channel
 
+	// VPP API handlers
+	ifHandler iface_vppcalls.IfVppAPI
+
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
 }
@@ -89,6 +92,11 @@ func (plugin *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	// Stopwatch
 	if enableStopwatch {
 		plugin.stopwatch = measure.NewStopwatch("IPSecConfigurator", plugin.log)
+	}
+
+	// VPP API handlers
+	if plugin.ifHandler, err = iface_vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
+		return err
 	}
 
 	// Message compatibility
@@ -336,7 +344,7 @@ func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_
 	plugin.ifIndexes.RegisterName(tunnel.Name, ifIdx, nil)
 	plugin.log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
 
-	if err := iface_vppcalls.SetInterfaceVRF(ifIdx, tunnel.Vrf, plugin.log, plugin.vppCh); err != nil {
+	if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, tunnel.Vrf); err != nil {
 		return err
 	}
 
@@ -345,14 +353,14 @@ func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_
 		return err
 	}
 	for _, ip := range ipAddrs {
-		if err := iface_vppcalls.AddInterfaceIP(ifIdx, ip, plugin.vppCh, plugin.stopwatch); err != nil {
+		if err := plugin.ifHandler.AddInterfaceIP(ifIdx, ip); err != nil {
 			plugin.log.Errorf("adding interface IP address failed: %v", err)
 			return err
 		}
 	}
 
 	if tunnel.Enabled {
-		if err := iface_vppcalls.InterfaceAdminUp(ifIdx, plugin.vppCh, plugin.stopwatch); err != nil {
+		if err := plugin.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
 			plugin.log.Debugf("setting interface up failed: %v", err)
 			return err
 		}

@@ -17,17 +17,13 @@ package vppcalls
 import (
 	"fmt"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
-// GetInterfaceVRF assigns VRF table to interface
-func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan govppapi.Channel) (vrfID uint32, err error) {
-	log.Debugf("Getting VRF for interface %v", ifIdx)
-
+func (handler *ifVppHandler) GetInterfaceVRF(ifIdx uint32) (vrfID uint32, err error) {
+	handler.log.Debugf("Getting VRF for interface %v", ifIdx)
 	req := &interfaces.SwInterfaceGetTable{
 		SwIfIndex: ifIdx,
 	}
@@ -39,7 +35,7 @@ func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan govppapi.Channel)
 
 	// Send message
 	reply := &interfaces.SwInterfaceGetTableReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	if reply.Retval != 0 {
@@ -49,15 +45,12 @@ func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan govppapi.Channel)
 	return reply.VrfID, nil
 }
 
-// SetInterfaceVRF retrieves VRF table from interface
-func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan govppapi.Channel) error {
-	if err := CreateVrfIfNeeded(vrfID, vppChan); err != nil {
-		log.Warnf("creating VRF failed: %v", err)
-		return err
+func (handler *ifVppHandler) SetInterfaceVRF(ifaceIndex, vrfID uint32) error {
+	if err := handler.CreateVrfIfNeeded(vrfID); err != nil {
+		return fmt.Errorf("creating VRF failed: %v", err)
 	}
 
-	log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfID)
-
+	handler.log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfID)
 	req := &interfaces.SwInterfaceSetTable{
 		VrfID:     vrfID,
 		SwIfIndex: ifaceIndex,
@@ -70,7 +63,7 @@ func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan govpp
 
 	// Send message
 	reply := new(interfaces.SwInterfaceSetTableReply)
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -82,29 +75,28 @@ func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan govpp
 
 // TODO: manage VRF tables globally in separate configurator
 
-// CreateVrfIfNeeded checks if VRF exists and creates it if not
-func CreateVrfIfNeeded(vrfID uint32, vppChan govppapi.Channel) error {
+func (handler *ifVppHandler) CreateVrfIfNeeded(vrfID uint32) error {
 	if vrfID == 0 {
 		return nil
 	}
 
-	tables, err := dumpVrfTables(vppChan)
+	tables, err := handler.dumpVrfTables()
 	if err != nil {
 		logrus.DefaultLogger().Warnf("dumping VRF tables failed: %v", err)
 		return err
 	}
 	if _, ok := tables[vrfID]; !ok {
 		logrus.DefaultLogger().Infof("VRF table %v does not exists, creating it", vrfID)
-		return vppAddIPTable(vrfID, vppChan)
+		return handler.vppAddIPTable(vrfID)
 	}
 
 	return nil
 }
 
-func dumpVrfTables(vppChan govppapi.Channel) (map[uint32][]*ip.IPFibDetails, error) {
+func (handler *ifVppHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
 	fibs := map[uint32][]*ip.IPFibDetails{}
 
-	reqCtx := vppChan.SendMultiRequest(&ip.IPFibDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&ip.IPFibDump{})
 	for {
 		fibDetails := &ip.IPFibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -122,7 +114,7 @@ func dumpVrfTables(vppChan govppapi.Channel) (map[uint32][]*ip.IPFibDetails, err
 	return fibs, nil
 }
 
-func vppAddIPTable(tableID uint32, vppChan govppapi.Channel) error {
+func (handler *ifVppHandler) vppAddIPTable(tableID uint32) error {
 	req := &ip.IPTableAddDel{
 		TableID: tableID,
 		IsAdd:   1,
@@ -130,7 +122,7 @@ func vppAddIPTable(tableID uint32, vppChan govppapi.Channel) error {
 
 	// Send message
 	reply := &ip.IPTableAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

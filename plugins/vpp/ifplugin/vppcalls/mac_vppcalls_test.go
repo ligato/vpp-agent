@@ -12,25 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls
+package vppcalls_test
 
 import (
 	"net"
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestSetInterfaceMac(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
 
 	mac, _ := net.ParseMAC("65:77:BF:72:C9:8D")
-	err := SetInterfaceMac(1, "65:77:BF:72:C9:8D", ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceMac(1, "65:77:BF:72:C9:8D")
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetMacAddress)
@@ -40,36 +39,36 @@ func TestSetInterfaceMac(t *testing.T) {
 }
 
 func TestSetInterfaceInvalidMac(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddress{})
 
-	err := SetInterfaceMac(1, "invalid-mac", ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceMac(1, "invalid-mac")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetInterfaceMacError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddress{})
 
-	err := SetInterfaceMac(1, "65:77:BF:72:C9:8D", ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceMac(1, "65:77:BF:72:C9:8D")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetInterfaceMacRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{
 		Retval: 1,
 	})
 
-	err := SetInterfaceMac(1, "65:77:BF:72:C9:8D", ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceMac(1, "65:77:BF:72:C9:8D")
 
 	Expect(err).ToNot(BeNil())
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -51,6 +52,9 @@ type BDConfigurator struct {
 
 	// State notification channel
 	notificationChan chan BridgeDomainStateMessage // Injected, do not close here
+
+	// VPP API handlers
+	ifHandler ifvppcalls.IfVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -92,6 +96,11 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	// Stopwatch
 	if enableStopwatch {
 		plugin.stopwatch = measure.NewStopwatch("ACLConfigurator", plugin.log)
+	}
+
+	// VPP API handlers
+	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+		return err
 	}
 
 	// Message compatibility
