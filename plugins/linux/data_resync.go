@@ -151,7 +151,7 @@ func resyncAppendRoutes(resyncData datasync.KeyValIterator, req *DataResyncReq) 
 
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
-	plugin.ifIndexes.WatchNameToIdx(plugin.PluginName, plugin.ifIndexesWatchChan)
+	plugin.ifIndexes.WatchNameToIdx(plugin.PluginName.String(), plugin.ifIndexesWatchChan)
 	plugin.watchDataReg, err = plugin.Watcher.
 		Watch("linuxplugin", plugin.changeChan, plugin.resyncChan,
 			interfaces.InterfaceKeyPrefix(),

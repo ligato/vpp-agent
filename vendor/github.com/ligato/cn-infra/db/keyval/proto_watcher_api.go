@@ -17,7 +17,6 @@ package keyval
 import (
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -48,14 +47,14 @@ func ToChanProto(ch chan ProtoWatchResp, opts ...interface{}) func(dto ProtoWatc
 	timeout := datasync.DefaultNotifTimeout
 	var logger logging.Logger = logrus.DefaultLogger()
 
-	for _, opt := range opts {
+	/*for _, opt := range opts {
 		switch opt.(type) {
 		case *core.WithLoggerOpt:
 			logger = opt.(*core.WithLoggerOpt).Logger
 		case *core.WithTimeoutOpt:
 			timeout = opt.(*core.WithTimeoutOpt).Timeout
 		}
-	}
+	}*/
 
 	return func(dto ProtoWatchResp) {
 		select {

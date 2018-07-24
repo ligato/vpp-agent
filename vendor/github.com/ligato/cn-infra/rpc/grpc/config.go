@@ -19,8 +19,9 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/namsral/flag"
+	"google.golang.org/grpc"
 )
 
 // Config is a configuration for GRPC netListener
@@ -53,6 +54,16 @@ type Config struct {
 	//TODO TLS/credentials
 }
 
+func (cfg *Config) getGrpcOptions() (opts []grpc.ServerOption) {
+	switch {
+	case cfg.MaxConcurrentStreams > 0:
+		opts = append(opts, grpc.MaxConcurrentStreams(cfg.MaxConcurrentStreams))
+	case cfg.MaxMsgSize > 0:
+		opts = append(opts, grpc.MaxMsgSize(cfg.MaxMsgSize))
+	}
+	return
+}
+
 // GetPort parses suffix from endpoint & returns integer after last ":" (otherwise it returns 0)
 func (cfg *Config) GetPort() int {
 	if cfg.Endpoint != "" && cfg.Endpoint != ":" {
@@ -69,7 +80,7 @@ func (cfg *Config) GetPort() int {
 }
 
 // DeclareGRPCPortFlag declares GRPC port (with usage & default value) a flag for a particular plugin name
-func DeclareGRPCPortFlag(pluginName core.PluginName) {
+func DeclareGRPCPortFlag(pluginName infra.PluginName) {
 	plugNameUpper := strings.ToUpper(string(pluginName))
 
 	usage := "Configure Agent' " + plugNameUpper + " net listener (port & timeouts); also set via '" +
@@ -77,6 +88,6 @@ func DeclareGRPCPortFlag(pluginName core.PluginName) {
 	flag.String(grpcPortFlag(pluginName), "", usage)
 }
 
-func grpcPortFlag(pluginName core.PluginName) string {
+func grpcPortFlag(pluginName infra.PluginName) string {
 	return strings.ToLower(string(pluginName)) + "-port"
 }

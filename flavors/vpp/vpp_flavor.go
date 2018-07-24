@@ -15,24 +15,7 @@
 // Package vpp defines the standard flavor used for full-featured VPP agents.
 package vpp
 
-import (
-	"sync"
-
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/datasync"
-	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/datasync/msgsync"
-	"github.com/ligato/cn-infra/flavors/connectors"
-	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/cn-infra/flavors/rpc"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linux"
-	"github.com/ligato/vpp-agent/plugins/rest"
-	"github.com/ligato/vpp-agent/plugins/telemetry"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-	rpcsvc "github.com/ligato/vpp-agent/plugins/vpp/rpc"
-)
-
+/*
 // kafkaIfStateTopic is the topic where interface state changes are published.
 const kafkaIfStateTopic = "if_state"
 
@@ -96,10 +79,10 @@ func (f *Flavor) Inject() bool {
 		&f.AllConnectorsFlavor.ConsulDataSync,
 	}}
 
-	/* note: now configurable with `status-publishers` in vppplugin
-		f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
-		&f.AllConnectorsFlavor.ETCDDataSync, &f.AllConnectorsFlavor.RedisDataSync},
-	}*/
+	// note: now configurable with `status-publishers` in vppplugin
+	//	f.VPP.Deps.PublishStatistics = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+	//	&f.AllConnectorsFlavor.ETCDDataSync, &f.AllConnectorsFlavor.RedisDataSync},
+	//}
 	f.VPP.Deps.DataSyncs = map[string]datasync.KeyProtoValWriter{
 		"etcd":  &f.AllConnectorsFlavor.ETCDDataSync,
 		"redis": &f.AllConnectorsFlavor.RedisDataSync,
@@ -191,3 +174,4 @@ func (opt *withPluginsOpt) Plugins(flavors ...core.Flavor) []*core.NamedPlugin {
 
 	panic("wrong usage of vpp.WithPlugin() for other than Flavor")
 }
+*/

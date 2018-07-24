@@ -15,12 +15,10 @@
 package vpp
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
-
 	"time"
-
-	"fmt"
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
@@ -745,12 +743,12 @@ func appendResyncSR(resyncData datasync.KeyValIterator, req *DataResyncReq) (num
 // All registration for above channel select (it ensures proper order during initialization) are put here.
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
-	plugin.swIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.ifIdxWatchCh)
+	plugin.swIfIndexes.WatchNameToIdx(plugin.PluginName.String(), plugin.ifIdxWatchCh)
 	plugin.Log.Debug("swIfIndexes watch registration finished")
-	plugin.bdIndexes.WatchNameToIdx(plugin.PluginName, plugin.bdIdxWatchCh)
+	plugin.bdIndexes.WatchNameToIdx(plugin.PluginName.String(), plugin.bdIdxWatchCh)
 	plugin.Log.Debug("bdIndexes watch registration finished")
 	if plugin.linuxIfIndexes != nil {
-		plugin.linuxIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.linuxIfIdxWatchCh)
+		plugin.linuxIfIndexes.WatchNameToIdx(plugin.PluginName.String(), plugin.linuxIfIdxWatchCh)
 		plugin.Log.Debug("linuxIfIndexes watch registration finished")
 	}
 

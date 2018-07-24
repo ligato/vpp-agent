@@ -20,7 +20,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -84,7 +83,7 @@ func (plugin *BridgeDomainStateUpdater) Init(logger logging.PluginLogger, goVppM
 
 	// Name-to-index watcher
 	plugin.bdIdxChan = make(chan l2idx.BdChangeDto, 100)
-	bdIndexes.WatchNameToIdx(core.PluginName("bdplugin_bdstate"), plugin.bdIdxChan)
+	bdIndexes.WatchNameToIdx("bdplugin_bdstate", plugin.bdIdxChan)
 
 	var childCtx context.Context
 	childCtx, plugin.cancel = context.WithCancel(ctx)

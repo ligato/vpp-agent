@@ -17,7 +17,7 @@ package rest
 import (
 	"fmt"
 
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
@@ -35,7 +35,7 @@ type Plugin struct {
 
 // Deps represents dependencies of Rest Plugin
 type Deps struct {
-	local.PluginInfraDeps
+	infra.Deps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
 }

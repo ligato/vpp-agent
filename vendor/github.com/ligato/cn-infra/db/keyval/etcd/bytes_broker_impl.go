@@ -77,7 +77,7 @@ func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*Bytes
 	start := time.Now()
 	etcdClient, err := clientv3.New(*config.Config)
 	if err != nil {
-		log.Errorf("Failed to connect to Etcd etcd(s) %v, Error: '%s'", config.Endpoints, err)
+		log.Debugf("Unable to connect to ETCD %v, Error: '%s'", config.Endpoints, err)
 		return nil, err
 	}
 	etcdConnectTime := time.Since(start)

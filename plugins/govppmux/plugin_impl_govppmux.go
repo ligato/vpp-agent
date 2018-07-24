@@ -26,8 +26,8 @@ import (
 
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
@@ -39,7 +39,7 @@ func init() {
 
 // GOVPPPlugin implements the govppmux plugin interface.
 type GOVPPPlugin struct {
-	Deps // Inject.
+	Deps
 
 	vppConn    *govpp.Connection
 	vppAdapter adapter.VppAdapter
@@ -58,8 +58,9 @@ type GOVPPPlugin struct {
 // Deps groups injected dependencies of plugin
 // so that they do not mix with other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps // inject
-	Resync                *resync.Plugin
+	infra.Deps
+	StatusCheck statuscheck.PluginStatusWriter
+	Resync      *resync.Plugin
 }
 
 // Config groups the configurable parameter of GoVpp.

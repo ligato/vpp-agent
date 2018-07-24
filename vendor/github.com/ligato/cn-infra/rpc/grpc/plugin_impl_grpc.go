@@ -17,12 +17,9 @@ package grpc
 import (
 	"io"
 	"net/http"
-
 	"strconv"
 
-	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/unrolled/render"
@@ -33,8 +30,12 @@ import (
 // Plugin maintains the GRPC netListener (see Init, AfterInit, Close methods)
 type Plugin struct {
 	Deps
-	// Stored GRPC config (used in example)
+
 	*Config
+
+	option Option
+	//Option func(*Plugin)
+
 	// GRPC server instance
 	grpcServer *grpc.Server
 	// Used mainly for testing purposes
@@ -47,15 +48,12 @@ type Plugin struct {
 
 // Deps is a list of injected dependencies of the GRPC plugin.
 type Deps struct {
-	Log        logging.PluginLogger
-	PluginName core.PluginName
-	HTTP       rest.HTTPHandlers
-	config.PluginConfig
+	infra.Deps
+	HTTP rest.HTTPHandlers
 }
 
 // Init prepares GRPC netListener for registration of individual service
-func (plugin *Plugin) Init() error {
-	var err error
+func (plugin *Plugin) Init() (err error) {
 	// Get GRPC configuration file
 	if plugin.Config == nil {
 		plugin.Config, err = plugin.getGrpcConfig()
@@ -66,14 +64,7 @@ func (plugin *Plugin) Init() error {
 
 	// Prepare GRPC server
 	if plugin.grpcServer == nil {
-		var opts []grpc.ServerOption
-		if plugin.Config.MaxConcurrentStreams > 0 {
-			opts = append(opts, grpc.MaxConcurrentStreams(plugin.Config.MaxConcurrentStreams))
-		}
-		if plugin.Config.MaxMsgSize > 0 {
-			opts = append(opts, grpc.MaxMsgSize(plugin.Config.MaxMsgSize))
-		}
-
+		opts := plugin.Config.getGrpcOptions()
 		plugin.grpcServer = grpc.NewServer(opts...)
 		grpclog.SetLogger(plugin.Log.NewLogger("grpc-server"))
 	}
@@ -91,12 +82,16 @@ func (plugin *Plugin) Init() error {
 
 // AfterInit starts the HTTP netListener.
 func (plugin *Plugin) AfterInit() (err error) {
+	//plugin.Log.Debugf("GRPC AfterInit()")
+
 	if plugin.Deps.HTTP != nil {
-		plugin.Log.Info("exposing GRPC services over HTTP port " + strconv.Itoa(plugin.Deps.HTTP.GetPort()) +
-			" /service ")
-		plugin.Deps.HTTP.RegisterHTTPHandler("service", func(formatter *render.Render) http.HandlerFunc {
+		plugin.Log.Infof("exposing GRPC services via HTTP (port %v) on: /service",
+			strconv.Itoa(plugin.Deps.HTTP.GetPort()))
+		plugin.Deps.HTTP.RegisterHTTPHandler("/service", func(formatter *render.Render) http.HandlerFunc {
 			return plugin.grpcServer.ServeHTTP
 		}, "GET", "PUT", "POST")
+	} else {
+		plugin.Log.Infof("HTTP not set, skip exposing GRPC services")
 	}
 
 	return err
@@ -122,14 +117,6 @@ func (plugin *Plugin) GetServer() *grpc.Server {
 // grpc configuration.
 func (plugin *Plugin) IsDisabled() (disabled bool) {
 	return plugin.disabled
-}
-
-// String returns plugin name (if not set defaults to "HTTP")
-func (plugin *Plugin) String() string {
-	if plugin.Deps.PluginName != "" {
-		return string(plugin.Deps.PluginName)
-	}
-	return "GRPC"
 }
 
 func (plugin *Plugin) getGrpcConfig() (*Config, error) {

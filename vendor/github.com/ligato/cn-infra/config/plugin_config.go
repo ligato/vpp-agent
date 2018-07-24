@@ -1,31 +1,35 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
 	"sync"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
+
+	"github.com/ligato/cn-infra/logging/logrus"
 )
 
-// FlagSuffix is added to plugin name while loading plugins configuration.
-const FlagSuffix = "-config"
+const (
+	// FlagSuffix is added to plugin name while loading plugins configuration.
+	FlagSuffix = "-config"
 
-// EnvSuffix is added to plugin name while loading plugins configuration from ENV variable.
-const EnvSuffix = "_CONFIG"
+	// EnvSuffix is added to plugin name while loading plugins configuration from ENV variable.
+	EnvSuffix = "_CONFIG"
 
-// DirFlag as flag name (see implementation in declareFlags())
-// is used to define default directory where config files reside.
-// This flag name is derived from the name of the plugin.
-const DirFlag = "config-dir"
+	// DirFlag as flag name (see implementation in declareFlags())
+	// is used to define default directory where config files reside.
+	// This flag name is derived from the name of the plugin.
+	DirFlag = "config-dir"
 
-// DirDefault holds a default value "." for flag, which represents current working directory.
-const DirDefault = "."
+	// DirDefault holds a default value "." for flag, which represents current working directory.
+	DirDefault = "."
 
-// DirUsage used as a flag (see implementation in declareFlags()).
-const DirUsage = "Location of the configuration files; also set via 'CONFIG_DIR' env variable."
+	// DirUsage used as a flag (see implementation in declareFlags()).
+	DirUsage = "Location of the config files; can also be set via 'CONFIG_DIR' env variable."
+)
 
 // PluginConfig is API for plugins to access configuration.
 //
@@ -41,6 +45,21 @@ type PluginConfig interface {
 	GetConfigName() string
 }
 
+// FlagSet is a type alias for flag.FlagSet.
+type FlagSet = flag.FlagSet
+
+// pluginFlags is used for storing flags for Plugins before agent starts.
+var pluginFlags = make(map[string]*FlagSet)
+
+// RegisterFlagsFor registers defined flags for plugin with given name.
+func RegisterFlagsFor(name string) {
+	if plugSet, ok := pluginFlags[name]; ok {
+		plugSet.VisitAll(func(f *flag.Flag) {
+			flag.Var(f.Value, f.Name, f.Usage)
+		})
+	}
+}
+
 // ForPlugin returns API that is injectable to a particular Plugin
 // and is used to read it's configuration.
 //
@@ -49,34 +68,56 @@ type PluginConfig interface {
 // opts (used to define flag (if it was not already defined)):
 // - default value
 // - usage
-func ForPlugin(pluginName string, opts ...string) PluginConfig {
-	flgName := pluginName + FlagSuffix
-	flg := flag.CommandLine.Lookup(flgName)
-	if flg == nil {
-		var flagDefault, flagUsage string
+func ForPlugin(name string, moreFlags ...func(*FlagSet)) PluginConfig {
+	flagSet := flag.NewFlagSet(name, flag.ExitOnError)
 
-		if len(opts) > 0 && opts[0] != "" {
-			flagDefault = opts[0]
-		} else {
-			flagDefault = pluginName + ".conf"
-		}
-		if len(opts) > 1 && opts[1] != "" {
-			flagUsage = opts[1]
-		} else {
-			flagUsage = "Location of the " + pluginName +
-				" Client configuration file; also set via '" +
-				strings.ToUpper(pluginName) + EnvSuffix + "' env variable."
-		}
-		flag.String(flgName, flagDefault, flagUsage)
+	for _, more := range moreFlags {
+		more(flagSet)
 	}
 
-	return &pluginConfig{pluginName: pluginName}
+	cfgFlag := name + FlagSuffix
+	if flagSet.Lookup(cfgFlag) == nil {
+		cfgFlagDefault := name + ".conf"
+		cfgFlagUsage := fmt.Sprintf(
+			"Location of the %q plugin config file; can also be set via %q env variable.",
+			cfgFlagDefault, strings.ToUpper(name)+EnvSuffix)
+		flagSet.String(cfgFlag, cfgFlagDefault, cfgFlagUsage)
+	}
+
+	pluginFlags[name] = flagSet
+
+	return &pluginConfig{
+		configFlag: cfgFlag,
+	}
 }
 
 type pluginConfig struct {
-	pluginName string
+	configFlag string
 	access     sync.Mutex
 	cfg        string
+}
+
+// Dir evaluates the flag DirFlag. It interprets "." as current working directory.
+func Dir() (string, error) {
+	flg := flag.CommandLine.Lookup(DirFlag)
+	if flg != nil {
+		val := flg.Value.String()
+		if strings.HasPrefix(val, ".") {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return cwd, err
+			}
+
+			if len(val) > 1 {
+				return cwd + val[1:], nil
+			}
+			return cwd, nil
+		}
+
+		return val, nil
+	}
+
+	return "", nil
 }
 
 // GetValue binds the configuration to config method argument.
@@ -108,12 +149,9 @@ func (p *pluginConfig) GetConfigName() string {
 }
 
 func (p *pluginConfig) getConfigName() string {
-	flgName := p.pluginName + FlagSuffix
-	flg := flag.CommandLine.Lookup(flgName)
+	flg := flag.CommandLine.Lookup(p.configFlag)
 	if flg != nil {
-		flgVal := flg.Value.String()
-
-		if flgVal != "" {
+		if flgVal := flg.Value.String(); flgVal != "" {
 			// if exist value from flag
 			if _, err := os.Stat(flgVal); !os.IsNotExist(err) {
 				return flgVal
@@ -130,29 +168,5 @@ func (p *pluginConfig) getConfigName() string {
 			}
 		}
 	}
-
 	return ""
-}
-
-// Dir evaluates the flag DirFlag. It interprets "." as current working directory.
-func Dir() (string, error) {
-	flg := flag.CommandLine.Lookup(DirFlag)
-	if flg != nil {
-		val := flg.Value.String()
-		if strings.HasPrefix(val, ".") {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cwd, err
-			}
-
-			if len(val) > 1 {
-				return cwd + val[1:], nil
-			}
-			return cwd, nil
-		}
-
-		return val, nil
-	}
-
-	return "", nil
 }

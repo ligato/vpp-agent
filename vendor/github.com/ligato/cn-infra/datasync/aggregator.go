@@ -44,9 +44,11 @@ type AggregatedRegistration struct {
 // The function implements KeyValProtoWatcher.Watch().
 func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan ChangeEvent,
 	resyncChan chan ResyncEvent, keyPrefixes ...string) (WatchRegistration, error) {
+
 	var registrations []WatchRegistration
-	for _, transport := range ta.Adapters {
-		watcherReg, err := transport.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
+
+	for _, adapter := range ta.Adapters {
+		watcherReg, err := adapter.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 		if err != nil {
 			return nil, err
 		}

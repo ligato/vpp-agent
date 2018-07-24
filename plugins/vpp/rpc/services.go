@@ -19,7 +19,7 @@ package rpc
 import (
 	"fmt"
 
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/clientv1/linux"
@@ -41,7 +41,7 @@ type GRPCSvcPlugin struct {
 
 // GRPCSvcPluginDeps - dependencies of GRPCSvcPlugin
 type GRPCSvcPluginDeps struct {
-	local.PluginLogDeps
+	infra.Deps
 	GRPCServer grpc.Server
 }
 

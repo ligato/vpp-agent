@@ -15,7 +15,6 @@
 package ifaceidx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -37,7 +36,7 @@ type SwIfIndex interface {
 	LookupNameByIP(ip string) []string
 
 	// WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping.
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan SwIfIdxDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan SwIfIdxDto)
 }
 
 // SwIfIndexRW is mapping between software interface indices
@@ -153,7 +152,7 @@ func (swi *swIfIndex) castMetadata(meta interface{}) *intf.Interfaces_Interface 
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping.
-func (swi *swIfIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan SwIfIdxDto) {
+func (swi *swIfIndex) WatchNameToIdx(subscriber string, pluginChannel chan SwIfIdxDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	swi.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

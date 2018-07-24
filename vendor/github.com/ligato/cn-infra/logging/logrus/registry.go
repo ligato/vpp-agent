@@ -26,7 +26,7 @@ import (
 )
 
 // DefaultRegistry is a default logging registry
-var DefaultRegistry logging.Registry
+//var DefaultRegistry logging.Registry
 
 var initialLogLvl = logrus.InfoLevel
 
@@ -39,7 +39,7 @@ func init() {
 			defaultLogger.Debugf("initial log level: %v", lvl.String())
 		}
 	}
-	DefaultRegistry = NewLogRegistry()
+	logging.DefaultRegistry = NewLogRegistry()
 }
 
 // NewLogRegistry is a constructor

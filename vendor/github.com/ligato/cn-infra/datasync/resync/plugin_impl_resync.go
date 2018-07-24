@@ -18,7 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 )
 
 const (
@@ -37,7 +38,8 @@ type Plugin struct {
 // Deps groups dependencies injected into the plugin so that they are
 // logically separated from other plugin fields.
 type Deps struct {
-	local.PluginLogDeps // inject
+	infra.PluginName // inject
+	Log              logging.PluginLogger
 }
 
 // Init initializes variables.

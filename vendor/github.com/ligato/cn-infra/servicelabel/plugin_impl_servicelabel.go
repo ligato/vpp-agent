@@ -17,12 +17,14 @@ package servicelabel
 import (
 	"fmt"
 
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 )
 
 // Plugin exposes the service label(i.e. the string used to identify the particular VNF) to the other plugins.
 type Plugin struct {
+	infra.PluginName
 	// MicroserviceLabel identifies particular VNF.
 	// Used primarily as a key prefix to ETCD data store.
 	MicroserviceLabel string

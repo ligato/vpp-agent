@@ -15,18 +15,7 @@
 // Package local defines flavor used for VPP agents managed only locally.
 package local
 
-import (
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/local"
-
-	"github.com/ligato/cn-infra/datasync"
-	local_sync "github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linux"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-)
-
+/*
 // NewAgent returns a new instance of the Agent with plugins.
 // It is an alias for core.NewAgent() to implicit use of the FlavorVppLocal
 func NewAgent(opts ...core.Option) *core.Agent {
@@ -108,3 +97,4 @@ func (opt *withPluginsOpt) Plugins(flavors ...core.Flavor) []*core.NamedPlugin {
 
 	panic("wrong usage of vppLocal.WithPlugin() for other than FlavorVppLocal")
 }
+*/

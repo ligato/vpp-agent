@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -142,7 +142,7 @@ func (mem *nameToIdxMem) ListNames() (names []string) {
 
 // Watch starts monitoring a change in the mapping. When yhe change occurs, the callback is called.
 // ToChan utility can be used to receive changes through channel.
-func (mem *nameToIdxMem) Watch(subscriber core.PluginName, callback func(idxvpp.NameToIdxDto)) {
+func (mem *nameToIdxMem) Watch(subscriber string, callback func(idxvpp.NameToIdxDto)) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
 		internalMeta, ok := dto.Value.(*nameToIdxMeta)
 		if !ok {
@@ -156,7 +156,7 @@ func (mem *nameToIdxMem) Watch(subscriber core.PluginName, callback func(idxvpp.
 		}
 		callback(msg)
 	}
-	mem.internal.Watch(subscriber, watcher)
+	mem.internal.Watch(infra.PluginName(subscriber), watcher)
 }
 
 // ToChan is an utility that allows to receive notification through a channel.

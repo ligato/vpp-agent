@@ -21,8 +21,10 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
@@ -77,10 +79,13 @@ type Plugin struct {
 // Deps groups injected dependencies of plugin
 // so that they do not mix with other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps                             // injected
-	Watcher               datasync.KeyValProtoWatcher // injected
-	VPP                   *vpp.Plugin
-	WatchEventsMutex      *sync.Mutex
+	infra.Deps
+	StatusCheck  statuscheck.PluginStatusWriter
+	ServiceLabel servicelabel.ReaderAPI
+
+	Watcher          datasync.KeyValProtoWatcher // injected
+	VPP              *vpp.Plugin
+	WatchEventsMutex *sync.Mutex
 }
 
 // LinuxConfig holds the linuxplugin configuration.
@@ -110,7 +115,7 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 // InjectVppIfIndexes injects VPP interfaces mapping into Linux plugin
 func (plugin *Plugin) InjectVppIfIndexes(indexes ifaceVPP.SwIfIndex) {
 	plugin.vppIfIndexes = indexes
-	plugin.vppIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.vppIfIndexesWatchChan)
+	plugin.vppIfIndexes.WatchNameToIdx(plugin.PluginName.String(), plugin.vppIfIndexesWatchChan)
 }
 
 // Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
@@ -239,7 +244,7 @@ func (plugin *Plugin) initL3() error {
 
 func (plugin *Plugin) retrieveLinuxConfig() (*LinuxConfig, error) {
 	config := &LinuxConfig{}
-	found, err := plugin.PluginInfraDeps.GetValue(config)
+	found, err := plugin.PluginConfig.GetValue(config)
 	if !found {
 		plugin.Log.Debug("Linuxplugin config not found")
 		return nil, nil
