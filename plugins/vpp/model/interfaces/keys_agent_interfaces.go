@@ -17,20 +17,36 @@ package interfaces
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ligato/vpp-agent/plugins/vpp/model"
 )
 
 const (
-	// InterfacePrefix vpp/config/v1/interface/
-	InterfacePrefix = "vpp/config/v1/interface/"
-	// IfStatePrefix vpp/status/v1/interface/
-	IfStatePrefix = "vpp/status/v1/interface/"
-	// IfErrorPrefix vpp/status/v1/interface/error
-	IfErrorPrefix = "vpp/status/v1/interface/error/"
+	// interfacePrefix is interface prefix
+	interfacePrefix = "vpp/config" + model.ProtoApiVersion + "interface/"
+	// ifStatePrefix is interface state prefix
+	ifStatePrefix = "vpp/status" + model.ProtoApiVersion + "interface/"
+	// ifErrorPrefix is interface error prefix
+	ifErrorPrefix = "vpp/status" + model.ProtoApiVersion + "interface/error/"
+	// restInterface is rest interface path
+	restInterface = model.ProtoApiVersion + "interface"
+	// restLoopback is path for loopback interface
+	restLoopback = model.ProtoApiVersion + "interface/loopback"
+	// restLoopback is path for physical interface
+	restEthernet = model.ProtoApiVersion + "interface/ethernet"
+	// restLoopback is path for memif interface
+	restMemif = model.ProtoApiVersion + "interface/memif"
+	// restLoopback is path for tap interface
+	restTap = model.ProtoApiVersion + "interface/tap"
+	// restAfPacket is path for af-packet interface
+	restAfPacket = model.ProtoApiVersion + "interface/afpacket"
+	// restLoopback is path for vxlan interface
+	restVxLan = model.ProtoApiVersion + "interface/vxlan"
 )
 
 // InterfaceKeyPrefix returns the prefix used in ETCD to store vpp interfaces config.
 func InterfaceKeyPrefix() string {
-	return InterfacePrefix
+	return interfacePrefix
 }
 
 // ParseNameFromKey returns suffix of the key.
@@ -46,26 +62,61 @@ func ParseNameFromKey(key string) (name string, err error) {
 // InterfaceKey returns the prefix used in ETCD to store the vpp interface config
 // of a particular interface in selected vpp instance.
 func InterfaceKey(ifaceLabel string) string {
-	return InterfacePrefix + ifaceLabel
+	return interfacePrefix + ifaceLabel
 }
 
 // InterfaceErrorPrefix returns the prefix used in ETCD to store the interface errors.
 func InterfaceErrorPrefix() string {
-	return IfErrorPrefix
+	return ifErrorPrefix
 }
 
 // InterfaceErrorKey returns the key used in ETCD to store the interface errors.
 func InterfaceErrorKey(ifaceLabel string) string {
-	return IfErrorPrefix + ifaceLabel
+	return ifErrorPrefix + ifaceLabel
 }
 
 // InterfaceStateKeyPrefix returns the prefix used in ETCD to store the vpp interfaces state data.
 func InterfaceStateKeyPrefix() string {
-	return IfStatePrefix
+	return ifStatePrefix
 }
 
 // InterfaceStateKey returns the prefix used in ETCD to store the vpp interface state data
 // of particular interface in selected vpp instance.
 func InterfaceStateKey(ifaceLabel string) string {
-	return IfStatePrefix + ifaceLabel
+	return ifStatePrefix + ifaceLabel
+}
+
+// RestInterfaceKey returns prefix used in REST to dump interface config
+func RestInterfaceKey() string {
+	return restInterface
+}
+
+// RestLoopbackKey returns prefix used in REST to dump loopback interface config
+func RestLoopbackKey() string {
+	return restLoopback
+}
+
+// RestEthernetKey returns prefix used in REST to dump ethernet interface config
+func RestEthernetKey() string {
+	return restEthernet
+}
+
+// RestMemifKey returns prefix used in REST to dump memif interface config
+func RestMemifKey() string {
+	return restMemif
+}
+
+// RestTapKey returns prefix used in REST to dump tap interface config
+func RestTapKey() string {
+	return restTap
+}
+
+// RestAfPAcketKey returns prefix used in REST to dump af-packet interface config
+func RestAfPAcketKey() string {
+	return restAfPacket
+}
+
+// RestVxLanKey returns prefix used in REST to dump VxLAN interface config
+func RestVxLanKey() string {
+	return restVxLan
 }

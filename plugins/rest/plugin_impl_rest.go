@@ -21,6 +21,7 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 const (
@@ -78,8 +79,15 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestMACIPKey(), plugin.macipACLPostHandler, POST)
 	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestMACIPKey(), plugin.macipACLGetHandler, GET)
 	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestMACIPExampleKey(), plugin.exampleMacIpACLGetHandler, GET)
+	// Interfaces
+	plugin.HTTPHandlers.RegisterHTTPHandler(interfaces.RestInterfaceKey(), plugin.interfacesGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(interfaces.RestLoopbackKey(), plugin.loopbackGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(interfaces.RestEthernetKey(), plugin.ethernetGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(interfaces.RestMemifKey(), plugin.memifGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(interfaces.RestTapKey(), plugin.tapGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(interfaces.RestAfPAcketKey(), plugin.afpacketGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(interfaces.RestVxLanKey(), plugin.vxLanTypeGetHandler, GET)
 
-	plugin.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainsGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomainids", plugin.bridgeDomainIdsGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/l2fibs", plugin.fibTableEntriesGetHandler, "GET")
