@@ -62,7 +62,8 @@ type IPSecConfigurator struct {
 	vppCh govppapi.Channel
 
 	// VPP API handlers
-	ifHandler iface_vppcalls.IfVppAPI
+	ifHandler    iface_vppcalls.IfVppAPI
+	ipSecHandler vppcalls.IPsecVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -74,6 +75,11 @@ func (plugin *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	// Logger
 	plugin.log = logger.NewLogger("-ipsec-plugin")
 	plugin.log.Debug("Initializing IPSec configurator")
+
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("IPSec-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
@@ -89,13 +95,11 @@ func (plugin *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 		return err
 	}
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("IPSecConfigurator", plugin.log)
-	}
-
 	// VPP API handlers
 	if plugin.ifHandler, err = iface_vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
+		return err
+	}
+	if plugin.ipSecHandler, err = vppcalls.NewIPsecVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -153,7 +157,7 @@ func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases
 func (plugin *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityPolicyDatabases_SPD) error {
 	plugin.log.Debugf("configuring SPD %v (%d)", spd.Name, spdID)
 
-	if err := vppcalls.AddSPD(spdID, plugin.vppCh, plugin.stopwatch); err != nil {
+	if err := plugin.ipSecHandler.AddSPD(spdID); err != nil {
 		return err
 	}
 
@@ -170,7 +174,7 @@ func (plugin *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityP
 			continue
 		}
 
-		if err := vppcalls.InterfaceAddSPD(spdID, swIfIdx, plugin.vppCh, plugin.stopwatch); err != nil {
+		if err := plugin.ipSecHandler.InterfaceAddSPD(spdID, swIfIdx); err != nil {
 			plugin.log.Errorf("assigning interface to SPD failed: %v", err)
 			continue
 		}
@@ -190,7 +194,7 @@ func (plugin *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityP
 			}
 		}
 
-		if err := vppcalls.AddSPDEntry(spdID, saID, entry, plugin.vppCh, plugin.stopwatch); err != nil {
+		if err := plugin.ipSecHandler.AddSPDEntry(spdID, saID, entry); err != nil {
 			plugin.log.Errorf("adding SPD policy entry failed: %v", err)
 			continue
 		}
@@ -234,7 +238,7 @@ func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases
 		plugin.log.Warnf("SPD %q not found", oldSpd.Name)
 		return nil
 	}
-	if err := vppcalls.DelSPD(spdID, plugin.vppCh, plugin.stopwatch); err != nil {
+	if err := plugin.ipSecHandler.DelSPD(spdID); err != nil {
 		return err
 	}
 
@@ -259,7 +263,7 @@ func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) 
 	saID := plugin.saIndexSeq
 	plugin.saIndexSeq++
 
-	if err := vppcalls.AddSAEntry(saID, sa, plugin.vppCh, plugin.stopwatch); err != nil {
+	if err := plugin.ipSecHandler.AddSAEntry(saID, sa); err != nil {
 		return err
 	}
 
@@ -322,7 +326,7 @@ func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) 
 		plugin.log.Warnf("caching SPD %v due removed SA %v", entry.SPD.Name, oldSa.Name)
 	}
 
-	if err := vppcalls.DelSAEntry(saID, oldSa, plugin.vppCh, plugin.stopwatch); err != nil {
+	if err := plugin.ipSecHandler.DelSAEntry(saID, oldSa); err != nil {
 		return err
 	}
 
@@ -336,7 +340,7 @@ func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) 
 func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) error {
 	plugin.log.Debugf("Configuring Tunnel %v", tunnel.Name)
 
-	ifIdx, err := vppcalls.AddTunnelInterface(tunnel, plugin.vppCh, plugin.stopwatch)
+	ifIdx, err := plugin.ipSecHandler.AddTunnelInterface(tunnel)
 	if err != nil {
 		return err
 	}
@@ -395,7 +399,7 @@ func (plugin *IPSecConfigurator) DeleteTunnel(oldTunnel *ipsec.TunnelInterfaces_
 		return nil
 	}
 
-	if err := vppcalls.DelTunnelInterface(ifIdx, oldTunnel, plugin.vppCh, plugin.stopwatch); err != nil {
+	if err := plugin.ipSecHandler.DelTunnelInterface(ifIdx, oldTunnel); err != nil {
 		return err
 	}
 
@@ -412,13 +416,13 @@ func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx 
 			plugin.log.Infof("Assigning SPD %v to interface %q", entry.spdID, ifName)
 
 			// TODO: loop through stored deletes, this is now needed because old assignment might still exist
-			if err := vppcalls.InterfaceDelSPD(entry.spdID, swIfIdx, plugin.vppCh, plugin.stopwatch); err != nil {
+			if err := plugin.ipSecHandler.InterfaceDelSPD(entry.spdID, swIfIdx); err != nil {
 				plugin.log.Errorf("unassigning interface from SPD failed: %v", err)
 			} else {
 				plugin.log.Infof("Unassigned SPD %v from interface %q", entry.spdID, ifName)
 			}
 
-			if err := vppcalls.InterfaceAddSPD(entry.spdID, swIfIdx, plugin.vppCh, plugin.stopwatch); err != nil {
+			if err := plugin.ipSecHandler.InterfaceAddSPD(entry.spdID, swIfIdx); err != nil {
 				plugin.log.Errorf("assigning interface to SPD failed: %v", err)
 				continue
 			} else {
@@ -436,7 +440,7 @@ func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx 
 		plugin.log.Infof("Unassigning SPD %v from interface %q", assign.SpdID, ifName)
 
 		// TODO: just store this for future, because this will fail since swIfIdx no longer exists
-		if err := vppcalls.InterfaceDelSPD(assign.SpdID, swIfIdx, plugin.vppCh, plugin.stopwatch); err != nil {
+		if err := plugin.ipSecHandler.InterfaceDelSPD(assign.SpdID, swIfIdx); err != nil {
 			plugin.log.Errorf("unassigning interface from SPD failed: %v", err)
 		} else {
 			plugin.log.Infof("Unassigned SPD %v from interface %q", assign.SpdID, ifName)
