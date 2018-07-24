@@ -21,23 +21,22 @@ import (
 
 	"time"
 
-	"git.fd.io/govpp.git/examples/bin_api/ip"
 	"github.com/ligato/cn-infra/utils/addrs"
-	l3ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
 func (handler *routeHandler) DumpStaticRoutes() ([]*Route, error) {
 	// IPFibDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ip.IPFibDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	var routes []*Route
 
 	// Dump IPv4 l3 FIB.
-	reqCtx := handler.callsChannel.SendMultiRequest(&l3ba.IPFibDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.IPFibDump{})
 	for {
-		fibDetails := &l3ba.IPFibDetails{}
+		fibDetails := &l3binapi.IPFibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
 			break // Break from the loop.
@@ -57,9 +56,9 @@ func (handler *routeHandler) DumpStaticRoutes() ([]*Route, error) {
 	}
 
 	// Dump IPv6 l3 FIB.
-	reqCtx = handler.callsChannel.SendMultiRequest(&l3ba.IP6FibDump{})
+	reqCtx = handler.callsChannel.SendMultiRequest(&l3binapi.IP6FibDump{})
 	for {
-		fibDetails := &l3ba.IP6FibDetails{}
+		fibDetails := &l3binapi.IP6FibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
 			break // break out of the loop
@@ -81,16 +80,16 @@ func (handler *routeHandler) DumpStaticRoutes() ([]*Route, error) {
 	return routes, nil
 }
 
-func (handler *routeHandler) dumpStaticRouteIPv4Details(fibDetails *l3ba.IPFibDetails) (*Route, error) {
+func (handler *routeHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) (*Route, error) {
 	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 }
 
-func (handler *routeHandler) dumpStaticRouteIPv6Details(fibDetails *l3ba.IP6FibDetails) (*Route, error) {
+func (handler *routeHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) (*Route, error) {
 	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
 // dumpStaticRouteIPDetails processes static route details and returns a route object
-func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, path []l3ba.FibPath, ipv6 bool) (*Route, error) {
+func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, path []l3binapi.FibPath, ipv6 bool) (*Route, error) {
 	// route details
 	var ipAddr string
 	if ipv6 {
@@ -142,17 +141,17 @@ func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 func (handler *arpVppHandler) DumpArpEntries() ([]*ArpEntry, error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ip.IPFibDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	var arps []*ArpEntry
 
 	// Dump ARPs.
-	reqCtx := handler.callsChannel.SendMultiRequest(&l3ba.IPNeighborDump{
+	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.IPNeighborDump{
 		SwIfIndex: 0xffffffff,
 	})
 	for {
-		arpDetails := &l3ba.IPNeighborDetails{}
+		arpDetails := &l3binapi.IPNeighborDetails{}
 		stop, err := reqCtx.ReceiveReply(arpDetails)
 		if stop {
 			break
