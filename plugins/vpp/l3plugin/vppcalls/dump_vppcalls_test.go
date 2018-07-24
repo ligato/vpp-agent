@@ -12,21 +12,23 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package vppdump_test
+package vppcalls
 
 import (
+	"testing"
+
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 // Test dumping routes
 func TestDumpStaticRoutes(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
+	l3handler, err := NewRouteVppHandler(ctx.MockChannel, logrus.DefaultLogger(), nil)
+	Expect(err).To(BeNil())
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPFibDetails{
@@ -38,7 +40,7 @@ func TestDumpStaticRoutes(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	routes, err := vppdump.DumpStaticRoutes(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	routes, err := l3handler.DumpStaticRoutes()
 	Expect(err).To(Succeed())
 	Expect(routes).To(HaveLen(2))
 	Expect(routes[0].OutIface).To(Equal(uint32(3)))

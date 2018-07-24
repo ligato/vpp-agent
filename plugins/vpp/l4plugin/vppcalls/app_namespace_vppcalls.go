@@ -19,7 +19,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
 
@@ -31,10 +30,9 @@ var AppNsMessages = []govppapi.Message{
 	&session.SessionEnableDisableReply{},
 }
 
-// AddAppNamespace calls respective VPP binary api to configure AppNamespace
-func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (appNsIdx uint32, err error) {
+func (handler *l4VppHandler) AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte) (appNsIdx uint32, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(session.AppNamespaceAddDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(session.AppNamespaceAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &session.AppNamespaceAddDel{
@@ -47,7 +45,7 @@ func AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byt
 	}
 
 	reply := &session.AppNamespaceAddDelReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	if reply.Retval != 0 {

@@ -20,19 +20,14 @@ import (
 
 	"strconv"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-// SetRxPlacement
-func SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings,
-	vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	queue := strconv.Itoa(int(rxPlacement.Queue))
@@ -40,7 +35,7 @@ func SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interfa
 
 	command := "set interface rx-placement " + vppInternalName + " queue " + queue + " worker " + worker
 
-	logrus.DefaultLogger().Warnf("Setting rx-placement commnad %s", command)
+	handler.log.Warnf("Setting rx-placement commnad %s", command)
 
 	// todo: binary api call for rx-placement is not available
 	req := &vpe.CliInband{
@@ -49,7 +44,7 @@ func SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interfa
 	}
 
 	reply := &vpe.CliInbandReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

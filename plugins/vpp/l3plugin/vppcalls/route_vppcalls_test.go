@@ -15,13 +15,16 @@
 package vppcalls_test
 
 import (
+	"net"
+	"testing"
+
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"net"
-	"testing"
 )
 
 var routes = []vppcalls.Route{
@@ -39,35 +42,45 @@ var routes = []vppcalls.Route{
 
 // Test adding routes
 func TestAddRoute(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPFibDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err := vppcalls.VppAddRoute(&routes[0], ctx.MockChannel, nil)
+	err := rtHandler.VppAddRoute(ifHandler, &routes[0])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err = vppcalls.VppAddRoute(&routes[0], ctx.MockChannel, nil)
+	err = rtHandler.VppAddRoute(ifHandler, &routes[0])
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test deleteing routes
 func TestDeleteRoute(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err := vppcalls.VppDelRoute(&routes[0], ctx.MockChannel, nil)
+	err := rtHandler.VppDelRoute(&routes[0])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
-	err = vppcalls.VppDelRoute(&routes[1], ctx.MockChannel, nil)
+	err = rtHandler.VppDelRoute(&routes[1])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{1})
-	err = vppcalls.VppDelRoute(&routes[0], ctx.MockChannel, nil)
+	err = rtHandler.VppDelRoute(&routes[0])
 	Expect(err).To(Not(BeNil()))
+}
+
+func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.IfVppAPI, vppcalls.RouteVppAPI) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	log := logrus.NewLogger("test-log")
+	ifHandler, err := ifvppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
+	Expect(err).To(BeNil())
+	rtHandler, err := vppcalls.NewRouteVppHandler(ctx.MockChannel, log, nil)
+	Expect(err).To(BeNil())
+	return ctx, ifHandler, rtHandler
 }

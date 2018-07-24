@@ -145,7 +145,7 @@ func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock
 	ifVppNotifCh := make(chan govppapi.Message, 100)
 	plugLog := logging.ForPlugin("tests", logrus.NewLogRegistry())
 
-	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, false)
+	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, true)
 	Expect(err).To(BeNil())
 
 	return plugin, conn
@@ -178,7 +178,7 @@ func bfdConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 			logrus.NewLogRegistry()),
 		connection,
 		index,
-		false)
+		true)
 
 	Expect(err).To(BeNil())
 
@@ -212,7 +212,7 @@ func stnConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 			logrus.NewLogRegistry()),
 		connection,
 		index,
-		false)
+		true)
 
 	Expect(err).To(BeNil())
 	return plugin, connection
@@ -245,7 +245,7 @@ func natConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*if
 			logrus.NewLogRegistry()),
 		connection,
 		index,
-		false)
+		true)
 
 	Expect(err).To(BeNil())
 	return plugin, index, connection

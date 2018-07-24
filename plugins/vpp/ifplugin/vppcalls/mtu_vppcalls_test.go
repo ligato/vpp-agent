@@ -18,18 +18,16 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestSetInterfaceMtu(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 
-	err := vppcalls.SetInterfaceMtu(1, 1500, ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceMtu(1, 1500)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.HwInterfaceSetMtu)
@@ -39,25 +37,25 @@ func TestSetInterfaceMtu(t *testing.T) {
 }
 
 func TestSetInterfaceMtuError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtu{})
 
-	err := vppcalls.SetInterfaceMtu(1, 1500, ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceMtu(1, 1500)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetInterfaceMtuRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.SetInterfaceMtu(1, 1500, ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceMtu(1, 1500)
 
 	Expect(err).ToNot(BeNil())
 }

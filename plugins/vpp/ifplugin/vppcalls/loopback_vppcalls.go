@@ -18,34 +18,30 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-// AddLoopbackInterface calls CreateLoopback bin API.
-func AddLoopbackInterface(ifName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (swIndex uint32, err error) {
+func (handler *ifVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.CreateLoopback{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(interfaces.CreateLoopback{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.CreateLoopback{}
 
 	reply := &interfaces.CreateLoopbackReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, stopwatch)
+	return reply.SwIfIndex, handler.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DeleteLoopbackInterface calls DeleteLoopback bin API.
-func DeleteLoopbackInterface(ifName string, idx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) DeleteLoopbackInterface(ifName string, idx uint32) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.DeleteLoopback{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(interfaces.DeleteLoopback{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare the message.
@@ -54,12 +50,12 @@ func DeleteLoopbackInterface(ifName string, idx uint32, vppChan govppapi.Channel
 	}
 
 	reply := &interfaces.DeleteLoopbackReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return RemoveInterfaceTag(ifName, idx, vppChan, stopwatch)
+	return handler.RemoveInterfaceTag(ifName, idx)
 }

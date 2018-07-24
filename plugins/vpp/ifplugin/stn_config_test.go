@@ -421,7 +421,7 @@ func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn", nil))
 	// Configurator
 	plugin := &ifplugin.StnConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices, false)
+	err = plugin.Init(log, connection, swIfIndices, true)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

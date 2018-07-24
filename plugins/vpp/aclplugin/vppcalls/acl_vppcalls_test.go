@@ -257,7 +257,8 @@ func TestAddIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	aclIndex, err := aclHandler.AddIPAcl(acl_IPrules, "test0")
 	Expect(err).To(BeNil())
@@ -290,7 +291,8 @@ func TestAddMacIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	aclIndex, err := aclHandler.AddMacIPAcl(acl_MACIPrules, "test6")
 	Expect(err).To(BeNil())
@@ -324,7 +326,8 @@ func TestDeleteIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	aclIndex, err := aclHandler.AddIPAcl(acl_IPrules, "test_del0")
 	Expect(err).To(BeNil())
@@ -369,7 +372,8 @@ func TestDeleteMACIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	aclIndex, err := aclHandler.AddMacIPAcl(acl_MACIPrules, "test_del2")
 	Expect(err).To(BeNil())
@@ -414,7 +418,8 @@ func TestModifyIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	aclIndex, err := aclHandler.AddIPAcl(acl_IPrules, "test_modify")
 	Expect(err).To(BeNil())
@@ -472,7 +477,8 @@ func TestModifyMACIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	aclIndex, err := aclHandler.AddMacIPAcl(acl_MACIPrules, "test_modify")
 	Expect(err).To(BeNil())

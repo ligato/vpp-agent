@@ -111,8 +111,8 @@ func (calls *srv6Calls) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *
 	}(time.Now())
 
 	req := &sr.SrLocalsidAddDel{
-		IsDel:        boolToUint(deletion),
-		LocalsidAddr: []byte(sidAddr),
+		IsDel:    boolToUint(deletion),
+		Localsid: sr.Srv6Sid{Addr: []byte(sidAddr)},
 	}
 	if !deletion {
 		req.FibTable = localSID.FibTableId // where to install localsid entry
@@ -177,11 +177,15 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunction_X.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunction_X.NextHop)
+		nhAddr, err := parseIPv6(localSID.EndFunction_X.NextHop) // parses also ipv4 addresses but into ipv6 address form
 		if err != nil {
 			return err
 		}
-		req.NhAddr = []byte(nhAddr)
+		if nhAddr4 := nhAddr.To4(); nhAddr4 != nil { // ipv4 address in ipv6 address form?
+			req.NhAddr4 = nhAddr4
+		} else {
+			req.NhAddr6 = []byte(nhAddr)
+		}
 	} else if localSID.EndFunction_T != nil {
 		req.Behavior = BehaviorT
 		req.EndPsp = boolToUint(localSID.EndFunction_T.Psp)
@@ -193,11 +197,15 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunction_DX2.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunction_DX2.NextHop)
+		nhAddr, err := parseIPv6(localSID.EndFunction_DX2.NextHop) // parses also ipv4 addresses but into ipv6 address form
 		if err != nil {
 			return err
 		}
-		req.NhAddr = []byte(nhAddr)
+		if nhAddr4 := nhAddr.To4(); nhAddr4 != nil { // ipv4 address in ipv6 address form?
+			req.NhAddr4 = nhAddr4
+		} else {
+			req.NhAddr6 = []byte(nhAddr)
+		}
 	} else if localSID.EndFunction_DX4 != nil {
 		req.Behavior = BehaviorDX4
 		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunction_DX4.OutgoingInterface)
@@ -209,10 +217,11 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 		if err != nil {
 			return err
 		}
-		if nhAddr.To4() == nil {
+		nhAddr4 := nhAddr.To4()
+		if nhAddr4 == nil {
 			return fmt.Errorf("next hop of DX4 end function (%v) is not valid IPv4 address", localSID.EndFunction_DX4.NextHop)
 		}
-		req.NhAddr = []byte(nhAddr)
+		req.NhAddr4 = []byte(nhAddr4)
 	} else if localSID.EndFunction_DX6 != nil {
 		req.Behavior = BehaviorDX6
 		interfaceSwIndex, _, exists := swIfIndex.LookupIdx(localSID.EndFunction_DX6.OutgoingInterface)
@@ -220,11 +229,11 @@ func (calls *srv6Calls) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.I
 			return fmt.Errorf("for interface %v doesn't exist sw index", localSID.EndFunction_DX6.OutgoingInterface)
 		}
 		req.SwIfIndex = interfaceSwIndex
-		nhAddr, err := parseIPv6(localSID.EndFunction_DX6.NextHop)
+		nhAddr6, err := parseIPv6(localSID.EndFunction_DX6.NextHop)
 		if err != nil {
 			return err
 		}
-		req.NhAddr = []byte(nhAddr)
+		req.NhAddr6 = []byte(nhAddr6)
 	} else if localSID.EndFunction_DT4 != nil {
 		req.Behavior = BehaviorDT4
 	} else if localSID.EndFunction_DT6 != nil {
@@ -271,18 +280,17 @@ func (calls *srv6Calls) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policy
 		calls.stopwatch.TimeLog(sr.SrPolicyAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	segmentsCount, segments, err := calls.convertNextSidList(policySegment.Segments)
+	sids, err := calls.convertPolicySegment(policySegment)
 	if err != nil {
 		return err
 	}
+	// Note: Weight in sr.SrPolicyAdd is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
 	req := &sr.SrPolicyAdd{
-		BsidAddr:  []byte(bindingSid),
-		Weight:    policySegment.Weight,
-		NSegments: segmentsCount,
-		Segments:  segments,
-		IsEncap:   boolToUint(policy.SrhEncapsulation),
-		Type:      boolToUint(policy.SprayBehaviour),
-		FibTable:  policy.FibTableId,
+		BsidAddr: []byte(bindingSid),
+		Sids:     *sids,
+		IsEncap:  boolToUint(policy.SrhEncapsulation),
+		Type:     boolToUint(policy.SprayBehaviour),
+		FibTable: policy.FibTableId,
 	}
 	reply := &sr.SrPolicyAddReply{}
 
@@ -307,7 +315,7 @@ func (calls *srv6Calls) DeletePolicy(bindingSid net.IP, vppChan govppapi.Channel
 	}(time.Now())
 
 	req := &sr.SrPolicyDel{
-		BsidAddr: []byte(bindingSid), // TODO add ability to define policy also by index (SrPolicyIndex)
+		BsidAddr: sr.Srv6Sid{Addr: []byte(bindingSid)}, // TODO add ability to define policy also by index (SrPolicyIndex)
 	}
 	reply := &sr.SrPolicyDelReply{}
 
@@ -353,16 +361,15 @@ func (calls *srv6Calls) modPolicy(operation uint8, bindingSid net.IP, policy *sr
 		calls.stopwatch.TimeLog(sr.SrPolicyMod{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	segmentsCount, segments, err := calls.convertNextSidList(policySegment.Segments)
+	sids, err := calls.convertPolicySegment(policySegment)
 	if err != nil {
 		return err
 	}
+	// Note: Weight in sr.SrPolicyMod is leftover from API changes that moved weight into sr.Srv6SidList (it is weight of sid list not of the whole policy)
 	req := &sr.SrPolicyMod{
 		BsidAddr:  []byte(bindingSid), // TODO add ability to define policy also by index (SrPolicyIndex)
 		Operation: operation,
-		Weight:    policySegment.Weight,
-		NSegments: segmentsCount,
-		Segments:  segments,
+		Sids:      *sids,
 		FibTable:  policy.FibTableId,
 	}
 	if operation == DeleteSRList || operation == ModifyWeightOfSRList {
@@ -380,23 +387,27 @@ func (calls *srv6Calls) modPolicy(operation uint8, bindingSid net.IP, policy *sr
 	return nil
 }
 
-func (calls *srv6Calls) convertNextSidList(nextSidList []string) (uint8, []sr.SrIP6Address, error) {
-	segments := make([]sr.SrIP6Address, 0)
-	for _, sid := range nextSidList {
+func (calls *srv6Calls) convertPolicySegment(policySegment *srv6.PolicySegment) (*sr.Srv6SidList, error) {
+	var segments []sr.Srv6Sid
+	for _, sid := range policySegment.Segments {
 		// parse to IPv6 address
 		parserSid, err := parseIPv6(sid)
 		if err != nil {
-			return 0, []sr.SrIP6Address{}, err
+			return nil, err
 		}
 
 		// add sid to segment list
-		ipv6Segment := sr.SrIP6Address{
-			Data: make([]byte, 16), // sr.SrIP6Address.Data = [16]byte
+		ipv6Segment := sr.Srv6Sid{
+			Addr: make([]byte, 16), // sr.Srv6Sid.Addr = [16]byte
 		}
-		copy(ipv6Segment.Data, parserSid)
+		copy(ipv6Segment.Addr, parserSid)
 		segments = append(segments, ipv6Segment)
 	}
-	return uint8(len(nextSidList)), segments, nil
+	return &sr.Srv6SidList{
+		NumSids: uint8(len(segments)),
+		Sids:    segments,
+		Weight:  policySegment.Weight,
+	}, nil
 }
 
 // AddSteering sets in VPP steering into SRv6 policy.
@@ -432,7 +443,7 @@ func (calls *srv6Calls) addDelSteering(delete bool, steering *srv6.Steering, swI
 	}
 
 	// converting policy reference
-	bsidAddr := make([]byte, 0)
+	var bsidAddr []byte
 	if len(strings.Trim(steering.PolicyBsid, " ")) > 0 {
 		bsid, err := parseIPv6(steering.PolicyBsid)
 		if err != nil {

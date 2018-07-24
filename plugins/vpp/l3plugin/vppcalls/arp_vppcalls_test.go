@@ -15,11 +15,13 @@
 package vppcalls_test
 
 import (
+	"testing"
+
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 var arpEntries = []vppcalls.ArpEntry{
@@ -32,7 +34,7 @@ var arpEntries = []vppcalls.ArpEntry{
 	{
 		Interface:  1,
 		IPAddress:  []byte{192, 168, 10, 22},
-		MacAddress:"6C:45:59:59:8E:BD",
+		MacAddress: "6C:45:59:59:8E:BD",
 		Static:     false,
 	},
 	{
@@ -45,30 +47,38 @@ var arpEntries = []vppcalls.ArpEntry{
 
 // Test adding of ARP
 func TestAddArp(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, arpHandler := arpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err := vppcalls.VppAddArp(&arpEntries[0], ctx.MockChannel, nil)
+	err := arpHandler.VppAddArp(&arpEntries[0])
 	Expect(err).To(Succeed())
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err = vppcalls.VppAddArp(&arpEntries[1], ctx.MockChannel, nil)
+	err = arpHandler.VppAddArp(&arpEntries[1])
 	Expect(err).To(Succeed())
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err = vppcalls.VppAddArp(&arpEntries[2], ctx.MockChannel, nil)
+	err = arpHandler.VppAddArp(&arpEntries[2])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{Retval: 1})
-	err = vppcalls.VppAddArp(&arpEntries[0], ctx.MockChannel, nil)
+	err = arpHandler.VppAddArp(&arpEntries[0])
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test deleting of ARP
 func TestDelArp(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, arpHandler := arpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err := vppcalls.VppDelArp(&arpEntries[0], ctx.MockChannel, nil)
+	err := arpHandler.VppDelArp(&arpEntries[0])
 	Expect(err).To(Succeed())
+}
+
+func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ArpVppAPI) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	log := logrus.NewLogger("test-log")
+	arpHandler, err := vppcalls.NewArpVppHandler(ctx.MockChannel, log, nil)
+	Expect(err).To(BeNil())
+	return ctx, arpHandler
 }

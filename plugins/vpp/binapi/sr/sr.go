@@ -5,8 +5,66 @@ package sr
 
 import "git.fd.io/govpp.git/api"
 
+// Srv6Sid represents the VPP binary API data type 'srv6_sid'.
+// Generated from '/usr/share/vpp/api/sr.api.json', line 577:
+//
+//            "srv6_sid",
+//            [
+//                "u8",
+//                "addr",
+//                16
+//            ],
+//            {
+//                "crc": "0x6ee67284"
+//            }
+//
+type Srv6Sid struct {
+	Addr []byte `struc:"[16]byte"`
+}
+
+func (*Srv6Sid) GetTypeName() string {
+	return "srv6_sid"
+}
+func (*Srv6Sid) GetCrcString() string {
+	return "6ee67284"
+}
+
+// Srv6SidList represents the VPP binary API data type 'srv6_sid_list'.
+// Generated from '/usr/share/vpp/api/sr.api.json', line 588:
+//
+//            "srv6_sid_list",
+//            [
+//                "u8",
+//                "num_sids"
+//            ],
+//            [
+//                "u32",
+//                "weight"
+//            ],
+//            [
+//                "vl_api_srv6_sid_t",
+//                "sids",
+//                16
+//            ],
+//            {
+//                "crc": "0x4066af74"
+//            }
+//
+type Srv6SidList struct {
+	NumSids uint8 `struc:"sizeof=Sids"`
+	Weight  uint32
+	Sids    []Srv6Sid
+}
+
+func (*Srv6SidList) GetTypeName() string {
+	return "srv6_sid_list"
+}
+func (*Srv6SidList) GetCrcString() string {
+	return "4066af74"
+}
+
 // SrIP6Address represents the VPP binary API data type 'sr_ip6_address'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 455:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 607:
 //
 //            "sr_ip6_address",
 //            [
@@ -50,9 +108,8 @@ func (*SrIP6Address) GetCrcString() string {
 //                "is_del"
 //            ],
 //            [
-//                "u8",
-//                "localsid_addr",
-//                16
+//                "vl_api_srv6_sid_t",
+//                "localsid"
 //            ],
 //            [
 //                "u8",
@@ -76,22 +133,28 @@ func (*SrIP6Address) GetCrcString() string {
 //            ],
 //            [
 //                "u8",
-//                "nh_addr",
+//                "nh_addr6",
 //                16
 //            ],
+//            [
+//                "u8",
+//                "nh_addr4",
+//                4
+//            ],
 //            {
-//                "crc": "0xa833a891"
+//                "crc": "0x20d478a0"
 //            }
 //
 type SrLocalsidAddDel struct {
-	IsDel        uint8
-	LocalsidAddr []byte `struc:"[16]byte"`
-	EndPsp       uint8
-	Behavior     uint8
-	SwIfIndex    uint32
-	VlanIndex    uint32
-	FibTable     uint32
-	NhAddr       []byte `struc:"[16]byte"`
+	IsDel     uint8
+	Localsid  Srv6Sid
+	EndPsp    uint8
+	Behavior  uint8
+	SwIfIndex uint32
+	VlanIndex uint32
+	FibTable  uint32
+	NhAddr6   []byte `struc:"[16]byte"`
+	NhAddr4   []byte `struc:"[4]byte"`
 }
 
 func (*SrLocalsidAddDel) GetMessageName() string {
@@ -101,14 +164,14 @@ func (*SrLocalsidAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SrLocalsidAddDel) GetCrcString() string {
-	return "a833a891"
+	return "20d478a0"
 }
 func NewSrLocalsidAddDel() api.Message {
 	return &SrLocalsidAddDel{}
 }
 
 // SrLocalsidAddDelReply represents the VPP binary API message 'sr_localsid_add_del_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 56:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 60:
 //
 //            "sr_localsid_add_del_reply",
 //            [
@@ -145,7 +208,7 @@ func NewSrLocalsidAddDelReply() api.Message {
 }
 
 // SrPolicyAdd represents the VPP binary API message 'sr_policy_add'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 74:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 78:
 //
 //            "sr_policy_add",
 //            [
@@ -182,27 +245,20 @@ func NewSrLocalsidAddDelReply() api.Message {
 //                "fib_table"
 //            ],
 //            [
-//                "u8",
-//                "n_segments"
-//            ],
-//            [
-//                "vl_api_sr_ip6_address_t",
-//                "segments",
-//                0,
-//                "n_segments"
+//                "vl_api_srv6_sid_list_t",
+//                "sids"
 //            ],
 //            {
-//                "crc": "0x6869ac7f"
+//                "crc": "0xa1676c1f"
 //            }
 //
 type SrPolicyAdd struct {
-	BsidAddr  []byte `struc:"[16]byte"`
-	Weight    uint32
-	IsEncap   uint8
-	Type      uint8
-	FibTable  uint32
-	NSegments uint8 `struc:"sizeof=Segments"`
-	Segments  []SrIP6Address
+	BsidAddr []byte `struc:"[16]byte"`
+	Weight   uint32
+	IsEncap  uint8
+	Type     uint8
+	FibTable uint32
+	Sids     Srv6SidList
 }
 
 func (*SrPolicyAdd) GetMessageName() string {
@@ -212,14 +268,14 @@ func (*SrPolicyAdd) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SrPolicyAdd) GetCrcString() string {
-	return "6869ac7f"
+	return "a1676c1f"
 }
 func NewSrPolicyAdd() api.Message {
 	return &SrPolicyAdd{}
 }
 
 // SrPolicyAddReply represents the VPP binary API message 'sr_policy_add_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 123:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 121:
 //
 //            "sr_policy_add_reply",
 //            [
@@ -256,7 +312,7 @@ func NewSrPolicyAddReply() api.Message {
 }
 
 // SrPolicyMod represents the VPP binary API message 'sr_policy_mod'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 141:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 139:
 //
 //            "sr_policy_mod",
 //            [
@@ -297,17 +353,11 @@ func NewSrPolicyAddReply() api.Message {
 //                "weight"
 //            ],
 //            [
-//                "u8",
-//                "n_segments"
-//            ],
-//            [
-//                "vl_api_sr_ip6_address_t",
-//                "segments",
-//                0,
-//                "n_segments"
+//                "vl_api_srv6_sid_list_t",
+//                "sids"
 //            ],
 //            {
-//                "crc": "0xad91f4b2"
+//                "crc": "0x51252136"
 //            }
 //
 type SrPolicyMod struct {
@@ -317,8 +367,7 @@ type SrPolicyMod struct {
 	Operation     uint8
 	SlIndex       uint32
 	Weight        uint32
-	NSegments     uint8 `struc:"sizeof=Segments"`
-	Segments      []SrIP6Address
+	Sids          Srv6SidList
 }
 
 func (*SrPolicyMod) GetMessageName() string {
@@ -328,14 +377,14 @@ func (*SrPolicyMod) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SrPolicyMod) GetCrcString() string {
-	return "ad91f4b2"
+	return "51252136"
 }
 func NewSrPolicyMod() api.Message {
 	return &SrPolicyMod{}
 }
 
 // SrPolicyModReply represents the VPP binary API message 'sr_policy_mod_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 194:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 186:
 //
 //            "sr_policy_mod_reply",
 //            [
@@ -372,7 +421,7 @@ func NewSrPolicyModReply() api.Message {
 }
 
 // SrPolicyDel represents the VPP binary API message 'sr_policy_del'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 212:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 204:
 //
 //            "sr_policy_del",
 //            [
@@ -388,20 +437,19 @@ func NewSrPolicyModReply() api.Message {
 //                "context"
 //            ],
 //            [
-//                "u8",
-//                "bsid_addr",
-//                16
+//                "vl_api_srv6_sid_t",
+//                "bsid_addr"
 //            ],
 //            [
 //                "u32",
 //                "sr_policy_index"
 //            ],
 //            {
-//                "crc": "0x0388e561"
+//                "crc": "0x168e1a98"
 //            }
 //
 type SrPolicyDel struct {
-	BsidAddr      []byte `struc:"[16]byte"`
+	BsidAddr      Srv6Sid
 	SrPolicyIndex uint32
 }
 
@@ -412,14 +460,14 @@ func (*SrPolicyDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 func (*SrPolicyDel) GetCrcString() string {
-	return "0388e561"
+	return "168e1a98"
 }
 func NewSrPolicyDel() api.Message {
 	return &SrPolicyDel{}
 }
 
 // SrPolicyDelReply represents the VPP binary API message 'sr_policy_del_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 239:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 230:
 //
 //            "sr_policy_del_reply",
 //            [
@@ -456,7 +504,7 @@ func NewSrPolicyDelReply() api.Message {
 }
 
 // SrSetEncapSource represents the VPP binary API message 'sr_set_encap_source'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 257:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 248:
 //
 //            "sr_set_encap_source",
 //            [
@@ -498,7 +546,7 @@ func NewSrSetEncapSource() api.Message {
 }
 
 // SrSetEncapSourceReply represents the VPP binary API message 'sr_set_encap_source_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 280:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 271:
 //
 //            "sr_set_encap_source_reply",
 //            [
@@ -535,7 +583,7 @@ func NewSrSetEncapSourceReply() api.Message {
 }
 
 // SrSteeringAddDel represents the VPP binary API message 'sr_steering_add_del'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 298:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 289:
 //
 //            "sr_steering_add_del",
 //            [
@@ -613,7 +661,7 @@ func NewSrSteeringAddDel() api.Message {
 }
 
 // SrSteeringAddDelReply represents the VPP binary API message 'sr_steering_add_del_reply'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 350:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 341:
 //
 //            "sr_steering_add_del_reply",
 //            [
@@ -650,7 +698,7 @@ func NewSrSteeringAddDelReply() api.Message {
 }
 
 // SrLocalsidsDump represents the VPP binary API message 'sr_localsids_dump'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 368:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 359:
 //
 //            "sr_localsids_dump",
 //            [
@@ -686,7 +734,7 @@ func NewSrLocalsidsDump() api.Message {
 }
 
 // SrLocalsidsDetails represents the VPP binary API message 'sr_localsids_details'.
-// Generated from '/usr/share/vpp/api/sr.api.json', line 386:
+// Generated from '/usr/share/vpp/api/sr.api.json', line 377:
 //
 //            "sr_localsids_details",
 //            [
@@ -698,9 +746,8 @@ func NewSrLocalsidsDump() api.Message {
 //                "context"
 //            ],
 //            [
-//                "u8",
-//                "address",
-//                16
+//                "vl_api_srv6_sid_t",
+//                "addr"
 //            ],
 //            [
 //                "u8",
@@ -715,24 +762,35 @@ func NewSrLocalsidsDump() api.Message {
 //                "fib_table"
 //            ],
 //            [
+//                "u32",
+//                "vlan_index"
+//            ],
+//            [
 //                "u8",
-//                "xconnect_next_hop",
+//                "xconnect_nh_addr6",
 //                16
+//            ],
+//            [
+//                "u8",
+//                "xconnect_nh_addr4",
+//                4
 //            ],
 //            [
 //                "u32",
 //                "xconnect_iface_or_vrf_table"
 //            ],
 //            {
-//                "crc": "0xb6556a9c"
+//                "crc": "0x7ff35765"
 //            }
 //
 type SrLocalsidsDetails struct {
-	Address                 []byte `struc:"[16]byte"`
+	Addr                    Srv6Sid
 	EndPsp                  uint8
 	Behavior                uint16
 	FibTable                uint32
-	XconnectNextHop         []byte `struc:"[16]byte"`
+	VlanIndex               uint32
+	XconnectNhAddr6         []byte `struc:"[16]byte"`
+	XconnectNhAddr4         []byte `struc:"[4]byte"`
 	XconnectIfaceOrVrfTable uint32
 }
 
@@ -743,8 +801,207 @@ func (*SrLocalsidsDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*SrLocalsidsDetails) GetCrcString() string {
-	return "b6556a9c"
+	return "7ff35765"
 }
 func NewSrLocalsidsDetails() api.Message {
 	return &SrLocalsidsDetails{}
+}
+
+// SrPoliciesDump represents the VPP binary API message 'sr_policies_dump'.
+// Generated from '/usr/share/vpp/api/sr.api.json', line 425:
+//
+//            "sr_policies_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type SrPoliciesDump struct {
+}
+
+func (*SrPoliciesDump) GetMessageName() string {
+	return "sr_policies_dump"
+}
+func (*SrPoliciesDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*SrPoliciesDump) GetCrcString() string {
+	return "51077d14"
+}
+func NewSrPoliciesDump() api.Message {
+	return &SrPoliciesDump{}
+}
+
+// SrPoliciesDetails represents the VPP binary API message 'sr_policies_details'.
+// Generated from '/usr/share/vpp/api/sr.api.json', line 443:
+//
+//            "sr_policies_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "vl_api_srv6_sid_t",
+//                "bsid"
+//            ],
+//            [
+//                "u8",
+//                "type"
+//            ],
+//            [
+//                "u8",
+//                "is_encap"
+//            ],
+//            [
+//                "u32",
+//                "fib_table"
+//            ],
+//            [
+//                "u8",
+//                "num_sid_lists"
+//            ],
+//            [
+//                "vl_api_srv6_sid_list_t",
+//                "sid_lists",
+//                0,
+//                "num_sid_lists"
+//            ],
+//            {
+//                "crc": "0xae838a76"
+//            }
+//
+type SrPoliciesDetails struct {
+	Bsid        Srv6Sid
+	Type        uint8
+	IsEncap     uint8
+	FibTable    uint32
+	NumSidLists uint8 `struc:"sizeof=SidLists"`
+	SidLists    []Srv6SidList
+}
+
+func (*SrPoliciesDetails) GetMessageName() string {
+	return "sr_policies_details"
+}
+func (*SrPoliciesDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*SrPoliciesDetails) GetCrcString() string {
+	return "ae838a76"
+}
+func NewSrPoliciesDetails() api.Message {
+	return &SrPoliciesDetails{}
+}
+
+// SrSteeringPolDump represents the VPP binary API message 'sr_steering_pol_dump'.
+// Generated from '/usr/share/vpp/api/sr.api.json', line 483:
+//
+//            "sr_steering_pol_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type SrSteeringPolDump struct {
+}
+
+func (*SrSteeringPolDump) GetMessageName() string {
+	return "sr_steering_pol_dump"
+}
+func (*SrSteeringPolDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*SrSteeringPolDump) GetCrcString() string {
+	return "51077d14"
+}
+func NewSrSteeringPolDump() api.Message {
+	return &SrSteeringPolDump{}
+}
+
+// SrSteeringPolDetails represents the VPP binary API message 'sr_steering_pol_details'.
+// Generated from '/usr/share/vpp/api/sr.api.json', line 501:
+//
+//            "sr_steering_pol_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "traffic_type"
+//            ],
+//            [
+//                "u32",
+//                "fib_table"
+//            ],
+//            [
+//                "u8",
+//                "prefix_addr",
+//                16
+//            ],
+//            [
+//                "u32",
+//                "mask_width"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "vl_api_srv6_sid_t",
+//                "bsid"
+//            ],
+//            {
+//                "crc": "0x1c756f85"
+//            }
+//
+type SrSteeringPolDetails struct {
+	TrafficType uint8
+	FibTable    uint32
+	PrefixAddr  []byte `struc:"[16]byte"`
+	MaskWidth   uint32
+	SwIfIndex   uint32
+	Bsid        Srv6Sid
+}
+
+func (*SrSteeringPolDetails) GetMessageName() string {
+	return "sr_steering_pol_details"
+}
+func (*SrSteeringPolDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*SrSteeringPolDetails) GetCrcString() string {
+	return "1c756f85"
+}
+func NewSrSteeringPolDetails() api.Message {
+	return &SrSteeringPolDetails{}
 }

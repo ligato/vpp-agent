@@ -1,4 +1,18 @@
+# Release v1.5.2 (2018-07-23)
+
+## Compatibility
+- VPP 18.07-rc0~358-ga5ee900
+- cn-infra v1.4.1 (minor version fixes bug in Consul)
+
+## Bugfix
+- [Telemetry](plugins/telemetry)
+  * Fixed bug where lack of config file could cause continuous polling. The interval now also 
+  cannot be changed to value less than 5 seconds.
+  * Telemetry plugin is now closed properly
+
 # Release v1.5.1 (2018-07-20)
+
+## Compatibility
 - VPP 18.07-rc0~358-ga5ee900
 - cn-infra v1.4
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump
+package vppcalls_test
 
 import (
 	"testing"
@@ -22,7 +22,6 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
@@ -30,7 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	interfaces2 "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
@@ -81,17 +79,17 @@ func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.Rep
 // Test dump of interfaces without any replies, should return error and nil
 // interfaces
 func TestDumpInterfacesFullySilent(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump if interfaces without replying to all requests
 func TestDumpInterfacesSilentSwInterfaceGetTableReply(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -102,14 +100,14 @@ func TestDumpInterfacesSilentSwInterfaceGetTableReply(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump if interfaces without replying to all requests
 func TestDumpInterfacesSilentIpAddressDetails(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -125,14 +123,14 @@ func TestDumpInterfacesSilentIpAddressDetails(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump if interfaces without replying to all requests
 func TestDumpInterfacesSilentMemifSocketFilenameDetails(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -153,14 +151,14 @@ func TestDumpInterfacesSilentMemifSocketFilenameDetails(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump if interfaces without replying to all requests
 func TestDumpInterfacesSilentMemifDetails(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -186,14 +184,14 @@ func TestDumpInterfacesSilentMemifDetails(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump if interfaces without replying to all requests
 func TestDumpInterfacesSilentSwInterfaceTapDetails(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -224,14 +222,14 @@ func TestDumpInterfacesSilentSwInterfaceTapDetails(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump if interfaces without replying to all requests
 func TestDumpInterfacesSilentSwInterfaceTapV2Details(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -267,14 +265,14 @@ func TestDumpInterfacesSilentSwInterfaceTapV2Details(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump if interfaces without replying to all requests
 func TestDumpInterfacesSilentVxlanTunnelDetails(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -315,14 +313,14 @@ func TestDumpInterfacesSilentVxlanTunnelDetails(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(Not(BeNil()))
 	Expect(intfs).To(BeNil())
 }
 
 // Test dump of interfaces with vxlan type
 func TestDumpInterfacesVxLan(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ipv61Parse := net.ParseIP("dead:beef:feed:face:cafe:babe:baad:c0de").To16()
@@ -378,7 +376,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0]
@@ -390,7 +388,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 
 // Test dump of interfaces with host type
 func TestDumpInterfacesHost(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -438,7 +436,7 @@ func TestDumpInterfacesHost(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0]
@@ -449,7 +447,7 @@ func TestDumpInterfacesHost(t *testing.T) {
 
 // Test dump of interfaces with memif type
 func TestDumpInterfacesMemif(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
@@ -508,7 +506,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 	intface := intfs[0]
@@ -523,7 +521,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 // Test dump of interfaces using custom mock reply handler to avoid issues with ControlPingMessageReply
 // not being properly recognized
 func TestDumpInterfacesFull(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	hwAddr1Parse, err := net.ParseMAC("01:23:45:67:89:ab")
@@ -603,7 +601,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 		},
 	}))
 
-	intfs, err := DumpInterfaces(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 
@@ -634,7 +632,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 
 // Test dump of memif socket details using standard reply mocking
 func TestDumpMemifSocketDetails(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameDetails{
@@ -644,7 +642,7 @@ func TestDumpMemifSocketDetails(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	result, err := DumpMemifSocketDetails(logrus.DefaultLogger(), ctx.MockChannel, nil)
+	result, err := ifHandler.DumpMemifSocketDetails()
 	Expect(err).To(BeNil())
 	Expect(result).To(Not(BeEmpty()))
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls
+package vppcalls_test
 
 import (
 	"net"
@@ -23,12 +23,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestAddVxlanTunnel(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
@@ -36,11 +35,11 @@ func TestAddVxlanTunnel(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	swIfIdx, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, 0, 2, ctx.MockChannel, nil)
+	}, 0, 2)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
@@ -61,7 +60,7 @@ func TestAddVxlanTunnel(t *testing.T) {
 }
 
 func TestAddVxlanTunnelWithVrf(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// VRF resolution
@@ -74,11 +73,11 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	swIfIdx, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, 1, 1, ctx.MockChannel, nil)
+	}, 1, 1)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
@@ -99,7 +98,7 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 }
 
 func TestAddVxlanTunnelIPv6(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
@@ -107,11 +106,11 @@ func TestAddVxlanTunnelIPv6(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	swIfIdx, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "2001:db8:0:1:1:1:1:1",
 		DstAddress: "2002:db8:0:1:1:1:1:1",
 		Vni:        1,
-	}, 0, 0, ctx.MockChannel, nil)
+	}, 0, 0)
 	Expect(err).To(BeNil())
 	Expect(swIfIdx).To(BeEquivalentTo(1))
 	var msgCheck bool
@@ -128,7 +127,7 @@ func TestAddVxlanTunnelIPv6(t *testing.T) {
 }
 
 func TestAddVxlanTunnelIPMismatch(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
@@ -136,16 +135,16 @@ func TestAddVxlanTunnelIPMismatch(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	_, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "2001:db8:0:1:1:1:1:1",
 		Vni:        1,
-	}, 0, 0, ctx.MockChannel, nil)
+	}, 0, 0)
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddVxlanTunnelInvalidIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
@@ -153,31 +152,31 @@ func TestAddVxlanTunnelInvalidIP(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	_, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "invalid-ip",
 		DstAddress: "2001:db8:0:1:1:1:1:1",
 		Vni:        1,
-	}, 0, 0, ctx.MockChannel, nil)
+	}, 0, 0)
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddVxlanTunnelError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnel{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	_, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.2",
 		Vni:        1,
-	}, 0, 0, ctx.MockChannel, nil)
+	}, 0, 0)
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddVxlanTunnelWithVrfError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// VRF resolution
@@ -190,16 +189,16 @@ func TestAddVxlanTunnelWithVrfError(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	_, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, 1, 0, ctx.MockChannel, nil)
+	}, 1, 0)
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddVxlanTunnelRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
@@ -207,16 +206,16 @@ func TestAddVxlanTunnelRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
+	_, err := ifHandler.AddVxlanTunnel("ifName", &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.2",
 		Vni:        1,
-	}, 0, 0, ctx.MockChannel, nil)
+	}, 0, 0)
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDeleteVxlanTunnel(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
@@ -224,31 +223,31 @@ func TestDeleteVxlanTunnel(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := DeleteVxlanTunnel("ifName", 1, &ifModel.Interfaces_Interface_Vxlan{
+	err := ifHandler.DeleteVxlanTunnel("ifName", 1, &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, ctx.MockChannel, nil)
+	})
 	Expect(err).To(BeNil())
 }
 
 func TestDeleteVxlanTunnelError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnel{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := DeleteVxlanTunnel("ifName", 1, &ifModel.Interfaces_Interface_Vxlan{
+	err := ifHandler.DeleteVxlanTunnel("ifName", 1, &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, ctx.MockChannel, nil)
+	})
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDeleteVxlanTunnelRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
@@ -256,10 +255,10 @@ func TestDeleteVxlanTunnelRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := DeleteVxlanTunnel("ifName", 1, &ifModel.Interfaces_Interface_Vxlan{
+	err := ifHandler.DeleteVxlanTunnel("ifName", 1, &ifModel.Interfaces_Interface_Vxlan{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
-	}, ctx.MockChannel, nil)
+	})
 	Expect(err).ToNot(BeNil())
 }

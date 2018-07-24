@@ -28,6 +28,7 @@ type AclVppAPI interface {
 	AclVppRead
 }
 
+// AclVppWrite provides write methods for ACL plugin
 type AclVppWrite interface {
 	// AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
 	AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error)
@@ -55,6 +56,7 @@ type AclVppWrite interface {
 	RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error
 }
 
+// AclVppRead provides read methods for ACL plugin
 type AclVppRead interface {
 	// GetAclPluginVersion returns version of the VPP ACL plugin
 	GetAclPluginVersion() (string, error)
@@ -90,10 +92,14 @@ type aclVppHandler struct {
 }
 
 // NewAclVppHandler creates new instance of acl vppcalls handler
-func NewAclVppHandler(callsChan, dumpChan govppapi.Channel, stopwatch *measure.Stopwatch) *aclVppHandler {
-	return &aclVppHandler{
+func NewAclVppHandler(callsChan, dumpChan govppapi.Channel, stopwatch *measure.Stopwatch) (*aclVppHandler, error) {
+	handler := &aclVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
 		stopwatch:    stopwatch,
 	}
+	if err := handler.callsChannel.CheckMessageCompatibility(AclMessages...); err != nil {
+		return nil, err
+	}
+	return handler, nil
 }

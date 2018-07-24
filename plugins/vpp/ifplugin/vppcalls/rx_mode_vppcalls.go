@@ -18,16 +18,13 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-// SetRxMode calls SwInterfaceSetRxMode bin
-func SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceSetRxMode{
@@ -38,7 +35,7 @@ func SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSet
 	}
 
 	reply := &interfaces.SwInterfaceSetRxModeReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
