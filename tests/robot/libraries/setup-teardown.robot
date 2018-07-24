@@ -69,6 +69,7 @@ Discard old results
     Remove Directory    ${RESULTS_FOLDER_SUITE}           recursive=true
     Create Directory    ${RESULTS_FOLDER}
 
+
 Log All SSH Outputs
     [Documentation]           *Log All SSH Outputs*
     ...                       Logs all connections outputs
