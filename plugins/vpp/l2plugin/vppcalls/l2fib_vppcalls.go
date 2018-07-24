@@ -21,7 +21,6 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
@@ -47,29 +46,10 @@ type FibLogicalReq struct {
 	callback func(error)
 }
 
-// L2FibVppCalls aggregates vpp calls related to l2 fib.
-type L2FibVppCalls struct {
-	log         logging.Logger
-	vppChan     govppapi.Channel
-	stopwatch   *measure.Stopwatch
-	requestChan chan *FibLogicalReq
-}
+func (handler *fibVppHandler) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error)) error {
+	handler.log.Debug("Adding L2 FIB table entry, mac: ", mac)
 
-// NewL2FibVppCalls is a constructor.
-func NewL2FibVppCalls(log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) *L2FibVppCalls {
-	return &L2FibVppCalls{
-		log:         log,
-		vppChan:     vppChan,
-		stopwatch:   stopwatch,
-		requestChan: make(chan *FibLogicalReq),
-	}
-}
-
-// Add creates L2 FIB table entry.
-func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error)) error {
-	fib.log.Debug("Adding L2 FIB table entry, mac: ", mac)
-
-	fib.requestChan <- &FibLogicalReq{
+	handler.requestChan <- &FibLogicalReq{
 		IsAdd:    true,
 		MAC:      mac,
 		BDIdx:    bdID,
@@ -81,11 +61,10 @@ func (fib *L2FibVppCalls) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, s
 	return nil
 }
 
-// Delete removes existing L2 FIB table entry.
-func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error)) error {
-	fib.log.Debug("Removing L2 fib table entry, mac: ", mac)
+func (handler *fibVppHandler) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error)) error {
+	handler.log.Debug("Removing L2 fib table entry, mac: ", mac)
 
-	fib.requestChan <- &FibLogicalReq{
+	handler.requestChan <- &FibLogicalReq{
 		IsAdd:    false,
 		MAC:      mac,
 		BDIdx:    bdID,
@@ -95,18 +74,17 @@ func (fib *L2FibVppCalls) Delete(mac string, bdID uint32, ifIdx uint32, callback
 	return nil
 }
 
-// WatchFIBReplies handles L2 FIB add/del requests
-func (fib *L2FibVppCalls) WatchFIBReplies() {
+func (handler *fibVppHandler) WatchFIBReplies() {
 	for {
 		select {
-		case r := <-fib.requestChan:
-			fib.log.Debug("VPP L2FIB request: ", r)
-			err := l2fibAddDel(r.MAC, r.BDIdx, r.SwIfIdx, r.BVI, r.Static, r.IsAdd, fib.vppChan, fib.stopwatch)
+		case r := <-handler.requestChan:
+			handler.log.Debug("VPP L2FIB request: ", r)
+			err := handler.l2fibAddDel(r.MAC, r.BDIdx, r.SwIfIdx, r.BVI, r.Static, r.IsAdd)
 			if err != nil {
-				fib.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
+				handler.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
 					Error("Static fib entry add/delete failed:", err)
 			} else {
-				fib.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
+				handler.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
 					Debug("Static fib entry added/deleted.")
 			}
 			r.callback(err)
@@ -114,9 +92,9 @@ func (fib *L2FibVppCalls) WatchFIBReplies() {
 	}
 }
 
-func l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func (handler *fibVppHandler) l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool) (err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	var mac []byte
@@ -137,7 +115,7 @@ func l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool, 
 	}
 
 	reply := &l2ba.L2fibAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.asyncCallsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

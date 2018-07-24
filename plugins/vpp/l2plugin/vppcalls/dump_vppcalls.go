@@ -12,30 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppdump
+package vppcalls
 
 import (
 	"bytes"
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
-// DumpBridgeDomainIDs lists all configured bridge domains. Auxiliary method for LookupFIBEntries.
-// returns list of bridge domain IDs (BD IDs). First element of returned slice is 0. It is default BD to which all
-// interfaces belong
-func DumpBridgeDomainIDs(vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) ([]uint32, error) {
+func (handler *bridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	activeDomains := make([]uint32, 1)
-	reqCtx := vppChannel.SendMultiRequest(req)
+	reqCtx := handler.callsChannel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.BridgeDomainDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
@@ -64,22 +59,16 @@ type BridgeDomainInterface struct {
 	l2nb.BridgeDomains_BridgeDomain_Interfaces
 }
 
-// DumpBridgeDomains dumps VPP bridge domain data into the northbound API data structure
-// map indexed by bridge domain ID.
-//
-// LIMITATIONS:
-// - not able to dump ArpTerminationTable - missing binary API
-//
-func DumpBridgeDomains(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*BridgeDomain, error) {
+func (handler *bridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomain, error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// map for the resulting BDs
 	bds := make(map[uint32]*BridgeDomain)
 
 	// First, dump all interfaces to create initial data.
-	reqCtx := vppChan.SendMultiRequest(&l2ba.BridgeDomainDump{BdID: ^uint32(0)})
+	reqCtx := handler.callsChannel.SendMultiRequest(&l2ba.BridgeDomainDump{BdID: ^uint32(0)})
 
 	for {
 		bdDetails := &l2ba.BridgeDomainDetails{}
@@ -124,17 +113,15 @@ type FIBTableEntry struct {
 	l2nb.FibTable_FibEntry
 }
 
-// DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
-// map indexed by destination MAC address.
-func DumpFIBTableEntries(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[string]*FIBTableEntry, error) {
+func (handler *fibVppHandler) DumpFIBTableEntries() (map[string]*FIBTableEntry, error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// map for the resulting FIBs
 	fibs := make(map[string]*FIBTableEntry)
 
-	reqCtx := vppChan.SendMultiRequest(&l2ba.L2FibTableDump{BdID: ^uint32(0)})
+	reqCtx := handler.syncCallsChannel.SendMultiRequest(&l2ba.L2FibTableDump{BdID: ^uint32(0)})
 	for {
 		fibDetails := &l2ba.L2FibTableDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -174,17 +161,15 @@ type XConnectPairs struct {
 	TransmitInterfaceSwIfIdx uint32 `json:"transmit_interface_sw_if_idx"`
 }
 
-// DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure
-// map indexed by rx interface index.
-func DumpXConnectPairs(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (map[uint32]*XConnectPairs, error) {
+func (handler *xConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectPairs, error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*XConnectPairs)
 
-	reqCtx := vppChan.SendMultiRequest(&l2ba.L2XconnectDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&l2ba.L2XconnectDump{})
 	for {
 		pairs := &l2ba.L2XconnectDetails{}
 		stop, err := reqCtx.ReceiveReply(pairs)
