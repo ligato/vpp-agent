@@ -51,6 +51,8 @@ type ProxyArpConfigurator struct {
 
 	// VPP channel
 	vppChan govppapi.Channel
+	// VPP API channel
+	pArpHandler vppcalls.ProxyArpVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -62,6 +64,11 @@ func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux g
 	// Logger
 	plugin.log = logger.NewLogger("-l3-proxy-arp-conf")
 	plugin.log.Debugf("Initializing proxy ARP configurator")
+
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("ARP-proxy-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
@@ -75,9 +82,9 @@ func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux g
 		return err
 	}
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("ProxyARPConfigurator", plugin.log)
+	// VPP API handler
+	if plugin.pArpHandler, err = vppcalls.NewProxyArpVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+		return err
 	}
 
 	// Message compatibility
@@ -134,7 +141,7 @@ func (plugin *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_I
 		}
 
 		// Call VPP API to enable interface for proxy ARP
-		if err := vppcalls.EnableProxyArpInterface(ifIdx, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+		if err := plugin.pArpHandler.EnableProxyArpInterface(ifIdx); err == nil {
 			plugin.log.Debugf("Interface %s enabled for proxy ARP", ifName)
 		} else {
 			err := fmt.Errorf("enabling interface %s for proxy ARP failed: %v", ifName, err)
@@ -168,7 +175,7 @@ func (plugin *ProxyArpConfigurator) ModifyInterface(newPArpIf, oldPArpIf *l3.Pro
 		ifIdx, _, found := plugin.ifIndexes.LookupIdx(ifName)
 		// If interface is not found, there is nothing to do
 		if found {
-			if err := vppcalls.DisableProxyArpInterface(ifIdx, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+			if err := plugin.pArpHandler.DisableProxyArpInterface(ifIdx); err == nil {
 				plugin.log.Debugf("Interface %s disabled for proxy ARP", ifName)
 			} else {
 				err = fmt.Errorf("disabling interface %s for proxy ARP failed: %v", ifName, err)
@@ -187,7 +194,7 @@ func (plugin *ProxyArpConfigurator) ModifyInterface(newPArpIf, oldPArpIf *l3.Pro
 			continue
 		}
 		// Configure
-		if err := vppcalls.EnableProxyArpInterface(ifIdx, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+		if err := plugin.pArpHandler.EnableProxyArpInterface(ifIdx); err == nil {
 			plugin.log.Debugf("Interface %s enabled for proxy ARP", ifName)
 		} else {
 			err := fmt.Errorf("enabling interface %s for proxy ARP failed: %v", ifName, err)
@@ -222,7 +229,7 @@ ProxyArpIfLoop:
 			continue
 		}
 		// Call VPP API to disable interface for proxy ARP
-		if err := vppcalls.DisableProxyArpInterface(ifIdx, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+		if err := plugin.pArpHandler.DisableProxyArpInterface(ifIdx); err == nil {
 			plugin.log.Debugf("Interface %s disabled for proxy ARP", ifName)
 		} else {
 			err = fmt.Errorf("disabling interface %s for proxy ARP failed: %v", ifName, err)
@@ -257,7 +264,7 @@ func (plugin *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_RangeLis
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := vppcalls.AddProxyArpRange(bFirstIP, bLastIP, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+		if err := plugin.pArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err == nil {
 			plugin.log.Debugf("Address range %s - %s configured for proxy ARP", firstIP, lastIP)
 		} else {
 			err := fmt.Errorf("failed to configure proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
@@ -295,7 +302,7 @@ func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.Proxy
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := vppcalls.DeleteProxyArpRange(bFirstIP, bLastIP, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+		if err := plugin.pArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err == nil {
 			plugin.log.Debugf("Address range %s - %s removed from proxy ARP setup", firstIP, lastIP)
 		} else {
 			err = fmt.Errorf("failed to remove proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
@@ -320,7 +327,7 @@ func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.Proxy
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := vppcalls.AddProxyArpRange(bFirstIP, bLastIP, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+		if err := plugin.pArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err == nil {
 			plugin.log.Debugf("Address range %s - %s configured for proxy ARP", firstIP, lastIP)
 		} else {
 			err := fmt.Errorf("failed to configure proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
@@ -352,7 +359,7 @@ func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_Range
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := vppcalls.DeleteProxyArpRange(bFirstIP, bLastIP, plugin.vppChan, plugin.log, plugin.stopwatch); err == nil {
+		if err := plugin.pArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err == nil {
 			plugin.log.Debugf("Address range %s - %s removed from proxy ARP setup", firstIP, lastIP)
 		} else {
 			err = fmt.Errorf("failed to remove proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
@@ -375,7 +382,7 @@ func (plugin *ProxyArpConfigurator) ResolveCreatedInterface(ifName string, ifIdx
 	for idx, cachedIf := range plugin.pArpIfCache {
 		if cachedIf == ifName {
 			// Configure cached interface
-			if err := vppcalls.EnableProxyArpInterface(ifIdx, plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+			if err := plugin.pArpHandler.EnableProxyArpInterface(ifIdx); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
