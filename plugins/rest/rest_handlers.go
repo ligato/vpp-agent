@@ -31,7 +31,7 @@ import (
 
 	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
+	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
@@ -84,7 +84,13 @@ func (plugin *Plugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.H
 		}
 		defer ch.Close()
 
-		res, err := l2plugin.DumpBridgeDomainIDs(ch, nil)
+		bdHandler, err := l2plugin.NewBridgeDomainVppHandler(ch, plugin.Log, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error creating VPP handler: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		res, err := bdHandler.DumpBridgeDomainIDs()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
@@ -111,7 +117,13 @@ func (plugin *Plugin) bridgeDomainsGetHandler(formatter *render.Render) http.Han
 		}
 		defer ch.Close()
 
-		res, err := l2plugin.DumpBridgeDomains(ch, nil)
+		bdHandler, err := l2plugin.NewBridgeDomainVppHandler(ch, plugin.Log, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error creating VPP handler: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		res, err := bdHandler.DumpBridgeDomains()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -138,7 +150,13 @@ func (plugin *Plugin) fibTableEntriesGetHandler(formatter *render.Render) http.H
 		}
 		defer ch.Close()
 
-		res, err := l2plugin.DumpFIBTableEntries(ch, nil)
+		fibHandler, err := l2plugin.NewFibVppHandler(ch, nil, make(chan *l2plugin.FibLogicalReq), plugin.Log, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error creating VPP handler: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		res, err := fibHandler.DumpFIBTableEntries()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -165,7 +183,13 @@ func (plugin *Plugin) xconnectPairsGetHandler(formatter *render.Render) http.Han
 		}
 		defer ch.Close()
 
-		res, err := l2plugin.DumpXConnectPairs(ch, nil)
+		xcHandler, err := l2plugin.NewXConnectVppHandler(ch, plugin.Log, nil)
+		if err != nil {
+			plugin.Log.Errorf("Error creating VPP handler: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		res, err := xcHandler.DumpXConnectPairs()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)

@@ -15,6 +15,8 @@
 package l2plugin_test
 
 import (
+	"testing"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
@@ -29,7 +31,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator, error) {
