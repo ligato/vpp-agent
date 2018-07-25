@@ -78,7 +78,7 @@ func (handler *bridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDo
 		for _, iface := range bdDetails.SwIfDetails {
 			ifName, _, exists := handler.ifIndexes.LookupName(iface.SwIfIndex)
 			if !exists {
-				handler.log.Warnf("Bridge domain dump: interface name for index %s not found", iface.SwIfIndex)
+				handler.log.Warnf("Bridge domain dump: interface name for index %d not found", iface.SwIfIndex)
 				continue
 			}
 			// Bvi

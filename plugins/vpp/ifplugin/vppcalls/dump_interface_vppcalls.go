@@ -43,6 +43,7 @@ type InterfaceDetails struct {
 
 // InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
 type InterfaceMeta struct {
+	SwIfIndex    uint32 `json:"sw_if_index"`
 	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
 }
@@ -80,6 +81,7 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 				}(ifDetails.LinkMtu),
 			},
 			Meta: &InterfaceMeta{
+				SwIfIndex:    ifDetails.SwIfIndex,
 				Tag:          string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0]),
 				InternalName: string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0]),
 			},
@@ -94,6 +96,17 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 			fillAFPacketDetails(ifs, ifDetails.SwIfIndex, details.Meta.InternalName)
 		}
 	}
+
+	// Get vrf for every interface
+	for _, ifData := range ifs {
+		vrf, err := handler.GetInterfaceVRF(ifData.Meta.SwIfIndex)
+		if err != nil {
+			handler.log.Warnf("Interface dump: failed to get VRF from interface %d", ifData.Meta.SwIfIndex)
+			continue
+		}
+		ifData.Interface.Vrf = vrf
+	}
+
 
 	handler.log.Debugf("dumped %d interfaces", len(ifs))
 
