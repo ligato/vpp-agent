@@ -19,7 +19,9 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -53,7 +55,7 @@ scenarios:
 */
 // TestVppSetL2XConnect tests VppSetL2XConnect method
 func TestVppSetL2XConnect(t *testing.T) {
-	ctx, xcHandler := xcTestSetup(t)
+	ctx, xcHandler, _ := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	for i := 0; i < len(setTestDataInXConnect); i++ {
@@ -98,7 +100,7 @@ scenarios:
 */
 // TestVppUnsetL2XConnect tests VppUnsetL2XConnect method
 func TestVppUnsetL2XConnect(t *testing.T) {
-	ctx, xcHandler := xcTestSetup(t)
+	ctx, xcHandler, _ := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	for i := 0; i < len(unsetTestDataInXConnect); i++ {
@@ -115,10 +117,11 @@ func TestVppUnsetL2XConnect(t *testing.T) {
 	}
 }
 
-func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI) {
+func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI, ifaceidx.SwIfIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	xcHandler, err := vppcalls.NewXConnectVppHandler(ctx.MockChannel, log, nil)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if-idx", nil))
+	xcHandler, err := vppcalls.NewXConnectVppHandler(ctx.MockChannel, ifIndexes, log, nil)
 	Expect(err).To(BeNil())
-	return ctx, xcHandler
+	return ctx, xcHandler, ifIndexes
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
@@ -60,7 +61,7 @@ type BridgeDomainVppRead interface {
 	// LIMITATIONS:
 	// - not able to dump ArpTerminationTable - missing binary API
 	//
-	DumpBridgeDomains() (map[uint32]*BridgeDomain, error)
+	DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error)
 }
 
 // FibVppAPI provides methods for managing FIBs
@@ -81,7 +82,7 @@ type FibVppWrite interface {
 type FibVppRead interface {
 	// DumpFIBTableEntries dumps VPP FIB table entries into the northbound API data structure
 	// map indexed by destination MAC address.
-	DumpFIBTableEntries() (map[string]*FIBTableEntry, error)
+	DumpFIBTableEntries() (map[string]*FibTableDetails, error)
 	// WatchFIBReplies handles L2 FIB add/del requests
 	WatchFIBReplies()
 }
@@ -104,13 +105,14 @@ type XConnectVppWrite interface {
 type XConnectVppRead interface {
 	// DumpXConnectPairs dumps VPP xconnect pair data into the northbound API data structure
 	// map indexed by rx interface index.
-	DumpXConnectPairs() (map[uint32]*XConnectPairs, error)
+	DumpXConnectPairs() (map[uint32]*XConnectDetails, error)
 }
 
 // bridgeDomainVppHandler is accessor for bridge domain-related vppcalls methods
 type bridgeDomainVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
@@ -120,6 +122,8 @@ type fibVppHandler struct {
 	syncCallsChannel  govppapi.Channel
 	asyncCallsChannel govppapi.Channel
 	requestChan       chan *FibLogicalReq
+	ifIndexes         ifaceidx.SwIfIndex
+	bdIndexes         l2idx.BDIndex
 	log               logging.Logger
 }
 
@@ -127,14 +131,16 @@ type fibVppHandler struct {
 type xConnectVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
 // NewBridgeDomainVppHandler creates new instance of bridge domain vppcalls handler
-func NewBridgeDomainVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*bridgeDomainVppHandler, error) {
+func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*bridgeDomainVppHandler, error) {
 	handler := &bridgeDomainVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(BridgeDomainMessages...); err != nil {
@@ -145,12 +151,15 @@ func NewBridgeDomainVppHandler(callsChan govppapi.Channel, log logging.Logger, s
 }
 
 // NewFibVppHandler creates new instance of FIB vppcalls handler
-func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, reqChan chan *FibLogicalReq, log logging.Logger, stopwatch *measure.Stopwatch) (*fibVppHandler, error) {
+func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, reqChan chan *FibLogicalReq, ifIndexes ifaceidx.SwIfIndex, bdIndexes l2idx.BDIndex,
+	log logging.Logger, stopwatch *measure.Stopwatch) (*fibVppHandler, error) {
 	handler := &fibVppHandler{
 		syncCallsChannel:  syncChan,
 		asyncCallsChannel: asyncChan,
 		requestChan:       reqChan,
 		stopwatch:         stopwatch,
+		ifIndexes:         ifIndexes,
+		bdIndexes:         bdIndexes,
 		log:               log,
 	}
 	if err := handler.syncCallsChannel.CheckMessageCompatibility(L2FibMessages...); err != nil {
@@ -161,10 +170,11 @@ func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, reqChan chan *FibLog
 }
 
 // NewXConnectVppHandler creates new instance of cross connect vppcalls handler
-func NewXConnectVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*xConnectVppHandler, error) {
+func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*xConnectVppHandler, error) {
 	handler := &xConnectVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(XConnectMessages...); err != nil {

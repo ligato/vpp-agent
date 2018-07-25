@@ -43,6 +43,7 @@ type InterfaceDetails struct {
 
 // InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
 type InterfaceMeta struct {
+	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
 }
 
@@ -79,6 +80,7 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 				}(ifDetails.LinkMtu),
 			},
 			Meta: &InterfaceMeta{
+				Tag:          string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0]),
 				InternalName: string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0]),
 			},
 		}
