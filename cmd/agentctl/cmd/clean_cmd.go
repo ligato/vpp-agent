@@ -55,9 +55,9 @@ If no data type filter is specified, all data for the specified vpp(s)
 will be deleted. If no [agent-label-filter] argument is specified, data
 for all agents will be deleted.`,
 		dataTypeFlagName, dataTypeFlagName,
-		status.StatusPrefix, interfaces.InterfacePrefix,
-		interfaces.IfStatePrefix, l2.BdPrefix,
-		l2.XconnectPrefix, l3.RoutesPrefix),
+		status.StatusPrefix, interfaces.InterfaceKeyPrefix(),
+		interfaces.InterfaceStateKeyPrefix(), l2.BridgeDomainKeyPrefix(),
+		l2.XConnectKeyPrefix(), l3.RoutesPrefix),
 	Example: fmt.Sprintf(`  Delete all data for "vpp1":
     $ agentctl clean vpp1
   Delete status data for "vpp1"":
@@ -66,7 +66,7 @@ for all agents will be deleted.`,
     $ agentctl clean vpp1 -dataType %s,%s
   Delete all data for all agents (no filter):
     $ agentctl clean`,
-		status.StatusPrefix, status.StatusPrefix, interfaces.InterfacePrefix),
+		status.StatusPrefix, status.StatusPrefix, interfaces.InterfaceKeyPrefix()),
 	Run: cleanFunc,
 }
 

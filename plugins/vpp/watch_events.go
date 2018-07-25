@@ -113,7 +113,7 @@ func (plugin *Plugin) onStatusResyncEvent(e datasync.ResyncEvent) {
 					wasError = err
 				}
 			}
-		} else if strings.HasPrefix(key, l2.BdStatePrefix) {
+		} else if strings.HasPrefix(key, l2.BridgeDomainStateKeyPrefix()) {
 			var keys []string
 			for {
 				x, stop := vals.GetNext()

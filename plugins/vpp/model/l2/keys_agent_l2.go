@@ -17,52 +17,62 @@ package l2
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ligato/vpp-agent/plugins/vpp/model"
 )
 
 // Prefixes
 const (
-	// BdPrefix is the relative key prefix for bridge domains.
-	BdPrefix = "vpp/config/v1/bd/"
-	// BdStatePrefix is the relative key prefix for bridge domain state.
-	BdStatePrefix = "vpp/status/v1/bd/"
-	// BdErrPrefix is the relative key prefix for the bridge domain error.
-	BdErrPrefix = "vpp/status/v1/bd/error/"
-	// FIBPrefix is the relative key prefix for FIB table entries.
-	FIBPrefix = "vpp/config/v1/bd/{bd}/fib/"
-	// XconnectPrefix is the relative key prefix for xconnects.
-	XconnectPrefix = "vpp/config/v1/xconnect/"
+	// bdPrefix is the relative key prefix for bridge domains.
+	bdPrefix = "vpp/config" + model.ProtoApiVersion + "bd/"
+	// bdStatePrefix is the relative key prefix for bridge domain state.
+	bdStatePrefix = "vpp/status" + model.ProtoApiVersion + "bd/"
+	// bdErrPrefix is the relative key prefix for the bridge domain error.
+	bdErrPrefix = "vpp/status" + model.ProtoApiVersion + "bd/error/"
+	// restBd is rest bridge domain path
+	restBd = model.ProtoApiVersion + "bd"
+	// restBdId is rest bridge domain ID path
+	restBdId = model.ProtoApiVersion + "bdid"
+	// fibPrefix is the relative key prefix for FIB table entries.
+	fibPrefix = "vpp/config/v1/bd/{bd}/fib/"
+	// restFib is rest FIB path
+	restFib = model.ProtoApiVersion + "fib"
+	// xConnectPrefix is the relative key prefix for xconnects.
+	xConnectPrefix = "vpp/config/v1/xconnect/"
+	// restXc is rest cross-connect path
+	restXc = model.ProtoApiVersion + "xc"
 )
 
 // BridgeDomainKeyPrefix returns the prefix used in ETCD to store vpp bridge domain config.
 func BridgeDomainKeyPrefix() string {
-	return BdPrefix
+	return bdPrefix
 }
 
 // BridgeDomainKey returns the prefix used in ETCD to store vpp bridge domain config
 // of a particular bridge domain in selected vpp instance.
 func BridgeDomainKey(bdName string) string {
-	return BdPrefix + bdName
+	return bdPrefix + bdName
 }
 
 // BridgeDomainStateKeyPrefix returns the prefix used in ETCD to store vpp bridge domain state data.
 func BridgeDomainStateKeyPrefix() string {
-	return BdStatePrefix
+	return bdStatePrefix
 }
 
 // BridgeDomainStateKey returns the prefix used in ETCD to store vpp bridge domain state data
 // of a particular bridge domain in selected vpp instance.
 func BridgeDomainStateKey(ifaceLabel string) string {
-	return BdStatePrefix + ifaceLabel
+	return bdStatePrefix + ifaceLabel
 }
 
 // BridgeDomainErrorPrefix returns the prefix used in ETCD to store bridge domain errors.
 func BridgeDomainErrorPrefix() string {
-	return BdErrPrefix
+	return bdErrPrefix
 }
 
 // BridgeDomainErrorKey returns the key used in ETCD to store bridge domain errors.
 func BridgeDomainErrorKey(bdLabel string) string {
-	return BdErrPrefix + bdLabel
+	return bdErrPrefix + bdLabel
 }
 
 // ParseBDNameFromKey returns suffix of the key.
@@ -75,15 +85,25 @@ func ParseBDNameFromKey(key string) (name string, err error) {
 	return key, fmt.Errorf("wrong format of the key %s", key)
 }
 
+// RestBridgeDomainKey returns the key used in REST to dump bridge domains.
+func RestBridgeDomainKey() string {
+	return restBd
+}
+
+// RestBridgeDomainIDKey returns the key used in REST to dump bridge domain IDs.
+func RestBridgeDomainIDKey() string {
+	return restBdId
+}
+
 // FibKeyPrefix returns the prefix used in ETCD to store vpp fib table entry config.
 func FibKeyPrefix() string {
-	return FIBPrefix
+	return fibPrefix
 }
 
 // FibKey returns the prefix used in ETCD to store vpp fib table entry config
 // of a particular fib in selected vpp instance.
 func FibKey(bdLabel string, fibMac string) string {
-	return strings.Replace(FIBPrefix, "{bd}", bdLabel, 1) + fibMac
+	return strings.Replace(fibPrefix, "{bd}", bdLabel, 1) + fibMac
 }
 
 // ParseFibKey parses bridge domain label and FIB MAC address from a FIB key.
@@ -98,13 +118,23 @@ func ParseFibKey(key string) (isFibKey bool, bdName string, fibMac string) {
 	return false, "", ""
 }
 
+// RestFibKey returns the prefix used in REST to dump vpp fib table entry config.
+func RestFibKey() string {
+	return restFib
+}
+
 // XConnectKeyPrefix returns the prefix used in ETCD to store vpp xConnect pair config.
 func XConnectKeyPrefix() string {
-	return XconnectPrefix
+	return xConnectPrefix
 }
 
 // XConnectKey returns the prefix used in ETCD to store vpp xConnect pair config
 // of particular xConnect pair in selected vpp instance.
 func XConnectKey(rxIface string) string {
-	return XconnectPrefix + rxIface
+	return xConnectPrefix + rxIface
+}
+
+// RestXConnectKey returns the prefix used in REST to dump vpp xConnect pair config.
+func RestXConnectKey() string {
+	return restXc
 }
