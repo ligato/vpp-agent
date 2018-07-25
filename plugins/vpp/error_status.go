@@ -254,7 +254,7 @@ func (plugin *Plugin) removeErrorLog(key string) {
 		key := interfaces.InterfaceErrorKey(name)
 		plugin.Publish.Put(key, nil)
 		plugin.Log.Infof("Error status log for interface %v cleared", name)
-	} else if prefix == l2.BdPrefix {
+	} else if prefix == l2.BridgeDomainKeyPrefix() {
 		key := l2.BridgeDomainErrorKey(name)
 		plugin.Publish.Put(key, nil)
 		plugin.Log.Infof("Error status log for bridge domain %v cleared", name)
@@ -272,8 +272,8 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 	if strings.HasPrefix(key, interfaces.InterfaceErrorPrefix()) {
 		name = strings.Replace(key, interfaces.InterfaceErrorPrefix(), "", 1)
 		_, metaData, exists = plugin.errorIndexes.LookupIdx(name)
-	} else if strings.HasPrefix(key, l2.BdErrPrefix) {
-		name = strings.Replace(key, l2.BdErrPrefix, "", 1)
+	} else if strings.HasPrefix(key, l2.BridgeDomainErrorPrefix()) {
+		name = strings.Replace(key, l2.BridgeDomainErrorPrefix(), "", 1)
 		_, metaData, exists = plugin.errorIndexes.LookupIdx(name)
 	}
 	if !exists {
