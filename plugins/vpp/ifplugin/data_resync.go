@@ -67,46 +67,46 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
 			// Register local0 interface with zero index
-			if err := plugin.registerInterface(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
+			if err := plugin.registerInterface(vppIf.Meta.InternalName, vppIfIdx, vppIf.Interface); err != nil {
 				errs = append(errs, err)
 			}
 			continue
 		}
-		if vppIf.Name == "" {
+		if vppIf.Interface.Name == "" {
 			// If interface has no name, it is stored as unnamed and resolved later
 			plugin.log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
-			unnamedVppIfs[vppIfIdx] = &vppIf.Interfaces_Interface
+			unnamedVppIfs[vppIfIdx] = vppIf.Interface
 			continue
 		}
 		var correlated bool
 		for _, nbIf := range nbIfs {
-			if vppIf.Name == nbIf.Name {
+			if vppIf.Interface.Name == nbIf.Name {
 				correlated = true
 				// Register interface to mapping and VPP tag/index
-				if err := plugin.registerInterface(vppIf.Name, vppIfIdx, nbIf); err != nil {
+				if err := plugin.registerInterface(vppIf.Interface.Name, vppIfIdx, nbIf); err != nil {
 					errs = append(errs, err)
 				}
 				// Calculate whether modification is needed
-				if plugin.isIfModified(nbIf, &vppIf.Interfaces_Interface) {
-					plugin.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Name)
-					if err = plugin.ModifyVPPInterface(nbIf, &vppIf.Interfaces_Interface); err != nil {
+				if plugin.isIfModified(nbIf, vppIf.Interface) {
+					plugin.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Interface.Name)
+					if err = plugin.ModifyVPPInterface(nbIf, vppIf.Interface); err != nil {
 						plugin.log.Errorf("Error while modifying interface: %v", err)
 						errs = append(errs, err)
 					}
 				} else {
-					plugin.log.Debugf("RESYNC interfaces: %v registered without additional changes", vppIf.Name)
+					plugin.log.Debugf("RESYNC interfaces: %v registered without additional changes", vppIf.Interface.Name)
 				}
 				break
 			}
 		}
 		if !correlated {
 			// Register interface before removal (to keep state consistent)
-			if err := plugin.registerInterface(vppIf.Name, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
+			if err := plugin.registerInterface(vppIf.Interface.Name, vppIfIdx, vppIf.Interface); err != nil {
 				errs = append(errs, err)
 			}
 			// VPP interface is obsolete and will be removed (un-configured if physical device)
-			plugin.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Name)
-			if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
+			plugin.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Interface.Name)
+			if err = plugin.deleteVPPInterface(vppIf.Interface, vppIfIdx); err != nil {
 				plugin.log.Errorf("Error while removing interface: %v", err)
 				errs = append(errs, err)
 			}
