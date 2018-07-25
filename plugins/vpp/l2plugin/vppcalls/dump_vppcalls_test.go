@@ -63,6 +63,7 @@ var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 			},
 		},
 		Meta: &vppcalls.BridgeDomainMeta{
+			BdID: 4,
 			BdIfIdxToName: func() map[uint32]string {
 				meta := make(map[uint32]string)
 				meta[5] = "if1"
@@ -88,6 +89,7 @@ var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 			},
 		},
 		Meta: &vppcalls.BridgeDomainMeta{
+			BdID: 5,
 			BdIfIdxToName: func() map[uint32]string {
 				meta := make(map[uint32]string)
 				meta[5] = "if1"
