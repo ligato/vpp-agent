@@ -24,14 +24,14 @@ import (
 
 // BfdDetails is the wrapper structure for the BFD northbound API structure.
 type BfdDetails struct {
-	Bfd  *bfd.SingleHopBFD
-	Meta *BfdMeta
+	Bfd  *bfd.SingleHopBFD `json:"bfd"`
+	Meta *BfdMeta          `json:"bfd_meta"`
 }
 
 // BfdMeta is combination of proto-modelled BFD data and VPP provided metadata
 type BfdMeta struct {
-	*BfdSessionMeta
-	*BfdAuthKeyMeta
+	*BfdSessionMeta `json:"bfd_session_meta"`
+	*BfdAuthKeyMeta `json:"bfd_authkey_meta"`
 }
 
 func (handler *bfdVppHandler) DumpBfdSingleHop() (*BfdDetails, error) {

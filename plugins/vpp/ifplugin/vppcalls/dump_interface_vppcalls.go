@@ -37,8 +37,8 @@ const defaultVPPMtu = 9216
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
 type InterfaceDetails struct {
-	Interface *ifnb.Interfaces_Interface
-	Meta      *InterfaceMeta
+	Interface *ifnb.Interfaces_Interface `json:"interface"`
+	Meta      *InterfaceMeta             `json:"interface_meta"`
 }
 
 // InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
@@ -106,7 +106,6 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 		}
 		ifData.Interface.Vrf = vrf
 	}
-
 
 	handler.log.Debugf("dumped %d interfaces", len(ifs))
 

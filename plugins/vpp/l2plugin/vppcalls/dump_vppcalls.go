@@ -27,13 +27,13 @@ import (
 // NOTE: Interfaces in BridgeDomains_BridgeDomain is overridden by the local Interfaces member.
 type BridgeDomainDetails struct {
 	Bd   *l2nb.BridgeDomains_BridgeDomain `json:"bridge_domain"`
-	Meta *BridgeDomainMeta
+	Meta *BridgeDomainMeta                `json:"bridge_domain_meta"`
 }
 
 // BridgeDomainMeta contains bridge domain interface name/index map
 type BridgeDomainMeta struct {
-	BdID          uint32
-	BdIfIdxToName map[uint32]string
+	BdID          uint32            `json:"bridge_domain_id"`
+	BdIfIdxToName map[uint32]string `json:"bridge_domain_id_to_name"`
 }
 
 func (handler *bridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
@@ -125,13 +125,13 @@ func (handler *bridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 
 // FIBTableDetails is the wrapper structure for the FIB table entry northbound API structure.
 type FibTableDetails struct {
-	Fib  *l2nb.FibTable_FibEntry
-	Meta *FibMeta
+	Fib  *l2nb.FibTable_FibEntry `json:"fib"`
+	Meta *FibMeta                `json:"fib_meta"`
 }
 
 // FibMeta contains FIB interface and bridge domain name/index map
 type FibMeta struct {
-	BdID  uint32 `json:"bridge_domain_idx"`
+	BdID  uint32 `json:"bridge_domain_id"`
 	IfIdx uint32 `json:"outgoing_interface_sw_if_idx"`
 }
 
@@ -194,8 +194,8 @@ func (handler *fibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails
 
 // XConnectDetails is the wrapper structure for the l2 xconnect northbound API structure.
 type XConnectDetails struct {
-	Xc   *l2nb.XConnectPairs_XConnectPair
-	Meta *XcMeta
+	Xc   *l2nb.XConnectPairs_XConnectPair `json:"x_connect"`
+	Meta *XcMeta                          `json:"x_connect_meta"`
 }
 
 // XcMeta contains cross connect rx/tx interface indexes

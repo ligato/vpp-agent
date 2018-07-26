@@ -14,7 +14,7 @@
 
 package resturl
 
-// Access list REST keys
+// Access list REST urls
 const (
 	// REST Acl IP prefix
 	AclIP = "/vpp/v1/acl/ip"
@@ -26,17 +26,17 @@ const (
 	AclMACIPExample = "/vpp/v1/acl/macip/example"
 )
 
-// BFD REST keys
+// BFD REST urls
 const (
-	// restBfdKey is a REST path of a bfd
-	BfdKey = "/vpp/v1/bfd"
-	// restBfdSessionKey is a REST path of a bfd sessions
-	BfdSessionKey = "/vpp/v1/bfd/sessions"
-	// restBfdAuthKey is a REST path of a bfd authentication keys
+	// BfdUrl is a REST path of a bfd
+	BfdUrl = "/vpp/v1/bfd"
+	// BfdSession is a REST path of a bfd sessions
+	BfdSession = "/vpp/v1/bfd/sessions"
+	// BfdAuthKey is a REST path of a bfd authentication keys
 	BfdAuthKey = "/vpp/v1/bfd/authkeys"
 )
 
-// Interface REST keys
+// Interface REST urls
 const (
 	// restInterface is rest interface path
 	Interface = "/vpp/v1/interfaces"

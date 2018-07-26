@@ -29,33 +29,31 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
+	"github.com/ligato/vpp-agent/plugins/rest/resturl"
 	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/rest/resturl"
 )
 
 // Registers access list REST handlers
-func (plugin *Plugin) registerAccessListHandlers() error {
+func (plugin *Plugin) registerAccessListHandlers() {
 	// GET IP ACLs
 	plugin.registerHTTPHandler(resturl.AclIP, GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpIPACL(nil)
 	})
 	// GET MACIP ACLs
 	plugin.registerHTTPHandler(resturl.AclMACIP, GET, func() (interface{}, error) {
-		return plugin.aclHandler.DumpMacIPAcls()
+		return plugin.aclHandler.DumpMACIPACL(nil)
 	})
 	// GET IP ACL example
 	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.AclIPExample, plugin.exampleIpACLGetHandler, GET)
 	// GET MACIP ACL example
 	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.AclMACIPExample, plugin.exampleMacIpACLGetHandler, GET)
-
-	return nil
 }
 
 // Registers interface REST handlers
-func (plugin *Plugin) registerInterfaceHandlers() error {
+func (plugin *Plugin) registerInterfaceHandlers() {
 	// GET all interfaces
 	plugin.registerHTTPHandler(resturl.Interface, GET, func() (interface{}, error) {
 		return plugin.ifHandler.DumpInterfaces()
@@ -120,29 +118,25 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 		}
 		return ifs, err
 	})
-
-	return nil
 }
 
-func (plugin *Plugin) registerBfdHandlers() error {
+func (plugin *Plugin) registerBfdHandlers() {
 	// GET BFD configuration
-	plugin.registerHTTPHandler(resturl.BfdKey, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.BfdUrl, GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdSingleHop()
 	})
 	// GET BFD sessions
-	plugin.registerHTTPHandler(resturl.BfdSessionKey, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.BfdSession, GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdSessions()
 	})
 	// GET BFD authentication keys
 	plugin.registerHTTPHandler(resturl.BfdAuthKey, GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdAuthKeys()
 	})
-
-	return nil
 }
 
 // Registers L2 plugin REST handlers
-func (plugin *Plugin) registerL2Handlers() error {
+func (plugin *Plugin) registerL2Handlers() {
 	// GET bridge domain IDs
 	plugin.registerHTTPHandler(resturl.BdId, GET, func() (interface{}, error) {
 		return plugin.bdHandler.DumpBridgeDomainIDs()
@@ -159,14 +153,15 @@ func (plugin *Plugin) registerL2Handlers() error {
 	plugin.registerHTTPHandler(resturl.Xc, GET, func() (interface{}, error) {
 		return plugin.xcHandler.DumpXConnectPairs()
 	})
-
-	return nil
 }
 
 // registerHTTPHandler is common register method for all handlers
 func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) {
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
+			plugin.Lock()
+			defer plugin.Unlock()
+
 			res, err := f()
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
@@ -174,7 +169,7 @@ func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interfac
 				formatter.JSON(w, http.StatusInternalServerError, err)
 				return
 			}
-			plugin.Deps.Log.Debug(res)
+			plugin.Deps.Log.Debug("Rest uri: %s, data: %v", key, res)
 			formatter.JSON(w, http.StatusOK, res)
 		}
 	}

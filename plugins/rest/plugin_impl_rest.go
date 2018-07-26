@@ -17,16 +17,18 @@ package rest
 import (
 	"fmt"
 
+	"sync"
+
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/rest/resturl"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/rest/resturl"
 )
 
 const (
@@ -55,6 +57,8 @@ type Plugin struct {
 	bdHandler  l2vppcalls.BridgeDomainVppRead
 	fibHandler l2vppcalls.FibVppRead
 	xcHandler  l2vppcalls.XConnectVppRead
+
+	sync.Mutex
 }
 
 // Deps represents dependencies of Rest Plugin
@@ -135,18 +139,10 @@ func (plugin *Plugin) Init() (err error) {
 func (plugin *Plugin) AfterInit() (err error) {
 	plugin.Log.Debug("REST API Plugin is up and running")
 
-	if err := plugin.registerAccessListHandlers(); err != nil {
-		return err
-	}
-	if err := plugin.registerInterfaceHandlers(); err != nil {
-		return err
-	}
-	if err := plugin.registerBfdHandlers(); err != nil {
-		return err
-	}
-	if err := plugin.registerL2Handlers(); err != nil {
-		return err
-	}
+	plugin.registerAccessListHandlers()
+	plugin.registerInterfaceHandlers()
+	plugin.registerBfdHandlers()
+	plugin.registerL2Handlers()
 
 	plugin.HTTPHandlers.RegisterHTTPHandler("/arps", plugin.arpGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
