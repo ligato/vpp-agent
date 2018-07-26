@@ -17,51 +17,47 @@ package resturl
 // Access list REST urls
 const (
 	// REST Acl IP prefix
-	AclIP = "/vpp/v1/acl/ip"
-	// REST Acl IP example prefix
-	AclIPExample = "/vpp/v1/acl/ip/example"
+	AclIP = "/vpp/dump/v1/acl/ip"
 	// REST Acl MACIP prefix
-	AclMACIP = "/vpp/v1/acl/macip"
-	// REST Acl MACIP example prefix
-	AclMACIPExample = "/vpp/v1/acl/macip/example"
+	AclMACIP = "/vpp/dump/v1/acl/macip"
 )
 
 // BFD REST urls
 const (
 	// BfdUrl is a REST path of a bfd
-	BfdUrl = "/vpp/v1/bfd"
+	BfdUrl = "/vpp/dump/v1/bfd"
 	// BfdSession is a REST path of a bfd sessions
-	BfdSession = "/vpp/v1/bfd/sessions"
+	BfdSession = "/vpp/dump/v1/bfd/sessions"
 	// BfdAuthKey is a REST path of a bfd authentication keys
-	BfdAuthKey = "/vpp/v1/bfd/authkeys"
+	BfdAuthKey = "/vpp/dump/v1/bfd/authkeys"
 )
 
 // Interface REST urls
 const (
 	// restInterface is rest interface path
-	Interface = "/vpp/v1/interfaces"
+	Interface = "/vpp/dump/v1/interfaces"
 	// restLoopback is path for loopback interface
-	Loopback = "/vpp/v1/interfaces/loopback"
+	Loopback = "/vpp/dump/v1/interfaces/loopback"
 	// restLoopback is path for physical interface
-	Ethernet = "/vpp/v1/interfaces/ethernet"
+	Ethernet = "/vpp/dump/v1/interfaces/ethernet"
 	// restLoopback is path for memif interface
-	Memif = "/vpp/v1/interfaces/memif"
+	Memif = "/vpp/dump/v1/interfaces/memif"
 	// restLoopback is path for tap interface
-	Tap = "/vpp/v1/interfaces/tap"
+	Tap = "/vpp/dump/v1/interfaces/tap"
 	// restAfPacket is path for af-packet interface
-	AfPacket = "/vpp/v1/interfaces/afpacket"
+	AfPacket = "/vpp/dump/v1/interfaces/afpacket"
 	// restLoopback is path for vxlan interface
-	VxLan = "/vpp/v1/interfaces/vxlan"
+	VxLan = "/vpp/dump/v1/interfaces/vxlan"
 )
 
 // L2 plugin
 const (
 	// restBd is rest bridge domain path
-	Bd = "/vpp/v1/bd"
+	Bd = "/vpp/dump/v1/bd"
 	// restBdId is rest bridge domain ID path
-	BdId = "/vpp/v1/bdid"
+	BdId = "/vpp/dump/v1/bdid"
 	// restFib is rest FIB path
-	Fib = "/vpp/v1/fib"
+	Fib = "/vpp/dump/v1/fib"
 	// restXc is rest cross-connect path
-	Xc = "/vpp/v1/xc"
+	Xc = "/vpp/dump/v1/xc"
 )

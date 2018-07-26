@@ -46,10 +46,6 @@ func (plugin *Plugin) registerAccessListHandlers() {
 	plugin.registerHTTPHandler(resturl.AclMACIP, GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpMACIPACL(nil)
 	})
-	// GET IP ACL example
-	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.AclIPExample, plugin.exampleIpACLGetHandler, GET)
-	// GET MACIP ACL example
-	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.AclMACIPExample, plugin.exampleMacIpACLGetHandler, GET)
 }
 
 // Registers interface REST handlers
@@ -249,76 +245,6 @@ func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.Hand
 
 		plugin.Log.Debug(res)
 		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// exampleACLGetHandler - used to get an example ACL configuration
-func (plugin *Plugin) exampleIpACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting example acl")
-
-		ipRule := &acl.AccessLists_Acl_Rule_Match_IpRule{
-			Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
-				DestinationNetwork: "1.2.3.4/24",
-				SourceNetwork:      "5.6.7.8/24",
-			},
-			Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
-				DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
-					LowerPort: 80,
-					UpperPort: 8080,
-				},
-				SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
-					LowerPort: 10,
-					UpperPort: 1010,
-				},
-				TcpFlagsMask:  0xFF,
-				TcpFlagsValue: 9,
-			},
-		}
-
-		rule := &acl.AccessLists_Acl_Rule{
-			Match: &acl.AccessLists_Acl_Rule_Match{
-				IpRule: ipRule,
-			},
-			AclAction: acl.AclAction_PERMIT,
-		}
-
-		aclRes := acl.AccessLists_Acl{
-			AclName: "example",
-			Rules:   []*acl.AccessLists_Acl_Rule{rule},
-		}
-
-		plugin.Log.Debug(aclRes)
-		formatter.JSON(w, http.StatusOK, aclRes)
-	}
-}
-
-func (plugin *Plugin) exampleMacIpACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		plugin.Deps.Log.Info("Getting example macip acl")
-
-		macipRule := &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-			SourceAddress:        "192.168.0.1",
-			SourceAddressPrefix:  uint32(16),
-			SourceMacAddress:     "02:00:DE:AD:00:02",
-			SourceMacAddressMask: "ff:ff:ff:ff:00:00",
-		}
-
-		rule := &acl.AccessLists_Acl_Rule{
-			Match: &acl.AccessLists_Acl_Rule_Match{
-				MacipRule: macipRule,
-			},
-			AclAction: acl.AclAction_PERMIT,
-		}
-
-		aclRes := acl.AccessLists_Acl{
-			AclName: "example",
-			Rules:   []*acl.AccessLists_Acl_Rule{rule},
-		}
-
-		plugin.Deps.Log.Debug(aclRes)
-		formatter.JSON(w, http.StatusOK, aclRes)
 	}
 }
 
