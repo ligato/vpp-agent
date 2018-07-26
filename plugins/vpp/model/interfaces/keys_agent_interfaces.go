@@ -29,19 +29,19 @@ const (
 	// ifErrorPrefix is interface error prefix
 	ifErrorPrefix = "vpp/status" + model.ProtoApiVersion + "interface/error/"
 	// restInterface is rest interface path
-	restInterface = model.ProtoApiVersion + "interface"
+	restInterface = model.ProtoApiVersion + "interfaces"
 	// restLoopback is path for loopback interface
-	restLoopback = model.ProtoApiVersion + "interface/loopback"
+	restLoopback = model.ProtoApiVersion + "interfaces/loopback"
 	// restLoopback is path for physical interface
-	restEthernet = model.ProtoApiVersion + "interface/ethernet"
+	restEthernet = model.ProtoApiVersion + "interfaces/ethernet"
 	// restLoopback is path for memif interface
-	restMemif = model.ProtoApiVersion + "interface/memif"
+	restMemif = model.ProtoApiVersion + "interfaces/memif"
 	// restLoopback is path for tap interface
-	restTap = model.ProtoApiVersion + "interface/tap"
+	restTap = model.ProtoApiVersion + "interfaces/tap"
 	// restAfPacket is path for af-packet interface
-	restAfPacket = model.ProtoApiVersion + "interface/afpacket"
+	restAfPacket = model.ProtoApiVersion + "interfaces/afpacket"
 	// restLoopback is path for vxlan interface
-	restVxLan = model.ProtoApiVersion + "interface/vxlan"
+	restVxLan = model.ProtoApiVersion + "interfaces/vxlan"
 )
 
 // InterfaceKeyPrefix returns the prefix used in ETCD to store vpp interfaces config.
