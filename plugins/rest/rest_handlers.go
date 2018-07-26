@@ -40,17 +40,13 @@ import (
 // Registers access list REST handlers
 func (plugin *Plugin) registerAccessListHandlers() error {
 	// GET IP ACLs
-	if err := plugin.registerHTTPHandler(acl.RestIPKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(acl.RestIPKey(), GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpIPACL(nil)
-	}); err != nil {
-		return err
-	}
+	})
 	// GET MACIP ACLs
-	if err := plugin.registerHTTPHandler(acl.RestMACIPKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(acl.RestMACIPKey(), GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpMacIPAcls()
-	}); err != nil {
-		return err
-	}
+	})
 	// GET IP ACL example
 	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestIPExampleKey(), plugin.exampleIpACLGetHandler, GET)
 	// GET MACIP ACL example
@@ -62,13 +58,11 @@ func (plugin *Plugin) registerAccessListHandlers() error {
 // Registers interface REST handlers
 func (plugin *Plugin) registerInterfaceHandlers() error {
 	// GET all interfaces
-	if err := plugin.registerHTTPHandler(interfaces.RestInterfaceKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(interfaces.RestInterfaceKey(), GET, func() (interface{}, error) {
 		return plugin.ifHandler.DumpInterfaces()
-	}); err != nil {
-		return err
-	}
+	})
 	// GET loopback interfaces
-	if err := plugin.registerHTTPHandler(interfaces.RestLoopbackKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(interfaces.RestLoopbackKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_SOFTWARE_LOOPBACK {
@@ -76,11 +70,9 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 			}
 		}
 		return ifs, err
-	}); err != nil {
-		return err
-	}
+	})
 	// GET ethernet interfaces
-	if err := plugin.registerHTTPHandler(interfaces.RestEthernetKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(interfaces.RestEthernetKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_ETHERNET_CSMACD {
@@ -88,11 +80,9 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 			}
 		}
 		return ifs, err
-	}); err != nil {
-		return err
-	}
+	})
 	// GET memif interfaces
-	if err := plugin.registerHTTPHandler(interfaces.RestMemifKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(interfaces.RestMemifKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_MEMORY_INTERFACE {
@@ -100,11 +90,9 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 			}
 		}
 		return ifs, err
-	}); err != nil {
-		return err
-	}
+	})
 	// GET tap interfaces
-	if err := plugin.registerHTTPHandler(interfaces.RestTapKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(interfaces.RestTapKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_TAP_INTERFACE {
@@ -112,11 +100,9 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 			}
 		}
 		return ifs, err
-	}); err != nil {
-		return err
-	}
+	})
 	// GET af-packet interfaces
-	if err := plugin.registerHTTPHandler(interfaces.RestAfPAcketKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(interfaces.RestAfPAcketKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_AF_PACKET_INTERFACE {
@@ -124,11 +110,9 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 			}
 		}
 		return ifs, err
-	}); err != nil {
-		return err
-	}
+	})
 	// GET VxLAN interfaces
-	if err := plugin.registerHTTPHandler(interfaces.RestVxLanKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(interfaces.RestVxLanKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_VXLAN_TUNNEL {
@@ -136,32 +120,24 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 			}
 		}
 		return ifs, err
-	}); err != nil {
-		return err
-	}
+	})
 
 	return nil
 }
 
 func (plugin *Plugin) registerBfdHandlers() error {
 	// GET BFD configuration
-	if err := plugin.registerHTTPHandler(bfd.RestBfdKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(bfd.RestBfdKey(), GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdSingleHop()
-	}); err != nil {
-		return err
-	}
+	})
 	// GET BFD sessions
-	if err := plugin.registerHTTPHandler(bfd.RestSessionKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(bfd.RestSessionKey(), GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdSessions()
-	}); err != nil {
-		return err
-	}
+	})
 	// GET BFD authentication keys
-	if err := plugin.registerHTTPHandler(bfd.RestAuthKeysKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(bfd.RestAuthKeysKey(), GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdAuthKeys()
-	}); err != nil {
-		return err
-	}
+	})
 
 	return nil
 }
@@ -169,53 +145,41 @@ func (plugin *Plugin) registerBfdHandlers() error {
 // Registers L2 plugin REST handlers
 func (plugin *Plugin) registerL2Handlers() error {
 	// GET bridge domain IDs
-	if err := plugin.registerHTTPHandler(l2.RestBridgeDomainIDKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(l2.RestBridgeDomainIDKey(), GET, func() (interface{}, error) {
 		return plugin.bdHandler.DumpBridgeDomainIDs()
-	}); err != nil {
-		return err
-	}
+	})
 	// GET bridge domains
-	if err := plugin.registerHTTPHandler(l2.RestBridgeDomainKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(l2.RestBridgeDomainKey(), GET, func() (interface{}, error) {
 		return plugin.bdHandler.DumpBridgeDomains()
-	}); err != nil {
-		return err
-	}
+	})
 	// GET FIB entries
-	if err := plugin.registerHTTPHandler(l2.RestFibKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(l2.RestFibKey(), GET, func() (interface{}, error) {
 		return plugin.fibHandler.DumpFIBTableEntries()
-	}); err != nil {
-		return err
-	}
+	})
 	// GET cross connects
-	if err := plugin.registerHTTPHandler(l2.RestXConnectKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(l2.RestXConnectKey(), GET, func() (interface{}, error) {
 		return plugin.xcHandler.DumpXConnectPairs()
-	}); err != nil {
-		return err
-	}
+	})
 
 	return nil
 }
 
 // registerHTTPHandler is common register method for all handlers
-func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) error {
-	var err error
+func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) {
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
 			res, err := f()
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
-				err = formatter.JSON(w, http.StatusInternalServerError, err)
+				w.Write([]byte("500 Internal server error: " + err.Error()))
+				formatter.JSON(w, http.StatusInternalServerError, err)
+				return
 			}
-
 			plugin.Deps.Log.Debug(res)
 			formatter.JSON(w, http.StatusOK, res)
 		}
 	}
-	if err != nil {
-		return err
-	}
 	plugin.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
-	return nil
 }
 
 // staticRoutesGetHandler - used to get list of all static routes
