@@ -21,15 +21,15 @@ interfaces or ACLs, internal names, etc.). Those data are in separate section la
 URLs to obtain ACL IP/MACIP configuration are as follows.
 
 ```
-curl http://0.0.0.0:9191/v1/acl/ip
-curl http://0.0.0.0:9191/v1/acl/macip 
+curl http://0.0.0.0:9191/vpp/v1/acl/ip
+curl http://0.0.0.0:9191/vpp/v1/acl/macip 
 ```
  
 It is also possible to obtain ACL example configuration (no configured on the VPP).
  
 ```
-curl http://0.0.0.0:9191/v1/acl/ip/example
-curl http://0.0.0.0:9191/v1/acl/macip/example
+curl http://0.0.0.0:9191/vpp/v1/acl/ip/example
+curl http://0.0.0.0:9191/vpp/v1/acl/macip/example
 ``` 
 
 **Interfaces**
@@ -38,13 +38,13 @@ REST plugin exposes configured interfaces, which can be show all together, or on
 of specific type.
  
 ```
-curl http://0.0.0.0:9191/v1/interfaces
-curl http://0.0.0.0:9191/v1/interfaces/loopback
-curl http://0.0.0.0:9191/v1/interfaces/ethernet
-curl http://0.0.0.0:9191/v1/interfaces/memif
-curl http://0.0.0.0:9191/v1/interfaces/tap
-curl http://0.0.0.0:9191/v1/interfaces/vxlan
-curl http://0.0.0.0:9191/v1/interfaces/afpacket
+curl http://0.0.0.0:9191/vpp/v1/interfaces
+curl http://0.0.0.0:9191/vpp/v1/interfaces/loopback
+curl http://0.0.0.0:9191/vpp/v1/interfaces/ethernet
+curl http://0.0.0.0:9191/vpp/v1/interfaces/memif
+curl http://0.0.0.0:9191/vpp/v1/interfaces/tap
+curl http://0.0.0.0:9191/vpp/v1/interfaces/vxlan
+curl http://0.0.0.0:9191/vpp/v1/interfaces/afpacket
 ``` 
  
 **BFD**
@@ -53,9 +53,9 @@ REST plugin allows to dump bidirectional forwarding detection sessions, authenti
 or the whole configuration. 
 
 ```
-curl http://0.0.0.0:9191/v1/bfd
-curl http://0.0.0.0:9191/v1/bfd/sessions
-curl http://0.0.0.0:9191/v1/bfd/authkeys
+curl http://0.0.0.0:9191/vpp/v1/bfd
+curl http://0.0.0.0:9191/vpp/v1/bfd/sessions
+curl http://0.0.0.0:9191/vpp/v1/bfd/authkeys
 ``` 
 
 **L2 plugin**
@@ -64,10 +64,10 @@ Support for bridge domains, FIBs and cross connects. It is also possible to get 
 the bridge domain IDs.
 
 ```
-curl http://0.0.0.0:9191/v1/bdid
-curl http://0.0.0.0:9191/v1/bd
-curl http://0.0.0.0:9191/v1/fibs
-curl http://0.0.0.0:9191/v1/xc
+curl http://0.0.0.0:9191/vpp/v1/bdid
+curl http://0.0.0.0:9191/vpp/v1/bd
+curl http://0.0.0.0:9191/vpp/v1/fibs
+curl http://0.0.0.0:9191/vpp/v1/xc
 ```
 
 **L3 plugin**

@@ -22,11 +22,11 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/rest/url"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/rest/resturl"
 )
 
 const (
@@ -109,19 +109,19 @@ func (plugin *Plugin) Init() (err error) {
 	}
 
 	plugin.indexItems = []indexItem{
-		{Name: "ACL IP", Path: url.RestIPKey()},
-		{Name: "ACL MACIP", Path: url.RestMACIPKey()},
-		{Name: "Interfaces", Path: url.RestInterfaceKey()},
-		{Name: "Loopback interfaces", Path: url.RestLoopbackKey()},
-		{Name: "Ethernet interfaces", Path: url.RestEthernetKey()},
-		{Name: "Memif interfaces", Path: url.RestMemifKey()},
-		{Name: "Tap interfaces", Path: url.RestTapKey()},
-		{Name: "VxLAN interfaces", Path: url.RestVxLanKey()},
-		{Name: "Af-packet nterfaces", Path: url.RestAfPAcketKey()},
-		{Name: "Bridge domains", Path: url.RestBridgeDomainKey()},
-		{Name: "Bridge domain IDs", Path: url.RestBridgeDomainIDKey()},
-		{Name: "L2Fibs", Path: url.RestFibKey()},
-		{Name: "XConnectorPairs", Path: url.RestXConnectKey()},
+		{Name: "ACL IP", Path: resturl.AclIP},
+		{Name: "ACL MACIP", Path: resturl.AclMACIP},
+		{Name: "Interfaces", Path: resturl.Interface},
+		{Name: "Loopback interfaces", Path: resturl.Loopback},
+		{Name: "Ethernet interfaces", Path: resturl.Ethernet},
+		{Name: "Memif interfaces", Path: resturl.Memif},
+		{Name: "Tap interfaces", Path: resturl.Tap},
+		{Name: "VxLAN interfaces", Path: resturl.VxLan},
+		{Name: "Af-packet nterfaces", Path: resturl.AfPacket},
+		{Name: "Bridge domains", Path: resturl.Bd},
+		{Name: "Bridge domain IDs", Path: resturl.BdId},
+		{Name: "L2Fibs", Path: resturl.Fib},
+		{Name: "XConnectorPairs", Path: resturl.Xc},
 
 		{Name: "ARPs", Path: "/arps"},
 		{Name: "Static routes", Path: "/staticroutes"},

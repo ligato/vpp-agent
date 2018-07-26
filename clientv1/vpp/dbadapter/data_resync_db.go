@@ -245,17 +245,17 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 
 		// fill all known keys of one VPP:
 
-		keys, err := dsl.listKeys(intf.InterfaceKeyPrefix())
+		keys, err := dsl.listKeys(intf.Prefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l2.BridgeDomainKeyPrefix())
+		keys, err = dsl.listKeys(l2.BdPrefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l2.XConnectKeyPrefix())
+		keys, err = dsl.listKeys(l2.XConnectPrefix)
 		if err != nil {
 			break
 		}

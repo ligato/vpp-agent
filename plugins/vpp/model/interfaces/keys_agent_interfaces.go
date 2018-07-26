@@ -21,17 +21,12 @@ import (
 
 const (
 	// interfacePrefix is interface prefix
-	interfacePrefix = "vpp/config/v1/interface/"
+	Prefix = "vpp/config/v1/interface/"
 	// ifStatePrefix is interface state prefix
-	ifStatePrefix = "vpp/status/v1/interface/"
+	StatePrefix = "vpp/status/v1/interface/"
 	// ifErrorPrefix is interface error prefix
-	ifErrorPrefix = "vpp/status/v1/interface/error/"
+	ErrorPrefix = "vpp/status/v1/interface/error/"
 )
-
-// InterfaceKeyPrefix returns the prefix used in ETCD to store vpp interfaces config.
-func InterfaceKeyPrefix() string {
-	return interfacePrefix
-}
 
 // ParseNameFromKey returns suffix of the key.
 func ParseNameFromKey(key string) (name string, err error) {
@@ -46,26 +41,16 @@ func ParseNameFromKey(key string) (name string, err error) {
 // InterfaceKey returns the prefix used in ETCD to store the vpp interface config
 // of a particular interface in selected vpp instance.
 func InterfaceKey(ifaceLabel string) string {
-	return interfacePrefix + ifaceLabel
-}
-
-// InterfaceErrorPrefix returns the prefix used in ETCD to store the interface errors.
-func InterfaceErrorPrefix() string {
-	return ifErrorPrefix
+	return Prefix + ifaceLabel
 }
 
 // InterfaceErrorKey returns the key used in ETCD to store the interface errors.
 func InterfaceErrorKey(ifaceLabel string) string {
-	return ifErrorPrefix + ifaceLabel
-}
-
-// InterfaceStateKeyPrefix returns the prefix used in ETCD to store the vpp interfaces state data.
-func InterfaceStateKeyPrefix() string {
-	return ifStatePrefix
+	return ErrorPrefix + ifaceLabel
 }
 
 // InterfaceStateKey returns the prefix used in ETCD to store the vpp interface state data
 // of particular interface in selected vpp instance.
 func InterfaceStateKey(ifaceLabel string) string {
-	return ifStatePrefix + ifaceLabel
+	return StatePrefix + ifaceLabel
 }

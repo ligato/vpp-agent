@@ -1274,7 +1274,7 @@ func (ctl *VppAgentCtl) deleteTxn() {
 
 // ReportIfaceErrorState reports interface status data to the ETCD
 func (ctl *VppAgentCtl) reportIfaceErrorState() {
-	ifErr, err := ctl.broker.ListValues(interfaces.InterfaceErrorPrefix())
+	ifErr, err := ctl.broker.ListValues(interfaces.ErrorPrefix)
 	if err != nil {
 		ctl.Log.Fatal(err)
 		return
@@ -1296,7 +1296,7 @@ func (ctl *VppAgentCtl) reportIfaceErrorState() {
 
 // ReportBdErrorState reports bridge domain status data to the ETCD
 func (ctl *VppAgentCtl) reportBdErrorState() {
-	bdErr, err := ctl.broker.ListValues(l2.BridgeDomainErrorPrefix())
+	bdErr, err := ctl.broker.ListValues(l2.BdErrPrefix)
 	if err != nil {
 		ctl.Log.Fatal(err)
 		return

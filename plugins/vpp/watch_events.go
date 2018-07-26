@@ -98,7 +98,7 @@ func (plugin *Plugin) onStatusResyncEvent(e datasync.ResyncEvent) {
 	var wasError error
 	for key, vals := range e.GetValues() {
 		plugin.Log.Debugf("trying to delete obsolete status for key %v begin ", key)
-		if strings.HasPrefix(key, interfaces.InterfaceStateKeyPrefix()) {
+		if strings.HasPrefix(key, interfaces.StatePrefix) {
 			var keys []string
 			for {
 				x, stop := vals.GetNext()
@@ -113,7 +113,7 @@ func (plugin *Plugin) onStatusResyncEvent(e datasync.ResyncEvent) {
 					wasError = err
 				}
 			}
-		} else if strings.HasPrefix(key, l2.BridgeDomainStateKeyPrefix()) {
+		} else if strings.HasPrefix(key, l2.BdStatePrefix) {
 			var keys []string
 			for {
 				x, stop := vals.GetNext()
