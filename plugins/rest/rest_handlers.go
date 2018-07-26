@@ -32,6 +32,7 @@ import (
 	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
@@ -135,6 +136,29 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 			}
 		}
 		return ifs, err
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (plugin *Plugin) registerBfdHandlers() error {
+	// GET BFD configuration
+	if err := plugin.registerHTTPHandler(bfd.RestBfdKey(), GET, func() (interface{}, error) {
+		return plugin.bfdHandler.DumpBfdSingleHop()
+	}); err != nil {
+		return err
+	}
+	// GET BFD sessions
+	if err := plugin.registerHTTPHandler(bfd.RestSessionKey(), GET, func() (interface{}, error) {
+		return plugin.bfdHandler.DumpBfdSessions()
+	}); err != nil {
+		return err
+	}
+	// GET BFD authentication keys
+	if err := plugin.registerHTTPHandler(bfd.RestAuthKeysKey(), GET, func() (interface{}, error) {
+		return plugin.bfdHandler.DumpBfdAuthKeys()
 	}); err != nil {
 		return err
 	}

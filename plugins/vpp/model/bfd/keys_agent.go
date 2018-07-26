@@ -14,44 +14,67 @@
 
 package bfd
 
-// BfdSessionPrefix bfd-session/
-const BfdSessionPrefix = "vpp/config/v1/bfd/session/"
+import "github.com/ligato/vpp-agent/plugins/vpp/model"
 
-// BfdAuthKeysPrefix bfd-key/
-const BfdAuthKeysPrefix = "vpp/config/v1/bfd/auth-key/"
+const (
+	// restBfdKey is a REST path of a bfd
+	restBfdKey = model.ProtoApiVersion + "bfd"
+	// bfdSessionPrefix bfd-session/
+	bfdSessionPrefix = "vpp/config" + model.ProtoApiVersion + "bfd/session/"
+	// restBfdSessionKey is a REST path of a bfd sessions
+	restBfdSessionKey = model.ProtoApiVersion + "bfd/sessions"
+	// bfdAuthKeysPrefix bfd-key/
+	bfdAuthKeysPrefix = "vpp/config" + model.ProtoApiVersion + "bfd/auth-key/"
+	// restBfdAuthKey is a REST path of a bfd authentication keys
+	restBfdAuthKey = model.ProtoApiVersion + "bfd/authkeys"
+	// BfdEchoFunctionPrefix bfd-echo-function/
+	bfdEchoFunctionPrefix = "vpp/config" + model.ProtoApiVersion + "bfd/echo-function"
+)
 
-// BfdEchoFunctionPrefix bfd-echo-function/
-const BfdEchoFunctionPrefix = "vpp/config/v1/bfd/echo-function"
+// RestBfdKey returns prefix used in REST to dump bfd config
+func RestBfdKey() string {
+	return restBfdKey
+}
 
 // SessionKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
 func SessionKeyPrefix() string {
-	return BfdSessionPrefix
-}
-
-// AuthKeysKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
-func AuthKeysKeyPrefix() string {
-	return BfdAuthKeysPrefix
-}
-
-// EchoFunctionKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
-func EchoFunctionKeyPrefix() string {
-	return BfdEchoFunctionPrefix
+	return bfdSessionPrefix
 }
 
 // SessionKey returns the prefix used in ETCD to store vpp bfd config
 // of a particular bfd session in selected vpp instance.
 func SessionKey(bfdSessionIfaceLabel string) string {
-	return BfdSessionPrefix + bfdSessionIfaceLabel
+	return bfdSessionPrefix + bfdSessionIfaceLabel
+}
+
+// RestSessionKey returns prefix used in REST to dump bfd session config
+func RestSessionKey() string {
+	return restBfdSessionKey
+}
+
+// AuthKeysKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
+func AuthKeysKeyPrefix() string {
+	return bfdAuthKeysPrefix
 }
 
 // AuthKeysKey returns the prefix used in ETCD to store vpp bfd config
 // of a particular bfd key in selected vpp instance.
 func AuthKeysKey(bfdKeyIDLabel string) string {
-	return BfdAuthKeysPrefix + bfdKeyIDLabel
+	return bfdAuthKeysPrefix + bfdKeyIDLabel
+}
+
+// RestAuthKeysKey returns prefix used in REST to dump bfd authentication config
+func RestAuthKeysKey() string {
+	return restBfdAuthKey
+}
+
+// EchoFunctionKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
+func EchoFunctionKeyPrefix() string {
+	return bfdEchoFunctionPrefix
 }
 
 // EchoFunctionKey returns the prefix used in ETCD to store vpp bfd config
 // of a particular bfd echo function in selected vpp instance.
 func EchoFunctionKey(bfdEchoIfaceLabel string) string {
-	return BfdEchoFunctionPrefix + bfdEchoIfaceLabel
+	return bfdEchoFunctionPrefix + bfdEchoIfaceLabel
 }

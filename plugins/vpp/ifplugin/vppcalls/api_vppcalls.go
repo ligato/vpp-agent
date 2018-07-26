@@ -140,12 +140,14 @@ type BfdVppWrite interface {
 
 // BfdVppRead provides read methods for BFD
 type BfdVppRead interface {
+	// DumpBfdSingleHop returns complete BFD configuration
+	DumpBfdSingleHop() (*BfdDetails, error)
 	// DumpBfdUDPSessions returns a list of BFD session's metadata
-	DumpBfdUDPSessions() ([]*bfd_api.BfdUDPSessionDetails, error)
+	DumpBfdSessions() (*BfdSessionDetails, error)
 	// DumpBfdUDPSessionsWithID returns a list of BFD session's metadata filtered according to provided authentication key
-	DumpBfdUDPSessionsWithID(authKeyIndex uint32) ([]*bfd_api.BfdUDPSessionDetails, error)
+	DumpBfdUDPSessionsWithID(authKeyIndex uint32) (*BfdSessionDetails, error)
 	// DumpBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
-	DumpBfdKeys() (keys []*bfd_api.BfdAuthKeysDetails, err error)
+	DumpBfdAuthKeys() (*BfdAuthKeyDetails, error)
 }
 
 // NatVppAPI provides methods for managing NAT
@@ -226,6 +228,7 @@ type ifVppHandler struct {
 type bfdVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel api.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
@@ -258,10 +261,11 @@ func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measu
 }
 
 // NewBfdVppHandler creates new instance of BFD vppcalls handler
-func NewBfdVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*bfdVppHandler, error) {
+func NewBfdVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*bfdVppHandler, error) {
 	handler := &bfdVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(BfdMessages...); err != nil {

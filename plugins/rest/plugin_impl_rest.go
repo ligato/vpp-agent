@@ -20,12 +20,11 @@ import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -51,13 +50,10 @@ type Plugin struct {
 	vppChan  api.Channel
 	dumpChan api.Channel
 
-	// Indexes
-	ifIndexes ifaceidx.SwIfIndex
-	bdIndexes l2idx.BDIndex
-
 	// Handlers
 	aclHandler aclvppcalls.AclVppRead
 	ifHandler  ifvppcalls.IfVppRead
+	bfdHandler ifvppcalls.BfdVppRead
 	bdHandler  l2vppcalls.BridgeDomainVppRead
 	fibHandler l2vppcalls.FibVppRead
 	xcHandler  l2vppcalls.XConnectVppRead
@@ -78,6 +74,10 @@ type indexItem struct {
 
 // Init initializes the Rest Plugin
 func (plugin *Plugin) Init() (err error) {
+	// Check VPP dependency
+	if plugin.VPP == nil {
+		return fmt.Errorf("REST plugin requires VPP plugin API")
+	}
 	// VPP channels
 	if plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
 		return err
@@ -86,10 +86,8 @@ func (plugin *Plugin) Init() (err error) {
 		return err
 	}
 	// Indexes
-	if plugin.VPP != nil {
-		plugin.ifIndexes = plugin.VPP.GetSwIfIndexes()
-		plugin.bdIndexes = plugin.VPP.GetBDIndexes()
-	}
+	ifIndexes := plugin.VPP.GetSwIfIndexes()
+	bdIndexes := plugin.VPP.GetBDIndexes()
 
 	// Initialize handlers
 	if plugin.aclHandler, err = aclvppcalls.NewAclVppHandler(plugin.vppChan, plugin.dumpChan, nil); err != nil {
@@ -98,21 +96,18 @@ func (plugin *Plugin) Init() (err error) {
 	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.Log, nil); err != nil {
 		return err
 	}
-	if plugin.ifIndexes != nil {
-		if plugin.bdHandler, err = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.Log, nil); err != nil {
-			return err
-		}
+	if plugin.bfdHandler, err = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
 	}
-	if plugin.ifIndexes != nil && plugin.bdIndexes != nil {
-		if plugin.fibHandler, err = l2vppcalls.NewFibVppHandler(plugin.vppChan, plugin.dumpChan, make(chan *l2vppcalls.FibLogicalReq),
-			plugin.ifIndexes, plugin.bdIndexes, plugin.Log, nil); err != nil {
-			return err
-		}
+	if plugin.bdHandler, err = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
 	}
-	if plugin.ifIndexes != nil {
-		if plugin.xcHandler, err = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.Log, nil); err != nil {
-			return err
-		}
+	if plugin.fibHandler, err = l2vppcalls.NewFibVppHandler(plugin.vppChan, plugin.dumpChan, make(chan *l2vppcalls.FibLogicalReq),
+		ifIndexes, bdIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.xcHandler, err = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
 	}
 
 	plugin.indexItems = []indexItem{
@@ -148,10 +143,11 @@ func (plugin *Plugin) AfterInit() (err error) {
 	if err := plugin.registerInterfaceHandlers(); err != nil {
 		return err
 	}
-	if plugin.bdHandler != nil {
-		if err := plugin.registerL2Handlers(); err != nil {
-			return err
-		}
+	if err := plugin.registerBfdHandlers(); err != nil {
+		return err
+	}
+	if err := plugin.registerL2Handlers(); err != nil {
+		return err
 	}
 
 	plugin.HTTPHandlers.RegisterHTTPHandler("/arps", plugin.arpGetHandler, "GET")
@@ -170,5 +166,5 @@ func (plugin *Plugin) AfterInit() (err error) {
 
 // Close is used to clean up resources used by Plugin
 func (plugin *Plugin) Close() (err error) {
-	return nil
+	return safeclose.Close(plugin.vppChan, plugin.dumpChan)
 }

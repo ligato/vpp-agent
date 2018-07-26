@@ -190,7 +190,7 @@ func (ctl *VppAgentCtl) createBfdSession() {
 			{
 				Interface:             "memif1",
 				Enabled:               true,
-				SourceAddress:         "192.168.1.2",
+				SourceAddress:         "172.125.40.1",
 				DestinationAddress:    "20.10.0.5",
 				RequiredMinRxInterval: 8,
 				DesiredMinTxInterval:  3,

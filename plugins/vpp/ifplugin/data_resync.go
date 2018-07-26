@@ -232,8 +232,8 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	plugin.clearMapping()
 
 	// Dump all BFD vppSessions
-	vppSessions, err := plugin.DumpBfdSessions()
-	if err != nil {
+	vppBfdSessions, err := plugin.bfdHandler.DumpBfdSessions()
+	if err != nil || vppBfdSessions == nil {
 		return err
 	}
 
@@ -242,7 +242,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	for _, nbSession := range nbSessions {
 		// look for configured session
 		var found bool
-		for _, vppSession := range vppSessions {
+		for _, vppSession := range vppBfdSessions.Session {
 			// compare fixed fields
 			if nbSession.Interface == vppSession.Interface && nbSession.SourceAddress == vppSession.SourceAddress &&
 				nbSession.DestinationAddress == vppSession.DestinationAddress {
@@ -265,7 +265,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	}
 
 	// Remove old sessions
-	for _, vppSession := range vppSessions {
+	for _, vppSession := range vppBfdSessions.Session {
 		// remove every not-yet-registered session
 		_, _, found := plugin.sessionsIndexes.LookupIdx(vppSession.Interface)
 		if !found {
@@ -292,7 +292,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	}()
 
 	// lookup BFD auth keys
-	vppKeys, err := plugin.DumpBFDAuthKeys()
+	vppBfdKeys, err := plugin.bfdHandler.DumpBfdAuthKeys()
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	for _, nbKey := range nbKeys {
 		// look for configured keys
 		var found bool
-		for _, vppKey := range vppKeys {
+		for _, vppKey := range vppBfdKeys.AuthKeys {
 			// compare key ID
 			if nbKey.Id == vppKey.Id {
 				plugin.log.Debugf("found configured BFD auth key with ID %v", nbKey.Id)
@@ -324,7 +324,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	}
 
 	// Remove old keys
-	for _, vppKey := range vppKeys {
+	for _, vppKey := range vppBfdKeys.AuthKeys {
 		// remove every not-yet-registered keys
 		_, _, found := plugin.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
 		if !found {

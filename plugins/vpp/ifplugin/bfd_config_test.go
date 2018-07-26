@@ -308,33 +308,6 @@ func TestBfdConfiguratorDeleteSessionError(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-// BFD session dump
-func TestBfdConfiguratorDumpBfdSessions(t *testing.T) {
-	var err error
-	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
-	// Reply set
-	ctx.MockVpp.MockReply(
-		&bfd_api.BfdUDPSessionDetails{
-			SwIfIndex: 1,
-			LocalAddr: net.ParseIP("10.0.0.1").To4(),
-			PeerAddr:  net.ParseIP("10.0.0.2").To4(),
-		},
-		&bfd_api.BfdUDPSessionDetails{
-			SwIfIndex: 2,
-			LocalAddr: net.ParseIP("10.0.0.3").To4(),
-			PeerAddr:  net.ParseIP("10.0.0.4").To4(),
-		})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Register (only first interface)
-	ifIndexes.RegisterName("if1", 1, nil)
-	// Test bfd session dump
-	sessions, err := plugin.DumpBfdSessions()
-	Expect(err).To(BeNil())
-	Expect(sessions).To(HaveLen(2))
-}
-
 // Configure BFD authentication key
 func TestBfdConfiguratorSetAuthKey(t *testing.T) {
 	var err error
@@ -448,31 +421,6 @@ func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
 	// Test key modification
 	err = plugin.DeleteBfdAuthKey(data)
 	Expect(err).To(BeNil())
-}
-
-// Dump BFD authentication key
-func TestBfdConfiguratorDumpAuthKey(t *testing.T) {
-	var err error
-	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
-	// Reply set
-	ctx.MockVpp.MockReply(
-		&bfd_api.BfdAuthKeysDetails{
-			ConfKeyID: 1,
-			AuthType:  4, // Means KEYED SHA1
-		},
-		&bfd_api.BfdAuthKeysDetails{
-			ConfKeyID: 2,
-			AuthType:  1, // Any other number is METICULOUS KEYED SHA1
-		})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Test authentication key dump
-	keys, err := plugin.DumpBFDAuthKeys()
-	Expect(err).To(BeNil())
-	Expect(keys).To(HaveLen(2))
-	Expect(keys[0].AuthenticationType).To(BeEquivalentTo(bfd.SingleHopBFD_Key_KEYED_SHA1))
-	Expect(keys[1].AuthenticationType).To(BeEquivalentTo(bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1))
 }
 
 // Configure BFD echo function create/modify/delete
