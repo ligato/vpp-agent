@@ -17,31 +17,15 @@ package interfaces
 import (
 	"fmt"
 	"strings"
-
-	"github.com/ligato/vpp-agent/plugins/vpp/model"
 )
 
 const (
 	// interfacePrefix is interface prefix
-	interfacePrefix = "vpp/config" + model.ProtoApiVersion + "interface/"
+	interfacePrefix = "vpp/config/v1/interface/"
 	// ifStatePrefix is interface state prefix
-	ifStatePrefix = "vpp/status" + model.ProtoApiVersion + "interface/"
+	ifStatePrefix = "vpp/status/v1/interface/"
 	// ifErrorPrefix is interface error prefix
-	ifErrorPrefix = "vpp/status" + model.ProtoApiVersion + "interface/error/"
-	// restInterface is rest interface path
-	restInterface = model.ProtoApiVersion + "interfaces"
-	// restLoopback is path for loopback interface
-	restLoopback = model.ProtoApiVersion + "interfaces/loopback"
-	// restLoopback is path for physical interface
-	restEthernet = model.ProtoApiVersion + "interfaces/ethernet"
-	// restLoopback is path for memif interface
-	restMemif = model.ProtoApiVersion + "interfaces/memif"
-	// restLoopback is path for tap interface
-	restTap = model.ProtoApiVersion + "interfaces/tap"
-	// restAfPacket is path for af-packet interface
-	restAfPacket = model.ProtoApiVersion + "interfaces/afpacket"
-	// restLoopback is path for vxlan interface
-	restVxLan = model.ProtoApiVersion + "interfaces/vxlan"
+	ifErrorPrefix = "vpp/status/v1/interface/error/"
 )
 
 // InterfaceKeyPrefix returns the prefix used in ETCD to store vpp interfaces config.
@@ -84,39 +68,4 @@ func InterfaceStateKeyPrefix() string {
 // of particular interface in selected vpp instance.
 func InterfaceStateKey(ifaceLabel string) string {
 	return ifStatePrefix + ifaceLabel
-}
-
-// RestInterfaceKey returns prefix used in REST to dump interface config
-func RestInterfaceKey() string {
-	return restInterface
-}
-
-// RestLoopbackKey returns prefix used in REST to dump loopback interface config
-func RestLoopbackKey() string {
-	return restLoopback
-}
-
-// RestEthernetKey returns prefix used in REST to dump ethernet interface config
-func RestEthernetKey() string {
-	return restEthernet
-}
-
-// RestMemifKey returns prefix used in REST to dump memif interface config
-func RestMemifKey() string {
-	return restMemif
-}
-
-// RestTapKey returns prefix used in REST to dump tap interface config
-func RestTapKey() string {
-	return restTap
-}
-
-// RestAfPAcketKey returns prefix used in REST to dump af-packet interface config
-func RestAfPAcketKey() string {
-	return restAfPacket
-}
-
-// RestVxLanKey returns prefix used in REST to dump VxLAN interface config
-func RestVxLanKey() string {
-	return restVxLan
 }

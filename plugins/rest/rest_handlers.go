@@ -29,28 +29,27 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
+	"github.com/ligato/vpp-agent/plugins/rest/url"
 	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
 // Registers access list REST handlers
 func (plugin *Plugin) registerAccessListHandlers() error {
 	// GET IP ACLs
-	plugin.registerHTTPHandler(acl.RestIPKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestIPKey(), GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpIPACL(nil)
 	})
 	// GET MACIP ACLs
-	plugin.registerHTTPHandler(acl.RestMACIPKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestMACIPKey(), GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpMacIPAcls()
 	})
 	// GET IP ACL example
-	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestIPExampleKey(), plugin.exampleIpACLGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(url.RestIPExampleKey(), plugin.exampleIpACLGetHandler, GET)
 	// GET MACIP ACL example
-	plugin.HTTPHandlers.RegisterHTTPHandler(acl.RestMACIPExampleKey(), plugin.exampleMacIpACLGetHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(url.RestMACIPExampleKey(), plugin.exampleMacIpACLGetHandler, GET)
 
 	return nil
 }
@@ -58,11 +57,11 @@ func (plugin *Plugin) registerAccessListHandlers() error {
 // Registers interface REST handlers
 func (plugin *Plugin) registerInterfaceHandlers() error {
 	// GET all interfaces
-	plugin.registerHTTPHandler(interfaces.RestInterfaceKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestInterfaceKey(), GET, func() (interface{}, error) {
 		return plugin.ifHandler.DumpInterfaces()
 	})
 	// GET loopback interfaces
-	plugin.registerHTTPHandler(interfaces.RestLoopbackKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestLoopbackKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_SOFTWARE_LOOPBACK {
@@ -72,7 +71,7 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 		return ifs, err
 	})
 	// GET ethernet interfaces
-	plugin.registerHTTPHandler(interfaces.RestEthernetKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestEthernetKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_ETHERNET_CSMACD {
@@ -82,7 +81,7 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 		return ifs, err
 	})
 	// GET memif interfaces
-	plugin.registerHTTPHandler(interfaces.RestMemifKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestMemifKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_MEMORY_INTERFACE {
@@ -92,7 +91,7 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 		return ifs, err
 	})
 	// GET tap interfaces
-	plugin.registerHTTPHandler(interfaces.RestTapKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestTapKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_TAP_INTERFACE {
@@ -102,7 +101,7 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 		return ifs, err
 	})
 	// GET af-packet interfaces
-	plugin.registerHTTPHandler(interfaces.RestAfPAcketKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestAfPAcketKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_AF_PACKET_INTERFACE {
@@ -112,7 +111,7 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 		return ifs, err
 	})
 	// GET VxLAN interfaces
-	plugin.registerHTTPHandler(interfaces.RestVxLanKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestVxLanKey(), GET, func() (interface{}, error) {
 		ifs, err := plugin.ifHandler.DumpInterfaces()
 		for ifKey, ifConfig := range ifs {
 			if ifConfig.Interface.Type != interfaces.InterfaceType_VXLAN_TUNNEL {
@@ -127,15 +126,15 @@ func (plugin *Plugin) registerInterfaceHandlers() error {
 
 func (plugin *Plugin) registerBfdHandlers() error {
 	// GET BFD configuration
-	plugin.registerHTTPHandler(bfd.RestBfdKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestBfdKey(), GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdSingleHop()
 	})
 	// GET BFD sessions
-	plugin.registerHTTPHandler(bfd.RestSessionKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestSessionKey(), GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdSessions()
 	})
 	// GET BFD authentication keys
-	plugin.registerHTTPHandler(bfd.RestAuthKeysKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestAuthKeysKey(), GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdAuthKeys()
 	})
 
@@ -145,19 +144,19 @@ func (plugin *Plugin) registerBfdHandlers() error {
 // Registers L2 plugin REST handlers
 func (plugin *Plugin) registerL2Handlers() error {
 	// GET bridge domain IDs
-	plugin.registerHTTPHandler(l2.RestBridgeDomainIDKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestBridgeDomainIDKey(), GET, func() (interface{}, error) {
 		return plugin.bdHandler.DumpBridgeDomainIDs()
 	})
 	// GET bridge domains
-	plugin.registerHTTPHandler(l2.RestBridgeDomainKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestBridgeDomainKey(), GET, func() (interface{}, error) {
 		return plugin.bdHandler.DumpBridgeDomains()
 	})
 	// GET FIB entries
-	plugin.registerHTTPHandler(l2.RestFibKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestFibKey(), GET, func() (interface{}, error) {
 		return plugin.fibHandler.DumpFIBTableEntries()
 	})
 	// GET cross connects
-	plugin.registerHTTPHandler(l2.RestXConnectKey(), GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(url.RestXConnectKey(), GET, func() (interface{}, error) {
 		return plugin.xcHandler.DumpXConnectPairs()
 	})
 
@@ -283,68 +282,6 @@ func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.Hand
 			return
 		}
 		res, err = plugin.aclHandler.DumpInterfaceMACIPAcls(swIndex)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// ipACLGetHandler - used to get configuration of IP ACLs
-func (plugin *Plugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting acls")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-		aclHandler, err := aclcalls.NewAclVppHandler(ch, ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := aclHandler.DumpIPACL(nil)
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Deps.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-func (plugin *Plugin) macipACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		plugin.Deps.Log.Info("Getting macip acls")
-
-		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
-		defer ch.Close()
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		aclHandler, err := aclcalls.NewAclVppHandler(ch, ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := aclHandler.DumpMACIPACL(nil)
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)

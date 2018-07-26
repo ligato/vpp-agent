@@ -22,13 +22,11 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/rest/url"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
 const (
@@ -111,19 +109,19 @@ func (plugin *Plugin) Init() (err error) {
 	}
 
 	plugin.indexItems = []indexItem{
-		{Name: "ACL IP", Path: acl.RestIPKey()},
-		{Name: "ACL MACIP", Path: acl.RestMACIPKey()},
-		{Name: "Interfaces", Path: interfaces.RestInterfaceKey()},
-		{Name: "Loopback interfaces", Path: interfaces.RestLoopbackKey()},
-		{Name: "Ethernet interfaces", Path: interfaces.RestEthernetKey()},
-		{Name: "Memif interfaces", Path: interfaces.RestMemifKey()},
-		{Name: "Tap interfaces", Path: interfaces.RestTapKey()},
-		{Name: "VxLAN interfaces", Path: interfaces.RestVxLanKey()},
-		{Name: "Af-packet nterfaces", Path: interfaces.RestAfPAcketKey()},
-		{Name: "Bridge domains", Path: l2.RestBridgeDomainKey()},
-		{Name: "Bridge domain IDs", Path: l2.RestBridgeDomainIDKey()},
-		{Name: "L2Fibs", Path: l2.RestFibKey()},
-		{Name: "XConnectorPairs", Path: l2.RestXConnectKey()},
+		{Name: "ACL IP", Path: url.RestIPKey()},
+		{Name: "ACL MACIP", Path: url.RestMACIPKey()},
+		{Name: "Interfaces", Path: url.RestInterfaceKey()},
+		{Name: "Loopback interfaces", Path: url.RestLoopbackKey()},
+		{Name: "Ethernet interfaces", Path: url.RestEthernetKey()},
+		{Name: "Memif interfaces", Path: url.RestMemifKey()},
+		{Name: "Tap interfaces", Path: url.RestTapKey()},
+		{Name: "VxLAN interfaces", Path: url.RestVxLanKey()},
+		{Name: "Af-packet nterfaces", Path: url.RestAfPAcketKey()},
+		{Name: "Bridge domains", Path: url.RestBridgeDomainKey()},
+		{Name: "Bridge domain IDs", Path: url.RestBridgeDomainIDKey()},
+		{Name: "L2Fibs", Path: url.RestFibKey()},
+		{Name: "XConnectorPairs", Path: url.RestXConnectKey()},
 
 		{Name: "ARPs", Path: "/arps"},
 		{Name: "Static routes", Path: "/staticroutes"},

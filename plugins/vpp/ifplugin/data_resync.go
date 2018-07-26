@@ -233,7 +233,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 
 	// Dump all BFD vppSessions
 	vppBfdSessions, err := plugin.bfdHandler.DumpBfdSessions()
-	if err != nil || vppBfdSessions == nil {
+	if err != nil {
 		return err
 	}
 

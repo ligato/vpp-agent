@@ -14,27 +14,14 @@
 
 package bfd
 
-import "github.com/ligato/vpp-agent/plugins/vpp/model"
-
 const (
-	// restBfdKey is a REST path of a bfd
-	restBfdKey = model.ProtoApiVersion + "bfd"
 	// bfdSessionPrefix bfd-session/
-	bfdSessionPrefix = "vpp/config" + model.ProtoApiVersion + "bfd/session/"
-	// restBfdSessionKey is a REST path of a bfd sessions
-	restBfdSessionKey = model.ProtoApiVersion + "bfd/sessions"
+	bfdSessionPrefix = "vpp/config/v1/bfd/session/"
 	// bfdAuthKeysPrefix bfd-key/
-	bfdAuthKeysPrefix = "vpp/config" + model.ProtoApiVersion + "bfd/auth-key/"
-	// restBfdAuthKey is a REST path of a bfd authentication keys
-	restBfdAuthKey = model.ProtoApiVersion + "bfd/authkeys"
+	bfdAuthKeysPrefix = "vpp/config/v1/bfd/auth-key/"
 	// BfdEchoFunctionPrefix bfd-echo-function/
-	bfdEchoFunctionPrefix = "vpp/config" + model.ProtoApiVersion + "bfd/echo-function"
+	bfdEchoFunctionPrefix = "vpp/config/v1/bfd/echo-function"
 )
-
-// RestBfdKey returns prefix used in REST to dump bfd config
-func RestBfdKey() string {
-	return restBfdKey
-}
 
 // SessionKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
 func SessionKeyPrefix() string {
@@ -47,11 +34,6 @@ func SessionKey(bfdSessionIfaceLabel string) string {
 	return bfdSessionPrefix + bfdSessionIfaceLabel
 }
 
-// RestSessionKey returns prefix used in REST to dump bfd session config
-func RestSessionKey() string {
-	return restBfdSessionKey
-}
-
 // AuthKeysKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
 func AuthKeysKeyPrefix() string {
 	return bfdAuthKeysPrefix
@@ -61,11 +43,6 @@ func AuthKeysKeyPrefix() string {
 // of a particular bfd key in selected vpp instance.
 func AuthKeysKey(bfdKeyIDLabel string) string {
 	return bfdAuthKeysPrefix + bfdKeyIDLabel
-}
-
-// RestAuthKeysKey returns prefix used in REST to dump bfd authentication config
-func RestAuthKeysKey() string {
-	return restBfdAuthKey
 }
 
 // EchoFunctionKeyPrefix returns the prefix used in ETCD to store vpp bfd config.
