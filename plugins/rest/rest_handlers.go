@@ -60,63 +60,27 @@ func (plugin *Plugin) registerInterfaceHandlers() {
 	})
 	// GET loopback interfaces
 	plugin.registerHTTPHandler(resturl.Loopback, GET, func() (interface{}, error) {
-		ifs, err := plugin.ifHandler.DumpInterfaces()
-		for ifKey, ifConfig := range ifs {
-			if ifConfig.Interface.Type != interfaces.InterfaceType_SOFTWARE_LOOPBACK {
-				delete(ifs, ifKey)
-			}
-		}
-		return ifs, err
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_SOFTWARE_LOOPBACK)
 	})
 	// GET ethernet interfaces
 	plugin.registerHTTPHandler(resturl.Ethernet, GET, func() (interface{}, error) {
-		ifs, err := plugin.ifHandler.DumpInterfaces()
-		for ifKey, ifConfig := range ifs {
-			if ifConfig.Interface.Type != interfaces.InterfaceType_ETHERNET_CSMACD {
-				delete(ifs, ifKey)
-			}
-		}
-		return ifs, err
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_ETHERNET_CSMACD)
 	})
 	// GET memif interfaces
 	plugin.registerHTTPHandler(resturl.Memif, GET, func() (interface{}, error) {
-		ifs, err := plugin.ifHandler.DumpInterfaces()
-		for ifKey, ifConfig := range ifs {
-			if ifConfig.Interface.Type != interfaces.InterfaceType_MEMORY_INTERFACE {
-				delete(ifs, ifKey)
-			}
-		}
-		return ifs, err
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_MEMORY_INTERFACE)
 	})
 	// GET tap interfaces
 	plugin.registerHTTPHandler(resturl.Tap, GET, func() (interface{}, error) {
-		ifs, err := plugin.ifHandler.DumpInterfaces()
-		for ifKey, ifConfig := range ifs {
-			if ifConfig.Interface.Type != interfaces.InterfaceType_TAP_INTERFACE {
-				delete(ifs, ifKey)
-			}
-		}
-		return ifs, err
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_TAP_INTERFACE)
 	})
 	// GET af-packet interfaces
 	plugin.registerHTTPHandler(resturl.AfPacket, GET, func() (interface{}, error) {
-		ifs, err := plugin.ifHandler.DumpInterfaces()
-		for ifKey, ifConfig := range ifs {
-			if ifConfig.Interface.Type != interfaces.InterfaceType_AF_PACKET_INTERFACE {
-				delete(ifs, ifKey)
-			}
-		}
-		return ifs, err
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_AF_PACKET_INTERFACE)
 	})
 	// GET VxLAN interfaces
 	plugin.registerHTTPHandler(resturl.VxLan, GET, func() (interface{}, error) {
-		ifs, err := plugin.ifHandler.DumpInterfaces()
-		for ifKey, ifConfig := range ifs {
-			if ifConfig.Interface.Type != interfaces.InterfaceType_VXLAN_TUNNEL {
-				delete(ifs, ifKey)
-			}
-		}
-		return ifs, err
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_VXLAN_TUNNEL)
 	})
 }
 

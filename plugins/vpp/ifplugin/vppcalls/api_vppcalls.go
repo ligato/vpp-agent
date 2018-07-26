@@ -106,6 +106,8 @@ type IfVppRead interface {
 	// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
 	// - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
 	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
+	// DumpInterfacesByType returns all VPP interfaces of the specified type
+	DumpInterfacesByType(reqType interfaces.InterfaceType) (map[uint32]*InterfaceDetails, error)
 	// GetInterfaceVRF assigns VRF table to interface
 	GetInterfaceVRF(ifIdx uint32) (vrfID uint32, err error)
 	// DumpMemifSocketDetails dumps memif socket details from the VPP

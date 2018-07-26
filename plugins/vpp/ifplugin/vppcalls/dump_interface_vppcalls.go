@@ -48,6 +48,22 @@ type InterfaceMeta struct {
 	InternalName string `json:"internal_name"`
 }
 
+func (handler *ifVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (map[uint32]*InterfaceDetails, error) {
+	// Dump all
+	ifs, err := handler.DumpInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	// Filter by type
+	for ifIdx, ifData := range ifs {
+		if ifData.Interface.Type != reqType {
+			delete(ifs, ifIdx)
+		}
+	}
+
+	return ifs, nil
+}
+
 func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	start := time.Now()
 	// map for the resulting interfaces
