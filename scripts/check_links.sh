@@ -8,7 +8,7 @@ do
         continue
     fi
 
-    if ! markdown-link-check --config ./scripts/link-check-config.json $i; then
+    if ! markdown-link-check -v $i; then
         res=1
     fi
     echo "";
