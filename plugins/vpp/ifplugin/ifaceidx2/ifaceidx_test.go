@@ -179,7 +179,7 @@ func TestLookupByName(t *testing.T) {
 
 	metadata, exist := index.LookupByName(ifName0)
 	Expect(exist).To(BeTrue())
-	Expect(metadata.GetSwIfIndex()).To(Equal(idx0))
+	Expect(metadata.GetIndex()).To(Equal(idx0))
 	Expect(metadata).To(Equal(iface))
 }
 
@@ -248,5 +248,5 @@ func TestWatchNameToIdx(t *testing.T) {
 	Eventually(c).Should(Receive(&dto))
 
 	Expect(dto.Name).To(Equal(ifName0))
-	Expect(dto.Metadata.GetSwIfIndex()).To(Equal(idx0))
+	Expect(dto.Metadata.GetIndex()).To(Equal(idx0))
 }

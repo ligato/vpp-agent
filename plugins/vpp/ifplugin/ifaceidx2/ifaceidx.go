@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package ifaceidx2
 import (
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
@@ -34,7 +33,7 @@ type IfaceMetadataIndex interface {
 	LookupByName(name string) (metadata *IfaceMetadata, exists bool)
 
 	// LookupBySwIfIndex retrieves a previously stored interface identified in
-	// VPP by the given/ <swIfIndex>.
+	// VPP by the given <swIfIndex>.
 	// If there is no interface associated with the given index, <exists> is returned
 	// as *false* with <name> and <metadata> both set to empty values.
 	LookupBySwIfIndex(swIfIndex uint32) (name string, metadata *IfaceMetadata, exists bool)
@@ -45,7 +44,7 @@ type IfaceMetadataIndex interface {
 
 	// WatchInterfaces allows to subscribe to watch for changes in the mapping
 	// if interface metadata.
-	WatchInterfaces(subscriber core.PluginName, channel chan<- IfaceMetadataDto)
+	WatchInterfaces(subscriber string, channel chan<- IfaceMetadataDto)
 }
 
 // IfaceMetadataIndexRW provides read-write access to mapping with interface
@@ -61,8 +60,8 @@ type IfaceMetadata struct {
 	IpAddresses []string
 }
 
-// GetSwIfIndex returns sw_if_index assigned to the interface.
-func (ifm *IfaceMetadata) GetSwIfIndex() uint32 {
+// GetIndex returns sw_if_index assigned to the interface.
+func (ifm *IfaceMetadata) GetIndex() uint32 {
 	return ifm.SwIfIndex
 }
 
@@ -78,8 +77,8 @@ type IfaceMetadataDto struct {
 type ifaceMetadataIndex struct {
 	idxmap.NamedMappingRW /* embeds */
 
-	log       logging.Logger
-	swIfIndex idxvpp2.SwIfIndex /* contains */
+	log         logging.Logger
+	nameToIndex idxvpp2.NameToIndex /* contains */
 }
 
 const (
@@ -89,11 +88,11 @@ const (
 
 // NewIfaceIndex creates a new instance implementing IfaceMetadataIndexRW.
 func NewIfaceIndex(logger logging.Logger, title string) IfaceMetadataIndexRW {
-	mapping := idxvpp2.NewSwIfIndex(logger, title, indexMetadata)
+	mapping := idxvpp2.NewNameToIndex(logger, title, indexMetadata)
 	return &ifaceMetadataIndex{
 		NamedMappingRW: mapping,
 		log:            logger,
-		swIfIndex:      mapping,
+		nameToIndex:    mapping,
 	}
 }
 
@@ -116,8 +115,8 @@ func (ifmx *ifaceMetadataIndex) LookupByName(name string) (metadata *IfaceMetada
 // If there is no interface associated with the given index, <exists> is returned
 // as *false* with <name> and <metadata> both set to empty values.
 func (ifmx *ifaceMetadataIndex) LookupBySwIfIndex(swIfIndex uint32) (name string, metadata *IfaceMetadata, exists bool) {
-	var item idxvpp2.WithSwIfIndex
-	name, item, exists = ifmx.swIfIndex.LookupBySwIfIndex(swIfIndex)
+	var item idxvpp2.WithIndex
+	name, item, exists = ifmx.nameToIndex.LookupByIndex(swIfIndex)
 	if exists {
 		var isIfaceMeta bool
 		metadata, isIfaceMeta = item.(*IfaceMetadata)
@@ -136,7 +135,7 @@ func (ifmx *ifaceMetadataIndex) LookupByIP(ip string) []string {
 
 // WatchInterfaces allows to subscribe to watch for changes in the mapping
 // if interface metadata.
-func (ifmx *ifaceMetadataIndex) WatchInterfaces(subscriber core.PluginName, channel chan<- IfaceMetadataDto) {
+func (ifmx *ifaceMetadataIndex) WatchInterfaces(subscriber string, channel chan<- IfaceMetadataDto) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
 		typedMeta, ok := dto.Value.(*IfaceMetadata)
 		if !ok {

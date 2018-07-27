@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Factory defines type of a function used to create new instances of a SwIfIndex mapping.
-type Factory func() (SwIfIndexRW, error)
+// Factory defines type of a function used to create new instances of a NameToIndex mapping.
+type Factory func() (NameToIndexRW, error)
 
 // GivenKW defines the initial state of a testing scenario.
 type GivenKW struct {
-	swIfIndexFactory Factory
-	swIfIndex        SwIfIndexRW
-	swIfIndexChan    chan SwIfIndexDto
+	nameToIndexFactory Factory
+	nameToIndex        NameToIndexRW
+	nameToIndexChan    chan NameToIndexDto
 }
 
 // When defines the actions/changes done to the tested registry.
@@ -67,15 +67,15 @@ func (given *GivenKW) When() *When {
 
 // NameToIdx sets up a given registry for the tested scenario.
 func (given *GivenKW) NameToIdx(idxMapFactory Factory, reg map[string]uint32) *GivenKW {
-	Expect(given.swIfIndexFactory).Should(BeNil())
-	Expect(given.swIfIndex).Should(BeNil())
+	Expect(given.nameToIndexFactory).Should(BeNil())
+	Expect(given.nameToIndex).Should(BeNil())
 	var err error
-	given.swIfIndexFactory = idxMapFactory
-	given.swIfIndex, err = idxMapFactory()
+	given.nameToIndexFactory = idxMapFactory
+	given.nameToIndex, err = idxMapFactory()
 	Expect(err).Should(BeNil())
 
 	for name, idx := range reg {
-		given.swIfIndex.Put(name, &OnlySwIfIndex{idx})
+		given.nameToIndex.Put(name, &OnlyIndex{idx})
 	}
 
 	// Registration of given mappings is done before watch (therefore there will be no notifications).
@@ -84,8 +84,8 @@ func (given *GivenKW) NameToIdx(idxMapFactory Factory, reg map[string]uint32) *G
 }
 
 func (given *GivenKW) watchNameIdx() {
-	given.swIfIndexChan = make(chan SwIfIndexDto, 1000)
-	given.swIfIndex.WatchItems("plugin2", given.swIfIndexChan)
+	given.nameToIndexChan = make(chan NameToIndexDto, 1000)
+	given.nameToIndex.WatchItems("plugin2", given.nameToIndexChan)
 }
 
 // Then starts a then-clause.
@@ -101,7 +101,7 @@ func (when *When) Name(name string) *WhenName {
 // IsDeleted removes a given name from the registry.
 func (whenName *WhenName) IsDeleted() *WhenName {
 	name := string(whenName.name)
-	whenName.when.given.swIfIndex.Delete(name)
+	whenName.when.given.nameToIndex.Delete(name)
 
 	return whenName
 }
@@ -114,7 +114,7 @@ func (whenName *WhenName) Then() *Then {
 // IsAdded adds a given name-index pair into the registry.
 func (whenName *WhenName) IsAdded(idx uint32) *WhenName {
 	name := string(whenName.name)
-	whenName.when.given.swIfIndex.Put(name, &OnlySwIfIndex{idx})
+	whenName.when.given.nameToIndex.Put(name, &OnlyIndex{idx})
 	return whenName
 }
 
@@ -131,7 +131,7 @@ func (then *Then) Name(name string) *ThenName {
 // MapsToNothing verifies that a given name really maps to nothing.
 func (thenName *ThenName) MapsToNothing() *ThenName {
 	name := string(thenName.name)
-	_, exist := thenName.then.when.given.swIfIndex.LookupByName(name)
+	_, exist := thenName.then.when.given.nameToIndex.LookupByName(name)
 	Expect(exist).Should(BeFalse())
 
 	return thenName
@@ -140,11 +140,11 @@ func (thenName *ThenName) MapsToNothing() *ThenName {
 //MapsTo asserts the response of LookupIdx, LookupName and message in the channel.
 func (thenName *ThenName) MapsTo(expectedIdx uint32) *ThenName {
 	name := string(thenName.name)
-	item, exist := thenName.then.when.given.swIfIndex.LookupByName(name)
+	item, exist := thenName.then.when.given.nameToIndex.LookupByName(name)
 	Expect(exist).Should(BeTrue())
-	Expect(item.GetSwIfIndex()).Should(Equal(uint32(expectedIdx)))
+	Expect(item.GetIndex()).Should(Equal(uint32(expectedIdx)))
 
-	retName, _, exist := thenName.then.when.given.swIfIndex.LookupBySwIfIndex(item.GetSwIfIndex())
+	retName, _, exist := thenName.then.when.given.nameToIndex.LookupByIndex(item.GetIndex())
 	Expect(exist).Should(BeTrue())
 	Expect(retName).ShouldNot(BeNil())
 	Expect(retName).Should(Equal(name))
@@ -199,7 +199,7 @@ func (thenNotif *ThenNotification) IsNotExpected() *ThenNotification {
 func (thenNotif *ThenNotification) IsExpectedFor(idx uint32) *ThenNotification {
 	notif, exist := thenNotif.receiveChan()
 	Expect(exist).Should(BeTrue())
-	Expect(notif.Item.GetSwIfIndex()).Should(BeEquivalentTo(uint32(idx)))
+	Expect(notif.Item.GetIndex()).Should(BeEquivalentTo(uint32(idx)))
 	Expect(notif.Del).Should(BeEquivalentTo(bool(thenNotif.del)))
 	return thenNotif
 }
@@ -214,9 +214,9 @@ func (thenNotif *ThenNotification) When() *When {
 	return thenNotif.then.when
 }
 
-func (thenNotif *ThenNotification) receiveChan() (*SwIfIndexDto, bool) {
-	ch := thenNotif.then.when.given.swIfIndexChan
-	var x SwIfIndexDto
+func (thenNotif *ThenNotification) receiveChan() (*NameToIndexDto, bool) {
+	ch := thenNotif.then.when.given.nameToIndexChan
+	var x NameToIndexDto
 	select {
 	case x = <-ch:
 		return &x, true

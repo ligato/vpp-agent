@@ -1,36 +1,36 @@
-# SwIfIndex
+# NameToIndex
 
-Note: SwIfIndex will completely replace NameToIdx once all plugins are based on
+Note: idxvpp2 package will completely replace idxvpp once all plugins are based on
 `KVScheduler`.
 
-The SwIfIndex mapping is an extension of the NamedMapping mapping. It is 
-used by VPP Agent plugins that interact with VPP to map between VPP items
-with `sw_if_index` handles and the string-based object identifiers used
-by northbound clients of the Agent.
+The NameToIndex mapping is an extension of the NamedMapping mapping. It is
+used by VPP Agent plugins that interact with VPP/Linux to map between items
+with integer handles and the string-based object identifiers used by northbound
+clients of the Agent.
 
 The mappings are primarily used to match VPP dumps with the northbound
 configuration. This is essential for the re-configuration and state
 re-synchronization after failures.
 Furthermore, a mapping registry may be shared between plugins.
 For example, `ifplugin` exposes a `sw_if_index->iface_meta` mapping (extended
-`SwIfIndex`) so that other plugins may reference interfaces from objects
+`NameToIndex`) so that other plugins may reference interfaces from objects
 that depend on them, such as bridge domains or IP routes.
 
 **API**
 
-Every plugin is allowed to allocate a new mapping using the function 
-`NewSwIfIndex(logger, title, indexfunction)`, giving in-memory-only
+Every plugin is allowed to allocate a new mapping using the function
+`NewNameToIndex(logger, title, indexfunction)`, giving in-memory-only
 storage capabilities. Specifying `indexFunction` allows to add user-defined
 secondary indices.
- 
-The `SwIfIndexRW` interface supports read and write operations. While the 
-registry owner is allowed to do both reads and writes, only the read 
-interface `SwIfIndex` is typically exposed to other plugins. 
+
+The `NameToIndexRW` interface supports read and write operations. While the
+registry owner is allowed to do both reads and writes, only the read
+interface `NameToIndex` is typically exposed to other plugins.
 
 The read-only interface provides item-by-name and item-by-index look-ups using
-the `LookupByName` and `LookupBySwIfIndex` functions, respectively. Additionally,
+the `LookupByName` and `LookupByIndex` functions, respectively. Additionally,
 a client can use the `WatchItems` function to watch for changes in the registry
-related to items with `sw_if_index`. The registry owner can change the mapping
+related to items with integer handles. The registry owner can change the mapping
 content using the `Put/Delete/Update` functions from the underlying NamedMapping.
 
 **KVScheduler-owned mapping**
@@ -41,26 +41,26 @@ are able to let the scheduler to keep the mapping of item metadata up-to-date.
 the scheduler-managed mapping for item metadata. Normally, the scheduler uses
 the basic `NamedMapping` to keep the association between item name and item
 metadata. Descriptor, however, may provide a mapping factory, building mapping
-with customized secondary indexes - like `SwIfIndex` or its extensions.
+with customized secondary indexes - like `NameToIndex` or its extensions.
 The mapping is then available for reading to everyone via scheduler's method
 `GetMetadataMap(descriptor)`. For mappings customized using the factory,
 the returned `NamedMapping` can be then further casted to interface exposing
-the extra look-ups, but keeping the access read-only. 
+the extra look-ups, but keeping the access read-only.
 
 *Example*
 
 Here are some simplified code snippets from `ifplugin` showing how descriptor
 can define mapping factory for the scheduler, and how the plugin then propagates
-a read-only access to the mapping, including the extra secondary indexes:  
+a read-only access to the mapping, including the extra secondary indexes:
 
 ```
-// ifaceidx extends SwIfIndex with IP lookups (for full code see plugins/vpp/ifplugin/ifaceidx):
+// ifaceidx extends NameToIndex with IP lookups (for full code see plugins/vpp/ifplugin/ifaceidx2):
 
 type IfaceMetadataIndex interface {
 	LookupByName(name string) (metadata *IfaceMetadata, exists bool)
 	LookupBySwIfIndex(swIfIndex uint32) (name string, metadata *IfaceMetadata, exists bool)
 	LookupByIP(ip string) []string /* name */
-	WatchInterfaces(subscriber core.PluginName, channel chan<- IfaceMetadataDto)
+	WatchInterfaces(subscriber string, channel chan<- IfaceMetadataDto)
 }
 
 type IfaceMetadata struct {

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,82 +18,81 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 )
 
-// WithSwIfIndex is interface that items with sw_if_index must implement to get
-// indexed by SwIfIndex.
-type WithSwIfIndex interface {
-	// GetSwIfIndex should return sw_if_index assigned to the item.
-	GetSwIfIndex() uint32
+// WithIndex is interface that items with integer handle must implement to get
+// indexed by NameToIndex.
+type WithIndex interface {
+	// GetIndex should return integer handle assigned to the item.
+	GetIndex() uint32
 }
 
-// SwIfIndex is the "user API" to the registry of VPP items indexed by sw_if_index.
+// NameToIndex is the "user API" to the registry of items with integer handles.
 // It provides read-only access intended for plugins that need to do the conversions
-// between logical names from NB and VPP IDs.
-type SwIfIndex interface {
+// between logical names from NB and VPP/Linux item IDs.
+type NameToIndex interface {
 	// LookupByName retrieves a previously stored item identified by
 	// <name>. If there is no item associated with the give name in the mapping,
 	// the <exists> is returned as *false* and <item> as *nil*.
-	LookupByName(name string) (item WithSwIfIndex, exists bool)
+	LookupByName(name string) (item WithIndex, exists bool)
 
-	// LookupIdx retrieves a previously stored item identified in VPP by the given
-	// <swIfIndex>.
+	// LookupByIndex retrieves a previously stored item identified in VPP/Linux
+	// by the given <index>.
 	// If there is no item associated with the given index, <exists> is returned
 	// as *false* with <name> and <item> both set to empty values.
-	LookupBySwIfIndex(swIfIndex uint32) (name string, item WithSwIfIndex, exists bool)
+	LookupByIndex(index uint32) (name string, item WithIndex, exists bool)
 
 	// WatchItems subscribes to receive notifications about the changes in the
-	// mapping related to items with sw_if_index.
-	WatchItems(subscriber core.PluginName, channel chan<- SwIfIndexDto)
+	// mapping related to items with integer handles.
+	WatchItems(subscriber string, channel chan<- NameToIndexDto)
 }
 
-// SwIfIndexRW is the "owner API" to the NameToIdx registry. Using this
+// NameToIndexRW is the "owner API" to the NameToIndex registry. Using this
 // API the owner is able to add/update and delete associations between logical
-// names and VPP items identified by sw_if_index.
-type SwIfIndexRW interface {
-	SwIfIndex
+// names and VPP/Linux items identified by integer handles.
+type NameToIndexRW interface {
+	NameToIndex
 	idxmap.NamedMappingRW
 }
 
-// OnlySwIfIndex can be used to add items into SwIfIndex with sw_if_index
+// OnlyIndex can be used to add items into NameToIndex with the integer handle
 // as the only information associated with each item.
-type OnlySwIfIndex struct {
-	SwIfIndex uint32
+type OnlyIndex struct {
+	Index uint32
 }
 
-// GetSwIfIndex returns sw_if_index assigned to the item.
-func (idx *OnlySwIfIndex) GetSwIfIndex() uint32 {
-	return idx.SwIfIndex
+// GetIndex returns index assigned to the item.
+func (item *OnlyIndex) GetIndex() uint32 {
+	return item.Index
 }
 
-// SwIfIndexDto represents an item sent through watch channel in swIfIndex.
-// In contrast to NamedMappingGenericEvent, it contains item casted to WithSwIfIndex.
-type SwIfIndexDto struct {
+// NameToIndexDto represents an item sent through watch channel in NameToIndex.
+// In contrast to NamedMappingGenericEvent, it contains item casted to WithIndex.
+type NameToIndexDto struct {
 	idxmap.NamedMappingEvent
-	Item WithSwIfIndex
+	Item WithIndex
 }
 
-// swIfIndex implements NamedMapping for items with sw_if_index.
-type swIfIndex struct {
+// nameToIndex implements NamedMapping for items with integer handles.
+type nameToIndex struct {
 	idxmap.NamedMappingRW
 	log logging.Logger
 }
 
 const (
-	// swIfIdxKey is a secondary index used to create association between
-	// item name and sw_if_index from VPP.
-	swIfIdxKey = "sw_if_index"
+	// indexKey is a secondary index used to create association between
+	// item name and the integer handle.
+	indexKey = "index"
 )
 
-// NewSwIfIndex creates a new instance implementing SwIfIndexRW.
+// NewNameToIndex creates a new instance implementing NameToIndexRW.
 // User can optionally extend the secondary indexes through <indexFunction>.
-func NewSwIfIndex(logger logging.Logger, title string,
-	indexFunction func(interface{}) map[string][]string) SwIfIndexRW {
-	return &swIfIndex{
+func NewNameToIndex(logger logging.Logger, title string,
+	indexFunction mem.IndexFunction) NameToIndexRW {
+	return &nameToIndex{
 		NamedMappingRW: mem.NewNamedMapping(logger, title,
 			func(item interface{}) map[string][]string {
 				idxs := internalIndexFunction(item)
@@ -112,28 +111,28 @@ func NewSwIfIndex(logger logging.Logger, title string,
 // LookupByName retrieves a previously stored item identified by
 // <name>. If there is no item associated with the give name in the mapping,
 // the <exists> is returned as *false* and <item> as *nil*.
-func (swix *swIfIndex) LookupByName(name string) (item WithSwIfIndex, exists bool) {
-	value, found := swix.GetValue(name)
+func (idx *nameToIndex) LookupByName(name string) (item WithIndex, exists bool) {
+	value, found := idx.GetValue(name)
 	if found {
-		if itemWithIndex, ok := value.(WithSwIfIndex); ok {
+		if itemWithIndex, ok := value.(WithIndex); ok {
 			return itemWithIndex, found
 		}
 	}
 	return nil, false
 }
 
-// LookupIdx retrieves a previously stored item identified in VPP by the given
-// <swIfIndex>.
-// If there is no item associated with the given index, exists is returned
+// LookupByIndex retrieves a previously stored item identified in VPP/Linux
+// by the given <index>.
+// If there is no item associated with the given index, <exists> is returned
 // as *false* with <name> and <item> both set to empty values.
-func (swix *swIfIndex) LookupBySwIfIndex(swIfIndex uint32) (name string, item WithSwIfIndex, exists bool) {
-	res := swix.ListNames(swIfIdxKey, strconv.FormatUint(uint64(swIfIndex), 10))
+func (idx *nameToIndex) LookupByIndex(index uint32) (name string, item WithIndex, exists bool) {
+	res := idx.ListNames(indexKey, strconv.FormatUint(uint64(index), 10))
 	if len(res) != 1 {
 		return
 	}
-	value, found := swix.GetValue(res[0])
+	value, found := idx.GetValue(res[0])
 	if found {
-		if itemWithIndex, ok := value.(WithSwIfIndex); ok {
+		if itemWithIndex, ok := value.(WithIndex); ok {
 			return res[0], itemWithIndex, found
 		}
 	}
@@ -141,34 +140,34 @@ func (swix *swIfIndex) LookupBySwIfIndex(swIfIndex uint32) (name string, item Wi
 }
 
 // WatchItems subscribes to receive notifications about the changes in the
-// mapping.
-func (swix *swIfIndex) WatchItems(subscriber core.PluginName, channel chan<- SwIfIndexDto) {
+// mapping related to items with integer handles.
+func (idx *nameToIndex) WatchItems(subscriber string, channel chan<- NameToIndexDto) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
-		itemWithIndex, ok := dto.Value.(WithSwIfIndex)
+		itemWithIndex, ok := dto.Value.(WithIndex)
 		if !ok {
 			return
 		}
-		msg := SwIfIndexDto{
+		msg := NameToIndexDto{
 			NamedMappingEvent: dto.NamedMappingEvent,
 			Item:              itemWithIndex,
 		}
 		select {
 		case channel <- msg:
 		case <-time.After(idxmap.DefaultNotifTimeout):
-			swix.log.Warn("Unable to deliver notification")
+			idx.log.Warn("Unable to deliver notification")
 		}
 	}
-	swix.Watch(subscriber, watcher)
+	idx.Watch(subscriber, watcher)
 }
 
-// internalIndexFunction is an index function used internally for sw_if_index.
+// internalIndexFunction is an index function used internally for nameToIndex.
 func internalIndexFunction(item interface{}) map[string][]string {
 	indexes := map[string][]string{}
-	itemWithIndex, ok := item.(WithSwIfIndex)
+	itemWithIndex, ok := item.(WithIndex)
 	if !ok || itemWithIndex == nil {
 		return indexes
 	}
 
-	indexes[swIfIdxKey] = []string{strconv.FormatUint(uint64(itemWithIndex.GetSwIfIndex()), 10)}
+	indexes[indexKey] = []string{strconv.FormatUint(uint64(itemWithIndex.GetIndex()), 10)}
 	return indexes
 }

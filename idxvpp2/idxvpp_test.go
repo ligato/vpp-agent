@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,8 +35,8 @@ var (
 	eth2 = "eth2"
 )
 
-func IndexFactory() (SwIfIndexRW, error) {
-	return NewSwIfIndex(logrus.DefaultLogger(), "test", nil), nil
+func IndexFactory() (NameToIndexRW, error) {
+	return NewNameToIndex(logrus.DefaultLogger(), "test", nil), nil
 }
 
 func Test01UnregisteredMapsToNothing(t *testing.T) {
@@ -85,13 +85,13 @@ const (
 )
 
 type Item struct {
-	sw_if_index uint32
-	flag        bool
-	vals        []string
+	index uint32
+	flag  bool
+	vals  []string
 }
 
-func (item *Item) GetSwIfIndex() uint32 {
-	return item.sw_if_index
+func (item *Item) GetIndex() uint32 {
+	return item.index
 }
 
 func createIdx(item interface{}) map[string][]string {
@@ -108,25 +108,25 @@ func createIdx(item interface{}) map[string][]string {
 
 func TestIndexedMetadata(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewSwIfIndex(logrus.DefaultLogger(), "title", createIdx)
+	idxm := NewNameToIndex(logrus.DefaultLogger(), "title", createIdx)
 
 	res := idxm.ListNames(flagKey, "true")
 	gomega.Expect(res).To(gomega.BeNil())
 
 	item1 := &Item{
-		sw_if_index: idx1,
-		flag:        true,
-		vals:        []string{"abc", "def", "xyz"},
+		index: idx1,
+		flag:  true,
+		vals:  []string{"abc", "def", "xyz"},
 	}
 	item2 := &Item{
-		sw_if_index: idx2,
-		flag:        false,
-		vals:        []string{"abc", "klm", "opq"},
+		index: idx2,
+		flag:  false,
+		vals:  []string{"abc", "klm", "opq"},
 	}
 	item3 := &Item{
-		sw_if_index: idx3,
-		flag:        true,
-		vals:        []string{"jkl"},
+		index: idx3,
+		flag:  true,
+		vals:  []string{"jkl"},
 	}
 
 	idxm.Put(eth0, item1)
@@ -160,30 +160,30 @@ func TestIndexedMetadata(t *testing.T) {
 
 func TestOldIndexRemove(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewSwIfIndex(logrus.DefaultLogger(), "title", nil)
+	idxm := NewNameToIndex(logrus.DefaultLogger(), "title", nil)
 
-	idxm.Put(eth0, &OnlySwIfIndex{idx1})
+	idxm.Put(eth0, &OnlyIndex{idx1})
 
 	item, found := idxm.LookupByName(eth0)
 	gomega.Expect(found).To(gomega.BeTrue())
-	gomega.Expect(item.GetSwIfIndex()).To(gomega.BeEquivalentTo(idx1))
+	gomega.Expect(item.GetIndex()).To(gomega.BeEquivalentTo(idx1))
 
-	name, _, found := idxm.LookupBySwIfIndex(idx1)
+	name, _, found := idxm.LookupByIndex(idx1)
 	gomega.Expect(found).To(gomega.BeTrue())
 	gomega.Expect(name).To(gomega.BeEquivalentTo(eth0))
 
-	idxm.Put(eth0, &OnlySwIfIndex{idx2})
+	idxm.Put(eth0, &OnlyIndex{idx2})
 
 	item, found = idxm.LookupByName(eth0)
 	gomega.Expect(found).To(gomega.BeTrue())
-	gomega.Expect(item.GetSwIfIndex()).To(gomega.BeEquivalentTo(idx2))
+	gomega.Expect(item.GetIndex()).To(gomega.BeEquivalentTo(idx2))
 
-	name, item, found = idxm.LookupBySwIfIndex(idx2)
+	name, item, found = idxm.LookupByIndex(idx2)
 	gomega.Expect(found).To(gomega.BeTrue())
 	gomega.Expect(name).To(gomega.BeEquivalentTo(string(eth0)))
 	gomega.Expect(item).ToNot(gomega.BeNil())
 
-	name, item, found = idxm.LookupBySwIfIndex(idx1)
+	name, item, found = idxm.LookupByIndex(idx1)
 	gomega.Expect(found).To(gomega.BeFalse())
 	gomega.Expect(name).To(gomega.BeEquivalentTo(""))
 	gomega.Expect(item).To(gomega.BeNil())
@@ -191,41 +191,41 @@ func TestOldIndexRemove(t *testing.T) {
 
 func TestUpdateIndex(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewSwIfIndex(logrus.DefaultLogger(), "title", nil)
+	idxm := NewNameToIndex(logrus.DefaultLogger(), "title", nil)
 
-	idxm.Put(eth0, &OnlySwIfIndex{idx1})
+	idxm.Put(eth0, &OnlyIndex{idx1})
 
 	item, found := idxm.LookupByName(eth0)
 	gomega.Expect(found).To(gomega.BeTrue())
-	gomega.Expect(item.GetSwIfIndex()).To(gomega.BeEquivalentTo(idx1))
+	gomega.Expect(item.GetIndex()).To(gomega.BeEquivalentTo(idx1))
 
-	success := idxm.Update(eth0, &OnlySwIfIndex{idx2})
+	success := idxm.Update(eth0, &OnlyIndex{idx2})
 	gomega.Expect(success).To(gomega.BeTrue())
 
 	item, found = idxm.LookupByName(eth0)
 	gomega.Expect(found).To(gomega.BeTrue())
-	gomega.Expect(item.GetSwIfIndex()).To(gomega.BeEquivalentTo(idx2))
+	gomega.Expect(item.GetIndex()).To(gomega.BeEquivalentTo(idx2))
 }
 
 func TestClearMapping(t *testing.T) {
 	gomega.RegisterTestingT(t)
-	idxm := NewSwIfIndex(logrus.DefaultLogger(), "title", nil)
+	idxm := NewNameToIndex(logrus.DefaultLogger(), "title", nil)
 
-	idxm.Put(eth0, &OnlySwIfIndex{idx1})
-	idxm.Put(eth1, &OnlySwIfIndex{idx2})
-	idxm.Put(eth2, &OnlySwIfIndex{idx3})
+	idxm.Put(eth0, &OnlyIndex{idx1})
+	idxm.Put(eth1, &OnlyIndex{idx2})
+	idxm.Put(eth2, &OnlyIndex{idx3})
 
 	item, found := idxm.LookupByName(eth0)
 	gomega.Expect(found).To(gomega.BeTrue())
-	gomega.Expect(item.GetSwIfIndex()).To(gomega.BeEquivalentTo(idx1))
+	gomega.Expect(item.GetIndex()).To(gomega.BeEquivalentTo(idx1))
 
 	item, found = idxm.LookupByName(eth1)
 	gomega.Expect(found).To(gomega.BeTrue())
-	gomega.Expect(item.GetSwIfIndex()).To(gomega.BeEquivalentTo(idx2))
+	gomega.Expect(item.GetIndex()).To(gomega.BeEquivalentTo(idx2))
 
 	item, found = idxm.LookupByName(eth2)
 	gomega.Expect(found).To(gomega.BeTrue())
-	gomega.Expect(item.GetSwIfIndex()).To(gomega.BeEquivalentTo(idx3))
+	gomega.Expect(item.GetIndex()).To(gomega.BeEquivalentTo(idx3))
 
 	idxm.Clear()
 
