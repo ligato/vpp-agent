@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 // DefaultPlugin is default instance of Plugin
@@ -31,6 +32,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.PluginName = "vpp"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
+	p.GoVppmux = &govppmux.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

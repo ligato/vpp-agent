@@ -37,8 +37,8 @@ func init() {
 	govpp.SetControlPingMessages(&vpe.ControlPing{}, &vpe.ControlPingReply{})
 }
 
-// GOVPPPlugin implements the govppmux plugin interface.
-type GOVPPPlugin struct {
+// Plugin implements the govppmux plugin interface.
+type Plugin struct {
 	Deps
 
 	vppConn    *govpp.Connection
@@ -89,16 +89,8 @@ func defaultConfig() *Config {
 	}
 }
 
-// FromExistingAdapter is used mainly for testing purposes.
-func FromExistingAdapter(vppAdapter adapter.VppAdapter) *GOVPPPlugin {
-	ret := &GOVPPPlugin{
-		vppAdapter: vppAdapter,
-	}
-	return ret
-}
-
 // Init is the entry point called by Agent Core. A single binary-API connection to VPP is established.
-func (plugin *GOVPPPlugin) Init() error {
+func (plugin *Plugin) Init() error {
 	var err error
 
 	govppLogger := plugin.Deps.Log.NewLogger("GoVpp")
@@ -155,7 +147,7 @@ func (plugin *GOVPPPlugin) Init() error {
 }
 
 // Close cleans up the resources allocated by the govppmux plugin.
-func (plugin *GOVPPPlugin) Close() error {
+func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
@@ -174,7 +166,7 @@ func (plugin *GOVPPPlugin) Close() error {
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannel()
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
+func (plugin *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		return nil, err
@@ -195,7 +187,7 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
+func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 	if err != nil {
 		return nil, err
@@ -211,7 +203,7 @@ func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSiz
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
-func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
+func (plugin *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
 
@@ -241,7 +233,7 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 	}
 }
 
-func (plugin *GOVPPPlugin) retrieveVersion() {
+func (plugin *Plugin) retrieveVersion() {
 	vppAPIChan, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		plugin.Log.Error("getting new api channel failed:", err)

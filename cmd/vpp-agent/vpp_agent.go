@@ -11,9 +11,8 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
-	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/linux"
+	"github.com/ligato/vpp-agent/plugins/rest"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/rpc"
@@ -22,27 +21,28 @@ import (
 type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
-	GoVPP *govppmux.Plugin
 	Linux *linux.Plugin
 	VPP   *vpp.Plugin
 
 	IfStatePub *msgsync.Plugin
 
-	GRPCSvcPlugin   *rpc.GRPCSvcPlugin
-	RESTAPIPlugin   *rest.Plugin
-	TelemetryPlugin *telemetry.Plugin
+	GRPCService *rpc.Plugin
+	RESTAPI     *rest.Plugin
+	Telemetry   *telemetry.Plugin
 }
 
 func NewVppAgent() *VPPAgent {
 	a := &VPPAgent{
-		LogManager: &logmanager.DefaultPlugin,
-		GoVPP:      &govppmux.DefaultPlugin,
+		LogManager:  &logmanager.DefaultPlugin,
+		Telemetry:   &telemetry.DefaultPlugin,
+		GRPCService: &rpc.DefaultPlugin,
 	}
 
 	ifStatePub := msgsync.NewPlugin(
 		msgsync.UseDeps(func(deps *msgsync.Deps) {
 			deps.Messaging = &kafka.DefaultPlugin
-		}), msgsync.UseConf(msgsync.Cfg{
+		}),
+		msgsync.UseConf(msgsync.Cfg{
 			Topic: "if_state",
 		}),
 	)
@@ -58,23 +58,27 @@ func NewVppAgent() *VPPAgent {
 		dataSync,
 	}}
 
-	var watchEventsMutex sync.Mutex
 	a.VPP = vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.GoVppmux = a.GoVPP
 		deps.Publish = dataSync
 		deps.Watch = watcher
+		deps.IfStatePub = a.IfStatePub
 		deps.DataSyncs = map[string]datasync.KeyProtoValWriter{
 			"etcd": dataSync,
 		}
-		deps.WatchEventsMutex = &watchEventsMutex
-		deps.IfStatePub = a.IfStatePub
 	}))
 	a.Linux = linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
 		deps.VPP = a.VPP
 		deps.Watcher = watcher
-		deps.WatchEventsMutex = &watchEventsMutex
 	}))
 	a.VPP.Deps.Linux = a.Linux
+
+	var watchEventsMutex sync.Mutex
+	a.VPP.Deps.WatchEventsMutex = &watchEventsMutex
+	a.Linux.Deps.WatchEventsMutex = &watchEventsMutex
+
+	a.RESTAPI = rest.NewPlugin(rest.UseDeps(func(deps *rest.Deps) {
+		deps.VPP = a.VPP
+	}))
 
 	return a
 }

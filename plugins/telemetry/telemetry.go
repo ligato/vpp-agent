@@ -108,9 +108,8 @@ type Plugin struct {
 type Deps struct {
 	infra.Deps
 	ServiceLabel servicelabel.ReaderAPI
-
-	GoVppmux   govppmux.API
-	Prometheus prom.API
+	GoVppmux     govppmux.API
+	Prometheus   prom.API
 }
 
 type runtimeStats struct {

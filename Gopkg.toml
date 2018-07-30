@@ -102,6 +102,10 @@ required = [
   name = "google.golang.org/grpc"
   version = "1.2.1"
 
+[[override]]
+  name = "github.com/Shopify/sarama"
+  version = "=1.15.0"
+
 [prune]
   go-tests = true
   unused-packages = true

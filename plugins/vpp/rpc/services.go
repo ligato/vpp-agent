@@ -29,9 +29,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// GRPCSvcPlugin registers VPP GRPC services in *grpc.Server.
-type GRPCSvcPlugin struct {
-	Deps GRPCSvcPluginDeps
+// Plugin registers VPP GRPC services in *grpc.Server.
+type Plugin struct {
+	Deps
 
 	// Services
 	changeVppSvc ChangeVppSvc
@@ -39,8 +39,8 @@ type GRPCSvcPlugin struct {
 	notifSvc     NotificationSvc
 }
 
-// GRPCSvcPluginDeps - dependencies of GRPCSvcPlugin
-type GRPCSvcPluginDeps struct {
+// Deps - dependencies of Plugin
+type Deps struct {
 	infra.Deps
 	GRPCServer grpc.Server
 }
@@ -56,24 +56,24 @@ type ResyncVppSvc struct {
 }
 
 // Init sets plugin child loggers for changeVppSvc & resyncVppSvc.
-func (plugin *GRPCSvcPlugin) Init() error {
+func (plugin *Plugin) Init() error {
 	// Data change
-	plugin.changeVppSvc.log = plugin.Deps.Log.NewLogger("changeVppSvc")
+	plugin.changeVppSvc.log = plugin.Log.NewLogger("changeVppSvc")
 	// Data resync
-	plugin.resyncVppSvc.log = plugin.Deps.Log.NewLogger("resyncVppSvc")
+	plugin.resyncVppSvc.log = plugin.Log.NewLogger("resyncVppSvc")
 	// Notification service (represents GRPC client)
-	plugin.notifSvc.log = plugin.Deps.Log.NewLogger("notifSvc")
+	plugin.notifSvc.log = plugin.Log.NewLogger("notifSvc")
 
 	return nil
 }
 
 // AfterInit registers all GRPC services in vppscv package
 // (be sure that defaultvppplugins are completely initialized).
-func (plugin *GRPCSvcPlugin) AfterInit() error {
-	if plugin.Deps.GRPCServer == nil {
+func (plugin *Plugin) AfterInit() error {
+	if plugin.GRPCServer == nil {
 		return nil
 	}
-	grpcServer := plugin.Deps.GRPCServer.GetServer()
+	grpcServer := plugin.GRPCServer.GetServer()
 	if grpcServer != nil {
 		rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
 		rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
@@ -84,12 +84,12 @@ func (plugin *GRPCSvcPlugin) AfterInit() error {
 }
 
 // Close does nothing.
-func (plugin *GRPCSvcPlugin) Close() error {
+func (plugin *Plugin) Close() error {
 	return nil
 }
 
 // UpdateNotifications stores new notification data
-func (plugin *GRPCSvcPlugin) UpdateNotifications(ctx context.Context, notification *interfaces.InterfaceNotification) {
+func (plugin *Plugin) UpdateNotifications(ctx context.Context, notification *interfaces.InterfaceNotification) {
 	if notification == nil {
 		return
 	}

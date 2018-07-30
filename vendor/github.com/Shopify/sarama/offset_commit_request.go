@@ -1,7 +1,5 @@
 package sarama
 
-import "errors"
-
 // ReceiveTime is a special value for the timestamp field of Offset Commit Requests which
 // tells the broker to set the timestamp to the time at which the request was received.
 // The timestamp is only used if message version 1 is used, which requires kafka 0.8.2.
@@ -175,7 +173,7 @@ func (r *OffsetCommitRequest) requiredVersion() KafkaVersion {
 	case 2:
 		return V0_9_0_0
 	default:
-		return MinVersion
+		return minVersion
 	}
 }
 
@@ -189,16 +187,4 @@ func (r *OffsetCommitRequest) AddBlock(topic string, partitionID int32, offset i
 	}
 
 	r.blocks[topic][partitionID] = &offsetCommitRequestBlock{offset, timestamp, metadata}
-}
-
-func (r *OffsetCommitRequest) Offset(topic string, partitionID int32) (int64, string, error) {
-	partitions := r.blocks[topic]
-	if partitions == nil {
-		return 0, "", errors.New("No such offset")
-	}
-	block := partitions[partitionID]
-	if block == nil {
-		return 0, "", errors.New("No such offset")
-	}
-	return block.offset, block.metadata, nil
 }

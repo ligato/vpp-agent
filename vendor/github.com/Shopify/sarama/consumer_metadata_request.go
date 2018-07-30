@@ -5,19 +5,12 @@ type ConsumerMetadataRequest struct {
 }
 
 func (r *ConsumerMetadataRequest) encode(pe packetEncoder) error {
-	tmp := new(FindCoordinatorRequest)
-	tmp.CoordinatorKey = r.ConsumerGroup
-	tmp.CoordinatorType = CoordinatorGroup
-	return tmp.encode(pe)
+	return pe.putString(r.ConsumerGroup)
 }
 
 func (r *ConsumerMetadataRequest) decode(pd packetDecoder, version int16) (err error) {
-	tmp := new(FindCoordinatorRequest)
-	if err := tmp.decode(pd, version); err != nil {
-		return err
-	}
-	r.ConsumerGroup = tmp.CoordinatorKey
-	return nil
+	r.ConsumerGroup, err = pd.getString()
+	return err
 }
 
 func (r *ConsumerMetadataRequest) key() int16 {

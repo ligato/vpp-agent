@@ -1,8 +1,6 @@
 package sarama
 
-import (
-	"time"
-)
+import "time"
 
 type AbortedTransaction struct {
 	ProducerID  int64
@@ -33,9 +31,7 @@ type FetchResponseBlock struct {
 	HighWaterMarkOffset int64
 	LastStableOffset    int64
 	AbortedTransactions []*AbortedTransaction
-	Records             *Records // deprecated: use FetchResponseBlock.Records
-	RecordsSet          []*Records
-	Partial             bool
+	Records             Records
 }
 
 func (b *FetchResponseBlock) decode(pd packetDecoder, version int16) (err error) {
@@ -83,67 +79,13 @@ func (b *FetchResponseBlock) decode(pd packetDecoder, version int16) (err error)
 	if err != nil {
 		return err
 	}
-
-	b.RecordsSet = []*Records{}
-
-	for recordsDecoder.remaining() > 0 {
-		records := &Records{}
-		if err := records.decode(recordsDecoder); err != nil {
-			// If we have at least one decoded records, this is not an error
-			if err == ErrInsufficientData {
-				if len(b.RecordsSet) == 0 {
-					b.Partial = true
-				}
-				break
-			}
+	if recordsSize > 0 {
+		if err = b.Records.decode(recordsDecoder); err != nil {
 			return err
-		}
-
-		partial, err := records.isPartial()
-		if err != nil {
-			return err
-		}
-
-		// If we have at least one full records, we skip incomplete ones
-		if partial && len(b.RecordsSet) > 0 {
-			break
-		}
-
-		b.RecordsSet = append(b.RecordsSet, records)
-
-		if b.Records == nil {
-			b.Records = records
 		}
 	}
 
 	return nil
-}
-
-func (b *FetchResponseBlock) numRecords() (int, error) {
-	sum := 0
-
-	for _, records := range b.RecordsSet {
-		count, err := records.numRecords()
-		if err != nil {
-			return 0, err
-		}
-
-		sum += count
-	}
-
-	return sum, nil
-}
-
-func (b *FetchResponseBlock) isPartial() (bool, error) {
-	if b.Partial {
-		return true, nil
-	}
-
-	if len(b.RecordsSet) == 1 {
-		return b.RecordsSet[0].isPartial()
-	}
-
-	return false, nil
 }
 
 func (b *FetchResponseBlock) encode(pe packetEncoder, version int16) (err error) {
@@ -165,11 +107,9 @@ func (b *FetchResponseBlock) encode(pe packetEncoder, version int16) (err error)
 	}
 
 	pe.push(&lengthField{})
-	for _, records := range b.RecordsSet {
-		err = records.encode(pe)
-		if err != nil {
-			return err
-		}
+	err = b.Records.encode(pe)
+	if err != nil {
+		return err
 	}
 	return pe.pop()
 }
@@ -280,7 +220,7 @@ func (r *FetchResponse) requiredVersion() KafkaVersion {
 	case 4:
 		return V0_11_0_0
 	default:
-		return MinVersion
+		return minVersion
 	}
 }
 
@@ -349,11 +289,11 @@ func (r *FetchResponse) AddMessage(topic string, partition int32, key, value Enc
 	kb, vb := encodeKV(key, value)
 	msg := &Message{Key: kb, Value: vb}
 	msgBlock := &MessageBlock{Msg: msg, Offset: offset}
-	if len(frb.RecordsSet) == 0 {
-		records := newLegacyRecords(&MessageSet{})
-		frb.RecordsSet = []*Records{&records}
+	set := frb.Records.msgSet
+	if set == nil {
+		set = &MessageSet{}
+		frb.Records = newLegacyRecords(set)
 	}
-	set := frb.RecordsSet[0].MsgSet
 	set.Messages = append(set.Messages, msgBlock)
 }
 
@@ -361,22 +301,12 @@ func (r *FetchResponse) AddRecord(topic string, partition int32, key, value Enco
 	frb := r.getOrCreateBlock(topic, partition)
 	kb, vb := encodeKV(key, value)
 	rec := &Record{Key: kb, Value: vb, OffsetDelta: offset}
-	if len(frb.RecordsSet) == 0 {
-		records := newDefaultRecords(&RecordBatch{Version: 2})
-		frb.RecordsSet = []*Records{&records}
+	batch := frb.Records.recordBatch
+	if batch == nil {
+		batch = &RecordBatch{Version: 2}
+		frb.Records = newDefaultRecords(batch)
 	}
-	batch := frb.RecordsSet[0].RecordBatch
 	batch.addRecord(rec)
-}
-
-func (r *FetchResponse) SetLastOffsetDelta(topic string, partition int32, offset int32) {
-	frb := r.getOrCreateBlock(topic, partition)
-	if len(frb.RecordsSet) == 0 {
-		records := newDefaultRecords(&RecordBatch{Version: 2})
-		frb.RecordsSet = []*Records{&records}
-	}
-	batch := frb.RecordsSet[0].RecordBatch
-	batch.LastOffsetDelta = offset
 }
 
 func (r *FetchResponse) SetLastStableOffset(topic string, partition int32, offset int64) {

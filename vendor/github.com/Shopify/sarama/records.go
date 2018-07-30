@@ -14,30 +14,30 @@ const (
 // Records implements a union type containing either a RecordBatch or a legacy MessageSet.
 type Records struct {
 	recordsType int
-	MsgSet      *MessageSet
-	RecordBatch *RecordBatch
+	msgSet      *MessageSet
+	recordBatch *RecordBatch
 }
 
 func newLegacyRecords(msgSet *MessageSet) Records {
-	return Records{recordsType: legacyRecords, MsgSet: msgSet}
+	return Records{recordsType: legacyRecords, msgSet: msgSet}
 }
 
 func newDefaultRecords(batch *RecordBatch) Records {
-	return Records{recordsType: defaultRecords, RecordBatch: batch}
+	return Records{recordsType: defaultRecords, recordBatch: batch}
 }
 
-// setTypeFromFields sets type of Records depending on which of MsgSet or RecordBatch is not nil.
+// setTypeFromFields sets type of Records depending on which of msgSet or recordBatch is not nil.
 // The first return value indicates whether both fields are nil (and the type is not set).
 // If both fields are not nil, it returns an error.
 func (r *Records) setTypeFromFields() (bool, error) {
-	if r.MsgSet == nil && r.RecordBatch == nil {
+	if r.msgSet == nil && r.recordBatch == nil {
 		return true, nil
 	}
-	if r.MsgSet != nil && r.RecordBatch != nil {
-		return false, fmt.Errorf("both MsgSet and RecordBatch are set, but record type is unknown")
+	if r.msgSet != nil && r.recordBatch != nil {
+		return false, fmt.Errorf("both msgSet and recordBatch are set, but record type is unknown")
 	}
 	r.recordsType = defaultRecords
-	if r.MsgSet != nil {
+	if r.msgSet != nil {
 		r.recordsType = legacyRecords
 	}
 	return false, nil
@@ -52,22 +52,26 @@ func (r *Records) encode(pe packetEncoder) error {
 
 	switch r.recordsType {
 	case legacyRecords:
-		if r.MsgSet == nil {
+		if r.msgSet == nil {
 			return nil
 		}
-		return r.MsgSet.encode(pe)
+		return r.msgSet.encode(pe)
 	case defaultRecords:
-		if r.RecordBatch == nil {
+		if r.recordBatch == nil {
 			return nil
 		}
-		return r.RecordBatch.encode(pe)
+		return r.recordBatch.encode(pe)
 	}
-
 	return fmt.Errorf("unknown records type: %v", r.recordsType)
 }
 
 func (r *Records) setTypeFromMagic(pd packetDecoder) error {
-	magic, err := magicValue(pd)
+	dec, err := pd.peek(magicOffset, magicLength)
+	if err != nil {
+		return err
+	}
+
+	magic, err := dec.getInt8()
 	if err != nil {
 		return err
 	}
@@ -76,24 +80,23 @@ func (r *Records) setTypeFromMagic(pd packetDecoder) error {
 	if magic < 2 {
 		r.recordsType = legacyRecords
 	}
-
 	return nil
 }
 
 func (r *Records) decode(pd packetDecoder) error {
 	if r.recordsType == unknownRecords {
 		if err := r.setTypeFromMagic(pd); err != nil {
-			return err
+			return nil
 		}
 	}
 
 	switch r.recordsType {
 	case legacyRecords:
-		r.MsgSet = &MessageSet{}
-		return r.MsgSet.decode(pd)
+		r.msgSet = &MessageSet{}
+		return r.msgSet.decode(pd)
 	case defaultRecords:
-		r.RecordBatch = &RecordBatch{}
-		return r.RecordBatch.decode(pd)
+		r.recordBatch = &RecordBatch{}
+		return r.recordBatch.decode(pd)
 	}
 	return fmt.Errorf("unknown records type: %v", r.recordsType)
 }
@@ -107,15 +110,15 @@ func (r *Records) numRecords() (int, error) {
 
 	switch r.recordsType {
 	case legacyRecords:
-		if r.MsgSet == nil {
+		if r.msgSet == nil {
 			return 0, nil
 		}
-		return len(r.MsgSet.Messages), nil
+		return len(r.msgSet.Messages), nil
 	case defaultRecords:
-		if r.RecordBatch == nil {
+		if r.recordBatch == nil {
 			return 0, nil
 		}
-		return len(r.RecordBatch.Records), nil
+		return len(r.recordBatch.Records), nil
 	}
 	return 0, fmt.Errorf("unknown records type: %v", r.recordsType)
 }
@@ -131,15 +134,15 @@ func (r *Records) isPartial() (bool, error) {
 	case unknownRecords:
 		return false, nil
 	case legacyRecords:
-		if r.MsgSet == nil {
+		if r.msgSet == nil {
 			return false, nil
 		}
-		return r.MsgSet.PartialTrailingMessage, nil
+		return r.msgSet.PartialTrailingMessage, nil
 	case defaultRecords:
-		if r.RecordBatch == nil {
+		if r.recordBatch == nil {
 			return false, nil
 		}
-		return r.RecordBatch.PartialTrailingRecord, nil
+		return r.recordBatch.PartialTrailingRecord, nil
 	}
 	return false, fmt.Errorf("unknown records type: %v", r.recordsType)
 }
@@ -155,19 +158,10 @@ func (r *Records) isControl() (bool, error) {
 	case legacyRecords:
 		return false, nil
 	case defaultRecords:
-		if r.RecordBatch == nil {
+		if r.recordBatch == nil {
 			return false, nil
 		}
-		return r.RecordBatch.Control, nil
+		return r.recordBatch.Control, nil
 	}
 	return false, fmt.Errorf("unknown records type: %v", r.recordsType)
-}
-
-func magicValue(pd packetDecoder) (int8, error) {
-	dec, err := pd.peek(magicOffset, magicLength)
-	if err != nil {
-		return 0, err
-	}
-
-	return dec.getInt8()
 }
