@@ -61,17 +61,17 @@ type AclVppRead interface {
 	// GetAclPluginVersion returns version of the VPP ACL plugin
 	GetAclPluginVersion() (string, error)
 	// DumpIPACL returns all IP-type ACLs
-	DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLEntry, error)
+	DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*AclDetails, error)
 	// DumpIPACL returns all MACIP-type ACLs
-	DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLEntry, error)
+	DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*AclDetails, error)
 	// DumpACLInterfaces returns a map of IP ACL indices with interfaces
 	DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex) (map[uint32]*acl.AccessLists_Acl_Interfaces, error)
 	// DumpMACIPACLInterfaces returns a map of MACIP ACL indices with interfaces
 	DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex) (map[uint32]*acl.AccessLists_Acl_Interfaces, error)
 	// DumpIPAcls returns a list of all configured ACLs with IP-type ruleData.
-	DumpIPAcls() (map[ACLIdentifier][]aclapi.ACLRule, error)
+	DumpIPAcls() (map[AclMeta][]aclapi.ACLRule, error)
 	// DumpMacIPAcls returns a list of all configured ACL with IPMAC-type ruleData.
-	DumpMacIPAcls() (map[ACLIdentifier][]aclapi.MacipACLRule, error)
+	DumpMacIPAcls() (map[AclMeta][]aclapi.MacipACLRule, error)
 	// DumpInterfaceAcls finds interface in VPP and returns its ACL configuration
 	DumpInterfaceIPAcls(swIndex uint32) (acl.AccessLists, error)
 	// DumpInterfaceMACIPAcls finds interface in VPP and returns its MACIP ACL configuration

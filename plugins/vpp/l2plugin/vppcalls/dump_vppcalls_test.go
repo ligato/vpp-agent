@@ -44,31 +44,59 @@ var testDataInMessagesBDs = []govppapi.Message{
 	},
 }
 
-var testDataOutMessage = []*vppcalls.BridgeDomain{
+var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 	{
-		Interfaces: []*vppcalls.BridgeDomainInterface{
-			{SwIfIndex: 5},
-			{SwIfIndex: 7},
-		},
-		BridgeDomains_BridgeDomain: l2nb.BridgeDomains_BridgeDomain{
+		Bd: &l2nb.BridgeDomains_BridgeDomain{
 			Flood:               true,
 			UnknownUnicastFlood: true,
 			Forward:             true,
 			Learn:               true,
 			ArpTermination:      true,
-			MacAge:              140},
-	}, {
-		Interfaces: []*vppcalls.BridgeDomainInterface{
-			{SwIfIndex: 5},
-			{SwIfIndex: 8},
+			MacAge:              140,
+			Interfaces: []*l2nb.BridgeDomains_BridgeDomain_Interfaces{
+				{
+					Name: "if1",
+				},
+				{
+					Name: "if2",
+				},
+			},
 		},
-		BridgeDomains_BridgeDomain: l2nb.BridgeDomains_BridgeDomain{
+		Meta: &vppcalls.BridgeDomainMeta{
+			BdID: 4,
+			BdIfIdxToName: func() map[uint32]string {
+				meta := make(map[uint32]string)
+				meta[5] = "if1"
+				meta[7] = "if2"
+				return meta
+			}(),
+		},
+	}, {
+		Bd: &l2nb.BridgeDomains_BridgeDomain{
 			Flood:               false,
 			UnknownUnicastFlood: false,
 			Forward:             false,
 			Learn:               false,
 			ArpTermination:      false,
-			MacAge:              141},
+			MacAge:              141,
+			Interfaces: []*l2nb.BridgeDomains_BridgeDomain_Interfaces{
+				{
+					Name: "if1",
+				},
+				{
+					Name: "if3",
+				},
+			},
+		},
+		Meta: &vppcalls.BridgeDomainMeta{
+			BdID: 5,
+			BdIfIdxToName: func() map[uint32]string {
+				meta := make(map[uint32]string)
+				meta[5] = "if1"
+				meta[8] = "if3"
+				return meta
+			}(),
+		},
 	},
 }
 
@@ -76,8 +104,11 @@ var testDataOutMessage = []*vppcalls.BridgeDomain{
 // - 2 bridge domains + 1 default in VPP
 // TestDumpBridgeDomainIDs tests DumpBridgeDomainIDs method
 func TestDumpBridgeDomainIDs(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, ifIndexes := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
+
+	ifIndexes.RegisterName("if1", 5, nil)
+	ifIndexes.RegisterName("if2", 7, nil)
 
 	ctx.MockVpp.MockReply(testDataInMessagesBDs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -85,7 +116,7 @@ func TestDumpBridgeDomainIDs(t *testing.T) {
 	activeDomains, err := bdHandler.DumpBridgeDomainIDs()
 
 	Expect(err).To(BeNil())
-	Expect(activeDomains).To(Equal([]uint32{0, 4, 5}))
+	Expect(activeDomains).To(Equal([]uint32{4, 5}))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 	_, err = bdHandler.DumpBridgeDomainIDs()
@@ -96,8 +127,12 @@ func TestDumpBridgeDomainIDs(t *testing.T) {
 // - 2 bridge domains + 1 default in VPP
 // TestDumpBridgeDomains tests DumpBridgeDomains method
 func TestDumpBridgeDomains(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, ifIndexes := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
+
+	ifIndexes.RegisterName("if1", 5, nil)
+	ifIndexes.RegisterName("if2", 7, nil)
+	ifIndexes.RegisterName("if3", 8, nil)
 
 	ctx.MockVpp.MockReply(testDataInMessagesBDs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -127,25 +162,33 @@ var testDataInMessagesFIBs = []govppapi.Message{
 	},
 }
 
-var testDataOutFIBs = []*vppcalls.FIBTableEntry{
+var testDataOutFIBs = []*vppcalls.FibTableDetails{
 	{
-		BridgeDomainIdx:          10,
-		OutgoingInterfaceSwIfIdx: 1,
-		FibTable_FibEntry: l2nb.FibTable_FibEntry{
+		Fib: &l2nb.FibTable_FibEntry{
 			PhysAddress:             "aa:aa:aa:aa:aa:aa",
+			BridgeDomain:            "bd1",
 			Action:                  l2nb.FibTable_FibEntry_DROP,
 			StaticConfig:            true,
 			BridgedVirtualInterface: true,
+			OutgoingInterface:       "if1",
+		},
+		Meta: &vppcalls.FibMeta{
+			BdID:  10,
+			IfIdx: 1,
 		},
 	},
 	{
-		BridgeDomainIdx:          20,
-		OutgoingInterfaceSwIfIdx: 2,
-		FibTable_FibEntry: l2nb.FibTable_FibEntry{
+		Fib: &l2nb.FibTable_FibEntry{
 			PhysAddress:             "bb:bb:bb:bb:bb:bb",
+			BridgeDomain:            "bd2",
 			Action:                  l2nb.FibTable_FibEntry_FORWARD,
 			StaticConfig:            false,
 			BridgedVirtualInterface: false,
+			OutgoingInterface:       "if2",
+		},
+		Meta: &vppcalls.FibMeta{
+			BdID:  20,
+			IfIdx: 2,
 		},
 	},
 }
@@ -154,8 +197,13 @@ var testDataOutFIBs = []*vppcalls.FIBTableEntry{
 // - 2 FIB entries in VPP
 // TestDumpFIBTableEntries tests DumpFIBTableEntries method
 func TestDumpFIBTableEntries(t *testing.T) {
-	ctx, fibHandler := fibTestSetup(t)
+	ctx, fibHandler, ifIndexes, bdIndexes := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
+
+	ifIndexes.RegisterName("if1", 1, nil)
+	ifIndexes.RegisterName("if2", 2, nil)
+	bdIndexes.RegisterName("bd1", 10, nil)
+	bdIndexes.RegisterName("bd2", 20, nil)
 
 	ctx.MockVpp.MockReply(testDataInMessagesFIBs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -176,17 +224,40 @@ var testDataInXConnect = []govppapi.Message{
 	&l2ba.L2XconnectDetails{3, 4},
 }
 
-var testDataOutXconnect = []*vppcalls.XConnectPairs{
-	{1, 2},
-	{3, 4},
+var testDataOutXconnect = []*vppcalls.XConnectDetails{
+	{
+		Xc: &l2nb.XConnectPairs_XConnectPair{
+			ReceiveInterface:  "if1",
+			TransmitInterface: "if2",
+		},
+		Meta: &vppcalls.XcMeta{
+			ReceiveInterfaceSwIfIdx:  1,
+			TransmitInterfaceSwIfIdx: 2,
+		},
+	},
+	{
+		Xc: &l2nb.XConnectPairs_XConnectPair{
+			ReceiveInterface:  "if3",
+			TransmitInterface: "if4",
+		},
+		Meta: &vppcalls.XcMeta{
+			ReceiveInterfaceSwIfIdx:  3,
+			TransmitInterfaceSwIfIdx: 4,
+		},
+	},
 }
 
 // Scenario:
 // - 2 Xconnect entries in VPP
 // TestDumpXConnectPairs tests DumpXConnectPairs method
 func TestDumpXConnectPairs(t *testing.T) {
-	ctx, xcHandler := xcTestSetup(t)
+	ctx, xcHandler, ifIndex := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
+
+	ifIndex.RegisterName("if1", 1, nil)
+	ifIndex.RegisterName("if2", 2, nil)
+	ifIndex.RegisterName("if3", 3, nil)
+	ifIndex.RegisterName("if4", 4, nil)
 
 	ctx.MockVpp.MockReply(testDataInXConnect...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})

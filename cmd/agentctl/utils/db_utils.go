@@ -190,11 +190,11 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		vd = newVppDataRecord()
 	}
 	switch dataType {
-	case interfaces.InterfacePrefix:
+	case interfaces.Prefix:
 		ed[label], err = readIfConfigFromDb(db, vd, key, params)
-	case interfaces.IfStatePrefix:
+	case interfaces.StatePrefix:
 		ed[label], err = readIfStateFromDb(db, vd, key, params)
-	case interfaces.IfErrorPrefix:
+	case interfaces.ErrorPrefix:
 		ed[label], err = readInterfaceErrorFromDb(db, vd, key, params)
 	case l2.BdPrefix:
 		ed[label], err = readBdConfigFromDb(db, vd, key, params)
@@ -202,9 +202,9 @@ func (ed EtcdDump) ReadDataFromDb(db keyval.ProtoBroker, key string,
 		ed[label], err = readBdStateFromDb(db, vd, key, params)
 	case l2.BdErrPrefix:
 		ed[label], err = readBdErrorFromDb(db, vd, key, params)
-	case l2.FIBPrefix:
+	case l2.FibPrefix:
 		ed[label], err = readFibFromDb(db, vd, key)
-	case l2.XconnectPrefix:
+	case l2.XConnectPrefix:
 		ed[label], err = readXconnectFromDb(db, vd, key, params)
 	case l3.RoutesPrefix:
 		ed[label], err = readRoutesFromDb(db, vd, key)

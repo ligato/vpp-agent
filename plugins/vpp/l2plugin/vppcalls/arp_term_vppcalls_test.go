@@ -22,7 +22,7 @@ import (
 )
 
 func TestVppAddArpTerminationTableEntry(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
@@ -41,7 +41,7 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 }
 
 func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
@@ -59,7 +59,7 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 }
 
 func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
@@ -77,7 +77,7 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 }
 
 func TestVppArpTerminationTableEntryMacError(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
@@ -90,7 +90,7 @@ func TestVppArpTerminationTableEntryMacError(t *testing.T) {
 }
 
 func TestVppArpTerminationTableEntryIpError(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
@@ -103,7 +103,7 @@ func TestVppArpTerminationTableEntryIpError(t *testing.T) {
 }
 
 func TestVppArpTerminationTableEntryError(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{

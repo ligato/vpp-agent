@@ -277,7 +277,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		if !ok || ifData == nil {
 			return fmt.Errorf("set rx-placement failed, no data available for interface index %d", ifIdx)
 		}
-		if err := plugin.ifHandler.SetRxPlacement(ifData.VPPInternalName, iface.RxPlacementSettings); err != nil {
+		if err := plugin.ifHandler.SetRxPlacement(ifData.Meta.InternalName, iface.RxPlacementSettings); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -603,7 +603,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		if !ok || ifData == nil {
 			return fmt.Errorf("set rx-placement for new config failed, no data available for interface index %d", ifIdx)
 		}
-		if err := plugin.ifHandler.SetRxPlacement(ifData.VPPInternalName, newConfig.RxPlacementSettings); err != nil {
+		if err := plugin.ifHandler.SetRxPlacement(ifData.Meta.InternalName, newConfig.RxPlacementSettings); err != nil {
 			wasError = err
 		}
 	}
