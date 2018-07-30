@@ -21,12 +21,12 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"strconv"
 )
 
 func TestAddBfdUDPSession(t *testing.T) {
@@ -34,7 +34,7 @@ func TestAddBfdUDPSession(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
-	bfdKeyIndexes.RegisterName(strconv.FormatUint(uint64(1), 10), 1, nil)
+	bfdKeyIndexes.RegisterName(ifplugin.AuthKeyIdentifier(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -66,7 +66,7 @@ func TestAddBfdUDPSessionIPv6(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
-	bfdKeyIndexes.RegisterName(strconv.FormatUint(uint64(1), 10), 1, nil)
+	bfdKeyIndexes.RegisterName(ifplugin.AuthKeyIdentifier(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -153,7 +153,7 @@ func TestAddBfdUDPSessionIncorrectSrcIPError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
-	bfdKeyIndexes.RegisterName(strconv.FormatUint(uint64(1), 10), 1, nil)
+	bfdKeyIndexes.RegisterName(ifplugin.AuthKeyIdentifier(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 

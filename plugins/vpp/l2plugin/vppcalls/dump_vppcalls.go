@@ -106,7 +106,7 @@ func (handler *bridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 	}(time.Now())
 
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
-	activeDomains := make([]uint32, 1)
+	var activeDomains []uint32
 	reqCtx := handler.callsChannel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.BridgeDomainDetails{}

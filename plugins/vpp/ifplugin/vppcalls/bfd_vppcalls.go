@@ -63,7 +63,7 @@ func (handler *bfdVppHandler) AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session
 
 	// Authentication
 	if bfdSess.Authentication != nil {
-		keyID := strconv.FormatUint(uint64(bfdSess.Authentication.KeyId), 10)
+		keyID := strconv.Itoa(int(bfdSess.Authentication.KeyId))
 		handler.log.Infof("Setting up authentication with index %v", keyID)
 		_, _, found := bfdKeyIndexes.LookupIdx(keyID)
 		if found {

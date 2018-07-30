@@ -344,7 +344,7 @@ func (plugin *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) 
 	if err != nil {
 		return fmt.Errorf("error while removing BFD auth key with ID %v", bfdInput.Id)
 	}
-	authKeyIDAsString := strconv.FormatUint(uint64(bfdInput.Id), 10)
+	authKeyIDAsString := AuthKeyIdentifier(bfdInput.Id)
 	plugin.keysIndexes.UnregisterName(authKeyIDAsString)
 	plugin.log.Debugf("BFD authentication key with id %v unregistered", bfdInput.Id)
 	// Recreate BFD sessions if necessary
@@ -414,5 +414,5 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 
 // Generates common identifier for authentication key
 func AuthKeyIdentifier(id uint32) string {
-	return strconv.FormatUint(uint64(id), 10)
+	return strconv.Itoa(int(id))
 }

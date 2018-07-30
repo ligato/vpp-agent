@@ -116,7 +116,7 @@ func TestDumpBridgeDomainIDs(t *testing.T) {
 	activeDomains, err := bdHandler.DumpBridgeDomainIDs()
 
 	Expect(err).To(BeNil())
-	Expect(activeDomains).To(Equal([]uint32{0, 4, 5}))
+	Expect(activeDomains).To(Equal([]uint32{4, 5}))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 	_, err = bdHandler.DumpBridgeDomainIDs()
