@@ -68,7 +68,7 @@ curl http://0.0.0.0:9191/vpp/dump/v1/xc
 ARPs and static routes exposed via REST:
 
 ```
-curl http://0.0.0.0:9191/staticroutes
+curl http://0.0.0.0:9191/vpp/dump/v1/routes
 curl http://0.0.0.0:9191/arps
 ```
 

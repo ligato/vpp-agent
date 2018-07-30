@@ -115,6 +115,14 @@ func (plugin *Plugin) registerL2Handlers() {
 	})
 }
 
+// Registers L3 plugin REST handlers
+func (plugin *Plugin) registerL3Handlers() {
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
+		return plugin.rtHandler.DumpStaticRoutes()
+	})
+}
+
 // registerHTTPHandler is common register method for all handlers
 func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) {
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
@@ -158,39 +166,6 @@ func (plugin *Plugin) arpGetHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 		res, err := l3Handler.DumpArpEntries()
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// staticRoutesGetHandler - used to get list of all static routes
-func (plugin *Plugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting list of all static routes")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
-		l3Handler, err := l3plugin.NewRouteVppHandler(ch, plugin.Log, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := l3Handler.DumpStaticRoutes()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)

@@ -19,8 +19,10 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
@@ -80,7 +82,8 @@ func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifvppcalls.IfVppAPI, vp
 	log := logrus.NewLogger("test-log")
 	ifHandler, err := ifvppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
 	Expect(err).To(BeNil())
-	rtHandler, err := vppcalls.NewRouteVppHandler(ctx.MockChannel, log, nil)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "rt-if-idx", nil))
+	rtHandler, err := vppcalls.NewRouteVppHandler(ctx.MockChannel, ifIndexes, log, nil)
 	Expect(err).To(BeNil())
 	return ctx, ifHandler, rtHandler
 }

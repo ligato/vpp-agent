@@ -85,7 +85,7 @@ func (plugin *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
-	if plugin.rtHandler, err = vppcalls.NewRouteVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+	if plugin.rtHandler, err = vppcalls.NewRouteVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 

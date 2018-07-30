@@ -18,6 +18,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 )
 
@@ -81,7 +82,7 @@ type RouteVppWrite interface {
 // RouteVppRead provides read methods for routes
 type RouteVppRead interface {
 	// DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
-	DumpStaticRoutes() ([]*Route, error)
+	DumpStaticRoutes() ([]*RouteDetails, error)
 }
 
 // arpVppHandler is accessor for ARP-related vppcalls methods
@@ -102,6 +103,7 @@ type proxyArpVppHandler struct {
 type routeHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
@@ -134,10 +136,11 @@ func NewProxyArpVppHandler(callsChan govppapi.Channel, log logging.Logger, stopw
 }
 
 // NewRouteVppHandler creates new instance of route vppcalls handler
-func NewRouteVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*routeHandler, error) {
+func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*routeHandler, error) {
 	handler := &routeHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(RouteMessages...); err != nil {
