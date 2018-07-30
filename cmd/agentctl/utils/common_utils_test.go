@@ -46,7 +46,7 @@ func Test02ParseKeyInterfaceConfig(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.InterfacePrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.Prefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
@@ -58,7 +58,7 @@ func Test03ParseKeyInterfaceStatus(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfStatePrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.StatePrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
@@ -70,7 +70,7 @@ func Test04ParseKeyInterfaceError(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/error/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfErrorPrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.ErrorPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
@@ -118,7 +118,7 @@ func Test08ParseKeyFib(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/{bd-label}/fib/{mac-address}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.FIBPrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.FibPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{mac-address}"))
 }
 

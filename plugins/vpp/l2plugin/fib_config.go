@@ -93,7 +93,8 @@ func (plugin *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 	// VPP calls helper object
 	requestChan := make(chan *vppcalls.FibLogicalReq)
-	if plugin.fibHandler, err = vppcalls.NewFibVppHandler(plugin.syncChannel, plugin.asyncChannel, requestChan, plugin.log, plugin.stopwatch); err != nil {
+	if plugin.fibHandler, err = vppcalls.NewFibVppHandler(plugin.syncChannel, plugin.asyncChannel, requestChan, plugin.ifIndexes,
+		plugin.bdIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 

@@ -22,7 +22,10 @@ import (
 
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -54,7 +57,7 @@ var deleteTestDataOutFib = &l2ba.L2fibAddDel{
 }
 
 func TestL2FibAdd(t *testing.T) {
-	ctx, fibHandler := fibTestSetup(t)
+	ctx, fibHandler, _, _ := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	go fibHandler.WatchFIBReplies()
@@ -74,7 +77,7 @@ func TestL2FibAdd(t *testing.T) {
 }
 
 func TestL2FibAddError(t *testing.T) {
-	ctx, fibHandler := fibTestSetup(t)
+	ctx, fibHandler, _, _ := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	go fibHandler.WatchFIBReplies()
@@ -100,7 +103,7 @@ func TestL2FibAddError(t *testing.T) {
 }
 
 func TestL2FibDelete(t *testing.T) {
-	ctx, fibHandler := fibTestSetup(t)
+	ctx, fibHandler, _, _ := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	go fibHandler.WatchFIBReplies()
@@ -119,7 +122,7 @@ func TestL2FibDelete(t *testing.T) {
 }
 
 func TestWatchFIBReplies(t *testing.T) {
-	ctx, fibHandler := fibTestSetup(t)
+	ctx, fibHandler, _, _ := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	go fibHandler.WatchFIBReplies()
@@ -142,7 +145,7 @@ func TestWatchFIBReplies(t *testing.T) {
 }
 
 func benchmarkWatchFIBReplies(reqN int, b *testing.B) {
-	ctx, fibHandler := fibTestSetup(nil)
+	ctx, fibHandler, _, _ := fibTestSetup(nil)
 	defer ctx.TeardownTestCtx()
 
 	// debug logs slow down benchmarks
@@ -187,11 +190,13 @@ func BenchmarkWatchFIBReplies10(b *testing.B)   { benchmarkWatchFIBReplies(10, b
 func BenchmarkWatchFIBReplies100(b *testing.B)  { benchmarkWatchFIBReplies(100, b) }
 func BenchmarkWatchFIBReplies1000(b *testing.B) { benchmarkWatchFIBReplies(1000, b) }
 
-func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FibVppAPI) {
+func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FibVppAPI, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
 	requestChan := make(chan *vppcalls.FibLogicalReq)
-	fibHandler, err := vppcalls.NewFibVppHandler(ctx.MockChannel, ctx.MockChannel, requestChan, logger, nil)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logger, "fib-if-idx", nil))
+	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(logger, "fib-bd-idx", nil))
+	fibHandler, err := vppcalls.NewFibVppHandler(ctx.MockChannel, ctx.MockChannel, requestChan, ifIndexes, bdIndexes, logger, nil)
 	Expect(err).To(BeNil())
-	return ctx, fibHandler
+	return ctx, fibHandler, ifIndexes, bdIndexes
 }

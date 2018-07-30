@@ -26,7 +26,7 @@ import (
 )
 
 func TestSetInterfacesToBridgeDomain(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2BridgeReply{})
@@ -75,7 +75,7 @@ func TestSetInterfacesToBridgeDomain(t *testing.T) {
 }
 
 func TestSetInterfacesToBridgeDomainNoInterfaceToSet(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd", nil))
@@ -89,7 +89,7 @@ func TestSetInterfacesToBridgeDomainNoInterfaceToSet(t *testing.T) {
 }
 
 func TestSetInterfacesToBridgeDomainMissingInterface(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2BridgeReply{})
@@ -114,7 +114,7 @@ func TestSetInterfacesToBridgeDomainMissingInterface(t *testing.T) {
 }
 
 func TestSetInterfacesToBridgeDomainError(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2Bridge{})
@@ -133,7 +133,7 @@ func TestSetInterfacesToBridgeDomainError(t *testing.T) {
 }
 
 func TestSetInterfacesToBridgeDomainRetval(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2BridgeReply{
@@ -154,7 +154,7 @@ func TestSetInterfacesToBridgeDomainRetval(t *testing.T) {
 }
 
 func TestUnsetInterfacesFromBridgeDomain(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2BridgeReply{})
@@ -195,7 +195,7 @@ func TestUnsetInterfacesFromBridgeDomain(t *testing.T) {
 }
 
 func TestUnsetInterfacesFromBridgeDomainNoInterfaceToUnset(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bd", nil))
@@ -209,7 +209,7 @@ func TestUnsetInterfacesFromBridgeDomainNoInterfaceToUnset(t *testing.T) {
 }
 
 func TestUnsetInterfacesFromBridgeDomainMissingInterface(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2BridgeReply{})
@@ -234,7 +234,7 @@ func TestUnsetInterfacesFromBridgeDomainMissingInterface(t *testing.T) {
 }
 
 func TestUnsetInterfacesFromBridgeDomainError(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2Bridge{})
@@ -253,7 +253,7 @@ func TestUnsetInterfacesFromBridgeDomainError(t *testing.T) {
 }
 
 func TestUnsetInterfacesFromBridgeDomainRetval(t *testing.T) {
-	ctx, bdHandler := bdTestSetup(t)
+	ctx, bdHandler, _ := bdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2Api.SwInterfaceSetL2BridgeReply{

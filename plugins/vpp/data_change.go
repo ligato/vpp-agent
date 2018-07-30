@@ -35,11 +35,11 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	key := dataChng.GetKey()
 
 	// Skip potential changes on error keys
-	if strings.HasPrefix(key, interfaces.InterfaceErrorPrefix()) || strings.HasPrefix(key, l2.BridgeDomainErrorPrefix()) {
+	if strings.HasPrefix(key, interfaces.ErrorPrefix) || strings.HasPrefix(key, l2.BdErrPrefix) {
 		return false, nil
 	}
 	plugin.Log.Debug("Start processing change for key: ", key)
-	if strings.HasPrefix(key, acl.KeyPrefix()) {
+	if strings.HasPrefix(key, acl.Prefix) {
 		var value, prevValue acl.AccessLists_Acl
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -51,7 +51,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
+	} else if strings.HasPrefix(key, interfaces.Prefix) {
 		var value, prevValue interfaces.Interfaces_Interface
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -63,7 +63,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, bfd.SessionKeyPrefix()) {
+	} else if strings.HasPrefix(key, bfd.SessionPrefix) {
 		var value, prevValue bfd.SingleHopBFD_Session
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -75,7 +75,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, bfd.AuthKeysKeyPrefix()) {
+	} else if strings.HasPrefix(key, bfd.AuthKeysPrefix) {
 		var value, prevValue bfd.SingleHopBFD_Key
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -87,7 +87,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
+	} else if strings.HasPrefix(key, bfd.EchoFunctionPrefix) {
 		var value, prevValue bfd.SingleHopBFD_EchoFunction
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -99,7 +99,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
+	} else if strings.HasPrefix(key, l2.BdPrefix) {
 		fib, _, _ := l2.ParseFibKey(key)
 		if fib {
 			// L2 FIB entry
@@ -128,7 +128,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 				return false, err
 			}
 		}
-	} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
+	} else if strings.HasPrefix(key, l2.XConnectPrefix) {
 		var value, prevValue l2.XConnectPairs_XConnectPair
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err

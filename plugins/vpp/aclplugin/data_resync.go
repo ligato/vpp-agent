@@ -49,28 +49,28 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
 		// Check what type of rules is in the ACL
-		ipRulesExist := len(vppIpACL.ACLDetails.Rules) > 0 && vppIpACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
+		ipRulesExist := len(vppIpACL.Acl.Rules) > 0 && vppIpACL.Acl.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
-			if err := plugin.aclHandler.DeleteIPAcl(vppIpACL.Identifier.ACLIndex); err != nil {
+			if err := plugin.aclHandler.DeleteIPAcl(vppIpACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
 			// Unregister.
-			plugin.l3l4AclIndexes.UnregisterName(vppIpACL.ACLDetails.AclName)
+			plugin.l3l4AclIndexes.UnregisterName(vppIpACL.Acl.AclName)
 			continue
 		}
 	}
 	for _, vppMacIpACL := range vppMacIpACLs {
-		ipRulesExist := len(vppMacIpACL.ACLDetails.Rules) > 0 && vppMacIpACL.ACLDetails.Rules[0].GetMatch().GetMacipRule() != nil
+		ipRulesExist := len(vppMacIpACL.Acl.Rules) > 0 && vppMacIpACL.Acl.Rules[0].GetMatch().GetMacipRule() != nil
 
 		if ipRulesExist {
-			if err := plugin.aclHandler.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex); err != nil {
+			if err := plugin.aclHandler.DeleteMacIPAcl(vppMacIpACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
 			// Unregister.
-			plugin.l2AclIndexes.UnregisterName(vppMacIpACL.ACLDetails.AclName)
+			plugin.l2AclIndexes.UnregisterName(vppMacIpACL.Acl.AclName)
 			continue
 		}
 	}

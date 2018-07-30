@@ -356,7 +356,7 @@ func (plugin *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err err
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.ACLDetails)
+		acls = append(acls, aclWithIndex.Acl)
 	}
 	return acls, nil
 }
@@ -369,7 +369,7 @@ func (plugin *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err 
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.ACLDetails)
+		acls = append(acls, aclWithIndex.Acl)
 	}
 	return acls, nil
 }

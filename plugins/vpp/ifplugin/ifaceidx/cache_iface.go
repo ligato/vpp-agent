@@ -31,7 +31,7 @@ func Cache(watcher datasync.KeyValProtoWatcher) SwIfIndex {
 	swIdx := NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
-		Prefix:        interfaces.InterfaceKeyPrefix(),
+		Prefix:        interfaces.Prefix,
 		IDX:           swIdx.GetMapping(),
 		DataPrototype: &interfaces.Interfaces_Interface{Name: "aaa"},
 		ParseName:     interfaces.ParseNameFromKey}
