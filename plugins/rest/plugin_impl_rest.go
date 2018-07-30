@@ -28,9 +28,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	l4vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
 )
 
 const (
@@ -58,13 +59,14 @@ type Plugin struct {
 	bfdHandler   ifvppcalls.BfdVppRead
 	natHandler   ifvppcalls.NatVppRead
 	stnHandler   ifvppcalls.StnVppRead
-	ipSecHandler vppcalls.IPSecVPPRead
+	ipSecHandler ipsecvppcalls.IPSecVPPRead
 	bdHandler    l2vppcalls.BridgeDomainVppRead
 	fibHandler   l2vppcalls.FibVppRead
 	xcHandler    l2vppcalls.XConnectVppRead
 	arpHandler   l3vppcalls.ArpVppRead
 	pArpHandler  l3vppcalls.ProxyArpVppRead
 	rtHandler    l3vppcalls.RouteVppRead
+	l4Handler    l4vppcalls.L4VppRead
 
 	sync.Mutex
 }
@@ -116,7 +118,7 @@ func (plugin *Plugin) Init() (err error) {
 	if plugin.stnHandler, err = ifvppcalls.NewStnVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
 		return err
 	}
-	if plugin.ipSecHandler, err = vppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log, nil); err != nil {
+	if plugin.ipSecHandler, err = ipsecvppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log, nil); err != nil {
 		return err
 	}
 	if plugin.bdHandler, err = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
@@ -136,6 +138,9 @@ func (plugin *Plugin) Init() (err error) {
 		return err
 	}
 	if plugin.rtHandler, err = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.l4Handler, err = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log, nil); err != nil {
 		return err
 	}
 
@@ -176,6 +181,7 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerIPSecHandlers()
 	plugin.registerL2Handlers()
 	plugin.registerL3Handlers()
+	plugin.registerL4Handlers()
 
 	plugin.HTTPHandlers.RegisterHTTPHandler("/arps", plugin.arpGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler(fmt.Sprintf("/acl/interface/{%s:[0-9]+}", swIndexVarName),

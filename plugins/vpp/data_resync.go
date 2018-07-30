@@ -219,12 +219,12 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l4.FeatureKeyPrefix()) {
+	if !plugin.droppedFromResync(l4.FeaturesPrefix) {
 		if err := plugin.appNsConfigurator.ResyncFeatures(req.L4Features); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l4.AppNamespacesKeyPrefix()) {
+	if !plugin.droppedFromResync(l4.Prefix) {
 		if err := plugin.appNsConfigurator.ResyncAppNs(req.AppNamespaces); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
@@ -313,10 +313,10 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
-		} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+		} else if strings.HasPrefix(key, l4.FeaturesPrefix) {
 			resyncFeatures(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNs feature flag")
-		} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
+		} else if strings.HasPrefix(key, l4.Prefix) {
 			numAppNs := resyncAppendAppNs(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNamespace values ", numAppNs)
 		} else if strings.HasPrefix(key, stn.Prefix) {
@@ -767,8 +767,8 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			l3.ArpPrefix,
 			l3.ProxyARPInterfacePrefix,
 			l3.ProxyARPRangePrefix,
-			l4.FeatureKeyPrefix(),
-			l4.AppNamespacesKeyPrefix(),
+			l4.FeaturesPrefix,
+			l4.Prefix,
 			stn.Prefix,
 			nat.GlobalPrefix,
 			nat.SNatPrefix,

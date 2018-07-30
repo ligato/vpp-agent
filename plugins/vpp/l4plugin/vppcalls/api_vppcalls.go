@@ -16,6 +16,7 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 )
 
@@ -37,20 +38,23 @@ type L4VppWrite interface {
 
 // L4VppRead provides read methods for L4
 type L4VppRead interface {
-	// Todo define dump methods
+	// DumpL4Config returns L4 configuration
+	DumpL4Config() ([]*SessionDetails, error)
 }
 
 // l4VppHandler is accessor for l4-related vppcalls methods
 type l4VppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
+	log          logging.Logger
 }
 
 // NewL4VppHandler creates new instance of L4 vppcalls handler
-func NewL4VppHandler(callsChan govppapi.Channel, stopwatch *measure.Stopwatch) (*l4VppHandler, error) {
+func NewL4VppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*l4VppHandler, error) {
 	handler := &l4VppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(AppNsMessages...); err != nil {
 		return nil, err

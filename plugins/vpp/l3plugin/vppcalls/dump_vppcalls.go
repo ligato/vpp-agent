@@ -224,7 +224,7 @@ type ArpMeta struct {
 func (handler *arpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l3binapi.IPNeighborDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	var entries []*ArpDetails
@@ -312,12 +312,12 @@ func (handler *proxyArpVppHandler) DumpProxyArp() (*ProxyArpDetails, error) {
 func (handler *proxyArpVppHandler) DumpProxyArpRanges() (*ProxyArpDetails, error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l3binapi.ProxyArpDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	var ranges []*l3.ProxyArpRanges_RangeList_Range
 
-	// Dump ARPs.
+	// Dump proxy ARP rages
 	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.ProxyArpDump{})
 
 	for {
@@ -345,7 +345,7 @@ func (handler *proxyArpVppHandler) DumpProxyArpRanges() (*ProxyArpDetails, error
 func (handler *proxyArpVppHandler) DumpProxyArpInterfaces() (*ProxyArpDetails, error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l3binapi.ProxyArpIntfcDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	var interfaces []*l3.ProxyArpInterfaces_InterfaceList_Interface
@@ -353,7 +353,7 @@ func (handler *proxyArpVppHandler) DumpProxyArpInterfaces() (*ProxyArpDetails, e
 		IfNameToIdx: make(map[uint32]string),
 	}
 
-	// Dump ARPs.
+	// Dump proxy ARP interfaces
 	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.ProxyArpIntfcDump{})
 
 	for {

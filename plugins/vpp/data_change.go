@@ -198,7 +198,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
+	} else if strings.HasPrefix(key, l4.Prefix) {
 		var value, prevValue l4.AppNamespaces_AppNamespace
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -210,7 +210,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+	} else if strings.HasPrefix(key, l4.FeaturesPrefix) {
 		var value, prevValue l4.L4Features
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err

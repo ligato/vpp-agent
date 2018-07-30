@@ -180,6 +180,14 @@ func (plugin *Plugin) registerL3Handlers() {
 	})
 }
 
+// Registers L3 plugin REST handlers
+func (plugin *Plugin) registerL4Handlers() {
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.Sessions, GET, func() (interface{}, error) {
+		return plugin.l4Handler.DumpL4Config()
+	})
+}
+
 // registerHTTPHandler is common register method for all handlers
 func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) {
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {

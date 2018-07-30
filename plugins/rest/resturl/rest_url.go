@@ -92,12 +92,18 @@ const (
 const (
 	// Routes is rest static route path
 	Routes = "/vpp/dump/v1/routes"
-	// Routes is rest static route path
+	// Arps is rest ARPs path
 	Arps = "/vpp/dump/v1/arps"
-	// Routes is rest static route path
+	// ProxyArps is rest proxy ARPs path
 	ProxyArps = "/vpp/dump/v1/proxyarp"
-	// Routes is rest static route path
+	// PArpIfs is rest proxy ARP interfaces path
 	PArpIfs = "/vpp/dump/v1/proxyarp/interfaces"
-	// Routes is rest static route path
+	// PArpRngs is rest proxy ARP ranges path
 	PArpRngs = "/vpp/dump/v1/proxyarp/ranges"
+)
+
+// L4 plugin
+const (
+	// Sessions is rest L4 configuration path
+	Sessions = "/vpp/dump/v1/sessions"
 )
