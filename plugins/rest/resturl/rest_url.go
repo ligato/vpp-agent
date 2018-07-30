@@ -50,6 +50,32 @@ const (
 	VxLan = "/vpp/dump/v1/interfaces/vxlan"
 )
 
+// NAT REST urls
+const (
+	// NatUrl is a REST path of a NAT
+	NatUrl = "/vpp/dump/v1/nat"
+	// NatGlobal is a REST path of a global NAT config
+	NatGlobal = "/vpp/dump/v1/nat/global"
+	// NatDNat is a REST path of a DNAT configurations
+	NatDNat = "/vpp/dump/v1/nat/dnat"
+)
+
+// STN REST url
+const (
+	// StnUrl is a REST path of a STN
+	StnUrl = "/vpp/dump/v1/stn"
+)
+
+// IPSec REST url
+const (
+	// IPSecSpd is a REST path of a IPSec SPD
+	IPSecSpd = "/vpp/dump/v1/ipsec/spd"
+	// IPSecSa is a REST path of a IPSec SA
+	IPSecSa = "/vpp/dump/v1/ipsec/sa"
+	// IPSecTnIf is a REST path of a IPSec Tunnels
+	IPSecTnIf = "/vpp/dump/v1/ipsec/tunnel"
+)
+
 // L2 plugin
 const (
 	// restBd is rest bridge domain path

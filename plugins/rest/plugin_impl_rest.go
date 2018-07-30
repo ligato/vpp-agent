@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
@@ -52,13 +53,16 @@ type Plugin struct {
 	dumpChan api.Channel
 
 	// Handlers
-	aclHandler aclvppcalls.AclVppRead
-	ifHandler  ifvppcalls.IfVppRead
-	bfdHandler ifvppcalls.BfdVppRead
-	bdHandler  l2vppcalls.BridgeDomainVppRead
-	fibHandler l2vppcalls.FibVppRead
-	xcHandler  l2vppcalls.XConnectVppRead
-	rtHandler  l3vppcalls.RouteVppRead
+	aclHandler   aclvppcalls.AclVppRead
+	ifHandler    ifvppcalls.IfVppRead
+	bfdHandler   ifvppcalls.BfdVppRead
+	natHandler   ifvppcalls.NatVppRead
+	stnHandler   ifvppcalls.StnVppRead
+	ipSecHandler vppcalls.IPSecVPPRead
+	bdHandler    l2vppcalls.BridgeDomainVppRead
+	fibHandler   l2vppcalls.FibVppRead
+	xcHandler    l2vppcalls.XConnectVppRead
+	rtHandler    l3vppcalls.RouteVppRead
 
 	sync.Mutex
 }
@@ -92,6 +96,7 @@ func (plugin *Plugin) Init() (err error) {
 	// Indexes
 	ifIndexes := plugin.VPP.GetSwIfIndexes()
 	bdIndexes := plugin.VPP.GetBDIndexes()
+	spdIndexes := plugin.VPP.GetIPSecSPDIndexes()
 
 	// Initialize handlers
 	if plugin.aclHandler, err = aclvppcalls.NewAclVppHandler(plugin.vppChan, plugin.dumpChan, nil); err != nil {
@@ -101,6 +106,15 @@ func (plugin *Plugin) Init() (err error) {
 		return err
 	}
 	if plugin.bfdHandler, err = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.natHandler, err = ifvppcalls.NewNatVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.stnHandler, err = ifvppcalls.NewStnVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.ipSecHandler, err = vppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log, nil); err != nil {
 		return err
 	}
 	if plugin.bdHandler, err = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
@@ -131,7 +145,6 @@ func (plugin *Plugin) Init() (err error) {
 		{Name: "Bridge domain IDs", Path: resturl.BdId},
 		{Name: "L2Fibs", Path: resturl.Fib},
 		{Name: "XConnectorPairs", Path: resturl.Xc},
-		{Name: "Static routes", Path: resturl.Routes},
 
 		{Name: "ARPs", Path: "/arps"},
 		{Name: "Telemetry", Path: "/telemetry"},
@@ -146,6 +159,9 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerAccessListHandlers()
 	plugin.registerInterfaceHandlers()
 	plugin.registerBfdHandlers()
+	plugin.registerNatHandlers()
+	plugin.registerStnHandlers()
+	plugin.registerIPSecHandlers()
 	plugin.registerL2Handlers()
 	plugin.registerL3Handlers()
 

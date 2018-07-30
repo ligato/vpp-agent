@@ -80,6 +80,7 @@ func (plugin *Plugin) registerInterfaceHandlers() {
 	})
 }
 
+// Registers BFD REST handlers
 func (plugin *Plugin) registerBfdHandlers() {
 	// GET BFD configuration
 	plugin.registerHTTPHandler(resturl.BfdUrl, GET, func() (interface{}, error) {
@@ -92,6 +93,46 @@ func (plugin *Plugin) registerBfdHandlers() {
 	// GET BFD authentication keys
 	plugin.registerHTTPHandler(resturl.BfdAuthKey, GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdAuthKeys()
+	})
+}
+
+// Registers NAT REST handlers
+func (plugin *Plugin) registerNatHandlers() {
+	// GET NAT configuration
+	plugin.registerHTTPHandler(resturl.NatUrl, GET, func() (interface{}, error) {
+		return plugin.natHandler.Nat44Dump()
+	})
+	// GET NAT global config
+	plugin.registerHTTPHandler(resturl.NatGlobal, GET, func() (interface{}, error) {
+		return plugin.natHandler.Nat44GlobalConfigDump()
+	})
+	// GET DNAT config
+	plugin.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
+		return plugin.natHandler.NAT44DNatDump()
+	})
+}
+
+// Registers STN REST handlers
+func (plugin *Plugin) registerStnHandlers() {
+	// GET STN configuration
+	plugin.registerHTTPHandler(resturl.StnUrl, GET, func() (interface{}, error) {
+		return plugin.stnHandler.DumpStnRules()
+	})
+}
+
+// Registers IPSec REST handlers
+func (plugin *Plugin) registerIPSecHandlers() {
+	// GET IPSec SPD configuration
+	plugin.registerHTTPHandler(resturl.IPSecSpd, GET, func() (interface{}, error) {
+		return plugin.ipSecHandler.DumpIPSecSPD()
+	})
+	// GET IPSec SA configuration
+	plugin.registerHTTPHandler(resturl.IPSecSa, GET, func() (interface{}, error) {
+		return plugin.ipSecHandler.DumpIPSecSA()
+	})
+	// GET IPSec Tunnel configuration
+	plugin.registerHTTPHandler(resturl.IPSecTnIf, GET, func() (interface{}, error) {
+		return plugin.ipSecHandler.DumpIPSecTunnelInterfaces()
 	})
 }
 

@@ -51,6 +51,25 @@ curl http://0.0.0.0:9191/vpp/dump/v1/bfd/sessions
 curl http://0.0.0.0:9191/vpp/dump/v1/bfd/authkeys
 ``` 
 
+**NAT**
+
+REST plugin allows to dump NAT44 global configuration, DNAT configuration or both of them together.
+SNAT is currently not supported in the model, so REST dump is not available as well.
+
+```
+curl http://0.0.0.0:9191/vpp/dump/v1/nat
+curl http://0.0.0.0:9191/vpp/dump/v1/nat/global
+curl http://0.0.0.0:9191/vpp/dump/v1/nat/dnat
+``` 
+
+**STN**
+
+Steal the NIC feature REST API contains one uri returning the list of STN rules.
+
+```
+curl http://0.0.0.0:9191/vpp/dump/v1/stn
+``` 
+
 **L2 plugin**
 
 Support for bridge domains, FIBs and cross connects. It is also possible to get all 
@@ -70,11 +89,6 @@ ARPs and static routes exposed via REST:
 ```
 curl http://0.0.0.0:9191/vpp/dump/v1/routes
 curl http://0.0.0.0:9191/arps
-```
-
-Configure an IP ACL:
-```
-curl -H "Content-Type: application/json" -X POST -d '<acl-json>' http://0.0.0.0:9191/interface/acl/ip
 ```
 
 ## Logging mechanism
