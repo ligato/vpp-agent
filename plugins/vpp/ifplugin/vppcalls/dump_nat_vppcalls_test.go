@@ -29,7 +29,7 @@ import (
 )
 
 func TestNat44InterfaceDump(t *testing.T) {
-	ctx, natHandler := natTestSetup(t)
+	ctx, natHandler, swIfIndexes := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bin_api.Nat44InterfaceDetails{
@@ -38,17 +38,16 @@ func TestNat44InterfaceDump(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
+	ifaces, err := natHandler.Nat44InterfaceDump()
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(1))
 	Expect(ifaces[0].IsInside).To(BeFalse())
 }
 
 func TestNat44InterfaceDump2(t *testing.T) {
-	ctx, natHandler := natTestSetup(t)
+	ctx, natHandler, swIfIndexes := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bin_api.Nat44InterfaceDetails{
@@ -57,17 +56,16 @@ func TestNat44InterfaceDump2(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
+	ifaces, err := natHandler.Nat44InterfaceDump()
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(1))
 	Expect(ifaces[0].IsInside).To(BeTrue())
 }
 
 func TestNat44InterfaceDump3(t *testing.T) {
-	ctx, natHandler := natTestSetup(t)
+	ctx, natHandler, swIfIndexes := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bin_api.Nat44InterfaceDetails{
@@ -76,20 +74,20 @@ func TestNat44InterfaceDump3(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
+	ifaces, err := natHandler.Nat44InterfaceDump()
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].IsInside).To(BeFalse())
 	Expect(ifaces[1].IsInside).To(BeTrue())
 }
 
-func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI) {
+func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.SwIfIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	natHandler, err := vppcalls.NewNatVppHandler(ctx.MockChannel, ctx.MockChannel, log, nil)
+	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
+	natHandler, err := vppcalls.NewNatVppHandler(ctx.MockChannel, ctx.MockChannel, swIfIndexes, log, nil)
 	Expect(err).To(BeNil())
-	return ctx, natHandler
+	return ctx, natHandler, swIfIndexes
 }
