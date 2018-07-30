@@ -20,7 +20,7 @@ const (
 	// bfdAuthKeysPrefix bfd-key/
 	AuthKeysPrefix = "vpp/config/v1/bfd/auth-key/"
 	// BfdEchoFunctionPrefix bfd-echo-function/
-	EchoFunctionPrefix = "vpp/config/v1/bfd/echo-function"
+	EchoFunctionPrefix = "vpp/config/v1/bfd/echo-function/"
 )
 
 // SessionKey returns the prefix used in ETCD to store vpp bfd config

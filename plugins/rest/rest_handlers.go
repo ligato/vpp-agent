@@ -125,11 +125,11 @@ func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interfac
 			res, err := f()
 			if err != nil {
 				plugin.Deps.Log.Errorf("Error: %v", err)
-				w.Write([]byte("500 Internal server error: " + err.Error()))
-				formatter.JSON(w, http.StatusInternalServerError, err)
+				errStr := fmt.Sprintf("500 Internal server error: %s\n", err.Error())
+				formatter.Text(w, http.StatusInternalServerError, errStr)
 				return
 			}
-			plugin.Deps.Log.Debug("Rest uri: %s, data: %v", key, res)
+			plugin.Deps.Log.Debugf("Rest uri: %s, data: %v", key, res)
 			formatter.JSON(w, http.StatusOK, res)
 		}
 	}
