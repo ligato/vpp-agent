@@ -105,3 +105,7 @@ required = [
 [prune]
   go-tests = true
   unused-packages = true
+
+  [[prune.project]]
+    name = "github.com/ligato/cn-infra"
+    unused-packages = false
