@@ -29,6 +29,7 @@ import (
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 )
 
 const (
@@ -57,6 +58,7 @@ type Plugin struct {
 	bdHandler  l2vppcalls.BridgeDomainVppRead
 	fibHandler l2vppcalls.FibVppRead
 	xcHandler  l2vppcalls.XConnectVppRead
+	rtHandler  l3vppcalls.RouteVppRead
 
 	sync.Mutex
 }
@@ -111,6 +113,9 @@ func (plugin *Plugin) Init() (err error) {
 	if plugin.xcHandler, err = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
 		return err
 	}
+	if plugin.rtHandler, err = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
 
 	plugin.indexItems = []indexItem{
 		{Name: "ACL IP", Path: resturl.AclIP},
@@ -126,10 +131,9 @@ func (plugin *Plugin) Init() (err error) {
 		{Name: "Bridge domain IDs", Path: resturl.BdId},
 		{Name: "L2Fibs", Path: resturl.Fib},
 		{Name: "XConnectorPairs", Path: resturl.Xc},
+		{Name: "Static routes", Path: resturl.Routes},
 
 		{Name: "ARPs", Path: "/arps"},
-		{Name: "Static routes", Path: "/staticroutes"},
-
 		{Name: "Telemetry", Path: "/telemetry"},
 	}
 	return nil
@@ -143,9 +147,9 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerInterfaceHandlers()
 	plugin.registerBfdHandlers()
 	plugin.registerL2Handlers()
+	plugin.registerL3Handlers()
 
 	plugin.HTTPHandlers.RegisterHTTPHandler("/arps", plugin.arpGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler(fmt.Sprintf("/acl/interface/{%s:[0-9]+}", swIndexVarName),
 		plugin.interfaceACLGetHandler, "GET")
 	plugin.HTTPHandlers.RegisterHTTPHandler("/command", plugin.commandHandler, "POST")

@@ -61,3 +61,9 @@ const (
 	// restXc is rest cross-connect path
 	Xc = "/vpp/dump/v1/xc"
 )
+
+// L3 plugin
+const (
+	// Routes is rest static route path
+	Routes = "/vpp/dump/v1/routes"
+)
