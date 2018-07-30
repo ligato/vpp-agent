@@ -92,4 +92,12 @@ const (
 const (
 	// Routes is rest static route path
 	Routes = "/vpp/dump/v1/routes"
+	// Routes is rest static route path
+	Arps = "/vpp/dump/v1/arps"
+	// Routes is rest static route path
+	ProxyArps = "/vpp/dump/v1/proxyarp"
+	// Routes is rest static route path
+	PArpIfs = "/vpp/dump/v1/proxyarp/interfaces"
+	// Routes is rest static route path
+	PArpRngs = "/vpp/dump/v1/proxyarp/ranges"
 )

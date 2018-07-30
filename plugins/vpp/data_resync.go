@@ -199,22 +199,22 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.RouteKeyPrefix()) {
+	if !plugin.droppedFromResync(l3.RoutesPrefix) {
 		if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.ArpKeyPrefix()) {
+	if !plugin.droppedFromResync(l3.ArpPrefix) {
 		if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.ProxyArpInterfacePrefix()) {
+	if !plugin.droppedFromResync(l3.ProxyARPInterfacePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncInterfaces(req.ProxyArpInterfaces); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.ProxyArpRangePrefix()) {
+	if !plugin.droppedFromResync(l3.ProxyARPRangePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
@@ -300,17 +300,17 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, l2.XConnectPrefix) {
 			numXCons := resyncAppendXCons(resyncData, req)
 			plugin.Log.Debug("Received RESYNC XConnects values ", numXCons)
-		} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+		} else if strings.HasPrefix(key, l3.VrfPrefix) {
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
 			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
-		} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+		} else if strings.HasPrefix(key, l3.ArpPrefix) {
 			numARPs := resyncAppendARPs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC ARP values ", numARPs)
-		} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
+		} else if strings.HasPrefix(key, l3.ProxyARPInterfacePrefix) {
 			numARPs := resyncAppendProxyArpInterfaces(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP interface values ", numARPs)
-		} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
+		} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
 		} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
@@ -763,10 +763,10 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			bfd.EchoFunctionPrefix,
 			l2.BdPrefix,
 			l2.XConnectPrefix,
-			l3.VrfKeyPrefix(),
-			l3.ArpKeyPrefix(),
-			l3.ProxyArpInterfacePrefix(),
-			l3.ProxyArpRangePrefix(),
+			l3.VrfPrefix,
+			l3.ArpPrefix,
+			l3.ProxyARPInterfacePrefix,
+			l3.ProxyARPRangePrefix,
 			l4.FeatureKeyPrefix(),
 			l4.AppNamespacesKeyPrefix(),
 			stn.Prefix,

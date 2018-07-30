@@ -18,7 +18,9 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -63,9 +65,10 @@ func TestProxyArpRange(t *testing.T) {
 func pArpTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	arpHandler, err := vppcalls.NewArpVppHandler(ctx.MockChannel, log, nil)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "proxy-arp-if-idx", nil))
+	arpHandler, err := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
 	Expect(err).To(BeNil())
-	pArpHandler, err := vppcalls.NewProxyArpVppHandler(ctx.MockChannel, log, nil)
+	pArpHandler, err := vppcalls.NewProxyArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
 	Expect(err).To(BeNil())
 	return ctx, arpHandler, pArpHandler
 }

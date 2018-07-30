@@ -159,6 +159,22 @@ func (plugin *Plugin) registerL2Handlers() {
 // Registers L3 plugin REST handlers
 func (plugin *Plugin) registerL3Handlers() {
 	// GET static routes
+	plugin.registerHTTPHandler(resturl.Arps, GET, func() (interface{}, error) {
+		return plugin.arpHandler.DumpArpEntries()
+	})
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.ProxyArps, GET, func() (interface{}, error) {
+		return plugin.pArpHandler.DumpProxyArp()
+	})
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.PArpIfs, GET, func() (interface{}, error) {
+		return plugin.pArpHandler.DumpProxyArpInterfaces()
+	})
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.PArpRngs, GET, func() (interface{}, error) {
+		return plugin.pArpHandler.DumpProxyArpRanges()
+	})
+	// GET static routes
 	plugin.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
 		return plugin.rtHandler.DumpStaticRoutes()
 	})
@@ -200,7 +216,7 @@ func (plugin *Plugin) arpGetHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		defer ch.Close()
 
-		l3Handler, err := l3plugin.NewArpVppHandler(ch, plugin.Log, nil)
+		l3Handler, err := l3plugin.NewArpVppHandler(ch, nil, plugin.Log, nil)
 		if err != nil {
 			plugin.Log.Errorf("Error creating VPP handler: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)

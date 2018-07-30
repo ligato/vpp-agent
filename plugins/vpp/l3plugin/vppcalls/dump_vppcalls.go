@@ -210,18 +210,30 @@ func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 	return routeDetails, nil
 }
 
-func (handler *arpVppHandler) DumpArpEntries() ([]*ArpEntry, error) {
+// ArpDetails holds info about ARP entry as a proto model
+type ArpDetails struct {
+	Arp  *l3.ArpTable_ArpEntry
+	Meta *ArpMeta
+}
+
+// ArpMeta contains interface index of the ARP interface
+type ArpMeta struct {
+	SwIfIndex uint32
+}
+
+func (handler *arpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	var arps []*ArpEntry
+	var entries []*ArpDetails
 
 	// Dump ARPs.
 	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.IPNeighborDump{
-		SwIfIndex: 0xffffffff,
+		SwIfIndex: 0xffffffff, // Send multirequest to get all ARP entries
 	})
+
 	for {
 		arpDetails := &l3binapi.IPNeighborDetails{}
 		stop, err := reqCtx.ReceiveReply(arpDetails)
@@ -233,25 +245,146 @@ func (handler *arpVppHandler) DumpArpEntries() ([]*ArpEntry, error) {
 			return nil, err
 		}
 
-		var mac net.HardwareAddr = arpDetails.MacAddress
-		arp := &ArpEntry{
-			Interface:  arpDetails.SwIfIndex,
-			MacAddress: mac.String(),
-			Static:     uintToBool(arpDetails.IsStatic),
+		// ARP interface
+		ifName, _, exists := handler.ifIndexes.LookupName(arpDetails.SwIfIndex)
+		if !exists {
+			handler.log.Warnf("ARP dump: interface name not found for index %d", arpDetails.SwIfIndex)
 		}
-
-		var address net.IP
-		if arpDetails.IsIpv6 == 1 {
-			address = net.IP(arpDetails.IPAddress).To16()
+		// IP & MAC address
+		var ip, mac string
+		if uintToBool(arpDetails.IsIpv6) {
+			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress).To16().String())
 		} else {
-			address = net.IP(arpDetails.IPAddress[:4]).To4()
+			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress[:4]).To4().String())
 		}
-		arp.IPAddress = address
+		mac = net.HardwareAddr(arpDetails.MacAddress).String()
 
-		arps = append(arps, arp)
+		// ARP entry
+		arp := &l3.ArpTable_ArpEntry{
+			Interface:   ifName,
+			IpAddress:   ip,
+			PhysAddress: mac,
+			Static:      uintToBool(arpDetails.IsStatic),
+		}
+		// ARP meta
+		meta := &ArpMeta{
+			SwIfIndex: arpDetails.SwIfIndex,
+		}
+
+		entries = append(entries, &ArpDetails{
+			Arp:  arp,
+			Meta: meta,
+		})
 	}
 
-	return arps, nil
+	return entries, nil
+}
+
+// ProxyArpDetails holds info about proxy ARP interfaces/ranges as a proto modeled data
+type ProxyArpDetails struct {
+	Interfaces []*l3.ProxyArpInterfaces_InterfaceList_Interface
+	Ranges     []*l3.ProxyArpRanges_RangeList_Range
+	Meta       *ProxyArpMeta
+}
+
+// ArpMeta contains interface index of the ARP interface
+type ProxyArpMeta struct {
+	IfNameToIdx map[uint32]string
+}
+
+func (handler *proxyArpVppHandler) DumpProxyArp() (*ProxyArpDetails, error) {
+	ranges, err := handler.DumpProxyArpRanges()
+	if err != nil {
+		return nil, err
+	}
+	interfaces, err := handler.DumpProxyArpInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	// Return as a new object
+	return &ProxyArpDetails{
+		Interfaces: interfaces.Interfaces,
+		Ranges:     ranges.Ranges,
+		Meta:       interfaces.Meta,
+	}, nil
+}
+
+func (handler *proxyArpVppHandler) DumpProxyArpRanges() (*ProxyArpDetails, error) {
+	// ArpDump time measurement
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	var ranges []*l3.ProxyArpRanges_RangeList_Range
+
+	// Dump ARPs.
+	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.ProxyArpDump{})
+
+	for {
+		proxyArpDetails := &l3binapi.ProxyArpDetails{}
+		stop, err := reqCtx.ReceiveReply(proxyArpDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			handler.log.Error(err)
+			return nil, err
+		}
+
+		ranges = append(ranges, &l3.ProxyArpRanges_RangeList_Range{
+			FirstIp: fmt.Sprintf("%s", net.IP(proxyArpDetails.Proxy.LowAddress[:4]).To4().String()),
+			LastIp:  fmt.Sprintf("%s", net.IP(proxyArpDetails.Proxy.HiAddress[:4]).To4().String()),
+		})
+	}
+
+	return &ProxyArpDetails{
+		Ranges: ranges,
+	}, nil
+}
+
+func (handler *proxyArpVppHandler) DumpProxyArpInterfaces() (*ProxyArpDetails, error) {
+	// ArpDump time measurement
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	var interfaces []*l3.ProxyArpInterfaces_InterfaceList_Interface
+	meta := &ProxyArpMeta{
+		IfNameToIdx: make(map[uint32]string),
+	}
+
+	// Dump ARPs.
+	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.ProxyArpIntfcDump{})
+
+	for {
+		proxyArpDetails := &l3binapi.ProxyArpIntfcDetails{}
+		stop, err := reqCtx.ReceiveReply(proxyArpDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			handler.log.Error(err)
+			return nil, err
+		}
+
+		// Interface
+		ifName, _, exists := handler.ifIndexes.LookupName(proxyArpDetails.SwIfIndex)
+		if !exists {
+			handler.log.Warnf("Proxy ARP interface dump: missing name for interface index %d", proxyArpDetails.SwIfIndex)
+		}
+
+		// Create entry
+		interfaces = append(interfaces, &l3.ProxyArpInterfaces_InterfaceList_Interface{
+			Name: ifName,
+		})
+		// Add to meta
+		meta.IfNameToIdx[proxyArpDetails.SwIfIndex] = ifName
+	}
+
+	return &ProxyArpDetails{
+		Interfaces: interfaces,
+		Meta:       meta,
+	}, nil
 }
 
 func uintToBool(value uint8) bool {

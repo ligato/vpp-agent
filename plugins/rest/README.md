@@ -84,11 +84,14 @@ curl http://0.0.0.0:9191/vpp/dump/v1/xc
 
 **L3 plugin**
 
-ARPs and static routes exposed via REST:
+ARPs, proxy ARP interfaces/ranges and static routes exposed via REST:
 
 ```
+curl http://0.0.0.0:9191/vpp/dump/v1/arps
+curl http://0.0.0.0:9191/vpp/dump/v1/proxyarp
+curl http://0.0.0.0:9191/vpp/dump/v1/proxyarp/interfaces
+curl http://0.0.0.0:9191/vpp/dump/v1/proxyarp/ranges
 curl http://0.0.0.0:9191/vpp/dump/v1/routes
-curl http://0.0.0.0:9191/arps
 ```
 
 ## Logging mechanism

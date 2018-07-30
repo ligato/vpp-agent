@@ -41,31 +41,6 @@ const (
 	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{label}"
 )
 
-// VrfKeyPrefix returns the prefix used in ETCD to store VRFs for vpp instance.
-func VrfKeyPrefix() string {
-	return VrfPrefix
-}
-
-// RouteKeyPrefix returns the prefix used in ETCD to store vpp routes for vpp instance.
-func RouteKeyPrefix() string {
-	return RoutesPrefix
-}
-
-// ArpKeyPrefix returns the prefix used in ETCD to store vpp APR tables for vpp instance.
-func ArpKeyPrefix() string {
-	return ArpPrefix
-}
-
-// ProxyArpPrefix returns the prefix used in ETCD to store proxy APR ranges for vpp instance.
-func ProxyArpRangePrefix() string {
-	return ProxyARPRangePrefix
-}
-
-// ProxyArpPrefix returns the prefix used in ETCD to store proxy APR interfaces for vpp instance.
-func ProxyArpInterfacePrefix() string {
-	return ProxyARPInterfacePrefix
-}
-
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
 func RouteKey(vrf uint32, dstAddr string, nextHopAddr string) string {
 	_, dstNet, _ := net.ParseCIDR(dstAddr)
@@ -81,8 +56,8 @@ func RouteKey(vrf uint32, dstAddr string, nextHopAddr string) string {
 
 // ParseRouteKey parses VRF label and route address from a route key.
 func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string) {
-	if strings.HasPrefix(key, VrfKeyPrefix()) {
-		vrfSuffix := strings.TrimPrefix(key, VrfKeyPrefix())
+	if strings.HasPrefix(key, VrfPrefix) {
+		vrfSuffix := strings.TrimPrefix(key, VrfPrefix)
 		routeComps := strings.Split(vrfSuffix, "/")
 		if len(routeComps) >= 5 && routeComps[1] == "fib" {
 			if mask, err := strconv.Atoi(routeComps[3]); err == nil {

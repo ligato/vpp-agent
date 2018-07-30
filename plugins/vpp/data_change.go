@@ -140,7 +140,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+	} else if strings.HasPrefix(key, l3.VrfPrefix) {
 		isRoute, vrfFromKey, _, _, _ := l3.ParseRouteKey(key)
 		if isRoute {
 			// Route
@@ -158,7 +158,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			plugin.Log.Warnf("Key '%s' not supported", key)
 		}
-	} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+	} else if strings.HasPrefix(key, l3.ArpPrefix) {
 		_, _, err := l3.ParseArpKey(key)
 		if err != nil {
 			return false, err
@@ -174,7 +174,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
+	} else if strings.HasPrefix(key, l3.ProxyARPInterfacePrefix) {
 		var value, prevValue l3.ProxyArpInterfaces_InterfaceList
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -186,7 +186,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
+	} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 		var value, prevValue l3.ProxyArpRanges_RangeList
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err

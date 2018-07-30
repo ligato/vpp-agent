@@ -62,6 +62,8 @@ type Plugin struct {
 	bdHandler    l2vppcalls.BridgeDomainVppRead
 	fibHandler   l2vppcalls.FibVppRead
 	xcHandler    l2vppcalls.XConnectVppRead
+	arpHandler   l3vppcalls.ArpVppRead
+	pArpHandler  l3vppcalls.ProxyArpVppRead
 	rtHandler    l3vppcalls.RouteVppRead
 
 	sync.Mutex
@@ -127,6 +129,12 @@ func (plugin *Plugin) Init() (err error) {
 	if plugin.xcHandler, err = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
 		return err
 	}
+	if plugin.arpHandler, err = l3vppcalls.NewArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.pArpHandler, err = l3vppcalls.NewProxyArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
 	if plugin.rtHandler, err = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
 		return err
 	}
@@ -145,8 +153,12 @@ func (plugin *Plugin) Init() (err error) {
 		{Name: "Bridge domain IDs", Path: resturl.BdId},
 		{Name: "L2Fibs", Path: resturl.Fib},
 		{Name: "XConnectorPairs", Path: resturl.Xc},
+		{Name: "ARPs", Path: resturl.Arps},
+		{Name: "Proxy ARPs", Path: resturl.ProxyArps},
+		{Name: "Proxy ARP interfaces", Path: resturl.PArpIfs},
+		{Name: "Proxy ARP ranges", Path: resturl.PArpRngs},
+		{Name: "Static routes", Path: resturl.Routes},
 
-		{Name: "ARPs", Path: "/arps"},
 		{Name: "Telemetry", Path: "/telemetry"},
 	}
 	return nil

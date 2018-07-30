@@ -260,12 +260,12 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.RouteKeyPrefix())
+		keys, err = dsl.listKeys(l3.RoutesPrefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.ArpKeyPrefix())
+		keys, err = dsl.listKeys(l3.ArpPrefix)
 		if err != nil {
 			break
 		}
