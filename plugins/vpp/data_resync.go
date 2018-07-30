@@ -229,22 +229,22 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(stn.KeyPrefix()) {
+	if !plugin.droppedFromResync(stn.Prefix) {
 		if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(nat.GlobalConfigPrefix()) {
+	if !plugin.droppedFromResync(nat.GlobalPrefix) {
 		if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(nat.SNatPrefix()) {
+	if !plugin.droppedFromResync(nat.SNatPrefix) {
 		if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(nat.DNatPrefix()) {
+	if !plugin.droppedFromResync(nat.DNatPrefix) {
 		if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
@@ -319,16 +319,16 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
 			numAppNs := resyncAppendAppNs(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNamespace values ", numAppNs)
-		} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+		} else if strings.HasPrefix(key, stn.Prefix) {
 			numStns := appendResyncStnRules(resyncData, req)
 			plugin.Log.Debug("Received RESYNC STN rules values ", numStns)
-		} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+		} else if strings.HasPrefix(key, nat.GlobalPrefix) {
 			resyncNatGlobal(resyncData, req)
 			plugin.Log.Debug("Received RESYNC NAT global config")
-		} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+		} else if strings.HasPrefix(key, nat.SNatPrefix) {
 			numSNats := appendResyncSNat(resyncData, req)
 			plugin.Log.Debug("Received RESYNC SNAT configs ", numSNats)
-		} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+		} else if strings.HasPrefix(key, nat.DNatPrefix) {
 			numDNats := appendResyncDNat(resyncData, req)
 			plugin.Log.Debug("Received RESYNC DNAT configs ", numDNats)
 		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
@@ -769,10 +769,10 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			l3.ProxyArpRangePrefix(),
 			l4.FeatureKeyPrefix(),
 			l4.AppNamespacesKeyPrefix(),
-			stn.KeyPrefix(),
-			nat.GlobalConfigPrefix(),
-			nat.SNatPrefix(),
-			nat.DNatPrefix(),
+			stn.Prefix,
+			nat.GlobalPrefix,
+			nat.SNatPrefix,
+			nat.DNatPrefix,
 			ipsec.KeyPrefix,
 			srv6.BasePrefix(),
 		)

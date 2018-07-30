@@ -185,7 +185,7 @@ func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) vppclient.DataResyncDSL {
 
 // NAT44Global adds a request to RESYNC global configuration for NAT44
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResyncDSL {
-	key := nat.GlobalConfigKey()
+	key := nat.GlobalPrefix
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

@@ -19,6 +19,8 @@ import (
 
 	"net"
 
+	"fmt"
+
 	stnapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
@@ -61,13 +63,12 @@ func (handler *stnVppHandler) DumpStnRules() (rules *StnDetails, err error) {
 		}
 
 		var stnStrIP string
-		if msg.IsIP4 == 1 {
-			var stnIP net.IP = msg.IPAddress[12:]
-			stnStrIP = stnIP.To4().String()
+		if uintToBool(msg.IsIP4) {
+			stnStrIP = fmt.Sprintf("%s", net.IP(msg.IPAddress[:4]).To4().String())
 		} else {
-			var stnIP net.IP = msg.IPAddress
-			stnStrIP = stnIP.To16().String()
+			stnStrIP = fmt.Sprintf("%s", net.IP(msg.IPAddress).To16().String())
 		}
+
 		ruleList = append(ruleList, &stn.STN_Rule{
 			IpAddress: stnStrIP,
 			Interface: ifName,

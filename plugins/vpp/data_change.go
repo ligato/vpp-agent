@@ -222,7 +222,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+	} else if strings.HasPrefix(key, stn.Prefix) {
 		var value, prevValue stn.STN_Rule
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -234,7 +234,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+	} else if strings.HasPrefix(key, nat.GlobalPrefix) {
 		// Global NAT config
 		var value, prevValue nat.Nat44Global
 		if err := dataChng.GetValue(&value); err != nil {
@@ -247,7 +247,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+	} else if strings.HasPrefix(key, nat.SNatPrefix) {
 		// SNAT config
 		var value, prevValue nat.Nat44SNat_SNatConfig
 		if err := dataChng.GetValue(&value); err != nil {
@@ -260,7 +260,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+	} else if strings.HasPrefix(key, nat.DNatPrefix) {
 		// DNAT config
 		var value, prevValue nat.Nat44DNat_DNatConfig
 		if err := dataChng.GetValue(&value); err != nil {

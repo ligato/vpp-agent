@@ -344,7 +344,7 @@ func TestStnConfiguratorDumpRule(t *testing.T) {
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnRulesDetails{
 		IsIP4:     1,
-		IPAddress: net.ParseIP("10.0.0.1"),
+		IPAddress: net.ParseIP("10.0.0.1").To4(),
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
