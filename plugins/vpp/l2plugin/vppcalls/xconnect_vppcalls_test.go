@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vppcalls
+package vppcalls_test
 
 import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -51,13 +55,13 @@ scenarios:
 */
 // TestVppSetL2XConnect tests VppSetL2XConnect method
 func TestVppSetL2XConnect(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, xcHandler, _ := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	for i := 0; i < len(setTestDataInXConnect); i++ {
 		ctx.MockVpp.MockReply(setTestDataInXConnect[i].message)
-		err := AddL2XConnect(setTestDataInXConnect[i].receiveIfaceIndex,
-			setTestDataInXConnect[i].transmitIfaceIndex, ctx.MockChannel, nil)
+		err := xcHandler.AddL2XConnect(setTestDataInXConnect[i].receiveIfaceIndex,
+			setTestDataInXConnect[i].transmitIfaceIndex)
 
 		if setTestDataOutXConnect[i].isResultOk {
 			Expect(err).To(BeNil())
@@ -96,13 +100,13 @@ scenarios:
 */
 // TestVppUnsetL2XConnect tests VppUnsetL2XConnect method
 func TestVppUnsetL2XConnect(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, xcHandler, _ := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	for i := 0; i < len(unsetTestDataInXConnect); i++ {
 		ctx.MockVpp.MockReply(unsetTestDataInXConnect[i].message)
-		err := DeleteL2XConnect(unsetTestDataInXConnect[i].receiveIfaceIndex,
-			unsetTestDataInXConnect[i].transmitIfaceIndex, ctx.MockChannel, nil)
+		err := xcHandler.DeleteL2XConnect(unsetTestDataInXConnect[i].receiveIfaceIndex,
+			unsetTestDataInXConnect[i].transmitIfaceIndex)
 
 		if unsetTestDataOutXConnect[i].isResultOk {
 			Expect(err).To(BeNil())
@@ -111,4 +115,13 @@ func TestVppUnsetL2XConnect(t *testing.T) {
 		}
 		Expect(ctx.MockChannel.Msg).To(Equal(unsetTestDataOutXConnect[i].outData))
 	}
+}
+
+func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI, ifaceidx.SwIfIndexRW) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	log := logrus.NewLogger("test-log")
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if-idx", nil))
+	xcHandler, err := vppcalls.NewXConnectVppHandler(ctx.MockChannel, ifIndexes, log, nil)
+	Expect(err).To(BeNil())
+	return ctx, xcHandler, ifIndexes
 }

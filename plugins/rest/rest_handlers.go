@@ -29,151 +29,119 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
+	"github.com/ligato/vpp-agent/plugins/rest/resturl"
 	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
-	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
+	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-// interfacesGetHandler - used to get list of all interfaces
-func (plugin *Plugin) interfacesGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting list of all interfaces")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
-		ifHandler, err := ifplugin.NewIfVppHandler(ch, plugin.Log, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := ifHandler.DumpInterfaces()
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
+// Registers access list REST handlers
+func (plugin *Plugin) registerAccessListHandlers() {
+	// GET IP ACLs
+	plugin.registerHTTPHandler(resturl.AclIP, GET, func() (interface{}, error) {
+		return plugin.aclHandler.DumpIPACL(nil)
+	})
+	// GET MACIP ACLs
+	plugin.registerHTTPHandler(resturl.AclMACIP, GET, func() (interface{}, error) {
+		return plugin.aclHandler.DumpMACIPACL(nil)
+	})
 }
 
-// bridgeDomainIdsGetHandler - used to get list of all bridge domain ids
-func (plugin *Plugin) bridgeDomainIdsGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting list of all bridge domain ids")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
-		res, err := l2plugin.DumpBridgeDomainIDs(ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
+// Registers interface REST handlers
+func (plugin *Plugin) registerInterfaceHandlers() {
+	// GET all interfaces
+	plugin.registerHTTPHandler(resturl.Interface, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfaces()
+	})
+	// GET loopback interfaces
+	plugin.registerHTTPHandler(resturl.Loopback, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_SOFTWARE_LOOPBACK)
+	})
+	// GET ethernet interfaces
+	plugin.registerHTTPHandler(resturl.Ethernet, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_ETHERNET_CSMACD)
+	})
+	// GET memif interfaces
+	plugin.registerHTTPHandler(resturl.Memif, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_MEMORY_INTERFACE)
+	})
+	// GET tap interfaces
+	plugin.registerHTTPHandler(resturl.Tap, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_TAP_INTERFACE)
+	})
+	// GET af-packet interfaces
+	plugin.registerHTTPHandler(resturl.AfPacket, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_AF_PACKET_INTERFACE)
+	})
+	// GET VxLAN interfaces
+	plugin.registerHTTPHandler(resturl.VxLan, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_VXLAN_TUNNEL)
+	})
 }
 
-// bridgeDomainsGetHandler - used to get list of all bridge domains
-func (plugin *Plugin) bridgeDomainsGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting list of all bridge domains")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
-		res, err := l2plugin.DumpBridgeDomains(ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
+func (plugin *Plugin) registerBfdHandlers() {
+	// GET BFD configuration
+	plugin.registerHTTPHandler(resturl.BfdUrl, GET, func() (interface{}, error) {
+		return plugin.bfdHandler.DumpBfdSingleHop()
+	})
+	// GET BFD sessions
+	plugin.registerHTTPHandler(resturl.BfdSession, GET, func() (interface{}, error) {
+		return plugin.bfdHandler.DumpBfdSessions()
+	})
+	// GET BFD authentication keys
+	plugin.registerHTTPHandler(resturl.BfdAuthKey, GET, func() (interface{}, error) {
+		return plugin.bfdHandler.DumpBfdAuthKeys()
+	})
 }
 
-// fibTableEntriesGetHandler - used to get list of all fib entries
-func (plugin *Plugin) fibTableEntriesGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting list of all fibs")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
-		res, err := l2plugin.DumpFIBTableEntries(ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
+// Registers L2 plugin REST handlers
+func (plugin *Plugin) registerL2Handlers() {
+	// GET bridge domain IDs
+	plugin.registerHTTPHandler(resturl.BdId, GET, func() (interface{}, error) {
+		return plugin.bdHandler.DumpBridgeDomainIDs()
+	})
+	// GET bridge domains
+	plugin.registerHTTPHandler(resturl.Bd, GET, func() (interface{}, error) {
+		return plugin.bdHandler.DumpBridgeDomains()
+	})
+	// GET FIB entries
+	plugin.registerHTTPHandler(resturl.Fib, GET, func() (interface{}, error) {
+		return plugin.fibHandler.DumpFIBTableEntries()
+	})
+	// GET cross connects
+	plugin.registerHTTPHandler(resturl.Xc, GET, func() (interface{}, error) {
+		return plugin.xcHandler.DumpXConnectPairs()
+	})
 }
 
-// xconnectPairsGetHandler - used to get list of all connect pairs (transmit and receive interfaces)
-func (plugin *Plugin) xconnectPairsGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
+// Registers L3 plugin REST handlers
+func (plugin *Plugin) registerL3Handlers() {
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
+		return plugin.rtHandler.DumpStaticRoutes()
+	})
+}
 
-		plugin.Log.Debug("Getting list of all xconnect pairs")
+// registerHTTPHandler is common register method for all handlers
+func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) {
+	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
+		return func(w http.ResponseWriter, req *http.Request) {
+			plugin.Lock()
+			defer plugin.Unlock()
 
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
+			res, err := f()
+			if err != nil {
+				plugin.Deps.Log.Errorf("Error: %v", err)
+				errStr := fmt.Sprintf("500 Internal server error: %s\n", err.Error())
+				formatter.Text(w, http.StatusInternalServerError, errStr)
+				return
+			}
+			plugin.Deps.Log.Debugf("Rest uri: %s, data: %v", key, res)
+			formatter.JSON(w, http.StatusOK, res)
 		}
-		defer ch.Close()
-
-		res, err := l2plugin.DumpXConnectPairs(ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
 	}
+	plugin.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
 }
 
 // staticRoutesGetHandler - used to get list of all static routes
@@ -191,34 +159,13 @@ func (plugin *Plugin) arpGetHandler(formatter *render.Render) http.HandlerFunc {
 		}
 		defer ch.Close()
 
-		res, err := l3plugin.DumpArps(plugin.Log, ch, nil)
+		l3Handler, err := l3plugin.NewArpVppHandler(ch, plugin.Log, nil)
 		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// staticRoutesGetHandler - used to get list of all static routes
-func (plugin *Plugin) staticRoutesGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting list of all static routes")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
+			plugin.Log.Errorf("Error creating VPP handler: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer ch.Close()
-
-		res, err := l3plugin.DumpStaticRoutes(plugin.Log, ch, nil)
+		res, err := l3Handler.DumpArpEntries()
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, nil)
@@ -252,29 +199,19 @@ func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.Hand
 			return
 		}
 
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
 		swIndex := uint32(swIndexuInt64)
-		aclHandler, err := aclcalls.NewAclVppHandler(ch, ch, nil)
 		if err != nil {
 			plugin.Log.Errorf("Error creating VPP handler: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
-		res, err := aclHandler.DumpInterfaceIPAcls(swIndex)
+		res, err := plugin.aclHandler.DumpInterfaceIPAcls(swIndex)
 		if err != nil {
 			plugin.Deps.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		}
-		res, err = aclHandler.DumpInterfaceMACIPAcls(swIndex)
+		res, err = plugin.aclHandler.DumpInterfaceMACIPAcls(swIndex)
 		if err != nil {
 			plugin.Log.Errorf("Error: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
@@ -283,138 +220,6 @@ func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.Hand
 
 		plugin.Log.Debug(res)
 		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// ipACLGetHandler - used to get configuration of IP ACLs
-func (plugin *Plugin) ipACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting acls")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-		aclHandler, err := aclcalls.NewAclVppHandler(ch, ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := aclHandler.DumpIPACL(nil)
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Deps.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-func (plugin *Plugin) macipACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		plugin.Deps.Log.Info("Getting macip acls")
-
-		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
-		defer ch.Close()
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		aclHandler, err := aclcalls.NewAclVppHandler(ch, ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := aclHandler.DumpMACIPACL(nil)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// exampleACLGetHandler - used to get an example ACL configuration
-func (plugin *Plugin) exampleIpACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting example acl")
-
-		ipRule := &acl.AccessLists_Acl_Rule_Match_IpRule{
-			Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
-				DestinationNetwork: "1.2.3.4/24",
-				SourceNetwork:      "5.6.7.8/24",
-			},
-			Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
-				DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
-					LowerPort: 80,
-					UpperPort: 8080,
-				},
-				SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
-					LowerPort: 10,
-					UpperPort: 1010,
-				},
-				TcpFlagsMask:  0xFF,
-				TcpFlagsValue: 9,
-			},
-		}
-
-		rule := &acl.AccessLists_Acl_Rule{
-			Match: &acl.AccessLists_Acl_Rule_Match{
-				IpRule: ipRule,
-			},
-			AclAction: acl.AclAction_PERMIT,
-		}
-
-		aclRes := acl.AccessLists_Acl{
-			AclName: "example",
-			Rules:   []*acl.AccessLists_Acl_Rule{rule},
-		}
-
-		plugin.Log.Debug(aclRes)
-		formatter.JSON(w, http.StatusOK, aclRes)
-	}
-}
-
-func (plugin *Plugin) exampleMacIpACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		plugin.Deps.Log.Info("Getting example macip acl")
-
-		macipRule := &acl.AccessLists_Acl_Rule_Match_MacIpRule{
-			SourceAddress:        "192.168.0.1",
-			SourceAddressPrefix:  uint32(16),
-			SourceMacAddress:     "02:00:DE:AD:00:02",
-			SourceMacAddressMask: "ff:ff:ff:ff:00:00",
-		}
-
-		rule := &acl.AccessLists_Acl_Rule{
-			Match: &acl.AccessLists_Acl_Rule_Match{
-				MacipRule: macipRule,
-			},
-			AclAction: acl.AclAction_PERMIT,
-		}
-
-		aclRes := acl.AccessLists_Acl{
-			AclName: "example",
-			Rules:   []*acl.AccessLists_Acl_Rule{rule},
-		}
-
-		plugin.Deps.Log.Debug(aclRes)
-		formatter.JSON(w, http.StatusOK, aclRes)
 	}
 }
 

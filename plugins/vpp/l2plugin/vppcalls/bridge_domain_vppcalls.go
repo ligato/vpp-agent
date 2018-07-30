@@ -19,7 +19,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
@@ -34,10 +33,9 @@ var BridgeDomainMessages = []govppapi.Message{
 	&l2ba.SwInterfaceSetL2BridgeReply{},
 }
 
-// VppAddBridgeDomain adds new bridge domain.
-func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *bridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BridgeDomainAddDel{
@@ -53,7 +51,7 @@ func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan
 	}
 
 	reply := &l2ba.BridgeDomainAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -63,10 +61,9 @@ func VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, vppChan
 	return nil
 }
 
-// VppDeleteBridgeDomain removes existing bridge domain.
-func VppDeleteBridgeDomain(bdIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *bridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BridgeDomainAddDel{
@@ -75,7 +72,7 @@ func VppDeleteBridgeDomain(bdIdx uint32, vppChan govppapi.Channel, stopwatch *me
 	}
 
 	reply := &l2ba.BridgeDomainAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

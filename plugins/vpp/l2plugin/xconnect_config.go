@@ -41,6 +41,7 @@ type XConnectConfigurator struct {
 	xcIndexSeq        uint32
 
 	vppChan   govppapi.Channel
+	xcHandler vppcalls.XConnectVppAPI
 	stopwatch *measure.Stopwatch // Timer used to measure and store time
 }
 
@@ -50,6 +51,11 @@ func (plugin *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux g
 	// Logger
 	plugin.log = logger.NewLogger("-xc-conf")
 	plugin.log.Info("Initializing L2 xConnect configurator")
+
+	// Stopwatch
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("XCConfigurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
@@ -64,9 +70,9 @@ func (plugin *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux g
 		return err
 	}
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("BFDConfigurator", plugin.log)
+	// Cross-connect VPP API handler
+	if plugin.xcHandler, err = vppcalls.NewXConnectVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
+		return err
 	}
 
 	// Message compatibility
@@ -125,7 +131,7 @@ func (plugin *XConnectConfigurator) ConfigureXConnectPair(xc *l2.XConnectPairs_X
 		return nil
 	}
 	// XConnect can be configured now
-	if err := vppcalls.AddL2XConnect(rxIfIdx, txIfIdx, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err := plugin.xcHandler.AddL2XConnect(rxIfIdx, txIfIdx); err != nil {
 		plugin.log.Errorf("Adding l2xConnect failed: %v", err)
 		return err
 	}
@@ -166,7 +172,7 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newXc, oldXc *l2.XConnect
 			return nil // Nothing more can be done
 		}
 		plugin.log.Debugf("Removing obsolete l2xConnect %s-%s", oldXc.ReceiveInterface, oldXc.TransmitInterface)
-		if err := vppcalls.DeleteL2XConnect(rxIfIdx, oldTxIfIdx, plugin.vppChan, plugin.stopwatch); err != nil {
+		if err := plugin.xcHandler.DeleteL2XConnect(rxIfIdx, oldTxIfIdx); err != nil {
 			plugin.log.Errorf("Deleted obsolete l2xConnect failed: %v", err)
 			return err
 		}
@@ -174,7 +180,7 @@ func (plugin *XConnectConfigurator) ModifyXConnectPair(newXc, oldXc *l2.XConnect
 		return nil
 	}
 	// Replace existing entry
-	if err := vppcalls.AddL2XConnect(rxIfIdx, txIfIdx, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err := plugin.xcHandler.AddL2XConnect(rxIfIdx, txIfIdx); err != nil {
 		plugin.log.Errorf("Replacing l2xConnect failed: %v", err)
 		return err
 	}
@@ -214,7 +220,7 @@ func (plugin *XConnectConfigurator) DeleteXConnectPair(xc *l2.XConnectPairs_XCon
 		return nil
 	}
 	// XConnect can be removed now
-	if err := vppcalls.DeleteL2XConnect(rxIfIdx, txIfIdx, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err := plugin.xcHandler.DeleteL2XConnect(rxIfIdx, txIfIdx); err != nil {
 		plugin.log.Errorf("Removing l2xConnect failed: %v", err)
 		return err
 	}

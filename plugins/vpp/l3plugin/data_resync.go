@@ -16,10 +16,8 @@ package l3plugin
 
 import (
 	"fmt"
-	"github.com/ligato/cn-infra/logging/measure"
-	l3ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
@@ -37,11 +35,11 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 	plugin.clearMapping()
 
 	// Retrieve VPP route configuration
-	vppRoutes, err := vppdump.DumpStaticRoutes(plugin.log, plugin.vppChan, measure.GetTimeLog(l3ba.IPFibDump{}, plugin.stopwatch))
+	vppRouteDetails, err := plugin.rtHandler.DumpStaticRoutes()
 	if err != nil {
 		return err
 	}
-	plugin.log.Debugf("Found %d routes configured on the VPP", len(vppRoutes))
+	plugin.log.Debugf("Found %d routes configured on the VPP", len(vppRouteDetails))
 
 	// Correlate NB and VPP configuration
 	for _, nbRoute := range nbRoutes {
@@ -63,27 +61,31 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 			nbRoute.Weight = 1
 		}
 		// Look for the same route in the configuration
-		for _, vppRoute := range vppRoutes {
-			vppRouteID := routeIdentifier(vppRoute.VrfID, vppRoute.DstAddr.String(), vppRoute.NextHopAddr.String())
+		for _, vppRouteDetail := range vppRouteDetails {
+			if vppRouteDetail.Route == nil {
+				continue
+			}
+			vppRoute := vppRouteDetail.Route
+			vppRouteID := routeIdentifier(vppRoute.VrfId, vppRoute.DstIpAddr, vppRoute.NextHopAddr)
 			plugin.log.Debugf("RESYNC routes: comparing %s and %s", nbRouteID, vppRouteID)
 			if int32(vppRoute.Type) != int32(nbRoute.Type) {
 				plugin.log.Debugf("RESYNC routes: route type is different (NB: %d, VPP %d)",
 					nbRoute.Type, vppRoute.Type)
 				continue
 			}
-			if vppRoute.OutIface != nbIfIdx {
+			if vppRoute.OutgoingInterface != nbRoute.OutgoingInterface {
 				plugin.log.Debugf("RESYNC routes: interface index is different (NB: %d, VPP %d)",
-					nbIfIdx, vppRoute.OutIface)
+					nbIfIdx, vppRoute.OutgoingInterface)
 				continue
 			}
-			if vppRoute.DstAddr.String() != nbRoute.DstIpAddr {
+			if vppRoute.DstIpAddr != nbRoute.DstIpAddr {
 				plugin.log.Debugf("RESYNC routes: dst address is different (NB: %s, VPP %s)",
-					nbRoute.DstIpAddr, vppRoute.DstAddr.String())
+					nbRoute.DstIpAddr, vppRoute.DstIpAddr)
 				continue
 			}
-			if vppRoute.VrfID != nbRoute.VrfId {
+			if vppRoute.VrfId != nbRoute.VrfId {
 				plugin.log.Debugf("RESYNC routes: VRF ID is different (NB: %d, VPP %d)",
-					nbRoute.VrfId, vppRoute.VrfID)
+					nbRoute.VrfId, vppRoute.VrfId)
 				continue
 			}
 			if vppRoute.Weight != nbRoute.Weight {
@@ -96,13 +98,13 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 					nbRoute.Preference, vppRoute.Preference)
 				continue
 			}
-			if vppRoute.NextHopAddr.String() != nbRoute.NextHopAddr {
-				if nbRoute.NextHopAddr == "" && vppRoute.NextHopAddr.IsUnspecified() {
+			if vppRoute.NextHopAddr != nbRoute.NextHopAddr {
+				if nbRoute.NextHopAddr == "" {
 					plugin.log.Debugf("RESYNC routes: empty next hop address matched (NB: %s, VPP %s)",
-						nbRoute.NextHopAddr, vppRoute.NextHopAddr.String())
+						nbRoute.NextHopAddr, vppRoute.NextHopAddr)
 				} else {
 					plugin.log.Debugf("RESYNC routes: next hop address is different (NB: %s, VPP %s)",
-						nbRoute.NextHopAddr, vppRoute.NextHopAddr.String())
+						nbRoute.NextHopAddr, vppRoute.NextHopAddr)
 					continue
 				}
 			}

@@ -530,8 +530,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// L2 FIB configurator
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{}
-	err = plugin.fibConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdIndexes, plugin.enableStopwatch)
-	if err != nil {
+	if err := plugin.fibConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdIndexes, plugin.enableStopwatch); err != nil {
 		return err
 	}
 	plugin.Log.Debug("fibConfigurator Initialized")

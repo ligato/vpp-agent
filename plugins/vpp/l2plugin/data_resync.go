@@ -18,8 +18,6 @@ import (
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
@@ -37,7 +35,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	plugin.clearMapping()
 
 	// Dump current state of the VPP bridge domains
-	vppBDs, err := vppdump.DumpBridgeDomains(plugin.vppChan, plugin.stopwatch)
+	vppBDs, err := plugin.bdHandler.DumpBridgeDomains()
 	if err != nil {
 		return err
 	}
@@ -46,7 +44,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 	var wasErr error
 	for vppBDIdx, vppBD := range vppBDs {
 		// tag is bridge domain name (unique identifier)
-		tag := vppBD.Name
+		tag := vppBD.Bd.Name
 		// Find NB bridge domain with the same name
 		var nbBD *l2.BridgeDomains_BridgeDomain
 		for _, nbBDConfig := range nbBDs {
@@ -69,12 +67,12 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			// Bridge domain exists, validate
 			valid, recreate := plugin.vppValidateBridgeDomainBVI(nbBD, &l2.BridgeDomains_BridgeDomain{
 				Name:                tag,
-				Learn:               vppBD.Learn,
-				Flood:               vppBD.Flood,
-				Forward:             vppBD.Forward,
-				UnknownUnicastFlood: vppBD.UnknownUnicastFlood,
-				ArpTermination:      vppBD.ArpTermination,
-				MacAge:              vppBD.MacAge,
+				Learn:               vppBD.Bd.Learn,
+				Flood:               vppBD.Bd.Flood,
+				Forward:             vppBD.Bd.Forward,
+				UnknownUnicastFlood: vppBD.Bd.UnknownUnicastFlood,
+				ArpTermination:      vppBD.Bd.ArpTermination,
+				MacAge:              vppBD.Bd.MacAge,
 			})
 			if !valid {
 				plugin.log.Errorf("RESYNC bridge domain: new config %v is invalid", nbBD.Name)
@@ -108,19 +106,17 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			var interfacesToUnset []*l2.BridgeDomains_BridgeDomain_Interfaces
 			for _, iface := range interfaceMap {
 				interfacesToUnset = append(interfacesToUnset, &l2.BridgeDomains_BridgeDomain_Interfaces{
-					Name: iface.Name,
+					Name: iface.Interface.Name,
 				})
 			}
 			// Remove interfaces from bridge domain. Attempt to unset interface which does not belong to the bridge domain
 			// does not cause an error
-			if _, err := vppcalls.UnsetInterfacesFromBridgeDomain(nbBD.Name, vppBDIdx, interfacesToUnset, plugin.ifIndexes, plugin.log,
-				plugin.vppChan, nil); err != nil {
+			if _, err := plugin.bdHandler.UnsetInterfacesFromBridgeDomain(nbBD.Name, vppBDIdx, interfacesToUnset, plugin.ifIndexes); err != nil {
 				return err
 			}
 			// Set all new interfaces to the bridge domain
 			// todo there is no need to calculate diff from configured interfaces, because currently all available interfaces are set here
-			configuredIfs, err := vppcalls.SetInterfacesToBridgeDomain(nbBD.Name, vppBDIdx, nbBD.Interfaces, plugin.ifIndexes, plugin.log,
-				plugin.vppChan, nil)
+			configuredIfs, err := plugin.bdHandler.SetInterfacesToBridgeDomain(nbBD.Name, vppBDIdx, nbBD.Interfaces, plugin.ifIndexes)
 			if err != nil {
 				return err
 			}
@@ -128,8 +124,7 @@ func (plugin *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) err
 			// todo VPP does not support ARP dump, they can be only added at this time
 			// Resolve new ARP entries
 			for _, arpEntry := range nbBD.ArpTerminationTable {
-				if err := vppcalls.VppAddArpTerminationTableEntry(vppBDIdx, arpEntry.PhysAddress, arpEntry.IpAddress,
-					plugin.log, plugin.vppChan, nil); err != nil {
+				if err := plugin.bdHandler.VppAddArpTerminationTableEntry(vppBDIdx, arpEntry.PhysAddress, arpEntry.IpAddress); err != nil {
 					plugin.log.Error(err)
 					wasErr = err
 				}
@@ -172,7 +167,7 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 	plugin.clearMapping()
 
 	// Get all FIB entries configured on the VPP
-	vppFIBs, err := vppdump.DumpFIBTableEntries(plugin.syncChannel, plugin.stopwatch)
+	vppFIBs, err := plugin.fibHandler.DumpFIBTableEntries()
 	if err != nil {
 		return err
 	}
@@ -188,20 +183,20 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 				}
 				// Bridge domain
 				bdIdx, _, found := plugin.bdIndexes.LookupIdx(nbFIB.BridgeDomain)
-				if !found || vppFIBdata.BridgeDomainIdx != bdIdx {
+				if !found || vppFIBdata.Meta.BdID != bdIdx {
 					continue
 				}
 				// BVI
-				if vppFIBdata.BridgedVirtualInterface != nbFIB.BridgedVirtualInterface {
+				if vppFIBdata.Fib.BridgedVirtualInterface != nbFIB.BridgedVirtualInterface {
 					continue
 				}
 				// Interface
 				swIdx, _, found := plugin.ifIndexes.LookupIdx(nbFIB.OutgoingInterface)
-				if !found || vppFIBdata.OutgoingInterfaceSwIfIdx != swIdx {
+				if !found || vppFIBdata.Meta.IfIdx != swIdx {
 					continue
 				}
 				// Is static
-				if vppFIBdata.StaticConfig != nbFIB.StaticConfig {
+				if vppFIBdata.Fib.StaticConfig != nbFIB.StaticConfig {
 					continue
 				}
 
@@ -214,10 +209,10 @@ func (plugin *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 		if exists {
 			plugin.fibIndexes.RegisterName(vppFIBmac, plugin.fibIndexSeq, meta)
 			plugin.fibIndexSeq++
-		} else if vppFIBdata.StaticConfig {
+		} else if vppFIBdata.Fib.StaticConfig {
 			// Get appropriate interface/bridge domain names
-			ifIdx, _, ifFound := plugin.ifIndexes.LookupName(vppFIBdata.OutgoingInterfaceSwIfIdx)
-			bdIdx, _, bdFound := plugin.bdIndexes.LookupName(vppFIBdata.BridgeDomainIdx)
+			ifIdx, _, ifFound := plugin.ifIndexes.LookupName(vppFIBdata.Meta.IfIdx)
+			bdIdx, _, bdFound := plugin.bdIndexes.LookupName(vppFIBdata.Meta.BdID)
 			if !ifFound || !bdFound {
 				// FIB entry cannot be removed without these informations and
 				// it should be removed by the VPP
@@ -268,7 +263,7 @@ func (plugin *XConnectConfigurator) Resync(nbXConns []*l2.XConnectPairs_XConnect
 	plugin.clearMapping()
 
 	// Read cross connects from the VPP
-	vppXConns, err := vppdump.DumpXConnectPairs(plugin.vppChan, plugin.stopwatch)
+	vppXConns, err := plugin.xcHandler.DumpXConnectPairs()
 	if err != nil {
 		return err
 	}
@@ -280,8 +275,8 @@ func (plugin *XConnectConfigurator) Resync(nbXConns []*l2.XConnectPairs_XConnect
 		var rxIfName, txIfName string
 		for _, nbXConn := range nbXConns {
 			// Find receive and transmit interface
-			rxIfName, _, rxIfFound := plugin.ifIndexes.LookupName(vppXConn.ReceiveInterfaceSwIfIdx)
-			txIfName, _, txIfFound := plugin.ifIndexes.LookupName(vppXConn.TransmitInterfaceSwIfIdx)
+			rxIfName, _, rxIfFound := plugin.ifIndexes.LookupName(vppXConn.Meta.ReceiveInterfaceSwIfIdx)
+			txIfName, _, txIfFound := plugin.ifIndexes.LookupName(vppXConn.Meta.TransmitInterfaceSwIfIdx)
 			if !rxIfFound || !txIfFound {
 				continue
 			}

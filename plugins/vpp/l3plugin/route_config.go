@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
@@ -48,6 +49,9 @@ type RouteConfigurator struct {
 
 	// VPP channels
 	vppChan govppapi.Channel
+	// VPP API handlers
+	ifHandler ifvppcalls.IfVppWrite
+	rtHandler vppcalls.RouteVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -59,6 +63,11 @@ func (plugin *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	// Logger
 	plugin.log = logger.NewLogger("-l3-route-conf")
 	plugin.log.Debug("Initializing L3 Route configurator")
+
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("Route-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
@@ -72,9 +81,12 @@ func (plugin *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 		return err
 	}
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("RouteConfigurator", plugin.log)
+	// VPP API handlers
+	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+		return err
+	}
+	if plugin.rtHandler, err = vppcalls.NewRouteVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
+		return err
 	}
 
 	// Message compatibility
@@ -141,7 +153,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(config *l3.StaticRoutes_Route, v
 
 	// Create and register new route.
 	if route != nil {
-		err := vppcalls.VppAddRoute(route, plugin.vppChan, plugin.stopwatch)
+		err := plugin.rtHandler.VppAddRoute(plugin.ifHandler, route)
 		if err != nil {
 			return err
 		}
@@ -219,7 +231,7 @@ func (plugin *RouteConfigurator) deleteOldRoute(oldConfig *l3.StaticRoutes_Route
 		return err
 	}
 	// Remove and unregister old route.
-	if err := vppcalls.VppDelRoute(oldRoute, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err := plugin.rtHandler.VppDelRoute(oldRoute); err != nil {
 		return err
 	}
 
@@ -252,7 +264,7 @@ func (plugin *RouteConfigurator) addNewRoute(newConfig *l3.StaticRoutes_Route, v
 		return err
 	}
 	// Create and register new route.
-	if err = vppcalls.VppAddRoute(newRoute, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err = plugin.rtHandler.VppAddRoute(plugin.ifHandler, newRoute); err != nil {
 		return err
 	}
 
@@ -299,7 +311,7 @@ func (plugin *RouteConfigurator) DeleteRoute(config *l3.StaticRoutes_Route, vrfF
 	plugin.log.Debugf("deleting route: %+v", route)
 
 	// Remove and unregister route.
-	if err = vppcalls.VppDelRoute(route, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err = plugin.rtHandler.VppDelRoute(route); err != nil {
 		return err
 	}
 

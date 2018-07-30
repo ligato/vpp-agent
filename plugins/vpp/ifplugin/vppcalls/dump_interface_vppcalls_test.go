@@ -379,7 +379,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
-	intface := intfs[0]
+	intface := intfs[0].Interface
 
 	// Check vxlan
 	Expect(intface.Vxlan.SrcAddress).To(Equal("dead:beef:feed:face:cafe:babe:baad:c0de"))
@@ -439,7 +439,7 @@ func TestDumpInterfacesHost(t *testing.T) {
 	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
-	intface := intfs[0]
+	intface := intfs[0].Interface
 
 	// Check interface data
 	Expect(intface.Afpacket.HostIfName).To(Equal("localhost"))
@@ -509,7 +509,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	intfs, err := ifHandler.DumpInterfaces()
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
-	intface := intfs[0]
+	intface := intfs[0].Interface
 
 	// Check memif
 	Expect(intface.Memif.SocketFilename).To(Equal("test"))
@@ -605,7 +605,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(intfs).To(HaveLen(1))
 
-	intface := intfs[0]
+	intface := intfs[0].Interface
 
 	// This is last checked type, so it will be equal to that
 	Expect(intface.Type).To(Equal(interfaces2.InterfaceType_VXLAN_TUNNEL))

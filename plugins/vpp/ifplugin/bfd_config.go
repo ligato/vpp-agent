@@ -81,7 +81,7 @@ func (plugin *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	if plugin.bfdHandler, err = vppcalls.NewBfdVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+	if plugin.bfdHandler, err = vppcalls.NewBfdVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -244,45 +244,6 @@ func (plugin *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Sessi
 	return nil
 }
 
-// DumpBfdSessions returns a list of all configured BFD sessions
-func (plugin *BFDConfigurator) DumpBfdSessions() ([]*bfd.SingleHopBFD_Session, error) {
-	var bfdSessionList []*bfd.SingleHopBFD_Session
-
-	bfdList, err := plugin.bfdHandler.DumpBfdUDPSessions()
-	if err != nil {
-		return bfdSessionList, err
-	}
-
-	var wasError error
-	for _, bfdItem := range bfdList {
-		// find interface
-		ifName, _, found := plugin.ifIndexes.LookupName(bfdItem.SwIfIndex)
-		if !found {
-			plugin.log.Warnf("required interface %v not found for BFD", bfdItem.SwIfIndex)
-		}
-
-		// Prepare IPv4 IP addresses
-		var dstAddr net.IP = bfdItem.PeerAddr[:4]
-		var srcAddr net.IP = bfdItem.LocalAddr[:4]
-
-		bfdSessionList = append(bfdSessionList, &bfd.SingleHopBFD_Session{
-			Interface:             ifName,
-			DestinationAddress:    dstAddr.To4().String(),
-			SourceAddress:         srcAddr.To4().String(),
-			Enabled:               true,
-			DesiredMinTxInterval:  bfdItem.DesiredMinTx,
-			RequiredMinRxInterval: bfdItem.RequiredMinRx,
-			DetectMultiplier:      uint32(bfdItem.DetectMult),
-			Authentication: &bfd.SingleHopBFD_Session_Authentication{
-				KeyId:           uint32(bfdItem.BfdKeyID),
-				AdvertisedKeyId: uint32(bfdItem.BfdKeyID),
-			},
-		})
-	}
-
-	return bfdSessionList, wasError
-}
-
 // ConfigureBfdAuthKey crates new authentication key which can be used for BFD session
 func (plugin *BFDConfigurator) ConfigureBfdAuthKey(bfdAuthKey *bfd.SingleHopBFD_Key) error {
 	plugin.log.Infof("Configuring BFD authentication key with ID %v", bfdAuthKey.Id)
@@ -311,17 +272,21 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 	if err != nil {
 		return fmt.Errorf("error while verifying authentication key usage. Id: %d: %v", oldInput.Id, err)
 	}
-	if len(sessionList) != 0 {
+	if sessionList != nil && len(sessionList.Session) != 0 {
 		// Authentication Key is used and cannot be removed directly
-		for _, bfds := range sessionList {
-			sourceAddr := net.HardwareAddr(bfds.LocalAddr).String()
-			destAddr := net.HardwareAddr(bfds.PeerAddr).String()
-			err := plugin.bfdHandler.DeleteBfdUDPSession(bfds.SwIfIndex, sourceAddr, destAddr)
+		for _, bfds := range sessionList.Session {
+			sourceAddr := net.HardwareAddr(bfds.SourceAddress).String()
+			destAddr := net.HardwareAddr(bfds.DestinationAddress).String()
+			ifIdx, _, found := plugin.ifIndexes.LookupIdx(bfds.Interface)
+			if !found {
+				plugin.log.Warnf("Modify BFD auth key: interface index for %s not found", bfds.Interface)
+			}
+			err := plugin.bfdHandler.DeleteBfdUDPSession(ifIdx, sourceAddr, destAddr)
 			if err != nil {
 				return err
 			}
 		}
-		plugin.log.Debugf("%v session(s) temporary removed", len(sessionList))
+		plugin.log.Debugf("%v session(s) temporary removed", len(sessionList.Session))
 	}
 
 	err = plugin.bfdHandler.DeleteBfdUDPAuthenticationKey(oldInput)
@@ -334,14 +299,18 @@ func (plugin *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, 
 	}
 
 	// Recreate BFD sessions if necessary
-	if len(sessionList) != 0 {
-		for _, bfdSession := range sessionList {
-			err := plugin.bfdHandler.AddBfdUDPSessionFromDetails(bfdSession, plugin.keysIndexes)
+	if sessionList != nil && len(sessionList.Session) != 0 {
+		for _, bfdSession := range sessionList.Session {
+			ifIdx, _, found := plugin.ifIndexes.LookupIdx(bfdSession.Interface)
+			if !found {
+				plugin.log.Warnf("Modify BFD auth key: interface index for %s not found", bfdSession.Interface)
+			}
+			err := plugin.bfdHandler.AddBfdUDPSession(bfdSession, ifIdx, plugin.keysIndexes)
 			if err != nil {
 				return err
 			}
 		}
-		plugin.log.Debugf("%v session(s) recreated", len(sessionList))
+		plugin.log.Debugf("%v session(s) recreated", len(sessionList.Session))
 	}
 
 	return nil
@@ -357,64 +326,42 @@ func (plugin *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) 
 		return fmt.Errorf("error while verifying authentication key usage. Id: %v", bfdInput.Id)
 	}
 
-	if len(sessionList) != 0 {
+	if sessionList != nil && len(sessionList.Session) != 0 {
 		// Authentication Key is used and cannot be removed directly
-		for _, bfds := range sessionList {
-			sourceAddr := net.IP(bfds.LocalAddr[0:4]).String()
-			destAddr := net.IP(bfds.PeerAddr[0:4]).String()
-			err := plugin.bfdHandler.DeleteBfdUDPSession(bfds.SwIfIndex, sourceAddr, destAddr)
+		for _, bfds := range sessionList.Session {
+			ifIdx, _, found := plugin.ifIndexes.LookupIdx(bfds.Interface)
+			if !found {
+				plugin.log.Warnf("Delete BFD auth key: interface index for %s not found", bfds.Interface)
+			}
+			err := plugin.bfdHandler.DeleteBfdUDPSession(ifIdx, bfds.SourceAddress, bfds.DestinationAddress)
 			if err != nil {
 				return err
 			}
 		}
-		plugin.log.Debugf("%v session(s) temporary removed", len(sessionList))
+		plugin.log.Debugf("%v session(s) temporary removed", len(sessionList.Session))
 	}
 	err = plugin.bfdHandler.DeleteBfdUDPAuthenticationKey(bfdInput)
 	if err != nil {
 		return fmt.Errorf("error while removing BFD auth key with ID %v", bfdInput.Id)
 	}
-	authKeyIDAsString := strconv.FormatUint(uint64(bfdInput.Id), 10)
+	authKeyIDAsString := AuthKeyIdentifier(bfdInput.Id)
 	plugin.keysIndexes.UnregisterName(authKeyIDAsString)
 	plugin.log.Debugf("BFD authentication key with id %v unregistered", bfdInput.Id)
 	// Recreate BFD sessions if necessary
-	if len(sessionList) != 0 {
-		for _, bfdSession := range sessionList {
-			err := plugin.bfdHandler.AddBfdUDPSessionFromDetails(bfdSession, plugin.keysIndexes)
+	if sessionList != nil && len(sessionList.Session) != 0 {
+		for _, bfdSession := range sessionList.Session {
+			ifIdx, _, found := plugin.ifIndexes.LookupIdx(bfdSession.Interface)
+			if !found {
+				plugin.log.Warnf("Delete BFD auth key: interface index for %s not found", bfdSession.Interface)
+			}
+			err := plugin.bfdHandler.AddBfdUDPSession(bfdSession, ifIdx, plugin.keysIndexes)
 			if err != nil {
 				return err
 			}
 		}
-		plugin.log.Debugf("%v session(s) recreated", len(sessionList))
+		plugin.log.Debugf("%v session(s) recreated", len(sessionList.Session))
 	}
 	return nil
-}
-
-// DumpBFDAuthKeys returns a list of all configured authentication keys
-func (plugin *BFDConfigurator) DumpBFDAuthKeys() ([]*bfd.SingleHopBFD_Key, error) {
-	var bfdAuthKeyList []*bfd.SingleHopBFD_Key
-
-	keys, err := plugin.bfdHandler.DumpBfdKeys()
-	if err != nil {
-		return bfdAuthKeyList, err
-	}
-
-	for _, key := range keys {
-		// resolve authentication type
-		var authType bfd.SingleHopBFD_Key_AuthenticationType
-		if key.AuthType == 4 {
-			authType = bfd.SingleHopBFD_Key_KEYED_SHA1
-		} else {
-			authType = bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1
-		}
-
-		bfdAuthKeyList = append(bfdAuthKeyList, &bfd.SingleHopBFD_Key{
-			Id:                 key.ConfKeyID,
-			AuthKeyIndex:       key.ConfKeyID,
-			AuthenticationType: authType,
-		})
-	}
-
-	return bfdAuthKeyList, nil
 }
 
 // ConfigureBfdEchoFunction is used to setup BFD Echo function on existing interface
@@ -467,5 +414,5 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 
 // Generates common identifier for authentication key
 func AuthKeyIdentifier(id uint32) string {
-	return strconv.FormatUint(uint64(id), 10)
+	return strconv.Itoa(int(id))
 }

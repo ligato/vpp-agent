@@ -157,42 +157,42 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	// store all resync errors
 	var resyncErrs []error
 
-	if !plugin.droppedFromResync(interfaces.InterfaceKeyPrefix()) {
+	if !plugin.droppedFromResync(interfaces.Prefix) {
 		if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
 			resyncErrs = append(resyncErrs, errs...)
 		}
 	}
-	if !plugin.droppedFromResync(acl.KeyPrefix()) {
+	if !plugin.droppedFromResync(acl.Prefix) {
 		if err := plugin.aclConfigurator.Resync(req.ACLs); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(bfd.AuthKeysKeyPrefix()) {
+	if !plugin.droppedFromResync(bfd.AuthKeysPrefix) {
 		if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(bfd.SessionKeyPrefix()) {
+	if !plugin.droppedFromResync(bfd.SessionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(bfd.EchoFunctionKeyPrefix()) {
+	if !plugin.droppedFromResync(bfd.EchoFunctionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l2.BridgeDomainKeyPrefix()) {
+	if !plugin.droppedFromResync(l2.BdPrefix) {
 		if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l2.FibKeyPrefix()) {
+	if !plugin.droppedFromResync(l2.FibPrefix) {
 		if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l2.XConnectKeyPrefix()) {
+	if !plugin.droppedFromResync(l2.XConnectPrefix) {
 		if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
@@ -276,26 +276,26 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		if plugin.droppedFromResync(key) {
 			continue
 		}
-		if strings.HasPrefix(key, acl.KeyPrefix()) {
+		if strings.HasPrefix(key, acl.Prefix) {
 			numAcls := appendACLInterface(resyncData, req)
 			plugin.Log.Debug("Received RESYNC ACL values ", numAcls)
-		} else if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
+		} else if strings.HasPrefix(key, interfaces.Prefix) {
 			numInterfaces := appendResyncInterface(resyncData, req)
 			plugin.Log.Debug("Received RESYNC interface values ", numInterfaces)
-		} else if strings.HasPrefix(key, bfd.SessionKeyPrefix()) {
+		} else if strings.HasPrefix(key, bfd.SessionPrefix) {
 			numBfdSession := resyncAppendBfdSession(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BFD Session values ", numBfdSession)
-		} else if strings.HasPrefix(key, bfd.AuthKeysKeyPrefix()) {
+		} else if strings.HasPrefix(key, bfd.AuthKeysPrefix) {
 			numBfdAuthKeys := resyncAppendBfdAuthKeys(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BFD Auth Key values ", numBfdAuthKeys)
-		} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
+		} else if strings.HasPrefix(key, bfd.EchoFunctionPrefix) {
 			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BFD Echo values ", numBfdEchos)
-		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
+		} else if strings.HasPrefix(key, l2.BdPrefix) {
 			numBDs, numL2FIBs := resyncAppendBDs(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BD values ", numBDs)
 			plugin.Log.Debug("Received RESYNC L2 FIB values ", numL2FIBs)
-		} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
+		} else if strings.HasPrefix(key, l2.XConnectPrefix) {
 			numXCons := resyncAppendXCons(resyncData, req)
 			plugin.Log.Debug("Received RESYNC XConnects values ", numXCons)
 		} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
@@ -754,13 +754,13 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 
 	plugin.watchConfigReg, err = plugin.Watch.
 		Watch("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,
-			acl.KeyPrefix(),
-			interfaces.InterfaceKeyPrefix(),
-			bfd.SessionKeyPrefix(),
-			bfd.AuthKeysKeyPrefix(),
-			bfd.EchoFunctionKeyPrefix(),
-			l2.BridgeDomainKeyPrefix(),
-			l2.XConnectKeyPrefix(),
+			acl.Prefix,
+			interfaces.Prefix,
+			bfd.SessionPrefix,
+			bfd.AuthKeysPrefix,
+			bfd.EchoFunctionPrefix,
+			l2.BdPrefix,
+			l2.XConnectPrefix,
 			l3.VrfKeyPrefix(),
 			l3.ArpKeyPrefix(),
 			l3.ProxyArpInterfacePrefix(),
@@ -780,7 +780,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 
 	plugin.watchStatusReg, err = plugin.Watch.
 		Watch("Status VPP default plug:IF/L2/L3", nil, plugin.resyncStatusChan,
-			interfaces.InterfaceStateKeyPrefix(), l2.BridgeDomainStateKeyPrefix())
+			interfaces.StatePrefix, l2.BdStatePrefix)
 	if err != nil {
 		return err
 	}

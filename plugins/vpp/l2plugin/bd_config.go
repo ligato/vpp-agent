@@ -50,6 +50,9 @@ type BDConfigurator struct {
 	// VPP channel
 	vppChan govppapi.Channel
 
+	// VPP API handlers
+	bdHandler vppcalls.BridgeDomainVppAPI
+
 	// State notification channel
 	notificationChan chan BridgeDomainStateMessage // Injected, do not close here
 
@@ -73,7 +76,8 @@ func (plugin *BDConfigurator) GetBdIndexes() l2idx.BDIndexRW {
 }
 
 // Init members (channels...) and start go routines.
-func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex, notificationChannel chan BridgeDomainStateMessage, enableStopwatch bool) (err error) {
+func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+	notificationChannel chan BridgeDomainStateMessage, enableStopwatch bool) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-l2-bd-conf")
 	plugin.log.Debug("Initializing L2 Bridge domains configurator")
@@ -95,7 +99,7 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 
 	// Stopwatch
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("ACLConfigurator", plugin.log)
+		plugin.stopwatch = measure.NewStopwatch("BDConfigurator", plugin.log)
 	}
 
 	// VPP API handlers
@@ -103,9 +107,7 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 		return err
 	}
 
-	// Message compatibility
-	err = plugin.vppChan.CheckMessageCompatibility(vppcalls.BridgeDomainMessages...)
-	if err != nil {
+	if plugin.bdHandler, err = vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -137,14 +139,13 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 	plugin.bdIDSeq++
 
 	// Create bridge domain with respective index.
-	if err := vppcalls.VppAddBridgeDomain(bdIdx, bdConfig, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err := plugin.bdHandler.VppAddBridgeDomain(bdIdx, bdConfig); err != nil {
 		plugin.log.Errorf("adding bridge domain %v failed: %v", bdConfig.Name, err)
 		return err
 	}
 
 	// Find all interfaces belonging to this bridge domain and set them up.
-	configuredIfs, err := vppcalls.SetInterfacesToBridgeDomain(bdConfig.Name, bdIdx, bdConfig.Interfaces, plugin.ifIndexes, plugin.log,
-		plugin.vppChan, plugin.stopwatch)
+	configuredIfs, err := plugin.bdHandler.SetInterfacesToBridgeDomain(bdConfig.Name, bdIdx, bdConfig.Interfaces, plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
@@ -154,8 +155,7 @@ func (plugin *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_B
 	if arpTerminationTable != nil && len(arpTerminationTable) != 0 {
 		arpTable := bdConfig.ArpTerminationTable
 		for _, arpEntry := range arpTable {
-			err := vppcalls.VppAddArpTerminationTableEntry(bdIdx, arpEntry.PhysAddress, arpEntry.IpAddress,
-				plugin.log, plugin.vppChan, plugin.stopwatch)
+			err := plugin.bdHandler.VppAddArpTerminationTableEntry(bdIdx, arpEntry.PhysAddress, arpEntry.IpAddress)
 			if err != nil {
 				plugin.log.Error(err)
 			}
@@ -216,13 +216,11 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 
 	// Update interfaces.
 	toSet, toUnset := plugin.calculateIfaceDiff(newBdConfig.Interfaces, oldBdConfig.Interfaces)
-	unConfIfs, err := vppcalls.UnsetInterfacesFromBridgeDomain(newBdConfig.Name, bdIdx, toUnset, plugin.ifIndexes, plugin.log,
-		plugin.vppChan, plugin.stopwatch)
+	unConfIfs, err := plugin.bdHandler.UnsetInterfacesFromBridgeDomain(newBdConfig.Name, bdIdx, toUnset, plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
-	newConfIfs, err := vppcalls.SetInterfacesToBridgeDomain(newBdConfig.Name, bdIdx, toSet, plugin.ifIndexes, plugin.log,
-		plugin.vppChan, plugin.stopwatch)
+	newConfIfs, err := plugin.bdHandler.SetInterfacesToBridgeDomain(newBdConfig.Name, bdIdx, toSet, plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
@@ -232,12 +230,10 @@ func (plugin *BDConfigurator) ModifyBridgeDomain(newBdConfig *l2.BridgeDomains_B
 	// Update ARP termination table.
 	toAdd, toRemove := plugin.calculateARPDiff(newBdConfig.ArpTerminationTable, oldBdConfig.ArpTerminationTable)
 	for _, entry := range toAdd {
-		vppcalls.VppAddArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress,
-			plugin.log, plugin.vppChan, plugin.stopwatch)
+		plugin.bdHandler.VppAddArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress)
 	}
 	for _, entry := range toRemove {
-		vppcalls.VppRemoveArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress,
-			plugin.log, plugin.vppChan, plugin.stopwatch)
+		plugin.bdHandler.VppRemoveArpTerminationTableEntry(bdIdx, entry.PhysAddress, entry.IpAddress)
 	}
 
 	// Push change to bridge domain state.
@@ -270,12 +266,11 @@ func (plugin *BDConfigurator) DeleteBridgeDomain(bdConfig *l2.BridgeDomains_Brid
 
 func (plugin *BDConfigurator) deleteBridgeDomain(bdConfig *l2.BridgeDomains_BridgeDomain, bdIdx uint32) error {
 	// Unmap all interfaces from removed bridge domain.
-	if _, err := vppcalls.UnsetInterfacesFromBridgeDomain(bdConfig.Name, bdIdx, bdConfig.Interfaces, plugin.ifIndexes,
-		plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
+	if _, err := plugin.bdHandler.UnsetInterfacesFromBridgeDomain(bdConfig.Name, bdIdx, bdConfig.Interfaces, plugin.ifIndexes); err != nil {
 		plugin.log.Error(err) // Try to remove bridge domain anyway
 	}
 
-	if err := vppcalls.VppDeleteBridgeDomain(bdIdx, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err := plugin.bdHandler.VppDeleteBridgeDomain(bdIdx); err != nil {
 		return err
 	}
 
@@ -336,8 +331,7 @@ func (plugin *BDConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint3
 		return nil
 	}
 	var bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces // Single-value
-	configuredIf, err := vppcalls.SetInterfacesToBridgeDomain(bd.Name, bdIdx, append(bdIfs, bdIf), plugin.ifIndexes, plugin.log,
-		plugin.vppChan, plugin.stopwatch)
+	configuredIf, err := plugin.bdHandler.SetInterfacesToBridgeDomain(bd.Name, bdIdx, append(bdIfs, bdIf), plugin.ifIndexes)
 	if err != nil {
 		return fmt.Errorf("error while assigning interface %s to bridge domain %s", ifName, bd.Name)
 	}

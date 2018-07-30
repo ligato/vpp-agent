@@ -99,7 +99,7 @@ func (plugin *Plugin) onStatusResyncEvent(e datasync.ResyncEvent) {
 	var wasError error
 	for key, vals := range e.GetValues() {
 		plugin.Log.Debugf("trying to delete obsolete status for key %v begin ", key)
-		if strings.HasPrefix(key, interfaces.IfStatePrefix) {
+		if strings.HasPrefix(key, interfaces.StatePrefix) {
 			var keys []string
 			for {
 				x, stop := vals.GetNext()
