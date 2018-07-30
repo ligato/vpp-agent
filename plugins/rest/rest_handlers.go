@@ -248,7 +248,12 @@ func (plugin *Plugin) staticRoutesGetHandler(formatter *render.Render) http.Hand
 		}
 		defer ch.Close()
 
-		l3Handler, err := l3plugin.NewRouteVppHandler(ch, plugin.Log, nil)
+		if plugin.ifIndexes == nil {
+			plugin.Log.Error("Error creating VPP handler: missing interface indexes")
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		l3Handler, err := l3plugin.NewRouteVppHandler(ch, plugin.ifIndexes, plugin.Log, nil)
 		if err != nil {
 			plugin.Log.Errorf("Error creating VPP handler: %v", err)
 			formatter.JSON(w, http.StatusInternalServerError, err)

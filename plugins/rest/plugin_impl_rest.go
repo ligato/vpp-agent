@@ -20,6 +20,8 @@ import (
 	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 const (
@@ -31,6 +33,8 @@ type Plugin struct {
 	Deps
 
 	indexItems []indexItem
+
+	ifIndexes ifaceidx.SwIfIndex
 }
 
 // Deps represents dependencies of Rest Plugin
@@ -38,6 +42,7 @@ type Deps struct {
 	local.PluginInfraDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
+	VPP          vpp.API
 }
 
 type indexItem struct {
@@ -57,6 +62,11 @@ func (plugin *Plugin) Init() (err error) {
 		{Name: "ACL IP", Path: "/acl/ip"},
 		{Name: "Telemetry", Path: "/telemetry"},
 	}
+
+	if plugin.VPP != nil {
+		plugin.ifIndexes = plugin.VPP.GetSwIfIndexes()
+	}
+
 	return nil
 }
 

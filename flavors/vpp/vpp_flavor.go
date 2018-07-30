@@ -141,6 +141,7 @@ func (f *Flavor) Inject() bool {
 	f.RESTAPIPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("rest")
 	f.RESTAPIPlugin.Deps.HTTPHandlers = &f.FlavorRPC.HTTP
 	f.RESTAPIPlugin.Deps.GoVppmux = &f.GoVPP
+	f.RESTAPIPlugin.Deps.VPP = &f.VPP
 
 	f.TelemetryPlugin.Deps.PluginInfraDeps = *f.FlavorLocal.InfraDeps("telemetry")
 	f.TelemetryPlugin.Deps.Prometheus = &f.FlavorRPC.Prometheus

@@ -21,17 +21,42 @@ import (
 
 	"time"
 
-	"github.com/ligato/cn-infra/utils/addrs"
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
-func (handler *routeHandler) DumpStaticRoutes() ([]*Route, error) {
+// RouteDetails is object returned as a VPP dump. It contains static route data in proto format, and VPP-specific
+// metadata
+type RouteDetails struct {
+	Route *l3.StaticRoutes_Route
+	Meta  *RouteMeta
+}
+
+// RouteMeta holds fields returned from the VPP as details which are not in the model
+type RouteMeta struct {
+	TableName         string
+	OutgoingIfIdx     uint32
+	Afi               uint8
+	IsLocal           bool
+	IsUDPEncap        bool
+	IsUnreach         bool
+	IsProhibit        bool
+	IsResolveHost     bool
+	IsResolveAttached bool
+	IsDvr             bool
+	IsSourceLookup    bool
+	NextHopID         uint32
+	RpfID             uint32
+	LabelStack        []l3binapi.FibMplsLabel
+}
+
+func (handler *routeHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 	// IPFibDump time measurement
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	var routes []*Route
+	var routes []*RouteDetails
 
 	// Dump IPv4 l3 FIB.
 	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.IPFibDump{})
@@ -39,20 +64,16 @@ func (handler *routeHandler) DumpStaticRoutes() ([]*Route, error) {
 		fibDetails := &l3binapi.IPFibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
-			break // Break from the loop.
+			break
 		}
 		if err != nil {
 			return nil, err
-		}
-		if len(fibDetails.Path) > 0 && fibDetails.Path[0].IsDrop == 1 {
-			// skip drop routes, not supported by vpp-agent
-			continue
 		}
 		ipv4Route, err := handler.dumpStaticRouteIPv4Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
-		routes = append(routes, ipv4Route)
+		routes = append(routes, ipv4Route...)
 	}
 
 	// Dump IPv6 l3 FIB.
@@ -61,81 +82,132 @@ func (handler *routeHandler) DumpStaticRoutes() ([]*Route, error) {
 		fibDetails := &l3binapi.IP6FibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
-			break // break out of the loop
+			break
 		}
 		if err != nil {
 			return nil, err
-		}
-		if len(fibDetails.Path) > 0 && fibDetails.Path[0].IsDrop == 1 {
-			// skip drop routes, not supported by vpp-agent
-			continue
 		}
 		ipv6Route, err := handler.dumpStaticRouteIPv6Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
-		routes = append(routes, ipv6Route)
+		routes = append(routes, ipv6Route...)
 	}
 
 	return routes, nil
 }
 
-func (handler *routeHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) (*Route, error) {
+func (handler *routeHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*RouteDetails, error) {
 	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 }
 
-func (handler *routeHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) (*Route, error) {
+func (handler *routeHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*RouteDetails, error) {
 	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
-// dumpStaticRouteIPDetails processes static route details and returns a route object
-func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, path []l3binapi.FibPath, ipv6 bool) (*Route, error) {
-	// route details
-	var ipAddr string
+// dumpStaticRouteIPDetails processes static route details and returns a route objects. Number of routes returned
+// depends on size of path list.
+func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*RouteDetails, error) {
+	// Common fields for every route path (destination IP, VRF)
+	var dstIP string
 	if ipv6 {
-		ipAddr = fmt.Sprintf("%s/%d", net.IP(address).To16().String(), uint32(prefixLen))
+		dstIP = fmt.Sprintf("%s/%d", net.IP(address).To16().String(), uint32(prefixLen))
 	} else {
-		ipAddr = fmt.Sprintf("%s/%d", net.IP(address[:4]).To4().String(), uint32(prefixLen))
+		dstIP = fmt.Sprintf("%s/%d", net.IP(address[:4]).To4().String(), uint32(prefixLen))
 	}
 
-	rt := &Route{
-		Type: IntraVrf, // default
-	}
+	var routeDetails []*RouteDetails
 
-	// IP net
-	parsedIP, _, err := addrs.ParseIPWithPrefix(ipAddr)
-	if err != nil {
-		return nil, err
-	}
+	// Paths
+	if len(paths) > 0 {
+		for _, path := range paths {
+			if uintToBool(path.IsDrop) {
+				// skip drop routes, not supported by vpp-agent
+				continue
+			}
+			// Next hop IP address
+			var nextHopIP string
+			if ipv6 {
+				nextHopIP = fmt.Sprintf("%s", net.IP(path.NextHop).To16().String())
+			} else {
+				nextHopIP = fmt.Sprintf("%s", net.IP(path.NextHop[:4]).To4().String())
+			}
 
-	rt.TableName = string(bytes.SplitN(tableName, []byte{0x00}, 2)[0])
-	rt.VrfID = tableID
-	rt.DstAddr = *parsedIP
+			// Route type (if via VRF is used)
+			var routeType l3.StaticRoutes_Route_RouteType
+			var viaVrfID uint32
+			if path.SwIfIndex == NextHopOutgoingIfUnset && path.TableID != tableID {
+				// outgoing interface not specified and path table id not equal to route table id = inter-VRF route
+				routeType = l3.StaticRoutes_Route_INTER_VRF
+				viaVrfID = path.TableID
+			} else {
+				routeType = l3.StaticRoutes_Route_INTRA_VRF // default
+			}
 
-	if len(path) > 0 {
-		// TODO: if len(path) > 1, it means multiple NB routes (load-balancing) - not implemented properly
+			// Outgoing interface
+			var ifName string
+			var ifIdx uint32
+			if path.SwIfIndex != ^uint32(0) {
+				var exists bool
+				ifIdx = path.SwIfIndex
+				if ifName, _, exists = handler.ifIndexes.LookupName(path.SwIfIndex); !exists {
+					handler.log.Warnf("Static route dump: interface name for index %d not found", path.SwIfIndex)
+				}
+			}
 
-		var nextHopAddr net.IP
-		if ipv6 {
-			nextHopAddr = net.IP(path[0].NextHop).To16()
-		} else {
-			nextHopAddr = net.IP(path[0].NextHop[:4]).To4()
+			// Route configuration
+			route := &l3.StaticRoutes_Route{
+				Type:              routeType,
+				VrfId:             tableID,
+				DstIpAddr:         dstIP,
+				NextHopAddr:       nextHopIP,
+				OutgoingInterface: ifName,
+				Weight:            uint32(path.Weight),
+				Preference:        uint32(path.Preference),
+				ViaVrfId:          viaVrfID,
+			}
+
+			// Route metadata
+			meta := &RouteMeta{
+				TableName:         string(bytes.SplitN(tableName, []byte{0x00}, 2)[0]),
+				OutgoingIfIdx:     ifIdx,
+				NextHopID:         path.NextHopID,
+				RpfID:             path.RpfID,
+				Afi:               path.Afi,
+				IsLocal:           uintToBool(path.IsLocal),
+				IsUDPEncap:        uintToBool(path.IsUDPEncap),
+				IsDvr:             uintToBool(path.IsDvr),
+				IsProhibit:        uintToBool(path.IsProhibit),
+				IsResolveAttached: uintToBool(path.IsResolveAttached),
+				IsResolveHost:     uintToBool(path.IsResolveHost),
+				IsSourceLookup:    uintToBool(path.IsSourceLookup),
+				IsUnreach:         uintToBool(path.IsUnreach),
+				LabelStack:        path.LabelStack,
+			}
+
+			routeDetails = append(routeDetails, &RouteDetails{
+				Route: route,
+				Meta:  meta,
+			})
 		}
-
-		rt.NextHopAddr = nextHopAddr
-
-		if path[0].SwIfIndex == NextHopOutgoingIfUnset && path[0].TableID != tableID {
-			// outgoing interface not specified and path table id not equal to route table id = inter-VRF route
-			rt.Type = InterVrf
-			rt.ViaVrfId = path[0].TableID
+	} else {
+		// Return route without path fields, but this is not a valid configuration
+		handler.log.Warnf("Route with destination IP %s (VRF %d) has no path specified", dstIP, tableID)
+		route := &l3.StaticRoutes_Route{
+			Type:      l3.StaticRoutes_Route_INTRA_VRF, // default
+			VrfId:     tableID,
+			DstIpAddr: dstIP,
 		}
-
-		rt.OutIface = path[0].SwIfIndex
-		rt.Preference = uint32(path[0].Preference)
-		rt.Weight = uint32(path[0].Weight)
+		meta := &RouteMeta{
+			TableName: string(bytes.SplitN(tableName, []byte{0x00}, 2)[0]),
+		}
+		routeDetails = append(routeDetails, &RouteDetails{
+			Route: route,
+			Meta:  meta,
+		})
 	}
 
-	return rt, nil
+	return routeDetails, nil
 }
 
 func (handler *arpVppHandler) DumpArpEntries() ([]*ArpEntry, error) {

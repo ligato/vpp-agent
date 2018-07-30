@@ -18,8 +18,10 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -27,9 +29,13 @@ import (
 // Test dumping routes
 func TestDumpStaticRoutes(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	l3handler, err := NewRouteVppHandler(ctx.MockChannel, logrus.DefaultLogger(), nil)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "rt-dump-if-idx", nil))
+	l3handler, err := NewRouteVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger(), nil)
 	Expect(err).To(BeNil())
 	defer ctx.TeardownTestCtx()
+
+	ifIndexes.RegisterName("if1", 2, nil)
+	ifIndexes.RegisterName("if2", 3, nil)
 
 	ctx.MockVpp.MockReply(&ip.IPFibDetails{
 		Path: []ip.FibPath{{SwIfIndex: 3}},
@@ -40,9 +46,9 @@ func TestDumpStaticRoutes(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	routes, err := l3handler.DumpStaticRoutes()
+	rtDetails, err := l3handler.DumpStaticRoutes()
 	Expect(err).To(Succeed())
-	Expect(routes).To(HaveLen(2))
-	Expect(routes[0].OutIface).To(Equal(uint32(3)))
-	Expect(routes[1].OutIface).To(Equal(uint32(2)))
+	Expect(rtDetails).To(HaveLen(2))
+	Expect(rtDetails[0].Route.OutgoingInterface).To(Equal("if2"))
+	Expect(rtDetails[1].Route.OutgoingInterface).To(Equal("if1"))
 }
