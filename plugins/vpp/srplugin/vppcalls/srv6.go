@@ -27,7 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
-// SRMessages checks if segment routing CRSs are compatible with VPP in runtime.
+// SRMessages checks if segment routing CRCs are compatible with VPP in runtime.
 var SrMessages = []govppapi.Message{
 	&sr.SrLocalsidAddDel{},
 	&sr.SrLocalsidAddDelReply{},
