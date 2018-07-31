@@ -8,8 +8,8 @@ do
         continue
     fi
 
-    echo $i;
-    if ! markdown-link-check $i; then
+    echo "$i"
+    if ! markdown-link-check -v "$i"; then
         res=1
     fi
     echo "";
