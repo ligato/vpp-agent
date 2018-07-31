@@ -22,20 +22,19 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/app"
 )
 
 func main() {
-	p := NewVppAgent()
+	vppAgent := app.New()
 
-	a := agent.NewAgent(agent.AllPlugins(p))
+	a := agent.NewAgent(agent.AllPlugins(vppAgent))
 
 	if err := a.Run(); err != nil {
 		log.DefaultLogger().Fatal(err)
 	}
 }
 
-// init sets the Log output and Log level parameters for VPP Agent's default
-// logger.
 func init() {
 	log.DefaultLogger().SetOutput(os.Stdout)
 	log.DefaultLogger().SetLevel(logging.DebugLevel)

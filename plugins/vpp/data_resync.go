@@ -752,7 +752,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		plugin.Log.Debug("linuxIfIndexes watch registration finished")
 	}
 
-	plugin.watchConfigReg, err = plugin.Watch.
+	plugin.watchConfigReg, err = plugin.Watcher.
 		Watch("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,
 			acl.Prefix,
 			interfaces.Prefix,
@@ -778,7 +778,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		return err
 	}
 
-	plugin.watchStatusReg, err = plugin.Watch.
+	plugin.watchStatusReg, err = plugin.Watcher.
 		Watch("Status VPP default plug:IF/L2/L3", nil, plugin.resyncStatusChan,
 			interfaces.StatePrefix, l2.BdStatePrefix)
 	if err != nil {

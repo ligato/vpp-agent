@@ -148,10 +148,10 @@ type Deps struct {
 
 	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.KeyProtoValWriter
-	Watch             datasync.KeyValProtoWatcher
+	Watcher           datasync.KeyValProtoWatcher
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
-	Linux             LinuxpluginAPI
+	Linux             LinuxPluginAPI
 	GRPCSvc           rpc.GRPCService
 
 	DataSyncs        map[string]datasync.KeyProtoValWriter
@@ -166,7 +166,7 @@ type Config struct {
 	StatusPublishers []string `json:"status-publishers"`
 }
 
-type LinuxpluginAPI interface {
+type LinuxPluginAPI interface {
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
@@ -403,9 +403,9 @@ func (plugin *Plugin) fixNilPointers() {
 		plugin.Deps.IfStatePub = noopWriter
 		plugin.Log.Debug("setting default noop writer for IfStatePub dependency")
 	}
-	if plugin.Deps.Watch == nil {
-		plugin.Deps.Watch = noopWatcher
-		plugin.Log.Debug("setting default noop watcher for Watch dependency")
+	if plugin.Deps.Watcher == nil {
+		plugin.Deps.Watcher = noopWatcher
+		plugin.Log.Debug("setting default noop watcher for Watcher dependency")
 	}
 }
 

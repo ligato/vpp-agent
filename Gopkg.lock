@@ -199,6 +199,21 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/go-redis/redis"
+  packages = [
+    ".",
+    "internal",
+    "internal/consistenthash",
+    "internal/hashtag",
+    "internal/pool",
+    "internal/proto",
+    "internal/singleflight",
+    "internal/util"
+  ]
+  revision = "480db94d33e6088e08d628833b6c0705451d24bb"
+  version = "v6.13.2"
+
+[[projects]]
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -255,10 +270,34 @@
   version = "v1.6.1"
 
 [[projects]]
+  name = "github.com/hashicorp/consul"
+  packages = ["api"]
+  revision = "e716d1b5f8be252b3e53906c6d5632e0228f30fa"
+  version = "v1.2.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-cleanhttp"
   packages = ["."]
   revision = "d5fe4b57a186c716b0e00b8c301cbd9b4182694d"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-rootcerts"
+  packages = ["."]
+  revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+
+[[projects]]
+  name = "github.com/hashicorp/serf"
+  packages = ["coordinate"]
+  revision = "d6574a5bb1226678d7010325fb6c985db20ee458"
+  version = "v0.8.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/howeyc/crc16"
+  packages = ["."]
+  revision = "2b2a61e366a66d3efb279e46176e7291001e0354"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -278,8 +317,10 @@
     "datasync/resync",
     "datasync/syncbase",
     "db/keyval",
+    "db/keyval/consul",
     "db/keyval/etcd",
     "db/keyval/kvproto",
+    "db/keyval/redis",
     "health/statuscheck",
     "health/statuscheck/model/status",
     "idxmap",
@@ -321,6 +362,18 @@
   packages = ["pbutil"]
   revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/mapstructure"
+  packages = ["."]
+  revision = "f15292f7a699fcc1a38a80977f80a046874ba8ac"
 
 [[projects]]
   name = "github.com/namsral/flag"
@@ -588,6 +641,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "37e09f31415fc4648e0c4dc4f9689151318dbffb14930f62c9cba7b1344dced9"
+  inputs-digest = "5db686f6d291c206147026573bde75c1328a4643ad9969e05fe27176c3903740"
   solver-name = "gps-cdcl"
   solver-version = 1

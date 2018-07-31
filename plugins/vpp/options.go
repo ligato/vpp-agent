@@ -20,9 +20,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
-// DefaultPlugin is default instance of Plugin
-//var DefaultPlugin = NewPlugin()
-
 // NewPlugin creates a new Plugin with the provides Options
 func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
@@ -41,12 +38,12 @@ func NewPlugin(opts ...Option) *Plugin {
 	return p
 }
 
-// Option is a function that acts on a Plugin to inject Dependencies or configuration
+// Option is a function that can be used in NewPlugin to customize Plugin.
 type Option func(*Plugin)
 
 // UseDeps returns Option that can inject custom dependencies.
-func UseDeps(cb func(*Deps)) Option {
+func UseDeps(f func(*Deps)) Option {
 	return func(p *Plugin) {
-		cb(&p.Deps)
+		f(&p.Deps)
 	}
 }
