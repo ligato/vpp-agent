@@ -34,13 +34,10 @@ import (
 	l4vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
 )
 
-const (
-	swIndexVarName = "swindex"
-)
-
 // REST api methods
 const (
-	GET = "GET"
+	GET  = "GET"
+	POST = "POST"
 )
 
 // Plugin registers Rest Plugin
@@ -163,8 +160,13 @@ func (plugin *Plugin) Init() (err error) {
 		{Name: "Proxy ARP interfaces", Path: resturl.PArpIfs},
 		{Name: "Proxy ARP ranges", Path: resturl.PArpRngs},
 		{Name: "Static routes", Path: resturl.Routes},
-
-		{Name: "Telemetry", Path: "/telemetry"},
+		{Name: "L4 sessions", Path: resturl.Sessions},
+		{Name: "Telemetry", Path: resturl.Telemetry},
+		{Name: "Telemetry memory", Path: resturl.TMemory},
+		{Name: "Telemetry runtime", Path: resturl.TRuntime},
+		{Name: "Telemetry node count", Path: resturl.TNodeCount},
+		{Name: "CLI command", Path: resturl.Command},
+		{Name: "Index page", Path: resturl.Index},
 	}
 	return nil
 }
@@ -182,16 +184,9 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerL2Handlers()
 	plugin.registerL3Handlers()
 	plugin.registerL4Handlers()
-
-	plugin.HTTPHandlers.RegisterHTTPHandler("/arps", plugin.arpGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler(fmt.Sprintf("/acl/interface/{%s:[0-9]+}", swIndexVarName),
-		plugin.interfaceACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/command", plugin.commandHandler, "POST")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry", plugin.telemetryHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry/memory", plugin.telemetryMemoryHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry/runtime", plugin.telemetryRuntimeHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry/nodecount", plugin.telemetryNodeCountHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/", plugin.indexHandler, "GET")
+	plugin.registerTelemetryHandlers()
+	plugin.registerCommandHandler()
+	plugin.registerIndexHandler()
 
 	return nil
 }

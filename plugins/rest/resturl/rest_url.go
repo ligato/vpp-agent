@@ -107,3 +107,23 @@ const (
 	// Sessions is rest L4 configuration path
 	Sessions = "/vpp/dump/v1/sessions"
 )
+
+// Command
+const (
+	// Command allows to put CLI command to the rest
+	Command = "/vpp/command"
+)
+
+// Telemetry
+const (
+	Telemetry = "vpp/dump/v1/telemetry"
+	TMemory= "vpp/dump/v1/telemetry/memory"
+	TRuntime= "vpp/dump/v1/telemetry/runtime"
+	TNodeCount= "vpp/dump/v1/telemetry/nodecount"
+)
+
+// Index
+const (
+	// Index can be used to get index page
+	Index = "/vpp/index"
+)

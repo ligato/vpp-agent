@@ -21,8 +21,8 @@ interfaces or ACLs, internal names, etc.). Those data are in separate section la
 URLs to obtain ACL IP/MACIP configuration are as follows.
 
 ```
-curl http://0.0.0.0:9191/vpp/dump/v1/acl/ip
-curl http://0.0.0.0:9191/vpp/dump/v1/acl/macip 
+curl GET http://0.0.0.0:9191/vpp/dump/v1/acl/ip
+curl GET http://0.0.0.0:9191/vpp/dump/v1/acl/macip 
 ```
 
 **Interfaces**
@@ -31,13 +31,13 @@ REST plugin exposes configured interfaces, which can be show all together, or on
 of specific type.
  
 ```
-curl http://0.0.0.0:9191/vpp/dump/v1/interfaces
-curl http://0.0.0.0:9191/vpp/dump/v1/interfaces/loopback
-curl http://0.0.0.0:9191/vpp/dump/v1/interfaces/ethernet
-curl http://0.0.0.0:9191/vpp/dump/v1/interfaces/memif
-curl http://0.0.0.0:9191/vpp/dump/v1/interfaces/tap
-curl http://0.0.0.0:9191/vpp/dump/v1/interfaces/vxlan
-curl http://0.0.0.0:9191/vpp/dump/v1/interfaces/afpacket
+curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces
+curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/loopback
+curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/ethernet
+curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/memif
+curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/tap
+curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/vxlan
+curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/afpacket
 ``` 
  
 **BFD**
@@ -46,9 +46,9 @@ REST plugin allows to dump bidirectional forwarding detection sessions, authenti
 or the whole configuration. 
 
 ```
-curl http://0.0.0.0:9191/vpp/dump/v1/bfd
-curl http://0.0.0.0:9191/vpp/dump/v1/bfd/sessions
-curl http://0.0.0.0:9191/vpp/dump/v1/bfd/authkeys
+curl GET http://0.0.0.0:9191/vpp/dump/v1/bfd
+curl GET http://0.0.0.0:9191/vpp/dump/v1/bfd/sessions
+curl GET http://0.0.0.0:9191/vpp/dump/v1/bfd/authkeys
 ``` 
 
 **NAT**
@@ -57,9 +57,9 @@ REST plugin allows to dump NAT44 global configuration, DNAT configuration or bot
 SNAT is currently not supported in the model, so REST dump is not available as well.
 
 ```
-curl http://0.0.0.0:9191/vpp/dump/v1/nat
-curl http://0.0.0.0:9191/vpp/dump/v1/nat/global
-curl http://0.0.0.0:9191/vpp/dump/v1/nat/dnat
+curl GET http://0.0.0.0:9191/vpp/dump/v1/nat
+curl GET http://0.0.0.0:9191/vpp/dump/v1/nat/global
+curl GET http://0.0.0.0:9191/vpp/dump/v1/nat/dnat
 ``` 
 
 **STN**
@@ -67,7 +67,7 @@ curl http://0.0.0.0:9191/vpp/dump/v1/nat/dnat
 Steal the NIC feature REST API contains one uri returning the list of STN rules.
 
 ```
-curl http://0.0.0.0:9191/vpp/dump/v1/stn
+curl GET http://0.0.0.0:9191/vpp/dump/v1/stn
 ``` 
 
 **L2 plugin**
@@ -76,10 +76,10 @@ Support for bridge domains, FIBs and cross connects. It is also possible to get 
 the bridge domain IDs.
 
 ```
-curl http://0.0.0.0:9191/vpp/dump/v1/bdid
-curl http://0.0.0.0:9191/vpp/dump/v1/bd
-curl http://0.0.0.0:9191/vpp/dump/v1/fibs
-curl http://0.0.0.0:9191/vpp/dump/v1/xc
+curl GET http://0.0.0.0:9191/vpp/dump/v1/bdid
+curl GET http://0.0.0.0:9191/vpp/dump/v1/bd
+curl GET http://0.0.0.0:9191/vpp/dump/v1/fibs
+curl GET http://0.0.0.0:9191/vpp/dump/v1/xc
 ```
 
 **L3 plugin**
@@ -87,11 +87,46 @@ curl http://0.0.0.0:9191/vpp/dump/v1/xc
 ARPs, proxy ARP interfaces/ranges and static routes exposed via REST:
 
 ```
-curl http://0.0.0.0:9191/vpp/dump/v1/arps
-curl http://0.0.0.0:9191/vpp/dump/v1/proxyarp
-curl http://0.0.0.0:9191/vpp/dump/v1/proxyarp/interfaces
-curl http://0.0.0.0:9191/vpp/dump/v1/proxyarp/ranges
-curl http://0.0.0.0:9191/vpp/dump/v1/routes
+curl GET http://0.0.0.0:9191/vpp/dump/v1/arps
+curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp
+curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp/interfaces
+curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp/ranges
+curl GET http://0.0.0.0:9191/vpp/dump/v1/routes
+```
+
+**L4 plugin**
+
+L4 plugin exposes session configuration:
+
+```
+curl GET http://0.0.0.0:9191/vpp/dump/v1/sessions
+```
+
+**Telemetry**
+
+REST allows to get all the telemetry data, or selective using specific key:
+
+```
+curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry
+curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry/memory
+curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry/runtime
+curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry/nodecount
+```
+
+**CLI command**
+
+Allows to use VPP CLI command via REST. Commands are defined as a map as following:
+
+```
+curl POST http://0.0.0.0:9191/vpp/command -d '{"vppclicommand":"<command>"}'
+```
+
+**Index**
+
+REST to get index page
+
+```
+curl GET http://0.0.0.0:9191/vpp/index
 ```
 
 ## Logging mechanism
