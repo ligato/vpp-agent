@@ -14,7 +14,12 @@
 
 package logging
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/sirupsen/logrus"
+)
 
 var (
 	// DefaultLogger is the default logger
@@ -52,14 +57,34 @@ func (level LogLevel) String() string {
 	case ErrorLevel:
 		return "error"
 	case WarnLevel:
-		return "warning"
+		return "warn"
 	case InfoLevel:
 		return "info"
 	case DebugLevel:
 		return "debug"
+	default:
+		return fmt.Sprintf("unknown(%d)", level)
 	}
+}
 
-	return fmt.Sprintf("unknown(%d)", level)
+// ParseLogLevel parses string representation of LogLevel.
+func ParseLogLevel(level string) LogLevel {
+	switch strings.ToLower(level) {
+	case "debug":
+		return DebugLevel
+	case "info":
+		return InfoLevel
+	case "warn", "warning":
+		return WarnLevel
+	case "error":
+		return ErrorLevel
+	case "fatal":
+		return FatalLevel
+	case "panic":
+		return PanicLevel
+	default:
+		return InfoLevel
+	}
 }
 
 // Fields is a type accepted by WithFields method. It can be used to instantiate map using shorter notation.
@@ -98,6 +123,8 @@ type Logger interface {
 	WithField(key string, value interface{}) LogWithLevel
 	// WithFields creates multiple structured fields
 	WithFields(fields Fields) LogWithLevel
+	// Add hook to send log to external address
+	AddHook(hook logrus.Hook)
 
 	LogWithLevel
 }
@@ -121,6 +148,8 @@ type Registry interface {
 	Lookup(loggerName string) (logger Logger, found bool)
 	// ClearRegistry removes all loggers except the default one from registry
 	ClearRegistry()
+	// HookConfigs stores hooks from log manager to be used for new loggers
+	AddHook(hook logrus.Hook)
 }
 
 // PluginLogger is intended for:

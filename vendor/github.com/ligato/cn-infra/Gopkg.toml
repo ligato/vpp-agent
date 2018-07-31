@@ -38,7 +38,7 @@ required = [
 
 [[constraint]]
   name = "github.com/Shopify/sarama"
-  version = "1.15.0"
+  version = "~1.15.0"
 
 [[constraint]]
   name = "github.com/Songmu/prompter"
@@ -119,6 +119,10 @@ required = [
 [[constraint]]
   branch = "master"
   name = "golang.org/x/net"
+
+[[constraint]]
+  name = "github.com/evalphobia/logrus_fluent"
+  version = "~0.4.0"
 
 [[override]]
   name = "github.com/ugorji/go"

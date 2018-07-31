@@ -21,6 +21,7 @@ examples:
 	cd examples/kafka-lib && make build
 	cd examples/logs-lib && make build
 	cd examples/redis-lib && make build
+	cd examples/cryptodata-lib && go build
 
 # Build plugin examples
 examples-plugin:
@@ -36,6 +37,7 @@ examples-plugin:
 	cd examples/simple-agent && go build -i -v ${LDFLAGS}
 	cd examples/statuscheck-plugin && go build -i -v ${LDFLAGS}
 	cd examples/prometheus-plugin && go build -i -v ${LDFLAGS}
+	cd examples/cryptodata-plugin && go build -i -v ${LDFLAGS}
 
 # Clean examples
 clean-examples:
@@ -123,7 +125,7 @@ format:
 # Get link check tool
 get-linkcheck:
 	sudo apt-get install npm
-	npm install -g markdown-link-check
+	npm install -g markdown-link-check@3.6.2
 
 # Validate links in markdown files
 check-links: get-linkcheck

@@ -41,7 +41,7 @@ type Plugin struct {
 
 // Deps - dependencies of Plugin
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	GRPCServer grpc.Server
 }
 

@@ -59,6 +59,12 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
+  name = "github.com/bshuster-repo/logrus-logstash-hook"
+  packages = ["."]
+  revision = "dbc1e22735aa6ed7bd9579a407c17bc7c4a4e046"
+  version = "v0.4.1"
+
+[[projects]]
   name = "github.com/bsm/sarama-cluster"
   packages = ["."]
   revision = "cf455bc755fe41ac9bb2861e7a961833d9c2ecc3"
@@ -164,6 +170,18 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/evalphobia/logrus_fluent"
+  packages = ["."]
+  revision = "76779e73f35d90f5a873e7feaf6691999b2c5db4"
+  version = "v0.4.0"
+
+[[projects]]
+  name = "github.com/fluent/fluent-logger-golang"
+  packages = ["fluent"]
+  revision = "8bbc2356beaf021b04c9bd5cdc76ea5a7ccb40ec"
+  version = "v1.3.0"
+
+[[projects]]
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
@@ -179,32 +197,6 @@
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
-
-[[projects]]
-  name = "github.com/go-redis/redis"
-  packages = [
-    ".",
-    "internal",
-    "internal/consistenthash",
-    "internal/hashtag",
-    "internal/pool",
-    "internal/proto",
-    "internal/singleflight",
-    "internal/util"
-  ]
-  revision = "480db94d33e6088e08d628833b6c0705451d24bb"
-  version = "v6.13.2"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/gocql/gocql"
-  packages = [
-    ".",
-    "internal/lru",
-    "internal/murmur",
-    "internal/streams"
-  ]
-  revision = "e06f8c1bcd787e6bf0608288b314522f08cc7848"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -264,57 +256,15 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/hailocab/go-hostpool"
-  packages = ["."]
-  revision = "e80d13ce29ede4452c43dea11e79b9bc8a15b478"
-
-[[projects]]
-  name = "github.com/hashicorp/consul"
-  packages = ["api"]
-  revision = "39f93f011e591c842acc8053a7f5972aa6e592fd"
-  version = "v1.2.1"
-
-[[projects]]
-  branch = "master"
   name = "github.com/hashicorp/go-cleanhttp"
   packages = ["."]
   revision = "d5fe4b57a186c716b0e00b8c301cbd9b4182694d"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-rootcerts"
-  packages = ["."]
-  revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
-
-[[projects]]
-  name = "github.com/hashicorp/serf"
-  packages = ["coordinate"]
-  revision = "d6574a5bb1226678d7010325fb6c985db20ee458"
-  version = "v0.8.1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/howeyc/crc16"
-  packages = ["."]
-  revision = "2b2a61e366a66d3efb279e46176e7291001e0354"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
-
-[[projects]]
-  name = "github.com/kr/pretty"
-  packages = ["."]
-  revision = "73f6ac0b30a98e433b289500d779f50c1a6f0712"
-  version = "v0.1.0"
-
-[[projects]]
-  name = "github.com/kr/text"
-  packages = ["."]
-  revision = "e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f"
-  version = "v0.1.0"
 
 [[projects]]
   name = "github.com/ligato/cn-infra"
@@ -328,13 +278,8 @@
     "datasync/resync",
     "datasync/syncbase",
     "db/keyval",
-    "db/keyval/consul",
     "db/keyval/etcd",
     "db/keyval/kvproto",
-    "db/keyval/redis",
-    "db/sql",
-    "db/sql/cassandra",
-    "health/probe",
     "health/statuscheck",
     "health/statuscheck/model/status",
     "idxmap",
@@ -355,10 +300,9 @@
     "utils/addrs",
     "utils/clienttls",
     "utils/once",
-    "utils/safeclose",
-    "utils/structs"
+    "utils/safeclose"
   ]
-  revision = "52432e9cff91cd15e5cd0001be7e1034253adf0a"
+  revision = "eaea1b438c5327f5960fa63cc11c3ec5f690d13b"
 
 [[projects]]
   branch = "master"
@@ -373,28 +317,10 @@
   revision = "ef56447db6a068ad9e52bc54a1aff5fb9e1ed2dd"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/maraino/go-mock"
-  packages = ["."]
-  revision = "4c74c434cd3a9e9a70ed1eeb56646a1d3fac372f"
-
-[[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
   revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/go-homedir"
-  packages = ["."]
-  revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/mapstructure"
-  packages = ["."]
-  revision = "f15292f7a699fcc1a38a80977f80a046874ba8ac"
 
 [[projects]]
   name = "github.com/namsral/flag"
@@ -444,6 +370,12 @@
   ]
   revision = "baf6536d6259209c3edfa2b22237af82942d3dfa"
   version = "v0.1.1"
+
+[[projects]]
+  name = "github.com/philhofer/fwd"
+  packages = ["."]
+  revision = "bb6d471dc95d4fe11e432687f8b70ff496cf3136"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/pierrec/lz4"
@@ -510,7 +442,10 @@
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
-  packages = ["."]
+  packages = [
+    ".",
+    "hooks/syslog"
+  ]
   revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
   version = "v1.0.4"
 
@@ -525,6 +460,12 @@
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/tinylib/msgp"
+  packages = ["msgp"]
+  revision = "b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1"
+  version = "1.0.2"
 
 [[projects]]
   branch = "master"
@@ -552,12 +493,6 @@
   name = "github.com/vishvananda/netns"
   packages = ["."]
   revision = "be1fbeda19366dea804f00efff2dd73a1642fdcc"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/willfaught/gockle"
-  packages = ["."]
-  revision = "4f254e1e0f0a12485963192ff605f61f1933e71f"
 
 [[projects]]
   branch = "master"
@@ -645,12 +580,6 @@
   version = "v1.2.1"
 
 [[projects]]
-  name = "gopkg.in/inf.v0"
-  packages = ["."]
-  revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
-  version = "v0.9.1"
-
-[[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -659,6 +588,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3db14f7f6dacfd3d6a6c4de7cc63effbfd7d1f44ca03490386d34ed5a3ec73fc"
+  inputs-digest = "37e09f31415fc4648e0c4dc4f9689151318dbffb14930f62c9cba7b1344dced9"
   solver-name = "gps-cdcl"
   solver-version = 1

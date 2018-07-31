@@ -106,7 +106,7 @@ type Plugin struct {
 
 // Deps represents dependencies of Telemetry Plugin
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
 	GoVppmux     govppmux.API
 	Prometheus   prom.API

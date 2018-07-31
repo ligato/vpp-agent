@@ -20,13 +20,7 @@ import (
 	"strings"
 )
 
-// BasicHTTPAuthenticator is a delegate that implements basic HTTP authentication
-type BasicHTTPAuthenticator interface {
-	// Authenticate returns true if user is authenticated successfully, false otherwise.
-	Authenticate(user string, pass string) bool
-}
-
-func auth(fn http.HandlerFunc, auth BasicHTTPAuthenticator) http.HandlerFunc {
+func auth(h http.Handler, auth BasicHTTPAuthenticator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, pass, _ := r.BasicAuth()
 		if !auth.Authenticate(user, pass) {
@@ -34,7 +28,7 @@ func auth(fn http.HandlerFunc, auth BasicHTTPAuthenticator) http.HandlerFunc {
 			http.Error(w, "Unauthorized.", http.StatusUnauthorized)
 			return
 		}
-		fn(w, r)
+		h.ServeHTTP(w, r)
 	}
 }
 
@@ -46,7 +40,9 @@ type staticAuthenticator struct {
 // newStaticAuthenticator creates new instance of static authenticator.
 // Argument `users` is a slice of colon-separated username and password couples.
 func newStaticAuthenticator(users []string) (*staticAuthenticator, error) {
-	sa := &staticAuthenticator{credentials: map[string]string{}}
+	sa := &staticAuthenticator{
+		credentials: make(map[string]string),
+	}
 	for _, u := range users {
 		fields := strings.Split(u, ":")
 		if len(fields) != 2 {

@@ -1,8 +1,6 @@
 package rpc
 
 import (
-	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 )
 
@@ -20,12 +18,7 @@ func NewPlugin(opts ...Option) *Plugin {
 		o(p)
 	}
 
-	if p.Deps.Log == nil {
-		p.Deps.Log = logging.ForPlugin(p.String())
-	}
-	if p.Deps.PluginConfig == nil {
-		p.Deps.PluginConfig = config.ForPlugin(p.String())
-	}
+	p.PluginDeps.Setup()
 
 	return p
 }

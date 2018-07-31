@@ -36,7 +36,7 @@ required = [
 
 [[constraint]]
   name = "github.com/ligato/cn-infra"
-  revision = "52432e9cff91cd15e5cd0001be7e1034253adf0a"
+  revision = "eaea1b438c5327f5960fa63cc11c3ec5f690d13b"
 
 [[constraint]]
   branch = "master"
@@ -101,10 +101,6 @@ required = [
 [[constraint]]
   name = "google.golang.org/grpc"
   version = "1.2.1"
-
-[[override]]
-  name = "github.com/Shopify/sarama"
-  version = "=1.15.0"
 
 [prune]
   go-tests = true

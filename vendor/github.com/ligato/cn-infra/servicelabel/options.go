@@ -18,3 +18,10 @@ func NewPlugin(opts ...Option) *Plugin {
 
 // Option is a function that can be used in NewPlugin to customize Plugin.
 type Option func(*Plugin)
+
+// UseLabel sets microservice label to given string
+func UseLabel(label string) Option {
+	return func(p *Plugin) {
+		p.MicroserviceLabel = label
+	}
+}

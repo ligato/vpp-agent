@@ -42,7 +42,6 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 	for {
 		select {
 		case e := <-plugin.resyncConfigChan:
-			plugin.Log.Warnf("VPP RESYNC")
 			runWithMutex(func() {
 				plugin.onResyncEvent(e)
 			})

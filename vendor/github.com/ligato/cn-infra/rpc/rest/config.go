@@ -109,7 +109,7 @@ func PluginConfig(pluginCfg config.PluginConfig, cfg *Config, pluginName infra.P
 	}
 
 	if pluginCfg != nil {
-		_, err := pluginCfg.GetValue(cfg)
+		_, err := pluginCfg.LoadValue(cfg)
 		if err != nil {
 			return err
 		}

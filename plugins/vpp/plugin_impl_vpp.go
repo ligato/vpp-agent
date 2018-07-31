@@ -142,7 +142,7 @@ type Plugin struct {
 // Deps groups injected dependencies of plugin so that they do not mix with
 // other plugin fieldsMtu.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck  statuscheck.PluginStatusWriter
 	ServiceLabel servicelabel.ReaderAPI
 
@@ -158,8 +158,8 @@ type Deps struct {
 	WatchEventsMutex *sync.Mutex
 }
 
-// PluginConfig holds the vpp-plugin configuration.
-type PluginConfig struct {
+// Config holds the vpp-plugin configuration.
+type Config struct {
 	Mtu              uint32   `json:"mtu"`
 	Stopwatch        bool     `json:"stopwatch"`
 	Strategy         string   `json:"strategy"`
@@ -644,10 +644,10 @@ func (plugin *Plugin) fromConfigFile() {
 	}
 }
 
-func (plugin *Plugin) retrieveVPPConfig() (*PluginConfig, error) {
-	config := &PluginConfig{}
+func (plugin *Plugin) retrieveVPPConfig() (*Config, error) {
+	config := &Config{}
 
-	found, err := plugin.PluginConfig.GetValue(config)
+	found, err := plugin.Cfg.LoadValue(config)
 	if err != nil {
 		return nil, err
 	} else if !found {

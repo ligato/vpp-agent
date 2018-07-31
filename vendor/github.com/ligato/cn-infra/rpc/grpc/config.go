@@ -64,6 +64,14 @@ func (cfg *Config) getGrpcOptions() (opts []grpc.ServerOption) {
 	return
 }
 
+func (cfg *Config) getSocketType() string {
+	// Default to tcp socket type of not specified for backward compatibility
+	if cfg.Network == "" {
+		return "tcp"
+	}
+	return cfg.Network
+}
+
 // GetPort parses suffix from endpoint & returns integer after last ":" (otherwise it returns 0)
 func (cfg *Config) GetPort() int {
 	if cfg.Endpoint != "" && cfg.Endpoint != ":" {

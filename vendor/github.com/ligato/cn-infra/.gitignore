@@ -8,6 +8,7 @@ examples/etcd-lib/editor/editor
 examples/etcd-lib/view/view
 examples/etcd-lib/watcher/watcher
 examples/flags-lib/flags-lib
+examples/grpc-plugin/grpc-server/grpc-server
 examples/kafka-lib/asyncproducer/asyncproducer
 examples/kafka-lib/consumer/consumer
 examples/kafka-lib/mux/mux

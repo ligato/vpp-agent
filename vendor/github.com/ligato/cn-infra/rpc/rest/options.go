@@ -37,11 +37,12 @@ func NewPlugin(opts ...Option) *Plugin {
 	if p.Deps.Log == nil {
 		p.Deps.Log = logging.ForPlugin(p.String())
 	}
-	if p.Deps.PluginConfig == nil {
-		p.Deps.PluginConfig = config.ForPlugin(p.String(), func(flags *config.FlagSet) {
-			flags.String(httpPortFlag(p.PluginName), DefaultHTTPPort,
-				fmt.Sprintf("Configure %q server port", p.String()))
-		})
+	if p.Deps.Cfg == nil {
+		p.Deps.Cfg = config.ForPlugin(p.String(),
+			config.WithExtraFlags(func(flags *config.FlagSet) {
+				flags.String(httpPortFlag(p.PluginName), DefaultHTTPPort, fmt.Sprintf(
+					"Configure %q server port", p.String()))
+			}))
 	}
 
 	return p

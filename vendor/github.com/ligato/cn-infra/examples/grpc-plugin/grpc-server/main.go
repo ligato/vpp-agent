@@ -22,99 +22,14 @@ import (
 const PluginName = "myPlugin"
 
 func main() {
-
-	// --------------------
-	// ALL DEFAULT
-	// --------------------
-
-	/*p := &ExamplePlugin{
-		GRPC: &grpc.DefaultPlugin,
-		Log:  logging.ForPlugin(PluginName),
-	}*/
-
-	// --------------------
-	// CHANGE GLOBAL DEFAULT
-	// --------------------
-
-	/*rest.DefaultPlugin = *rest.NewPlugin(
-		rest.UseConf(rest.Config{
-			Endpoint: ":1234",
-		}),
-	)
-
-	p := &ExamplePlugin{
-		GRPC: &grpc.DefaultPlugin,
-		Log:  logging.ForPlugin(PluginName),
-	}*/
-
-	// --------------------
-	// CUSTOM INSTANCE
-	// --------------------
-
-	myRest := rest.NewPlugin(
-		rest.UseConf(rest.Config{
-			Endpoint: ":1234",
-		}),
-	)
-
 	p := &ExamplePlugin{
 		GRPC: grpc.NewPlugin(
-			grpc.UseHTTP(myRest),
+			grpc.UseHTTP(&rest.DefaultPlugin),
 		),
 		Log: logging.ForPlugin(PluginName),
 	}
 
-	// OR CHANGE ANY DEPENDENCY
-
-	/*p := &ExamplePlugin{
-		GRPC: grpc.NewPlugin(
-			grpc.UseDeps(func(deps *grpc.Deps) {
-				deps.HTTP = myRest
-				deps.SetName("myGRPC")
-			}),
-		),
-		Log: logging.ForPlugin(PluginName),
-	}*/
-
-	// --------------------
-	// DISABLE DEP
-	// --------------------
-
-	/*myGRPC := grpc.NewPlugin(
-		grpc.UseDeps(grpc.Deps{
-			HTTP: rest.Disabled,
-		}),
-	)
-
-	//rest.DefaultPlugin = rest.NewPlugin(rest.UseDisabled())*/
-
-	// --------------------
-	// INIT AGENT
-	// --------------------
-
-	/*myGRPC := grpc.NewPlugin(
-		//grpc.UseCustom(grpc.PluginDeps{}),
-		//grpc.UseDefaults(),
-		grpc.UseDeps(grpc.Deps{
-			//Log: logging.ForPlugin("myGRPC"),
-			//HTTP: httpPlug,
-			//HTTP: rest.Disabled,
-			//HTTP: NewPlugin(UseDisabled()),
-		}),
-	)
-
-	p := &ExamplePlugin{
-		Deps: Deps{
-			PluginName: PluginName,
-			Log:        logging.ForPlugin(PluginName),
-			GRPC:       myGRPC,
-			//GRPC: grpc.DefaultPlugin,
-		},
-	}*/
-
-	a := agent.NewAgent(
-		agent.AllPlugins(p),
-	)
+	a := agent.NewAgent(agent.AllPlugins(p))
 
 	if err := a.Run(); err != nil {
 		log.Fatal(err)

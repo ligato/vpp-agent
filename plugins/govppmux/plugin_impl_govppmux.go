@@ -58,7 +58,7 @@ type Plugin struct {
 // Deps groups injected dependencies of plugin
 // so that they do not mix with other plugin fields.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck statuscheck.PluginStatusWriter
 	Resync      *resync.Plugin
 }
@@ -102,7 +102,7 @@ func (plugin *Plugin) Init() error {
 	plugin.PluginName = plugin.Deps.PluginName
 
 	plugin.config = defaultConfig()
-	found, err := plugin.PluginConfig.GetValue(plugin.config)
+	found, err := plugin.Cfg.LoadValue(plugin.config)
 	if err != nil {
 		return err
 	}

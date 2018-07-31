@@ -19,16 +19,26 @@ import (
 	"os"
 	"reflect"
 	"syscall"
+	"time"
 
 	"github.com/ligato/cn-infra/infra"
 )
 
+var (
+	// DefaultStartTimeout is default timeout for starting agent
+	DefaultStartTimeout = time.Second * 15
+	// DefaultStopTimeout is default timeout for stopping agent
+	DefaultStopTimeout = time.Second * 5
+)
+
 // Options specifies option list for the Agent
 type Options struct {
-	QuitSignals []os.Signal
-	QuitChan    chan struct{}
-	Context     context.Context
-	Plugins     []infra.Plugin
+	StartTimeout time.Duration
+	StopTimeout  time.Duration
+	QuitSignals  []os.Signal
+	QuitChan     chan struct{}
+	Context      context.Context
+	Plugins      []infra.Plugin
 
 	pluginMap   map[infra.Plugin]struct{}
 	pluginNames map[string]struct{}
@@ -36,6 +46,8 @@ type Options struct {
 
 func newOptions(opts ...Option) Options {
 	opt := Options{
+		StartTimeout: DefaultStartTimeout,
+		StopTimeout:  DefaultStopTimeout,
 		QuitSignals: []os.Signal{
 			os.Interrupt,
 			syscall.SIGTERM,
@@ -53,6 +65,20 @@ func newOptions(opts ...Option) Options {
 
 // Option is a function that operates on an Agent's Option
 type Option func(*Options)
+
+// StartTimeout returns an Option that sets timeout for the start of Agent.
+func StartTimeout(timeout time.Duration) Option {
+	return func(o *Options) {
+		o.StartTimeout = timeout
+	}
+}
+
+// StopTimeout returns an Option that sets timeout for the stop of Agent.
+func StopTimeout(timeout time.Duration) Option {
+	return func(o *Options) {
+		o.StopTimeout = timeout
+	}
+}
 
 // Version returns an Option that sets the version of the Agent to the entered string
 func Version(buildVer, buildDate, commitHash string) Option {
@@ -117,7 +143,7 @@ func AllPlugins(plugins ...infra.Plugin) Option {
 			}
 			o.Plugins = append(o.Plugins, foundPlugins...)
 
-			// TODO: perhaps set plugin name to typ.Strilng() if it's empty
+			// TODO: perhaps set plugin name to typ.String() if it's empty
 			/*p, ok := plugin.(core.PluginNamed)
 			if !ok {
 				p = core.NamePlugin(typ.String(), plugin)

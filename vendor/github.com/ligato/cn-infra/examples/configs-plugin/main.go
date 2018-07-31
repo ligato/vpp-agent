@@ -97,7 +97,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 		plugin.Conf = &Conf{Field1: "some default value"}
 	}
 
-	found, err := plugin.PluginConfig.GetValue(plugin.Conf)
+	found, err := plugin.PluginConfig.LoadValue(plugin.Conf)
 	if err != nil {
 		plugin.Log.Error("Error loading config", err)
 	} else if found {

@@ -21,7 +21,6 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/unrolled/render"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -33,13 +32,8 @@ type Plugin struct {
 
 	*Config
 
-	option Option
-	//Option func(*Plugin)
-
 	// GRPC server instance
 	grpcServer *grpc.Server
-	// Used mainly for testing purposes
-	listenAndServe ListenAndServe
 	// GRPC network listener
 	netListener io.Closer
 	// Plugin availability flag
@@ -48,7 +42,7 @@ type Plugin struct {
 
 // Deps is a list of injected dependencies of the GRPC plugin.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	HTTP rest.HTTPHandlers
 }
 
@@ -70,20 +64,17 @@ func (plugin *Plugin) Init() (err error) {
 	}
 
 	// Start GRPC listener
-	if plugin.listenAndServe != nil {
-		plugin.netListener, err = plugin.listenAndServe(*plugin.Config, plugin.grpcServer)
-	} else {
-		plugin.Log.Info("Listening GRPC on tcp://", plugin.Config.Endpoint)
-		plugin.netListener, err = ListenAndServeGRPC(plugin.Config, plugin.grpcServer)
+	plugin.netListener, err = ListenAndServe(plugin.Config, plugin.grpcServer)
+	if err != nil {
+		return err
 	}
+	plugin.Log.Infof("Listening GRPC on: %v", plugin.Config.Endpoint)
 
-	return err
+	return nil
 }
 
 // AfterInit starts the HTTP netListener.
-func (plugin *Plugin) AfterInit() (err error) {
-	//plugin.Log.Debugf("GRPC AfterInit()")
-
+func (plugin *Plugin) AfterInit() error {
 	if plugin.Deps.HTTP != nil {
 		plugin.Log.Infof("exposing GRPC services via HTTP (port %v) on: /service",
 			strconv.Itoa(plugin.Deps.HTTP.GetPort()))
@@ -94,18 +85,15 @@ func (plugin *Plugin) AfterInit() (err error) {
 		plugin.Log.Infof("HTTP not set, skip exposing GRPC services")
 	}
 
-	return err
+	return nil
 }
 
 // Close stops the HTTP netListener.
 func (plugin *Plugin) Close() error {
-	wasError := safeclose.Close(plugin.netListener)
-
 	if plugin.grpcServer != nil {
 		plugin.grpcServer.Stop()
 	}
-
-	return wasError
+	return nil
 }
 
 // GetServer is a getter for accessing grpc.Server
@@ -115,13 +103,13 @@ func (plugin *Plugin) GetServer() *grpc.Server {
 
 // IsDisabled returns *true* if the plugin is not in use due to missing
 // grpc configuration.
-func (plugin *Plugin) IsDisabled() (disabled bool) {
+func (plugin *Plugin) IsDisabled() bool {
 	return plugin.disabled
 }
 
 func (plugin *Plugin) getGrpcConfig() (*Config, error) {
 	var grpcCfg Config
-	found, err := plugin.PluginConfig.GetValue(&grpcCfg)
+	found, err := plugin.Cfg.LoadValue(&grpcCfg)
 	if err != nil {
 		return &grpcCfg, err
 	}

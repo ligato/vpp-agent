@@ -31,7 +31,7 @@ const (
 
 // Plugin implements Plugin interface therefore can be loaded with other plugins
 type Plugin struct {
-	Deps // inject
+	Deps
 
 	clientConfig *ClientConfig
 	session      gockle.Session
@@ -40,7 +40,7 @@ type Plugin struct {
 // Deps is here to group injected dependencies of plugin
 // to not mix with other plugin fields.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck statuscheck.PluginStatusWriter // inject
 }
 
@@ -66,10 +66,10 @@ func (p *Plugin) Init() (err error) {
 
 	// Retrieve config
 	var cfg Config
-	found, err := p.PluginConfig.GetValue(&cfg)
+	found, err := p.Cfg.LoadValue(&cfg)
 	// need to be strict about config presence for ETCD
 	if !found {
-		p.Log.Info("cassandra client config not found ", p.PluginConfig.GetConfigName(),
+		p.Log.Info("cassandra client config not found ", p.Cfg.GetConfigName(),
 			" - skip loading this plugin")
 		return nil
 	}

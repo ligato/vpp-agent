@@ -15,9 +15,7 @@
 package vpp
 
 import (
-	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
@@ -38,12 +36,7 @@ func NewPlugin(opts ...Option) *Plugin {
 		o(p)
 	}
 
-	if p.Deps.Log == nil {
-		p.Deps.Log = logging.ForPlugin(p.String())
-	}
-	if p.Deps.PluginConfig == nil {
-		p.Deps.PluginConfig = config.ForPlugin(p.String())
-	}
+	p.PluginDeps.Setup()
 
 	return p
 }

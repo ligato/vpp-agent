@@ -36,14 +36,31 @@ func (name *PluginName) SetName(n string) {
 	*name = PluginName(n)
 }
 
-// Deps defines common dependencies for use in Plugins.
+// PluginDeps defines common dependencies for use with plugins.
 // It can easily be embedded in Deps for Plugin:
+//
 // type Deps struct {
-//     infra.Deps
+//     infra.PluginDeps
 //     // other dependencies
 // }
-type Deps struct {
+type PluginDeps struct {
 	PluginName
 	Log logging.PluginLogger
-	config.PluginConfig
+	Cfg config.PluginConfig
+}
+
+// Setup sets nil dependencies to default instance using plugin's name.
+func (d *PluginDeps) Setup() {
+	if d.Log == nil {
+		d.Log = logging.ForPlugin(d.String())
+	}
+	if d.Cfg == nil {
+		d.Cfg = config.ForPlugin(d.String())
+	}
+}
+
+// Close is an empty implementation used to avoid need for
+// implementing it by plugins that do not need it.
+func (d *PluginDeps) Close() error {
+	return nil
 }

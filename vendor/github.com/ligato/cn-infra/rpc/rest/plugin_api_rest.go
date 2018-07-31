@@ -21,6 +21,9 @@ import (
 	"github.com/unrolled/render"
 )
 
+// HandlerProvider is a function used for registering handlers via HTTPHandlers
+type HandlerProvider func(formatter *render.Render) http.HandlerFunc
+
 // HTTPHandlers defines the API exposed by the REST plugin.
 // Use this interface to declare dependency on the REST functionality, i.e.:
 //
@@ -31,10 +34,14 @@ import (
 //
 type HTTPHandlers interface {
 	// RegisterHTTPHandler propagates to Gorilla mux
-	RegisterHTTPHandler(path string,
-		handler func(formatter *render.Render) http.HandlerFunc,
-		methods ...string) *mux.Route
+	RegisterHTTPHandler(path string, provider HandlerProvider, methods ...string) *mux.Route
 
 	// GetPort returns configured port number (for debugging purposes)
 	GetPort() int
+}
+
+// BasicHTTPAuthenticator is a delegate that implements basic HTTP authentication
+type BasicHTTPAuthenticator interface {
+	// Authenticate returns true if user is authenticated successfully, false otherwise.
+	Authenticate(user string, pass string) bool
 }

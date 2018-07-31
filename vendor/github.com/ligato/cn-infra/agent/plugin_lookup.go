@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
-var agentLogger = logrus.NewLogger("agent")
+var agentLogger = logrus.NewLogger("infra")
 
 func init() {
 	if os.Getenv("DEBUG_INFRA") != "" {
@@ -113,24 +113,16 @@ func findPlugins(val reflect.Value, uniqueness map[infra.Plugin]struct{}, x ...i
 				continue
 			}
 
+			// TODO: perhaps add regexp for validation of plugin name
+
 			uniqueness[plug] = struct{}{}
-			/*p, ok := plug.(core.PluginNamed)
-			if !ok {
-				p = core.NamePlugin(field.Name, plug)
-			}*/
 			fieldPlug = plug
 
 			logf(" + FOUND PLUGIN: %v - %v (%v)", plug.String(), field.Name, field.Type)
-
-			/*var pp core.Plugin = plug
-			if np, ok := p.(*core.NamedPlugin); ok {
-				pp = np.Plugin
-			}*/
 		}
 
 		// do recursive inspection only for plugins and fields Deps
-		if fieldPlug != nil || (field.Name == "Deps" && fieldVal.Kind() == reflect.Struct) {
-			//var l []core.PluginNamed
+		if fieldPlug != nil || (field.Anonymous && fieldVal.Kind() == reflect.Struct) {
 			// try to inspect structure recursively
 			l, err := findPlugins(fieldVal, uniqueness, n+1)
 			if err != nil {

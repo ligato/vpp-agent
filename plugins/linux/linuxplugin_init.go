@@ -79,7 +79,7 @@ type Plugin struct {
 // Deps groups injected dependencies of plugin
 // so that they do not mix with other plugin fields.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck  statuscheck.PluginStatusWriter
 	ServiceLabel servicelabel.ReaderAPI
 
@@ -244,7 +244,7 @@ func (plugin *Plugin) initL3() error {
 
 func (plugin *Plugin) retrieveLinuxConfig() (*LinuxConfig, error) {
 	config := &LinuxConfig{}
-	found, err := plugin.PluginConfig.GetValue(config)
+	found, err := plugin.Cfg.LoadValue(config)
 	if !found {
 		plugin.Log.Debug("Linuxplugin config not found")
 		return nil, nil

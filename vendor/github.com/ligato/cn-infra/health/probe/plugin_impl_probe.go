@@ -39,7 +39,7 @@ type Plugin struct {
 
 // Deps lists dependencies of REST plugin.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
 	StatusCheck  statuscheck.StatusReader // inject
 	HTTP         rest.HTTPHandlers        // inject

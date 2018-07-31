@@ -1,9 +1,9 @@
 package logmanager
 
 import (
-	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/rest"
+	"github.com/ligato/cn-infra/servicelabel"
 )
 
 // DefaultPlugin is a default instance of Plugin.
@@ -16,17 +16,13 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.PluginName = "logs"
 	p.LogRegistry = logging.DefaultRegistry
 	p.HTTP = &rest.DefaultPlugin
+	p.ServiceLabel = &servicelabel.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)
 	}
 
-	if p.Deps.Log == nil {
-		p.Deps.Log = logging.ForPlugin(p.String())
-	}
-	if p.Deps.PluginConfig == nil {
-		p.Deps.PluginConfig = config.ForPlugin(p.String())
-	}
+	p.PluginDeps.Setup()
 
 	return p
 }
@@ -42,8 +38,8 @@ func UseDeps(cb func(*Deps)) Option {
 }
 
 // UseConf returns Option which injects a particular configuration.
-func UseConf(conf Conf) Option {
+func UseConf(conf Config) Option {
 	return func(p *Plugin) {
-		p.Conf = &conf
+		p.Config = &conf
 	}
 }

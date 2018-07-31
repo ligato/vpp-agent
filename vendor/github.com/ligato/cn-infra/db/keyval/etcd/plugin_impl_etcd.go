@@ -37,6 +37,7 @@ const (
 // Plugin implements etcd plugin.
 type Plugin struct {
 	Deps
+
 	sync.Mutex
 
 	// Plugin is disabled if there is no config file available
@@ -63,7 +64,7 @@ type Plugin struct {
 // Deps lists dependencies of the etcd plugin.
 // If injected, etcd plugin will use StatusCheck to signal the connection status.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck statuscheck.PluginStatusWriter // inject
 	Resync      *resync.Plugin
 }
@@ -255,7 +256,7 @@ func (plugin *Plugin) statusCheckProbe() (statuscheck.PluginState, error) {
 
 func (plugin *Plugin) getEtcdConfig() (*Config, error) {
 	var etcdCfg Config
-	found, err := plugin.PluginConfig.GetValue(&etcdCfg)
+	found, err := plugin.Cfg.LoadValue(&etcdCfg)
 	if err != nil {
 		return nil, err
 	}

@@ -31,7 +31,7 @@ import (
 // Other plugins can be notified when DB changes occur or resync is needed.
 // This plugin reads/pulls the data from db when resync is needed.
 type Plugin struct {
-	Deps // inject
+	Deps
 
 	adapter  *watcher
 	registry *syncbase.Registry

@@ -41,7 +41,7 @@ type Plugin struct {
 
 // Deps lists dependencies of the redis plugin.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck statuscheck.PluginStatusWriter // inject
 	Resync      *resync.Plugin
 }
@@ -113,13 +113,13 @@ func (plugin *Plugin) OnConnect(callback func() error) {
 }
 
 func (plugin *Plugin) getRedisConfig() (cfg interface{}, err error) {
-	found, _ := plugin.PluginConfig.GetValue(&struct{}{})
+	found, _ := plugin.Cfg.LoadValue(&struct{}{})
 	if !found {
 		plugin.Log.Info("Redis config not found, skip loading this plugin")
 		plugin.disabled = true
 		return
 	}
-	configFile := plugin.PluginConfig.GetConfigName()
+	configFile := plugin.Cfg.GetConfigName()
 	if configFile != "" {
 		cfg, err = LoadConfig(configFile)
 		if err != nil {

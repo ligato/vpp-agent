@@ -15,7 +15,6 @@
 package rest
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -31,17 +30,14 @@ type Plugin struct {
 
 	*Config
 
-	// Used mainly for testing purposes
-	listenAndServe ListenAndServe
-
-	server    io.Closer
+	server    *http.Server
 	mx        *mux.Router
 	formatter *render.Render
 }
 
 // Deps lists the dependencies of the Rest plugin.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 
 	// Authenticator can be injected in a flavor inject method.
 	// If there is no authenticator injected and config contains
@@ -56,7 +52,7 @@ func (plugin *Plugin) Init() (err error) {
 	if plugin.Config == nil {
 		plugin.Config = DefaultConfig()
 	}
-	if err := PluginConfig(plugin.Deps.PluginConfig, plugin.Config, plugin.Deps.PluginName); err != nil {
+	if err := PluginConfig(plugin.Cfg, plugin.Config, plugin.PluginName); err != nil {
 		return err
 	}
 
@@ -81,32 +77,30 @@ func (plugin *Plugin) Init() (err error) {
 func (plugin *Plugin) AfterInit() (err error) {
 	cfgCopy := *plugin.Config
 
-	if plugin.listenAndServe != nil {
-		plugin.server, err = plugin.listenAndServe(cfgCopy, plugin.mx)
-	} else {
-		if cfgCopy.UseHTTPS() {
-			plugin.Log.Info("Listening on https://", cfgCopy.Endpoint)
-		} else {
-			plugin.Log.Info("Listening on http://", cfgCopy.Endpoint)
-		}
-
-		plugin.server, err = ListenAndServeHTTP(cfgCopy, plugin.mx)
+	var handler http.Handler = plugin.mx
+	if plugin.Authenticator != nil {
+		handler = auth(handler, plugin.Authenticator)
 	}
 
-	return err
+	plugin.server, err = ListenAndServe(cfgCopy, handler)
+	if err != nil {
+		return err
+	}
+
+	if cfgCopy.UseHTTPS() {
+		plugin.Log.Info("Listening on https://", cfgCopy.Endpoint)
+	} else {
+		plugin.Log.Info("Listening on http://", cfgCopy.Endpoint)
+	}
+
+	return nil
 }
 
 // RegisterHTTPHandler registers HTTP <handler> at the given <path>.
-func (plugin *Plugin) RegisterHTTPHandler(path string,
-	handler func(formatter *render.Render) http.HandlerFunc,
-	methods ...string) *mux.Route {
+func (plugin *Plugin) RegisterHTTPHandler(path string, provider HandlerProvider, methods ...string) *mux.Route {
 	plugin.Log.Debug("Registering handler: ", path)
 
-	if plugin.Authenticator != nil {
-		return plugin.mx.HandleFunc(path, auth(handler(plugin.formatter), plugin.Authenticator)).Methods(methods...)
-	}
-	return plugin.mx.HandleFunc(path, handler(plugin.formatter)).Methods(methods...)
-
+	return plugin.mx.Handle(path, provider(plugin.formatter)).Methods(methods...)
 }
 
 // GetPort returns plugin configuration port

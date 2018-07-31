@@ -22,25 +22,18 @@ import (
 	"github.com/namsral/flag"
 )
 
+var microserviceLabelFlag string
+
+func init() {
+	flag.StringVar(&microserviceLabelFlag, "microservice-label", "vpp1", fmt.Sprintf("microservice label; also set via '%v' env variable.", MicroserviceLabelEnvVar))
+}
+
 // Plugin exposes the service label(i.e. the string used to identify the particular VNF) to the other plugins.
 type Plugin struct {
 	infra.PluginName
 	// MicroserviceLabel identifies particular VNF.
 	// Used primarily as a key prefix to ETCD data store.
 	MicroserviceLabel string
-}
-
-// OfDifferentAgent sets micorserivce label and returns new instance of Plugin.
-// It is meant for watching DB by prefix of different agent. You can pass/inject
-// instance of this plugin for example to kvdbsync.
-func OfDifferentAgent(microserviceLabel string) *Plugin {
-	return &Plugin{MicroserviceLabel: microserviceLabel}
-}
-
-var microserviceLabelFlag string
-
-func init() {
-	flag.StringVar(&microserviceLabelFlag, "microservice-label", "vpp1", fmt.Sprintf("microservice label; also set via '%v' env variable.", MicroserviceLabelEnvVar))
 }
 
 // Init is called at plugin initialization.

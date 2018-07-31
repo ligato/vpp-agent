@@ -26,22 +26,22 @@ import (
 // Plugin implements KeyProtoValWriter that propagates protobuf messages
 // to a particular topic (unless the messaging.Mux is not disabled).
 type Plugin struct {
-	Deps // inject
+	Deps
 
-	Cfg
+	Config
 	adapter messaging.ProtoPublisher
 }
 
 // Deps groups dependencies injected into the plugin so that they are
 // logically separated from other plugin fields.
 type Deps struct {
-	infra.Deps
-	Messaging messaging.Mux // inject
+	infra.PluginDeps
+	Messaging messaging.Mux
 }
 
-// Cfg groups configurations fields. It can be extended with other fields
+// Config groups configurations fields. It can be extended with other fields
 // (such as sync/async, partition...).
-type Cfg struct {
+type Config struct {
 	Topic string
 }
 
@@ -53,8 +53,8 @@ func (plugin *Plugin) Init() error {
 // AfterInit uses provided MUX connection to build new publisher.
 func (plugin *Plugin) AfterInit() error {
 	if !plugin.Messaging.Disabled() {
-		cfg := plugin.Cfg
-		plugin.PluginConfig.GetValue(&cfg)
+		cfg := plugin.Config
+		plugin.Cfg.LoadValue(&cfg)
 
 		if cfg.Topic != "" {
 			var err error

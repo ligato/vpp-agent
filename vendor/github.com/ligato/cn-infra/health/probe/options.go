@@ -15,7 +15,6 @@
 package probe
 
 import (
-	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/rest"
@@ -40,9 +39,6 @@ func NewPlugin(opts ...Option) *Plugin {
 
 	if p.Deps.Log == nil {
 		p.Deps.Log = logging.ForPlugin(p.String())
-	}
-	if p.Deps.PluginConfig == nil {
-		p.Deps.PluginConfig = config.ForPlugin(p.String())
 	}
 
 	return p

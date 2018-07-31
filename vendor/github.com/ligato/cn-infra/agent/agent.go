@@ -18,6 +18,7 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/infra"
@@ -68,13 +69,11 @@ func NewAgent(opts ...Option) Agent {
 	options := newOptions(opts...)
 
 	if !flag.Parsed() {
+		config.DefineDirFlag()
 		for _, p := range options.Plugins {
 			name := p.String()
 			agentLogger.Debugf("registering flags for: %q", name)
-			config.RegisterFlagsFor(name)
-		}
-		if flag.Lookup(config.DirFlag) == nil {
-			flag.String(config.DirFlag, config.DirDefault, config.DirUsage)
+			config.DefineFlagsFor(name)
 		}
 		flag.Parse()
 	}
@@ -101,12 +100,12 @@ func (a *agent) Options() Options {
 // Start starts the agent.  Start will return as soon as the Agent is ready.  The Agent continues
 // running after Start returns.
 func (a *agent) Start() error {
-	return a.startOnce.Do(a.startSignalWrapper)
+	return a.startOnce.Do(a.starter)
 }
 
 // Stop the Agent.  Calls close on all Plugins
 func (a *agent) Stop() error {
-	return a.stopOnce.Do(a.stop)
+	return a.stopOnce.Do(a.stopper)
 }
 
 // Run runs the agent.  Run will not return until a SIGINT, SIGTERM, or SIGKILL is received
@@ -117,11 +116,11 @@ func (a *agent) Run() error {
 	return a.Wait()
 }
 
-func (a *agent) startSignalWrapper() error {
+func (a *agent) starter() error {
 	logging.DefaultLogger.WithFields(logging.Fields{
 		"CommitHash": CommitHash,
 		"BuildDate":  BuildDate,
-	}).Infof("Starting agent %v", BuildVersion)
+	}).Infof("Starting agent: %v", BuildVersion)
 
 	// If we want to properly handle cleanup when a SIG comes in *during*
 	// agent startup (ie, clean up after its finished) we need to register
@@ -131,12 +130,31 @@ func (a *agent) startSignalWrapper() error {
 		signal.Notify(sig, a.opts.QuitSignals...)
 	}
 
+	started := make(chan struct{})
+	defer close(started)
+
+	if timeout := a.opts.StartTimeout; timeout > 0 {
+		go func() {
+			select {
+			case <-started:
+				// agent started
+			case <-time.After(timeout):
+				logging.DefaultLogger.Errorf("agent failed to start before timeout (%v)", timeout)
+				os.Exit(1)
+			}
+		}()
+	}
+
 	// If the agent started, we have things to clean up if here is a SIG
 	// So fire off a goroutine to do that
 	if err := a.start(); err != nil {
 		signal.Stop(sig)
 		return err
 	}
+
+	logging.DefaultLogger.Infof("Agent started with %d plugins", len(a.opts.Plugins))
+
+	a.stopCh = make(chan struct{}) // If we are started, we have a stopCh to signal stopping
 
 	go func() {
 		var quit <-chan struct{}
@@ -151,7 +169,7 @@ func (a *agent) startSignalWrapper() error {
 			logging.DefaultLogger.Info("Context canceled, stopping.")
 		case s := <-sig:
 			logging.DefaultLogger.Infof("Signal %v received, stopping.", s)
-		case <-a.After():
+		case <-a.stopCh:
 		}
 		// Doesn't hurt to call Stop twice, its idempotent because of the
 		// stopOnce
@@ -185,9 +203,32 @@ func (a *agent) start() error {
 		}
 	}
 
-	a.stopCh = make(chan struct{}) // If we are started, we have a stopCh to signal stopping
+	return nil
+}
 
-	logging.DefaultLogger.Infof("Agent started with %d plugins", len(a.opts.Plugins))
+func (a *agent) stopper() error {
+	logging.DefaultLogger.Infof("Stopping agent")
+
+	stopped := make(chan struct{})
+	defer close(stopped)
+
+	if timeout := a.opts.StopTimeout; timeout > 0 {
+		go func() {
+			select {
+			case <-stopped:
+				// agent stopped
+			case <-time.After(timeout):
+				logging.DefaultLogger.Errorf("agent failed to stop before timeout (%v)", timeout)
+				os.Exit(1)
+			}
+		}()
+	}
+
+	if err := a.stop(); err != nil {
+		return err
+	}
+
+	logging.DefaultLogger.Info("Agent stopped")
 
 	return nil
 }
@@ -198,17 +239,18 @@ func (a *agent) stop() error {
 		logging.DefaultLogger.Error(err)
 		return err
 	}
+	agentLogger.Debugf("stopping %d plugins", len(a.opts.Plugins))
+
 	defer close(a.stopCh)
 
-	// Close plugins
-	for _, p := range a.opts.Plugins {
+	// Close plugins in reverse order
+	for i := len(a.opts.Plugins) - 1; i >= 0; i-- {
+		p := a.opts.Plugins[i]
 		agentLogger.Debugf("=> Close(): %v", p)
 		if err := p.Close(); err != nil {
 			return err
 		}
 	}
-
-	logging.DefaultLogger.Info("Agent stopped")
 
 	return nil
 }

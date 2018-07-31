@@ -34,7 +34,7 @@ const topic = "status-check"
 
 // Plugin provides API for interaction with kafka brokers.
 type Plugin struct {
-	Deps // inject
+	Deps
 
 	mux          *mux.Multiplexer
 	subscription chan *client.ConsumerMessage
@@ -50,7 +50,7 @@ type Plugin struct {
 // Deps groups dependencies injected into the plugin so that they are
 // logically separated from other plugin fields.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck  statuscheck.PluginStatusWriter // inject
 	ServiceLabel servicelabel.ReaderAPI
 }
@@ -67,9 +67,9 @@ func (plugin *Plugin) Init() (err error) {
 
 	// Get muxCfg data (contains kafka brokers ip addresses)
 	muxCfg := &mux.Config{}
-	found, err := plugin.PluginConfig.GetValue(muxCfg)
+	found, err := plugin.Cfg.LoadValue(muxCfg)
 	if !found {
-		plugin.Log.Info("kafka config not found ", plugin.PluginConfig.GetConfigName(), " - skip loading this plugin")
+		plugin.Log.Info("kafka config not found ", plugin.Cfg.GetConfigName(), " - skip loading this plugin")
 		plugin.disabled = true
 		return nil //skip loading the plugin
 	}

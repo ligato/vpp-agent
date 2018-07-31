@@ -53,7 +53,7 @@ type Plugin struct {
 // Deps lists dependencies of the Consul plugin.
 // If injected, Consul plugin will use StatusCheck to signal the connection status.
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	StatusCheck statuscheck.PluginStatusWriter // inject
 	Resync      *resync.Plugin
 }
@@ -124,7 +124,7 @@ func (plugin *Plugin) Disabled() bool {
 
 func (plugin *Plugin) getConfig() (*Config, error) {
 	var cfg Config
-	found, err := plugin.PluginConfig.GetValue(&cfg)
+	found, err := plugin.Cfg.LoadValue(&cfg)
 	if err != nil {
 		return nil, err
 	}

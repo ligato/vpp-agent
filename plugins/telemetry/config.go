@@ -27,7 +27,7 @@ type Config struct {
 // getConfig returns telemetry plugin file configuration if exists
 func (p *Plugin) getConfig() (*Config, error) {
 	config := &Config{}
-	found, err := p.PluginConfig.GetValue(config)
+	found, err := p.Cfg.LoadValue(config)
 	if !found {
 		p.Log.Debug("Telemetry config not found")
 		return nil, nil

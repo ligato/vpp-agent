@@ -64,7 +64,7 @@ type Plugin struct {
 
 // Deps represents dependencies of Rest Plugin
 type Deps struct {
-	infra.Deps
+	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
 	VPP          vpp.API
