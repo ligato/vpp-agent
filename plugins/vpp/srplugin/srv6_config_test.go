@@ -912,13 +912,8 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *vppcallfake.SRv6C
 	swIndex := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "sw_if_indexes", ifaceidx.IndexMetadata))
 	// Configurator
 	fakeVPPCalls := vppcallfake.NewSRv6Calls()
-	configurator := &srplugin.SRv6Configurator{
-		Log:         log,
-		GoVppmux:    connection,
-		SwIfIndexes: swIndex,
-		VppCalls:    fakeVPPCalls,
-	}
-	err = configurator.Init()
+	configurator := &srplugin.SRv6Configurator{}
+	err = configurator.Init(log, connection, swIndex, false, fakeVPPCalls)
 	Expect(err).To(BeNil())
 
 	return configurator, fakeVPPCalls, connection

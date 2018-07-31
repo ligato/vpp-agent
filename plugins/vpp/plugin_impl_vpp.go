@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/messaging"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -46,7 +45,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/rpc"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/namsral/flag"
 )
 
@@ -266,7 +264,6 @@ func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing default plugins")
-	//flag.Parse()
 
 	// Read config file and set all related fields
 	plugin.fromConfigFile()
@@ -575,7 +572,7 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 func (plugin *Plugin) initL4(ctx context.Context) error {
 	plugin.Log.Infof("Init L4 plugin")
 
-	// Application namespace conifgurator
+	// Application namespace configurator
 	plugin.appNsConfigurator = &l4plugin.AppNsConfigurator{}
 	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
 		return err
@@ -588,22 +585,9 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 func (plugin *Plugin) initSR(ctx context.Context) (err error) {
 	plugin.Log.Infof("Init SR plugin")
 
-	// logger
-	srLogger := plugin.Log.NewLogger("-sr-plugin")
-
-	var stopwatch *measure.Stopwatch
-	if plugin.enableStopwatch {
-		stopwatch = measure.NewStopwatch("SRConfigurator", srLogger)
-	}
-	// configuring configurators
-	plugin.srv6Configurator = &srplugin.SRv6Configurator{
-		Log:         srLogger,
-		GoVppmux:    plugin.GoVppmux,
-		SwIfIndexes: plugin.swIfIndexes,
-		VppCalls:    vppcalls.NewSRv6Calls(srLogger, stopwatch),
-	}
-	// Init SR plugin
-	if err := plugin.srv6Configurator.Init(); err != nil {
+	// Init SR configurator
+	plugin.srv6Configurator = &srplugin.SRv6Configurator{}
+	if err := plugin.srv6Configurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch, nil); err != nil {
 		return err
 	}
 
