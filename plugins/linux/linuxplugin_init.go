@@ -115,7 +115,7 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 // InjectVppIfIndexes injects VPP interfaces mapping into Linux plugin
 func (plugin *Plugin) InjectVppIfIndexes(indexes ifaceVPP.SwIfIndex) {
 	plugin.vppIfIndexes = indexes
-	plugin.vppIfIndexes.WatchNameToIdx(plugin.PluginName.String(), plugin.vppIfIndexesWatchChan)
+	plugin.vppIfIndexes.WatchNameToIdx(plugin.String(), plugin.vppIfIndexesWatchChan)
 }
 
 // Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
