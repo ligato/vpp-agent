@@ -57,11 +57,11 @@ var (
 var (
 	// noopWriter (no operation writer) helps avoiding NIL pointer based segmentation fault.
 	// It is used as default if some dependency was not injected.
-	noopWriter = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{}}
+	noopWriter = datasync.KVProtoWriters{}
 
 	// noopWatcher (no operation watcher) helps avoiding NIL pointer based segmentation fault.
 	// It is used as default if some dependency was not injected.
-	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
+	noopWatcher = datasync.KVProtoWatchers{}
 )
 
 // VPP resync strategy. Can be set in vpp-plugin.conf. If no strategy is set, the default behavior is defined by 'fullResync'
@@ -611,14 +611,14 @@ func (plugin *Plugin) fromConfigFile() {
 		return
 	}
 	if config != nil {
-		publishers := &datasync.CompositeKVProtoWriter{}
+		publishers := datasync.KVProtoWriters{}
 		for _, pub := range config.StatusPublishers {
 			db, found := plugin.Deps.DataSyncs[pub]
 			if !found {
 				plugin.Log.Warnf("Unknown status publisher %q from config", pub)
 				continue
 			}
-			publishers.Adapters = append(publishers.Adapters, db)
+			publishers = append(publishers, db)
 			plugin.Log.Infof("Added status publisher %q from config", pub)
 		}
 		plugin.Deps.PublishStatistics = publishers
