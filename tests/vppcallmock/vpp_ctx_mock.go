@@ -16,7 +16,6 @@ package vppcallmock
 
 import (
 	"testing"
-
 	"time"
 
 	"git.fd.io/govpp.git/adapter/mock"

@@ -22,8 +22,6 @@ import (
 
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -31,6 +29,8 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 func init() {
@@ -248,5 +248,13 @@ func (plugin *Plugin) retrieveVersion() {
 	}
 
 	plugin.Log.Debugf("version info: %+v", info)
-	plugin.Log.Infof("VPP version: %v (%v)", info.Version, info.BuildDate)
+	plugin.Log.Infof("VPP version: %q (%v)", info.Version, info.BuildDate)
+
+	// Get VPP ACL plugin version
+	var aclVersion string
+	if aclVersion, err = aclvppcalls.GetAclPluginVersion(vppAPIChan); err != nil {
+		plugin.Log.Warn("getting acl version info failed:", err)
+		return
+	}
+	plugin.Log.Infof("VPP ACL plugin version: %q", aclVersion)
 }

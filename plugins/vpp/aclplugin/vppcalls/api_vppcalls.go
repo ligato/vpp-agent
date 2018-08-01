@@ -58,8 +58,6 @@ type AclVppWrite interface {
 
 // AclVppRead provides read methods for ACL plugin
 type AclVppRead interface {
-	// GetAclPluginVersion returns version of the VPP ACL plugin
-	GetAclPluginVersion() (string, error)
 	// DumpIPACL returns all IP-type ACLs
 	DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*AclDetails, error)
 	// DumpIPACL returns all MACIP-type ACLs

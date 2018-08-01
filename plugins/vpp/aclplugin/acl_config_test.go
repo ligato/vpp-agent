@@ -20,7 +20,6 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
@@ -73,29 +72,8 @@ var macipAcls = acl.AccessLists_Acl{
 	},
 }
 
-// Test AclConfigurator initialization
-func TestAclConfiguratorInit(t *testing.T) {
-	RegisterTestingT(t)
-	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
-	}
-	connection, _ := core.Connect(ctx.MockVpp)
-	defer connection.Disconnect()
-
-	plugin := &aclplugin.ACLConfigurator{}
-
-	ctx.MockVpp.MockReply(&acl_api.ACLPluginGetVersionReply{})
-
-	// Test init
-	err := plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection, nil, false)
-	Expect(err).To(BeNil())
-	err = plugin.Close()
-	Expect(err).To(BeNil())
-}
-
 // Test creation of ACLs and sets acls to interfaces
 func TestConfigureACL(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
@@ -120,7 +98,6 @@ func TestConfigureACL(t *testing.T) {
 
 // Test modification of non existing acl
 func TestModifyNonExistingACL(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
@@ -155,7 +132,6 @@ func TestModifyNonExistingACL(t *testing.T) {
 
 // Test modification of given acl
 func TestModifyACL(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
@@ -239,7 +215,6 @@ func TestModifyACL(t *testing.T) {
 
 // Test deletion of non existing acl
 func TestDeleteNonExistingACL(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
@@ -256,8 +231,6 @@ func TestDeleteNonExistingACL(t *testing.T) {
 
 // Test deletion of given acl
 func TestDeleteACL(t *testing.T) {
-	// Setup
-
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
@@ -292,7 +265,6 @@ func TestDeleteACL(t *testing.T) {
 
 // Test listiong of IP ACLs
 func TestDumpIPACL(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
@@ -330,7 +302,6 @@ func TestDumpIPACL(t *testing.T) {
 
 // Test listiong of MACIP ACLs
 func TestDumpMACIPACL(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
@@ -369,7 +340,6 @@ func TestDumpMACIPACL(t *testing.T) {
 
 // Test configures new interface for every ACL found in cache
 func TestResolveCreatedInterface(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
@@ -397,7 +367,6 @@ func TestResolveCreatedInterface(t *testing.T) {
 
 // Test configuration of interfaces with deleted ACLs
 func TestResolveDeletedInterface(t *testing.T) {
-	// Setup
 	ctx, connection, plugin := aclTestSetup(t, true)
 	defer aclTestTeardown(connection, plugin)
 
@@ -425,6 +394,7 @@ func TestResolveDeletedInterface(t *testing.T) {
 /* ACL Test Setup */
 func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Connection, *aclplugin.ACLConfigurator) {
 	RegisterTestingT(t)
+
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
@@ -432,8 +402,9 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// Logger
-	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
+	log := logging.ForPlugin("test-log")
 	log.SetLevel(logging.DebugLevel)
+
 	// Interface indices
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "acl-plugin", nil))
 	if createIfs {
@@ -444,7 +415,6 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 	}
 
 	// Configurator
-	ctx.MockVpp.MockReply(&acl_api.ACLPluginGetVersionReply{1, 0})
 	plugin := &aclplugin.ACLConfigurator{}
 	err = plugin.Init(log, connection, ifIndexes, false)
 	Expect(err).To(BeNil())
@@ -455,6 +425,6 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 /* ACL Test Teardown */
 func aclTestTeardown(connection *core.Connection, plugin *aclplugin.ACLConfigurator) {
 	connection.Disconnect()
-	err := plugin.Close()
-	Expect(err).To(BeNil())
+	Expect(plugin.Close()).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }

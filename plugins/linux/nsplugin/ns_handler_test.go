@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/tests/linuxmock"
 	. "github.com/onsi/gomega"
@@ -48,7 +47,7 @@ func nsHandlerTestSetup(t *testing.T) (*nsplugin.NsHandler, *linuxmock.IfNetlink
 	RegisterTestingT(t)
 
 	// Loggers
-	pluginLog := logging.ForPlugin("linux-ns-handler-log", logrus.NewLogRegistry())
+	pluginLog := logging.ForPlugin("linux-ns-handler-log")
 	pluginLog.SetLevel(logging.DebugLevel)
 	// Handlers
 	ifHandler := linuxmock.NewIfNetlinkHandlerMock()

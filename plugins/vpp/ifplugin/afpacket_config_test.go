@@ -17,8 +17,6 @@ package ifplugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -33,33 +31,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-/* AF_PACKET configurator init */
-
-// Test init function
-func TestAfPacketConfiguratorInit(t *testing.T) {
-	RegisterTestingT(t)
-	connection, err := core.Connect(&mock.VppAdapter{})
-	Expect(err).To(BeNil())
-	plugin := &ifplugin.AFPacketConfigurator{}
-	vppCh, err := connection.NewAPIChannel()
-	Expect(err).To(BeNil())
-	ifHandler, err := vppcalls.NewIfVppHandler(vppCh, logrus.DefaultLogger(), nil)
-	Expect(err).To(BeNil())
-	err = plugin.Init(logrus.DefaultLogger(), ifHandler, struct{}{}, nil)
-	Expect(err).To(BeNil())
-	connection.Disconnect()
-}
-
 /* AF_PACKET test cases */
 
 // Configure af packet interface with unavailable host
 func TestAfPacketConfigureHostNotAvail(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Data
 	data := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test configure af packet with host unavailable
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
@@ -77,10 +58,9 @@ func TestAfPacketConfigureHostNotAvail(t *testing.T) {
 
 // Configure af packet interface
 func TestAfPacketConfigureHostAvail(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		SwIfIndex: 2,
@@ -88,6 +68,7 @@ func TestAfPacketConfigureHostAvail(t *testing.T) {
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	data := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test af packet
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
@@ -106,10 +87,9 @@ func TestAfPacketConfigureHostAvail(t *testing.T) {
 
 // Configure af packet with error reply from VPP API
 func TestAfPacketConfigureHostAvailError(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		Retval:    1,
@@ -117,6 +97,7 @@ func TestAfPacketConfigureHostAvailError(t *testing.T) {
 	})
 	// Data
 	data := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test configure af packet with return value != 0
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
@@ -133,13 +114,13 @@ func TestAfPacketConfigureHostAvailError(t *testing.T) {
 
 // Configure af packet as incorrect interface type
 func TestAfPacketConfigureIncorrectTypeError(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Data
 	data := getTestAfPacketData("host1", []string{"10.0.0.1/24"}, "host1")
 	data.Type = interfaces.InterfaceType_SOFTWARE_LOOPBACK
+
 	// Test configure af packet with incorrect type
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).ToNot(BeNil())
@@ -153,10 +134,9 @@ func TestAfPacketConfigureIncorrectTypeError(t *testing.T) {
 
 // Call af packet modification which causes recreation of the interface
 func TestAfPacketModifyRecreateChangedHost(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		SwIfIndex: 1,
@@ -165,6 +145,7 @@ func TestAfPacketModifyRecreateChangedHost(t *testing.T) {
 	// Data
 	oldData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
 	newData := getTestAfPacketData("if1", []string{"10.0.0.2/24"}, "host2")
+
 	// Test configure initial af packet data
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(oldData)
@@ -179,9 +160,8 @@ func TestAfPacketModifyRecreateChangedHost(t *testing.T) {
 
 // Test modify pending af packet interface
 func TestAfPacketModifyRecreatePending(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
+
 	defer afPacketTestTeardown(ctx)
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
@@ -191,6 +171,7 @@ func TestAfPacketModifyRecreatePending(t *testing.T) {
 	// Data
 	oldData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
 	newData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test configure initial af packet data
 	_, pending, err := plugin.ConfigureAfPacketInterface(oldData)
 	Expect(err).To(BeNil())
@@ -203,13 +184,13 @@ func TestAfPacketModifyRecreatePending(t *testing.T) {
 
 // Modify recreate of af packet interface which was not found
 func TestAfPacketModifyRecreateNotFound(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Data
 	oldData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
 	newData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host2")
+
 	// Test af packet modify
 	recreate, err := plugin.ModifyAfPacketInterface(newData, oldData)
 	Expect(err).To(BeNil())
@@ -218,10 +199,9 @@ func TestAfPacketModifyRecreateNotFound(t *testing.T) {
 
 // Modify af packet interface without recreation
 func TestAfPacketModifyNoRecreate(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		SwIfIndex: 1,
@@ -230,6 +210,7 @@ func TestAfPacketModifyNoRecreate(t *testing.T) {
 	// Data
 	oldData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
 	newData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test configure initial data
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(oldData)
@@ -252,10 +233,9 @@ func TestAfPacketModifyNoRecreate(t *testing.T) {
 
 // Modify af packet with incorrect interface type
 func TestAfPacketModifyIncorrectType(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		SwIfIndex: 1,
@@ -265,6 +245,7 @@ func TestAfPacketModifyIncorrectType(t *testing.T) {
 	oldData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
 	newData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host2")
 	newData.Type = interfaces.InterfaceType_SOFTWARE_LOOPBACK
+
 	// Test configure initial data
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(oldData)
@@ -278,10 +259,9 @@ func TestAfPacketModifyIncorrectType(t *testing.T) {
 
 // Af packet delete
 func TestAfPacketDelete(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{ // Create
 		SwIfIndex: 1,
@@ -291,6 +271,7 @@ func TestAfPacketDelete(t *testing.T) {
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	data := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test configure initial af packet data
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
@@ -316,10 +297,9 @@ func TestAfPacketDelete(t *testing.T) {
 
 // Delete af packet with incorrect interface type data
 func TestAfPacketDeleteIncorrectType(t *testing.T) {
-	var err error
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		SwIfIndex: 1,
@@ -329,6 +309,7 @@ func TestAfPacketDeleteIncorrectType(t *testing.T) {
 	data := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
 	modifiedData := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
 	modifiedData.Type = interfaces.InterfaceType_SOFTWARE_LOOPBACK
+
 	// Test configure initial af packet
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	swIfIdx, pending, err := plugin.ConfigureAfPacketInterface(data)
@@ -342,9 +323,9 @@ func TestAfPacketDeleteIncorrectType(t *testing.T) {
 
 // Register new linux interface and test af packet behaviour
 func TestAfPacketNewLinuxInterfaceHostFound(t *testing.T) {
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		SwIfIndex: 1,
@@ -352,6 +333,7 @@ func TestAfPacketNewLinuxInterfaceHostFound(t *testing.T) {
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	data := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test registered linux interface
 	_, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
@@ -364,9 +346,9 @@ func TestAfPacketNewLinuxInterfaceHostFound(t *testing.T) {
 
 // Register new linux interface while af packet is not pending. Note: this is a case which should NOT happen
 func TestAfPacketNewLinuxInterfaceHostNotPending(t *testing.T) {
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{
 		SwIfIndex: 1,
@@ -376,6 +358,7 @@ func TestAfPacketNewLinuxInterfaceHostNotPending(t *testing.T) {
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
 	// Data
 	data := getTestAfPacketData("if1", []string{"10.0.0.1/24"}, "host1")
+
 	// Test registered linux interface
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	_, pending, err := plugin.ConfigureAfPacketInterface(data)
@@ -389,10 +372,11 @@ func TestAfPacketNewLinuxInterfaceHostNotPending(t *testing.T) {
 
 // Test new linux interface which is not a host
 func TestAfPacketNewLinuxInterfaceHostNotFound(t *testing.T) {
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeFalse())
+
 	// Test registered linux interface
 	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	Expect(config).To(BeNil())
@@ -403,6 +387,7 @@ func TestAfPacketNewLinuxInterfaceHostNotFound(t *testing.T) {
 func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
+
 	// Logger
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
@@ -421,9 +406,9 @@ func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 
 // Un-register linux interface
 func TestAfPacketDeletedLinuxInterface(t *testing.T) {
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
@@ -446,9 +431,9 @@ func TestAfPacketDeletedLinuxInterface(t *testing.T) {
 
 // Un-register linux interface while host is not found
 func TestAfPacketDeletedLinuxInterfaceHostNotFound(t *testing.T) {
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Prepare
 	plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
 	// Test un-registered linux interface
@@ -460,6 +445,7 @@ func TestAfPacketDeletedLinuxInterfaceHostNotFound(t *testing.T) {
 func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
+
 	// Logger
 	log := logrus.DefaultLogger()
 	log.SetLevel(logging.DebugLevel)
@@ -482,9 +468,9 @@ func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
 
 // Check if 'IsPending' returns correct output
 func TestAfPacketIsPending(t *testing.T) {
-	// Setup
 	ctx, plugin, _ := afPacketTestSetup(t)
 	defer afPacketTestTeardown(ctx)
+
 	// Reply set
 	ctx.MockVpp.MockReply(&ap_api.AfPacketCreateReply{})
 	ctx.MockVpp.MockReply(&if_api.SwInterfaceTagAddDelReply{})
@@ -511,6 +497,8 @@ func TestAfPacketIsPending(t *testing.T) {
 /* AF_PACKET Test Setup */
 
 func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.AFPacketConfigurator, ifaceidx.SwIfIndexRW) {
+	RegisterTestingT(t)
+
 	ctx := vppcallmock.SetupTestCtx(t)
 	// Logger
 	log := logrus.DefaultLogger()
@@ -532,6 +520,7 @@ func afPacketTestTeardown(ctx *vppcallmock.TestCtx) {
 	ctx.TeardownTestCtx()
 	err := safeclose.Close(ctx)
 	Expect(err).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 /* AF_PACKET Test Data */

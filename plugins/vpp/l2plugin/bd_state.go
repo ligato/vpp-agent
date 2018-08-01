@@ -28,6 +28,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
+// BridgeDomainStateNotification contains bridge domain state object with all data published to ETCD.
+type BridgeDomainStateNotification struct {
+	State *l2.BridgeDomainState_BridgeDomain
+}
+
 // BridgeDomainStateUpdater holds all data required to handle bridge domain state.
 type BridgeDomainStateUpdater struct {
 	log    logging.Logger
@@ -52,11 +57,6 @@ type BridgeDomainStateUpdater struct {
 	vppCombinedCountersSubs *govppapi.NotifSubscription
 	notificationChan        chan BridgeDomainStateMessage // Injected, do not close here
 	bdIdxChan               chan l2idx.BdChangeDto
-}
-
-// BridgeDomainStateNotification contains bridge domain state object with all data published to ETCD.
-type BridgeDomainStateNotification struct {
-	State *l2.BridgeDomainState_BridgeDomain
 }
 
 // Init bridge domain state updater.
