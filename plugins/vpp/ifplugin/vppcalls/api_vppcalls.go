@@ -160,43 +160,47 @@ type NatVppAPI interface {
 
 // NatVppWrite provides write methods for NAT
 type NatVppWrite interface {
-	// SetNat44Forwarding configures global forwarding setup for NAT44
-	SetNat44Forwarding(enableFwd bool) error
-	// EnableNat44Interface enables NAT feature for provided interface
-	EnableNat44Interface(ifIdx uint32, isInside bool) error
-	// DisableNat44Interface enables NAT feature for provided interface
-	DisableNat44Interface(ifIdx uint32, isInside bool) error
-	// EnableNat44InterfaceOutput enables NAT output feature for provided interface
-	EnableNat44InterfaceOutput(ifIdx uint32, isInside bool) error
-	// DisableNat44InterfaceOutput disables NAT output feature for provided interface
-	DisableNat44InterfaceOutput(ifIdx uint32, isInside bool) error
-	// AddNat44AddressPool sets new NAT address pool
-	AddNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error
-	// DelNat44AddressPool removes existing NAT address pool
-	DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error
-	// AddNat44IdentityMapping adds new NAT44 identity mapping
-	AddNat44IdentityMapping(ctx *IdentityMappingContext) error
-	// DelNat44IdentityMapping removes NAT44 identity mapping
-	DelNat44IdentityMapping(ctx *IdentityMappingContext) error
-	// AddNat44StaticMapping creates new static mapping entry (considering address only or both, address and port
+	// SetForwarding configures global forwarding setup for NAT44
+	SetForwarding(enableFwd bool) error
+	// EnableInterface enables NAT feature for provided interface
+	EnableInterface(ifIdx uint32, isInside bool) error
+	// DisableInterface enables NAT feature for provided interface
+	DisableInterface(ifIdx uint32, isInside bool) error
+	// EnableInterfaceOutput enables NAT output feature for provided interface
+	EnableInterfaceOutput(ifIdx uint32, isInside bool) error
+	// DisableInterfaceOutput disables NAT output feature for provided interface
+	DisableInterfaceOutput(ifIdx uint32, isInside bool) error
+	// AddAddressPool sets new NAT address pool
+	AddAddressPool(first, last []byte, vrf uint32, twiceNat bool) error
+	// DelAddressPool removes existing NAT address pool
+	DelAddressPool(first, last []byte, vrf uint32, twiceNat bool) error
+	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets
+	SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassemblyIPv4) error
+	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv6 packets
+	SetVirtualReassemblyIPv6(vrCfg *nat.Nat44Global_VirtualReassemblyIPv6) error
+	// AddIdentityMapping adds new NAT44 identity mapping
+	AddIdentityMapping(ctx *IdentityMappingContext) error
+	// DelIdentityMapping removes NAT44 identity mapping
+	DelIdentityMapping(ctx *IdentityMappingContext) error
+	// AddStaticMapping creates new static mapping entry (considering address only or both, address and port
 	// depending on the context)
-	AddNat44StaticMapping(ctx *StaticMappingContext) error
-	// DelNat44StaticMapping removes existing static mapping entry
-	DelNat44StaticMapping(ctx *StaticMappingContext) error
-	// AddNat44StaticMappingLb creates new static mapping entry with load balancer
-	AddNat44StaticMappingLb(ctx *StaticMappingLbContext) error
-	// DelNat44StaticMappingLb removes existing static mapping entry with load balancer
-	DelNat44StaticMappingLb(ctx *StaticMappingLbContext) error
+	AddStaticMapping(ctx *StaticMappingContext) error
+	// DelStaticMapping removes existing static mapping entry
+	DelStaticMapping(ctx *StaticMappingContext) error
+	// AddStaticMappingLb creates new static mapping entry with load balancer
+	AddStaticMappingLb(ctx *StaticMappingLbContext) error
+	// DelStaticMappingLb removes existing static mapping entry with load balancer
+	DelStaticMappingLb(ctx *StaticMappingLbContext) error
 }
 
 // NatVppRead provides read methods for NAT
 type NatVppRead interface {
 	// Nat44GlobalConfigDump returns global config in NB format
-	Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error)
+	GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error)
 	// NAT44NatDump dumps all types of mappings, sorts it according to tag (DNAT label) and creates a set of DNAT configurations
-	NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error)
+	DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error)
 	// Nat44InterfaceDump returns a list of interfaces enabled for NAT44
-	Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error)
+	InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error)
 }
 
 // StnVppAPI provides methods for managing STN

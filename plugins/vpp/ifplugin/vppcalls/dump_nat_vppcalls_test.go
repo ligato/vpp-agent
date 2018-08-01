@@ -41,7 +41,7 @@ func TestNat44InterfaceDump(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
+	ifaces, err := natHandler.InterfaceDump(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(1))
 	Expect(ifaces[0].IsInside).To(BeFalse())
@@ -60,7 +60,7 @@ func TestNat44InterfaceDump2(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
+	ifaces, err := natHandler.InterfaceDump(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(1))
 	Expect(ifaces[0].IsInside).To(BeTrue())
@@ -79,7 +79,7 @@ func TestNat44InterfaceDump3(t *testing.T) {
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
 	swIfIndexes.RegisterName("if0", 1, nil)
 
-	ifaces, err := natHandler.Nat44InterfaceDump(swIfIndexes)
+	ifaces, err := natHandler.InterfaceDump(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].IsInside).To(BeFalse())

@@ -452,7 +452,7 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 	// Re-initialize cache
 	plugin.clearMapping()
 
-	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump(plugin.ifIndexes)
+	vppNatGlobal, err := plugin.natHandler.GlobalConfigDump(plugin.ifIndexes)
 	if err != nil {
 		return fmt.Errorf("failed to dump NAT44 global config: %v", err)
 	}
@@ -471,7 +471,7 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump(plugin.ifIndexes)
+	vppDNatCfg, err := plugin.natHandler.DNatDump(plugin.ifIndexes)
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}
