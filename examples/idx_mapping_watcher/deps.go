@@ -14,9 +14,7 @@
 
 package main
 
-import "github.com/ligato/cn-infra/flavors/local"
-
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
-	local.PluginLogDeps // injected
+	//local.PluginLogDeps // injected
 }

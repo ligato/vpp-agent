@@ -15,8 +15,6 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -33,17 +31,19 @@ import (
 // HTTP and Log) and example plugin which demonstrates index mapping lookup functionality.
 func main() {
 	// Init close channel to stop the example
-	exampleFinished := make(chan struct{}, 1)
+	//exampleFinished := make(chan struct{}, 1)
+	//
+	//// Start Agent
+	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
+	//	examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
+	//	examplePlug.PluginLogDeps = *flavor.LogDeps("idx-mapping-lookup")
+	//
+	//	return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
+	//}))
+	//
+	//core.EventLoopWithInterrupt(agent, exampleFinished)
 
-	// Start Agent
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
-		examplePlug.PluginLogDeps = *flavor.LogDeps("idx-mapping-lookup")
-
-		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
-	}))
-
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	//todo use new flavors and options
 }
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the Agent.
@@ -54,6 +54,8 @@ type ExamplePlugin struct {
 	exampleIDSeq uint32             // Provides unique ID for every item stored in mapping
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
+
+	Log logrus.Logger
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.

@@ -19,11 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/flavors/local"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -87,18 +84,20 @@ var (
 // Start Agent plugins selected for this example.
 func main() {
 	// Init close channel to stop the example.
-	closeChannel := make(chan struct{}, 1)
+	//closeChannel := make(chan struct{}, 1)
+	//
+	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
+	//	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &TapExamplePlugin{}}
+	//
+	//	return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
+	//}))
+	//
+	//// End when the localhost example is finished.
+	//go closeExample("localhost example finished", closeChannel)
+	//
+	//core.EventLoopWithInterrupt(agent, closeChannel)
 
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
-		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &TapExamplePlugin{}}
-
-		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
-	}))
-
-	// End when the localhost example is finished.
-	go closeExample("localhost example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// todo use new flavors and options
 }
 
 // Stop the agent with desired info message.
@@ -111,7 +110,7 @@ func closeExample(message string, closeChannel chan struct{}) {
 /* TAP Example */
 
 // PluginID of an example plugin.
-const PluginID core.PluginName = "tap-example-plugin"
+//const PluginID core.PluginName = "tap-example-plugin"
 
 // TapExamplePlugin uses localclient to transport example tap and its linux end
 // configuration to linuxplugin or VPP plugins
@@ -157,16 +156,16 @@ func (plugin *TapExamplePlugin) Close() error {
 // Configure initial data
 func (plugin *TapExamplePlugin) putInitialData() {
 	plugin.log.Infof("Applying initial configuration")
-	err := localclient.DataResyncRequest(PluginID).
-		VppInterface(initialTap1()).
-		LinuxInterface(initialLinuxTap1()).
-		BD(bridgeDomain()).
-		Send().ReceiveReply()
-	if err != nil {
-		plugin.log.Errorf("Initial configuration failed: %v", err)
-	} else {
-		plugin.log.Info("Initial configuration successful")
-	}
+	//err := localclient.DataResyncRequest(PluginID).
+	//	VppInterface(initialTap1()).
+	//	LinuxInterface(initialLinuxTap1()).
+	//	BD(bridgeDomain()).
+	//	Send().ReceiveReply()
+	//if err != nil {
+	//	plugin.log.Errorf("Initial configuration failed: %v", err)
+	//} else {
+	//	plugin.log.Info("Initial configuration successful")
+	//}
 }
 
 // Configure modified data
@@ -175,18 +174,18 @@ func (plugin *TapExamplePlugin) putModifiedData(ctx context.Context, timeout int
 	case <-time.After(time.Duration(timeout) * time.Second):
 		plugin.log.Infof("Applying modified configuration")
 		// Simulate configuration change after timeout
-		err := localclient.DataChangeRequest(PluginID).
-			Put().
-			VppInterface(modifiedTap1()).
-			VppInterface(tap2()).
-			LinuxInterface(modifiedLinuxTap1()).
-			LinuxInterface(linuxTap2()).
-			Send().ReceiveReply()
-		if err != nil {
-			plugin.log.Errorf("Modified configuration failed: %v", err)
-		} else {
-			plugin.log.Info("Modified configuration successful")
-		}
+		//err := localclient.DataChangeRequest(PluginID).
+		//	Put().
+		//	VppInterface(modifiedTap1()).
+		//	VppInterface(tap2()).
+		//	LinuxInterface(modifiedLinuxTap1()).
+		//	LinuxInterface(linuxTap2()).
+		//	Send().ReceiveReply()
+		//if err != nil {
+		//	plugin.log.Errorf("Modified configuration failed: %v", err)
+		//} else {
+		//	plugin.log.Info("Modified configuration successful")
+		//}
 	case <-ctx.Done():
 		// Cancel the scheduled re-configuration.
 		plugin.log.Info("Modification of configuration canceled")

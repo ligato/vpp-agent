@@ -18,12 +18,11 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/cn-infra/logging"
 )
 
 // *************************************************************************
@@ -43,17 +42,19 @@ import (
 // HTTP and Log), and GOVPP, and resync plugin, and example plugin which demonstrates GOVPP call functionality.
 func main() {
 	// Init closes channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
+	//exampleFinished := make(chan struct{}, 1)
 
 	// Start Agent with ExampleFlavor
-	flavor := vppFlavor.Flavor{}
-	exampleFlavor := ExampleFlavor{
-		GovppExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:       &flavor, // inject VPP flavor
-	}
-	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
+	//flavor := vppFlavor.Flavor{}
+	//exampleFlavor := ExampleFlavor{
+	//	GovppExample: ExamplePlugin{closeChannel: &exampleFinished},
+	//	Flavor:       &flavor, // inject VPP flavor
+	//}
+	//agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
+	//
+	//core.EventLoopWithInterrupt(agent, exampleFinished)
 
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	// todo use new flavors && options
 }
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the Agent.
@@ -66,6 +67,7 @@ type ExamplePlugin struct {
 	vppChannel   govppapi.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
+	Log logging.Logger
 }
 
 // Init members of plugin.
