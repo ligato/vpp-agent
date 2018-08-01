@@ -15,7 +15,6 @@
 package l2idx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -39,7 +38,7 @@ type BDIndex interface {
 	LookupConfiguredIfsForBd(bdName string) ([]string, bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan BdChangeDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan BdChangeDto)
 }
 
 // BDIndexRW is mapping between indices (used internally in VPP) and Bridge Domain names.
@@ -191,7 +190,7 @@ func (bdi *bdIndex) LookupConfiguredIfsForBd(bdName string) ([]string, bool) {
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.
-func (bdi *bdIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan BdChangeDto) {
+func (bdi *bdIndex) WatchNameToIdx(subscriber string, pluginChannel chan BdChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	bdi.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

@@ -50,11 +50,7 @@ func NewWatchResp(serializer keyval.Serializer, resp keyval.BytesWatchResp) keyv
 
 // GetValue returns the value after the change.
 func (wr *protoWatchResp) GetValue(msg proto.Message) error {
-	err := wr.serializer.Unmarshal(wr.BytesWatchResp.GetValue(), msg)
-	if err != nil {
-		return err
-	}
-	return nil
+	return wr.serializer.Unmarshal(wr.BytesWatchResp.GetValue(), msg)
 }
 
 // GetPrevValue returns the previous value after the change.

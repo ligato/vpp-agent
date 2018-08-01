@@ -22,24 +22,24 @@ import (
 
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 func init() {
 	govpp.SetControlPingMessages(&vpe.ControlPing{}, &vpe.ControlPingReply{})
 }
 
-// GOVPPPlugin implements the govppmux plugin interface.
-type GOVPPPlugin struct {
-	Deps // Inject.
+// Plugin implements the govppmux plugin interface.
+type Plugin struct {
+	Deps
 
 	vppConn    *govpp.Connection
 	vppAdapter adapter.VppAdapter
@@ -58,8 +58,9 @@ type GOVPPPlugin struct {
 // Deps groups injected dependencies of plugin
 // so that they do not mix with other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps // inject
-	Resync                *resync.Plugin
+	infra.PluginDeps
+	StatusCheck statuscheck.PluginStatusWriter
+	Resync      *resync.Plugin
 }
 
 // Config groups the configurable parameter of GoVpp.
@@ -88,16 +89,8 @@ func defaultConfig() *Config {
 	}
 }
 
-// FromExistingAdapter is used mainly for testing purposes.
-func FromExistingAdapter(vppAdapter adapter.VppAdapter) *GOVPPPlugin {
-	ret := &GOVPPPlugin{
-		vppAdapter: vppAdapter,
-	}
-	return ret
-}
-
 // Init is the entry point called by Agent Core. A single binary-API connection to VPP is established.
-func (plugin *GOVPPPlugin) Init() error {
+func (plugin *Plugin) Init() error {
 	var err error
 
 	govppLogger := plugin.Deps.Log.NewLogger("GoVpp")
@@ -109,7 +102,7 @@ func (plugin *GOVPPPlugin) Init() error {
 	plugin.PluginName = plugin.Deps.PluginName
 
 	plugin.config = defaultConfig()
-	found, err := plugin.PluginConfig.GetValue(plugin.config)
+	found, err := plugin.Cfg.LoadValue(plugin.config)
 	if err != nil {
 		return err
 	}
@@ -154,7 +147,7 @@ func (plugin *GOVPPPlugin) Init() error {
 }
 
 // Close cleans up the resources allocated by the govppmux plugin.
-func (plugin *GOVPPPlugin) Close() error {
+func (plugin *Plugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
@@ -173,7 +166,7 @@ func (plugin *GOVPPPlugin) Close() error {
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannel()
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
+func (plugin *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		return nil, err
@@ -194,7 +187,7 @@ func (plugin *GOVPPPlugin) NewAPIChannel() (govppapi.Channel, error) {
 // Example of binary API call from some plugin using GOVPP:
 //      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 //      ch.SendRequest(req).ReceiveReply
-func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
+func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 	if err != nil {
 		return nil, err
@@ -210,7 +203,7 @@ func (plugin *GOVPPPlugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSiz
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
-func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
+func (plugin *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	plugin.wg.Add(1)
 	defer plugin.wg.Done()
 
@@ -240,7 +233,7 @@ func (plugin *GOVPPPlugin) handleVPPConnectionEvents(ctx context.Context) {
 	}
 }
 
-func (plugin *GOVPPPlugin) retrieveVersion() {
+func (plugin *Plugin) retrieveVersion() {
 	vppAPIChan, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		plugin.Log.Error("getting new api channel failed:", err)
@@ -255,5 +248,13 @@ func (plugin *GOVPPPlugin) retrieveVersion() {
 	}
 
 	plugin.Log.Debugf("version info: %+v", info)
-	plugin.Log.Infof("VPP version: %v (%v)", info.Version, info.BuildDate)
+	plugin.Log.Infof("VPP version: %q (%v)", info.Version, info.BuildDate)
+
+	// Get VPP ACL plugin version
+	var aclVersion string
+	if aclVersion, err = aclvppcalls.GetAclPluginVersion(vppAPIChan); err != nil {
+		plugin.Log.Warn("getting acl version info failed:", err)
+		return
+	}
+	plugin.Log.Infof("VPP ACL plugin version: %q", aclVersion)
 }

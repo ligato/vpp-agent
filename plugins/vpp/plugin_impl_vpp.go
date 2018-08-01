@@ -21,8 +21,10 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/messaging"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -55,11 +57,11 @@ var (
 var (
 	// noopWriter (no operation writer) helps avoiding NIL pointer based segmentation fault.
 	// It is used as default if some dependency was not injected.
-	noopWriter = &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{}}
+	noopWriter = datasync.KVProtoWriters{}
 
 	// noopWatcher (no operation watcher) helps avoiding NIL pointer based segmentation fault.
 	// It is used as default if some dependency was not injected.
-	noopWatcher = &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{}}
+	noopWatcher = datasync.KVProtoWatchers{}
 )
 
 // VPP resync strategy. Can be set in vpp-plugin.conf. If no strategy is set, the default behavior is defined by 'fullResync'
@@ -140,30 +142,31 @@ type Plugin struct {
 // Deps groups injected dependencies of plugin so that they do not mix with
 // other plugin fieldsMtu.
 type Deps struct {
-	// inject all below
-	local.PluginInfraDeps
+	infra.PluginDeps
+	StatusCheck  statuscheck.PluginStatusWriter
+	ServiceLabel servicelabel.ReaderAPI
 
 	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.KeyProtoValWriter
-	Watch             datasync.KeyValProtoWatcher
+	Watcher           datasync.KeyValProtoWatcher
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
-	Linux             linuxpluginAPI
+	Linux             LinuxPluginAPI
 	GRPCSvc           rpc.GRPCService
 
 	DataSyncs        map[string]datasync.KeyProtoValWriter
 	WatchEventsMutex *sync.Mutex
 }
 
-// PluginConfig holds the vpp-plugin configuration.
-type PluginConfig struct {
+// Config holds the vpp-plugin configuration.
+type Config struct {
 	Mtu              uint32   `json:"mtu"`
 	Stopwatch        bool     `json:"stopwatch"`
 	Strategy         string   `json:"strategy"`
 	StatusPublishers []string `json:"status-publishers"`
 }
 
-type linuxpluginAPI interface {
+type LinuxPluginAPI interface {
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
@@ -261,7 +264,6 @@ func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing default plugins")
-	flag.Parse()
 
 	// Read config file and set all related fields
 	plugin.fromConfigFile()
@@ -401,9 +403,9 @@ func (plugin *Plugin) fixNilPointers() {
 		plugin.Deps.IfStatePub = noopWriter
 		plugin.Log.Debug("setting default noop writer for IfStatePub dependency")
 	}
-	if plugin.Deps.Watch == nil {
-		plugin.Deps.Watch = noopWatcher
-		plugin.Log.Debug("setting default noop watcher for Watch dependency")
+	if plugin.Deps.Watcher == nil {
+		plugin.Deps.Watcher = noopWatcher
+		plugin.Log.Debug("setting default noop watcher for Watcher dependency")
 	}
 }
 
@@ -609,14 +611,14 @@ func (plugin *Plugin) fromConfigFile() {
 		return
 	}
 	if config != nil {
-		publishers := &datasync.CompositeKVProtoWriter{}
+		publishers := datasync.KVProtoWriters{}
 		for _, pub := range config.StatusPublishers {
 			db, found := plugin.Deps.DataSyncs[pub]
 			if !found {
 				plugin.Log.Warnf("Unknown status publisher %q from config", pub)
 				continue
 			}
-			publishers.Adapters = append(publishers.Adapters, db)
+			publishers = append(publishers, db)
 			plugin.Log.Infof("Added status publisher %q from config", pub)
 		}
 		plugin.Deps.PublishStatistics = publishers
@@ -642,10 +644,10 @@ func (plugin *Plugin) fromConfigFile() {
 	}
 }
 
-func (plugin *Plugin) retrieveVPPConfig() (*PluginConfig, error) {
-	config := &PluginConfig{}
+func (plugin *Plugin) retrieveVPPConfig() (*Config, error) {
+	config := &Config{}
 
-	found, err := plugin.PluginConfig.GetValue(config)
+	found, err := plugin.Cfg.LoadValue(config)
 	if err != nil {
 		return nil, err
 	} else if !found {

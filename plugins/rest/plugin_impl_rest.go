@@ -16,11 +16,10 @@ package rest
 
 import (
 	"fmt"
-
 	"sync"
 
 	"git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -65,7 +64,7 @@ type Plugin struct {
 
 // Deps represents dependencies of Rest Plugin
 type Deps struct {
-	local.PluginInfraDeps
+	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
 	VPP          vpp.API

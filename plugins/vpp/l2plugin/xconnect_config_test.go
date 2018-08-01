@@ -20,7 +20,6 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -32,26 +31,6 @@ import (
 )
 
 /* XConnect configurator init and close */
-
-// Test init function
-func TestXConnectConfiguratorInit(t *testing.T) {
-	var err error
-	// Setup
-	RegisterTestingT(t)
-	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
-	}
-	connection, _ := core.Connect(ctx.MockVpp)
-	defer connection.Disconnect()
-	plugin := &l2plugin.XConnectConfigurator{}
-	// Test init
-	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, false)
-	Expect(err).To(BeNil())
-	// Test close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
-}
 
 /* XConnect configurator test cases */
 
@@ -620,7 +599,7 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugi
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
-	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
+	log := logging.ForPlugin("test-log")
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if", nil))
@@ -636,6 +615,7 @@ func xcTestTeardown(connection *core.Connection, plugin *l2plugin.XConnectConfig
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 /* XConnect Test Data */

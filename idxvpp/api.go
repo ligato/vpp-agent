@@ -17,7 +17,6 @@ package idxvpp
 import (
 	"errors"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
 )
 
@@ -142,5 +141,5 @@ type NameToIdx interface {
 	//			ifIdxEv.Done()
 	//       ...
 	//    }
-	Watch(subscriber core.PluginName, callback func(NameToIdxDto))
+	Watch(subscriber string, callback func(NameToIdxDto))
 }

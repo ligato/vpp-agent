@@ -15,7 +15,6 @@
 package ifaceidx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -57,7 +56,7 @@ type LinuxIfIndex interface {
 	LookupNameByHostIfName(hostIfName string) []string
 
 	// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping.
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxIfIndexDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan LinuxIfIndexDto)
 }
 
 // LinuxIfIndexRW is mapping between software interface indices (used internally in VPP)
@@ -170,7 +169,7 @@ func (linuxIfIdx *linuxIfIndex) UnregisterName(name string) (idx uint32, metadat
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping.
-func (linuxIfIdx *linuxIfIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxIfIndexDto) {
+func (linuxIfIdx *linuxIfIndex) WatchNameToIdx(subscriber string, pluginChannel chan LinuxIfIndexDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	linuxIfIdx.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {
