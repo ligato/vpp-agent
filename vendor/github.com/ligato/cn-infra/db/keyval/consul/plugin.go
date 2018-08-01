@@ -59,78 +59,83 @@ type Deps struct {
 }
 
 // Init initializes Consul plugin.
-func (plugin *Plugin) Init() (err error) {
-	if plugin.Config == nil {
-		plugin.Config, err = plugin.getConfig()
-		if err != nil || plugin.disabled {
+func (p *Plugin) Init() (err error) {
+	if p.Config == nil {
+		p.Config, err = p.getConfig()
+		if err != nil || p.disabled {
 			return err
 		}
 	}
 
-	clientCfg, err := ConfigToClient(plugin.Config)
+	clientCfg, err := ConfigToClient(p.Config)
 	if err != nil {
 		return err
 	}
-	plugin.client, err = NewClient(clientCfg)
+	p.client, err = NewClient(clientCfg)
 	if err != nil {
-		plugin.Log.Errorf("Err: %v", err)
+		p.Log.Errorf("Err: %v", err)
 		return err
 	}
-	plugin.reconnectResync = plugin.Config.ReconnectResync
-	plugin.protoWrapper = kvproto.NewProtoWrapperWithSerializer(plugin.client, &keyval.SerializerJSON{})
 
-	// Register for providing status reports (polling mode).
-	if plugin.StatusCheck != nil {
-		plugin.StatusCheck.Register(plugin.PluginName, func() (statuscheck.PluginState, error) {
-			_, _, _, err := plugin.client.GetValue(healthCheckProbeKey)
-			if err == nil {
-				if plugin.reconnectResync && plugin.lastConnErr != nil {
-					plugin.Log.Info("Starting resync after Consul reconnect")
-					if plugin.Resync != nil {
-						plugin.Resync.DoResync()
-						plugin.lastConnErr = nil
-					} else {
-						plugin.Log.Warn("Expected resync after Consul reconnect could not start beacuse of missing Resync plugin")
-					}
-				}
-				return statuscheck.OK, nil
-			}
-			plugin.lastConnErr = err
-			return statuscheck.Error, err
-		})
+	p.reconnectResync = p.Config.ReconnectResync
+	p.protoWrapper = kvproto.NewProtoWrapper(p.client, &keyval.SerializerJSON{})
+
+	// Register for providing status reports (polling mode)
+	if p.StatusCheck != nil {
+		p.StatusCheck.Register(p.PluginName, p.statusCheckProbe)
 	} else {
-		plugin.Log.Warnf("Unable to start status check for consul")
+		p.Log.Warnf("Unable to start status check for consul")
 	}
 
 	return nil
 }
 
+func (p *Plugin) statusCheckProbe() (statuscheck.PluginState, error) {
+	_, _, _, err := p.client.GetValue(healthCheckProbeKey)
+	if err != nil {
+		p.lastConnErr = err
+		return statuscheck.Error, err
+	}
+
+	if p.reconnectResync && p.lastConnErr != nil {
+		p.Log.Info("Starting resync after Consul reconnect")
+		if p.Resync != nil {
+			p.Resync.DoResync()
+			p.lastConnErr = nil
+		} else {
+			p.Log.Warn("Expected resync after Consul reconnect could not start beacuse of missing Resync plugin")
+		}
+	}
+
+	return statuscheck.OK, nil
+}
+
 // OnConnect executes callback from datasync
-func (plugin *Plugin) OnConnect(callback func() error) {
+func (p *Plugin) OnConnect(callback func() error) {
 	if err := callback(); err != nil {
-		plugin.Log.Error(err)
+		p.Log.Error(err)
 	}
 }
 
 // Close closes Consul plugin.
-func (plugin *Plugin) Close() error {
+func (p *Plugin) Close() error {
 	return nil
 }
 
 // Disabled returns *true* if the plugin is not in use due to missing configuration.
-func (plugin *Plugin) Disabled() bool {
-	return plugin.disabled
+func (p *Plugin) Disabled() bool {
+	return p.disabled
 }
 
-func (plugin *Plugin) getConfig() (*Config, error) {
+func (p *Plugin) getConfig() (*Config, error) {
 	var cfg Config
-	found, err := plugin.Cfg.LoadValue(&cfg)
+	found, err := p.Cfg.LoadValue(&cfg)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		plugin.Log.Info("Consul config not found, skip loading this plugin")
-		plugin.disabled = true
+		p.Log.Info("Consul config not found, skip loading this plugin")
+		p.disabled = true
 		return nil, nil
 	}
 	return &cfg, nil
@@ -147,11 +152,11 @@ func ConfigToClient(cfg *Config) (*api.Config, error) {
 }
 
 // NewBroker creates new instance of prefixed broker that provides API with arguments of type proto.Message.
-func (plugin *Plugin) NewBroker(keyPrefix string) keyval.ProtoBroker {
-	return plugin.protoWrapper.NewBroker(keyPrefix)
+func (p *Plugin) NewBroker(keyPrefix string) keyval.ProtoBroker {
+	return p.protoWrapper.NewBroker(keyPrefix)
 }
 
 // NewWatcher creates new instance of prefixed broker that provides API with arguments of type proto.Message.
-func (plugin *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
-	return plugin.protoWrapper.NewWatcher(keyPrefix)
+func (p *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
+	return p.protoWrapper.NewWatcher(keyPrefix)
 }

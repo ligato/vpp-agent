@@ -139,14 +139,14 @@ func (c *Client) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, 
 }
 
 type watchResp struct {
-	typ              datasync.PutDel
+	typ              datasync.Op
 	key              string
 	value, prevValue []byte
 	rev              int64
 }
 
 // GetChangeType returns "Put" for BytesWatchPutResp.
-func (resp *watchResp) GetChangeType() datasync.PutDel {
+func (resp *watchResp) GetChangeType() datasync.Op {
 	return resp.typ
 }
 
@@ -225,7 +225,7 @@ func (c *Client) watch(resp func(watchResp keyval.BytesWatchResp), closeCh chan 
 }
 
 type watchEvent struct {
-	Type      datasync.PutDel
+	Type      datasync.Op
 	Key       string
 	Value     []byte
 	PrevValue []byte

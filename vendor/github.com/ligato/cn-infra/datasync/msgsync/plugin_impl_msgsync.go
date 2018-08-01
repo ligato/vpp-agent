@@ -46,19 +46,19 @@ type Config struct {
 }
 
 // Init does nothing.
-func (plugin *Plugin) Init() error {
+func (p *Plugin) Init() error {
 	return nil
 }
 
 // AfterInit uses provided MUX connection to build new publisher.
-func (plugin *Plugin) AfterInit() error {
-	if !plugin.Messaging.Disabled() {
-		cfg := plugin.Config
-		plugin.Cfg.LoadValue(&cfg)
+func (p *Plugin) AfterInit() error {
+	if !p.Messaging.Disabled() {
+		cfg := p.Config
+		p.Cfg.LoadValue(&cfg)
 
 		if cfg.Topic != "" {
 			var err error
-			plugin.adapter, err = plugin.Messaging.NewSyncPublisher("msgsync-connection", cfg.Topic)
+			p.adapter, err = p.Messaging.NewSyncPublisher("msgsync-connection", cfg.Topic)
 			if err != nil {
 				return err
 			}
@@ -71,19 +71,19 @@ func (plugin *Plugin) AfterInit() error {
 // Put propagates this call to a particular messaging Publisher.
 //
 // This method is supposed to be called in PubPlugin.AfterInit() or later (even from different go routine).
-func (plugin *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOption) error {
-	if plugin.Messaging.Disabled() {
+func (p *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOption) error {
+	if p.Messaging.Disabled() {
 		return nil
 	}
 
-	if plugin.adapter != nil {
-		return plugin.adapter.Put(key, data, opts...)
+	if p.adapter != nil {
+		return p.adapter.Put(key, data, opts...)
 	}
 
 	return errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
 }
 
 // Close resources.
-func (plugin *Plugin) Close() error {
+func (p *Plugin) Close() error {
 	return nil
 }

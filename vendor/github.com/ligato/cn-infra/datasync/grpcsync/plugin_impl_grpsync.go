@@ -28,24 +28,21 @@ type Plugin struct {
 	Adapter datasync.KeyValProtoWatcher
 }
 
-// Deps - gRPC Plugin dependencies
+// Deps represent Plugin dependencies.
 type Deps struct {
 	infra.PluginName
 	GRPC grpc.Server
 }
 
 // Init registers new gRPC service and instantiates plugin.Adapter.
-func (plugin *Plugin) Init() error {
-	grpcAdapter := NewAdapter(plugin.GRPC.GetServer())
-
-	plugin.Adapter = &syncbase.Adapter{
-		Watcher: grpcAdapter,
+func (p *Plugin) Init() error {
+	p.Adapter = &syncbase.Adapter{
+		Watcher: NewAdapter(p.GRPC.GetServer()),
 	}
-
 	return nil
 }
 
 // Close does nothing.
-func (plugin *Plugin) Close() error {
+func (p *Plugin) Close() error {
 	return nil
 }

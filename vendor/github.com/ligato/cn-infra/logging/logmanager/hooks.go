@@ -30,7 +30,7 @@ func (cH *commonHook) Levels() []logrus.Level {
 }
 
 // store hook into registy for late use and applies to existing loggers
-func (lm *Plugin) addHook(hookName string, hookConfig HookConfig) error {
+func (p *Plugin) addHook(hookName string, hookConfig HookConfig) error {
 	var lgHook logrus.Hook
 	var err error
 
@@ -44,19 +44,19 @@ func (lm *Plugin) addHook(hookName string, hookConfig HookConfig) error {
 			hookConfig.Protocol,
 			address,
 			syslog.LOG_INFO,
-			lm.ServiceLabel.GetAgentLabel(),
+			p.ServiceLabel.GetAgentLabel(),
 		)
 	case HookLogStash:
 		lgHook, err = logrustash.NewHook(
 			hookConfig.Protocol,
 			hookConfig.Address+":"+strconv.Itoa(hookConfig.Port),
-			lm.ServiceLabel.GetAgentLabel(),
+			p.ServiceLabel.GetAgentLabel(),
 		)
 	case HookFluent:
 		lgHook, err = logrus_fluent.NewWithConfig(logrus_fluent.Config{
 			Host:       hookConfig.Address,
 			Port:       hookConfig.Port,
-			DefaultTag: lm.ServiceLabel.GetAgentLabel(),
+			DefaultTag: p.ServiceLabel.GetAgentLabel(),
 		})
 	default:
 		return fmt.Errorf("unsupported hook: %q", hookName)
@@ -74,11 +74,11 @@ func (lm *Plugin) addHook(hookName string, hookConfig HookConfig) error {
 			if lgl, err := logrus.ParseLevel(level); err == nil {
 				cHook.levels = append(cHook.levels, lgl)
 			} else {
-				lm.Log.Warnf("cannot parse hook log level %v : %v", level, err.Error())
+				p.Log.Warnf("cannot parse hook log level %v : %v", level, err.Error())
 			}
 		}
 	}
 	// add hook to existing loggers and store it into registry for late use
-	lm.LogRegistry.AddHook(cHook)
+	p.LogRegistry.AddHook(cHook)
 	return nil
 }

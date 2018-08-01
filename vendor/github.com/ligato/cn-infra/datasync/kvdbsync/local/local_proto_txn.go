@@ -29,6 +29,14 @@ type ProtoTxnItem struct {
 	Delete bool
 }
 
+// GetValue returns the value of the pair.
+func (item *ProtoTxnItem) GetValue(out proto.Message) error {
+	if item.Data != nil {
+		proto.Merge(out, item.Data)
+	}
+	return nil
+}
+
 // ProtoTxn is a concurrent map of proto messages.
 // The intent is to collect the user data and propagate them when commit happens.
 type ProtoTxn struct {
@@ -43,14 +51,6 @@ func NewProtoTxn(commit func(map[string]datasync.ChangeValue) error) *ProtoTxn {
 		items:  make(map[string]*ProtoTxnItem),
 		commit: commit,
 	}
-}
-
-// GetValue returns the value of the pair.
-func (lazy *ProtoTxnItem) GetValue(out proto.Message) error {
-	if lazy.Data != nil {
-		proto.Merge(out, lazy.Data)
-	}
-	return nil
 }
 
 // Put adds store operation into transaction.

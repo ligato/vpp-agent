@@ -34,7 +34,7 @@ type ChangeWatchResp struct {
 }
 
 // GetChangeType - see the comment in implemented interface datasync.ChangeEvent.
-func (ev *ChangeWatchResp) GetChangeType() datasync.PutDel {
+func (ev *ChangeWatchResp) GetChangeType() datasync.Op {
 	if ev.message.OperationType == PutDel_DEL {
 		return datasync.Delete
 	}

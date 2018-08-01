@@ -106,11 +106,15 @@ dep-install: get-dep
 dep-update: get-dep
 	dep ensure -update
 
+LINTER := $(shell command -v gometalinter 2> /dev/null)
+
 # Get linter tools
 get-linters:
+ifndef LINTER
 	@echo "=> installing linters"
 	go get -v github.com/alecthomas/gometalinter
 	gometalinter --install
+endif
 
 # Run linters
 lint: get-linters
@@ -122,10 +126,15 @@ format:
 	@echo "=> formatting the code"
 	./scripts/gofmt.sh
 
+MDLINKCHECK := $(shell command -v markdown-link-check 2> /dev/null)
+
 # Get link check tool
 get-linkcheck:
+ifndef MDLINKCHECK
+	@echo "=> installing markdown link checker"
 	sudo apt-get install npm
 	npm install -g markdown-link-check@3.6.2
+endif
 
 # Validate links in markdown files
 check-links: get-linkcheck

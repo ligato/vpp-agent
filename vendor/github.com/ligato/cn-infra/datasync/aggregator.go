@@ -19,19 +19,15 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 )
 
-// CompositeKVProtoWatcher is an adapter that allows multiple
+// KVProtoWatchers is an adapter that allows multiple
 // watchers (KeyValProtoWatcher) to be aggregated in one.
 // Watch request is delegated to all of them.
-type CompositeKVProtoWatcher struct {
-	Adapters []KeyValProtoWatcher
-}
+type KVProtoWatchers []KeyValProtoWatcher
 
-// CompositeKVProtoWriter is an adapter that allows multiple
+// KVProtoWriters is an adapter that allows multiple
 // writers (KeyProtoValWriter) in one.
 // Put request is delegated to all of them.
-type CompositeKVProtoWriter struct {
-	Adapters []KeyProtoValWriter
-}
+type KVProtoWriters []KeyProtoValWriter
 
 // AggregatedRegistration is adapter that allows multiple
 // registrations (WatchRegistration) to be aggregated in one.
@@ -42,12 +38,12 @@ type AggregatedRegistration struct {
 
 // Watch subscribes to every transport available within transport aggregator.
 // The function implements KeyValProtoWatcher.Watch().
-func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan ChangeEvent,
+func (ta KVProtoWatchers) Watch(resyncName string, changeChan chan ChangeEvent,
 	resyncChan chan ResyncEvent, keyPrefixes ...string) (WatchRegistration, error) {
 
 	var registrations []WatchRegistration
 
-	for _, adapter := range ta.Adapters {
+	for _, adapter := range ta {
 		watcherReg, err := adapter.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 		if err != nil {
 			return nil, err
@@ -65,9 +61,9 @@ func (ta *CompositeKVProtoWatcher) Watch(resyncName string, changeChan chan Chan
 
 // Put writes data to all aggregated transports.
 // This function implements KeyProtoValWriter.Put().
-func (ta *CompositeKVProtoWriter) Put(key string, data proto.Message, opts ...PutOption) error {
+func (ta KVProtoWriters) Put(key string, data proto.Message, opts ...PutOption) error {
 	var wasError error
-	for _, transport := range ta.Adapters {
+	for _, transport := range ta {
 		err := transport.Put(key, data, opts...)
 		if err != nil {
 			wasError = err

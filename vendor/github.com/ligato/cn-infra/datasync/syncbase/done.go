@@ -32,7 +32,7 @@ func (ev *DoneChannel) Done(err error) {
 	if ev.DoneChan != nil {
 		select {
 		case ev.DoneChan <- err:
-			//sent successfully
+			// sent successfully
 		default:
 			logrus.DefaultLogger().Debug("Nobody is listening anymore")
 		}
@@ -63,27 +63,21 @@ func AggregateDone(events []func(chan error), done chan error) {
 	go collectDoneEvents(partialDone, done, len(events))
 
 	for _, event := range events {
-		event(partialDone) //fire event
+		event(partialDone) // fire event
 	}
 }
 
-func collectDoneEvents(partialDone, done chan error, evCount int) {
-	var lastError error
+func collectDoneEvents(partialDone, done chan error, count int) {
+	var lastErr error
 
-	if evCount > 0 {
-		var numDone int
-		for {
-			doneEv := <-partialDone
-			numDone++
-			if doneEv != nil {
-				lastError = doneEv
-			}
-			if numDone >= evCount {
-				logrus.DefaultLogger().Debug("TX Done - all events callbacks received")
-				break
+	if count > 0 {
+		for i := 0; i < count; i++ {
+			if err := <-partialDone; err != nil {
+				lastErr = err
 			}
 		}
+		logrus.DefaultLogger().Debug("TX Done - all events callbacks received")
 	}
 
-	done <- lastError
+	done <- lastErr
 }

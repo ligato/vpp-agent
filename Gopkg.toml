@@ -1,28 +1,7 @@
-# Gopkg.toml example
+# Gopkg.toml
 #
 # Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
 # for detailed Gopkg.toml documentation.
-#
-# required = ["github.com/user/thing/cmd/thing"]
-# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
-#
-# [[constraint]]
-#   name = "github.com/user/project"
-#   version = "1.0.0"
-#
-# [[constraint]]
-#   name = "github.com/user/project2"
-#   branch = "dev"
-#   source = "github.com/myfork/project2"
-#
-# [[override]]
-#   name = "github.com/x/y"
-#   version = "2.4.0"
-#
-# [prune]
-#   non-go = false
-#   go-tests = true
-#   unused-packages = true
 
 required = [
     "git.fd.io/govpp.git/cmd/binapi-generator",
@@ -31,12 +10,12 @@ required = [
 ]
 
 [[constraint]]
-  name = "git.fd.io/govpp.git"
-  revision = "f1bef4a3c66f4408afdeb64cda62ccd8562d0fc6"
+  name = "github.com/ligato/cn-infra"
+  revision = "08263ed16f06e59e560a9f51f57a960f22eb3f76"
 
 [[constraint]]
-  name = "github.com/ligato/cn-infra"
-  revision = "eaea1b438c5327f5960fa63cc11c3ec5f690d13b"
+  name = "git.fd.io/govpp.git"
+  revision = "f1bef4a3c66f4408afdeb64cda62ccd8562d0fc6"
 
 [[constraint]]
   branch = "master"

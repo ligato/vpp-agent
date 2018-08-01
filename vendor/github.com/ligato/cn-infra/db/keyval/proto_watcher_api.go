@@ -19,7 +19,6 @@ import (
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // ProtoWatcher defines API for monitoring changes in datastore.
@@ -42,25 +41,13 @@ type ProtoWatchResp interface {
 // ToChanProto creates a callback that can be passed to the Watch function
 // in order to receive JSON/protobuf-formatted notifications through a channel.
 // If the notification cannot be delivered until timeout, it is dropped.
-func ToChanProto(ch chan ProtoWatchResp, opts ...interface{}) func(dto ProtoWatchResp) {
-
-	timeout := datasync.DefaultNotifTimeout
-	var logger logging.Logger = logrus.DefaultLogger()
-
-	/*for _, opt := range opts {
-		switch opt.(type) {
-		case *core.WithLoggerOpt:
-			logger = opt.(*core.WithLoggerOpt).Logger
-		case *core.WithTimeoutOpt:
-			timeout = opt.(*core.WithTimeoutOpt).Timeout
-		}
-	}*/
-
+func ToChanProto(respCh chan ProtoWatchResp, opts ...interface{}) func(dto ProtoWatchResp) {
 	return func(dto ProtoWatchResp) {
 		select {
-		case ch <- dto:
-		case <-time.After(timeout):
-			logger.Warn("Unable to deliver notification")
+		case respCh <- dto:
+			// success
+		case <-time.After(datasync.DefaultNotifTimeout):
+			logging.DefaultLogger.Warn("Unable to deliver notification")
 		}
 	}
 }

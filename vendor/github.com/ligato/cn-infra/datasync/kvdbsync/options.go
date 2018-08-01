@@ -17,6 +17,7 @@ package kvdbsync
 import (
 	"fmt"
 
+	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 )
@@ -52,5 +53,12 @@ type Option func(*Plugin)
 func UseDeps(cb func(*Deps)) Option {
 	return func(p *Plugin) {
 		cb(&p.Deps)
+	}
+}
+
+// UseKVPlugin returns Option that sets KvPlugin dependency.
+func UseKVPlugin(kv keyval.KvProtoPlugin) Option {
+	return func(p *Plugin) {
+		p.KvPlugin = kv
 	}
 }

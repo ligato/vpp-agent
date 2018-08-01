@@ -43,32 +43,32 @@ type Deps struct {
 }
 
 // Init initializes variables.
-func (plugin *Plugin) Init() (err error) {
-	plugin.registrations = make(map[string]Registration)
+func (p *Plugin) Init() (err error) {
+	p.registrations = make(map[string]Registration)
 
-	//plugin.waingForResync = make(map[core.PluginName]*PluginEvent)
-	//plugin.waingForResyncChan = make(chan *PluginEvent)
-	//go plugin.watchWaingForResync()
+	//p.waingForResync = make(map[core.PluginName]*PluginEvent)
+	//p.waingForResyncChan = make(chan *PluginEvent)
+	//go p.watchWaingForResync()
 
 	return nil
 }
 
 // AfterInit method starts the resync.
-func (plugin *Plugin) AfterInit() (err error) {
-	plugin.startResync()
+func (p *Plugin) AfterInit() (err error) {
+	p.startResync()
 
 	return nil
 }
 
 // Close TODO set flag that ignore errors => not start Resync while agent is stopping
 // TODO kill existing Resync timeout while agent is stopping
-func (plugin *Plugin) Close() error {
+func (p *Plugin) Close() error {
 	//TODO close error report channel
 
-	plugin.access.Lock()
-	defer plugin.access.Unlock()
+	p.access.Lock()
+	defer p.access.Unlock()
 
-	plugin.registrations = make(map[string]Registration)
+	p.registrations = make(map[string]Registration)
 
 	return nil
 }
@@ -77,59 +77,59 @@ func (plugin *Plugin) Close() error {
 // The plugins are supposed to load current state of their objects when newResync() is called.
 // The actual CreateNewObjects(), DeleteObsoleteObjects() and ModifyExistingObjects() will be orchestrated
 // to ensure their proper order. If an error occurs during Resync, then new Resync is planned.
-func (plugin *Plugin) Register(resyncName string) Registration {
-	plugin.access.Lock()
-	defer plugin.access.Unlock()
+func (p *Plugin) Register(resyncName string) Registration {
+	p.access.Lock()
+	defer p.access.Unlock()
 
-	if _, found := plugin.registrations[resyncName]; found {
-		plugin.Log.WithField("resyncName", resyncName).
+	if _, found := p.registrations[resyncName]; found {
+		p.Log.WithField("resyncName", resyncName).
 			Panic("You are trying to register same resync twice")
 		return nil
 	}
 	// ensure that resync is triggered in the same order as the plugins were registered
-	plugin.regOrder = append(plugin.regOrder, resyncName)
+	p.regOrder = append(p.regOrder, resyncName)
 
 	reg := NewRegistration(resyncName, make(chan StatusEvent, 0)) /*Zero to have back pressure*/
-	plugin.registrations[resyncName] = reg
+	p.registrations[resyncName] = reg
 
 	return reg
 }
 
 // DoResync can be used to start resync procedure outside of after init
-func (plugin *Plugin) DoResync() {
-	plugin.startResync()
+func (p *Plugin) DoResync() {
+	p.startResync()
 }
 
 // Call callback on plugins to create/delete/modify objects.
-func (plugin *Plugin) startResync() {
-	plugin.Log.Info("Resync order", plugin.regOrder)
+func (p *Plugin) startResync() {
+	p.Log.Info("Resync order", p.regOrder)
 
 	startResyncTime := time.Now()
 
-	for _, regName := range plugin.regOrder {
-		if reg, found := plugin.registrations[regName]; found {
+	for _, regName := range p.regOrder {
+		if reg, found := p.registrations[regName]; found {
 			startPartTime := time.Now()
 
-			plugin.startSingleResync(regName, reg)
+			p.startSingleResync(regName, reg)
 
 			took := time.Since(startPartTime)
-			plugin.Log.WithField("durationInNs", took.Nanoseconds()).
+			p.Log.WithField("durationInNs", took.Nanoseconds()).
 				Infof("Resync of %v took %v", regName, took)
 		}
 	}
 
 	took := time.Since(startResyncTime)
-	plugin.Log.WithField("durationInNs", took.Nanoseconds()).Info("Resync took ", took)
+	p.Log.WithField("durationInNs", took.Nanoseconds()).Info("Resync took ", took)
 
 	// TODO check if there ReportError (if not than report) if error occurred even during Resync
 }
-func (plugin *Plugin) startSingleResync(resyncName string, reg Registration) {
+func (p *Plugin) startSingleResync(resyncName string, reg Registration) {
 	started := newStatusEvent(Started)
 	reg.StatusChan() <- started
 
 	select {
 	case <-started.ReceiveAck():
 	case <-time.After(singleResyncTimeout):
-		plugin.Log.WithField("regName", resyncName).Warn("Timeout of ACK")
+		p.Log.WithField("regName", resyncName).Warn("Timeout of ACK")
 	}
 }

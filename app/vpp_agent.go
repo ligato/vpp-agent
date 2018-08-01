@@ -61,20 +61,18 @@ func New() *VPPAgent {
 	consulDataSync := kvdbsync.NewPlugin(useKV(&consul.DefaultPlugin))
 	redisDataSync := kvdbsync.NewPlugin(useKV(&redis.DefaultPlugin))
 
-	watcher := &datasync.CompositeKVProtoWatcher{Adapters: []datasync.KeyValProtoWatcher{
+	watcher := datasync.KVProtoWatchers{
 		local.Get(),
 		etcdDataSync,
 		consulDataSync,
-	}}
-	publisher := &datasync.CompositeKVProtoWriter{Adapters: []datasync.KeyProtoValWriter{
+	}
+	publisher := datasync.KVProtoWriters{
 		etcdDataSync,
 		consulDataSync,
-	}}
+	}
 
 	ifStatePub := msgsync.NewPlugin(
-		msgsync.UseDeps(func(deps *msgsync.Deps) {
-			deps.Messaging = &kafka.DefaultPlugin
-		}),
+		msgsync.UseMessaging(&kafka.DefaultPlugin),
 		msgsync.UseConf(msgsync.Config{
 			Topic: "if_state",
 		}),
@@ -93,7 +91,6 @@ func New() *VPPAgent {
 		deps.VPP = vppPlugin
 		deps.Watcher = watcher
 	}))
-
 	vppPlugin.Deps.Linux = linuxPlugin
 
 	var watchEventsMutex sync.Mutex

@@ -42,8 +42,8 @@ type Plugin struct {
 // Deps lists dependencies of the redis plugin.
 type Deps struct {
 	infra.PluginDeps
-	StatusCheck statuscheck.PluginStatusWriter // inject
-	Resync      *resync.Plugin
+	StatusCheck statuscheck.PluginStatusWriter
+	Resync      *resync.Plugin // inject
 }
 
 // Init retrieves redis configuration and establishes a new connection
@@ -51,75 +51,77 @@ type Deps struct {
 // If the configuration file doesn't exist or cannot be read, the returned errora
 // will be of os.PathError type. An untyped error is returned in case the file
 // doesn't contain a valid YAML configuration.
-func (plugin *Plugin) Init() (err error) {
-	redisCfg, err := plugin.getRedisConfig()
-	if err != nil || plugin.disabled {
+func (p *Plugin) Init() (err error) {
+	redisCfg, err := p.getRedisConfig()
+	if err != nil || p.disabled {
 		return err
 	}
+
 	// Create client according to config
 	client, err := ConfigToClient(redisCfg)
 	if err != nil {
 		return err
 	}
+
 	// Uses config file to establish connection with the database
-	plugin.connection, err = NewBytesConnection(client, plugin.Log)
+	p.connection, err = NewBytesConnection(client, p.Log)
 	if err != nil {
 		return err
 	}
-	plugin.protoWrapper = kvproto.NewProtoWrapperWithSerializer(plugin.connection, &keyval.SerializerJSON{})
+	p.protoWrapper = kvproto.NewProtoWrapper(p.connection, &keyval.SerializerJSON{})
 
 	// Register for providing status reports (polling mode)
-	if plugin.StatusCheck != nil {
-		plugin.StatusCheck.Register(plugin.PluginName, func() (statuscheck.PluginState, error) {
-			_, _, err := plugin.NewBroker("/").GetValue(healthCheckProbeKey, nil)
+	if p.StatusCheck != nil {
+		p.StatusCheck.Register(p.PluginName, func() (statuscheck.PluginState, error) {
+			_, _, err := p.NewBroker("/").GetValue(healthCheckProbeKey, nil)
 			if err == nil {
 				return statuscheck.OK, nil
 			}
 			return statuscheck.Error, err
 		})
 	} else {
-		plugin.Log.Warnf("Unable to start status check for redis")
+		p.Log.Warnf("Unable to start status check for redis")
 	}
 
 	return nil
 }
 
 // Close does nothing for redis plugin.
-func (plugin *Plugin) Close() error {
+func (p *Plugin) Close() error {
 	return nil
 }
 
 // NewBroker creates new instance of prefixed broker that provides API with arguments of type proto.Message.
-func (plugin *Plugin) NewBroker(keyPrefix string) keyval.ProtoBroker {
-	return plugin.protoWrapper.NewBroker(keyPrefix)
+func (p *Plugin) NewBroker(keyPrefix string) keyval.ProtoBroker {
+	return p.protoWrapper.NewBroker(keyPrefix)
 }
 
 // NewWatcher creates new instance of prefixed broker that provides API with arguments of type proto.Message.
-func (plugin *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
-	return plugin.protoWrapper.NewWatcher(keyPrefix)
+func (p *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
+	return p.protoWrapper.NewWatcher(keyPrefix)
 }
 
 // Disabled returns *true* if the plugin is not in use due to missing
 // redis configuration.
-func (plugin *Plugin) Disabled() (disabled bool) {
-	return plugin.disabled
+func (p *Plugin) Disabled() (disabled bool) {
+	return p.disabled
 }
 
 // OnConnect executes callback from datasync
-func (plugin *Plugin) OnConnect(callback func() error) {
+func (p *Plugin) OnConnect(callback func() error) {
 	if err := callback(); err != nil {
-		plugin.Log.Error(err)
+		p.Log.Error(err)
 	}
 }
 
-func (plugin *Plugin) getRedisConfig() (cfg interface{}, err error) {
-	found, _ := plugin.Cfg.LoadValue(&struct{}{})
+func (p *Plugin) getRedisConfig() (cfg interface{}, err error) {
+	found, _ := p.Cfg.LoadValue(&struct{}{})
 	if !found {
-		plugin.Log.Info("Redis config not found, skip loading this plugin")
-		plugin.disabled = true
+		p.Log.Info("Redis config not found, skip loading this plugin")
+		p.disabled = true
 		return
 	}
-	configFile := plugin.Cfg.GetConfigName()
+	configFile := p.Cfg.GetConfigName()
 	if configFile != "" {
 		cfg, err = LoadConfig(configFile)
 		if err != nil {
