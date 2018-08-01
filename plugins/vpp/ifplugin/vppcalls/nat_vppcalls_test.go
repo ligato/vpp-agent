@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	. "github.com/onsi/gomega"
+	natapi "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
 func TestSetNat44Forwarding(t *testing.T) {
@@ -328,6 +329,84 @@ func TestDelNat44AddressPool(t *testing.T) {
 	Expect(msg.LastIPAddress).To(BeEquivalentTo(lastIP))
 	Expect(msg.VrfID).To(BeEquivalentTo(0))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(0))
+}
+
+func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
+	ctx, natHandler := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
+	err := natHandler.SetVirtualReassemblyIPv4(&natapi.Nat44Global_VirtualReassemblyIPv4{
+		Timeout: 10,
+		MaxFrag: 20,
+		MaxReass: 30,
+		DropFrag: true,
+	})
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*nat.NatSetReass)
+	Expect(ok).To(BeTrue())
+	Expect(msg.Timeout).To(BeEquivalentTo(10))
+	Expect(msg.MaxFrag).To(BeEquivalentTo(20))
+	Expect(msg.MaxReass).To(BeEquivalentTo(30))
+	Expect(msg.DropFrag).To(BeEquivalentTo(1))
+}
+
+func TestSetNat44DefaultVirtualReassemblyIPv4(t *testing.T) {
+	ctx, natHandler := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
+	err := natHandler.SetDefaultVirtualReassemblyIPv4()
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*nat.NatSetReass)
+	Expect(ok).To(BeTrue())
+	Expect(msg.Timeout).To(BeEquivalentTo(2))
+	Expect(msg.MaxFrag).To(BeEquivalentTo(5))
+	Expect(msg.MaxReass).To(BeEquivalentTo(1024))
+	Expect(msg.DropFrag).To(BeEquivalentTo(0))
+}
+
+func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
+	ctx, natHandler := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
+	err := natHandler.SetVirtualReassemblyIPv6(&natapi.Nat44Global_VirtualReassemblyIPv6{
+		Timeout: 5,
+		MaxFrag: 10,
+		MaxReass: 15,
+		DropFrag: true,
+	})
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*nat.NatSetReass)
+	Expect(ok).To(BeTrue())
+	Expect(msg.Timeout).To(BeEquivalentTo(5))
+	Expect(msg.MaxFrag).To(BeEquivalentTo(10))
+	Expect(msg.MaxReass).To(BeEquivalentTo(15))
+	Expect(msg.DropFrag).To(BeEquivalentTo(1))
+}
+
+func TestSetNat44DefaultVirtualReassemblyIPv6(t *testing.T) {
+	ctx, natHandler := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
+	err := natHandler.SetDefaultVirtualReassemblyIPv6()
+
+	Expect(err).ShouldNot(HaveOccurred())
+
+	msg, ok := ctx.MockChannel.Msg.(*nat.NatSetReass)
+	Expect(ok).To(BeTrue())
+	Expect(msg.Timeout).To(BeEquivalentTo(2))
+	Expect(msg.MaxFrag).To(BeEquivalentTo(5))
+	Expect(msg.MaxReass).To(BeEquivalentTo(1024))
+	Expect(msg.DropFrag).To(BeEquivalentTo(0))
 }
 
 func TestAddNat44StaticMapping(t *testing.T) {
