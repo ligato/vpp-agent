@@ -47,9 +47,9 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginName
 	Log          logging.PluginLogger
-	ServiceLabel servicelabel.ReaderAPI
 	KvPlugin     keyval.KvProtoPlugin // inject
-	ResyncOrch   resync.Subscriber    // inject
+	ResyncOrch   resync.Subscriber
+	ServiceLabel servicelabel.ReaderAPI
 }
 
 // Init only initializes plugin.registry.

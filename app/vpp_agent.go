@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/msgsync"
 	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/consul"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/redis"
@@ -51,15 +50,9 @@ type VPPAgent struct {
 }
 
 func New() *VPPAgent {
-	var useKV = func(kv keyval.KvProtoPlugin) kvdbsync.Option {
-		return kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
-			deps.KvPlugin = kv
-			deps.ResyncOrch = &resync.DefaultPlugin
-		})
-	}
-	etcdDataSync := kvdbsync.NewPlugin(useKV(&etcd.DefaultPlugin))
-	consulDataSync := kvdbsync.NewPlugin(useKV(&consul.DefaultPlugin))
-	redisDataSync := kvdbsync.NewPlugin(useKV(&redis.DefaultPlugin))
+	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
+	consulDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&consul.DefaultPlugin))
+	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&redis.DefaultPlugin))
 
 	watcher := datasync.KVProtoWatchers{
 		local.Get(),

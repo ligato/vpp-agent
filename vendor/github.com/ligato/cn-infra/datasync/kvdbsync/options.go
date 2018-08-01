@@ -17,6 +17,7 @@ package kvdbsync
 import (
 	"fmt"
 
+	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -28,6 +29,7 @@ func NewPlugin(opts ...Option) *Plugin {
 
 	p.PluginName = "kvdb"
 	p.ServiceLabel = &servicelabel.DefaultPlugin
+	p.ResyncOrch = &resync.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)
@@ -56,8 +58,8 @@ func UseDeps(cb func(*Deps)) Option {
 	}
 }
 
-// UseKVPlugin returns Option that sets KvPlugin dependency.
-func UseKVPlugin(kv keyval.KvProtoPlugin) Option {
+// UseKV returns Option that sets KvPlugin dependency.
+func UseKV(kv keyval.KvProtoPlugin) Option {
 	return func(p *Plugin) {
 		p.KvPlugin = kv
 	}
