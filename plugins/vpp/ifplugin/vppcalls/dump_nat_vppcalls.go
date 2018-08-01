@@ -26,14 +26,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
-func (handler *natVppHandler) GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error) {
+func (handler *natVppHandler) Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error) {
 	handler.log.Debug("dumping Nat44Global")
 	// Dump all necessary data to reconstruct global NAT configuration
 	isEnabled, err := handler.isForwardingEnabled()
 	if err != nil {
 		return nil, err
 	}
-	natInterfaces, err := handler.InterfaceDump(swIfIndices)
+	natInterfaces, err := handler.Nat44InterfaceDump(swIfIndices)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (handler *natVppHandler) GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (
 	}, nil
 }
 
-func (handler *natVppHandler) DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error) {
+func (handler *natVppHandler) Nat44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error) {
 	// List od DNAT configs
 	var dNatCfgs []*nat.Nat44DNat_DNatConfig
 
@@ -154,10 +154,9 @@ func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_V
 	}(time.Now())
 
 	req := &bin_api.NatGetReass{}
-	reqContext := handler.dumpChannel.SendRequest(req)
-
 	reply := &bin_api.NatGetReassReply{}
-	if err := reqContext.ReceiveReply(reply); err != nil {
+
+	if err := handler.dumpChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, nil, fmt.Errorf("failed to get NAT44 virtual reassembly configuration: %v", err)
 	}
 	if reply.Retval != 0 {
@@ -334,7 +333,7 @@ func (handler *natVppHandler) identityMappingDump(swIfIndices ifaceidx.SwIfIndex
 	return entries, nil
 }
 
-func (handler *natVppHandler) InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error) {
+func (handler *natVppHandler) Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44InterfaceDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

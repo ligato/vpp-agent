@@ -106,9 +106,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
 	plugin.uIfaceCache = make(map[string]string)
 	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
-	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
-		return err
-	}
+	plugin.memifScCache = make(map[string]uint32)
 
 	// Init AF-packet configurator
 	plugin.linux = linux
@@ -137,10 +135,7 @@ func (plugin *InterfaceConfigurator) clearMapping() error {
 	plugin.dhcpIndexes.Clear()
 	plugin.uIfaceCache = make(map[string]string)
 	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
-	var err error
-	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
-		return err
-	}
+	plugin.memifScCache = make(map[string]uint32)
 	return nil
 }
 

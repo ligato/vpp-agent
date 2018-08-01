@@ -17,33 +17,25 @@ package rest
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
+
+	"github.com/ligato/cn-infra/logging"
 )
 
-// ListenAndServe is a function that uses <config> & <handler> to handle
-// HTTP Requests.
-// It return an instance of io.Closer to close the HTTP Server during cleanup.
-type ListenAndServe func(config Config, handler http.Handler) (
-	httpServer io.Closer, err error)
-
-// FromExistingServer is used mainly for testing purposes
-//
-// Example:
-//
-//    httpmux.FromExistingServer(mock.SetHandler)
-//	  mock.NewRequest("GET", "/v1/a", nil)
-//
-func FromExistingServer(listenAndServe ListenAndServe) *Plugin {
-	return &Plugin{listenAndServe: listenAndServe}
-}
-
-// ListenAndServeHTTP starts a http server.
-func ListenAndServeHTTP(config Config, handler http.Handler) (httpServer io.Closer, err error) {
-
-	tlsCfg := &tls.Config{}
+// ListenAndServe starts a http server.
+func ListenAndServe(config Config, handler http.Handler) (srv *http.Server, err error) {
+	server := &http.Server{
+		Addr:              config.Endpoint,
+		ReadTimeout:       config.ReadTimeout,
+		ReadHeaderTimeout: config.ReadHeaderTimeout,
+		WriteTimeout:      config.WriteTimeout,
+		IdleTimeout:       config.IdleTimeout,
+		MaxHeaderBytes:    config.MaxHeaderBytes,
+		Handler:           handler,
+	}
 
 	if len(config.ClientCerts) > 0 {
 		// require client certificate
@@ -57,42 +49,47 @@ func ListenAndServeHTTP(config Config, handler http.Handler) (httpServer io.Clos
 			caCertPool.AppendCertsFromPEM(caCert)
 		}
 
-		tlsCfg.ClientAuth = tls.RequireAndVerifyClientCert
-		tlsCfg.ClientCAs = caCertPool
+		server.TLSConfig = &tls.Config{
+			ClientAuth: tls.RequireAndVerifyClientCert,
+			ClientCAs:  caCertPool,
+		}
 	}
 
-	server := &http.Server{
-		Addr:              config.Endpoint,
-		ReadTimeout:       config.ReadTimeout,
-		ReadHeaderTimeout: config.ReadHeaderTimeout,
-		WriteTimeout:      config.WriteTimeout,
-		IdleTimeout:       config.IdleTimeout,
-		MaxHeaderBytes:    config.MaxHeaderBytes,
-		TLSConfig:         tlsCfg,
+	ln, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		return nil, err
 	}
-	server.Handler = handler
+	l := tcpKeepAliveListener{ln.(*net.TCPListener)}
 
-	var errCh chan error
 	go func() {
 		var err error
 		if config.UseHTTPS() {
 			// if server certificate and key is configured use HTTPS
-			err = server.ListenAndServeTLS(config.ServerCertfile, config.ServerKeyfile)
+			err = server.ServeTLS(l, config.ServerCertfile, config.ServerKeyfile)
 		} else {
-			err = server.ListenAndServe()
+			err = server.Serve(l)
 		}
-
-		errCh <- err
-
+		// Serve always returns non-nil error
+		logging.DefaultLogger.Debugf("HTTP server Serve: %v", err)
 	}()
 
-	select {
-	case err := <-errCh:
+	return server, nil
+}
+
+// tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
+// connections. It's used by ListenAndServe and ListenAndServeTLS so
+// dead TCP connections (e.g. closing laptop mid-download) eventually
+// go away.
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
 		return nil, err
-		// Wait 100ms to create a new stream, so it doesn't bring too much
-		// overhead when retry.
-	case <-time.After(100 * time.Millisecond):
-		//everything is probably fine
-		return server, nil
 	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
 }

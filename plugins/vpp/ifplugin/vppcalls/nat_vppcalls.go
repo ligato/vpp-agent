@@ -84,7 +84,7 @@ type LocalLbAddress struct {
 	Probability uint8
 }
 
-func (handler *natVppHandler) SetForwarding(enableFwd bool) error {
+func (handler *natVppHandler) SetNat44Forwarding(enableFwd bool) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(nat.Nat44ForwardingEnableDisable{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -319,27 +319,27 @@ func (handler *natVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingCon
 	return nil
 }
 
-func (handler *natVppHandler) EnableInterface(ifIdx uint32, isInside bool) error {
+func (handler *natVppHandler) EnableNat44Interface(ifIdx uint32, isInside bool) error {
 	return handler.handleNat44Interface(ifIdx, isInside, true)
 }
 
-func (handler *natVppHandler) DisableInterface(ifIdx uint32, isInside bool) error {
+func (handler *natVppHandler) DisableNat44Interface(ifIdx uint32, isInside bool) error {
 	return handler.handleNat44Interface(ifIdx, isInside, false)
 }
 
-func (handler *natVppHandler) EnableInterfaceOutput(ifIdx uint32, isInside bool) error {
+func (handler *natVppHandler) EnableNat44InterfaceOutput(ifIdx uint32, isInside bool) error {
 	return handler.handleNat44InterfaceOutputFeature(ifIdx, isInside, true)
 }
 
-func (handler *natVppHandler) DisableInterfaceOutput(ifIdx uint32, isInside bool) error {
+func (handler *natVppHandler) DisableNat44InterfaceOutput(ifIdx uint32, isInside bool) error {
 	return handler.handleNat44InterfaceOutputFeature(ifIdx, isInside, false)
 }
 
-func (handler *natVppHandler) AddAddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
+func (handler *natVppHandler) AddNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
 	return handler.handleNat44AddressPool(first, last, vrf, twiceNat, true)
 }
 
-func (handler *natVppHandler) DelAddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
+func (handler *natVppHandler) DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
 	return handler.handleNat44AddressPool(first, last, vrf, twiceNat, false)
 }
 
@@ -359,32 +359,32 @@ func (handler *natVppHandler) SetDefaultVirtualReassemblyIPv6() error {
 	return handler.handleNat44VirtualReassembly(Timeout, MaxReassembly, MaxFragments, false, true)
 }
 
-func (handler *natVppHandler) AddIdentityMapping(ctx *IdentityMappingContext) error {
+func (handler *natVppHandler) AddNat44IdentityMapping(ctx *IdentityMappingContext) error {
 	return handler.handleNat44IdentityMapping(ctx, true)
 }
 
-func (handler *natVppHandler) DelIdentityMapping(ctx *IdentityMappingContext) error {
+func (handler *natVppHandler) DelNat44IdentityMapping(ctx *IdentityMappingContext) error {
 	return handler.handleNat44IdentityMapping(ctx, false)
 }
 
-func (handler *natVppHandler) AddStaticMapping(ctx *StaticMappingContext) error {
+func (handler *natVppHandler) AddNat44StaticMapping(ctx *StaticMappingContext) error {
 	if ctx.AddressOnly {
 		return handler.handleNat44StaticMapping(ctx, true, true)
 	}
 	return handler.handleNat44StaticMapping(ctx, true, false)
 }
 
-func (handler *natVppHandler) DelStaticMapping(ctx *StaticMappingContext) error {
+func (handler *natVppHandler) DelNat44StaticMapping(ctx *StaticMappingContext) error {
 	if ctx.AddressOnly {
 		return handler.handleNat44StaticMapping(ctx, false, true)
 	}
 	return handler.handleNat44StaticMapping(ctx, false, false)
 }
 
-func (handler *natVppHandler) AddStaticMappingLb(ctx *StaticMappingLbContext) error {
+func (handler *natVppHandler) AddNat44StaticMappingLb(ctx *StaticMappingLbContext) error {
 	return handler.handleNat44StaticMappingLb(ctx, true)
 }
 
-func (handler *natVppHandler) DelStaticMappingLb(ctx *StaticMappingLbContext) error {
+func (handler *natVppHandler) DelNat44StaticMappingLb(ctx *StaticMappingLbContext) error {
 	return handler.handleNat44StaticMappingLb(ctx, false)
 }

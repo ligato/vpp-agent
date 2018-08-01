@@ -21,36 +21,29 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewChangeWatchResp creates a new instance of ChangeWatchResp.
-func NewChangeWatchResp(delegate keyval.ProtoWatchResp, prevVal datasync.LazyValue) *ChangeWatchResp {
-	return &ChangeWatchResp{delegate, prevVal, &syncbase.DoneChannel{DoneChan: nil}}
-}
-
 // ChangeWatchResp is a structure that adapts the BytesWatchResp to the
 // datasync api.
 type ChangeWatchResp struct {
-	delegate keyval.ProtoWatchResp
-	prev     datasync.LazyValue
+	keyval.ProtoWatchResp
+	prev datasync.LazyValue
 	*syncbase.DoneChannel
 }
 
-// GetChangeType returns the type of the associated change.
-func (ev *ChangeWatchResp) GetChangeType() datasync.PutDel {
-	return ev.delegate.GetChangeType()
-}
-
-// GetKey returns the key associated with the change.
-func (ev *ChangeWatchResp) GetKey() string {
-	return ev.delegate.GetKey()
+// NewChangeWatchResp creates a new instance of ChangeWatchResp.
+func NewChangeWatchResp(delegate keyval.ProtoWatchResp, prevVal datasync.LazyValue) *ChangeWatchResp {
+	return &ChangeWatchResp{
+		ProtoWatchResp: delegate,
+		prev:           prevVal,
+		DoneChannel:    &syncbase.DoneChannel{DoneChan: nil},
+	}
 }
 
 // GetValue returns previous value associated with a change. For description of parameter and output
 // values, see the comment in implemented interface datasync.ChangeEvent.
 func (ev *ChangeWatchResp) GetValue(val proto.Message) (err error) {
-	if ev.delegate.GetChangeType() != datasync.Delete {
-		return ev.delegate.GetValue(val)
+	if ev.ProtoWatchResp.GetChangeType() != datasync.Delete {
+		return ev.ProtoWatchResp.GetValue(val)
 	}
-
 	return nil
 }
 
@@ -61,9 +54,4 @@ func (ev *ChangeWatchResp) GetPrevValue(prevVal proto.Message) (exists bool, err
 		return true, ev.prev.GetValue(prevVal)
 	}
 	return false, nil
-}
-
-// GetRevision returns revision associated with the change.
-func (ev *ChangeWatchResp) GetRevision() (rev int64) {
-	return ev.delegate.GetRevision()
 }

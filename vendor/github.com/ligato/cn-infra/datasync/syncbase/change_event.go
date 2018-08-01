@@ -23,7 +23,7 @@ import (
 // ChangeEvent is a simple structure that implements interface datasync.ChangeEvent.
 type ChangeEvent struct {
 	Key        string
-	ChangeType datasync.PutDel
+	ChangeType datasync.Op
 	CurrVal    datasync.LazyValue
 	CurrRev    int64
 	PrevVal    datasync.LazyValue
@@ -31,7 +31,7 @@ type ChangeEvent struct {
 }
 
 // GetChangeType returns type of the event.
-func (ev *ChangeEvent) GetChangeType() datasync.PutDel {
+func (ev *ChangeEvent) GetChangeType() datasync.Op {
 	return ev.ChangeType
 }
 

@@ -26,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -71,7 +70,7 @@ func Marshalling(agentLabel string, idxMap idxvpp.NameToIdx, loadedFromFile idxv
 		return err
 	}
 
-	idxMap.Watch(core.PluginName("idxpersist"), nametoidx.ToChan(changes))
+	idxMap.Watch("idxpersist", nametoidx.ToChan(changes))
 
 	err = persist.loadIdxMapFile(loadedFromFile)
 	if err != nil {

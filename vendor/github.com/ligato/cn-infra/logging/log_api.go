@@ -14,10 +14,20 @@
 
 package logging
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
 
-// Fields is a type accepted by WithFields method. It can be used to instantiate map using shorter notation.
-type Fields map[string]interface{}
+	"github.com/sirupsen/logrus"
+)
+
+var (
+	// DefaultLogger is the default logger
+	DefaultLogger Logger
+
+	// DefaultRegistry is the default logging registry
+	DefaultRegistry Registry
+)
 
 // LogLevel represents severity of log record
 type LogLevel uint32
@@ -47,31 +57,38 @@ func (level LogLevel) String() string {
 	case ErrorLevel:
 		return "error"
 	case WarnLevel:
-		return "warning"
+		return "warn"
 	case InfoLevel:
 		return "info"
 	case DebugLevel:
 		return "debug"
+	default:
+		return fmt.Sprintf("unknown(%d)", level)
 	}
-
-	return fmt.Sprintf("unknown(%d)", level)
 }
 
-// Logger provides logging capabilities
-type Logger interface {
-	// GetName return the logger name
-	GetName() string
-	// SetLevel modifies the LogLevel
-	SetLevel(level LogLevel)
-	// GetLevel returns currently set logLevel
-	GetLevel() LogLevel
-	// WithField creates one structured field
-	WithField(key string, value interface{}) LogWithLevel
-	// WithFields creates multiple structured fields
-	WithFields(fields map[string]interface{}) LogWithLevel
-
-	LogWithLevel
+// ParseLogLevel parses string representation of LogLevel.
+func ParseLogLevel(level string) LogLevel {
+	switch strings.ToLower(level) {
+	case "debug":
+		return DebugLevel
+	case "info":
+		return InfoLevel
+	case "warn", "warning":
+		return WarnLevel
+	case "error":
+		return ErrorLevel
+	case "fatal":
+		return FatalLevel
+	case "panic":
+		return PanicLevel
+	default:
+		return InfoLevel
+	}
 }
+
+// Fields is a type accepted by WithFields method. It can be used to instantiate map using shorter notation.
+type Fields map[string]interface{}
 
 // LogWithLevel allows to log with different log levels
 type LogWithLevel interface {
@@ -94,28 +111,33 @@ type LogWithLevel interface {
 	Println(v ...interface{})
 }
 
-// LogFactory is API for the plugins that want to create their own loggers.
-type LogFactory interface {
-	NewLogger(name string) Logger
+// Logger provides logging capabilities
+type Logger interface {
+	// GetName return the logger name
+	GetName() string
+	// SetLevel modifies the LogLevel
+	SetLevel(level LogLevel)
+	// GetLevel returns currently set logLevel
+	GetLevel() LogLevel
+	// WithField creates one structured field
+	WithField(key string, value interface{}) LogWithLevel
+	// WithFields creates multiple structured fields
+	WithFields(fields Fields) LogWithLevel
+	// Add hook to send log to external address
+	AddHook(hook logrus.Hook)
+
+	LogWithLevel
 }
 
-// PluginLogger is intended for:
-// 1. small plugins (that just need one logger; name corresponds to plugin name)
-// 2. large plugins that need multiple loggers (all loggers share same name prefix)
-type PluginLogger interface {
-	// Plugin has by default possibility to log
-	// Logger name is initialized with plugin name
-	Logger
-
-	// LogFactory can be optionally used by large plugins
-	// to create child loggers (their names are prefixed by plugin logger name)
-	LogFactory
+// LoggerFactory is API for the plugins that want to create their own loggers.
+type LoggerFactory interface {
+	NewLogger(name string) Logger
 }
 
 // Registry groups multiple Logger instances and allows to mange their log levels.
 type Registry interface {
-	// LogFactory allow to create new loggers
-	LogFactory
+	// LoggerFactory allow to create new loggers
+	LoggerFactory
 	// List Loggers returns a map (loggerName => log level)
 	ListLoggers() map[string]string
 	// SetLevel modifies log level of selected logger in the registry
@@ -126,33 +148,53 @@ type Registry interface {
 	Lookup(loggerName string) (logger Logger, found bool)
 	// ClearRegistry removes all loggers except the default one from registry
 	ClearRegistry()
+	// HookConfigs stores hooks from log manager to be used for new loggers
+	AddHook(hook logrus.Hook)
+}
+
+// PluginLogger is intended for:
+// 1. small plugins (that just need one logger; name corresponds to plugin name)
+// 2. large plugins that need multiple loggers (all loggers share same name prefix)
+type PluginLogger interface {
+	// Plugin has by default possibility to log
+	// Logger name is initialized with plugin name
+	Logger
+	// LoggerFactory can be optionally used by large plugins
+	// to create child loggers (their names are prefixed by plugin logger name)
+	LoggerFactory
 }
 
 // ForPlugin is used to initialize plugin logger by name
 // and optionally created children (their name prefixed by plugin logger name)
-//
-// Example usage:
-//
-//    flavor.ETCD.Logger =
-// 			ForPlugin(PluginNameOfFlavor(&flavor.ETCD, flavor), flavor.Logrus)
-//
-func ForPlugin(name string, factory LogFactory) PluginLogger {
-	return &pluginLogger{
-		Logger:     factory.NewLogger(name),
-		LogFactory: &prefixedLogFactory{name, factory},
+func ForPlugin(name string) PluginLogger {
+	if logger, found := DefaultRegistry.Lookup(name); found {
+		DefaultLogger.Debugf("using plugin logger for %q that was already initialized", name)
+		return &pluginLogger{
+			Logger:        logger,
+			LoggerFactory: &prefixedLoggerFactory{name, DefaultRegistry},
+		}
 	}
+	return NewPluginLogger(name, DefaultRegistry)
 }
 
-func (factory *prefixedLogFactory) NewLogger(name string) Logger {
-	return factory.delegate.NewLogger(factory.prefix + name)
-}
-
-type prefixedLogFactory struct {
-	prefix   string
-	delegate LogFactory
+// NewPluginLogger creates new logger with given LoggerFactory.
+func NewPluginLogger(name string, factory LoggerFactory) PluginLogger {
+	return &pluginLogger{
+		Logger:        factory.NewLogger(name),
+		LoggerFactory: &prefixedLoggerFactory{name, factory},
+	}
 }
 
 type pluginLogger struct {
 	Logger
-	LogFactory
+	LoggerFactory
+}
+
+type prefixedLoggerFactory struct {
+	prefix  string
+	factory LoggerFactory
+}
+
+func (p *prefixedLoggerFactory) NewLogger(name string) Logger {
+	return p.factory.NewLogger(p.prefix + name)
 }

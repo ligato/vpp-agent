@@ -182,7 +182,7 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 	plugin.globalNAT = config
 
 	// Forwarding
-	if err := plugin.natHandler.SetForwarding(config.Forwarding); err != nil {
+	if err := plugin.natHandler.SetNat44Forwarding(config.Forwarding); err != nil {
 		return err
 	}
 	if config.Forwarding {
@@ -233,7 +233,7 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 
 	// Forwarding
 	if oldConfig.Forwarding != newConfig.Forwarding {
-		if err := plugin.natHandler.SetForwarding(newConfig.Forwarding); err != nil {
+		if err := plugin.natHandler.SetNat44Forwarding(newConfig.Forwarding); err != nil {
 			return err
 		}
 	}
@@ -493,12 +493,12 @@ func (plugin *NatConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 
 // DumpNatGlobal returns the current NAT44 global config
 func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
-	return plugin.natHandler.GlobalConfigDump(plugin.ifIndexes)
+	return plugin.natHandler.Nat44GlobalConfigDump(plugin.ifIndexes)
 }
 
 // DumpNatDNat returns the current NAT44 DNAT config
 func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
-	return plugin.natHandler.DNatDump(plugin.ifIndexes)
+	return plugin.natHandler.Nat44DNatDump(plugin.ifIndexes)
 }
 
 // enables set of interfaces as inside/outside in NAT
@@ -511,7 +511,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 		} else {
 			if natInterface.OutputFeature {
 				// enable nat interface and output feature
-				if err = plugin.natHandler.EnableInterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
+				if err = plugin.natHandler.EnableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -521,7 +521,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 				}
 			} else {
 				// enable interface only
-				if err = plugin.natHandler.EnableInterface(ifIdx, natInterface.IsInside); err != nil {
+				if err = plugin.natHandler.EnableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -553,7 +553,7 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 		} else {
 			if natInterface.OutputFeature {
 				// disable nat interface and output feature
-				if err = plugin.natHandler.DisableInterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
+				if err = plugin.natHandler.DisableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -563,7 +563,7 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 				}
 			} else {
 				// disable interface
-				if err = plugin.natHandler.DisableInterface(ifIdx, natInterface.IsInside); err != nil {
+				if err = plugin.natHandler.DisableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -614,7 +614,7 @@ func (plugin *NatConfigurator) addAddressPool(addressPools []*nat.Nat44Global_Ad
 		} else if lastIP == nil {
 			lastIP = firstIP
 		}
-		if err = plugin.natHandler.AddAddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
+		if err = plugin.natHandler.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
 		}
@@ -660,7 +660,7 @@ func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Ad
 		}
 
 		// remove address pool
-		if err = plugin.natHandler.DelAddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
+		if err = plugin.natHandler.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
 		}
@@ -774,9 +774,9 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 	}
 
 	if add {
-		return plugin.natHandler.AddStaticMappingLb(ctx)
+		return plugin.natHandler.AddNat44StaticMappingLb(ctx)
 	}
-	return plugin.natHandler.DelStaticMappingLb(ctx)
+	return plugin.natHandler.DelNat44StaticMappingLb(ctx)
 }
 
 // handler for single static mapping entry
@@ -834,9 +834,9 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 	}
 
 	if add {
-		return plugin.natHandler.AddStaticMapping(ctx)
+		return plugin.natHandler.AddNat44StaticMapping(ctx)
 	}
-	return plugin.natHandler.DelStaticMapping(ctx)
+	return plugin.natHandler.DelNat44StaticMapping(ctx)
 }
 
 // configures a list of identity mappings with label
@@ -927,9 +927,9 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 
 	// Configure/remove identity mapping
 	if isAdd {
-		return plugin.natHandler.AddIdentityMapping(ctx)
+		return plugin.natHandler.AddNat44IdentityMapping(ctx)
 	}
-	return plugin.natHandler.DelIdentityMapping(ctx)
+	return plugin.natHandler.DelNat44IdentityMapping(ctx)
 }
 
 // looks for new and obsolete IN interfaces

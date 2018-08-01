@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -25,6 +24,20 @@ import (
 	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
+
+// GetAclPluginVersion retrieves ACL plugin version.
+func GetAclPluginVersion(ch govppapi.Channel) (string, error) {
+	req := &aclapi.ACLPluginGetVersion{}
+
+	reply := &aclapi.ACLPluginGetVersionReply{}
+	if err := ch.SendRequest(req).ReceiveReply(reply); err != nil {
+		return "", fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
+	}
+
+	version := fmt.Sprintf("%d.%d", reply.Major, reply.Minor)
+
+	return version, nil
+}
 
 // AclMessages is list of used VPP messages for compatibility check
 var AclMessages = []govppapi.Message{
@@ -50,21 +63,6 @@ var AclMessages = []govppapi.Message{
 	&aclapi.ACLInterfaceSetACLListReply{},
 	&aclapi.MacipACLInterfaceAddDel{},
 	&aclapi.MacipACLInterfaceAddDelReply{},
-}
-
-func (handler *aclVppHandler) GetAclPluginVersion() (string, error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(aclapi.ACLPluginGetVersion{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &aclapi.ACLPluginGetVersion{}
-	reply := &aclapi.ACLPluginGetVersionReply{}
-	// Does not return retval
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return "", fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
-	}
-
-	return strconv.Itoa(int(reply.Major)) + "." + strconv.Itoa(int(reply.Minor)), nil
 }
 
 func (handler *aclVppHandler) AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {

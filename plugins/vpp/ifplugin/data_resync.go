@@ -54,6 +54,11 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	}
 	plugin.afPacketConfigurator.clearMapping()
 
+	var err error
+	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
+		return []error{err}
+	}
+
 	// Dump current state of the VPP interfaces
 	vppIfs, err := plugin.ifHandler.DumpInterfaces()
 	if err != nil {
@@ -452,7 +457,7 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 	// Re-initialize cache
 	plugin.clearMapping()
 
-	vppNatGlobal, err := plugin.natHandler.GlobalConfigDump(plugin.ifIndexes)
+	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump(plugin.ifIndexes)
 	if err != nil {
 		return fmt.Errorf("failed to dump NAT44 global config: %v", err)
 	}
@@ -471,7 +476,7 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := plugin.natHandler.DNatDump(plugin.ifIndexes)
+	vppDNatCfg, err := plugin.natHandler.Nat44DNatDump(plugin.ifIndexes)
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}

@@ -4,13 +4,9 @@ import (
 	"io"
 	"net"
 	"strings"
+
+	"github.com/go-redis/redis/internal/proto"
 )
-
-const Nil = RedisError("redis: nil")
-
-type RedisError string
-
-func (e RedisError) Error() string { return string(e) }
 
 func IsRetryableError(err error, retryNetError bool) bool {
 	if IsNetworkError(err) {
@@ -23,6 +19,9 @@ func IsRetryableError(err error, retryNetError bool) bool {
 	if strings.HasPrefix(s, "LOADING ") {
 		return true
 	}
+	if strings.HasPrefix(s, "READONLY ") {
+		return true
+	}
 	if strings.HasPrefix(s, "CLUSTERDOWN ") {
 		return true
 	}
@@ -30,7 +29,7 @@ func IsRetryableError(err error, retryNetError bool) bool {
 }
 
 func IsRedisError(err error) bool {
-	_, ok := err.(RedisError)
+	_, ok := err.(proto.RedisError)
 	return ok
 }
 
@@ -47,7 +46,7 @@ func IsBadConn(err error, allowTimeout bool) bool {
 		return false
 	}
 	if IsRedisError(err) {
-		return false
+		return strings.HasPrefix(err.Error(), "READONLY ")
 	}
 	if allowTimeout {
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {

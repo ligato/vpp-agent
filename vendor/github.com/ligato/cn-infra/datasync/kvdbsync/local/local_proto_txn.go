@@ -23,45 +23,62 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewProtoTxn is a constructor.
-func NewProtoTxn(commit func(map[string] /*key*/ datasync.ChangeValue) error) *ProtoTxn {
-	return &ProtoTxn{items: map[string] /*key*/ *ProtoTxnItem{}, commit: commit}
+// ProtoTxnItem is used in ProtoTxn.
+type ProtoTxnItem struct {
+	Data   proto.Message
+	Delete bool
+}
+
+// GetValue returns the value of the pair.
+func (item *ProtoTxnItem) GetValue(out proto.Message) error {
+	if item.Data != nil {
+		proto.Merge(out, item.Data)
+	}
+	return nil
 }
 
 // ProtoTxn is a concurrent map of proto messages.
 // The intent is to collect the user data and propagate them when commit happens.
 type ProtoTxn struct {
-	items  map[string] /*key*/ *ProtoTxnItem
 	access sync.Mutex
-	commit func(map[string] /*key*/ datasync.ChangeValue) error
+	items  map[string]*ProtoTxnItem
+	commit func(map[string]datasync.ChangeValue) error
 }
 
-//Put adds store operation into transaction.
+// NewProtoTxn is a constructor.
+func NewProtoTxn(commit func(map[string]datasync.ChangeValue) error) *ProtoTxn {
+	return &ProtoTxn{
+		items:  make(map[string]*ProtoTxnItem),
+		commit: commit,
+	}
+}
+
+// Put adds store operation into transaction.
 func (txn *ProtoTxn) Put(key string, data proto.Message) keyval.ProtoTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
-	txn.items[key] = &ProtoTxnItem{data, false}
+	txn.items[key] = &ProtoTxnItem{Data: data}
 
 	return txn
 }
 
-//Delete adds delete operation into transaction.
+// Delete adds delete operation into transaction.
 func (txn *ProtoTxn) Delete(key string) keyval.ProtoTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
-	txn.items[key] = &ProtoTxnItem{nil, true}
+	txn.items[key] = &ProtoTxnItem{Delete: true}
 
 	return txn
 }
 
-//Commit executes the transaction.
+// Commit executes the transaction.
 func (txn *ProtoTxn) Commit() error {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
-	kvs := map[string] /*key*/ datasync.ChangeValue{}
+	kvs := map[string]datasync.ChangeValue{}
 	for key, item := range txn.items {
 		changeType := datasync.Put
 		if item.Delete {
@@ -71,18 +88,4 @@ func (txn *ProtoTxn) Commit() error {
 		kvs[key] = syncbase.NewChange(key, item.Data, 0, changeType)
 	}
 	return txn.commit(kvs)
-}
-
-// ProtoTxnItem is used in ProtoTxn.
-type ProtoTxnItem struct {
-	Data   proto.Message
-	Delete bool
-}
-
-// GetValue returns the value of the pair.
-func (lazy *ProtoTxnItem) GetValue(out proto.Message) error {
-	if lazy.Data != nil {
-		proto.Merge(out, lazy.Data)
-	}
-	return nil
 }

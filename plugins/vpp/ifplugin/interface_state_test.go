@@ -35,7 +35,8 @@ import (
 )
 
 func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater,
-	chan govppapi.Message, chan *intf.InterfaceNotification, error) {
+	chan govppapi.Message, chan *intf.InterfaceNotification,
+) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -45,8 +46,6 @@ func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwI
 	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "interface_state_test", ifaceidx.IndexMetadata)
 	index := ifaceidx.NewSwIfIndex(nameToIdx)
 	names := nameToIdx.ListNames()
-
-	// Check if names were empty
 	Expect(names).To(BeEmpty())
 
 	// Create publish state function
@@ -62,38 +61,31 @@ func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwI
 	// Create connection
 	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
 	connection, err := govpp.Connect(mockCtx.MockVpp)
-
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
+	Expect(err).To(BeNil())
 
 	// Create plugin logger
-	pluginLogger := logging.ForPlugin("testname", logrus.NewLogRegistry())
+	pluginLogger := logging.ForPlugin("testname")
 
 	// Test initialization
 	ifPlugin := &ifplugin.InterfaceStateUpdater{}
 	err = ifPlugin.Init(pluginLogger, connection, ctx, index, notifChan, publishIfState)
-
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
-
-	// Test after init
+	Expect(err).To(BeNil())
 	err = ifPlugin.AfterInit()
+	Expect(err).To(BeNil())
 
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
+	return connection, index, ifPlugin, notifChan, publishChan
+}
 
-	return connection, index, ifPlugin, notifChan, publishChan, nil
+func testPluginDataTeardown(plugin *ifplugin.InterfaceStateUpdater, connection *govpp.Connection) {
+	connection.Disconnect()
+	Expect(plugin.Close()).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 // Test UPDOWN notification
 func TestInterfaceStateUpdaterUpDownNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan, err := testPluginDataInitialization(t)
-	Expect(err).To(BeNil())
-	defer ifPlugin.Close()
-	defer conn.Disconnect()
+	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, conn)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{
@@ -121,10 +113,8 @@ func TestInterfaceStateUpdaterUpDownNotif(t *testing.T) {
 
 // Test simple counter notification
 func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan, err := testPluginDataInitialization(t)
-	Expect(err).To(BeNil())
-	defer ifPlugin.Close()
-	defer conn.Disconnect()
+	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, conn)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{
@@ -195,10 +185,19 @@ func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
 	}
 
 	var notif *intf.InterfaceNotification
-
 	Eventually(publishChan).Should(Receive(&notif))
 	Expect(notif.Type).To(Equal(intf.InterfaceNotification_UPDOWN))
 	Expect(notif.State.AdminStatus).Should(BeEquivalentTo(intf.InterfacesState_Interface_UP))
+	Expect(notif.State.Statistics).To(BeEquivalentTo(&intf.InterfacesState_Interface_Statistics{
+		DropPackets:     32768,
+		PuntPackets:     32769,
+		Ipv4Packets:     32770,
+		Ipv6Packets:     32771,
+		InNobufPackets:  32772,
+		InMissPackets:   32773,
+		InErrorPackets:  32774,
+		OutErrorPackets: 32775,
+	}))
 	Expect(notif.State.Statistics.DropPackets).Should(BeEquivalentTo(32768))
 	Expect(notif.State.Statistics.PuntPackets).Should(BeEquivalentTo(32769))
 	Expect(notif.State.Statistics.Ipv4Packets).Should(BeEquivalentTo(32770))
@@ -211,10 +210,8 @@ func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
 
 // Test VnetIntCombined notification
 func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan, err := testPluginDataInitialization(t)
-	Expect(err).To(BeNil())
-	defer ifPlugin.Close()
-	defer conn.Disconnect()
+	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, conn)
 
 	// Register name
 	index.RegisterName("test0", 0, &intf.Interfaces_Interface{
@@ -263,10 +260,8 @@ func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
 
 // Test SwInterfaceDetails notification
 func TestInterfaceStateUpdaterSwInterfaceDetailsNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan, err := testPluginDataInitialization(t)
-	Expect(err).To(BeNil())
-	defer ifPlugin.Close()
-	defer conn.Disconnect()
+	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, conn)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{
@@ -305,10 +300,8 @@ func TestInterfaceStateUpdaterSwInterfaceDetailsNotif(t *testing.T) {
 
 // Test deleted notification
 func TestInterfaceStateUpdaterIfStateDeleted(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan, err := testPluginDataInitialization(t)
-	Expect(err).To(BeNil())
-	defer ifPlugin.Close()
-	defer conn.Disconnect()
+	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, conn)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{

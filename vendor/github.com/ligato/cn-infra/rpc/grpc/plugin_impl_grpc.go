@@ -17,14 +17,10 @@ package grpc
 import (
 	"io"
 	"net/http"
-
 	"strconv"
 
-	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/unrolled/render"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -33,12 +29,11 @@ import (
 // Plugin maintains the GRPC netListener (see Init, AfterInit, Close methods)
 type Plugin struct {
 	Deps
-	// Stored GRPC config (used in example)
+
 	*Config
+
 	// GRPC server instance
 	grpcServer *grpc.Server
-	// Used mainly for testing purposes
-	listenAndServe ListenAndServe
 	// GRPC network listener
 	netListener io.Closer
 	// Plugin availability flag
@@ -47,100 +42,80 @@ type Plugin struct {
 
 // Deps is a list of injected dependencies of the GRPC plugin.
 type Deps struct {
-	Log        logging.PluginLogger
-	PluginName core.PluginName
-	HTTP       rest.HTTPHandlers
-	config.PluginConfig
+	infra.PluginDeps
+	HTTP rest.HTTPHandlers
 }
 
 // Init prepares GRPC netListener for registration of individual service
-func (plugin *Plugin) Init() error {
-	var err error
+func (p *Plugin) Init() (err error) {
 	// Get GRPC configuration file
-	if plugin.Config == nil {
-		plugin.Config, err = plugin.getGrpcConfig()
-		if err != nil || plugin.disabled {
+	if p.Config == nil {
+		p.Config, err = p.getGrpcConfig()
+		if err != nil || p.disabled {
 			return err
 		}
 	}
 
 	// Prepare GRPC server
-	if plugin.grpcServer == nil {
-		var opts []grpc.ServerOption
-		if plugin.Config.MaxConcurrentStreams > 0 {
-			opts = append(opts, grpc.MaxConcurrentStreams(plugin.Config.MaxConcurrentStreams))
-		}
-		if plugin.Config.MaxMsgSize > 0 {
-			opts = append(opts, grpc.MaxMsgSize(plugin.Config.MaxMsgSize))
-		}
-
-		plugin.grpcServer = grpc.NewServer(opts...)
-		grpclog.SetLogger(plugin.Log.NewLogger("grpc-server"))
+	if p.grpcServer == nil {
+		opts := p.Config.getGrpcOptions()
+		p.grpcServer = grpc.NewServer(opts...)
+		grpclog.SetLogger(p.Log.NewLogger("grpc-server"))
 	}
 
 	// Start GRPC listener
-	if plugin.listenAndServe != nil {
-		plugin.netListener, err = plugin.listenAndServe(*plugin.Config, plugin.grpcServer)
-	} else {
-		plugin.Log.Info("Listening GRPC on tcp://", plugin.Config.Endpoint)
-		plugin.netListener, err = ListenAndServeGRPC(plugin.Config, plugin.grpcServer)
+	p.netListener, err = ListenAndServe(p.Config, p.grpcServer)
+	if err != nil {
+		return err
 	}
+	p.Log.Infof("Listening GRPC on: %v", p.Config.Endpoint)
 
-	return err
+	return nil
 }
 
 // AfterInit starts the HTTP netListener.
-func (plugin *Plugin) AfterInit() (err error) {
-	if plugin.Deps.HTTP != nil {
-		plugin.Log.Info("exposing GRPC services over HTTP port " + strconv.Itoa(plugin.Deps.HTTP.GetPort()) +
-			" /service ")
-		plugin.Deps.HTTP.RegisterHTTPHandler("service", func(formatter *render.Render) http.HandlerFunc {
-			return plugin.grpcServer.ServeHTTP
+func (p *Plugin) AfterInit() error {
+	if p.Deps.HTTP != nil {
+		p.Log.Infof("exposing GRPC services via HTTP (port %v) on: /service",
+			strconv.Itoa(p.Deps.HTTP.GetPort()))
+		p.Deps.HTTP.RegisterHTTPHandler("/service", func(formatter *render.Render) http.HandlerFunc {
+			return p.grpcServer.ServeHTTP
 		}, "GET", "PUT", "POST")
+	} else {
+		p.Log.Infof("HTTP not set, skip exposing GRPC services")
 	}
 
-	return err
+	return nil
 }
 
 // Close stops the HTTP netListener.
-func (plugin *Plugin) Close() error {
-	wasError := safeclose.Close(plugin.netListener)
-
-	if plugin.grpcServer != nil {
-		plugin.grpcServer.Stop()
+func (p *Plugin) Close() error {
+	if p.grpcServer != nil {
+		p.grpcServer.Stop()
 	}
-
-	return wasError
+	return nil
 }
 
 // GetServer is a getter for accessing grpc.Server
-func (plugin *Plugin) GetServer() *grpc.Server {
-	return plugin.grpcServer
+func (p *Plugin) GetServer() *grpc.Server {
+	return p.grpcServer
 }
 
 // IsDisabled returns *true* if the plugin is not in use due to missing
 // grpc configuration.
-func (plugin *Plugin) IsDisabled() (disabled bool) {
-	return plugin.disabled
+func (p *Plugin) IsDisabled() bool {
+	return p.disabled
 }
 
-// String returns plugin name (if not set defaults to "HTTP")
-func (plugin *Plugin) String() string {
-	if plugin.Deps.PluginName != "" {
-		return string(plugin.Deps.PluginName)
-	}
-	return "GRPC"
-}
-
-func (plugin *Plugin) getGrpcConfig() (*Config, error) {
+func (p *Plugin) getGrpcConfig() (*Config, error) {
 	var grpcCfg Config
-	found, err := plugin.PluginConfig.GetValue(&grpcCfg)
+	found, err := p.Cfg.LoadValue(&grpcCfg)
 	if err != nil {
 		return &grpcCfg, err
 	}
 	if !found {
-		plugin.Log.Info("GRPC config not found, skip loading this plugin")
-		plugin.disabled = true
+		p.Log.Info("GRPC config not found, skip loading this plugin")
+		p.disabled = true
 	}
 	return &grpcCfg, nil
 }
