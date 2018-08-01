@@ -14,9 +14,7 @@
 
 package resync
 
-import (
-	"github.com/ligato/cn-infra/core"
-)
+import "github.com/ligato/cn-infra/infra"
 
 // Subscriber is an API used by plugins to register for notifications from the
 // RESYNC Orcherstrator.
@@ -33,5 +31,5 @@ type Subscriber interface {
 type Reporter interface {
 	// ReportError is called by Plugins when the binary api call was not successful.
 	// Based on that the Resync Orchestrator starts the Resync.
-	ReportError(name core.PluginName, err error)
+	ReportError(name infra.PluginName, err error)
 }

@@ -15,6 +15,8 @@
 package l2plugin_test
 
 import (
+	"testing"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
@@ -29,10 +31,9 @@ import (
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
-	"testing"
 )
 
-func bdStateTestInitialization(t *testing.T) (*core.Connection, l2idx.BDIndexRW, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, chan *l2plugin.BridgeDomainStateNotification, error) {
+func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater, *core.Connection, l2idx.BDIndexRW, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, chan *l2plugin.BridgeDomainStateNotification) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -67,37 +68,28 @@ func bdStateTestInitialization(t *testing.T) (*core.Connection, l2idx.BDIndexRW,
 	// Create connection
 	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
 	connection, err := core.Connect(mockCtx.MockVpp)
-
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
+	Expect(err).To(BeNil())
 
 	// Create plugin logger
-	pluginLogger := logging.ForPlugin("testname", logrus.NewLogRegistry())
+	pluginLogger := logging.ForPlugin("testname")
 
 	// Test initialization
-	bdStatePlugin := &l2plugin.BridgeDomainStateUpdater{}
-	err = bdStatePlugin.Init(pluginLogger, connection, ctx, index, swIfIndex, notifChan, publishIfState)
+	plugin := &l2plugin.BridgeDomainStateUpdater{}
+	err = plugin.Init(pluginLogger, connection, ctx, index, swIfIndex, notifChan, publishIfState)
+	Expect(err).To(BeNil())
 
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
-
-	return connection, index, swIfIndex, notifChan, publishChan, nil
+	return plugin, connection, index, swIfIndex, notifChan, publishChan
 }
 
-// Tests initialization of bridge domain state updater
-func TestBridgeDomainStateUpdater_Init(t *testing.T) {
-	conn, _, _, _, _, err := bdStateTestInitialization(t)
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+func bdStateTestTeardown(plugin *l2plugin.BridgeDomainStateUpdater, conn *core.Connection) {
+	conn.Disconnect()
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 // Tests notification processing in bridge domain state updater with zero index
 func TestBridgeDomainStateUpdater_watchVppNotificationsZero(t *testing.T) {
-	conn, _, _, notifChan, publishChan, err := bdStateTestInitialization(t)
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	plugin, conn, _, _, notifChan, publishChan := bdStateTestInitialization(t)
+	defer bdStateTestTeardown(plugin, conn)
 
 	// Test notifications
 	notifChan <- l2plugin.BridgeDomainStateMessage{
@@ -114,9 +106,8 @@ func TestBridgeDomainStateUpdater_watchVppNotificationsZero(t *testing.T) {
 
 // Tests notification processing in bridge domain state updater with zero index and no name (invalid)
 func TestBridgeDomainStateUpdater_watchVppNotificationsZeroNoName(t *testing.T) {
-	conn, _, _, notifChan, publishChan, err := bdStateTestInitialization(t)
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	plugin, conn, _, _, notifChan, publishChan := bdStateTestInitialization(t)
+	defer bdStateTestTeardown(plugin, conn)
 
 	// Test notifications
 	notifChan <- l2plugin.BridgeDomainStateMessage{
@@ -132,9 +123,8 @@ func TestBridgeDomainStateUpdater_watchVppNotificationsZeroNoName(t *testing.T) 
 
 // Tests notification processing in bridge domain state updater
 func TestBridgeDomainStateUpdater_watchVppNotifications(t *testing.T) {
-	conn, bdIndex, swIfIndex, notifChan, publishChan, err := bdStateTestInitialization(t)
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	plugin, conn, bdIndex, swIfIndex, notifChan, publishChan := bdStateTestInitialization(t)
+	defer bdStateTestTeardown(plugin, conn)
 
 	// Register interface name
 	swIfIndex.RegisterName("test", 1, &intf.Interfaces_Interface{

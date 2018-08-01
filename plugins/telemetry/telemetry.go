@@ -19,8 +19,9 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/infra"
 	prom "github.com/ligato/cn-infra/rpc/prometheus"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/prometheus/client_golang/prometheus"
@@ -105,10 +106,10 @@ type Plugin struct {
 
 // Deps represents dependencies of Telemetry Plugin
 type Deps struct {
-	local.PluginInfraDeps
-
-	GoVppmux   govppmux.API
-	Prometheus prom.API
+	infra.PluginDeps
+	ServiceLabel servicelabel.ReaderAPI
+	GoVppmux     govppmux.API
+	Prometheus   prom.API
 }
 
 type runtimeStats struct {

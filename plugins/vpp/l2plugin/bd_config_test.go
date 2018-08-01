@@ -33,7 +33,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator, error) {
+func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -50,48 +50,36 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 	// Create connection
 	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
 	connection, err := core.Connect(mockCtx.MockVpp)
-
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
+	Expect(err).To(BeNil())
 
 	// Create plugin logger
-	pluginLogger := logging.ForPlugin("testname", logrus.NewLogRegistry())
+	pluginLogger := logging.ForPlugin("testname")
 
 	// Test initialization
 	bdConfiguratorPlugin := &l2plugin.BDConfigurator{}
 	err = bdConfiguratorPlugin.Init(pluginLogger, connection, swIfIndex, notifChan, false)
+	Expect(err).To(BeNil())
 
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
-
-	return mockCtx, connection, swIfIndex, notifChan, bdConfiguratorPlugin, nil
+	return mockCtx, connection, swIfIndex, notifChan, bdConfiguratorPlugin
 }
 
-// Tests initialization and close of bridge domain configurator
-func TestBDConfigurator_Init(t *testing.T) {
-	_, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
-
-	err = plugin.Close()
-	Expect(err).To(BeNil())
+func bdConfigTeardown(conn *core.Connection, plugin *l2plugin.BDConfigurator) {
+	conn.Disconnect()
+	Expect(plugin.Close()).To(Succeed())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 // Tests configuration of bridge domain
 func TestBDConfigurator_ConfigureBridgeDomain(t *testing.T) {
-	ctx, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	err = plugin.ConfigureBridgeDomain(&l2.BridgeDomains_BridgeDomain{
+	err := plugin.ConfigureBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 		Name:                "test",
 		Flood:               true,
 		UnknownUnicastFlood: true,
@@ -127,17 +115,15 @@ func TestBDConfigurator_ConfigureBridgeDomain(t *testing.T) {
 
 // Tests modification of bridge domain (recreating it)
 func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
-	ctx, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	err = plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
+	err := plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 		Name:                "test",
 		Flood:               false,
 		UnknownUnicastFlood: false,
@@ -195,17 +181,15 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 
 // Tests modification of bridge domain (bridge domain not found)
 func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
-	ctx, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	err = plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
+	err := plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 		Name:                "test",
 		Flood:               true,
 		UnknownUnicastFlood: true,
@@ -262,10 +246,8 @@ func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
 
 // Tests modification of bridge domain (bridge domain already present)
 func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
-	ctx, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
@@ -295,7 +277,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 		},
 	}, []string{"if0"}))
 
-	err = plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
+	err := plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 		Name:                "test",
 		Flood:               true,
 		UnknownUnicastFlood: true,
@@ -352,10 +334,8 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 
 // Tests deletion of bridge domain
 func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
-	ctx, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 
@@ -382,7 +362,7 @@ func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
 		},
 	}, []string{"if0"}))
 
-	err = plugin.DeleteBridgeDomain(&l2.BridgeDomains_BridgeDomain{
+	err := plugin.DeleteBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 		Name:                "test",
 		Flood:               true,
 		UnknownUnicastFlood: true,
@@ -413,21 +393,17 @@ func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
 
 // Tests resolving of created interface (not found)
 func TestBDConfigurator_ResolveCreatedInterfaceNotFound(t *testing.T) {
-	_, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	_, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
-	err = plugin.ResolveCreatedInterface("test", 0)
+	err := plugin.ResolveCreatedInterface("test", 0)
 	Expect(err).To(BeNil())
 }
 
 // Tests resolving of created interface (present)
 func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
-	ctx, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{
 		BdID:         1,
@@ -473,7 +449,7 @@ func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
 		},
 	}, []string{"test"}))
 
-	err = plugin.ResolveCreatedInterface("test", 0)
+	err := plugin.ResolveCreatedInterface("test", 0)
 	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetBdIndexes().LookupIdx("test")
@@ -484,21 +460,17 @@ func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
 
 // Tests resolving of deleted interface (not found)
 func TestBDConfigurator_ResolveDeletedInterfaceNotFound(t *testing.T) {
-	_, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	_, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
-	err = plugin.ResolveDeletedInterface("test")
+	err := plugin.ResolveDeletedInterface("test")
 	Expect(err).To(BeNil())
 }
 
 // Tests resolving of deleted interface (present)
 func TestBDConfigurator_ResolveDeletedInterfaceFound(t *testing.T) {
-	ctx, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{
 		BdID:         1,
@@ -544,7 +516,7 @@ func TestBDConfigurator_ResolveDeletedInterfaceFound(t *testing.T) {
 		},
 	}, []string{"test"}))
 
-	err = plugin.ResolveDeletedInterface("test")
+	err := plugin.ResolveDeletedInterface("test")
 	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetBdIndexes().LookupIdx("test")
@@ -554,10 +526,8 @@ func TestBDConfigurator_ResolveDeletedInterfaceFound(t *testing.T) {
 
 // Tests configuration and modification of bridge domain with 4 interfaces
 func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
-	ctx, conn, index, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	ctx, conn, index, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	// Register interfaces to index
 	index.RegisterName("if0", 0, &interfaces.Interfaces_Interface{
@@ -621,7 +591,7 @@ func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
 		},
 	}
 
-	err = plugin.ConfigureBridgeDomain(bdData)
+	err := plugin.ConfigureBridgeDomain(bdData)
 	Expect(err).To(BeNil())
 
 	// Check for correct metadata after creation
@@ -715,10 +685,8 @@ func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
 
 // Tests invalid bridge domain with 2 BVI interfaces
 func TestBDConfigurator_TwoBVI(t *testing.T) {
-	_, conn, _, _, plugin, err := bdConfigTestInitialization(t)
-	defer plugin.Close()
-	defer conn.Disconnect()
-	Expect(err).To(BeNil())
+	_, conn, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
 
 	// Create incorrect domain
 	bdData := &l2.BridgeDomains_BridgeDomain{
@@ -739,7 +707,7 @@ func TestBDConfigurator_TwoBVI(t *testing.T) {
 		},
 	}
 
-	err = plugin.ConfigureBridgeDomain(bdData)
+	err := plugin.ConfigureBridgeDomain(bdData)
 	Expect(err).To(BeNil())
 
 	// Check for missing index after failed creation

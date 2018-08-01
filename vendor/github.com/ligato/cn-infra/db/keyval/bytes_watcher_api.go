@@ -17,10 +17,8 @@ package keyval
 import (
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 )
 
 // BytesWatcher defines API for monitoring changes in datastore.
@@ -42,25 +40,13 @@ type BytesWatchResp interface {
 // ToChan creates a callback that can be passed to the Watch function in order
 // to receive notifications through a channel. If the notification cannot be
 // delivered until timeout, it is dropped.
-func ToChan(ch chan BytesWatchResp, opts ...interface{}) func(dto BytesWatchResp) {
-
-	timeout := datasync.DefaultNotifTimeout
-	var logger logging.Logger = logrus.DefaultLogger()
-
-	for _, opt := range opts {
-		switch opt.(type) {
-		case *core.WithLoggerOpt:
-			logger = opt.(*core.WithLoggerOpt).Logger
-		case *core.WithTimeoutOpt:
-			timeout = opt.(*core.WithTimeoutOpt).Timeout
-		}
-	}
-
+func ToChan(respCh chan BytesWatchResp, opts ...interface{}) func(dto BytesWatchResp) {
 	return func(dto BytesWatchResp) {
 		select {
-		case ch <- dto:
-		case <-time.After(timeout):
-			logger.Warn("Unable to deliver notification")
+		case respCh <- dto:
+			// success
+		case <-time.After(datasync.DefaultNotifTimeout):
+			logging.DefaultLogger.Warn("Unable to deliver notification")
 		}
 	}
 }

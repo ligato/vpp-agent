@@ -369,7 +369,7 @@ func (plugin *Plugin) extractFrom(dataChng datasync.ChangeEvent, value proto.Mes
 
 // dataChangeACL propagates data change to the particular aclConfigurator.
 func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevValue *acl.AccessLists_Acl,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -382,7 +382,7 @@ func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevV
 
 // DataChangeIface propagates data change to the ifConfigurator.
 func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.Interfaces_Interface, prevValue *interfaces.Interfaces_Interface,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -395,7 +395,7 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.Interfaces_In
 
 // DataChangeBfdSession propagates data change to the bfdConfigurator.
 func (plugin *Plugin) dataChangeBfdSession(diff bool, value *bfd.SingleHopBFD_Session, prevValue *bfd.SingleHopBFD_Session,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdSession ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -408,7 +408,7 @@ func (plugin *Plugin) dataChangeBfdSession(diff bool, value *bfd.SingleHopBFD_Se
 
 // DataChangeBfdKey propagates data change to the bfdConfigurator.
 func (plugin *Plugin) dataChangeBfdKey(diff bool, value *bfd.SingleHopBFD_Key, prevValue *bfd.SingleHopBFD_Key,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdKey ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -421,7 +421,7 @@ func (plugin *Plugin) dataChangeBfdKey(diff bool, value *bfd.SingleHopBFD_Key, p
 
 // DataChangeBfdEchoFunction propagates data change to the bfdConfigurator.
 func (plugin *Plugin) dataChangeBfdEchoFunction(diff bool, value *bfd.SingleHopBFD_EchoFunction, prevValue *bfd.SingleHopBFD_EchoFunction,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdEchoFunction ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -434,7 +434,7 @@ func (plugin *Plugin) dataChangeBfdEchoFunction(diff bool, value *bfd.SingleHopB
 
 // dataChangeBD propagates data change to the bdConfigurator.
 func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDomain, prevValue *l2.BridgeDomains_BridgeDomain,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBD ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -447,7 +447,7 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 
 // dataChangeFIB propagates data change to the fibConfigurator.
 func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTable_FibEntry, prevValue *l2.FibTable_FibEntry,
-	changeType datasync.PutDel, callback func(error)) error {
+	changeType datasync.Op, callback func(error)) error {
 	plugin.Log.Debug("dataChangeFIB diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -460,7 +460,7 @@ func (plugin *Plugin) dataChangeFIB(diff bool, value *l2.FibTable_FibEntry, prev
 
 // DataChangeIface propagates data change to the xcConfugurator.
 func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnectPair, prevValue *l2.XConnectPairs_XConnectPair,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeXCon ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -474,7 +474,7 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 
 // DataChangeStaticRoute propagates data change to the routeConfigurator.
 func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Route, prevValue *l3.StaticRoutes_Route,
-	vrfFromKey string, changeType datasync.PutDel) error {
+	vrfFromKey string, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeStaticRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -487,7 +487,7 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 
 // dataChangeARP propagates data change to the arpConfigurator
 func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpEntry, prevValue *l3.ArpTable_ArpEntry,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -500,7 +500,7 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpEntry, prev
 
 // dataChangeProxyARPInterface propagates data change to the arpConfigurator
 func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l3.ProxyArpInterfaces_InterfaceList,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeProxyARPInterface diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -513,7 +513,7 @@ func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l
 
 // dataChangeProxyARPRange propagates data change to the arpConfigurator
 func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.ProxyArpRanges_RangeList,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeProxyARPRange diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -526,7 +526,7 @@ func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.Pr
 
 // DataChangeStaticRoute propagates data change to the l4Configurator
 func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_AppNamespace, prevValue *l4.AppNamespaces_AppNamespace,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeL4AppNamespace ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -539,7 +539,7 @@ func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_
 
 // DataChangeL4Features propagates data change to the l4Configurator
 func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L4Features,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeL4Feature ", changeType, " ", value, " ", prevValue)
 
 	// diff and previous value is not important, features flag can be either set or not.
@@ -551,7 +551,7 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 }
 
 // DataChangeStnRule propagates data change to the stn configurator
-func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValue *stn.STN_Rule, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValue *stn.STN_Rule, changeType datasync.Op) error {
 	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -563,7 +563,7 @@ func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValu
 }
 
 // dataChangeNatGlobal propagates data change to the nat configurator
-func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44Global, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44Global, changeType datasync.Op) error {
 	plugin.Log.Debug("natGlobalChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -575,7 +575,7 @@ func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44
 }
 
 // dataChangeSNat propagates data change to the nat configurator
-func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_SNatConfig, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_SNatConfig, changeType datasync.Op) error {
 	plugin.Log.Debug("sNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -587,7 +587,7 @@ func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_
 }
 
 // dataChangeDNat propagates data change to the nat configurator
-func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_DNatConfig, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_DNatConfig, changeType datasync.Op) error {
 	plugin.Log.Debug("dNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -599,7 +599,7 @@ func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_
 }
 
 // dataChangeIPSecSPD propagates data change to the IPSec configurator
-func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.SecurityPolicyDatabases_SPD, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.SecurityPolicyDatabases_SPD, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -611,7 +611,7 @@ func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.Secu
 }
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
-func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -623,7 +623,7 @@ func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.Secur
 }
 
 // dataChangeIPSecTunnel propagates data change to the IPSec configurator
-func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.TunnelInterfaces_Tunnel, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.TunnelInterfaces_Tunnel, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecTunnel diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
 	if datasync.Delete == changeType {
@@ -635,7 +635,7 @@ func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.T
 }
 
 // DataChangeLocalSID handles change events from ETCD related to local SIDs
-func (plugin *Plugin) dataChangeLocalSID(diff bool, value *srv6.LocalSID, prevValue *srv6.LocalSID, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeLocalSID(diff bool, value *srv6.LocalSID, prevValue *srv6.LocalSID, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeLocalSIDs ", diff, " ", changeType, " ", value, " ", prevValue)
 	if datasync.Delete == changeType {
 		return plugin.srv6Configurator.DeleteLocalSID(prevValue)
@@ -646,7 +646,7 @@ func (plugin *Plugin) dataChangeLocalSID(diff bool, value *srv6.LocalSID, prevVa
 }
 
 // dataChangePolicy handles change events from ETCD related to policies
-func (plugin *Plugin) dataChangePolicy(diff bool, value *srv6.Policy, prevValue *srv6.Policy, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangePolicy(diff bool, value *srv6.Policy, prevValue *srv6.Policy, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangePolicy ", diff, " ", changeType, " ", value, " ", prevValue)
 	if datasync.Delete == changeType {
 		return plugin.srv6Configurator.RemovePolicy(prevValue)
@@ -657,7 +657,7 @@ func (plugin *Plugin) dataChangePolicy(diff bool, value *srv6.Policy, prevValue 
 }
 
 // dataChangePolicySegment handles change events from ETCD related to policies segments
-func (plugin *Plugin) dataChangePolicySegment(segmentName string, diff bool, value *srv6.PolicySegment, prevValue *srv6.PolicySegment, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangePolicySegment(segmentName string, diff bool, value *srv6.PolicySegment, prevValue *srv6.PolicySegment, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangePolicySegment ", segmentName, " ", diff, " ", changeType, " ", value, " ", prevValue)
 	if datasync.Delete == changeType {
 		return plugin.srv6Configurator.RemovePolicySegment(segmentName, prevValue)
@@ -668,7 +668,7 @@ func (plugin *Plugin) dataChangePolicySegment(segmentName string, diff bool, val
 }
 
 // dataChangeSteering handles change events from ETCD related to steering
-func (plugin *Plugin) dataChangeSteering(steeringName string, diff bool, value *srv6.Steering, prevValue *srv6.Steering, changeType datasync.PutDel) error {
+func (plugin *Plugin) dataChangeSteering(steeringName string, diff bool, value *srv6.Steering, prevValue *srv6.Steering, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeSteering ", steeringName, " ", diff, " ", changeType, " ", value, " ", prevValue)
 	if datasync.Delete == changeType {
 		return plugin.srv6Configurator.RemoveSteering(steeringName, prevValue)

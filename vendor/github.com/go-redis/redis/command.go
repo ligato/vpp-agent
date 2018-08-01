@@ -10,6 +10,7 @@ import (
 	"github.com/go-redis/redis/internal"
 	"github.com/go-redis/redis/internal/pool"
 	"github.com/go-redis/redis/internal/proto"
+	"github.com/go-redis/redis/internal/util"
 )
 
 type Cmder interface {
@@ -81,9 +82,9 @@ func cmdFirstKeyPos(cmd Cmder, info *CommandInfo) int {
 	case "eval", "evalsha":
 		if cmd.stringArg(2) != "0" {
 			return 3
-		} else {
-			return 0
 		}
+
+		return 0
 	case "publish":
 		return 1
 	}
@@ -436,7 +437,7 @@ func NewStringCmd(args ...interface{}) *StringCmd {
 }
 
 func (cmd *StringCmd) Val() string {
-	return internal.BytesToString(cmd.val)
+	return util.BytesToString(cmd.val)
 }
 
 func (cmd *StringCmd) Result() (string, error) {
@@ -709,6 +710,179 @@ func (cmd *StringStructMapCmd) readReply(cn *pool.Conn) error {
 	}
 	cmd.val = v.(map[string]struct{})
 	return nil
+}
+
+//------------------------------------------------------------------------------
+
+type XStream struct {
+	Stream   string
+	Messages []*XMessage
+}
+
+type XMessage struct {
+	ID     string
+	Values map[string]interface{}
+}
+
+//------------------------------------------------------------------------------
+
+type XStreamSliceCmd struct {
+	baseCmd
+
+	val []*XStream
+}
+
+var _ Cmder = (*XStreamSliceCmd)(nil)
+
+func NewXStreamSliceCmd(args ...interface{}) *XStreamSliceCmd {
+	return &XStreamSliceCmd{
+		baseCmd: baseCmd{_args: args},
+	}
+}
+
+func (cmd *XStreamSliceCmd) Val() []*XStream {
+	return cmd.val
+}
+
+func (cmd *XStreamSliceCmd) Result() ([]*XStream, error) {
+	return cmd.val, cmd.err
+}
+
+func (cmd *XStreamSliceCmd) String() string {
+	return cmdString(cmd, cmd.val)
+}
+
+func (cmd *XStreamSliceCmd) readReply(cn *pool.Conn) error {
+	var v interface{}
+	v, cmd.err = cn.Rd.ReadArrayReply(xStreamSliceParser)
+	if cmd.err != nil {
+		return cmd.err
+	}
+	cmd.val = v.([]*XStream)
+	return nil
+}
+
+// Implements proto.MultiBulkParse
+func xStreamSliceParser(rd *proto.Reader, n int64) (interface{}, error) {
+	xx := make([]*XStream, n)
+	for i := int64(0); i < n; i++ {
+		v, err := rd.ReadArrayReply(xStreamParser)
+		if err != nil {
+			return nil, err
+		}
+		xx[i] = v.(*XStream)
+	}
+	return xx, nil
+}
+
+// Implements proto.MultiBulkParse
+func xStreamParser(rd *proto.Reader, n int64) (interface{}, error) {
+	if n != 2 {
+		return nil, fmt.Errorf("got %d, wanted 2", n)
+	}
+
+	stream, err := rd.ReadStringReply()
+	if err != nil {
+		return nil, err
+	}
+
+	v, err := rd.ReadArrayReply(xMessageSliceParser)
+	if err != nil {
+		return nil, err
+	}
+
+	return &XStream{
+		Stream:   stream,
+		Messages: v.([]*XMessage),
+	}, nil
+}
+
+//------------------------------------------------------------------------------
+
+type XMessageSliceCmd struct {
+	baseCmd
+
+	val []*XMessage
+}
+
+var _ Cmder = (*XMessageSliceCmd)(nil)
+
+func NewXMessageSliceCmd(args ...interface{}) *XMessageSliceCmd {
+	return &XMessageSliceCmd{
+		baseCmd: baseCmd{_args: args},
+	}
+}
+
+func (cmd *XMessageSliceCmd) Val() []*XMessage {
+	return cmd.val
+}
+
+func (cmd *XMessageSliceCmd) Result() ([]*XMessage, error) {
+	return cmd.val, cmd.err
+}
+
+func (cmd *XMessageSliceCmd) String() string {
+	return cmdString(cmd, cmd.val)
+}
+
+func (cmd *XMessageSliceCmd) readReply(cn *pool.Conn) error {
+	var v interface{}
+	v, cmd.err = cn.Rd.ReadArrayReply(xMessageSliceParser)
+	if cmd.err != nil {
+		return cmd.err
+	}
+	cmd.val = v.([]*XMessage)
+	return nil
+}
+
+// Implements proto.MultiBulkParse
+func xMessageSliceParser(rd *proto.Reader, n int64) (interface{}, error) {
+	msgs := make([]*XMessage, n)
+	for i := int64(0); i < n; i++ {
+		v, err := rd.ReadArrayReply(xMessageParser)
+		if err != nil {
+			return nil, err
+		}
+		msgs[i] = v.(*XMessage)
+	}
+	return msgs, nil
+}
+
+// Implements proto.MultiBulkParse
+func xMessageParser(rd *proto.Reader, n int64) (interface{}, error) {
+	id, err := rd.ReadStringReply()
+	if err != nil {
+		return nil, err
+	}
+
+	v, err := rd.ReadArrayReply(xKeyValueParser)
+	if err != nil {
+		return nil, err
+	}
+
+	return &XMessage{
+		ID:     id,
+		Values: v.(map[string]interface{}),
+	}, nil
+}
+
+// Implements proto.MultiBulkParse
+func xKeyValueParser(rd *proto.Reader, n int64) (interface{}, error) {
+	values := make(map[string]interface{}, n)
+	for i := int64(0); i < n; i += 2 {
+		key, err := rd.ReadStringReply()
+		if err != nil {
+			return nil, err
+		}
+
+		value, err := rd.ReadStringReply()
+		if err != nil {
+			return nil, err
+		}
+
+		values[key] = value
+	}
+	return values, nil
 }
 
 //------------------------------------------------------------------------------
@@ -1021,4 +1195,31 @@ func (cmd *CommandsInfoCmd) readReply(cn *pool.Conn) error {
 	}
 	cmd.val = v.(map[string]*CommandInfo)
 	return nil
+}
+
+//------------------------------------------------------------------------------
+
+type cmdsInfoCache struct {
+	fn func() (map[string]*CommandInfo, error)
+
+	once internal.Once
+	cmds map[string]*CommandInfo
+}
+
+func newCmdsInfoCache(fn func() (map[string]*CommandInfo, error)) *cmdsInfoCache {
+	return &cmdsInfoCache{
+		fn: fn,
+	}
+}
+
+func (c *cmdsInfoCache) Get() (map[string]*CommandInfo, error) {
+	err := c.once.Do(func() error {
+		cmds, err := c.fn()
+		if err != nil {
+			return err
+		}
+		c.cmds = cmds
+		return nil
+	})
+	return c.cmds, err
 }

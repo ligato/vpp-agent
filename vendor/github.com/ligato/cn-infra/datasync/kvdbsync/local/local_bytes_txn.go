@@ -22,45 +22,54 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewBytesTxn is a constructor.
-func NewBytesTxn(commit func(map[string] /*key*/ datasync.ChangeValue) error) *BytesTxn {
-	return &BytesTxn{items: map[string] /*key*/ *BytesTxnItem{}, commit: commit}
+// BytesTxnItem is used in BytesTxn.
+type BytesTxnItem struct {
+	Data   []byte
+	Delete bool
 }
 
 // BytesTxn is just a concurrent map of Bytes messages.
 // The intent is to collect the user data and propagate them when commit happens.
 type BytesTxn struct {
-	items  map[string] /*key*/ *BytesTxnItem
 	access sync.Mutex
-	commit func(map[string] /*key*/ datasync.ChangeValue) error
+	items  map[string]*BytesTxnItem
+	commit func(map[string]datasync.ChangeValue) error
 }
 
-//Put adds store operation into transaction.
+// NewBytesTxn is a constructor.
+func NewBytesTxn(commit func(map[string]datasync.ChangeValue) error) *BytesTxn {
+	return &BytesTxn{
+		items:  make(map[string]*BytesTxnItem),
+		commit: commit,
+	}
+}
+
+// Put adds store operation into transaction.
 func (txn *BytesTxn) Put(key string, data []byte) keyval.BytesTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
-	txn.items[key] = &BytesTxnItem{data, false}
+	txn.items[key] = &BytesTxnItem{Data: data}
 
 	return txn
 }
 
-//Delete add delete operation into transaction.
+// Delete add delete operation into transaction.
 func (txn *BytesTxn) Delete(key string) keyval.BytesTxn {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
-	txn.items[key] = &BytesTxnItem{nil, true}
+	txn.items[key] = &BytesTxnItem{Delete: true}
 
 	return txn
 }
 
-//Commit executes the transaction.
+// Commit executes the transaction.
 func (txn *BytesTxn) Commit() error {
 	txn.access.Lock()
 	defer txn.access.Unlock()
 
-	kvs := map[string] /*key*/ datasync.ChangeValue{}
+	kvs := map[string]datasync.ChangeValue{}
 	for key, item := range txn.items {
 		changeType := datasync.Put
 		if item.Delete {
@@ -70,10 +79,4 @@ func (txn *BytesTxn) Commit() error {
 		kvs[key] = syncbase.NewChangeBytes(key, item.Data, 0, changeType)
 	}
 	return txn.commit(kvs)
-}
-
-// BytesTxnItem is used in BytesTxn.
-type BytesTxnItem struct {
-	Data   []byte
-	Delete bool
 }

@@ -51,8 +51,5 @@ func (tx *bytesTxn) Delete(key string) keyval.BytesTxn {
 // committed to the data store, or none of them.
 func (tx *bytesTxn) Commit() error {
 	_, err := tx.kv.Txn(context.Background()).Then(tx.ops...).Commit()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

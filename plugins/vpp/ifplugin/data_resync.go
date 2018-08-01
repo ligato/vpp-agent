@@ -54,6 +54,11 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	}
 	plugin.afPacketConfigurator.clearMapping()
 
+	var err error
+	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
+		return []error{err}
+	}
+
 	// Dump current state of the VPP interfaces
 	vppIfs, err := plugin.ifHandler.DumpInterfaces()
 	if err != nil {

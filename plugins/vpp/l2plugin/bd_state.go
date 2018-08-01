@@ -20,7 +20,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -28,6 +27,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
+
+// BridgeDomainStateNotification contains bridge domain state object with all data published to ETCD.
+type BridgeDomainStateNotification struct {
+	State *l2.BridgeDomainState_BridgeDomain
+}
 
 // BridgeDomainStateUpdater holds all data required to handle bridge domain state.
 type BridgeDomainStateUpdater struct {
@@ -55,11 +59,6 @@ type BridgeDomainStateUpdater struct {
 	bdIdxChan               chan l2idx.BdChangeDto
 }
 
-// BridgeDomainStateNotification contains bridge domain state object with all data published to ETCD.
-type BridgeDomainStateNotification struct {
-	State *l2.BridgeDomainState_BridgeDomain
-}
-
 // Init bridge domain state updater.
 func (plugin *BridgeDomainStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
@@ -84,7 +83,7 @@ func (plugin *BridgeDomainStateUpdater) Init(logger logging.PluginLogger, goVppM
 
 	// Name-to-index watcher
 	plugin.bdIdxChan = make(chan l2idx.BdChangeDto, 100)
-	bdIndexes.WatchNameToIdx(core.PluginName("bdplugin_bdstate"), plugin.bdIdxChan)
+	bdIndexes.WatchNameToIdx("bdplugin_bdstate", plugin.bdIdxChan)
 
 	var childCtx context.Context
 	childCtx, plugin.cancel = context.WithCancel(ctx)

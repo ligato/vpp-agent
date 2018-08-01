@@ -22,53 +22,39 @@ import (
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
+)
+
+var (
+	// ErrNotReady is an error returned when KVDBSync plugin is being used before the KVPlugin is ready.
+	ErrNotReady = errors.New("transport adapter is not ready yet (probably called before AfterInit)")
 )
 
 // Plugin dbsync implements synchronization between local memory and db.
 // Other plugins can be notified when DB changes occur or resync is needed.
 // This plugin reads/pulls the data from db when resync is needed.
 type Plugin struct {
-	Deps // inject
+	Deps
 
 	adapter  *watcher
 	registry *syncbase.Registry
 }
 
-type infraDeps interface {
-	// InfraDeps for getting PlugginInfraDeps instance (logger, config, plugin name, statuscheck)
-	InfraDeps(pluginName string, opts ...local.InfraDepsOpts) *local.PluginInfraDeps
-}
-
-// OfDifferentAgent allows accessing DB of a different agent (with a particular microservice label).
-// This method is a shortcut to simplify creating new instance of a plugin
-// that is supposed to watch different agent DB.
-// Method intentionally copies instance of a plugin (assuming it has set all dependencies)
-// and sets microservice label.
-func (plugin /*intentionally without pointer receiver*/ Plugin) OfDifferentAgent(
-	microserviceLabel string, infraDeps infraDeps) *Plugin {
-
-	// plugin name suffixed by micorservice label
-	plugin.Deps.PluginInfraDeps = *infraDeps.InfraDeps(string(
-		plugin.Deps.PluginInfraDeps.PluginName) + "-" + microserviceLabel)
-
-	// this is important - here comes microservice label of different agent
-	plugin.Deps.PluginInfraDeps.ServiceLabel = servicelabel.OfDifferentAgent(microserviceLabel)
-	return &plugin // copy (no pointer receiver)
-}
-
 // Deps groups dependencies injected into the plugin so that they are
 // logically separated from other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps                      // inject
-	ResyncOrch            resync.Subscriber    // inject
-	KvPlugin              keyval.KvProtoPlugin // inject
+	infra.PluginName
+	Log          logging.PluginLogger
+	KvPlugin     keyval.KvProtoPlugin // inject
+	ResyncOrch   resync.Subscriber
+	ServiceLabel servicelabel.ReaderAPI
 }
 
 // Init only initializes plugin.registry.
-func (plugin *Plugin) Init() error {
-	plugin.registry = syncbase.NewRegistry()
+func (p *Plugin) Init() error {
+	p.registry = syncbase.NewRegistry()
 
 	return nil
 }
@@ -80,22 +66,48 @@ func (plugin *Plugin) Init() error {
 // The order of plugins in flavor is not important to resync
 // since Watch() is called in Plugin.Init() and Resync.Register()
 // is called in Plugin.AfterInit().
-func (plugin *Plugin) AfterInit() error {
-	if plugin.KvPlugin != nil && !plugin.KvPlugin.Disabled() {
-		db := plugin.KvPlugin.NewBroker(plugin.ServiceLabel.GetAgentPrefix())
-		dbW := plugin.KvPlugin.NewWatcher(plugin.ServiceLabel.GetAgentPrefix())
-		plugin.adapter = &watcher{db, dbW, plugin.registry}
+//
+// If provided connection is not ready (not connected), AfterInit starts new goroutine in order to
+// 'wait' for the connection. After that, the new transport watcher is built as usual.
+func (p *Plugin) AfterInit() error {
+	if !p.isKvEnabled() {
+		p.Log.Debugf("KVPlugin is nil or disabled, skipping AfterInit")
+		return nil
+	}
 
-		if plugin.ResyncOrch != nil {
-			for resyncName, sub := range plugin.registry.Subscriptions() {
-				resyncReg := plugin.ResyncOrch.Register(resyncName)
-				_, err := watchAndResyncBrokerKeys(resyncReg, sub.ChangeChan, sub.ResyncChan, sub.CloseChan,
-					plugin.adapter, sub.KeyPrefixes...)
-				if err != nil {
-					return err
-				}
+	// set function to be executed on KVPlugin connection
+	p.KvPlugin.OnConnect(p.initKvPlugin)
+
+	return nil
+}
+
+func (p *Plugin) isKvEnabled() bool {
+	return p.KvPlugin != nil && !p.KvPlugin.Disabled()
+}
+
+func (p *Plugin) initKvPlugin() error {
+	if !p.isKvEnabled() {
+		p.Log.Debugf("KVPlugin is nil or disabled, skipping initKvPlugin")
+		return nil
+	}
+
+	p.adapter = &watcher{
+		db:   p.KvPlugin.NewBroker(p.ServiceLabel.GetAgentPrefix()),
+		dbW:  p.KvPlugin.NewWatcher(p.ServiceLabel.GetAgentPrefix()),
+		base: p.registry,
+	}
+
+	if p.ResyncOrch != nil {
+		for name, sub := range p.registry.Subscriptions() {
+			reg := p.ResyncOrch.Register(name)
+			_, err := watchAndResyncBrokerKeys(reg, sub.ChangeChan, sub.ResyncChan, sub.CloseChan,
+				p.adapter, sub.KeyPrefixes...)
+			if err != nil {
+				return err
 			}
 		}
+	} else {
+		p.Log.Debugf("ResyncOrch is nil, skipping registration")
 	}
 
 	return nil
@@ -107,51 +119,43 @@ func (plugin *Plugin) AfterInit() error {
 // This method is supposed to be called in Plugin.Init().
 // Calling this method later than kvdbsync.Plugin.AfterInit() will have no effect
 // (no notifications will be received).
-func (plugin *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
+func (p *Plugin) Watch(resyncName string, changeChan chan datasync.ChangeEvent,
 	resyncChan chan datasync.ResyncEvent, keyPrefixes ...string) (datasync.WatchRegistration, error) {
 
-	return plugin.registry.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
+	return p.registry.Watch(resyncName, changeChan, resyncChan, keyPrefixes...)
 }
 
 // Put propagates this call to a particular kvdb.Plugin unless the kvdb.Plugin is Disabled().
 //
 // This method is supposed to be called in Plugin.AfterInit() or later (even from different go routine).
-func (plugin *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOption) error {
-	if plugin.KvPlugin.Disabled() {
+func (p *Plugin) Put(key string, data proto.Message, opts ...datasync.PutOption) error {
+	if !p.isKvEnabled() {
 		return nil
 	}
 
-	if plugin.adapter != nil {
-		return plugin.adapter.db.Put(key, data, opts...)
+	if p.adapter != nil {
+		return p.adapter.db.Put(key, data, opts...)
 	}
 
-	return errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
+	return ErrNotReady
 }
 
 // Delete propagates this call to a particular kvdb.Plugin unless the kvdb.Plugin is Disabled().
 //
 // This method is supposed to be called in Plugin.AfterInit() or later (even from different go routine).
-func (plugin *Plugin) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
-	if plugin.KvPlugin.Disabled() {
+func (p *Plugin) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
+	if !p.isKvEnabled() {
 		return false, nil
 	}
 
-	if plugin.adapter != nil {
-		return plugin.adapter.db.Delete(key, opts...)
+	if p.adapter != nil {
+		return p.adapter.db.Delete(key, opts...)
 	}
 
-	return false, errors.New("Transport adapter is not ready yet. (Probably called before AfterInit)")
+	return false, ErrNotReady
 }
 
 // Close resources.
-func (plugin *Plugin) Close() error {
+func (p *Plugin) Close() error {
 	return nil
-}
-
-// String returns Deps.PluginName if set, "kvdbsync" otherwise.
-func (plugin *Plugin) String() string {
-	if len(plugin.PluginName) == 0 {
-		return "kvdbsync"
-	}
-	return string(plugin.PluginName)
 }

@@ -49,35 +49,13 @@ type BytesBrokerWatcherEtcd struct {
 	opTimeout time.Duration
 }
 
-// bytesKeyValIterator is an iterator returned by ListValues call.
-type bytesKeyValIterator struct {
-	index int
-	len   int
-	resp  *clientv3.GetResponse
-}
-
-// bytesKeyIterator is an iterator returned by ListKeys call.
-type bytesKeyIterator struct {
-	index int
-	len   int
-	resp  *clientv3.GetResponse
-}
-
-// bytesKeyVal represents a single key-value pair.
-type bytesKeyVal struct {
-	key       string
-	value     []byte
-	prevValue []byte
-	revision  int64
-}
-
 // NewEtcdConnectionWithBytes creates new connection to etcd based on the given
 // config file.
 func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*BytesConnectionEtcd, error) {
 	start := time.Now()
 	etcdClient, err := clientv3.New(*config.Config)
 	if err != nil {
-		log.Errorf("Failed to connect to Etcd etcd(s) %v, Error: '%s'", config.Endpoints, err)
+		log.Debugf("Unable to connect to ETCD %v, Error: '%s'", config.Endpoints, err)
 		return nil, err
 	}
 	etcdConnectTime := time.Since(start)
@@ -184,8 +162,8 @@ func (pdb *BytesBrokerWatcherEtcd) Delete(key string, opts ...datasync.DelOption
 // list. The prefix is removed from the keys returned in watch events.
 // Watch events will be delivered to <resp> callback.
 func (pdb *BytesBrokerWatcherEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
-	for _, k := range keys {
-		err := watchInternal(pdb.Logger, pdb.watcher, closeChan, k, resp)
+	for _, key := range keys {
+		err := watchInternal(pdb.Logger, pdb.watcher, closeChan, key, resp)
 		if err != nil {
 			return err
 		}
@@ -217,9 +195,9 @@ func (db *BytesConnectionEtcd) NewTxn() keyval.BytesTxn {
 }
 
 func newTxnInternal(kv clientv3.KV) keyval.BytesTxn {
-	tx := bytesTxn{}
-	tx.kv = kv
-	return &tx
+	return &bytesTxn{
+		kv: kv,
+	}
 }
 
 // Watch starts subscription for changes associated with the selected keys.
@@ -228,14 +206,13 @@ func newTxnInternal(kv clientv3.KV) keyval.BytesTxn {
 // to stop go routines from specific subscription, or only goroutine with
 // provided key prefix
 func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
-	var err error
-	for _, k := range keys {
-		err = watchInternal(db.Logger, db.etcdClient, closeChan, k, resp)
+	for _, key := range keys {
+		err := watchInternal(db.Logger, db.etcdClient, closeChan, key, resp)
 		if err != nil {
-			break
+			return err
 		}
 	}
-	return err
+	return nil
 }
 
 // watchInternal starts the watch subscription for the key.
@@ -281,6 +258,7 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 				for _, ev := range wresp.Events {
 					handleWatchEvent(log, resp, ev)
 				}
+
 			case closeVal, ok := <-closeCh:
 				if !ok || closeVal == registeredKey {
 					log.WithField("prefix", prefix).Debug("Watch ended")
@@ -289,6 +267,7 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 			}
 		}
 	}(prefix)
+
 	return nil
 }
 
@@ -391,6 +370,7 @@ func getValueInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Duratio
 	for _, ev := range resp.Kvs {
 		return ev.Value, true, ev.ModRevision, nil
 	}
+
 	return nil, false, 0, nil
 }
 
@@ -533,73 +513,4 @@ func getRevisionInternal(log logging.Logger, kv clientv3.KV, opTimeout time.Dura
 	}
 
 	return resp.Header.Revision, nil
-}
-
-// GetNext returns the following item from the result set.
-// When there are no more items to get, <stop> is returned as *true* and <val>
-// is simply *nil*.
-func (ctx *bytesKeyValIterator) GetNext() (val keyval.BytesKeyVal, stop bool) {
-	if ctx.index >= ctx.len {
-		return nil, true
-	}
-
-	key := string(ctx.resp.Kvs[ctx.index].Key)
-	data := ctx.resp.Kvs[ctx.index].Value
-	rev := ctx.resp.Kvs[ctx.index].ModRevision
-
-	var prevValue []byte
-	if len(ctx.resp.Kvs) > 0 && ctx.index > 0 {
-		prevValue = ctx.resp.Kvs[ctx.index-1].Value
-	}
-
-	ctx.index++
-
-	return &bytesKeyVal{key, data, prevValue, rev}, false
-}
-
-// GetNext returns the following key (+ revision) from the result set.
-// When there are no more keys to get, <stop> is returned as *true*
-// and <key> and <rev> are default values.
-func (ctx *bytesKeyIterator) GetNext() (key string, rev int64, stop bool) {
-	if ctx.index >= ctx.len {
-		return "", 0, true
-	}
-
-	key = string(ctx.resp.Kvs[ctx.index].Key)
-	rev = ctx.resp.Kvs[ctx.index].ModRevision
-	ctx.index++
-
-	return key, rev, false
-}
-
-// Close does nothing since db cursors are not needed.
-// The method is required by the code since it implements Iterator API.
-func (ctx *bytesKeyIterator) Close() error {
-	return nil
-}
-
-// Close does nothing since db cursors are not needed.
-// The method is required by the code since it implements Iterator API.
-func (kv *bytesKeyVal) Close() error {
-	return nil
-}
-
-// GetValue returns the value of the pair.
-func (kv *bytesKeyVal) GetValue() []byte {
-	return kv.value
-}
-
-// GetPrevValue returns the previous value of the pair.
-func (kv *bytesKeyVal) GetPrevValue() []byte {
-	return kv.prevValue
-}
-
-// GetKey returns the key of the pair.
-func (kv *bytesKeyVal) GetKey() string {
-	return kv.key
-}
-
-// GetRevision returns the revision associated with the pair.
-func (kv *bytesKeyVal) GetRevision() int64 {
-	return kv.revision
 }
