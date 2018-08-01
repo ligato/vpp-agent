@@ -116,14 +116,23 @@ const (
 
 // Telemetry
 const (
-	Telemetry = "vpp/dump/v1/telemetry"
-	TMemory= "vpp/dump/v1/telemetry/memory"
-	TRuntime= "vpp/dump/v1/telemetry/runtime"
-	TNodeCount= "vpp/dump/v1/telemetry/nodecount"
+	// Telemetry allows to put CLI
+	Telemetry  = "/vpp/dump/v1/telemetry"
+	TMemory    = "/vpp/dump/v1/telemetry/memory"
+	TRuntime   = "/vpp/dump/v1/telemetry/runtime"
+	TNodeCount = "/vpp/dump/v1/telemetry/nodecount"
 )
 
 // Index
 const (
-	// Index can be used to get index page
-	Index = "/vpp/index"
+	// Index can be used to get the full index page
+	Index      = "/"
+	IndexAcl   = "/aclplugin"
+	IndexIf    = "/ifplugin"
+	IndexIPSec = "/ipsecplugin"
+	IndexL2    = "/l2plugin"
+	IndexL3    = "/l3plugin"
+	IndexL4    = "/l4plugin"
+	IndexTel   = "/telemetry"
+	IndexComm  = "/common"
 )

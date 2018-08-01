@@ -123,10 +123,18 @@ curl POST http://0.0.0.0:9191/vpp/command -d '{"vppclicommand":"<command>"}'
 
 **Index**
 
-REST to get index page
+REST to get index page. It is also possible to get index pages only for specific group (ifplugin, telemetry, etc.)
 
 ```
-curl GET http://0.0.0.0:9191/vpp/index
+curl GET http://0.0.0.0:9191/
+curl GET http://0.0.0.0:9191/aclplugin
+curl GET http://0.0.0.0:9191/ifplugin
+curl GET http://0.0.0.0:9191/ipsecplugin
+curl GET http://0.0.0.0:9191/l2plugin
+curl GET http://0.0.0.0:9191/l3plugin
+curl GET http://0.0.0.0:9191/l4plugin
+curl GET http://0.0.0.0:9191/telemetry
+curl GET http://0.0.0.0:9191/common
 ```
 
 ## Logging mechanism

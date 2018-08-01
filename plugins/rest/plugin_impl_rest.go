@@ -44,7 +44,15 @@ const (
 type Plugin struct {
 	Deps
 
-	indexItems []indexItem
+	// Partial index items
+	aclIndexItems       []indexItem
+	ifIndexItems        []indexItem
+	ipSecIndexItems     []indexItem
+	l2IndexItems        []indexItem
+	l3IndexItems        []indexItem
+	l4IndexItems        []indexItem
+	telemetryIndexItems []indexItem
+	commonIndexItems    []indexItem
 
 	// Channels
 	vppChan  api.Channel
@@ -141,9 +149,12 @@ func (plugin *Plugin) Init() (err error) {
 		return err
 	}
 
-	plugin.indexItems = []indexItem{
+	// Fill index item lists
+	plugin.aclIndexItems = []indexItem{
 		{Name: "ACL IP", Path: resturl.AclIP},
 		{Name: "ACL MACIP", Path: resturl.AclMACIP},
+	}
+	plugin.ifIndexItems = []indexItem{
 		{Name: "Interfaces", Path: resturl.Interface},
 		{Name: "Loopback interfaces", Path: resturl.Loopback},
 		{Name: "Ethernet interfaces", Path: resturl.Ethernet},
@@ -151,23 +162,47 @@ func (plugin *Plugin) Init() (err error) {
 		{Name: "Tap interfaces", Path: resturl.Tap},
 		{Name: "VxLAN interfaces", Path: resturl.VxLan},
 		{Name: "Af-packet nterfaces", Path: resturl.AfPacket},
+	}
+	plugin.ipSecIndexItems = []indexItem{
+		{Name: "IPSec SPD", Path: resturl.IPSecSpd},
+		{Name: "IPSec SA", Path: resturl.IPSecSa},
+		{Name: "IPSec Tunnel interfaces", Path: resturl.IPSecTnIf},
+	}
+	plugin.l2IndexItems = []indexItem{
 		{Name: "Bridge domains", Path: resturl.Bd},
 		{Name: "Bridge domain IDs", Path: resturl.BdId},
 		{Name: "L2Fibs", Path: resturl.Fib},
 		{Name: "XConnectorPairs", Path: resturl.Xc},
+	}
+	plugin.l3IndexItems = []indexItem{
 		{Name: "ARPs", Path: resturl.Arps},
 		{Name: "Proxy ARPs", Path: resturl.ProxyArps},
 		{Name: "Proxy ARP interfaces", Path: resturl.PArpIfs},
 		{Name: "Proxy ARP ranges", Path: resturl.PArpRngs},
 		{Name: "Static routes", Path: resturl.Routes},
+	}
+	plugin.l4IndexItems = []indexItem{
 		{Name: "L4 sessions", Path: resturl.Sessions},
+	}
+	plugin.telemetryIndexItems = []indexItem{
 		{Name: "Telemetry", Path: resturl.Telemetry},
 		{Name: "Telemetry memory", Path: resturl.TMemory},
 		{Name: "Telemetry runtime", Path: resturl.TRuntime},
 		{Name: "Telemetry node count", Path: resturl.TNodeCount},
+	}
+	plugin.commonIndexItems = []indexItem{
 		{Name: "CLI command", Path: resturl.Command},
 		{Name: "Index page", Path: resturl.Index},
+		{Name: "Index page for ACL plugin", Path: resturl.IndexAcl},
+		{Name: "Index page for interface plugin", Path: resturl.IndexIf},
+		{Name: "Index page for IPSec plugin", Path: resturl.IndexIPSec},
+		{Name: "Index page for L2 plugin", Path: resturl.IndexL2},
+		{Name: "Index page for L3 plugin", Path: resturl.IndexL3},
+		{Name: "Index page for L4 plugin", Path: resturl.IndexL4},
+		{Name: "Index page for telemetry", Path: resturl.IndexTel},
+		{Name: "Index page for common commands", Path: resturl.IndexComm},
 	}
+
 	return nil
 }
 
@@ -186,7 +221,7 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerL4Handlers()
 	plugin.registerTelemetryHandlers()
 	plugin.registerCommandHandler()
-	plugin.registerIndexHandler()
+	plugin.registerIndexHandlers()
 
 	return nil
 }
