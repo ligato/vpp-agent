@@ -178,6 +178,10 @@ type NatVppWrite interface {
 	SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassemblyIPv4) error
 	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv6 packets
 	SetVirtualReassemblyIPv6(vrCfg *nat.Nat44Global_VirtualReassemblyIPv6) error
+	// SetVirtualReassemblyIPv4 configures default NAT virtual reassembly for IPv4 packets
+	SetDefaultVirtualReassemblyIPv4() error
+	// SetVirtualReassemblyIPv4 configures default NAT virtual reassembly for IPv6 packets
+	SetDefaultVirtualReassemblyIPv6() error
 	// AddIdentityMapping adds new NAT44 identity mapping
 	AddIdentityMapping(ctx *IdentityMappingContext) error
 	// DelIdentityMapping removes NAT44 identity mapping

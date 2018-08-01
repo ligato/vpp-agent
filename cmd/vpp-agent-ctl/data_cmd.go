@@ -740,6 +740,18 @@ func (ctl *VppAgentCtl) createGlobalNat() {
 				TwiceNat:        false,
 			},
 		},
+		VirtualReassemblyIpv4: &nat.Nat44Global_VirtualReassemblyIPv4{
+			Timeout:  10,
+			MaxReass: 20,
+			MaxFrag:  10,
+			DropFrag: true,
+		},
+		VirtualReassemblyIpv6: &nat.Nat44Global_VirtualReassemblyIPv6{
+			Timeout:  15,
+			MaxReass: 25,
+			MaxFrag:  15,
+			DropFrag: false,
+		},
 	}
 
 	ctl.Log.Println(natGlobal)

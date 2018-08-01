@@ -204,7 +204,20 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 		return err
 	}
 
-	// Virtual reassembly
+	// Virtual reassembly IPv4
+	if config.VirtualReassemblyIpv4 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv4(config.VirtualReassemblyIpv4); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv4")
+	}
+	// Virtual reassembly IPv6
+	if config.VirtualReassemblyIpv6 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv6(config.VirtualReassemblyIpv6); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv6")
+	}
 
 	plugin.log.Debug("Setting up NAT global config done")
 
@@ -249,6 +262,33 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 		return err
 	}
 
+	// Virtual reassembly IPv4
+	if oldConfig.VirtualReassemblyIpv4 != nil && newConfig.VirtualReassemblyIpv4 == nil {
+		// Reset with empty config
+		if err := plugin.natHandler.SetDefaultVirtualReassemblyIPv4(); err != nil {
+			return err
+		}
+		plugin.log.Debug("Default nat virtual reassembly set for IPv4")
+	} else if newConfig.VirtualReassemblyIpv4 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv4(newConfig.VirtualReassemblyIpv4); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv4")
+	}
+	// Virtual reassembly IPv6
+	if oldConfig.VirtualReassemblyIpv6 != nil && newConfig.VirtualReassemblyIpv6 == nil {
+		// Reset with empty config
+		if err := plugin.natHandler.SetDefaultVirtualReassemblyIPv6(); err != nil {
+			return err
+		}
+		plugin.log.Debug("Default nat virtual reassembly set for IPv6")
+	} else if newConfig.VirtualReassemblyIpv6 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv6(newConfig.VirtualReassemblyIpv6); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv6")
+	}
+
 	plugin.log.Debug("Modifying NAT global config done")
 
 	return nil
@@ -274,6 +314,15 @@ func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (e
 			return err
 		}
 	}
+
+	// Reset virtual reassembly
+	if err := plugin.natHandler.SetDefaultVirtualReassemblyIPv4(); err != nil {
+		return err
+	}
+	if err := plugin.natHandler.SetDefaultVirtualReassemblyIPv6(); err != nil {
+		return err
+	}
+	plugin.log.Debug("Nat virtual reassembly reset for IPv4 & IPv6")
 
 	plugin.log.Debug("Deleting NAT global config done")
 

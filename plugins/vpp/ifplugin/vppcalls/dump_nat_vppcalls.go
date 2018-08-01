@@ -45,6 +45,7 @@ func (handler *natVppHandler) GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (
 	if err != nil {
 		return nil, err
 	}
+	vrIPv4, vrIPv6, err := handler.virtualReassemblyDump()
 
 	// Combine interfaces with output feature with the rest of them
 	var nat44GlobalInterfaces []*nat.Nat44Global_NatInterface
@@ -67,9 +68,11 @@ func (handler *natVppHandler) GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (
 
 	// Set fields
 	return &nat.Nat44Global{
-		Forwarding:    isEnabled,
-		NatInterfaces: nat44GlobalInterfaces,
-		AddressPools:  natAddressPools,
+		Forwarding:            isEnabled,
+		NatInterfaces:         nat44GlobalInterfaces,
+		AddressPools:          natAddressPools,
+		VirtualReassemblyIpv4: vrIPv4,
+		VirtualReassemblyIpv6: vrIPv6,
 	}, nil
 }
 
@@ -140,6 +143,45 @@ func (handler *natVppHandler) addressDump() (addresses []*nat.Nat44Global_Addres
 	}
 
 	handler.log.Debugf("NAT44 address pool dump complete, found %d entries", len(addresses))
+
+	return
+}
+
+// virtualReassemblyDump returns current NAT44 virtual-reassembly configuration. The output config may be nil.
+func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_VirtualReassemblyIPv4, vrIPv6 *nat.Nat44Global_VirtualReassemblyIPv6, err error) {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(bin_api.NatGetReass{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &bin_api.NatGetReass{}
+	reqContext := handler.dumpChannel.SendRequest(req)
+
+	reply := &bin_api.NatGetReassReply{}
+	if err := reqContext.ReceiveReply(reply); err != nil {
+		return nil, nil, fmt.Errorf("failed to get NAT44 virtual reassembly configuration: %v", err)
+	}
+	if reply.Retval != 0 {
+		return nil, nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	// IPv4
+	if !(reply.IP4MaxReass == MaxReassembly && reply.IP4MaxFrag == MaxFragments && reply.IP4Timeout == Timeout && reply.IP4DropFrag == 0) {
+		vrIPv4 = &nat.Nat44Global_VirtualReassemblyIPv4{
+			Timeout:  reply.IP4Timeout,
+			MaxReass: uint32(reply.IP4MaxReass),
+			MaxFrag:  uint32(reply.IP4MaxFrag),
+			DropFrag: uintToBool(reply.IP4DropFrag),
+		}
+	}
+	// IPv6
+	if !(reply.IP6MaxReass == MaxReassembly && reply.IP6MaxFrag == MaxFragments && reply.IP6Timeout == Timeout && reply.IP6DropFrag == 0) {
+		vrIPv6 = &nat.Nat44Global_VirtualReassemblyIPv6{
+			Timeout:  reply.IP6Timeout,
+			MaxReass: uint32(reply.IP6MaxReass),
+			MaxFrag:  uint32(reply.IP6MaxFrag),
+			DropFrag: uintToBool(reply.IP6DropFrag),
+		}
+	}
 
 	return
 }

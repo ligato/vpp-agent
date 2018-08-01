@@ -32,6 +32,13 @@ const (
 // NoInterface is sw-if-idx which means 'no interface'
 const NoInterface uint32 = 0xffffffff
 
+// Default NAT virtual reassembly values
+const (
+	MaxReassembly = 1024
+	MaxFragments  = 5
+	Timeout       = 2
+)
+
 // StaticMappingContext groups common fields required for static mapping
 type StaticMappingContext struct {
 	Tag           string
@@ -342,6 +349,14 @@ func (handler *natVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat2.Nat44Global_V
 
 func (handler *natVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat2.Nat44Global_VirtualReassemblyIPv6) error {
 	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, true)
+}
+
+func (handler *natVppHandler) SetDefaultVirtualReassemblyIPv4() error {
+	return handler.handleNat44VirtualReassembly(Timeout, MaxReassembly, MaxFragments, false, false)
+}
+
+func (handler *natVppHandler) SetDefaultVirtualReassemblyIPv6() error {
+	return handler.handleNat44VirtualReassembly(Timeout, MaxReassembly, MaxFragments, false, true)
 }
 
 func (handler *natVppHandler) AddIdentityMapping(ctx *IdentityMappingContext) error {
