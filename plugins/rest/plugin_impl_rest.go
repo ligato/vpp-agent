@@ -43,15 +43,8 @@ const (
 type Plugin struct {
 	Deps
 
-	// Partial index items
-	aclIndexItems       []indexItem
-	ifIndexItems        []indexItem
-	ipSecIndexItems     []indexItem
-	l2IndexItems        []indexItem
-	l3IndexItems        []indexItem
-	l4IndexItems        []indexItem
-	telemetryIndexItems []indexItem
-	commonIndexItems    []indexItem
+	// Index page
+	indexes *indexes
 
 	// Channels
 	vppChan  api.Channel
@@ -72,7 +65,7 @@ type Plugin struct {
 	rtHandler    l3vppcalls.RouteVppRead
 	l4Handler    l4vppcalls.L4VppRead
 
-	sync.Mutex
+	govppmux sync.Mutex
 }
 
 // Deps represents dependencies of Rest Plugin
@@ -81,6 +74,10 @@ type Deps struct {
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
 	VPP          vpp.API
+}
+
+type indexes struct {
+	IdxMap map[string][]indexItem
 }
 
 type indexItem struct {
@@ -149,57 +146,53 @@ func (plugin *Plugin) Init() (err error) {
 	}
 
 	// Fill index item lists
-	plugin.aclIndexItems = []indexItem{
-		{Name: "ACL IP", Path: resturl.AclIP},
-		{Name: "ACL MACIP", Path: resturl.AclMACIP},
+	idxMap := make(map[string][]indexItem)
+	idxMap["ACL plugin"] = []indexItem{
+		{Name: "IP-type access lists", Path: resturl.AclIP},
+		{Name: "MACIP-type access lists", Path: resturl.AclMACIP},
 	}
-	plugin.ifIndexItems = []indexItem{
-		{Name: "Interfaces", Path: resturl.Interface},
-		{Name: "Loopback interfaces", Path: resturl.Loopback},
-		{Name: "Ethernet interfaces", Path: resturl.Ethernet},
-		{Name: "Memif interfaces", Path: resturl.Memif},
-		{Name: "Tap interfaces", Path: resturl.Tap},
-		{Name: "VxLAN interfaces", Path: resturl.VxLan},
-		{Name: "Af-packet nterfaces", Path: resturl.AfPacket},
+	idxMap["Interface plugin"] = []indexItem{
+		{Name: "All interfaces", Path: resturl.Interface},
+		{Name: "Loopbacks", Path: resturl.Loopback},
+		{Name: "Ethernets", Path: resturl.Ethernet},
+		{Name: "Memifs", Path: resturl.Memif},
+		{Name: "Taps", Path: resturl.Tap},
+		{Name: "VxLANs", Path: resturl.VxLan},
+		{Name: "Af-packets", Path: resturl.AfPacket},
 	}
-	plugin.ipSecIndexItems = []indexItem{
-		{Name: "IPSec SPD", Path: resturl.IPSecSpd},
-		{Name: "IPSec SA", Path: resturl.IPSecSa},
-		{Name: "IPSec Tunnel interfaces", Path: resturl.IPSecTnIf},
+	idxMap["IPSec plugin"] = []indexItem{
+		{Name: "Security policy databases", Path: resturl.IPSecSpd},
+		{Name: "Security associations", Path: resturl.IPSecSa},
+		{Name: "Tunnel interfaces", Path: resturl.IPSecTnIf},
 	}
-	plugin.l2IndexItems = []indexItem{
+	idxMap["L2 plugin"] = []indexItem{
 		{Name: "Bridge domains", Path: resturl.Bd},
 		{Name: "Bridge domain IDs", Path: resturl.BdId},
 		{Name: "L2Fibs", Path: resturl.Fib},
-		{Name: "XConnectorPairs", Path: resturl.Xc},
+		{Name: "Cross connects", Path: resturl.Xc},
 	}
-	plugin.l3IndexItems = []indexItem{
+	idxMap["L3 plugin"] = []indexItem{
 		{Name: "ARPs", Path: resturl.Arps},
 		{Name: "Proxy ARPs", Path: resturl.ProxyArps},
 		{Name: "Proxy ARP interfaces", Path: resturl.PArpIfs},
 		{Name: "Proxy ARP ranges", Path: resturl.PArpRngs},
 		{Name: "Static routes", Path: resturl.Routes},
 	}
-	plugin.l4IndexItems = []indexItem{
+	idxMap["L4 plugin"] = []indexItem{
 		{Name: "L4 sessions", Path: resturl.Sessions},
 	}
-	plugin.telemetryIndexItems = []indexItem{
-		{Name: "Telemetry", Path: resturl.Telemetry},
-		{Name: "Telemetry memory", Path: resturl.TMemory},
-		{Name: "Telemetry runtime", Path: resturl.TRuntime},
-		{Name: "Telemetry node count", Path: resturl.TNodeCount},
+	idxMap["Telemetry"] = []indexItem{
+		{Name: "All data", Path: resturl.Telemetry},
+		{Name: "Memory", Path: resturl.TMemory},
+		{Name: "Runtime", Path: resturl.TRuntime},
+		{Name: "Node count", Path: resturl.TNodeCount},
 	}
-	plugin.commonIndexItems = []indexItem{
+	idxMap["Other"] = []indexItem{
 		{Name: "CLI command", Path: resturl.Command},
-		{Name: "Index page", Path: resturl.Index},
-		{Name: "Index page for ACL plugin", Path: resturl.IndexAcl},
-		{Name: "Index page for interface plugin", Path: resturl.IndexIf},
-		{Name: "Index page for IPSec plugin", Path: resturl.IndexIPSec},
-		{Name: "Index page for L2 plugin", Path: resturl.IndexL2},
-		{Name: "Index page for L3 plugin", Path: resturl.IndexL3},
-		{Name: "Index page for L4 plugin", Path: resturl.IndexL4},
-		{Name: "Index page for telemetry", Path: resturl.IndexTel},
-		{Name: "Index page for common commands", Path: resturl.IndexComm},
+	}
+
+	plugin.indexes = &indexes{
+		IdxMap: idxMap,
 	}
 
 	return nil

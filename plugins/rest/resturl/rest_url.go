@@ -127,12 +127,4 @@ const (
 const (
 	// Index can be used to get the full index page
 	Index      = "/"
-	IndexAcl   = "/aclplugin"
-	IndexIf    = "/ifplugin"
-	IndexIPSec = "/ipsecplugin"
-	IndexL2    = "/l2plugin"
-	IndexL3    = "/l3plugin"
-	IndexL4    = "/l4plugin"
-	IndexTel   = "/telemetry"
-	IndexComm  = "/common"
 )

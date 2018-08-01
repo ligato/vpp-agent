@@ -6,10 +6,13 @@
 <body>
 <h2>Index:</h2>
 <ul>
-{{range .}}
-    <li>
-        <a href="{{.Path}}">{{.Name}}</a>
-    </li>
+{{range $key, $data := .IdxMap}}
+    <h3>{{$key}}:</h3>
+    {{range $dataEntry := $data}}
+        <li>
+            <a href="{{$dataEntry.Path}}">{{$dataEntry.Name}}</a>
+        </li>
+    {{end}}
 {{end}}
 </ul>
 </body>

@@ -198,23 +198,15 @@ func (plugin *Plugin) registerCommandHandler() {
 
 // Registers index page
 func (plugin *Plugin) registerIndexHandlers() {
-	plugin.registerIndexHandler(resturl.Index, GET, plugin.getAllIndexHandlers())
-	plugin.registerIndexHandler(resturl.IndexAcl, GET, plugin.aclIndexItems)
-	plugin.registerIndexHandler(resturl.IndexIf, GET, plugin.ifIndexItems)
-	plugin.registerIndexHandler(resturl.IndexIPSec, GET, plugin.ipSecIndexItems)
-	plugin.registerIndexHandler(resturl.IndexL2, GET, plugin.l2IndexItems)
-	plugin.registerIndexHandler(resturl.IndexL3, GET, plugin.l3IndexItems)
-	plugin.registerIndexHandler(resturl.IndexL4, GET, plugin.l4IndexItems)
-	plugin.registerIndexHandler(resturl.IndexTel, GET, plugin.telemetryIndexItems)
-	plugin.registerIndexHandler(resturl.IndexComm, GET, plugin.commonIndexItems)
+	plugin.registerIndexHandler(resturl.Index, GET, plugin.indexes)
 }
 
 // registerHTTPHandler is common register method for all handlers
 func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) {
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
-			plugin.Lock()
-			defer plugin.Unlock()
+			plugin.govppmux.Lock()
+			defer plugin.govppmux.Unlock()
 
 			res, err := f()
 			if err != nil {
@@ -416,31 +408,19 @@ func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.H
 	}
 }
 
-func (plugin *Plugin) registerIndexHandler(key, method string, indexItems []indexItem) {
+func (plugin *Plugin) registerIndexHandler(key, method string, indexes *indexes) {
+	r := render.New(render.Options{
+		Directory:  "templates",
+		Asset:      Asset,
+		AssetNames: AssetNames,
+	})
+
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
-			plugin.Lock()
-			defer plugin.Unlock()
-
-			r := render.New(render.Options{
-				Directory:  "templates",
-				Asset:      Asset,
-				AssetNames: AssetNames,
-			})
 
 			plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
-			r.HTML(w, http.StatusOK, "index", indexItems)
+			r.HTML(w, http.StatusOK, "index", indexes)
 		}
 	}
 	plugin.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
-}
-
-func (plugin *Plugin) getAllIndexHandlers() (indexItems []indexItem) {
-	indexItems = append(indexItems, plugin.aclIndexItems...)
-	indexItems = append(indexItems, plugin.ifIndexItems...)
-	indexItems = append(indexItems, plugin.ipSecIndexItems...)
-	indexItems = append(indexItems, plugin.l2IndexItems...)
-	indexItems = append(indexItems, plugin.l3IndexItems...)
-	indexItems = append(indexItems, plugin.l4IndexItems...)
-	return append(indexItems, plugin.commonIndexItems...)
 }
