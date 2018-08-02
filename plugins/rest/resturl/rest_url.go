@@ -116,11 +116,11 @@ const (
 
 // Telemetry
 const (
-	// Telemetry allows to put CLI
-	Telemetry  = "/vpp/dump/v1/telemetry"
-	TMemory    = "/vpp/dump/v1/telemetry/memory"
-	TRuntime   = "/vpp/dump/v1/telemetry/runtime"
-	TNodeCount = "/vpp/dump/v1/telemetry/nodecount"
+	// Telemetry reads various types of metrics data from the VPP
+	Telemetry  = "/vpp/telemetry"
+	TMemory    = "/vpp/telemetry/memory"
+	TRuntime   = "/vpp/telemetry/runtime"
+	TNodeCount = "/vpp/telemetry/nodecount"
 )
 
 // Index

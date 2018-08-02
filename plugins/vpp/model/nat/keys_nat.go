@@ -16,13 +16,13 @@ package nat
 
 const (
 	// natPrefix
-	Prefix = "vpp/config/v1/nat"
+	Prefix = "vpp/config/v1/nat/"
 	// globalConfigPrefix is relative prefix for global config
-	GlobalPrefix = Prefix + "/global/"
+	GlobalPrefix = Prefix + "global/"
 	// sNatPrefix is relative prefix for SNAT setup
-	SNatPrefix = Prefix + "/snat/"
+	SNatPrefix = Prefix + "snat/"
 	// dNatPrefix is relative prefix for DNAT setup
-	DNatPrefix = Prefix + "/dnat/"
+	DNatPrefix = Prefix + "dnat/"
 )
 
 // SNatKey returns the key used in ETCD to store SNAT config

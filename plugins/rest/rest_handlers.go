@@ -198,7 +198,20 @@ func (plugin *Plugin) registerCommandHandler() {
 
 // Registers index page
 func (plugin *Plugin) registerIndexHandlers() {
-	plugin.registerIndexHandler(resturl.Index, GET, plugin.indexes)
+	r := render.New(render.Options{
+		Directory:  "templates",
+		Asset:      Asset,
+		AssetNames: AssetNames,
+	})
+
+	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
+		return func(w http.ResponseWriter, req *http.Request) {
+
+			plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
+			r.HTML(w, http.StatusOK, "index", plugin.index)
+		}
+	}
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.Index, handlerFunc, GET)
 }
 
 // registerHTTPHandler is common register method for all handlers
@@ -406,21 +419,4 @@ func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.H
 
 		formatter.JSON(w, http.StatusOK, nodeCounters)
 	}
-}
-
-func (plugin *Plugin) registerIndexHandler(key, method string, indexes *indexes) {
-	r := render.New(render.Options{
-		Directory:  "templates",
-		Asset:      Asset,
-		AssetNames: AssetNames,
-	})
-
-	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
-		return func(w http.ResponseWriter, req *http.Request) {
-
-			plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
-			r.HTML(w, http.StatusOK, "index", indexes)
-		}
-	}
-	plugin.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
 }

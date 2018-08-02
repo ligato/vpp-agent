@@ -15,13 +15,11 @@
 package vppcalls
 
 import (
-	"bytes"
 	"net"
 	"strconv"
 	"time"
 
 	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
@@ -77,11 +75,11 @@ func (handler *ipSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPS
 
 		sa := &ipsec.SecurityAssociations_SA{
 			Spi:            saData.Spi,
-			Protocol:       getSaProto(saData.Protocol),
-			CryptoAlg:      getCryptoAlg(saData.CryptoAlg),
-			CryptoKey:      string(bytes.SplitN(saData.CryptoKey, []byte{0x00}, 2)[0]),
-			IntegAlg:       getIntegAlg(saData.IntegAlg),
-			IntegKey:       string(bytes.SplitN(saData.IntegKey, []byte{0x00}, 2)[0]),
+			Protocol:       ipsec.SecurityAssociations_SA_IPSecProtocol(saData.Protocol),
+			CryptoAlg:      ipsec.CryptoAlgorithm(saData.CryptoAlg),
+			CryptoKey:      string(saData.CryptoKey[:saData.CryptoKeyLen]),
+			IntegAlg:       ipsec.IntegAlgorithm(saData.IntegAlg),
+			IntegKey:       string(saData.IntegKey[:saData.IntegKeyLen]),
 			UseEsn:         uintToBool(saData.UseEsn),
 			UseAntiReplay:  uintToBool(saData.UseAntiReplay),
 			TunnelSrcAddr:  tunnelSrcAddrStr,
@@ -110,7 +108,7 @@ func (handler *ipSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPS
 
 // IPSecTunnelInterfaceDetails hold a list of tunnel interfaces with name/index map as metadata
 type IPSecTunnelInterfaceDetails struct {
-	Tunnels []*ipsec.TunnelInterfaces_Tunnel
+	Tunnels *ipsec.TunnelInterfaces
 	Meta    *IPSecTunnelMeta
 }
 
@@ -140,19 +138,14 @@ func (handler *ipSecVppHandler) DumpIPSecTunnelInterfaces() (tun *IPSecTunnelInt
 		}
 
 		// Interface
-		var ifName string
-		var ifData *interfaces.Interfaces_Interface
-		if saData.SwIfIndex != ^uint32(1) {
-			var found bool
-			ifName, ifData, found = handler.ifIndexes.LookupName(saData.SwIfIndex)
-			if !found {
-				handler.log.Warnf("IPSec SA dump: interface name not found for %d", saData.SwIfIndex)
-				continue
-			}
-			if ifData == nil {
-				handler.log.Warnf("IPSec SA dump: interface %s has no metadata", ifName)
-				continue
-			}
+		ifName, ifData, found := handler.ifIndexes.LookupName(saData.SwIfIndex)
+		if !found {
+			handler.log.Warnf("IPSec SA dump: interface name not found for %d", saData.SwIfIndex)
+			continue
+		}
+		if ifData == nil {
+			handler.log.Warnf("IPSec SA dump: interface %s has no metadata", ifName)
+			continue
 		}
 
 		// Addresses
@@ -174,8 +167,8 @@ func (handler *ipSecVppHandler) DumpIPSecTunnelInterfaces() (tun *IPSecTunnelInt
 			RemoteIp:    tunnelDstAddrStr,
 			LocalSpi:    saData.Spi,
 			RemoteSpi:   saData.Spi,
-			CryptoAlg:   getCryptoAlg(saData.CryptoAlg),
-			IntegAlg:    getIntegAlg(saData.IntegAlg),
+			CryptoAlg:   ipsec.CryptoAlgorithm(saData.CryptoAlg),
+			IntegAlg:    ipsec.IntegAlgorithm(saData.IntegAlg),
 			Enabled:     ifData.Enabled,
 			IpAddresses: ifData.IpAddresses,
 			Vrf:         ifData.Vrf,
@@ -187,7 +180,9 @@ func (handler *ipSecVppHandler) DumpIPSecTunnelInterfaces() (tun *IPSecTunnelInt
 	}
 
 	return &IPSecTunnelInterfaceDetails{
-		Tunnels: tunnels,
+		Tunnels: &ipsec.TunnelInterfaces{
+			Tunnels: tunnels,
+		},
 		Meta:    meta,
 	}, nil
 }
@@ -234,7 +229,7 @@ func (handler *ipSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err 
 		// Prepare VPP binapi request
 		req := &ipsecapi.IpsecSpdDump{
 			SpdID: spdIdx,
-			SaID:  0xffffffff,
+			SaID:  ^uint32(0),
 		}
 		requestCtx := handler.callsChannel.SendMultiRequest(req)
 
@@ -332,49 +327,6 @@ func (handler *ipSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []
 
 	return saList, nil
 
-}
-
-func getCryptoAlg(alg uint8) ipsec.CryptoAlgorithm {
-	switch alg {
-	case 0:
-		return ipsec.CryptoAlgorithm_NONE_CRYPTO
-	case 1:
-		return ipsec.CryptoAlgorithm_AES_CBC_128
-	case 2:
-		return ipsec.CryptoAlgorithm_AES_CBC_192
-	case 3:
-		return ipsec.CryptoAlgorithm_AES_CBC_256
-	default:
-		return ipsec.CryptoAlgorithm_NONE_CRYPTO // As default
-	}
-}
-
-func getIntegAlg(alg uint8) ipsec.IntegAlgorithm {
-	switch alg {
-	case 0:
-		return ipsec.IntegAlgorithm_NONE_INTEG
-	case 1:
-		return ipsec.IntegAlgorithm_MD5_96
-	case 2:
-		return ipsec.IntegAlgorithm_SHA1_96
-	case 3:
-		return ipsec.IntegAlgorithm_SHA_256_96
-	case 4:
-		return ipsec.IntegAlgorithm_SHA_256_128
-	case 5:
-		return ipsec.IntegAlgorithm_SHA_384_192
-	case 6:
-		return ipsec.IntegAlgorithm_SHA_512_256
-	default:
-		return ipsec.IntegAlgorithm_NONE_INTEG // As default
-	}
-}
-
-func getSaProto(protocol uint8) ipsec.SecurityAssociations_SA_IPSecProtocol {
-	if protocol == 0 {
-		return ipsec.SecurityAssociations_SA_AH
-	}
-	return ipsec.SecurityAssociations_SA_ESP
 }
 
 func uintToBool(input uint8) bool {
