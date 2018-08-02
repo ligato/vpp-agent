@@ -19,11 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/flavors/local"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -96,18 +93,20 @@ var (
 // Start Agent plugins selected for this example.
 func main() {
 	// Init close channel to stop the example.
-	closeChannel := make(chan struct{}, 1)
+	//closeChannel := make(chan struct{}, 1)
+	//
+	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
+	//	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &VethExamplePlugin{}}
+	//
+	//	return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
+	//}))
+	//
+	//// End when the localhost example is finished.
+	//go closeExample("localhost example finished", closeChannel)
+	//
+	//core.EventLoopWithInterrupt(agent, closeChannel)
 
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
-		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &VethExamplePlugin{}}
-
-		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
-	}))
-
-	// End when the localhost example is finished.
-	go closeExample("localhost example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// todo use new flavors and options
 }
 
 // Stop the agent with desired info message.
@@ -120,7 +119,7 @@ func closeExample(message string, closeChannel chan struct{}) {
 /* VETH Example */
 
 // PluginID of an example plugin.
-const PluginID core.PluginName = "veth-example-plugin"
+//const PluginID core.PluginName = "veth-example-plugin"
 
 // VethExamplePlugin uses localclient to transport example veth and af-packet
 // configuration to linuxplugin, eventually VPP plugins
@@ -166,17 +165,17 @@ func (plugin *VethExamplePlugin) Close() error {
 // Configure initial data
 func (plugin *VethExamplePlugin) putInitialData() {
 	plugin.log.Infof("Applying initial configuration")
-	err := localclient.DataResyncRequest(PluginID).
-		LinuxInterface(initialVeth11()).
-		LinuxInterface(initialVeth12()).
-		VppInterface(afPacket1()).
-		BD(bridgeDomain()).
-		Send().ReceiveReply()
-	if err != nil {
-		plugin.log.Errorf("Initial configuration failed: %v", err)
-	} else {
-		plugin.log.Info("Initial configuration successful")
-	}
+	//err := localclient.DataResyncRequest(PluginID).
+	//	LinuxInterface(initialVeth11()).
+	//	LinuxInterface(initialVeth12()).
+	//	VppInterface(afPacket1()).
+	//	BD(bridgeDomain()).
+	////	Send().ReceiveReply()
+	//if err != nil {
+	//	plugin.log.Errorf("Initial configuration failed: %v", err)
+	//} else {
+	//	plugin.log.Info("Initial configuration successful")
+	//}
 }
 
 // Configure modified data
@@ -185,19 +184,19 @@ func (plugin *VethExamplePlugin) putModifiedData(ctx context.Context, timeout in
 	case <-time.After(time.Duration(timeout) * time.Second):
 		plugin.log.Infof("Applying modified configuration")
 		// Simulate configuration change after timeout
-		err := localclient.DataChangeRequest(PluginID).
-			Put().
-			LinuxInterface(modifiedVeth11()).
-			LinuxInterface(modifiedVeth12()).
-			LinuxInterface(veth21()).
-			LinuxInterface(veth22()).
-			VppInterface(afPacket2()).
-			Send().ReceiveReply()
-		if err != nil {
-			plugin.log.Errorf("Modified configuration failed: %v", err)
-		} else {
-			plugin.log.Info("Modified configuration successful")
-		}
+		//err := localclient.DataChangeRequest(PluginID).
+		//	Put().
+		//	LinuxInterface(modifiedVeth11()).
+		//	LinuxInterface(modifiedVeth12()).
+		//	LinuxInterface(veth21()).
+		//	LinuxInterface(veth22()).
+		//	VppInterface(afPacket2()).
+		//	Send().ReceiveReply()
+		//if err != nil {
+		//	plugin.log.Errorf("Modified configuration failed: %v", err)
+		//} else {
+		//	plugin.log.Info("Modified configuration successful")
+		//}
 	case <-ctx.Done():
 		// Cancel the scheduled re-configuration.
 		plugin.log.Info("Modification of configuration canceled")

@@ -15,29 +15,28 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/go/itest/iftst"
+	"github.com/ligato/cn-infra/logging"
 )
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
+	//// Init close channel to stop the example.
+	//exampleFinished := make(chan struct{}, 1)
+	//
+	//// Start Agent with ExampleFlavor.
+	//flavor := vppFlavor.Flavor{}
+	//exampleFlavor := ExampleFlavor{
+	//	IdxIfaceCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
+	//	Flavor:               &flavor, // inject VPP flavor
+	//}
+	//agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
+	//
+	//core.EventLoopWithInterrupt(agent, exampleFinished)
 
-	// Start Agent with ExampleFlavor.
-	flavor := vppFlavor.Flavor{}
-	exampleFlavor := ExampleFlavor{
-		IdxIfaceCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:               &flavor, // inject VPP flavor
-	}
-	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
-
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	// todo use new flavors && agent
 }
 
 // ExamplePlugin used for demonstration of SwIfIndexes - see Init()
@@ -53,6 +52,8 @@ type ExamplePlugin struct {
 
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
+
+	Log logging.Logger
 }
 
 // Init initializes transport & SwIfIndexes then watch, publish & lookup.
@@ -110,20 +111,20 @@ func (plugin *ExamplePlugin) Close() error {
 // Test data are published to different agents (including local).
 func (plugin *ExamplePlugin) publish() (err error) {
 	// Create interface in local agent.
-	iface0 := iftst.TapInterfaceBuilder("iface0", "192.168.1.1")
-	err = plugin.Publisher.Put(interfaces.InterfaceKey(iface0.Name), &iface0)
-	if err != nil {
-		return err
-	}
-	// Create interface in agent1.
-	iface1 := iftst.TapInterfaceBuilder("iface1", "192.168.0.2")
-	err = plugin.Agent1.Put(interfaces.InterfaceKey(iface1.Name), &iface1)
-	if err != nil {
-		return err
-	}
-	// Create interface in agent2.
-	iface2 := iftst.TapInterfaceBuilder("iface2", "192.168.0.3")
-	err = plugin.Agent2.Put(interfaces.InterfaceKey(iface2.Name), &iface2)
+	//iface0 := iftst.TapInterfaceBuilder("iface0", "192.168.1.1")
+	//err = plugin.Publisher.Put(interfaces.InterfaceKey(iface0.Name), &iface0)
+	//if err != nil {
+	//	return err
+	//}
+	//// Create interface in agent1.
+	//iface1 := iftst.TapInterfaceBuilder("iface1", "192.168.0.2")
+	//err = plugin.Agent1.Put(interfaces.InterfaceKey(iface1.Name), &iface1)
+	//if err != nil {
+	//	return err
+	//}
+	//// Create interface in agent2.
+	//iface2 := iftst.TapInterfaceBuilder("iface2", "192.168.0.3")
+	//err = plugin.Agent2.Put(interfaces.InterfaceKey(iface2.Name), &iface2)
 	return err
 }
 
@@ -132,9 +133,9 @@ func (plugin *ExamplePlugin) consume() {
 	plugin.Log.Info("Watching started")
 	swIfIdxChan := make(chan ifaceidx.SwIfIdxDto)
 	// Subscribe local iface-idx-mapping and both of cache mapping.
-	plugin.swIfIdxLocal.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
-	plugin.swIfIdxAgent1.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
-	plugin.swIfIdxAgent2.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
+	//plugin.swIfIdxLocal.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
+	//plugin.swIfIdxAgent1.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
+	//plugin.swIfIdxAgent2.WatchNameToIdx(plugin.PluginName, swIfIdxChan)
 
 	counter := 0
 

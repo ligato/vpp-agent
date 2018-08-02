@@ -21,8 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -35,7 +33,6 @@ import (
 
 	"fmt"
 
-	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 )
 
@@ -60,22 +57,23 @@ func init() {
 // Start Agent plugins selected for this example.
 func main() {
 	// Init close channel to stop the example.
-	closeChannel := make(chan struct{}, 1)
-
-	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
-	flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-
-	// Example plugin
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
-
-		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
-	}))
-
-	// End when the localhost example is finished.
-	go closeExample("localhost example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	//closeChannel := make(chan struct{}, 1)
+	//
+	//flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
+	//flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
+	//
+	//// Example plugin
+	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
+	//	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
+	//
+	//	return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
+	//}))
+	//
+	//// End when the localhost example is finished.
+	//go closeExample("localhost example finished", closeChannel)
+	//
+	//core.EventLoopWithInterrupt(agent, closeChannel)
+	// todo use new flavors and options
 }
 
 // Stop the agent with desired info message.
@@ -90,7 +88,7 @@ func closeExample(message string, closeChannel chan struct{}) {
  ******************/
 
 // PluginID of example plugin
-const PluginID core.PluginName = "example-plugin"
+//const PluginID core.PluginName = "example-plugin"
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {

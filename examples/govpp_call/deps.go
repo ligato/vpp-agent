@@ -14,51 +14,46 @@
 
 package main
 
-import (
-	"github.com/ligato/cn-infra/core"
-	"github.com/ligato/cn-infra/flavors/local"
-	"github.com/ligato/vpp-agent/flavors/vpp"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
-)
+import "github.com/ligato/vpp-agent/plugins/govppmux"
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
 	GoVppmux              govppmux.API
-	local.PluginInfraDeps // injected
+//	local.PluginInfraDeps // injected
 }
-
-// ExampleFlavor is a set of plugins required for the datasync example.
-type ExampleFlavor struct {
-	// Local flavor to access to Infra (logger, service label, status check)
-	*vpp.Flavor
-	// Example plugin
-	GovppExample ExamplePlugin
-	// Mark flavor as injected after Inject()
-	injected bool
-}
-
-// Inject sets object references
-func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
-	// Every flavor should be injected only once
-	if ef.injected {
-		return false
-	}
-	ef.injected = true
-
-	// Init local flavor
-	if ef.Flavor == nil {
-		ef.Flavor = &vpp.Flavor{}
-	}
-	ef.Flavor.Inject()
-
-	ef.GovppExample.PluginInfraDeps = *ef.Flavor.InfraDeps("govpp-example")
-	ef.GovppExample.GoVppmux = &ef.GoVPP
-
-	return true
-}
-
-// Plugins combines all Plugins in flavor to the list
-func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
-	ef.Inject()
-	return core.ListPluginsInFlavor(ef)
-}
+//
+//// ExampleFlavor is a set of plugins required for the datasync example.
+//type ExampleFlavor struct {
+//	// Local flavor to access to Infra (logger, service label, status check)
+//	*vpp.Flavor
+//	// Example plugin
+//	GovppExample ExamplePlugin
+//	// Mark flavor as injected after Inject()
+//	injected bool
+//}
+//
+//// Inject sets object references
+//func (ef *ExampleFlavor) Inject() (allReadyInjected bool) {
+//	// Every flavor should be injected only once
+//	if ef.injected {
+//		return false
+//	}
+//	ef.injected = true
+//
+//	// Init local flavor
+//	if ef.Flavor == nil {
+//		ef.Flavor = &vpp.Flavor{}
+//	}
+//	ef.Flavor.Inject()
+//
+//	ef.GovppExample.PluginInfraDeps = *ef.Flavor.InfraDeps("govpp-example")
+//	ef.GovppExample.GoVppmux = &ef.GoVPP
+//
+//	return true
+//}
+//
+//// Plugins combines all Plugins in flavor to the list
+//func (ef *ExampleFlavor) Plugins() []*core.NamedPlugin {
+//	ef.Inject()
+//	return core.ListPluginsInFlavor(ef)
+//}
