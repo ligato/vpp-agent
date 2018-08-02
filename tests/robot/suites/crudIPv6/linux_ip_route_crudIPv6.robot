@@ -17,7 +17,7 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${CONFIG_SLEEP}=       10s
+${CONFIG_SLEEP}=       50s
 ${RESYNC_SLEEP}=       15s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s
