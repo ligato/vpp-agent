@@ -174,7 +174,7 @@ func TestEnableNat44InterfaceOutputAsInside(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.Nat44InterfaceAddDelOutputFeatureReply{})
-	err := natHandler.EnableNat44Interface(1, true)
+	err := natHandler.EnableNat44InterfaceOutput(1, true)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
