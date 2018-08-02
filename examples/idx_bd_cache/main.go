@@ -15,29 +15,28 @@
 package main
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/tests/go/itest/l2tst"
+	"github.com/ligato/cn-infra/logging"
 )
 
 // Start Agent plugins selected for this example.
 func main() {
 	// Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
+	//exampleFinished := make(chan struct{}, 1)
+	//
+	//// Start Agent with VPP Flavor and ExampleFlavor.
+	//flavor := vppFlavor.Flavor{}
+	//exampleFlavor := ExampleFlavor{
+	//	IdxBdCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
+	//	Flavor:            &flavor, // inject VPP flavor
+	//}
+	//agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
+	//
+	//core.EventLoopWithInterrupt(agent, exampleFinished)
 
-	// Start Agent with VPP Flavor and ExampleFlavor.
-	flavor := vppFlavor.Flavor{}
-	exampleFlavor := ExampleFlavor{
-		IdxBdCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:            &flavor, // inject VPP flavor
-	}
-	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
-
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	// todo use new flavors && options
 }
 
 // ExamplePlugin is used for demonstration of Bridge Domain Indexes - see Init().
@@ -53,6 +52,8 @@ type ExamplePlugin struct {
 
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
+
+	Log logging.Logger
 }
 
 // Init transport & bdIndexes, then watch, publish & lookup
@@ -110,20 +111,20 @@ func (plugin *ExamplePlugin) Close() error {
 // Test data are published to different agents (including local).
 func (plugin *ExamplePlugin) publish() (err error) {
 	// Create bridge domain in local agent.
-	br0 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
-	err = plugin.Publisher.Put(l2.BridgeDomainKey(br0.Name), &br0)
-	if err != nil {
-		return err
-	}
-	// Create bridge domain in agent1
-	br1 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd1", "iface1", true)
-	err = plugin.Agent1.Put(l2.BridgeDomainKey(br1.Name), &br1)
-	if err != nil {
-		return err
-	}
-	// Create bridge domain in agent2
-	br2 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd2", "iface2", true)
-	err = plugin.Agent2.Put(l2.BridgeDomainKey(br2.Name), &br2)
+	//br0 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
+	//err = plugin.Publisher.Put(l2.BridgeDomainKey(br0.Name), &br0)
+	//if err != nil {
+	//	return err
+	//}
+	//// Create bridge domain in agent1
+	//br1 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd1", "iface1", true)
+	//err = plugin.Agent1.Put(l2.BridgeDomainKey(br1.Name), &br1)
+	//if err != nil {
+	//	return err
+	//}
+	//// Create bridge domain in agent2
+	//br2 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd2", "iface2", true)
+	//err = plugin.Agent2.Put(l2.BridgeDomainKey(br2.Name), &br2)
 	return err
 }
 
@@ -132,9 +133,9 @@ func (plugin *ExamplePlugin) consume() {
 	plugin.Log.Info("Watching started")
 	bdIdxChan := make(chan l2idx.BdChangeDto)
 	// Subscribe local bd-idx-mapping and both of cache mapping.
-	plugin.bdIdxLocal.WatchNameToIdx(plugin.PluginName, bdIdxChan)
-	plugin.bdIdxAgent1.WatchNameToIdx(plugin.PluginName, bdIdxChan)
-	plugin.bdIdxAgent2.WatchNameToIdx(plugin.PluginName, bdIdxChan)
+	//plugin.bdIdxLocal.WatchNameToIdx(plugin.PluginName, bdIdxChan)
+	//plugin.bdIdxAgent1.WatchNameToIdx(plugin.PluginName, bdIdxChan)
+	//plugin.bdIdxAgent2.WatchNameToIdx(plugin.PluginName, bdIdxChan)
 
 	counter := 0
 
