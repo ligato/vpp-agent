@@ -29,7 +29,7 @@ import (
 func (handler *natVppHandler) Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error) {
 	handler.log.Debug("dumping Nat44Global")
 	// Dump all necessary data to reconstruct global NAT configuration
-	isEnabled, err := handler.isForwardingEnabled()
+	isEnabled, err := handler.isNat44ForwardingEnabled()
 	if err != nil {
 		return nil, err
 	}
@@ -37,15 +37,18 @@ func (handler *natVppHandler) Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfInd
 	if err != nil {
 		return nil, err
 	}
-	natOutputFeature, err := handler.interfaceOutputFeatureDump(swIfIndices)
+	natOutputFeature, err := handler.nat44InterfaceOutputFeatureDump(swIfIndices)
 	if err != nil {
 		return nil, err
 	}
-	natAddressPools, err := handler.addressDump()
+	natAddressPools, err := handler.nat44AddressDump()
 	if err != nil {
 		return nil, err
 	}
 	vrIPv4, vrIPv6, err := handler.virtualReassemblyDump()
+	if err != nil {
+		return nil, err
+	}
 
 	// Combine interfaces with output feature with the rest of them
 	var nat44GlobalInterfaces []*nat.Nat44Global_NatInterface
@@ -83,7 +86,7 @@ func (handler *natVppHandler) Nat44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*na
 	handler.log.Debug("dumping DNat")
 
 	// Static mappings
-	natStMappings, err := handler.staticMappingDump(swIfIndices)
+	natStMappings, err := handler.nat44StaticMappingDump(swIfIndices)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 static mappings: %v", err)
 	}
@@ -91,7 +94,7 @@ func (handler *natVppHandler) Nat44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*na
 		handler.processDNatData(tag, data, &dNatCfgs)
 	}
 	// Static mappings with load balancer
-	natStLbMappings, err := handler.staticMappingLbDump()
+	natStLbMappings, err := handler.nat44StaticMappingLbDump()
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 static mappings with load balancer: %v", err)
 	}
@@ -99,7 +102,7 @@ func (handler *natVppHandler) Nat44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*na
 		handler.processDNatData(tag, data, &dNatCfgs)
 	}
 	// Identity mappings
-	natIdMappings, err := handler.identityMappingDump(swIfIndices)
+	natIdMappings, err := handler.nat44IdentityMappingDump(swIfIndices)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 identity mappings: %v", err)
 	}
@@ -115,7 +118,7 @@ func (handler *natVppHandler) Nat44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*na
 }
 
 // nat44AddressDump returns a list of NAT44 address pools configured in the VPP
-func (handler *natVppHandler) addressDump() (addresses []*nat.Nat44Global_AddressPool, err error) {
+func (handler *natVppHandler) nat44AddressDump() (addresses []*nat.Nat44Global_AddressPool, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44AddressDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -186,7 +189,7 @@ func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_V
 }
 
 // nat44StaticMappingDump returns a map of static mapping tag/data pairs
-func (handler *natVppHandler) staticMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
+func (handler *natVppHandler) nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44StaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -238,7 +241,7 @@ func (handler *natVppHandler) staticMappingDump(swIfIndices ifaceidx.SwIfIndex) 
 }
 
 // nat44StaticMappingLbDump returns a map of static mapping tag/data pairs with load balancer
-func (handler *natVppHandler) staticMappingLbDump() (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
+func (handler *natVppHandler) nat44StaticMappingLbDump() (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44LbStaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -288,7 +291,7 @@ func (handler *natVppHandler) staticMappingLbDump() (entries map[string]*nat.Nat
 }
 
 // nat44IdentityMappingDump returns a map of identity mapping tag/data pairs
-func (handler *natVppHandler) identityMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping, err error) {
+func (handler *natVppHandler) nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -378,7 +381,7 @@ func (handler *natVppHandler) Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex)
 }
 
 // nat44InterfaceOutputFeatureDump returns a list of interfaces with output feature set
-func (handler *natVppHandler) interfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex) (ifaces []*nat.Nat44Global_NatInterface, err error) {
+func (handler *natVppHandler) nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex) (ifaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -416,7 +419,7 @@ func (handler *natVppHandler) interfaceOutputFeatureDump(swIfIndices ifaceidx.Sw
 }
 
 // Nat44IsForwardingEnabled returns a list of interfaces enabled for NAT44
-func (handler *natVppHandler) isForwardingEnabled() (isEnabled bool, err error) {
+func (handler *natVppHandler) isNat44ForwardingEnabled() (isEnabled bool, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44ForwardingIsEnabled{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

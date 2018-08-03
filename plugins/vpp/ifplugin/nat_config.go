@@ -322,7 +322,6 @@ func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (e
 	if err := plugin.natHandler.SetDefaultVirtualReassemblyIPv6(); err != nil {
 		return err
 	}
-	plugin.log.Debug("Nat virtual reassembly reset for IPv4 & IPv6")
 
 	plugin.log.Debug("Deleting NAT global config done")
 
