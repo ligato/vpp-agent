@@ -18,7 +18,10 @@ import (
 	"net"
 	"testing"
 
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -115,7 +118,8 @@ func TestDelStnRule(t *testing.T) {
 
 func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.StnVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	stnHandler, err := vppcalls.NewStnVppHandler(ctx.MockChannel, nil)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "stn-if-idx", nil))
+	stnHandler, err := vppcalls.NewStnVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger(), nil)
 	Expect(err).To(BeNil())
 	return ctx, stnHandler
 }

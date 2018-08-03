@@ -324,7 +324,7 @@ func TestStnConfiguratorDumpRule(t *testing.T) {
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnRulesDetails{
 		IsIP4:     1,
-		IPAddress: net.ParseIP("10.0.0.1"),
+		IPAddress: net.ParseIP("10.0.0.1").To4(),
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -334,11 +334,12 @@ func TestStnConfiguratorDumpRule(t *testing.T) {
 	// Test rule dump
 	data, err := plugin.Dump()
 	Expect(err).To(BeNil())
-	Expect(data).ToNot(BeNil())
-	Expect(data).To(HaveLen(1))
-	Expect(data[0].SwIfIndex).To(BeEquivalentTo(1))
-	Expect(data[0].IPAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1")))
-	Expect(data[0].IsIP4).To(BeEquivalentTo(1))
+	Expect(data.Rules).ToNot(BeNil())
+	Expect(data.Rules).To(HaveLen(1))
+	Expect(data.Rules[0].Interface).To(BeEquivalentTo("if1"))
+	Expect(data.Rules[0].IpAddress).To(BeEquivalentTo("10.0.0.1"))
+	Expect(data.Meta).ToNot(BeNil())
+	Expect(data.Meta.IfNameToIdx[1]).To(BeEquivalentTo("if1"))
 }
 
 // Resolve new interface for STN
