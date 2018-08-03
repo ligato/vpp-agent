@@ -353,23 +353,6 @@ func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
 	Expect(msg.DropFrag).To(BeEquivalentTo(1))
 }
 
-func TestSetNat44DefaultVirtualReassemblyIPv4(t *testing.T) {
-	ctx, natHandler := natTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
-	err := natHandler.SetDefaultVirtualReassemblyIPv4()
-
-	Expect(err).ShouldNot(HaveOccurred())
-
-	msg, ok := ctx.MockChannel.Msg.(*nat.NatSetReass)
-	Expect(ok).To(BeTrue())
-	Expect(msg.Timeout).To(BeEquivalentTo(2))
-	Expect(msg.MaxFrag).To(BeEquivalentTo(5))
-	Expect(msg.MaxReass).To(BeEquivalentTo(1024))
-	Expect(msg.DropFrag).To(BeEquivalentTo(0))
-}
-
 func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
 	ctx, natHandler := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -390,23 +373,6 @@ func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
 	Expect(msg.MaxFrag).To(BeEquivalentTo(10))
 	Expect(msg.MaxReass).To(BeEquivalentTo(15))
 	Expect(msg.DropFrag).To(BeEquivalentTo(1))
-}
-
-func TestSetNat44DefaultVirtualReassemblyIPv6(t *testing.T) {
-	ctx, natHandler := natTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
-	err := natHandler.SetDefaultVirtualReassemblyIPv6()
-
-	Expect(err).ShouldNot(HaveOccurred())
-
-	msg, ok := ctx.MockChannel.Msg.(*nat.NatSetReass)
-	Expect(ok).To(BeTrue())
-	Expect(msg.Timeout).To(BeEquivalentTo(2))
-	Expect(msg.MaxFrag).To(BeEquivalentTo(5))
-	Expect(msg.MaxReass).To(BeEquivalentTo(1024))
-	Expect(msg.DropFrag).To(BeEquivalentTo(0))
 }
 
 func TestAddNat44StaticMapping(t *testing.T) {

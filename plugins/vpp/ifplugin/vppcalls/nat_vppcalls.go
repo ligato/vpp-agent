@@ -351,14 +351,6 @@ func (handler *natVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat2.Nat44Global_V
 	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, true)
 }
 
-func (handler *natVppHandler) SetDefaultVirtualReassemblyIPv4() error {
-	return handler.handleNat44VirtualReassembly(Timeout, MaxReassembly, MaxFragments, false, false)
-}
-
-func (handler *natVppHandler) SetDefaultVirtualReassemblyIPv6() error {
-	return handler.handleNat44VirtualReassembly(Timeout, MaxReassembly, MaxFragments, false, true)
-}
-
 func (handler *natVppHandler) AddNat44IdentityMapping(ctx *IdentityMappingContext) error {
 	return handler.handleNat44IdentityMapping(ctx, true)
 }

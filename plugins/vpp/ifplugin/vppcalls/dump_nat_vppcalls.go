@@ -166,23 +166,17 @@ func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_V
 		return nil, nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	// IPv4
-	if !(reply.IP4MaxReass == MaxReassembly && reply.IP4MaxFrag == MaxFragments && reply.IP4Timeout == Timeout && reply.IP4DropFrag == 0) {
-		vrIPv4 = &nat.Nat44Global_VirtualReassembly{
-			Timeout:  reply.IP4Timeout,
-			MaxReass: uint32(reply.IP4MaxReass),
-			MaxFrag:  uint32(reply.IP4MaxFrag),
-			DropFrag: uintToBool(reply.IP4DropFrag),
-		}
+	vrIPv4 = &nat.Nat44Global_VirtualReassembly{
+		Timeout:  reply.IP4Timeout,
+		MaxReass: uint32(reply.IP4MaxReass),
+		MaxFrag:  uint32(reply.IP4MaxFrag),
+		DropFrag: uintToBool(reply.IP4DropFrag),
 	}
-	// IPv6
-	if !(reply.IP6MaxReass == MaxReassembly && reply.IP6MaxFrag == MaxFragments && reply.IP6Timeout == Timeout && reply.IP6DropFrag == 0) {
-		vrIPv6 = &nat.Nat44Global_VirtualReassembly{
-			Timeout:  reply.IP6Timeout,
-			MaxReass: uint32(reply.IP6MaxReass),
-			MaxFrag:  uint32(reply.IP6MaxFrag),
-			DropFrag: uintToBool(reply.IP6DropFrag),
-		}
+	vrIPv6 = &nat.Nat44Global_VirtualReassembly{
+		Timeout:  reply.IP6Timeout,
+		MaxReass: uint32(reply.IP6MaxReass),
+		MaxFrag:  uint32(reply.IP6MaxFrag),
+		DropFrag: uintToBool(reply.IP6DropFrag),
 	}
 
 	return
@@ -219,7 +213,7 @@ func (handler *natVppHandler) nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIn
 			VrfId: msg.VrfID,
 			ExternalInterface: func(ifIdx uint32) string {
 				ifName, _, found := swIfIndices.LookupName(ifIdx)
-				if !found && ifIdx != 0xffffffff {
+				if !found && ifIdx != ^uint32(0) {
 					handler.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
 				}
 				return ifName
