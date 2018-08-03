@@ -34,6 +34,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/rpc"
 )
 
+// VPPAgent defines plugins which will be loaded and their order.
+// Note: the plugin itself is loaded after all its dependencies. It means that the VPP plugin is first in the list
+// despite it needs to be loaded after the linux plugin.
 type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
@@ -41,8 +44,8 @@ type VPPAgent struct {
 	ConsulDataSync *kvdbsync.Plugin
 	RedisDataSync  *kvdbsync.Plugin
 
-	Linux *linux.Plugin
 	VPP   *vpp.Plugin
+	Linux *linux.Plugin
 
 	GRPCService *rpc.Plugin
 	RESTAPI     *rest.Plugin

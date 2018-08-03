@@ -747,8 +747,13 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("swIfIndexes watch registration finished")
 	plugin.bdIndexes.WatchNameToIdx(plugin.String(), plugin.bdIdxWatchCh)
 	plugin.Log.Debug("bdIndexes watch registration finished")
-	if plugin.linuxIfIndexes != nil {
-		plugin.linuxIfIndexes.WatchNameToIdx(plugin.String(), plugin.linuxIfIdxWatchCh)
+	if plugin.Linux != nil {
+		// Get pointer to the map with Linux interface indexes.
+		linuxIfIndexes := plugin.Linux.GetLinuxIfIndexes()
+		if linuxIfIndexes == nil {
+			return fmt.Errorf("linux plugin enabled but interface indexes are not available")
+		}
+		linuxIfIndexes.WatchNameToIdx(plugin.String(), plugin.linuxIfIdxWatchCh)
 		plugin.Log.Debug("linuxIfIndexes watch registration finished")
 	}
 
