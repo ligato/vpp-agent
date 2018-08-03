@@ -535,7 +535,7 @@ func TestAddPolicy(t *testing.T) {
 			Policy: policy(10, false, true),
 			PolicySegment: &srv6.PolicySegment{
 				Weight:   1,
-				Segments: []string{toString(sidA), invalidIPAddress, toString(sidC)},
+				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
 			MockReply: &sr.SrPolicyAddReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
@@ -651,7 +651,7 @@ func TestAddPolicySegment(t *testing.T) {
 			Policy: policy(10, false, true),
 			PolicySegment: &srv6.PolicySegment{
 				Weight:   1,
-				Segments: []string{toString(sidA), invalidIPAddress, toString(sidC)},
+				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
 			MockReply: &sr.SrPolicyModReply{},
 			Verify: func(err error, catchedMsg govppapi.Message) {
@@ -723,7 +723,7 @@ func TestDeletePolicySegment(t *testing.T) {
 			Policy: policy(10, false, true),
 			PolicySegment: &srv6.PolicySegment{
 				Weight:   1,
-				Segments: []string{toString(sidA), invalidIPAddress, toString(sidC)},
+				Segments: []string{sidToStr(sidA), invalidIPAddress, sidToStr(sidC)},
 			},
 			SegmentIndex: 111,
 			MockReply:    &sr.SrPolicyModReply{},
@@ -782,7 +782,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of IPv6 L3 steering",
 			Steering: &srv6.Steering{
-				PolicyBsid: toString(sidA),
+				PolicyBsid: sidToStr(sidA),
 				L3Traffic: &srv6.Steering_L3Traffic{
 					FibTableId:    10,
 					PrefixAddress: "1::/64",
@@ -804,7 +804,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of IPv4 L3 steering",
 			Steering: &srv6.Steering{
-				PolicyBsid: toString(sidA),
+				PolicyBsid: sidToStr(sidA),
 				L3Traffic: &srv6.Steering_L3Traffic{
 					FibTableId:    10,
 					PrefixAddress: "1.2.3.4/24",
@@ -826,7 +826,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: action + " of L2 steering",
 			Steering: &srv6.Steering{
-				PolicyBsid: toString(sidA),
+				PolicyBsid: sidToStr(sidA),
 				L2Traffic: &srv6.Steering_L2Traffic{
 					InterfaceName: ifaceA,
 				},
@@ -845,7 +845,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "invalid prefix (" + action + " of IPv4 L3 steering)",
 			Steering: &srv6.Steering{
-				PolicyBsid: toString(sidA),
+				PolicyBsid: sidToStr(sidA),
 				L3Traffic: &srv6.Steering_L3Traffic{
 					FibTableId:    10,
 					PrefixAddress: invalidIPAddress,
@@ -859,7 +859,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "interface without index (" + action + " of L2 steering)",
 			Steering: &srv6.Steering{
-				PolicyBsid: toString(sidA),
+				PolicyBsid: sidToStr(sidA),
 				L2Traffic: &srv6.Steering_L2Traffic{
 					InterfaceName: ifaceBOutOfidxs,
 				},
@@ -886,7 +886,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 		{
 			Name: "failure propagation from VPP",
 			Steering: &srv6.Steering{
-				PolicyBsid: toString(sidA),
+				PolicyBsid: sidToStr(sidA),
 				L3Traffic: &srv6.Steering_L3Traffic{
 					FibTableId:    10,
 					PrefixAddress: "1::/64",
@@ -965,6 +965,6 @@ func boolToUint(input bool) uint8 {
 	return uint8(0)
 }
 
-func toString(sid sr.Srv6Sid) string {
+func sidToStr(sid sr.Srv6Sid) string {
 	return srv6.SID(sid.Addr).String()
 }
