@@ -86,9 +86,6 @@ func closeExample(message string, closeChannel chan struct{}) {
  * Example plugin *
  ******************/
 
-// PluginID of example plugin
-//const PluginID core.PluginName = "example-plugin"
-
 // ExamplePlugin demonstrates the use of the localclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
 	Deps
