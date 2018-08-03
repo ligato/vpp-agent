@@ -16,13 +16,14 @@ package main
 
 import (
 	"context"
+	"log"
 	"net"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/ligato/cn-infra/logging"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/clientv1/vpp/remoteclient"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
@@ -33,6 +34,8 @@ import (
 
 	"fmt"
 
+	"github.com/ligato/cn-infra/agent"
+	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 )
 
@@ -46,8 +49,8 @@ var socketType string
 
 // init sets the default logging level
 func init() {
-	log.DefaultLogger().SetOutput(os.Stdout)
-	log.DefaultLogger().SetLevel(logging.DebugLevel)
+	logrus.DefaultLogger().SetOutput(os.Stdout)
+	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
 }
 
 /********
@@ -56,39 +59,41 @@ func init() {
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example.
-	//closeChannel := make(chan struct{}, 1)
-	//
-	//flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
-	//flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-	//
-	//// Example plugin
-	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-	//	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
-	//
-	//	return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
-	//}))
-	//
-	//// End when the localhost example is finished.
-	//go closeExample("localhost example finished", closeChannel)
-	//
-	//core.EventLoopWithInterrupt(agent, closeChannel)
-	// todo use new flavors and options
+	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
+	flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
+
+	//Init close channel to stop the example.
+	closeChannel := make(chan struct{}, 1)
+
+	// Inject dependencies to example plugin
+	ep := &ExamplePlugin{}
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(closeChannel),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
+
+	// End when the localhost example is finished.
+	go closeExample("localhost example finished", closeChannel)
+
 }
 
 // Stop the agent with desired info message.
 func closeExample(message string, closeChannel chan struct{}) {
 	time.Sleep(25 * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+	logrus.DefaultLogger().Info(message)
+	close(closeChannel)
 }
 
 /******************
  * Example plugin *
  ******************/
 
-// PluginID of example plugin
-//const PluginID core.PluginName = "example-plugin"
+// PluginName represents name of plugin.
+const PluginName = "grpc-config-example"
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
@@ -117,7 +122,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	plugin.wg.Add(1)
 	go plugin.reconfigureVPP(ctx)
 
-	log.DefaultLogger().Info("Initialization of the example plugin has completed")
+	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return nil
 }
 
@@ -131,8 +136,13 @@ func (plugin *ExamplePlugin) Close() error {
 		return err
 	}
 
-	log.DefaultLogger().Info("Closed example plugin")
+	logrus.DefaultLogger().Info("Closed example plugin")
 	return nil
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 // Dialer for unix domain socket
@@ -154,9 +164,9 @@ func (plugin *ExamplePlugin) resyncVPP() {
 		StaticRoute(&routeThroughMemif1).
 		Send().ReceiveReply()
 	if err != nil {
-		log.DefaultLogger().Errorf("Failed to apply initial VPP configuration: %v", err)
+		logrus.DefaultLogger().Errorf("Failed to apply initial VPP configuration: %v", err)
 	} else {
-		log.DefaultLogger().Info("Successfully applied initial VPP configuration")
+		logrus.DefaultLogger().Info("Successfully applied initial VPP configuration")
 	}
 }
 
@@ -184,13 +194,13 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			StaticRoute(0, dstNetAddr.String(), nextHopAddr.String()). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
-			log.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
+			logrus.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
 		} else {
-			log.DefaultLogger().Info("Successfully reconfigured VPP")
+			logrus.DefaultLogger().Info("Successfully reconfigured VPP")
 		}
 	case <-ctx.Done():
 		// Cancel the scheduled re-configuration.
-		log.DefaultLogger().Info("Planned VPP re-configuration was canceled")
+		logrus.DefaultLogger().Info("Planned VPP re-configuration was canceled")
 	}
 	plugin.wg.Done()
 }
