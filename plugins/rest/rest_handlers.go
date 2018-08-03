@@ -157,10 +157,6 @@ func (plugin *Plugin) registerL3Handlers() {
 	plugin.registerHTTPHandler(resturl.Arps, GET, func() (interface{}, error) {
 		return plugin.arpHandler.DumpArpEntries()
 	})
-	// GET proxy ARP entries
-	plugin.registerHTTPHandler(resturl.ProxyArps, GET, func() (interface{}, error) {
-		return plugin.pArpHandler.DumpProxyArp()
-	})
 	// GET proxy ARP interfaces
 	plugin.registerHTTPHandler(resturl.PArpIfs, GET, func() (interface{}, error) {
 		return plugin.pArpHandler.DumpProxyArpInterfaces()

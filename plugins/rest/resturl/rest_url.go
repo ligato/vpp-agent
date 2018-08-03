@@ -94,8 +94,6 @@ const (
 	Routes = "/vpp/dump/v1/routes"
 	// Arps is rest ARPs path
 	Arps = "/vpp/dump/v1/arps"
-	// ProxyArps is rest proxy ARPs path
-	ProxyArps = "/vpp/dump/v1/proxyarp"
 	// PArpIfs is rest proxy ARP interfaces path
 	PArpIfs = "/vpp/dump/v1/proxyarp/interfaces"
 	// PArpRngs is rest proxy ARP ranges path

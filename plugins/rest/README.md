@@ -88,7 +88,6 @@ ARPs, proxy ARP interfaces/ranges and static routes exposed via REST:
 
 ```
 curl GET http://0.0.0.0:9191/vpp/dump/v1/arps
-curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp
 curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp/interfaces
 curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp/ranges
 curl GET http://0.0.0.0:9191/vpp/dump/v1/routes

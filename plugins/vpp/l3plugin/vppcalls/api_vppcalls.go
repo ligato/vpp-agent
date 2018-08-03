@@ -62,12 +62,10 @@ type ProxyArpVppWrite interface {
 
 // ProxyArpVppRead provides read methods for proxy ARPs
 type ProxyArpVppRead interface {
-	// DumpProxyArp returns configured proxy ARP interfaces and ranges
-	DumpProxyArp() (*ProxyArpDetails, error)
 	// DumpProxyArpRanges returns configured proxy ARP ranges
-	DumpProxyArpRanges() (*ProxyArpDetails, error)
+	DumpProxyArpRanges() ([]*ProxyArpRangesDetails, error)
 	// DumpProxyArpRanges returns configured proxy ARP interfaces
-	DumpProxyArpInterfaces() (*ProxyArpDetails, error)
+	DumpProxyArpInterfaces() ([]*ProxyArpInterfaceDetails, error)
 }
 
 // RouteVppAPI provides methods for managing routes
