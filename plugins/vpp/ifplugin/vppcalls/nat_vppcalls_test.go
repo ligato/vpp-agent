@@ -336,7 +336,7 @@ func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
-	err := natHandler.SetVirtualReassemblyIPv4(&natapi.Nat44Global_VirtualReassemblyIPv4{
+	err := natHandler.SetVirtualReassemblyIPv4(&natapi.Nat44Global_VirtualReassembly{
 		Timeout:  10,
 		MaxFrag:  20,
 		MaxReass: 30,
@@ -375,7 +375,7 @@ func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
-	err := natHandler.SetVirtualReassemblyIPv6(&natapi.Nat44Global_VirtualReassemblyIPv6{
+	err := natHandler.SetVirtualReassemblyIPv6(&natapi.Nat44Global_VirtualReassembly{
 		Timeout:  5,
 		MaxFrag:  10,
 		MaxReass: 15,

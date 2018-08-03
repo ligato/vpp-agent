@@ -151,7 +151,7 @@ func (handler *natVppHandler) nat44AddressDump() (addresses []*nat.Nat44Global_A
 }
 
 // virtualReassemblyDump returns current NAT44 virtual-reassembly configuration. The output config may be nil.
-func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_VirtualReassemblyIPv4, vrIPv6 *nat.Nat44Global_VirtualReassemblyIPv6, err error) {
+func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_VirtualReassembly, vrIPv6 *nat.Nat44Global_VirtualReassembly, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.NatGetReass{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -168,7 +168,7 @@ func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_V
 
 	// IPv4
 	if !(reply.IP4MaxReass == MaxReassembly && reply.IP4MaxFrag == MaxFragments && reply.IP4Timeout == Timeout && reply.IP4DropFrag == 0) {
-		vrIPv4 = &nat.Nat44Global_VirtualReassemblyIPv4{
+		vrIPv4 = &nat.Nat44Global_VirtualReassembly{
 			Timeout:  reply.IP4Timeout,
 			MaxReass: uint32(reply.IP4MaxReass),
 			MaxFrag:  uint32(reply.IP4MaxFrag),
@@ -177,7 +177,7 @@ func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_V
 	}
 	// IPv6
 	if !(reply.IP6MaxReass == MaxReassembly && reply.IP6MaxFrag == MaxFragments && reply.IP6Timeout == Timeout && reply.IP6DropFrag == 0) {
-		vrIPv6 = &nat.Nat44Global_VirtualReassemblyIPv6{
+		vrIPv6 = &nat.Nat44Global_VirtualReassembly{
 			Timeout:  reply.IP6Timeout,
 			MaxReass: uint32(reply.IP6MaxReass),
 			MaxFrag:  uint32(reply.IP6MaxFrag),

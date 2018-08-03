@@ -343,11 +343,11 @@ func (handler *natVppHandler) DelNat44AddressPool(first, last []byte, vrf uint32
 	return handler.handleNat44AddressPool(first, last, vrf, twiceNat, false)
 }
 
-func (handler *natVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat2.Nat44Global_VirtualReassemblyIPv4) error {
+func (handler *natVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
 	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, false)
 }
 
-func (handler *natVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat2.Nat44Global_VirtualReassemblyIPv6) error {
+func (handler *natVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
 	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, true)
 }
 

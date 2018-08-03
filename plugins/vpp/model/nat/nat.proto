@@ -33,21 +33,14 @@ message Nat44Global {
     }
     repeated AddressPool address_pools = 5;
 
-    message VirtualReassemblyIPv4 {             /* NAT virtual reassembly for IPv4 */
+    message VirtualReassembly {                 /* NAT virtual reassembly */
         uint32 timeout = 1;                     /* Reassembly timeout */
         uint32 max_reass = 2;                   /* Maximum number of concurrent reassemblies */
         uint32 max_frag = 3;                    /* Maximum number of fragments per reassembly */
         bool drop_frag = 4;                     /* If set to true fragments are dropped, translated otherwise*/
     }
-    VirtualReassemblyIPv4 virtual_reassembly_ipv4 = 6;
-
-    message VirtualReassemblyIPv6 {             /* NAT virtual reassembly for IPv6 */
-        uint32 timeout = 1;                     /* Reassembly timeout */
-        uint32 max_reass = 2;                   /* Maximum number of concurrent reassemblies */
-        uint32 max_frag = 3;                    /* Maximum number of fragments per reassembly */
-        bool drop_frag = 4;                     /* If set to true fragments are dropped, translated otherwise*/
-    }
-    VirtualReassemblyIPv6 virtual_reassembly_ipv6 = 7;
+    VirtualReassembly virtual_reassembly_ipv4 = 6;
+    VirtualReassembly virtual_reassembly_ipv6 = 7;
 }
 
 /* Many-to-one (SNAT) setup */

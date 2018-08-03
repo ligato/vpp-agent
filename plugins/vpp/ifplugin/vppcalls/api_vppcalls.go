@@ -175,9 +175,9 @@ type NatVppWrite interface {
 	// DelNat44AddressPool removes existing NAT address pool
 	DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error
 	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets
-	SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassemblyIPv4) error
+	SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassembly) error
 	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv6 packets
-	SetVirtualReassemblyIPv6(vrCfg *nat.Nat44Global_VirtualReassemblyIPv6) error
+	SetVirtualReassemblyIPv6(vrCfg *nat.Nat44Global_VirtualReassembly) error
 	// SetVirtualReassemblyIPv4 configures default NAT virtual reassembly for IPv4 packets
 	SetDefaultVirtualReassemblyIPv4() error
 	// SetVirtualReassemblyIPv4 configures default NAT virtual reassembly for IPv6 packets

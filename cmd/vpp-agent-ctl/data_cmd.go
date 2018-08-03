@@ -740,13 +740,13 @@ func (ctl *VppAgentCtl) createGlobalNat() {
 				TwiceNat:        false,
 			},
 		},
-		VirtualReassemblyIpv4: &nat.Nat44Global_VirtualReassemblyIPv4{
+		VirtualReassemblyIpv4: &nat.Nat44Global_VirtualReassembly{
 			Timeout:  10,
 			MaxReass: 20,
 			MaxFrag:  10,
 			DropFrag: true,
 		},
-		VirtualReassemblyIpv6: &nat.Nat44Global_VirtualReassemblyIPv6{
+		VirtualReassemblyIpv6: &nat.Nat44Global_VirtualReassembly{
 			Timeout:  15,
 			MaxReass: 25,
 			MaxFrag:  15,
