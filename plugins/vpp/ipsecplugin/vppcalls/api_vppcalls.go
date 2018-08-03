@@ -62,7 +62,7 @@ type IPSecVPPRead interface {
 	// DumpIPSecSAWithIndex returns a security association with provided index
 	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
 	// DumpIPSecTunnelInterfaces returns a list of configured IPSec tunnel interfaces
-	DumpIPSecTunnelInterfaces() (tun *IPSecTunnelInterfaceDetails, err error)
+	DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error)
 }
 
 // ipSecVppHandler is accessor for IPsec-related vppcalls methods

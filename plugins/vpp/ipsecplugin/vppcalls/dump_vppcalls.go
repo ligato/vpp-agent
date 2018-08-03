@@ -108,24 +108,20 @@ func (handler *ipSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPS
 
 // IPSecTunnelInterfaceDetails hold a list of tunnel interfaces with name/index map as metadata
 type IPSecTunnelInterfaceDetails struct {
-	Tunnels *ipsec.TunnelInterfaces
-	Meta    *IPSecTunnelMeta
+	Tunnel *ipsec.TunnelInterfaces_Tunnel
+	Meta   *IPSecTunnelMeta
 }
 
 // IPSecTunnelMeta contains map of name/index pairs
 type IPSecTunnelMeta struct {
-	IfNameToIdx map[uint32]string
+	SwIfIndex uint32
 }
 
-func (handler *ipSecVppHandler) DumpIPSecTunnelInterfaces() (tun *IPSecTunnelInterfaceDetails, err error) {
+func (handler *ipSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ipsecapi.IpsecSaDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	var tunnels []*ipsec.TunnelInterfaces_Tunnel
-	meta := &IPSecTunnelMeta{
-		IfNameToIdx: make(map[uint32]string),
-	}
 	saDetails, err := handler.dumpSecurityAssociations(^uint32(0))
 	if err != nil {
 		return nil, err
@@ -173,18 +169,15 @@ func (handler *ipSecVppHandler) DumpIPSecTunnelInterfaces() (tun *IPSecTunnelInt
 			IpAddresses: ifData.IpAddresses,
 			Vrf:         ifData.Vrf,
 		}
-		tunnels = append(tunnels, tunnel)
-
-		// Put metadata entry
-		meta.IfNameToIdx[saData.SwIfIndex] = ifName
+		tun = append(tun, &IPSecTunnelInterfaceDetails{
+			Tunnel: tunnel,
+			Meta: &IPSecTunnelMeta{
+				SwIfIndex: saData.SwIfIndex,
+			},
+		})
 	}
 
-	return &IPSecTunnelInterfaceDetails{
-		Tunnels: &ipsec.TunnelInterfaces{
-			Tunnels: tunnels,
-		},
-		Meta:    meta,
-	}, nil
+	return tun, nil
 }
 
 // IPSecSpdDetails represents IPSec policy databases with particular metadata
