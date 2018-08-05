@@ -12,7 +12,8 @@ Suite Teardown    Testsuite Teardown
 
 *** Variables ***
 ${ENV}=                common
-
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 *** Test Cases ***
 # CRUD tests for IPsec
 Add Agent Vpp Node

@@ -17,7 +17,7 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${SYNC_SLEEP}=         15s
+${SYNC_SLEEP}=       2s
 
 *** Test Cases ***
 Configure Environment 1
@@ -34,12 +34,12 @@ Create 2 Loopbacks And Memifs And BD On VPP1
     vpp_ctl: Put Loopback Interface With IP    node=agent_vpp_1    name=bvi_loop1    mac=8a:f1:be:90:01:00    ip=10.1.1.100    prefix=24    vrf=20    enabled=true
     vpp_ctl: Put Memif Interface    node=agent_vpp_1    name=memif1    mac=02:f1:be:90:03:00    master=true    id=3       socket=m2.sock    vrf=20
     Create Bridge Domain bd2 With Autolearn On agent_vpp_1 with interfaces bvi_loop1, memif1
-    Sleep    2s
+
 
 Create 2 Memifs On VPP3
     Create Slave memif0 on agent_vpp_3 with MAC 02:f1:be:90:00:03, key 2 and m1.sock socket
     vpp_ctl: Put Memif Interface    node=agent_vpp_3    name=memif1    mac=02:f1:be:90:03:03    master=false    id=3       socket=m2.sock    vrf=20
-    Sleep    2s
+
 
 Ping Loopback1 X Loopback2
     vpp_term: Check No Ping Within Interface    agent_vpp_1     10.1.1.100    loop0    15

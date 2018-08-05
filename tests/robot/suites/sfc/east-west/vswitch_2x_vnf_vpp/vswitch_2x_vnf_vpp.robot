@@ -11,12 +11,14 @@ Resource     ../../../../libraries/all_libs.robot
 Force Tags        sfcIPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${FINAL_SLEEP}=        3s
-${SYNC_SLEEP}=         10s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 
 *** Test Cases ***
 Configure Environment
@@ -27,17 +29,17 @@ Configure Environment
     ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
     Set Suite Variable          ${DATA_FOLDER}
     Start SFC Controller Container With Own Config    basic.conf
-    Sleep    ${SYNC_SLEEP}
+
 
 Check Memifs On Vswitch
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  connected=1  enabled=1
 
 Check Memif Interface On VPP2
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
 
 Check Memif Interface On VPP3
-    vat_term: Check Memif Interface State     agent_vpp_3  vpp3_memif1  role=slave  ipv4=10.0.0.10/24  connected=1  enabled=1 
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_3  vpp3_memif1  role=slave  ipv4=10.0.0.10/24  connected=1  enabled=1
 
 Show Interfaces And Other Objects
     vpp_term: Show Interfaces    agent_vpp_1
@@ -83,17 +85,17 @@ Start Agent Nodes Again
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
     Add Agent VPP Node    agent_vpp_3
-    Sleep    ${SYNC_SLEEP}
+
 
 Check Memifs On Vswitch After Resync
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_3_vpp3_memif1  role=master  connected=1  enabled=1
 
 Check Memif Interface On VPP2 After Resync
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv4=10.0.0.1/24  connected=1  enabled=1
 
 Check Memif Interface On VPP3 After Resync
-    vat_term: Check Memif Interface State     agent_vpp_3  vpp3_memif1  role=slave  ipv4=10.0.0.10/24  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_3  vpp3_memif1  role=slave  ipv4=10.0.0.10/24  connected=1  enabled=1
 
 Show Interfaces And Other Objects After Resync
     vpp_term: Show Interfaces    agent_vpp_1
@@ -135,11 +137,14 @@ Done
     [Tags]    debug
     No Operation
 
-Final Sleep For Manual Checking
-    [Tags]    debug
-    Sleep   ${FINAL_SLEEP}
 
 *** Keywords ***
 Suite Cleanup
     Stop SFC Controller Container
     Testsuite Teardown
+
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown

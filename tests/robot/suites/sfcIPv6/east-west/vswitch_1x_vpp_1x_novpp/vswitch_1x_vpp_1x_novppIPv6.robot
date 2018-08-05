@@ -17,10 +17,11 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${FINAL_SLEEP}=        3s
-${SYNC_SLEEP}=         12s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 ${IP_1}=               fd30::1:b:0:0:1
 ${IP_2}=               fd30::1:b:0:0:10
+
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
@@ -30,7 +31,6 @@ Configure Environment
     ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
     Set Suite Variable          ${DATA_FOLDER}
     Start SFC Controller Container With Own Config    basicIPv6.conf
-    Sleep    ${SYNC_SLEEP}
 
 Check Interfaces Created
     Check Stuff
@@ -53,8 +53,6 @@ Start Agent Nodes Again
     #Add Agent VPP Node    agent_vpp_2
     Add Agent Node    agent_1
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
-    #Sleep    ${SYNC_SLEEP}
-    Sleep    ${SYNC_SLEEP}
 
 Check Interfaces After Resync
     Check Stuff
@@ -75,7 +73,6 @@ Remove Agent Nodes Again
 Start Agent Nodes Again2
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent Node    agent_1
-    Sleep    ${SYNC_SLEEP}
 
 Check Interfaces After Resync2
     Check Stuff
@@ -94,7 +91,6 @@ Start All Agent Nodes
     Add Agent VPP Node    agent_vpp_1    vswitch=${TRUE}
     Add Agent VPP Node    agent_vpp_2
     Add Agent Node    agent_1
-    Sleep    ${SYNC_SLEEP}
 
 Check Interfaces After Resync3
     Check Stuff
@@ -109,10 +105,10 @@ Check Ping Agent1 -> VPP2 After Resync3
 *** Keywords ***
 
 Check Stuff
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_afp1    enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv6=${IP_1}/64  connected=1  enabled=1
     Show Interfaces And Other Objects
-    vat_term: Check Memif Interface State     agent_vpp_1  IF_MEMIF_VSWITCH_agent_vpp_2_vpp2_memif1  role=master  connected=1  enabled=1
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_agent_1_agent1_afp1    enabled=1
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=02:02:02:02:02:02  role=slave  ipv6=${IP_1}/64  connected=1  enabled=1
 
 Show Interfaces And Other Objects
     vpp_term: Show Interfaces    agent_vpp_1

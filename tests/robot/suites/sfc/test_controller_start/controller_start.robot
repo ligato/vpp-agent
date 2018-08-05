@@ -17,7 +17,6 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${FINAL_SLEEP}=        3s
 
 *** Test Cases ***
 Configure Environment
@@ -60,9 +59,6 @@ Done
     [Tags]    debug
     No Operation
 
-Final Sleep For Manual Checking
-    [Tags]    debug
-    Sleep   ${FINAL_SLEEP}
 
 *** Keywords ***
 Suite Cleanup

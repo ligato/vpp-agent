@@ -17,7 +17,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${CONFIG_SLEEP}=       50s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 ${RESYNC_SLEEP}=       15s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s
@@ -40,11 +41,9 @@ Setup Interfaces
     vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns1    name=ns1_veth1    host_if_name=ns1_veth1_linux    mac=d2:74:8c:12:67:d2    peer=ns2_veth2    ip=${VETH_IP1}     prefix=64
     vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns2    name=ns2_veth2    host_if_name=ns2_veth2_linux    mac=92:c7:42:67:ab:cd    peer=ns1_veth1    ip=${VETH_IP2}     prefix=64
 
-    Sleep    ${CONFIG_SLEEP}
-
 Chceck Interfaces
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2
 
 Ping
     # This should work by default after veth interface setup
@@ -57,20 +56,18 @@ Create Linux Routes
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=${GOOGLE_IP}    prefix=128    next_hop=${VETH_IP1}
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=${QUAD9_IP}    prefix=128    next_hop=${VETH_IP2}
 
-    Sleep    ${CONFIG_SLEEP}
-
 Check Linux Routes
-    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP2}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP1}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${GOOGLE_IP}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${GOOGLE_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
 
 
     # created routes should not exist in other namespace
-    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP2}
-    Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP1}
-    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${GOOGLE_IP}
-    Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=${QUAD9_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${GOOGLE_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns1    ip=${QUAD9_IP}
 
 Read Route Information From Setup Database
     vpp_ctl: Get Linux Route As Json    node=agent_vpp_1    routename=pingingveth2
@@ -81,57 +78,52 @@ Read Route Information From Setup Database
 Change Linux Routes Without Deleting Key (Changing Metric)
     # changing of gateway - this is incorrect/ the record would not be put in the database  - Let us change metric
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinginggoogl    ip=${GOOGLE_IP}    prefix=128    next_hop=${VETH_IP1}    metric=55
-    Sleep    ${CONFIG_SLEEP}
+
 
     # testing if there is the new metric
-    Check Linux Routes Metric    node=agent_vpp_1    namespace=ns1    ip=${GOOGLE_IP}    metric=55
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes Metric    node=agent_vpp_1    namespace=ns1    ip=${GOOGLE_IP}    metric=55
 
 Change Linux Routes At First Deleting Key And Putting The Same Secondly Deleting Key Then Putting It To Other Namespace
     vpp_ctl: Delete Linux Route    node=agent_vpp_1    routename=pinging9
-    Sleep    ${CONFIG_SLEEP}
 
-    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
 
     # we create exactly the same as deleted route
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2    routename=pinging9    ip=${QUAD9_IP}    prefix=128    next_hop=${VETH_IP2}
-    Sleep    ${CONFIG_SLEEP}
 
-    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
 
     # delete again
     vpp_ctl: Delete Linux Route    node=agent_vpp_1    routename=pinging9
-    Sleep    ${CONFIG_SLEEP}
 
-    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
 
     # we try to transfer route to other namespace - there is also need to change appropriately gateway
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=pinging9    ip=${QUAD9_IP}    prefix=128    next_hop=${VETH_IP1}
-    Sleep    ${CONFIG_SLEEP}
 
-    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
-    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=${QUAD9_IP}    next_hop=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Removed Linux Route    node=agent_vpp_1    namespace=ns2    ip=${QUAD9_IP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=${QUAD9_IP}    next_hop=${VETH_IP1}
 
 At first create route and after that create inteface in namespace 3
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns2_veth3    ip=${VETH_IP4}    prefix=128    next_hop=${VETH_IP3}
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns2_veth2    ip=${VETH_IP2}    prefix=128   next_hop=${VETH_IP3}
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=pingingns1_veth1    ip=${VETH_IP1}    prefix=128    next_hop=${VETH_IP3}
     vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3    routename=pingingns3_veth3    ip=${VETH_IP3}    prefix=128    next_hop=${VETH_IP4}
-    Sleep    ${CONFIG_SLEEP}
 
     vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns3    name=ns3_veth3    host_if_name=ns3_veth3_linux    mac=92:c7:42:67:ab:ce    peer=ns2_veth3    ip=${VETH_IP3}
     vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns2    name=ns2_veth3    host_if_name=ns2_veth3_linux    mac=92:c7:42:67:ab:cf    peer=ns3_veth3    ip=${VETH_IP4}
-    Sleep    ${CONFIG_SLEEP}
 
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3
+
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3
 
     Ping6 in namespace    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP3}
     Ping6 in namespace    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP4}
 
-    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP1}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP2}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP4}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP3}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP4}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP3}
 
     # tested also above, but repeat after giving exact routes
     Ping6 in namespace    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP4}
@@ -148,14 +140,14 @@ At first create route and after that create inteface in namespace 3
     # Ping6 in namespace    node=agent_vpp_1    namespace=ns1    ip=192.169.22.3
 
 Check linux Routes On VPP1
-    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP2}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP1}
-    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=${GOOGLE_IP}    next_hop=${VETH_IP1}
-    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=${QUAD9_IP}    next_hop=${VETH_IP1}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP1}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP2}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP4}
-    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP3}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=${GOOGLE_IP}    next_hop=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=${QUAD9_IP}    next_hop=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP4}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes    node=agent_vpp_1    namespace=ns2    ip=${VETH_IP3}
 
 Remove VPP Nodes
     Remove All Nodes
