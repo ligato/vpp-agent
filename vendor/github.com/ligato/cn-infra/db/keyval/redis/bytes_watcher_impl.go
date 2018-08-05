@@ -40,7 +40,7 @@ func NewBytesWatchPutResp(key string, value []byte, prevValue []byte, revision i
 }
 
 // GetChangeType returns "Put" for BytesWatchPutResp.
-func (resp *BytesWatchPutResp) GetChangeType() datasync.PutDel {
+func (resp *BytesWatchPutResp) GetChangeType() datasync.Op {
 	return datasync.Put
 }
 
@@ -76,7 +76,7 @@ func NewBytesWatchDelResp(key string, revision int64) *BytesWatchDelResp {
 }
 
 // GetChangeType returns "Delete" for BytesWatchPutResp.
-func (resp *BytesWatchDelResp) GetChangeType() datasync.PutDel {
+func (resp *BytesWatchDelResp) GetChangeType() datasync.Op {
 	return datasync.Delete
 }
 

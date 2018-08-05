@@ -28,7 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 )
 
-// InterfaceMessages checks if interface CRSs are compatible with VPP in runtime.
+// InterfaceMessages checks if interface CRCs are compatible with VPP in runtime.
 var InterfaceMessages = []govppapi.Message{
 	&memif.MemifCreate{},
 	&memif.MemifCreateReply{},
@@ -96,7 +96,7 @@ var InterfaceMessages = []govppapi.Message{
 	&ip.IPContainerProxyAddDelReply{},
 }
 
-// BfdMessages checks if bfd CRSs are compatible with VPP in runtime.
+// BfdMessages checks if bfd CRCs are compatible with VPP in runtime.
 var BfdMessages = []govppapi.Message{
 	&bfd.BfdUDPAdd{},
 	&bfd.BfdUDPAddReply{},

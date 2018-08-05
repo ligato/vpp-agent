@@ -146,6 +146,10 @@ func do(ctl *VppAgentCtl) {
 			ctl.createIPsecSA()
 		case "-sad":
 			ctl.deleteIPsecSA()
+		case "-tun":
+			ctl.createIPSecTunnelInterface()
+		case "-tund":
+			ctl.deleteIPSecTunnelInterface()
 			// STN
 		case "-stn":
 			ctl.createStn()
@@ -258,8 +262,9 @@ func usage() {
 		-afpkt,	-afpktd	- af_packet type interface
 		-veth,	-vethd	- Linux VETH interface pair
 		-ltap,	-ltapd	- Linux TAP interface
-		-spd,   -spdd   - IPsec security policy database
-		-sa,    -sad    - IPsec security associations
+		-spd,   -spdd   - IPSec security policy database
+		-sa,    -sad    - IPSec security associations
+		-tun    -tund   - IPSec tunnel interface
 		-stn,	-stnd	- STN rule
 		-gnat,	-gnatd	- Global NAT configuration
 		-snat,	-snatd	- SNAT configuration

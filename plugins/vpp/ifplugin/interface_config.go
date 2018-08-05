@@ -106,9 +106,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	plugin.dhcpIndexes = ifaceidx.NewDHCPIndex(nametoidx.NewNameToIdx(plugin.log, "dhcp_indices", ifaceidx.IndexDHCPMetadata))
 	plugin.uIfaceCache = make(map[string]string)
 	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
-	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
-		return err
-	}
+	plugin.memifScCache = make(map[string]uint32)
 
 	// Init AF-packet configurator
 	plugin.linux = linux
@@ -137,10 +135,7 @@ func (plugin *InterfaceConfigurator) clearMapping() error {
 	plugin.dhcpIndexes.Clear()
 	plugin.uIfaceCache = make(map[string]string)
 	plugin.vxlanMulticastCache = make(map[string]*intf.Interfaces_Interface)
-	var err error
-	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
-		return err
-	}
+	plugin.memifScCache = make(map[string]uint32)
 	return nil
 }
 
@@ -277,7 +272,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		if !ok || ifData == nil {
 			return fmt.Errorf("set rx-placement failed, no data available for interface index %d", ifIdx)
 		}
-		if err := plugin.ifHandler.SetRxPlacement(ifData.VPPInternalName, iface.RxPlacementSettings); err != nil {
+		if err := plugin.ifHandler.SetRxPlacement(ifData.Meta.InternalName, iface.RxPlacementSettings); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -603,7 +598,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		if !ok || ifData == nil {
 			return fmt.Errorf("set rx-placement for new config failed, no data available for interface index %d", ifIdx)
 		}
-		if err := plugin.ifHandler.SetRxPlacement(ifData.VPPInternalName, newConfig.RxPlacementSettings); err != nil {
+		if err := plugin.ifHandler.SetRxPlacement(ifData.Meta.InternalName, newConfig.RxPlacementSettings); err != nil {
 			wasError = err
 		}
 	}

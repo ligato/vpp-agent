@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
@@ -30,11 +30,11 @@ import (
 )
 
 func TestAddBfdUDPSession(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
-	bfdKeyIndexes.RegisterName(string(1), 1, nil)
+	bfdKeyIndexes.RegisterName(ifplugin.AuthKeyIdentifier(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -62,11 +62,11 @@ func TestAddBfdUDPSession(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionIPv6(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
-	bfdKeyIndexes.RegisterName(string(1), 1, nil)
+	bfdKeyIndexes.RegisterName(ifplugin.AuthKeyIdentifier(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -94,7 +94,7 @@ func TestAddBfdUDPSessionIPv6(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionAuthKeyNotFound(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -125,7 +125,7 @@ func TestAddBfdUDPSessionAuthKeyNotFound(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionNoAuthKey(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
@@ -149,11 +149,11 @@ func TestAddBfdUDPSessionNoAuthKey(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionIncorrectSrcIPError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
-	bfdKeyIndexes.RegisterName(string(1), 1, nil)
+	bfdKeyIndexes.RegisterName(ifplugin.AuthKeyIdentifier(1), 1, nil)
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 
@@ -173,7 +173,7 @@ func TestAddBfdUDPSessionIncorrectSrcIPError(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionIncorrectDstIPError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -197,7 +197,7 @@ func TestAddBfdUDPSessionIncorrectDstIPError(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionIPVerError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -221,7 +221,7 @@ func TestAddBfdUDPSessionIPVerError(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
@@ -237,7 +237,7 @@ func TestAddBfdUDPSessionError(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionRetvalError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{
@@ -255,7 +255,7 @@ func TestAddBfdUDPSessionRetvalError(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionFromDetails(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -287,7 +287,7 @@ func TestAddBfdUDPSessionFromDetails(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionFromDetailsAuthKeyNotFound(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -313,7 +313,7 @@ func TestAddBfdUDPSessionFromDetailsAuthKeyNotFound(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionFromDetailsNoAuth(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -339,7 +339,7 @@ func TestAddBfdUDPSessionFromDetailsNoAuth(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionFromDetailsError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -357,7 +357,7 @@ func TestAddBfdUDPSessionFromDetailsError(t *testing.T) {
 }
 
 func TestAddBfdUDPSessionFromDetailsRetval(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	bfdKeyIndexes := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "bfd", nil)
@@ -377,7 +377,7 @@ func TestAddBfdUDPSessionFromDetailsRetval(t *testing.T) {
 }
 
 func TestModifyBfdUDPSession(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -405,7 +405,7 @@ func TestModifyBfdUDPSession(t *testing.T) {
 }
 
 func TestModifyBfdUDPSessionIPv6(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -426,7 +426,7 @@ func TestModifyBfdUDPSessionIPv6(t *testing.T) {
 }
 
 func TestModifyBfdUDPSessionDifferentIPVer(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -444,7 +444,7 @@ func TestModifyBfdUDPSessionDifferentIPVer(t *testing.T) {
 }
 
 func TestModifyBfdUDPSessionNoInterface(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -461,7 +461,7 @@ func TestModifyBfdUDPSessionNoInterface(t *testing.T) {
 }
 
 func TestModifyBfdUDPSessionInvalidSrcIP(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -479,7 +479,7 @@ func TestModifyBfdUDPSessionInvalidSrcIP(t *testing.T) {
 }
 
 func TestModifyBfdUDPSessionInvalidDstIP(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -497,7 +497,7 @@ func TestModifyBfdUDPSessionInvalidDstIP(t *testing.T) {
 }
 
 func TestModifyBfdUDPSessionError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -515,7 +515,7 @@ func TestModifyBfdUDPSessionError(t *testing.T) {
 }
 
 func TestModifyBfdUDPSessionRetval(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -535,7 +535,7 @@ func TestModifyBfdUDPSessionRetval(t *testing.T) {
 }
 
 func TestDeleteBfdUDPSession(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelReply{})
@@ -552,7 +552,7 @@ func TestDeleteBfdUDPSession(t *testing.T) {
 }
 
 func TestDeleteBfdUDPSessionError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
@@ -563,7 +563,7 @@ func TestDeleteBfdUDPSessionError(t *testing.T) {
 }
 
 func TestDeleteBfdUDPSessionRetval(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelReply{
@@ -575,61 +575,8 @@ func TestDeleteBfdUDPSessionRetval(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-func TestDumpBfdUDPSessions(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSessionDetails{
-		SwIfIndex: 1,
-		LocalAddr: net.ParseIP("10.0.0.1"),
-		PeerAddr:  net.ParseIP("20.0.0.1"),
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	sessions, err := bfdHandler.DumpBfdUDPSessions()
-
-	Expect(err).To(BeNil())
-	Expect(sessions).To(HaveLen(1))
-}
-
-func TestDumpBfdUDPSessionsWithID(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	// Authenticated wiht ID 1
-	ctx.MockVpp.MockReply(
-		&bfd_api.BfdUDPSessionDetails{
-			SwIfIndex:       1,
-			LocalAddr:       net.ParseIP("10.0.0.1"),
-			PeerAddr:        net.ParseIP("20.0.0.1"),
-			IsAuthenticated: 1,
-			BfdKeyID:        1,
-		},
-		// Authenticated with ID 2 (filtered)
-		&bfd_api.BfdUDPSessionDetails{
-			SwIfIndex:       2,
-			LocalAddr:       net.ParseIP("10.0.0.2"),
-			PeerAddr:        net.ParseIP("20.0.0.2"),
-			IsAuthenticated: 1,
-			BfdKeyID:        2,
-		},
-		// Not authenticated
-		&bfd_api.BfdUDPSessionDetails{
-			SwIfIndex:       3,
-			LocalAddr:       net.ParseIP("10.0.0.3"),
-			PeerAddr:        net.ParseIP("20.0.0.3"),
-			IsAuthenticated: 0,
-		})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	sessions, err := bfdHandler.DumpBfdUDPSessionsWithID(1)
-
-	Expect(err).To(BeNil())
-	Expect(sessions).To(HaveLen(1))
-}
-
 func TestSetBfdUDPAuthenticationKeySha1(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
@@ -652,7 +599,7 @@ func TestSetBfdUDPAuthenticationKeySha1(t *testing.T) {
 }
 
 func TestSetBfdUDPAuthenticationKeyMeticulous(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
@@ -675,7 +622,7 @@ func TestSetBfdUDPAuthenticationKeyMeticulous(t *testing.T) {
 }
 
 func TestSetBfdUDPAuthenticationKeyUnknown(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
@@ -698,7 +645,7 @@ func TestSetBfdUDPAuthenticationKeyUnknown(t *testing.T) {
 }
 
 func TestSetBfdUDPAuthenticationError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthDelKeyReply{})
@@ -715,7 +662,7 @@ func TestSetBfdUDPAuthenticationError(t *testing.T) {
 }
 
 func TestSetBfdUDPAuthenticationRetval(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{
@@ -734,7 +681,7 @@ func TestSetBfdUDPAuthenticationRetval(t *testing.T) {
 }
 
 func TestDeleteBfdUDPAuthenticationKey(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthDelKeyReply{})
@@ -754,7 +701,7 @@ func TestDeleteBfdUDPAuthenticationKey(t *testing.T) {
 }
 
 func TestDeleteBfdUDPAuthenticationKeyError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
@@ -771,7 +718,7 @@ func TestDeleteBfdUDPAuthenticationKeyError(t *testing.T) {
 }
 
 func TestDeleteBfdUDPAuthenticationKeyRetval(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthDelKeyReply{
@@ -789,30 +736,8 @@ func TestDeleteBfdUDPAuthenticationKeyRetval(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-func TestDumpBfdKeys(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	ctx.MockVpp.MockReply(&bfd_api.BfdAuthKeysDetails{
-		ConfKeyID: 1,
-		UseCount:  0,
-		AuthType:  4,
-	},
-		&bfd_api.BfdAuthKeysDetails{
-			ConfKeyID: 2,
-			UseCount:  1,
-			AuthType:  5,
-		})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-
-	keys, err := bfdHandler.DumpBfdKeys()
-
-	Expect(err).To(BeNil())
-	Expect(keys).To(HaveLen(2))
-}
-
 func TestAddBfdEchoFunction(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -831,7 +756,7 @@ func TestAddBfdEchoFunction(t *testing.T) {
 }
 
 func TestAddBfdEchoFunctionInterfaceNotFound(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -846,7 +771,7 @@ func TestAddBfdEchoFunctionInterfaceNotFound(t *testing.T) {
 }
 
 func TestAddBfdEchoFunctionError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -862,7 +787,7 @@ func TestAddBfdEchoFunctionError(t *testing.T) {
 }
 
 func TestAddBfdEchoFunctionRetval(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", nil))
@@ -880,7 +805,7 @@ func TestAddBfdEchoFunctionRetval(t *testing.T) {
 }
 
 func TestDeleteBfdEchoFunction(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelEchoSourceReply{})
@@ -892,7 +817,7 @@ func TestDeleteBfdEchoFunction(t *testing.T) {
 }
 
 func TestDeleteBfdEchoFunctionError(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{})
@@ -902,7 +827,7 @@ func TestDeleteBfdEchoFunctionError(t *testing.T) {
 }
 
 func TestDeleteBfdEchoFunctionRetval(t *testing.T) {
-	ctx, bfdHandler := bfdTestSetup(t)
+	ctx, bfdHandler, _ := bfdTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelEchoSourceReply{
@@ -913,10 +838,11 @@ func TestDeleteBfdEchoFunctionRetval(t *testing.T) {
 	Expect(err).ToNot(BeNil())
 }
 
-func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BfdVppAPI) {
+func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BfdVppAPI, ifaceidx.SwIfIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	bfdHandler, err := vppcalls.NewBfdVppHandler(ctx.MockChannel, log, nil)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "bfd-if-idx", nil))
+	bfdHandler, err := vppcalls.NewBfdVppHandler(ctx.MockChannel, ifIndexes, log, nil)
 	Expect(err).To(BeNil())
-	return ctx, bfdHandler
+	return ctx, bfdHandler, ifIndexes
 }

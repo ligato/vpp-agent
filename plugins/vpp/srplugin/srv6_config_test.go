@@ -21,7 +21,6 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
@@ -906,19 +905,14 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *vppcallfake.SRv6C
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
-	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
+	log := logging.ForPlugin("test-log")
 	log.SetLevel(logging.DebugLevel)
 	// Interface index from default plugins
 	swIndex := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "sw_if_indexes", ifaceidx.IndexMetadata))
 	// Configurator
 	fakeVPPCalls := vppcallfake.NewSRv6Calls()
-	configurator := &srplugin.SRv6Configurator{
-		Log:         log,
-		GoVppmux:    connection,
-		SwIfIndexes: swIndex,
-		VppCalls:    fakeVPPCalls,
-	}
-	err = configurator.Init()
+	configurator := &srplugin.SRv6Configurator{}
+	err = configurator.Init(log, connection, swIndex, false, fakeVPPCalls)
 	Expect(err).To(BeNil())
 
 	return configurator, fakeVPPCalls, connection
@@ -930,6 +924,7 @@ func srv6TestTeardown(connection *core.Connection, plugin *srplugin.SRv6Configur
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 func verifyOnePolicyWithSegments(fakeVPPCalls *vppcallfake.SRv6Calls, policy *srv6.Policy, segments ...*srv6.PolicySegment) {

@@ -19,6 +19,8 @@ import (
 	"net"
 	"time"
 
+	"strconv"
+
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
@@ -61,7 +63,7 @@ func (handler *bfdVppHandler) AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session
 
 	// Authentication
 	if bfdSess.Authentication != nil {
-		keyID := string(bfdSess.Authentication.KeyId)
+		keyID := strconv.Itoa(int(bfdSess.Authentication.KeyId))
 		handler.log.Infof("Setting up authentication with index %v", keyID)
 		_, _, found := bfdKeyIndexes.LookupIdx(keyID)
 		if found {
@@ -203,47 +205,6 @@ func (handler *bfdVppHandler) DeleteBfdUDPSession(ifIndex uint32, sourceAddress 
 	return nil
 }
 
-func (handler *bfdVppHandler) DumpBfdUDPSessions() ([]*bfd_api.BfdUDPSessionDetails, error) {
-	return handler.dumpBfdUDPSessionsWithID(false, 0)
-}
-
-func (handler *bfdVppHandler) DumpBfdUDPSessionsWithID(authKeyIndex uint32) ([]*bfd_api.BfdUDPSessionDetails, error) {
-	return handler.dumpBfdUDPSessionsWithID(true, authKeyIndex)
-}
-
-func (handler *bfdVppHandler) dumpBfdUDPSessionsWithID(filterID bool, authKeyIndex uint32) (sessions []*bfd_api.BfdUDPSessionDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(bfd_api.BfdUDPSessionDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &bfd_api.BfdUDPSessionDump{}
-	reqCtx := handler.callsChannel.SendMultiRequest(req)
-	for {
-		msg := &bfd_api.BfdUDPSessionDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if stop {
-			break
-		}
-		if err != nil {
-			return sessions, err
-		}
-
-		if filterID {
-			// Not interested in sessions without auth key
-			if msg.IsAuthenticated == 0 {
-				continue
-			}
-			if msg.BfdKeyID == uint8(authKeyIndex) {
-				sessions = append(sessions, msg)
-			}
-		} else {
-			sessions = append(sessions, msg)
-		}
-	}
-
-	return sessions, nil
-}
-
 func (handler *bfdVppHandler) SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdAuthSetKey{}).LogTimeEntry(time.Since(t))
@@ -296,29 +257,6 @@ func (handler *bfdVppHandler) DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHo
 	}
 
 	return nil
-}
-
-func (handler *bfdVppHandler) DumpBfdKeys() (keys []*bfd_api.BfdAuthKeysDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(bfd_api.BfdAuthKeysDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &bfd_api.BfdAuthKeysDump{}
-	reqCtx := handler.callsChannel.SendMultiRequest(req)
-	for {
-		msg := &bfd_api.BfdAuthKeysDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		keys = append(keys, msg)
-	}
-
-	return keys, nil
 }
 
 func (handler *bfdVppHandler) AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex) error {

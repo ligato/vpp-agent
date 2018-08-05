@@ -16,30 +16,72 @@ package rest
 
 import (
 	"fmt"
+	"sync"
 
-	"github.com/ligato/cn-infra/flavors/local"
+	"git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/rest/resturl"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	l4vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
 )
 
+// REST api methods
 const (
-	swIndexVarName = "swindex"
+	GET  = "GET"
+	POST = "POST"
 )
 
 // Plugin registers Rest Plugin
 type Plugin struct {
 	Deps
 
-	indexItems []indexItem
+	// Index page
+	index *index
+
+	// Channels
+	vppChan  api.Channel
+	dumpChan api.Channel
+
+	// Handlers
+	aclHandler   aclvppcalls.AclVppRead
+	ifHandler    ifvppcalls.IfVppRead
+	bfdHandler   ifvppcalls.BfdVppRead
+	natHandler   ifvppcalls.NatVppRead
+	stnHandler   ifvppcalls.StnVppRead
+	ipSecHandler ipsecvppcalls.IPSecVPPRead
+	bdHandler    l2vppcalls.BridgeDomainVppRead
+	fibHandler   l2vppcalls.FibVppRead
+	xcHandler    l2vppcalls.XConnectVppRead
+	arpHandler   l3vppcalls.ArpVppRead
+	pArpHandler  l3vppcalls.ProxyArpVppRead
+	rtHandler    l3vppcalls.RouteVppRead
+	l4Handler    l4vppcalls.L4VppRead
+
+	govppmux sync.Mutex
 }
 
 // Deps represents dependencies of Rest Plugin
 type Deps struct {
-	local.PluginInfraDeps
+	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.API
+	VPP          vpp.API
 }
 
+// index defines map of main index page entries
+type index struct {
+	ItemMap map[string][]indexItem
+}
+
+// indexItem is single index page entry
 type indexItem struct {
 	Name string
 	Path string
@@ -47,16 +89,111 @@ type indexItem struct {
 
 // Init initializes the Rest Plugin
 func (plugin *Plugin) Init() (err error) {
-	plugin.indexItems = []indexItem{
-		{Name: "Interfaces", Path: "/interfaces"},
-		{Name: "Bridge domains", Path: "/bridgedomains"},
-		{Name: "L2Fibs", Path: "/l2fibs"},
-		{Name: "XConnectorPairs", Path: "/xconnectpairs"},
-		{Name: "ARPs", Path: "/arps"},
-		{Name: "Static routes", Path: "/staticroutes"},
-		{Name: "ACL IP", Path: "/acl/ip"},
-		{Name: "Telemetry", Path: "/telemetry"},
+	// Check VPP dependency
+	if plugin.VPP == nil {
+		return fmt.Errorf("REST plugin requires VPP plugin API")
 	}
+	// VPP channels
+	if plugin.vppChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
+		return err
+	}
+	if plugin.dumpChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
+		return err
+	}
+	// Indexes
+	ifIndexes := plugin.VPP.GetSwIfIndexes()
+	bdIndexes := plugin.VPP.GetBDIndexes()
+	spdIndexes := plugin.VPP.GetIPSecSPDIndexes()
+
+	// Initialize handlers
+	if plugin.aclHandler, err = aclvppcalls.NewAclVppHandler(plugin.vppChan, plugin.dumpChan, nil); err != nil {
+		return err
+	}
+	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.bfdHandler, err = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.natHandler, err = ifvppcalls.NewNatVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.stnHandler, err = ifvppcalls.NewStnVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.ipSecHandler, err = ipsecvppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.bdHandler, err = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.fibHandler, err = l2vppcalls.NewFibVppHandler(plugin.vppChan, plugin.dumpChan, make(chan *l2vppcalls.FibLogicalReq),
+		ifIndexes, bdIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.xcHandler, err = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.arpHandler, err = l3vppcalls.NewArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.pArpHandler, err = l3vppcalls.NewProxyArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.rtHandler, err = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil); err != nil {
+		return err
+	}
+	if plugin.l4Handler, err = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log, nil); err != nil {
+		return err
+	}
+
+	// Fill index item lists
+	idxMap := map[string][]indexItem{
+		"ACL plugin": {
+			{Name: "IP-type access lists", Path: resturl.AclIP},
+			{Name: "MACIP-type access lists", Path: resturl.AclMACIP},
+		},
+		"Interface plugin": {
+			{Name: "All interfaces", Path: resturl.Interface},
+			{Name: "Loopbacks", Path: resturl.Loopback},
+			{Name: "Ethernets", Path: resturl.Ethernet},
+			{Name: "Memifs", Path: resturl.Memif},
+			{Name: "Taps", Path: resturl.Tap},
+			{Name: "VxLANs", Path: resturl.VxLan},
+			{Name: "Af-packets", Path: resturl.AfPacket},
+		},
+		"IPSec plugin": {
+			{Name: "Security policy databases", Path: resturl.IPSecSpd},
+			{Name: "Security associations", Path: resturl.IPSecSa},
+			{Name: "Tunnel interfaces", Path: resturl.IPSecTnIf},
+		},
+		"L2 plugin": {
+			{Name: "Bridge domains", Path: resturl.Bd},
+			{Name: "Bridge domain IDs", Path: resturl.BdId},
+			{Name: "L2Fibs", Path: resturl.Fib},
+			{Name: "Cross connects", Path: resturl.Xc},
+		},
+		"L3 plugin": {
+			{Name: "Bridge domains", Path: resturl.Bd},
+			{Name: "Bridge domain IDs", Path: resturl.BdId},
+			{Name: "L2Fibs", Path: resturl.Fib},
+			{Name: "Cross connects", Path: resturl.Xc},
+		},
+		"L4 plugin": {
+			{Name: "L4 sessions", Path: resturl.Sessions},
+		},
+		"Telemetry": {
+			{Name: "All data", Path: resturl.Telemetry},
+			{Name: "Memory", Path: resturl.TMemory},
+			{Name: "Runtime", Path: resturl.TRuntime},
+			{Name: "Node count", Path: resturl.TNodeCount},
+		},
+	}
+
+	plugin.index = &index{
+		ItemMap: idxMap,
+	}
+
 	return nil
 }
 
@@ -64,32 +201,23 @@ func (plugin *Plugin) Init() (err error) {
 func (plugin *Plugin) AfterInit() (err error) {
 	plugin.Log.Debug("REST API Plugin is up and running")
 
-	plugin.HTTPHandlers.RegisterHTTPHandler("/interfaces", plugin.interfacesGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomains", plugin.bridgeDomainsGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/bridgedomainids", plugin.bridgeDomainIdsGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/l2fibs", plugin.fibTableEntriesGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/xconnectpairs", plugin.xconnectPairsGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/arps", plugin.arpGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/staticroutes", plugin.staticRoutesGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler(fmt.Sprintf("/acl/interface/{%s:[0-9]+}", swIndexVarName),
-		plugin.interfaceACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLPostHandler, "POST")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip", plugin.ipACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/ip/example", plugin.exampleIpACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/macip", plugin.macipACLPostHandler, "POST")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/macip", plugin.macipACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/acl/macip/example", plugin.exampleMacIpACLGetHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/command", plugin.commandHandler, "POST")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry", plugin.telemetryHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry/memory", plugin.telemetryMemoryHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry/runtime", plugin.telemetryRuntimeHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/telemetry/nodecount", plugin.telemetryNodeCountHandler, "GET")
-	plugin.HTTPHandlers.RegisterHTTPHandler("/", plugin.indexHandler, "GET")
+	plugin.registerAccessListHandlers()
+	plugin.registerInterfaceHandlers()
+	plugin.registerBfdHandlers()
+	plugin.registerNatHandlers()
+	plugin.registerStnHandlers()
+	plugin.registerIPSecHandlers()
+	plugin.registerL2Handlers()
+	plugin.registerL3Handlers()
+	plugin.registerL4Handlers()
+	plugin.registerTelemetryHandlers()
+	plugin.registerCommandHandler()
+	plugin.registerIndexHandlers()
 
 	return nil
 }
 
 // Close is used to clean up resources used by Plugin
 func (plugin *Plugin) Close() (err error) {
-	return nil
+	return safeclose.Close(plugin.vppChan, plugin.dumpChan)
 }

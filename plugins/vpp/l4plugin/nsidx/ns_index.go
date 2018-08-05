@@ -15,7 +15,6 @@
 package nsidx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
@@ -39,7 +38,7 @@ type AppNsIndex interface {
 	ListNames() (names []string)
 
 	// WatchNameToIdx allows to subscribe for watching changes in appNsIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan ChangeDto)
 }
 
 // AppNsIndexRW is mapping between indexes (used internally in VPP) and AppNamespace indexes.
@@ -131,7 +130,7 @@ func (appNs *appNsIndex) ListNames() (names []string) {
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in appNsIndex mapping
-func (appNs *appNsIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ChangeDto) {
+func (appNs *appNsIndex) WatchNameToIdx(subscriber string, pluginChannel chan ChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	appNs.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

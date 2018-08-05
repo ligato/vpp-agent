@@ -54,6 +54,11 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	}
 	plugin.afPacketConfigurator.clearMapping()
 
+	var err error
+	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
+		return []error{err}
+	}
+
 	// Dump current state of the VPP interfaces
 	vppIfs, err := plugin.ifHandler.DumpInterfaces()
 	if err != nil {
@@ -67,46 +72,46 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
 			// Register local0 interface with zero index
-			if err := plugin.registerInterface(vppIf.VPPInternalName, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
+			if err := plugin.registerInterface(vppIf.Meta.InternalName, vppIfIdx, vppIf.Interface); err != nil {
 				errs = append(errs, err)
 			}
 			continue
 		}
-		if vppIf.Name == "" {
+		if vppIf.Interface.Name == "" {
 			// If interface has no name, it is stored as unnamed and resolved later
 			plugin.log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
-			unnamedVppIfs[vppIfIdx] = &vppIf.Interfaces_Interface
+			unnamedVppIfs[vppIfIdx] = vppIf.Interface
 			continue
 		}
 		var correlated bool
 		for _, nbIf := range nbIfs {
-			if vppIf.Name == nbIf.Name {
+			if vppIf.Interface.Name == nbIf.Name {
 				correlated = true
 				// Register interface to mapping and VPP tag/index
-				if err := plugin.registerInterface(vppIf.Name, vppIfIdx, nbIf); err != nil {
+				if err := plugin.registerInterface(vppIf.Interface.Name, vppIfIdx, nbIf); err != nil {
 					errs = append(errs, err)
 				}
 				// Calculate whether modification is needed
-				if plugin.isIfModified(nbIf, &vppIf.Interfaces_Interface) {
-					plugin.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Name)
-					if err = plugin.ModifyVPPInterface(nbIf, &vppIf.Interfaces_Interface); err != nil {
+				if plugin.isIfModified(nbIf, vppIf.Interface) {
+					plugin.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Interface.Name)
+					if err = plugin.ModifyVPPInterface(nbIf, vppIf.Interface); err != nil {
 						plugin.log.Errorf("Error while modifying interface: %v", err)
 						errs = append(errs, err)
 					}
 				} else {
-					plugin.log.Debugf("RESYNC interfaces: %v registered without additional changes", vppIf.Name)
+					plugin.log.Debugf("RESYNC interfaces: %v registered without additional changes", vppIf.Interface.Name)
 				}
 				break
 			}
 		}
 		if !correlated {
 			// Register interface before removal (to keep state consistent)
-			if err := plugin.registerInterface(vppIf.Name, vppIfIdx, &vppIf.Interfaces_Interface); err != nil {
+			if err := plugin.registerInterface(vppIf.Interface.Name, vppIfIdx, vppIf.Interface); err != nil {
 				errs = append(errs, err)
 			}
 			// VPP interface is obsolete and will be removed (un-configured if physical device)
-			plugin.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Name)
-			if err = plugin.deleteVPPInterface(&vppIf.Interfaces_Interface, vppIfIdx); err != nil {
+			plugin.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Interface.Name)
+			if err = plugin.deleteVPPInterface(vppIf.Interface, vppIfIdx); err != nil {
 				plugin.log.Errorf("Error while removing interface: %v", err)
 				errs = append(errs, err)
 			}
@@ -232,7 +237,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	plugin.clearMapping()
 
 	// Dump all BFD vppSessions
-	vppSessions, err := plugin.DumpBfdSessions()
+	vppBfdSessions, err := plugin.bfdHandler.DumpBfdSessions()
 	if err != nil {
 		return err
 	}
@@ -242,7 +247,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	for _, nbSession := range nbSessions {
 		// look for configured session
 		var found bool
-		for _, vppSession := range vppSessions {
+		for _, vppSession := range vppBfdSessions.Session {
 			// compare fixed fields
 			if nbSession.Interface == vppSession.Interface && nbSession.SourceAddress == vppSession.SourceAddress &&
 				nbSession.DestinationAddress == vppSession.DestinationAddress {
@@ -265,7 +270,7 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	}
 
 	// Remove old sessions
-	for _, vppSession := range vppSessions {
+	for _, vppSession := range vppBfdSessions.Session {
 		// remove every not-yet-registered session
 		_, _, found := plugin.sessionsIndexes.LookupIdx(vppSession.Interface)
 		if !found {
@@ -292,7 +297,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	}()
 
 	// lookup BFD auth keys
-	vppKeys, err := plugin.DumpBFDAuthKeys()
+	vppBfdKeys, err := plugin.bfdHandler.DumpBfdAuthKeys()
 	if err != nil {
 		return err
 	}
@@ -302,7 +307,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	for _, nbKey := range nbKeys {
 		// look for configured keys
 		var found bool
-		for _, vppKey := range vppKeys {
+		for _, vppKey := range vppBfdKeys.AuthKeys {
 			// compare key ID
 			if nbKey.Id == vppKey.Id {
 				plugin.log.Debugf("found configured BFD auth key with ID %v", nbKey.Id)
@@ -324,7 +329,7 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	}
 
 	// Remove old keys
-	for _, vppKey := range vppKeys {
+	for _, vppKey := range vppBfdKeys.AuthKeys {
 		// remove every not-yet-registered keys
 		_, _, found := plugin.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
 		if !found {
@@ -376,42 +381,35 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 	plugin.clearMapping()
 
 	// Dump existing STN Rules
-	vppStnRules, err := plugin.Dump()
+	vppStnDetails, err := plugin.Dump()
 	if err != nil {
 		return err
 	}
 
 	// Correlate configuration, and remove obsolete rules STN rules
 	var wasErr error
-	for _, vppStnRule := range vppStnRules {
+	for _, vppStnRule := range vppStnDetails.Rules {
 		// Parse parameters
 		var vppStnIP net.IP
 		var vppStnIPStr string
 
-		if vppStnRule.IsIP4 == 1 {
-			vppStnIP = vppStnRule.IPAddress[:4]
-		} else {
-			vppStnIP = vppStnRule.IPAddress
-		}
-		vppStnIPStr = vppStnIP.String()
-
-		vppStnIfName, _, found := plugin.ifIndexes.LookupName(vppStnRule.SwIfIndex)
+		vppStnIfIdx, _, found := plugin.ifIndexes.LookupIdx(vppStnRule.Interface)
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
-			if err := plugin.stnHandler.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP); err != nil {
+			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
 				plugin.log.Error(err)
 				wasErr = err
 			}
 			plugin.log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
-				vppStnIPStr, vppStnRule.SwIfIndex)
+				vppStnIPStr, vppStnIfIdx)
 			continue
 		}
 
 		// Look for equal rule in NB configuration
 		var match bool
 		for _, nbStnRule := range nbStnRules {
-			if nbStnRule.IpAddress == vppStnIPStr && nbStnRule.Interface == vppStnIfName {
+			if nbStnRule.IpAddress == vppStnIPStr && nbStnRule.Interface == vppStnRule.Interface {
 				// Register existing rule
 				plugin.indexSTNRule(nbStnRule, false)
 				match = true
@@ -421,11 +419,11 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
-			if err := plugin.stnHandler.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP); err != nil {
+			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
 				plugin.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnIfName)
+			plugin.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnRule.Interface)
 		}
 	}
 
@@ -452,7 +450,7 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 	// Re-initialize cache
 	plugin.clearMapping()
 
-	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump(plugin.ifIndexes)
+	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump()
 	if err != nil {
 		return fmt.Errorf("failed to dump NAT44 global config: %v", err)
 	}
@@ -471,7 +469,7 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump(plugin.ifIndexes)
+	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump()
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}

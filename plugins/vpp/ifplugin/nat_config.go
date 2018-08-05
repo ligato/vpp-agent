@@ -116,7 +116,8 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	if plugin.natHandler, err = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.log, plugin.stopwatch); err != nil {
+	if plugin.natHandler, err = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.ifIndexes,
+		plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -442,12 +443,12 @@ func (plugin *NatConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 
 // DumpNatGlobal returns the current NAT44 global config
 func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
-	return plugin.natHandler.Nat44GlobalConfigDump(plugin.ifIndexes)
+	return plugin.natHandler.Nat44GlobalConfigDump()
 }
 
 // DumpNatDNat returns the current NAT44 DNAT config
 func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
-	return plugin.natHandler.NAT44DNatDump(plugin.ifIndexes)
+	return plugin.natHandler.NAT44DNatDump()
 }
 
 // enables set of interfaces as inside/outside in NAT

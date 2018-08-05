@@ -106,13 +106,6 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 		return err
 	}
 
-	// Get VPP ACL plugin version
-	var aclVersion string
-	if aclVersion, err = plugin.aclHandler.GetAclPluginVersion(); err != nil {
-		return err
-	}
-	plugin.log.Infof("VPP ACL plugin version is %s", aclVersion)
-
 	return nil
 }
 
@@ -356,7 +349,7 @@ func (plugin *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err err
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.ACLDetails)
+		acls = append(acls, aclWithIndex.Acl)
 	}
 	return acls, nil
 }
@@ -369,7 +362,7 @@ func (plugin *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err 
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.ACLDetails)
+		acls = append(acls, aclWithIndex.Acl)
 	}
 	return acls, nil
 }

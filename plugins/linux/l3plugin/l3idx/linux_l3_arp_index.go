@@ -15,7 +15,6 @@
 package l3idx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
@@ -38,7 +37,7 @@ type LinuxARPIndex interface {
 	LookupNameByHostIfName(hostIfName string) []string
 
 	// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxARPIndexDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan LinuxARPIndexDto)
 }
 
 // LinuxARPIndexRW is mapping between software ARP indexes (used internally in VPP)
@@ -111,7 +110,7 @@ func (linuxArpIndex *linuxArpIndex) UnregisterName(name string) (idx uint32, met
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping
-func (linuxArpIndex *linuxArpIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxARPIndexDto) {
+func (linuxArpIndex *linuxArpIndex) WatchNameToIdx(subscriber string, pluginChannel chan LinuxARPIndexDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	linuxArpIndex.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

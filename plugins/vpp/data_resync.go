@@ -15,12 +15,10 @@
 package vpp
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
-
 	"time"
-
-	"fmt"
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
@@ -159,92 +157,92 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	// store all resync errors
 	var resyncErrs []error
 
-	if !plugin.droppedFromResync(interfaces.InterfaceKeyPrefix()) {
+	if !plugin.droppedFromResync(interfaces.Prefix) {
 		if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
 			resyncErrs = append(resyncErrs, errs...)
 		}
 	}
-	if !plugin.droppedFromResync(acl.KeyPrefix()) {
+	if !plugin.droppedFromResync(acl.Prefix) {
 		if err := plugin.aclConfigurator.Resync(req.ACLs); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(bfd.AuthKeysKeyPrefix()) {
+	if !plugin.droppedFromResync(bfd.AuthKeysPrefix) {
 		if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(bfd.SessionKeyPrefix()) {
+	if !plugin.droppedFromResync(bfd.SessionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(bfd.EchoFunctionKeyPrefix()) {
+	if !plugin.droppedFromResync(bfd.EchoFunctionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l2.BridgeDomainKeyPrefix()) {
+	if !plugin.droppedFromResync(l2.BdPrefix) {
 		if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l2.FibKeyPrefix()) {
+	if !plugin.droppedFromResync(l2.FibPrefix) {
 		if err := plugin.fibConfigurator.Resync(req.FibTableEntries); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l2.XConnectKeyPrefix()) {
+	if !plugin.droppedFromResync(l2.XConnectPrefix) {
 		if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.RouteKeyPrefix()) {
+	if !plugin.droppedFromResync(l3.RoutesPrefix) {
 		if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.ArpKeyPrefix()) {
+	if !plugin.droppedFromResync(l3.ArpPrefix) {
 		if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.ProxyArpInterfacePrefix()) {
+	if !plugin.droppedFromResync(l3.ProxyARPInterfacePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncInterfaces(req.ProxyArpInterfaces); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l3.ProxyArpRangePrefix()) {
+	if !plugin.droppedFromResync(l3.ProxyARPRangePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l4.FeatureKeyPrefix()) {
+	if !plugin.droppedFromResync(l4.FeaturesPrefix) {
 		if err := plugin.appNsConfigurator.ResyncFeatures(req.L4Features); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(l4.AppNamespacesKeyPrefix()) {
+	if !plugin.droppedFromResync(l4.Prefix) {
 		if err := plugin.appNsConfigurator.ResyncAppNs(req.AppNamespaces); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(stn.KeyPrefix()) {
+	if !plugin.droppedFromResync(stn.Prefix) {
 		if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(nat.GlobalConfigPrefix()) {
+	if !plugin.droppedFromResync(nat.GlobalPrefix) {
 		if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(nat.SNatPrefix()) {
+	if !plugin.droppedFromResync(nat.SNatPrefix) {
 		if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
-	if !plugin.droppedFromResync(nat.DNatPrefix()) {
+	if !plugin.droppedFromResync(nat.DNatPrefix) {
 		if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
@@ -278,57 +276,57 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		if plugin.droppedFromResync(key) {
 			continue
 		}
-		if strings.HasPrefix(key, acl.KeyPrefix()) {
+		if strings.HasPrefix(key, acl.Prefix) {
 			numAcls := appendACLInterface(resyncData, req)
 			plugin.Log.Debug("Received RESYNC ACL values ", numAcls)
-		} else if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
+		} else if strings.HasPrefix(key, interfaces.Prefix) {
 			numInterfaces := appendResyncInterface(resyncData, req)
 			plugin.Log.Debug("Received RESYNC interface values ", numInterfaces)
-		} else if strings.HasPrefix(key, bfd.SessionKeyPrefix()) {
+		} else if strings.HasPrefix(key, bfd.SessionPrefix) {
 			numBfdSession := resyncAppendBfdSession(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BFD Session values ", numBfdSession)
-		} else if strings.HasPrefix(key, bfd.AuthKeysKeyPrefix()) {
+		} else if strings.HasPrefix(key, bfd.AuthKeysPrefix) {
 			numBfdAuthKeys := resyncAppendBfdAuthKeys(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BFD Auth Key values ", numBfdAuthKeys)
-		} else if strings.HasPrefix(key, bfd.EchoFunctionKeyPrefix()) {
+		} else if strings.HasPrefix(key, bfd.EchoFunctionPrefix) {
 			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BFD Echo values ", numBfdEchos)
-		} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
+		} else if strings.HasPrefix(key, l2.BdPrefix) {
 			numBDs, numL2FIBs := resyncAppendBDs(resyncData, req)
 			plugin.Log.Debug("Received RESYNC BD values ", numBDs)
 			plugin.Log.Debug("Received RESYNC L2 FIB values ", numL2FIBs)
-		} else if strings.HasPrefix(key, l2.XConnectKeyPrefix()) {
+		} else if strings.HasPrefix(key, l2.XConnectPrefix) {
 			numXCons := resyncAppendXCons(resyncData, req)
 			plugin.Log.Debug("Received RESYNC XConnects values ", numXCons)
-		} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+		} else if strings.HasPrefix(key, l3.VrfPrefix) {
 			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
 			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
-		} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+		} else if strings.HasPrefix(key, l3.ArpPrefix) {
 			numARPs := resyncAppendARPs(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC ARP values ", numARPs)
-		} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
+		} else if strings.HasPrefix(key, l3.ProxyARPInterfacePrefix) {
 			numARPs := resyncAppendProxyArpInterfaces(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP interface values ", numARPs)
-		} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
+		} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
-		} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+		} else if strings.HasPrefix(key, l4.FeaturesPrefix) {
 			resyncFeatures(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNs feature flag")
-		} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
+		} else if strings.HasPrefix(key, l4.Prefix) {
 			numAppNs := resyncAppendAppNs(resyncData, req)
 			plugin.Log.Debug("Received RESYNC AppNamespace values ", numAppNs)
-		} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+		} else if strings.HasPrefix(key, stn.Prefix) {
 			numStns := appendResyncStnRules(resyncData, req)
 			plugin.Log.Debug("Received RESYNC STN rules values ", numStns)
-		} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+		} else if strings.HasPrefix(key, nat.GlobalPrefix) {
 			resyncNatGlobal(resyncData, req)
 			plugin.Log.Debug("Received RESYNC NAT global config")
-		} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+		} else if strings.HasPrefix(key, nat.SNatPrefix) {
 			numSNats := appendResyncSNat(resyncData, req)
 			plugin.Log.Debug("Received RESYNC SNAT configs ", numSNats)
-		} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+		} else if strings.HasPrefix(key, nat.DNatPrefix) {
 			numDNats := appendResyncDNat(resyncData, req)
 			plugin.Log.Debug("Received RESYNC DNAT configs ", numDNats)
 		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
@@ -745,34 +743,39 @@ func appendResyncSR(resyncData datasync.KeyValIterator, req *DataResyncReq) (num
 // All registration for above channel select (it ensures proper order during initialization) are put here.
 func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("subscribeWatcher begin")
-	plugin.swIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.ifIdxWatchCh)
+	plugin.swIfIndexes.WatchNameToIdx(plugin.String(), plugin.ifIdxWatchCh)
 	plugin.Log.Debug("swIfIndexes watch registration finished")
-	plugin.bdIndexes.WatchNameToIdx(plugin.PluginName, plugin.bdIdxWatchCh)
+	plugin.bdIndexes.WatchNameToIdx(plugin.String(), plugin.bdIdxWatchCh)
 	plugin.Log.Debug("bdIndexes watch registration finished")
-	if plugin.linuxIfIndexes != nil {
-		plugin.linuxIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.linuxIfIdxWatchCh)
+	if plugin.Linux != nil {
+		// Get pointer to the map with Linux interface indexes.
+		linuxIfIndexes := plugin.Linux.GetLinuxIfIndexes()
+		if linuxIfIndexes == nil {
+			return fmt.Errorf("linux plugin enabled but interface indexes are not available")
+		}
+		linuxIfIndexes.WatchNameToIdx(plugin.String(), plugin.linuxIfIdxWatchCh)
 		plugin.Log.Debug("linuxIfIndexes watch registration finished")
 	}
 
-	plugin.watchConfigReg, err = plugin.Watch.
+	plugin.watchConfigReg, err = plugin.Watcher.
 		Watch("Config VPP default plug:IF/L2/L3", plugin.changeChan, plugin.resyncConfigChan,
-			acl.KeyPrefix(),
-			interfaces.InterfaceKeyPrefix(),
-			bfd.SessionKeyPrefix(),
-			bfd.AuthKeysKeyPrefix(),
-			bfd.EchoFunctionKeyPrefix(),
-			l2.BridgeDomainKeyPrefix(),
-			l2.XConnectKeyPrefix(),
-			l3.VrfKeyPrefix(),
-			l3.ArpKeyPrefix(),
-			l3.ProxyArpInterfacePrefix(),
-			l3.ProxyArpRangePrefix(),
-			l4.FeatureKeyPrefix(),
-			l4.AppNamespacesKeyPrefix(),
-			stn.KeyPrefix(),
-			nat.GlobalConfigPrefix(),
-			nat.SNatPrefix(),
-			nat.DNatPrefix(),
+			acl.Prefix,
+			interfaces.Prefix,
+			bfd.SessionPrefix,
+			bfd.AuthKeysPrefix,
+			bfd.EchoFunctionPrefix,
+			l2.BdPrefix,
+			l2.XConnectPrefix,
+			l3.VrfPrefix,
+			l3.ArpPrefix,
+			l3.ProxyARPInterfacePrefix,
+			l3.ProxyARPRangePrefix,
+			l4.FeaturesPrefix,
+			l4.Prefix,
+			stn.Prefix,
+			nat.GlobalPrefix,
+			nat.SNatPrefix,
+			nat.DNatPrefix,
 			ipsec.KeyPrefix,
 			srv6.BasePrefix(),
 		)
@@ -780,9 +783,9 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 		return err
 	}
 
-	plugin.watchStatusReg, err = plugin.Watch.
+	plugin.watchStatusReg, err = plugin.Watcher.
 		Watch("Status VPP default plug:IF/L2/L3", nil, plugin.resyncStatusChan,
-			interfaces.InterfaceStateKeyPrefix(), l2.BridgeDomainStateKeyPrefix())
+			interfaces.StatePrefix, l2.BdStatePrefix)
 	if err != nil {
 		return err
 	}

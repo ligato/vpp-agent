@@ -18,17 +18,19 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
 // IPsecVppAPI provides methods for creating and managing of a IPsec configuration
-type IPsecVppAPI interface {
-	IPsecVppWrite
-	IPsecVPPRead
+type IPSecVppAPI interface {
+	IPSecVppWrite
+	IPSecVPPRead
 }
 
 // IPsecVppWrite provides write methods for IPsec
-type IPsecVppWrite interface {
+type IPSecVppWrite interface {
 	// AddTunnelInterface adds tunnel interface
 	AddTunnelInterface(tunnel *ipsec.TunnelInterfaces_Tunnel) (uint32, error)
 	// DelTunnelInterface removes tunnel interface
@@ -51,23 +53,35 @@ type IPsecVppWrite interface {
 	DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA) error
 }
 
-// IPsecVppWrite provides read methods for IPsec
-type IPsecVPPRead interface {
-	// TODO define dump methods
+// IPsecVppWrite provides read methods for IPSec
+type IPSecVPPRead interface {
+	// DumpIPSecSPD returns a list of IPSec security policy databases
+	DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
+	// DumpIPSecSA returns a list of configured security associations
+	DumpIPSecSA() (saList []*IPSecSaDetails, err error)
+	// DumpIPSecSAWithIndex returns a security association with provided index
+	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
+	// DumpIPSecTunnelInterfaces returns a list of configured IPSec tunnel interfaces
+	DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error)
 }
 
 // ipSecVppHandler is accessor for IPsec-related vppcalls methods
 type ipSecVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.SwIfIndex
+	spdIndexes   ipsecidx.SPDIndex // TODO workaround in order to be able to dump at least spds configurator knows about
 	log          logging.Logger
 }
 
 // NewIPsecVppHandler creates new instance of IPsec vppcalls handler
-func NewIPsecVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*ipSecVppHandler, error) {
+func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, spdIndexes ipsecidx.SPDIndex,
+	log logging.Logger, stopwatch *measure.Stopwatch) (*ipSecVppHandler, error) {
 	handler := &ipSecVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
+		spdIndexes:   spdIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(IPSecMessages...); err != nil {

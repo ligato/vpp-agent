@@ -15,7 +15,6 @@
 package aclidx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	acl_model "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
@@ -34,7 +33,7 @@ type AclIndex interface {
 	LookupName(idx uint32) (name string, metadata *acl_model.AccessLists_Acl, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in aclIndex mapping.
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan AclIdxDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan AclIdxDto)
 }
 
 // AclIndexRW is mapping between ACL indices (used internally in VPP) and ACL names.
@@ -117,7 +116,7 @@ func (acl *aclIndex) castMetadata(meta interface{}) *acl_model.AccessLists_Acl {
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping.
-func (acl *aclIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan AclIdxDto) {
+func (acl *aclIndex) WatchNameToIdx(subscriber string, pluginChannel chan AclIdxDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	acl.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

@@ -23,7 +23,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	dhcp_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -38,36 +37,6 @@ import (
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
-
-/* Interface configurator init and close */
-
-// Test init function
-func TestInterfaceConfiguratorInit(t *testing.T) {
-	var err error
-	// Setup
-	RegisterTestingT(t)
-	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
-	}
-	connection, _ := govpp.Connect(ctx.MockVpp)
-	defer connection.Disconnect()
-	plugin := &ifplugin.InterfaceConfigurator{}
-	ifVppNotifChan := make(chan govppapi.Message, 100)
-	// Reply set
-	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameDetails{
-		SocketID:       1,
-		SocketFilename: []byte("test-socket-filename"),
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	// Test init
-	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection,
-		nil, ifVppNotifChan, 0, true)
-	Expect(err).To(BeNil())
-	Expect(plugin.IsSocketFilenameCached("test-socket-filename")).To(BeTrue())
-	// Test close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
-}
 
 // Test dhcp
 func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
@@ -1421,15 +1390,17 @@ func TestModifyRxMode(t *testing.T) {
 
 func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govpp.Connection, *ifplugin.InterfaceConfigurator) {
 	RegisterTestingT(t)
+
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
 	connection, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
 	// Logger
-	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
+	log := logging.ForPlugin("test-log")
 	log.SetLevel(logging.DebugLevel)
+
 	// Configurator
 	plugin := &ifplugin.InterfaceConfigurator{}
 	notifChan := make(chan govppapi.Message, 5)
@@ -1443,6 +1414,7 @@ func ifTestTeardown(connection *govpp.Connection, plugin *ifplugin.InterfaceConf
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 /* Interface Test Data */

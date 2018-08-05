@@ -4,6 +4,16 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// Op represents datasync operations.
+type Op string
+
+const (
+	// Put represents Create or Update operation.
+	Put Op = "Put"
+	// Delete operation
+	Delete = "Delete"
+)
+
 // ChangeEvent is used to define the data type for the change channel
 // (<changeChan> from KeyValProtoWatcher.Watch).
 // A data change event contains a key identifying where the change happened
@@ -11,7 +21,6 @@ import (
 // (previous value) and the value *after* the change (current value).
 type ChangeEvent interface {
 	CallbackResult
-
 	ProtoWatchResp
 }
 
@@ -70,7 +79,7 @@ type WithKey interface {
 // The intent is to ensure that the same method declaration is used in different
 // interfaces (composition of interfaces).
 type WithChangeType interface {
-	GetChangeType() PutDel
+	GetChangeType() Op
 }
 
 // WithRevision is a simple helper interface embedded by all interfaces that
@@ -106,4 +115,18 @@ type LazyValue interface {
 	// returns:
 	// - error if value argument can not be properly filled.
 	GetValue(value proto.Message) error
+}
+
+// KeyValIterator is an iterator for KeyVal.
+type KeyValIterator interface {
+	// GetNext retrieves the next value from the iterator context. The retrieved
+	// value is unmarshaled and returned as <kv>. The allReceived flag is
+	// set to true on the last KeyVal pair in the context.
+	GetNext() (kv KeyVal, allReceived bool)
+}
+
+// KeyVal represents a single key-value pair.
+type KeyVal interface {
+	WithKey
+	LazyValueWithRev
 }

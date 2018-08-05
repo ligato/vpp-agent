@@ -379,7 +379,7 @@ func TestAddLocalSID(t *testing.T) {
 				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
 			}
 			// make the call
-			err := vppCalls.AddLocalSid(sidA.Addr, td.Input, swIfIndex, ctx.MockChannel)
+			err := vppCalls.AddLocalSid(sidA.Addr, td.Input, swIfIndex)
 			// verify result
 			if td.ExpectFailure {
 				Expect(err).Should(HaveOccurred())
@@ -435,10 +435,10 @@ func TestDeleteLocalSID(t *testing.T) {
 					Psp: true,
 				},
 			}
-			vppCalls.AddLocalSid(td.Sid, localsid, swIfIndex, ctx.MockChannel)
+			vppCalls.AddLocalSid(td.Sid, localsid, swIfIndex)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
-			err := vppCalls.DeleteLocalSid(td.Sid, ctx.MockChannel)
+			err := vppCalls.DeleteLocalSid(td.Sid)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -490,7 +490,7 @@ func TestSetEncapsSourceAddress(t *testing.T) {
 			defer teardown(ctx)
 
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppCalls.SetEncapsSourceAddress(td.Address, ctx.MockChannel)
+			err := vppCalls.SetEncapsSourceAddress(td.Address)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -561,7 +561,7 @@ func TestAddPolicy(t *testing.T) {
 			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppCalls.AddPolicy(td.BSID, td.Policy, td.PolicySegment, ctx.MockChannel)
+			err := vppCalls.AddPolicy(td.BSID, td.Policy, td.PolicySegment)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -605,10 +605,10 @@ func TestDeletePolicy(t *testing.T) {
 			// data and prepare case
 			policy := policy(0, true, true)
 			segment := policySegment(1, sidA.Addr, sidB.Addr, sidC.Addr)
-			vppCalls.AddPolicy(td.BSID, policy, segment, ctx.MockChannel)
+			vppCalls.AddPolicy(td.BSID, policy, segment)
 			ctx.MockVpp.MockReply(td.MockReply)
 			// make the call and verify
-			err := vppCalls.DeletePolicy(td.BSID, ctx.MockChannel)
+			err := vppCalls.DeletePolicy(td.BSID)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -677,7 +677,7 @@ func TestAddPolicySegment(t *testing.T) {
 			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppCalls.AddPolicySegment(td.BSID, td.Policy, td.PolicySegment, ctx.MockChannel)
+			err := vppCalls.AddPolicySegment(td.BSID, td.Policy, td.PolicySegment)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -751,7 +751,7 @@ func TestDeletePolicySegment(t *testing.T) {
 			defer teardown(ctx)
 			// prepare reply, make call and verify
 			ctx.MockVpp.MockReply(td.MockReply)
-			err := vppCalls.DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex, ctx.MockChannel)
+			err := vppCalls.DeletePolicySegment(td.BSID, td.Policy, td.PolicySegment, td.SegmentIndex)
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
@@ -908,18 +908,19 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 			ctx.MockVpp.MockReply(td.MockReply)
 			var err error
 			if removal {
-				err = vppCalls.RemoveSteering(td.Steering, swIfIndex, ctx.MockChannel)
+				err = vppCalls.RemoveSteering(td.Steering, swIfIndex)
 			} else {
-				err = vppCalls.AddSteering(td.Steering, swIfIndex, ctx.MockChannel)
+				err = vppCalls.AddSteering(td.Steering, swIfIndex)
 			}
 			td.Verify(err, ctx.MockChannel.Msg)
 		})
 	}
 }
 
-func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6Calls) {
+func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6VppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	vppCalls := vppcalls.NewSRv6Calls(logrus.DefaultLogger(), nil)
+	vppCalls, err := vppcalls.NewSRv6VppHandler(ctx.MockChannel, logrus.DefaultLogger(), nil)
+	Expect(err).To(BeNil())
 	return ctx, vppCalls
 }
 

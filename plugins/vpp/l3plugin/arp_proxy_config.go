@@ -83,7 +83,7 @@ func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux g
 	}
 
 	// VPP API handler
-	if plugin.pArpHandler, err = vppcalls.NewProxyArpVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+	if plugin.pArpHandler, err = vppcalls.NewProxyArpVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 

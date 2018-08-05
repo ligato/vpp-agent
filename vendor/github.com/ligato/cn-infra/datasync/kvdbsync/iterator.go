@@ -19,14 +19,14 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 )
 
-// NewIterator creates a new instance of Iterator.
-func NewIterator(delegate keyval.ProtoKeyValIterator) *Iterator {
-	return &Iterator{delegate: delegate}
-}
-
 // Iterator adapts the db_proto.KeyValIterator to the datasync.KeyValIterator.
 type Iterator struct {
 	delegate keyval.ProtoKeyValIterator
+}
+
+// NewIterator creates a new instance of Iterator.
+func NewIterator(delegate keyval.ProtoKeyValIterator) *Iterator {
+	return &Iterator{delegate: delegate}
 }
 
 // GetNext only delegates the call to internal iterator.

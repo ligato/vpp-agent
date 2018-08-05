@@ -22,7 +22,6 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -45,28 +44,6 @@ func (m *mockCallback) Done(err error) {
 }
 
 /* FIB configurator init and close */
-
-// Test init function
-func TestFIBConnectConfiguratorInit(t *testing.T) {
-	var err error
-	// Setup
-	RegisterTestingT(t)
-	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
-	}
-	connection, _ := core.Connect(ctx.MockVpp)
-	defer connection.Disconnect()
-	plugin := &l2plugin.FIBConfigurator{}
-	// Test init
-	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", ifaceidx.IndexMetadata))
-	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "if", ifaceidx.IndexMetadata))
-	err = plugin.Init(log, connection, ifIndexes, bdIndexes, false)
-	Expect(err).To(BeNil())
-	// Test close
-	err = plugin.Close()
-	Expect(err).To(BeNil())
-}
 
 /* FIB configurator test cases */
 
@@ -1130,31 +1107,29 @@ func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plug
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
-	log := logging.ForPlugin("test-log", logrus.NewLogRegistry())
+	log := logging.ForPlugin("test-log")
 	log.SetLevel(logging.DebugLevel)
 	// Interface indices
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "fib-if", nil))
 	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(log, "fib-bd", nil))
 	// Configurator
 	plugin := &l2plugin.FIBConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log", logrus.NewLogRegistry()), connection, swIfIndexes, bdIndexes, false)
+	err = plugin.Init(logging.ForPlugin("test-log"), connection, swIfIndexes, bdIndexes, false)
 	Expect(err).To(BeNil())
-	// Callback
 
 	return ctx, connection, plugin, swIfIndexes, bdIndexes
 }
 
 func getCallback(buffer int) *mockCallback {
-	c := make(chan error, buffer)
 	return &mockCallback{
-		doneChan: c,
+		doneChan: make(chan error, buffer),
 	}
 }
 
 func fibTestTeardown(connection *core.Connection, plugin *l2plugin.FIBConfigurator) {
 	connection.Disconnect()
-	err := plugin.Close()
-	Expect(err).To(BeNil())
+	Expect(plugin.Close()).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 /* FIB Test Data */

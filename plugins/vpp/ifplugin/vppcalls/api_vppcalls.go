@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -105,7 +104,9 @@ type IfVppRead interface {
 	// LIMITATIONS:
 	// - there is no af_packet dump binary API. We relay on naming conventions of the internal VPP interface names
 	// - ip.IPAddressDetails has wrong internal structure, as a workaround we need to handle them as notifications
-	DumpInterfaces() (map[uint32]*Interface, error)
+	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
+	// DumpInterfacesByType returns all VPP interfaces of the specified type
+	DumpInterfacesByType(reqType interfaces.InterfaceType) (map[uint32]*InterfaceDetails, error)
 	// GetInterfaceVRF assigns VRF table to interface
 	GetInterfaceVRF(ifIdx uint32) (vrfID uint32, err error)
 	// DumpMemifSocketDetails dumps memif socket details from the VPP
@@ -140,12 +141,14 @@ type BfdVppWrite interface {
 
 // BfdVppRead provides read methods for BFD
 type BfdVppRead interface {
+	// DumpBfdSingleHop returns complete BFD configuration
+	DumpBfdSingleHop() (*BfdDetails, error)
 	// DumpBfdUDPSessions returns a list of BFD session's metadata
-	DumpBfdUDPSessions() ([]*bfd_api.BfdUDPSessionDetails, error)
+	DumpBfdSessions() (*BfdSessionDetails, error)
 	// DumpBfdUDPSessionsWithID returns a list of BFD session's metadata filtered according to provided authentication key
-	DumpBfdUDPSessionsWithID(authKeyIndex uint32) ([]*bfd_api.BfdUDPSessionDetails, error)
+	DumpBfdUDPSessionsWithID(authKeyIndex uint32) (*BfdSessionDetails, error)
 	// DumpBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
-	DumpBfdKeys() (keys []*bfd_api.BfdAuthKeysDetails, err error)
+	DumpBfdAuthKeys() (*BfdAuthKeyDetails, error)
 }
 
 // NatVppAPI provides methods for managing NAT
@@ -187,12 +190,14 @@ type NatVppWrite interface {
 
 // NatVppRead provides read methods for NAT
 type NatVppRead interface {
+	// Nat44Dump retuns global NAT configuration together with the DNAT configs
+	Nat44Dump() (*Nat44Details, error)
 	// Nat44GlobalConfigDump returns global config in NB format
-	Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error)
+	Nat44GlobalConfigDump() (*nat.Nat44Global, error)
 	// NAT44NatDump dumps all types of mappings, sorts it according to tag (DNAT label) and creates a set of DNAT configurations
-	NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error)
+	NAT44DNatDump() (*nat.Nat44DNat, error)
 	// Nat44InterfaceDump returns a list of interfaces enabled for NAT44
-	Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error)
+	Nat44InterfaceDump() (interfaces []*nat.Nat44Global_NatInterface, err error)
 }
 
 // StnVppAPI provides methods for managing STN
@@ -212,7 +217,7 @@ type StnVppWrite interface {
 // StnVppRead provides read methods for STN
 type StnVppRead interface {
 	// DumpStnRules returns a list of all STN rules configured on the VPP
-	DumpStnRules() (rules []*stn.StnRulesDetails, err error)
+	DumpStnRules() (rules *StnDetails, err error)
 }
 
 // ifVppHandler is accessor for interface-related vppcalls methods
@@ -226,6 +231,7 @@ type ifVppHandler struct {
 type bfdVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel api.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
@@ -234,13 +240,16 @@ type natVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel api.Channel
 	dumpChannel  api.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
 // stnVppHandler is accessor for STN-related vppcalls methods
 type stnVppHandler struct {
 	stopwatch    *measure.Stopwatch
+	ifIndexes    ifaceidx.SwIfIndex
 	callsChannel api.Channel
+	log          logging.Logger
 }
 
 // NewIfVppHandler creates new instance of interface vppcalls handler
@@ -258,10 +267,11 @@ func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measu
 }
 
 // NewBfdVppHandler creates new instance of BFD vppcalls handler
-func NewBfdVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*bfdVppHandler, error) {
+func NewBfdVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*bfdVppHandler, error) {
 	handler := &bfdVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(BfdMessages...); err != nil {
@@ -272,11 +282,12 @@ func NewBfdVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *meas
 }
 
 // NewNatVppHandler creates new instance of NAT vppcalls handler
-func NewNatVppHandler(callsChan, dumpChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*natVppHandler, error) {
+func NewNatVppHandler(callsChan, dumpChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*natVppHandler, error) {
 	handler := &natVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(NatMessages...); err != nil {
@@ -287,10 +298,12 @@ func NewNatVppHandler(callsChan, dumpChan api.Channel, log logging.Logger, stopw
 }
 
 // NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(callsChan api.Channel, stopwatch *measure.Stopwatch) (*stnVppHandler, error) {
+func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*stnVppHandler, error) {
 	handler := &stnVppHandler{
 		callsChannel: callsChan,
+		ifIndexes:    ifIndexes,
 		stopwatch:    stopwatch,
+		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(StnMessages...); err != nil {
 		return nil, err

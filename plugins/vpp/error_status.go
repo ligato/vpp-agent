@@ -61,9 +61,9 @@ func (plugin *Plugin) changePropagateError() {
 }
 
 // Process provides error data and adds a new entry.
-func (plugin *Plugin) processError(errInfo error, key string, changeType datasync.PutDel, change datasync.ChangeEvent) {
+func (plugin *Plugin) processError(errInfo error, key string, changeType datasync.Op, change datasync.ChangeEvent) {
 	// Interfaces
-	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
+	if strings.HasPrefix(key, interfaces.Prefix) {
 		var err error
 		var iface, prevIface interfaces.Interfaces_Interface
 		if err := change.GetValue(&iface); err != nil {
@@ -92,7 +92,7 @@ func (plugin *Plugin) processError(errInfo error, key string, changeType datasyn
 			plugin.Log.Errorf("Failed to propagate interface error, cause: %v", err)
 		}
 		// Bridge domains
-	} else if strings.HasPrefix(key, l2.BridgeDomainKeyPrefix()) {
+	} else if strings.HasPrefix(key, l2.BdPrefix) {
 		var err error
 		var bd, prevBd l2.BridgeDomains_BridgeDomain
 		if err := change.GetValue(&bd); err != nil {
@@ -125,7 +125,7 @@ func (plugin *Plugin) processError(errInfo error, key string, changeType datasyn
 
 // Create a list of errors for the provided interface and register it. If the interface
 // already has some errors logged, find it and add a new error log to the list.
-func (plugin *Plugin) composeInterfaceErrors(ifName string, change datasync.PutDel, errs ...error) *interfaces.InterfaceErrors_Interface {
+func (plugin *Plugin) composeInterfaceErrors(ifName string, change datasync.Op, errs ...error) *interfaces.InterfaceErrors_Interface {
 	// Read registered data.
 	_, data, exists := plugin.errorIndexes.LookupIdx(ifName)
 
@@ -163,7 +163,7 @@ func (plugin *Plugin) composeInterfaceErrors(ifName string, change datasync.PutD
 
 // Create a list of errors for the provided bridge domain and register it. If the bridge domain
 // already has any error logged, find it and add a new error log to the list.
-func (plugin *Plugin) composeBridgeDomainErrors(bdName string, change datasync.PutDel, errs ...error) *l2.BridgeDomainErrors_BridgeDomain {
+func (plugin *Plugin) composeBridgeDomainErrors(bdName string, change datasync.Op, errs ...error) *l2.BridgeDomainErrors_BridgeDomain {
 	// Read registered data
 	_, data, exists := plugin.errorIndexes.LookupIdx(bdName)
 
@@ -250,7 +250,7 @@ func (plugin *Plugin) removeErrorLog(key string) {
 		return
 	}
 
-	if prefix == interfaces.InterfacePrefix {
+	if prefix == interfaces.Prefix {
 		key := interfaces.InterfaceErrorKey(name)
 		plugin.Publish.Put(key, nil)
 		plugin.Log.Infof("Error status log for interface %v cleared", name)
@@ -269,8 +269,8 @@ func (plugin *Plugin) removeOldestErrorLogEntry(key string) {
 	var name string
 	var metaData interface{}
 	var exists bool
-	if strings.HasPrefix(key, interfaces.IfErrorPrefix) {
-		name = strings.Replace(key, interfaces.IfErrorPrefix, "", 1)
+	if strings.HasPrefix(key, interfaces.ErrorPrefix) {
+		name = strings.Replace(key, interfaces.ErrorPrefix, "", 1)
 		_, metaData, exists = plugin.errorIndexes.LookupIdx(name)
 	} else if strings.HasPrefix(key, l2.BdErrPrefix) {
 		name = strings.Replace(key, l2.BdErrPrefix, "", 1)

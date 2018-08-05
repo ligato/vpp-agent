@@ -90,7 +90,8 @@ func (keys *watchBrokerKeys) watchResync(resyncReg resync.Registration) {
 		if resyncStatus.ResyncStatus() == resync.Started {
 			err := keys.resync()
 			if err != nil {
-				logrus.DefaultLogger().Error("error getting resync data ", err) // We are not able to propagate it somewhere else.
+				// We are not able to propagate it somewhere else.
+				logrus.DefaultLogger().Errorf("getting resync data failed: %v", err)
 				// TODO NICE-to-HAVE publish the err using the transport asynchronously
 			}
 		}
@@ -141,6 +142,7 @@ func (keys *watchBrokerKeys) resync() error {
 	case <-time.After(resyncTimeout):
 		logrus.DefaultLogger().Warn("Timeout of resync callback")
 	}
+
 	return nil
 }
 
