@@ -117,7 +117,7 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 	for _, ifData := range ifs {
 		vrf, err := handler.GetInterfaceVRF(ifData.Meta.SwIfIndex)
 		if err != nil {
-			handler.log.Warnf("Interface dump: failed to get VRF from interface %d", ifData.Meta.SwIfIndex)
+			handler.log.Warnf("Interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 			continue
 		}
 		ifData.Interface.Vrf = vrf
@@ -129,14 +129,6 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, handler.stopwatch)
 	if timeLog != nil {
 		timeLog.LogTimeEntry(time.Since(start))
-	}
-
-	for idx := range ifs {
-		vrfID, err := handler.GetInterfaceVRF(idx)
-		if err != nil {
-			return nil, err
-		}
-		ifs[idx].Interface.Vrf = vrfID
 	}
 
 	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, handler.stopwatch)
