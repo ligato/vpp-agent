@@ -102,7 +102,6 @@ type Plugin struct {
 
 	// Shared indexes
 	swIfIndexes    ifaceidx.SwIfIndexRW
-	linuxIfIndexes ifaceLinux.LinuxIfIndex
 	bdIndexes      l2idx.BDIndexRW
 	errorIndexes   idxvpp.NameToIdxRW
 	errorIdxSeq    uint32
@@ -411,13 +410,6 @@ func (plugin *Plugin) fixNilPointers() {
 
 func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.Log.Infof("Init interface plugin")
-
-	// Get pointer to the map with Linux interface indices.
-	if plugin.Linux != nil {
-		plugin.linuxIfIndexes = plugin.Linux.GetLinuxIfIndexes()
-	} else {
-		plugin.linuxIfIndexes = nil
-	}
 
 	// Interface configurator
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)

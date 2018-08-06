@@ -676,6 +676,39 @@ func (ctl *VppAgentCtl) deleteIPsecSA() {
 	ctl.broker.Delete(saKey2)
 }
 
+// createIPSecTunnelInterface configures IPSec tunnel interface
+func (ctl *VppAgentCtl) createIPSecTunnelInterface() {
+	tunnelIf := ipsec.TunnelInterfaces_Tunnel{
+		Name:            "ipsec0",
+		Esn:             false,
+		AntiReplay:      false,
+		LocalSpi:        1000,
+		RemoteSpi:       1001,
+		LocalIp:         "10.0.0.2",
+		RemoteIp:        "10.0.0.1",
+		CryptoAlg:       1,
+		LocalCryptoKey:  "4a506a794f574265564551694d653768",
+		RemoteCryptoKey: "4a506a794f574265564551694d653768",
+		IntegAlg:        2,
+		LocalIntegKey:   "4339314b55523947594d6d3547666b45764e6a58",
+		RemoteIntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+		Enabled:         true,
+		IpAddresses:     []string{"20.0.0.0/24"},
+		Vrf:             0,
+	}
+
+	ctl.Log.Println(tunnelIf)
+	ctl.broker.Put(ipsec.TunnelKey(tunnelIf.Name), &tunnelIf)
+}
+
+// deleteIPSecTunnelInterface removes IPSec tunnel interface
+func (ctl *VppAgentCtl) deleteIPSecTunnelInterface() {
+	tunnelKey := ipsec.TunnelKey("ipsec0")
+
+	ctl.Log.Println("Deleting", tunnelKey)
+	ctl.broker.Delete(tunnelKey)
+}
+
 // STN
 
 // CreateStn puts STN configuration to the ETCD
@@ -755,12 +788,12 @@ func (ctl *VppAgentCtl) createGlobalNat() {
 	}
 
 	ctl.Log.Println(natGlobal)
-	ctl.broker.Put(nat.GlobalConfigKey(), natGlobal)
+	ctl.broker.Put(nat.GlobalPrefix, natGlobal)
 }
 
 // DeleteGlobalNat removes global NAT configuration from the ETCD
 func (ctl *VppAgentCtl) deleteGlobalNat() {
-	globalNat := nat.GlobalConfigKey()
+	globalNat := nat.GlobalPrefix
 
 	ctl.Log.Println("Deleting", globalNat)
 	ctl.broker.Delete(globalNat)

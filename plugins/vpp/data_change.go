@@ -140,7 +140,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l3.VrfKeyPrefix()) {
+	} else if strings.HasPrefix(key, l3.VrfPrefix) {
 		isRoute, vrfFromKey, _, _, _ := l3.ParseRouteKey(key)
 		if isRoute {
 			// Route
@@ -158,7 +158,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			plugin.Log.Warnf("Key '%s' not supported", key)
 		}
-	} else if strings.HasPrefix(key, l3.ArpKeyPrefix()) {
+	} else if strings.HasPrefix(key, l3.ArpPrefix) {
 		_, _, err := l3.ParseArpKey(key)
 		if err != nil {
 			return false, err
@@ -174,7 +174,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l3.ProxyArpInterfacePrefix()) {
+	} else if strings.HasPrefix(key, l3.ProxyARPInterfacePrefix) {
 		var value, prevValue l3.ProxyArpInterfaces_InterfaceList
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -186,7 +186,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l3.ProxyArpRangePrefix()) {
+	} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 		var value, prevValue l3.ProxyArpRanges_RangeList
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -198,7 +198,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l4.AppNamespacesKeyPrefix()) {
+	} else if strings.HasPrefix(key, l4.Prefix) {
 		var value, prevValue l4.AppNamespaces_AppNamespace
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -210,7 +210,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l4.FeatureKeyPrefix()) {
+	} else if strings.HasPrefix(key, l4.FeaturesPrefix) {
 		var value, prevValue l4.L4Features
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -222,7 +222,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, stn.KeyPrefix()) {
+	} else if strings.HasPrefix(key, stn.Prefix) {
 		var value, prevValue stn.STN_Rule
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
@@ -234,7 +234,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, nat.GlobalConfigPrefix()) {
+	} else if strings.HasPrefix(key, nat.GlobalPrefix) {
 		// Global NAT config
 		var value, prevValue nat.Nat44Global
 		if err := dataChng.GetValue(&value); err != nil {
@@ -247,7 +247,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, nat.SNatPrefix()) {
+	} else if strings.HasPrefix(key, nat.SNatPrefix) {
 		// SNAT config
 		var value, prevValue nat.Nat44SNat_SNatConfig
 		if err := dataChng.GetValue(&value); err != nil {
@@ -260,7 +260,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, nat.DNatPrefix()) {
+	} else if strings.HasPrefix(key, nat.DNatPrefix) {
 		// DNAT config
 		var value, prevValue nat.Nat44DNat_DNatConfig
 		if err := dataChng.GetValue(&value); err != nil {

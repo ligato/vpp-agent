@@ -28,7 +28,6 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	modelStn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
@@ -90,7 +89,7 @@ func (plugin *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	plugin.allIndexesSeq, plugin.unstoredIndexSeq = 1, 1
 
 	// VPP API handler
-	if plugin.stnHandler, err = vppcalls.NewStnVppHandler(plugin.vppChan, plugin.stopwatch); err != nil {
+	if plugin.stnHandler, err = vppcalls.NewStnVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -201,13 +200,13 @@ func (plugin *StnConfigurator) Modify(ruleOld *modelStn.STN_Rule, ruleNew *model
 }
 
 // Dump STN rules configured on the VPP
-func (plugin *StnConfigurator) Dump() ([]*stn.StnRulesDetails, error) {
-	rules, err := plugin.stnHandler.DumpStnRules()
+func (plugin *StnConfigurator) Dump() (*vppcalls.StnDetails, error) {
+	stnDetails, err := plugin.stnHandler.DumpStnRules()
 	if err != nil {
 		return nil, err
 	}
-	plugin.log.Debugf("found %d configured STN rules", len(rules))
-	return rules, nil
+	plugin.log.Debugf("found %d configured STN rules", len(stnDetails.Rules))
+	return stnDetails, nil
 }
 
 // Close GOVPP channel.

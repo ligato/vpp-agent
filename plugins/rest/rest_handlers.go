@@ -21,18 +21,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core/bin_api/vpe"
-	"github.com/gorilla/mux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/unrolled/render"
 
 	"github.com/ligato/vpp-agent/plugins/rest/resturl"
-	aclcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	l3plugin "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
@@ -80,6 +75,7 @@ func (plugin *Plugin) registerInterfaceHandlers() {
 	})
 }
 
+// Registers BFD REST handlers
 func (plugin *Plugin) registerBfdHandlers() {
 	// GET BFD configuration
 	plugin.registerHTTPHandler(resturl.BfdUrl, GET, func() (interface{}, error) {
@@ -92,6 +88,46 @@ func (plugin *Plugin) registerBfdHandlers() {
 	// GET BFD authentication keys
 	plugin.registerHTTPHandler(resturl.BfdAuthKey, GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdAuthKeys()
+	})
+}
+
+// Registers NAT REST handlers
+func (plugin *Plugin) registerNatHandlers() {
+	// GET NAT configuration
+	plugin.registerHTTPHandler(resturl.NatUrl, GET, func() (interface{}, error) {
+		return plugin.natHandler.Nat44Dump()
+	})
+	// GET NAT global config
+	plugin.registerHTTPHandler(resturl.NatGlobal, GET, func() (interface{}, error) {
+		return plugin.natHandler.Nat44GlobalConfigDump()
+	})
+	// GET DNAT config
+	plugin.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
+		return plugin.natHandler.NAT44DNatDump()
+	})
+}
+
+// Registers STN REST handlers
+func (plugin *Plugin) registerStnHandlers() {
+	// GET STN configuration
+	plugin.registerHTTPHandler(resturl.StnUrl, GET, func() (interface{}, error) {
+		return plugin.stnHandler.DumpStnRules()
+	})
+}
+
+// Registers IPSec REST handlers
+func (plugin *Plugin) registerIPSecHandlers() {
+	// GET IPSec SPD configuration
+	plugin.registerHTTPHandler(resturl.IPSecSpd, GET, func() (interface{}, error) {
+		return plugin.ipSecHandler.DumpIPSecSPD()
+	})
+	// GET IPSec SA configuration
+	plugin.registerHTTPHandler(resturl.IPSecSa, GET, func() (interface{}, error) {
+		return plugin.ipSecHandler.DumpIPSecSA()
+	})
+	// GET IPSec Tunnel configuration
+	plugin.registerHTTPHandler(resturl.IPSecTnIf, GET, func() (interface{}, error) {
+		return plugin.ipSecHandler.DumpIPSecTunnelInterfaces()
 	})
 }
 
@@ -117,18 +153,69 @@ func (plugin *Plugin) registerL2Handlers() {
 
 // Registers L3 plugin REST handlers
 func (plugin *Plugin) registerL3Handlers() {
+	// GET ARP entries
+	plugin.registerHTTPHandler(resturl.Arps, GET, func() (interface{}, error) {
+		return plugin.arpHandler.DumpArpEntries()
+	})
+	// GET proxy ARP interfaces
+	plugin.registerHTTPHandler(resturl.PArpIfs, GET, func() (interface{}, error) {
+		return plugin.pArpHandler.DumpProxyArpInterfaces()
+	})
+	// GET proxy ARP ranges
+	plugin.registerHTTPHandler(resturl.PArpRngs, GET, func() (interface{}, error) {
+		return plugin.pArpHandler.DumpProxyArpRanges()
+	})
 	// GET static routes
 	plugin.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
 		return plugin.rtHandler.DumpStaticRoutes()
 	})
 }
 
+// Registers L3 plugin REST handlers
+func (plugin *Plugin) registerL4Handlers() {
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.Sessions, GET, func() (interface{}, error) {
+		return plugin.l4Handler.DumpL4Config()
+	})
+}
+
+// Registers Telemetry handler
+func (plugin *Plugin) registerTelemetryHandlers() {
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.Telemetry, plugin.telemetryHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.TMemory, plugin.telemetryMemoryHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.TRuntime, plugin.telemetryRuntimeHandler, GET)
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.TNodeCount, plugin.telemetryNodeCountHandler, GET)
+}
+
+// Registers command handler
+func (plugin *Plugin) registerCommandHandler() {
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.Command, plugin.commandHandler, POST)
+}
+
+// Registers index page
+func (plugin *Plugin) registerIndexHandlers() {
+	r := render.New(render.Options{
+		Directory:  "templates",
+		Asset:      Asset,
+		AssetNames: AssetNames,
+	})
+
+	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
+		return func(w http.ResponseWriter, req *http.Request) {
+
+			plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
+			r.HTML(w, http.StatusOK, "index", plugin.index)
+		}
+	}
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.Index, handlerFunc, GET)
+}
+
 // registerHTTPHandler is common register method for all handlers
 func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, error)) {
 	handlerFunc := func(formatter *render.Render) http.HandlerFunc {
 		return func(w http.ResponseWriter, req *http.Request) {
-			plugin.Lock()
-			defer plugin.Unlock()
+			plugin.govppmux.Lock()
+			defer plugin.govppmux.Unlock()
 
 			res, err := f()
 			if err != nil {
@@ -142,180 +229,6 @@ func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interfac
 		}
 	}
 	plugin.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
-}
-
-// staticRoutesGetHandler - used to get list of all static routes
-func (plugin *Plugin) arpGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting list of all ARPs")
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
-		l3Handler, err := l3plugin.NewArpVppHandler(ch, plugin.Log, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := l3Handler.DumpArpEntries()
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// interfaceACLGetHandler - used to get acl configuration for a particular interface
-func (plugin *Plugin) interfaceACLGetHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		plugin.Log.Debug("Getting acl configuration of interface")
-
-		vars := mux.Vars(req)
-		if vars == nil {
-			plugin.Log.Error("Interface software index not specified.")
-			formatter.JSON(w, http.StatusNotFound, "Interface software index not specified.")
-			return
-		}
-
-		plugin.Log.Infof("Received request for swIndex: %v", vars[swIndexVarName])
-
-		swIndexuInt64, err := strconv.ParseUint(vars[swIndexVarName], 10, 32)
-		if err != nil {
-			plugin.Log.Error("Failed to unmarshal request body.")
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		swIndex := uint32(swIndexuInt64)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err := plugin.aclHandler.DumpInterfaceIPAcls(swIndex)
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		res, err = plugin.aclHandler.DumpInterfaceMACIPAcls(swIndex)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		plugin.Log.Debug(res)
-		formatter.JSON(w, http.StatusOK, res)
-	}
-}
-
-// ipACLPostHandler - used to get acl configuration for a particular interface
-func (plugin *Plugin) ipACLPostHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		body, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			plugin.Deps.Log.Error("Failed to parse request body.")
-			formatter.JSON(w, http.StatusBadRequest, err)
-			return
-		}
-		aclParam := acl.AccessLists_Acl{}
-		err = json.Unmarshal(body, &aclParam)
-		if err != nil {
-			plugin.Deps.Log.Error("Failed to unmarshal request body.")
-			formatter.JSON(w, http.StatusBadRequest, err)
-			return
-		}
-
-		// create an API channel
-		ch, err := plugin.Deps.GoVppmux.NewAPIChannel()
-		defer ch.Close()
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		var aclIndex struct {
-			Idx uint32 `json:"acl_index"`
-		}
-		aclHandler, err := aclcalls.NewAclVppHandler(ch, ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		aclIndex.Idx, err = aclHandler.AddIPAcl(aclParam.Rules, aclParam.AclName)
-		if err != nil {
-			plugin.Deps.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, aclIndex)
-			return
-		}
-
-		plugin.Deps.Log.Debug(aclIndex)
-		formatter.JSON(w, http.StatusOK, aclIndex)
-	}
-}
-
-func (plugin *Plugin) macipACLPostHandler(formatter *render.Render) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-
-		body, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			plugin.Log.Error("Failed to parse request body.")
-			formatter.JSON(w, http.StatusBadRequest, err)
-			return
-		}
-		aclParam := acl.AccessLists_Acl{}
-		err = json.Unmarshal(body, &aclParam)
-		if err != nil {
-			plugin.Log.Error("Failed to unmarshal request body.")
-			formatter.JSON(w, http.StatusBadRequest, err)
-			return
-		}
-
-		// create an API channel
-		ch, err := plugin.GoVppmux.NewAPIChannel()
-		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		defer ch.Close()
-
-		var aclIndex struct {
-			Idx uint32 `json:"acl_index"`
-		}
-		aclHandler, err := aclcalls.NewAclVppHandler(ch, ch, nil)
-		if err != nil {
-			plugin.Log.Errorf("Error creating VPP handler: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
-			return
-		}
-		aclIndex.Idx, err = aclHandler.AddMacIPAcl(aclParam.Rules, aclParam.AclName)
-		if err != nil {
-			plugin.Log.Errorf("Error: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, aclIndex)
-			return
-		}
-
-		plugin.Log.Debug(aclIndex)
-		formatter.JSON(w, http.StatusOK, aclIndex)
-	}
 }
 
 // commandHandler - used to execute VPP CLI commands
@@ -361,12 +274,12 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 		reply := &vpe.CliInbandReply{}
 		err = ch.SendRequest(r).ReceiveReply(reply)
 		if err != nil {
-			err = fmt.Errorf("Sending request failed: %v", err)
+			err = fmt.Errorf("sending request failed: %v", err)
 			plugin.Log.Error(err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
 		} else if reply.Retval > 0 {
-			err = fmt.Errorf("Request returned error code: %v", reply.Retval)
+			err = fmt.Errorf("request returned error code: %v", reply.Retval)
 			plugin.Log.Error(err)
 			formatter.JSON(w, http.StatusInternalServerError, err)
 			return
@@ -385,9 +298,9 @@ func (plugin *Plugin) sendCommand(ch govppapi.Channel, command string) ([]byte, 
 
 	reply := &vpe.CliInbandReply{}
 	if err := ch.SendRequest(r).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("Sending request failed: %v", err)
+		return nil, fmt.Errorf("sending request failed: %v", err)
 	} else if reply.Retval > 0 {
-		return nil, fmt.Errorf("Request returned error code: %v", reply.Retval)
+		return nil, fmt.Errorf("request returned error code: %v", reply.Retval)
 	}
 
 	return reply.Reply[:reply.Length], nil
@@ -501,19 +414,5 @@ func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.H
 		}
 
 		formatter.JSON(w, http.StatusOK, nodeCounters)
-	}
-}
-
-// indexHandler - used to get index page
-func (plugin *Plugin) indexHandler(formatter *render.Render) http.HandlerFunc {
-	r := render.New(render.Options{
-		Directory:  "templates",
-		Asset:      Asset,
-		AssetNames: AssetNames,
-	})
-	return func(w http.ResponseWriter, req *http.Request) {
-		plugin.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
-
-		r.HTML(w, http.StatusOK, "index", plugin.indexItems)
 	}
 }

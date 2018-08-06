@@ -85,7 +85,7 @@ func (plugin *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	if plugin.arpHandler, err = vppcalls.NewArpVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
+	if plugin.arpHandler, err = vppcalls.NewArpVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
