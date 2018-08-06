@@ -59,7 +59,7 @@ func TestAddRoute(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-// Test deleteing routes
+// Test deleting routes
 func TestDeleteRoute(t *testing.T) {
 	ctx, _, rtHandler := routeTestSetup(t)
 	defer ctx.TeardownTestCtx()

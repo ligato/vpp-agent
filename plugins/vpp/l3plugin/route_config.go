@@ -177,7 +177,7 @@ func (plugin *RouteConfigurator) ConfigureRoute(route *l3.StaticRoutes_Route, vr
 		return nil
 	}
 
-	// Create and register new route.
+	// Create new route.
 	err = plugin.rtHandler.VppAddRoute(plugin.ifHandler, route, swIdx)
 	if err != nil {
 		return err
@@ -329,14 +329,12 @@ func (plugin *RouteConfigurator) DeleteRoute(route *l3.StaticRoutes_Route, vrfFr
 
 // DiffRoutes calculates route diff from two sets of routes and returns routes to be added and removed
 func (plugin *RouteConfigurator) DiffRoutes(new, old []*l3.StaticRoutes_Route) (toBeDeleted, toBeAdded []*l3.StaticRoutes_Route) {
-	newSorted := SortedRoutes(new)
-	oldSorted := SortedRoutes(old)
+	oldSorted, newSorted := SortedRoutes(old), SortedRoutes(new)
 	sort.Sort(newSorted)
 	sort.Sort(oldSorted)
 
 	// Compare.
-	i := 0
-	j := 0
+	i, j := 0, 0
 	for i < len(newSorted) && j < len(oldSorted) {
 		if eqRoutes(newSorted[i], oldSorted[j]) {
 			i++

@@ -16,8 +16,9 @@ package vppcalls
 
 import (
 	"fmt"
-	"net"
 	"time"
+
+	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/utils/addrs"
@@ -80,19 +81,21 @@ func (handler *routeHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 	}
 	req.DstAddressLength = byte(prefix)
 
-	// Next hop address and parameters
-	req.NextHopSwIfIndex = rtIfIdx
+	// Common route parameters
 	req.NextHopWeight = uint8(route.Weight)
 	req.NextHopPreference = uint8(route.Preference)
 	req.NextHopViaLabel = NextHopViaLabelUnset
 	req.ClassifyTableIndex = ClassifyTableIndexUnset
-	req.IsDrop = 0
 
-	// VRF
+	// VRF/Other route parameters based on type
 	req.TableID = route.VrfId
 	if route.Type == l3.StaticRoutes_Route_INTER_VRF {
+		req.NextHopSwIfIndex = rtIfIdx
 		req.NextHopTableID = route.ViaVrfId
+	} else if route.Type == l3.StaticRoutes_Route_DROP {
+		req.IsDrop = 1
 	} else {
+		req.NextHopSwIfIndex = rtIfIdx
 		req.NextHopTableID = route.VrfId
 	}
 
@@ -101,7 +104,7 @@ func (handler *routeHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 
 	// Send message
 	reply := &ip.IPAddDelRouteReply{}
-	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
