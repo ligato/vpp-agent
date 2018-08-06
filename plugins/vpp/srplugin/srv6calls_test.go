@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package vppcallfake contains fake implementation of interface vppcalls.SRv6Calls
-package vppcallfake
+package srplugin_test
 
 import (
 	"fmt"

@@ -198,29 +198,31 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l4.NamespacesPrefix) {
-		var value, prevValue l4.AppNamespaces_AppNamespace
-		if err := dataChng.GetValue(&value); err != nil {
-			return false, err
-		}
-		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeAppNamespace(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+	} else if strings.HasPrefix(key, l4.Prefix) {
+		if strings.HasPrefix(key, l4.NamespacesPrefix) {
+			var value, prevValue l4.AppNamespaces_AppNamespace
+			if err := dataChng.GetValue(&value); err != nil {
 				return false, err
 			}
-		} else {
-			return false, err
-		}
-	} else if strings.HasPrefix(key, l4.FeaturesPrefix) {
-		var value, prevValue l4.L4Features
-		if err := dataChng.GetValue(&value); err != nil {
-			return false, err
-		}
-		if _, err := dataChng.GetPrevValue(&prevValue); err == nil {
-			if err := plugin.dataChangeL4Features(&value, &prevValue, dataChng.GetChangeType()); err != nil {
+			if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeAppNamespace(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
 				return false, err
 			}
-		} else {
-			return false, err
+		} else if strings.HasPrefix(key, l4.FeaturesPrefix) {
+			var value, prevValue l4.L4Features
+			if err := dataChng.GetValue(&value); err != nil {
+				return false, err
+			}
+			if _, err := dataChng.GetPrevValue(&prevValue); err == nil {
+				if err := plugin.dataChangeL4Features(&value, &prevValue, dataChng.GetChangeType()); err != nil {
+					return false, err
+				}
+			} else {
+				return false, err
+			}
 		}
 	} else if strings.HasPrefix(key, stn.Prefix) {
 		var value, prevValue stn.STN_Rule
