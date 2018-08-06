@@ -162,7 +162,7 @@ bindata: get-bindata
 
 # Get dependency manager tool
 get-dep:
-	go get -v github.com/golang/dep/cmd/dep
+	go get -u -v github.com/golang/dep/cmd/dep
 	dep version
 
 # Install the project's dependencies
