@@ -37,7 +37,7 @@ func (handler *natVppHandler) Nat44Dump() (*Nat44Details, error) {
 	if err != nil {
 		return nil, err
 	}
-	dNat, err := handler.NAT44DNatDump()
+	dNat, err := handler.Nat44DNatDump()
 	if err != nil {
 		return nil, err
 	}

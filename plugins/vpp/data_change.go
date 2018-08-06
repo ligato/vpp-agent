@@ -198,7 +198,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
-	} else if strings.HasPrefix(key, l4.Prefix) {
+	} else if strings.HasPrefix(key, l4.NamespacesPrefix) {
 		var value, prevValue l4.AppNamespaces_AppNamespace
 		if err := dataChng.GetValue(&value); err != nil {
 			return false, err
