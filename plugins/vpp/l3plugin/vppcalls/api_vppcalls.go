@@ -39,7 +39,7 @@ type ArpVppWrite interface {
 // ArpVppRead provides read methods for ARPs
 type ArpVppRead interface {
 	// DumpArpEntries dumps ARPs from VPP and fills them into the provided static route map.
-	DumpArpEntries() ([]*ArpEntry, error)
+	DumpArpEntries() ([]*ArpDetails, error)
 }
 
 // ProxyArpVppAPI provides methods for managing proxy ARP entries
@@ -62,7 +62,10 @@ type ProxyArpVppWrite interface {
 
 // ProxyArpVppRead provides read methods for proxy ARPs
 type ProxyArpVppRead interface {
-	// TODO define
+	// DumpProxyArpRanges returns configured proxy ARP ranges
+	DumpProxyArpRanges() ([]*ProxyArpRangesDetails, error)
+	// DumpProxyArpRanges returns configured proxy ARP interfaces
+	DumpProxyArpInterfaces() ([]*ProxyArpInterfaceDetails, error)
 }
 
 // RouteVppAPI provides methods for managing routes
@@ -89,6 +92,7 @@ type RouteVppRead interface {
 type arpVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
@@ -96,6 +100,7 @@ type arpVppHandler struct {
 type proxyArpVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
@@ -108,10 +113,11 @@ type routeHandler struct {
 }
 
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
-func NewArpVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*arpVppHandler, error) {
+func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*arpVppHandler, error) {
 	handler := &arpVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(ArpMessages...); err != nil {
@@ -122,10 +128,11 @@ func NewArpVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch 
 }
 
 // NewProxyArpVppHandler creates new instance of proxy ARP vppcalls handler
-func NewProxyArpVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*proxyArpVppHandler, error) {
+func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*proxyArpVppHandler, error) {
 	handler := &proxyArpVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(ProxyArpMessages...); err != nil {

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-
 	"time"
 
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -208,55 +207,4 @@ func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 	}
 
 	return routeDetails, nil
-}
-
-func (handler *arpVppHandler) DumpArpEntries() ([]*ArpEntry, error) {
-	// ArpDump time measurement
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	var arps []*ArpEntry
-
-	// Dump ARPs.
-	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.IPNeighborDump{
-		SwIfIndex: 0xffffffff,
-	})
-	for {
-		arpDetails := &l3binapi.IPNeighborDetails{}
-		stop, err := reqCtx.ReceiveReply(arpDetails)
-		if stop {
-			break
-		}
-		if err != nil {
-			handler.log.Error(err)
-			return nil, err
-		}
-
-		var mac net.HardwareAddr = arpDetails.MacAddress
-		arp := &ArpEntry{
-			Interface:  arpDetails.SwIfIndex,
-			MacAddress: mac.String(),
-			Static:     uintToBool(arpDetails.IsStatic),
-		}
-
-		var address net.IP
-		if arpDetails.IsIpv6 == 1 {
-			address = net.IP(arpDetails.IPAddress).To16()
-		} else {
-			address = net.IP(arpDetails.IPAddress[:4]).To4()
-		}
-		arp.IPAddress = address
-
-		arps = append(arps, arp)
-	}
-
-	return arps, nil
-}
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
 }

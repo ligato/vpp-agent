@@ -81,7 +81,7 @@ func (plugin *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	}
 
 	// VPP API handler
-	if plugin.l4Handler, err = vppcalls.NewL4VppHandler(plugin.vppChan, plugin.stopwatch); err != nil {
+	if plugin.l4Handler, err = vppcalls.NewL4VppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 

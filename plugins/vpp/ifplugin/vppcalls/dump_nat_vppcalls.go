@@ -22,22 +22,43 @@ import (
 	"time"
 
 	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
-func (handler *natVppHandler) Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44Global, error) {
+// Nat44Details contains all configuration available for network address translation.
+// Note: SNAT is currently skipped, since there is no model defined for it
+type Nat44Details struct {
+	Global *nat.Nat44Global
+	DNat   *nat.Nat44DNat
+}
+
+func (handler *natVppHandler) Nat44Dump() (*Nat44Details, error) {
+	global, err := handler.Nat44GlobalConfigDump()
+	if err != nil {
+		return nil, err
+	}
+	dNat, err := handler.NAT44DNatDump()
+	if err != nil {
+		return nil, err
+	}
+	return &Nat44Details{
+		Global: global,
+		DNat:   dNat,
+	}, nil
+}
+
+func (handler *natVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) {
 	handler.log.Debug("dumping Nat44Global")
 	// Dump all necessary data to reconstruct global NAT configuration
 	isEnabled, err := handler.nat44IsForwardingEnabled()
 	if err != nil {
 		return nil, err
 	}
-	natInterfaces, err := handler.Nat44InterfaceDump(swIfIndices)
+	natInterfaces, err := handler.Nat44InterfaceDump()
 	if err != nil {
 		return nil, err
 	}
-	natOutputFeature, err := handler.nat44InterfaceOutputFeatureDump(swIfIndices)
+	natOutputFeature, err := handler.nat44InterfaceOutputFeatureDump()
 	if err != nil {
 		return nil, err
 	}
@@ -73,14 +94,14 @@ func (handler *natVppHandler) Nat44GlobalConfigDump(swIfIndices ifaceidx.SwIfInd
 	}, nil
 }
 
-func (handler *natVppHandler) NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*nat.Nat44DNat, error) {
+func (handler *natVppHandler) NAT44DNatDump() (*nat.Nat44DNat, error) {
 	// List od DNAT configs
 	var dNatCfgs []*nat.Nat44DNat_DNatConfig
 
 	handler.log.Debug("dumping DNat")
 
 	// Static mappings
-	natStMappings, err := handler.nat44StaticMappingDump(swIfIndices)
+	natStMappings, err := handler.nat44StaticMappingDump()
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 static mappings: %v", err)
 	}
@@ -96,7 +117,7 @@ func (handler *natVppHandler) NAT44DNatDump(swIfIndices ifaceidx.SwIfIndex) (*na
 		handler.processDNatData(tag, data, &dNatCfgs)
 	}
 	// Identity mappings
-	natIdMappings, err := handler.nat44IdentityMappingDump(swIfIndices)
+	natIdMappings, err := handler.nat44IdentityMappingDump()
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 identity mappings: %v", err)
 	}
@@ -145,7 +166,7 @@ func (handler *natVppHandler) nat44AddressDump() (addresses []*nat.Nat44Global_A
 }
 
 // nat44StaticMappingDump returns a map of static mapping tag/data pairs
-func (handler *natVppHandler) nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
+func (handler *natVppHandler) nat44StaticMappingDump() (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44StaticMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -174,7 +195,7 @@ func (handler *natVppHandler) nat44StaticMappingDump(swIfIndices ifaceidx.SwIfIn
 		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMapping{
 			VrfId: msg.VrfID,
 			ExternalInterface: func(ifIdx uint32) string {
-				ifName, _, found := swIfIndices.LookupName(ifIdx)
+				ifName, _, found := handler.ifIndexes.LookupName(ifIdx)
 				if !found && ifIdx != 0xffffffff {
 					handler.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
 				}
@@ -247,7 +268,7 @@ func (handler *natVppHandler) nat44StaticMappingLbDump() (entries map[string]*na
 }
 
 // nat44IdentityMappingDump returns a map of identity mapping tag/data pairs
-func (handler *natVppHandler) nat44IdentityMappingDump(swIfIndices ifaceidx.SwIfIndex) (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping, err error) {
+func (handler *natVppHandler) nat44IdentityMappingDump() (entries map[string]*nat.Nat44DNat_DNatConfig_IdentityMapping, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44IdentityMappingDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -275,7 +296,7 @@ func (handler *natVppHandler) nat44IdentityMappingDump(swIfIndices ifaceidx.SwIf
 		entries[tag] = &nat.Nat44DNat_DNatConfig_IdentityMapping{
 			VrfId: msg.VrfID,
 			AddressedInterface: func(ifIdx uint32) string {
-				ifName, _, found := swIfIndices.LookupName(ifIdx)
+				ifName, _, found := handler.ifIndexes.LookupName(ifIdx)
 				if !found && ifIdx != 0xffffffff {
 					handler.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
 				}
@@ -292,7 +313,7 @@ func (handler *natVppHandler) nat44IdentityMappingDump(swIfIndices ifaceidx.SwIf
 	return entries, nil
 }
 
-func (handler *natVppHandler) Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex) (interfaces []*nat.Nat44Global_NatInterface, err error) {
+func (handler *natVppHandler) Nat44InterfaceDump() (interfaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44InterfaceDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -311,7 +332,7 @@ func (handler *natVppHandler) Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex)
 		}
 
 		// Find interface name
-		ifName, _, found := swIfIndices.LookupName(msg.SwIfIndex)
+		ifName, _, found := handler.ifIndexes.LookupName(msg.SwIfIndex)
 		if !found {
 			handler.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
 			continue
@@ -337,7 +358,7 @@ func (handler *natVppHandler) Nat44InterfaceDump(swIfIndices ifaceidx.SwIfIndex)
 }
 
 // nat44InterfaceOutputFeatureDump returns a list of interfaces with output feature set
-func (handler *natVppHandler) nat44InterfaceOutputFeatureDump(swIfIndices ifaceidx.SwIfIndex) (ifaces []*nat.Nat44Global_NatInterface, err error) {
+func (handler *natVppHandler) nat44InterfaceOutputFeatureDump() (ifaces []*nat.Nat44Global_NatInterface, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44InterfaceOutputFeatureDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -356,7 +377,7 @@ func (handler *natVppHandler) nat44InterfaceOutputFeatureDump(swIfIndices ifacei
 		}
 
 		// Find interface name
-		ifName, _, found := swIfIndices.LookupName(msg.SwIfIndex)
+		ifName, _, found := handler.ifIndexes.LookupName(msg.SwIfIndex)
 		if !found {
 			handler.log.Warnf("Interface with index %d not found in the mapping", msg.SwIfIndex)
 			continue

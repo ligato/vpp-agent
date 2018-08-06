@@ -912,11 +912,6 @@ func TestDataResyncResyncStn(t *testing.T) {
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Name:    (&stnApi.StnRulesDump{}).GetMessageName(),
-			Ping:    true,
-			Message: &stnApi.StnRulesDetails{},
-		},
-		{
 			Name:    (&stnApi.StnAddDelRule{}).GetMessageName(),
 			Message: &stnApi.StnAddDelRuleReply{},
 		},
@@ -927,7 +922,7 @@ func TestDataResyncResyncStn(t *testing.T) {
 		{
 			RuleName:  "test",
 			Interface: "if0",
-			IpAddress: "192.168.0.1/24",
+			IpAddress: "192.168.0.1",
 		},
 	}
 

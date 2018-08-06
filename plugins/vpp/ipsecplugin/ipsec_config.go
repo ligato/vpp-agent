@@ -30,6 +30,7 @@ import (
 	iface_vppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
@@ -63,7 +64,7 @@ type IPSecConfigurator struct {
 
 	// VPP API handlers
 	ifHandler    iface_vppcalls.IfVppAPI
-	ipSecHandler vppcalls.IPsecVppAPI
+	ipSecHandler vppcalls.IPSecVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -99,7 +100,7 @@ func (plugin *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	if plugin.ifHandler, err = iface_vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
-	if plugin.ipSecHandler, err = vppcalls.NewIPsecVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
+	if plugin.ipSecHandler, err = vppcalls.NewIPsecVppHandler(plugin.vppCh, plugin.ifIndexes, plugin.spdIndexes, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -345,7 +346,13 @@ func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_
 		return err
 	}
 
-	plugin.ifIndexes.RegisterName(tunnel.Name, ifIdx, nil)
+	// Register with necessary metadta info
+	plugin.ifIndexes.RegisterName(tunnel.Name, ifIdx, &interfaces.Interfaces_Interface{
+		Name:        tunnel.Name,
+		Enabled:     tunnel.Enabled,
+		IpAddresses: tunnel.IpAddresses,
+		Vrf:         tunnel.Vrf,
+	})
 	plugin.log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
 
 	if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, tunnel.Vrf); err != nil {

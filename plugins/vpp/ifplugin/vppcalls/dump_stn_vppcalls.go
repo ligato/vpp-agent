@@ -17,18 +17,39 @@ package vppcalls
 import (
 	"time"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"net"
+
+	"fmt"
+
+	stnapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
-func (handler *stnVppHandler) DumpStnRules() (rules []*stn.StnRulesDetails, err error) {
+// StnDetails contains proto-modelled STN data and vpp specific metadata
+type StnDetails struct {
+	Rules []*stn.STN_Rule
+	Meta  *StnMeta
+}
+
+// StnMeta contains map of interface name/index
+type StnMeta struct {
+	IfNameToIdx map[uint32]string
+}
+
+func (handler *stnVppHandler) DumpStnRules() (rules *StnDetails, err error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(stn.StnRulesDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(stnapi.StnRulesDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &stn.StnRulesDump{}
+	var ruleList []*stn.STN_Rule
+	meta := &StnMeta{
+		IfNameToIdx: make(map[uint32]string),
+	}
+
+	req := &stnapi.StnRulesDump{}
 	reqCtx := handler.callsChannel.SendMultiRequest(req)
 	for {
-		msg := &stn.StnRulesDetails{}
+		msg := &stnapi.StnRulesDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
 		if stop {
 			break
@@ -36,8 +57,27 @@ func (handler *stnVppHandler) DumpStnRules() (rules []*stn.StnRulesDetails, err 
 		if err != nil {
 			return nil, err
 		}
-		rules = append(rules, msg)
+		ifName, _, found := handler.ifIndexes.LookupName(msg.SwIfIndex)
+		if !found {
+			handler.log.Warnf("STN dump: name not found for interface %d", msg.SwIfIndex)
+		}
+
+		var stnStrIP string
+		if uintToBool(msg.IsIP4) {
+			stnStrIP = fmt.Sprintf("%s", net.IP(msg.IPAddress[:4]).To4().String())
+		} else {
+			stnStrIP = fmt.Sprintf("%s", net.IP(msg.IPAddress).To16().String())
+		}
+
+		ruleList = append(ruleList, &stn.STN_Rule{
+			IpAddress: stnStrIP,
+			Interface: ifName,
+		})
+		meta.IfNameToIdx[msg.SwIfIndex] = ifName
 	}
 
-	return rules, nil
+	return &StnDetails{
+		Rules: ruleList,
+		Meta:  meta,
+	}, nil
 }

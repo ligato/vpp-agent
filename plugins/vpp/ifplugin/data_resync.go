@@ -381,42 +381,35 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 	plugin.clearMapping()
 
 	// Dump existing STN Rules
-	vppStnRules, err := plugin.Dump()
+	vppStnDetails, err := plugin.Dump()
 	if err != nil {
 		return err
 	}
 
 	// Correlate configuration, and remove obsolete rules STN rules
 	var wasErr error
-	for _, vppStnRule := range vppStnRules {
+	for _, vppStnRule := range vppStnDetails.Rules {
 		// Parse parameters
 		var vppStnIP net.IP
 		var vppStnIPStr string
 
-		if vppStnRule.IsIP4 == 1 {
-			vppStnIP = vppStnRule.IPAddress[:4]
-		} else {
-			vppStnIP = vppStnRule.IPAddress
-		}
-		vppStnIPStr = vppStnIP.String()
-
-		vppStnIfName, _, found := plugin.ifIndexes.LookupName(vppStnRule.SwIfIndex)
+		vppStnIfIdx, _, found := plugin.ifIndexes.LookupIdx(vppStnRule.Interface)
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
-			if err := plugin.stnHandler.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP); err != nil {
+			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
 				plugin.log.Error(err)
 				wasErr = err
 			}
 			plugin.log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
-				vppStnIPStr, vppStnRule.SwIfIndex)
+				vppStnIPStr, vppStnIfIdx)
 			continue
 		}
 
 		// Look for equal rule in NB configuration
 		var match bool
 		for _, nbStnRule := range nbStnRules {
-			if nbStnRule.IpAddress == vppStnIPStr && nbStnRule.Interface == vppStnIfName {
+			if nbStnRule.IpAddress == vppStnIPStr && nbStnRule.Interface == vppStnRule.Interface {
 				// Register existing rule
 				plugin.indexSTNRule(nbStnRule, false)
 				match = true
@@ -426,11 +419,11 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
-			if err := plugin.stnHandler.DelStnRule(vppStnRule.SwIfIndex, &vppStnIP); err != nil {
+			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
 				plugin.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnIfName)
+			plugin.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnRule.Interface)
 		}
 	}
 
@@ -457,7 +450,7 @@ func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error 
 	// Re-initialize cache
 	plugin.clearMapping()
 
-	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump(plugin.ifIndexes)
+	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump()
 	if err != nil {
 		return fmt.Errorf("failed to dump NAT44 global config: %v", err)
 	}
@@ -476,7 +469,7 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump(plugin.ifIndexes)
+	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump()
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}
