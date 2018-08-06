@@ -178,7 +178,7 @@ dep-update: get-dep
 # Check state of dependencies
 dep-check: get-dep
 	@echo "=> checking dependencies"
-	dep ensure -dry-run -no-vendor
+	dep ensure -v -dry-run -no-vendor
 
 LINTER := $(shell command -v gometalinter 2> /dev/null)
 
