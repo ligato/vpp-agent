@@ -15,59 +15,112 @@
 package main
 
 import (
+	"log"
+	"sync"
+
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
+
+const agent1, agent2 = "agent1", "agent2"
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example.
-	//exampleFinished := make(chan struct{}, 1)
-	//
-	//// Start Agent with VPP Flavor and ExampleFlavor.
-	//flavor := vppFlavor.Flavor{}
-	//exampleFlavor := ExampleFlavor{
-	//	IdxBdCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-	//	Flavor:            &flavor, // inject VPP flavor
-	//}
-	//agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
-	//
-	//core.EventLoopWithInterrupt(agent, exampleFinished)
+	// Channel used to close the example
+	exampleClosed := make(chan struct{})
 
-	// todo use new flavors && options
+	// Agent 1 datasync plugin
+	serviceLabel1 := servicelabel.NewPlugin(servicelabel.UseLabel(agent1))
+	serviceLabel1.SetName(agent1)
+	etcdDataSyncAgent1 := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin), kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
+		deps.Log = logging.ForPlugin(agent1)
+		deps.ServiceLabel = serviceLabel1
+	}))
+	etcdDataSyncAgent1.SetName("etcd-datasync-" + agent1)
+
+	// Agent 2 datasync plugin
+	serviceLabel2 := servicelabel.NewPlugin(servicelabel.UseLabel(agent2))
+	serviceLabel2.SetName(agent2)
+	etcdDataSyncAgent2 := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin), kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
+		deps.Log = logging.ForPlugin(agent2)
+		deps.ServiceLabel = serviceLabel2
+	}))
+	etcdDataSyncAgent2.SetName("etcd-datasync-" + agent2)
+
+	// Example plugin datasync
+	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
+
+	// VPP plugin
+	var watchEventsMutex sync.Mutex
+	watcher := datasync.KVProtoWatchers{
+		etcdDataSync,
+	}
+	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
+		deps.Watcher = watcher
+	}))
+	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+
+	// Inject dependencies to example plugin
+	ep := &ExamplePlugin{
+		exampleClosed: exampleClosed,
+		Deps: Deps{
+			Log:          logging.DefaultLogger,
+			ETCDDataSync: etcdDataSync,
+			VPP:          vppPlugin,
+			Agent1:       etcdDataSyncAgent1,
+			Agent2:       etcdDataSyncAgent2,
+		},
+	}
+
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleClosed),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
 }
+
+// PluginName represents name of plugin.
+const PluginName = "idx-bd-cache-example"
 
 // ExamplePlugin is used for demonstration of Bridge Domain Indexes - see Init().
 type ExamplePlugin struct {
 	Deps
-
-	// Linux plugin dependency
-	VPP vpp.API
 
 	bdIdxLocal  l2idx.BDIndex
 	bdIdxAgent1 l2idx.BDIndex
 	bdIdxAgent2 l2idx.BDIndex
 
 	// Fields below are used to properly finish the example.
-	closeChannel *chan struct{}
+	exampleClosed chan struct{}
+}
 
-	Log logging.Logger
+// Deps is a helper struct which is grouping all dependencies injected to the plugin
+type Deps struct {
+	Log          logging.Logger
+	ETCDDataSync datasync.KeyProtoValWriter
+	VPP          vpp.API
+	Agent1       *kvdbsync.Plugin
+	Agent2       *kvdbsync.Plugin
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 // Init transport & bdIndexes, then watch, publish & lookup
 func (plugin *ExamplePlugin) Init() (err error) {
-	// Manually initialize 'other' agents (for example purpose only).
-	err = plugin.Agent1.Init()
-	if err != nil {
-		return err
-	}
-	err = plugin.Agent2.Init()
-	if err != nil {
-		return err
-	}
-
 	// Get access to local bridge domain indexes.
 	plugin.bdIdxLocal = plugin.VPP.GetBDIndexes()
 
@@ -85,16 +138,6 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 // AfterInit - call Cache()
 func (plugin *ExamplePlugin) AfterInit() error {
-	// Manually run AfterInit() on 'other' agents (for example purpose only).
-	err := plugin.Agent1.AfterInit()
-	if err != nil {
-		return err
-	}
-	err = plugin.Agent2.AfterInit()
-	if err != nil {
-		return err
-	}
-
 	// Publish test data
 	plugin.publish()
 
@@ -104,27 +147,51 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
-		plugin.bdIdxLocal, plugin.bdIdxAgent1, plugin.bdIdxAgent2, plugin.closeChannel)
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.ETCDDataSync, plugin.Agent1, plugin.Agent2,
+		plugin.bdIdxLocal, plugin.bdIdxAgent1, plugin.bdIdxAgent2)
 }
 
 // Test data are published to different agents (including local).
 func (plugin *ExamplePlugin) publish() (err error) {
-	// Create bridge domain in local agent.
-	//br0 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd0", "iface0", true)
-	//err = plugin.Publisher.Put(l2.BridgeDomainKey(br0.Name), &br0)
-	//if err != nil {
-	//	return err
-	//}
-	//// Create bridge domain in agent1
-	//br1 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd1", "iface1", true)
-	//err = plugin.Agent1.Put(l2.BridgeDomainKey(br1.Name), &br1)
-	//if err != nil {
-	//	return err
-	//}
-	//// Create bridge domain in agent2
-	//br2 := l2tst.SimpleBridgeDomain1XIfaceBuilder("bd2", "iface2", true)
-	//err = plugin.Agent2.Put(l2.BridgeDomainKey(br2.Name), &br2)
+	//Create bridge domain in local agent.
+	br0 := &l2.BridgeDomains_BridgeDomain{
+		Name: "bd0",
+		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+			{
+				Name: "iface0",
+				BridgedVirtualInterface: true,
+			},
+		},
+	}
+	err = plugin.ETCDDataSync.Put(l2.BridgeDomainKey(br0.Name), br0)
+	if err != nil {
+		return err
+	}
+	// Create bridge domain in agent1
+	br1 := &l2.BridgeDomains_BridgeDomain{
+		Name: "bd1",
+		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+			{
+				Name: "iface1",
+				BridgedVirtualInterface: true,
+			},
+		},
+	}
+	err = plugin.Agent1.Put(l2.BridgeDomainKey(br1.Name), br1)
+	if err != nil {
+		return err
+	}
+	// Create bridge domain in agent2
+	br2 := &l2.BridgeDomains_BridgeDomain{
+		Name: "bd2",
+		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+			{
+				Name: "iface2",
+				BridgedVirtualInterface: true,
+			},
+		},
+	}
+	err = plugin.Agent2.Put(l2.BridgeDomainKey(br2.Name), br2)
 	return err
 }
 
@@ -133,9 +200,9 @@ func (plugin *ExamplePlugin) consume() {
 	plugin.Log.Info("Watching started")
 	bdIdxChan := make(chan l2idx.BdChangeDto)
 	// Subscribe local bd-idx-mapping and both of cache mapping.
-	//plugin.bdIdxLocal.WatchNameToIdx(plugin.PluginName, bdIdxChan)
-	//plugin.bdIdxAgent1.WatchNameToIdx(plugin.PluginName, bdIdxChan)
-	//plugin.bdIdxAgent2.WatchNameToIdx(plugin.PluginName, bdIdxChan)
+	plugin.bdIdxLocal.WatchNameToIdx(PluginName, bdIdxChan)
+	plugin.bdIdxAgent1.WatchNameToIdx(PluginName, bdIdxChan)
+	plugin.bdIdxAgent2.WatchNameToIdx(PluginName, bdIdxChan)
 
 	counter := 0
 
@@ -174,5 +241,5 @@ func (plugin *ExamplePlugin) lookup() {
 
 	// End the example.
 	plugin.Log.Infof("idx-bd-cache example finished, sending shutdown ...")
-	*plugin.closeChannel <- struct{}{}
+	close(plugin.exampleClosed)
 }

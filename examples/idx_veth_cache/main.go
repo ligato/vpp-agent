@@ -16,12 +16,19 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
+	"github.com/ligato/cn-infra/datasync/resync"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/linux"
 	linux_if "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -43,34 +50,76 @@ import (
 
 // Init sets the default logging level.
 func init() {
-	log.DefaultLogger().SetOutput(os.Stdout)
-	log.DefaultLogger().SetLevel(logging.InfoLevel)
+	logrus.DefaultLogger().SetOutput(os.Stdout)
+	logrus.DefaultLogger().SetLevel(logging.InfoLevel)
 }
+
+const agent1, agent2 = "agent1", "agent2"
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example.
-	//exampleFinished := make(chan struct{}, 1)
-	//
-	//// Start Agent with ExampleFlavor
-	//vppFlavor := vpp.Flavor{}
-	//exampleFlavor := ExampleFlavor{
-	//	IdxVethCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-	//	Flavor:              &vppFlavor, // inject VPP flavor
-	//}
-	//agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
-	//
-	//core.EventLoopWithInterrupt(agent, exampleFinished)
+	// Channel used to close the example
+	exampleClosed := make(chan struct{})
 
-	// todo use new flavors and options
+	// Agent 1 datasync plugin
+	serviceLabel1 := servicelabel.NewPlugin(servicelabel.UseLabel(agent1))
+	serviceLabel1.SetName(agent1)
+	etcdDataSyncAgent1 := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin), kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
+		deps.Log = logging.ForPlugin(agent1)
+		deps.ServiceLabel = serviceLabel1
+	}))
+	etcdDataSyncAgent1.SetName("etcd-datasync-" + agent1)
+
+	// Agent 2 datasync plugin
+	serviceLabel2 := servicelabel.NewPlugin(servicelabel.UseLabel(agent2))
+	serviceLabel2.SetName(agent2)
+	etcdDataSyncAgent2 := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin), kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
+		deps.Log = logging.ForPlugin(agent2)
+		deps.ServiceLabel = serviceLabel2
+	}))
+	etcdDataSyncAgent2.SetName("etcd-datasync-" + agent2)
+
+	// Example plugin datasync
+	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
+
+	// Linux plugin
+	var watchEventsMutex sync.Mutex
+	watcher := datasync.KVProtoWatchers{
+		etcdDataSync,
+	}
+	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
+		deps.Watcher = watcher
+	}))
+	linuxPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+
+	// Inject dependencies to example plugin
+	ep := &ExamplePlugin{
+		exampleClosed: exampleClosed,
+		Deps: Deps{
+			Log:          logging.DefaultLogger,
+			ETCDDataSync: etcdDataSync,
+			Linux:        linuxPlugin,
+			Agent1:       etcdDataSyncAgent1,
+			Agent2:       etcdDataSyncAgent2,
+		},
+	}
+
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleClosed),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
 }
+
+// PluginName represents name of plugin.
+const PluginName = "idx-veth-cache-example"
 
 // ExamplePlugin demonstrates the use of the name-to-idx cache in linux plugin.
 type ExamplePlugin struct {
 	Deps
-
-	// Linux plugin dependency
-	Linux linux.API
 
 	linuxIfIdxLocal  linux_if.LinuxIfIndex
 	linuxIfIdxAgent1 linux_if.LinuxIfIndex
@@ -78,24 +127,25 @@ type ExamplePlugin struct {
 	wg               sync.WaitGroup
 
 	// Fields below are used to properly finish the example.
-	closeChannel *chan struct{}
+	exampleClosed chan struct{}
+}
 
-	Log logging.Logger
+// Deps is a helper struct which is grouping all dependencies injected to the plugin
+type Deps struct {
+	Log          logging.Logger
+	ETCDDataSync *kvdbsync.Plugin
+	Linux        *linux.Plugin
+	Agent1       *kvdbsync.Plugin
+	Agent2       *kvdbsync.Plugin
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() error {
-	// Manually initialize 'other' agents (for example purpose only).
-	var err error
-	err = plugin.Agent1.Init()
-	if err != nil {
-		return err
-	}
-	err = plugin.Agent2.Init()
-	if err != nil {
-		return err
-	}
-
 	// Receive linux interfaces mapping.
 	if plugin.Linux != nil {
 		plugin.linuxIfIdxLocal = plugin.Linux.GetLinuxIfIndexes()
@@ -110,22 +160,15 @@ func (plugin *ExamplePlugin) Init() error {
 	plugin.linuxIfIdxAgent1 = linux_if.Cache(plugin.Agent1)
 	plugin.linuxIfIdxAgent2 = linux_if.Cache(plugin.Agent2)
 
-	log.DefaultLogger().Info("Initialization of the example plugin has completed")
+	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
 
-	return err
+	return nil
 }
 
 // AfterInit - call Cache()
 func (plugin *ExamplePlugin) AfterInit() error {
-	// Manually run AfterInit() on 'other' agents (for example purpose only).
-	err := plugin.Agent1.AfterInit()
-	if err != nil {
-		return err
-	}
-	err = plugin.Agent2.AfterInit()
-	if err != nil {
-		return err
-	}
+	// Manually start resync (simulate vpp-agent default behaviour)
+	resync.DefaultPlugin.DoResync()
 
 	// Publish test data.
 	plugin.publish()
@@ -137,13 +180,13 @@ func (plugin *ExamplePlugin) AfterInit() error {
 func (plugin *ExamplePlugin) Close() error {
 	plugin.wg.Wait()
 
-	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Publisher, plugin.Agent1, plugin.Agent2,
-		plugin.linuxIfIdxLocal, plugin.linuxIfIdxAgent1, plugin.linuxIfIdxAgent2, plugin.closeChannel)
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Agent1, plugin.Agent2,
+		plugin.linuxIfIdxLocal, plugin.linuxIfIdxAgent1, plugin.linuxIfIdxAgent2)
 }
 
 // publish propagates example configuration to etcd.
 func (plugin *ExamplePlugin) publish() error {
-	log.DefaultLogger().Infof("Putting interfaces to ETCD")
+	logrus.DefaultLogger().Infof("Putting interfaces to ETCD")
 
 	// VETH pair in default namespace
 	vethDef := &veth11DefaultNs
@@ -162,10 +205,10 @@ func (plugin *ExamplePlugin) publish() error {
 	err = plugin.Agent2.Put(linux_intf.InterfaceKey(vethNs2Peer.Name), vethNs2Peer)
 
 	if err != nil {
-		log.DefaultLogger().Errorf("Failed to apply initial Linux&VPP configuration: %v", err)
+		logrus.DefaultLogger().Errorf("Failed to apply initial Linux&VPP configuration: %v", err)
 		return err
 	}
-	log.DefaultLogger().Info("Successfully applied initial Linux&VPP configuration")
+	logrus.DefaultLogger().Info("Successfully applied initial Linux&VPP configuration")
 
 	return err
 }
@@ -176,9 +219,9 @@ func (plugin *ExamplePlugin) consume() (err error) {
 	// Init chan to sent watch updates.
 	linuxIfIdxChan := make(chan linux_if.LinuxIfIndexDto)
 	// Register all agents (incl. local) to watch linux name-to-idx mapping changes.
-	//plugin.linuxIfIdxLocal.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
-	//plugin.linuxIfIdxAgent1.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
-	//plugin.linuxIfIdxAgent2.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
+	plugin.linuxIfIdxLocal.WatchNameToIdx(PluginName, linuxIfIdxChan)
+	plugin.linuxIfIdxAgent1.WatchNameToIdx(PluginName, linuxIfIdxChan)
+	plugin.linuxIfIdxAgent2.WatchNameToIdx(PluginName, linuxIfIdxChan)
 
 	counter := 0
 
@@ -204,7 +247,7 @@ func (plugin *ExamplePlugin) consume() (err error) {
 
 	// End the example.
 	plugin.Log.Infof("idx-iface-cache example finished, sending shutdown ...")
-	*plugin.closeChannel <- struct{}{}
+	close(plugin.exampleClosed)
 
 	return nil
 }
@@ -221,17 +264,17 @@ func (plugin *ExamplePlugin) lookup() bool {
 
 	// Look for loopback interface.
 	if _, _, loopback = plugin.linuxIfIdxLocal.LookupIdx("lo"); loopback {
-		log.DefaultLogger().Info("Interface found: loopback")
+		logrus.DefaultLogger().Info("Interface found: loopback")
 	} else {
-		log.DefaultLogger().Warn("Interface not found: loopback")
+		logrus.DefaultLogger().Warn("Interface not found: loopback")
 	}
 	// Look for VETH 11 default namespace interface on agent1.
 	for i := 0; i <= 10; i++ {
 		if _, _, veth11 = plugin.linuxIfIdxAgent1.LookupIdx(veth11DefaultNs.Name); veth11 {
-			log.DefaultLogger().Info("Interface found on agent1: veth11Def")
+			logrus.DefaultLogger().Info("Interface found on agent1: veth11Def")
 			break
 		} else if i == 3 {
-			log.DefaultLogger().Warn("Interface not found on agent1: veth11Def")
+			logrus.DefaultLogger().Warn("Interface not found on agent1: veth11Def")
 		} else {
 			// Try several times in case cache is not updated yet.
 			time.Sleep(1 * time.Second)
@@ -241,10 +284,10 @@ func (plugin *ExamplePlugin) lookup() bool {
 	// Look for VETH 12 default namespace interface on agent1.
 	for i := 0; i <= 3; i++ {
 		if _, _, veth12 = plugin.linuxIfIdxAgent1.LookupIdx(veth12DefaultNs.Name); veth12 {
-			log.DefaultLogger().Info("Interface found on agent1: veth12Def")
+			logrus.DefaultLogger().Info("Interface found on agent1: veth12Def")
 			break
 		} else if i == 3 {
-			log.DefaultLogger().Warn("Interface not found on agent1: veth12Def")
+			logrus.DefaultLogger().Warn("Interface not found on agent1: veth12Def")
 		} else {
 			// Try several times in case cache is not updated yet.
 			time.Sleep(1 * time.Second)
@@ -254,10 +297,10 @@ func (plugin *ExamplePlugin) lookup() bool {
 	// Look for VETH 21 ns1 namespace interface on agent2.
 	for i := 0; i <= 3; i++ {
 		if _, _, veth21 = plugin.linuxIfIdxAgent2.LookupIdx(veth21Ns1.Name); veth21 {
-			log.DefaultLogger().Info("Interface found on agent2: veth21ns1")
+			logrus.DefaultLogger().Info("Interface found on agent2: veth21ns1")
 			break
 		} else if i == 3 {
-			log.DefaultLogger().Warn("Interface not found on agent2 : veth21ns1")
+			logrus.DefaultLogger().Warn("Interface not found on agent2 : veth21ns1")
 		} else {
 			// Try several times in case cache is not updated yet.
 			time.Sleep(1 * time.Second)
@@ -267,10 +310,10 @@ func (plugin *ExamplePlugin) lookup() bool {
 	// Look for VETH 22 ns2 namespace interface on agent2.
 	for i := 0; i <= 3; i++ {
 		if _, _, veth22 = plugin.linuxIfIdxAgent2.LookupIdx(veth22Ns2.Name); veth22 {
-			log.DefaultLogger().Info("Interface found on agent2: veth22ns2")
+			logrus.DefaultLogger().Info("Interface found on agent2: veth22ns2")
 			break
 		} else if i == 3 {
-			log.DefaultLogger().Warn("Interface not found on agent2: veth22ns2")
+			logrus.DefaultLogger().Warn("Interface not found on agent2: veth22ns2")
 		} else {
 			// Try several times in case cache is not updated yet.
 			time.Sleep(1 * time.Second)
