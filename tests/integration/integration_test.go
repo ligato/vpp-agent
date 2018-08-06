@@ -26,7 +26,6 @@ import (
 
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
@@ -118,23 +117,4 @@ func (ctx *testCtx) teardown() {
 	if err := ctx.VPP.Wait(); err != nil {
 		logf("VPP process wait failed: %v", err)
 	}
-}
-
-func TestVersion(t *testing.T) {
-	ctx := setupTest(t)
-	defer ctx.teardown()
-
-	channel, err := ctx.Conn.NewAPIChannel()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer channel.Close()
-
-	info, err := vppcalls.GetVersionInfo(channel)
-	if err != nil {
-		t.Fatalf("getting version info failed: %v", err)
-		return
-	}
-
-	t.Logf("version info: %+v", info)
 }
