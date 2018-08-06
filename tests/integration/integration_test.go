@@ -16,6 +16,7 @@ package integration
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -23,8 +24,8 @@ import (
 	"syscall"
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/vppapiclient"
 	govpp "git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/mitchellh/go-ps"
@@ -37,12 +38,13 @@ var (
 )
 
 func init() {
+	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
 	govpp.SetControlPingMessages(&vpe.ControlPing{}, &vpe.ControlPingReply{})
 }
 
 func logf(f string, v ...interface{}) {
 	if *debug {
-		log.Printf(f, v...)
+		log.Output(2, fmt.Sprintf(f, v...))
 	}
 }
 
@@ -53,6 +55,10 @@ type testCtx struct {
 }
 
 func setupTest(t *testing.T) *testCtx {
+	if os.Getenv("TRAVIS") != "" {
+		t.Skip("skipping test for Travis")
+	}
+
 	RegisterTestingT(t)
 
 	processes, err := ps.Processes()
@@ -71,6 +77,8 @@ func setupTest(t *testing.T) *testCtx {
 	var removeFile = func(path string) {
 		if err := os.Remove("/dev/shm/vpe-api"); err != nil && !os.IsNotExist(err) {
 			t.Fatalf("removing file %q failed: %v", path, err)
+		} else {
+			logf("removed file %q", path)
 		}
 	}
 	// rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
@@ -89,7 +97,7 @@ func setupTest(t *testing.T) *testCtx {
 
 	logf("connecting to VPP..")
 
-	adapter := vppapiclient.NewVppAdapter("")
+	adapter := govppmux.NewVppAdapter("")
 	conn, err := govpp.Connect(adapter)
 	if err != nil {
 		if err := cmd.Process.Kill(); err != nil {
