@@ -16,7 +16,7 @@ package l4
 
 // Prefixes
 const (
-	// L4Prefix is the relative key prefix for VPP L4 plugin.
+	// Prefix is common relative key for VPP L4 plugin.
 	Prefix = "vpp/config/v1/l4/"
 
 	// L4FeaturesPrefix is the relative key prefix for VPP L4 features.
