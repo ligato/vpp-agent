@@ -313,17 +313,18 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMapping{
 			{
 				// DNAT static mapping with load balancer (multiple local addresses)
-				VrfId:             0,
 				ExternalInterface: "memif1",
 				ExternalIp:        "192.168.0.1",
 				ExternalPort:      8989,
 				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
+						VrfId:       0,
 						LocalIp:     "172.124.0.2",
 						LocalPort:   6500,
 						Probability: 40,
 					},
 					{
+						VrfId:       0,
 						LocalIp:     "172.125.10.5",
 						LocalPort:   2300,
 						Probability: 40,
@@ -334,12 +335,12 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 			},
 			{
 				// DNAT static mapping without load balancer (single local address)
-				VrfId:             0,
 				ExternalInterface: "memif2",
 				ExternalIp:        "192.168.0.2",
 				ExternalPort:      8989,
 				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
+						VrfId:       0,
 						LocalIp:     "172.124.0.3",
 						LocalPort:   6501,
 						Probability: 50,
