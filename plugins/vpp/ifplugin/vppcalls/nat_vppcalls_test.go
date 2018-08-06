@@ -332,7 +332,7 @@ func TestDelNat44AddressPool(t *testing.T) {
 }
 
 func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
-	ctx, natHandler := natTestSetup(t)
+	ctx, natHandler, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
@@ -354,7 +354,7 @@ func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
 }
 
 func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
-	ctx, natHandler := natTestSetup(t)
+	ctx, natHandler, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&nat.NatSetReassReply{})
