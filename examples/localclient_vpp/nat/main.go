@@ -118,18 +118,15 @@ func main() {
 		deps.Watcher = watcher
 	}))
 
-	var watchEventsMutex sync.Mutex
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
-
 	// Inject dependencies to example plugin
-	ep := &NatExamplePlugin{
-		Log: logging.DefaultLogger,
-	}
+	ep := &NatExamplePlugin{}
+	ep.Deps.Log = logging.DefaultLogger
 	ep.Deps.VPP = vppPlugin
 
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleFinished),
 	)
 	if err := a.Run(); err != nil {
 		log.Fatal()
@@ -139,10 +136,10 @@ func main() {
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, closeChannel chan struct{}) {
+func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(time.Duration(*timeout+5) * time.Second)
 	logrus.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+	close(exampleFinished)
 }
 
 /* NAT44 Example */
@@ -152,13 +149,13 @@ func closeExample(message string, closeChannel chan struct{}) {
 type NatExamplePlugin struct {
 	Deps
 
-	Log    logging.Logger
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
 }
 
 // Deps is example plugin dependencies.
 type Deps struct {
+	Log logging.Logger
 	VPP *vpp.Plugin
 }
 

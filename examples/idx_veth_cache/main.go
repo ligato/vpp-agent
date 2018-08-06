@@ -58,9 +58,6 @@ const agent1, agent2 = "agent1", "agent2"
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Channel used to close the example
-	exampleClosed := make(chan struct{})
-
 	// Agent 1 datasync plugin
 	serviceLabel1 := servicelabel.NewPlugin(servicelabel.UseLabel(agent1))
 	serviceLabel1.SetName(agent1)
@@ -83,18 +80,16 @@ func main() {
 	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
 
 	// Linux plugin
-	var watchEventsMutex sync.Mutex
 	watcher := datasync.KVProtoWatchers{
 		etcdDataSync,
 	}
 	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
 		deps.Watcher = watcher
 	}))
-	linuxPlugin.Deps.WatchEventsMutex = &watchEventsMutex
 
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{
-		exampleClosed: exampleClosed,
+		exampleFinished: make(chan struct{}),
 		Deps: Deps{
 			Log:          logging.DefaultLogger,
 			ETCDDataSync: etcdDataSync,
@@ -107,7 +102,7 @@ func main() {
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
-		agent.QuitOnClose(exampleClosed),
+		agent.QuitOnClose(ep.exampleFinished),
 	)
 	if err := a.Run(); err != nil {
 		log.Fatal()
@@ -127,7 +122,7 @@ type ExamplePlugin struct {
 	wg               sync.WaitGroup
 
 	// Fields below are used to properly finish the example.
-	exampleClosed chan struct{}
+	exampleFinished chan struct{}
 }
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
@@ -247,7 +242,7 @@ func (plugin *ExamplePlugin) consume() (err error) {
 
 	// End the example.
 	plugin.Log.Infof("idx-iface-cache example finished, sending shutdown ...")
-	close(plugin.exampleClosed)
+	close(plugin.exampleFinished)
 
 	return nil
 }

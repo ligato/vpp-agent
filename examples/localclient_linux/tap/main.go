@@ -91,7 +91,7 @@ var (
 // Start Agent plugins selected for this example.
 func main() {
 	//Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
+	exampleFinished := make(chan struct{})
 	// Prepare all the dependencies for example plugin
 	watcher := datasync.KVProtoWatchers{
 		local.Get(),
@@ -119,6 +119,7 @@ func main() {
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleFinished),
 	)
 	if err := a.Run(); err != nil {
 		log.Fatal()
@@ -128,10 +129,10 @@ func main() {
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, closeChannel chan struct{}) {
+func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(time.Duration(*timeout+5) * time.Second)
 	logrus.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+	close(exampleFinished)
 }
 
 /* TAP Example */

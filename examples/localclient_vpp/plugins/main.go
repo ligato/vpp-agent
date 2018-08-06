@@ -67,6 +67,7 @@ func main() {
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleFinished),
 	)
 	if err := a.Run(); err != nil {
 		log.Fatal()
@@ -76,10 +77,10 @@ func main() {
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, closeChannel chan struct{}) {
+func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(25 * time.Second)
 	logrus.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+	close(exampleFinished)
 }
 
 /******************

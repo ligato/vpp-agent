@@ -15,9 +15,6 @@
 package main
 
 import (
-	"log"
-	"sync"
-
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
@@ -28,15 +25,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"log"
 )
 
 const agent1, agent2 = "agent1", "agent2"
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Channel used to close the example
-	exampleClosed := make(chan struct{})
-
 	// Agent 1 datasync plugin
 	serviceLabel1 := servicelabel.NewPlugin(servicelabel.UseLabel(agent1))
 	serviceLabel1.SetName(agent1)
@@ -59,18 +54,16 @@ func main() {
 	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
 
 	// VPP plugin
-	var watchEventsMutex sync.Mutex
 	watcher := datasync.KVProtoWatchers{
 		etcdDataSync,
 	}
 	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
 		deps.Watcher = watcher
 	}))
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
 
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{
-		exampleClosed: exampleClosed,
+		exampleFinished: make(chan struct{}),
 		Deps: Deps{
 			Log:          logging.DefaultLogger,
 			ETCDDataSync: etcdDataSync,
@@ -83,7 +76,7 @@ func main() {
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
-		agent.QuitOnClose(exampleClosed),
+		agent.QuitOnClose(ep.exampleFinished),
 	)
 	if err := a.Run(); err != nil {
 		log.Fatal()
@@ -102,7 +95,7 @@ type ExamplePlugin struct {
 	swIfIdxAgent2 ifaceidx.SwIfIndex
 
 	// Fields below are used to properly finish the example.
-	exampleClosed chan struct{}
+	exampleFinished chan struct{}
 }
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
@@ -147,38 +140,26 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.Agent1, plugin.Agent2,
-		plugin.swIfIdxLocal, plugin.swIfIdxAgent1, plugin.swIfIdxAgent2)
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.swIfIdxLocal, plugin.swIfIdxAgent1,
+		plugin.swIfIdxAgent2)
 }
 
 // Test data are published to different agents (including local).
 func (plugin *ExamplePlugin) publish() (err error) {
 	// Create interface in local agent.
-	iface0 := &interfaces.Interfaces_Interface{
-		Name:        "iface0",
-		Enabled:     true,
-		IpAddresses: []string{"192.168.1.1"},
-	}
+	iface0 := newExampleInterface("iface0", "192.168.0.1")
 	err = plugin.ETCDDataSync.Put(interfaces.InterfaceKey(iface0.Name), iface0)
 	if err != nil {
 		return err
 	}
 	// Create interface in agent1.
-	iface1 := &interfaces.Interfaces_Interface{
-		Name:        "iface1",
-		Enabled:     true,
-		IpAddresses: []string{"192.168.0.2"},
-	}
+	iface1 := newExampleInterface("iface1", "192.168.0.2")
 	err = plugin.Agent1.Put(interfaces.InterfaceKey(iface1.Name), iface1)
 	if err != nil {
 		return err
 	}
 	// Create interface in agent2.
-	iface2 := &interfaces.Interfaces_Interface{
-		Name:        "iface2",
-		Enabled:     true,
-		IpAddresses: []string{"192.168.0.3"},
-	}
+	iface2 := newExampleInterface("iface2", "192.168.0.3")
 	err = plugin.Agent2.Put(interfaces.InterfaceKey(iface2.Name), iface2)
 	return err
 }
@@ -229,5 +210,13 @@ func (plugin *ExamplePlugin) lookup() {
 
 	// End the example.
 	plugin.Log.Infof("idx-iface-cache example finished, sending shutdown ...")
-	close(plugin.exampleClosed)
+	close(plugin.exampleFinished)
+}
+
+func newExampleInterface(ifName, ipAddr string) *interfaces.Interfaces_Interface {
+	return &interfaces.Interfaces_Interface{
+		Name:        ifName,
+		Enabled:     true,
+		IpAddresses: []string{ipAddr},
+	}
 }

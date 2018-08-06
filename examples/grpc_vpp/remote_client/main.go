@@ -63,29 +63,29 @@ func main() {
 	flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
 
 	//Init close channel to stop the example.
-	closeChannel := make(chan struct{}, 1)
+	exampleFinished := make(chan struct{}, 1)
 
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{}
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
-		agent.QuitOnClose(closeChannel),
+		agent.QuitOnClose(exampleFinished),
 	)
 	if err := a.Run(); err != nil {
 		log.Fatal()
 	}
 
 	// End when the localhost example is finished.
-	go closeExample("localhost example finished", closeChannel)
+	go closeExample("localhost example finished", exampleFinished)
 
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, closeChannel chan struct{}) {
+func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(25 * time.Second)
 	logrus.DefaultLogger().Info(message)
-	close(closeChannel)
+	close(exampleFinished)
 }
 
 /******************

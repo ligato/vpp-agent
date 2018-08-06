@@ -15,9 +15,6 @@
 package main
 
 import (
-	"log"
-	"sync"
-
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
@@ -28,15 +25,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"log"
 )
 
 const agent1, agent2 = "agent1", "agent2"
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Channel used to close the example
-	exampleClosed := make(chan struct{})
-
 	// Agent 1 datasync plugin
 	serviceLabel1 := servicelabel.NewPlugin(servicelabel.UseLabel(agent1))
 	serviceLabel1.SetName(agent1)
@@ -59,18 +54,16 @@ func main() {
 	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
 
 	// VPP plugin
-	var watchEventsMutex sync.Mutex
 	watcher := datasync.KVProtoWatchers{
 		etcdDataSync,
 	}
 	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
 		deps.Watcher = watcher
 	}))
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
 
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{
-		exampleClosed: exampleClosed,
+		exampleFinished: make(chan struct{}),
 		Deps: Deps{
 			Log:          logging.DefaultLogger,
 			ETCDDataSync: etcdDataSync,
@@ -83,7 +76,7 @@ func main() {
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
-		agent.QuitOnClose(exampleClosed),
+		agent.QuitOnClose(ep.exampleFinished),
 	)
 	if err := a.Run(); err != nil {
 		log.Fatal()
@@ -102,7 +95,7 @@ type ExamplePlugin struct {
 	bdIdxAgent2 l2idx.BDIndex
 
 	// Fields below are used to properly finish the example.
-	exampleClosed chan struct{}
+	exampleFinished chan struct{}
 }
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
@@ -147,50 +140,26 @@ func (plugin *ExamplePlugin) AfterInit() error {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.ETCDDataSync, plugin.Agent1, plugin.Agent2,
-		plugin.bdIdxLocal, plugin.bdIdxAgent1, plugin.bdIdxAgent2)
+	return safeclose.Close(plugin.Agent1, plugin.Agent2, plugin.ETCDDataSync, plugin.bdIdxLocal, plugin.bdIdxAgent1,
+		plugin.bdIdxAgent2)
 }
 
 // Test data are published to different agents (including local).
 func (plugin *ExamplePlugin) publish() (err error) {
-	//Create bridge domain in local agent.
-	br0 := &l2.BridgeDomains_BridgeDomain{
-		Name: "bd0",
-		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
-			{
-				Name: "iface0",
-				BridgedVirtualInterface: true,
-			},
-		},
-	}
+	// Create bridge domain in local agent.
+	br0 := newExampleBridgeDomain("bd0", "iface0")
 	err = plugin.ETCDDataSync.Put(l2.BridgeDomainKey(br0.Name), br0)
 	if err != nil {
 		return err
 	}
 	// Create bridge domain in agent1
-	br1 := &l2.BridgeDomains_BridgeDomain{
-		Name: "bd1",
-		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
-			{
-				Name: "iface1",
-				BridgedVirtualInterface: true,
-			},
-		},
-	}
+	br1 := newExampleBridgeDomain("bd1", "iface1")
 	err = plugin.Agent1.Put(l2.BridgeDomainKey(br1.Name), br1)
 	if err != nil {
 		return err
 	}
 	// Create bridge domain in agent2
-	br2 := &l2.BridgeDomains_BridgeDomain{
-		Name: "bd2",
-		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
-			{
-				Name: "iface2",
-				BridgedVirtualInterface: true,
-			},
-		},
-	}
+	br2 := newExampleBridgeDomain("bd2", "iface2")
 	err = plugin.Agent2.Put(l2.BridgeDomainKey(br2.Name), br2)
 	return err
 }
@@ -241,5 +210,17 @@ func (plugin *ExamplePlugin) lookup() {
 
 	// End the example.
 	plugin.Log.Infof("idx-bd-cache example finished, sending shutdown ...")
-	close(plugin.exampleClosed)
+	close(plugin.exampleFinished)
+}
+
+func newExampleBridgeDomain(bdName, ifName string) *l2.BridgeDomains_BridgeDomain {
+	return &l2.BridgeDomains_BridgeDomain{
+		Name: bdName,
+		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+			{
+				Name: ifName,
+				BridgedVirtualInterface: true,
+			},
+		},
+	}
 }

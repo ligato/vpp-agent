@@ -17,9 +17,6 @@ package main
 import (
 	"time"
 
-	"log"
-	"sync"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync"
@@ -31,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"log"
 )
 
 // *************************************************************************
@@ -58,9 +56,6 @@ func main() {
 	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
 		deps.Watcher = watcher
 	}))
-
-	var watchEventsMutex sync.Mutex
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
 
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{
