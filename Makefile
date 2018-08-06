@@ -4,7 +4,7 @@ VERSION	?= $(shell git describe --always --tags --dirty)
 COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
-CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
+CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
 
 ifeq ($(NOSTRIP),)
