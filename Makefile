@@ -162,7 +162,7 @@ bindata: get-bindata
 
 # Get dependency manager tool
 get-dep:
-	go get -v github.com/golang/dep/cmd/dep
+	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 	dep version
 
 # Install the project's dependencies
@@ -178,7 +178,7 @@ dep-update: get-dep
 # Check state of dependencies
 dep-check: get-dep
 	@echo "=> checking dependencies"
-	dep ensure -dry-run -no-vendor
+	dep check
 
 LINTER := $(shell command -v gometalinter 2> /dev/null)
 
