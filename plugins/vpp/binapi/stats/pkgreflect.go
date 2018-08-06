@@ -5,6 +5,10 @@ package stats
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"BierNeighborCounter": reflect.TypeOf((*BierNeighborCounter)(nil)).Elem(),
+	"BierTableID": reflect.TypeOf((*BierTableID)(nil)).Elem(),
+	"FibMplsLabel": reflect.TypeOf((*FibMplsLabel)(nil)).Elem(),
+	"FibPath": reflect.TypeOf((*FibPath)(nil)).Elem(),
 	"IP4FibCounter": reflect.TypeOf((*IP4FibCounter)(nil)).Elem(),
 	"IP4MfibCounter": reflect.TypeOf((*IP4MfibCounter)(nil)).Elem(),
 	"IP4NbrCounter": reflect.TypeOf((*IP4NbrCounter)(nil)).Elem(),
@@ -15,6 +19,7 @@ var Types = map[string]reflect.Type{
 	"StatsGetPollerDelayReply": reflect.TypeOf((*StatsGetPollerDelayReply)(nil)).Elem(),
 	"UDPEncapCounter": reflect.TypeOf((*UDPEncapCounter)(nil)).Elem(),
 	"VlibCounter": reflect.TypeOf((*VlibCounter)(nil)).Elem(),
+	"VnetBierNeighborCounters": reflect.TypeOf((*VnetBierNeighborCounters)(nil)).Elem(),
 	"VnetCombinedCounter": reflect.TypeOf((*VnetCombinedCounter)(nil)).Elem(),
 	"VnetGetSummaryStats": reflect.TypeOf((*VnetGetSummaryStats)(nil)).Elem(),
 	"VnetGetSummaryStatsReply": reflect.TypeOf((*VnetGetSummaryStatsReply)(nil)).Elem(),
@@ -30,6 +35,8 @@ var Types = map[string]reflect.Type{
 	"VnetPerInterfaceSimpleCounters": reflect.TypeOf((*VnetPerInterfaceSimpleCounters)(nil)).Elem(),
 	"VnetSimpleCounter": reflect.TypeOf((*VnetSimpleCounter)(nil)).Elem(),
 	"VnetUDPEncapCounters": reflect.TypeOf((*VnetUDPEncapCounters)(nil)).Elem(),
+	"WantBierNeighborStats": reflect.TypeOf((*WantBierNeighborStats)(nil)).Elem(),
+	"WantBierNeighborStatsReply": reflect.TypeOf((*WantBierNeighborStatsReply)(nil)).Elem(),
 	"WantIP4FibStats": reflect.TypeOf((*WantIP4FibStats)(nil)).Elem(),
 	"WantIP4FibStatsReply": reflect.TypeOf((*WantIP4FibStatsReply)(nil)).Elem(),
 	"WantIP4MfibStats": reflect.TypeOf((*WantIP4MfibStats)(nil)).Elem(),
@@ -59,6 +66,7 @@ var Types = map[string]reflect.Type{
 var Functions = map[string]reflect.Value{
 	"NewStatsGetPollerDelay": reflect.ValueOf(NewStatsGetPollerDelay),
 	"NewStatsGetPollerDelayReply": reflect.ValueOf(NewStatsGetPollerDelayReply),
+	"NewVnetBierNeighborCounters": reflect.ValueOf(NewVnetBierNeighborCounters),
 	"NewVnetGetSummaryStats": reflect.ValueOf(NewVnetGetSummaryStats),
 	"NewVnetGetSummaryStatsReply": reflect.ValueOf(NewVnetGetSummaryStatsReply),
 	"NewVnetIP4FibCounters": reflect.ValueOf(NewVnetIP4FibCounters),
@@ -72,6 +80,8 @@ var Functions = map[string]reflect.Value{
 	"NewVnetPerInterfaceCombinedCounters": reflect.ValueOf(NewVnetPerInterfaceCombinedCounters),
 	"NewVnetPerInterfaceSimpleCounters": reflect.ValueOf(NewVnetPerInterfaceSimpleCounters),
 	"NewVnetUDPEncapCounters": reflect.ValueOf(NewVnetUDPEncapCounters),
+	"NewWantBierNeighborStats": reflect.ValueOf(NewWantBierNeighborStats),
+	"NewWantBierNeighborStatsReply": reflect.ValueOf(NewWantBierNeighborStatsReply),
 	"NewWantIP4FibStats": reflect.ValueOf(NewWantIP4FibStats),
 	"NewWantIP4FibStatsReply": reflect.ValueOf(NewWantIP4FibStatsReply),
 	"NewWantIP4MfibStats": reflect.ValueOf(NewWantIP4MfibStats),

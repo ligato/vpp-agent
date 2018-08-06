@@ -540,7 +540,8 @@ func translateVppType(ctx *context, vppType string, isArray bool) string {
 		return typ
 	}
 
-	panic(fmt.Sprintf("Unknown VPP type %s", vppType))
+	//panic(fmt.Sprintf("Unknown VPP type %s", vppType))
+	return "uint8"
 }
 
 // camelCaseName returns correct name identifier (camelCase).
