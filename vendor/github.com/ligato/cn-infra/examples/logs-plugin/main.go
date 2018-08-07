@@ -23,19 +23,10 @@ import (
 // ************************************************************************/
 
 // PluginName represents name of plugin.
-const PluginName = "example"
+const PluginName = "logs-example"
 
 func main() {
-	// Start Agent with ExamplePlugin & LocalFlavor (reused cn-infra plugins).
-	/*agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		examplePlug := &ExamplePlugin{
-			exampleFinished: exampleFinished,
-			PluginLogDeps:   *flavor.LogDeps("logs-example"),
-		}
-		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
-	}))
-	core.EventLoopWithInterrupt(agent, exampleFinished)*/
-
+	// Prepare example plugin and start the agent
 	p := &ExamplePlugin{
 		exampleFinished: make(chan struct{}),
 		Log:             logging.ForPlugin(PluginName),
@@ -48,7 +39,6 @@ func main() {
 	if err := a.Run(); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 // ExamplePlugin presents the PluginLogger API.

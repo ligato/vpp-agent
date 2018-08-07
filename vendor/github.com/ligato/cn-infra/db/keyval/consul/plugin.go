@@ -54,7 +54,7 @@ type Plugin struct {
 // If injected, Consul plugin will use StatusCheck to signal the connection status.
 type Deps struct {
 	infra.PluginDeps
-	StatusCheck statuscheck.PluginStatusWriter // inject
+	StatusCheck statuscheck.PluginStatusWriter
 	Resync      *resync.Plugin
 }
 

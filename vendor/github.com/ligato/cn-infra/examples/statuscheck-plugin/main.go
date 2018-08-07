@@ -37,19 +37,20 @@ import (
 const PluginName = "example"
 
 func main() {
+	// Prepare ETCD data sync plugin as an plugin dependency
 	etcdDataSync := kvdbsync.NewPlugin(
 		kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
 			deps.KvPlugin = &etcd.DefaultPlugin
 			deps.ResyncOrch = &resync.DefaultPlugin
 		}),
 	)
-
+	// Init example plugin dependencies
 	p := &ExamplePlugin{
 		Log:             logging.ForPlugin(PluginName),
 		StatusMonitor:   &statuscheck.DefaultPlugin,
 		exampleFinished: make(chan struct{}),
 	}
-
+	// Start Agent with example plugin including dependencies
 	a := agent.NewAgent(
 		agent.AllPlugins(etcdDataSync, p),
 		agent.QuitOnClose(p.exampleFinished),

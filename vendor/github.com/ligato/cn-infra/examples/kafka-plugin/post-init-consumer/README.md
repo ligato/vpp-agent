@@ -1,7 +1,7 @@
-# kafka-plugin Manual-Partitioner
+# kafka-plugin Post-init consumer
 
-A simple example demonstrating the usage of Kafka plugin API with
-a focus on manual partitioning.
+A simple example demonstrating the usage of Kafka plugin API 
+where consumer is started after the message producer.
 
 ### Requirements
 
