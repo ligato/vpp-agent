@@ -1250,7 +1250,6 @@ func getTestNatAddressPoolConfig(first, last string, vrf uint32, twn bool) *nat.
 
 func getTestNatStaticMappingConfig(vrf uint32, ifName, externalIP string, externalPort uint32, proto nat.Protocol, locals ...*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP) *nat.Nat44DNat_DNatConfig_StaticMapping {
 	return &nat.Nat44DNat_DNatConfig_StaticMapping{
-		VrfId:             vrf,
 		ExternalInterface: ifName,
 		ExternalIp:        externalIP,
 		ExternalPort:      externalPort,

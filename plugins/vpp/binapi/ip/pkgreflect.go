@@ -5,9 +5,12 @@ package ip
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Address": reflect.TypeOf((*Address)(nil)).Elem(),
 	"FibMplsLabel": reflect.TypeOf((*FibMplsLabel)(nil)).Elem(),
 	"FibPath": reflect.TypeOf((*FibPath)(nil)).Elem(),
+	"IP4Address": reflect.TypeOf((*IP4Address)(nil)).Elem(),
 	"IP4ArpEvent": reflect.TypeOf((*IP4ArpEvent)(nil)).Elem(),
+	"IP6Address": reflect.TypeOf((*IP6Address)(nil)).Elem(),
 	"IP6FibDetails": reflect.TypeOf((*IP6FibDetails)(nil)).Elem(),
 	"IP6FibDump": reflect.TypeOf((*IP6FibDump)(nil)).Elem(),
 	"IP6MfibDetails": reflect.TypeOf((*IP6MfibDetails)(nil)).Elem(),
@@ -67,6 +70,7 @@ var Types = map[string]reflect.Type{
 	"IoamEnableReply": reflect.TypeOf((*IoamEnableReply)(nil)).Elem(),
 	"MfibSignalDetails": reflect.TypeOf((*MfibSignalDetails)(nil)).Elem(),
 	"MfibSignalDump": reflect.TypeOf((*MfibSignalDump)(nil)).Elem(),
+	"Prefix": reflect.TypeOf((*Prefix)(nil)).Elem(),
 	"ProxyArp": reflect.TypeOf((*ProxyArp)(nil)).Elem(),
 	"ProxyArpAddDel": reflect.TypeOf((*ProxyArpAddDel)(nil)).Elem(),
 	"ProxyArpAddDelReply": reflect.TypeOf((*ProxyArpAddDelReply)(nil)).Elem(),
