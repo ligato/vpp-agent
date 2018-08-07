@@ -17,13 +17,11 @@ package l3plugin
 import (
 	"fmt"
 
-	"strings"
+	"net"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
-
-const ipv6LinkLocalPrefix = "fe80:"
 
 // Resync configures the VPP static routes.
 func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error {
@@ -140,7 +138,6 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 		}
 	}
 
-
 	// Remove other routes except DROP type
 	for _, vppRoute := range vppRouteDetails {
 		if routeMayBeRemoved(vppRoute) {
@@ -171,7 +168,7 @@ func routeMayBeRemoved(route *vppcalls.RouteDetails) bool {
 	if route.Route.Type == l3.StaticRoutes_Route_DROP {
 		return false
 	}
-	if route.Meta.IsIPv6 && strings.HasPrefix(route.Route.DstIpAddr, ipv6LinkLocalPrefix) {
+	if route.Meta.IsIPv6 && net.ParseIP(route.Route.DstIpAddr).IsLinkLocalUnicast() {
 		return false
 	}
 	return true

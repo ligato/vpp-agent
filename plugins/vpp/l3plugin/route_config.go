@@ -336,7 +336,7 @@ func (plugin *RouteConfigurator) DiffRoutes(new, old []*l3.StaticRoutes_Route) (
 	// Compare.
 	i, j := 0, 0
 	for i < len(newSorted) && j < len(oldSorted) {
-		if eqRoutes(newSorted[i], oldSorted[j]) {
+		if *newSorted[i] == *oldSorted[j] {
 			i++
 			j++
 		} else {
@@ -376,7 +376,9 @@ func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx ui
 			"dstIPAddr": route.DstIpAddr,
 		}).Debug("Remove routes from route cache - outgoing interface was added.")
 		vrf := strconv.FormatUint(uint64(route.VrfId), 10)
-		plugin.recreateRoute(route, vrf)
+		if err := plugin.recreateRoute(route, vrf); err != nil {
+			plugin.log.Errorf("Error recreating interface %s: %v", ifName, err)
+		}
 		plugin.rtCachedIndexes.UnregisterName(routeWithIndex.RouteID)
 	}
 }
@@ -424,9 +426,11 @@ It is neither possible to recreate interface and then create route.
 It is only possible to recreate interface, delete old associated routes (like clean old mess)
 and then add them again.
 */
-func (plugin *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf string) {
-	plugin.DeleteRoute(route, vrf)
-	plugin.ConfigureRoute(route, vrf)
+func (plugin *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf string) error {
+	if err := plugin.DeleteRoute(route, vrf); err != nil {
+		return nil
+	}
+	return plugin.ConfigureRoute(route, vrf)
 }
 
 func (plugin *RouteConfigurator) moveRouteToCache(config *l3.StaticRoutes_Route) (wasError error) {
@@ -455,17 +459,6 @@ func resolveInterfaceSwIndex(ifName string, index ifaceidx.SwIfIndex) (uint32, e
 		}
 	}
 	return ifIndex, nil
-}
-
-func eqRoutes(a, b *l3.StaticRoutes_Route) bool {
-	return a.Type == b.Type &&
-		a.VrfId == b.VrfId &&
-		strings.EqualFold(a.DstIpAddr, b.DstIpAddr) &&
-		strings.EqualFold(a.NextHopAddr, b.NextHopAddr) &&
-		a.ViaVrfId == b.ViaVrfId &&
-		a.OutgoingInterface == b.OutgoingInterface &&
-		a.Weight == b.Weight &&
-		a.Preference == b.Preference
 }
 
 func lessRoute(a, b *l3.StaticRoutes_Route) bool {
