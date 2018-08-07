@@ -1107,30 +1107,13 @@ func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat4
 // diffVirtualReassembly compares virtual reassembly from old config, returns virtual reassembly to be configured, or nil
 // if no changes are needed
 func isVirtualReassModified(oldReass, newReass *nat.Nat44Global_VirtualReassembly) *nat.Nat44Global_VirtualReassembly {
-	// If both are nil, return nil
-	if oldReass == nil && newReass == nil {
-		return nil
-	}
-	// If reassembly was not set before, configure new one
-	if oldReass == nil && newReass != nil {
+	// If new value is set while the old value does not exist, or it is different, return new value to configure
+	if newReass != nil && (oldReass == nil || *oldReass != *newReass) {
 		return newReass
 	}
-	// If reassembly config was removed, set to default
+	// If old value was set but new is not, return default
 	if oldReass != nil && newReass == nil {
 		return getDefaultVr()
-	}
-	// Compare configs and return new one if there is a change, nil otherwise
-	if oldReass.DropFrag != newReass.DropFrag {
-		return newReass
-	}
-	if oldReass.MaxReass != newReass.MaxReass {
-		return newReass
-	}
-	if oldReass.MaxFrag != newReass.MaxFrag {
-		return newReass
-	}
-	if oldReass.Timeout != newReass.Timeout {
-		return newReass
 	}
 	return nil
 }
@@ -1222,20 +1205,6 @@ func (plugin *NatConfigurator) getMappingTag(label, mType string) string {
 	plugin.natMappingTagSeq++
 
 	return buffer.String()
-}
-
-// isDefaultVr compares provided virtual reassembly config with default VPP values
-func isDefaultVr(vr *nat.Nat44Global_VirtualReassembly) bool {
-	// Nil is handled as default (no value to set/change)
-	if vr == nil {
-		return true
-	}
-	// Compare with default values
-	if vr.MaxReass == vppcalls.MaxReassembly && vr.MaxFrag == vppcalls.MaxFragments && vr.Timeout == vppcalls.Timeout &&
-		!vr.DropFrag {
-		return true
-	}
-	return false
 }
 
 // getDefaultVr returns default nat virtual reassembly configuration.
