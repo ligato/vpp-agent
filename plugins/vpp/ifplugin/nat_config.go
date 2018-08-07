@@ -43,6 +43,13 @@ const (
 	dummyTag = "dummy-tag" // used for deletion where tag is not needed
 )
 
+// Default NAT virtual reassembly values
+const (
+	maxReassembly = 1024
+	maxFragments  = 5
+	timeout       = 2
+)
+
 // NatConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of NAT address pools and static entries with or without a load ballance,
 // as modelled by the proto file "../common/model/nat/nat.proto"
@@ -1210,9 +1217,9 @@ func (plugin *NatConfigurator) getMappingTag(label, mType string) string {
 // getDefaultVr returns default nat virtual reassembly configuration.
 func getDefaultVr() *nat.Nat44Global_VirtualReassembly {
 	return &nat.Nat44Global_VirtualReassembly{
-		MaxReass: vppcalls.MaxReassembly,
-		MaxFrag:  vppcalls.MaxFragments,
-		Timeout:  vppcalls.Timeout,
+		MaxReass: maxReassembly,
+		MaxFrag:  maxFragments,
+		Timeout:  timeout,
 		DropFrag: false,
 	}
 }

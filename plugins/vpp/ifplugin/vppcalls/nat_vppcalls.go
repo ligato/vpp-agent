@@ -32,13 +32,6 @@ const (
 // NoInterface is sw-if-idx which means 'no interface'
 const NoInterface uint32 = 0xffffffff
 
-// Default NAT virtual reassembly values
-const (
-	MaxReassembly = 1024
-	MaxFragments  = 5
-	Timeout       = 2
-)
-
 // StaticMappingContext groups common fields required for static mapping
 type StaticMappingContext struct {
 	Tag           string
