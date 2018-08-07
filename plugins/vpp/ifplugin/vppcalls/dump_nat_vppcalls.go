@@ -37,7 +37,7 @@ func (handler *natVppHandler) Nat44Dump() (*Nat44Details, error) {
 	if err != nil {
 		return nil, err
 	}
-	dNat, err := handler.NAT44DNatDump()
+	dNat, err := handler.Nat44DNatDump()
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (handler *natVppHandler) Nat44Dump() (*Nat44Details, error) {
 func (handler *natVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) {
 	handler.log.Debug("dumping Nat44Global")
 	// Dump all necessary data to reconstruct global NAT configuration
-	isEnabled, err := handler.nat44IsForwardingEnabled()
+	isEnabled, err := handler.isNat44ForwardingEnabled()
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +63,10 @@ func (handler *natVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) 
 		return nil, err
 	}
 	natAddressPools, err := handler.nat44AddressDump()
+	if err != nil {
+		return nil, err
+	}
+	vrIPv4, vrIPv6, err := handler.virtualReassemblyDump()
 	if err != nil {
 		return nil, err
 	}
@@ -88,13 +92,15 @@ func (handler *natVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) 
 
 	// Set fields
 	return &nat.Nat44Global{
-		Forwarding:    isEnabled,
-		NatInterfaces: nat44GlobalInterfaces,
-		AddressPools:  natAddressPools,
+		Forwarding:            isEnabled,
+		NatInterfaces:         nat44GlobalInterfaces,
+		AddressPools:          natAddressPools,
+		VirtualReassemblyIpv4: vrIPv4,
+		VirtualReassemblyIpv6: vrIPv6,
 	}, nil
 }
 
-func (handler *natVppHandler) NAT44DNatDump() (*nat.Nat44DNat, error) {
+func (handler *natVppHandler) Nat44DNatDump() (*nat.Nat44DNat, error) {
 	// List od DNAT configs
 	var dNatCfgs []*nat.Nat44DNat_DNatConfig
 
@@ -165,6 +171,38 @@ func (handler *natVppHandler) nat44AddressDump() (addresses []*nat.Nat44Global_A
 	return
 }
 
+// virtualReassemblyDump returns current NAT44 virtual-reassembly configuration. The output config may be nil.
+func (handler *natVppHandler) virtualReassemblyDump() (vrIPv4 *nat.Nat44Global_VirtualReassembly, vrIPv6 *nat.Nat44Global_VirtualReassembly, err error) {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(bin_api.NatGetReass{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &bin_api.NatGetReass{}
+	reply := &bin_api.NatGetReassReply{}
+
+	if err := handler.dumpChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, nil, fmt.Errorf("failed to get NAT44 virtual reassembly configuration: %v", err)
+	}
+	if reply.Retval != 0 {
+		return nil, nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	vrIPv4 = &nat.Nat44Global_VirtualReassembly{
+		Timeout:  reply.IP4Timeout,
+		MaxReass: uint32(reply.IP4MaxReass),
+		MaxFrag:  uint32(reply.IP4MaxFrag),
+		DropFrag: uintToBool(reply.IP4DropFrag),
+	}
+	vrIPv6 = &nat.Nat44Global_VirtualReassembly{
+		Timeout:  reply.IP6Timeout,
+		MaxReass: uint32(reply.IP6MaxReass),
+		MaxFrag:  uint32(reply.IP6MaxFrag),
+		DropFrag: uintToBool(reply.IP6DropFrag),
+	}
+
+	return
+}
+
 // nat44StaticMappingDump returns a map of static mapping tag/data pairs
 func (handler *natVppHandler) nat44StaticMappingDump() (entries map[string]*nat.Nat44DNat_DNatConfig_StaticMapping, err error) {
 	defer func(t time.Time) {
@@ -196,7 +234,7 @@ func (handler *natVppHandler) nat44StaticMappingDump() (entries map[string]*nat.
 			VrfId: msg.VrfID,
 			ExternalInterface: func(ifIdx uint32) string {
 				ifName, _, found := handler.ifIndexes.LookupName(ifIdx)
-				if !found && ifIdx != 0xffffffff {
+				if !found && ifIdx != ^uint32(0) {
 					handler.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
 				}
 				return ifName
@@ -207,7 +245,7 @@ func (handler *natVppHandler) nat44StaticMappingDump() (entries map[string]*nat.
 				LocalIp:   lcIPAddress.To4().String(),
 				LocalPort: uint32(msg.LocalPort),
 			}),
-			Protocol: handler.getNatProtocol(msg.Protocol),
+			Protocol: handler.getProtocol(msg.Protocol),
 			TwiceNat: handler.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 		}
 	}
@@ -257,7 +295,7 @@ func (handler *natVppHandler) nat44StaticMappingLbDump() (entries map[string]*na
 			ExternalIp:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps:     locals,
-			Protocol:     handler.getNatProtocol(msg.Protocol),
+			Protocol:     handler.getProtocol(msg.Protocol),
 			TwiceNat:     handler.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 		}
 	}
@@ -304,7 +342,7 @@ func (handler *natVppHandler) nat44IdentityMappingDump() (entries map[string]*na
 			}(msg.SwIfIndex),
 			IpAddress: ipAddress.To4().String(),
 			Port:      uint32(msg.Port),
-			Protocol:  handler.getNatProtocol(msg.Protocol),
+			Protocol:  handler.getProtocol(msg.Protocol),
 		}
 	}
 
@@ -396,7 +434,7 @@ func (handler *natVppHandler) nat44InterfaceOutputFeatureDump() (ifaces []*nat.N
 }
 
 // Nat44IsForwardingEnabled returns a list of interfaces enabled for NAT44
-func (handler *natVppHandler) nat44IsForwardingEnabled() (isEnabled bool, err error) {
+func (handler *natVppHandler) isNat44ForwardingEnabled() (isEnabled bool, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bin_api.Nat44ForwardingIsEnabled{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -453,7 +491,7 @@ func (handler *natVppHandler) processDNatData(tag string, data interface{}, dNat
 }
 
 // returns NAT numeric representation of provided protocol value
-func (handler *natVppHandler) getNatProtocol(protocol uint8) (proto nat.Protocol) {
+func (handler *natVppHandler) getProtocol(protocol uint8) (proto nat.Protocol) {
 	switch protocol {
 	case TCP:
 		return nat.Protocol_TCP
