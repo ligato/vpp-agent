@@ -198,6 +198,14 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		} else {
 			return false, err
 		}
+	} else if strings.HasPrefix(key, l3.IPScanNeighPrefix) {
+		var value l3.IPScanNeighbor
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if err := plugin.dataChangeIPScanNeigh(&value, dataChng.GetChangeType()); err != nil {
+			return false, err
+		}
 	} else if strings.HasPrefix(key, l4.Prefix) {
 		if strings.HasPrefix(key, l4.NamespacesPrefix) {
 			var value, prevValue l4.AppNamespaces_AppNamespace
@@ -524,6 +532,16 @@ func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.Pr
 		return plugin.proxyArpConfigurator.ModifyRange(value, prevValue)
 	}
 	return plugin.proxyArpConfigurator.AddRange(value)
+}
+
+// dataChangeIPScanNeigh propagates data change to the ipNeighConfigurator
+func (plugin *Plugin) dataChangeIPScanNeigh(value *l3.IPScanNeighbor,
+	changeType datasync.Op) error {
+
+	if datasync.Delete == changeType {
+		return plugin.ipNeighConfigurator.Unset()
+	}
+	return plugin.ipNeighConfigurator.Set(value)
 }
 
 // DataChangeStaticRoute propagates data change to the l4Configurator

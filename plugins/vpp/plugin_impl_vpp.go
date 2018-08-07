@@ -93,6 +93,7 @@ type Plugin struct {
 	arpConfigurator      *l3plugin.ArpConfigurator
 	proxyArpConfigurator *l3plugin.ProxyArpConfigurator
 	routeConfigurator    *l3plugin.RouteConfigurator
+	ipNeighConfigurator  *l3plugin.IPNeighConfigurator
 	appNsConfigurator    *l4plugin.AppNsConfigurator
 	srv6Configurator     *srplugin.SRv6Configurator
 
@@ -101,10 +102,10 @@ type Plugin struct {
 	bdStateUpdater *l2plugin.BridgeDomainStateUpdater
 
 	// Shared indexes
-	swIfIndexes    ifaceidx.SwIfIndexRW
-	bdIndexes      l2idx.BDIndexRW
-	errorIndexes   idxvpp.NameToIdxRW
-	errorIdxSeq    uint32
+	swIfIndexes  ifaceidx.SwIfIndexRW
+	bdIndexes    l2idx.BDIndexRW
+	errorIndexes idxvpp.NameToIdxRW
+	errorIdxSeq  uint32
 
 	// Channels (watch, notification, ...) which should be closed
 	ifStateChan       chan *intf.InterfaceNotification
@@ -362,7 +363,7 @@ func (plugin *Plugin) Close() error {
 		// Configurators
 		plugin.aclConfigurator, plugin.ifConfigurator, plugin.bfdConfigurator, plugin.natConfigurator, plugin.stnConfigurator,
 		plugin.ipSecConfigurator, plugin.bdConfigurator, plugin.fibConfigurator, plugin.xcConfigurator, plugin.arpConfigurator,
-		plugin.proxyArpConfigurator, plugin.routeConfigurator, plugin.appNsConfigurator,
+		plugin.proxyArpConfigurator, plugin.routeConfigurator, plugin.ipNeighConfigurator, plugin.appNsConfigurator,
 		// State updaters
 		plugin.ifStateUpdater, plugin.bdStateUpdater,
 		// Channels
@@ -557,6 +558,13 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 		return err
 	}
 	plugin.Log.Debug("routeConfigurator Initialized")
+
+	// IP neighbor configurator
+	plugin.ipNeighConfigurator = &l3plugin.IPNeighConfigurator{}
+	if err := plugin.ipNeighConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.enableStopwatch); err != nil {
+		return err
+	}
+	plugin.Log.Debug("ipNeighConfigurator Initialized")
 
 	return nil
 }

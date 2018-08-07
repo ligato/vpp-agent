@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // ArpVppAPI provides methods for managing ARP entries
@@ -88,6 +89,12 @@ type RouteVppRead interface {
 	DumpStaticRoutes() ([]*RouteDetails, error)
 }
 
+// IPNeighVppAPI provides methods for managing IP scan neighbor configuration
+type IPNeighVppAPI interface {
+	// SetIPScanNeighbor configures IP scan neighbor to the VPP
+	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
+}
+
 // arpVppHandler is accessor for ARP-related vppcalls methods
 type arpVppHandler struct {
 	stopwatch    *measure.Stopwatch
@@ -109,6 +116,13 @@ type routeHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
+	log          logging.Logger
+}
+
+// ipNeighHandler is accessor for ip-neighbor-related vppcalls methods
+type ipNeighHandler struct {
+	stopwatch    *measure.Stopwatch
+	callsChannel govppapi.Channel
 	log          logging.Logger
 }
 
@@ -151,6 +165,20 @@ func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(RouteMessages...); err != nil {
+		return nil, err
+	}
+
+	return handler, nil
+}
+
+// NewIPNeighVppHandler creates new instance of ip neighbor vppcalls handler
+func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*ipNeighHandler, error) {
+	handler := &ipNeighHandler{
+		callsChannel: callsChan,
+		stopwatch:    stopwatch,
+		log:          log,
+	}
+	if err := handler.callsChannel.CheckMessageCompatibility(IPNeighMessages...); err != nil {
 		return nil, err
 	}
 

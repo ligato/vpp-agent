@@ -61,6 +61,8 @@ type DataResyncReq struct {
 	ProxyArpInterfaces []*l3.ProxyArpInterfaces_InterfaceList
 	// ProxyArpRanges is a list af all proxy ARP ranges that are expected to be in VPP after RESYNC.
 	ProxyArpRanges []*l3.ProxyArpRanges_RangeList
+	// IPScanNeigh is a IP scan neighbor config that is expected to be set in VPP after RESYNC.
+	IPScanNeigh *l3.IPScanNeighbor
 	// L4Features is a bool flag that is expected to be set in VPP after RESYNC.
 	L4Features *l4.L4Features
 	// AppNamespaces is a list af all App Namespaces that are expected to be in VPP after RESYNC.
@@ -104,6 +106,7 @@ func NewDataResyncReq() *DataResyncReq {
 		ArpEntries:          []*l3.ArpTable_ArpEntry{},
 		ProxyArpInterfaces:  []*l3.ProxyArpInterfaces_InterfaceList{},
 		ProxyArpRanges:      []*l3.ProxyArpRanges_RangeList{},
+		IPScanNeigh:         &l3.IPScanNeighbor{},
 		L4Features:          &l4.L4Features{},
 		AppNamespaces:       []*l4.AppNamespaces_AppNamespace{},
 		StnRules:            []*stn.STN_Rule{},
@@ -214,6 +217,11 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l3.ProxyARPRangePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
+			resyncErrs = append(resyncErrs, err)
+		}
+	}
+	if !plugin.droppedFromResync(l3.IPScanNeighPrefix) {
+		if err := plugin.ipNeighConfigurator.Resync(req.IPScanNeigh); err != nil {
 			resyncErrs = append(resyncErrs, err)
 		}
 	}
@@ -770,6 +778,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			l3.ArpPrefix,
 			l3.ProxyARPInterfacePrefix,
 			l3.ProxyARPRangePrefix,
+			l3.IPScanNeighPrefix,
 			l4.FeaturesPrefix,
 			l4.NamespacesPrefix,
 			stn.Prefix,
