@@ -1,57 +1,67 @@
 package main
 
 import (
+	"log"
+
+	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/datasync/kvdbsync"
+		"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/etcd"
+	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/utils/safeclose"
 )
+
+// PluginName represents name of plugin.
+const PluginName = "redis-example"
 
 // Main allows running Example Plugin as a statically linked binary with Agent Core Plugins. Close channel and plugins
 // required for the example are initialized. Agent is instantiated with generic plugin (Status check, and Log)
 // and example plugin which demonstrates use of Redis flavor.
 func main() {
-	// Init close channel used to stop the example
-	//exampleFinished := make(chan struct{})
-
-	// Start Agent with ExamplePlugin, RedisPlugin & FlavorLocal (reused cn-infra plugins).
-	/*agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		redisPlug := &redis.Plugin{}
-		redisDataSync := &kvdbsync.Plugin{}
-		resyncOrch := &resync.Plugin{}
-
-		redisPlug.Deps.PluginInfraDeps = *flavor.InfraDeps("redis", local.WithConf())
-		resyncOrch.Deps.PluginLogDeps = *flavor.LogDeps("redis-resync")
-		connectors.InjectKVDBSync(redisDataSync, redisPlug, redisPlug.PluginName, flavor, resyncOrch)
-
-		examplePlug := &ExamplePlugin{closeChannel: exampleFinished}
-		examplePlug.Deps.PluginLogDeps = *flavor.LogDeps("redis-example")
-		examplePlug.Deps.DB = redisPlug          // Inject redis to example plugin.
-		examplePlug.Deps.Watcher = redisDataSync // Inject datasync watcher to example plugin.
-
-		return []*core.NamedPlugin{
-			{redisPlug.PluginName, redisPlug},
-			{redisDataSync.PluginName, redisDataSync},
-			{resyncOrch.PluginName, resyncOrch},
-			{examplePlug.PluginName, examplePlug}}
+	// Prepare Redis data sync plugin as an plugin dependency
+	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
+		deps.KvPlugin = &etcd.DefaultPlugin
 	}))
-	core.EventLoopWithInterrupt(agent, exampleFinished)*/
 
-	// TODO: use new agent with options
+	// Init example plugin dependencies
+	ep := &ExamplePlugin{
+		Deps: Deps{
+			Log:     logging.ForPlugin(PluginName),
+			Watcher: redisDataSync,
+			DB:      &redis.DefaultPlugin,
+		},
+		exampleFinished: make(chan struct{}),
+	}
+
+	// Start Agent with example plugin including dependencies
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(ep.exampleFinished),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // ExamplePlugin to depict the use of Redis flavor
 type ExamplePlugin struct {
 	Deps // plugin dependencies are injected
 
-	closeChannel chan struct{}
+	exampleFinished chan struct{}
 }
 
 // Deps is a helper struct which is grouping all dependencies injected to the plugin
 type Deps struct {
-	//local.PluginLogDeps                             // injected
 	Log     logging.PluginLogger
-	Watcher datasync.KeyValProtoWatcher // injected
-	DB      keyval.KvProtoPlugin        // injected
+	Watcher datasync.KeyValProtoWatcher
+	DB      keyval.KvProtoPlugin
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 // Init is meant for registering the watcher
@@ -72,6 +82,5 @@ func (plugin *ExamplePlugin) AfterInit() (err error) {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed to clean up resources that were
 // allocated by the plugin during its lifetime
 func (plugin *ExamplePlugin) Close() error {
-	close(plugin.closeChannel)
-	return nil
+	return safeclose.Close(plugin.exampleFinished)
 }
