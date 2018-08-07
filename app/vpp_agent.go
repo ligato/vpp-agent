@@ -82,6 +82,7 @@ func New() *VPPAgent {
 			"etcd":  etcdDataSync,
 			"redis": redisDataSync,
 		}
+		deps.GRPCSvc = &rpc.DefaultPlugin
 	}))
 	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
 		deps.VPP = vppPlugin
