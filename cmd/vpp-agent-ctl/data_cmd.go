@@ -1156,6 +1156,27 @@ func (ctl *VppAgentCtl) deleteProxyArpRanges() {
 	ctl.broker.Delete(arpKey)
 }
 
+// SetIPScanNeigh puts VPP IP scan neighbor configuration to the ETCD
+func (ctl *VppAgentCtl) setIPScanNeigh() {
+	ipScanNeigh := &l3.IPScanNeighbor{
+		Mode:           l3.IPScanNeighbor_BOTH,
+		ScanInterval:   11,
+		MaxProcTime:    36,
+		MaxUpdate:      5,
+		ScanIntDelay:   16,
+		StaleThreshold: 26,
+	}
+
+	log.Println(ipScanNeigh)
+	ctl.broker.Put(l3.IPScanNeighPrefix, ipScanNeigh)
+}
+
+// UnsetIPScanNeigh removes VPP IP scan neighbor configuration from the ETCD
+func (ctl *VppAgentCtl) unsetIPScanNeigh() {
+	ctl.Log.Println("Deleting", l3.IPScanNeighPrefix)
+	ctl.broker.Delete(l3.IPScanNeighPrefix)
+}
+
 // Linux ARP
 
 // CreateLinuxArp puts linux ARP entry configuration to the ETCD

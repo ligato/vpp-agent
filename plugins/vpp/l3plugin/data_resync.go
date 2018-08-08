@@ -244,3 +244,21 @@ func (plugin *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArp
 	plugin.log.Debug("RESYNC proxy ARP ranges end. ", wasError)
 	return nil
 }
+
+// Resync configures the empty VPP (adds IP scan neigh config)
+func (p *IPNeighConfigurator) Resync(config *l3.IPScanNeighbor) error {
+	p.log.Debug("RESYNC IP neighbor begin. ")
+	defer func() {
+		if p.stopwatch != nil {
+			p.stopwatch.PrintLog()
+		}
+	}()
+
+	var wasError error
+	if err := p.Set(config); err != nil {
+		return err
+	}
+
+	p.log.Debug("RESYNC IP neighbor end. ", wasError)
+	return nil
+}

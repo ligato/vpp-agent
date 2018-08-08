@@ -206,6 +206,10 @@ func do(ctl *VppAgentCtl) {
 			ctl.addProxyArpRanges()
 		case "-prxrd":
 			ctl.deleteProxyArpRanges()
+		case "-ipscn":
+			ctl.setIPScanNeigh()
+		case "-ipscnd":
+			ctl.unsetIPScanNeigh()
 			// Linux ARP
 		case "-larp":
 			ctl.createLinuxArp()
@@ -278,6 +282,7 @@ func usage() {
 		-prxr,	-prxrd	- Proxy ARP ranges
 		-lrte,	-lrted	- Linux route
 		-larp,	-larpd	- Linux ARP entry
+		-ipscn  -ipscnd - VPP IP scan neighbor
 		-el4,	-dl4	- L4 features
 		-appns,	-appnsd	- Application namespace
 
