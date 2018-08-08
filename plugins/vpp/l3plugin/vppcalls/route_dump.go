@@ -35,6 +35,7 @@ type RouteDetails struct {
 type RouteMeta struct {
 	TableName         string
 	OutgoingIfIdx     uint32
+	IsIPv6            bool
 	Afi               uint8
 	IsLocal           bool
 	IsUDPEncap        bool
@@ -120,10 +121,6 @@ func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 	// Paths
 	if len(paths) > 0 {
 		for _, path := range paths {
-			if uintToBool(path.IsDrop) {
-				// skip drop routes, not supported by vpp-agent
-				continue
-			}
 			// Next hop IP address
 			var nextHopIP string
 			if ipv6 {
@@ -139,6 +136,8 @@ func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 				// outgoing interface not specified and path table id not equal to route table id = inter-VRF route
 				routeType = l3.StaticRoutes_Route_INTER_VRF
 				viaVrfID = path.TableID
+			} else if uintToBool(path.IsDrop) {
+				routeType = l3.StaticRoutes_Route_DROP
 			} else {
 				routeType = l3.StaticRoutes_Route_INTRA_VRF // default
 			}
@@ -171,6 +170,7 @@ func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 				TableName:         string(bytes.SplitN(tableName, []byte{0x00}, 2)[0]),
 				OutgoingIfIdx:     ifIdx,
 				NextHopID:         path.NextHopID,
+				IsIPv6:            ipv6,
 				RpfID:             path.RpfID,
 				Afi:               path.Afi,
 				IsLocal:           uintToBool(path.IsLocal),

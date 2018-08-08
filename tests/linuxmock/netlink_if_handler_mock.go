@@ -23,6 +23,7 @@ import (
 // NetlinkHandlerMock allows to mock netlink-related methods
 type IfNetlinkHandlerMock struct {
 	responses []*whenIfResp
+	calls     []*called
 	respCurr  int
 	respMax   int
 }
@@ -38,6 +39,12 @@ func NewIfNetlinkHandlerMock() *IfNetlinkHandlerMock {
 type whenIfResp struct {
 	methodName string
 	items      []interface{}
+}
+
+// Helper struct with method name which was called including parameters
+type called struct {
+	methodName string
+	params []interface{}
 }
 
 // When defines name of the related method. It creates a new instance of whenIfResp with provided method name and
@@ -66,6 +73,19 @@ func (when *whenIfResp) ThenReturn(item ...interface{}) {
 	when.items = item
 }
 
+// GetCallsFor returns number of calls for specific method including parameters used for every call
+func (mock *IfNetlinkHandlerMock) GetCallsFor(name string) (numCalls int, params map[int][]interface{}) {
+	params = make(map[int][]interface{})
+	index := 0
+	for _, call := range mock.calls {
+		if call.methodName == name {
+			index++
+			params[index] = call.params
+		}
+	}
+	return index, params
+}
+
 // Auxiliary method returns next return value for provided method as generic type
 func (mock *IfNetlinkHandlerMock) getReturnValues(name string) (response []interface{}) {
 	for i, resp := range mock.responses {
@@ -77,6 +97,13 @@ func (mock *IfNetlinkHandlerMock) getReturnValues(name string) (response []inter
 	}
 	// Return empty response
 	return
+}
+
+// Auxiliary method adds method/params entry to the mock
+func (mock *IfNetlinkHandlerMock) addCalled(name string, params... interface{}) {
+	var parameters []interface{}
+	parameters = append(parameters, params)
+	mock.calls = append(mock.calls, &called{methodName: name, params: params})
 }
 
 /* Mocked netlink handler methods */
@@ -114,6 +141,7 @@ func (mock *IfNetlinkHandlerMock) SetInterfaceDown(ifName string) error {
 }
 
 func (mock *IfNetlinkHandlerMock) AddInterfaceIP(ifName string, addr *net.IPNet) error {
+	mock.addCalled("AddInterfaceIP", ifName, addr)
 	items := mock.getReturnValues("AddInterfaceIP")
 	if len(items) >= 1 {
 		return items[0].(error)

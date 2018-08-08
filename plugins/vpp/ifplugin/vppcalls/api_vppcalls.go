@@ -173,6 +173,10 @@ type NatVppWrite interface {
 	AddNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error
 	// DelNat44AddressPool removes existing NAT address pool
 	DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error
+	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets
+	SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassembly) error
+	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv6 packets
+	SetVirtualReassemblyIPv6(vrCfg *nat.Nat44Global_VirtualReassembly) error
 	// AddNat44IdentityMapping adds new NAT44 identity mapping
 	AddNat44IdentityMapping(ctx *IdentityMappingContext) error
 	// DelNat44IdentityMapping removes NAT44 identity mapping
@@ -195,7 +199,7 @@ type NatVppRead interface {
 	// Nat44GlobalConfigDump returns global config in NB format
 	Nat44GlobalConfigDump() (*nat.Nat44Global, error)
 	// NAT44NatDump dumps all types of mappings, sorts it according to tag (DNAT label) and creates a set of DNAT configurations
-	NAT44DNatDump() (*nat.Nat44DNat, error)
+	Nat44DNatDump() (*nat.Nat44DNat, error)
 	// Nat44InterfaceDump returns a list of interfaces enabled for NAT44
 	Nat44InterfaceDump() (interfaces []*nat.Nat44Global_NatInterface, err error)
 }

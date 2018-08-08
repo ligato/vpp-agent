@@ -32,6 +32,15 @@ message Nat44Global {
         bool twice_nat = 4;                     /* Enable/disable twice NAT. */
     }
     repeated AddressPool address_pools = 5;
+
+    message VirtualReassembly {                 /* NAT virtual reassembly */
+        uint32 timeout = 1;                     /* Reassembly timeout */
+        uint32 max_reass = 2;                   /* Maximum number of concurrent reassemblies */
+        uint32 max_frag = 3;                    /* Maximum number of fragments per reassembly */
+        bool drop_frag = 4;                     /* If set to true fragments are dropped, translated otherwise*/
+    }
+    VirtualReassembly virtual_reassembly_ipv4 = 6;
+    VirtualReassembly virtual_reassembly_ipv6 = 7;
 }
 
 /* Many-to-one (SNAT) setup */

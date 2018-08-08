@@ -43,6 +43,13 @@ const (
 	dummyTag = "dummy-tag" // used for deletion where tag is not needed
 )
 
+// Default NAT virtual reassembly values
+const (
+	maxReassembly = 1024
+	maxFragments  = 5
+	timeout       = 2
+)
+
 // NatConfigurator runs in the background in its own goroutine where it watches for any changes
 // in the configuration of NAT address pools and static entries with or without a load ballance,
 // as modelled by the proto file "../common/model/nat/nat.proto"
@@ -192,7 +199,7 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 		plugin.log.Debugf("NAT forwarding disabled")
 	}
 
-	// / Inside/outside interfaces
+	// Inside/outside interfaces
 	if len(config.NatInterfaces) > 0 {
 		if err := plugin.enableNatInterfaces(config.NatInterfaces); err != nil {
 			return err
@@ -203,6 +210,21 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 
 	if err := plugin.addAddressPool(config.AddressPools); err != nil {
 		return err
+	}
+
+	// Virtual reassembly IPv4
+	if config.VirtualReassemblyIpv4 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv4(config.VirtualReassemblyIpv4); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv4")
+	}
+	// Virtual reassembly IPv6
+	if config.VirtualReassemblyIpv6 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv6(config.VirtualReassemblyIpv6); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv6")
 	}
 
 	plugin.log.Debug("Setting up NAT global config done")
@@ -248,7 +270,20 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 		return err
 	}
 
-	plugin.log.Debug("Modifying NAT global config done")
+	// Virtual reassembly IPv4
+	if toConfigure := isVirtualReassModified(oldConfig.VirtualReassemblyIpv4, newConfig.VirtualReassemblyIpv4); toConfigure != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv4(toConfigure); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly modified for IPv4")
+	}
+	// Virtual reassembly IPv6
+	if toConfigure := isVirtualReassModified(oldConfig.VirtualReassemblyIpv6, newConfig.VirtualReassemblyIpv6); toConfigure != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv6(toConfigure); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly modified for IPv6")
+	}
 
 	return nil
 }
@@ -272,6 +307,14 @@ func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (e
 		if err := plugin.delAddressPool(config.AddressPools); err != nil {
 			return err
 		}
+	}
+
+	// Reset virtual reassembly to default
+	if err := plugin.natHandler.SetVirtualReassemblyIPv4(getDefaultVr()); err != nil {
+		return err
+	}
+	if err := plugin.natHandler.SetVirtualReassemblyIPv6(getDefaultVr()); err != nil {
+		return err
 	}
 
 	plugin.log.Debug("Deleting NAT global config done")
@@ -448,7 +491,7 @@ func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
 
 // DumpNatDNat returns the current NAT44 DNAT config
 func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
-	return plugin.natHandler.NAT44DNatDump()
+	return plugin.natHandler.Nat44DNatDump()
 }
 
 // enables set of interfaces as inside/outside in NAT
@@ -1068,6 +1111,20 @@ func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat4
 	return
 }
 
+// diffVirtualReassembly compares virtual reassembly from old config, returns virtual reassembly to be configured, or nil
+// if no changes are needed
+func isVirtualReassModified(oldReass, newReass *nat.Nat44Global_VirtualReassembly) *nat.Nat44Global_VirtualReassembly {
+	// If new value is set while the old value does not exist, or it is different, return new value to configure
+	if newReass != nil && (oldReass == nil || *oldReass != *newReass) {
+		return newReass
+	}
+	// If old value was set but new is not, return default
+	if oldReass != nil && newReass == nil {
+		return getDefaultVr()
+	}
+	return nil
+}
+
 // comapares two lists of Local IP addresses, returns true if lists are equal, false otherwise
 func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP) bool {
 	if len(oldIPs) != len(newIPs) {
@@ -1155,4 +1212,14 @@ func (plugin *NatConfigurator) getMappingTag(label, mType string) string {
 	plugin.natMappingTagSeq++
 
 	return buffer.String()
+}
+
+// getDefaultVr returns default nat virtual reassembly configuration.
+func getDefaultVr() *nat.Nat44Global_VirtualReassembly {
+	return &nat.Nat44Global_VirtualReassembly{
+		MaxReass: maxReassembly,
+		MaxFrag:  maxFragments,
+		Timeout:  timeout,
+		DropFrag: false,
+	}
 }

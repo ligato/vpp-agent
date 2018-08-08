@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	nat2 "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
 // Num protocol representation
@@ -157,6 +158,31 @@ func (handler *natVppHandler) handleNat44AddressPool(first, last []byte, vrf uin
 	}
 
 	reply := &nat.Nat44AddDelAddressRangeReply{}
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	return nil
+}
+
+// Calls VPP binary API to setup NAT virtual reassembly
+func (handler *natVppHandler) handleNat44VirtualReassembly(timeout, maxReass, maxFrag uint32, dropFrag, isIpv6 bool) error {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(nat.NatSetReass{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &nat.NatSetReass{
+		Timeout:  timeout,
+		MaxReass: uint16(maxReass),
+		MaxFrag:  uint8(maxFrag),
+		DropFrag: boolToUint(dropFrag),
+		IsIP6:    boolToUint(isIpv6),
+	}
+
+	reply := &nat.NatSetReassReply{}
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -308,6 +334,14 @@ func (handler *natVppHandler) AddNat44AddressPool(first, last []byte, vrf uint32
 
 func (handler *natVppHandler) DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
 	return handler.handleNat44AddressPool(first, last, vrf, twiceNat, false)
+}
+
+func (handler *natVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
+	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, false)
+}
+
+func (handler *natVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
+	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, true)
 }
 
 func (handler *natVppHandler) AddNat44IdentityMapping(ctx *IdentityMappingContext) error {

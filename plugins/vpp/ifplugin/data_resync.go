@@ -469,7 +469,7 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump()
+	vppDNatCfg, err := plugin.natHandler.Nat44DNatDump()
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}
