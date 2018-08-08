@@ -15,15 +15,18 @@
 package nsplugin
 
 import (
-	"github.com/vishvananda/netns"
 	"os"
 	"syscall"
+
+	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 )
 
 // Defines all methods required for managing operating system, system calls and namespaces on system level
 type SystemAPI interface {
 	OperatingSystem
 	Syscall
+	NetNsNamespace
 	NetlinkNamespace
 }
 
@@ -45,14 +48,20 @@ type Syscall interface {
 	Unmount(target string, flags int) (err error)
 }
 
-// NetlinkNamespace defines method for namespace handling from netlink package
-type NetlinkNamespace interface {
+// NetNsNamespace defines method for namespace handling from netns package
+type NetNsNamespace interface {
 	// NewNetworkNamespace crates new namespace and returns handle to manage it further
 	NewNetworkNamespace() (ns netns.NsHandle, err error)
 	// GetNamespaceFromName returns namespace handle from its name
 	GetNamespaceFromName(name string) (ns netns.NsHandle, err error)
 	// SetNamespace sets the current namespace to the namespace represented by the handle
 	SetNamespace(ns netns.NsHandle) (err error)
+}
+
+// NetlinkNamespace defines method for namespace handling from netlink package
+type NetlinkNamespace interface {
+	// LinkSetNsFd puts the device into a new network namespace.
+	LinkSetNsFd(link netlink.Link, fd int) (err error)
 }
 
 type systemHandler struct{}
@@ -85,7 +94,7 @@ func (osh *systemHandler) Unmount(target string, flags int) error {
 	return syscall.Unmount(target, flags)
 }
 
-/* Netlink namespace */
+/* Netns namespace */
 
 func (osh *systemHandler) NewNetworkNamespace() (ns netns.NsHandle, err error) {
 	return netns.New()
@@ -97,4 +106,10 @@ func (osh *systemHandler) GetNamespaceFromName(name string) (ns netns.NsHandle, 
 
 func (osh *systemHandler) SetNamespace(ns netns.NsHandle) (err error) {
 	return netns.Set(ns)
+}
+
+/* Netlink namespace */
+
+func (osh *systemHandler) LinkSetNsFd(link netlink.Link, fd int) (err error) {
+	return netlink.LinkSetNsFd(link, fd)
 }

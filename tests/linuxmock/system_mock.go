@@ -15,8 +15,10 @@
 package linuxmock
 
 import (
-	"github.com/vishvananda/netns"
 	"os"
+
+	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 )
 
 // SystemMock allows to mock netlink-related methods
@@ -157,6 +159,14 @@ func (mock *SystemMock) GetNamespaceFromName(name string) (netns.NsHandle, error
 
 func (mock *SystemMock) SetNamespace(ns netns.NsHandle) error {
 	items := mock.getReturnValues("SetNamespace")
+	if len(items) >= 1 {
+		return items[0].(error)
+	}
+	return nil
+}
+
+func (mock *SystemMock) LinkSetNsFd(link netlink.Link, fd int) error {
+	items := mock.getReturnValues("LinkSetNsFd")
 	if len(items) >= 1 {
 		return items[0].(error)
 	}
