@@ -1334,3 +1334,282 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 	Expect(plugin.IsDNatLabelIdMappingRegistered(idIdent)).To(BeTrue())
 	Expect(plugin.IsDNatLabelStMappingRegistered(stIdent)).To(BeTrue())
 }
+
+// Test unexported method resolving NB static mapping equal to the VPP static mapping. Mapping
+// is expected to be registered
+func TestResolveStaticMapping(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeTrue())
+}
+
+// Test unexported method resolving NB static mapping with different local IP address as the VPP static mapping. Mapping
+// is not expected to be registered
+func TestResolveStaticMappingNoMatch1(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].LocalIps[0].LocalIp = "" // Change localIP
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB static mapping with different external IP address as the VPP static mapping.
+// Mapping  is not expected to be registered
+func TestResolveStaticMappingNoMatch2(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].ExternalIp = "" // Change external IP
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB static mapping with different VRF as the VPP static mapping. Mapping
+// is not expected to be registered
+func TestResolveStaticMappingNoMatch3(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].VrfId = 1 // Change VRF
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB static mapping with different count of local IP addresses as the VPP static
+// mapping. Mapping is not expected to be registered
+func TestResolveStaticMappingNoMatch4(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.2", 30, 15)) // Change number of Local IPs
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping equal to the VPP load-balanced static mapping.
+// Mapping is expected to be registered
+func TestResolveStaticMappingLb(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeTrue())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different local IP in one of the entries.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch1(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].LocalIps[1].LocalIp = "" // Change localIP in second entry
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different external IP.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch2(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].ExternalIp = "" // Change external IP
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different VRF.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch3(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].VrfId = 1 // Change VRF
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different count of local IP entries.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch4(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.3", 35, 20)) // Change number of Local IPs
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB identity mapping equal to the VPP identity mapping.
+// Mapping is expected to be registered.
+func TestResolveIdentityMapping(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+
+	nbData := getNat44IdentityMappingData()
+	vppData := getNat44IdentityMappingData().IdMappings
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
+	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeTrue())
+}
+
+// Test unexported method resolving NB identity mapping with different IP address.
+// Mapping is expected to not be registered.
+func TestResolveIdentityMappingNoMatch1(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+
+	nbData := getNat44IdentityMappingData()
+	vppData := getNat44IdentityMappingData().IdMappings
+	vppData[0].IpAddress = "" // Ip address change
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
+	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB identity mapping with different VRF.
+// Mapping is expected to not be registered.
+func TestResolveIdentityMappingNoMatch2(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+
+	nbData := getNat44IdentityMappingData()
+	vppData := getNat44IdentityMappingData().IdMappings
+	vppData[0].VrfId = 1 // VRF change
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
+	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+}
+
+func getNat44StaticMappingData() *nat.Nat44DNat_DNatConfig {
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP
+
+	nbData := &nat.Nat44DNat_DNatConfig{
+		Label:      "test-dnat",
+		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 0, 6)),
+	}
+	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35))
+	return nbData
+}
+
+func getNat44StaticMappingLbData() *nat.Nat44DNat_DNatConfig {
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP
+
+	nbData := &nat.Nat44DNat_DNatConfig{
+		Label:      "test-dnat",
+		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 0, 6)),
+	}
+	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35),
+		getLocalIP("192.168.0.2", 9001, 40))
+	return nbData
+}
+
+func getNat44IdentityMappingData() *nat.Nat44DNat_DNatConfig {
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := &nat.Nat44DNat_DNatConfig{
+		Label:      "test-dnat",
+		IdMappings: append(idMappings, getIdentityMapping("10.0.0.1", 25, 0, 6)),
+	}
+	return nbData
+}
+
+func getStaticMapping(ip string, port, vrf uint32, proto nat.Protocol) *nat.Nat44DNat_DNatConfig_StaticMapping {
+	return &nat.Nat44DNat_DNatConfig_StaticMapping{
+		VrfId:        vrf,
+		ExternalIp:   ip,
+		ExternalPort: port,
+		Protocol:     proto,
+	}
+}
+
+func getIdentityMapping(ip string, port, vrf uint32, proto nat.Protocol) *nat.Nat44DNat_DNatConfig_IdentityMapping {
+	return &nat.Nat44DNat_DNatConfig_IdentityMapping{
+		VrfId:     vrf,
+		IpAddress: ip,
+		Port:      port,
+		Protocol:  proto,
+	}
+}
+
+func getLocalIP(ip string, port, probability uint32) *nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP {
+	return &nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
+		LocalIp:     ip,
+		LocalPort:   port,
+		Probability: probability,
+	}
+}
