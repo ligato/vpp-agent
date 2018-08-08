@@ -24,13 +24,12 @@ import (
 	"sync"
 	"syscall"
 
-	"bytes"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/ligato/cn-infra/logging"
+	ipAddrs "github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
-	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
 
@@ -184,19 +183,13 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	// When interface moves from one namespace to another, it loses all its IP addresses, admin status
 	// and MTU configuration -- we need to remember the interface configuration before the move
 	// and re-configure the interface in the new namespace.
-
-	netIntf, err := net.InterfaceByName(ifName)
-	if err != nil {
-		return err
-	}
-
-	addrs, err := netIntf.Addrs()
+	addresses, isIPv6, err := plugin.getLinuxIfAddrs(link.Attrs().Name)
 	if err != nil {
 		return err
 	}
 
 	// Move the interface into the namespace.
-	err = netlink.LinkSetNsFd(link, int(ns))
+	err = plugin.sysHandler.LinkSetNsFd(link, int(ns))
 	if err != nil {
 		return err
 	}
@@ -204,15 +197,15 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 		"dest-namespace-fd": int(ns)}).
 		Debug("Moved Linux interface across namespaces")
 
-	// re-configure interface in its new namespace
+	// Re-configure interface in its new namespace
 	revertNs, err := plugin.SwitchNamespace(ifaceNs, ctx)
 	if err != nil {
 		return err
 	}
 	defer revertNs()
 
-	if netIntf.Flags&net.FlagUp == 1 {
-		// re-enable interface
+	if link.Attrs().Flags&net.FlagUp == 1 {
+		// Re-enable interface
 		err = plugin.ifHandler.SetInterfaceUp(ifName)
 		if nil != err {
 			return fmt.Errorf("failed to enable Linux interface `%s`: %v", ifName, err)
@@ -221,42 +214,29 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 			Debug("Linux interface was re-enabled")
 	}
 
-	// Get all configured interface addresses
-	confAddresses, err := plugin.ifHandler.GetAddressList(ifName)
-	if err != nil {
-		return err
-	}
-
-	// re-add IP addresses
-	for i := range addrs {
-		ip, network, err := net.ParseCIDR(addrs[i].String())
-		network.IP = ip /* combine IP address with netmask */
-		if err != nil {
-			return fmt.Errorf("failed to parse IPv4 address of a Linux interface `%s`: %v", ifName, err)
-		}
-		// Check link local addresses which cannot be reassigned
-		if addressExists(confAddresses, network) {
-			plugin.log.Debugf("Cannot assign %s to interface %s, IP already exists",
-				network.IP.String(), ifName)
+	// Re-add IP addresses
+	for _, address := range addresses {
+		// Skip IPv6 link local address if there is no other IPv6 address
+		if !isIPv6 && address.IP.IsLinkLocalUnicast(){
 			continue
 		}
-		err = plugin.ifHandler.AddInterfaceIP(ifName, network)
+		err = plugin.ifHandler.AddInterfaceIP(ifName, address)
 		if err != nil {
 			if err.Error() == "file exists" {
 				continue
 			}
-			return fmt.Errorf("failed to assign IPv4 address to a Linux interface `%s`: %v", ifName, err)
+			return fmt.Errorf("failed to assign IP address to a Linux interface `%s`: %v", ifName, err)
 		}
-		plugin.log.WithFields(logging.Fields{"ifName": ifName, "addr": network}).
+		plugin.log.WithFields(logging.Fields{"ifName": ifName, "addr": address}).
 			Debug("IP address was re-assigned to Linux interface")
 	}
 
-	// revert back the MTU config
-	err = plugin.ifHandler.SetInterfaceMTU(ifName, netIntf.MTU)
+	// Revert back the MTU config
+	err = plugin.ifHandler.SetInterfaceMTU(ifName, link.Attrs().MTU)
 	if nil != err {
 		return fmt.Errorf("failed to set MTU of a Linux interface `%s`: %v", ifName, err)
 	}
-	plugin.log.WithFields(logging.Fields{"ifName": ifName, "mtu": netIntf.MTU}).
+	plugin.log.WithFields(logging.Fields{"ifName": ifName, "mtu": link.Attrs().MTU}).
 		Debug("MTU was reconfigured for Linux interface")
 
 	return nil
@@ -469,13 +449,28 @@ func (plugin *NsHandler) convertMicroserviceNsToPidNs(microserviceLabel string) 
 	return nil
 }
 
-func addressExists(configured []netlink.Addr, provided *net.IPNet) bool {
-	for _, confAddr := range configured {
-		if bytes.Equal(confAddr.IP, provided.IP) {
-			return true
-		}
+// getLinuxIfAddrs returns a list of IP addresses for given linux interface with info whether there is IPv6 address
+// (except default link local)
+func (plugin *NsHandler) getLinuxIfAddrs(ifName string) ([]*net.IPNet, bool, error) {
+	var networks []*net.IPNet
+	addrs, err := plugin.ifHandler.GetAddressList(ifName)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get IP address set from linux interface %s", ifName)
 	}
-	return false
+	var containsIPv6 bool
+	for _, ipAddr := range addrs {
+		network, ipv6, err := ipAddrs.ParseIPWithPrefix(ipAddr.String())
+		if err != nil {
+			return nil, false, fmt.Errorf("failed to parse IP address %s", ipAddr.String())
+		}
+		// Set once if IP address is version 6 and not a link local address
+		if !containsIPv6 && ipv6 && !ipAddr.IP.IsLinkLocalUnicast() {
+			containsIPv6 = true
+		}
+		networks = append(networks, network)
+	}
+
+	return networks, containsIPv6, nil
 }
 
 // dupNsHandle duplicates namespace handle.
