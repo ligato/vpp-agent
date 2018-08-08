@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // ArpVppAPI provides methods for managing ARP entries
@@ -77,9 +78,9 @@ type RouteVppAPI interface {
 // RouteVppWrite provides write methods for routes
 type RouteVppWrite interface {
 	// VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
-	VppAddRoute(ifHandler vppcalls.IfVppWrite, route *Route) error
+	VppAddRoute(ifHandler vppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error
 	// VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *Route) error
+	VppDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32) error
 }
 
 // RouteVppRead provides read methods for routes
