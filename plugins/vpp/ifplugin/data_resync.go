@@ -600,7 +600,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 				for _, nbLocal := range nbMapping.LocalIps {
 					var found bool
 					for _, vppLocal := range vppLbMapping.LocalIps {
-						if nbLocal.LocalIp == vppLocal.LocalIp || nbLocal.LocalPort == vppLocal.LocalPort ||
+						if nbLocal.LocalIp == vppLocal.LocalIp && nbLocal.LocalPort == vppLocal.LocalPort &&
 							nbLocal.Probability == vppLocal.Probability {
 							found = true
 						}
