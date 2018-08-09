@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
@@ -47,7 +48,7 @@ type NameToIndex interface {
 
 	// WatchItems subscribes to receive notifications about the changes in the
 	// mapping related to items with integer handles.
-	WatchItems(subscriber string, channel chan<- NameToIndexDto)
+	WatchItems(subscriber infra.PluginName, channel chan<- NameToIndexDto)
 }
 
 // NameToIndexRW is the "owner API" to the NameToIndex registry. Using this
@@ -141,7 +142,7 @@ func (idx *nameToIndex) LookupByIndex(index uint32) (name string, item WithIndex
 
 // WatchItems subscribes to receive notifications about the changes in the
 // mapping related to items with integer handles.
-func (idx *nameToIndex) WatchItems(subscriber string, channel chan<- NameToIndexDto) {
+func (idx *nameToIndex) WatchItems(subscriber infra.PluginName, channel chan<- NameToIndexDto) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
 		itemWithIndex, ok := dto.Value.(WithIndex)
 		if !ok {

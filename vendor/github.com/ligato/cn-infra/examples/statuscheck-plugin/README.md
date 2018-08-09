@@ -2,7 +2,7 @@
 
 ### Requirements
 
-To start the example you have to have ETCD running first.
+To start the example you have to have the ETCD running first.
 if you don't have it installed locally you can use the following docker
 image.
 ```
@@ -12,7 +12,7 @@ sudo docker run -p 22379:2379 --name etcd --rm \
     -listen-client-urls http://0.0.0.0:2379
 ```
 
-It will bring up ETCD listening on port 2379 for client communication.
+It will bring up the ETCD listening on port 2379 for the client communication.
 
 ### Usage
 
@@ -21,9 +21,8 @@ with the `-etcd-config` argument or through the `ETCD_CONFIG`
 environment variable.
 By default, the application will try to search for `etcd.conf`
 in the current working directory.
-If the configuration file cannot be loaded, the initialization
-of the etcd plugin will be skipped and the example scenario will thus
-not execute in its entirety.
+If the configuration file cannot be loaded or is not found, 
+ETCD plugin tries to connect using default configuration.
 
 To run the example, type:
 ```
