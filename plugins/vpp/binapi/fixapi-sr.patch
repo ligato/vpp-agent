@@ -1,0 +1,16 @@
+diff --git a/plugins/vpp/binapi/sr/sr.go b/plugins/vpp/binapi/sr/sr.go
+index 9325fbb..15780c3 100644
+--- a/plugins/vpp/binapi/sr/sr.go
++++ b/plugins/vpp/binapi/sr/sr.go
+@@ -51,9 +51,9 @@ func (*Srv6Sid) GetCrcString() string {
+ //            }
+ //
+ type Srv6SidList struct {
+-	NumSids uint8
++	NumSids uint8 `struc:"sizeof=Sids"`
+ 	Weight  uint32
+-	Sids    []Srv6Sid `struc:"[16]Srv6Sid"`
++	Sids    []Srv6Sid
+ }
+ 
+ func (*Srv6SidList) GetTypeName() string {

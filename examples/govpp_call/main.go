@@ -18,12 +18,17 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	vppFlavor "github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"log"
 )
 
 // *************************************************************************
@@ -42,41 +47,63 @@ import (
 // required for the example are initialized. Agent is instantiated with generic plugins (etcd, Kafka, Status check,
 // HTTP and Log), and GOVPP, and resync plugin, and example plugin which demonstrates GOVPP call functionality.
 func main() {
-	// Init closes channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
-
-	// Start Agent with ExampleFlavor
-	flavor := vppFlavor.Flavor{}
-	exampleFlavor := ExampleFlavor{
-		GovppExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:       &flavor, // inject VPP flavor
+	//Init close channel to stop the example.
+	closeChannel := make(chan struct{}, 1)
+	// Prepare all the dependencies for example plugin
+	watcher := datasync.KVProtoWatchers{
+		local.Get(),
 	}
-	agent := core.NewAgent(core.Inject(&flavor, &exampleFlavor))
+	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
+		deps.Watcher = watcher
+	}))
 
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	// Inject dependencies to example plugin
+	ep := &ExamplePlugin{
+		Log:          logrus.DefaultLogger(),
+		closeChannel: closeChannel,
+	}
+	ep.Deps.VPP = vppPlugin
+	ep.Deps.GoVppMux = &govppmux.DefaultPlugin
+
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(closeChannel),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
 }
+
+// PluginName represents name of plugin.
+const PluginName = "govpp-example"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the Agent.
 type ExamplePlugin struct {
 	Deps
 
-	VPP vpp.API
-
 	exampleIDSeq uint32           // Plugin-specific ID initialization
 	vppChannel   govppapi.Channel // Vpp channel to communicate with VPP
 	// Fields below are used to properly finish the example.
-	closeChannel *chan struct{}
+	closeChannel chan struct{}
+	Log          logging.Logger
+}
+
+// Deps is example plugin dependencies.
+type Deps struct {
+	GoVppMux *govppmux.Plugin
+	VPP      *vpp.Plugin
 }
 
 // Init members of plugin.
 func (plugin *ExamplePlugin) Init() (err error) {
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	plugin.vppChannel, err = plugin.GoVppmux.NewAPIChannel()
+	plugin.vppChannel, err = plugin.Deps.GoVppMux.NewAPIChannel()
 
 	plugin.Log.Info("Default plugin plugin ready")
 
-	//plugin.VPP.DisableResync(l2.BridgeDomainKeyPrefix())
+	plugin.VPP.DisableResync(l2.BdPrefix)
 
 	// Make VPP call
 	go plugin.VppCall()
@@ -87,7 +114,12 @@ func (plugin *ExamplePlugin) Init() (err error) {
 // Close is called by Agent Core when the Agent is shutting down. It is supposed
 // to clean up resources that were allocated by the plugin during its lifetime.
 func (plugin *ExamplePlugin) Close() error {
-	return safeclose.Close(plugin.GoVppmux, plugin.vppChannel)
+	return safeclose.Close(plugin.vppChannel)
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 /***********
@@ -132,7 +164,7 @@ func (plugin *ExamplePlugin) VppCall() {
 	plugin.Log.Info("Data successfully sent to VPP")
 	// End the example.
 	plugin.Log.Infof("etcd/datasync example finished, sending shutdown ...")
-	*plugin.closeChannel <- struct{}{}
+	close(plugin.closeChannel)
 }
 
 // Auxiliary function to build bridge domain data

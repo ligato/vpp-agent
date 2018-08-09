@@ -30,7 +30,8 @@ ${IP_4}=                 fd31::1:e:0:0:2
 ${IP_5}=                 fd32::1:e:0:0:1
 ${IP_6}=                 fd32::1:e:0:0:2
 ${PREFIX}=               64
-
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
@@ -44,83 +45,83 @@ Add VPP1_memif1 Interface
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MEMIF11_MAC}    master=true    id=1    ip=${IP_1}    prefix=64    socket=default.sock
 
 Check That VPP1_memif1 Is Created But Not Connected
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF11_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv6=${IP_1}/64  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF11_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv6=${IP_1}/64  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Add VPP2_memif1 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_2    mac=${MEMIF21_MAC}
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_2    name=vpp2_memif1    mac=${MEMIF21_MAC}    master=false    id=1    ip=${IP_2}    prefix=64    socket=default.sock
 
 Check That VPP2_memif1 Is Created And Connected With VPP1_memif1
-    vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF21_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv6=${IP_2}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv6=${IP_1}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF21_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv6=${IP_2}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv6=${IP_1}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Add VPP1_memif2 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MEMIF12_MAC}
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=${MEMIF12_MAC}    master=true    id=2    ip=${IP_3}    prefix=64    socket=default.sock
 
 Check That VPP1_memif2 Is Created But Not Connected
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF12_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF12_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Add VPP2_memif2 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_2    mac=${MEMIF22_MAC}
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_2    name=vpp2_memif2    mac=${MEMIF22_MAC}    master=false    id=2    ip=${IP_4}    prefix=64    socket=default.sock
 
 Check That VPP2_memif2 Is Created And Connected With VPP1_memif2
-    vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF22_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF22_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif1 And VPP2_memif1 Interfaces Are Not Affected By VPP1_memif2 And VPP2_memif2 Interfaces
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv6=${IP_1}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv6=${IP_2}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_MAC}  role=master  id=1  ipv6=${IP_1}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv6=${IP_2}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Update VPP1_memif1 Interface
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MEMIF11_SEC_MAC}    master=true    id=1    ip=${IP_5}    prefix=30    socket=default.sock
-    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MEMIF11_MAC}
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF11_SEC_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MEMIF11_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MEMIF11_SEC_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP2_memif1 Is Still Configured And Connected
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv6=${IP_2}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_MAC}  role=slave  id=1  ipv6=${IP_2}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif2 And VPP2_memif2 Are Not Affected By VPP1_memif1 Update
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Update VPP2_memif1 Interface
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_2    name=vpp2_memif1    mac=${MEMIF21_SEC_MAC}    master=false    id=1    ip=${IP_6}    prefix=64    socket=default.sock
-    vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=${MEMIF21_MAC}
-    vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF21_SEC_MAC}
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv6=${IP_6}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=${MEMIF21_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MEMIF21_SEC_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv6=${IP_6}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif1 Is Still Configured And Connected
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif2 And VPP2_memif2 Are Not Affected By VPP2_memif1 Update
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=${MEMIF12_MAC}  role=master  id=2  ipv6=${IP_3}/64  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Delete VPP1_memif2 Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_memif2
-    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MEMIF12_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MEMIF12_MAC}
 
 Check That VPP2_memif2 Interface Is Disconnected
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=0  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv6=${IP_4}/64  connected=0  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif1 And VPP2_memif1 Are Not Affected By VPP1_memif2 Delete
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv6=${IP_6}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv6=${IP_6}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Delete VPP2_memif2 Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_2    name=vpp2_memif2
-    vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=${MEMIF22_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=${MEMIF22_MAC}
 
 Check That VPP1_memif1 And VPP2_memif1 Are Not Affected By VPP2_memif2 Delete
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv6=${IP_6}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv6=${IP_5}/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv6=${IP_6}/64  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Show Interfaces And Other Objects After Setup
     vpp_term: Show Interfaces    agent_vpp_1

@@ -47,7 +47,10 @@ type AppNsConfigurator struct {
 	appNsIdxSeq  uint32
 
 	// VPP channel
-	vppChan   govppapi.Channel
+	vppChan govppapi.Channel
+	// VPP API handler
+	l4Handler vppcalls.L4VppAPI
+
 	stopwatch *measure.Stopwatch
 
 	// Feature flag - internal state whether the L4 features are enabled or disabled
@@ -74,6 +77,11 @@ func (plugin *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 
 	// VPP channels
 	if plugin.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+		return err
+	}
+
+	// VPP API handler
+	if plugin.l4Handler, err = vppcalls.NewL4VppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -122,7 +130,7 @@ func (plugin *AppNsConfigurator) ConfigureL4FeatureFlag(features *l4.L4Features)
 func (plugin *AppNsConfigurator) configureL4FeatureFlag() error {
 	plugin.log.Info("Configuring L4 features")
 
-	if err := vppcalls.EnableL4Features(plugin.vppChan); err != nil {
+	if err := plugin.l4Handler.EnableL4Features(); err != nil {
 		plugin.log.Errorf("Enabling L4 features failed: %v", err)
 		return err
 	}
@@ -136,7 +144,7 @@ func (plugin *AppNsConfigurator) configureL4FeatureFlag() error {
 func (plugin *AppNsConfigurator) DeleteL4FeatureFlag() error {
 	plugin.log.Info("Removing L4 features")
 
-	if err := vppcalls.DisableL4Features(plugin.vppChan); err != nil {
+	if err := plugin.l4Handler.DisableL4Features(); err != nil {
 		plugin.log.Errorf("Disabling L4 features failed: %v", err)
 		return err
 	}
@@ -271,7 +279,7 @@ func (plugin *AppNsConfigurator) configureAppNamespace(ns *l4.AppNamespaces_AppN
 
 	plugin.log.Debugf("Adding App Namespace %v to interface %v", ns.NamespaceId, ifIdx)
 
-	appNsIdx, err := vppcalls.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID, plugin.vppChan, plugin.stopwatch)
+	appNsIdx, err := plugin.l4Handler.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID)
 	if err != nil {
 		return err
 	}

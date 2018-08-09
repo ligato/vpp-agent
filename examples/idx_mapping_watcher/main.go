@@ -17,10 +17,13 @@ package main
 import (
 	"strconv"
 
-	"github.com/ligato/cn-infra/core"
+	"log"
+
+	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 )
@@ -42,31 +45,34 @@ const expectedEvents = 5
 // required for the example are initialized. The Agent is instantiated with generic plugins (etcd, Kafka, Status check,
 // HTTP and Log) and example plugin which demonstrates index mapping watcher functionality.
 func main() {
-	// Init close channel to stop the example
-	exampleFinished := make(chan struct{}, 1)
+	ep := &ExamplePlugin{
+		Log:             logging.DefaultLogger,
+		exampleFinished: make(chan struct{}),
+	}
 
 	// Start Agent
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
-		examplePlug.PluginLogDeps = *flavor.LogDeps("idx-watch-example")
-
-		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
-	}))
-
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(ep.exampleFinished),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
 }
+
+// PluginName represents name of plugin.
+const PluginName = "idx-mapping-watcher"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the Agent.
 type ExamplePlugin struct {
-	Deps
-
 	exampleIdx        idxvpp.NameToIdxRW         // Name-to-index mapping
 	exampleIDSeq      uint32                     // Unique ID
 	exIdxWatchChannel chan idxvpp.NameToIdxDto   // Channel to watch changes in mapping
 	watchDataReg      datasync.WatchRegistration // To subscribe to mapping change events
 	// Fields below are used to properly finish the example
-	eventCounter uint8
-	closeChannel *chan struct{}
+	eventCounter    uint8
+	exampleFinished chan struct{}
+	Log             logging.Logger
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
@@ -91,9 +97,19 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}()
 
 	// Subscribe name-to-index watcher.
-	plugin.exampleIdx.Watch(plugin.PluginName, nametoidx.ToChan(plugin.exIdxWatchChannel))
+	plugin.exampleIdx.Watch(PluginName, nametoidx.ToChan(plugin.exIdxWatchChannel))
 
 	return err
+}
+
+// Close cleans up the resources.
+func (plugin *ExamplePlugin) Close() error {
+	return safeclose.Close(plugin.exIdxWatchChannel)
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 /************
@@ -135,7 +151,7 @@ func (plugin *ExamplePlugin) watchEvents() {
 			// End the example when it is done (5 events are expected).
 			if plugin.eventCounter == expectedEvents {
 				plugin.Log.Infof("idx-watch-lookup example finished, sending shutdown ...")
-				*plugin.closeChannel <- struct{}{}
+				close(plugin.exampleFinished)
 			}
 		}
 	}

@@ -43,10 +43,10 @@ Add Veth2 Interface
     vpp_ctl: Put Veth Interface    node=agent_vpp_1    name=vpp1_veth2    mac=${VETH2_MAC}    peer=vpp1_veth1
 
 Check That Veth1 And Veth2 Interfaces Are Created
-    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH1_MAC}
-    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH2_MAC}
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv6=${VETHIP1}/64    mtu=1500    state=up
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH1_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH2_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv6=${VETHIP1}/64    mtu=1500    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
 
 Add Veth3 Interface
     linux: Interface Not Exists    node=agent_vpp_1    mac=${VETH3_MAC}
@@ -58,30 +58,30 @@ Add Veth4 Interface
     vpp_ctl: Put Veth Interface    node=agent_vpp_1    name=vpp1_veth4    mac=${VETH4_MAC}    peer=vpp1_veth3    enabled=false
 
 Check That Veth3 And Veth4 Interfaces Are Created
-    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH3_MAC}
-    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH4_MAC}
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv6=${VETHIP2}/64    mtu=1500    state=lowerlayerdown
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=down
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH3_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH4_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv6=${VETHIP2}/64    mtu=1500    state=lowerlayerdown
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=down
 
 Check That Veth1 And Veth2 Interfaces Are Still Configured
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv6=${VETHIP1}/64    mtu=1500    state=up
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_MAC}    ipv6=${VETHIP1}/64    mtu=1500    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
 
 Update Veth1 Interface
     vpp_ctl: Put Veth Interface With IP    node=agent_vpp_1    name=vpp1_veth1    mac=${VETH1_SEC_MAC}    peer=vpp1_veth2    ip=${VETHIP3}    prefix=64    mtu=1600
-    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH1_MAC}
-    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH1_SEC_MAC}
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_SEC_MAC}    ipv6=${VETHIP3}/64    mtu=1600    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH1_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Created    node=agent_vpp_1    mac=${VETH1_SEC_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth1    mac=${VETH1_SEC_MAC}    ipv6=${VETHIP3}/64    mtu=1600    state=up
 
 Check That Veth2 And Veth3 And Veth4 interfaces Are Still Configured
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv6=${VETHIP2}/64    mtu=1500    state=lowerlayerdown
-    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=down
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth2    mac=${VETH2_MAC}    state=up
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv6=${VETHIP2}/64    mtu=1500    state=lowerlayerdown
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Check Veth Interface State     agent_vpp_1    vpp1_veth4    mac=${VETH4_MAC}    state=down
 
 Delete Veth2 Interface
     vpp_ctl: Delete Linux Interface    node=agent_vpp_1    name=vpp1_veth2
-    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH1_SEC_MAC}
-    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH2_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH1_SEC_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH2_MAC}
 
 Check That Veth3 And Veth4 Are Still Configured
     linux: Check Veth Interface State     agent_vpp_1    vpp1_veth3    mac=${VETH3_MAC}    ipv6=${VETHIP2}/64    mtu=1500    state=lowerlayerdown
@@ -89,8 +89,8 @@ Check That Veth3 And Veth4 Are Still Configured
 
 Delete Veth3 Interface
     vpp_ctl: Delete Linux Interface    node=agent_vpp_1    name=vpp1_veth3
-    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH3_MAC}
-    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH4_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH3_MAC}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface Is Deleted    node=agent_vpp_1    mac=${VETH4_MAC}
 
 Show Interfaces And Other Objects After Setup
     vpp_term: Show Interfaces    agent_vpp_1

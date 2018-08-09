@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -236,12 +235,16 @@ func (plugin *LinuxInterfaceConfigurator) isLinuxIfModified(nbIf, linuxIf *inter
 			nbIf.Enabled, linuxIf.Enabled)
 		return true
 	}
-	// Remove IPv6 link local addresses (default values)
+	// Remove link local addresses
+	var newIPIdx int
 	for ipIdx, ipAddress := range linuxIf.IpAddresses {
-		if strings.HasPrefix(ipAddress, "fe80") {
-			linuxIf.IpAddresses = append(linuxIf.IpAddresses[:ipIdx], linuxIf.IpAddresses[ipIdx+1:]...)
+		if !net.ParseIP(linuxIf.IpAddresses[ipIdx]).IsLinkLocalUnicast() {
+			linuxIf.IpAddresses[newIPIdx] = ipAddress
+			newIPIdx++
 		}
 	}
+	// Prune IP address list
+	linuxIf.IpAddresses = linuxIf.IpAddresses[:newIPIdx]
 	// IP address count
 	if len(nbIf.IpAddresses) != len(linuxIf.IpAddresses) {
 		plugin.log.Debugf("Linux interface RESYNC comparison: ip address count does not match (NB: %d, Linux: %d)",

@@ -30,7 +30,7 @@ func Cache(watcher datasync.KeyValProtoWatcher) BDIndex {
 	bdIdx := NewBDIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), resyncName, IndexMetadata))
 
 	helper := cacheutil.CacheHelper{
-		Prefix:        l2.BridgeDomainKeyPrefix(),
+		Prefix:        l2.BdPrefix,
 		IDX:           bdIdx.GetMapping(),
 		DataPrototype: &l2.BridgeDomains_BridgeDomain{},
 		ParseName:     l2.ParseBDNameFromKey}

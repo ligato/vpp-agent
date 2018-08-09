@@ -18,14 +18,12 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 )
 
-func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(dhcp.DhcpClientConfig{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(dhcp.DhcpClientConfig{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &dhcp.DhcpClientConfig{
@@ -40,7 +38,7 @@ func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan govp
 	}
 
 	reply := &dhcp.DhcpClientConfigReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -50,12 +48,10 @@ func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan govp
 	return nil
 }
 
-// SetInterfaceAsDHCPClient sets provided interface as a DHCP client
-func SetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
-	return handleInterfaceDHCP(ifIdx, hostName, true, vppChan, stopwatch)
+func (handler *ifVppHandler) SetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+	return handler.handleInterfaceDHCP(ifIdx, hostName, true)
 }
 
-// UnsetInterfaceAsDHCPClient un-sets interface as DHCP client
-func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
-	return handleInterfaceDHCP(ifIdx, hostName, false, vppChan, stopwatch)
+func (handler *ifVppHandler) UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+	return handler.handleInterfaceDHCP(ifIdx, hostName, false)
 }

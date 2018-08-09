@@ -10,7 +10,9 @@ Resource    ../../../libraries/pretty_keywords.robot
 
 Force Tags        trafficIPv4
 Suite Setup       Testsuite Setup
-Suite Teardown    Testsuite Teardown
+Suite Teardown    Suite Cleanup
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 
 *** Variables ***
 ${VARIABLES}=          common
@@ -47,7 +49,7 @@ Setup Interfaces
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}
 
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_2    name=vpp2_memif1    mac=62:62:62:62:62:62    master=false    id=1    ip=192.168.1.2
-    vpp_ctl: Put Veth Interface With IP    node=agent_vpp_2    name=vpp2_veth1    mac=22:21:21:21:21:21    peer=vpp2_veth2    ip=10.10.1.2
+    vpp_ctl: Put Veth Interface With IP    node=agent_vpp_2    name=vpp2_veth1    mac=22:21:21:21:21:21    peer=k tomu ti staci jedno vpp    ip=10.10.1.2
     vpp_ctl: Put Veth Interface    node=agent_vpp_2    name=vpp2_veth2    mac=22:22:22:22:22:22    peer=vpp2_veth1
     vpp_ctl: Put Afpacket Interface    node=agent_vpp_2    name=vpp2_afpacket1    mac=a2:a2:a2:a2:a2:a2    host_int=vpp2_veth2
     vpp_ctl: Put VXLan Interface    node=agent_vpp_2    name=vpp2_vxlan1    src=192.168.1.2    dst=192.168.1.1    vni=5
@@ -162,8 +164,11 @@ Check Ping After Resync From VPP2 to VPP1
 Resync Done
     No Operation
 
-Final Sleep After Resync For Manual Checking
-    Sleep   ${RESYNC_SLEEP}
 
 
 *** Keywords ***
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown

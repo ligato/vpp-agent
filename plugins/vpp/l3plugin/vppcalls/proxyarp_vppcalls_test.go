@@ -15,46 +15,60 @@
 package vppcalls_test
 
 import (
+	"testing"
+
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 // Test enable/disable proxy arp
 func TestProxyArp(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, arpHandler, pArpHandler := pArpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
-	err := vppcalls.EnableProxyArpInterface(0, ctx.MockChannel, logrus.DefaultLogger(), nil)
+	err := pArpHandler.EnableProxyArpInterface(0)
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
-	err = vppcalls.DisableProxyArpInterface(0, ctx.MockChannel, logrus.DefaultLogger(), nil)
+	err = pArpHandler.DisableProxyArpInterface(0)
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{Retval: 1})
-	err = vppcalls.VppAddArp(&arpEntries[0], ctx.MockChannel, nil)
+	err = arpHandler.VppAddArp(&arpEntries[0])
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test add/delete ip range for proxy arp
 func TestProxyArpRange(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, _, pArpHandler := pArpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
-	err := vppcalls.AddProxyArpRange([]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30}, ctx.MockChannel, logrus.DefaultLogger(), nil)
+	err := pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 20}, []byte{192, 168, 10, 30})
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
-	err = vppcalls.DeleteProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27}, ctx.MockChannel, logrus.DefaultLogger(), nil)
+	err = pArpHandler.DeleteProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{Retval: 1})
-	err = vppcalls.AddProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27}, ctx.MockChannel, logrus.DefaultLogger(), nil)
+	err = pArpHandler.AddProxyArpRange([]byte{192, 168, 10, 23}, []byte{192, 168, 10, 27})
 	Expect(err).To(Not(BeNil()))
+}
+
+func pArpTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	log := logrus.NewLogger("test-log")
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "proxy-arp-if-idx", nil))
+	arpHandler, err := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
+	Expect(err).To(BeNil())
+	pArpHandler, err := vppcalls.NewProxyArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
+	Expect(err).To(BeNil())
+	return ctx, arpHandler, pArpHandler
 }

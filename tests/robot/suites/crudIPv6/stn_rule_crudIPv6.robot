@@ -15,7 +15,7 @@ Test Setup        TestSetup
 Test Teardown     TestTeardown
 
 *** Variables ***
-${SYNC_SLEEP}=         20s
+
 ${RESYNC_SLEEP}=       45s
 ${VARIABLES}=        common
 ${ENV}=              common
@@ -30,6 +30,8 @@ ${PREFIX}=           64
 ${MTU}=              4800
 ${UP_STATE}=         up
 ${RULE_NAME}         rule1
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 
 *** Test Cases ***
 Configure Environment
@@ -46,14 +48,14 @@ Add TAP1 Interface
 Check TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
     Log                  ${interfaces}
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1}
     ${actual_state}=    vpp_term: Check TAP IP6 interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv6=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Add STN Rule
     vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Created
-    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
 
 Check TAP1 Interface Is Still Configured
     ${actual_state}=    vpp_term: Check TAP IP6 interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv6=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
@@ -63,26 +65,26 @@ Add TAP2 Interface
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP2}    mac=${MAC_TAP2}    ip=${IP_TAP2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP2}
 
 Check TAP2 Interface Is Created
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}
     ${actual_state}=    vpp_term: Check TAP IP6 interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv6=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Update STN Rule
     vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Updated
-    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
 
 Delete STN Rule
     vpp_ctl: Delete STN Rule    node=agent_vpp_1    rule_name=${RULE_NAME}
 
 Check Deleted STN Rule
-    vpp_term: Check STN Rule Deleted    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule Deleted    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
 
 Add STN Rule Again
     vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Created Again
-    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
 
 Remove VPP Node
     Remove Node     agent_vpp_1

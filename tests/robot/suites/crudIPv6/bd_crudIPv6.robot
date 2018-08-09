@@ -29,6 +29,8 @@ ${LOOPBACK_IP}=          fd32::1:1:0:0:1
 ${LOOPBACK_IP_PREFIX}=   fd32::1:1:0:0:1/64
 ${TAP_IP}=               fd33::1:1:0:0:1
 ${TAP_IP_PREFIX}=        fd33::1:1:0:0:1/64
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 
 *** Test Cases ***
 Configure Environment
@@ -57,8 +59,8 @@ Add BD1 Bridge Domain
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}    flood=true    unicast=true    forward=true    learn=true    arp_term=true
 
 Check BD1 Is Created
-    vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_vxlan1
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif1  interface=vpp1_afpacket1  interface=vpp1_vxlan1  bvi_int=none
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_vxlan1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif1  interface=vpp1_afpacket1  interface=vpp1_vxlan1  bvi_int=none
 
 Add BD2 Bridge Domain
     @{ints}=    Create List   vpp1_memif2  vpp1_vxlan2    bvi_vpp1_loop3
@@ -66,44 +68,44 @@ Add BD2 Bridge Domain
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd2    ints=${ints}    flood=true    unicast=true    forward=true    learn=true    arp_term=true
 
 Check BD2 Is Created
-    vat_term: BD Is Created    agent_vpp_1    vpp1_memif2    vpp1_vxlan2    bvi_vpp1_loop3
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Created    agent_vpp_1    vpp1_memif2    vpp1_vxlan2    bvi_vpp1_loop3
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
 
 Check That BD1 Is Not Affected By Adding BD2
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif1  interface=vpp1_afpacket1  interface=vpp1_vxlan1  bvi_int=none
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif1  interface=vpp1_afpacket1  interface=vpp1_vxlan1  bvi_int=none
 
 Update BD1
     @{ints}=    Create List   vpp1_memif1  vpp1_vxlan1    bvi_vpp1_loop2
     vat_term: BD Not Exists    agent_vpp_1    @{ints}
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}    flood=false    unicast=false    forward=false    learn=false    arp_term=false
-    vat_term: BD Is Deleted    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_vxlan1
-    vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_vxlan1    bvi_vpp1_loop2
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=0  unicast=0  forward=0  learn=0  arp_term=0  interface=vpp1_memif1  interface=vpp1_vxlan1  interface=bvi_vpp1_loop2  bvi_int=bvi_vpp1_loop2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Deleted    agent_vpp_1    vpp1_memif1    vpp1_afpacket1    vpp1_vxlan1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Created    agent_vpp_1    vpp1_memif1    vpp1_vxlan1    bvi_vpp1_loop2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=0  unicast=0  forward=0  learn=0  arp_term=0  interface=vpp1_memif1  interface=vpp1_vxlan1  interface=bvi_vpp1_loop2  bvi_int=bvi_vpp1_loop2
 
 Check That BD2 Is Not Affected By Updating BD1
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
 
 Delete VXLan1 Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_vxlan1
-    vxlan: Tunnel Is Deleted    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Deleted    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
 
 Check That VXLan1 Interface Is Deleted From BD1
-    vat_term: BD Is Deleted    agent_vpp_1    vpp1_memif1    vpp1_vxlan1    bvi_vpp1_loop2
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=0  unicast=0  forward=0  learn=0  arp_term=0  interface=vpp1_memif1  interface=bvi_vpp1_loop2  bvi_int=bvi_vpp1_loop2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Deleted    agent_vpp_1    vpp1_memif1    vpp1_vxlan1    bvi_vpp1_loop2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=0  unicast=0  forward=0  learn=0  arp_term=0  interface=vpp1_memif1  interface=bvi_vpp1_loop2  bvi_int=bvi_vpp1_loop2
 
 Read VXLan1 Interface
     vpp_ctl: Put VXLan Interface    node=agent_vpp_1    name=vpp1_vxlan1    src=192.168.1.1    dst=192.168.1.2    vni=5
-    vxlan: Tunnel Is Created    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vxlan: Tunnel Is Created    node=agent_vpp_1    src=192.168.1.1    dst=192.168.1.2    vni=5
 
 Check That VXLan1 Interface Is Added To BD1
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=0  unicast=0  forward=0  learn=0  arp_term=0  interface=vpp1_memif1  interface=vpp1_vxlan1  interface=bvi_vpp1_loop2  bvi_int=bvi_vpp1_loop2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd1  flood=0  unicast=0  forward=0  learn=0  arp_term=0  interface=vpp1_memif1  interface=vpp1_vxlan1  interface=bvi_vpp1_loop2  bvi_int=bvi_vpp1_loop2
 
 Delete BD1 Bridge Domain
     vpp_ctl: Delete Bridge Domain    agent_vpp_1    vpp1_bd1
-    vat_term: BD Is Deleted    agent_vpp_1    vpp1_memif1    vpp1_vxlan1    bvi_vpp1_loop2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Deleted    agent_vpp_1    vpp1_memif1    vpp1_vxlan1    bvi_vpp1_loop2
 
 Check That BD2 Is Not Affected By Deleting BD1
-    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  vpp1_bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=vpp1_memif2  interface=vpp1_vxlan2  interface=bvi_vpp1_loop3  bvi_int=bvi_vpp1_loop3
 
 Show Interfaces And Other Objects After Test
     vpp_term: Show Interfaces    agent_vpp_1

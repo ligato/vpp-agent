@@ -15,7 +15,6 @@
 package l2idx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -33,7 +32,7 @@ type FIBIndex interface {
 	LookupName(idx uint32) (name string, metadata *l2.FibTable_FibEntry, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in fibIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan FibChangeDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan FibChangeDto)
 }
 
 // FIBIndexRW is mapping between indices (used internally in VPP) and FIB entries.
@@ -116,7 +115,7 @@ func (fib *fibIndex) LookupName(idx uint32) (name string, metadata *l2.FibTable_
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in fibIndex mapping.
-func (fib *fibIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan FibChangeDto) {
+func (fib *fibIndex) WatchNameToIdx(subscriber string, pluginChannel chan FibChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	fib.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

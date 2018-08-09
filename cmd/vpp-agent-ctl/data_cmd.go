@@ -190,7 +190,7 @@ func (ctl *VppAgentCtl) createBfdSession() {
 			{
 				Interface:             "memif1",
 				Enabled:               true,
-				SourceAddress:         "192.168.1.2",
+				SourceAddress:         "172.125.40.1",
 				DestinationAddress:    "20.10.0.5",
 				RequiredMinRxInterval: 8,
 				DesiredMinTxInterval:  3,
@@ -676,6 +676,39 @@ func (ctl *VppAgentCtl) deleteIPsecSA() {
 	ctl.broker.Delete(saKey2)
 }
 
+// createIPSecTunnelInterface configures IPSec tunnel interface
+func (ctl *VppAgentCtl) createIPSecTunnelInterface() {
+	tunnelIf := ipsec.TunnelInterfaces_Tunnel{
+		Name:            "ipsec0",
+		Esn:             false,
+		AntiReplay:      false,
+		LocalSpi:        1000,
+		RemoteSpi:       1001,
+		LocalIp:         "10.0.0.2",
+		RemoteIp:        "10.0.0.1",
+		CryptoAlg:       1,
+		LocalCryptoKey:  "4a506a794f574265564551694d653768",
+		RemoteCryptoKey: "4a506a794f574265564551694d653768",
+		IntegAlg:        2,
+		LocalIntegKey:   "4339314b55523947594d6d3547666b45764e6a58",
+		RemoteIntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+		Enabled:         true,
+		IpAddresses:     []string{"20.0.0.0/24"},
+		Vrf:             0,
+	}
+
+	ctl.Log.Println(tunnelIf)
+	ctl.broker.Put(ipsec.TunnelKey(tunnelIf.Name), &tunnelIf)
+}
+
+// deleteIPSecTunnelInterface removes IPSec tunnel interface
+func (ctl *VppAgentCtl) deleteIPSecTunnelInterface() {
+	tunnelKey := ipsec.TunnelKey("ipsec0")
+
+	ctl.Log.Println("Deleting", tunnelKey)
+	ctl.broker.Delete(tunnelKey)
+}
+
 // STN
 
 // CreateStn puts STN configuration to the ETCD
@@ -740,15 +773,27 @@ func (ctl *VppAgentCtl) createGlobalNat() {
 				TwiceNat:        false,
 			},
 		},
+		VirtualReassemblyIpv4: &nat.Nat44Global_VirtualReassembly{
+			Timeout:  10,
+			MaxReass: 20,
+			MaxFrag:  10,
+			DropFrag: true,
+		},
+		VirtualReassemblyIpv6: &nat.Nat44Global_VirtualReassembly{
+			Timeout:  15,
+			MaxReass: 25,
+			MaxFrag:  15,
+			DropFrag: false,
+		},
 	}
 
 	ctl.Log.Println(natGlobal)
-	ctl.broker.Put(nat.GlobalConfigKey(), natGlobal)
+	ctl.broker.Put(nat.GlobalPrefix, natGlobal)
 }
 
 // DeleteGlobalNat removes global NAT configuration from the ETCD
 func (ctl *VppAgentCtl) deleteGlobalNat() {
-	globalNat := nat.GlobalConfigKey()
+	globalNat := nat.GlobalPrefix
 
 	ctl.Log.Println("Deleting", globalNat)
 	ctl.broker.Delete(globalNat)
@@ -1111,6 +1156,27 @@ func (ctl *VppAgentCtl) deleteProxyArpRanges() {
 	ctl.broker.Delete(arpKey)
 }
 
+// SetIPScanNeigh puts VPP IP scan neighbor configuration to the ETCD
+func (ctl *VppAgentCtl) setIPScanNeigh() {
+	ipScanNeigh := &l3.IPScanNeighbor{
+		Mode:           l3.IPScanNeighbor_BOTH,
+		ScanInterval:   11,
+		MaxProcTime:    36,
+		MaxUpdate:      5,
+		ScanIntDelay:   16,
+		StaleThreshold: 26,
+	}
+
+	log.Println(ipScanNeigh)
+	ctl.broker.Put(l3.IPScanNeighPrefix, ipScanNeigh)
+}
+
+// UnsetIPScanNeigh removes VPP IP scan neighbor configuration from the ETCD
+func (ctl *VppAgentCtl) unsetIPScanNeigh() {
+	ctl.Log.Println("Deleting", l3.IPScanNeighPrefix)
+	ctl.broker.Delete(l3.IPScanNeighPrefix)
+}
+
 // Linux ARP
 
 // CreateLinuxArp puts linux ARP entry configuration to the ETCD
@@ -1274,7 +1340,7 @@ func (ctl *VppAgentCtl) deleteTxn() {
 
 // ReportIfaceErrorState reports interface status data to the ETCD
 func (ctl *VppAgentCtl) reportIfaceErrorState() {
-	ifErr, err := ctl.broker.ListValues(interfaces.IfErrorPrefix)
+	ifErr, err := ctl.broker.ListValues(interfaces.ErrorPrefix)
 	if err != nil {
 		ctl.Log.Fatal(err)
 		return

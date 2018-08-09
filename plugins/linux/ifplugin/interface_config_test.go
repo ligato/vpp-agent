@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -508,9 +507,9 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 	RegisterTestingT(t)
 
 	// Loggers
-	pluginLog := logging.ForPlugin("linux-if-log", logrus.NewLogRegistry())
+	pluginLog := logging.ForPlugin("linux-if-log")
 	pluginLog.SetLevel(logging.DebugLevel)
-	nsHandleLog := logging.ForPlugin("ns-handle-log", logrus.NewLogRegistry())
+	nsHandleLog := logging.ForPlugin("ns-handle-log")
 	nsHandleLog.SetLevel(logging.DebugLevel)
 	// Linux interface indexes
 	swIfIndexes := ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(pluginLog, "if", nil))
@@ -535,6 +534,7 @@ func ifTestTeardown(plugin *ifplugin.LinuxInterfaceConfigurator,
 	Expect(err).To(BeNil())
 	err = plugin.Close()
 	Expect(err).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 /* Linux interface Test Data */

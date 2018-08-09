@@ -20,11 +20,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
+	"log"
+
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
-	"github.com/ligato/vpp-agent/flavors/local"
+	"github.com/ligato/vpp-agent/plugins/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -33,8 +37,8 @@ import (
 
 // init sets the default logging level.
 func init() {
-	log.DefaultLogger().SetOutput(os.Stdout)
-	log.DefaultLogger().SetLevel(logging.DebugLevel)
+	logrus.DefaultLogger().SetOutput(os.Stdout)
+	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
 }
 
 /********
@@ -43,40 +47,61 @@ func init() {
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example.
-	closeChannel := make(chan struct{}, 1)
-
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
-		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &ExamplePlugin{}}
-
-		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
+	//Init close channel to stop the example.
+	exampleFinished := make(chan struct{}, 1)
+	// Prepare all the dependencies for example plugin
+	watcher := datasync.KVProtoWatchers{
+		local.Get(),
+	}
+	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
+		deps.Watcher = watcher
 	}))
 
-	// End when the localhost example is finished.
-	go closeExample("localhost example finished", closeChannel)
+	var watchEventsMutex sync.Mutex
+	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
 
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// Inject dependencies to example plugin
+	ep := &ExamplePlugin{}
+	ep.Deps.VPP = vppPlugin
+
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleFinished),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
+
+	go closeExample("localhost example finished", exampleFinished)
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, closeChannel chan struct{}) {
+func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(25 * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+	logrus.DefaultLogger().Info(message)
+	close(exampleFinished)
 }
 
 /******************
  * Example plugin *
  ******************/
 
-// PluginID of example plugin
-const PluginID core.PluginName = "example-plugin"
-
 // ExamplePlugin demonstrates the use of the localclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
+	Deps
+
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
 }
+
+// Deps is example plugin dependencies.
+type Deps struct {
+	VPP *vpp.Plugin
+}
+
+// PluginName represents name of plugin.
+const PluginName = "plugin-example"
 
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() error {
@@ -89,7 +114,7 @@ func (plugin *ExamplePlugin) Init() error {
 	plugin.wg.Add(1)
 	go plugin.reconfigureVPP(ctx)
 
-	log.DefaultLogger().Info("Initialization of the example plugin has completed")
+	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return nil
 }
 
@@ -98,22 +123,27 @@ func (plugin *ExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	log.DefaultLogger().Info("Closed example plugin")
+	logrus.DefaultLogger().Info("Closed example plugin")
 	return nil
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (plugin *ExamplePlugin) resyncVPP() {
-	err := localclient.DataResyncRequest(PluginID).
+	err := localclient.DataResyncRequest(PluginName).
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).
 		Interface(&loopback1).
 		StaticRoute(&routeThroughMemif1).
 		Send().ReceiveReply()
 	if err != nil {
-		log.DefaultLogger().Errorf("Failed to apply initial VPP configuration: %v", err)
+		logrus.DefaultLogger().Errorf("Failed to apply initial VPP configuration: %v", err)
 	} else {
-		log.DefaultLogger().Info("Successfully applied initial VPP configuration")
+		logrus.DefaultLogger().Info("Successfully applied initial VPP configuration")
 	}
 }
 
@@ -122,7 +152,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	select {
 	case <-time.After(15 * time.Second):
 		// Simulate configuration change exactly 15seconds after resync.
-		err := localclient.DataChangeRequest(PluginID).
+		err := localclient.DataChangeRequest(PluginName).
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
 			Interface(&memif2).            /* newly added memif interface */
@@ -135,13 +165,13 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 			StaticRoute(0, "192.168.2.1/32", "192.168.1.1"). /* remove the route going through memif1 */
 			Send().ReceiveReply()
 		if err != nil {
-			log.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
+			logrus.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
 		} else {
-			log.DefaultLogger().Info("Successfully reconfigured VPP")
+			logrus.DefaultLogger().Info("Successfully reconfigured VPP")
 		}
 	case <-ctx.Done():
 		// cancel the scheduled re-configuration
-		log.DefaultLogger().Info("Planned VPP re-configuration was canceled")
+		logrus.DefaultLogger().Info("Planned VPP re-configuration was canceled")
 	}
 	plugin.wg.Done()
 }

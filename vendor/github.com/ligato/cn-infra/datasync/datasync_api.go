@@ -16,9 +16,9 @@ package datasync
 
 import (
 	"io"
+	"time"
 
 	"github.com/golang/protobuf/proto"
-	"time"
 )
 
 // DefaultNotifTimeout defines the default timeout for datasync notification delivery.

@@ -19,29 +19,22 @@ package main
 import (
 	"os"
 
-	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	flavor "github.com/ligato/vpp-agent/flavors/vpp"
+	"github.com/ligato/vpp-agent/app"
 )
 
-// main is the main entry point into the VPP Agent. Firstly, a new CN-Infra
-// Agent (app) is created, using the set of plugins defined in vpp_flavor
-// (../../flavors/vpp). Secondly, the function calls EventLoopWithInterrupt()
-// which initializes and starts all plugins and then waits for the user
-// to terminate the VPP Agent process with SIGINT. All VPP Agent's work between
-// the initialization and termination is performed by the plugins.
 func main() {
-	agent := flavor.NewAgent()
+	vppAgent := app.New()
 
-	err := core.EventLoopWithInterrupt(agent, nil)
-	if err != nil {
-		os.Exit(1)
+	a := agent.NewAgent(agent.AllPlugins(vppAgent))
+
+	if err := a.Run(); err != nil {
+		log.DefaultLogger().Fatal(err)
 	}
 }
 
-// init sets the Log output and Log level parameters for VPP Agent's default
-// logger.
 func init() {
 	log.DefaultLogger().SetOutput(os.Stdout)
 	log.DefaultLogger().SetLevel(logging.DebugLevel)

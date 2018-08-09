@@ -17,7 +17,6 @@ package l3idx
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
@@ -44,7 +43,7 @@ type LinuxRouteIndex interface {
 	LookupRouteByIP(ns *l3.LinuxStaticRoutes_Route_Namespace, ipAddress string) (*l3.LinuxStaticRoutes_Route, error)
 
 	// WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxRouteIndexDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan LinuxRouteIndexDto)
 }
 
 // LinuxRouteIndexRW is mapping between software route indexes (used internally in VPP)
@@ -160,7 +159,7 @@ func (linuxRouteIndex *linuxRouteIndex) UnregisterName(name string) (idx uint32,
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in linuxIfIndex mapping
-func (linuxRouteIndex *linuxRouteIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan LinuxRouteIndexDto) {
+func (linuxRouteIndex *linuxRouteIndex) WatchNameToIdx(subscriber string, pluginChannel chan LinuxRouteIndexDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	linuxRouteIndex.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

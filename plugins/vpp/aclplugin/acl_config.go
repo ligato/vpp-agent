@@ -97,23 +97,14 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// Configurator-wide stopwatch instance
-	plugin.stopwatch = measure.NewStopwatch("ACL-configurator", plugin.log)
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("ACL-configurator", plugin.log)
+	}
 
 	// ACL binary api handler
-	plugin.aclHandler = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch)
-
-	// Message compatibility
-	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.AclMessages...); err != nil {
-		plugin.log.Error(err)
+	if plugin.aclHandler, err = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch); err != nil {
 		return err
 	}
-
-	// Get VPP ACL plugin version
-	var aclVersion string
-	if aclVersion, err = plugin.aclHandler.GetAclPluginVersion(); err != nil {
-		return err
-	}
-	plugin.log.Infof("VPP ACL plugin version is %s", aclVersion)
 
 	return nil
 }
@@ -358,7 +349,7 @@ func (plugin *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err err
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.ACLDetails)
+		acls = append(acls, aclWithIndex.Acl)
 	}
 	return acls, nil
 }
@@ -371,7 +362,7 @@ func (plugin *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err 
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.ACLDetails)
+		acls = append(acls, aclWithIndex.Acl)
 	}
 	return acls, nil
 }

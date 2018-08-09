@@ -27,7 +27,8 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		0,
@@ -36,7 +37,7 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 		[]uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err := aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
+	err = aclHandler.SetACLToInterfacesAsIngress(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -81,7 +82,8 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		0,
@@ -90,7 +92,7 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 		[]uint32{0, 1},
 	})
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceSetACLListReply{})
-	err := aclHandler.RemoveIPIngressACLFromInterfaces(0, []uint32{0})
+	err = aclHandler.RemoveIPIngressACLFromInterfaces(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
@@ -135,10 +137,11 @@ func TestSetMacIPAclToInterface(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
-	err := aclHandler.SetMacIPAclToInterface(0, []uint32{0})
+	err = aclHandler.SetMacIPAclToInterface(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
@@ -157,10 +160,11 @@ func TestRemoveMacIPIngressACLFromInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
-	err := aclHandler.RemoveMacIPIngressACLFromInterfaces(1, []uint32{0})
+	err = aclHandler.RemoveMacIPIngressACLFromInterfaces(1, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases

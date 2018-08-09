@@ -32,7 +32,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
@@ -42,6 +41,13 @@ const (
 	staticLb = "|staticLb|"
 	identity = "|identity|"
 	dummyTag = "dummy-tag" // used for deletion where tag is not needed
+)
+
+// Default NAT virtual reassembly values
+const (
+	maxReassembly = 1024
+	maxFragments  = 5
+	timeout       = 2
 )
 
 // NatConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -79,6 +85,9 @@ type NatConfigurator struct {
 	vppChan     govppapi.Channel
 	vppDumpChan govppapi.Channel
 
+	// VPP API handler
+	natHandler vppcalls.NatVppAPI
+
 	stopwatch *measure.Stopwatch
 }
 
@@ -88,6 +97,11 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	// Logger
 	plugin.log = logger.NewLogger("-nat-conf")
 	plugin.log.Debug("Initializing NAT configurator")
+
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("NAT-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = ifIndexes
@@ -108,13 +122,9 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 		return err
 	}
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("InterfaceConfigurator", plugin.log)
-	}
-
-	// Check VPP message compatibility
-	if err := vppcalls.CheckMsgCompatibilityForNat(plugin.vppChan); err != nil {
+	// VPP API handler
+	if plugin.natHandler, err = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.ifIndexes,
+		plugin.log, plugin.stopwatch); err != nil {
 		return err
 	}
 
@@ -180,7 +190,7 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 	plugin.globalNAT = config
 
 	// Forwarding
-	if err := vppcalls.SetNat44Forwarding(config.Forwarding, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err := plugin.natHandler.SetNat44Forwarding(config.Forwarding); err != nil {
 		return err
 	}
 	if config.Forwarding {
@@ -189,7 +199,7 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 		plugin.log.Debugf("NAT forwarding disabled")
 	}
 
-	// / Inside/outside interfaces
+	// Inside/outside interfaces
 	if len(config.NatInterfaces) > 0 {
 		if err := plugin.enableNatInterfaces(config.NatInterfaces); err != nil {
 			return err
@@ -200,6 +210,21 @@ func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error
 
 	if err := plugin.addAddressPool(config.AddressPools); err != nil {
 		return err
+	}
+
+	// Virtual reassembly IPv4
+	if config.VirtualReassemblyIpv4 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv4(config.VirtualReassemblyIpv4); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv4")
+	}
+	// Virtual reassembly IPv6
+	if config.VirtualReassemblyIpv6 != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv6(config.VirtualReassemblyIpv6); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly set for IPv6")
 	}
 
 	plugin.log.Debug("Setting up NAT global config done")
@@ -216,7 +241,7 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 
 	// Forwarding
 	if oldConfig.Forwarding != newConfig.Forwarding {
-		if err := vppcalls.SetNat44Forwarding(newConfig.Forwarding, plugin.vppChan, plugin.stopwatch); err != nil {
+		if err := plugin.natHandler.SetNat44Forwarding(newConfig.Forwarding); err != nil {
 			return err
 		}
 	}
@@ -245,7 +270,20 @@ func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.N
 		return err
 	}
 
-	plugin.log.Debug("Modifying NAT global config done")
+	// Virtual reassembly IPv4
+	if toConfigure := isVirtualReassModified(oldConfig.VirtualReassemblyIpv4, newConfig.VirtualReassemblyIpv4); toConfigure != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv4(toConfigure); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly modified for IPv4")
+	}
+	// Virtual reassembly IPv6
+	if toConfigure := isVirtualReassModified(oldConfig.VirtualReassemblyIpv6, newConfig.VirtualReassemblyIpv6); toConfigure != nil {
+		if err := plugin.natHandler.SetVirtualReassemblyIPv6(toConfigure); err != nil {
+			return err
+		}
+		plugin.log.Debug("Nat virtual reassembly modified for IPv6")
+	}
 
 	return nil
 }
@@ -269,6 +307,14 @@ func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (e
 		if err := plugin.delAddressPool(config.AddressPools); err != nil {
 			return err
 		}
+	}
+
+	// Reset virtual reassembly to default
+	if err := plugin.natHandler.SetVirtualReassemblyIPv4(getDefaultVr()); err != nil {
+		return err
+	}
+	if err := plugin.natHandler.SetVirtualReassemblyIPv6(getDefaultVr()); err != nil {
+		return err
 	}
 
 	plugin.log.Debug("Deleting NAT global config done")
@@ -440,12 +486,12 @@ func (plugin *NatConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 
 // DumpNatGlobal returns the current NAT44 global config
 func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
-	return vppdump.Nat44GlobalConfigDump(plugin.ifIndexes, plugin.log, plugin.vppDumpChan, plugin.stopwatch)
+	return plugin.natHandler.Nat44GlobalConfigDump()
 }
 
 // DumpNatDNat returns the current NAT44 DNAT config
 func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
-	return vppdump.NAT44DNatDump(plugin.ifIndexes, plugin.log, plugin.vppDumpChan, plugin.stopwatch)
+	return plugin.natHandler.Nat44DNatDump()
 }
 
 // enables set of interfaces as inside/outside in NAT
@@ -458,7 +504,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 		} else {
 			if natInterface.OutputFeature {
 				// enable nat interface and output feature
-				if err = vppcalls.EnableNat44InterfaceOutput(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.stopwatch); err != nil {
+				if err = plugin.natHandler.EnableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -468,7 +514,7 @@ func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Glo
 				}
 			} else {
 				// enable interface only
-				if err = vppcalls.EnableNat44Interface(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.stopwatch); err != nil {
+				if err = plugin.natHandler.EnableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -500,7 +546,7 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 		} else {
 			if natInterface.OutputFeature {
 				// disable nat interface and output feature
-				if err = vppcalls.DisableNat44InterfaceOutput(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.stopwatch); err != nil {
+				if err = plugin.natHandler.DisableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -510,7 +556,7 @@ func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Gl
 				}
 			} else {
 				// disable interface
-				if err = vppcalls.DisableNat44Interface(ifIdx, natInterface.IsInside, plugin.vppChan, plugin.stopwatch); err != nil {
+				if err = plugin.natHandler.DisableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
 					return
 				}
 				if natInterface.IsInside {
@@ -561,7 +607,7 @@ func (plugin *NatConfigurator) addAddressPool(addressPools []*nat.Nat44Global_Ad
 		} else if lastIP == nil {
 			lastIP = firstIP
 		}
-		if err = vppcalls.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.stopwatch); err != nil {
+		if err = plugin.natHandler.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
 		}
@@ -607,7 +653,7 @@ func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Ad
 		}
 
 		// remove address pool
-		if err = vppcalls.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat, plugin.vppChan, plugin.stopwatch); err != nil {
+		if err = plugin.natHandler.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
 		}
@@ -721,9 +767,9 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 	}
 
 	if add {
-		return vppcalls.AddNat44StaticMappingLb(ctx, plugin.vppChan, plugin.stopwatch)
+		return plugin.natHandler.AddNat44StaticMappingLb(ctx)
 	}
-	return vppcalls.DelNat44StaticMappingLb(ctx, plugin.vppChan, plugin.stopwatch)
+	return plugin.natHandler.DelNat44StaticMappingLb(ctx)
 }
 
 // handler for single static mapping entry
@@ -781,9 +827,9 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 	}
 
 	if add {
-		return vppcalls.AddNat44StaticMapping(ctx, plugin.vppChan, plugin.stopwatch)
+		return plugin.natHandler.AddNat44StaticMapping(ctx)
 	}
-	return vppcalls.DelNat44StaticMapping(ctx, plugin.vppChan, plugin.stopwatch)
+	return plugin.natHandler.DelNat44StaticMapping(ctx)
 }
 
 // configures a list of identity mappings with label
@@ -874,9 +920,9 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 
 	// Configure/remove identity mapping
 	if isAdd {
-		return vppcalls.AddNat44IdentityMapping(ctx, plugin.vppChan, plugin.stopwatch)
+		return plugin.natHandler.AddNat44IdentityMapping(ctx)
 	}
-	return vppcalls.DelNat44IdentityMapping(ctx, plugin.vppChan, plugin.stopwatch)
+	return plugin.natHandler.DelNat44IdentityMapping(ctx)
 }
 
 // looks for new and obsolete IN interfaces
@@ -1065,6 +1111,20 @@ func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat4
 	return
 }
 
+// diffVirtualReassembly compares virtual reassembly from old config, returns virtual reassembly to be configured, or nil
+// if no changes are needed
+func isVirtualReassModified(oldReass, newReass *nat.Nat44Global_VirtualReassembly) *nat.Nat44Global_VirtualReassembly {
+	// If new value is set while the old value does not exist, or it is different, return new value to configure
+	if newReass != nil && (oldReass == nil || *oldReass != *newReass) {
+		return newReass
+	}
+	// If old value was set but new is not, return default
+	if oldReass != nil && newReass == nil {
+		return getDefaultVr()
+	}
+	return nil
+}
+
 // comapares two lists of Local IP addresses, returns true if lists are equal, false otherwise
 func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP) bool {
 	if len(oldIPs) != len(newIPs) {
@@ -1152,4 +1212,14 @@ func (plugin *NatConfigurator) getMappingTag(label, mType string) string {
 	plugin.natMappingTagSeq++
 
 	return buffer.String()
+}
+
+// getDefaultVr returns default nat virtual reassembly configuration.
+func getDefaultVr() *nat.Nat44Global_VirtualReassembly {
+	return &nat.Nat44Global_VirtualReassembly{
+		MaxReass: maxReassembly,
+		MaxFrag:  maxFragments,
+		Timeout:  timeout,
+		DropFrag: false,
+	}
 }

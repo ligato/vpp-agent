@@ -18,22 +18,20 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestSetRxPlacement(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{})
 
-	err := vppcalls.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
+	err := ifHandler.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
 		Queue:  1,
 		Worker: 2,
-	}, ctx.MockChannel, nil)
+	})
 
 	expMsg := "set interface rx-placement if-internal queue 1 worker 2"
 	expMsgLen := len(expMsg)
@@ -46,47 +44,47 @@ func TestSetRxPlacement(t *testing.T) {
 }
 
 func TestSetRxPlacementRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
+	err := ifHandler.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
 		Queue:  1,
 		Worker: 2,
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetRxPlacementReply(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
 		Reply: []byte("dummy-reply"),
 	})
 
-	err := vppcalls.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
+	err := ifHandler.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
 		Queue:  1,
 		Worker: 2,
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetRxPlacementError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpe.CliInband{})
 
-	err := vppcalls.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
+	err := ifHandler.SetRxPlacement("if-internal", &interfaces.Interfaces_Interface_RxPlacementSettings{
 		Queue:  1,
 		Worker: 2,
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }

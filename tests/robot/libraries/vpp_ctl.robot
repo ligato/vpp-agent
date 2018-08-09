@@ -239,7 +239,6 @@ vpp_ctl: Put TAP Interface With IP
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
-    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
 
 vpp_ctl: Put TAP Unnumbered Interface
     [Arguments]    ${node}    ${name}    ${mac}    ${unnumbered}    ${interface_with_ip_name}    ${host_if_name}    ${mtu}=1500    ${enabled}=true
@@ -250,7 +249,7 @@ vpp_ctl: Put TAP Unnumbered Interface
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
-    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
+
 
 vpp_ctl: Put Static Fib Entry
     [Arguments]    ${node}    ${bd_name}    ${mac}    ${outgoing_interface}    ${static}=true
@@ -673,7 +672,6 @@ vpp_ctl: Put TAPv2 Interface With IP
     ${data}=              Replace Variables             ${data}
     Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
-    Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
 
 vpp_ctl: Put STN Rule
     [Arguments]    ${node}    ${interface}    ${ip}    ${rule_name}

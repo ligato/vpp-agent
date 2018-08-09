@@ -20,7 +20,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
@@ -40,9 +39,9 @@ type ArpEntry struct {
 }
 
 // vppAddDelArp adds or removes ARP entry according to provided input
-func vppAddDelArp(entry *ArpEntry, vppChan govppapi.Channel, delete bool, stopwatch *measure.Stopwatch) error {
+func (handler *arpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ip.IPNeighborAddDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(ip.IPNeighborAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &ip.IPNeighborAddDel{}
@@ -78,7 +77,7 @@ func vppAddDelArp(entry *ArpEntry, vppChan govppapi.Channel, delete bool, stopwa
 
 	// Send message
 	reply := &ip.IPNeighborAddDelReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -88,12 +87,10 @@ func vppAddDelArp(entry *ArpEntry, vppChan govppapi.Channel, delete bool, stopwa
 	return nil
 }
 
-// VppAddArp adds ARP entry according to provided input
-func VppAddArp(entry *ArpEntry, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return vppAddDelArp(entry, vppChan, false, stopwatch)
+func (handler *arpVppHandler) VppAddArp(entry *ArpEntry) error {
+	return handler.vppAddDelArp(entry, false)
 }
 
-// VppDelArp removes old ARP entry according to provided input
-func VppDelArp(entry *ArpEntry, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return vppAddDelArp(entry, vppChan, true, stopwatch)
+func (handler *arpVppHandler) VppDelArp(entry *ArpEntry) error {
+	return handler.vppAddDelArp(entry, true)
 }

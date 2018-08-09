@@ -18,16 +18,13 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-// AddMemifInterface calls MemifCreate bin API.
-func AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif, socketID uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (swIdx uint32, err error) {
+func (handler *ifVppHandler) AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif, socketID uint32) (swIdx uint32, err error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(memif.MemifCreate{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(memif.MemifCreate{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &memif.MemifCreate{
@@ -54,20 +51,19 @@ func AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif,
 	}
 
 	reply := &memif.MemifCreateReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	}
 	if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.SwIfIndex, SetInterfaceTag(ifName, reply.SwIfIndex, vppChan, stopwatch)
+	return reply.SwIfIndex, handler.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DeleteMemifInterface calls MemifDelete bin API.
-func DeleteMemifInterface(ifName string, idx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(memif.MemifDelete{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(memif.MemifDelete{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &memif.MemifDelete{
@@ -75,20 +71,19 @@ func DeleteMemifInterface(ifName string, idx uint32, vppChan govppapi.Channel, s
 	}
 
 	reply := &memif.MemifDeleteReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return RemoveInterfaceTag(ifName, idx, vppChan, stopwatch)
+	return handler.RemoveInterfaceTag(ifName, idx)
 }
 
-// RegisterMemifSocketFilename registers new socket file name with provided ID.
-func RegisterMemifSocketFilename(filename []byte, id uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *ifVppHandler) RegisterMemifSocketFilename(filename []byte, id uint32) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(memif.MemifSocketFilenameAddDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(memif.MemifSocketFilenameAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &memif.MemifSocketFilenameAddDel{
@@ -98,7 +93,7 @@ func RegisterMemifSocketFilename(filename []byte, id uint32, vppChan govppapi.Ch
 	}
 
 	reply := &memif.MemifSocketFilenameAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

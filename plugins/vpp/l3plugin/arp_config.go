@@ -52,6 +52,8 @@ type ArpConfigurator struct {
 
 	// VPP channel
 	vppChan govppapi.Channel
+	// VPP API handler
+	arpHandler vppcalls.ArpVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -63,6 +65,11 @@ func (plugin *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	// Logger
 	plugin.log = logger.NewLogger("-l3-arp-conf")
 	plugin.log.Debug("Initializing ARP configurator")
+
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("ARP-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
@@ -77,9 +84,9 @@ func (plugin *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 		return err
 	}
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("ARPConfigurator", plugin.log)
+	// VPP API handler
+	if plugin.arpHandler, err = vppcalls.NewArpVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
+		return err
 	}
 
 	// Message compatibility
@@ -160,7 +167,7 @@ func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpEntry) error {
 	plugin.log.Debugf("adding ARP: %+v", *arp)
 
 	// Create and register new arp entry
-	if err = vppcalls.VppAddArp(arp, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err = plugin.arpHandler.VppAddArp(arp); err != nil {
 		return err
 	}
 
@@ -235,7 +242,7 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpEntry) error {
 	plugin.log.Debugf("deleting ARP: %+v", arp)
 
 	// Delete and un-register new arp
-	if err = vppcalls.VppDelArp(arp, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err = plugin.arpHandler.VppDelArp(arp); err != nil {
 		return err
 	}
 	_, _, found = plugin.arpIndexes.UnregisterName(arpID)

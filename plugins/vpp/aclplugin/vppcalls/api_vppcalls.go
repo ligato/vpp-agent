@@ -28,6 +28,7 @@ type AclVppAPI interface {
 	AclVppRead
 }
 
+// AclVppWrite provides write methods for ACL plugin
 type AclVppWrite interface {
 	// AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
 	AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error)
@@ -55,21 +56,20 @@ type AclVppWrite interface {
 	RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error
 }
 
+// AclVppRead provides read methods for ACL plugin
 type AclVppRead interface {
-	// GetAclPluginVersion returns version of the VPP ACL plugin
-	GetAclPluginVersion() (string, error)
 	// DumpIPACL returns all IP-type ACLs
-	DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLEntry, error)
+	DumpIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*AclDetails, error)
 	// DumpIPACL returns all MACIP-type ACLs
-	DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*ACLEntry, error)
+	DumpMACIPACL(swIfIndices ifaceidx.SwIfIndex) ([]*AclDetails, error)
 	// DumpACLInterfaces returns a map of IP ACL indices with interfaces
 	DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex) (map[uint32]*acl.AccessLists_Acl_Interfaces, error)
 	// DumpMACIPACLInterfaces returns a map of MACIP ACL indices with interfaces
 	DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.SwIfIndex) (map[uint32]*acl.AccessLists_Acl_Interfaces, error)
 	// DumpIPAcls returns a list of all configured ACLs with IP-type ruleData.
-	DumpIPAcls() (map[ACLIdentifier][]aclapi.ACLRule, error)
+	DumpIPAcls() (map[AclMeta][]aclapi.ACLRule, error)
 	// DumpMacIPAcls returns a list of all configured ACL with IPMAC-type ruleData.
-	DumpMacIPAcls() (map[ACLIdentifier][]aclapi.MacipACLRule, error)
+	DumpMacIPAcls() (map[AclMeta][]aclapi.MacipACLRule, error)
 	// DumpInterfaceAcls finds interface in VPP and returns its ACL configuration
 	DumpInterfaceIPAcls(swIndex uint32) (acl.AccessLists, error)
 	// DumpInterfaceMACIPAcls finds interface in VPP and returns its MACIP ACL configuration
@@ -90,10 +90,14 @@ type aclVppHandler struct {
 }
 
 // NewAclVppHandler creates new instance of acl vppcalls handler
-func NewAclVppHandler(callsChan, dumpChan govppapi.Channel, stopwatch *measure.Stopwatch) *aclVppHandler {
-	return &aclVppHandler{
+func NewAclVppHandler(callsChan, dumpChan govppapi.Channel, stopwatch *measure.Stopwatch) (*aclVppHandler, error) {
+	handler := &aclVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
 		stopwatch:    stopwatch,
 	}
+	if err := handler.callsChannel.CheckMessageCompatibility(AclMessages...); err != nil {
+		return nil, err
+	}
+	return handler, nil
 }

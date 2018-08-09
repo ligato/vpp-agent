@@ -17,6 +17,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 
 *** Test Cases ***
 Configure Environment
@@ -41,15 +43,15 @@ Add Physical1 Interface
     vpp_ctl: Put Physical Interface With IP    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_1_VPP_NAME}    ip=10.11.1.2    prefix=28    mtu=1500
 
 Check That Physical1 Interface Is Configured
-    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_1_VPP_NAME}
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv4=10.11.1.2/28    mtu=1500
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_1_VPP_NAME}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv4=10.11.1.2/28    mtu=1500
 
 Add Physical2 Interface
     vpp_ctl: Put Physical Interface With IP    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_2_VPP_NAME}    ip=20.21.2.3    prefix=24    mtu=2500
 
 Check That Physical2 Interface Is Configured
-    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv4=20.21.2.3/24    mtu=2500
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv4=20.21.2.3/24    mtu=2500
 
 Check That Physical1 Interface Is Still Configured
     vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv4=10.11.1.2/28    mtu=1500
@@ -59,7 +61,7 @@ Update Physical1 Interface
     vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv4=30.31.3.3/26    mtu=1600
 
 Check That Physical2 Interface Is Still Configured
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv4=20.21.2.3/24    mtu=2500
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv4=20.21.2.3/24    mtu=2500
 
 Delete Physical2 Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
@@ -70,7 +72,7 @@ Check That Physical2 Interface Is Unconfigured
     Lists Should Be Equal    ${ipv4_list}    ${EMPTY}
 
 Check That Physical1 Interface Is Not Affected By Delete Physical2
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv4=30.31.3.3/26    mtu=1600
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv4=30.31.3.3/26    mtu=1600
 
 Delete Physical1 interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_1_VPP_NAME}

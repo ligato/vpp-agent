@@ -4,7 +4,7 @@ VERSION	?= $(shell git describe --always --tags --dirty)
 COMMIT	?= $(shell git rev-parse HEAD)
 DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
 
-CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/core
+CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
 
 ifeq ($(NOSTRIP),)
@@ -143,8 +143,8 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi/tapv2 && pkgreflect
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
-	@echo "=> applying patches"
-	patch -p1 -i plugins/vpp/binapi/*.patch
+	@echo "=> applying fix patches"
+	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch -p1 -i {} \;
 
 verify-binapi:
 	@echo "=> verifying binary api"
@@ -162,7 +162,7 @@ bindata: get-bindata
 
 # Get dependency manager tool
 get-dep:
-	go get -v github.com/golang/dep/cmd/dep
+	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 	dep version
 
 # Install the project's dependencies
@@ -177,13 +177,18 @@ dep-update: get-dep
 
 # Check state of dependencies
 dep-check: get-dep
-	dep ensure -dry-run -no-vendor
+	@echo "=> checking dependencies"
+	dep check
+
+LINTER := $(shell command -v gometalinter 2> /dev/null)
 
 # Get linter tools
 get-linters:
+ifndef LINTER
 	@echo "=> installing linters"
 	go get -v github.com/alecthomas/gometalinter
 	gometalinter --install
+endif
 
 # Run linters
 lint: get-linters
@@ -195,10 +200,14 @@ format:
 	@echo "=> formatting the code"
 	./scripts/gofmt.sh
 
+MDLINKCHECK := $(shell command -v markdown-link-check 2> /dev/null)
+
 # Get link check tool
 get-linkcheck:
+ifndef MDLINKCHECK
 	sudo apt-get install npm
-	npm install -g markdown-link-check
+	npm install -g markdown-link-check@3.6.2
+endif
 
 # Validate links in markdown files
 check-links: get-linkcheck

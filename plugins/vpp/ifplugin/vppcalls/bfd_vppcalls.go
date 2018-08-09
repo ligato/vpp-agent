@@ -19,9 +19,8 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
+	"strconv"
+
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
@@ -29,11 +28,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 )
 
-// AddBfdUDPSession adds new BFD session with authentication if available.
-func AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyIndexes idxvpp.NameToIdx,
-	log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *bfdVppHandler) AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyIndexes idxvpp.NameToIdx) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdUDPAdd{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdUDPAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bfd_api.BfdUDPAdd{
@@ -66,15 +63,15 @@ func AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyInd
 
 	// Authentication
 	if bfdSess.Authentication != nil {
-		keyID := string(bfdSess.Authentication.KeyId)
-		log.Infof("Setting up authentication with index %v", keyID)
+		keyID := strconv.Itoa(int(bfdSess.Authentication.KeyId))
+		handler.log.Infof("Setting up authentication with index %v", keyID)
 		_, _, found := bfdKeyIndexes.LookupIdx(keyID)
 		if found {
 			req.IsAuthenticated = 1
 			req.BfdKeyID = uint8(bfdSess.Authentication.KeyId)
 			req.ConfKeyID = bfdSess.Authentication.AdvertisedKeyId
 		} else {
-			log.Infof("Authentication key %v not found", bfdSess.Authentication.KeyId)
+			handler.log.Infof("Authentication key %v not found", bfdSess.Authentication.KeyId)
 			req.IsAuthenticated = 0
 		}
 	} else {
@@ -82,7 +79,7 @@ func AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyInd
 	}
 
 	reply := &bfd_api.BfdUDPAddReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -92,11 +89,9 @@ func AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyInd
 	return nil
 }
 
-// AddBfdUDPSessionFromDetails adds new BFD session with authentication if available.
-func AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx, log logging.Logger,
-	vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *bfdVppHandler) AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdUDPAdd{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdUDPAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bfd_api.BfdUDPAdd{
@@ -112,14 +107,14 @@ func AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUDPSessionDetails, bfdKeyIn
 	// Authentication
 	if bfdSess.IsAuthenticated != 0 {
 		keyID := string(bfdSess.BfdKeyID)
-		log.Infof("Setting up authentication with index %v", keyID)
+		handler.log.Infof("Setting up authentication with index %v", keyID)
 		_, _, found := bfdKeyIndexes.LookupIdx(keyID)
 		if found {
 			req.IsAuthenticated = 1
 			req.BfdKeyID = bfdSess.BfdKeyID
 			req.ConfKeyID = bfdSess.ConfKeyID
 		} else {
-			log.Infof("Authentication key %v not found", bfdSess.BfdKeyID)
+			handler.log.Infof("Authentication key %v not found", bfdSess.BfdKeyID)
 			req.IsAuthenticated = 0
 		}
 	} else {
@@ -127,7 +122,7 @@ func AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUDPSessionDetails, bfdKeyIn
 	}
 
 	reply := &bfd_api.BfdUDPAddReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -137,10 +132,9 @@ func AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUDPSessionDetails, bfdKeyIn
 	return nil
 }
 
-// ModifyBfdUDPSession modifies existing BFD session excluding authentication which cannot be changed this way.
-func ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func (handler *bfdVppHandler) ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdUDPMod{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdUDPMod{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Find the interface
@@ -178,7 +172,7 @@ func ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	}
 
 	reply := &bfd_api.BfdUDPModReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -188,10 +182,9 @@ func ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx
 	return nil
 }
 
-// DeleteBfdUDPSession removes an existing BFD session.
-func DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *bfdVppHandler) DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress string) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdUDPDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdUDPDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bfd_api.BfdUDPDel{
@@ -202,7 +195,7 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress strin
 	}
 
 	reply := &bfd_api.BfdUDPDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -212,53 +205,9 @@ func DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress strin
 	return nil
 }
 
-// DumpBfdUDPSessions returns a list of BFD session's metadata
-func DumpBfdUDPSessions(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) ([]*bfd_api.BfdUDPSessionDetails, error) {
-	return dumpBfdUDPSessionsWithID(false, 0, vppChan, stopwatch)
-}
-
-// DumpBfdUDPSessionsWithID returns a list of BFD session's metadata filtered according to provided authentication key
-func DumpBfdUDPSessionsWithID(authKeyIndex uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) ([]*bfd_api.BfdUDPSessionDetails, error) {
-	return dumpBfdUDPSessionsWithID(true, authKeyIndex, vppChan, stopwatch)
-}
-
-func dumpBfdUDPSessionsWithID(filterID bool, authKeyIndex uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (sessions []*bfd_api.BfdUDPSessionDetails, err error) {
+func (handler *bfdVppHandler) SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdUDPSessionDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &bfd_api.BfdUDPSessionDump{}
-	reqCtx := vppChan.SendMultiRequest(req)
-	for {
-		msg := &bfd_api.BfdUDPSessionDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if stop {
-			break
-		}
-		if err != nil {
-			return sessions, err
-		}
-
-		if filterID {
-			// Not interested in sessions without auth key
-			if msg.IsAuthenticated == 0 {
-				continue
-			}
-			if msg.BfdKeyID == uint8(authKeyIndex) {
-				sessions = append(sessions, msg)
-			}
-		} else {
-			sessions = append(sessions, msg)
-		}
-	}
-
-	return sessions, nil
-}
-
-// SetBfdUDPAuthenticationKey creates new authentication key.
-func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
-	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdAuthSetKey{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdAuthSetKey{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Convert authentication according to RFC5880.
@@ -268,7 +217,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	} else if bfdKey.AuthenticationType == 1 {
 		authentication = 5 // Meticulous keyed SHA1
 	} else {
-		log.Warnf("Provided authentication type not supported, setting up SHA1")
+		handler.log.Warnf("Provided authentication type not supported, setting up SHA1")
 		authentication = 4
 	}
 
@@ -280,7 +229,7 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	}
 
 	reply := &bfd_api.BfdAuthSetKeyReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -290,10 +239,9 @@ func SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, log logging.Logger
 	return nil
 }
 
-// DeleteBfdUDPAuthenticationKey removes the authentication key.
-func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func (handler *bfdVppHandler) DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdAuthDelKey{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdAuthDelKey{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &bfd_api.BfdAuthDelKey{
@@ -301,7 +249,7 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChan govppap
 	}
 
 	reply := &bfd_api.BfdAuthDelKeyReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -311,34 +259,9 @@ func DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key, vppChan govppap
 	return nil
 }
 
-// DumpBfdKeys looks up all BFD auth keys and saves their name-to-index mapping
-func DumpBfdKeys(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (keys []*bfd_api.BfdAuthKeysDetails, err error) {
+func (handler *bfdVppHandler) AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdAuthKeysDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &bfd_api.BfdAuthKeysDump{}
-	reqCtx := vppChan.SendMultiRequest(req)
-	for {
-		msg := &bfd_api.BfdAuthKeysDetails{}
-		stop, err := reqCtx.ReceiveReply(msg)
-		if stop {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		keys = append(keys, msg)
-	}
-
-	return keys, nil
-}
-
-// AddBfdEchoFunction sets up an echo function for the interface.
-func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
-	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdUDPSetEchoSource{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdUDPSetEchoSource{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Verify the interface presence.
@@ -352,7 +275,7 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	}
 
 	reply := &bfd_api.BfdUDPSetEchoSourceReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -362,17 +285,16 @@ func AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifa
 	return nil
 }
 
-// DeleteBfdEchoFunction removes an echo function.
-func DeleteBfdEchoFunction(vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
+func (handler *bfdVppHandler) DeleteBfdEchoFunction() error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(bfd_api.BfdUDPDelEchoSource{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(bfd_api.BfdUDPDelEchoSource{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare the message.
 	req := &bfd_api.BfdUDPDelEchoSource{}
 
 	reply := &bfd_api.BfdUDPDelEchoSourceReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {

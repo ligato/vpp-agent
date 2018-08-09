@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -321,9 +320,9 @@ func routeTestSetup(t *testing.T) (*l3plugin.LinuxRouteConfigurator, *linuxmock.
 	RegisterTestingT(t)
 
 	// Loggers
-	pluginLog := logging.ForPlugin("linux-route-log", logrus.NewLogRegistry())
+	pluginLog := logging.ForPlugin("linux-route-log")
 	pluginLog.SetLevel(logging.DebugLevel)
-	nsHandleLog := logging.ForPlugin("ns-handle-log", logrus.NewLogRegistry())
+	nsHandleLog := logging.ForPlugin("ns-handle-log")
 	nsHandleLog.SetLevel(logging.DebugLevel)
 	// Linux interface indexes
 	ifIndexes := ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(pluginLog, "if", nil))
@@ -340,6 +339,7 @@ func routeTestSetup(t *testing.T) (*l3plugin.LinuxRouteConfigurator, *linuxmock.
 func routeTestTeardown(plugin *l3plugin.LinuxRouteConfigurator) {
 	err := plugin.Close()
 	Expect(err).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 func getRouteID(dst, gw string, ifIdx, table uint32) *netlink.Route {
