@@ -156,7 +156,7 @@ func (mem *nameToIdxMem) Watch(subscriber string, callback func(idxvpp.NameToIdx
 		}
 		callback(msg)
 	}
-	mem.internal.Watch(string(subscriber), watcher)
+	mem.internal.Watch(infra.PluginName(subscriber), watcher)
 }
 
 // ToChan is an utility that allows to receive notification through a channel.

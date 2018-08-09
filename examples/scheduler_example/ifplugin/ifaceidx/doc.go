@@ -1,2 +1,3 @@
-// Package ifaceidx will replace ifaceidx once ifplugin is based on the KVScheduler.
+// Package ifaceidx implements name-to-index mapping registry and cache
+// for VPP interfaces.
 package ifaceidx
