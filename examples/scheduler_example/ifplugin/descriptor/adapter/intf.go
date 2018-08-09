@@ -9,7 +9,7 @@ import (
 	. "github.com/ligato/cn-infra/kvscheduler/api"
 	. "github.com/ligato/cn-infra/kvscheduler/value/protoval"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/examples/scheduler_example/ifplugin/ifaceidx2"
+	"github.com/ligato/vpp-agent/examples/scheduler_example/ifplugin/ifaceidx"
 )
 
 ////////// type-safe key-value pair with metadata //////////
@@ -17,7 +17,7 @@ import (
 type IntfKVWithMetadata struct {
 	Key      string
 	Value    *interfaces.Interfaces_Interface
-	Metadata *ifaceidx2.IfaceMetadata
+	Metadata *ifaceidx.IfaceMetadata
 	Origin   ValueOrigin
 }
 
@@ -29,11 +29,11 @@ type IntfDescriptorAPI interface {
     NBKeyPrefixes() []string
     WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory)
 	Build(key string, valueData *interfaces.Interfaces_Interface) (value ProtoValue, err error)
-	Add(key string, value *interfaces.Interfaces_Interface) (metadata *ifaceidx2.IfaceMetadata, err error)
-	Delete(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx2.IfaceMetadata) error
-	Modify(key string, oldValue, newValue *interfaces.Interfaces_Interface, oldMetadata *ifaceidx2.IfaceMetadata) (newMetadata *ifaceidx2.IfaceMetadata, err error)
-	ModifyHasToRecreate(key string, oldValue, newValue *interfaces.Interfaces_Interface, metadata *ifaceidx2.IfaceMetadata) bool
-	Update(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx2.IfaceMetadata) error
+	Add(key string, value *interfaces.Interfaces_Interface) (metadata *ifaceidx.IfaceMetadata, err error)
+	Delete(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx.IfaceMetadata) error
+	Modify(key string, oldValue, newValue *interfaces.Interfaces_Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error)
+	ModifyHasToRecreate(key string, oldValue, newValue *interfaces.Interfaces_Interface, metadata *ifaceidx.IfaceMetadata) bool
+	Update(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx.IfaceMetadata) error
 	Dependencies(key string, value *interfaces.Interfaces_Interface) []Dependency
 	DerivedValues(key string, value *interfaces.Interfaces_Interface) []KeyValuePair
 	Dump(correlate []IntfKVWithMetadata) ([]IntfKVWithMetadata, error)
@@ -77,26 +77,26 @@ func (db *IntfDescriptorBase) Build(key string, valueData *interfaces.Interfaces
 	return NewProtoValue(valueData), nil
 }
 
-func (db *IntfDescriptorBase) Add(key string, value *interfaces.Interfaces_Interface) (metadata *ifaceidx2.IfaceMetadata, err error) {
+func (db *IntfDescriptorBase) Add(key string, value *interfaces.Interfaces_Interface) (metadata *ifaceidx.IfaceMetadata, err error) {
 	fmt.Printf("Create for key=%s is not implemented\n", key)
 	return nil, nil
 }
 
-func (db *IntfDescriptorBase) Delete(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx2.IfaceMetadata) error {
+func (db *IntfDescriptorBase) Delete(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx.IfaceMetadata) error {
 	fmt.Printf("Delete for key=%s is not implemented\n", key)
 	return nil
 }
 
-func (db *IntfDescriptorBase) Modify(key string, oldValue, newValue *interfaces.Interfaces_Interface, oldMetadata *ifaceidx2.IfaceMetadata) (newMetadata *ifaceidx2.IfaceMetadata, err error) {
+func (db *IntfDescriptorBase) Modify(key string, oldValue, newValue *interfaces.Interfaces_Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
 	fmt.Printf("Modify for key=%s is not implemented\n", key)
 	return nil, nil
 }
 
-func (db *IntfDescriptorBase) ModifyHasToRecreate(key string, oldValue, newValue *interfaces.Interfaces_Interface, metadata *ifaceidx2.IfaceMetadata) bool {
+func (db *IntfDescriptorBase) ModifyHasToRecreate(key string, oldValue, newValue *interfaces.Interfaces_Interface, metadata *ifaceidx.IfaceMetadata) bool {
 	return false
 }
 
-func (db *IntfDescriptorBase) Update(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx2.IfaceMetadata) error {
+func (db *IntfDescriptorBase) Update(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx.IfaceMetadata) error {
 	fmt.Printf("Modify for key=%s is not implemented\n", key)
 	return nil
 }
@@ -300,11 +300,11 @@ func castValue(key string, value Value) (*interfaces.Interfaces_Interface, error
 	return protoWithType, nil
 }
 
-func castMetadata(key string, metadata Metadata) (*ifaceidx2.IfaceMetadata, error) {
+func castMetadata(key string, metadata Metadata) (*ifaceidx.IfaceMetadata, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*ifaceidx2.IfaceMetadata)
+	typedMetadata, ok := metadata.(*ifaceidx.IfaceMetadata)
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}
