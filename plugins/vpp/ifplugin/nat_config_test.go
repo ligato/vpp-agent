@@ -480,6 +480,8 @@ func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{}) // Delete
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelAddressRangeReply{})
+	ctx.MockVpp.MockReply(&nat_api.NatSetReassReply{})
+	ctx.MockVpp.MockReply(&nat_api.NatSetReassReply{})
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{}) // Re-register
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{})
 	// Registration
@@ -562,9 +564,10 @@ func TestNatConfiguratorDeleteGlobalConfigErrors(t *testing.T) {
 
 // Remove empty global NAT configuration
 func TestNatConfiguratorDeleteGlobalConfigEmpty(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
+	ctx, connection, plugin, _ := natTestSetup(t)
 	defer natTestTeardown(connection, plugin)
-
+	ctx.MockVpp.MockReply(&nat_api.NatSetReassReply{})
+	ctx.MockVpp.MockReply(&nat_api.NatSetReassReply{})
 	// Data
 	data := &nat.Nat44Global{}
 

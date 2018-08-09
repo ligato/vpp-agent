@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package ifplugin
 
-// Deps is a helper struct which is grouping all dependencies injected to the plugin
-type Deps struct {
-	//local.PluginLogDeps // injected
+import "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+
+// Export for testing
+func ResolveMappings(natCfg *NatConfigurator, nbDNatConfig *nat.Nat44DNat_DNatConfig,
+vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIdMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
+	natCfg.resolveMappings(nbDNatConfig, vppMappings, vppIdMappings)
 }

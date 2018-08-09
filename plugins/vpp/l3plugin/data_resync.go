@@ -17,6 +17,8 @@ package l3plugin
 import (
 	"fmt"
 
+	"net"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
@@ -123,22 +125,53 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 
 	// Add missing route configuration
 	var wasError error
-	if len(nbRoutes) > 0 {
-		for _, nbRoute := range nbRoutes {
-			routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
+	for _, nbRoute := range nbRoutes {
+		routeID := routeIdentifier(nbRoute.VrfId, nbRoute.DstIpAddr, nbRoute.NextHopAddr)
+		_, _, found := plugin.rtIndexes.LookupIdx(routeID)
+		if !found {
+			// create new route if does not exist yet. VRF ID is already validated at this point.
+			if err := plugin.ConfigureRoute(nbRoute, fmt.Sprintf("%d", nbRoute.VrfId)); err != nil {
+				plugin.log.Error(err)
+				wasError = err
+			}
+			plugin.log.Debugf("RESYNC routes: route %s was configured", routeID)
+		}
+	}
+
+	// Remove other routes except DROP type
+	for _, vppRoute := range vppRouteDetails {
+		if routeMayBeRemoved(vppRoute) {
+			route := vppRoute.Route
+			routeID := routeIdentifier(route.VrfId, route.DstIpAddr, route.NextHopAddr)
 			_, _, found := plugin.rtIndexes.LookupIdx(routeID)
 			if !found {
-				// create new route if does not exist yet. VRF ID is already validated at this point.
-				plugin.log.Debugf("RESYNC routes: route %s not found and will be configured", routeID)
-				if err := plugin.ConfigureRoute(nbRoute, fmt.Sprintf("%d", nbRoute.VrfId)); err != nil {
+				// Register before removal
+				plugin.rtIndexes.RegisterName(routeID, plugin.rtIndexSeq, route)
+				plugin.rtIndexSeq++
+				if err := plugin.DeleteRoute(route, fmt.Sprintf("%d", route.VrfId)); err != nil {
 					plugin.log.Error(err)
 					wasError = err
 				}
+				plugin.log.Debugf("RESYNC routes: vpp route %s removed", routeID)
 			}
 		}
 	}
+
 	plugin.log.WithField("cfg", plugin).Debug("RESYNC routes end. ", wasError)
 	return wasError
+}
+
+// Following rules are currently applied:
+// - no DROP type route can be removed in order to prevent removal of VPP default routes
+// - IPv6 link local route cannot be removed
+func routeMayBeRemoved(route *vppcalls.RouteDetails) bool {
+	if route.Route.Type == l3.StaticRoutes_Route_DROP {
+		return false
+	}
+	if route.Meta.IsIPv6 && net.ParseIP(route.Route.DstIpAddr).IsLinkLocalUnicast() {
+		return false
+	}
+	return true
 }
 
 // Resync confgures the empty VPP (overwrites the arp entries)
@@ -209,5 +242,23 @@ func (plugin *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArp
 	}
 
 	plugin.log.Debug("RESYNC proxy ARP ranges end. ", wasError)
+	return nil
+}
+
+// Resync configures the empty VPP (adds IP scan neigh config)
+func (p *IPNeighConfigurator) Resync(config *l3.IPScanNeighbor) error {
+	p.log.Debug("RESYNC IP neighbor begin. ")
+	defer func() {
+		if p.stopwatch != nil {
+			p.stopwatch.PrintLog()
+		}
+	}()
+
+	var wasError error
+	if err := p.Set(config); err != nil {
+		return err
+	}
+
+	p.log.Debug("RESYNC IP neighbor end. ", wasError)
 	return nil
 }

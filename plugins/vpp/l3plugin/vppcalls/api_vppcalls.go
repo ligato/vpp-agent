@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // ArpVppAPI provides methods for managing ARP entries
@@ -77,15 +78,21 @@ type RouteVppAPI interface {
 // RouteVppWrite provides write methods for routes
 type RouteVppWrite interface {
 	// VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
-	VppAddRoute(ifHandler vppcalls.IfVppWrite, route *Route) error
+	VppAddRoute(ifHandler vppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error
 	// VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *Route) error
+	VppDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32) error
 }
 
 // RouteVppRead provides read methods for routes
 type RouteVppRead interface {
 	// DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
 	DumpStaticRoutes() ([]*RouteDetails, error)
+}
+
+// IPNeighVppAPI provides methods for managing IP scan neighbor configuration
+type IPNeighVppAPI interface {
+	// SetIPScanNeighbor configures IP scan neighbor to the VPP
+	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
 }
 
 // arpVppHandler is accessor for ARP-related vppcalls methods
@@ -109,6 +116,13 @@ type routeHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
+	log          logging.Logger
+}
+
+// ipNeighHandler is accessor for ip-neighbor-related vppcalls methods
+type ipNeighHandler struct {
+	stopwatch    *measure.Stopwatch
+	callsChannel govppapi.Channel
 	log          logging.Logger
 }
 
@@ -151,6 +165,20 @@ func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex
 		log:          log,
 	}
 	if err := handler.callsChannel.CheckMessageCompatibility(RouteMessages...); err != nil {
+		return nil, err
+	}
+
+	return handler, nil
+}
+
+// NewIPNeighVppHandler creates new instance of ip neighbor vppcalls handler
+func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*ipNeighHandler, error) {
+	handler := &ipNeighHandler{
+		callsChannel: callsChan,
+		stopwatch:    stopwatch,
+		log:          log,
+	}
+	if err := handler.callsChannel.CheckMessageCompatibility(IPNeighMessages...); err != nil {
 		return nil, err
 	}
 

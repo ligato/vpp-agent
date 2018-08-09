@@ -397,10 +397,159 @@ func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3pl
 	return ctx, connection, plugin, ifIndexes
 }
 
+func TestDiffRoutesAddedOnly(t *testing.T) {
+	RegisterTestingT(t)
+
+	var routesOld []*l3.StaticRoutes_Route
+
+	routes := []*l3.StaticRoutes_Route{
+		routeOne,
+		routeTwo,
+	}
+
+	cfg := l3plugin.RouteConfigurator{}
+	del, add := cfg.DiffRoutes(routes, routesOld)
+	Expect(del).To(BeEmpty())
+	Expect(add).NotTo(BeEmpty())
+	Expect(add[0]).To(BeEquivalentTo(routeOne))
+	Expect(add[1]).To(BeEquivalentTo(routeTwo))
+}
+
+func TestDiffRoutesDeleteOnly(t *testing.T) {
+	RegisterTestingT(t)
+
+	routesOld := []*l3.StaticRoutes_Route{
+		routeOne,
+		routeTwo,
+	}
+
+	var routes []*l3.StaticRoutes_Route
+
+	cfg := l3plugin.RouteConfigurator{}
+	del, add := cfg.DiffRoutes(routes, routesOld)
+	Expect(add).To(BeEmpty())
+	Expect(del).NotTo(BeEmpty())
+	Expect(del[0]).To(BeEquivalentTo(routeOne))
+	Expect(del[1]).To(BeEquivalentTo(routeTwo))
+}
+
+func TestDiffRoutesOneAdded(t *testing.T) {
+	RegisterTestingT(t)
+
+	routesOld := []*l3.StaticRoutes_Route{
+		routeOne,
+	}
+
+	routes := []*l3.StaticRoutes_Route{
+		routeOne,
+		routeTwo,
+	}
+
+	cfg := l3plugin.RouteConfigurator{}
+	del, add := cfg.DiffRoutes(routes, routesOld)
+	Expect(del).To(BeEmpty())
+	Expect(add).NotTo(BeEmpty())
+	Expect(add[0]).To(BeEquivalentTo(routeTwo))
+}
+
+func TestDiffRoutesNoChange(t *testing.T) {
+	RegisterTestingT(t)
+
+	routesOld := []*l3.StaticRoutes_Route{
+		routeTwo,
+		routeOne,
+	}
+
+	routes := []*l3.StaticRoutes_Route{
+		routeOne,
+		routeTwo,
+	}
+
+	cfg := l3plugin.RouteConfigurator{}
+	del, add := cfg.DiffRoutes(routes, routesOld)
+	Expect(del).To(BeEmpty())
+	Expect(add).To(BeEmpty())
+}
+
+func TestDiffRoutesWeightChange(t *testing.T) {
+	RegisterTestingT(t)
+
+	routesOld := []*l3.StaticRoutes_Route{
+		routeThree,
+	}
+
+	routes := []*l3.StaticRoutes_Route{
+		routeThreeW,
+	}
+
+	cfg := l3plugin.RouteConfigurator{}
+	del, add := cfg.DiffRoutes(routes, routesOld)
+	Expect(del).NotTo(BeEmpty())
+	Expect(add).NotTo(BeEmpty())
+	Expect(add[0]).To(BeEquivalentTo(routeThreeW))
+	Expect(del[0]).To(BeEquivalentTo(routeThree))
+
+}
+
+func TestDiffRoutesMultipleChanges(t *testing.T) {
+	RegisterTestingT(t)
+
+	routesOld := []*l3.StaticRoutes_Route{
+		routeOne,
+		routeTwo,
+		routeThree,
+	}
+
+	routes := []*l3.StaticRoutes_Route{
+		routeThreeW,
+		routeTwo,
+	}
+
+	cfg := l3plugin.RouteConfigurator{}
+	del, add := cfg.DiffRoutes(routes, routesOld)
+	Expect(del).NotTo(BeEmpty())
+	Expect(add).NotTo(BeEmpty())
+	Expect(add[0]).To(BeEquivalentTo(routeThreeW))
+	Expect(del[0]).To(BeEquivalentTo(routeOne))
+	Expect(del[1]).To(BeEquivalentTo(routeThree))
+}
+
 // Test Teardown
 func routeTestTeardown(connection *core.Connection, plugin *l3plugin.RouteConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
+}
+
+var routeOne = &l3.StaticRoutes_Route{
+	VrfId:             0,
+	DstIpAddr:         "10.1.1.0/24",
+	NextHopAddr:       "192.168.1.1",
+	OutgoingInterface: "if1",
+	Weight:            5,
+}
+
+var routeTwo = &l3.StaticRoutes_Route{
+	VrfId:             0,
+	DstIpAddr:         "172.16.1.0/24",
+	NextHopAddr:       "10.10.1.1",
+	OutgoingInterface: "if2",
+	Weight:            5,
+}
+
+var routeThree = &l3.StaticRoutes_Route{
+	VrfId:             0,
+	DstIpAddr:         "172.16.1.0/24",
+	NextHopAddr:       "10.10.1.1",
+	OutgoingInterface: "if2",
+	Weight:            5,
+}
+
+var routeThreeW = &l3.StaticRoutes_Route{
+	VrfId:             0,
+	DstIpAddr:         "172.16.1.0/24",
+	NextHopAddr:       "10.10.1.1",
+	OutgoingInterface: "if2",
+	Weight:            10,
 }

@@ -16,12 +16,19 @@ package main
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
+	"github.com/ligato/vpp-agent/plugins/linux"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/namsral/flag"
@@ -83,53 +90,82 @@ var (
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example.
-	//closeChannel := make(chan struct{}, 1)
-	//
-	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
-	//	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &TapExamplePlugin{}}
-	//
-	//	return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
-	//}))
-	//
-	//// End when the localhost example is finished.
-	//go closeExample("localhost example finished", closeChannel)
-	//
-	//core.EventLoopWithInterrupt(agent, closeChannel)
+	//Init close channel to stop the example.
+	exampleFinished := make(chan struct{})
+	// Prepare all the dependencies for example plugin
+	watcher := datasync.KVProtoWatchers{
+		local.Get(),
+	}
+	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
+		deps.Watcher = watcher
+	}))
+	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
+		deps.VPP = vppPlugin
+		deps.Watcher = watcher
+	}))
+	vppPlugin.Deps.Linux = linuxPlugin
 
-	// todo use new flavors and options
+	var watchEventsMutex sync.Mutex
+	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+	linuxPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+
+	// Inject dependencies to example plugin
+	ep := &TapExamplePlugin{
+		Log: logging.DefaultLogger,
+	}
+	ep.Deps.VPP = vppPlugin
+	ep.Deps.Linux = linuxPlugin
+
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleFinished),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
+
+	go closeExample("localhost example finished", exampleFinished)
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, closeChannel chan struct{}) {
+func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(time.Duration(*timeout+5) * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+	logrus.DefaultLogger().Info(message)
+	close(exampleFinished)
 }
 
 /* TAP Example */
 
-// PluginID of an example plugin.
-//const PluginID core.PluginName = "tap-example-plugin"
-
 // TapExamplePlugin uses localclient to transport example tap and its linux end
 // configuration to linuxplugin or VPP plugins
 type TapExamplePlugin struct {
-	log    logging.Logger
+	Deps
+
+	Log    logging.Logger
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
 }
 
+// Deps is example plugin dependencies. Keep order of fields.
+type Deps struct {
+	VPP   *vpp.Plugin
+	Linux *linux.Plugin
+}
+
+// PluginName represents name of plugin.
+const PluginName = "tap-example"
+
 // Init initializes example plugin.
 func (plugin *TapExamplePlugin) Init() error {
 	// Logger
-	plugin.log = log.DefaultLogger()
-	plugin.log.SetLevel(logging.DebugLevel)
-	plugin.log.Info("Initializing Tap example")
+	plugin.Log = logrus.DefaultLogger()
+	plugin.Log.SetLevel(logging.DebugLevel)
+	plugin.Log.Info("Initializing Tap example")
 
 	// Flags
 	flag.Parse()
-	plugin.log.Infof("Timeout between create and modify set to %d", *timeout)
+	plugin.Log.Infof("Timeout between create and modify set to %d", *timeout)
 
 	// Apply initial Linux/VPP configuration.
 	plugin.putInitialData()
@@ -140,7 +176,7 @@ func (plugin *TapExamplePlugin) Init() error {
 	plugin.wg.Add(1)
 	go plugin.putModifiedData(ctx, *timeout)
 
-	plugin.log.Info("Tap example initialization done")
+	plugin.Log.Info("Tap example initialization done")
 	return nil
 }
 
@@ -149,46 +185,51 @@ func (plugin *TapExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	log.DefaultLogger().Info("Closed Tap plugin")
+	plugin.Log.Info("Closed Tap plugin")
 	return nil
+}
+
+// String returns plugin name
+func (plugin *TapExamplePlugin) String() string {
+	return PluginName
 }
 
 // Configure initial data
 func (plugin *TapExamplePlugin) putInitialData() {
-	plugin.log.Infof("Applying initial configuration")
-	//err := localclient.DataResyncRequest(PluginID).
-	//	VppInterface(initialTap1()).
-	//	LinuxInterface(initialLinuxTap1()).
-	//	BD(bridgeDomain()).
-	//	Send().ReceiveReply()
-	//if err != nil {
-	//	plugin.log.Errorf("Initial configuration failed: %v", err)
-	//} else {
-	//	plugin.log.Info("Initial configuration successful")
-	//}
+	plugin.Log.Infof("Applying initial configuration")
+	err := localclient.DataResyncRequest(PluginName).
+		VppInterface(initialTap1()).
+		LinuxInterface(initialLinuxTap1()).
+		BD(bridgeDomain()).
+		Send().ReceiveReply()
+	if err != nil {
+		plugin.Log.Errorf("Initial configuration failed: %v", err)
+	} else {
+		plugin.Log.Info("Initial configuration successful")
+	}
 }
 
 // Configure modified data
 func (plugin *TapExamplePlugin) putModifiedData(ctx context.Context, timeout int) {
 	select {
 	case <-time.After(time.Duration(timeout) * time.Second):
-		plugin.log.Infof("Applying modified configuration")
+		plugin.Log.Infof("Applying modified configuration")
 		// Simulate configuration change after timeout
-		//err := localclient.DataChangeRequest(PluginID).
-		//	Put().
-		//	VppInterface(modifiedTap1()).
-		//	VppInterface(tap2()).
-		//	LinuxInterface(modifiedLinuxTap1()).
-		//	LinuxInterface(linuxTap2()).
-		//	Send().ReceiveReply()
-		//if err != nil {
-		//	plugin.log.Errorf("Modified configuration failed: %v", err)
-		//} else {
-		//	plugin.log.Info("Modified configuration successful")
-		//}
+		err := localclient.DataChangeRequest(PluginName).
+			Put().
+			VppInterface(modifiedTap1()).
+			VppInterface(tap2()).
+			LinuxInterface(modifiedLinuxTap1()).
+			LinuxInterface(linuxTap2()).
+			Send().ReceiveReply()
+		if err != nil {
+			plugin.Log.Errorf("Modified configuration failed: %v", err)
+		} else {
+			plugin.Log.Info("Modified configuration successful")
+		}
 	case <-ctx.Done():
 		// Cancel the scheduled re-configuration.
-		plugin.log.Info("Modification of configuration canceled")
+		plugin.Log.Info("Modification of configuration canceled")
 	}
 	plugin.wg.Done()
 }

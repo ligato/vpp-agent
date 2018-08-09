@@ -16,11 +16,17 @@ package main
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
-	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
+	"github.com/ligato/vpp-agent/plugins/vpp"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/namsral/flag"
@@ -102,53 +108,70 @@ vpp#
 
 // Start Agent plugins selected for this example.
 func main() {
-	// Init close channel to stop the example.
-	//closeChannel := make(chan struct{}, 1)
-	//
-	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
-	//	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &NatExamplePlugin{}}
-	//
-	//	return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
-	//}))
-	//
-	//// End when the localhost example is finished.
-	//go closeExample("NAT44 example finished", closeChannel)
-	//
-	//core.EventLoopWithInterrupt(agent, closeChannel)
+	//Init close channel to stop the example.
+	exampleFinished := make(chan struct{}, 1)
+	// Prepare all the dependencies for example plugin
+	watcher := datasync.KVProtoWatchers{
+		local.Get(),
+	}
+	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
+		deps.Watcher = watcher
+	}))
 
-	// todo use new flavors and options
+	// Inject dependencies to example plugin
+	ep := &NatExamplePlugin{}
+	ep.Deps.Log = logging.DefaultLogger
+	ep.Deps.VPP = vppPlugin
+
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(exampleFinished),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
+
+	go closeExample("localhost example finished", exampleFinished)
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, closeChannel chan struct{}) {
+func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(time.Duration(*timeout+5) * time.Second)
-	log.DefaultLogger().Info(message)
-	closeChannel <- struct{}{}
+	logrus.DefaultLogger().Info(message)
+	close(exampleFinished)
 }
 
 /* NAT44 Example */
 
-// PluginID of an example plugin.
-//const PluginID core.PluginName = "nat-example-plugin"
-
 // NatExamplePlugin uses localclient to transport example global NAT and DNAT and af-packet
 // configuration to NAT VPP plugin
 type NatExamplePlugin struct {
-	log    logging.Logger
+	Deps
+
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
 }
 
+// Deps is example plugin dependencies.
+type Deps struct {
+	Log logging.Logger
+	VPP *vpp.Plugin
+}
+
+// PluginName represents name of plugin.
+const PluginName = "nat-example"
+
 // Init initializes example plugin.
 func (plugin *NatExamplePlugin) Init() error {
 	// Logger
-	plugin.log = log.DefaultLogger()
-	plugin.log.SetLevel(logging.DebugLevel)
-	plugin.log.Info("Initializing NAT44 example")
+	plugin.Log = logrus.DefaultLogger()
+	plugin.Log.SetLevel(logging.DebugLevel)
+	plugin.Log.Info("Initializing NAT44 example")
 
 	// Flags
 	flag.Parse()
-	plugin.log.Infof("Timeout between configuring NAT global and DNAT set to %d", *timeout)
+	plugin.Log.Infof("Timeout between configuring NAT global and DNAT set to %d", *timeout)
 
 	// Apply initial VPP configuration.
 	plugin.putGlobalConfig()
@@ -159,7 +182,7 @@ func (plugin *NatExamplePlugin) Init() error {
 	plugin.wg.Add(1)
 	go plugin.putDNAT(ctx, *timeout)
 
-	plugin.log.Info("NAT example initialization done")
+	plugin.Log.Info("NAT example initialization done")
 	return nil
 }
 
@@ -168,43 +191,48 @@ func (plugin *NatExamplePlugin) Close() error {
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	log.DefaultLogger().Info("Closed NAT example plugin")
+	logrus.DefaultLogger().Info("Closed NAT example plugin")
 	return nil
+}
+
+// String returns plugin name
+func (plugin *NatExamplePlugin) String() string {
+	return PluginName
 }
 
 // Configure NAT44 Global config
 func (plugin *NatExamplePlugin) putGlobalConfig() {
-	plugin.log.Infof("Applying NAT44 global configuration")
-	//err := localclient.DataResyncRequest(PluginID).
-	//	Interface(interface1()).
-	//	Interface(interface2()).
-	//	Interface(interface3()).
-	//	NAT44Global(globalNat()).
-	//	Send().ReceiveReply()
-	//if err != nil {
-	//	plugin.log.Errorf("NAT44 global configuration failed: %v", err)
-	//} else {
-	//	plugin.log.Info("NAT44 global configuration successful")
-	//}
+	plugin.Log.Infof("Applying NAT44 global configuration")
+	err := localclient.DataResyncRequest(PluginName).
+		Interface(interface1()).
+		Interface(interface2()).
+		Interface(interface3()).
+		NAT44Global(globalNat()).
+		Send().ReceiveReply()
+	if err != nil {
+		plugin.Log.Errorf("NAT44 global configuration failed: %v", err)
+	} else {
+		plugin.Log.Info("NAT44 global configuration successful")
+	}
 }
 
 // Configure DNAT
 func (plugin *NatExamplePlugin) putDNAT(ctx context.Context, timeout int) {
 	select {
 	case <-time.After(time.Duration(timeout) * time.Second):
-		plugin.log.Infof("Applying DNAT configuration")
-		//err := localclient.DataChangeRequest(PluginID).
-		//	Put().
-		//	NAT44DNat(dNat()).
-		//	Send().ReceiveReply()
-		//if err != nil {
-		//	plugin.log.Errorf("DNAT configuration failed: %v", err)
-		//} else {
-		//	plugin.log.Info("DNAT configuration successful")
-		//}
+		plugin.Log.Infof("Applying DNAT configuration")
+		err := localclient.DataChangeRequest(PluginName).
+			Put().
+			NAT44DNat(dNat()).
+			Send().ReceiveReply()
+		if err != nil {
+			plugin.Log.Errorf("DNAT configuration failed: %v", err)
+		} else {
+			plugin.Log.Info("DNAT configuration successful")
+		}
 	case <-ctx.Done():
 		// Cancel the scheduled DNAT configuration.
-		plugin.log.Info("DNAT configuration canceled")
+		plugin.Log.Info("DNAT configuration canceled")
 	}
 	plugin.wg.Done()
 }

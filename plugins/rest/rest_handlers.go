@@ -103,7 +103,7 @@ func (plugin *Plugin) registerNatHandlers() {
 	})
 	// GET DNAT config
 	plugin.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
-		return plugin.natHandler.NAT44DNatDump()
+		return plugin.natHandler.Nat44DNatDump()
 	})
 }
 

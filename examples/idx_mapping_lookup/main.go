@@ -15,6 +15,10 @@
 package main
 
 import (
+	"log"
+
+	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -30,32 +34,32 @@ import (
 // required for the example are initialized. Agent is instantiated with generic plugins (etcd, Kafka, Status check,
 // HTTP and Log) and example plugin which demonstrates index mapping lookup functionality.
 func main() {
-	// Init close channel to stop the example
-	//exampleFinished := make(chan struct{}, 1)
-	//
-	//// Start Agent
-	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-	//	examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
-	//	examplePlug.PluginLogDeps = *flavor.LogDeps("idx-mapping-lookup")
-	//
-	//	return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
-	//}))
-	//
-	//core.EventLoopWithInterrupt(agent, exampleFinished)
+	ep := &ExamplePlugin{
+		Log:             logging.DefaultLogger,
+		exampleFinished: make(chan struct{}),
+	}
 
-	//todo use new flavors and options
+	// Start Agent
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(ep.exampleFinished),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal()
+	}
 }
+
+// PluginName represents name of plugin.
+const PluginName = "idx-mapping-lookup"
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the Agent.
 type ExamplePlugin struct {
-	Deps
-
 	exampleIdx   idxvpp.NameToIdxRW // Name to index mapping registry
 	exampleIDSeq uint32             // Provides unique ID for every item stored in mapping
 	// Fields below are used to properly finish the example.
-	closeChannel *chan struct{}
+	exampleFinished chan struct{}
 
-	Log logrus.Logger
+	Log logging.Logger
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
@@ -75,9 +79,19 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	// End the example.
 	plugin.Log.Infof("idx-mapping-lookup example finished, sending shutdown ...")
-	*plugin.closeChannel <- struct{}{}
+	close(plugin.exampleFinished)
 
 	return err
+}
+
+// Close cleans up the resources.
+func (plugin *ExamplePlugin) Close() error {
+	return nil
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
 }
 
 // Meta structure. It can contain any number of fields of different types. Metadata is optional and can be nil.

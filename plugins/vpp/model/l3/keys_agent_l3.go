@@ -39,6 +39,8 @@ const (
 	ProxyARPRangeKey = ProxyARPRangePrefix + "{label}"
 	// ProxyARPInterfacePrefix is the relative key prefix for proxy ARP-enabled interfaces.
 	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{label}"
+	// IPScanNeighPrefix it the relative key prefix for IP scan neighbor feature
+	IPScanNeighPrefix = "vpp/config/v1/ipneigh/"
 )
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.

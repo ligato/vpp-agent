@@ -469,7 +469,7 @@ func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) 
 func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
 	plugin.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := plugin.natHandler.NAT44DNatDump()
+	vppDNatCfg, err := plugin.natHandler.Nat44DNatDump()
 	if err != nil {
 		return fmt.Errorf("failed to dump DNAT config: %v", err)
 	}
@@ -600,8 +600,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 				for _, nbLocal := range nbMapping.LocalIps {
 					var found bool
 					for _, vppLocal := range vppLbMapping.LocalIps {
-						if nbLocal.LocalIp == vppLocal.LocalIp || nbLocal.LocalPort == vppLocal.LocalPort ||
-							nbLocal.Probability == vppLocal.Probability {
+						if *nbLocal == *vppLocal {
 							found = true
 						}
 					}
@@ -645,8 +644,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 				}
 				nbLocal := nbMapping.LocalIps[0]
 				vppLocal := vppMapping.LocalIps[0]
-				if nbLocal.LocalIp != vppLocal.LocalIp || nbLocal.LocalPort != vppLocal.LocalPort ||
-					nbLocal.Probability != vppLocal.Probability {
+				if *nbLocal != *vppLocal {
 					continue
 				}
 
