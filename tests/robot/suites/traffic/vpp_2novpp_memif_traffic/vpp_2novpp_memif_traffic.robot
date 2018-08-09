@@ -10,12 +10,14 @@ Resource     ../../../libraries/pretty_keywords.robot
 
 Force Tags        trafficIPv4
 Suite Setup       Testsuite Setup
-Suite Teardown    Testsuite Teardown
+Suite Teardown    Suite Cleanup
+Test Setup        TestSetup
+Test Teardown     TestTeardown
 
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-
+${SYNC_SLEEP}=         10s
 *** Test Cases ***
 
 Configure Environment
@@ -49,3 +51,9 @@ Create Memif on Agent1
     Ping from agent_vpp_2 to 10.1.1.1
 
 
+*** Keywords ***
+TestSetup
+    Make Datastore Snapshots    ${TEST_NAME}_test_setup
+
+TestTeardown
+    Make Datastore Snapshots    ${TEST_NAME}_test_teardown

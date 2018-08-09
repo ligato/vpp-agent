@@ -20,6 +20,8 @@ ${ENV}=                common
 ${IP_1}=               fd33::1:b:0:0:1
 ${IP_2}=               fd30::1:b:0:0:1
 ${IP_3}=               fd31::1:b:0:0:1
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
@@ -43,40 +45,40 @@ Add Physical1 Interface
     vpp_ctl: Put Physical Interface With IP    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_1_VPP_NAME}    ip=${IP_1}    prefix=64    mtu=1500
 
 Check That Physical1 Interface Is Configured
-    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_1_VPP_NAME}
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_1}/64    mtu=1500
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_1_VPP_NAME}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_1}/64    mtu=1500
 
 Add Physical2 Interface
     vpp_ctl: Put Physical Interface With IP    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_2_VPP_NAME}    ip=${IP_2}    prefix=64    mtu=2500
 
 Check That Physical2 Interface Is Configured
-    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv6=${IP_2}/64    mtu=2500
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Enabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv6=${IP_2}/64    mtu=2500
 
 Check That Physical1 Interface Is Still Configured
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_1}/64    mtu=1500
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_1}/64    mtu=1500
 
 Update Physical1 Interface
     vpp_ctl: Put Physical Interface With IP    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_1_VPP_NAME}    ip=${IP_3}    prefix=64    mtu=1600
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_3}/64    mtu=1600
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_3}/64    mtu=1600
 
 Check That Physical2 Interface Is Still Configured
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv6=${IP_2}/64    mtu=2500
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_2_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_2_MAC}    ipv6=${IP_2}/64    mtu=2500
 
 Delete Physical2 Interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
-    vpp_term: Interface Is Disabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Disabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
 
 Check That Physical2 Interface Is Unconfigured
     ${ipv4_list}=     vpp_term: Get Interface IPs    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_2_VPP_NAME}
     Lists Should Be Equal    ${ipv4_list}    ${EMPTY}
 
 Check That Physical1 Interface Is Not Affected By Delete Physical2
-    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_3}/64    mtu=1600
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Physical Interface State    agent_vpp_1    ${DOCKER_PHYSICAL_INT_1_VPP_NAME}    enabled=1    mac=${DOCKER_PHYSICAL_INT_1_MAC}    ipv6=${IP_3}/64    mtu=1600
 
 Delete Physical1 interface
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=${DOCKER_PHYSICAL_INT_1_VPP_NAME}
-    vpp_term: Interface Is Disabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_1_VPP_NAME}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Disabled    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_1_VPP_NAME}
 
 Check That Physical1 Interface Is Unconfigured
     ${ipv4_list}=     vpp_term: Get Interface IPs    node=agent_vpp_1    interface=${DOCKER_PHYSICAL_INT_1_VPP_NAME}

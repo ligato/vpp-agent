@@ -33,7 +33,8 @@ ${IP_VPP1_MEMIF1}=          fd33::1:a:0:0:1
 ${IP_VPP2_MEMIF1}=          fd33::1:a:0:0:2
 ${PREFIX}=                  64
 ${UP_STATE}=                up
-${SYNC_SLEEP}=         10s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        50s
 
@@ -55,7 +56,7 @@ Add VPP1_TAP1 Interface
 Check VPP1_TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
     Log                  ${interfaces}
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
     ${actual_state}=    vpp_term: Check TAPv2 interface State    agent_vpp_1    ${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ipv6=${IP_VPP1_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Check Ping Between VPP1 and linux_VPP1_TAP1 Interface
@@ -65,7 +66,7 @@ Check Ping Between VPP1 and linux_VPP1_TAP1 Interface
 Add VPP1_memif1 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=${NAME_VPP1_MEMIF1}    mac=${MAC_VPP1_MEMIF1}    master=true    id=1    ip=${IP_VPP1_MEMIF1}    prefix=24    socket=memif.sock
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
 
 Add VPP2_TAP1 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
@@ -85,7 +86,7 @@ Check Ping Between VPP2 And linux_VPP2_TAP1 Interface
 Add VPP2_memif1 Interface
     vpp_term: Interface Not Exists    node=agent_vpp_2    mac=${MAC_VPP2_MEMIF1}
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_2    name=${NAME_VPP2_MEMIF1}    mac=${MAC_VPP2_MEMIF1}    master=false    id=1    ip=${IP_VPP2_MEMIF1}    prefix=24    socket=memif.sock
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_MEMIF1}
 
 Check Ping From VPP1 To VPP2_memif1
     vpp_term: Check Ping    node=agent_vpp_1    ip=${IP_VPP2_MEMIF1}

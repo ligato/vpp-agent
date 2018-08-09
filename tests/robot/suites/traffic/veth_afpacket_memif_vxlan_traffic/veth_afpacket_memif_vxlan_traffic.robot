@@ -276,7 +276,6 @@ Final Sleep After Resync For Manual Checking
 
 
 *** Keywords ***
-*** Keywords ***
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup
 
