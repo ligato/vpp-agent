@@ -23,6 +23,7 @@ import (
 
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
@@ -46,6 +47,17 @@ type InterfaceMeta struct {
 	SwIfIndex    uint32 `json:"sw_if_index"`
 	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
+	Dhcp         *Dhcp  `json:"dhcp"`
+}
+
+// Dhcp is helper struct for DHCP metadata for interfaces using it
+type Dhcp struct {
+	IfIdx            uint32
+	Hostname         string
+	ID               string
+	WantEvent        bool
+	SetBroadcastFlag bool
+	Pid              uint32
 }
 
 func (handler *ifVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (map[uint32]*InterfaceDetails, error) {
@@ -113,14 +125,26 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 		}
 	}
 
-	// Get vrf for every interface
+	// Get DHCP clients
+	dhcpClients, err := handler.dumpDhcpClients()
+	if err != nil {
+		return nil, fmt.Errorf("failed to dump interface DHCP clients: %v", err)
+	}
+	// Get vrf for every interface and fill DHCP if set
 	for _, ifData := range ifs {
+		// VRF
 		vrf, err := handler.GetInterfaceVRF(ifData.Meta.SwIfIndex)
 		if err != nil {
 			handler.log.Warnf("Interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 			continue
 		}
 		ifData.Interface.Vrf = vrf
+		// DHCP
+		dhcpData, ok := dhcpClients[ifData.Meta.SwIfIndex]
+		if ok {
+			ifData.Interface.SetDhcpClient = true
+			ifData.Meta.Dhcp = dhcpData
+		}
 	}
 
 	handler.log.Debugf("dumped %d interfaces", len(ifs))
@@ -132,7 +156,7 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 	}
 
 	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, handler.stopwatch)
-	err := handler.dumpIPAddressDetails(ifs, 0, timeLog)
+	err = handler.dumpIPAddressDetails(ifs, 0, timeLog)
 	if err != nil {
 		return nil, err
 	}
@@ -410,6 +434,39 @@ func (handler *ifVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) 
 	}
 
 	return nil
+}
+
+// dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
+func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(dhcp.DhcpClientDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	dhcpData := make(map[uint32]*Dhcp)
+	reqCtx := handler.callsChannel.SendMultiRequest(&dhcp.DhcpClientDump{})
+
+	for {
+		dhcpDetails := &dhcp.DhcpClientDetails{}
+		last, err := reqCtx.ReceiveReply(dhcpDetails)
+		if last {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		client := dhcpDetails.Client
+
+		dhcpData[client.SwIfIndex] = &Dhcp{
+			IfIdx:            client.SwIfIndex,
+			Hostname:         string(client.Hostname),
+			ID:               string(client.ID),
+			WantEvent:        uintToBool(client.WantDhcpEvent),
+			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
+			Pid:              client.Pid,
+		}
+	}
+
+	return dhcpData, nil
 }
 
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
