@@ -50,20 +50,32 @@ type InterfaceMeta struct {
 	Dhcp         *Dhcp  `json:"dhcp"`
 }
 
-// Dhcp is helper struct for DHCP metadata for interfaces using it
+// Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
 type Dhcp struct {
-	IfIdx            uint32
-	State            uint8
+	Client *Client `json:"dhcp_client"`
+	Lease  *Lease  `json:"dhcp_lease"`
+}
+
+// Client is helper struct grouping DHCP client data
+type Client struct {
+	SwIfIndex        uint32
 	Hostname         string
 	ID               string
-	HostAddress      string
-	IsIpv6           bool
-	HostMac          string
-	RouterAddress    string
-	MaskWidth        uint8
-	WantEvent        bool
+	WantDhcpEvent    bool
 	SetBroadcastFlag bool
 	Pid              uint32
+}
+
+// Lease is helper struct grouping DHCP lease data
+type Lease struct {
+	SwIfIndex     uint32
+	State         uint8
+	Hostname      string
+	IsIpv6        bool
+	MaskWidth     uint8
+	HostAddress   string
+	RouterAddress string
+	HostMac       string
 }
 
 func (handler *ifVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (map[uint32]*InterfaceDetails, error) {
@@ -464,20 +476,41 @@ func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 		lease := dhcpDetails.Lease
 
 		var hostMac net.HardwareAddr = lease.HostMac
+		var hostAddr, routerAddr string
+		if uintToBool(lease.IsIpv6) {
+			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
+			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
+		} else {
+			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress[:4]).To4().String(), uint32(lease.MaskWidth))
+			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress[:4]).To4().String(), uint32(lease.MaskWidth))
+		}
 
-		dhcpData[client.SwIfIndex] = &Dhcp{
-			IfIdx:            client.SwIfIndex,
-			State:            lease.State,
+		// DHCP client data
+		dhcpClient := &Client{
+			SwIfIndex:        client.SwIfIndex,
 			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
 			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
-			HostAddress:      string(bytes.SplitN(lease.HostAddress, []byte{0x00}, 2)[0]),
-			IsIpv6:           uintToBool(lease.IsIpv6),
-			HostMac:          hostMac.String(),
-			RouterAddress:    string(bytes.SplitN(lease.RouterAddress, []byte{0x00}, 2)[0]),
-			MaskWidth:        lease.MaskWidth,
-			WantEvent:        uintToBool(client.WantDhcpEvent),
+			WantDhcpEvent:    uintToBool(client.WantDhcpEvent),
 			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
 			Pid:              client.Pid,
+		}
+
+		// DHCP lease data
+		dhcpLease := &Lease{
+			SwIfIndex:     lease.SwIfIndex,
+			State:         lease.State,
+			Hostname:      string(bytes.SplitN(lease.Hostname, []byte{0x00}, 2)[0]),
+			IsIpv6:        uintToBool(lease.IsIpv6),
+			MaskWidth:     lease.MaskWidth,
+			HostAddress:   hostAddr,
+			RouterAddress: routerAddr,
+			HostMac:       hostMac.String(),
+		}
+
+		// DHCP metadata
+		dhcpData[client.SwIfIndex] = &Dhcp{
+			Client: dhcpClient,
+			Lease:  dhcpLease,
 		}
 	}
 
