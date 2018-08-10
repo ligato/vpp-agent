@@ -458,8 +458,8 @@ func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 
 		dhcpData[client.SwIfIndex] = &Dhcp{
 			IfIdx:            client.SwIfIndex,
-			Hostname:         string(client.Hostname),
-			ID:               string(client.ID),
+			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
+			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
 			WantEvent:        uintToBool(client.WantDhcpEvent),
 			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
 			Pid:              client.Pid,
