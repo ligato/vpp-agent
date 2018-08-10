@@ -23,6 +23,7 @@ import (
 
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
@@ -46,6 +47,35 @@ type InterfaceMeta struct {
 	SwIfIndex    uint32 `json:"sw_if_index"`
 	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
+	Dhcp         *Dhcp  `json:"dhcp"`
+}
+
+// Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
+type Dhcp struct {
+	Client *Client `json:"dhcp_client"`
+	Lease  *Lease  `json:"dhcp_lease"`
+}
+
+// Client is helper struct grouping DHCP client data
+type Client struct {
+	SwIfIndex        uint32
+	Hostname         string
+	ID               string
+	WantDhcpEvent    bool
+	SetBroadcastFlag bool
+	Pid              uint32
+}
+
+// Lease is helper struct grouping DHCP lease data
+type Lease struct {
+	SwIfIndex     uint32
+	State         uint8
+	Hostname      string
+	IsIpv6        bool
+	MaskWidth     uint8
+	HostAddress   string
+	RouterAddress string
+	HostMac       string
 }
 
 func (handler *ifVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (map[uint32]*InterfaceDetails, error) {
@@ -113,14 +143,26 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 		}
 	}
 
-	// Get vrf for every interface
+	// Get DHCP clients
+	dhcpClients, err := handler.dumpDhcpClients()
+	if err != nil {
+		return nil, fmt.Errorf("failed to dump interface DHCP clients: %v", err)
+	}
+	// Get vrf for every interface and fill DHCP if set
 	for _, ifData := range ifs {
+		// VRF
 		vrf, err := handler.GetInterfaceVRF(ifData.Meta.SwIfIndex)
 		if err != nil {
 			handler.log.Warnf("Interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 			continue
 		}
 		ifData.Interface.Vrf = vrf
+		// DHCP
+		dhcpData, ok := dhcpClients[ifData.Meta.SwIfIndex]
+		if ok {
+			ifData.Interface.SetDhcpClient = true
+			ifData.Meta.Dhcp = dhcpData
+		}
 	}
 
 	handler.log.Debugf("dumped %d interfaces", len(ifs))
@@ -132,7 +174,7 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 	}
 
 	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, handler.stopwatch)
-	err := handler.dumpIPAddressDetails(ifs, 0, timeLog)
+	err = handler.dumpIPAddressDetails(ifs, 0, timeLog)
 	if err != nil {
 		return nil, err
 	}
@@ -410,6 +452,69 @@ func (handler *ifVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) 
 	}
 
 	return nil
+}
+
+// dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
+func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
+	defer func(t time.Time) {
+		handler.stopwatch.TimeLog(dhcp.DhcpClientDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	dhcpData := make(map[uint32]*Dhcp)
+	reqCtx := handler.callsChannel.SendMultiRequest(&dhcp.DhcpClientDump{})
+
+	for {
+		dhcpDetails := &dhcp.DhcpClientDetails{}
+		last, err := reqCtx.ReceiveReply(dhcpDetails)
+		if last {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		client := dhcpDetails.Client
+		lease := dhcpDetails.Lease
+
+		var hostMac net.HardwareAddr = lease.HostMac
+		var hostAddr, routerAddr string
+		if uintToBool(lease.IsIpv6) {
+			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
+			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
+		} else {
+			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress[:4]).To4().String(), uint32(lease.MaskWidth))
+			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress[:4]).To4().String(), uint32(lease.MaskWidth))
+		}
+
+		// DHCP client data
+		dhcpClient := &Client{
+			SwIfIndex:        client.SwIfIndex,
+			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
+			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
+			WantDhcpEvent:    uintToBool(client.WantDhcpEvent),
+			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
+			Pid:              client.Pid,
+		}
+
+		// DHCP lease data
+		dhcpLease := &Lease{
+			SwIfIndex:     lease.SwIfIndex,
+			State:         lease.State,
+			Hostname:      string(bytes.SplitN(lease.Hostname, []byte{0x00}, 2)[0]),
+			IsIpv6:        uintToBool(lease.IsIpv6),
+			MaskWidth:     lease.MaskWidth,
+			HostAddress:   hostAddr,
+			RouterAddress: routerAddr,
+			HostMac:       hostMac.String(),
+		}
+
+		// DHCP metadata
+		dhcpData[client.SwIfIndex] = &Dhcp{
+			Client: dhcpClient,
+			Lease:  dhcpLease,
+		}
+	}
+
+	return dhcpData, nil
 }
 
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
