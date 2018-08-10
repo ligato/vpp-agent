@@ -53,8 +53,14 @@ type InterfaceMeta struct {
 // Dhcp is helper struct for DHCP metadata for interfaces using it
 type Dhcp struct {
 	IfIdx            uint32
+	State            uint8
 	Hostname         string
 	ID               string
+	HostAddress      string
+	IsIpv6           bool
+	HostMac          string
+	RouterAddress    string
+	MaskWidth        uint8
 	WantEvent        bool
 	SetBroadcastFlag bool
 	Pid              uint32
@@ -455,11 +461,20 @@ func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 			return nil, err
 		}
 		client := dhcpDetails.Client
+		lease := dhcpDetails.Lease
+
+		var hostMac net.HardwareAddr = lease.HostMac
 
 		dhcpData[client.SwIfIndex] = &Dhcp{
 			IfIdx:            client.SwIfIndex,
+			State:            lease.State,
 			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
 			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
+			HostAddress:      string(bytes.SplitN(lease.HostAddress, []byte{0x00}, 2)[0]),
+			IsIpv6:           uintToBool(lease.IsIpv6),
+			HostMac:          hostMac.String(),
+			RouterAddress:    string(bytes.SplitN(lease.RouterAddress, []byte{0x00}, 2)[0]),
+			MaskWidth:        lease.MaskWidth,
 			WantEvent:        uintToBool(client.WantDhcpEvent),
 			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
 			Pid:              client.Pid,
