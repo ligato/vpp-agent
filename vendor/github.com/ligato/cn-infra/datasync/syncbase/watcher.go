@@ -15,6 +15,7 @@
 package syncbase
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -24,6 +25,8 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
+
+	"github.com/ligato/cn-infra/kvscheduler"
 )
 
 const (
@@ -98,6 +101,35 @@ func (adapter *Registry) Watch(resyncName string, changeChan chan datasync.Chang
 // PropagateChanges fills registered channels with the data.
 func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue) error {
 	var events []func(done chan error)
+
+	// propagate transaction to KV scheduler
+	// TODO: scheduler should subscribe to registry and receive TXN as a whole
+	scheduler := &kvscheduler.DefaultPlugin // temporary hack
+	if scheduler.IsInitialized() {
+		keyPrefixes := scheduler.GetRegisteredNBKeyPrefixes()
+
+		// TODO: add options to localclient
+		txn := scheduler.StartNBTransaction()
+		for key, val := range txData {
+			registered := false
+			for _, prefix := range keyPrefixes {
+				if strings.HasPrefix(key, prefix) {
+					registered = true
+					break
+				}
+			}
+			if !registered {
+				continue
+			}
+			if val.GetChangeType() == datasync.Delete {
+				txn.SetValueData(key, nil)
+			} else {
+				txn.SetValueData(key, val)
+			}
+		}
+		// TODO: return error(s)
+		txn.Commit(context.Background())
+	}
 
 	for _, sub := range adapter.subscriptions {
 		for _, prefix := range sub.KeyPrefixes {

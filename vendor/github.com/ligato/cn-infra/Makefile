@@ -38,6 +38,7 @@ examples-plugin:
 	cd examples/statuscheck-plugin && go build -i -v ${LDFLAGS}
 	cd examples/prometheus-plugin && go build -i -v ${LDFLAGS}
 	cd examples/cryptodata-plugin && go build -i -v ${LDFLAGS}
+	cd examples/bolt-plugin && go build -i -v ${LDFLAGS}
 
 # Clean examples
 clean-examples:
@@ -62,6 +63,7 @@ clean-examples-plugin:
 	rm -f examples/simple-agent/simple-agent
 	rm -f examples/statuscheck-plugin/statuscheck-plugin
 	rm -f examples/prometheus-plugin/prometheus-plugin
+	rm -f examples/bolt-plugin/bolt-plugin
 
 # Get test tools
 get-testtools:

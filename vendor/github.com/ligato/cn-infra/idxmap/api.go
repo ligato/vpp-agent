@@ -34,14 +34,18 @@ type NamedMapping interface {
 	// ListAllNames returns all names in the mapping.
 	ListAllNames() (names []string)
 
+	// ListFields returns a map of fields (secondary indexes) and their values
+	// currently associated with the item identified by <name>.
+	ListFields(name string) map[string][]string // field -> values
+
 	// Watch subscribes to receive notifications about the changes in the
 	// mapping. To receive changes through a channel, ToChan utility can be used.
 	//
 	// Example usage:
 	//
-	//  map.Watch(plugin.PluginName, ToChan(myChannel))
+	//  map.Watch(subscriber, ToChan(myChannel))
 	//
-	//  map.Watch(plugin.PluginName, func(msgNamedMappingGenericEvent) {/*handle callback*/ return nil})
+	//  map.Watch(subscriber, func(msgNamedMappingGenericEvent) {/*handle callback*/ return nil})
 	//
 	Watch(subscriber infra.PluginName, callback func(NamedMappingGenericEvent)) error
 }

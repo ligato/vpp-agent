@@ -8,8 +8,8 @@ on your localhost:
 sudo docker run -p 9042:9042 --name cassandra01 -d cassandra:latest
 ```
 
-In the example, the configuration for the connection to cassandra is 
-configured in a yaml-formatted config file. The config file is specified
+In the example, the configuration for the connection to the cassandra 
+is configured in a yaml-formatted config file. The config file is specified
 as the first CLI argument:
 
 ```
