@@ -6,12 +6,19 @@
 required = [
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "github.com/ungerik/pkgreflect",
-    "github.com/gogo/protobuf/protoc-gen-gogo"
+    "github.com/gogo/protobuf/protoc-gen-gogo",
+    "github.com/Shopify/sarama",
+    "github.com/bsm/sarama-cluster",
+    "github.com/coreos/etcd",
+    "github.com/docker/libnetwork",
+    "github.com/opencontainers/runc"
 ]
 
 [[constraint]]
   name = "github.com/ligato/cn-infra"
-  revision = "4903fd7f8a498f0a6038df2ac6fe762697dea1f8"
+  branch = "pr-fix-deps"
+  source = "github.com/mestery/cn-infra"
+#  revision = "4903fd7f8a498f0a6038df2ac6fe762697dea1f8"
 
 [[constraint]]
   name = "git.fd.io/govpp.git"
@@ -21,7 +28,7 @@ required = [
   branch = "master"
   name = "github.com/buger/goterm"
 
-[[constraint]]
+[[override]]
   name = "github.com/fsouza/go-dockerclient"
   revision = "9e921e30db8bcc1221fa0485ad9ce5b195fb4445"
 
@@ -36,10 +43,6 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/golang/protobuf"
-
-[[constraint]]
-  name = "github.com/gorilla/mux"
-  version = "1.6.1"
 
 [[constraint]]
   branch = "master"
@@ -77,9 +80,29 @@ required = [
   branch = "master"
   name = "golang.org/x/net"
 
-[[constraint]]
+[[override]]
   name = "google.golang.org/grpc"
   version = "1.2.1"
+
+[[constraint]]
+  name = "github.com/Shopify/sarama"
+  version = "~1.15.0"
+
+[[constraint]]
+  name = "github.com/bsm/sarama-cluster"
+  version = "2.1.11"
+
+[[constraint]]
+  name = "github.com/coreos/etcd"
+  version = "=3.3.9"
+
+[[constraint]]
+  name = "github.com/docker/libnetwork"
+  revision = "9ffeaf7d8b64fa0eb64cc27835dc1a5a90328024"
+
+[[constraint]]
+  name = "github.com/opencontainers/runc"
+  version = "v1.0.0-rc5"
 
 [prune]
   go-tests = true

@@ -28,24 +28,37 @@ func Encode(src []byte) []byte {
 // Decode decodes snappy data whether it is traditional unframed
 // or includes the xerial framing format.
 func Decode(src []byte) ([]byte, error) {
+	return DecodeInto(nil, src)
+}
+
+// DecodeInto decodes snappy data whether it is traditional unframed
+// or includes the xerial framing format into the specified `dst`.
+// It is assumed that the entirety of `dst` including all capacity is available
+// for use by this function. If `dst` is nil *or* insufficiently large to hold
+// the decoded `src`, new space will be allocated.
+func DecodeInto(dst, src []byte) ([]byte, error) {
 	var max = len(src)
 	if max < len(xerialHeader) {
 		return nil, ErrMalformed
 	}
 
 	if !bytes.Equal(src[:8], xerialHeader) {
-		return master.Decode(nil, src)
+		return master.Decode(dst[:cap(dst)], src)
 	}
 
 	if max < sizeOffset+sizeBytes {
 		return nil, ErrMalformed
 	}
 
+	if dst == nil {
+		dst = make([]byte, 0, len(src))
+	}
+
+	dst = dst[:0]
 	var (
 		pos   = sizeOffset
-		dst   = make([]byte, 0, len(src))
 		chunk []byte
-		err   error
+		err       error
 	)
 
 	for pos+sizeBytes <= max {
@@ -60,7 +73,7 @@ func Decode(src []byte) ([]byte, error) {
 			return nil, ErrMalformed
 		}
 
-		chunk, err = master.Decode(chunk, src[pos:nextPos])
+		chunk, err = master.Decode(chunk[:cap(chunk)], src[pos:nextPos])
 		if err != nil {
 			return nil, err
 		}

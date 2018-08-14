@@ -1,6 +1,6 @@
 // +build !windows
 
-package archive
+package archive // import "github.com/docker/docker/pkg/archive"
 
 import (
 	"archive/tar"
@@ -32,8 +32,8 @@ func getWalkRoot(srcPath string, include string) string {
 // CanonicalTarNameForPath returns platform-specific filepath
 // to canonical posix-style path for tar archival. p is relative
 // path.
-func CanonicalTarNameForPath(p string) (string, error) {
-	return p, nil // already unix-style
+func CanonicalTarNameForPath(p string) string {
+	return p // already unix-style
 }
 
 // chmodTarEntry is used to adjust the file permissions used in tar header based
