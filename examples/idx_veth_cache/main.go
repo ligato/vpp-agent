@@ -20,11 +20,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/flavors/vpp"
 	"github.com/ligato/vpp-agent/plugins/linux"
 	linux_if "github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
@@ -52,17 +50,19 @@ func init() {
 // Start Agent plugins selected for this example.
 func main() {
 	// Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
+	//exampleFinished := make(chan struct{}, 1)
+	//
+	//// Start Agent with ExampleFlavor
+	//vppFlavor := vpp.Flavor{}
+	//exampleFlavor := ExampleFlavor{
+	//	IdxVethCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
+	//	Flavor:              &vppFlavor, // inject VPP flavor
+	//}
+	//agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
+	//
+	//core.EventLoopWithInterrupt(agent, exampleFinished)
 
-	// Start Agent with ExampleFlavor
-	vppFlavor := vpp.Flavor{}
-	exampleFlavor := ExampleFlavor{
-		IdxVethCacheExample: ExamplePlugin{closeChannel: &exampleFinished},
-		Flavor:              &vppFlavor, // inject VPP flavor
-	}
-	agent := core.NewAgent(core.Inject(&vppFlavor, &exampleFlavor))
-
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	// todo use new flavors and options
 }
 
 // ExamplePlugin demonstrates the use of the name-to-idx cache in linux plugin.
@@ -79,6 +79,8 @@ type ExamplePlugin struct {
 
 	// Fields below are used to properly finish the example.
 	closeChannel *chan struct{}
+
+	Log logging.Logger
 }
 
 // Init initializes example plugin.
@@ -174,9 +176,9 @@ func (plugin *ExamplePlugin) consume() (err error) {
 	// Init chan to sent watch updates.
 	linuxIfIdxChan := make(chan linux_if.LinuxIfIndexDto)
 	// Register all agents (incl. local) to watch linux name-to-idx mapping changes.
-	plugin.linuxIfIdxLocal.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
-	plugin.linuxIfIdxAgent1.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
-	plugin.linuxIfIdxAgent2.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
+	//plugin.linuxIfIdxLocal.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
+	//plugin.linuxIfIdxAgent1.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
+	//plugin.linuxIfIdxAgent2.WatchNameToIdx(plugin.PluginName, linuxIfIdxChan)
 
 	counter := 0
 

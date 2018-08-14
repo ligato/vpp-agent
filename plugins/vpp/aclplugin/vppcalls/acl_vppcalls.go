@@ -17,65 +17,57 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
-// AclMessages is list of used VPP messages for compatibility check
-var AclMessages = []govppapi.Message{
-	&acl_api.ACLAddReplace{},
-	&acl_api.ACLAddReplaceReply{},
-	&acl_api.ACLDel{},
-	&acl_api.ACLDelReply{},
-	&acl_api.MacipACLAdd{},
-	&acl_api.MacipACLAddReply{},
-	&acl_api.MacipACLAddReplace{},
-	&acl_api.MacipACLAddReplaceReply{},
-	&acl_api.MacipACLDel{},
-	&acl_api.MacipACLDelReply{},
-	&acl_api.ACLDump{},
-	&acl_api.ACLDetails{},
-	&acl_api.MacipACLDump{},
-	&acl_api.MacipACLDetails{},
-	&acl_api.ACLInterfaceListDump{},
-	&acl_api.ACLInterfaceListDetails{},
-	&acl_api.MacipACLInterfaceListDump{},
-	&acl_api.MacipACLInterfaceListDetails{},
-	&acl_api.ACLInterfaceSetACLList{},
-	&acl_api.ACLInterfaceSetACLListReply{},
-	&acl_api.MacipACLInterfaceAddDel{},
-	&acl_api.MacipACLInterfaceAddDelReply{},
-}
+// GetAclPluginVersion retrieves ACL plugin version.
+func GetAclPluginVersion(ch govppapi.Channel) (string, error) {
+	req := &aclapi.ACLPluginGetVersion{}
 
-// GetAclPluginVersion returns version of the VPP ACL plugin
-func GetAclPluginVersion(vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) (string, error) {
-	defer func(t time.Time) {
-		stopwatch.TimeLog(acl_api.ACLPluginGetVersion{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	req := &acl_api.ACLPluginGetVersion{}
-	reply := &acl_api.ACLPluginGetVersionReply{}
-	// Does not return retval
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply := &aclapi.ACLPluginGetVersionReply{}
+	if err := ch.SendRequest(req).ReceiveReply(reply); err != nil {
 		return "", fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
 	}
 
-	return strconv.Itoa(int(reply.Major)) + "." + strconv.Itoa(int(reply.Minor)), nil
+	version := fmt.Sprintf("%d.%d", reply.Major, reply.Minor)
+
+	return version, nil
 }
 
-// AddIPAcl create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
-func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+// AclMessages is list of used VPP messages for compatibility check
+var AclMessages = []govppapi.Message{
+	&aclapi.ACLAddReplace{},
+	&aclapi.ACLAddReplaceReply{},
+	&aclapi.ACLDel{},
+	&aclapi.ACLDelReply{},
+	&aclapi.MacipACLAdd{},
+	&aclapi.MacipACLAddReply{},
+	&aclapi.MacipACLAddReplace{},
+	&aclapi.MacipACLAddReplaceReply{},
+	&aclapi.MacipACLDel{},
+	&aclapi.MacipACLDelReply{},
+	&aclapi.ACLDump{},
+	&aclapi.ACLDetails{},
+	&aclapi.MacipACLDump{},
+	&aclapi.MacipACLDetails{},
+	&aclapi.ACLInterfaceListDump{},
+	&aclapi.ACLInterfaceListDetails{},
+	&aclapi.MacipACLInterfaceListDump{},
+	&aclapi.MacipACLInterfaceListDetails{},
+	&aclapi.ACLInterfaceSetACLList{},
+	&aclapi.ACLInterfaceSetACLListReply{},
+	&aclapi.MacipACLInterfaceAddDel{},
+	&aclapi.MacipACLInterfaceAddDelReply{},
+}
+
+func (handler *aclVppHandler) AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(aclapi.ACLAddReplace{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare Ip rules
@@ -87,68 +79,58 @@ func AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Log
 		return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 	}
 
-	req := &acl_api.ACLAddReplace{
+	req := &aclapi.ACLAddReplace{
 		ACLIndex: 0xffffffff, // to make new Entry
 		Count:    uint32(len(aclIPRules)),
 		Tag:      []byte(aclName),
 		R:        aclIPRules,
 	}
 
-	reply := &acl_api.ACLAddReplaceReply{}
-	if err = vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply := &aclapi.ACLAddReplaceReply{}
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
-	log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, reply.ACLIndex)
-
 	return reply.ACLIndex, nil
 }
 
-// AddMacIPAcl creates new L2 MAC IP ACL. VPP provides index in reply.
-func AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) (uint32, error) {
+func (handler *aclVppHandler) AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(acl_api.MacipACLAdd{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(aclapi.MacipACLAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare MAc Ip rules
-	aclMacIPRules, err := transformACLMacIPRules(rules)
+	aclMacIPRules, err := handler.transformACLMacIPRules(rules)
 	if err != nil {
 		return 0, err
 	}
 	if len(aclMacIPRules) == 0 {
-		log.Debugf("No Mac Ip ACL rules written for ACL %v", aclName)
 		return 0, fmt.Errorf("no rules found for ACL %v", aclName)
 	}
 
-	req := &acl_api.MacipACLAdd{
+	req := &aclapi.MacipACLAdd{
 		Count: uint32(len(aclMacIPRules)),
 		Tag:   []byte(aclName),
 		R:     aclMacIPRules,
 	}
 
-	reply := &acl_api.MacipACLAddReply{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply := &aclapi.MacipACLAddReply{}
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
-	log.Infof("%v Mac Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, reply.ACLIndex)
-
 	return reply.ACLIndex, nil
 }
 
-// ModifyIPAcl uses index (provided by VPP) to identify ACL which is modified.
-func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
-
+func (handler *aclVppHandler) ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(aclapi.ACLAddReplace{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare Ip rules
@@ -157,40 +139,35 @@ func ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName str
 		return err
 	}
 	if len(aclIPRules) == 0 {
-		log.Debugf("No Ip ACL rules written for ACL %v", aclName)
 		return nil
 	}
 
-	req := &acl_api.ACLAddReplace{
+	req := &aclapi.ACLAddReplace{
 		ACLIndex: aclIndex,
 		Count:    uint32(len(aclIPRules)),
 		Tag:      []byte(aclName),
 		R:        aclIPRules,
 	}
 
-	reply := &acl_api.ACLAddReplaceReply{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply := &aclapi.ACLAddReplaceReply{}
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
-	log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclIPRules), aclName, aclIndex)
-
 	return nil
 }
 
-// ModifyMACIPAcl uses index (provided by VPP) to identify ACL which is modified.
-func ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string, log logging.Logger,
-	vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *aclVppHandler) ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error {
 
 	defer func(t time.Time) {
-		stopwatch.TimeLog(acl_api.ACLAddReplace{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(aclapi.ACLAddReplace{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare MAc Ip rules
-	aclMacIPRules, err := transformACLMacIPRules(rules)
+	aclMacIPRules, err := handler.transformACLMacIPRules(rules)
 	if err != nil {
 		return err
 	}
@@ -198,76 +175,68 @@ func ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName 
 		return fmt.Errorf("no rules found for ACL %v", aclName)
 	}
 
-	req := &acl_api.MacipACLAddReplace{
+	req := &aclapi.MacipACLAddReplace{
 		ACLIndex: aclIndex,
 		Count:    uint32(len(aclMacIPRules)),
 		Tag:      []byte(aclName),
 		R:        aclMacIPRules,
 	}
 
-	reply := &acl_api.MacipACLAddReplaceReply{}
-	if err := vppChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	reply := &aclapi.MacipACLAddReplaceReply{}
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	}
 	if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
-	log.Infof("%v Ip ACL rule(s) written for ACL %v with index %v", len(aclMacIPRules), aclName, aclIndex)
-
 	return nil
 }
 
-// DeleteIPAcl removes L3/L4 ACL.
-func DeleteIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *aclVppHandler) DeleteIPAcl(aclIndex uint32) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(acl_api.ACLDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(aclapi.ACLDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	msg := &acl_api.ACLDel{
+	msg := &aclapi.ACLDel{
 		ACLIndex: aclIndex,
 	}
 
-	reply := &acl_api.ACLDelReply{}
-	if err := vppChannel.SendRequest(msg).ReceiveReply(reply); err != nil {
+	reply := &aclapi.ACLDelReply{}
+	if err := handler.callsChannel.SendRequest(msg).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L3/L4 ACL %v: %v", aclIndex, err)
 	}
 	if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while removing L3/L4 ACL %v", reply.GetMessageName(), reply.Retval, aclIndex)
 	}
 
-	log.Infof("L3/L4 ACL %v removed", aclIndex)
-
 	return nil
 }
 
-// DeleteMacIPAcl removes L2 ACL.
-func DeleteMacIPAcl(aclIndex uint32, log logging.Logger, vppChannel govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *aclVppHandler) DeleteMacIPAcl(aclIndex uint32) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(acl_api.MacipACLDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(aclapi.MacipACLDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	msg := &acl_api.MacipACLDel{
+	msg := &aclapi.MacipACLDel{
 		ACLIndex: aclIndex,
 	}
 
-	reply := &acl_api.MacipACLDelReply{}
-	if err := vppChannel.SendRequest(msg).ReceiveReply(reply); err != nil {
+	reply := &aclapi.MacipACLDelReply{}
+	if err := handler.callsChannel.SendRequest(msg).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L2 ACL %v: %v", aclIndex, err)
 	}
 	if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while removing L2 ACL %v", reply.GetMessageName(), reply.Retval, aclIndex)
 	}
 
-	log.Infof("L2 ACL %v removed", aclIndex)
-
 	return nil
 }
 
 // Method transforms provided set of IP proto ACL rules to binapi ACL rules.
-func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) (aclIPRules []acl_api.ACLRule, err error) {
+func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) (aclIPRules []aclapi.ACLRule, err error) {
 	for _, rule := range rules {
-		aclRule := &acl_api.ACLRule{
+		aclRule := &aclapi.ACLRule{
 			IsPermit: uint8(rule.AclAction),
 		}
 		// Match
@@ -294,9 +263,9 @@ func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) (aclIPRules []acl_ap
 	return aclIPRules, nil
 }
 
-func transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) (aclMacIPRules []acl_api.MacipACLRule, err error) {
+func (handler *aclVppHandler) transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) (aclMacIPRules []aclapi.MacipACLRule, err error) {
 	for _, rule := range rules {
-		aclMacIPRule := &acl_api.MacipACLRule{
+		aclMacIPRule := &aclapi.MacipACLRule{
 			IsPermit: uint8(rule.AclAction),
 		}
 		// Matche
@@ -334,7 +303,7 @@ func transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) (aclMacIPRules []
 
 // The function sets an IP ACL rule fields into provided ACL Rule object. Source
 // and destination addresses have to be the same IP version and contain a network mask.
-func ipACL(ipRule *acl.AccessLists_Acl_Rule_Match_IpRule_Ip, aclRule *acl_api.ACLRule) (*acl_api.ACLRule, error) {
+func ipACL(ipRule *acl.AccessLists_Acl_Rule_Match_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACLRule, error) {
 	var (
 		err        error
 		srcIP      net.IP
@@ -401,12 +370,12 @@ func ipACL(ipRule *acl.AccessLists_Acl_Rule_Match_IpRule_Ip, aclRule *acl_api.AC
 
 // The function sets an ICMP ACL rule fields into provided ACL Rule object.
 // The ranges are exclusive, use first = 0 and last = 255/65535 (icmpv4/icmpv6) to match "any".
-func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
+func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
 	if icmpRule == nil {
 		return aclRule
 	}
 	if icmpRule.Icmpv6 {
-		aclRule.Proto = vppdump.ICMPv6Proto // IANA ICMPv6
+		aclRule.Proto = ICMPv6Proto // IANA ICMPv6
 		aclRule.IsIpv6 = 1
 		// ICMPv6 type range
 		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
@@ -415,7 +384,7 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp, aclRule *acl_
 		aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
 		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.First)
 	} else {
-		aclRule.Proto = vppdump.ICMPv4Proto // IANA ICMPv4
+		aclRule.Proto = ICMPv4Proto // IANA ICMPv4
 		aclRule.IsIpv6 = 0
 		// ICMPv4 type range
 		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
@@ -428,8 +397,8 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp, aclRule *acl_
 }
 
 // Sets an TCP ACL rule fields into provided ACL Rule object.
-func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Tcp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
-	aclRule.Proto = vppdump.TCPProto // IANA TCP
+func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Tcp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+	aclRule.Proto = TCPProto // IANA TCP
 	aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(tcpRule.SourcePortRange.UpperPort)
 	aclRule.DstportOrIcmpcodeFirst = uint16(tcpRule.DestinationPortRange.LowerPort)
@@ -440,8 +409,8 @@ func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Tcp, aclRule *acl_api
 }
 
 // Sets an UDP ACL rule fields into provided ACL Rule object.
-func udpACL(udpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Udp, aclRule *acl_api.ACLRule) *acl_api.ACLRule {
-	aclRule.Proto = vppdump.UDPProto // IANA UDP
+func udpACL(udpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Udp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+	aclRule.Proto = UDPProto // IANA UDP
 	aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(udpRule.SourcePortRange.UpperPort)
 	aclRule.DstportOrIcmpcodeFirst = uint16(udpRule.DestinationPortRange.LowerPort)

@@ -73,7 +73,7 @@ type LinuxInterfaceConfigurator struct {
 	ifHandler linuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
 
-	//Timer used to measure and store time
+	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
 }
 

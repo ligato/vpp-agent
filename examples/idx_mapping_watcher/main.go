@@ -17,9 +17,7 @@ package main
 import (
 	"strconv"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/flavors/local"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -43,17 +41,19 @@ const expectedEvents = 5
 // HTTP and Log) and example plugin which demonstrates index mapping watcher functionality.
 func main() {
 	// Init close channel to stop the example
-	exampleFinished := make(chan struct{}, 1)
+	//exampleFinished := make(chan struct{}, 1)
+	//
+	//// Start Agent
+	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
+	//	examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
+	//	examplePlug.PluginLogDeps = *flavor.LogDeps("idx-watch-example")
+	//
+	//	return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
+	//}))
+	//
+	//core.EventLoopWithInterrupt(agent, exampleFinished)
 
-	// Start Agent
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		examplePlug := &ExamplePlugin{closeChannel: &exampleFinished}
-		examplePlug.PluginLogDeps = *flavor.LogDeps("idx-watch-example")
-
-		return []*core.NamedPlugin{{examplePlug.PluginName, examplePlug}}
-	}))
-
-	core.EventLoopWithInterrupt(agent, exampleFinished)
+	// todo use new flavors and options
 }
 
 // ExamplePlugin implements Plugin interface which is used to pass custom plugin instances to the Agent.
@@ -67,6 +67,7 @@ type ExamplePlugin struct {
 	// Fields below are used to properly finish the example
 	eventCounter uint8
 	closeChannel *chan struct{}
+	Log logrus.Logger
 }
 
 // Init is the entry point into the plugin that is called by Agent Core when the Agent is coming up.
@@ -91,7 +92,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}()
 
 	// Subscribe name-to-index watcher.
-	plugin.exampleIdx.Watch(plugin.PluginName, nametoidx.ToChan(plugin.exIdxWatchChannel))
+	//plugin.exampleIdx.Watch(plugin.PluginName, nametoidx.ToChan(plugin.exIdxWatchChannel))
 
 	return err
 }

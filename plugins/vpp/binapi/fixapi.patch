@@ -2,7 +2,7 @@ diff --git b/plugins/vpp/binapi/ip/ip.go a/plugins/vpp/binapi/ip/ip.go
 index 1bcfcef9..a14d15b5 100644
 --- b/plugins/vpp/binapi/ip/ip.go
 +++ a/plugins/vpp/binapi/ip/ip.go
-@@ -152,8 +152,8 @@
+@@ -256,8 +256,8 @@
  	NextHopID         uint32
  	RpfID             uint32
  	ViaLabel          uint32

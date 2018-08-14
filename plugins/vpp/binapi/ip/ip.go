@@ -5,8 +5,112 @@ package ip
 
 import "git.fd.io/govpp.git/api"
 
+// IP4Address represents the VPP binary API data type 'ip4_address'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2743:
+//
+//            "ip4_address",
+//            [
+//                "u8",
+//                "address",
+//                4
+//            ],
+//            {
+//                "crc": "0xfc4baa28"
+//            }
+//
+type IP4Address struct {
+	Address []byte `struc:"[4]byte"`
+}
+
+func (*IP4Address) GetTypeName() string {
+	return "ip4_address"
+}
+func (*IP4Address) GetCrcString() string {
+	return "fc4baa28"
+}
+
+// IP6Address represents the VPP binary API data type 'ip6_address'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2754:
+//
+//            "ip6_address",
+//            [
+//                "u8",
+//                "address",
+//                16
+//            ],
+//            {
+//                "crc": "0xad99ccc2"
+//            }
+//
+type IP6Address struct {
+	Address []byte `struc:"[16]byte"`
+}
+
+func (*IP6Address) GetTypeName() string {
+	return "ip6_address"
+}
+func (*IP6Address) GetCrcString() string {
+	return "ad99ccc2"
+}
+
+// Address represents the VPP binary API data type 'address'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2765:
+//
+//            "address",
+//            [
+//                "vl_api_address_family_t",
+//                "af"
+//            ],
+//            [
+//                "vl_api_address_union_t",
+//                "un"
+//            ],
+//            {
+//                "crc": "0x09f11671"
+//            }
+//
+type Address struct {
+	Af uint8
+	Un uint8
+}
+
+func (*Address) GetTypeName() string {
+	return "address"
+}
+func (*Address) GetCrcString() string {
+	return "09f11671"
+}
+
+// Prefix represents the VPP binary API data type 'prefix'.
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2779:
+//
+//            "prefix",
+//            [
+//                "vl_api_address_t",
+//                "address"
+//            ],
+//            [
+//                "u8",
+//                "address_length"
+//            ],
+//            {
+//                "crc": "0x0403aebc"
+//            }
+//
+type Prefix struct {
+	Address       Address
+	AddressLength uint8
+}
+
+func (*Prefix) GetTypeName() string {
+	return "prefix"
+}
+func (*Prefix) GetCrcString() string {
+	return "0403aebc"
+}
+
 // FibMplsLabel represents the VPP binary API data type 'fib_mpls_label'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2713:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2793:
 //
 //            "fib_mpls_label",
 //            [
@@ -44,7 +148,7 @@ func (*FibMplsLabel) GetCrcString() string {
 }
 
 // FibPath represents the VPP binary API data type 'fib_path'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2735:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2815:
 //
 //            "fib_path",
 //            [
@@ -164,7 +268,7 @@ func (*FibPath) GetCrcString() string {
 }
 
 // IP6RaPrefixInfo represents the VPP binary API data type 'ip6_ra_prefix_info'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2823:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2903:
 //
 //            "ip6_ra_prefix_info",
 //            [
@@ -208,7 +312,7 @@ func (*IP6RaPrefixInfo) GetCrcString() string {
 }
 
 // ProxyArp represents the VPP binary API data type 'proxy_arp'.
-// Generated from '/usr/share/vpp/api/ip.api.json', line 2850:
+// Generated from '/usr/share/vpp/api/ip.api.json', line 2930:
 //
 //            "proxy_arp",
 //            [

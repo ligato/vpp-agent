@@ -185,7 +185,7 @@ func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) vppclient.DataResyncDSL {
 
 // NAT44Global adds a request to RESYNC global configuration for NAT44
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResyncDSL {
-	key := nat.GlobalConfigKey()
+	key := nat.GlobalPrefix
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -245,27 +245,27 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 
 		// fill all known keys of one VPP:
 
-		keys, err := dsl.listKeys(intf.InterfaceKeyPrefix())
+		keys, err := dsl.listKeys(intf.Prefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l2.BridgeDomainKeyPrefix())
+		keys, err = dsl.listKeys(l2.BdPrefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l2.XConnectKeyPrefix())
+		keys, err = dsl.listKeys(l2.XConnectPrefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.RouteKeyPrefix())
+		keys, err = dsl.listKeys(l3.RoutesPrefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.ArpKeyPrefix())
+		keys, err = dsl.listKeys(l3.ArpPrefix)
 		if err != nil {
 			break
 		}

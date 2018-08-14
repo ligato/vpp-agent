@@ -46,7 +46,7 @@ func Test02ParseKeyInterfaceConfig(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/interface/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.InterfacePrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.Prefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
@@ -58,7 +58,7 @@ func Test03ParseKeyInterfaceStatus(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfStatePrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.StatePrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
@@ -70,7 +70,7 @@ func Test04ParseKeyInterfaceError(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/status/v1/interface/error/{interface-name}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.IfErrorPrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(interfaces.ErrorPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{interface-name}"))
 }
 
@@ -118,7 +118,7 @@ func Test08ParseKeyFib(t *testing.T) {
 		ParseKey("/vnf-agent/{agent-label}/vpp/config/v1/bd/{bd-label}/fib/{mac-address}")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("{agent-label}"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.FIBPrefix))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l2.FibPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("{mac-address}"))
 }
 
@@ -130,14 +130,14 @@ func Test09ParseKeyRoute(t *testing.T) {
 		ParseKey("/vnf-agent/agent1/vpp/config/v1/vrf/vrf1/fib/192.168.1.0/24/192.168.2.1")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("agent1"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RouteKeyPrefix()))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RoutesPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("192.168.1.0/24/192.168.2.1"))
 
 	label, dataType, params, _ = utils.
 		ParseKey("/vnf-agent/agent2/vpp/config/v1/vrf/vrf2/fib/2001:db8:abcd:0012::0/64/2001:db8::1")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("agent2"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RouteKeyPrefix()))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.RoutesPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("2001:db8:abcd:0012::0/64/2001:db8::1"))
 }
 
@@ -149,6 +149,6 @@ func Test10ParseKeyVrf(t *testing.T) {
 		ParseKey("/vnf-agent/agent1/vpp/config/v1/vrf/vrf1")
 
 	gomega.Expect(label).To(gomega.BeEquivalentTo("agent1"))
-	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.VrfKeyPrefix()))
+	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.VrfPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("vrf1"))
 }

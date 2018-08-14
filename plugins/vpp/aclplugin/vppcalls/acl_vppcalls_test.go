@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
@@ -258,28 +257,31 @@ func TestAddIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclIndex, err := AddIPAcl(acl_IPrules, "test0", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
+
+	aclIndex, err := aclHandler.AddIPAcl(acl_IPrules, "test0")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	_, err = AddIPAcl(aclNoRules, "test1", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddIPAcl(aclNoRules, "test1")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = AddIPAcl(aclErr1Rules, "test2", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddIPAcl(aclErr1Rules, "test2")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = AddIPAcl(aclErr2Rules, "test3", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddIPAcl(aclErr2Rules, "test3")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = AddIPAcl(aclErr3Rules, "test4", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddIPAcl(aclErr3Rules, "test4")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-	_, err = AddIPAcl(acl_IPrules, "test5", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddIPAcl(acl_IPrules, "test5")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
-	_, err = AddIPAcl(acl_IPrules, "test6", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddIPAcl(acl_IPrules, "test6")
 	Expect(err).To(Not(BeNil()))
 }
 
@@ -289,29 +291,32 @@ func TestAddMacIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclIndex, err := AddMacIPAcl(acl_MACIPrules, "test6", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
+
+	aclIndex, err := aclHandler.AddMacIPAcl(acl_MACIPrules, "test6")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	_, err = AddMacIPAcl(aclNoRules, "test7", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddMacIPAcl(aclNoRules, "test7")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = AddMacIPAcl(aclErr4Rules, "test8", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddMacIPAcl(aclErr4Rules, "test8")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = AddMacIPAcl(aclErr5Rules, "test9", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddMacIPAcl(aclErr5Rules, "test9")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = AddMacIPAcl(aclErr6Rules, "test10", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddMacIPAcl(aclErr6Rules, "test10")
 	Expect(err).To(Not(BeNil()))
 	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	_, err = AddMacIPAcl(acl_MACIPrules, "test11", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddMacIPAcl(acl_MACIPrules, "test11")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{Retval: -1})
-	_, err = AddMacIPAcl(acl_MACIPrules, "test12", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	_, err = aclHandler.AddMacIPAcl(acl_MACIPrules, "test12")
 	Expect(err).To(Not(BeNil()))
 }
 
@@ -321,7 +326,10 @@ func TestDeleteIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclIndex, err := AddIPAcl(acl_IPrules, "test_del0", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
+
+	aclIndex, err := aclHandler.AddIPAcl(acl_IPrules, "test_del0")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -341,20 +349,20 @@ func TestDeleteIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{ACLIndex: 1})
-	aclIndex, err = AddIPAcl(rule2del, "test_del1", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclIndex, err = aclHandler.AddIPAcl(rule2del, "test_del1")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	err = DeleteIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.DeleteIPAcl(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{Retval: -1})
-	err = DeleteIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.DeleteIPAcl(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-	err = DeleteIPAcl(1, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.DeleteIPAcl(1)
 	Expect(err).To(BeNil())
 }
 
@@ -364,7 +372,10 @@ func TestDeleteMACIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclIndex, err := AddMacIPAcl(acl_MACIPrules, "test_del2", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
+
+	aclIndex, err := aclHandler.AddMacIPAcl(acl_MACIPrules, "test_del2")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -384,20 +395,20 @@ func TestDeleteMACIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{ACLIndex: 1})
-	aclIndex, err = AddMacIPAcl(rule2del, "test_del3", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclIndex, err = aclHandler.AddMacIPAcl(rule2del, "test_del3")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-	err = DeleteMacIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.DeleteMacIPAcl(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{Retval: -1})
-	err = DeleteMacIPAcl(5, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.DeleteMacIPAcl(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
-	err = DeleteMacIPAcl(1, logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.DeleteMacIPAcl(1)
 	Expect(err).To(BeNil())
 }
 
@@ -407,7 +418,10 @@ func TestModifyIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclIndex, err := AddIPAcl(acl_IPrules, "test_modify", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
+
+	aclIndex, err := aclHandler.AddIPAcl(acl_IPrules, "test_modify")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -439,21 +453,21 @@ func TestModifyIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	err = ModifyIPAcl(0, rule2modify, "test_modify0", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyIPAcl(0, rule2modify, "test_modify0")
 	Expect(err).To(BeNil())
 
-	err = ModifyIPAcl(0, aclErr1Rules, "test_modify1", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyIPAcl(0, aclErr1Rules, "test_modify1")
 	Expect(err).To(Not(BeNil()))
 
-	err = ModifyIPAcl(0, aclNoRules, "test_modify2", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyIPAcl(0, aclNoRules, "test_modify2")
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = ModifyIPAcl(0, acl_IPrules, "test_modify3", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyIPAcl(0, acl_IPrules, "test_modify3")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
-	err = ModifyIPAcl(0, acl_IPrules, "test_modify4", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyIPAcl(0, acl_IPrules, "test_modify4")
 	Expect(err).To(Not(BeNil()))
 }
 
@@ -463,7 +477,10 @@ func TestModifyMACIPAcl(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclIndex, err := AddMacIPAcl(acl_MACIPrules, "test_modify", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	aclHandler, err := NewAclVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	Expect(err).To(BeNil())
+
+	aclIndex, err := aclHandler.AddMacIPAcl(acl_MACIPrules, "test_modify")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -495,17 +512,17 @@ func TestModifyMACIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = ModifyMACIPAcl(0, rule2modify, "test_modify0", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyMACIPAcl(0, rule2modify, "test_modify0")
 	Expect(err).To(BeNil())
 
-	err = ModifyMACIPAcl(0, aclErr1Rules, "test_modify1", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyMACIPAcl(0, aclErr1Rules, "test_modify1")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = ModifyMACIPAcl(0, acl_IPrules, "test_modify3", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyMACIPAcl(0, acl_IPrules, "test_modify3")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{Retval: -1})
-	err = ModifyMACIPAcl(0, acl_IPrules, "test_modify4", logrus.DefaultLogger(), ctx.MockChannel, nil)
+	err = aclHandler.ModifyMACIPAcl(0, acl_IPrules, "test_modify4")
 	Expect(err).To(Not(BeNil()))
 }

@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"testing"
 
+	"net"
+
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -29,7 +30,6 @@ import (
 	"github.com/ligato/vpp-agent/tests/linuxmock"
 	. "github.com/onsi/gomega"
 	"github.com/vishvananda/netlink"
-	"net"
 )
 
 /* Linux ARP configurator init and close */
@@ -156,9 +156,9 @@ func arpTestSetup(t *testing.T) (*l3plugin.LinuxArpConfigurator, *linuxmock.L3Ne
 	RegisterTestingT(t)
 
 	// Loggers
-	pluginLog := logging.ForPlugin("linux-arp-log", logrus.NewLogRegistry())
+	pluginLog := logging.ForPlugin("linux-arp-log")
 	pluginLog.SetLevel(logging.DebugLevel)
-	nsHandleLog := logging.ForPlugin("ns-handle-log", logrus.NewLogRegistry())
+	nsHandleLog := logging.ForPlugin("ns-handle-log")
 	nsHandleLog.SetLevel(logging.DebugLevel)
 	// Linux interface indexes
 	ifIndexes := ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(pluginLog, "if", nil))
@@ -175,6 +175,7 @@ func arpTestSetup(t *testing.T) (*l3plugin.LinuxArpConfigurator, *linuxmock.L3Ne
 func arpTestTeardown(plugin *l3plugin.LinuxArpConfigurator) {
 	err := plugin.Close()
 	Expect(err).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 func getArpID(ifIdx uint32, ip, mac string) *netlink.Neigh {

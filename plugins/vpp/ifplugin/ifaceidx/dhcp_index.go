@@ -15,7 +15,6 @@
 package ifaceidx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -44,7 +43,7 @@ type DhcpIndex interface {
 	LookupName(idx uint32) (name string, metadata *DHCPSettings, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in DhcpIndex mapping.
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan DhcpIdxDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan DhcpIdxDto)
 }
 
 // DhcpIndexRW is mapping between software interface names, indices
@@ -132,7 +131,7 @@ func (dhcp *dhcpIndex) LookupName(idx uint32) (name string, metadata *DHCPSettin
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in dhcpIndex mapping.
-func (dhcp *dhcpIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan DhcpIdxDto) {
+func (dhcp *dhcpIndex) WatchNameToIdx(subscriber string, pluginChannel chan DhcpIdxDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	dhcp.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

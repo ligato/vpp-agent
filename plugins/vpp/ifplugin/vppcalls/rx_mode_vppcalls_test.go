@@ -18,23 +18,21 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestSetRxMode(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 
-	err := vppcalls.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
+	err := ifHandler.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
 		RxMode:       ifModel.RxModeType_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetRxMode)
@@ -46,33 +44,33 @@ func TestSetRxMode(t *testing.T) {
 }
 
 func TestSetRxModeError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxMode{})
 
-	err := vppcalls.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
+	err := ifHandler.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
 		RxMode:       ifModel.RxModeType_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetRxModeRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
+	err := ifHandler.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
 		RxMode:       ifModel.RxModeType_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }

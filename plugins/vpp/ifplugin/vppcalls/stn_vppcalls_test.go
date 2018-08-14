@@ -18,20 +18,23 @@ import (
 	"net"
 	"testing"
 
+	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestAddStnRule(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, stnHandler := stnTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&stn.StnAddDelRuleReply{})
 
 	_, ip, _ := net.ParseCIDR("10.0.0.1/24")
-	err := vppcalls.AddStnRule(1, &ip.IP, ctx.MockChannel, nil)
+	err := stnHandler.AddStnRule(1, &ip.IP)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*stn.StnAddDelRule)
@@ -43,13 +46,13 @@ func TestAddStnRule(t *testing.T) {
 }
 
 func TestAddStnRuleIPv6(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, stnHandler := stnTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&stn.StnAddDelRuleReply{})
 
 	_, ip, _ := net.ParseCIDR("2001:db8:0:1:1:1:1:1/128")
-	err := vppcalls.AddStnRule(1, &ip.IP, ctx.MockChannel, nil)
+	err := stnHandler.AddStnRule(1, &ip.IP)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*stn.StnAddDelRule)
@@ -61,31 +64,31 @@ func TestAddStnRuleIPv6(t *testing.T) {
 }
 
 func TestAddStnRuleInvalidIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, stnHandler := stnTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&stn.StnAddDelRuleReply{})
 
 	var ip net.IP = []byte("invalid-ip")
-	err := vppcalls.AddStnRule(1, &ip, ctx.MockChannel, nil)
+	err := stnHandler.AddStnRule(1, &ip)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddStnRuleError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, stnHandler := stnTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&stn.StnAddDelRule{})
 
 	_, ip, _ := net.ParseCIDR("10.0.0.1/24")
-	err := vppcalls.AddStnRule(1, &ip.IP, ctx.MockChannel, nil)
+	err := stnHandler.AddStnRule(1, &ip.IP)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddStnRuleRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, stnHandler := stnTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&stn.StnAddDelRuleReply{
@@ -93,22 +96,30 @@ func TestAddStnRuleRetval(t *testing.T) {
 	})
 
 	_, ip, _ := net.ParseCIDR("10.0.0.1/24")
-	err := vppcalls.AddStnRule(1, &ip.IP, ctx.MockChannel, nil)
+	err := stnHandler.AddStnRule(1, &ip.IP)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDelStnRule(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, stnHandler := stnTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&stn.StnAddDelRuleReply{})
 
 	_, ip, _ := net.ParseCIDR("10.0.0.1/24")
-	err := vppcalls.DelStnRule(1, &ip.IP, ctx.MockChannel, nil)
+	err := stnHandler.DelStnRule(1, &ip.IP)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*stn.StnAddDelRule)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
+}
+
+func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.StnVppAPI) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "stn-if-idx", nil))
+	stnHandler, err := vppcalls.NewStnVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger(), nil)
+	Expect(err).To(BeNil())
+	return ctx, stnHandler
 }

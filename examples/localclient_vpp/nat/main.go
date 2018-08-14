@@ -19,11 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
-	"github.com/ligato/vpp-agent/flavors/local"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/namsral/flag"
@@ -106,18 +103,20 @@ vpp#
 // Start Agent plugins selected for this example.
 func main() {
 	// Init close channel to stop the example.
-	closeChannel := make(chan struct{}, 1)
+	//closeChannel := make(chan struct{}, 1)
+	//
+	//agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
+	//	examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &NatExamplePlugin{}}
+	//
+	//	return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
+	//}))
+	//
+	//// End when the localhost example is finished.
+	//go closeExample("NAT44 example finished", closeChannel)
+	//
+	//core.EventLoopWithInterrupt(agent, closeChannel)
 
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorVppLocal) []*core.NamedPlugin {
-		examplePlugin := &core.NamedPlugin{PluginName: PluginID, Plugin: &NatExamplePlugin{}}
-
-		return []*core.NamedPlugin{{examplePlugin.PluginName, examplePlugin}}
-	}))
-
-	// End when the localhost example is finished.
-	go closeExample("NAT44 example finished", closeChannel)
-
-	core.EventLoopWithInterrupt(agent, closeChannel)
+	// todo use new flavors and options
 }
 
 // Stop the agent with desired info message.
@@ -130,7 +129,7 @@ func closeExample(message string, closeChannel chan struct{}) {
 /* NAT44 Example */
 
 // PluginID of an example plugin.
-const PluginID core.PluginName = "nat-example-plugin"
+//const PluginID core.PluginName = "nat-example-plugin"
 
 // NatExamplePlugin uses localclient to transport example global NAT and DNAT and af-packet
 // configuration to NAT VPP plugin
@@ -176,17 +175,17 @@ func (plugin *NatExamplePlugin) Close() error {
 // Configure NAT44 Global config
 func (plugin *NatExamplePlugin) putGlobalConfig() {
 	plugin.log.Infof("Applying NAT44 global configuration")
-	err := localclient.DataResyncRequest(PluginID).
-		Interface(interface1()).
-		Interface(interface2()).
-		Interface(interface3()).
-		NAT44Global(globalNat()).
-		Send().ReceiveReply()
-	if err != nil {
-		plugin.log.Errorf("NAT44 global configuration failed: %v", err)
-	} else {
-		plugin.log.Info("NAT44 global configuration successful")
-	}
+	//err := localclient.DataResyncRequest(PluginID).
+	//	Interface(interface1()).
+	//	Interface(interface2()).
+	//	Interface(interface3()).
+	//	NAT44Global(globalNat()).
+	//	Send().ReceiveReply()
+	//if err != nil {
+	//	plugin.log.Errorf("NAT44 global configuration failed: %v", err)
+	//} else {
+	//	plugin.log.Info("NAT44 global configuration successful")
+	//}
 }
 
 // Configure DNAT
@@ -194,15 +193,15 @@ func (plugin *NatExamplePlugin) putDNAT(ctx context.Context, timeout int) {
 	select {
 	case <-time.After(time.Duration(timeout) * time.Second):
 		plugin.log.Infof("Applying DNAT configuration")
-		err := localclient.DataChangeRequest(PluginID).
-			Put().
-			NAT44DNat(dNat()).
-			Send().ReceiveReply()
-		if err != nil {
-			plugin.log.Errorf("DNAT configuration failed: %v", err)
-		} else {
-			plugin.log.Info("DNAT configuration successful")
-		}
+		//err := localclient.DataChangeRequest(PluginID).
+		//	Put().
+		//	NAT44DNat(dNat()).
+		//	Send().ReceiveReply()
+		//if err != nil {
+		//	plugin.log.Errorf("DNAT configuration failed: %v", err)
+		//} else {
+		//	plugin.log.Info("DNAT configuration successful")
+		//}
 	case <-ctx.Done():
 		// Cancel the scheduled DNAT configuration.
 		plugin.log.Info("DNAT configuration canceled")
@@ -314,17 +313,18 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMapping{
 			{
 				// DNAT static mapping with load balancer (multiple local addresses)
-				VrfId:             0,
 				ExternalInterface: "memif1",
 				ExternalIp:        "192.168.0.1",
 				ExternalPort:      8989,
 				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
+						VrfId:       0,
 						LocalIp:     "172.124.0.2",
 						LocalPort:   6500,
 						Probability: 40,
 					},
 					{
+						VrfId:       0,
 						LocalIp:     "172.125.10.5",
 						LocalPort:   2300,
 						Probability: 40,
@@ -335,12 +335,12 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 			},
 			{
 				// DNAT static mapping without load balancer (single local address)
-				VrfId:             0,
 				ExternalInterface: "memif2",
 				ExternalIp:        "192.168.0.2",
 				ExternalPort:      8989,
 				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
+						VrfId:       0,
 						LocalIp:     "172.124.0.3",
 						LocalPort:   6501,
 						Probability: 50,

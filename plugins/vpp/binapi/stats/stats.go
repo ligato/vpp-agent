@@ -6,7 +6,7 @@ package stats
 import "git.fd.io/govpp.git/api"
 
 // VlibCounter represents the VPP binary API data type 'vlib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1004:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1078:
 //
 //            "vlib_counter",
 //            [
@@ -34,7 +34,7 @@ func (*VlibCounter) GetCrcString() string {
 }
 
 // VnetCombinedCounter represents the VPP binary API data type 'vnet_combined_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1018:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1092:
 //
 //            "vnet_combined_counter",
 //            [
@@ -137,7 +137,7 @@ func (*VnetCombinedCounter) GetCrcString() string {
 }
 
 // VnetSimpleCounter represents the VPP binary API data type 'vnet_simple_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1092:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1166:
 //
 //            "vnet_simple_counter",
 //            [
@@ -204,8 +204,199 @@ func (*VnetSimpleCounter) GetCrcString() string {
 	return "8bd65e2d"
 }
 
+// FibMplsLabel represents the VPP binary API data type 'fib_mpls_label'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1212:
+//
+//            "fib_mpls_label",
+//            [
+//                "u8",
+//                "is_uniform"
+//            ],
+//            [
+//                "u32",
+//                "label"
+//            ],
+//            [
+//                "u8",
+//                "ttl"
+//            ],
+//            [
+//                "u8",
+//                "exp"
+//            ],
+//            {
+//                "crc": "0xc93bf35c"
+//            }
+//
+type FibMplsLabel struct {
+	IsUniform uint8
+	Label     uint32
+	TTL       uint8
+	Exp       uint8
+}
+
+func (*FibMplsLabel) GetTypeName() string {
+	return "fib_mpls_label"
+}
+func (*FibMplsLabel) GetCrcString() string {
+	return "c93bf35c"
+}
+
+// FibPath represents the VPP binary API data type 'fib_path'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1234:
+//
+//            "fib_path",
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "table_id"
+//            ],
+//            [
+//                "u8",
+//                "weight"
+//            ],
+//            [
+//                "u8",
+//                "preference"
+//            ],
+//            [
+//                "u8",
+//                "is_local"
+//            ],
+//            [
+//                "u8",
+//                "is_drop"
+//            ],
+//            [
+//                "u8",
+//                "is_udp_encap"
+//            ],
+//            [
+//                "u8",
+//                "is_unreach"
+//            ],
+//            [
+//                "u8",
+//                "is_prohibit"
+//            ],
+//            [
+//                "u8",
+//                "is_resolve_host"
+//            ],
+//            [
+//                "u8",
+//                "is_resolve_attached"
+//            ],
+//            [
+//                "u8",
+//                "is_dvr"
+//            ],
+//            [
+//                "u8",
+//                "is_source_lookup"
+//            ],
+//            [
+//                "u8",
+//                "afi"
+//            ],
+//            [
+//                "u8",
+//                "next_hop",
+//                16
+//            ],
+//            [
+//                "u32",
+//                "next_hop_id"
+//            ],
+//            [
+//                "u32",
+//                "rpf_id"
+//            ],
+//            [
+//                "u32",
+//                "via_label"
+//            ],
+//            [
+//                "u8",
+//                "n_labels"
+//            ],
+//            [
+//                "vl_api_fib_mpls_label_t",
+//                "label_stack",
+//                16
+//            ],
+//            {
+//                "crc": "0xabe483ef"
+//            }
+//
+type FibPath struct {
+	SwIfIndex         uint32
+	TableID           uint32
+	Weight            uint8
+	Preference        uint8
+	IsLocal           uint8
+	IsDrop            uint8
+	IsUDPEncap        uint8
+	IsUnreach         uint8
+	IsProhibit        uint8
+	IsResolveHost     uint8
+	IsResolveAttached uint8
+	IsDvr             uint8
+	IsSourceLookup    uint8
+	Afi               uint8
+	NextHop           []byte `struc:"[16]byte"`
+	NextHopID         uint32
+	RpfID             uint32
+	ViaLabel          uint32
+	NLabels           uint8
+	LabelStack        []FibMplsLabel `struc:"[16]FibMplsLabel"`
+}
+
+func (*FibPath) GetTypeName() string {
+	return "fib_path"
+}
+func (*FibPath) GetCrcString() string {
+	return "abe483ef"
+}
+
+// BierTableID represents the VPP binary API data type 'bier_table_id'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1322:
+//
+//            "bier_table_id",
+//            [
+//                "u8",
+//                "bt_set"
+//            ],
+//            [
+//                "u8",
+//                "bt_sub_domain"
+//            ],
+//            [
+//                "u8",
+//                "bt_hdr_len_id"
+//            ],
+//            {
+//                "crc": "0x435c691d"
+//            }
+//
+type BierTableID struct {
+	BtSet       uint8
+	BtSubDomain uint8
+	BtHdrLenID  uint8
+}
+
+func (*BierTableID) GetTypeName() string {
+	return "bier_table_id"
+}
+func (*BierTableID) GetCrcString() string {
+	return "435c691d"
+}
+
 // IP4FibCounter represents the VPP binary API data type 'ip4_fib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1138:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1340:
 //
 //            "ip4_fib_counter",
 //            [
@@ -243,7 +434,7 @@ func (*IP4FibCounter) GetCrcString() string {
 }
 
 // IP4MfibCounter represents the VPP binary API data type 'ip4_mfib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1160:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1362:
 //
 //            "ip4_mfib_counter",
 //            [
@@ -288,7 +479,7 @@ func (*IP4MfibCounter) GetCrcString() string {
 }
 
 // IP4NbrCounter represents the VPP binary API data type 'ip4_nbr_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1188:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1390:
 //
 //            "ip4_nbr_counter",
 //            [
@@ -326,7 +517,7 @@ func (*IP4NbrCounter) GetCrcString() string {
 }
 
 // IP6FibCounter represents the VPP binary API data type 'ip6_fib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1210:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1412:
 //
 //            "ip6_fib_counter",
 //            [
@@ -365,7 +556,7 @@ func (*IP6FibCounter) GetCrcString() string {
 }
 
 // IP6MfibCounter represents the VPP binary API data type 'ip6_mfib_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1233:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1435:
 //
 //            "ip6_mfib_counter",
 //            [
@@ -410,7 +601,7 @@ func (*IP6MfibCounter) GetCrcString() string {
 }
 
 // IP6NbrCounter represents the VPP binary API data type 'ip6_nbr_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1261:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1463:
 //
 //            "ip6_nbr_counter",
 //            [
@@ -449,7 +640,7 @@ func (*IP6NbrCounter) GetCrcString() string {
 }
 
 // UDPEncapCounter represents the VPP binary API data type 'udp_encap_counter'.
-// Generated from '/usr/share/vpp/api/stats.api.json', line 1284:
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1486:
 //
 //            "udp_encap_counter",
 //            [
@@ -479,6 +670,44 @@ func (*UDPEncapCounter) GetTypeName() string {
 }
 func (*UDPEncapCounter) GetCrcString() string {
 	return "7107035f"
+}
+
+// BierNeighborCounter represents the VPP binary API data type 'bier_neighbor_counter'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 1504:
+//
+//            "bier_neighbor_counter",
+//            [
+//                "vl_api_bier_table_id_t",
+//                "tbl_id"
+//            ],
+//            [
+//                "vl_api_fib_path_t",
+//                "path"
+//            ],
+//            [
+//                "u64",
+//                "packets"
+//            ],
+//            [
+//                "u64",
+//                "bytes"
+//            ],
+//            {
+//                "crc": "0x91fe1748"
+//            }
+//
+type BierNeighborCounter struct {
+	TblID   BierTableID
+	Path    FibPath
+	Packets uint64
+	Bytes   uint64
+}
+
+func (*BierNeighborCounter) GetTypeName() string {
+	return "bier_neighbor_counter"
+}
+func (*BierNeighborCounter) GetCrcString() string {
+	return "91fe1748"
 }
 
 // WantStats represents the VPP binary API message 'want_stats'.
@@ -1943,25 +2172,25 @@ func NewVnetGetSummaryStats() api.Message {
 //            [
 //                "u64",
 //                "total_pkts",
-//                2
+//                8
 //            ],
 //            [
 //                "u64",
 //                "total_bytes",
-//                2
+//                8
 //            ],
 //            [
 //                "f64",
 //                "vector_rate"
 //            ],
 //            {
-//                "crc": "0x32b87c56"
+//                "crc": "0x82b5e46c"
 //            }
 //
 type VnetGetSummaryStatsReply struct {
 	Retval     int32
-	TotalPkts  []uint64 `struc:"[2]uint64"`
-	TotalBytes []uint64 `struc:"[2]uint64"`
+	TotalPkts  []uint64 `struc:"[8]uint64"`
+	TotalBytes []uint64 `struc:"[8]uint64"`
 	VectorRate float64
 }
 
@@ -1972,7 +2201,7 @@ func (*VnetGetSummaryStatsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 func (*VnetGetSummaryStatsReply) GetCrcString() string {
-	return "32b87c56"
+	return "82b5e46c"
 }
 func NewVnetGetSummaryStatsReply() api.Message {
 	return &VnetGetSummaryStatsReply{}
@@ -2182,4 +2411,132 @@ func (*VnetUDPEncapCounters) GetCrcString() string {
 }
 func NewVnetUDPEncapCounters() api.Message {
 	return &VnetUDPEncapCounters{}
+}
+
+// WantBierNeighborStats represents the VPP binary API message 'want_bier_neighbor_stats'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 922:
+//
+//            "want_bier_neighbor_stats",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "enable"
+//            ],
+//            [
+//                "u32",
+//                "pid"
+//            ],
+//            {
+//                "crc": "0xcfaccc1f"
+//            }
+//
+type WantBierNeighborStats struct {
+	Enable uint32
+	Pid    uint32
+}
+
+func (*WantBierNeighborStats) GetMessageName() string {
+	return "want_bier_neighbor_stats"
+}
+func (*WantBierNeighborStats) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func (*WantBierNeighborStats) GetCrcString() string {
+	return "cfaccc1f"
+}
+func NewWantBierNeighborStats() api.Message {
+	return &WantBierNeighborStats{}
+}
+
+// WantBierNeighborStatsReply represents the VPP binary API message 'want_bier_neighbor_stats_reply'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 948:
+//
+//            "want_bier_neighbor_stats_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type WantBierNeighborStatsReply struct {
+	Retval int32
+}
+
+func (*WantBierNeighborStatsReply) GetMessageName() string {
+	return "want_bier_neighbor_stats_reply"
+}
+func (*WantBierNeighborStatsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func (*WantBierNeighborStatsReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func NewWantBierNeighborStatsReply() api.Message {
+	return &WantBierNeighborStatsReply{}
+}
+
+// VnetBierNeighborCounters represents the VPP binary API message 'vnet_bier_neighbor_counters'.
+// Generated from '/usr/share/vpp/api/stats.api.json', line 966:
+//
+//            "vnet_bier_neighbor_counters",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "timestamp"
+//            ],
+//            [
+//                "u32",
+//                "count"
+//            ],
+//            [
+//                "vl_api_bier_neighbor_counter_t",
+//                "c",
+//                0,
+//                "count"
+//            ],
+//            {
+//                "crc": "0xee0481ce"
+//            }
+//
+type VnetBierNeighborCounters struct {
+	Timestamp uint32
+	Count     uint32 `struc:"sizeof=C"`
+	C         []BierNeighborCounter
+}
+
+func (*VnetBierNeighborCounters) GetMessageName() string {
+	return "vnet_bier_neighbor_counters"
+}
+func (*VnetBierNeighborCounters) GetMessageType() api.MessageType {
+	return api.OtherMessage
+}
+func (*VnetBierNeighborCounters) GetCrcString() string {
+	return "ee0481ce"
+}
+func NewVnetBierNeighborCounters() api.Message {
+	return &VnetBierNeighborCounters{}
 }

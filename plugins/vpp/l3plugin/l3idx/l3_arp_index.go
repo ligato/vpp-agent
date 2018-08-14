@@ -15,7 +15,6 @@
 package l3idx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
@@ -36,7 +35,7 @@ type ARPIndex interface {
 	LookupNamesByInterface(ifName string) []*l3.ArpTable_ArpEntry
 
 	// WatchNameToIdx allows to subscribe for watching changes in SwIfIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ARPIndexDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan ARPIndexDto)
 }
 
 // ARPIndexRW is mapping between software ARP indexes (used internally in VPP)
@@ -124,7 +123,7 @@ func (arpIndex *ArpIndex) Clear() {
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in SwIfIndex mapping
-func (arpIndex *ArpIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan ARPIndexDto) {
+func (arpIndex *ArpIndex) WatchNameToIdx(subscriber string, pluginChannel chan ARPIndexDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	arpIndex.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

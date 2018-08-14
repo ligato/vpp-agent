@@ -18,11 +18,11 @@ import (
 	"github.com/ligato/cn-infra/datasync/syncbase"
 )
 
-// DefaultTransport is a default registry.
-var DefaultTransport = syncbase.NewRegistry()
+// DefaultRegistry is a default registry.
+var DefaultRegistry = syncbase.NewRegistry()
 
 // Get returns the global singleton instance.
 func Get() *syncbase.Registry {
-	// TODO: obsolete, use DefaultTransport directly instead
-	return DefaultTransport
+	// TODO: obsolete, use DefaultRegistry directly instead
+	return DefaultRegistry
 }

@@ -190,7 +190,7 @@ func (ctl *VppAgentCtl) createBfdSession() {
 			{
 				Interface:             "memif1",
 				Enabled:               true,
-				SourceAddress:         "192.168.1.2",
+				SourceAddress:         "172.125.40.1",
 				DestinationAddress:    "20.10.0.5",
 				RequiredMinRxInterval: 8,
 				DesiredMinTxInterval:  3,
@@ -676,6 +676,39 @@ func (ctl *VppAgentCtl) deleteIPsecSA() {
 	ctl.broker.Delete(saKey2)
 }
 
+// createIPSecTunnelInterface configures IPSec tunnel interface
+func (ctl *VppAgentCtl) createIPSecTunnelInterface() {
+	tunnelIf := ipsec.TunnelInterfaces_Tunnel{
+		Name:            "ipsec0",
+		Esn:             false,
+		AntiReplay:      false,
+		LocalSpi:        1000,
+		RemoteSpi:       1001,
+		LocalIp:         "10.0.0.2",
+		RemoteIp:        "10.0.0.1",
+		CryptoAlg:       1,
+		LocalCryptoKey:  "4a506a794f574265564551694d653768",
+		RemoteCryptoKey: "4a506a794f574265564551694d653768",
+		IntegAlg:        2,
+		LocalIntegKey:   "4339314b55523947594d6d3547666b45764e6a58",
+		RemoteIntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+		Enabled:         true,
+		IpAddresses:     []string{"20.0.0.0/24"},
+		Vrf:             0,
+	}
+
+	ctl.Log.Println(tunnelIf)
+	ctl.broker.Put(ipsec.TunnelKey(tunnelIf.Name), &tunnelIf)
+}
+
+// deleteIPSecTunnelInterface removes IPSec tunnel interface
+func (ctl *VppAgentCtl) deleteIPSecTunnelInterface() {
+	tunnelKey := ipsec.TunnelKey("ipsec0")
+
+	ctl.Log.Println("Deleting", tunnelKey)
+	ctl.broker.Delete(tunnelKey)
+}
+
 // STN
 
 // CreateStn puts STN configuration to the ETCD
@@ -743,12 +776,12 @@ func (ctl *VppAgentCtl) createGlobalNat() {
 	}
 
 	ctl.Log.Println(natGlobal)
-	ctl.broker.Put(nat.GlobalConfigKey(), natGlobal)
+	ctl.broker.Put(nat.GlobalPrefix, natGlobal)
 }
 
 // DeleteGlobalNat removes global NAT configuration from the ETCD
 func (ctl *VppAgentCtl) deleteGlobalNat() {
-	globalNat := nat.GlobalConfigKey()
+	globalNat := nat.GlobalPrefix
 
 	ctl.Log.Println("Deleting", globalNat)
 	ctl.broker.Delete(globalNat)
@@ -780,17 +813,18 @@ func (ctl *VppAgentCtl) createDNat() {
 		Label: "dnat1",
 		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMapping{
 			{
-				VrfId:             0,
 				ExternalInterface: "tap1",
 				ExternalIp:        "192.168.0.1",
 				ExternalPort:      8989,
 				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
+						VrfId:       0,
 						LocalIp:     "172.124.0.2",
 						LocalPort:   6500,
 						Probability: 40,
 					},
 					{
+						VrfId:       0,
 						LocalIp:     "172.125.10.5",
 						LocalPort:   2300,
 						Probability: 40,
@@ -942,11 +976,28 @@ func (ctl *VppAgentCtl) createRoute() {
 				Weight:            6,
 				OutgoingInterface: "tap1",
 			},
+			// inter-vrf route without next hop addr (recursive lookup)
+			//{
+			//	Type:      l3.StaticRoutes_Route_INTER_VRF,
+			//	VrfId:     0,
+			//	DstIpAddr: "1.2.3.4/32",
+			//	ViaVrfId:  1,
+			//},
+			// inter-vrf route with next hop addr
+			//{
+			//	Type:        l3.StaticRoutes_Route_INTER_VRF,
+			//	VrfId:       1,
+			//	DstIpAddr:   "10.1.1.3/32",
+			//	NextHopAddr: "192.168.1.13",
+			//	ViaVrfId:    0,
+			//},
 		},
 	}
 
-	ctl.Log.Print(routes.Routes[0])
-	ctl.broker.Put(l3.RouteKey(routes.Routes[0].VrfId, routes.Routes[0].DstIpAddr, routes.Routes[0].NextHopAddr), routes.Routes[0])
+	for _, r := range routes.Routes {
+		ctl.Log.Print(r)
+		ctl.broker.Put(l3.RouteKey(r.VrfId, r.DstIpAddr, r.NextHopAddr), r)
+	}
 }
 
 // DeleteRoute removes VPP route configuration from the ETCD
@@ -1257,7 +1308,7 @@ func (ctl *VppAgentCtl) deleteTxn() {
 
 // ReportIfaceErrorState reports interface status data to the ETCD
 func (ctl *VppAgentCtl) reportIfaceErrorState() {
-	ifErr, err := ctl.broker.ListValues(interfaces.IfErrorPrefix)
+	ifErr, err := ctl.broker.ListValues(interfaces.ErrorPrefix)
 	if err != nil {
 		ctl.Log.Fatal(err)
 		return

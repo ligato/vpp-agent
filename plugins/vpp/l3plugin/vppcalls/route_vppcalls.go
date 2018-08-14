@@ -20,7 +20,6 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -35,14 +34,25 @@ var RouteMessages = []govppapi.Message{
 	&ip.IP6FibDetails{},
 }
 
+type RouteType int32
+
+const (
+	// IntraVrf route forwards in the specified vrf_id only
+	IntraVrf RouteType = iota
+	// InterVrf route forwards using the lookup in the via_vrf_id
+	InterVrf
+)
+
 // Route represents a forward IP route entry with the parameters of gateway
 // to which packets should be forwarded when a given routing table entry is applied.
 type Route struct {
+	Type        RouteType `json:"type"`
 	VrfID       uint32    `json:"vrf_id"`
 	TableName   string    `json:"table_name"`
 	DstAddr     net.IPNet `json:"dst_addr"`
 	NextHopAddr net.IP    `json:"next_hop_addr"`
 	OutIface    uint32    `json:"out_iface"`
+	ViaVrfId    uint32    `json:"via_vrf_id"`
 	Weight      uint32    `json:"weight"`
 	Preference  uint32    `json:"preference"`
 }
@@ -62,9 +72,9 @@ const (
 )
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
-func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwatch *measure.Stopwatch) error {
+func (handler *routeHandler) vppAddDelRoute(route *Route, delete bool) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ip.IPAddDelRoute{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(ip.IPAddDelRoute{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &ip.IPAddDelRoute{}
@@ -95,20 +105,24 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 	req.NextHopSwIfIndex = route.OutIface
 	req.NextHopWeight = uint8(route.Weight)
 	req.NextHopPreference = uint8(route.Preference)
-	req.NextHopTableID = route.VrfID
 	req.NextHopViaLabel = NextHopViaLabelUnset
 	req.ClassifyTableIndex = ClassifyTableIndexUnset
 	req.IsDrop = 0
 
 	// VRF
 	req.TableID = route.VrfID
+	if route.Type == InterVrf {
+		req.NextHopTableID = route.ViaVrfId
+	} else {
+		req.NextHopTableID = route.VrfID
+	}
 
 	// Multi path is always true
 	req.IsMultipath = 1
 
 	// Send message
 	reply := &ip.IPAddDelRouteReply{}
-	if err = vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -118,15 +132,18 @@ func vppAddDelRoute(route *Route, vppChan govppapi.Channel, delete bool, stopwat
 	return nil
 }
 
-// VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
-func VppAddRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	if err := ifvppcalls.CreateVrfIfNeeded(route.VrfID, vppChan); err != nil {
+func (handler *routeHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *Route) error {
+	if err := ifHandler.CreateVrfIfNeeded(route.VrfID); err != nil {
 		return err
 	}
-	return vppAddDelRoute(route, vppChan, false, stopwatch)
+	if route.Type == InterVrf {
+		if err := ifHandler.CreateVrfIfNeeded(route.ViaVrfId); err != nil {
+			return err
+		}
+	}
+	return handler.vppAddDelRoute(route, false)
 }
 
-// VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
-func VppDelRoute(route *Route, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return vppAddDelRoute(route, vppChan, true, stopwatch)
+func (handler *routeHandler) VppDelRoute(route *Route) error {
+	return handler.vppAddDelRoute(route, true)
 }

@@ -18,18 +18,16 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestSetInterfaceAsDHCPClient(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{})
 
-	err := vppcalls.SetInterfaceAsDHCPClient(1, "hostName", ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DhcpClientConfig)
@@ -41,36 +39,36 @@ func TestSetInterfaceAsDHCPClient(t *testing.T) {
 }
 
 func TestSetInterfaceAsDHCPClientError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&dhcp.DhcpComplEvent{})
 
-	err := vppcalls.SetInterfaceAsDHCPClient(1, "hostName", ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetInterfaceAsDHCPClientRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.SetInterfaceAsDHCPClient(1, "hostName", ctx.MockChannel, nil)
+	err := ifHandler.SetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestUnsetInterfaceAsDHCPClient(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{})
 
-	err := vppcalls.UnsetInterfaceAsDHCPClient(1, "hostName", ctx.MockChannel, nil)
+	err := ifHandler.UnsetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DhcpClientConfig)
@@ -82,25 +80,25 @@ func TestUnsetInterfaceAsDHCPClient(t *testing.T) {
 }
 
 func TestUnsetInterfaceAsDHCPClientError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&dhcp.DhcpComplEvent{})
 
-	err := vppcalls.UnsetInterfaceAsDHCPClient(1, "hostName", ctx.MockChannel, nil)
+	err := ifHandler.UnsetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestUnsetInterfaceAsDHCPClientRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.UnsetInterfaceAsDHCPClient(1, "hostName", ctx.MockChannel, nil)
+	err := ifHandler.UnsetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).ToNot(BeNil())
 }

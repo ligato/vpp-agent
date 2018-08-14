@@ -15,7 +15,6 @@
 package l2idx
 
 import (
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -33,7 +32,7 @@ type XcIndex interface {
 	LookupName(idx uint32) (name string, metadata *l2.XConnectPairs_XConnectPair, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in xcIndex mapping
-	WatchNameToIdx(subscriber core.PluginName, pluginChannel chan XcChangeDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan XcChangeDto)
 }
 
 // XcIndexRW is mapping between indices (used internally in VPP) and cross connect entries.
@@ -116,7 +115,7 @@ func (xc *xcIndex) LookupName(idx uint32) (name string, metadata *l2.XConnectPai
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in xcIndex mapping.
-func (xc *xcIndex) WatchNameToIdx(subscriber core.PluginName, pluginChannel chan XcChangeDto) {
+func (xc *xcIndex) WatchNameToIdx(subscriber string, pluginChannel chan XcChangeDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	xc.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {

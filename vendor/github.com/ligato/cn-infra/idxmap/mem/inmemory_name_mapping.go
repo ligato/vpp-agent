@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 )
 
@@ -152,7 +152,7 @@ func (mem *memNamedMapping) ListNames(field string, value string) []string {
 
 // Watch allows to subscribe for tracking changes in the mapping.
 // When an item is added or removed, the given <callback> is triggered.
-func (mem *memNamedMapping) Watch(subscriber core.PluginName, callback func(idxmap.NamedMappingGenericEvent)) error {
+func (mem *memNamedMapping) Watch(subscriber infra.PluginName, callback func(idxmap.NamedMappingGenericEvent)) error {
 	mem.Debug("Watch ", subscriber)
 
 	_, found := mem.subscribers.LoadOrStore(subscriber, callback)
@@ -238,7 +238,7 @@ func (mem *memNamedMapping) putNameToIdxSync(name string, metadata interface{}) 
 
 func (mem *memNamedMapping) publishAddToChannel(name string, value interface{}) {
 	mem.subscribers.Range(func(key, val interface{}) bool {
-		subscriber := key.(core.PluginName)
+		subscriber := key.(infra.PluginName)
 		clb := val.(func(idxmap.NamedMappingGenericEvent))
 
 		if clb != nil {
@@ -261,7 +261,7 @@ func (mem *memNamedMapping) publishAddToChannel(name string, value interface{}) 
 
 func (mem *memNamedMapping) publishUpdateToChannel(name string, value interface{}) {
 	mem.subscribers.Range(func(key, val interface{}) bool {
-		subscriber := key.(core.PluginName)
+		subscriber := key.(infra.PluginName)
 		clb := val.(func(idxmap.NamedMappingGenericEvent))
 
 		if clb != nil {
@@ -284,7 +284,7 @@ func (mem *memNamedMapping) publishUpdateToChannel(name string, value interface{
 
 func (mem *memNamedMapping) publishDelToChannel(name string, value interface{}) {
 	mem.subscribers.Range(func(key, val interface{}) bool {
-		subscriber := key.(core.PluginName)
+		subscriber := key.(infra.PluginName)
 		clb := val.(func(idxmap.NamedMappingGenericEvent))
 
 		if clb != nil {

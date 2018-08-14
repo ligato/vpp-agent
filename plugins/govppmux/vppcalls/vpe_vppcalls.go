@@ -148,7 +148,7 @@ type NodeCounter struct {
 
 var (
 	// Regular expression to parse output from `show node counters`
-	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-\/]+)\s+([\w- ]+)$`)
+	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-\/]+)\s+(.+)$`)
 )
 
 // GetNodeCounters retrieves node counters info
