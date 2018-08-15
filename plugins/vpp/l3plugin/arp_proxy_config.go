@@ -58,7 +58,7 @@ type ProxyArpConfigurator struct {
 	stopwatch *measure.Stopwatch
 }
 
-// Init VPP channel and check message compatibility
+// Init VPP channel and vppcalls handler
 func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger

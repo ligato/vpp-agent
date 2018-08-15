@@ -39,32 +39,6 @@ func GetAclPluginVersion(ch govppapi.Channel) (string, error) {
 	return version, nil
 }
 
-// AclMessages is list of used VPP messages for compatibility check
-var AclMessages = []govppapi.Message{
-	&aclapi.ACLAddReplace{},
-	&aclapi.ACLAddReplaceReply{},
-	&aclapi.ACLDel{},
-	&aclapi.ACLDelReply{},
-	&aclapi.MacipACLAdd{},
-	&aclapi.MacipACLAddReply{},
-	&aclapi.MacipACLAddReplace{},
-	&aclapi.MacipACLAddReplaceReply{},
-	&aclapi.MacipACLDel{},
-	&aclapi.MacipACLDelReply{},
-	&aclapi.ACLDump{},
-	&aclapi.ACLDetails{},
-	&aclapi.MacipACLDump{},
-	&aclapi.MacipACLDetails{},
-	&aclapi.ACLInterfaceListDump{},
-	&aclapi.ACLInterfaceListDetails{},
-	&aclapi.MacipACLInterfaceListDump{},
-	&aclapi.MacipACLInterfaceListDetails{},
-	&aclapi.ACLInterfaceSetACLList{},
-	&aclapi.ACLInterfaceSetACLListReply{},
-	&aclapi.MacipACLInterfaceAddDel{},
-	&aclapi.MacipACLInterfaceAddDelReply{},
-}
-
 func (handler *aclVppHandler) AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(aclapi.ACLAddReplace{}).LogTimeEntry(time.Since(t))

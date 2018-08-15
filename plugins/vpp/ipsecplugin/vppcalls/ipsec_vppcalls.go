@@ -20,33 +20,10 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/utils/addrs"
 	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
-
-// IPSecMessages is list of used VPP messages for compatibility check
-var IPSecMessages = []govppapi.Message{
-	&ipsec_api.IpsecSpdAddDel{},
-	&ipsec_api.IpsecSpdAddDelReply{},
-	&ipsec_api.IpsecInterfaceAddDelSpd{},
-	&ipsec_api.IpsecInterfaceAddDelSpdReply{},
-	&ipsec_api.IpsecSpdAddDelEntry{},
-	&ipsec_api.IpsecSpdAddDelEntryReply{},
-	&ipsec_api.IpsecSadAddDelEntry{},
-	&ipsec_api.IpsecSadAddDelEntryReply{},
-	&ipsec_api.IpsecSpdDump{},
-	&ipsec_api.IpsecSpdDetails{},
-	&ipsec_api.IpsecTunnelIfAddDel{},
-	&ipsec_api.IpsecTunnelIfAddDelReply{},
-	&ipsec_api.IpsecSaDump{},
-	&ipsec_api.IpsecSaDetails{},
-	&ipsec_api.IpsecTunnelIfSetKey{},
-	&ipsec_api.IpsecTunnelIfSetKeyReply{},
-	&ipsec_api.IpsecTunnelIfSetSa{},
-	&ipsec_api.IpsecTunnelIfSetSaReply{},
-}
 
 func (handler *ipSecVppHandler) tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool) (uint32, error) {
 	defer func(t time.Time) {

@@ -20,28 +20,11 @@ import (
 	"strings"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/sr"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
-
-// SRMessages checks if segment routing CRCs are compatible with VPP in runtime.
-var SrMessages = []govppapi.Message{
-	&sr.SrLocalsidAddDel{},
-	&sr.SrLocalsidAddDelReply{},
-	&sr.SrSetEncapSource{},
-	&sr.SrSetEncapSourceReply{},
-	&sr.SrPolicyAdd{},
-	&sr.SrPolicyAddReply{},
-	&sr.SrPolicyMod{},
-	&sr.SrPolicyModReply{},
-	&sr.SrPolicyDel{},
-	&sr.SrPolicyModReply{},
-	&sr.SrSteeringAddDel{},
-	&sr.SrSteeringAddDelReply{},
-}
 
 // Constants for behavior function hardcoded into VPP (there can be also custom behavior functions implemented as VPP plugins)
 // Constants are taken from VPP's vnet/srv6/sr.h (names are modified to Golang from original C form in VPP code)
