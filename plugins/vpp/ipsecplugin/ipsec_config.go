@@ -97,18 +97,8 @@ func (plugin *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	}
 
 	// VPP API handlers
-	if plugin.ifHandler, err = iface_vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-	if plugin.ipSecHandler, err = vppcalls.NewIPsecVppHandler(plugin.vppCh, plugin.ifIndexes, plugin.spdIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-
-	// Message compatibility
-	if err = plugin.vppCh.CheckMessageCompatibility(vppcalls.IPSecMessages...); err != nil {
-		plugin.log.Error(err)
-		return err
-	}
+	plugin.ifHandler = iface_vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch)
+	plugin.ipSecHandler = vppcalls.NewIPsecVppHandler(plugin.vppCh, plugin.ifIndexes, plugin.spdIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }

@@ -19,16 +19,9 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
-
-// ArpMessages is list of used VPP messages for compatibility check
-var ArpMessages = []govppapi.Message{
-	&ip.IPNeighborAddDel{},
-	&ip.IPNeighborAddDelReply{},
-}
 
 // ArpEntry represents ARP entry for interface
 type ArpEntry struct {
@@ -56,10 +49,10 @@ func (handler *arpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
 		return err
 	}
 	if isIpv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 		req.DstAddress = []byte(entry.IPAddress.To16())
 	} else {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 		req.DstAddress = []byte(entry.IPAddress.To4())
 	}
 	if entry.Static {

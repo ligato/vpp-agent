@@ -188,7 +188,7 @@ func (plugin *Plugin) Close() error {
 		plugin.ifConfigurator, plugin.arpConfigurator, plugin.routeConfigurator,
 		// Channels
 		plugin.ifIndexesWatchChan, plugin.ifMicroserviceNotif, plugin.changeChan, plugin.resyncChan,
-		plugin.msChan, plugin.vppIfIndexesWatchChan,
+		plugin.msChan,
 		// Registrations
 		plugin.watchDataReg,
 	)

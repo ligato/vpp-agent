@@ -5,6 +5,7 @@ package stn
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"StnAddDelRule": reflect.TypeOf((*StnAddDelRule)(nil)).Elem(),
 	"StnAddDelRuleReply": reflect.TypeOf((*StnAddDelRuleReply)(nil)).Elem(),
 	"StnRulesDetails": reflect.TypeOf((*StnRulesDetails)(nil)).Elem(),

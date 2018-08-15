@@ -245,7 +245,7 @@ func (handler *ipSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err 
 
 			// Addresses
 			var remoteStartAddrStr, remoteStopAddrStr, localStartAddrStr, localStopAddrStr string
-			if uintToBool(spdDetails.IsIpv6) {
+			if uintToBool(spdDetails.IsIPv6) {
 				var remoteStartAddr, remoteStopAddr net.IP = spdDetails.RemoteStartAddr, spdDetails.RemoteStopAddr
 				remoteStartAddrStr, remoteStopAddrStr = remoteStartAddr.String(), remoteStopAddr.String()
 				var localStartAddr, localStopAddr net.IP = spdDetails.LocalStartAddr, spdDetails.LocalStopAddr

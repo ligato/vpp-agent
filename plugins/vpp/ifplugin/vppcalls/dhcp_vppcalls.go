@@ -23,21 +23,21 @@ import (
 
 func (handler *ifVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(dhcp.DhcpClientConfig{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(dhcp.DHCPClientConfig{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &dhcp.DhcpClientConfig{
-		Client: dhcp.DhcpClient{
+	req := &dhcp.DHCPClientConfig{
+		Client: dhcp.DHCPClient{
 			SwIfIndex:     ifIdx,
 			Hostname:      []byte(hostName),
-			WantDhcpEvent: 1,
+			WantDHCPEvent: 1,
 		},
 	}
 	if isAdd {
 		req.IsAdd = 1
 	}
 
-	reply := &dhcp.DhcpClientConfigReply{}
+	reply := &dhcp.DHCPClientConfigReply{}
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}

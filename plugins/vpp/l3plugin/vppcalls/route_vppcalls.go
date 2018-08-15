@@ -71,11 +71,11 @@ func (handler *routeHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 	parsedNextHopIP := net.ParseIP(route.NextHopAddr)
 	prefix, _ := parsedDstIP.Mask.Size()
 	if isIpv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 		req.DstAddress = []byte(parsedDstIP.IP.To16())
 		req.NextHopAddress = []byte(parsedNextHopIP.To16())
 	} else {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 		req.DstAddress = []byte(parsedDstIP.IP.To4())
 		req.NextHopAddress = []byte(parsedNextHopIP.To4())
 	}

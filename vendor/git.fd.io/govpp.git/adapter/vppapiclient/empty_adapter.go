@@ -32,7 +32,7 @@ func NewVppAdapter(string) adapter.VppAdapter {
 }
 
 func (a *vppAPIClientAdapter) Connect() error {
-	return nil
+	return adapter.ErrNotImplemented
 }
 
 func (a *vppAPIClientAdapter) Disconnect() {
@@ -47,7 +47,7 @@ func (a *vppAPIClientAdapter) SendMsg(clientID uint32, data []byte) error {
 	return nil
 }
 
-func (a *vppAPIClientAdapter) SetMsgCallback(cb func(context uint32, msgID uint16, data []byte)) {
+func (a *vppAPIClientAdapter) SetMsgCallback(cb adapter.MsgCallback) {
 	// no op
 }
 

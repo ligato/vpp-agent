@@ -20,33 +20,10 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/utils/addrs"
 	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
-
-// IPSecMessages is list of used VPP messages for compatibility check
-var IPSecMessages = []govppapi.Message{
-	&ipsec_api.IpsecSpdAddDel{},
-	&ipsec_api.IpsecSpdAddDelReply{},
-	&ipsec_api.IpsecInterfaceAddDelSpd{},
-	&ipsec_api.IpsecInterfaceAddDelSpdReply{},
-	&ipsec_api.IpsecSpdAddDelEntry{},
-	&ipsec_api.IpsecSpdAddDelEntryReply{},
-	&ipsec_api.IpsecSadAddDelEntry{},
-	&ipsec_api.IpsecSadAddDelEntryReply{},
-	&ipsec_api.IpsecSpdDump{},
-	&ipsec_api.IpsecSpdDetails{},
-	&ipsec_api.IpsecTunnelIfAddDel{},
-	&ipsec_api.IpsecTunnelIfAddDelReply{},
-	&ipsec_api.IpsecSaDump{},
-	&ipsec_api.IpsecSaDetails{},
-	&ipsec_api.IpsecTunnelIfSetKey{},
-	&ipsec_api.IpsecTunnelIfSetKeyReply{},
-	&ipsec_api.IpsecTunnelIfSetSa{},
-	&ipsec_api.IpsecTunnelIfSetSaReply{},
-}
 
 func (handler *ipSecVppHandler) tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool) (uint32, error) {
 	defer func(t time.Time) {
@@ -200,13 +177,13 @@ func (handler *ipSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.Se
 			return err
 		}
 		if isIPv6 {
-			req.IsIpv6 = 1
+			req.IsIPv6 = 1
 			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To16()
 			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To16()
 			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To16()
 			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To16()
 		} else {
-			req.IsIpv6 = 0
+			req.IsIPv6 = 0
 			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To4()
 			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To4()
 			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To4()
@@ -274,11 +251,11 @@ func (handler *ipSecVppHandler) sadAddDelEntry(saID uint32, sa *ipsec.SecurityAs
 			return err
 		}
 		if isIPv6 {
-			req.IsTunnelIpv6 = 1
+			req.IsTunnelIPv6 = 1
 			req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To16()
 			req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To16()
 		} else {
-			req.IsTunnelIpv6 = 0
+			req.IsTunnelIPv6 = 0
 			req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To4()
 			req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To4()
 		}

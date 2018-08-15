@@ -54,7 +54,6 @@ type StaticMappingLbContext struct {
 	ExternalIP   []byte
 	ExternalPort uint16
 	Protocol     uint8
-	Vrf          uint32
 	TwiceNat     bool
 	SelfTwiceNat bool
 }
@@ -71,6 +70,7 @@ type IdentityMappingContext struct {
 
 // LocalLbAddress represents one local IP and address entry
 type LocalLbAddress struct {
+	Vrf         uint32
 	Tag         string
 	LocalIP     []byte
 	LocalPort   uint16
@@ -244,6 +244,7 @@ func (handler *natVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbCon
 			Addr:        ctxLocal.LocalIP,
 			Port:        ctxLocal.LocalPort,
 			Probability: ctxLocal.Probability,
+			VrfID:       ctxLocal.Vrf,
 		}
 		localAddrPorts = append(localAddrPorts, localAddrPort)
 	}
@@ -255,7 +256,6 @@ func (handler *natVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbCon
 		ExternalAddr: ctx.ExternalIP,
 		ExternalPort: ctx.ExternalPort,
 		Protocol:     ctx.Protocol,
-		VrfID:        ctx.Vrf,
 		TwiceNat:     boolToUint(ctx.TwiceNat),
 		SelfTwiceNat: boolToUint(ctx.SelfTwiceNat),
 		Out2inOnly:   1,

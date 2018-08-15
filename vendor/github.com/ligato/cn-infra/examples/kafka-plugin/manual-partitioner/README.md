@@ -34,6 +34,5 @@ go run main.go deps.go [-kafka-config <config-filepath>]
 
 If `kafka-config` is unspecified, the application will try to search
 for `kafka.conf` in the current working directory.
-If the configuration file cannot be loaded, the initialization
-of the kafka plugin will be skipped and the example scenario will thus
-not execute in its entirety.
+If the configuration file cannot be loaded or is not defined, default 
+configuration will be used.

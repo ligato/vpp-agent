@@ -1395,7 +1395,7 @@ func TestResolveStaticMappingNoMatch3(t *testing.T) {
 
 	nbData := getNat44StaticMappingData()
 	vppData := getNat44StaticMappingData().StMappings
-	vppData[0].VrfId = 1 // Change VRF
+	vppData[0].LocalIps[0].VrfId = 1 // Change VRF
 
 	// Tests where NB != VPP
 	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
@@ -1412,7 +1412,7 @@ func TestResolveStaticMappingNoMatch4(t *testing.T) {
 
 	nbData := getNat44StaticMappingData()
 	vppData := getNat44StaticMappingData().StMappings
-	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.2", 30, 15)) // Change number of Local IPs
+	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.2", 30, 15, 0)) // Change number of Local IPs
 
 	// Tests where NB != VPP
 	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
@@ -1479,7 +1479,7 @@ func TestResolveStaticMappingLbNoMatch3(t *testing.T) {
 
 	nbData := getNat44StaticMappingLbData()
 	vppData := getNat44StaticMappingLbData().StMappings
-	vppData[0].VrfId = 1 // Change VRF
+	vppData[0].LocalIps[1].VrfId = 1 // Change VRF
 
 	// Tests where NB != VPP
 	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
@@ -1496,7 +1496,7 @@ func TestResolveStaticMappingLbNoMatch4(t *testing.T) {
 
 	nbData := getNat44StaticMappingLbData()
 	vppData := getNat44StaticMappingLbData().StMappings
-	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.3", 35, 20)) // Change number of Local IPs
+	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.3", 35, 20, 0)) // Change number of Local IPs
 
 	// Tests where NB != VPP
 	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
@@ -1559,9 +1559,9 @@ func getNat44StaticMappingData() *nat.Nat44DNat_DNatConfig {
 
 	nbData := &nat.Nat44DNat_DNatConfig{
 		Label:      "test-dnat",
-		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 0, 6)),
+		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 6)),
 	}
-	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35))
+	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35, 0))
 	return nbData
 }
 
@@ -1571,10 +1571,10 @@ func getNat44StaticMappingLbData() *nat.Nat44DNat_DNatConfig {
 
 	nbData := &nat.Nat44DNat_DNatConfig{
 		Label:      "test-dnat",
-		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 0, 6)),
+		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 6)),
 	}
-	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35),
-		getLocalIP("192.168.0.2", 9001, 40))
+	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35, 0),
+		getLocalIP("192.168.0.2", 9001, 40, 0))
 	return nbData
 }
 
@@ -1588,9 +1588,8 @@ func getNat44IdentityMappingData() *nat.Nat44DNat_DNatConfig {
 	return nbData
 }
 
-func getStaticMapping(ip string, port, vrf uint32, proto nat.Protocol) *nat.Nat44DNat_DNatConfig_StaticMapping {
+func getStaticMapping(ip string, port uint32, proto nat.Protocol) *nat.Nat44DNat_DNatConfig_StaticMapping {
 	return &nat.Nat44DNat_DNatConfig_StaticMapping{
-		VrfId:        vrf,
 		ExternalIp:   ip,
 		ExternalPort: port,
 		Protocol:     proto,
@@ -1606,8 +1605,9 @@ func getIdentityMapping(ip string, port, vrf uint32, proto nat.Protocol) *nat.Na
 	}
 }
 
-func getLocalIP(ip string, port, probability uint32) *nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP {
+func getLocalIP(ip string, port, probability uint32, vrf uint32) *nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP {
 	return &nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
+		VrfId:       vrf,
 		LocalIp:     ip,
 		LocalPort:   port,
 		Probability: probability,

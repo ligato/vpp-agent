@@ -81,7 +81,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 			Message: &vxlan.VxlanTunnelDetails{
-				IsIpv6:     1,
+				IsIPv6:     1,
 				SwIfIndex:  0,
 				SrcAddress: ipv61Parse,
 				DstAddress: ipv62Parse,
@@ -268,10 +268,10 @@ func TestDumpInterfacesFull(t *testing.T) {
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Name: (&dhcp.DhcpClientDump{}).GetMessageName(),
+			Name: (&dhcp.DHCPClientDump{}).GetMessageName(),
 			Ping: true,
-			Message: &dhcp.DhcpClientDetails{
-				Client: dhcp.DhcpClient{
+			Message: &dhcp.DHCPClientDetails{
+				Client: dhcp.DHCPClient{
 					SwIfIndex: 0,
 				},
 			},

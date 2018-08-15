@@ -278,7 +278,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	req := NewDataResyncReq()
 	for key := range resyncEv.GetValues() {
-		plugin.Log.Debug("Received RESYNC key ", key)
+		plugin.Log.Debugf("Received RESYNC key %q", key)
 	}
 	for key, resyncData := range resyncEv.GetValues() {
 		if plugin.droppedFromResync(key) {
@@ -316,6 +316,9 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, l3.ProxyARPInterfacePrefix) {
 			numARPs := resyncAppendProxyArpInterfaces(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP interface values ", numARPs)
+		} else if strings.HasPrefix(key, l3.IPScanNeighPrefix) {
+			resyncAppendIPScanNeighs(resyncData, req)
+			plugin.Log.Debug("Received RESYNC IPScanNeigh")
 		} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
@@ -344,7 +347,7 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numSRs := appendResyncSR(resyncData, req)
 			plugin.Log.Debug("Received RESYNC SR configs ", numSRs)
 		} else {
-			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
+			plugin.Log.Warnf("ignoring prefix %q by VPP standard plugins", key)
 		}
 	}
 	return req
@@ -388,6 +391,19 @@ func resyncAppendProxyArpInterfaces(resyncData datasync.KeyValIterator, req *Dat
 		}
 	}
 	return num
+}
+
+func resyncAppendIPScanNeighs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	for {
+		arpData, stop := resyncData.GetNext()
+		if stop {
+			break
+		}
+		entry := &l3.IPScanNeighbor{}
+		if err := arpData.GetValue(entry); err == nil {
+			req.IPScanNeigh = entry
+		}
+	}
 }
 
 func resyncAppendProxyArpRanges(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {

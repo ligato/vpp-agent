@@ -29,6 +29,7 @@ var Types = map[string]reflect.Type{
 	"BfdUDPSessionSetFlagsReply": reflect.TypeOf((*BfdUDPSessionSetFlagsReply)(nil)).Elem(),
 	"BfdUDPSetEchoSource": reflect.TypeOf((*BfdUDPSetEchoSource)(nil)).Elem(),
 	"BfdUDPSetEchoSourceReply": reflect.TypeOf((*BfdUDPSetEchoSourceReply)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"WantBfdEvents": reflect.TypeOf((*WantBfdEvents)(nil)).Elem(),
 	"WantBfdEventsReply": reflect.TypeOf((*WantBfdEventsReply)(nil)).Elem(),
 }

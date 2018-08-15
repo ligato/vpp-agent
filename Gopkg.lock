@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:8d40326a85fd1d5fc616216e82b356d79ac9510a68352c1cf583a785c30cb636"
+  digest = "1:d4129b6e6a5cf983b344d2e37c591a2702353bb80e81eda8ac5718f3c40a1631"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -13,10 +13,10 @@
     "cmd/binapi-generator",
     "codec",
     "core",
-    "core/bin_api/vpe",
   ]
   pruneopts = "UT"
-  revision = "f1bef4a3c66f4408afdeb64cda62ccd8562d0fc6"
+  revision = "5df690ab830bcf5eb9ffe4d86ceaa4154d7b859b"
+  source = "github.com/ligato/govpp"
 
 [[projects]]
   branch = "master"
@@ -380,7 +380,7 @@
   version = "v1.0"
 
 [[projects]]
-  digest = "1:71763575e72121010d94e73ad13c7638ab35a4fd92e361b72b99a6ce765fbb25"
+  digest = "1:54c1c618aaa5d05b74f94668912ae990904a18d5dd28aa4b72ef06b393a1a459"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -419,7 +419,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "7838b46f7be1b8c032d8f478c3da744c86d3f4c2"
+  revision = "98e10610edaf49aa2ca14c97302bc252cd6fdb63"
 
 [[projects]]
   branch = "master"
@@ -790,7 +790,6 @@
     "git.fd.io/govpp.git/api",
     "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
-    "git.fd.io/govpp.git/core/bin_api/vpe",
     "github.com/buger/goterm",
     "github.com/elazarl/go-bindata-assetfs",
     "github.com/fsouza/go-dockerclient",
@@ -828,6 +827,7 @@
     "github.com/ligato/cn-infra/utils/addrs",
     "github.com/ligato/cn-infra/utils/safeclose",
     "github.com/logrusorgru/aurora.git",
+    "github.com/lunixbochs/struc",
     "github.com/namsral/flag",
     "github.com/onsi/gomega",
     "github.com/prometheus/client_golang/prometheus",

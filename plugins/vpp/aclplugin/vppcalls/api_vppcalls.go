@@ -90,14 +90,10 @@ type aclVppHandler struct {
 }
 
 // NewAclVppHandler creates new instance of acl vppcalls handler
-func NewAclVppHandler(callsChan, dumpChan govppapi.Channel, stopwatch *measure.Stopwatch) (*aclVppHandler, error) {
-	handler := &aclVppHandler{
+func NewAclVppHandler(callsChan, dumpChan govppapi.Channel, stopwatch *measure.Stopwatch) *aclVppHandler {
+	return &aclVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
 		stopwatch:    stopwatch,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(AclMessages...); err != nil {
-		return nil, err
-	}
-	return handler, nil
 }

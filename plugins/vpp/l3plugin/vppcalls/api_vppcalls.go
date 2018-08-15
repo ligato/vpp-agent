@@ -127,60 +127,40 @@ type ipNeighHandler struct {
 }
 
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
-func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*arpVppHandler, error) {
-	handler := &arpVppHandler{
+func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *arpVppHandler {
+	return &arpVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(ArpMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewProxyArpVppHandler creates new instance of proxy ARP vppcalls handler
-func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*proxyArpVppHandler, error) {
-	handler := &proxyArpVppHandler{
+func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *proxyArpVppHandler {
+	return &proxyArpVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(ProxyArpMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewRouteVppHandler creates new instance of route vppcalls handler
-func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*routeHandler, error) {
-	handler := &routeHandler{
+func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *routeHandler {
+	return &routeHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(RouteMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewIPNeighVppHandler creates new instance of ip neighbor vppcalls handler
-func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*ipNeighHandler, error) {
-	handler := &ipNeighHandler{
+func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *ipNeighHandler {
+	return &ipNeighHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(IPNeighMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }

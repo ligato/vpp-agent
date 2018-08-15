@@ -120,7 +120,7 @@ func TestCreateVrfIfNeeded(t *testing.T) {
 		vppMsg, ok := msg.(*ip.IPTableAddDel)
 		if ok {
 			Expect(vppMsg.TableID).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 			msgCheck = true
 		}

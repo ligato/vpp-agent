@@ -86,17 +86,9 @@ func (plugin *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 		return err
 	}
 
-	// Message compatibility
-	if err := plugin.syncChannel.CheckMessageCompatibility(vppcalls.L2FibMessages...); err != nil {
-		return err
-	}
-
 	// VPP calls helper object
-	requestChan := make(chan *vppcalls.FibLogicalReq)
-	if plugin.fibHandler, err = vppcalls.NewFibVppHandler(plugin.syncChannel, plugin.asyncChannel, requestChan, plugin.ifIndexes,
-		plugin.bdIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
+	plugin.fibHandler = vppcalls.NewFibVppHandler(plugin.syncChannel, plugin.asyncChannel, plugin.ifIndexes,
+		plugin.bdIndexes, plugin.log, plugin.stopwatch)
 
 	// FIB reply watcher
 	go plugin.fibHandler.WatchFIBReplies()

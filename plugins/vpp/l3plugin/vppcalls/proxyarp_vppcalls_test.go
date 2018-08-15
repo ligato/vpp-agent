@@ -66,9 +66,7 @@ func pArpTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ArpVppAPI, vppc
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "proxy-arp-if-idx", nil))
-	arpHandler, err := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
-	Expect(err).To(BeNil())
-	pArpHandler, err := vppcalls.NewProxyArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
-	Expect(err).To(BeNil())
+	arpHandler := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
+	pArpHandler := vppcalls.NewProxyArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
 	return ctx, arpHandler, pArpHandler
 }

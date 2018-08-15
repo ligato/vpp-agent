@@ -3,6 +3,9 @@ glide.lock
 examples/cassandra-lib/cassandra-lib
 examples/configs-plugin/configs-plugin
 examples/consul-lib/consul-lib
+examples/cryptodata-lib/cryptodata-lib
+examples/cryptodata-plugin/cryptodata-plugin
+examples/cryptodata-proto-plugin/cryptodata-proto-plugin
 examples/datasync-plugin/datasync-plugin
 examples/etcd-lib/editor/editor
 examples/etcd-lib/view/view
