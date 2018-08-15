@@ -108,18 +108,8 @@ func (plugin *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	}
 
 	// VPP API handlers
-	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-	if plugin.rtHandler, err = vppcalls.NewRouteVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-
-	// Message compatibility
-	if err := plugin.vppChan.CheckMessageCompatibility(vppcalls.RouteMessages...); err != nil {
-		plugin.log.Error(err)
-		return err
-	}
+	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
+	plugin.rtHandler = vppcalls.NewRouteVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }

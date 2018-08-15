@@ -58,9 +58,7 @@ func (p *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	}
 
 	// VPP API handler
-	if p.ipNeighHandler, err = vppcalls.NewIPNeighVppHandler(p.vppChan, p.log, p.stopwatch); err != nil {
-		return err
-	}
+	p.ipNeighHandler = vppcalls.NewIPNeighVppHandler(p.vppChan, p.log, p.stopwatch)
 
 	return nil
 }

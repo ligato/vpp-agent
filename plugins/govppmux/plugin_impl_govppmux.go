@@ -30,12 +30,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
-
-func init() {
-	govpp.SetControlPingMessages(&vpe.ControlPing{}, &vpe.ControlPingReply{})
-}
 
 // Plugin implements the govppmux plugin interface.
 type Plugin struct {

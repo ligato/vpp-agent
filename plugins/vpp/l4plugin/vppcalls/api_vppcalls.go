@@ -50,15 +50,10 @@ type l4VppHandler struct {
 }
 
 // NewL4VppHandler creates new instance of L4 vppcalls handler
-func NewL4VppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*l4VppHandler, error) {
-	handler := &l4VppHandler{
+func NewL4VppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *l4VppHandler {
+	return &l4VppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(AppNsMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }

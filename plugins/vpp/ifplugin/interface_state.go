@@ -149,7 +149,7 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	wantInterfaceEventsReply := &interfaces.WantInterfaceEventsReply{}
 	// enable interface state notifications from VPP
 	err = plugin.vppCh.SendRequest(&interfaces.WantInterfaceEvents{
-		Pid:           uint32(os.Getpid()),
+		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantInterfaceEventsReply)
 	plugin.log.Debug("wantInterfaceEventsReply: ", wantInterfaceEventsReply, " ", err)
@@ -163,7 +163,7 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	wantStatsReply := &stats.WantStatsReply{}
 	// enable interface counters notifications from VPP
 	err = plugin.vppCh.SendRequest(&stats.WantStats{
-		Pid:           uint32(os.Getpid()),
+		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantStatsReply)
 	plugin.log.Debug("wantStatsReply: ", wantStatsReply, " ", err)

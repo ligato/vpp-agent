@@ -28,9 +28,9 @@ func (handler *ifVppHandler) GetInterfaceVRF(ifIdx uint32) (vrfID uint32, err er
 		SwIfIndex: ifIdx,
 	}
 	/*if table.IsIPv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 	} else {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 	}*/
 
 	// Send message
@@ -56,9 +56,9 @@ func (handler *ifVppHandler) SetInterfaceVRF(ifaceIndex, vrfID uint32) error {
 		SwIfIndex: ifaceIndex,
 	}
 	/*if table.IsIPv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 	} else {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 	}*/
 
 	// Send message

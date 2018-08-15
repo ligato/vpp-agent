@@ -91,15 +91,13 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	// Config file data
 	plugin.defaultMtu = defaultMtu
 
-	// VPP channel & compatibility
+	// VPP channel
 	if plugin.vppCh, err = goVppMux.NewAPIChannel(); err != nil {
 		return err
 	}
 
 	// VPP API handler
-	if plugin.ifHandler, err = vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
+	plugin.ifHandler = vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch)
 
 	// Mappings
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
@@ -115,7 +113,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 
 	// DHCP channel
 	plugin.DhcpChan = make(chan govppapi.Message, 1)
-	if _, err := plugin.vppCh.SubscribeNotification(plugin.DhcpChan, dhcp.NewDhcpComplEvent); err != nil {
+	if _, err := plugin.vppCh.SubscribeNotification(plugin.DhcpChan, dhcp.NewDHCPComplEvent); err != nil {
 		return err
 	}
 
@@ -1050,14 +1048,14 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 		select {
 		case notification := <-plugin.DhcpChan:
 			switch dhcpNotif := notification.(type) {
-			case *dhcp.DhcpComplEvent:
+			case *dhcp.DHCPComplEvent:
 				var ipAddr, rIPAddr net.IP = dhcpNotif.Lease.HostAddress, dhcpNotif.Lease.RouterAddress
 				var hwAddr net.HardwareAddr = dhcpNotif.Lease.HostMac
 				var ipStr, rIPStr string
 
 				name := string(bytes.SplitN(dhcpNotif.Lease.Hostname, []byte{0x00}, 2)[0])
 
-				if dhcpNotif.Lease.IsIpv6 == 1 {
+				if dhcpNotif.Lease.IsIPv6 == 1 {
 					ipStr = ipAddr.To16().String()
 					rIPStr = rIPAddr.To16().String()
 				} else {
@@ -1081,7 +1079,7 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 							return true
 						}
 						return false
-					}(dhcpNotif.Lease.IsIpv6),
+					}(dhcpNotif.Lease.IsIPv6),
 					IPAddress:     ipStr,
 					Mask:          uint32(dhcpNotif.Lease.MaskWidth),
 					PhysAddress:   hwAddr.String(),

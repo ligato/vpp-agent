@@ -200,13 +200,13 @@ func (handler *ipSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.Se
 			return err
 		}
 		if isIPv6 {
-			req.IsIpv6 = 1
+			req.IsIPv6 = 1
 			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To16()
 			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To16()
 			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To16()
 			req.LocalAddressStop = net.ParseIP(spd.LocalAddrStop).To16()
 		} else {
-			req.IsIpv6 = 0
+			req.IsIPv6 = 0
 			req.RemoteAddressStart = net.ParseIP(spd.RemoteAddrStart).To4()
 			req.RemoteAddressStop = net.ParseIP(spd.RemoteAddrStop).To4()
 			req.LocalAddressStart = net.ParseIP(spd.LocalAddrStart).To4()
@@ -274,11 +274,11 @@ func (handler *ipSecVppHandler) sadAddDelEntry(saID uint32, sa *ipsec.SecurityAs
 			return err
 		}
 		if isIPv6 {
-			req.IsTunnelIpv6 = 1
+			req.IsTunnelIPv6 = 1
 			req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To16()
 			req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To16()
 		} else {
-			req.IsTunnelIpv6 = 0
+			req.IsTunnelIPv6 = 0
 			req.TunnelSrcAddress = net.ParseIP(sa.TunnelSrcAddr).To4()
 			req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To4()
 		}

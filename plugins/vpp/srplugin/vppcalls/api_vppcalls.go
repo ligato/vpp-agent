@@ -65,15 +65,10 @@ type srv6VppHandler struct {
 }
 
 //  NewSRv6VppHandler creates new instance of SRv6 vppcalls handler
-func NewSRv6VppHandler(vppChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*srv6VppHandler, error) {
-	handler := &srv6VppHandler{
+func NewSRv6VppHandler(vppChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *srv6VppHandler {
+	return &srv6VppHandler{
 		callsChannel: vppChan,
 		log:          log,
 		stopwatch:    stopwatch,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(SrMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }

@@ -45,7 +45,7 @@ func TestGetIPRuleMatch(t *testing.T) {
 	}
 
 	icmpV6Rule := aclHandler.getIPRuleMatches(acl_api.ACLRule{
-		IsIpv6:         1,
+		IsIPv6:         1,
 		SrcIPAddr:      []byte{'d', 'e', 'd', 'd', 1},
 		SrcIPPrefixLen: 64,
 		DstIPAddr:      []byte{'d', 'e', 'd', 'd', 2},
@@ -98,7 +98,7 @@ func TestGetMACIPRuleMatches(t *testing.T) {
 	}
 	macipV6Rule := aclHandler.getMACIPRuleMatches(acl_api.MacipACLRule{
 		IsPermit:       0,
-		IsIpv6:         1,
+		IsIPv6:         1,
 		SrcMac:         []byte{2, 'd', 'e', 'a', 'd', 2},
 		SrcMacMask:     []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 		SrcIPAddr:      []byte{'d', 'e', 'a', 'd', 1},

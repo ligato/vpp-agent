@@ -19,6 +19,7 @@ var Types = map[string]reflect.Type{
 	"GetNodeGraphReply": reflect.TypeOf((*GetNodeGraphReply)(nil)).Elem(),
 	"GetNodeIndex": reflect.TypeOf((*GetNodeIndex)(nil)).Elem(),
 	"GetNodeIndexReply": reflect.TypeOf((*GetNodeIndexReply)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"ShowVersion": reflect.TypeOf((*ShowVersion)(nil)).Elem(),
 	"ShowVersionReply": reflect.TypeOf((*ShowVersionReply)(nil)).Elem(),
 }

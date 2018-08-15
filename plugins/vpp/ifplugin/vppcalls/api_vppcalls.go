@@ -257,61 +257,41 @@ type stnVppHandler struct {
 }
 
 // NewIfVppHandler creates new instance of interface vppcalls handler
-func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) (*ifVppHandler, error) {
-	handler := &ifVppHandler{
+func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *ifVppHandler {
+	return &ifVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(InterfaceMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewBfdVppHandler creates new instance of BFD vppcalls handler
-func NewBfdVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*bfdVppHandler, error) {
-	handler := &bfdVppHandler{
+func NewBfdVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *bfdVppHandler {
+	return &bfdVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(BfdMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewNatVppHandler creates new instance of NAT vppcalls handler
-func NewNatVppHandler(callsChan, dumpChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*natVppHandler, error) {
-	handler := &natVppHandler{
+func NewNatVppHandler(callsChan, dumpChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *natVppHandler {
+	return &natVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(NatMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*stnVppHandler, error) {
-	handler := &stnVppHandler{
+func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *stnVppHandler {
+	return &stnVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
 		stopwatch:    stopwatch,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(StnMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }

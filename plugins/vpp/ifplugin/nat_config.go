@@ -123,10 +123,8 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	if plugin.natHandler, err = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.ifIndexes,
-		plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
+	plugin.natHandler = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.ifIndexes,
+		plugin.log, plugin.stopwatch)
 
 	return nil
 }
@@ -757,7 +755,6 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 		ExternalPort: uint16(staticMappingLb.ExternalPort),
 		Protocol:     getProtocol(staticMappingLb.Protocol, plugin.log),
 		LocalIPs:     getLocalIPs(staticMappingLb.LocalIps, plugin.log),
-		Vrf:          staticMappingLb.VrfId,
 		TwiceNat:     staticMappingLb.TwiceNat == nat.TwiceNatMode_ENABLED,
 		SelfTwiceNat: staticMappingLb.TwiceNat == nat.TwiceNatMode_SELF,
 	}
@@ -785,6 +782,7 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 	// Parse local IP address and port
 	lcIPAddr := net.ParseIP(staticMapping.LocalIps[0].LocalIp).To4()
 	lcPort := staticMapping.LocalIps[0].LocalPort
+	lcVrf := staticMapping.LocalIps[0].VrfId
 	if lcIPAddr == nil {
 		return fmt.Errorf("cannot configure DNAT mapping: unable to parse local IP %v", lcIPAddr)
 	}
@@ -821,7 +819,7 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 		ExternalPort:  uint16(staticMapping.ExternalPort),
 		ExternalIfIdx: ifIdx,
 		Protocol:      getProtocol(staticMapping.Protocol, plugin.log),
-		Vrf:           staticMapping.VrfId,
+		Vrf:           lcVrf,
 		TwiceNat:      staticMapping.TwiceNat == nat.TwiceNatMode_ENABLED,
 		SelfTwiceNat:  staticMapping.TwiceNat == nat.TwiceNatMode_SELF,
 	}
@@ -1022,7 +1020,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 		var found bool
 		for _, oldMap := range oldMappings {
 			// VRF, protocol and twice map
-			if newMap.VrfId != oldMap.VrfId || newMap.Protocol != oldMap.Protocol || newMap.TwiceNat != oldMap.TwiceNat {
+			if newMap.Protocol != oldMap.Protocol || newMap.TwiceNat != oldMap.TwiceNat {
 				continue
 			}
 			// External interface, IP and port
@@ -1045,7 +1043,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 		var found bool
 		for _, newMap := range newMappings {
 			// VRF, protocol and twice map
-			if newMap.VrfId != oldMap.VrfId || newMap.Protocol != oldMap.Protocol || newMap.TwiceNat != oldMap.TwiceNat {
+			if newMap.Protocol != oldMap.Protocol || newMap.TwiceNat != oldMap.TwiceNat {
 				continue
 			}
 			// External interface, IP and port
@@ -1133,7 +1131,7 @@ func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_D
 	for _, newIP := range newIPs {
 		var found bool
 		for _, oldIP := range oldIPs {
-			if newIP.LocalIp == oldIP.LocalIp && newIP.LocalPort == oldIP.LocalPort && newIP.Probability == oldIP.Probability {
+			if newIP.VrfId == oldIP.VrfId && newIP.LocalIp == oldIP.LocalIp && newIP.LocalPort == oldIP.LocalPort && newIP.Probability == oldIP.Probability {
 				found = true
 			}
 		}
@@ -1160,6 +1158,7 @@ func getLocalIPs(ipPorts []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP, log 
 		}
 
 		locals = append(locals, &vppcalls.LocalLbAddress{
+			Vrf:         ipPort.VrfId,
 			LocalIP:     localIP,
 			LocalPort:   uint16(ipPort.LocalPort),
 			Probability: uint8(ipPort.Probability),
@@ -1190,7 +1189,7 @@ func GetStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMapping) str
 	extIP = strings.Replace(extIP, "/", "", -1)
 	locIP := strings.Replace(mapping.LocalIps[0].LocalIp, ".", "", -1)
 	locIP = strings.Replace(locIP, "/", "", -1)
-	return extIP + locIP + strconv.Itoa(int(mapping.VrfId))
+	return extIP + locIP + strconv.Itoa(int(mapping.LocalIps[0].VrfId))
 }
 
 // GetIdMappingIdentifier returns unique ID of the mapping

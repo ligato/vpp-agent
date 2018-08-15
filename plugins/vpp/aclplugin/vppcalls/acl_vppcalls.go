@@ -274,11 +274,11 @@ func (handler *aclVppHandler) transformACLMacIPRules(rules []*acl.AccessLists_Ac
 			// Source IP Address + Prefix
 			srcIPAddress := net.ParseIP(macIPRule.SourceAddress)
 			if srcIPAddress.To4() != nil {
-				aclMacIPRule.IsIpv6 = 0
+				aclMacIPRule.IsIPv6 = 0
 				aclMacIPRule.SrcIPAddr = srcIPAddress.To4()
 				aclMacIPRule.SrcIPPrefixLen = uint8(macIPRule.SourceAddressPrefix)
 			} else if srcIPAddress.To16() != nil {
-				aclMacIPRule.IsIpv6 = 1
+				aclMacIPRule.IsIPv6 = 1
 				aclMacIPRule.SrcIPAddr = srcIPAddress.To16()
 				aclMacIPRule.SrcIPPrefixLen = uint8(macIPRule.SourceAddressPrefix)
 			} else {
@@ -349,21 +349,21 @@ func ipACL(ipRule *acl.AccessLists_Acl_Rule_Match_IpRule_Ip, aclRule *aclapi.ACL
 
 	if srcIP.To4() != nil || dstIP.To4() != nil {
 		// Ipv4 case
-		aclRule.IsIpv6 = 0
+		aclRule.IsIPv6 = 0
 		aclRule.SrcIPAddr = srcIP.To4()
 		aclRule.SrcIPPrefixLen = srcMask
 		aclRule.DstIPAddr = dstIP.To4()
 		aclRule.DstIPPrefixLen = dstMask
 	} else if srcIP.To16() != nil || dstIP.To16() != nil {
 		// Ipv6 case
-		aclRule.IsIpv6 = 1
+		aclRule.IsIPv6 = 1
 		aclRule.SrcIPAddr = srcIP.To16()
 		aclRule.SrcIPPrefixLen = srcMask
 		aclRule.DstIPAddr = dstIP.To16()
 		aclRule.DstIPPrefixLen = dstMask
 	} else {
 		// Both empty
-		aclRule.IsIpv6 = 0
+		aclRule.IsIPv6 = 0
 	}
 	return aclRule, nil
 }
@@ -376,7 +376,7 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp, aclRule *acla
 	}
 	if icmpRule.Icmpv6 {
 		aclRule.Proto = ICMPv6Proto // IANA ICMPv6
-		aclRule.IsIpv6 = 1
+		aclRule.IsIPv6 = 1
 		// ICMPv6 type range
 		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
 		aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)
@@ -385,7 +385,7 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp, aclRule *acla
 		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.First)
 	} else {
 		aclRule.Proto = ICMPv4Proto // IANA ICMPv4
-		aclRule.IsIpv6 = 0
+		aclRule.IsIPv6 = 0
 		// ICMPv4 type range
 		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
 		aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)

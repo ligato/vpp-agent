@@ -57,7 +57,7 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 				return parsed
 			}("7C:4E:E7:8A:63:68"),
 			Hostname: []byte("if1"),
-			IsIpv6:   0,
+			IsIPv6:   0,
 		},
 	}
 	dhcpIpv6 := &dhcp_api.DhcpComplEvent{
@@ -70,7 +70,7 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 				return parsed
 			}("7C:4E:E7:8A:63:68"),
 			Hostname: []byte("if2"),
-			IsIpv6:   1,
+			IsIPv6:   1,
 		},
 	}
 	plugin.DhcpChan <- dhcpIpv4

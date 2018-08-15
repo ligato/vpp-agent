@@ -231,7 +231,6 @@ func (handler *natVppHandler) nat44StaticMappingDump() (entries map[string]*nat.
 
 		// Fill data (value)
 		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMapping{
-			VrfId: msg.VrfID,
 			ExternalInterface: func(ifIdx uint32) string {
 				ifName, _, found := handler.ifIndexes.LookupName(ifIdx)
 				if !found && ifIdx != ^uint32(0) {
@@ -242,6 +241,7 @@ func (handler *natVppHandler) nat44StaticMappingDump() (entries map[string]*nat.
 			ExternalIp:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps: append(locals, &nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{ // single-value
+				VrfId:     msg.VrfID,
 				LocalIp:   lcIPAddress.To4().String(),
 				LocalPort: uint32(msg.LocalPort),
 			}),
@@ -283,6 +283,7 @@ func (handler *natVppHandler) nat44StaticMappingLbDump() (entries map[string]*na
 		for _, localIPVal := range msg.Locals {
 			localIP := net.IP(localIPVal.Addr)
 			locals = append(locals, &nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
+				VrfId:       localIPVal.VrfID,
 				LocalIp:     localIP.To4().String(),
 				LocalPort:   uint32(localIPVal.Port),
 				Probability: uint32(localIPVal.Probability),
@@ -291,7 +292,6 @@ func (handler *natVppHandler) nat44StaticMappingLbDump() (entries map[string]*na
 		exIPAddress := net.IP(msg.ExternalAddr)
 
 		entries[tag] = &nat.Nat44DNat_DNatConfig_StaticMapping{
-			VrfId:        msg.VrfID,
 			ExternalIp:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps:     locals,

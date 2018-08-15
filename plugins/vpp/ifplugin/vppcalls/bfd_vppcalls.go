@@ -49,11 +49,11 @@ func (handler *bfdVppHandler) AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session
 		return err
 	}
 	if isLocalIpv6 && isPeerIpv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 		req.LocalAddr = net.ParseIP(bfdSess.SourceAddress).To16()
 		req.PeerAddr = net.ParseIP(bfdSess.DestinationAddress).To16()
 	} else if !isLocalIpv6 && !isPeerIpv6 {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 		req.LocalAddr = net.ParseIP(bfdSess.SourceAddress).To4()
 		req.PeerAddr = net.ParseIP(bfdSess.DestinationAddress).To4()
 	} else {
@@ -101,7 +101,7 @@ func (handler *bfdVppHandler) AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUD
 		LocalAddr:     bfdSess.LocalAddr,
 		PeerAddr:      bfdSess.PeerAddr,
 		DetectMult:    bfdSess.DetectMult,
-		IsIpv6:        bfdSess.IsIpv6,
+		IsIPv6:        bfdSess.IsIPv6,
 	}
 
 	// Authentication
@@ -159,11 +159,11 @@ func (handler *bfdVppHandler) ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Sess
 		return err
 	}
 	if isLocalIpv6 && isPeerIpv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 		req.LocalAddr = net.ParseIP(bfdSess.SourceAddress).To16()
 		req.PeerAddr = net.ParseIP(bfdSess.DestinationAddress).To16()
 	} else if !isLocalIpv6 && !isPeerIpv6 {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 		req.LocalAddr = net.ParseIP(bfdSess.SourceAddress).To4()
 		req.PeerAddr = net.ParseIP(bfdSess.DestinationAddress).To4()
 	} else {
@@ -191,7 +191,7 @@ func (handler *bfdVppHandler) DeleteBfdUDPSession(ifIndex uint32, sourceAddress 
 		SwIfIndex: ifIndex,
 		LocalAddr: net.ParseIP(sourceAddress).To4(),
 		PeerAddr:  net.ParseIP(destAddress).To4(),
-		IsIpv6:    0,
+		IsIPv6:    0,
 	}
 
 	reply := &bfd_api.BfdUDPDelReply{}

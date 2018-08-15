@@ -71,7 +71,7 @@ type Lease struct {
 	SwIfIndex     uint32
 	State         uint8
 	Hostname      string
-	IsIpv6        bool
+	IsIPv6        bool
 	MaskWidth     uint8
 	HostAddress   string
 	RouterAddress string
@@ -240,7 +240,7 @@ func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetai
 		// IPAddressDetails time measurement
 		start := time.Now()
 
-		reqCtx := handler.callsChannel.SendMultiRequest(&ip.IPAddressDump{SwIfIndex: idx, IsIpv6: isIPv6})
+		reqCtx := handler.callsChannel.SendMultiRequest(&ip.IPAddressDump{SwIfIndex: idx, IsIPv6: isIPv6})
 		for {
 			ipDetails := &ip.IPAddressDetails{}
 			stop, err := reqCtx.ReceiveReply(ipDetails)
@@ -281,7 +281,7 @@ func (handler *ifVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, 
 		ifs[ipDetails.SwIfIndex].Interface.IpAddresses = make([]string, 0)
 	}
 	var ipAddr string
-	if ipDetails.IsIpv6 == 1 {
+	if ipDetails.IsIPv6 == 1 {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP).To16().String(), uint32(ipDetails.PrefixLength))
 	} else {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP[:4]).To4().String(), uint32(ipDetails.PrefixLength))
@@ -433,7 +433,7 @@ func (handler *ifVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) 
 			multicastIfName = ifs[vxlanDetails.McastSwIfIndex].Interface.Name
 		}
 
-		if vxlanDetails.IsIpv6 == 1 {
+		if vxlanDetails.IsIPv6 == 1 {
 			ifs[vxlanDetails.SwIfIndex].Interface.Vxlan = &ifnb.Interfaces_Interface_Vxlan{
 				Multicast:  multicastIfName,
 				SrcAddress: net.IP(vxlanDetails.SrcAddress).To16().String(),
@@ -457,14 +457,14 @@ func (handler *ifVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) 
 // dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
 func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(dhcp.DhcpClientDump{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(dhcp.DHCPClientDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	dhcpData := make(map[uint32]*Dhcp)
-	reqCtx := handler.callsChannel.SendMultiRequest(&dhcp.DhcpClientDump{})
+	reqCtx := handler.callsChannel.SendMultiRequest(&dhcp.DHCPClientDump{})
 
 	for {
-		dhcpDetails := &dhcp.DhcpClientDetails{}
+		dhcpDetails := &dhcp.DHCPClientDetails{}
 		last, err := reqCtx.ReceiveReply(dhcpDetails)
 		if last {
 			break
@@ -477,7 +477,7 @@ func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 
 		var hostMac net.HardwareAddr = lease.HostMac
 		var hostAddr, routerAddr string
-		if uintToBool(lease.IsIpv6) {
+		if uintToBool(lease.IsIPv6) {
 			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
 			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
 		} else {
@@ -490,9 +490,9 @@ func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 			SwIfIndex:        client.SwIfIndex,
 			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
 			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
-			WantDhcpEvent:    uintToBool(client.WantDhcpEvent),
+			WantDhcpEvent:    uintToBool(client.WantDHCPEvent),
 			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
-			Pid:              client.Pid,
+			Pid:              client.PID,
 		}
 
 		// DHCP lease data
@@ -500,7 +500,7 @@ func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 			SwIfIndex:     lease.SwIfIndex,
 			State:         lease.State,
 			Hostname:      string(bytes.SplitN(lease.Hostname, []byte{0x00}, 2)[0]),
-			IsIpv6:        uintToBool(lease.IsIpv6),
+			IsIPv6:        uintToBool(lease.IsIPv6),
 			MaskWidth:     lease.MaskWidth,
 			HostAddress:   hostAddr,
 			RouterAddress: routerAddr,

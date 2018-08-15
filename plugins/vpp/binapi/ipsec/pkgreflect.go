@@ -51,6 +51,7 @@ var Types = map[string]reflect.Type{
 	"IpsecTunnelIfSetKeyReply": reflect.TypeOf((*IpsecTunnelIfSetKeyReply)(nil)).Elem(),
 	"IpsecTunnelIfSetSa": reflect.TypeOf((*IpsecTunnelIfSetSa)(nil)).Elem(),
 	"IpsecTunnelIfSetSaReply": reflect.TypeOf((*IpsecTunnelIfSetSaReply)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{

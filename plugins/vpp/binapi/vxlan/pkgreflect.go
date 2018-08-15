@@ -5,6 +5,7 @@ package vxlan
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"SwInterfaceSetVxlanBypass": reflect.TypeOf((*SwInterfaceSetVxlanBypass)(nil)).Elem(),
 	"SwInterfaceSetVxlanBypassReply": reflect.TypeOf((*SwInterfaceSetVxlanBypassReply)(nil)).Elem(),
 	"VxlanAddDelTunnel": reflect.TypeOf((*VxlanAddDelTunnel)(nil)).Elem(),
