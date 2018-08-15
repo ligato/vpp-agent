@@ -268,10 +268,10 @@ func TestDumpInterfacesFull(t *testing.T) {
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Name: (&dhcp.DhcpClientDump{}).GetMessageName(),
+			Name: (&dhcp.DHCPClientDump{}).GetMessageName(),
 			Ping: true,
-			Message: &dhcp.DhcpClientDetails{
-				Client: dhcp.DhcpClient{
+			Message: &dhcp.DHCPClientDetails{
+				Client: dhcp.DHCPClient{
 					SwIfIndex: 0,
 				},
 			},

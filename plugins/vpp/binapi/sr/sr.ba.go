@@ -70,9 +70,9 @@ func (*Srv6Sid) GetCrcString() string {
 //            }
 //
 type Srv6SidList struct {
-	NumSids uint8
+	NumSids uint8 `struc:"sizeof=Sids"`
 	Weight  uint32
-	Sids    []Srv6Sid `struc:"[16]Srv6Sid"`
+	Sids    []Srv6Sid
 }
 
 func (*Srv6SidList) GetTypeName() string {

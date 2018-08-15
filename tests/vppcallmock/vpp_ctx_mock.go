@@ -20,7 +20,8 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
-	"github.com/ligato/cn-infra/logging/logrus"
+	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -33,7 +34,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
+
+func init() {
+	govpp.SetLogLevel(logrus.DebugLevel)
+}
 
 // TestCtx is helping structure for unit testing.
 // It wraps VppAdapter which is used instead of real VPP.
@@ -95,11 +101,6 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiReq
 	return m.Channel.SendMultiRequest(msg)
 }
 
-// CheckMessageCompatibility does nothing for mocked channel
-func (m *mockedChannel) CheckMessageCompatibility(msgs ...govppapi.Message) error {
-	return nil
-}
-
 type HandleReplies struct {
 	Name     string
 	Ping     bool
@@ -110,6 +111,7 @@ type HandleReplies struct {
 func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 	var sendControlPing bool
 
+	ctx.MockVpp.RegisterBinAPITypes(acl.Types)
 	ctx.MockVpp.RegisterBinAPITypes(af_packet.Types)
 	ctx.MockVpp.RegisterBinAPITypes(bfd.Types)
 	ctx.MockVpp.RegisterBinAPITypes(nat.Types)
@@ -137,7 +139,7 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 		}
 
 		if request.MsgName == "" {
-			logrus.DefaultLogger().Fatalf("mockHandler received request (ID: %v) with empty MsgName, check if compatbility check is done before using this request", request.MsgID)
+			log.DefaultLogger().Fatalf("mockHandler received request (ID: %v) with empty MsgName, check if compatbility check is done before using this request", request.MsgID)
 		}
 
 		if sendControlPing {
@@ -155,7 +157,7 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 				// Send control ping next iteration if set
 				sendControlPing = dataMock.Ping
 				if len(dataMock.Messages) > 0 {
-					logrus.DefaultLogger().Infof(" MOCK HANDLER: mocking %d messages", len(dataMock.Messages))
+					log.DefaultLogger().Infof(" MOCK HANDLER: mocking %d messages", len(dataMock.Messages))
 					for _, msg := range dataMock.Messages {
 						ctx.MockVpp.MockReply(msg)
 					}
@@ -175,7 +177,7 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 			Expect(err).To(BeNil())
 			return reply, msgID, true
 		} else {
-			logrus.DefaultLogger().Warnf("NO REPLY FOR %v FOUND", request.MsgName)
+			log.DefaultLogger().Warnf("NO REPLY FOR %v FOUND", request.MsgName)
 		}
 
 		return reply, 0, false

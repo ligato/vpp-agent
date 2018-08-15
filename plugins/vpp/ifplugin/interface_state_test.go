@@ -97,7 +97,7 @@ func TestInterfaceStateUpdaterUpDownNotif(t *testing.T) {
 
 	// Test notifications
 	notifChan <- &interfaces.SwInterfaceEvent{
-		Pid:         0,
+		PID:         0,
 		SwIfIndex:   0,
 		AdminUpDown: 1,
 		LinkUpDown:  1,
@@ -177,7 +177,7 @@ func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
 
 	// Send interface event notification to propagate update from counter to publish channel
 	notifChan <- &interfaces.SwInterfaceEvent{
-		Pid:         0,
+		PID:         0,
 		SwIfIndex:   0,
 		AdminUpDown: 1,
 		LinkUpDown:  1,
@@ -313,7 +313,7 @@ func TestInterfaceStateUpdaterIfStateDeleted(t *testing.T) {
 
 	// Test notifications
 	notifChan <- &interfaces.SwInterfaceEvent{
-		Pid:         0,
+		PID:         0,
 		SwIfIndex:   0,
 		AdminUpDown: 1,
 		LinkUpDown:  1,

@@ -17,11 +17,10 @@ package aclplugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
@@ -31,7 +30,7 @@ type vppReplyMock struct {
 	Message govppapi.Message
 }
 
-func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.ReplyHandler {
+/*func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.ReplyHandler {
 	var sendControlPing bool
 
 	return func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
@@ -67,7 +66,7 @@ func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.Rep
 
 		return reply, 0, false
 	}
-}
+}*/
 
 var acls = []*acl.AccessLists_Acl{
 	{AclName: "acl1",
@@ -116,39 +115,38 @@ func TestResyncEmpty(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Id:      1011,
+			Name:    (&acl_api.ACLDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &acl_api.ACLDetails{},
 		},
 		{
-			Id:      1015,
+			Name:    (&acl_api.ACLInterfaceListDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &acl_api.ACLInterfaceListDetails{},
 		},
 		{
-			Id:      1013,
+			Name:    (&acl_api.MacipACLDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &acl_api.MacipACLDetails{},
 		},
 		{
-			Id:      1017,
+			Name:    (&acl_api.MacipACLInterfaceListDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &acl_api.MacipACLInterfaceListDetails{},
 		},
 		{
-			Id:      1001,
+			Name:    (&acl_api.ACLAddReplace{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.ACLAddReplaceReply{},
 		},
 		{
-			Id:      1005,
+			Name:    (&acl_api.MacipACLAdd{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.MacipACLAddReply{},
 		},
-	}))
+	})
 
 	err := plugin.Resync(acls)
 	Expect(err).To(BeNil())
@@ -168,10 +166,9 @@ func TestResyncConfigured(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Id:   1011,
+			Name: (&acl_api.ACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
@@ -181,7 +178,7 @@ func TestResyncConfigured(t *testing.T) {
 			},
 		},
 		{
-			Id:   1015,
+			Name: (&acl_api.ACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -191,7 +188,7 @@ func TestResyncConfigured(t *testing.T) {
 			},
 		},
 		{
-			Id:   1013,
+			Name: (&acl_api.MacipACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
@@ -201,7 +198,7 @@ func TestResyncConfigured(t *testing.T) {
 			},
 		},
 		{
-			Id:   1017,
+			Name: (&acl_api.MacipACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -210,26 +207,26 @@ func TestResyncConfigured(t *testing.T) {
 			},
 		},
 		{
-			Id:      1003,
+			Name:    (&acl_api.ACLDel{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
 		{
-			Id:      1009,
+			Name:    (&acl_api.MacipACLDel{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.MacipACLDelReply{},
 		},
 		{
-			Id:      1001,
+			Name:    (&acl_api.ACLAddReplace{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.ACLAddReplaceReply{},
 		},
 		{
-			Id:      1005,
+			Name:    (&acl_api.MacipACLAdd{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.MacipACLAddReply{},
 		},
-	}))
+	})
 
 	plugin.GetL3L4AclIfIndexes().RegisterName("acl3", 1, nil)
 	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
@@ -265,10 +262,9 @@ func TestResyncErr1(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Id:   1011,
+			Name: (&acl_api.ACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
@@ -278,7 +274,7 @@ func TestResyncErr1(t *testing.T) {
 			},
 		},
 		{
-			Id:   1015,
+			Name: (&acl_api.ACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -288,7 +284,7 @@ func TestResyncErr1(t *testing.T) {
 			},
 		},
 		{
-			Id:   1013,
+			Name: (&acl_api.MacipACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
@@ -298,7 +294,7 @@ func TestResyncErr1(t *testing.T) {
 			},
 		},
 		{
-			Id:   1017,
+			Name: (&acl_api.MacipACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -308,11 +304,11 @@ func TestResyncErr1(t *testing.T) {
 		},
 		// wrong msg
 		{
-			Id:      1003,
+			Name:    (&acl_api.ACLDel{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.MacipACLDelReply{},
 		},
-	}))
+	})
 
 	plugin.GetL3L4AclIfIndexes().RegisterName("acl3", 1, nil)
 	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
@@ -336,10 +332,9 @@ func TestResyncErr2(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Id:   1011,
+			Name: (&acl_api.ACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
@@ -349,7 +344,7 @@ func TestResyncErr2(t *testing.T) {
 			},
 		},
 		{
-			Id:   1015,
+			Name: (&acl_api.ACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -359,7 +354,7 @@ func TestResyncErr2(t *testing.T) {
 			},
 		},
 		{
-			Id:   1013,
+			Name: (&acl_api.MacipACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
@@ -369,7 +364,7 @@ func TestResyncErr2(t *testing.T) {
 			},
 		},
 		{
-			Id:   1017,
+			Name: (&acl_api.MacipACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -378,17 +373,17 @@ func TestResyncErr2(t *testing.T) {
 			},
 		},
 		{
-			Id:      1003,
+			Name:    (&acl_api.ACLDel{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
 		// wrong msg
 		{
-			Id:      1009,
+			Name:    (&acl_api.MacipACLDel{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
-	}))
+	})
 
 	plugin.GetL3L4AclIfIndexes().RegisterName("acl3", 1, nil)
 	plugin.GetL2AclIfIndexes().RegisterName("acl4", 1, nil)
@@ -413,10 +408,9 @@ func TestResyncErr3(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
 
-	ctx.MockVpp.RegisterBinAPITypes(acl_api.Types)
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, []*vppReplyMock{
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
-			Id:   1011,
+			Name: (&acl_api.ACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLDetails{
 				ACLIndex: 0,
@@ -426,7 +420,7 @@ func TestResyncErr3(t *testing.T) {
 			},
 		},
 		{
-			Id:   1015,
+			Name: (&acl_api.ACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.ACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -436,7 +430,7 @@ func TestResyncErr3(t *testing.T) {
 			},
 		},
 		{
-			Id:   1013,
+			Name: (&acl_api.MacipACLDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLDetails{
 				ACLIndex: 0,
@@ -446,7 +440,7 @@ func TestResyncErr3(t *testing.T) {
 			},
 		},
 		{
-			Id:   1017,
+			Name: (&acl_api.MacipACLInterfaceListDump{}).GetMessageName(),
 			Ping: true,
 			Message: &acl_api.MacipACLInterfaceListDetails{
 				SwIfIndex: 1,
@@ -455,22 +449,22 @@ func TestResyncErr3(t *testing.T) {
 			},
 		},
 		{
-			Id:      1003,
+			Name:    (&acl_api.ACLDel{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.ACLDelReply{},
 		},
 		{
-			Id:      1009,
+			Name:    (&acl_api.MacipACLDel{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.MacipACLDelReply{},
 		},
 		// wrong msg
 		{
-			Id:      1001,
+			Name:    (&acl_api.ACLAddReplace{}).GetMessageName(),
 			Ping:    false,
 			Message: &acl_api.MacipACLAddReplaceReply{},
 		},
-	}))
+	})
 
 	err := plugin.Resync(acls)
 	Expect(err).To(Not(BeNil()))

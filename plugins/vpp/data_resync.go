@@ -278,12 +278,13 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	req := NewDataResyncReq()
 	for key := range resyncEv.GetValues() {
-		plugin.Log.Debug("Received RESYNC key ", key)
+		plugin.Log.Debugf("Received RESYNC key %q", key)
 	}
 	for key, resyncData := range resyncEv.GetValues() {
 		if plugin.droppedFromResync(key) {
 			continue
 		}
+		plugin.Log.Debugf("CHECK RESYNC PREFIX %q", key)
 		if strings.HasPrefix(key, acl.Prefix) {
 			numAcls := appendACLInterface(resyncData, req)
 			plugin.Log.Debug("Received RESYNC ACL values ", numAcls)
@@ -316,6 +317,7 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		} else if strings.HasPrefix(key, l3.ProxyARPInterfacePrefix) {
 			numARPs := resyncAppendProxyArpInterfaces(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP interface values ", numARPs)
+		} else if strings.HasPrefix(key, l3.IPScanNeighPrefix) {
 		} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
