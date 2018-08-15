@@ -318,6 +318,8 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numARPs := resyncAppendProxyArpInterfaces(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP interface values ", numARPs)
 		} else if strings.HasPrefix(key, l3.IPScanNeighPrefix) {
+			resyncAppendIPScanNeighs(resyncData, req)
+			plugin.Log.Debug("Received RESYNC IPScanNeigh")
 		} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
 			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
 			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
@@ -390,6 +392,19 @@ func resyncAppendProxyArpInterfaces(resyncData datasync.KeyValIterator, req *Dat
 		}
 	}
 	return num
+}
+
+func resyncAppendIPScanNeighs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	for {
+		arpData, stop := resyncData.GetNext()
+		if stop {
+			break
+		}
+		entry := &l3.IPScanNeighbor{}
+		if err := arpData.GetValue(entry); err == nil {
+			req.IPScanNeigh = entry
+		}
+	}
 }
 
 func resyncAppendProxyArpRanges(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
