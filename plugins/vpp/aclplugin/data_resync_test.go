@@ -17,56 +17,11 @@ package aclplugin_test
 import (
 	"testing"
 
-	govppapi "git.fd.io/govpp.git/api"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
-
-type vppReplyMock struct {
-	Id      uint16
-	Ping    bool
-	Message govppapi.Message
-}
-
-/*func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.ReplyHandler {
-	var sendControlPing bool
-
-	return func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
-		if sendControlPing {
-			sendControlPing = false
-			data := &vpe.ControlPingReply{}
-			reply, err := vppMock.ReplyBytes(request, data)
-			Expect(err).To(BeNil())
-			msgID, err := vppMock.GetMsgID(data.GetMessageName(), data.GetCrcString())
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		}
-
-		for _, dataMock := range dataList {
-			if request.MsgID == dataMock.Id {
-				// Send control ping next iteration if set
-				sendControlPing = dataMock.Ping
-				msgID, err := vppMock.GetMsgID(dataMock.Message.GetMessageName(), dataMock.Message.GetCrcString())
-				Expect(err).To(BeNil())
-				reply, err := vppMock.ReplyBytes(request, dataMock.Message)
-				Expect(err).To(BeNil())
-				return reply, msgID, true
-			}
-		}
-
-		replyMsg, msgID, ok := vppMock.ReplyFor(request.MsgName)
-
-		if ok {
-			reply, err := vppMock.ReplyBytes(request, replyMsg)
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		}
-
-		return reply, 0, false
-	}
-}*/
 
 var acls = []*acl.AccessLists_Acl{
 	{AclName: "acl1",
