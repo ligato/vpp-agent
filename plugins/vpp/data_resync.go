@@ -284,7 +284,6 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 		if plugin.droppedFromResync(key) {
 			continue
 		}
-		plugin.Log.Debugf("CHECK RESYNC PREFIX %q", key)
 		if strings.HasPrefix(key, acl.Prefix) {
 			numAcls := appendACLInterface(resyncData, req)
 			plugin.Log.Debug("Received RESYNC ACL values ", numAcls)
@@ -348,7 +347,7 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			numSRs := appendResyncSR(resyncData, req)
 			plugin.Log.Debug("Received RESYNC SR configs ", numSRs)
 		} else {
-			plugin.Log.Warn("ignoring ", resyncEv, " by VPP standard plugins")
+			plugin.Log.Warnf("ignoring prefix %q by VPP standard plugins", key)
 		}
 	}
 	return req
