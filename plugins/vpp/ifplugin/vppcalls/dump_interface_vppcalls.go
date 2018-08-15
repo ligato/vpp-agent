@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -231,16 +230,15 @@ func (handler *ifVppHandler) DumpMemifSocketDetails() (map[string]uint32, error)
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
 func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
-	// TODO: workaround for incorrect ip.IPAddressDetails message
-	notifChan := make(chan api.Message, 100)
-	subs, _ := handler.callsChannel.SubscribeNotification(notifChan, ip.NewIPAddressDetails)
-
 	// Dump IP addresses of each interface.
 	for idx := range ifs {
 		// IPAddressDetails time measurement
 		start := time.Now()
 
-		reqCtx := handler.callsChannel.SendMultiRequest(&ip.IPAddressDump{SwIfIndex: idx, IsIPv6: isIPv6})
+		reqCtx := handler.callsChannel.SendMultiRequest(&ip.IPAddressDump{
+			SwIfIndex: idx,
+			IsIPv6:    isIPv6,
+		})
 		for {
 			ipDetails := &ip.IPAddressDetails{}
 			stop, err := reqCtx.ReceiveReply(ipDetails)
@@ -253,20 +251,11 @@ func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetai
 			handler.processIPDetails(ifs, ipDetails)
 		}
 
-		// TODO: workaround for incorrect ip.IPAddressDetails message
-		for len(notifChan) > 0 {
-			notifMsg := <-notifChan
-			handler.processIPDetails(ifs, notifMsg.(*ip.IPAddressDetails))
-		}
-
 		// IPAddressDump time
 		if timeLog != nil {
 			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}
-
-	// TODO: workaround for incorrect ip.IPAddressDetails message
-	handler.callsChannel.UnsubscribeNotification(subs)
 
 	return nil
 }
