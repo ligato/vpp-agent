@@ -20,21 +20,11 @@ import (
 
 	"net"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
-
-var RouteMessages = []govppapi.Message{
-	&ip.IPAddDelRoute{},
-	&ip.IPAddDelRouteReply{},
-	&ip.IPFibDump{},
-	&ip.IPFibDetails{},
-	&ip.IP6FibDump{},
-	&ip.IP6FibDetails{},
-}
 
 const (
 	// NextHopViaLabelUnset constant has to be assigned into the field next hop
@@ -115,12 +105,31 @@ func (handler *routeHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 }
 
 func (handler *routeHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
-	if err := ifHandler.CreateVrfIfNeeded(route.VrfId); err != nil {
+	// Evaluate route IP version
+	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstIpAddr)
+	if err != nil {
 		return err
 	}
-	if route.Type == l3.StaticRoutes_Route_INTER_VRF {
-		if err := ifHandler.CreateVrfIfNeeded(route.ViaVrfId); err != nil {
+
+	if isIPv6 {
+		// Configure IPv6 VRF
+		if err := ifHandler.CreateVrfIPv6(route.VrfId); err != nil {
 			return err
+		}
+		if route.Type == l3.StaticRoutes_Route_INTER_VRF {
+			if err := ifHandler.CreateVrfIPv6(route.ViaVrfId); err != nil {
+				return err
+			}
+		}
+	} else {
+		// Configure IPv4 VRF
+		if err := ifHandler.CreateVrf(route.VrfId); err != nil {
+			return err
+		}
+		if route.Type == l3.StaticRoutes_Route_INTER_VRF {
+			if err := ifHandler.CreateVrf(route.ViaVrfId); err != nil {
+				return err
+			}
 		}
 	}
 	return handler.vppAddDelRoute(route, rtIfIdx, false)

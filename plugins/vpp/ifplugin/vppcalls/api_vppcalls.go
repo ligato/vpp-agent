@@ -90,10 +90,14 @@ type IfVppWrite interface {
 	SetRxMode(ifIdx uint32, rxModeSettings *interfaces.Interfaces_Interface_RxModeSettings) error
 	// SetRxPlacement configures rx-placement for interface
 	SetRxPlacement(vppInternalName string, rxPlacement *interfaces.Interfaces_Interface_RxPlacementSettings) error
-	// SetInterfaceVRF retrieves VRF table from interface
-	SetInterfaceVRF(ifaceIndex, vrfID uint32) error
-	// CreateVrfIfNeeded checks if VRF exists and creates it if not
-	CreateVrfIfNeeded(vrfID uint32) error
+	// CreateVrf checks if VRF exists and creates it if not
+	CreateVrf(vrfID uint32) error
+	// CreateVrfIPv6 checks if IPv6 VRF exists and creates it if not
+	CreateVrfIPv6(vrfID uint32) error
+	// SetInterfaceVrf retrieves VRF table from interface
+	SetInterfaceVrf(ifaceIndex, vrfID uint32) error
+	// SetInterfaceVrfIPv6 retrieves IPV6 VRF table from interface
+	SetInterfaceVrfIPv6(ifaceIndex, vrfID uint32) error
 }
 
 // IfVppRead provides read methods for interface plugin
@@ -107,8 +111,10 @@ type IfVppRead interface {
 	DumpInterfaces() (map[uint32]*InterfaceDetails, error)
 	// DumpInterfacesByType returns all VPP interfaces of the specified type
 	DumpInterfacesByType(reqType interfaces.InterfaceType) (map[uint32]*InterfaceDetails, error)
-	// GetInterfaceVRF assigns VRF table to interface
-	GetInterfaceVRF(ifIdx uint32) (vrfID uint32, err error)
+	// GetInterfaceVrf reads VRF table to interface
+	GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error)
+	// GetInterfaceVrfIPv6 reads IPv6 VRF table to interface
+	GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error)
 	// DumpMemifSocketDetails dumps memif socket details from the VPP
 	DumpMemifSocketDetails() (map[string]uint32, error)
 }

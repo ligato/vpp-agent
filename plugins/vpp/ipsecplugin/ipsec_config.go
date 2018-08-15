@@ -345,7 +345,7 @@ func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_
 	})
 	plugin.log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
 
-	if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, tunnel.Vrf); err != nil {
+	if err := plugin.ifHandler.SetInterfaceVrf(ifIdx, tunnel.Vrf); err != nil {
 		return err
 	}
 

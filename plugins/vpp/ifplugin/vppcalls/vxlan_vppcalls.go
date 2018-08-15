@@ -29,7 +29,7 @@ func (handler *ifVppHandler) addDelVxlanTunnel(iface *intf.Interfaces_Interface_
 	}(time.Now())
 
 	// this is temporary fix to solve creation of VRF table for VXLAN
-	if err := handler.CreateVrfIfNeeded(encVrf); err != nil {
+	if err := handler.CreateVrf(encVrf); err != nil {
 		return 0, err
 	}
 
