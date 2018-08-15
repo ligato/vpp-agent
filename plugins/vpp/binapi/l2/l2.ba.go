@@ -1957,23 +1957,23 @@ func NewBdIPMacAddDelReply() api.Message {
 //                "sw_if_index"
 //            ],
 //            [
-//                "u8",
+//                "u32",
 //                "enable_disable"
 //            ],
 //            {
-//                "crc": "0x69d24598"
+//                "crc": "0xdabbaf12"
 //            }
 //
 type L2InterfaceEfpFilter struct {
 	SwIfIndex     uint32
-	EnableDisable uint8
+	EnableDisable uint32
 }
 
 func (*L2InterfaceEfpFilter) GetMessageName() string {
 	return "l2_interface_efp_filter"
 }
 func (*L2InterfaceEfpFilter) GetCrcString() string {
-	return "69d24598"
+	return "dabbaf12"
 }
 func (*L2InterfaceEfpFilter) GetMessageType() api.MessageType {
 	return api.RequestMessage

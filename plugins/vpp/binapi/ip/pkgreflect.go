@@ -72,7 +72,6 @@ var Types = map[string]reflect.Type{
 	"IoamEnableReply": reflect.TypeOf((*IoamEnableReply)(nil)).Elem(),
 	"MfibSignalDetails": reflect.TypeOf((*MfibSignalDetails)(nil)).Elem(),
 	"MfibSignalDump": reflect.TypeOf((*MfibSignalDump)(nil)).Elem(),
-	"Mprefix": reflect.TypeOf((*Mprefix)(nil)).Elem(),
 	"Prefix": reflect.TypeOf((*Prefix)(nil)).Elem(),
 	"ProxyArp": reflect.TypeOf((*ProxyArp)(nil)).Elem(),
 	"ProxyArpAddDel": reflect.TypeOf((*ProxyArpAddDel)(nil)).Elem(),

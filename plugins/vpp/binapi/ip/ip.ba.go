@@ -9,7 +9,7 @@ It is generated from this file:
 
 It contains these VPP binary API objects:
 	87 messages
-	9 types
+	8 types
 	1 enum
 	1 union
 	42 services
@@ -155,46 +155,8 @@ func (*Prefix) GetCrcString() string {
 	return "0403aebc"
 }
 
-// Mprefix represents the VPP binary API type 'mprefix'.
-// Generated from 'ip.api.json', line 2793:
-//
-//            "mprefix",
-//            [
-//                "vl_api_address_family_t",
-//                "af"
-//            ],
-//            [
-//                "u16",
-//                "grp_address_length"
-//            ],
-//            [
-//                "vl_api_address_union_t",
-//                "grp_address"
-//            ],
-//            [
-//                "vl_api_address_union_t",
-//                "src_address"
-//            ],
-//            {
-//                "crc": "0x1c4cba05"
-//            }
-//
-type Mprefix struct {
-	Af               AddressFamily
-	GrpAddressLength uint16
-	GrpAddress       AddressUnion
-	SrcAddress       AddressUnion
-}
-
-func (*Mprefix) GetTypeName() string {
-	return "mprefix"
-}
-func (*Mprefix) GetCrcString() string {
-	return "1c4cba05"
-}
-
 // FibMplsLabel represents the VPP binary API type 'fib_mpls_label'.
-// Generated from 'ip.api.json', line 2815:
+// Generated from 'ip.api.json', line 2793:
 //
 //            "fib_mpls_label",
 //            [
@@ -232,7 +194,7 @@ func (*FibMplsLabel) GetCrcString() string {
 }
 
 // FibPath represents the VPP binary API type 'fib_path'.
-// Generated from 'ip.api.json', line 2837:
+// Generated from 'ip.api.json', line 2815:
 //
 //            "fib_path",
 //            [
@@ -352,7 +314,7 @@ func (*FibPath) GetCrcString() string {
 }
 
 // IP6RaPrefixInfo represents the VPP binary API type 'ip6_ra_prefix_info'.
-// Generated from 'ip.api.json', line 2925:
+// Generated from 'ip.api.json', line 2903:
 //
 //            "ip6_ra_prefix_info",
 //            [
@@ -396,7 +358,7 @@ func (*IP6RaPrefixInfo) GetCrcString() string {
 }
 
 // ProxyArp represents the VPP binary API type 'proxy_arp'.
-// Generated from 'ip.api.json', line 2952:
+// Generated from 'ip.api.json', line 2930:
 //
 //            "proxy_arp",
 //            [
