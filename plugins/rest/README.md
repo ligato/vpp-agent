@@ -78,7 +78,7 @@ the bridge domain IDs.
 ```
 curl GET http://0.0.0.0:9191/vpp/dump/v1/bdid
 curl GET http://0.0.0.0:9191/vpp/dump/v1/bd
-curl GET http://0.0.0.0:9191/vpp/dump/v1/fibs
+curl GET http://0.0.0.0:9191/vpp/dump/v1/fib
 curl GET http://0.0.0.0:9191/vpp/dump/v1/xc
 ```
 
