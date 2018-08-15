@@ -286,7 +286,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	// configure optional vrf
 	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
-		if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, iface.Vrf); err != nil {
+		if err := plugin.ifHandler.SetInterfaceVrf(ifIdx, iface.Vrf); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -666,7 +666,7 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 			wasError = err
 		}
 
-		if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, newConfig.Vrf); err != nil {
+		if err := plugin.ifHandler.SetInterfaceVrf(ifIdx, newConfig.Vrf); err != nil {
 			plugin.log.Error(err)
 			wasError = err
 		}

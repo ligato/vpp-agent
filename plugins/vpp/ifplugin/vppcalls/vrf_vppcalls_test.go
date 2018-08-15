@@ -31,7 +31,20 @@ func TestGetInterfaceVRF(t *testing.T) {
 		VrfID: 1,
 	})
 
-	vrfID, err := ifHandler.GetInterfaceVRF(1)
+	vrfID, err := ifHandler.GetInterfaceVrf(1)
+	Expect(err).To(BeNil())
+	Expect(vrfID).To(BeEquivalentTo(1))
+}
+
+func TestGetInterfaceIPv6VRF(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceGetTableReply{
+		VrfID: 1,
+	})
+
+	vrfID, err := ifHandler.GetInterfaceVrfIPv6(1)
 	Expect(err).To(BeNil())
 	Expect(vrfID).To(BeEquivalentTo(1))
 }
@@ -42,7 +55,7 @@ func TestGetInterfaceVRFError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceGetTable{})
 
-	_, err := ifHandler.GetInterfaceVRF(1)
+	_, err := ifHandler.GetInterfaceVrf(1)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -54,7 +67,7 @@ func TestGetInterfaceVRFRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	_, err := ifHandler.GetInterfaceVRF(1)
+	_, err := ifHandler.GetInterfaceVrf(1)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -67,12 +80,30 @@ func TestSetInterfaceVRF(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 
-	err := ifHandler.SetInterfaceVRF(1, 2)
+	err := ifHandler.SetInterfaceVrf(1, 2)
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetTable)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.VrfID).To(BeEquivalentTo(2))
+}
+
+func TestSetInterfaceIPv6VRF(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&ip.IP6FibDetails{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+
+	err := ifHandler.SetInterfaceVrfIPv6(1, 2)
+	Expect(err).To(BeNil())
+	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetTable)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
+	Expect(vppMsg.VrfID).To(BeEquivalentTo(2))
+	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
 }
 
 func TestSetInterfaceVRFError(t *testing.T) {
@@ -84,7 +115,7 @@ func TestSetInterfaceVRFError(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTable{})
 
-	err := ifHandler.SetInterfaceVRF(1, 2)
+	err := ifHandler.SetInterfaceVrf(1, 2)
 	Expect(err).To(HaveOccurred())
 }
 
@@ -99,7 +130,7 @@ func TestSetInterfaceVRFRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.SetInterfaceVRF(1, 2)
+	err := ifHandler.SetInterfaceVrf(1, 2)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -113,7 +144,7 @@ func TestCreateVrfIfNeeded(t *testing.T) {
 	// Add/del table
 	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 
-	err := ifHandler.CreateVrfIfNeeded(1)
+	err := ifHandler.CreateVrf(1)
 	Expect(err).To(BeNil())
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
@@ -121,6 +152,31 @@ func TestCreateVrfIfNeeded(t *testing.T) {
 		if ok {
 			Expect(vppMsg.TableID).To(BeEquivalentTo(1))
 			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+			msgCheck = true
+		}
+	}
+	Expect(msgCheck).To(BeTrue())
+}
+
+func TestCreateIPv6VrfIfNeeded(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	// IP FIB dump
+	ctx.MockVpp.MockReply(&ip.IP6FibDetails{})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	// Add/del table
+	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
+
+	err := ifHandler.CreateVrfIPv6(1)
+	Expect(err).To(BeNil())
+	var msgCheck bool
+	for _, msg := range ctx.MockChannel.Msgs {
+		vppMsg, ok := msg.(*ip.IPTableAddDel)
+		if ok {
+			Expect(vppMsg.TableID).To(BeEquivalentTo(1))
+			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 			msgCheck = true
 		}
@@ -138,7 +194,7 @@ func TestCreateVrfIfNeededNull(t *testing.T) {
 	// Add/del table
 	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{})
 
-	err := ifHandler.CreateVrfIfNeeded(0)
+	err := ifHandler.CreateVrf(0)
 	Expect(err).To(BeNil())
 }
 
@@ -152,7 +208,7 @@ func TestCreateVrfIfNeededError(t *testing.T) {
 	// Add/del table
 	ctx.MockVpp.MockReply(&ip.IPTableAddDel{})
 
-	err := ifHandler.CreateVrfIfNeeded(1)
+	err := ifHandler.CreateVrf(1)
 	Expect(err).ToNot(BeNil())
 }
 
@@ -168,6 +224,6 @@ func TestCreateVrfIfNeededRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.CreateVrfIfNeeded(1)
+	err := ifHandler.CreateVrf(1)
 	Expect(err).ToNot(BeNil())
 }

@@ -115,11 +115,11 @@ func (handler *routeHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 }
 
 func (handler *routeHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
-	if err := ifHandler.CreateVrfIfNeeded(route.VrfId); err != nil {
+	if err := ifHandler.CreateVrf(route.VrfId); err != nil {
 		return err
 	}
 	if route.Type == l3.StaticRoutes_Route_INTER_VRF {
-		if err := ifHandler.CreateVrfIfNeeded(route.ViaVrfId); err != nil {
+		if err := ifHandler.CreateVrf(route.ViaVrfId); err != nil {
 			return err
 		}
 	}

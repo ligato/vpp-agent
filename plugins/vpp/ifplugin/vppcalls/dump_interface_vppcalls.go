@@ -151,7 +151,7 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 	// Get vrf for every interface and fill DHCP if set
 	for _, ifData := range ifs {
 		// VRF
-		vrf, err := handler.GetInterfaceVRF(ifData.Meta.SwIfIndex)
+		vrf, err := handler.GetInterfaceVrf(ifData.Meta.SwIfIndex)
 		if err != nil {
 			handler.log.Warnf("Interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 			continue
