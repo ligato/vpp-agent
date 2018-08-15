@@ -15,10 +15,15 @@
 package api
 
 import (
+	"fmt"
 	"time"
 )
 
 // MessageType represents the type of a VPP message.
+// Note: this is currently derived from the message header (fields),
+// and in many cases it does not represent the actual type of VPP message.
+// This means that some replies can be identified as requests, etc.
+// TODO: use services to identify type of message
 type MessageType int
 
 const (
@@ -26,9 +31,9 @@ const (
 	RequestMessage MessageType = iota
 	// ReplyMessage represents a VPP reply message
 	ReplyMessage
-	// EventMessage represents a VPP notification event message
+	// EventMessage represents a VPP event message
 	EventMessage
-	// OtherMessage represents other VPP message (e.g. counters)
+	// OtherMessage represents other VPP message
 	OtherMessage
 )
 
@@ -37,11 +42,11 @@ type Message interface {
 	// GetMessageName returns the original VPP name of the message, as defined in the VPP API.
 	GetMessageName() string
 
-	// GetMessageType returns the type of the VPP message.
-	GetMessageType() MessageType
-
 	// GetCrcString returns the string with CRC checksum of the message definition (the string represents a hexadecimal number).
 	GetCrcString() string
+
+	// GetMessageType returns the type of the VPP message.
+	GetMessageType() MessageType
 }
 
 // DataType is an interface that is implemented by all VPP Binary API data types by the binapi_generator.
@@ -51,6 +56,21 @@ type DataType interface {
 
 	// GetCrcString returns the string with CRC checksum of the data type definition (the string represents a hexadecimal number).
 	GetCrcString() string
+}
+
+// MessageDecoder provides functionality for decoding binary data to generated API messages.
+type MessageDecoder interface {
+	// DecodeMsg decodes binary-encoded data of a message into provided Message structure.
+	DecodeMsg(data []byte, msg Message) error
+}
+
+// MessageIdentifier provides identification of generated API messages.
+type MessageIdentifier interface {
+	// GetMessageID returns message identifier of given API message.
+	GetMessageID(msg Message) (uint16, error)
+
+	// LookupByID looks up message name and crc by ID
+	LookupByID(msgID uint16) (Message, error)
 }
 
 // ChannelProvider provides the communication channel with govpp core.
@@ -64,53 +84,32 @@ type ChannelProvider interface {
 	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (Channel, error)
 }
 
-// MessageDecoder provides functionality for decoding binary data to generated API messages.
-type MessageDecoder interface {
-	// DecodeMsg decodes binary-encoded data of a message into provided Message structure.
-	DecodeMsg(data []byte, msg Message) error
-}
-
-// MessageIdentifier provides identification of generated API messages.
-type MessageIdentifier interface {
-	// GetMessageID returns message identifier of given API message.
-	GetMessageID(msg Message) (uint16, error)
-	// LookupByID looks up message name and crc by ID
-	LookupByID(ID uint16) (string, error)
-}
-
 // Channel provides methods for direct communication with VPP channel.
 type Channel interface {
+	// GetID returns channel's ID
+	GetID() uint16
+
 	// SendRequest asynchronously sends a request to VPP. Returns a request context, that can be used to call ReceiveReply.
 	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
 	SendRequest(msg Message) RequestCtx
+
 	// SendMultiRequest asynchronously sends a multipart request (request to which multiple responses are expected) to VPP.
 	// Returns a multipart request context, that can be used to call ReceiveReply.
 	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
 	SendMultiRequest(msg Message) MultiRequestCtx
+
 	// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel.
 	// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
 	// buffer is full, the notifications will not be delivered into it.
 	SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error)
+
 	// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription.
 	UnsubscribeNotification(subscription *NotifSubscription) error
-	// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
-	// which the library is connected to.
-	CheckMessageCompatibility(messages ...Message) error
+
 	// SetReplyTimeout sets the timeout for replies from VPP. It represents the maximum time the API waits for a reply
 	// from VPP before returning an error.
 	SetReplyTimeout(timeout time.Duration)
-	// GetRequestChannel returns request go channel of the VPP channel
-	GetRequestChannel() chan<- *VppRequest
-	// GetReplyChannel returns reply go channel of the VPP channel
-	GetReplyChannel() <-chan *VppReply
-	// GetNotificationChannel returns notification go channel of the VPP channel
-	GetNotificationChannel() chan<- *NotifSubscribeRequest
-	// GetNotificationReplyChannel returns notification reply go channel of the VPP channel
-	GetNotificationReplyChannel() <-chan error
-	// GetMessageDecoder returns message decoder instance
-	GetMessageDecoder() MessageDecoder
-	// GetID returns channel's ID
-	GetID() uint16
+
 	// Close closes the API channel and releases all API channel-related resources in the ChannelProvider.
 	Close()
 }
@@ -131,30 +130,24 @@ type MultiRequestCtx interface {
 	ReceiveReply(msg Message) (lastReplyReceived bool, err error)
 }
 
-// VppRequest is a request that will be sent to VPP.
-type VppRequest struct {
-	SeqNum    uint16  // sequence number
-	Message   Message // binary API message to be send to VPP
-	Multipart bool    // true if multipart response is expected, false otherwise
-}
-
-// VppReply is a reply received from VPP.
-type VppReply struct {
-	MessageID         uint16 // ID of the message
-	SeqNum            uint16 // sequence number
-	Data              []byte // encoded data with the message - MessageDecoder can be used for decoding
-	LastReplyReceived bool   // in case of multipart replies, true if the last reply has been already received and this one should be ignored
-	Error             error  // in case of error, data is nil and this member contains error description
-}
-
-// NotifSubscribeRequest is a request to subscribe for delivery of specific notification messages.
-type NotifSubscribeRequest struct {
-	Subscription *NotifSubscription // subscription details
-	Subscribe    bool               // true if this is a request to subscribe, false if unsubscribe
-}
-
 // NotifSubscription represents a subscription for delivery of specific notification messages.
 type NotifSubscription struct {
 	NotifChan  chan Message   // channel where notification messages will be delivered to
 	MsgFactory func() Message // function that returns a new instance of the specific message that is expected as a notification
+	// TODO: use Message directly here, not a factory, eliminating need to allocation
+}
+
+var registeredMessages = make(map[string]Message)
+
+// RegisterMessage is called from generated code to register message.
+func RegisterMessage(x Message, name string) {
+	if _, ok := registeredMessages[name]; ok {
+		panic(fmt.Errorf("govpp: duplicate message registered: %s (%s)", name, x.GetCrcString()))
+	}
+	registeredMessages[name] = x
+}
+
+// GetAllMessages returns list of all registered messages.
+func GetAllMessages() map[string]Message {
+	return registeredMessages
 }

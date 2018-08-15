@@ -32,10 +32,10 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
+  branch = "master"
   name = "github.com/boltdb/bolt"
   packages = ["."]
-  revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
-  version = "v1.3.1"
+  revision = "fd01fc79c553a8e99d512a07e8e0c63d4a3ccfc5"
 
 [[projects]]
   name = "github.com/bshuster-repo/logrus-logstash-hook"
@@ -635,6 +635,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8e9b76dce4a0158d94c9080d637a821d98240a4afda68682950bcbf4057f4bf6"
+  inputs-digest = "d31922b027d723235d66bd9680107bce45b4c428d0f8ef8a1b6ab700bbb1465a"
   solver-name = "gps-cdcl"
   solver-version = 1

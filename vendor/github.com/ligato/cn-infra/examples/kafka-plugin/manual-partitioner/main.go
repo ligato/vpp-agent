@@ -6,9 +6,13 @@ import (
 	"strconv"
 	"time"
 
+	"log"
+
+	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/examples/model"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/messaging"
+	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/cn-infra/messaging/kafka/mux"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/namsral/flag"
@@ -25,27 +29,26 @@ var (
 	messageCount = flag.String("messageCount", os.Getenv("MSG_COUNT"), "Number of messages which will be send. Set to '0' to just watch")
 )
 
+// PluginName represents name of plugin.
+const PluginName = "kafka-manual-example"
+
 func main() {
-	// Init close channel used to stop the example
-	//exampleFinished := make(chan struct{}, 1)
-
-	// Start Agent with ExamplePlugin, KafkaPlugin & FlavorLocal (reused cn-infra plugins).
-	/*agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		kafkaPlug := &kafka.Plugin{}
-		kafkaPlug.Deps.PluginInfraDeps = *flavor.InfraDeps("kafka", local.WithConf())
-
-		examplePlug := &ExamplePlugin{closeChannel: exampleFinished}
-		examplePlug.Deps.PluginLogDeps = *flavor.LogDeps("kafka-example")
-		examplePlug.Deps.Kafka = kafkaPlug // Inject kafka to example plugin.
-
-		return []*core.NamedPlugin{
-			{kafkaPlug.PluginName, kafkaPlug},
-			{examplePlug.PluginName, examplePlug}}
-	}))
-
-	core.EventLoopWithInterrupt(agent, exampleFinished)*/
-
-	// TODO: use new agent with options
+	// Init example plugin and its dependencies
+	ep := &ExamplePlugin{
+		Deps: Deps{
+			Log:   logging.ForPlugin(PluginName),
+			Kafka: &kafka.DefaultPlugin,
+		},
+		exampleFinished: make(chan struct{}),
+	}
+	// Start Agent with example plugin including dependencies
+	a := agent.NewAgent(
+		agent.AllPlugins(ep),
+		agent.QuitOnClose(ep.exampleFinished),
+	)
+	if err := a.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // ExamplePlugin demonstrates the use of Kafka plugin API from another plugin.
@@ -65,9 +68,9 @@ type ExamplePlugin struct {
 	asyncErrorChannel   chan messaging.ProtoMessageErr
 
 	// Fields below are used to properly finish the example.
-	messagesSent bool
-	asyncSuccess bool
-	closeChannel chan struct{}
+	messagesSent    bool
+	asyncSuccess    bool
+	exampleFinished chan struct{}
 }
 
 // Deps lists dependencies of ExamplePlugin.
@@ -99,6 +102,11 @@ const (
 	connection = "example-proto-connection"
 	subscriber = "example-part-watcher"
 )
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return PluginName
+}
 
 // Init initializes and starts producers and consumers.
 func (plugin *ExamplePlugin) Init() (err error) {
@@ -210,7 +218,7 @@ func (plugin *ExamplePlugin) closeExample() {
 
 			plugin.Log.Info("kafka example finished, sending shutdown ...")
 
-			plugin.closeChannel <- struct{}{}
+			close(plugin.exampleFinished)
 			break
 		}
 	}
