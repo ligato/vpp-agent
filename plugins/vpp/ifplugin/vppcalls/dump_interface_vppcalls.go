@@ -262,12 +262,9 @@ func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetai
 
 // processIPDetails processes ip.IPAddressDetails binary API message and fills the details into the provided interface map.
 func (handler *ifVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, ipDetails *ip.IPAddressDetails) {
-	_, ifIdxExists := ifs[ipDetails.SwIfIndex]
+	ifDetails, ifIdxExists := ifs[ipDetails.SwIfIndex]
 	if !ifIdxExists {
 		return
-	}
-	if ifs[ipDetails.SwIfIndex].Interface.IpAddresses == nil {
-		ifs[ipDetails.SwIfIndex].Interface.IpAddresses = make([]string, 0)
 	}
 	var ipAddr string
 	if ipDetails.IsIPv6 == 1 {
@@ -275,7 +272,7 @@ func (handler *ifVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, 
 	} else {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP[:4]).To4().String(), uint32(ipDetails.PrefixLength))
 	}
-	ifs[ipDetails.SwIfIndex].Interface.IpAddresses = append(ifs[ipDetails.SwIfIndex].Interface.IpAddresses, ipAddr)
+	ifDetails.Interface.IpAddresses = append(ifDetails.Interface.IpAddresses, ipAddr)
 }
 
 // fillAFPacketDetails fills af_packet interface details into the provided interface map.

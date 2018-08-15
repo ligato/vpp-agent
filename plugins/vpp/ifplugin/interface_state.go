@@ -192,7 +192,7 @@ func (plugin *InterfaceStateUpdater) Close() error {
 		plugin.vppCh.UnsubscribeNotification(plugin.vppCombinedCountersSubs)
 	}
 
-	return safeclose.Close(plugin.vppCh, plugin.swIdxChan)
+	return safeclose.Close(plugin.vppCh)
 }
 
 // watchVPPNotifications watches for delivery of notifications from VPP.
