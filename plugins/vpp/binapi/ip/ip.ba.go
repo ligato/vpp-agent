@@ -12,7 +12,7 @@ It contains these VPP binary API objects:
 	9 types
 	1 enum
 	1 union
-	42 servicess
+	42 services
 */
 package ip
 

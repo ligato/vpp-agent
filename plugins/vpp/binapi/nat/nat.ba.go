@@ -10,7 +10,7 @@ It is generated from this file:
 It contains these VPP binary API objects:
 	116 messages
 	1 type
-	58 servicess
+	58 services
 */
 package nat
 

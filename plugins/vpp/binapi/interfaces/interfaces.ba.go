@@ -10,7 +10,7 @@ It is generated from this file:
 It contains these VPP binary API objects:
 	47 messages
 	3 types
-	23 servicess
+	23 services
 */
 package interfaces
 

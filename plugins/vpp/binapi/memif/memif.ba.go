@@ -9,7 +9,7 @@ It is generated from this file:
 
 It contains these VPP binary API objects:
 	10 messages
-	5 servicess
+	5 services
 */
 package memif
 

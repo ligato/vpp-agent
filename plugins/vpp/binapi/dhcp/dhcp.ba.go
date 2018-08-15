@@ -10,7 +10,7 @@ It is generated from this file:
 It contains these VPP binary API objects:
 	25 messages
 	5 types
-	11 servicess
+	11 services
 */
 package dhcp
 

@@ -9,7 +9,7 @@ It is generated from this file:
 
 It contains these VPP binary API objects:
 	16 messages
-	8 servicess
+	8 services
 */
 package vpe
 

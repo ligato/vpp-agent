@@ -9,7 +9,7 @@ It is generated from this file:
 
 It contains these VPP binary API objects:
 	6 messages
-	3 servicess
+	3 services
 */
 package tapv2
 

@@ -9,7 +9,7 @@ It is generated from this file:
 
 It contains these VPP binary API objects:
 	46 messages
-	23 servicess
+	23 services
 */
 package ipsec
 

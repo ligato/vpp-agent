@@ -193,7 +193,7 @@ func generateHeader(ctx *context, w io.Writer) {
 	printObjNum("type", len(ctx.packageData.Types))
 	printObjNum("enum", len(ctx.packageData.Enums))
 	printObjNum("union", len(ctx.packageData.Unions))
-	printObjNum("services", len(ctx.packageData.Services))
+	printObjNum("service", len(ctx.packageData.Services))
 	fmt.Fprintln(w, "*/")
 	fmt.Fprintf(w, "package %s\n", ctx.packageName)
 	fmt.Fprintln(w)
