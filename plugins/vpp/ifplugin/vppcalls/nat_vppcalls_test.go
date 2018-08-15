@@ -542,7 +542,6 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 		ExternalIP:   externalIP,
 		ExternalPort: 8080,
 		Protocol:     16,
-		Vrf:          1,
 		TwiceNat:     true,
 	}
 
@@ -554,7 +553,6 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelLbStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
-	Expect(msg.VrfID).To(BeEquivalentTo(1))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
 	Expect(msg.ExternalAddr).To(BeEquivalentTo(externalIP))
@@ -614,7 +612,6 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 		ExternalIP:   externalIP,
 		ExternalPort: 8080,
 		Protocol:     16,
-		Vrf:          1,
 		TwiceNat:     true,
 	}
 
@@ -626,7 +623,6 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 	msg, ok := ctx.MockChannel.Msg.(*nat.Nat44AddDelLbStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg.Tag).To(BeEquivalentTo("tag1"))
-	Expect(msg.VrfID).To(BeEquivalentTo(1))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(0))
 	Expect(msg.ExternalAddr).To(BeEquivalentTo(externalIP))

@@ -45,10 +45,10 @@ func (handler *bridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32
 	}
 	ipAddr := net.ParseIP(ip)
 	if isIpv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 		req.IPAddress = []byte(ipAddr.To16())
 	} else {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 		req.IPAddress = []byte(ipAddr.To4())
 	}
 

@@ -14,6 +14,16 @@
 
 package adapter
 
+import (
+	"errors"
+)
+
+// ErrNotImplemented is an error returned when missing implementation.
+var ErrNotImplemented = errors.New("not implemented for this OS")
+
+// MsgCallback defines func signature for message callback.
+type MsgCallback func(msgID uint16, context uint32, data []byte)
+
 // VppAdapter provides connection to VPP. It is responsible for sending and receiving of binary-encoded messages to/from VPP.
 type VppAdapter interface {
 	// Connect connects the process to VPP.
@@ -29,7 +39,7 @@ type VppAdapter interface {
 	SendMsg(context uint32, data []byte) error
 
 	// SetMsgCallback sets a callback function that will be called by the adapter whenever a message comes from VPP.
-	SetMsgCallback(func(context uint32, msgId uint16, data []byte))
+	SetMsgCallback(cb MsgCallback)
 
 	// WaitReady waits until adapter is ready.
 	WaitReady() error

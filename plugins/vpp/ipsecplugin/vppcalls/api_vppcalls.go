@@ -76,17 +76,12 @@ type ipSecVppHandler struct {
 
 // NewIPsecVppHandler creates new instance of IPsec vppcalls handler
 func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, spdIndexes ipsecidx.SPDIndex,
-	log logging.Logger, stopwatch *measure.Stopwatch) (*ipSecVppHandler, error) {
-	handler := &ipSecVppHandler{
+	log logging.Logger, stopwatch *measure.Stopwatch) *ipSecVppHandler {
+	return &ipSecVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		spdIndexes:   spdIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(IPSecMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }

@@ -7,6 +7,8 @@ import "reflect"
 var Types = map[string]reflect.Type{
 	"AcceptSession": reflect.TypeOf((*AcceptSession)(nil)).Elem(),
 	"AcceptSessionReply": reflect.TypeOf((*AcceptSessionReply)(nil)).Elem(),
+	"AppCutThroughRegistrationAdd": reflect.TypeOf((*AppCutThroughRegistrationAdd)(nil)).Elem(),
+	"AppCutThroughRegistrationAddReply": reflect.TypeOf((*AppCutThroughRegistrationAddReply)(nil)).Elem(),
 	"AppNamespaceAddDel": reflect.TypeOf((*AppNamespaceAddDel)(nil)).Elem(),
 	"AppNamespaceAddDelReply": reflect.TypeOf((*AppNamespaceAddDelReply)(nil)).Elem(),
 	"ApplicationAttach": reflect.TypeOf((*ApplicationAttach)(nil)).Elem(),
@@ -33,6 +35,7 @@ var Types = map[string]reflect.Type{
 	"MapAnotherSegmentReply": reflect.TypeOf((*MapAnotherSegmentReply)(nil)).Elem(),
 	"ResetSession": reflect.TypeOf((*ResetSession)(nil)).Elem(),
 	"ResetSessionReply": reflect.TypeOf((*ResetSessionReply)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"SessionEnableDisable": reflect.TypeOf((*SessionEnableDisable)(nil)).Elem(),
 	"SessionEnableDisableReply": reflect.TypeOf((*SessionEnableDisableReply)(nil)).Elem(),
 	"SessionRuleAddDel": reflect.TypeOf((*SessionRuleAddDel)(nil)).Elem(),
@@ -50,6 +53,8 @@ var Types = map[string]reflect.Type{
 var Functions = map[string]reflect.Value{
 	"NewAcceptSession": reflect.ValueOf(NewAcceptSession),
 	"NewAcceptSessionReply": reflect.ValueOf(NewAcceptSessionReply),
+	"NewAppCutThroughRegistrationAdd": reflect.ValueOf(NewAppCutThroughRegistrationAdd),
+	"NewAppCutThroughRegistrationAddReply": reflect.ValueOf(NewAppCutThroughRegistrationAddReply),
 	"NewAppNamespaceAddDel": reflect.ValueOf(NewAppNamespaceAddDel),
 	"NewAppNamespaceAddDelReply": reflect.ValueOf(NewAppNamespaceAddDelReply),
 	"NewApplicationAttach": reflect.ValueOf(NewApplicationAttach),

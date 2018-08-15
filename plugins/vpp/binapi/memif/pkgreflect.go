@@ -15,6 +15,7 @@ var Types = map[string]reflect.Type{
 	"MemifSocketFilenameAddDelReply": reflect.TypeOf((*MemifSocketFilenameAddDelReply)(nil)).Elem(),
 	"MemifSocketFilenameDetails": reflect.TypeOf((*MemifSocketFilenameDetails)(nil)).Elem(),
 	"MemifSocketFilenameDump": reflect.TypeOf((*MemifSocketFilenameDump)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{

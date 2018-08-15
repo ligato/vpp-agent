@@ -25,16 +25,16 @@ func TestSetInterfaceAsDHCPClient(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{})
 
 	err := ifHandler.SetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DhcpClientConfig)
+	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DHCPClientConfig)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
-	Expect(vppMsg.Client.WantDhcpEvent).To(BeEquivalentTo(1))
+	Expect(vppMsg.Client.WantDHCPEvent).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 }
 
@@ -42,7 +42,7 @@ func TestSetInterfaceAsDHCPClientError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DhcpComplEvent{})
+	ctx.MockVpp.MockReply(&dhcp.DHCPComplEvent{})
 
 	err := ifHandler.SetInterfaceAsDHCPClient(1, "hostName")
 
@@ -53,7 +53,7 @@ func TestSetInterfaceAsDHCPClientRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{
+	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{
 		Retval: 1,
 	})
 
@@ -66,16 +66,16 @@ func TestUnsetInterfaceAsDHCPClient(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{})
 
 	err := ifHandler.UnsetInterfaceAsDHCPClient(1, "hostName")
 
 	Expect(err).To(BeNil())
-	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DhcpClientConfig)
+	vppMsg, ok := ctx.MockChannel.Msg.(*dhcp.DHCPClientConfig)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.Client.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.Client.Hostname).To(BeEquivalentTo([]byte("hostName")))
-	Expect(vppMsg.Client.WantDhcpEvent).To(BeEquivalentTo(1))
+	Expect(vppMsg.Client.WantDHCPEvent).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAdd).To(BeEquivalentTo(0))
 }
 
@@ -83,7 +83,7 @@ func TestUnsetInterfaceAsDHCPClientError(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DhcpComplEvent{})
+	ctx.MockVpp.MockReply(&dhcp.DHCPComplEvent{})
 
 	err := ifHandler.UnsetInterfaceAsDHCPClient(1, "hostName")
 
@@ -94,7 +94,7 @@ func TestUnsetInterfaceAsDHCPClientRetval(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ctx.MockVpp.MockReply(&dhcp.DhcpClientConfigReply{
+	ctx.MockVpp.MockReply(&dhcp.DHCPClientConfigReply{
 		Retval: 1,
 	})
 

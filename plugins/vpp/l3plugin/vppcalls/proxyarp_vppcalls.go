@@ -18,17 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
-
-// ProxyArpMessages is list of used VPP messages for compatibility check
-var ProxyArpMessages = []govppapi.Message{
-	&ip.ProxyArpIntfcEnableDisable{},
-	&ip.ProxyArpIntfcEnableDisableReply{},
-	&ip.ProxyArpAddDel{},
-	&ip.ProxyArpAddDelReply{},
-}
 
 func (handler *proxyArpVppHandler) EnableProxyArpInterface(swIfIdx uint32) error {
 	return handler.vppAddDelProxyArpInterface(swIfIdx, true)

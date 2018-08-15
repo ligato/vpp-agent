@@ -81,9 +81,7 @@ func (plugin *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	if plugin.bfdHandler, err = vppcalls.NewBfdVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
+	plugin.bfdHandler = vppcalls.NewBfdVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }

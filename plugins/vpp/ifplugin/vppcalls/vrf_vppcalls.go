@@ -91,7 +91,7 @@ func (h *ifVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
 	req := &interfaces.SwInterfaceSetTable{
 		SwIfIndex: ifIdx,
 		VrfID:     vrfID,
-		IsIpv6:    boolToUint(isIPv6),
+		IsIPv6:    boolToUint(isIPv6),
 	}
 	reply := &interfaces.SwInterfaceSetTableReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -114,7 +114,7 @@ func (h *ifVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32,
 
 	req := &interfaces.SwInterfaceGetTable{
 		SwIfIndex: ifIdx,
-		IsIpv6:    boolToUint(isIPv6),
+		IsIPv6:    boolToUint(isIPv6),
 	}
 	reply := &interfaces.SwInterfaceGetTableReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -185,7 +185,7 @@ func (h *ifVppHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
 
 	req := &ip.IPTableAddDel{
 		TableID: vrfID,
-		IsIpv6:  boolToUint(isIPv6),
+		IsIPv6:  boolToUint(isIPv6),
 		IsAdd:   1,
 	}
 	reply := &ip.IPTableAddDelReply{}

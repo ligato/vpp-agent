@@ -42,6 +42,7 @@ var Types = map[string]reflect.Type{
 	"L2fibFlushInt": reflect.TypeOf((*L2fibFlushInt)(nil)).Elem(),
 	"L2fibFlushIntReply": reflect.TypeOf((*L2fibFlushIntReply)(nil)).Elem(),
 	"MacEntry": reflect.TypeOf((*MacEntry)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"SwInterfaceSetL2Bridge": reflect.TypeOf((*SwInterfaceSetL2Bridge)(nil)).Elem(),
 	"SwInterfaceSetL2BridgeReply": reflect.TypeOf((*SwInterfaceSetL2BridgeReply)(nil)).Elem(),
 	"SwInterfaceSetL2Xconnect": reflect.TypeOf((*SwInterfaceSetL2Xconnect)(nil)).Elem(),

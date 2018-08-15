@@ -30,12 +30,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
-
-func init() {
-	govpp.SetControlPingMessages(&vpe.ControlPing{}, &vpe.ControlPingReply{})
-}
 
 // Plugin implements the govppmux plugin interface.
 type Plugin struct {
@@ -131,13 +126,12 @@ func (plugin *Plugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 	vppConnectTime := time.Since(startTime)
-	plugin.Log.WithField("durationInNs", vppConnectTime.Nanoseconds()).Info("Connecting to VPP took ", vppConnectTime)
+	plugin.Log.Info("Connecting to VPP took ", vppConnectTime)
 	plugin.retrieveVersion()
 
 	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
 	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
-	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
 
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())

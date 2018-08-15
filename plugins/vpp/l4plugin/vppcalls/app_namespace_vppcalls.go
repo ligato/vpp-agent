@@ -18,17 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
-
-// AppNsMessages is list of used VPP messages for compatibility check
-var AppNsMessages = []govppapi.Message{
-	&session.AppNamespaceAddDel{},
-	&session.AppNamespaceAddDelReply{},
-	&session.SessionEnableDisable{},
-	&session.SessionEnableDisableReply{},
-}
 
 func (handler *l4VppHandler) AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte) (appNsIdx uint32, err error) {
 	defer func(t time.Time) {

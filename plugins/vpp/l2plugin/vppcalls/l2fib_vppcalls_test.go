@@ -193,10 +193,8 @@ func BenchmarkWatchFIBReplies1000(b *testing.B) { benchmarkWatchFIBReplies(1000,
 func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FibVppAPI, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
-	requestChan := make(chan *vppcalls.FibLogicalReq)
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logger, "fib-if-idx", nil))
 	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(logger, "fib-bd-idx", nil))
-	fibHandler, err := vppcalls.NewFibVppHandler(ctx.MockChannel, ctx.MockChannel, requestChan, ifIndexes, bdIndexes, logger, nil)
-	Expect(err).To(BeNil())
+	fibHandler := vppcalls.NewFibVppHandler(ctx.MockChannel, ctx.MockChannel, ifIndexes, bdIndexes, logger, nil)
 	return ctx, fibHandler, ifIndexes, bdIndexes
 }

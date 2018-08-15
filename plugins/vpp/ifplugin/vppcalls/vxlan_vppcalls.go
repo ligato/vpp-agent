@@ -47,7 +47,7 @@ func (handler *ifVppHandler) addDelVxlanTunnel(iface *intf.Interfaces_Interface_
 	if srcAddr == nil && dstAddr == nil {
 		srcAddr = net.ParseIP(iface.SrcAddress).To16()
 		dstAddr = net.ParseIP(iface.DstAddress).To16()
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 		if srcAddr == nil || dstAddr == nil {
 			return 0, fmt.Errorf("invalid VXLAN address, src: %s, dst: %s", srcAddr, dstAddr)
 		}

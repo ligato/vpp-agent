@@ -58,7 +58,7 @@ type ProxyArpConfigurator struct {
 	stopwatch *measure.Stopwatch
 }
 
-// Init VPP channel and check message compatibility
+// Init VPP channel and vppcalls handler
 func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
@@ -83,15 +83,7 @@ func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux g
 	}
 
 	// VPP API handler
-	if plugin.pArpHandler, err = vppcalls.NewProxyArpVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-
-	// Message compatibility
-	if err := plugin.vppChan.CheckMessageCompatibility(vppcalls.ProxyArpMessages...); err != nil {
-		plugin.log.Error(err)
-		return err
-	}
+	plugin.pArpHandler = vppcalls.NewProxyArpVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }

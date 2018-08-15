@@ -52,7 +52,7 @@ func TestAddVxlanTunnel(t *testing.T) {
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(0))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
 			Expect(vppMsg.Vni).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 			msgCheck = true
 		}
 	}
@@ -90,7 +90,7 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(1))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(1))
 			Expect(vppMsg.Vni).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 			msgCheck = true
 		}
 	}
@@ -119,7 +119,7 @@ func TestAddVxlanTunnelIPv6(t *testing.T) {
 		if ok {
 			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
 			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("2002:db8:0:1:1:1:1:1").To16()))
-			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
 			msgCheck = true
 		}
 	}

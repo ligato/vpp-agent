@@ -119,7 +119,6 @@ func TestDelStnRule(t *testing.T) {
 func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.StnVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "stn-if-idx", nil))
-	stnHandler, err := vppcalls.NewStnVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger(), nil)
-	Expect(err).To(BeNil())
+	stnHandler := vppcalls.NewStnVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger(), nil)
 	return ctx, stnHandler
 }

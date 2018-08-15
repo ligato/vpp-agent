@@ -103,7 +103,7 @@ func TestSetInterfaceIPv6VRF(t *testing.T) {
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.VrfID).To(BeEquivalentTo(2))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
 }
 
 func TestSetInterfaceVRFError(t *testing.T) {
@@ -151,7 +151,7 @@ func TestCreateVrfIfNeeded(t *testing.T) {
 		vppMsg, ok := msg.(*ip.IPTableAddDel)
 		if ok {
 			Expect(vppMsg.TableID).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 			msgCheck = true
 		}
@@ -176,7 +176,7 @@ func TestCreateIPv6VrfIfNeeded(t *testing.T) {
 		vppMsg, ok := msg.(*ip.IPTableAddDel)
 		if ok {
 			Expect(vppMsg.TableID).To(BeEquivalentTo(1))
-			Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 			msgCheck = true
 		}

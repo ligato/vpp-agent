@@ -614,7 +614,7 @@ func (handler *aclVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.Acces
 // ACL Plugin's NB format
 func (handler *aclVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule {
 	var srcIP, dstIP string
-	if r.IsIpv6 == 1 {
+	if r.IsIPv6 == 1 {
 		srcIP = net.IP(r.SrcIPAddr).To16().String()
 		dstIP = net.IP(r.DstIPAddr).To16().String()
 	} else {
@@ -644,7 +644,7 @@ func (handler *aclVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.AccessLis
 // ACL Plugin's NB format
 func (handler *aclVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.AccessLists_Acl_Rule_Match_MacIpRule {
 	var srcAddr string
-	if rule.IsIpv6 == 1 {
+	if rule.IsIPv6 == 1 {
 		srcAddr = net.IP(rule.SrcIPAddr).To16().String()
 	} else {
 		srcAddr = net.IP(rule.SrcIPAddr[:4]).To4().String()
@@ -699,7 +699,7 @@ func (handler *aclVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.AccessList
 // format into the ACL Plugin's NB format
 func (handler *aclVppHandler) getIcmpMatchRule(r acl_api.ACLRule) *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp {
 	icmp := &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp{
-		Icmpv6:        r.IsIpv6 > 0,
+		Icmpv6:        r.IsIPv6 > 0,
 		IcmpCodeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_Range{},
 		IcmpTypeRange: &acl.AccessLists_Acl_Rule_Match_IpRule_Icmp_Range{},
 	}

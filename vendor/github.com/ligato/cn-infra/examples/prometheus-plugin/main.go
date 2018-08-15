@@ -29,41 +29,13 @@ import (
 const PluginName = "example"
 
 func main() {
-	// Init close channel used to stop the example.
-	/*exampleFinished := make(chan struct{})
-
-	// Start Agent with ExamplePlugin, REST, prometheus plugin & FlavorLocal (reused cn-infra plugins).
-	agent := local.NewAgent(local.WithPlugins(func(flavor *local.FlavorLocal) []*core.NamedPlugin {
-		httpPlugin := &rest.Plugin{}
-
-		rest.DeclareHTTPPortFlag("http")
-		httpPlugDeps := *flavor.InfraDeps("http", local.WithConf())
-		httpPlugin.Deps.Log = httpPlugDeps.Log
-		httpPlugin.Deps.PluginConfig = httpPlugDeps.PluginConfig
-		httpPlugin.Deps.PluginName = httpPlugDeps.PluginName
-
-		prometheusPlugin := &prom.Plugin{}
-		prometheusPlugin.Deps.PluginInfraDeps = *flavor.InfraDeps("prometheus")
-		prometheusPlugin.Deps.HTTP = httpPlugin
-
-		examplePlug := &ExamplePlugin{}
-		examplePlug.Deps.PluginInfraDeps = *flavor.InfraDeps("prometheus-example")
-		examplePlug.Deps.Prometheus = prometheusPlugin
-
-		return []*core.NamedPlugin{
-			{httpPlugin.PluginName, httpPlugin},
-			{prometheusPlugin.PluginName, prometheusPlugin},
-			{examplePlug.PluginName, examplePlug}}
-	}))
-	core.EventLoopWithInterrupt(agent, exampleFinished)*/
-
+	// Prepare example plugin and start the agent
 	p := &ExamplePlugin{
 		Deps: Deps{
 			Log:        logging.ForPlugin(PluginName),
 			Prometheus: &prom.DefaultPlugin,
 		},
 	}
-
 	a := agent.NewAgent(agent.AllPlugins(p))
 	if err := a.Run(); err != nil {
 		log.Fatal(err)

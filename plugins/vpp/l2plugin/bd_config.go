@@ -103,13 +103,8 @@ func (plugin *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	}
 
 	// VPP API handlers
-	if plugin.ifHandler, err = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-
-	if plugin.bdHandler, err = vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
+	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
+	plugin.bdHandler = vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }

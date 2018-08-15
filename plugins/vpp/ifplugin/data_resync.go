@@ -582,7 +582,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 		MappingCompare:
 			for vppIndex, vppLbMapping := range *vppMappings {
 				// Compare VRF/SNAT fields
-				if nbMapping.VrfId != vppLbMapping.VrfId || nbMapping.TwiceNat != vppLbMapping.TwiceNat {
+				if nbMapping.TwiceNat != vppLbMapping.TwiceNat {
 					continue
 				}
 				// Compare external IP/Port
@@ -622,7 +622,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 			// No load balancer
 			for vppIndex, vppMapping := range *vppMappings {
 				// Compare VRF/SNAT fields
-				if nbMapping.VrfId != vppMapping.VrfId || nbMapping.TwiceNat != vppMapping.TwiceNat {
+				if nbMapping.TwiceNat != vppMapping.TwiceNat {
 					continue
 				}
 				// Compare external IP/Port and interface
