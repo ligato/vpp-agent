@@ -104,7 +104,7 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 	case api.EventMessage:
 		header = new(VppEventHeader)
 	default:
-		header = new(VppEventHeader)
+		header = new(VppOtherHeader)
 	}
 
 	buf := bytes.NewReader(data)
