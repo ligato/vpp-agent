@@ -15,7 +15,7 @@ required = [
 
 [[constraint]]
   name =  "git.fd.io/govpp.git"
-  revision = "5df690ab830bcf5eb9ffe4d86ceaa4154d7b859b"
+  revision = "0ed38dbb620ef88a2007179265f37742ee46c305"
   source = "github.com/ligato/govpp"
 
 [[constraint]]

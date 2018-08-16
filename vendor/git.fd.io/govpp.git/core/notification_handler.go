@@ -126,7 +126,7 @@ func (c *Connection) sendNotifications(msgID uint16, data []byte) {
 				"msg_name": msg.GetMessageName(),
 				"msg_id":   msgID,
 				"msg_size": len(data),
-			}).Error("Unable to decode the notification message.")
+			}).Errorf("Unable to decode the notification message: %v", err)
 			continue
 		}
 
