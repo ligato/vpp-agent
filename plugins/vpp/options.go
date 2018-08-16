@@ -24,7 +24,7 @@ import (
 func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
-	p.PluginName = "vpp"
+	p.PluginName = "vpp-plugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
