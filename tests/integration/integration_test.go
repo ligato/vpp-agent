@@ -23,12 +23,13 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/mitchellh/go-ps"
+	ps "github.com/mitchellh/go-ps"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -38,12 +39,9 @@ var (
 
 func init() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	govpp.SetControlPingMessages(&vpe.ControlPing{}, &vpe.ControlPingReply{})
-}
-
-func logf(f string, v ...interface{}) {
+	flag.Parse()
 	if *debug {
-		log.Output(2, fmt.Sprintf(f, v...))
+		govpp.SetLogLevel(logrus.DebugLevel)
 	}
 }
 
@@ -53,13 +51,15 @@ type testCtx struct {
 	T    *testing.T
 }
 
-func setupTest(t *testing.T) *testCtx {
+func setupVPP(t *testing.T) *testCtx {
 	if os.Getenv("TRAVIS") != "" {
 		t.Skip("skipping test for Travis")
 	}
+	logf("=== VPP setup ===")
 
 	RegisterTestingT(t)
 
+	// check if VPP process is not running already
 	processes, err := ps.Processes()
 	if err != nil {
 		t.Fatalf("listing processes failed: %v", err)
@@ -73,11 +73,12 @@ func setupTest(t *testing.T) *testCtx {
 		}
 	}
 
+	// remove binapi files from previous run
 	var removeFile = func(path string) {
-		if err := os.Remove("/dev/shm/vpe-api"); err != nil && !os.IsNotExist(err) {
-			t.Fatalf("removing file %q failed: %v", path, err)
-		} else {
+		if err := os.Remove(path); err == nil {
 			logf("removed file %q", path)
+		} else if !os.IsNotExist(err) {
+			t.Fatalf("removing file %q failed: %v", path, err)
 		}
 	}
 	// rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api
@@ -85,36 +86,65 @@ func setupTest(t *testing.T) *testCtx {
 	removeFile("/dev/shm/global_vm")
 	removeFile("/dev/shm/db")
 
+	time.Sleep(time.Millisecond * 250)
+
 	logf("starting VPP process: %q", *vppPath)
 
 	cmd := exec.Command(*vppPath, "-c", "/etc/vpp/vpp.conf")
 	//cmd.Stderr = os.Stderr
 	//cmd.Stdout = os.Stdout
+
+	// ensure that process is killed when current process exits
+	cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
+
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting VPP failed: %v", err)
 	}
 
-	logf("connecting to VPP..")
-
 	adapter := govppmux.NewVppAdapter("")
+
+	logf("connecting to VPP..")
 	conn, err := govpp.Connect(adapter)
 	if err != nil {
+		logf("sending KILL signal to VPP")
 		if err := cmd.Process.Kill(); err != nil {
 			logf("KILL FAILED: %v", err)
 		}
 		t.Fatalf("connecting to VPP failed: %v", err)
+	} else {
+		logf("connected successfully")
 	}
 
 	return &testCtx{VPP: cmd, T: t, Conn: conn}
 }
 
-func (ctx *testCtx) teardown() {
-	ctx.Conn.Disconnect()
+func (ctx *testCtx) teardownVPP() {
+	logf("--- VPP teardown ---")
 
+	// disconnect sometimes hangs
+	done := make(chan struct{})
+	go func() {
+		ctx.Conn.Disconnect()
+		close(done)
+	}()
+	select {
+	case <-done:
+		logf("VPP disconnected")
+	case <-time.After(time.Second * 1):
+		logf("VPP disconnect timeout")
+	}
+
+	logf("sending SIGTERM to VPP")
 	if err := ctx.VPP.Process.Signal(syscall.SIGTERM); err != nil {
 		ctx.T.Fatalf("sending signal to VPP failed: %v", err)
 	}
 	if err := ctx.VPP.Wait(); err != nil {
 		logf("VPP process wait failed: %v", err)
+	}
+}
+
+func logf(f string, v ...interface{}) {
+	if *debug {
+		log.Output(2, fmt.Sprintf(f, v...))
 	}
 }
