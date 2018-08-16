@@ -26,7 +26,7 @@ import (
 func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
-	p.PluginName = "linux"
+	p.PluginName = "linux-plugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
 
