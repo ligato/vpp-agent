@@ -1,16 +1,26 @@
 FROM dev_vpp_agent as devimg
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
      # general tools
-     iproute2 iputils-ping inetutils-traceroute \
+     inetutils-traceroute \
+     iproute2 \
+     iputils-ping \
      # vpp requirements
-     openssl python libapr1 libnuma1 \
-     libmbedcrypto0 libmbedtls10 libmbedx509-0 ca-certificates \
+     ca-certificates \
+     libapr1 \
+     libc6 \
+     libmbedcrypto1 \
+     libmbedtls10 \
+     libmbedx509-0 \
+     libnuma1 \
+     openssl \
      # other
-     supervisor ipsec-tools \
+     ipsec-tools \
+     python \
+     supervisor \
  && rm -rf /var/lib/apt/lists/*
 
 # install vpp
