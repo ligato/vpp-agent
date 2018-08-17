@@ -14,7 +14,9 @@ vpp_term: Check VPP Terminal
     [Arguments]        ${node}
     [Documentation]    Check terminal on node ${node}
     Log Many           ${node}    ${${node}_VPP_HOST_PORT}    ${${node}_VPP_TERM_PROMPT}
-    ${command}=        Set Variable       telnet 0 ${${node}_VPP_HOST_PORT}
+    # using telnet does not work with latest VPP
+    #${command}=        Set Variable       telnet 0 ${${node}_VPP_HOST_PORT}
+    ${command}=        Set Variable       docker exec -it ${node} vppctl -s localhost:${${node}_VPP_PORT}
     ${out}=            Write To Machine   ${node}_term    ${command}
     Should Contain     ${out}             ${${node}_VPP_TERM_PROMPT}
     [Return]           ${out}
