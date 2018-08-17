@@ -200,8 +200,8 @@ func TestDataResyncResync(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 	Expect(plugin.IsSocketFilenameCached("testsocket")).To(BeTrue())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
@@ -252,8 +252,8 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -301,8 +301,8 @@ func TestDataResyncResyncSameName(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -351,8 +351,8 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -416,8 +416,8 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -480,8 +480,8 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -533,8 +533,8 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -600,8 +600,8 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())

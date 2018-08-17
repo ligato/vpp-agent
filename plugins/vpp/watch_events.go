@@ -189,13 +189,13 @@ func (plugin *Plugin) onLinuxIfaceEvent(e linux_ifaceidx.LinuxIfIndexDto) {
 	if e.Metadata != nil && e.Metadata.Data != nil && e.Metadata.Data.HostIfName != "" {
 		hostIfName = e.Metadata.Data.HostIfName
 	}
+	var err error
 	if !e.IsDelete() {
-		plugin.ifConfigurator.ResolveCreatedLinuxInterface(e.Name, hostIfName, e.Idx)
-		// TODO propagate error
+		err = plugin.ifConfigurator.ResolveCreatedLinuxInterface(e.Name, hostIfName, e.Idx)
 	} else {
-		plugin.ifConfigurator.ResolveDeletedLinuxInterface(e.Name, hostIfName, e.Idx)
-		// TODO propagate error
+		err = plugin.ifConfigurator.ResolveDeletedLinuxInterface(e.Name, hostIfName, e.Idx)
 	}
+	plugin.ifConfigurator.LogError(err)
 	e.Done()
 }
 

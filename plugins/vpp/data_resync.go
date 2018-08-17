@@ -161,8 +161,8 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	var resyncErrs []error
 
 	if !plugin.droppedFromResync(interfaces.Prefix) {
-		if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
-			resyncErrs = append(resyncErrs, errs...)
+		if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+			resyncErrs = append(resyncErrs, plugin.ifConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(acl.Prefix) {

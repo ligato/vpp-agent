@@ -395,12 +395,15 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.Interfaces_In
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ifConfigurator.DeleteVPPInterface(prevValue)
+		err = plugin.ifConfigurator.DeleteVPPInterface(prevValue)
 	} else if diff {
-		return plugin.ifConfigurator.ModifyVPPInterface(value, prevValue)
+		err = plugin.ifConfigurator.ModifyVPPInterface(value, prevValue)
+	} else {
+		err = plugin.ifConfigurator.ConfigureVPPInterface(value)
 	}
-	return plugin.ifConfigurator.ConfigureVPPInterface(value)
+	return plugin.ifConfigurator.LogError(err)
 }
 
 // DataChangeBfdSession propagates data change to the bfdConfigurator.

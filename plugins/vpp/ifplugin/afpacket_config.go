@@ -15,8 +15,7 @@
 package ifplugin
 
 import (
-	"errors"
-
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
@@ -46,8 +45,8 @@ type AfPacketConfig struct {
 }
 
 // GetAfPacketStatusByName looks for cached interface by its name and returns its state and data
-func (plugin *AFPacketConfigurator) GetAfPacketStatusByName(name string) (exists, pending bool, ifData *intf.Interfaces_Interface) {
-	data, ok := plugin.afPacketByName[name]
+func (ac *AFPacketConfigurator) GetAfPacketStatusByName(name string) (exists, pending bool, ifData *intf.Interfaces_Interface) {
+	data, ok := ac.afPacketByName[name]
 	if data != nil {
 		return ok, data.pending, data.config
 	}
@@ -55,8 +54,8 @@ func (plugin *AFPacketConfigurator) GetAfPacketStatusByName(name string) (exists
 }
 
 // GetAfPacketStatusByHost looks for cached interface by host interface and returns its state and data
-func (plugin *AFPacketConfigurator) GetAfPacketStatusByHost(hostIf string) (exists, pending bool, ifData *intf.Interfaces_Interface) {
-	data, ok := plugin.afPacketByHostIf[hostIf]
+func (ac *AFPacketConfigurator) GetAfPacketStatusByHost(hostIf string) (exists, pending bool, ifData *intf.Interfaces_Interface) {
+	data, ok := ac.afPacketByHostIf[hostIf]
 	if data != nil {
 		return ok, data.pending, data.config
 	}
@@ -64,163 +63,170 @@ func (plugin *AFPacketConfigurator) GetAfPacketStatusByHost(hostIf string) (exis
 }
 
 // GetHostInterfacesEntry looks for cached host interface and returns true if exists
-func (plugin *AFPacketConfigurator) GetHostInterfacesEntry(hostIf string) bool {
-	_, ok := plugin.linuxHostInterfaces[hostIf]
+func (ac *AFPacketConfigurator) GetHostInterfacesEntry(hostIf string) bool {
+	_, ok := ac.linuxHostInterfaces[hostIf]
 	return ok
 }
 
 // Init members of AFPacketConfigurator.
-func (plugin *AFPacketConfigurator) Init(logger logging.Logger, ifHandler vppcalls.IfVppAPI, linux interface{},
+func (ac *AFPacketConfigurator) Init(logger logging.Logger, ifHandler vppcalls.IfVppAPI, linux interface{},
 	indexes ifaceidx.SwIfIndexRW) (err error) {
-	plugin.log = logger
-	plugin.log.Infof("Initializing AF-Packet configurator")
+	ac.log = logger
+	ac.log.Infof("Initializing AF-Packet configurator")
 
 	// VPP API handler
-	plugin.ifHandler = ifHandler
+	ac.ifHandler = ifHandler
 
 	// Linux
-	plugin.linux = linux
+	ac.linux = linux
 
 	// Mappings
-	plugin.ifIndexes = indexes
-	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
-	plugin.afPacketByName = make(map[string]*AfPacketConfig)
-	plugin.linuxHostInterfaces = make(map[string]struct{})
+	ac.ifIndexes = indexes
+	ac.afPacketByHostIf = make(map[string]*AfPacketConfig)
+	ac.afPacketByName = make(map[string]*AfPacketConfig)
+	ac.linuxHostInterfaces = make(map[string]struct{})
 
 	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *AFPacketConfigurator) clearMapping() {
-	plugin.afPacketByHostIf = make(map[string]*AfPacketConfig)
-	plugin.afPacketByName = make(map[string]*AfPacketConfig)
+func (ac *AFPacketConfigurator) clearMapping() {
+	ac.afPacketByHostIf = make(map[string]*AfPacketConfig)
+	ac.afPacketByName = make(map[string]*AfPacketConfig)
 }
 
 // ConfigureAfPacketInterface creates a new Afpacket interface or marks it as pending if the target host interface doesn't exist yet.
-func (plugin *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.Interfaces_Interface) (swIndex uint32, pending bool, err error) {
+func (ac *AFPacketConfigurator) ConfigureAfPacketInterface(afpacket *intf.Interfaces_Interface) (swIndex uint32, pending bool, err error) {
 	if afpacket.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
-		return 0, false, errors.New("expecting AfPacket interface")
+		return 0, false, errors.Errorf("expecting AfPacket-type interface, received %v", afpacket.Type)
 	}
 
-	if plugin.linux != nil {
-		_, hostIfAvail := plugin.linuxHostInterfaces[afpacket.Afpacket.HostIfName]
+	if ac.linux != nil {
+		_, hostIfAvail := ac.linuxHostInterfaces[afpacket.Afpacket.HostIfName]
 		if !hostIfAvail {
-			plugin.addToCache(afpacket, true)
+			ac.addToCache(afpacket, true)
 			return 0, true, nil
 		}
 	}
-	swIdx, err := plugin.ifHandler.AddAfPacketInterface(afpacket.Name, afpacket.PhysAddress, afpacket.Afpacket)
+	swIdx, err := ac.ifHandler.AddAfPacketInterface(afpacket.Name, afpacket.PhysAddress, afpacket.Afpacket)
 	if err != nil {
-		plugin.addToCache(afpacket, true)
+		ac.addToCache(afpacket, true)
 		return 0, true, err
 	}
-	plugin.addToCache(afpacket, false)
+	ac.addToCache(afpacket, false)
 	// If the interface is not in pending state, register it
-	plugin.ifIndexes.RegisterName(afpacket.Name, swIdx, afpacket)
+	ac.ifIndexes.RegisterName(afpacket.Name, swIdx, afpacket)
+	ac.log.Debugf("Interface %s registered to mapping", afpacket.Name)
 
 	return swIdx, false, nil
 }
 
 // ModifyAfPacketInterface updates the cache with afpacket configurations and tells InterfaceConfigurator if the interface
 // needs to be recreated for the changes to be applied.
-func (plugin *AFPacketConfigurator) ModifyAfPacketInterface(newConfig *intf.Interfaces_Interface,
+func (ac *AFPacketConfigurator) ModifyAfPacketInterface(newConfig *intf.Interfaces_Interface,
 	oldConfig *intf.Interfaces_Interface) (recreate bool, err error) {
 
 	if oldConfig.Type != intf.InterfaceType_AF_PACKET_INTERFACE ||
 		newConfig.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
-		return false, errors.New("expecting AfPacket interface")
+		return false, errors.Errorf("expecting AfPacket-type interface, received %v/%v",
+			oldConfig.Type, newConfig.Type)
 	}
 
-	afpacket, found := plugin.afPacketByName[oldConfig.Name]
+	afpacket, found := ac.afPacketByName[oldConfig.Name]
 	if !found || afpacket.pending || (newConfig.Afpacket.HostIfName != oldConfig.Afpacket.HostIfName) {
 		return true, nil
 	}
 
 	// rewrite cached configuration
-	plugin.addToCache(newConfig, false)
+	ac.addToCache(newConfig, false)
 
 	return false, nil
 }
 
 // DeleteAfPacketInterface removes Afpacket interface from VPP and from the cache.
-func (plugin *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Interfaces_Interface, ifIdx uint32) (err error) {
+func (ac *AFPacketConfigurator) DeleteAfPacketInterface(afpacket *intf.Interfaces_Interface, ifIdx uint32) (err error) {
 	if afpacket.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
-		return errors.New("expecting AfPacket interface")
+		return errors.Errorf("expecting AfPacket-type interface, received %v", afpacket.Type)
 	}
 
-	config, found := plugin.afPacketByName[afpacket.Name]
+	config, found := ac.afPacketByName[afpacket.Name]
 	if !found || !config.pending {
-		err = plugin.ifHandler.DeleteAfPacketInterface(afpacket.Name, ifIdx, afpacket.GetAfpacket())
+		err = ac.ifHandler.DeleteAfPacketInterface(afpacket.Name, ifIdx, afpacket.GetAfpacket())
 		// unregister interface to let other plugins know that it is removed from the vpp
-		plugin.ifIndexes.UnregisterName(afpacket.Name)
+		ac.ifIndexes.UnregisterName(afpacket.Name)
+		ac.log.Debugf("Interface %s unregistered from mapping", afpacket.Name)
 	}
-	plugin.removeFromCache(afpacket)
+	ac.removeFromCache(afpacket)
 
 	return err
 }
 
 // ResolveCreatedLinuxInterface reacts to a newly created Linux interface.
-func (plugin *AFPacketConfigurator) ResolveCreatedLinuxInterface(interfaceName, hostIfName string, interfaceIndex uint32) *intf.Interfaces_Interface {
-	if plugin.linux == nil {
-		plugin.log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).
-			Warn("Unexpectedly learned about a new Linux interface")
-		return nil
+func (ac *AFPacketConfigurator) ResolveCreatedLinuxInterface(ifName, hostIfName string, ifIdx uint32) (*intf.Interfaces_Interface, error) {
+	if ac.linux == nil {
+		ac.log.Debugf("Registered linux interface %s not resolved, linux plugin disabled", ifName)
+		return nil, nil
 	}
-	plugin.linuxHostInterfaces[hostIfName] = struct{}{}
+	ac.linuxHostInterfaces[hostIfName] = struct{}{}
+	ac.log.Debugf("Linux interface %s registered as host", hostIfName)
 
-	afpacket, found := plugin.afPacketByHostIf[hostIfName]
+	afpacket, found := ac.afPacketByHostIf[hostIfName]
 	if found {
 		if !afpacket.pending {
 			// this should not happen, log as warning
-			plugin.log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).
-				Warn("Re-creating already configured AFPacket interface")
+			ac.log.Warn("Re-creating already configured AFPacket interface %s (host name: %s)", ifName, hostIfName)
 			// remove the existing afpacket and let the interface configurator to re-create it
-			plugin.DeleteAfPacketInterface(afpacket.config, interfaceIndex)
+			if err := ac.DeleteAfPacketInterface(afpacket.config, ifIdx); err != nil {
+				return nil, err
+			}
 		}
 		// afpacket is now free to get created
-		return afpacket.config
+		return afpacket.config, nil
 	}
-	return nil // nothing to configure
+	return nil, nil // nothing to configure
 }
 
 // ResolveDeletedLinuxInterface reacts to a removed Linux interface.
-func (plugin *AFPacketConfigurator) ResolveDeletedLinuxInterface(interfaceName, hostIfName string, ifIdx uint32) {
-	if plugin.linux == nil {
-		plugin.log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).
-			Warn("Unexpectedly learned about removed Linux interface")
-		return
+func (ac *AFPacketConfigurator) ResolveDeletedLinuxInterface(ifName, hostIfName string, ifIdx uint32) error {
+	if ac.linux == nil {
+		ac.log.Debugf("Unregistered linux interface %s not resolved, linux plugin disabled", ifName)
+		return nil
 	}
-	delete(plugin.linuxHostInterfaces, hostIfName)
+	delete(ac.linuxHostInterfaces, hostIfName)
+	ac.log.Debugf("Linux interface %s unregistered as host", hostIfName)
 
-	afpacket, found := plugin.afPacketByHostIf[hostIfName]
+	afpacket, found := ac.afPacketByHostIf[hostIfName]
 	if found {
 		// remove the interface and re-add as pending
-		if err := plugin.DeleteAfPacketInterface(afpacket.config, ifIdx); err != nil {
-			plugin.log.Errorf("Failed to remove af_packet interface %s (host name: %s)", interfaceName, hostIfName)
+		if err := ac.DeleteAfPacketInterface(afpacket.config, ifIdx); err != nil {
+			return errors.Errorf("Failed to remove af_packet interface %s (host name: %s): %v",
+				ifName, hostIfName, err)
 		} else {
-			if _, _, err := plugin.ConfigureAfPacketInterface(afpacket.config); err != nil {
-				plugin.log.Errorf("Failed to configure af_packet interface %s (host name: %s)", interfaceName, hostIfName)
+			if _, _, err := ac.ConfigureAfPacketInterface(afpacket.config); err != nil {
+				return errors.Errorf("Failed to configure af_packet interface %s (host name: %s): %v",
+					ifName, hostIfName, err)
 			}
 		}
 	}
+	return nil
 }
 
 // IsPendingAfPacket returns true if the given config belongs to pending Afpacket interface.
-func (plugin *AFPacketConfigurator) IsPendingAfPacket(iface *intf.Interfaces_Interface) (pending bool) {
-	afpacket, found := plugin.afPacketByName[iface.Name]
+func (ac *AFPacketConfigurator) IsPendingAfPacket(iface *intf.Interfaces_Interface) (pending bool) {
+	afpacket, found := ac.afPacketByName[iface.Name]
 	return found && afpacket.pending
 }
 
-func (plugin *AFPacketConfigurator) addToCache(afpacket *intf.Interfaces_Interface, pending bool) {
+func (ac *AFPacketConfigurator) addToCache(afpacket *intf.Interfaces_Interface, pending bool) {
 	config := &AfPacketConfig{config: afpacket, pending: pending}
-	plugin.afPacketByHostIf[afpacket.Afpacket.HostIfName] = config
-	plugin.afPacketByName[afpacket.Name] = config
-	plugin.log.Debugf("Afpacket interface with name %v added to cache (hostIf: %s, pending: %t)",
+	ac.afPacketByHostIf[afpacket.Afpacket.HostIfName] = config
+	ac.afPacketByName[afpacket.Name] = config
+	ac.log.Debugf("Afpacket interface with name %v added to cache (hostIf: %s, pending: %t)",
 		afpacket.Name, afpacket.Afpacket.HostIfName, pending)
 }
 
-func (plugin *AFPacketConfigurator) removeFromCache(afpacket *intf.Interfaces_Interface) {
-	delete(plugin.afPacketByName, afpacket.Name)
-	delete(plugin.afPacketByHostIf, afpacket.Afpacket.HostIfName)
-	plugin.log.Debugf("Afpacket interface with name %v removed from cache", afpacket.Name)
+func (ac *AFPacketConfigurator) removeFromCache(afpacket *intf.Interfaces_Interface) {
+	delete(ac.afPacketByName, afpacket.Name)
+	delete(ac.afPacketByHostIf, afpacket.Afpacket.HostIfName)
+	ac.log.Debugf("Afpacket interface with name %v removed from cache", afpacket.Name)
 }
