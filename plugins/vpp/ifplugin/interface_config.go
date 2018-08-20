@@ -191,7 +191,7 @@ func (ic *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_In
 		if err != nil || cached {
 			return err
 		}
-		ifIdx, err = ic.ifHandler.AddVxlanTunnel(iface.Name, iface.Vxlan, iface.Vrf, multicastIfIdx)
+		ifIdx, err = ic.ifHandler.AddVxLanTunnel(iface.Name, iface.Vrf, multicastIfIdx, iface.Vxlan)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 		ifIdx, err = ic.ifHandler.AddLoopbackInterface(iface.Name)
 	case intf.InterfaceType_ETHERNET_CSMACD:
@@ -794,7 +794,7 @@ func (ic *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_I
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		err = ic.ifHandler.DeleteMemifInterface(oldConfig.Name, ifIdx)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		err = ic.ifHandler.DeleteVxlanTunnel(oldConfig.Name, ifIdx, oldConfig.GetVxlan())
+		err = ic.ifHandler.DeleteVxLanTunnel(oldConfig.Name, ifIdx, oldConfig.Vrf, oldConfig.GetVxlan())
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 		err = ic.ifHandler.DeleteLoopbackInterface(oldConfig.Name, ifIdx)
 	case intf.InterfaceType_ETHERNET_CSMACD:

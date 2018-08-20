@@ -2,6 +2,7 @@
 
 
 [[projects]]
+  branch = "master"
   digest = "1:090b939a424724c096b5002d62ea42d9a69dc5fecc3eae0218955a5c6e4070ac"
   name = "git.fd.io/govpp.git"
   packages = [
@@ -15,8 +16,8 @@
     "core",
   ]
   pruneopts = "UT"
-  revision = "0ed38dbb620ef88a2007179265f37742ee46c305"
-  source = "github.com/ligato/govpp"
+  revision = "a3bb834db727a3ac9a1ffcfeae9265e5dead851f"
+  source = "github.com/FDio/govpp"
 
 [[projects]]
   branch = "master"
@@ -129,7 +130,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:d665be6d68a70466a6df6939d9d7dace71df3d7ecbea190e7abb9b48f8d4c37c"
+  digest = "1:4ec8504b68b75f562efc4b291cba33194f88eaa4e68d9fc449e5b7ca68539329"
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -144,22 +145,18 @@
     "api/types/swarm/runtime",
     "api/types/versions",
     "opts",
-    "pkg/archive",
     "pkg/fileutils",
     "pkg/homedir",
     "pkg/idtools",
     "pkg/ioutils",
-    "pkg/jsonmessage",
     "pkg/longpath",
     "pkg/mount",
     "pkg/pools",
     "pkg/stdcopy",
     "pkg/system",
-    "pkg/term",
-    "pkg/term/windows",
   ]
   pruneopts = "UT"
-  revision = "fe8aac6f5ae413a967adb0adad0b54abdfb825c4"
+  revision = "3dfb26ab3cbf961298f8ce3f94659b5fe4146ceb"
 
 [[projects]]
   digest = "1:87dcb59127512b84097086504c16595cf8fef35b9e0bfca565dfc06e198158d7"
@@ -176,6 +173,13 @@
   pruneopts = "UT"
   revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
   version = "v0.3.2"
+
+[[projects]]
+  digest = "1:00d0d550a1f1d7ca03270ebc1e136f21f6b9dab37f0c37e9a90d56d2f7afcff9"
+  name = "github.com/docker/libnetwork"
+  packages = ["ipamutils"]
+  pruneopts = "UT"
+  revision = "19279f0492417475b6bfbd0aa529f73e8f178fb5"
 
 [[projects]]
   digest = "1:1f0c7ab489b407a7f8f9ad16c25a504d28ab461517a971d341388a56156c1bd7"
@@ -234,11 +238,17 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:966a69c49e18a71e2cf54a281acca9992f6189efa97fcd27064dae12d7303f06"
+  digest = "1:027133e2c23fd4ff467e66d928ab4a64f7fd7cb2f77acdb580c483f7389d22d7"
   name = "github.com/fsouza/go-dockerclient"
-  packages = ["."]
+  packages = [
+    ".",
+    "internal/archive",
+    "internal/jsonmessage",
+    "internal/term",
+  ]
   pruneopts = "UT"
-  revision = "9e921e30db8bcc1221fa0485ad9ce5b195fb4445"
+  revision = "8842d40dbf5ee062d80f9dc429db31a0fe0cdc73"
+  version = "v1.2.2"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
@@ -388,6 +398,7 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
   digest = "1:54c1c618aaa5d05b74f94668912ae990904a18d5dd28aa4b72ef06b393a1a459"
   name = "github.com/ligato/cn-infra"
   packages = [
@@ -519,12 +530,9 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:1869683e323ebff2bdf8adcb560f82bf6f8d94019d35099e3403f7df12e9c07e"
+  digest = "1:38ee335aedf4626620f3cf8f605661e71abdcce7b40b38921962beb3980f0a20"
   name = "github.com/opencontainers/runc"
-  packages = [
-    "libcontainer/system",
-    "libcontainer/user",
-  ]
+  packages = ["libcontainer/user"]
   pruneopts = "UT"
   revision = "baf6536d6259209c3edfa2b22237af82942d3dfa"
   version = "v0.1.1"
@@ -696,11 +704,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:720048f3e2f5bd89b5322b8fe427c911828af06c11bb7f376eae63de9a545a92"
+  digest = "1:322768c2d083e730e27856aef1551d7ebc9e209f9e9549aca9d4e1cb095b5e87"
   name = "golang.org/x/net"
   packages = [
     "context",
-    "context/ctxhttp",
     "html",
     "html/atom",
     "html/charset",
