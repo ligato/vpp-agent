@@ -172,17 +172,17 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(bfd.AuthKeysPrefix) {
 		if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bfdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(bfd.SessionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bfdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(bfd.EchoFunctionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bfdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l2.BdPrefix) {

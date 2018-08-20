@@ -41,7 +41,6 @@ const ifTempName = "temp-if-name"
 //    is found, interface is modified if needed and registered.
 // 4. All remaining NB interfaces are configured
 func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error {
-	// Calculate and log interface resync
 	defer func() {
 		if ic.stopwatch != nil {
 			ic.stopwatch.PrintLog()
@@ -224,26 +223,23 @@ func (ic *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interf
 }
 
 // ResyncSession writes BFD sessions to the empty VPP
-func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
-	// Calculate and log bfd resync
+func (bfdc *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if bfdc.stopwatch != nil {
+			bfdc.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	plugin.clearMapping()
+	bfdc.clearMapping()
 
 	// Dump all BFD vppSessions
-	vppBfdSessions, err := plugin.bfdHandler.DumpBfdSessions()
+	vppBfdSessions, err := bfdc.bfdHandler.DumpBfdSessions()
 	if err != nil {
-		return err
+		return errors.Errorf("BFD resync error: failed to dump BFD sessions: %v", err)
 	}
 
 	// Correlate existing BFD sessions from the VPP and NB config, configure new ones
-	var wasErr error
 	for _, nbSession := range nbSessions {
 		// look for configured session
 		var found bool
@@ -251,20 +247,18 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 			// compare fixed fields
 			if nbSession.Interface == vppSession.Interface && nbSession.SourceAddress == vppSession.SourceAddress &&
 				nbSession.DestinationAddress == vppSession.DestinationAddress {
-				plugin.log.Debugf("found configured BFD session for interface %v", nbSession.Interface)
-				plugin.sessionsIndexes.RegisterName(nbSession.Interface, plugin.bfdIDSeq, nil)
-				if err := plugin.ModifyBfdSession(vppSession, nbSession); err != nil {
-					plugin.log.Errorf("BFD resync: error modifying BFD session for interface %v: %v", nbSession.Interface, err)
-					wasErr = err
+				bfdc.sessionsIndexes.RegisterName(nbSession.Interface, bfdc.bfdIDSeq, nil)
+				if err := bfdc.ModifyBfdSession(vppSession, nbSession); err != nil {
+					return errors.Errorf("BFD resync error: failed to modify BFD session %s: %v",
+						nbSession.Interface, err)
 				}
 				found = true
 			}
 		}
 		if !found {
 			// configure new BFD session
-			if err := plugin.ConfigureBfdSession(nbSession); err != nil {
-				plugin.log.Errorf("BFD resync: error creating a new BFD session for interface %v: %v", nbSession.Interface, err)
-				wasErr = err
+			if err := bfdc.ConfigureBfdSession(nbSession); err != nil {
+				return errors.Errorf("BFD resync error: failed to create BFD session %s: %v", nbSession.Interface, err)
 			}
 		}
 	}
@@ -272,58 +266,53 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	// Remove old sessions
 	for _, vppSession := range vppBfdSessions.Session {
 		// remove every not-yet-registered session
-		_, _, found := plugin.sessionsIndexes.LookupIdx(vppSession.Interface)
+		_, _, found := bfdc.sessionsIndexes.LookupIdx(vppSession.Interface)
 		if !found {
-			if err := plugin.DeleteBfdSession(vppSession); err != nil {
-				plugin.log.Errorf("BFD resync: error removing BFD session for interface %v: %v", vppSession.Interface, err)
-				wasErr = err
+			if err := bfdc.DeleteBfdSession(vppSession); err != nil {
+				return errors.Errorf("BFD resync error: failed to delete BFD session %s: %v", vppSession.Interface, err)
 			}
 		}
 	}
 
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasErr)
+	bfdc.log.Info("BFD session resync done")
 
-	return wasErr
+	return nil
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP
-func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
-	// Calculate and log bfd resync
+func (bfdc *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if bfdc.stopwatch != nil {
+			bfdc.stopwatch.PrintLog()
 		}
 	}()
 
 	// lookup BFD auth keys
-	vppBfdKeys, err := plugin.bfdHandler.DumpBfdAuthKeys()
+	vppBfdKeys, err := bfdc.bfdHandler.DumpBfdAuthKeys()
 	if err != nil {
-		return err
+		return errors.Errorf("BFD resync error: failed to dump BFD authentication keys: %v", err)
 	}
 
 	// Correlate existing BFD keys from the VPP and NB config, configure new ones
-	var wasErr error
 	for _, nbKey := range nbKeys {
 		// look for configured keys
 		var found bool
 		for _, vppKey := range vppBfdKeys.AuthKeys {
 			// compare key ID
 			if nbKey.Id == vppKey.Id {
-				plugin.log.Debugf("found configured BFD auth key with ID %v", nbKey.Id)
-				plugin.keysIndexes.RegisterName(AuthKeyIdentifier(nbKey.Id), plugin.bfdIDSeq, nil)
-				if err := plugin.ModifyBfdAuthKey(vppKey, nbKey); err != nil {
-					plugin.log.Errorf("BFD resync: error modifying BFD auth key with ID %v: %v", nbKey.Id, err)
-					wasErr = err
+				bfdc.keysIndexes.RegisterName(AuthKeyIdentifier(nbKey.Id), bfdc.bfdIDSeq, nil)
+				if err := bfdc.ModifyBfdAuthKey(vppKey, nbKey); err != nil {
+					return errors.Errorf("BFD resync error: failed to modify BFD authentication key %s (ID %d): %v",
+						nbKey.Name, nbKey.Id, err)
 				}
 				found = true
 			}
 		}
 		if !found {
 			// configure new BFD authentication key
-			if err := plugin.ConfigureBfdAuthKey(nbKey); err != nil {
-				plugin.log.Errorf("BFD resync: error creating a new BFD auth key with ID %v: %v", nbKey.Id, err)
-				wasErr = err
+			if err := bfdc.ConfigureBfdAuthKey(nbKey); err != nil {
+				return errors.Errorf("BFD resync error: failed to configure BFD authentication key %s (ID %d): %v",
+					nbKey.Name, nbKey.Id, err)
 			}
 		}
 	}
@@ -331,24 +320,27 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	// Remove old keys
 	for _, vppKey := range vppBfdKeys.AuthKeys {
 		// remove every not-yet-registered keys
-		_, _, found := plugin.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
+		_, _, found := bfdc.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
 		if !found {
-			if err := plugin.DeleteBfdAuthKey(vppKey); err != nil {
-				plugin.log.Errorf("BFD resync: error removing BFD auth key with ID %v: %v", vppKey.Id, err)
-				wasErr = err
+			if err := bfdc.DeleteBfdAuthKey(vppKey); err != nil {
+				return errors.Errorf("BFD resync error: failed to delete BFD authentication key %s (ID %d): %v",
+					vppKey.Name, vppKey.Id, err)
 			}
 		}
 	}
 
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasErr)
+	bfdc.log.Info("BFD authentication key resync done")
 
-	return wasErr
+	return nil
 }
 
 // ResyncEchoFunction writes BFD echo function to the empty VPP
-func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Echo source begin.")
-
+func (bfdc *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
+	defer func() {
+		if bfdc.stopwatch != nil {
+			bfdc.stopwatch.PrintLog()
+		}
+	}()
 	if len(echoFunctions) == 0 {
 		// Nothing to do here. Currently VPP does not support BFD echo dump so agent does not know
 		// whether there is echo function already configured and cannot remove it
@@ -357,11 +349,12 @@ func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHop
 	// Only one config can be used to set an echo source. If there are multiple configurations,
 	// use the first one
 	if len(echoFunctions) > 1 {
-		plugin.log.Warn("Multiple configurations of BFD echo function found. Setting up %v as source",
+		bfdc.log.Warn("BFD resync: multiple configurations of BFD echo function found. Setting up %s as source",
 			echoFunctions[0].EchoSourceInterface)
 	}
-	if err := plugin.ConfigureBfdEchoFunction(echoFunctions[0]); err != nil {
-		return err
+	if err := bfdc.ConfigureBfdEchoFunction(echoFunctions[0]); err != nil {
+		return errors.Errorf("BFD resync error: failed to set interface %s as BFD echo source: %v",
+			echoFunctions[0], err)
 	}
 
 	return nil

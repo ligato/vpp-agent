@@ -792,7 +792,7 @@ func TestDataResyncResyncSessionSameData(t *testing.T) {
 
 // Tests BFDConfigurator authorization key resync
 func TestDataResyncResyncAuthKey(t *testing.T) {
-	ctx, plugin, conn, _ := bfdConfiguratorTestInitialization(t)
+	ctx, plugin, conn, swIfIdx := bfdConfiguratorTestInitialization(t)
 	defer bfdConfiguratorTestTeardown(plugin, conn)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
@@ -815,7 +815,8 @@ func TestDataResyncResyncAuthKey(t *testing.T) {
 			Message: &bfdApi.BfdAuthSetKeyReply{},
 		},
 	})
-
+	// Register
+	swIfIdx.RegisterName("if1", 0, nil)
 	// Test
 	authKey := []*bfd.SingleHopBFD_Key{
 		{

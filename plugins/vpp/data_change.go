@@ -400,9 +400,9 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.Interfaces_In
 		err = plugin.ifConfigurator.DeleteVPPInterface(prevValue)
 	} else if diff {
 		err = plugin.ifConfigurator.ModifyVPPInterface(value, prevValue)
-	} else {
-		err = plugin.ifConfigurator.ConfigureVPPInterface(value)
 	}
+	err = plugin.ifConfigurator.ConfigureVPPInterface(value)
+
 	return plugin.ifConfigurator.LogError(err)
 }
 
@@ -411,12 +411,15 @@ func (plugin *Plugin) dataChangeBfdSession(diff bool, value *bfd.SingleHopBFD_Se
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdSession ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bfdConfigurator.DeleteBfdSession(prevValue)
+		err = plugin.bfdConfigurator.DeleteBfdSession(prevValue)
 	} else if diff {
-		return plugin.bfdConfigurator.ModifyBfdSession(prevValue, value)
+		err = plugin.bfdConfigurator.ModifyBfdSession(prevValue, value)
 	}
-	return plugin.bfdConfigurator.ConfigureBfdSession(value)
+	err = plugin.bfdConfigurator.ConfigureBfdSession(value)
+
+	return plugin.bfdConfigurator.LogError(err)
 }
 
 // DataChangeBfdKey propagates data change to the bfdConfigurator.
@@ -424,12 +427,15 @@ func (plugin *Plugin) dataChangeBfdKey(diff bool, value *bfd.SingleHopBFD_Key, p
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdKey ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bfdConfigurator.DeleteBfdAuthKey(prevValue)
+		err = plugin.bfdConfigurator.DeleteBfdAuthKey(prevValue)
 	} else if diff {
-		return plugin.bfdConfigurator.ModifyBfdAuthKey(prevValue, value)
+		err = plugin.bfdConfigurator.ModifyBfdAuthKey(prevValue, value)
 	}
-	return plugin.bfdConfigurator.ConfigureBfdAuthKey(value)
+	err = plugin.bfdConfigurator.ConfigureBfdAuthKey(value)
+
+	return plugin.bfdConfigurator.LogError(err)
 }
 
 // DataChangeBfdEchoFunction propagates data change to the bfdConfigurator.
@@ -437,12 +443,15 @@ func (plugin *Plugin) dataChangeBfdEchoFunction(diff bool, value *bfd.SingleHopB
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdEchoFunction ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bfdConfigurator.DeleteBfdEchoFunction(prevValue)
+		err = plugin.bfdConfigurator.DeleteBfdEchoFunction(prevValue)
 	} else if diff {
-		return plugin.bfdConfigurator.ModifyBfdEchoFunction(prevValue, value)
+		err = plugin.bfdConfigurator.ModifyBfdEchoFunction(prevValue, value)
 	}
-	return plugin.bfdConfigurator.ConfigureBfdEchoFunction(value)
+	err = plugin.bfdConfigurator.ConfigureBfdEchoFunction(value)
+
+	return plugin.bfdConfigurator.LogError(err)
 }
 
 // dataChangeBD propagates data change to the bdConfigurator.
