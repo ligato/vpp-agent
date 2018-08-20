@@ -52,10 +52,10 @@ type IfVppWrite interface {
 	AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap) (swIfIdx uint32, err error)
 	// DeleteTapInterface calls TapDelete bin API.
 	DeleteTapInterface(ifName string, idx uint32, version uint32) error
-	// AddVxlanTunnel calls AddDelVxlanTunnelReq with flag add=1.
-	AddVxlanTunnel(ifName string, vxlanIntf *interfaces.Interfaces_Interface_Vxlan, encapVrf, multicastIf uint32) (swIndex uint32, err error)
-	// DeleteVxlanTunnel calls AddDelVxlanTunnelReq with flag add=0.
-	DeleteVxlanTunnel(ifName string, idx uint32, vxlanIntf *interfaces.Interfaces_Interface_Vxlan) error
+	// AddVxLanTunnel calls AddDelVxLanTunnelReq with flag add=1.
+	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.Interfaces_Interface_Vxlan) (swIndex uint32, err error)
+	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
+	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.Interfaces_Interface_Vxlan) error
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
 	InterfaceAdminDown(ifIdx uint32) error
 	// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
