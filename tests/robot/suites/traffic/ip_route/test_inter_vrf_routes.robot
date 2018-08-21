@@ -15,6 +15,9 @@ Suite Teardown    Test Teardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
+${WAIT_TIMEOUT}=       20s
+${SYNC_SLEEP}=         2s
+${FINAL_SLEEP}=        1s
 ${IP_1}=               10.1.1.1
 ${IP_2}=               10.1.1.2
 ${IP_3}=               10.1.2.1
@@ -34,16 +37,14 @@ Start Two Agents And Then Configure With Default And Non Default VRF
     Create Master memif1 on agent_vpp_1 with VRF 2, IP ${IP_3}, MAC 02:f1:be:90:02:00, key 1 and m1.sock socket
     Create Slave memif1 on agent_vpp_2 with VRF 2, IP ${IP_4}, MAC 02:f1:be:90:02:02, key 1 and m1.sock socket
 
-    Sleep    14
-
-    List of interfaces On agent_vpp_1 Should Contain Interface memif1/1
-    List of interfaces On agent_vpp_2 Should Contain Interface memif1/1
-    List of interfaces On agent_vpp_1 Should Contain Interface memif2/1
-    List of interfaces On agent_vpp_2 Should Contain Interface memif2/1
-    IP Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP_1}/32
-    IP Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP_3}/32
-    IP Fib Table 0 On agent_vpp_2 Should Contain Route With IP ${IP_2}/32
-    IP Fib Table 2 On agent_vpp_2 Should Contain Route With IP ${IP_4}/32
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    List of interfaces On agent_vpp_1 Should Contain Interface memif1/1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    List of interfaces On agent_vpp_2 Should Contain Interface memif1/1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    List of interfaces On agent_vpp_1 Should Contain Interface memif2/1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    List of interfaces On agent_vpp_2 Should Contain Interface memif2/1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP_1}/32
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP_3}/32
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Fib Table 0 On agent_vpp_2 Should Contain Route With IP ${IP_2}/32
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP Fib Table 2 On agent_vpp_2 Should Contain Route With IP ${IP_4}/32
 
 
 Check Normal Ping Inside VRF
@@ -92,9 +93,8 @@ Check Route With Ping
     Ping On agent_vpp_1 With IP ${IP_4}, Source memif2/1
     Ping On agent_vpp_1 With IP ${IP_3}, Source memif1/1
 
-#Manual Test Sleep
-#    Sleep   10s
-
+Final Sleep For Manual Checking
+    Sleep   ${FINAL_SLEEP}
 
 *** Keywords ***
 List of interfaces On ${node} Should Contain Interface ${int}

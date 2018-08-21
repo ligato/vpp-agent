@@ -309,6 +309,14 @@ vpp_ctl: Delete Linux Interface
     Log Many     ${out}
     [Return]    ${out}
 
+vpp_ctl: Delete Route
+    [Arguments]    ${node}    ${id}    ${ip}    ${prefix}
+    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Delete key  ${uri}
+    Log Many        ${out}
+    [Return]       ${out}
+
 vpp_ctl: Delete Routes
     [Arguments]    ${node}    ${id}
     ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib
