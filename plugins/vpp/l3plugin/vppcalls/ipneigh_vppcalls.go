@@ -18,16 +18,9 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
-
-// ArpMessages is list of used VPP messages for compatibility check
-var IPNeighMessages = []govppapi.Message{
-	&ip.IPScanNeighborEnableDisable{},
-	&ip.IPScanNeighborEnableDisableReply{},
-}
 
 func (h *ipNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
 	defer func(t time.Time) {

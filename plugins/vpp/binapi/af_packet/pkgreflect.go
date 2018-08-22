@@ -13,6 +13,7 @@ var Types = map[string]reflect.Type{
 	"AfPacketDump": reflect.TypeOf((*AfPacketDump)(nil)).Elem(),
 	"AfPacketSetL4CksumOffload": reflect.TypeOf((*AfPacketSetL4CksumOffload)(nil)).Elem(),
 	"AfPacketSetL4CksumOffloadReply": reflect.TypeOf((*AfPacketSetL4CksumOffloadReply)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{

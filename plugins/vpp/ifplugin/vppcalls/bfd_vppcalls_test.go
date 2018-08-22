@@ -57,7 +57,7 @@ func TestAddBfdUDPSession(t *testing.T) {
 	Expect(vppMsg.DesiredMinTx).To(BeEquivalentTo(10))
 	Expect(vppMsg.RequiredMinRx).To(BeEquivalentTo(15))
 	Expect(vppMsg.DetectMult).To(BeEquivalentTo(2))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 	Expect(vppMsg.IsAuthenticated).To(BeEquivalentTo(1))
 }
 
@@ -89,7 +89,7 @@ func TestAddBfdUDPSessionIPv6(t *testing.T) {
 	Expect(vppMsg.DesiredMinTx).To(BeEquivalentTo(10))
 	Expect(vppMsg.RequiredMinRx).To(BeEquivalentTo(15))
 	Expect(vppMsg.DetectMult).To(BeEquivalentTo(2))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
 	Expect(vppMsg.IsAuthenticated).To(BeEquivalentTo(1))
 }
 
@@ -120,7 +120,7 @@ func TestAddBfdUDPSessionAuthKeyNotFound(t *testing.T) {
 	Expect(vppMsg.DesiredMinTx).To(BeEquivalentTo(10))
 	Expect(vppMsg.RequiredMinRx).To(BeEquivalentTo(15))
 	Expect(vppMsg.DetectMult).To(BeEquivalentTo(2))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 	Expect(vppMsg.IsAuthenticated).To(BeEquivalentTo(0))
 }
 
@@ -144,7 +144,7 @@ func TestAddBfdUDPSessionNoAuthKey(t *testing.T) {
 	Expect(vppMsg.DesiredMinTx).To(BeEquivalentTo(10))
 	Expect(vppMsg.RequiredMinRx).To(BeEquivalentTo(15))
 	Expect(vppMsg.DetectMult).To(BeEquivalentTo(2))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 	Expect(vppMsg.IsAuthenticated).To(BeEquivalentTo(0))
 }
 
@@ -267,7 +267,7 @@ func TestAddBfdUDPSessionFromDetails(t *testing.T) {
 		SwIfIndex:       1,
 		LocalAddr:       net.ParseIP("10.0.0.1"),
 		PeerAddr:        net.ParseIP("20.0.0.1"),
-		IsIpv6:          0,
+		IsIPv6:          0,
 		IsAuthenticated: 1,
 		BfdKeyID:        1,
 		RequiredMinRx:   15,
@@ -282,7 +282,7 @@ func TestAddBfdUDPSessionFromDetails(t *testing.T) {
 	Expect(vppMsg.DesiredMinTx).To(BeEquivalentTo(10))
 	Expect(vppMsg.RequiredMinRx).To(BeEquivalentTo(15))
 	Expect(vppMsg.DetectMult).To(BeEquivalentTo(2))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 	Expect(vppMsg.IsAuthenticated).To(BeEquivalentTo(1))
 }
 
@@ -298,7 +298,7 @@ func TestAddBfdUDPSessionFromDetailsAuthKeyNotFound(t *testing.T) {
 		SwIfIndex:       1,
 		LocalAddr:       net.ParseIP("10.0.0.1"),
 		PeerAddr:        net.ParseIP("20.0.0.1"),
-		IsIpv6:          0,
+		IsIPv6:          0,
 		IsAuthenticated: 1,
 		BfdKeyID:        1,
 		RequiredMinRx:   15,
@@ -324,7 +324,7 @@ func TestAddBfdUDPSessionFromDetailsNoAuth(t *testing.T) {
 		SwIfIndex:       1,
 		LocalAddr:       net.ParseIP("10.0.0.1"),
 		PeerAddr:        net.ParseIP("20.0.0.1"),
-		IsIpv6:          0,
+		IsIPv6:          0,
 		IsAuthenticated: 0,
 		BfdKeyID:        1,
 		RequiredMinRx:   15,
@@ -350,7 +350,7 @@ func TestAddBfdUDPSessionFromDetailsError(t *testing.T) {
 		SwIfIndex: 1,
 		LocalAddr: net.ParseIP("10.0.0.1"),
 		PeerAddr:  net.ParseIP("20.0.0.1"),
-		IsIpv6:    0,
+		IsIPv6:    0,
 	}, bfdKeyIndexes)
 
 	Expect(err).ToNot(BeNil())
@@ -370,7 +370,7 @@ func TestAddBfdUDPSessionFromDetailsRetval(t *testing.T) {
 		SwIfIndex: 1,
 		LocalAddr: net.ParseIP("10.0.0.1"),
 		PeerAddr:  net.ParseIP("20.0.0.1"),
-		IsIpv6:    0,
+		IsIPv6:    0,
 	}, bfdKeyIndexes)
 
 	Expect(err).ToNot(BeNil())
@@ -401,7 +401,7 @@ func TestModifyBfdUDPSession(t *testing.T) {
 	Expect(vppMsg.DesiredMinTx).To(BeEquivalentTo(10))
 	Expect(vppMsg.RequiredMinRx).To(BeEquivalentTo(15))
 	Expect(vppMsg.DetectMult).To(BeEquivalentTo(2))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 }
 
 func TestModifyBfdUDPSessionIPv6(t *testing.T) {
@@ -422,7 +422,7 @@ func TestModifyBfdUDPSessionIPv6(t *testing.T) {
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*bfd_api.BfdUDPMod)
 	Expect(ok).To(BeTrue())
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
 }
 
 func TestModifyBfdUDPSessionDifferentIPVer(t *testing.T) {
@@ -548,7 +548,7 @@ func TestDeleteBfdUDPSession(t *testing.T) {
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
 	Expect(vppMsg.LocalAddr).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
 	Expect(vppMsg.PeerAddr).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 }
 
 func TestDeleteBfdUDPSessionError(t *testing.T) {
@@ -842,7 +842,6 @@ func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BfdVppAPI, iface
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "bfd-if-idx", nil))
-	bfdHandler, err := vppcalls.NewBfdVppHandler(ctx.MockChannel, ifIndexes, log, nil)
-	Expect(err).To(BeNil())
+	bfdHandler := vppcalls.NewBfdVppHandler(ctx.MockChannel, ifIndexes, log, nil)
 	return ctx, bfdHandler, ifIndexes
 }

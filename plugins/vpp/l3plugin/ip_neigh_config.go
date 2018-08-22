@@ -40,7 +40,7 @@ type IPNeighConfigurator struct {
 	stopwatch *measure.Stopwatch
 }
 
-// Init VPP channel and check message compatibility
+// Init VPP channel and vppcalls handler
 func (p *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, enableStopwatch bool) (err error) {
 	// Logger
 	p.log = logger.NewLogger("-l3-ip-neigh-conf")
@@ -58,9 +58,7 @@ func (p *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	}
 
 	// VPP API handler
-	if p.ipNeighHandler, err = vppcalls.NewIPNeighVppHandler(p.vppChan, p.log, p.stopwatch); err != nil {
-		return err
-	}
+	p.ipNeighHandler = vppcalls.NewIPNeighVppHandler(p.vppChan, p.log, p.stopwatch)
 
 	return nil
 }

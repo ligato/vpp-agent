@@ -919,8 +919,7 @@ func testAddRemoveSteering(t *testing.T, removal bool) {
 
 func setup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.SRv6VppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	vppCalls, err := vppcalls.NewSRv6VppHandler(ctx.MockChannel, logrus.DefaultLogger(), nil)
-	Expect(err).To(BeNil())
+	vppCalls := vppcalls.NewSRv6VppHandler(ctx.MockChannel, logrus.DefaultLogger(), nil)
 	return ctx, vppCalls
 }
 

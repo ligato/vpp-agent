@@ -825,17 +825,18 @@ func (ctl *VppAgentCtl) createDNat() {
 		Label: "dnat1",
 		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMapping{
 			{
-				VrfId:             0,
 				ExternalInterface: "tap1",
 				ExternalIp:        "192.168.0.1",
 				ExternalPort:      8989,
 				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
 					{
+						VrfId:       0,
 						LocalIp:     "172.124.0.2",
 						LocalPort:   6500,
 						Probability: 40,
 					},
 					{
+						VrfId:       0,
 						LocalIp:     "172.125.10.5",
 						LocalPort:   2300,
 						Probability: 40,

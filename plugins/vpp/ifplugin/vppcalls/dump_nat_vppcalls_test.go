@@ -87,7 +87,6 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, iface
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
-	natHandler, err := vppcalls.NewNatVppHandler(ctx.MockChannel, ctx.MockChannel, swIfIndexes, log, nil)
-	Expect(err).To(BeNil())
+	natHandler := vppcalls.NewNatVppHandler(ctx.MockChannel, ctx.MockChannel, swIfIndexes, log, nil)
 	return ctx, natHandler, swIfIndexes
 }

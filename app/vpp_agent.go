@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/consul"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/redis"
+	"github.com/ligato/cn-infra/health/probe"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/vpp-agent/plugins/linux"
@@ -49,6 +50,7 @@ type VPPAgent struct {
 
 	GRPCService *rpc.Plugin
 	RESTAPI     *rest.Plugin
+	Probe       *probe.Plugin
 	Telemetry   *telemetry.Plugin
 }
 
@@ -107,6 +109,7 @@ func New() *VPPAgent {
 		Linux:          linuxPlugin,
 		GRPCService:    &rpc.DefaultPlugin,
 		RESTAPI:        restPlugin,
+		Probe:          &probe.DefaultPlugin,
 		Telemetry:      &telemetry.DefaultPlugin,
 	}
 }

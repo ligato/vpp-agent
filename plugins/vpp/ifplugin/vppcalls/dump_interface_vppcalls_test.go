@@ -18,6 +18,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
@@ -80,7 +81,7 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
 			Ping: true,
 			Message: &vxlan.VxlanTunnelDetails{
-				IsIpv6:     1,
+				IsIPv6:     1,
 				SwIfIndex:  0,
 				SrcAddress: ipv61Parse,
 				DstAddress: ipv62Parse,
@@ -244,6 +245,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
 			Message: &interfaces.SwInterfaceDetails{
+				SwIfIndex:       0,
 				InterfaceName:   []byte("memif1"),
 				Tag:             []byte("interface2"),
 				AdminUpDown:     1,
@@ -264,6 +266,15 @@ func TestDumpInterfacesFull(t *testing.T) {
 			Name:    (&ip.IPAddressDump{}).GetMessageName(),
 			Ping:    true,
 			Message: &ip.IPAddressDetails{},
+		},
+		{
+			Name: (&dhcp.DHCPClientDump{}).GetMessageName(),
+			Ping: true,
+			Message: &dhcp.DHCPClientDetails{
+				Client: dhcp.DHCPClient{
+					SwIfIndex: 0,
+				},
+			},
 		},
 		{
 			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
@@ -326,6 +337,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 	Expect(intface.Mtu).To(Equal(uint32(0))) // default mtu
 	Expect(intface.Enabled).To(BeTrue())
 	Expect(intface.Vrf).To(Equal(uint32(42)))
+	Expect(intface.SetDhcpClient).To(BeTrue())
 
 	// Check memif
 	Expect(intface.Memif.SocketFilename).To(Equal("test"))

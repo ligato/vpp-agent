@@ -47,10 +47,10 @@ func (handler *ifVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, is
 	}
 	if isIPv6 {
 		req.Address = []byte(addr.IP.To16())
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 	} else {
 		req.Address = []byte(addr.IP.To4())
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 	}
 
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}

@@ -5,6 +5,7 @@ package sr
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"SrIP6Address": reflect.TypeOf((*SrIP6Address)(nil)).Elem(),
 	"SrLocalsidAddDel": reflect.TypeOf((*SrLocalsidAddDel)(nil)).Elem(),
 	"SrLocalsidAddDelReply": reflect.TypeOf((*SrLocalsidAddDelReply)(nil)).Elem(),

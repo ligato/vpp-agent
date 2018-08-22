@@ -71,15 +71,7 @@ func (plugin *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux g
 	}
 
 	// Cross-connect VPP API handler
-	if plugin.xcHandler, err = vppcalls.NewXConnectVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-
-	// Message compatibility
-	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.XConnectMessages...); err != nil {
-		plugin.log.Error(err)
-		return err
-	}
+	plugin.xcHandler = vppcalls.NewXConnectVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }

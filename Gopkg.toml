@@ -10,12 +10,13 @@ required = [
 ]
 
 [[constraint]]
+  branch = "master"
   name = "github.com/ligato/cn-infra"
-  revision = "7838b46f7be1b8c032d8f478c3da744c86d3f4c2"
 
 [[constraint]]
-  name = "git.fd.io/govpp.git"
-  revision = "f1bef4a3c66f4408afdeb64cda62ccd8562d0fc6"
+  branch = "master"
+  name =  "git.fd.io/govpp.git"
+  source = "github.com/FDio/govpp"
 
 [[constraint]]
   branch = "master"
@@ -23,7 +24,7 @@ required = [
 
 [[constraint]]
   name = "github.com/fsouza/go-dockerclient"
-  revision = "9e921e30db8bcc1221fa0485ad9ce5b195fb4445"
+  version = "1.0"
 
 [[constraint]]
   name = "github.com/ghodss/yaml"
@@ -36,10 +37,6 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/golang/protobuf"
-
-[[constraint]]
-  name = "github.com/gorilla/mux"
-  version = "1.6.1"
 
 [[constraint]]
   branch = "master"
@@ -80,6 +77,10 @@ required = [
 [[constraint]]
   name = "google.golang.org/grpc"
   version = "1.2.1"
+
+[[override]]
+  name = "github.com/docker/libnetwork"
+  revision = "19279f0492417475b6bfbd0aa529f73e8f178fb5"
 
 [prune]
   go-tests = true

@@ -144,7 +144,7 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi/vpe && pkgreflect
 	cd plugins/vpp/binapi/vxlan && pkgreflect
 	@echo "=> applying fix patches"
-	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch -p1 -i {} \;
+	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
 
 verify-binapi:
 	@echo "=> verifying binary api"
@@ -205,7 +205,7 @@ MDLINKCHECK := $(shell command -v markdown-link-check 2> /dev/null)
 # Get link check tool
 get-linkcheck:
 ifndef MDLINKCHECK
-	sudo apt-get install npm
+	sudo apt-get update && sudo apt-get install -y npm
 	npm install -g markdown-link-check@3.6.2
 endif
 

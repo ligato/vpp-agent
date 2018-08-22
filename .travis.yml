@@ -5,20 +5,18 @@ language: go
 go:
   - "1.10.x"
 
-go_import_path: github.com/ligato/vpp-agent
-
 addons:
   apt:
-    update:
-      packages:
-        - npm
+    packages:
+      - npm
+
+go_import_path: github.com/ligato/vpp-agent
 
 git:
   depth: 10
   submodules: false
 
 cache:
-  apt: true
   directories:
     - $HOME/.cache/go-build
     - $HOME/build-cache
@@ -50,7 +48,7 @@ notifications:
   slack:
     rooms:
       - ligato:xLH4aTwGx1dexPaloAegQ74O
-    on_success: always
+    on_success: change
     on_failure: always
     template:
       - "Build <%{build_url}|#%{build_number}> of *%{repository_slug}* on branch _%{branch}_ in PR: <%{pull_request_url}|#%{pull_request_number}>"

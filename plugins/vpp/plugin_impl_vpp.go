@@ -367,7 +367,7 @@ func (plugin *Plugin) Close() error {
 		// State updaters
 		plugin.ifStateUpdater, plugin.bdStateUpdater,
 		// Channels
-		plugin.ifStateChan, plugin.ifVppNotifChan, plugin.ifIdxWatchCh, plugin.bdStateChan, plugin.bdVppNotifChan,
+		plugin.ifStateChan, plugin.ifVppNotifChan, plugin.bdStateChan, plugin.bdVppNotifChan,
 		plugin.bdIdxWatchCh, plugin.linuxIfIdxWatchCh, plugin.resyncStatusChan, plugin.resyncConfigChan,
 		plugin.changeChan, plugin.errorChannel,
 		// Registrations

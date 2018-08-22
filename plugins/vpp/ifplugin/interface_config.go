@@ -91,15 +91,13 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 	// Config file data
 	plugin.defaultMtu = defaultMtu
 
-	// VPP channel & compatibility
+	// VPP channel
 	if plugin.vppCh, err = goVppMux.NewAPIChannel(); err != nil {
 		return err
 	}
 
 	// VPP API handler
-	if plugin.ifHandler, err = vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
+	plugin.ifHandler = vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch)
 
 	// Mappings
 	plugin.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(plugin.log, "sw_if_indexes", ifaceidx.IndexMetadata))
@@ -115,7 +113,7 @@ func (plugin *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux 
 
 	// DHCP channel
 	plugin.DhcpChan = make(chan govppapi.Message, 1)
-	if _, err := plugin.vppCh.SubscribeNotification(plugin.DhcpChan, dhcp.NewDhcpComplEvent); err != nil {
+	if _, err := plugin.vppCh.SubscribeNotification(plugin.DhcpChan, dhcp.NewDHCPComplEvent); err != nil {
 		return err
 	}
 
@@ -229,7 +227,7 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		if err != nil || cached {
 			return err
 		}
-		ifIdx, err = plugin.ifHandler.AddVxlanTunnel(iface.Name, iface.Vxlan, iface.Vrf, multicastIfIdx)
+		ifIdx, err = plugin.ifHandler.AddVxLanTunnel(iface.Name, iface.Vrf, multicastIfIdx, iface.Vxlan)
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 		ifIdx, err = plugin.ifHandler.AddLoopbackInterface(iface.Name)
 	case intf.InterfaceType_ETHERNET_CSMACD:
@@ -255,12 +253,12 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 
 	var errs []error
 
-	// rx mode
+	// Rx-mode
 	if err := plugin.configRxModeForInterface(iface, ifIdx); err != nil {
 		errs = append(errs, err)
 	}
 
-	// TODO: simplify implementation for rx placement when the binary api call will be available (remove dump)
+	// Rx-placement TODO: simplify implementation for rx placement when the binary api call will be available (remove dump)
 	if iface.RxPlacementSettings != nil {
 		// Required in order to get vpp internal name. Must be called from here, calling in vppcalls causes
 		// import cycle
@@ -277,21 +275,14 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
-	// configure optional mac address (for af packet it is configured in different way)
+	// MAC address (optional, for af-packet is configured in different way)
 	if iface.PhysAddress != "" && iface.Type != intf.InterfaceType_AF_PACKET_INTERFACE {
 		if err := plugin.ifHandler.SetInterfaceMac(ifIdx, iface.PhysAddress); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	// configure optional vrf
-	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
-		if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, iface.Vrf); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	// configure DHCP client
+	// DHCP client
 	if iface.SetDhcpClient {
 		if err := plugin.ifHandler.SetInterfaceAsDHCPClient(ifIdx, iface.Name); err != nil {
 			errs = append(errs, err)
@@ -300,11 +291,29 @@ func (plugin *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interface
 		}
 	}
 
-	// configure IP addresses/un-numbered
+	// Get IP addresses
 	IPAddrs, err := addrs.StrAddrsToStruct(iface.IpAddresses)
 	if err != nil {
 		return err
 	}
+
+	// VRF (optional, unavailable for VxLAN interfaces), has to be done before IP addresses are configured
+	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
+		// Configured separately for IPv4/IPv6
+		isIPv4, isIPv6 := plugin.getIPAddressVersions(IPAddrs)
+		if isIPv4 {
+			if err := plugin.ifHandler.SetInterfaceVrf(ifIdx, iface.Vrf); err != nil {
+				errs = append(errs, err)
+			}
+		}
+		if isIPv6 {
+			if err := plugin.ifHandler.SetInterfaceVrfIPv6(ifIdx, iface.Vrf); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	// Configure IP addresses or unnumbered config
 	if err := plugin.configureIPAddresses(iface.Name, ifIdx, IPAddrs, iface.Unnumbered); err != nil {
 		errs = append(errs, err)
 	}
@@ -655,9 +664,8 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 		return err
 	}
 
-	// configure VRF if it was changed
-	if oldConfig.Vrf != newConfig.Vrf &&
-		ifaceType != intf.InterfaceType_VXLAN_TUNNEL {
+	// Reconfigure VRF
+	if ifaceType != intf.InterfaceType_VXLAN_TUNNEL {
 		plugin.log.Debugf("VRF changed: %v -> %v", oldConfig.Vrf, newConfig.Vrf)
 
 		// interface must not have IP when setting VRF
@@ -666,26 +674,23 @@ func (plugin *InterfaceConfigurator) modifyVPPInterface(newConfig *intf.Interfac
 			wasError = err
 		}
 
-		if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, newConfig.Vrf); err != nil {
-			plugin.log.Error(err)
-			wasError = err
+		// Get VRF IP version using new list of addresses. During modify, interface VRF IP version
+		// should be updated as well.
+		isIPv4, isIPv6 := plugin.getIPAddressVersions(newAddrs)
+		if isIPv4 {
+			if err := plugin.ifHandler.SetInterfaceVrf(ifIdx, newConfig.Vrf); err != nil {
+				plugin.log.Error(err)
+				wasError = err
+			}
+		}
+		if isIPv6 {
+			if err := plugin.ifHandler.SetInterfaceVrfIPv6(ifIdx, newConfig.Vrf); err != nil {
+				plugin.log.Error(err)
+				wasError = err
+			}
 		}
 
 		if err = plugin.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered); err != nil {
-			plugin.log.Error(err)
-			wasError = err
-		}
-
-	} else {
-		// if VRF is not changed, try to add/del only differences
-		del, add := addrs.DiffAddr(newAddrs, oldAddrs)
-
-		if err := plugin.removeIPAddresses(ifIdx, del, oldConfig.Unnumbered); err != nil {
-			plugin.log.Error(err)
-			wasError = err
-		}
-
-		if err := plugin.configureIPAddresses(newConfig.Name, ifIdx, add, newConfig.Unnumbered); err != nil {
 			plugin.log.Error(err)
 			wasError = err
 		}
@@ -893,7 +898,7 @@ func (plugin *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfac
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		err = plugin.ifHandler.DeleteMemifInterface(oldConfig.Name, ifIdx)
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		err = plugin.ifHandler.DeleteVxlanTunnel(oldConfig.Name, ifIdx, oldConfig.GetVxlan())
+		err = plugin.ifHandler.DeleteVxLanTunnel(oldConfig.Name, ifIdx, oldConfig.Vrf, oldConfig.GetVxlan())
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 		err = plugin.ifHandler.DeleteLoopbackInterface(oldConfig.Name, ifIdx)
 	case intf.InterfaceType_ETHERNET_CSMACD:
@@ -930,6 +935,19 @@ func (plugin *InterfaceConfigurator) ResolveDeletedLinuxInterface(interfaceName,
 	plugin.log.WithFields(logging.Fields{"ifName": interfaceName, "hostIfName": hostIfName}).Info("Linux interface was deleted")
 
 	plugin.afPacketConfigurator.ResolveDeletedLinuxInterface(interfaceName, hostIfName, ifIdx)
+}
+
+// Returns two flags, whether provided list of addresses contains IPv4 and/or IPv6 type addresses
+func (plugin *InterfaceConfigurator) getIPAddressVersions(ipAddrs []*net.IPNet) (isIPv4, isIPv6 bool) {
+	for _, ip := range ipAddrs {
+		if ip.IP.To4() != nil {
+			isIPv4 = true
+		} else {
+			isIPv6 = true
+		}
+	}
+
+	return
 }
 
 // returns memif socket filename ID. Registers it if does not exists yet
@@ -1050,14 +1068,14 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 		select {
 		case notification := <-plugin.DhcpChan:
 			switch dhcpNotif := notification.(type) {
-			case *dhcp.DhcpComplEvent:
+			case *dhcp.DHCPComplEvent:
 				var ipAddr, rIPAddr net.IP = dhcpNotif.Lease.HostAddress, dhcpNotif.Lease.RouterAddress
 				var hwAddr net.HardwareAddr = dhcpNotif.Lease.HostMac
 				var ipStr, rIPStr string
 
 				name := string(bytes.SplitN(dhcpNotif.Lease.Hostname, []byte{0x00}, 2)[0])
 
-				if dhcpNotif.Lease.IsIpv6 == 1 {
+				if dhcpNotif.Lease.IsIPv6 == 1 {
 					ipStr = ipAddr.To16().String()
 					rIPStr = rIPAddr.To16().String()
 				} else {
@@ -1081,7 +1099,7 @@ func (plugin *InterfaceConfigurator) watchDHCPNotifications() {
 							return true
 						}
 						return false
-					}(dhcpNotif.Lease.IsIpv6),
+					}(dhcpNotif.Lease.IsIPv6),
 					IPAddress:     ipStr,
 					Mask:          uint32(dhcpNotif.Lease.MaskWidth),
 					PhysAddress:   hwAddr.String(),

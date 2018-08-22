@@ -48,8 +48,8 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, nil)
 	plugin.GetSwIfIndexes().RegisterName("if2", 2, nil)
 	// Test DHCP notifications
-	dhcpIpv4 := &dhcp_api.DhcpComplEvent{
-		Lease: dhcp_api.DhcpLease{
+	dhcpIpv4 := &dhcp_api.DHCPComplEvent{
+		Lease: dhcp_api.DHCPLease{
 			HostAddress:   net.ParseIP("10.0.0.1"),
 			RouterAddress: net.ParseIP("10.0.0.2"),
 			HostMac: func(mac string) []byte {
@@ -57,11 +57,11 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 				return parsed
 			}("7C:4E:E7:8A:63:68"),
 			Hostname: []byte("if1"),
-			IsIpv6:   0,
+			IsIPv6:   0,
 		},
 	}
-	dhcpIpv6 := &dhcp_api.DhcpComplEvent{
-		Lease: dhcp_api.DhcpLease{
+	dhcpIpv6 := &dhcp_api.DHCPComplEvent{
+		Lease: dhcp_api.DHCPLease{
 			HostAddress:   net.ParseIP("fd21:7408:186f::/48"),
 			RouterAddress: net.ParseIP("2001:db8:a0b:12f0::1/48"),
 			HostMac: func(mac string) []byte {
@@ -70,7 +70,7 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 				return parsed
 			}("7C:4E:E7:8A:63:68"),
 			Hostname: []byte("if2"),
-			IsIpv6:   1,
+			IsIPv6:   1,
 		},
 	}
 	plugin.DhcpChan <- dhcpIpv4
@@ -179,8 +179,7 @@ func TestInterfacesConfigureTapV2(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
-	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&dhcp_api.DHCPClientConfigReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
@@ -213,7 +212,6 @@ func TestInterfacesConfigureMemif(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
@@ -250,7 +248,6 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
@@ -261,7 +258,6 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
@@ -489,7 +485,6 @@ func TestInterfacesConfigureVxLANWithMulticastIPError(t *testing.T) {
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
@@ -705,6 +700,7 @@ func TestInterfacesModifyTapV1WithoutTapData(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply()                        // Do not propagate interface details
@@ -782,7 +778,7 @@ func TestInterfacesModifyMemifWithoutMemifData(t *testing.T) {
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
-	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&dhcp_api.DHCPClientConfigReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply()                        // Do not propagate interface details
@@ -875,12 +871,12 @@ func TestInterfacesModifyVxLanSimple(t *testing.T) {
 		SwIfIndex: 1,
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
-	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&dhcp_api.DHCPClientConfigReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{}) // Modify - delete old data
+	ctx.MockVpp.MockReply(&dhcp_api.DHCPClientConfigReply{}) // Modify - delete old data
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -1002,6 +998,9 @@ func TestInterfacesModifyLoopback(t *testing.T) {
 	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	ctx.MockVpp.MockReply()
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -1045,6 +1044,7 @@ func TestInterfacesModifyEthernet(t *testing.T) {
 	ctx.MockVpp.MockReply() // Do not propagate interface details
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Modify
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	// Data
 	oldData := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
@@ -1087,6 +1087,7 @@ func TestInterfacesModifyAfPacket(t *testing.T) {
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{}) // Modify
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&interfaces.HwInterfaceSetMtuReply{})
 	// Data
@@ -1190,7 +1191,7 @@ func TestInterfacesDeleteTapInterface(t *testing.T) {
 	defer ifTestTeardown(connection, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
-	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&dhcp_api.DHCPClientConfigReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&tap.TapDeleteReply{})
@@ -1359,8 +1360,8 @@ func TestModifyRxMode(t *testing.T) {
 
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
-	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
-	ctx.MockVpp.MockReply(&dhcp_api.DhcpClientConfigReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
+	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetTableReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
 	ctx.MockVpp.MockReply()                        // Do not propagate interface details

@@ -81,15 +81,7 @@ func (plugin *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 	}
 
 	// VPP API handler
-	if plugin.l4Handler, err = vppcalls.NewL4VppHandler(plugin.vppChan, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
-
-	// Message compatibility
-	if err = plugin.vppChan.CheckMessageCompatibility(vppcalls.AppNsMessages...); err != nil {
-		plugin.log.Error(err)
-		return err
-	}
+	plugin.l4Handler = vppcalls.NewL4VppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
 
 	return nil
 }

@@ -136,50 +136,35 @@ type xConnectVppHandler struct {
 }
 
 // NewBridgeDomainVppHandler creates new instance of bridge domain vppcalls handler
-func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*bridgeDomainVppHandler, error) {
-	handler := &bridgeDomainVppHandler{
+func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *bridgeDomainVppHandler {
+	return &bridgeDomainVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(BridgeDomainMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewFibVppHandler creates new instance of FIB vppcalls handler
-func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, reqChan chan *FibLogicalReq, ifIndexes ifaceidx.SwIfIndex, bdIndexes l2idx.BDIndex,
-	log logging.Logger, stopwatch *measure.Stopwatch) (*fibVppHandler, error) {
-	handler := &fibVppHandler{
+func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, bdIndexes l2idx.BDIndex,
+	log logging.Logger, stopwatch *measure.Stopwatch) *fibVppHandler {
+	return &fibVppHandler{
 		syncCallsChannel:  syncChan,
 		asyncCallsChannel: asyncChan,
-		requestChan:       reqChan,
+		requestChan:       make(chan *FibLogicalReq),
 		stopwatch:         stopwatch,
 		ifIndexes:         ifIndexes,
 		bdIndexes:         bdIndexes,
 		log:               log,
 	}
-	if err := handler.syncCallsChannel.CheckMessageCompatibility(L2FibMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }
 
 // NewXConnectVppHandler creates new instance of cross connect vppcalls handler
-func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) (*xConnectVppHandler, error) {
-	handler := &xConnectVppHandler{
+func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *xConnectVppHandler {
+	return &xConnectVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
-	if err := handler.callsChannel.CheckMessageCompatibility(XConnectMessages...); err != nil {
-		return nil, err
-	}
-
-	return handler, nil
 }

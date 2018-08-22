@@ -5,6 +5,7 @@ package tap
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"SwInterfaceTapDetails": reflect.TypeOf((*SwInterfaceTapDetails)(nil)).Elem(),
 	"SwInterfaceTapDump": reflect.TypeOf((*SwInterfaceTapDump)(nil)).Elem(),
 	"TapConnect": reflect.TypeOf((*TapConnect)(nil)).Elem(),

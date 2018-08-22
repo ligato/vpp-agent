@@ -89,9 +89,7 @@ func (plugin *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	plugin.allIndexesSeq, plugin.unstoredIndexSeq = 1, 1
 
 	// VPP API handler
-	if plugin.stnHandler, err = vppcalls.NewStnVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch); err != nil {
-		return err
-	}
+	plugin.stnHandler = vppcalls.NewStnVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }

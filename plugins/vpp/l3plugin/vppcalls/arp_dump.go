@@ -65,7 +65,7 @@ func (handler *arpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 		}
 		// IP & MAC address
 		var ip, mac string
-		if uintToBool(arpDetails.IsIpv6) {
+		if uintToBool(arpDetails.IsIPv6) {
 			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress).To16().String())
 		} else {
 			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress[:4]).To4().String())

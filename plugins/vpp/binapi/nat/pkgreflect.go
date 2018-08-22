@@ -122,6 +122,7 @@ var Types = map[string]reflect.Type{
 	"NatShowConfigReply": reflect.TypeOf((*NatShowConfigReply)(nil)).Elem(),
 	"NatWorkerDetails": reflect.TypeOf((*NatWorkerDetails)(nil)).Elem(),
 	"NatWorkerDump": reflect.TypeOf((*NatWorkerDump)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{

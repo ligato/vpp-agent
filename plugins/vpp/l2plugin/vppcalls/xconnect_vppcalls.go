@@ -18,17 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
-
-// XConnectMessages is list of used VPP messages for compatibility check
-var XConnectMessages = []govppapi.Message{
-	&l2ba.L2XconnectDump{},
-	&l2ba.L2XconnectDetails{},
-	&l2ba.SwInterfaceSetL2Xconnect{},
-	&l2ba.SwInterfaceSetL2XconnectReply{},
-}
 
 func (handler *xConnectVppHandler) AddL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
 	return handler.addDelXConnect(rxIfIdx, txIfIdx, true)

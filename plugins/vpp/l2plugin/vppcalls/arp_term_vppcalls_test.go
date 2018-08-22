@@ -34,7 +34,7 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
 		BdID:       4,
 		IsAdd:      1,
-		IsIpv6:     0,
+		IsIPv6:     0,
 		IPAddress:  []byte{192, 168, 4, 4},
 		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
@@ -52,7 +52,7 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
 		BdID:       4,
 		IsAdd:      1,
-		IsIpv6:     1,
+		IsIPv6:     1,
 		IPAddress:  []byte{32, 1, 13, 185, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84},
 		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
@@ -70,7 +70,7 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
 		BdID:       4,
 		IsAdd:      0,
-		IsIpv6:     0,
+		IsIPv6:     0,
 		IPAddress:  []byte{192, 168, 4, 4},
 		MacAddress: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
 	}))
