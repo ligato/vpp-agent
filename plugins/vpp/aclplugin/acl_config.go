@@ -142,7 +142,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 	var vppACLIndex uint32
 	var err error
 	if isL2MacIP {
-		vppACLIndex, err = plugin.aclHandler.AddMacIPAcl(rules, acl.AclName)
+		vppACLIndex, err = plugin.aclHandler.AddMacIPACL(rules, acl.AclName)
 		if err != nil {
 			return err
 		}
@@ -151,7 +151,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 		plugin.l2AclIndexes.RegisterName(acl.AclName, agentACLIndex, acl)
 		plugin.log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
 	} else {
-		vppACLIndex, err = plugin.aclHandler.AddIPAcl(rules, acl.AclName)
+		vppACLIndex, err = plugin.aclHandler.AddIPACL(rules, acl.AclName)
 		if err != nil {
 			return err
 		}
@@ -165,7 +165,7 @@ func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 	if ifaces := acl.GetInterfaces(); ifaces != nil {
 		if isL2MacIP {
 			aclIfIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, L2)
-			err := plugin.aclHandler.SetMacIPAclToInterface(vppACLIndex, aclIfIndices)
+			err := plugin.aclHandler.SetMacIPACLToInterface(vppACLIndex, aclIfIndices)
 			if err != nil {
 				return err
 			}
@@ -215,14 +215,14 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 		}
 		if isL2MacIP {
 			// L2 ACL
-			err := plugin.aclHandler.ModifyMACIPAcl(vppACLIndex, rules, newACL.AclName)
+			err := plugin.aclHandler.ModifyMACIPACL(vppACLIndex, rules, newACL.AclName)
 			if err != nil {
 				return err
 			}
 			// There is no need to update index because modified ACL keeps the old one.
 		} else {
 			// L3/L4 ACL can be modified directly.
-			err := plugin.aclHandler.ModifyIPAcl(vppACLIndex, rules, newACL.AclName)
+			err := plugin.aclHandler.ModifyIPACL(vppACLIndex, rules, newACL.AclName)
 			if err != nil {
 				return err
 			}
@@ -242,7 +242,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 			// Put L2 ACL to new interfaces.
 			if newACL.Interfaces != nil {
 				aclMacInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, L2)
-				err := plugin.aclHandler.SetMacIPAclToInterface(vppACLIndex, aclMacInterfaces)
+				err := plugin.aclHandler.SetMacIPACLToInterface(vppACLIndex, aclMacInterfaces)
 				if err != nil {
 					return err
 				}
@@ -306,7 +306,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 			}
 		}
 		// Remove ACL L2.
-		err := plugin.aclHandler.DeleteMacIPAcl(vppACLIndex)
+		err := plugin.aclHandler.DeleteMacIPACL(vppACLIndex)
 		if err != nil {
 			return err
 		}
@@ -328,7 +328,7 @@ func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 			}
 		}
 		// Remove ACL L3/L4.
-		err := plugin.aclHandler.DeleteIPAcl(vppACLIndex)
+		err := plugin.aclHandler.DeleteIPACL(vppACLIndex)
 		if err != nil {
 			return err
 		}
@@ -407,7 +407,7 @@ func (plugin *ACLConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint
 			var ifIndices []uint32
 			switch aclCacheEntry.ifAttr {
 			case L2:
-				if err := plugin.aclHandler.SetMacIPAclToInterface(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
+				if err := plugin.aclHandler.SetMacIPACLToInterface(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
 					plugin.log.Error(err)
 					wasErr = err
 				}

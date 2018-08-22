@@ -65,8 +65,8 @@ func (handler *ACLVppHandler) RemoveIPEgressACLFromInterfaces(ACLIndex uint32, i
 	})
 }
 
-// SetMacIPAclToInterface implements ACL handler.
-func (handler *ACLVppHandler) SetMacIPAclToInterface(aclIndex uint32, ifIndices []uint32) error {
+// SetMacIPACLToInterface implements ACL handler.
+func (handler *ACLVppHandler) SetMacIPACLToInterface(aclIndex uint32, ifIndices []uint32) error {
 	setACLStopwatch := measure.GetTimeLog(acl_api.MacipACLInterfaceAddDel{}, handler.stopwatch)
 	for _, ingressIfIdx := range ifIndices {
 		// Measure MacipACLInterfaceAddDel time

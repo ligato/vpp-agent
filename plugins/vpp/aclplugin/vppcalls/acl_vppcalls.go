@@ -166,8 +166,8 @@ func (handler *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.Acces
 	return nil
 }
 
-// DeleteIPAcl implements ACL handler.
-func (handler *ACLVppHandler) DeleteIPAcl(aclIndex uint32) error {
+// DeleteIPACL implements ACL handler.
+func (handler *ACLVppHandler) DeleteIPACL(aclIndex uint32) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(aclapi.ACLDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

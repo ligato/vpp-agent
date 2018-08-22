@@ -138,17 +138,17 @@ func TestSetMacIPAclToInterface(t *testing.T) {
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
-	err := aclHandler.SetMacIPAclToInterface(0, []uint32{0})
+	err := aclHandler.SetMacIPACLToInterface(0, []uint32{0})
 	Expect(err).To(BeNil())
 
 	// error cases
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.SetMacIPAclToInterface(0, []uint32{0})
+	err = aclHandler.SetMacIPACLToInterface(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{Retval: -1})
-	err = aclHandler.SetMacIPAclToInterface(0, []uint32{0})
+	err = aclHandler.SetMacIPACLToInterface(0, []uint32{0})
 	Expect(err).To(Not(BeNil()))
 }
 

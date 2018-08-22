@@ -351,15 +351,15 @@ func TestDeleteIPAcl(t *testing.T) {
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	err = aclHandler.DeleteIPAcl(5)
+	err = aclHandler.DeleteIPACL(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{Retval: -1})
-	err = aclHandler.DeleteIPAcl(5)
+	err = aclHandler.DeleteIPACL(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-	err = aclHandler.DeleteIPAcl(1)
+	err = aclHandler.DeleteIPACL(1)
 	Expect(err).To(BeNil())
 }
 

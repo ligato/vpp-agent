@@ -31,17 +31,17 @@ type ACLVppAPI interface {
 // ACLVppWrite provides write methods for ACL plugin
 type ACLVppWrite interface {
 	// AddIPACL create new L3/4 ACL. Input index == 0xffffffff, VPP provides index in reply.
-	AddIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error)
+	AddIPACL(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error)
 	// AddMacIPACL creates new L2 MAC IP ACL. VPP provides index in reply.
-	AddMacIPAcl(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error)
+	AddMacIPACL(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error)
 	// ModifyIPACL uses index (provided by VPP) to identify ACL which is modified.
-	ModifyIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error
+	ModifyIPACL(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error
 	// ModifyMACIPACL uses index (provided by VPP) to identify ACL which is modified.
-	ModifyMACIPAcl(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error
-	// DeleteIPAcl removes L3/L4 ACL.
-	DeleteIPAcl(aclIndex uint32) error
+	ModifyMACIPACL(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error
+	// DeleteIPACL removes L3/L4 ACL.
+	DeleteIPACL(aclIndex uint32) error
 	// DeleteMacIPACL removes L2 ACL.
-	DeleteMacIPAcl(aclIndex uint32) error
+	DeleteMacIPACL(aclIndex uint32) error
 	// SetACLToInterfacesAsIngress sets ACL to all provided interfaces as ingress
 	SetACLToInterfacesAsIngress(ACLIndex uint32, ifIndices []uint32) error
 	// RemoveIPIngressACLFromInterfaces removes ACL from interfaces
@@ -50,8 +50,8 @@ type ACLVppWrite interface {
 	SetACLToInterfacesAsEgress(ACLIndex uint32, ifIndices []uint32) error
 	// RemoveIPEgressACLFromInterfaces removes ACL from interfaces
 	RemoveIPEgressACLFromInterfaces(ACLIndex uint32, ifIndices []uint32) error
-	// SetMacIPAclToInterface adds L2 ACL to interface.
-	SetMacIPAclToInterface(aclIndex uint32, ifIndices []uint32) error
+	// SetMacIPACLToInterface adds L2 ACL to interface.
+	SetMacIPACLToInterface(aclIndex uint32, ifIndices []uint32) error
 	// RemoveMacIPIngressACLFromInterfaces removes L2 ACL from interfaces.
 	RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error
 }

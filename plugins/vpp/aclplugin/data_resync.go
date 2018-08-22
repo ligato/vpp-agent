@@ -52,7 +52,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 		ipRulesExist := len(vppIPACL.ACL.Rules) > 0 && vppIPACL.ACL.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
-			if err := plugin.aclHandler.DeleteIPAcl(vppIPACL.Meta.Index); err != nil {
+			if err := plugin.aclHandler.DeleteIPACL(vppIPACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
@@ -65,7 +65,7 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 		ipRulesExist := len(vppMacIPACL.ACL.Rules) > 0 && vppMacIPACL.ACL.Rules[0].GetMatch().GetMacipRule() != nil
 
 		if ipRulesExist {
-			if err := plugin.aclHandler.DeleteMacIPAcl(vppMacIPACL.Meta.Index); err != nil {
+			if err := plugin.aclHandler.DeleteMacIPACL(vppMacIPACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
