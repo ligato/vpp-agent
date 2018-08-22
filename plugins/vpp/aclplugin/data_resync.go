@@ -32,12 +32,12 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	plugin.clearMapping()
 
 	// Retrieve existing IpACL config
-	vppIpACLs, err := plugin.aclHandler.DumpIPACL(plugin.ifIndexes)
+	vppIPACLs, err := plugin.aclHandler.DumpIPACL(plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
 	// Retrieve existing MacIpACL config
-	vppMacIpACLs, err := plugin.aclHandler.DumpMACIPACL(plugin.ifIndexes)
+	vppMacIPACLs, err := plugin.aclHandler.DumpMACIPACL(plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
@@ -45,32 +45,32 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	// Remove all configured VPP ACLs
 	// Note: due to inability to dump ACL interfaces, it is not currently possible to correctly
 	// calculate difference between configs
-	for _, vppIpACL := range vppIpACLs {
+	for _, vppIPACL := range vppIPACLs {
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
 		// Check what type of rules is in the ACL
-		ipRulesExist := len(vppIpACL.Acl.Rules) > 0 && vppIpACL.Acl.Rules[0].GetMatch().GetIpRule() != nil
+		ipRulesExist := len(vppIPACL.ACL.Rules) > 0 && vppIPACL.ACL.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
-			if err := plugin.aclHandler.DeleteIPAcl(vppIpACL.Meta.Index); err != nil {
+			if err := plugin.aclHandler.DeleteIPAcl(vppIPACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
 			// Unregister.
-			plugin.l3l4AclIndexes.UnregisterName(vppIpACL.Acl.AclName)
+			plugin.l3l4AclIndexes.UnregisterName(vppIPACL.ACL.AclName)
 			continue
 		}
 	}
-	for _, vppMacIpACL := range vppMacIpACLs {
-		ipRulesExist := len(vppMacIpACL.Acl.Rules) > 0 && vppMacIpACL.Acl.Rules[0].GetMatch().GetMacipRule() != nil
+	for _, vppMacIPACL := range vppMacIPACLs {
+		ipRulesExist := len(vppMacIPACL.ACL.Rules) > 0 && vppMacIPACL.ACL.Rules[0].GetMatch().GetMacipRule() != nil
 
 		if ipRulesExist {
-			if err := plugin.aclHandler.DeleteMacIPAcl(vppMacIpACL.Meta.Index); err != nil {
+			if err := plugin.aclHandler.DeleteMacIPAcl(vppMacIPACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
 			// Unregister.
-			plugin.l2AclIndexes.UnregisterName(vppMacIpACL.Acl.AclName)
+			plugin.l2AclIndexes.UnregisterName(vppMacIPACL.ACL.AclName)
 			continue
 		}
 	}

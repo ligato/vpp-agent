@@ -246,7 +246,7 @@ func (plugin *Plugin) retrieveVersion() {
 
 	// Get VPP ACL plugin version
 	var aclVersion string
-	if aclVersion, err = aclvppcalls.GetAclPluginVersion(vppAPIChan); err != nil {
+	if aclVersion, err = aclvppcalls.GetACLPluginVersion(vppAPIChan); err != nil {
 		plugin.Log.Warn("getting acl version info failed:", err)
 		return
 	}

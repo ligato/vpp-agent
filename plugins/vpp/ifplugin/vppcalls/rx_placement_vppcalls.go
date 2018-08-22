@@ -16,18 +16,18 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
-
 	"strconv"
+	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-func (handler *ifVppHandler) SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings) error {
+// SetRxPlacement implements interface handler.
+func (h *IfVppHandler) SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	queue := strconv.Itoa(int(rxPlacement.Queue))
@@ -35,19 +35,18 @@ func (handler *ifVppHandler) SetRxPlacement(vppInternalName string, rxPlacement 
 
 	command := "set interface rx-placement " + vppInternalName + " queue " + queue + " worker " + worker
 
-	handler.log.Warnf("Setting rx-placement commnad %s", command)
+	h.log.Warnf("Setting rx-placement commnad %s", command)
 
-	// todo: binary api call for rx-placement is not available
+	// TODO: binary api call for rx-placement is not available
 	req := &vpe.CliInband{
 		Length: uint32(len(command)),
 		Cmd:    []byte(command),
 	}
-
 	reply := &vpe.CliInbandReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 	if reply.Length > 0 {

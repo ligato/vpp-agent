@@ -434,9 +434,9 @@ func (plugin *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx u
 		// Set interface as un-numbered
 		if err := plugin.ifHandler.SetUnnumberedIP(ifIdx, ifIdxIP); err != nil {
 			return err
-		} else {
-			plugin.log.WithFields(logging.Fields{"un-numberedIface": ifIdx, "ifIdxIP": ifIdxIP}).Debug("Interface set as un-numbered")
 		}
+		plugin.log.WithFields(logging.Fields{"un-numberedIface": ifIdx, "ifIdxIP": ifIdxIP}).Debug("Interface set as un-numbered")
+
 		// just log
 		if len(addresses) != 0 {
 			plugin.log.Warnf("Interface %v set as un-numbered contains IP address(es)", ifName, addresses)

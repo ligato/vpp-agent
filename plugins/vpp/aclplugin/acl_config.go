@@ -57,8 +57,8 @@ type ACLConfigurator struct {
 
 	// In-memory mappings
 	ifIndexes      ifaceidx.SwIfIndex
-	l2AclIndexes   aclidx.AclIndexRW
-	l3l4AclIndexes aclidx.AclIndexRW
+	l2AclIndexes   aclidx.ACLIndexRW
+	l3l4AclIndexes aclidx.ACLIndexRW
 
 	// Cache for ACL un-configured interfaces
 	ifCache []*ACLIfCacheEntry
@@ -68,7 +68,7 @@ type ACLConfigurator struct {
 	vppDumpChan govppapi.Channel
 
 	// ACL VPP calls handler
-	aclHandler vppcalls.AclVppAPI
+	aclHandler vppcalls.ACLVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -83,8 +83,8 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
-	plugin.l2AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l2_indexes", nil))
-	plugin.l3l4AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l3_l4_indexes", nil))
+	plugin.l2AclIndexes = aclidx.NewACLIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l2_indexes", nil))
+	plugin.l3l4AclIndexes = aclidx.NewACLIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l3_l4_indexes", nil))
 
 	// VPP channels
 	plugin.vppChan, err = goVppMux.NewAPIChannel()
@@ -102,7 +102,7 @@ func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// ACL binary api handler
-	plugin.aclHandler = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch)
+	plugin.aclHandler = vppcalls.NewACLVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch)
 
 	return nil
 }
@@ -119,12 +119,12 @@ func (plugin *ACLConfigurator) clearMapping() {
 }
 
 // GetL2AclIfIndexes exposes l2 acl interface name-to-index mapping
-func (plugin *ACLConfigurator) GetL2AclIfIndexes() aclidx.AclIndexRW {
+func (plugin *ACLConfigurator) GetL2AclIfIndexes() aclidx.ACLIndexRW {
 	return plugin.l2AclIndexes
 }
 
 // GetL3L4AclIfIndexes exposes l3/l4 acl interface name-to-index mapping
-func (plugin *ACLConfigurator) GetL3L4AclIfIndexes() aclidx.AclIndexRW {
+func (plugin *ACLConfigurator) GetL3L4AclIfIndexes() aclidx.ACLIndexRW {
 	return plugin.l3l4AclIndexes
 }
 
@@ -200,7 +200,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 		if isL2MacIP {
 			agentACLIndex, _, found := plugin.l2AclIndexes.LookupIdx(oldACL.AclName)
 			if !found {
-				plugin.log.Infof("Acl %v index not found", oldACL.AclName)
+				plugin.log.Infof("ACL %v index not found", oldACL.AclName)
 				return nil
 			}
 			// Index used in VPP = index used in mapping - 1
@@ -208,7 +208,7 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 		} else {
 			agentACLIndex, _, found := plugin.l3l4AclIndexes.LookupIdx(oldACL.AclName)
 			if !found {
-				plugin.log.Infof("Acl %v index not found", oldACL.AclName)
+				plugin.log.Infof("ACL %v index not found", oldACL.AclName)
 				return nil
 			}
 			vppACLIndex = agentACLIndex - 1
@@ -347,7 +347,7 @@ func (plugin *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err err
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.Acl)
+		acls = append(acls, aclWithIndex.ACL)
 	}
 	return acls, nil
 }
@@ -360,7 +360,7 @@ func (plugin *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err 
 		return nil, err
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.Acl)
+		acls = append(acls, aclWithIndex.ACL)
 	}
 	return acls, nil
 }
@@ -451,14 +451,14 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 			plugin.log.Warnf("ACL %v not found in the mapping", aclName)
 			continue
 		}
-		vppAclIdx := aclIdx - 1
+		vppACLIdx := aclIdx - 1
 		if ifaces := aclData.GetInterfaces(); ifaces != nil {
 			// Look over ingress interfaces
 			for _, iface := range ifaces.Ingress {
 				if iface == ifName {
 					plugin.ifCache = append(plugin.ifCache, &ACLIfCacheEntry{
 						ifName: ifName,
-						aclID:  vppAclIdx,
+						aclID:  vppACLIdx,
 						ifAttr: INGRESS,
 					})
 				}
@@ -468,7 +468,7 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 				if iface == ifName {
 					plugin.ifCache = append(plugin.ifCache, &ACLIfCacheEntry{
 						ifName: ifName,
-						aclID:  vppAclIdx,
+						aclID:  vppACLIdx,
 						ifAttr: EGRESS,
 					})
 				}
@@ -482,14 +482,14 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 			plugin.log.Warnf("ACL %v not found in the mapping", aclName)
 			continue
 		}
-		vppAclIdx := aclIdx - 1
+		vppACLIdx := aclIdx - 1
 		if ifaces := aclData.GetInterfaces(); ifaces != nil {
 			// Look over ingress interfaces
 			for _, ingressIf := range ifaces.Ingress {
 				if ingressIf == ifName {
 					plugin.ifCache = append(plugin.ifCache, &ACLIfCacheEntry{
 						ifName: ifName,
-						aclID:  vppAclIdx,
+						aclID:  vppACLIdx,
 						ifAttr: L2,
 					})
 				}
@@ -542,7 +542,7 @@ func (plugin *ACLConfigurator) validateRules(aclName string, rules []*acl.Access
 		}
 	}
 	if len(validL3L4Rules) > 0 && len(validL2Rules) > 0 {
-		plugin.log.Errorf("Acl %v contains even L2 rules and L3/L4 rules. This case is not supported yet, only L3/L4 rules will be resolved",
+		plugin.log.Errorf("ACL %v contains even L2 rules and L3/L4 rules. This case is not supported yet, only L3/L4 rules will be resolved",
 			aclName)
 		return validL3L4Rules, false
 	} else if len(validL3L4Rules) > 0 {

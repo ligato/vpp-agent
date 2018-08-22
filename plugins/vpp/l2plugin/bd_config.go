@@ -70,7 +70,7 @@ type BridgeDomainStateMessage struct {
 	Name    string
 }
 
-// GetSwIfIndexes exposes interface name-to-index mapping
+// GetBdIndexes exposes interface name-to-index mapping
 func (plugin *BDConfigurator) GetBdIndexes() l2idx.BDIndexRW {
 	return plugin.bdIndexes
 }

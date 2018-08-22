@@ -42,16 +42,16 @@ type L4VppRead interface {
 	DumpL4Config() ([]*SessionDetails, error)
 }
 
-// l4VppHandler is accessor for l4-related vppcalls methods
-type l4VppHandler struct {
+// L4VppHandler is accessor for l4-related vppcalls methods
+type L4VppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	log          logging.Logger
 }
 
 // NewL4VppHandler creates new instance of L4 vppcalls handler
-func NewL4VppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *l4VppHandler {
-	return &l4VppHandler{
+func NewL4VppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *L4VppHandler {
+	return &L4VppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		log:          log,

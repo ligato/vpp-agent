@@ -111,9 +111,8 @@ func (plugin *AppNsConfigurator) ConfigureL4FeatureFlag(features *l4.L4Features)
 			return err
 		}
 		return plugin.resolveCachedNamespaces()
-	} else {
-		return plugin.DeleteL4FeatureFlag()
 	}
+	return plugin.DeleteL4FeatureFlag()
 
 	return nil
 }

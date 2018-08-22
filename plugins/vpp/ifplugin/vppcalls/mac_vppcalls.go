@@ -22,9 +22,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-func (handler *ifVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) error {
+// SetInterfaceMac implements interface handler.
+func (h *IfVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.SwInterfaceSetMacAddress{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetMacAddress{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	mac, err := net.ParseMAC(macAddress)
@@ -36,12 +37,11 @@ func (handler *ifVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) er
 		SwIfIndex:  ifIdx,
 		MacAddress: mac,
 	}
-
 	reply := &interfaces.SwInterfaceSetMacAddressReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

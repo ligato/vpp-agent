@@ -24,13 +24,14 @@ import (
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
-func (handler *bridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string) error {
+func (handler *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.BdIPMacAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BdIPMacAddDel{
-		BdID: bdID,
+		BdID:  bdID,
+		IsAdd: boolToUint(isAdd),
 	}
 
 	macAddr, err := net.ParseMAC(mac)
@@ -51,25 +52,19 @@ func (handler *bridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32
 		req.IsIPv6 = 0
 		req.IPAddress = []byte(ipAddr.To4())
 	}
-
-	if isAdd {
-		req.IsAdd = 1
-	} else {
-		req.IsAdd = 0
-	}
-
 	reply := &l2ba.BdIPMacAddDelReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bridgeDomainVppHandler) VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string) error {
+// VppAddArpTerminationTableEntry implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string) error {
 	handler.log.Info("Adding ARP termination entry")
 
 	err := handler.callBdIPMacAddDel(true, bdID, mac, ip)
@@ -82,7 +77,8 @@ func (handler *bridgeDomainVppHandler) VppAddArpTerminationTableEntry(bdID uint3
 	return nil
 }
 
-func (handler *bridgeDomainVppHandler) VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string) error {
+// VppRemoveArpTerminationTableEntry implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string) error {
 	handler.log.Info("Removing ARP termination entry")
 
 	err := handler.callBdIPMacAddDel(false, bdID, mac, ip)

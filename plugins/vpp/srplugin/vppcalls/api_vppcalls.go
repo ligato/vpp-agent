@@ -54,19 +54,19 @@ type SRv6VPPWrite interface {
 
 // SRv6VPPRead provides read methods for segment routing
 type SRv6VPPRead interface {
-	// Todo implement dump methods
+	// TODO: implement dump methods
 }
 
-// srv6VppHandler is accessor for SRv6-related vppcalls methods
-type srv6VppHandler struct {
+// SRv6VppHandler is accessor for SRv6-related vppcalls methods
+type SRv6VppHandler struct {
 	log          logging.Logger
 	callsChannel govppapi.Channel
 	stopwatch    *measure.Stopwatch
 }
 
-//  NewSRv6VppHandler creates new instance of SRv6 vppcalls handler
-func NewSRv6VppHandler(vppChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *srv6VppHandler {
-	return &srv6VppHandler{
+// NewSRv6VppHandler creates new instance of SRv6 vppcalls handler
+func NewSRv6VppHandler(vppChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *SRv6VppHandler {
+	return &SRv6VppHandler{
 		callsChannel: vppChan,
 		log:          log,
 		stopwatch:    stopwatch,

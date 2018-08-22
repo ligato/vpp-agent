@@ -120,7 +120,7 @@ func (plugin *IPSecConfigurator) GetSaIndexes() idxvpp.NameToIdxRW {
 	return plugin.saIndexes
 }
 
-// GetSaIndexes returns security policy database indexes
+// GetSpdIndexes returns security policy database indexes
 func (plugin *IPSecConfigurator) GetSpdIndexes() ipsecidx.SPDIndex {
 	return plugin.spdIndexes
 }

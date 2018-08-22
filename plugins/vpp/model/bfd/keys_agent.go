@@ -15,11 +15,11 @@
 package bfd
 
 const (
-	// bfdSessionPrefix bfd-session/
+	// SessionPrefix bfd-session/
 	SessionPrefix = "vpp/config/v1/bfd/session/"
-	// bfdAuthKeysPrefix bfd-key/
+	// AuthKeysPrefix bfd-key/
 	AuthKeysPrefix = "vpp/config/v1/bfd/auth-key/"
-	// BfdEchoFunctionPrefix bfd-echo-function/
+	// EchoFunctionPrefix bfd-echo-function/
 	EchoFunctionPrefix = "vpp/config/v1/bfd/echo-function/"
 )
 

@@ -17,9 +17,8 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
-
 	"strconv"
+	"time"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -28,7 +27,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 )
 
-func (handler *bfdVppHandler) AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyIndexes idxvpp.NameToIdx) error {
+// AddBfdUDPSession implements BFD handler.
+func (handler *BfdVppHandler) AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, ifIdx uint32, bfdKeyIndexes idxvpp.NameToIdx) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdUDPAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -77,19 +77,19 @@ func (handler *bfdVppHandler) AddBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session
 	} else {
 		req.IsAuthenticated = 0
 	}
-
 	reply := &bfd_api.BfdUDPAddReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bfdVppHandler) AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx) error {
+// AddBfdUDPSessionFromDetails implements BFD handler.
+func (handler *BfdVppHandler) AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUDPSessionDetails, bfdKeyIndexes idxvpp.NameToIdx) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdUDPAdd{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -120,19 +120,19 @@ func (handler *bfdVppHandler) AddBfdUDPSessionFromDetails(bfdSess *bfd_api.BfdUD
 	} else {
 		req.IsAuthenticated = 0
 	}
-
 	reply := &bfd_api.BfdUDPAddReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bfdVppHandler) ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex) error {
+// ModifyBfdUDPSession implements BFD handler.
+func (handler *BfdVppHandler) ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Session, swIfIndexes ifaceidx.SwIfIndex) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdUDPMod{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -170,19 +170,19 @@ func (handler *bfdVppHandler) ModifyBfdUDPSession(bfdSess *bfd.SingleHopBFD_Sess
 		return fmt.Errorf("different IP versions or missing IP address. Local: %v, Peer: %v",
 			bfdSess.SourceAddress, bfdSess.DestinationAddress)
 	}
-
 	reply := &bfd_api.BfdUDPModReply{}
+
 	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bfdVppHandler) DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress string) error {
+// DeleteBfdUDPSession implements BFD handler.
+func (handler *BfdVppHandler) DeleteBfdUDPSession(ifIndex uint32, sourceAddress string, destAddress string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdUDPDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -193,19 +193,19 @@ func (handler *bfdVppHandler) DeleteBfdUDPSession(ifIndex uint32, sourceAddress 
 		PeerAddr:  net.ParseIP(destAddress).To4(),
 		IsIPv6:    0,
 	}
-
 	reply := &bfd_api.BfdUDPDelReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bfdVppHandler) SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error {
+// SetBfdUDPAuthenticationKey implements BFD handler.
+func (handler *BfdVppHandler) SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdAuthSetKey{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -227,19 +227,19 @@ func (handler *bfdVppHandler) SetBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBF
 		Key:       []byte(bfdKey.Secret),
 		KeyLen:    uint8(len(bfdKey.Secret)),
 	}
-
 	reply := &bfd_api.BfdAuthSetKeyReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bfdVppHandler) DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error {
+// DeleteBfdUDPAuthenticationKey implements BFD handler.
+func (handler *BfdVppHandler) DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHopBFD_Key) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdAuthDelKey{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -247,19 +247,19 @@ func (handler *bfdVppHandler) DeleteBfdUDPAuthenticationKey(bfdKey *bfd.SingleHo
 	req := &bfd_api.BfdAuthDelKey{
 		ConfKeyID: bfdKey.Id,
 	}
-
 	reply := &bfd_api.BfdAuthDelKeyReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bfdVppHandler) AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex) error {
+// AddBfdEchoFunction implements BFD handler.
+func (handler *BfdVppHandler) AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction, swIfIndexes ifaceidx.SwIfIndex) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdUDPSetEchoSource{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -273,31 +273,30 @@ func (handler *bfdVppHandler) AddBfdEchoFunction(bfdInput *bfd.SingleHopBFD_Echo
 	req := &bfd_api.BfdUDPSetEchoSource{
 		SwIfIndex: ifIdx,
 	}
-
 	reply := &bfd_api.BfdUDPSetEchoSourceReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bfdVppHandler) DeleteBfdEchoFunction() error {
+// DeleteBfdEchoFunction implements BFD handler.
+func (handler *BfdVppHandler) DeleteBfdEchoFunction() error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfd_api.BfdUDPDelEchoSource{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare the message.
 	req := &bfd_api.BfdUDPDelEchoSource{}
-
 	reply := &bfd_api.BfdUDPDelEchoSourceReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

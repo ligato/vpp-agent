@@ -114,6 +114,7 @@ func (plugin *ProxyArpConfigurator) GetArpIfCache() []string {
 	return plugin.pArpIfCache
 }
 
+// AddInterface implements proxy arp handler.
 func (plugin *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
 	plugin.log.Infof("Enabling interfaces from proxy ARP config %s", pArpIf.Label)
 
@@ -332,6 +333,7 @@ func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.Proxy
 	return nil
 }
 
+// DeleteRange implements proxy arp handler.
 func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
 	plugin.log.Infof("Removing proxy ARP IP range config %s", pArpRng.Label)
 

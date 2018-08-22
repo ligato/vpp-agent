@@ -21,50 +21,49 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-func (handler *ifVppHandler) InterfaceAdminDown(ifIdx uint32) error {
-	return handler.interfaceSetFlags(ifIdx, false)
+// InterfaceAdminDown implements interface handler.
+func (h *IfVppHandler) InterfaceAdminDown(ifIdx uint32) error {
+	return h.interfaceSetFlags(ifIdx, false)
 }
 
-func (handler *ifVppHandler) InterfaceAdminUp(ifIdx uint32) error {
-	return handler.interfaceSetFlags(ifIdx, true)
+// InterfaceAdminUp implements interface handler.
+func (h *IfVppHandler) InterfaceAdminUp(ifIdx uint32) error {
+	return h.interfaceSetFlags(ifIdx, true)
 }
 
-func (handler *ifVppHandler) SetInterfaceTag(tag string, ifIdx uint32) error {
-	return handler.handleInterfaceTag(tag, ifIdx, true)
+// SetInterfaceTag implements interface handler.
+func (h *IfVppHandler) SetInterfaceTag(tag string, ifIdx uint32) error {
+	return h.handleInterfaceTag(tag, ifIdx, true)
 }
 
-func (handler *ifVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
-	return handler.handleInterfaceTag(tag, ifIdx, false)
+// RemoveInterfaceTag implements interface handler.
+func (h *IfVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
+	return h.handleInterfaceTag(tag, ifIdx, false)
 }
 
-func (handler *ifVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
+func (h *IfVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.SwInterfaceSetFlagsReply{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetFlagsReply{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceSetFlags{
-		SwIfIndex: ifIdx,
+		SwIfIndex:   ifIdx,
+		AdminUpDown: boolToUint(adminUp),
 	}
-	if adminUp {
-		req.AdminUpDown = 1
-	} else {
-		req.AdminUpDown = 0
-	}
-
 	reply := &interfaces.SwInterfaceSetFlagsReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *ifVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) error {
+func (h *IfVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.SwInterfaceTagAddDel{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceTagAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceTagAddDel{
@@ -76,12 +75,11 @@ func (handler *ifVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd 
 	if isAdd {
 		req.SwIfIndex = ifIdx
 	}
-
 	reply := &interfaces.SwInterfaceTagAddDelReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s %v (index %v) add/del returned %v", reply.GetMessageName(), tag, ifIdx, reply.Retval)
 	}
 

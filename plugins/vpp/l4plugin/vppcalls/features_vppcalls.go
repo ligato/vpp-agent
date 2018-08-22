@@ -20,32 +20,32 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
 
-func (handler *l4VppHandler) EnableL4Features() error {
+// EnableL4Features enables L4 features.
+func (handler *L4VppHandler) EnableL4Features() error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 1,
 	}
-
 	reply := &session.SessionEnableDisableReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *l4VppHandler) DisableL4Features() error {
+// DisableL4Features disables L4 features.
+func (handler *L4VppHandler) DisableL4Features() error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 0,
 	}
-
 	reply := &session.SessionEnableDisableReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v", reply.GetMessageName(), reply.Retval)
 	}
 

@@ -28,9 +28,9 @@ const (
 	delInterfaceIP uint8 = 0
 )
 
-func (handler *ifVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd uint8) error {
+func (h *IfVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd uint8) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.SwInterfaceAddDelAddress{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceAddDelAddress{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceAddDelAddress{
@@ -52,24 +52,25 @@ func (handler *ifVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, is
 		req.Address = []byte(addr.IP.To4())
 		req.IsIPv6 = 0
 	}
-
 	reply := &interfaces.SwInterfaceAddDelAddressReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *ifVppHandler) AddInterfaceIP(ifIdx uint32, addr *net.IPNet) error {
-	return handler.addDelInterfaceIP(ifIdx, addr, addInterfaceIP)
+// AddInterfaceIP implements interface handler.
+func (h *IfVppHandler) AddInterfaceIP(ifIdx uint32, addr *net.IPNet) error {
+	return h.addDelInterfaceIP(ifIdx, addr, addInterfaceIP)
 }
 
-func (handler *ifVppHandler) DelInterfaceIP(ifIdx uint32, addr *net.IPNet) error {
-	return handler.addDelInterfaceIP(ifIdx, addr, delInterfaceIP)
+// DelInterfaceIP implements interface handler.
+func (h *IfVppHandler) DelInterfaceIP(ifIdx uint32, addr *net.IPNet) error {
+	return h.addDelInterfaceIP(ifIdx, addr, delInterfaceIP)
 }
 
 const (
@@ -77,9 +78,9 @@ const (
 	unsetUnnumberedIP uint8 = 0
 )
 
-func (handler *ifVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8) error {
+func (h *IfVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.SwInterfaceSetUnnumbered{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetUnnumbered{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare the message.
@@ -88,22 +89,23 @@ func (handler *ifVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uin
 		UnnumberedSwIfIndex: uIfIdx,
 		IsAdd:               isAdd,
 	}
-
 	reply := &interfaces.SwInterfaceSetUnnumberedReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *ifVppHandler) SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32) error {
-	return handler.setUnsetUnnumberedIP(uIfIdx, ifIdxWithIP, setUnnumberedIP)
+// SetUnnumberedIP implements interface handler.
+func (h *IfVppHandler) SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32) error {
+	return h.setUnsetUnnumberedIP(uIfIdx, ifIdxWithIP, setUnnumberedIP)
 }
 
-func (handler *ifVppHandler) UnsetUnnumberedIP(uIfIdx uint32) error {
-	return handler.setUnsetUnnumberedIP(uIfIdx, 0, unsetUnnumberedIP)
+// UnsetUnnumberedIP implements interface handler.
+func (h *IfVppHandler) UnsetUnnumberedIP(uIfIdx uint32) error {
+	return h.setUnsetUnnumberedIP(uIfIdx, 0, unsetUnnumberedIP)
 }
