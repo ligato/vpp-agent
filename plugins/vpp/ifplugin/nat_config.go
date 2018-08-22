@@ -133,7 +133,7 @@ func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 // Close used resources
 func (c *NatConfigurator) Close() error {
 	if err := safeclose.Close(c.vppChan, c.vppDumpChan); err != nil {
-		return errors.Errorf("failed to safeclose NAT configurator: %v", err)
+		return c.LogError(errors.Errorf("failed to safeclose NAT configurator: %v", err))
 	}
 	return nil
 }

@@ -208,7 +208,7 @@ func (c *StnConfigurator) Dump() (*vppcalls.StnDetails, error) {
 // Close GOVPP channel.
 func (c *StnConfigurator) Close() error {
 	if err := safeclose.Close(c.vppChan); err != nil {
-		return errors.Errorf("failed to safeclose STN configurator: %v", err)
+		return c.LogError(errors.Errorf("failed to safeclose STN configurator: %v", err))
 	}
 	return nil
 }
