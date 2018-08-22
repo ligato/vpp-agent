@@ -38,7 +38,7 @@ import (
 )
 
 // SetInterfaceMac calls LinkSetHardwareAddr netlink API.
-func (handler *netLinkHandler) SetInterfaceMac(ifName string, macAddress string) error {
+func (handler *NetLinkHandler) SetInterfaceMac(ifName string, macAddress string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("set-interface-mac").LogTimeEntry(time.Since(t))
 	}(time.Now())

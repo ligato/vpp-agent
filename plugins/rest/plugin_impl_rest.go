@@ -51,7 +51,7 @@ type Plugin struct {
 	dumpChan api.Channel
 
 	// Handlers
-	aclHandler   aclvppcalls.AclVppRead
+	aclHandler   aclvppcalls.ACLVppRead
 	ifHandler    ifvppcalls.IfVppRead
 	bfdHandler   ifvppcalls.BfdVppRead
 	natHandler   ifvppcalls.NatVppRead
@@ -106,7 +106,7 @@ func (plugin *Plugin) Init() (err error) {
 	spdIndexes := plugin.VPP.GetIPSecSPDIndexes()
 
 	// Initialize handlers
-	plugin.aclHandler = aclvppcalls.NewAclVppHandler(plugin.vppChan, plugin.dumpChan, nil)
+	plugin.aclHandler = aclvppcalls.NewACLVppHandler(plugin.vppChan, plugin.dumpChan, nil)
 	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.Log, nil)
 	plugin.bfdHandler = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
 	plugin.natHandler = ifvppcalls.NewNatVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, plugin.Log, nil)
@@ -123,8 +123,8 @@ func (plugin *Plugin) Init() (err error) {
 	// Fill index item lists
 	idxMap := map[string][]indexItem{
 		"ACL plugin": {
-			{Name: "IP-type access lists", Path: resturl.AclIP},
-			{Name: "MACIP-type access lists", Path: resturl.AclMACIP},
+			{Name: "IP-type access lists", Path: resturl.ACLIP},
+			{Name: "MACIP-type access lists", Path: resturl.ACLMACIP},
 		},
 		"Interface plugin": {
 			{Name: "All interfaces", Path: resturl.Interface},
@@ -142,13 +142,13 @@ func (plugin *Plugin) Init() (err error) {
 		},
 		"L2 plugin": {
 			{Name: "Bridge domains", Path: resturl.Bd},
-			{Name: "Bridge domain IDs", Path: resturl.BdId},
+			{Name: "Bridge domain IDs", Path: resturl.BdID},
 			{Name: "L2Fibs", Path: resturl.Fib},
 			{Name: "Cross connects", Path: resturl.Xc},
 		},
 		"L3 plugin": {
 			{Name: "Bridge domains", Path: resturl.Bd},
-			{Name: "Bridge domain IDs", Path: resturl.BdId},
+			{Name: "Bridge domain IDs", Path: resturl.BdID},
 			{Name: "L2Fibs", Path: resturl.Fib},
 			{Name: "Cross connects", Path: resturl.Xc},
 		},

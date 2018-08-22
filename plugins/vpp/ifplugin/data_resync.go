@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
-	_ "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
@@ -505,17 +504,17 @@ func (c *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) e
 				}
 			}
 			// Configure all missing DNAT identity mappings
-			for _, nbIdMapping := range nbDNat.IdMappings {
-				mappingIdentifier := GetIdMappingIdentifier(nbIdMapping)
-				_, _, found := c.dNatIdMappingIndexes.LookupIdx(mappingIdentifier)
+			for _, nbIDMapping := range nbDNat.IdMappings {
+				mappingIdentifier := GetIDMappingIdentifier(nbIDMapping)
+				_, _, found := c.dNatIDMappingIndexes.LookupIdx(mappingIdentifier)
 				if !found {
 					// Configure missing mapping
-					if err := c.handleIdentityMapping(nbIdMapping, "", true); err != nil {
+					if err := c.handleIdentityMapping(nbIDMapping, "", true); err != nil {
 						return err
 					}
 
 					// Register new DNAT mapping
-					c.dNatIdMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+					c.dNatIDMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
 					c.natIndexSeq++
 					c.log.Debugf("NAT44 resync: new identity mapping %s registered", mappingIdentifier)
 				}
@@ -534,9 +533,9 @@ func (c *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) e
 					}
 				}
 			}
-			for _, vppIdMapping := range vppDNat.IdMappings {
+			for _, vppIDMapping := range vppDNat.IdMappings {
 				// Identity mapping
-				if err := c.handleIdentityMapping(vppIdMapping, "", false); err != nil {
+				if err := c.handleIdentityMapping(vppIDMapping, "", false); err != nil {
 					return err
 				}
 			}
@@ -564,7 +563,7 @@ func (c *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) e
 
 // Looks for the same mapping in the VPP, register existing ones
 func (c *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
-	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIdMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
+	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIDMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	// Iterate over static mappings in NB DNAT config
 	for _, nbMapping := range nbDNatConfig.StMappings {
 		if len(nbMapping.LocalIps) > 1 {
@@ -651,29 +650,29 @@ func (c *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig
 		}
 	}
 	// Iterate over identity mappings in NB DNAT config
-	for _, nbIdMapping := range nbDNatConfig.IdMappings {
-		for vppIdIndex, vppIdMapping := range *vppIdMappings {
+	for _, nbIDMapping := range nbDNatConfig.IdMappings {
+		for vppIDIndex, vppIDMapping := range *vppIDMappings {
 			// Compare VRF and address interface
-			if nbIdMapping.VrfId != vppIdMapping.VrfId || nbIdMapping.AddressedInterface != vppIdMapping.AddressedInterface {
+			if nbIDMapping.VrfId != vppIDMapping.VrfId || nbIDMapping.AddressedInterface != vppIDMapping.AddressedInterface {
 				continue
 			}
 			// Compare IP and port values
-			if nbIdMapping.IpAddress != vppIdMapping.IpAddress || nbIdMapping.Port != vppIdMapping.Port {
+			if nbIDMapping.IpAddress != vppIDMapping.IpAddress || nbIDMapping.Port != vppIDMapping.Port {
 				continue
 			}
 			// Compare protocol
-			if nbIdMapping.Protocol != vppIdMapping.Protocol {
+			if nbIDMapping.Protocol != vppIDMapping.Protocol {
 				continue
 			}
 
 			// At this point, the NB mapping matched the VPP one, so register it
-			mappingIdentifier := GetIdMappingIdentifier(nbIdMapping)
-			c.dNatIdMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+			mappingIdentifier := GetIDMappingIdentifier(nbIDMapping)
+			c.dNatIDMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
 			c.natIndexSeq++
 
 			// Remove registered entry from vpp mapping (configurator knows which mappings were registered)
-			dIdMappings := *vppIdMappings
-			*vppIdMappings = append(dIdMappings[:vppIdIndex], dIdMappings[vppIdIndex+1:]...)
+			dIDMappings := *vppIDMappings
+			*vppIDMappings = append(dIDMappings[:vppIDIndex], dIDMappings[vppIDIndex+1:]...)
 			c.log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
 		}
 	}

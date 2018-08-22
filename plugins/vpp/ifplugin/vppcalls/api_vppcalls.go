@@ -230,23 +230,23 @@ type StnVppRead interface {
 	DumpStnRules() (rules *StnDetails, err error)
 }
 
-// ifVppHandler is accessor for interface-related vppcalls methods
-type ifVppHandler struct {
+// IfVppHandler is accessor for interface-related vppcalls methods
+type IfVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel api.Channel
 	log          logging.Logger
 }
 
-// bfdVppHandler is accessor for BFD-related vppcalls methods
-type bfdVppHandler struct {
+// BfdVppHandler is accessor for BFD-related vppcalls methods
+type BfdVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel api.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
-// natVppHandler is accessor for NAT-related vppcalls methods
-type natVppHandler struct {
+// NatVppHandler is accessor for NAT-related vppcalls methods
+type NatVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel api.Channel
 	dumpChannel  api.Channel
@@ -254,8 +254,8 @@ type natVppHandler struct {
 	log          logging.Logger
 }
 
-// stnVppHandler is accessor for STN-related vppcalls methods
-type stnVppHandler struct {
+// StnVppHandler is accessor for STN-related vppcalls methods
+type StnVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	ifIndexes    ifaceidx.SwIfIndex
 	callsChannel api.Channel
@@ -263,8 +263,8 @@ type stnVppHandler struct {
 }
 
 // NewIfVppHandler creates new instance of interface vppcalls handler
-func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *ifVppHandler {
-	return &ifVppHandler{
+func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *IfVppHandler {
+	return &IfVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		log:          log,
@@ -272,8 +272,8 @@ func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measu
 }
 
 // NewBfdVppHandler creates new instance of BFD vppcalls handler
-func NewBfdVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *bfdVppHandler {
-	return &bfdVppHandler{
+func NewBfdVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *BfdVppHandler {
+	return &BfdVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
@@ -282,8 +282,8 @@ func NewBfdVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log l
 }
 
 // NewNatVppHandler creates new instance of NAT vppcalls handler
-func NewNatVppHandler(callsChan, dumpChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *natVppHandler {
-	return &natVppHandler{
+func NewNatVppHandler(callsChan, dumpChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *NatVppHandler {
+	return &NatVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
 		stopwatch:    stopwatch,
@@ -293,8 +293,8 @@ func NewNatVppHandler(callsChan, dumpChan api.Channel, ifIndexes ifaceidx.SwIfIn
 }
 
 // NewStnVppHandler creates new instance of STN vppcalls handler
-func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *stnVppHandler {
-	return &stnVppHandler{
+func NewStnVppHandler(callsChan api.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *StnVppHandler {
+	return &StnVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
 		stopwatch:    stopwatch,

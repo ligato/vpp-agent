@@ -23,7 +23,7 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-func (h *ifVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
+func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(vxlan.VxlanAddDelTunnel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -61,15 +61,15 @@ func (h *ifVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan,
 	reply := &vxlan.VxlanAddDelTunnelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, nil
 }
 
-func (h *ifVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *intf.Interfaces_Interface_Vxlan) (swIndex uint32, err error) {
+// AddVxLanTunnel implements VxLan handler.
+func (h *IfVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *intf.Interfaces_Interface_Vxlan) (swIndex uint32, err error) {
 	swIfIdx, err := h.addDelVxLanTunnel(vxLan, vrf, multicastIf, true)
 	if err != nil {
 		return 0, err
@@ -77,7 +77,8 @@ func (h *ifVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vx
 	return swIfIdx, h.SetInterfaceTag(ifName, swIfIdx)
 }
 
-func (h *ifVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *intf.Interfaces_Interface_Vxlan) error {
+// DeleteVxLanTunnel implements VxLan handler.
+func (h *IfVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *intf.Interfaces_Interface_Vxlan) error {
 	// Multicast does not need to be set
 	if _, err := h.addDelVxLanTunnel(vxLan, vrf, 0, false); err != nil {
 		return err

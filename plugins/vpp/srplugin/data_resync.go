@@ -18,12 +18,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
-// TODO move unique identifiable name into srv6 models
+// NamedPolicySegment represents named policy segment.
+// TODO: move unique identifiable name into srv6 models
 type NamedPolicySegment struct {
 	Name    string /* unique identifiable name */
 	Segment *srv6.PolicySegment
 }
 
+// NamedSteering represents named steetring.
 type NamedSteering struct {
 	Name     string /* unique identifiable name */
 	Steering *srv6.Steering

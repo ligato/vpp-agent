@@ -37,7 +37,7 @@ import (
 )
 
 // SetInterfaceDown calls Netlink API LinkSetDown.
-func (handler *netLinkHandler) SetInterfaceDown(ifName string) error {
+func (handler *NetLinkHandler) SetInterfaceDown(ifName string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("interface-admin-down").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -50,7 +50,7 @@ func (handler *netLinkHandler) SetInterfaceDown(ifName string) error {
 }
 
 // SetInterfaceUp calls Netlink API LinkSetUp.
-func (handler *netLinkHandler) SetInterfaceUp(ifName string) error {
+func (handler *NetLinkHandler) SetInterfaceUp(ifName string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("interface-admin-up").LogTimeEntry(time.Since(t))
 	}(time.Now())

@@ -201,11 +201,10 @@ func (c *AFPacketConfigurator) ResolveDeletedLinuxInterface(ifName, hostIfName s
 		if err := c.DeleteAfPacketInterface(afpacket.config, ifIdx); err != nil {
 			return errors.Errorf("Failed to remove af_packet interface %s (host name: %s): %v",
 				ifName, hostIfName, err)
-		} else {
-			if _, _, err := c.ConfigureAfPacketInterface(afpacket.config); err != nil {
-				return errors.Errorf("Failed to configure af_packet interface %s (host name: %s): %v",
-					ifName, hostIfName, err)
-			}
+		}
+		if _, _, err := c.ConfigureAfPacketInterface(afpacket.config); err != nil {
+			return errors.Errorf("Failed to configure af_packet interface %s (host name: %s): %v",
+				ifName, hostIfName, err)
 		}
 	}
 	return nil

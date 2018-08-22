@@ -20,11 +20,11 @@ import (
 )
 
 const (
-	// interfacePrefix is interface prefix
+	// Prefix is interface prefix
 	Prefix = "vpp/config/v1/interface/"
-	// ifStatePrefix is interface state prefix
+	// StatePrefix is interface state prefix
 	StatePrefix = "vpp/status/v1/interface/"
-	// ifErrorPrefix is interface error prefix
+	// ErrorPrefix is interface error prefix
 	ErrorPrefix = "vpp/status/v1/interface/error/"
 )
 

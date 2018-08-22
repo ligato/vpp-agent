@@ -72,7 +72,7 @@ func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwI
 
 	// Test initialization
 	ifPlugin := &ifplugin.InterfaceStateUpdater{}
-	err = ifPlugin.Init(pluginLogger, connection, ctx, index, notifChan, publishIfState)
+	err = ifPlugin.Init(ctx, pluginLogger, connection, index, notifChan, publishIfState)
 	Expect(err).To(BeNil())
 	err = ifPlugin.AfterInit()
 	Expect(err).To(BeNil())

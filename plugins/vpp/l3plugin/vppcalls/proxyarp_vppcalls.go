@@ -21,24 +21,28 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
-func (handler *proxyArpVppHandler) EnableProxyArpInterface(swIfIdx uint32) error {
+// EnableProxyArpInterface implements proxy arp handler.
+func (handler *ProxyArpVppHandler) EnableProxyArpInterface(swIfIdx uint32) error {
 	return handler.vppAddDelProxyArpInterface(swIfIdx, true)
 }
 
-func (handler *proxyArpVppHandler) DisableProxyArpInterface(swIfIdx uint32) error {
+// DisableProxyArpInterface implements proxy arp handler.
+func (handler *ProxyArpVppHandler) DisableProxyArpInterface(swIfIdx uint32) error {
 	return handler.vppAddDelProxyArpInterface(swIfIdx, false)
 }
 
-func (handler *proxyArpVppHandler) AddProxyArpRange(firstIP, lastIP []byte) error {
+// AddProxyArpRange implements proxy arp handler.
+func (handler *ProxyArpVppHandler) AddProxyArpRange(firstIP, lastIP []byte) error {
 	return handler.vppAddDelProxyArpRange(firstIP, lastIP, true)
 }
 
-func (handler *proxyArpVppHandler) DeleteProxyArpRange(firstIP, lastIP []byte) error {
+// DeleteProxyArpRange implements proxy arp handler.
+func (handler *ProxyArpVppHandler) DeleteProxyArpRange(firstIP, lastIP []byte) error {
 	return handler.vppAddDelProxyArpRange(firstIP, lastIP, false)
 }
 
 // vppAddDelProxyArpInterface adds or removes proxy ARP interface entry according to provided input
-func (handler *proxyArpVppHandler) vppAddDelProxyArpInterface(swIfIdx uint32, enable bool) error {
+func (handler *ProxyArpVppHandler) vppAddDelProxyArpInterface(swIfIdx uint32, enable bool) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ip.ProxyArpIntfcEnableDisable{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -66,7 +70,7 @@ func (handler *proxyArpVppHandler) vppAddDelProxyArpInterface(swIfIdx uint32, en
 }
 
 // vppAddDelProxyArpRange adds or removes proxy ARP range according to provided input
-func (handler *proxyArpVppHandler) vppAddDelProxyArpRange(firstIP, lastIP []byte, isAdd bool) error {
+func (handler *ProxyArpVppHandler) vppAddDelProxyArpRange(firstIP, lastIP []byte, isAdd bool) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ip.ProxyArpAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -81,13 +85,12 @@ func (handler *proxyArpVppHandler) vppAddDelProxyArpRange(firstIP, lastIP []byte
 		LowAddress: firstIP,
 		HiAddress:  lastIP,
 	}
+	reply := &ip.ProxyArpAddDelReply{}
 
 	// Send message
-	reply := &ip.ProxyArpAddDelReply{}
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

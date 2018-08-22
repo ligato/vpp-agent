@@ -318,7 +318,7 @@ func StnIdentifier(iface string) string {
 	return fmt.Sprintf("stn-iface-%v", iface)
 }
 
-// If not nil, prints error including stack trace. The same value is also returned, so it can be easily propagated further
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
 func (c *StnConfigurator) LogError(err error) error {
 	if err == nil {
 		return nil

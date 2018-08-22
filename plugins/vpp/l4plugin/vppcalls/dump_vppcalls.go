@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
 
-// SessionDetails
+// SessionDetails represents session details.
 type SessionDetails struct {
 	TransportProto uint8
 	LocalIP        string
@@ -36,7 +36,8 @@ type SessionDetails struct {
 	Tag            string
 }
 
-func (handler *l4VppHandler) DumpL4Config() ([]*SessionDetails, error) {
+// DumpL4Config implements L4VppRead.
+func (handler *L4VppHandler) DumpL4Config() ([]*SessionDetails, error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(session.SessionRulesDump{}).LogTimeEntry(time.Since(t))

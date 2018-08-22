@@ -101,6 +101,7 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiReq
 	return m.Channel.SendMultiRequest(msg)
 }
 
+// HandleReplies represents spec for MockReplyHandler.
 type HandleReplies struct {
 	Name     string
 	Ping     bool
@@ -108,6 +109,7 @@ type HandleReplies struct {
 	Messages []govppapi.Message
 }
 
+// MockReplies sets up reply handler for give HandleReplies.
 func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 	var sendControlPing bool
 
@@ -171,15 +173,17 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 			}
 		}
 
-		replyMsg, msgID, ok := ctx.MockVpp.ReplyFor(request.MsgName)
+		var err error
+		replyMsg, id, ok := ctx.MockVpp.ReplyFor(request.MsgName)
 		if ok {
-			reply, err := ctx.MockVpp.ReplyBytes(request, replyMsg)
+			reply, err = ctx.MockVpp.ReplyBytes(request, replyMsg)
 			Expect(err).To(BeNil())
-			return reply, msgID, true
+			msgID = id
+			prepared = true
 		} else {
 			log.DefaultLogger().Warnf("NO REPLY FOR %v FOUND", request.MsgName)
 		}
 
-		return reply, 0, false
+		return reply, msgID, prepared
 	})
 }

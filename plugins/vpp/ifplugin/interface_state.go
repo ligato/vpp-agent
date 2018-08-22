@@ -84,7 +84,7 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (c *InterfaceStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context,
+func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger
@@ -475,7 +475,7 @@ func (c *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName strin
 		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
 
-// If not nil, prints error including stack trace. The same value is also returned, so it can be easily propagated further
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
 func (c *InterfaceStateUpdater) LogError(err error) error {
 	if err == nil {
 		return nil

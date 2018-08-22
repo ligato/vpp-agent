@@ -1150,12 +1150,12 @@ func TestDataResyncResyncDNat(t *testing.T) {
 		},
 	})
 
-	idIdent := ifplugin.GetIdMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
+	idIdent := ifplugin.GetIDMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
 		Protocol:  nat.Protocol_TCP,
 		IpAddress: "192.168.0.1",
 	})
 
-	Expect(plugin.IsDNatLabelIdMappingRegistered(idIdent)).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(idIdent)).To(BeTrue())
 	Expect(plugin.IsDNatLabelStMappingRegistered(stIdent)).To(BeTrue())
 }
 
@@ -1348,12 +1348,12 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 		},
 	})
 
-	idIdent := ifplugin.GetIdMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
+	idIdent := ifplugin.GetIDMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
 		Protocol:  nat.Protocol_TCP,
 		IpAddress: "192.168.0.1",
 	})
 
-	Expect(plugin.IsDNatLabelIdMappingRegistered(idIdent)).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(idIdent)).To(BeTrue())
 	Expect(plugin.IsDNatLabelStMappingRegistered(stIdent)).To(BeTrue())
 }
 
@@ -1538,7 +1538,7 @@ func TestResolveIdentityMapping(t *testing.T) {
 
 	// Test where NB == VPP
 	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
-	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeTrue())
 }
 
 // Test unexported method resolving NB identity mapping with different IP address.
@@ -1555,7 +1555,7 @@ func TestResolveIdentityMappingNoMatch1(t *testing.T) {
 
 	// Test where NB == VPP
 	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
-	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
 }
 
 // Test unexported method resolving NB identity mapping with different VRF.
@@ -1572,7 +1572,7 @@ func TestResolveIdentityMappingNoMatch2(t *testing.T) {
 
 	// Test where NB == VPP
 	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
-	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
 }
 
 func getNat44StaticMappingData() *nat.Nat44DNat_DNatConfig {

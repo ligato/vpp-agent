@@ -424,12 +424,12 @@ func (c *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoF
 	return nil
 }
 
-// Generates common identifier for authentication key
+// AuthKeyIdentifier generates common identifier for authentication key
 func AuthKeyIdentifier(id uint32) string {
 	return strconv.Itoa(int(id))
 }
 
-// If not nil, prints error including stack trace. The same value is also returned, so it can be easily propagated further
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
 func (c *BFDConfigurator) LogError(err error) error {
 	if err == nil {
 		return nil

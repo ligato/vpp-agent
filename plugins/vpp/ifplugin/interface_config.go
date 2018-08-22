@@ -562,11 +562,10 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 		} else {
 			if err := c.ifHandler.UnsetInterfaceAsDHCPClient(ifIdx, newConfig.Name); err != nil {
 				return errors.Errorf("failed to unset interface %s as DHCP client: %v", newConfig.Name, err)
-			} else {
-				// Remove from DHCP mapping
-				c.dhcpIndexes.UnregisterName(newConfig.Name)
-				c.log.Debugf("Interface %s unregistered as DHCP client", oldConfig.Name)
 			}
+			// Remove from DHCP mapping
+			c.dhcpIndexes.UnregisterName(newConfig.Name)
+			c.log.Debugf("Interface %s unregistered as DHCP client", oldConfig.Name)
 		}
 	}
 
@@ -1031,7 +1030,7 @@ func (c *InterfaceConfigurator) watchDHCPNotifications() {
 	}
 }
 
-// If not nil, prints error including stack trace. The same value is also returned, so it can be easily propagated further
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
 func (c *InterfaceConfigurator) LogError(err error) error {
 	if err == nil {
 		return nil

@@ -23,6 +23,6 @@ func PropagateIfDetailsToStatus(ifCfg *InterfaceConfigurator) error {
 }
 
 func ResolveMappings(natCfg *NatConfigurator, nbDNatConfig *nat.Nat44DNat_DNatConfig,
-	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIdMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
-	natCfg.resolveMappings(nbDNatConfig, vppMappings, vppIdMappings)
+	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIDMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
+	natCfg.resolveMappings(nbDNatConfig, vppMappings, vppIDMappings)
 }

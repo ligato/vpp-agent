@@ -24,7 +24,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
-func (handler *bridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
+// SetInterfacesToBridgeDomain implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (ifs []string, wasErr error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
@@ -54,7 +55,8 @@ func (handler *bridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string
 	return ifs, wasErr
 }
 
-func (handler *bridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
+// UnsetInterfacesFromBridgeDomain implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (ifs []string, wasErr error) {
 
 	defer func(t time.Time) {
@@ -85,28 +87,24 @@ func (handler *bridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName st
 	return ifs, wasErr
 }
 
-func (handler *bridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
+func (handler *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
 	ifIdx uint32, add bool) error {
 	req := &l2ba.SwInterfaceSetL2Bridge{
 		BdID:        bdIdx,
 		RxSwIfIndex: ifIdx,
 		Shg:         uint8(bdIf.SplitHorizonGroup),
-	}
-	// Enable
-	if add {
-		req.Enable = 1
+		Enable:      boolToUint(add),
 	}
 	// Set as BVI.
 	if bdIf.BridgedVirtualInterface {
 		req.Bvi = 1
 		handler.log.Debugf("Interface %v set as BVI", bdIf.Name)
 	}
-
 	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("error while assigning/removing interface %v to bd %v: %v", bdIf.Name, bdName, err)
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d while assigning/removing interface %v (idx %v) to bd %v",
 			reply.GetMessageName(), reply.Retval, bdIf.Name, ifIdx, bdName)
 	}

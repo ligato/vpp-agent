@@ -54,6 +54,7 @@ type VPPAgent struct {
 	Telemetry   *telemetry.Plugin
 }
 
+// New creates new VPPAgent instance.
 func New() *VPPAgent {
 	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
 	consulDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&consul.DefaultPlugin))
@@ -113,20 +114,25 @@ func New() *VPPAgent {
 		Telemetry:      &telemetry.DefaultPlugin,
 	}
 }
+
+// Init initializes main plugin.
 func (VPPAgent) Init() error {
 	return nil
 }
 
+// AfterInit executes resync.
 func (VPPAgent) AfterInit() error {
 	// manually start resync after all plugins started
 	resync.DefaultPlugin.DoResync()
 	return nil
 }
 
+// Close could close used resources.
 func (VPPAgent) Close() error {
 	return nil
 }
 
+// String returns name of the plugin.
 func (VPPAgent) String() string {
 	return "VPPAgent"
 }

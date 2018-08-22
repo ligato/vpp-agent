@@ -21,41 +21,41 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-func (handler *ifVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err error) {
+// AddLoopbackInterface implements interface handler.
+func (h *IfVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.CreateLoopback{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.CreateLoopback{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.CreateLoopback{}
-
 	reply := &interfaces.CreateLoopbackReply{}
-	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.SwIfIndex, handler.SetInterfaceTag(ifName, reply.SwIfIndex)
+	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-func (handler *ifVppHandler) DeleteLoopbackInterface(ifName string, idx uint32) error {
+// DeleteLoopbackInterface implements interface handler.
+func (h *IfVppHandler) DeleteLoopbackInterface(ifName string, idx uint32) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.DeleteLoopback{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.DeleteLoopback{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Prepare the message.
 	req := &interfaces.DeleteLoopback{
 		SwIfIndex: idx,
 	}
-
 	reply := &interfaces.DeleteLoopbackReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return handler.RemoveInterfaceTag(ifName, idx)
+	return h.RemoveInterfaceTag(ifName, idx)
 }

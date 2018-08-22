@@ -19,30 +19,30 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// NetlinkHandlerMock allows to mock netlink-related methods
+// L3NetlinkHandlerMock allows to mock netlink-related methods
 type L3NetlinkHandlerMock struct {
-	responses []*whenL3Resp
+	responses []*WhenL3Resp
 	respCurr  int
 	respMax   int
 }
 
-// NewNetlinkHandlerMock creates new instance of the mock and initializes response list
+// NewL3NetlinkHandlerMock creates new instance of the mock and initializes response list
 func NewL3NetlinkHandlerMock() *L3NetlinkHandlerMock {
 	return &L3NetlinkHandlerMock{
-		responses: make([]*whenL3Resp, 0),
+		responses: make([]*WhenL3Resp, 0),
 	}
 }
 
-// Helper struct with single method call and desired response items
-type whenL3Resp struct {
+// WhenL3Resp is helper struct with single method call and desired response items
+type WhenL3Resp struct {
 	methodName string
 	items      []interface{}
 }
 
-// When defines name of the related method. It creates a new instance of whenL3Resp with provided method name and
+// When defines name of the related method. It creates a new instance of WhenL3Resp with provided method name and
 // stores it to the mock.
-func (mock *L3NetlinkHandlerMock) When(name string) *whenL3Resp {
-	resp := &whenL3Resp{
+func (mock *L3NetlinkHandlerMock) When(name string) *WhenL3Resp {
+	resp := &WhenL3Resp{
 		methodName: name,
 	}
 	mock.responses = append(mock.responses, resp)
@@ -61,7 +61,7 @@ func (mock *L3NetlinkHandlerMock) When(name string) *whenL3Resp {
 // - When('method1').ThenReturn('val1')
 //
 // All mocked methods are evaluated in same order they were assigned.
-func (when *whenL3Resp) ThenReturn(item ...interface{}) {
+func (when *WhenL3Resp) ThenReturn(item ...interface{}) {
 	when.items = item
 }
 
@@ -80,6 +80,7 @@ func (mock *L3NetlinkHandlerMock) getReturnValues(name string) (response []inter
 
 /* Mocked netlink handler methods */
 
+// AddArpEntry implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) AddArpEntry(name string, arpEntry *netlink.Neigh) error {
 	items := mock.getReturnValues("AddArpEntry")
 	if len(items) >= 1 {
@@ -88,6 +89,7 @@ func (mock *L3NetlinkHandlerMock) AddArpEntry(name string, arpEntry *netlink.Nei
 	return nil
 }
 
+// SetArpEntry implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) SetArpEntry(name string, arpEntry *netlink.Neigh) error {
 	items := mock.getReturnValues("SetArpEntry")
 	if len(items) >= 1 {
@@ -96,6 +98,7 @@ func (mock *L3NetlinkHandlerMock) SetArpEntry(name string, arpEntry *netlink.Nei
 	return nil
 }
 
+// DelArpEntry implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) DelArpEntry(name string, arpEntry *netlink.Neigh) error {
 	items := mock.getReturnValues("DelArpEntry")
 	if len(items) >= 1 {
@@ -104,6 +107,7 @@ func (mock *L3NetlinkHandlerMock) DelArpEntry(name string, arpEntry *netlink.Nei
 	return nil
 }
 
+// GetArpEntries implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) GetArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error) {
 	items := mock.getReturnValues("GetArpEntries")
 	if len(items) == 1 {
@@ -119,6 +123,7 @@ func (mock *L3NetlinkHandlerMock) GetArpEntries(interfaceIdx int, family int) ([
 	return nil, nil
 }
 
+// AddStaticRoute implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) AddStaticRoute(name string, route *netlink.Route) error {
 	items := mock.getReturnValues("AddStaticRoute")
 	if len(items) >= 1 {
@@ -127,6 +132,7 @@ func (mock *L3NetlinkHandlerMock) AddStaticRoute(name string, route *netlink.Rou
 	return nil
 }
 
+// ReplaceStaticRoute implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) ReplaceStaticRoute(name string, route *netlink.Route) error {
 	items := mock.getReturnValues("ReplaceStaticRoute")
 	if len(items) >= 1 {
@@ -135,6 +141,7 @@ func (mock *L3NetlinkHandlerMock) ReplaceStaticRoute(name string, route *netlink
 	return nil
 }
 
+// DelStaticRoute implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) DelStaticRoute(name string, route *netlink.Route) error {
 	items := mock.getReturnValues("DelStaticRoute")
 	if len(items) >= 1 {
@@ -143,4 +150,5 @@ func (mock *L3NetlinkHandlerMock) DelStaticRoute(name string, route *netlink.Rou
 	return nil
 }
 
+// SetStopwatch implements .
 func (mock *L3NetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}

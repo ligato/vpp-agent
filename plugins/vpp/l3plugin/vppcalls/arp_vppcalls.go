@@ -32,12 +32,15 @@ type ArpEntry struct {
 }
 
 // vppAddDelArp adds or removes ARP entry according to provided input
-func (handler *arpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
+func (handler *ArpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ip.IPNeighborAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &ip.IPNeighborAddDel{}
+	req := &ip.IPNeighborAddDel{
+		SwIfIndex:  entry.Interface,
+		IsNoAdjFib: 1,
+	}
 	if delete {
 		req.IsAdd = 0
 	} else {
@@ -65,25 +68,24 @@ func (handler *arpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
 		return err
 	}
 	req.MacAddress = []byte(macAddr)
-	req.IsNoAdjFib = 1
-	req.SwIfIndex = entry.Interface
+	reply := &ip.IPNeighborAddDelReply{}
 
 	// Send message
-	reply := &ip.IPNeighborAddDelReply{}
 	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *arpVppHandler) VppAddArp(entry *ArpEntry) error {
+// VppAddArp implements arp handler.
+func (handler *ArpVppHandler) VppAddArp(entry *ArpEntry) error {
 	return handler.vppAddDelArp(entry, false)
 }
 
-func (handler *arpVppHandler) VppDelArp(entry *ArpEntry) error {
+// VppDelArp implements arp handler.
+func (handler *ArpVppHandler) VppDelArp(entry *ArpEntry) error {
 	return handler.vppAddDelArp(entry, true)
 }
