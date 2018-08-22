@@ -53,13 +53,13 @@ func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error
 
 	var err error
 	if c.memifScCache, err = c.ifHandler.DumpMemifSocketDetails(); err != nil {
-		return errors.Errorf("Interface resync error: failed to dump memif socket details: %v", err)
+		return errors.Errorf("interface resync error: failed to dump memif socket details: %v", err)
 	}
 
 	// Dump current state of the VPP interfaces
 	vppIfs, err := c.ifHandler.DumpInterfaces()
 	if err != nil {
-		return errors.Errorf("Interface resync error: failed to dump interfaces: %v", err)
+		return errors.Errorf("interface resync error: failed to dump interfaces: %v", err)
 	}
 
 	// Cache for untagged interfaces. All un-named interfaces have to be correlated
@@ -70,13 +70,13 @@ func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error
 		if vppIfIdx == 0 {
 			// Register local0 interface with zero index
 			if err := c.registerInterface(vppIf.Meta.InternalName, vppIfIdx, vppIf.Interface); err != nil {
-				return errors.Errorf("Interface resync error: %v", err)
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			continue
 		}
 		if vppIf.Interface.Name == "" {
 			// If interface has no name, it is stored as unnamed and resolved later
-			c.log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
+			c.log.Debugf("Interface resync: interface %v has no name (tag)", vppIfIdx)
 			unnamedVppIfs[vppIfIdx] = vppIf.Interface
 			continue
 		}
@@ -86,13 +86,13 @@ func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error
 				correlated = true
 				// Register interface to mapping and VPP tag/index
 				if err := c.registerInterface(vppIf.Interface.Name, vppIfIdx, nbIf); err != nil {
-					return errors.Errorf("Interface resync error: %v", err)
+					return errors.Errorf("interface resync error: %v", err)
 				}
 				// Calculate whether modification is needed
 				if c.isIfModified(nbIf, vppIf.Interface) {
-					c.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Interface.Name)
+					c.log.Debugf("Interface resync: modifying interface %v", vppIf.Interface.Name)
 					if err = c.ModifyVPPInterface(nbIf, vppIf.Interface); err != nil {
-						return errors.Errorf("Interface resync error: failed to modify interface %s: %v",
+						return errors.Errorf("interface resync error: failed to modify interface %s: %v",
 							vppIf.Interface.Name, err)
 					}
 				} else {
@@ -104,12 +104,12 @@ func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error
 		if !correlated {
 			// Register interface before removal (to keep state consistent)
 			if err := c.registerInterface(vppIf.Interface.Name, vppIfIdx, vppIf.Interface); err != nil {
-				return errors.Errorf("Interface resync error: %v", err)
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			// VPP interface is obsolete and will be removed (un-configured if physical device)
 			c.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Interface.Name)
 			if err = c.deleteVPPInterface(vppIf.Interface, vppIfIdx); err != nil {
-				return errors.Errorf("Interface resync error: failed to remove interface %s: %v",
+				return errors.Errorf("interface resync error: failed to remove interface %s: %v",
 					vppIf.Interface.Name, err)
 			}
 		}
@@ -135,27 +135,27 @@ func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error
 		if correlatedIf != nil {
 			// Register interface
 			if err := c.registerInterface(correlatedIf.Name, vppIfIdx, correlatedIf); err != nil {
-				return errors.Errorf("Interface resync error: %v", err)
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			// Calculate whether modification is needed
 			if c.isIfModified(correlatedIf, vppIf) {
-				c.log.Debugf("RESYNC interfaces: modifying correlated interface %v", vppIf.Name)
+				c.log.Debugf("Interface resync: modifying correlated interface %v", vppIf.Name)
 				if err = c.ModifyVPPInterface(correlatedIf, vppIf); err != nil {
-					return errors.Errorf("Interface resync error: failed to modify correlated interface %s: %v",
+					return errors.Errorf("interface resync error: failed to modify correlated interface %s: %v",
 						vppIf.Name, err)
 				}
 			} else {
-				c.log.Debugf("Interface resync: correlated %v registered without additional changes", vppIf.Name)
+				c.log.Debugf("interface resync: correlated %v registered without additional changes", vppIf.Name)
 			}
 		} else {
 			// Register interface  with temporary name (will be unregistered during removal)
 			if err := c.registerInterface(ifTempName, vppIfIdx, vppIf); err != nil {
-				return errors.Errorf("Interface resync error: %v", err)
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			// VPP interface cannot be correlated and will be removed
-			c.log.Debugf("RESYNC interfaces: removing interface %v", vppIf.Name)
+			c.log.Debugf("Interface resync: removing interface %v", vppIf.Name)
 			if err = c.deleteVPPInterface(vppIf, vppIfIdx); err != nil {
-				return errors.Errorf("Interface resync error: failed to remove interface %s: %v",
+				return errors.Errorf("interface resync error: failed to remove interface %s: %v",
 					vppIf.Name, err)
 			}
 		}
@@ -166,9 +166,9 @@ func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error
 		// If interface is registered, it was already processed
 		_, _, found := c.swIfIndexes.LookupIdx(nbIf.Name)
 		if !found {
-			c.log.Debugf("RESYNC interfaces: configuring new interface %v", nbIf.Name)
+			c.log.Debugf("Interface resync: configuring new interface %v", nbIf.Name)
 			if err := c.ConfigureVPPInterface(nbIf); err != nil {
-				return errors.Errorf("Interface resync error: failed to configure interface %s: %v",
+				return errors.Errorf("interface resync error: failed to configure interface %s: %v",
 					nbIf.Name, err)
 			}
 		}
@@ -176,7 +176,7 @@ func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error
 
 	// update the interfaces state data in memory
 	if err := c.propagateIfDetailsToStatus(); err != nil {
-		return errors.Errorf("Interface resync error: %v", err)
+		return errors.Errorf("interface resync error: %v", err)
 	}
 
 	c.log.Info("Interface resync done")

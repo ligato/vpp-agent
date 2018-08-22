@@ -434,6 +434,11 @@ func (c *BFDConfigurator) LogError(err error) error {
 	if err == nil {
 		return nil
 	}
-	c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
 	return err
 }
