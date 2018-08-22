@@ -23,13 +23,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
-// IPsecVppAPI provides methods for creating and managing of a IPsec configuration
+// IPSecVppAPI provides methods for creating and managing of a IPsec configuration
 type IPSecVppAPI interface {
 	IPSecVppWrite
 	IPSecVPPRead
 }
 
-// IPsecVppWrite provides write methods for IPsec
+// IPSecVppWrite provides write methods for IPsec
 type IPSecVppWrite interface {
 	// AddTunnelInterface adds tunnel interface
 	AddTunnelInterface(tunnel *ipsec.TunnelInterfaces_Tunnel) (uint32, error)
@@ -53,7 +53,7 @@ type IPSecVppWrite interface {
 	DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA) error
 }
 
-// IPsecVppWrite provides read methods for IPSec
+// IPSecVPPRead provides read methods for IPSec
 type IPSecVPPRead interface {
 	// DumpIPSecSPD returns a list of IPSec security policy databases
 	DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
@@ -65,8 +65,8 @@ type IPSecVPPRead interface {
 	DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error)
 }
 
-// ipSecVppHandler is accessor for IPsec-related vppcalls methods
-type ipSecVppHandler struct {
+// IPSecVppHandler is accessor for IPsec-related vppcalls methods
+type IPSecVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
@@ -76,8 +76,8 @@ type ipSecVppHandler struct {
 
 // NewIPsecVppHandler creates new instance of IPsec vppcalls handler
 func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, spdIndexes ipsecidx.SPDIndex,
-	log logging.Logger, stopwatch *measure.Stopwatch) *ipSecVppHandler {
-	return &ipSecVppHandler{
+	log logging.Logger, stopwatch *measure.Stopwatch) *IPSecVppHandler {
+	return &IPSecVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,

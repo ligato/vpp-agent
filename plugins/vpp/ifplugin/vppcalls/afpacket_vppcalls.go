@@ -16,62 +16,58 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
-
 	"net"
+	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-func (handler *ifVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket) (swIndex uint32, err error) {
+// AddAfPacketInterface implements AfPacket handler.
+func (h *IfVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket) (swIndex uint32, err error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(af_packet.AfPacketCreate{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(af_packet.AfPacketCreate{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &af_packet.AfPacketCreate{
 		HostIfName: []byte(afPacketIntf.HostIfName),
 	}
-
 	if hwAddr == "" {
 		req.UseRandomHwAddr = 1
 	} else {
 		mac, err := net.ParseMAC(hwAddr)
-
 		if err != nil {
 			return 0, err
 		}
-
 		req.HwAddr = mac
 	}
-
 	reply := &af_packet.AfPacketCreateReply{}
-	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.SwIfIndex, handler.SetInterfaceTag(ifName, reply.SwIfIndex)
+	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-func (handler *ifVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interfaces_Interface_Afpacket) error {
+// DeleteAfPacketInterface implements AfPacket handler.
+func (h *IfVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interfaces_Interface_Afpacket) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(af_packet.AfPacketDelete{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(af_packet.AfPacketDelete{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &af_packet.AfPacketDelete{
 		HostIfName: []byte(afPacketIntf.HostIfName),
 	}
-
 	reply := &af_packet.AfPacketDeleteReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return handler.RemoveInterfaceTag(ifName, idx)
+	return h.RemoveInterfaceTag(ifName, idx)
 }

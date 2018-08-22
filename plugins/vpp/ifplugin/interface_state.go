@@ -84,7 +84,7 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (plugin *InterfaceStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context,
+func (plugin *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger

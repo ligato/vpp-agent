@@ -504,7 +504,7 @@ func (plugin *LinuxRouteConfigurator) createDefaultRoute(netLinkRoute *netlink.R
 	// Gateway
 	gateway := net.ParseIP(route.GwAddr)
 	if gateway == nil {
-		fmt.Errorf("unable to create route %s as default, gateway is nil", route.Name)
+		return fmt.Errorf("unable to create route %s as default, gateway is nil", route.Name)
 	}
 	netLinkRoute.Gw = gateway
 

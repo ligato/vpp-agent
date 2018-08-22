@@ -36,7 +36,8 @@ type StnMeta struct {
 	IfNameToIdx map[uint32]string
 }
 
-func (handler *stnVppHandler) DumpStnRules() (rules *StnDetails, err error) {
+// DumpStnRules implements STN handler.
+func (handler *StnVppHandler) DumpStnRules() (rules *StnDetails, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(stnapi.StnRulesDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

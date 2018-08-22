@@ -28,7 +28,8 @@ type ProxyArpRangesDetails struct {
 	Range *l3.ProxyArpRanges_RangeList_Range
 }
 
-func (handler *proxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDetails, err error) {
+// DumpProxyArpRanges implements proxy arp handler.
+func (handler *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDetails, err error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l3binapi.ProxyArpDump{}).LogTimeEntry(time.Since(t))
@@ -70,7 +71,8 @@ type ProxyArpInterfaceMeta struct {
 	SwIfIndex uint32
 }
 
-func (handler *proxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*ProxyArpInterfaceDetails, err error) {
+// DumpProxyArpInterfaces implements proxy arp handler.
+func (handler *ProxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*ProxyArpInterfaceDetails, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l3binapi.ProxyArpIntfcDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

@@ -15,13 +15,13 @@
 package nat
 
 const (
-	// natPrefix
+	// Prefix is NAT prefix
 	Prefix = "vpp/config/v1/nat/"
-	// globalConfigPrefix is relative prefix for global config
+	// GlobalPrefix is relative prefix for global config
 	GlobalPrefix = Prefix + "global/"
-	// sNatPrefix is relative prefix for SNAT setup
+	// SNatPrefix is relative prefix for SNAT setup
 	SNatPrefix = Prefix + "snat/"
-	// dNatPrefix is relative prefix for DNAT setup
+	// DNatPrefix is relative prefix for DNAT setup
 	DNatPrefix = Prefix + "dnat/"
 )
 

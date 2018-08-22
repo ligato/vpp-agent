@@ -23,32 +23,38 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
-func (h *ifVppHandler) CreateVrf(vrfID uint32) error {
+// CreateVrf implements interface handler.
+func (h *IfVppHandler) CreateVrf(vrfID uint32) error {
 	return h.createVrfIfNeeded(vrfID, false)
 }
 
-func (h *ifVppHandler) CreateVrfIPv6(vrfID uint32) error {
+// CreateVrfIPv6 implements interface handler.
+func (h *IfVppHandler) CreateVrfIPv6(vrfID uint32) error {
 	return h.createVrfIfNeeded(vrfID, true)
 }
 
-func (h *ifVppHandler) SetInterfaceVrf(ifIdx, vrfID uint32) error {
+// SetInterfaceVrf implements interface handler.
+func (h *IfVppHandler) SetInterfaceVrf(ifIdx, vrfID uint32) error {
 	return h.setInterfaceVrf(ifIdx, vrfID, false)
 }
 
-func (h *ifVppHandler) SetInterfaceVrfIPv6(ifIdx, vrfID uint32) error {
+// SetInterfaceVrfIPv6 implements interface handler.
+func (h *IfVppHandler) SetInterfaceVrfIPv6(ifIdx, vrfID uint32) error {
 	return h.setInterfaceVrf(ifIdx, vrfID, true)
 }
 
-func (h *ifVppHandler) GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error) {
+// GetInterfaceVrf implements interface handler.
+func (h *IfVppHandler) GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error) {
 	return h.getInterfaceVrf(ifIdx, false)
 }
 
-func (h *ifVppHandler) GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error) {
+// GetInterfaceVrfIPv6 implements interface handler.
+func (h *IfVppHandler) GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error) {
 	return h.getInterfaceVrf(ifIdx, true)
 }
 
 // New VRF with provided ID for IPv4 or IPv6 will be created if missing.
-func (h *ifVppHandler) createVrfIfNeeded(vrfID uint32, isIPv6 bool) error {
+func (h *IfVppHandler) createVrfIfNeeded(vrfID uint32, isIPv6 bool) error {
 	// Zero VRF exists by default
 	if vrfID == 0 {
 		return nil
@@ -79,7 +85,7 @@ func (h *ifVppHandler) createVrfIfNeeded(vrfID uint32, isIPv6 bool) error {
 }
 
 // Interface is set to VRF table. Table IP version has to be defined.
-func (h *ifVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
+func (h *IfVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(interfaces.SwInterfaceSetTable{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -94,10 +100,10 @@ func (h *ifVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
 		IsIPv6:    boolToUint(isIPv6),
 	}
 	reply := &interfaces.SwInterfaceSetTableReply{}
+
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
@@ -107,7 +113,7 @@ func (h *ifVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
 }
 
 // Returns VRF ID for provided interface.
-func (h *ifVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32, err error) {
+func (h *IfVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32, err error) {
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(interfaces.SwInterfaceGetTable{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -117,10 +123,10 @@ func (h *ifVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32,
 		IsIPv6:    boolToUint(isIPv6),
 	}
 	reply := &interfaces.SwInterfaceGetTableReply{}
+
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
@@ -128,7 +134,7 @@ func (h *ifVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32,
 }
 
 // Returns all IPv4 VRF tables
-func (h *ifVppHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
+func (h *IfVppHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(ip.IPFibDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -153,7 +159,7 @@ func (h *ifVppHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
 }
 
 // Returns all IPv6 VRF tables
-func (h *ifVppHandler) dumpVrfTablesIPv6() (map[uint32][]*ip.IP6FibDetails, error) {
+func (h *IfVppHandler) dumpVrfTablesIPv6() (map[uint32][]*ip.IP6FibDetails, error) {
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(ip.IP6FibDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -178,7 +184,7 @@ func (h *ifVppHandler) dumpVrfTablesIPv6() (map[uint32][]*ip.IP6FibDetails, erro
 }
 
 // Creates new VRF table with provided ID and for desired IP version
-func (h *ifVppHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
+func (h *IfVppHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(ip.IPTableAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -189,10 +195,10 @@ func (h *ifVppHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
 		IsAdd:   1,
 	}
 	reply := &ip.IPTableAddDelReply{}
+
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

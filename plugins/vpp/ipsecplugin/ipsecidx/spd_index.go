@@ -37,7 +37,7 @@ type SPDIndex interface {
 	LookupBySA(saName string) []SPDEntry
 }
 
-// RouteIndexRW is mapping between SPD data (metadata) and SPD entry names.
+// SPDIndexRW is mapping between SPD data (metadata) and SPD entry names.
 type SPDIndexRW interface {
 	SPDIndex
 

@@ -217,7 +217,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	// Re-add IP addresses
 	for _, address := range addresses {
 		// Skip IPv6 link local address if there is no other IPv6 address
-		if !isIPv6 && address.IP.IsLinkLocalUnicast(){
+		if !isIPv6 && address.IP.IsLinkLocalUnicast() {
 			continue
 		}
 		err = plugin.ifHandler.AddInterfaceIP(ifName, address)
@@ -242,7 +242,7 @@ func (plugin *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName str
 	return nil
 }
 
-// switchToNamespace switches the network namespace of the current thread.
+// SwitchToNamespace switches the network namespace of the current thread.
 func (plugin *NsHandler) SwitchToNamespace(nsMgmtCtx *NamespaceMgmtCtx, ns *intf.LinuxInterfaces_Interface_Namespace) (revert func(), err error) {
 	if ns != nil && ns.Type == intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
 		// Convert namespace
@@ -443,7 +443,7 @@ func (plugin *NsHandler) convertMicroserviceNsToPidNs(microserviceLabel string) 
 	if microservice, ok := plugin.microServiceByLabel[microserviceLabel]; ok {
 		pidNamespace := &Namespace{}
 		pidNamespace.Type = PidRefNs
-		pidNamespace.Pid = uint32(microservice.Pid)
+		pidNamespace.Pid = uint32(microservice.PID)
 		return pidNamespace
 	}
 	return nil

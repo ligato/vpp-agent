@@ -22,9 +22,10 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-func (handler *ifVppHandler) SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings) error {
+// SetRxMode implements interface handler.
+func (h *IfVppHandler) SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceSetRxMode{
@@ -33,12 +34,11 @@ func (handler *ifVppHandler) SetRxMode(ifIdx uint32, rxModeSettings *intf.Interf
 		QueueID:      rxModeSettings.QueueId,
 		QueueIDValid: uint8(rxModeSettings.QueueIdValid),
 	}
-
 	reply := &interfaces.SwInterfaceSetRxModeReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

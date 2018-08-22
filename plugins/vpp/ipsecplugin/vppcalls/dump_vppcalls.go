@@ -43,11 +43,13 @@ type IPSecSaMeta struct {
 	TotalDataSize  uint64
 }
 
-func (handler *ipSecVppHandler) DumpIPSecSA() (saList []*IPSecSaDetails, err error) {
+// DumpIPSecSA implements IPSec handler.
+func (handler *IPSecVppHandler) DumpIPSecSA() (saList []*IPSecSaDetails, err error) {
 	return handler.DumpIPSecSAWithIndex(^uint32(0)) // Get everything
 }
 
-func (handler *ipSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error) {
+// DumpIPSecSAWithIndex implements IPSec handler.
+func (handler *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ipsecapi.IpsecSaDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -117,7 +119,8 @@ type IPSecTunnelMeta struct {
 	SwIfIndex uint32
 }
 
-func (handler *ipSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error) {
+// DumpIPSecTunnelInterfaces implements IPSec handler.
+func (handler *IPSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ipsecapi.IpsecSaDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -200,7 +203,8 @@ type SpdMeta struct {
 	Packets uint64
 }
 
-func (handler *ipSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error) {
+// DumpIPSecSPD implements IPSec handler.
+func (handler *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ipsecapi.IpsecSpdDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -295,7 +299,7 @@ func (handler *ipSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err 
 }
 
 // Get all security association (used also for tunnel interfaces) in binary api format
-func (handler *ipSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*ipsecapi.IpsecSaDetails, err error) {
+func (handler *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*ipsecapi.IpsecSaDetails, err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ipsecapi.IpsecSaDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

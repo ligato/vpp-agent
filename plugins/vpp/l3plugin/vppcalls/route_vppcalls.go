@@ -41,7 +41,7 @@ const (
 )
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
-func (handler *routeHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32, delete bool) error {
+func (handler *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32, delete bool) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(ip.IPAddDelRoute{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -104,7 +104,8 @@ func (handler *routeHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 	return nil
 }
 
-func (handler *routeHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
+// VppAddRoute implements route handler.
+func (handler *RouteHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
 	// Evaluate route IP version
 	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstIpAddr)
 	if err != nil {
@@ -135,6 +136,7 @@ func (handler *routeHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route 
 	return handler.vppAddDelRoute(route, rtIfIdx, false)
 }
 
-func (handler *routeHandler) VppDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
+// VppDelRoute implements route handler.
+func (handler *RouteHandler) VppDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
 	return handler.vppAddDelRoute(route, rtIfIdx, true)
 }

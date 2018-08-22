@@ -410,7 +410,7 @@ func (plugin *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_
 	return nil
 }
 
-// Generates common identifier for authentication key
+// AuthKeyIdentifier generates common identifier for authentication key
 func AuthKeyIdentifier(id uint32) string {
 	return strconv.Itoa(int(id))
 }

@@ -289,7 +289,7 @@ func (plugin *FIBConfigurator) ResolveUpdatedBridgeDomain(bdName string, bdID ui
 	return nil
 }
 
-// ResolveDeletedInterface handles removed bridge domain. In that case, FIB entry remains on the VPP but it is not possible
+// ResolveDeletedBridgeDomain handles removed bridge domain. In that case, FIB entry remains on the VPP but it is not possible
 // to delete it.
 func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(bdName string, bdID uint32, callback func(error)) error {
 	plugin.log.Infof("FIB configurator: resolving unregistered bridge domain %s", bdName)
@@ -307,8 +307,8 @@ func (plugin *FIBConfigurator) ResolveDeletedBridgeDomain(bdName string, bdID ui
 func (plugin *FIBConfigurator) resolveRegisteredItem(callback func(error)) error {
 	var wasErr error
 	// First, remove FIBs which cannot be removed due to missing interface
-	for _, cachedFibId := range plugin.delCacheIndexes.GetMapping().ListNames() {
-		_, fibData, found := plugin.delCacheIndexes.LookupIdx(cachedFibId)
+	for _, cachedFibID := range plugin.delCacheIndexes.GetMapping().ListNames() {
+		_, fibData, found := plugin.delCacheIndexes.LookupIdx(cachedFibID)
 		if !found || fibData == nil {
 			// Should not happen
 			continue
@@ -318,22 +318,22 @@ func (plugin *FIBConfigurator) resolveRegisteredItem(callback func(error)) error
 		if cached {
 			continue
 		}
-		if err := plugin.fibHandler.Delete(cachedFibId, bdIdx, ifIdx, func(err error) {
-			plugin.log.Debugf("Deleting cached obsolete FIB %s", cachedFibId)
+		if err := plugin.fibHandler.Delete(cachedFibID, bdIdx, ifIdx, func(err error) {
+			plugin.log.Debugf("Deleting cached obsolete FIB %s", cachedFibID)
 			// Handle registration
-			plugin.fibIndexes.UnregisterName(cachedFibId)
+			plugin.fibIndexes.UnregisterName(cachedFibID)
 			callback(err)
 		}); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
 		}
-		plugin.delCacheIndexes.UnregisterName(cachedFibId)
-		plugin.log.Debugf("FIB %s removed from 'del' cache", cachedFibId)
+		plugin.delCacheIndexes.UnregisterName(cachedFibID)
+		plugin.log.Debugf("FIB %s removed from 'del' cache", cachedFibID)
 	}
 
 	// Configure un-configurable FIBs
-	for _, cachedFibId := range plugin.addCacheIndexes.GetMapping().ListNames() {
-		_, fibData, found := plugin.addCacheIndexes.LookupIdx(cachedFibId)
+	for _, cachedFibID := range plugin.addCacheIndexes.GetMapping().ListNames() {
+		_, fibData, found := plugin.addCacheIndexes.LookupIdx(cachedFibID)
 		if !found || fibData == nil {
 			// Should not happen
 			continue
@@ -343,18 +343,18 @@ func (plugin *FIBConfigurator) resolveRegisteredItem(callback func(error)) error
 		if cached {
 			continue
 		}
-		if err := plugin.fibHandler.Add(cachedFibId, bdIdx, ifIdx, fibData.BridgedVirtualInterface, fibData.StaticConfig, func(err error) {
-			plugin.log.Infof("Configuring cached FIB %s", cachedFibId)
+		if err := plugin.fibHandler.Add(cachedFibID, bdIdx, ifIdx, fibData.BridgedVirtualInterface, fibData.StaticConfig, func(err error) {
+			plugin.log.Infof("Configuring cached FIB %s", cachedFibID)
 			// Handle registration
-			plugin.fibIndexes.RegisterName(cachedFibId, plugin.fibIndexSeq, fibData)
+			plugin.fibIndexes.RegisterName(cachedFibID, plugin.fibIndexSeq, fibData)
 			plugin.fibIndexSeq++
 			callback(err)
 		}); err != nil {
 			plugin.log.Error(err)
 			wasErr = err
 		}
-		plugin.addCacheIndexes.UnregisterName(cachedFibId)
-		plugin.log.Debugf("FIB %s removed from 'add' cache", cachedFibId)
+		plugin.addCacheIndexes.UnregisterName(cachedFibID)
+		plugin.log.Debugf("FIB %s removed from 'add' cache", cachedFibID)
 	}
 
 	return wasErr

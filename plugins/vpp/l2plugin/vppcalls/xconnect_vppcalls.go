@@ -21,15 +21,17 @@ import (
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
-func (handler *xConnectVppHandler) AddL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
+// AddL2XConnect implements xconnect handler.
+func (handler *XConnectVppHandler) AddL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
 	return handler.addDelXConnect(rxIfIdx, txIfIdx, true)
 }
 
-func (handler *xConnectVppHandler) DeleteL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
+// DeleteL2XConnect implements xconnect handler.
+func (handler *XConnectVppHandler) DeleteL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
 	return handler.addDelXConnect(rxIfIdx, txIfIdx, false)
 }
 
-func (handler *xConnectVppHandler) addDelXConnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool) error {
+func (handler *XConnectVppHandler) addDelXConnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Xconnect{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -39,12 +41,11 @@ func (handler *xConnectVppHandler) addDelXConnect(rxIfaceIdx uint32, txIfaceIdx 
 		TxSwIfIndex: txIfaceIdx,
 		RxSwIfIndex: rxIfaceIdx,
 	}
-
 	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

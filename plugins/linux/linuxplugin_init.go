@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package linuxplugin implements the Linux plugin that handles management
+// Package linux implements the Linux plugin that handles management
 // of Linux VETH interfaces.
 package linux
 
@@ -88,8 +88,8 @@ type Deps struct {
 	WatchEventsMutex *sync.Mutex
 }
 
-// LinuxConfig holds the linuxplugin configuration.
-type LinuxConfig struct {
+// Config holds the linuxplugin configuration.
+type Config struct {
 	Stopwatch bool `json:"stopwatch"`
 	Disabled  bool `json:"disabled"`
 }
@@ -242,8 +242,8 @@ func (plugin *Plugin) initL3() error {
 	return plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch)
 }
 
-func (plugin *Plugin) retrieveLinuxConfig() (*LinuxConfig, error) {
-	config := &LinuxConfig{}
+func (plugin *Plugin) retrieveLinuxConfig() (*Config, error) {
+	config := &Config{}
 	found, err := plugin.Cfg.LoadValue(config)
 	if !found {
 		plugin.Log.Debug("Linuxplugin config not found")

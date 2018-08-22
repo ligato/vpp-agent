@@ -34,7 +34,8 @@ type BfdMeta struct {
 	*BfdAuthKeyMeta `json:"bfd_authkey_meta"`
 }
 
-func (handler *bfdVppHandler) DumpBfdSingleHop() (*BfdDetails, error) {
+// DumpBfdSingleHop implements BFD handler.
+func (handler *BfdVppHandler) DumpBfdSingleHop() (*BfdDetails, error) {
 	sessionDetails, err := handler.DumpBfdSessions()
 	if err != nil {
 		return nil, err
@@ -67,7 +68,8 @@ type BfdSessionMeta struct {
 	SessionIfToIdx map[uint32]string
 }
 
-func (handler *bfdVppHandler) DumpBfdSessions() (*BfdSessionDetails, error) {
+// DumpBfdSessions implements BFD handler.
+func (handler *BfdVppHandler) DumpBfdSessions() (*BfdSessionDetails, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfdapi.BfdUDPSessionDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -119,7 +121,8 @@ func (handler *bfdVppHandler) DumpBfdSessions() (*BfdSessionDetails, error) {
 	}, nil
 }
 
-func (handler *bfdVppHandler) DumpBfdUDPSessionsWithID(authKeyIndex uint32) (*BfdSessionDetails, error) {
+// DumpBfdUDPSessionsWithID implements BFD handler.
+func (handler *BfdVppHandler) DumpBfdUDPSessionsWithID(authKeyIndex uint32) (*BfdSessionDetails, error) {
 	details, err := handler.DumpBfdSessions()
 	if err != nil || len(details.Session) == 0 {
 		return nil, err
@@ -148,7 +151,8 @@ type BfdAuthKeyMeta struct {
 	KeyIDToUseCount map[uint32]uint32
 }
 
-func (handler *bfdVppHandler) DumpBfdAuthKeys() (*BfdAuthKeyDetails, error) {
+// DumpBfdAuthKeys implements BFD handler.
+func (handler *BfdVppHandler) DumpBfdAuthKeys() (*BfdAuthKeyDetails, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(bfdapi.BfdAuthKeysDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

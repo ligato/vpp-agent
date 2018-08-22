@@ -164,7 +164,6 @@ func (plugin *RouteConfigurator) ConfigureRoute(route *l3.StaticRoutes_Route, vr
 	// Check mandatory destination address
 	if route.DstIpAddr == "" {
 		return fmt.Errorf("route %v does not contain destination address", routeID)
-		return nil
 	}
 
 	// Create new route.

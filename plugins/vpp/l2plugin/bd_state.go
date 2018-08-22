@@ -60,7 +60,7 @@ type BridgeDomainStateUpdater struct {
 }
 
 // Init bridge domain state updater.
-func (plugin *BridgeDomainStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
+func (plugin *BridgeDomainStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 	// Logger
 	plugin.log = logger.NewLogger("-l2-bd-state")

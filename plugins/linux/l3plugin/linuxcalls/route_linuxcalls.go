@@ -23,7 +23,7 @@ import (
 )
 
 // AddStaticRoute creates the new static route
-func (handler *netLinkHandler) AddStaticRoute(name string, route *netlink.Route) error {
+func (handler *NetLinkHandler) AddStaticRoute(name string, route *netlink.Route) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("add-static-route").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -32,7 +32,7 @@ func (handler *netLinkHandler) AddStaticRoute(name string, route *netlink.Route)
 }
 
 // ReplaceStaticRoute removes the static route
-func (handler *netLinkHandler) ReplaceStaticRoute(name string, route *netlink.Route) error {
+func (handler *NetLinkHandler) ReplaceStaticRoute(name string, route *netlink.Route) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("replace-static-route").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -41,7 +41,7 @@ func (handler *netLinkHandler) ReplaceStaticRoute(name string, route *netlink.Ro
 }
 
 // DelStaticRoute removes the static route
-func (handler *netLinkHandler) DelStaticRoute(name string, route *netlink.Route) error {
+func (handler *NetLinkHandler) DelStaticRoute(name string, route *netlink.Route) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("del-static-route").LogTimeEntry(time.Since(t))
 	}(time.Now())

@@ -23,7 +23,7 @@ import (
 
 // SystemMock allows to mock netlink-related methods
 type SystemMock struct {
-	responses []*whenStResp
+	responses []*WhenStResp
 	respCurr  int
 	respMax   int
 }
@@ -31,20 +31,20 @@ type SystemMock struct {
 // NewSystemMock creates new instance of the mock and initializes response list
 func NewSystemMock() *SystemMock {
 	return &SystemMock{
-		responses: make([]*whenStResp, 0),
+		responses: make([]*WhenStResp, 0),
 	}
 }
 
-// Helper struct with single method call and desired response items
-type whenStResp struct {
+// WhenStResp is helper struct with single method call and desired response items
+type WhenStResp struct {
 	methodName string
 	items      []interface{}
 }
 
-// When defines name of the related method. It creates a new instance of whenStResp with provided method name and
+// When defines name of the related method. It creates a new instance of WhenStResp with provided method name and
 // stores it to the mock.
-func (mock *SystemMock) When(name string) *whenStResp {
-	resp := &whenStResp{
+func (mock *SystemMock) When(name string) *WhenStResp {
+	resp := &WhenStResp{
 		methodName: name,
 	}
 	mock.responses = append(mock.responses, resp)
@@ -63,7 +63,7 @@ func (mock *SystemMock) When(name string) *whenStResp {
 // - When('method1').ThenReturn('val1')
 //
 // All mocked methods are evaluated in same order they were assigned.
-func (when *whenStResp) ThenReturn(item ...interface{}) {
+func (when *WhenStResp) ThenReturn(item ...interface{}) {
 	when.items = item
 }
 
@@ -80,6 +80,7 @@ func (mock *SystemMock) getReturnValues(name string) (response []interface{}) {
 	return
 }
 
+// OpenFile implements OperatingSystem.
 func (mock *SystemMock) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
 	items := mock.getReturnValues("OpenFile")
 	if len(items) == 1 {
@@ -95,6 +96,7 @@ func (mock *SystemMock) OpenFile(name string, flag int, perm os.FileMode) (*os.F
 	return nil, nil
 }
 
+// MkDirAll implements OperatingSystem.
 func (mock *SystemMock) MkDirAll(path string, perm os.FileMode) error {
 	items := mock.getReturnValues("MkDirAll")
 	if len(items) >= 1 {
@@ -103,6 +105,7 @@ func (mock *SystemMock) MkDirAll(path string, perm os.FileMode) error {
 	return nil
 }
 
+// Remove implements OperatingSystem.
 func (mock *SystemMock) Remove(name string) error {
 	items := mock.getReturnValues("Remove")
 	if len(items) >= 1 {
@@ -111,6 +114,7 @@ func (mock *SystemMock) Remove(name string) error {
 	return nil
 }
 
+// Mount implements Syscall.
 func (mock *SystemMock) Mount(source string, target string, fsType string, flags uintptr, data string) error {
 	items := mock.getReturnValues("Mount")
 	if len(items) >= 1 {
@@ -119,6 +123,7 @@ func (mock *SystemMock) Mount(source string, target string, fsType string, flags
 	return nil
 }
 
+// Unmount implements Syscall.
 func (mock *SystemMock) Unmount(target string, flags int) error {
 	items := mock.getReturnValues("Unmount")
 	if len(items) >= 1 {
@@ -127,6 +132,7 @@ func (mock *SystemMock) Unmount(target string, flags int) error {
 	return nil
 }
 
+// NewNetworkNamespace implements NetlinkNamespace.
 func (mock *SystemMock) NewNetworkNamespace() (netns.NsHandle, error) {
 	items := mock.getReturnValues("NewNetworkNamespace")
 	if len(items) == 1 {
@@ -142,6 +148,7 @@ func (mock *SystemMock) NewNetworkNamespace() (netns.NsHandle, error) {
 	return 0, nil
 }
 
+// GetNamespaceFromName implements NetNsNamespace.
 func (mock *SystemMock) GetNamespaceFromName(name string) (netns.NsHandle, error) {
 	items := mock.getReturnValues("GetNamespaceFromName")
 	if len(items) == 1 {
@@ -157,6 +164,7 @@ func (mock *SystemMock) GetNamespaceFromName(name string) (netns.NsHandle, error
 	return 0, nil
 }
 
+// SetNamespace implements NetNsNamespace.
 func (mock *SystemMock) SetNamespace(ns netns.NsHandle) error {
 	items := mock.getReturnValues("SetNamespace")
 	if len(items) >= 1 {
@@ -165,6 +173,7 @@ func (mock *SystemMock) SetNamespace(ns netns.NsHandle) error {
 	return nil
 }
 
+// LinkSetNsFd implements NetlinkNamespace.
 func (mock *SystemMock) LinkSetNsFd(link netlink.Link, fd int) error {
 	items := mock.getReturnValues("LinkSetNsFd")
 	if len(items) >= 1 {

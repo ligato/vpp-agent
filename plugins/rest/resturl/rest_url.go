@@ -16,16 +16,16 @@ package resturl
 
 // Access list REST urls
 const (
-	// REST Acl IP prefix
-	AclIP = "/vpp/dump/v1/acl/ip"
-	// REST Acl MACIP prefix
-	AclMACIP = "/vpp/dump/v1/acl/macip"
+	// REST ACL IP prefix
+	ACLIP = "/vpp/dump/v1/acl/ip"
+	// REST ACL MACIP prefix
+	ACLMACIP = "/vpp/dump/v1/acl/macip"
 )
 
 // BFD REST urls
 const (
-	// BfdUrl is a REST path of a bfd
-	BfdUrl = "/vpp/dump/v1/bfd"
+	// BfdURL is a REST path of a bfd
+	BfdURL = "/vpp/dump/v1/bfd"
 	// BfdSession is a REST path of a bfd sessions
 	BfdSession = "/vpp/dump/v1/bfd/sessions"
 	// BfdAuthKey is a REST path of a bfd authentication keys
@@ -52,8 +52,8 @@ const (
 
 // NAT REST urls
 const (
-	// NatUrl is a REST path of a NAT
-	NatUrl = "/vpp/dump/v1/nat"
+	// NatURL is a REST path of a NAT
+	NatURL = "/vpp/dump/v1/nat"
 	// NatGlobal is a REST path of a global NAT config
 	NatGlobal = "/vpp/dump/v1/nat/global"
 	// NatDNat is a REST path of a DNAT configurations
@@ -62,8 +62,8 @@ const (
 
 // STN REST url
 const (
-	// StnUrl is a REST path of a STN
-	StnUrl = "/vpp/dump/v1/stn"
+	// StnURL is a REST path of a STN
+	StnURL = "/vpp/dump/v1/stn"
 )
 
 // IPSec REST url
@@ -81,7 +81,7 @@ const (
 	// restBd is rest bridge domain path
 	Bd = "/vpp/dump/v1/bd"
 	// restBdId is rest bridge domain ID path
-	BdId = "/vpp/dump/v1/bdid"
+	BdID = "/vpp/dump/v1/bdid"
 	// restFib is rest FIB path
 	Fib = "/vpp/dump/v1/fib"
 	// restXc is rest cross-connect path
@@ -124,5 +124,5 @@ const (
 // Index
 const (
 	// Index can be used to get the full index page
-	Index      = "/"
+	Index = "/"
 )

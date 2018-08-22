@@ -53,8 +53,8 @@ func (e *unavailableMicroserviceErr) Error() string {
 // Microservice is used to store PID and ID of the container running a given microservice.
 type Microservice struct {
 	Label string
-	Pid   int
-	Id    string
+	PID   int
+	ID    string
 }
 
 // MicroserviceEvent contains microservice object and event type
@@ -184,7 +184,7 @@ func (plugin *NsHandler) processNewMicroservice(nsMgmtCtx *NamespaceMgmtCtx, mic
 
 	microservice, restarted := plugin.microServiceByLabel[microserviceLabel]
 	if restarted {
-		plugin.processTerminatedMicroservice(nsMgmtCtx, microservice.Id)
+		plugin.processTerminatedMicroservice(nsMgmtCtx, microservice.ID)
 		plugin.log.WithFields(logging.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
 			Warn("Microservice has been restarted")
 	} else {
@@ -192,7 +192,7 @@ func (plugin *NsHandler) processNewMicroservice(nsMgmtCtx *NamespaceMgmtCtx, mic
 			Debug("Discovered new microservice")
 	}
 
-	microservice = &Microservice{Label: microserviceLabel, Pid: pid, Id: id}
+	microservice = &Microservice{Label: microserviceLabel, PID: pid, ID: id}
 	plugin.microServiceByLabel[microserviceLabel] = microservice
 	plugin.microServiceByID[id] = microservice
 
@@ -212,11 +212,11 @@ func (plugin *NsHandler) processTerminatedMicroservice(nsMgmtCtx *NamespaceMgmtC
 			Warn("Detected removal of an unknown microservice")
 		return
 	}
-	plugin.log.WithFields(logging.Fields{"label": microservice.Label, "pid": microservice.Pid, "id": microservice.Id}).
+	plugin.log.WithFields(logging.Fields{"label": microservice.Label, "pid": microservice.PID, "id": microservice.ID}).
 		Debug("Microservice has terminated")
 
 	delete(plugin.microServiceByLabel, microservice.Label)
-	delete(plugin.microServiceByID, microservice.Id)
+	delete(plugin.microServiceByID, microservice.ID)
 
 	// Send notification to interface configurator
 	plugin.ifMicroserviceNotif <- &MicroserviceEvent{

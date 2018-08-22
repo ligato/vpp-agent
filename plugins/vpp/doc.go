@@ -1,3 +1,3 @@
-// Package vppplugin is the parent package for all "default" VPP-related
+// Package vpp is the parent package for all "default" VPP-related
 // plugins.
 package vpp

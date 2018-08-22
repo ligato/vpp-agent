@@ -75,7 +75,7 @@ func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater
 
 	// Test initialization
 	plugin := &l2plugin.BridgeDomainStateUpdater{}
-	err = plugin.Init(pluginLogger, connection, ctx, index, swIfIndex, notifChan, publishIfState)
+	err = plugin.Init(ctx, pluginLogger, connection, index, swIfIndex, notifChan, publishIfState)
 	Expect(err).To(BeNil())
 
 	return plugin, connection, index, swIfIndex, notifChan, publishChan

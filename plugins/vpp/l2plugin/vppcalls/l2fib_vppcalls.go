@@ -35,7 +35,8 @@ type FibLogicalReq struct {
 	callback func(error)
 }
 
-func (handler *fibVppHandler) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error)) error {
+// Add implements fib handler.
+func (handler *FibVppHandler) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error)) error {
 	handler.log.Debug("Adding L2 FIB table entry, mac: ", mac)
 
 	handler.requestChan <- &FibLogicalReq{
@@ -50,7 +51,8 @@ func (handler *fibVppHandler) Add(mac string, bdID uint32, ifIdx uint32, bvi boo
 	return nil
 }
 
-func (handler *fibVppHandler) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error)) error {
+// Delete implements fib handler.
+func (handler *FibVppHandler) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error)) error {
 	handler.log.Debug("Removing L2 fib table entry, mac: ", mac)
 
 	handler.requestChan <- &FibLogicalReq{
@@ -63,7 +65,8 @@ func (handler *fibVppHandler) Delete(mac string, bdID uint32, ifIdx uint32, call
 	return nil
 }
 
-func (handler *fibVppHandler) WatchFIBReplies() {
+// WatchFIBReplies implements fib handler.
+func (handler *FibVppHandler) WatchFIBReplies() {
 	for {
 		select {
 		case r := <-handler.requestChan:
@@ -81,7 +84,7 @@ func (handler *fibVppHandler) WatchFIBReplies() {
 	}
 }
 
-func (handler *fibVppHandler) l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool) (err error) {
+func (handler *FibVppHandler) l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool) (err error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -102,12 +105,11 @@ func (handler *fibVppHandler) l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, 
 		BviMac:    boolToUint(bvi),
 		StaticMac: boolToUint(static),
 	}
-
 	reply := &l2ba.L2fibAddDelReply{}
+
 	if err := handler.asyncCallsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

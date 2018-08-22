@@ -15,7 +15,7 @@
 package acl
 
 const (
-	// ACL key prefix
+	// Prefix is ACL key prefix
 	Prefix = "vpp/config/v1/acl/"
 )
 

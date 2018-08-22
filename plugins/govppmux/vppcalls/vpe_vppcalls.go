@@ -94,7 +94,7 @@ var (
 	memoryRe = regexp.MustCompile(`Thread\s+(\d+)\s+(\w+).?\s+(\d+) objects, ([\dkmg\.]+) of ([\dkmg\.]+) used, ([\dkmg\.]+) free, ([\dkmg\.]+) reclaimed, ([\dkmg\.]+) overhead, ([\dkmg\.]+) capacity`)
 )
 
-// GetNodeCounters retrieves node counters info
+// GetMemory retrieves `show memory` info.
 func GetMemory(vppChan govppapi.Channel) (*MemoryInfo, error) {
 	data, err := RunCliCommand(vppChan, "show memory")
 	if err != nil {
@@ -151,7 +151,7 @@ var (
 	nodeCountersRe = regexp.MustCompile(`^\s+(\d+)\s+([\w-\/]+)\s+(.+)$`)
 )
 
-// GetNodeCounters retrieves node counters info
+// GetNodeCounters retrieves node counters info.
 func GetNodeCounters(vppChan govppapi.Channel) (*NodeCounterInfo, error) {
 	data, err := RunCliCommand(vppChan, "show node counters")
 	if err != nil {
@@ -238,7 +238,7 @@ var (
 	runtimeItemsRe = regexp.MustCompile(`([\w-:\.]+)\s+(\w+(?:[ -]\w+)*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([0-9\.e]+)\s+([0-9\.e]+)\s+`)
 )
 
-// GetNodeCounters retrieves node counters info
+// GetRuntimeInfo retrieves how runtime info.
 func GetRuntimeInfo(vppChan govppapi.Channel) (*RuntimeInfo, error) {
 	data, err := RunCliCommand(vppChan, "show runtime")
 	if err != nil {

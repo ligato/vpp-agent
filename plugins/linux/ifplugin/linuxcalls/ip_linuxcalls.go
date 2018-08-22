@@ -38,7 +38,7 @@ import (
 )
 
 // GetAddressList calls AddrList netlink API
-func (handler *netLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
+func (handler *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("get-address-list").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -52,7 +52,7 @@ func (handler *netLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, er
 }
 
 // AddInterfaceIP calls AddrAdd Netlink API.
-func (handler *netLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) error {
+func (handler *NetLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("add-interface-ip").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -66,7 +66,7 @@ func (handler *netLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) er
 }
 
 // DelInterfaceIP calls AddrDel Netlink API.
-func (handler *netLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) error {
+func (handler *NetLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("del-interface-ip").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -80,7 +80,7 @@ func (handler *netLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) er
 }
 
 // SetInterfaceMTU calls LinkSetMTU Netlink API.
-func (handler *netLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
+func (handler *NetLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("set-interface-mtu").LogTimeEntry(time.Since(t))
 	}(time.Now())

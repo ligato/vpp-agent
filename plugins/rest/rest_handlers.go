@@ -33,11 +33,11 @@ import (
 // Registers access list REST handlers
 func (plugin *Plugin) registerAccessListHandlers() {
 	// GET IP ACLs
-	plugin.registerHTTPHandler(resturl.AclIP, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.ACLIP, GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpIPACL(nil)
 	})
 	// GET MACIP ACLs
-	plugin.registerHTTPHandler(resturl.AclMACIP, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.ACLMACIP, GET, func() (interface{}, error) {
 		return plugin.aclHandler.DumpMACIPACL(nil)
 	})
 }
@@ -77,7 +77,7 @@ func (plugin *Plugin) registerInterfaceHandlers() {
 // Registers BFD REST handlers
 func (plugin *Plugin) registerBfdHandlers() {
 	// GET BFD configuration
-	plugin.registerHTTPHandler(resturl.BfdUrl, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.BfdURL, GET, func() (interface{}, error) {
 		return plugin.bfdHandler.DumpBfdSingleHop()
 	})
 	// GET BFD sessions
@@ -93,7 +93,7 @@ func (plugin *Plugin) registerBfdHandlers() {
 // Registers NAT REST handlers
 func (plugin *Plugin) registerNatHandlers() {
 	// GET NAT configuration
-	plugin.registerHTTPHandler(resturl.NatUrl, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.NatURL, GET, func() (interface{}, error) {
 		return plugin.natHandler.Nat44Dump()
 	})
 	// GET NAT global config
@@ -109,7 +109,7 @@ func (plugin *Plugin) registerNatHandlers() {
 // Registers STN REST handlers
 func (plugin *Plugin) registerStnHandlers() {
 	// GET STN configuration
-	plugin.registerHTTPHandler(resturl.StnUrl, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.StnURL, GET, func() (interface{}, error) {
 		return plugin.stnHandler.DumpStnRules()
 	})
 }
@@ -133,7 +133,7 @@ func (plugin *Plugin) registerIPSecHandlers() {
 // Registers L2 plugin REST handlers
 func (plugin *Plugin) registerL2Handlers() {
 	// GET bridge domain IDs
-	plugin.registerHTTPHandler(resturl.BdId, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.BdID, GET, func() (interface{}, error) {
 		return plugin.bdHandler.DumpBridgeDomainIDs()
 	})
 	// GET bridge domains
