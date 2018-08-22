@@ -897,9 +897,8 @@ func (ic *InterfaceConfigurator) getVxLanMulticast(vxlan *intf.Interfaces_Interf
 	}
 	mcIfIdx, mcIf, found := ic.swIfIndexes.LookupIdx(vxlan.Vxlan.Multicast)
 	if !found {
-		ic.log.Infof("multicast interface %s not found, %s is cached", vxlan.Vxlan.Multicast, vxlan.Name)
 		ic.vxlanMulticastCache[vxlan.Name] = vxlan
-		ic.log.Debugf("Interface %s added to VxLAN multicast cache", vxlan.Name)
+		ic.log.Debugf("multicast interface %s not found, cached", vxlan.Vxlan.Multicast, vxlan.Name)
 		return 0, true, nil
 	}
 	// Check wheteher at least one of the addresses is from multicast range
