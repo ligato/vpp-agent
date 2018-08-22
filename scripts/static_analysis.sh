@@ -11,5 +11,14 @@ do
   enabledLinters="$enabledLinters --enable=$linterName"
 done
 
+params=-tags="${GO_BUILD_TAGS}"
+
 # running linters (excluding vendor,...)
-gometalinter --vendor --deadline 1m --enable-gc --disable-all $enabledLinters --exclude="should not use dot imports" --exclude="$filesToExclude" ./...
+gometalinter \
+	--vendor \
+	--linter="vet:go vet ${params}:^(?:vet:.*?\.go:\s+(?P<path>.*?\.go):(?P<line>\d+):(?P<col>\d+):\s*(?P<message>.*))|(?:(?P<path>.*?\.go):(?P<line>\d+):\s*(?P<message>.*))$" \
+	--deadline 3m \
+	--enable-gc \
+	--disable-all $enabledLinters \
+	--exclude="should not use dot imports" \
+	./...

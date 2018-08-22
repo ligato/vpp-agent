@@ -113,8 +113,6 @@ func (plugin *AppNsConfigurator) ConfigureL4FeatureFlag(features *l4.L4Features)
 		return plugin.resolveCachedNamespaces()
 	}
 	return plugin.DeleteL4FeatureFlag()
-
-	return nil
 }
 
 // configureL4FeatureFlag process the NB Features config and propagates it to bin api calls
