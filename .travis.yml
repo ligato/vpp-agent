@@ -5,20 +5,18 @@ language: go
 go:
   - "1.10.x"
 
-go_import_path: github.com/ligato/vpp-agent
-
 addons:
   apt:
-    update:
-      packages:
-        - npm
+    packages:
+      - npm
+
+go_import_path: github.com/ligato/vpp-agent
 
 git:
   depth: 10
   submodules: false
 
 cache:
-  apt: true
   directories:
     - $HOME/.cache/go-build
     - $HOME/build-cache
