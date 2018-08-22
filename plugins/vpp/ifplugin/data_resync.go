@@ -39,26 +39,26 @@ const ifTempName = "temp-if-name"
 // 3. Untagged interfaces are correlated heuristically (mac address, ip addresses). If correlation
 //    is found, interface is modified if needed and registered.
 // 4. All remaining NB interfaces are configured
-func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error {
+func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error {
 	defer func() {
-		if ic.stopwatch != nil {
-			ic.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	if err := ic.clearMapping(); err != nil {
+	if err := c.clearMapping(); err != nil {
 		return err
 	}
-	ic.afPacketConfigurator.clearMapping()
+	c.afPacketConfigurator.clearMapping()
 
 	var err error
-	if ic.memifScCache, err = ic.ifHandler.DumpMemifSocketDetails(); err != nil {
+	if c.memifScCache, err = c.ifHandler.DumpMemifSocketDetails(); err != nil {
 		return errors.Errorf("Interface resync error: failed to dump memif socket details: %v", err)
 	}
 
 	// Dump current state of the VPP interfaces
-	vppIfs, err := ic.ifHandler.DumpInterfaces()
+	vppIfs, err := c.ifHandler.DumpInterfaces()
 	if err != nil {
 		return errors.Errorf("Interface resync error: failed to dump interfaces: %v", err)
 	}
@@ -70,14 +70,14 @@ func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) erro
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
 			// Register local0 interface with zero index
-			if err := ic.registerInterface(vppIf.Meta.InternalName, vppIfIdx, vppIf.Interface); err != nil {
+			if err := c.registerInterface(vppIf.Meta.InternalName, vppIfIdx, vppIf.Interface); err != nil {
 				return errors.Errorf("Interface resync error: %v", err)
 			}
 			continue
 		}
 		if vppIf.Interface.Name == "" {
 			// If interface has no name, it is stored as unnamed and resolved later
-			ic.log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
+			c.log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
 			unnamedVppIfs[vppIfIdx] = vppIf.Interface
 			continue
 		}
@@ -86,30 +86,30 @@ func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) erro
 			if vppIf.Interface.Name == nbIf.Name {
 				correlated = true
 				// Register interface to mapping and VPP tag/index
-				if err := ic.registerInterface(vppIf.Interface.Name, vppIfIdx, nbIf); err != nil {
+				if err := c.registerInterface(vppIf.Interface.Name, vppIfIdx, nbIf); err != nil {
 					return errors.Errorf("Interface resync error: %v", err)
 				}
 				// Calculate whether modification is needed
-				if ic.isIfModified(nbIf, vppIf.Interface) {
-					ic.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Interface.Name)
-					if err = ic.ModifyVPPInterface(nbIf, vppIf.Interface); err != nil {
+				if c.isIfModified(nbIf, vppIf.Interface) {
+					c.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Interface.Name)
+					if err = c.ModifyVPPInterface(nbIf, vppIf.Interface); err != nil {
 						return errors.Errorf("Interface resync error: failed to modify interface %s: %v",
 							vppIf.Interface.Name, err)
 					}
 				} else {
-					ic.log.Debugf("Interface resync: %s registered without additional changes", vppIf.Interface.Name)
+					c.log.Debugf("Interface resync: %s registered without additional changes", vppIf.Interface.Name)
 				}
 				break
 			}
 		}
 		if !correlated {
 			// Register interface before removal (to keep state consistent)
-			if err := ic.registerInterface(vppIf.Interface.Name, vppIfIdx, vppIf.Interface); err != nil {
+			if err := c.registerInterface(vppIf.Interface.Name, vppIfIdx, vppIf.Interface); err != nil {
 				return errors.Errorf("Interface resync error: %v", err)
 			}
 			// VPP interface is obsolete and will be removed (un-configured if physical device)
-			ic.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Interface.Name)
-			if err = ic.deleteVPPInterface(vppIf.Interface, vppIfIdx); err != nil {
+			c.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Interface.Name)
+			if err = c.deleteVPPInterface(vppIf.Interface, vppIfIdx); err != nil {
 				return errors.Errorf("Interface resync error: failed to remove interface %s: %v",
 					vppIf.Interface.Name, err)
 			}
@@ -122,12 +122,12 @@ func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) erro
 		var correlatedIf *intf.Interfaces_Interface
 		for _, nbIf := range nbIfs {
 			// Already registered interfaces cannot be correlated again
-			_, _, found := ic.swIfIndexes.LookupIdx(nbIf.Name)
+			_, _, found := c.swIfIndexes.LookupIdx(nbIf.Name)
 			if found {
 				continue
 			}
 			// Try to correlate heuristically
-			correlatedIf = ic.correlateInterface(vppIf, nbIf)
+			correlatedIf = c.correlateInterface(vppIf, nbIf)
 			if correlatedIf != nil {
 				break
 			}
@@ -135,27 +135,27 @@ func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) erro
 
 		if correlatedIf != nil {
 			// Register interface
-			if err := ic.registerInterface(correlatedIf.Name, vppIfIdx, correlatedIf); err != nil {
+			if err := c.registerInterface(correlatedIf.Name, vppIfIdx, correlatedIf); err != nil {
 				return errors.Errorf("Interface resync error: %v", err)
 			}
 			// Calculate whether modification is needed
-			if ic.isIfModified(correlatedIf, vppIf) {
-				ic.log.Debugf("RESYNC interfaces: modifying correlated interface %v", vppIf.Name)
-				if err = ic.ModifyVPPInterface(correlatedIf, vppIf); err != nil {
+			if c.isIfModified(correlatedIf, vppIf) {
+				c.log.Debugf("RESYNC interfaces: modifying correlated interface %v", vppIf.Name)
+				if err = c.ModifyVPPInterface(correlatedIf, vppIf); err != nil {
 					return errors.Errorf("Interface resync error: failed to modify correlated interface %s: %v",
 						vppIf.Name, err)
 				}
 			} else {
-				ic.log.Debugf("Interface resync: correlated %v registered without additional changes", vppIf.Name)
+				c.log.Debugf("Interface resync: correlated %v registered without additional changes", vppIf.Name)
 			}
 		} else {
 			// Register interface  with temporary name (will be unregistered during removal)
-			if err := ic.registerInterface(ifTempName, vppIfIdx, vppIf); err != nil {
+			if err := c.registerInterface(ifTempName, vppIfIdx, vppIf); err != nil {
 				return errors.Errorf("Interface resync error: %v", err)
 			}
 			// VPP interface cannot be correlated and will be removed
-			ic.log.Debugf("RESYNC interfaces: removing interface %v", vppIf.Name)
-			if err = ic.deleteVPPInterface(vppIf, vppIfIdx); err != nil {
+			c.log.Debugf("RESYNC interfaces: removing interface %v", vppIf.Name)
+			if err = c.deleteVPPInterface(vppIf, vppIfIdx); err != nil {
 				return errors.Errorf("Interface resync error: failed to remove interface %s: %v",
 					vppIf.Name, err)
 			}
@@ -165,10 +165,10 @@ func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) erro
 	// Last step is to configure all new (not-yet-registered) interfaces
 	for _, nbIf := range nbIfs {
 		// If interface is registered, it was already processed
-		_, _, found := ic.swIfIndexes.LookupIdx(nbIf.Name)
+		_, _, found := c.swIfIndexes.LookupIdx(nbIf.Name)
 		if !found {
-			ic.log.Debugf("RESYNC interfaces: configuring new interface %v", nbIf.Name)
-			if err := ic.ConfigureVPPInterface(nbIf); err != nil {
+			c.log.Debugf("RESYNC interfaces: configuring new interface %v", nbIf.Name)
+			if err := c.ConfigureVPPInterface(nbIf); err != nil {
 				return errors.Errorf("Interface resync error: failed to configure interface %s: %v",
 					nbIf.Name, err)
 			}
@@ -176,23 +176,23 @@ func (ic *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) erro
 	}
 
 	// update the interfaces state data in memory
-	if err := ic.propagateIfDetailsToStatus(); err != nil {
+	if err := c.propagateIfDetailsToStatus(); err != nil {
 		return errors.Errorf("Interface resync error: %v", err)
 	}
 
-	ic.log.Info("Interface resync done")
+	c.log.Info("Interface resync done")
 
 	return nil
 }
 
 // VerifyVPPConfigPresence dumps VPP interface configuration on the vpp. If there are any interfaces configured (except
 // the local0), it returns false (do not interrupt the resto of the resync), otherwise returns true
-func (ic *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interfaces_Interface) bool {
+func (c *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interfaces_Interface) bool {
 	// notify that the resync should be stopped
 	var stop bool
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := ic.ifHandler.DumpInterfaces()
+	vppIfaces, err := c.ifHandler.DumpInterfaces()
 	if err != nil {
 		// Do not return error here
 		return stop
@@ -201,10 +201,10 @@ func (ic *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interf
 	// The strategy is optimize-cold-start, so look over all dumped VPP interfaces and check for the configured ones
 	// (leave out the local0). If there are any other interfaces, return true (resync will continue).
 	// If not, return a false flag which cancels the VPP resync operation.
-	ic.log.Info("optimize-cold-start VPP resync strategy chosen, resolving...")
+	c.log.Info("optimize-cold-start VPP resync strategy chosen, resolving...")
 	if len(vppIfaces) == 0 {
 		stop = true
-		ic.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
+		c.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
 		return stop
 	}
 	// if interface exists, try to find local0 interface (index 0)
@@ -212,28 +212,28 @@ func (ic *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interf
 	// in case local0 is the only interface on the vpp, stop the resync
 	if len(vppIfaces) == 1 && ok {
 		stop = true
-		ic.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (only local0 was found)")
+		c.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (only local0 was found)")
 		return stop
 	}
 	// otherwise continue normally
-	ic.log.Infof("... VPP configuration found, continue with VPP resync")
+	c.log.Infof("... VPP configuration found, continue with VPP resync")
 
 	return stop
 }
 
 // ResyncSession writes BFD sessions to the empty VPP
-func (bfdc *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
+func (c *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
 	defer func() {
-		if bfdc.stopwatch != nil {
-			bfdc.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	bfdc.clearMapping()
+	c.clearMapping()
 
 	// Dump all BFD vppSessions
-	vppBfdSessions, err := bfdc.bfdHandler.DumpBfdSessions()
+	vppBfdSessions, err := c.bfdHandler.DumpBfdSessions()
 	if err != nil {
 		return errors.Errorf("BFD resync error: failed to dump BFD sessions: %v", err)
 	}
@@ -246,8 +246,8 @@ func (bfdc *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sessio
 			// compare fixed fields
 			if nbSession.Interface == vppSession.Interface && nbSession.SourceAddress == vppSession.SourceAddress &&
 				nbSession.DestinationAddress == vppSession.DestinationAddress {
-				bfdc.sessionsIndexes.RegisterName(nbSession.Interface, bfdc.bfdIDSeq, nil)
-				if err := bfdc.ModifyBfdSession(vppSession, nbSession); err != nil {
+				c.sessionsIndexes.RegisterName(nbSession.Interface, c.bfdIDSeq, nil)
+				if err := c.ModifyBfdSession(vppSession, nbSession); err != nil {
 					return errors.Errorf("BFD resync error: failed to modify BFD session %s: %v",
 						nbSession.Interface, err)
 				}
@@ -256,7 +256,7 @@ func (bfdc *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sessio
 		}
 		if !found {
 			// configure new BFD session
-			if err := bfdc.ConfigureBfdSession(nbSession); err != nil {
+			if err := c.ConfigureBfdSession(nbSession); err != nil {
 				return errors.Errorf("BFD resync error: failed to create BFD session %s: %v", nbSession.Interface, err)
 			}
 		}
@@ -265,29 +265,29 @@ func (bfdc *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sessio
 	// Remove old sessions
 	for _, vppSession := range vppBfdSessions.Session {
 		// remove every not-yet-registered session
-		_, _, found := bfdc.sessionsIndexes.LookupIdx(vppSession.Interface)
+		_, _, found := c.sessionsIndexes.LookupIdx(vppSession.Interface)
 		if !found {
-			if err := bfdc.DeleteBfdSession(vppSession); err != nil {
+			if err := c.DeleteBfdSession(vppSession); err != nil {
 				return errors.Errorf("BFD resync error: failed to delete BFD session %s: %v", vppSession.Interface, err)
 			}
 		}
 	}
 
-	bfdc.log.Info("BFD session resync done")
+	c.log.Info("BFD session resync done")
 
 	return nil
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP
-func (bfdc *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
+func (c *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
 	defer func() {
-		if bfdc.stopwatch != nil {
-			bfdc.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// lookup BFD auth keys
-	vppBfdKeys, err := bfdc.bfdHandler.DumpBfdAuthKeys()
+	vppBfdKeys, err := c.bfdHandler.DumpBfdAuthKeys()
 	if err != nil {
 		return errors.Errorf("BFD resync error: failed to dump BFD authentication keys: %v", err)
 	}
@@ -299,8 +299,8 @@ func (bfdc *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error
 		for _, vppKey := range vppBfdKeys.AuthKeys {
 			// compare key ID
 			if nbKey.Id == vppKey.Id {
-				bfdc.keysIndexes.RegisterName(AuthKeyIdentifier(nbKey.Id), bfdc.bfdIDSeq, nil)
-				if err := bfdc.ModifyBfdAuthKey(vppKey, nbKey); err != nil {
+				c.keysIndexes.RegisterName(AuthKeyIdentifier(nbKey.Id), c.bfdIDSeq, nil)
+				if err := c.ModifyBfdAuthKey(vppKey, nbKey); err != nil {
 					return errors.Errorf("BFD resync error: failed to modify BFD authentication key %s (ID %d): %v",
 						nbKey.Name, nbKey.Id, err)
 				}
@@ -309,7 +309,7 @@ func (bfdc *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error
 		}
 		if !found {
 			// configure new BFD authentication key
-			if err := bfdc.ConfigureBfdAuthKey(nbKey); err != nil {
+			if err := c.ConfigureBfdAuthKey(nbKey); err != nil {
 				return errors.Errorf("BFD resync error: failed to configure BFD authentication key %s (ID %d): %v",
 					nbKey.Name, nbKey.Id, err)
 			}
@@ -319,25 +319,25 @@ func (bfdc *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error
 	// Remove old keys
 	for _, vppKey := range vppBfdKeys.AuthKeys {
 		// remove every not-yet-registered keys
-		_, _, found := bfdc.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
+		_, _, found := c.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
 		if !found {
-			if err := bfdc.DeleteBfdAuthKey(vppKey); err != nil {
+			if err := c.DeleteBfdAuthKey(vppKey); err != nil {
 				return errors.Errorf("BFD resync error: failed to delete BFD authentication key %s (ID %d): %v",
 					vppKey.Name, vppKey.Id, err)
 			}
 		}
 	}
 
-	bfdc.log.Info("BFD authentication key resync done")
+	c.log.Info("BFD authentication key resync done")
 
 	return nil
 }
 
 // ResyncEchoFunction writes BFD echo function to the empty VPP
-func (bfdc *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
+func (c *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
 	defer func() {
-		if bfdc.stopwatch != nil {
-			bfdc.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 	if len(echoFunctions) == 0 {
@@ -348,34 +348,34 @@ func (bfdc *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBF
 	// Only one config can be used to set an echo source. If there are multiple configurations,
 	// use the first one
 	if len(echoFunctions) > 1 {
-		bfdc.log.Warn("BFD resync: multiple configurations of BFD echo function found. Setting up %s as source",
+		c.log.Warn("BFD resync: multiple configurations of BFD echo function found. Setting up %s as source",
 			echoFunctions[0].EchoSourceInterface)
 	}
-	if err := bfdc.ConfigureBfdEchoFunction(echoFunctions[0]); err != nil {
+	if err := c.ConfigureBfdEchoFunction(echoFunctions[0]); err != nil {
 		return errors.Errorf("BFD resync error: failed to set interface %s as BFD echo source: %v",
 			echoFunctions[0], err)
 	}
 
-	bfdc.log.Info("BFD echo function resync done")
+	c.log.Info("BFD echo function resync done")
 
 	return nil
 }
 
 // Resync writes stn rule to the the empty VPP
-func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
+func (c *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
+	c.log.WithField("cfg", c).Debug("RESYNC stn rules begin. ")
 	// Calculate and log stn rules resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	plugin.clearMapping()
+	c.clearMapping()
 
 	// Dump existing STN Rules
-	vppStnDetails, err := plugin.Dump()
+	vppStnDetails, err := c.Dump()
 	if err != nil {
 		return err
 	}
@@ -387,15 +387,15 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 		var vppStnIP net.IP
 		var vppStnIPStr string
 
-		vppStnIfIdx, _, found := plugin.ifIndexes.LookupIdx(vppStnRule.Interface)
+		vppStnIfIdx, _, found := c.ifIndexes.LookupIdx(vppStnRule.Interface)
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
-			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
-				plugin.log.Error(err)
+			if err := c.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
+				c.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
+			c.log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
 				vppStnIPStr, vppStnIfIdx)
 			continue
 		}
@@ -405,32 +405,32 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 		for _, nbStnRule := range nbStnRules {
 			if nbStnRule.IpAddress == vppStnIPStr && nbStnRule.Interface == vppStnRule.Interface {
 				// Register existing rule
-				plugin.indexSTNRule(nbStnRule, false)
+				c.indexSTNRule(nbStnRule, false)
 				match = true
 			}
-			plugin.log.Debugf("RESYNC STN: registered already existing rule %v", nbStnRule.RuleName)
+			c.log.Debugf("RESYNC STN: registered already existing rule %v", nbStnRule.RuleName)
 		}
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
-			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
-				plugin.log.Error(err)
+			if err := c.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
+				c.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnRule.Interface)
+			c.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnRule.Interface)
 		}
 	}
 
 	// Configure missing rules
 	for _, nbStnRule := range nbStnRules {
 		identifier := StnIdentifier(nbStnRule.Interface)
-		_, _, found := plugin.allIndexes.LookupIdx(identifier)
+		_, _, found := c.allIndexes.LookupIdx(identifier)
 		if !found {
-			if err := plugin.Add(nbStnRule); err != nil {
-				plugin.log.Error(err)
+			if err := c.Add(nbStnRule); err != nil {
+				c.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule %v added", nbStnRule.RuleName)
+			c.log.Debugf("RESYNC STN: rule %v added", nbStnRule.RuleName)
 		}
 	}
 
@@ -438,36 +438,36 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 }
 
 // ResyncNatGlobal writes NAT address pool config to the the empty VPP
-func (natc *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error {
+func (c *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error {
 	// Re-initialize cache
-	natc.clearMapping()
+	c.clearMapping()
 
-	vppNatGlobal, err := natc.natHandler.Nat44GlobalConfigDump()
+	vppNatGlobal, err := c.natHandler.Nat44GlobalConfigDump()
 	if err != nil {
 		return errors.Errorf("NAT resync error: failed to dump NAT44 global config: %v", err)
 	}
 
 	// Modify will made all the diffs needed (nothing if content is equal)
-	if err := natc.ModifyNatGlobalConfig(vppNatGlobal, nbGlobal); err != nil {
+	if err := c.ModifyNatGlobalConfig(vppNatGlobal, nbGlobal); err != nil {
 		return err
 	}
 
-	natc.log.Info("NAT global config resync done.")
+	c.log.Info("NAT global config resync done.")
 
 	return nil
 }
 
 // ResyncSNat writes NAT static mapping config to the the empty VPP
-func (natc *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) error {
+func (c *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) error {
 	// todo SNAT not implemented yet, nothing to resync
 	return nil
 }
 
 // ResyncDNat writes NAT static mapping config to the the empty VPP
-func (natc *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
-	natc.log.Debug("RESYNC DNAT config.")
+func (c *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
+	c.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := natc.natHandler.Nat44DNatDump()
+	vppDNatCfg, err := c.natHandler.Nat44DNatDump()
 	if err != nil {
 		return errors.Errorf("NAT resync error: failed to dump NAT44 DNAT: %v", err)
 	}
@@ -482,88 +482,88 @@ func (natc *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig
 				continue
 			}
 			// Compare all VPP mappings with the NB, register existing ones
-			natc.resolveMappings(nbDNat, &vppDNat.StMappings, &vppDNat.IdMappings)
+			c.resolveMappings(nbDNat, &vppDNat.StMappings, &vppDNat.IdMappings)
 			// Configure all missing DNAT mappings
 			for _, nbMapping := range nbDNat.StMappings {
 				mappingIdentifier := GetStMappingIdentifier(nbMapping)
-				_, _, found := natc.dNatStMappingIndexes.LookupIdx(mappingIdentifier)
+				_, _, found := c.dNatStMappingIndexes.LookupIdx(mappingIdentifier)
 				if !found {
 					// Configure missing mapping
 					if len(nbMapping.LocalIps) == 1 {
-						if err := natc.handleStaticMapping(nbMapping, "", true); err != nil {
+						if err := c.handleStaticMapping(nbMapping, "", true); err != nil {
 							return err
 						}
 					} else {
-						if err := natc.handleStaticMappingLb(nbMapping, "", true); err != nil {
+						if err := c.handleStaticMappingLb(nbMapping, "", true); err != nil {
 							return err
 						}
 					}
 					// Register new DNAT mapping
-					natc.dNatStMappingIndexes.RegisterName(mappingIdentifier, natc.natIndexSeq, nil)
-					natc.natIndexSeq++
-					natc.log.Debugf("NAT44 resync: new (lb)static mapping %s registered", mappingIdentifier)
+					c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+					c.natIndexSeq++
+					c.log.Debugf("NAT44 resync: new (lb)static mapping %s registered", mappingIdentifier)
 				}
 			}
 			// Configure all missing DNAT identity mappings
 			for _, nbIdMapping := range nbDNat.IdMappings {
 				mappingIdentifier := GetIdMappingIdentifier(nbIdMapping)
-				_, _, found := natc.dNatIdMappingIndexes.LookupIdx(mappingIdentifier)
+				_, _, found := c.dNatIdMappingIndexes.LookupIdx(mappingIdentifier)
 				if !found {
 					// Configure missing mapping
-					if err := natc.handleIdentityMapping(nbIdMapping, "", true); err != nil {
+					if err := c.handleIdentityMapping(nbIdMapping, "", true); err != nil {
 						return err
 					}
 
 					// Register new DNAT mapping
-					natc.dNatIdMappingIndexes.RegisterName(mappingIdentifier, natc.natIndexSeq, nil)
-					natc.natIndexSeq++
-					natc.log.Debugf("NAT44 resync: new identity mapping %s registered", mappingIdentifier)
+					c.dNatIdMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+					c.natIndexSeq++
+					c.log.Debugf("NAT44 resync: new identity mapping %s registered", mappingIdentifier)
 				}
 			}
 			// Remove obsolete mappings from DNAT
 			for _, vppMapping := range vppDNat.StMappings {
 				// Static mapping
 				if len(vppMapping.LocalIps) == 1 {
-					if err := natc.handleStaticMapping(vppMapping, "", false); err != nil {
+					if err := c.handleStaticMapping(vppMapping, "", false); err != nil {
 						return err
 					}
 				} else {
 					// Lb-static mapping
-					if err := natc.handleStaticMappingLb(vppMapping, "", false); err != nil {
+					if err := c.handleStaticMappingLb(vppMapping, "", false); err != nil {
 						return err
 					}
 				}
 			}
 			for _, vppIdMapping := range vppDNat.IdMappings {
 				// Identity mapping
-				if err := natc.handleIdentityMapping(vppIdMapping, "", false); err != nil {
+				if err := c.handleIdentityMapping(vppIdMapping, "", false); err != nil {
 					return err
 				}
 			}
 			// At this point, the DNAT is completely configured and can be registered
-			natc.dNatIndexes.RegisterName(nbDNat.Label, natc.natIndexSeq, nil)
-			natc.natIndexSeq++
-			natc.log.Debugf("NAT44 resync: DNAT %s synced", nbDNat.Label)
+			c.dNatIndexes.RegisterName(nbDNat.Label, c.natIndexSeq, nil)
+			c.natIndexSeq++
+			c.log.Debugf("NAT44 resync: DNAT %s synced", nbDNat.Label)
 		}
 	}
 
 	// Remove obsolete DNAT configurations which are not registered
 	for _, vppDNat := range vppDNatCfg.DnatConfigs {
-		_, _, found := natc.dNatIndexes.LookupIdx(vppDNat.Label)
+		_, _, found := c.dNatIndexes.LookupIdx(vppDNat.Label)
 		if !found {
-			if err := natc.DeleteDNat(vppDNat); err != nil {
+			if err := c.DeleteDNat(vppDNat); err != nil {
 				return err
 			}
 		}
 	}
 
-	natc.log.Info("DNAT resync done.")
+	c.log.Info("DNAT resync done.")
 
 	return nil
 }
 
 // Looks for the same mapping in the VPP, register existing ones
-func (natc *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
+func (c *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
 	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIdMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	// Iterate over static mappings in NB DNAT config
 	for _, nbMapping := range nbDNatConfig.StMappings {
@@ -600,13 +600,13 @@ func (natc *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatCon
 				}
 				// At this point, the NB mapping matched the VPP one, so register it
 				mappingIdentifier := GetStMappingIdentifier(nbMapping)
-				natc.dNatStMappingIndexes.RegisterName(mappingIdentifier, natc.natIndexSeq, nil)
-				natc.natIndexSeq++
+				c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+				c.natIndexSeq++
 
 				// Remove registered entry from vpp mapping (configurator knows which mappings were registered)
 				dMappings := *vppMappings
 				*vppMappings = append(dMappings[:vppIndex], dMappings[vppIndex+1:]...)
-				natc.log.Debugf("NAT44 resync: lb-mapping %v already configured", mappingIdentifier)
+				c.log.Debugf("NAT44 resync: lb-mapping %v already configured", mappingIdentifier)
 			}
 		} else {
 			// No load balancer
@@ -629,7 +629,7 @@ func (natc *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatCon
 				}
 				// Compare Local IP/Port and probability addresses (there is only one local IP address in this case)
 				if len(nbMapping.LocalIps) != 1 || len(vppMapping.LocalIps) != 1 {
-					natc.log.Warnf("NAT44 resync: mapping without load balancer contains more than 1 local IP address")
+					c.log.Warnf("NAT44 resync: mapping without load balancer contains more than 1 local IP address")
 					continue
 				}
 				nbLocal := nbMapping.LocalIps[0]
@@ -640,13 +640,13 @@ func (natc *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatCon
 
 				// At this point, the NB mapping matched the VPP one, so register it
 				mappingIdentifier := GetStMappingIdentifier(nbMapping)
-				natc.dNatStMappingIndexes.RegisterName(mappingIdentifier, natc.natIndexSeq, nil)
-				natc.natIndexSeq++
+				c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+				c.natIndexSeq++
 
 				// Remove registered entry from vpp mapping (so configurator knows which mappings were registered)
 				dMappings := *vppMappings
 				*vppMappings = append(dMappings[:vppIndex], dMappings[vppIndex+1:]...)
-				natc.log.Debugf("NAT44 resync: mapping %v already configured", mappingIdentifier)
+				c.log.Debugf("NAT44 resync: mapping %v already configured", mappingIdentifier)
 			}
 		}
 	}
@@ -668,19 +668,19 @@ func (natc *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatCon
 
 			// At this point, the NB mapping matched the VPP one, so register it
 			mappingIdentifier := GetIdMappingIdentifier(nbIdMapping)
-			natc.dNatIdMappingIndexes.RegisterName(mappingIdentifier, natc.natIndexSeq, nil)
-			natc.natIndexSeq++
+			c.dNatIdMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+			c.natIndexSeq++
 
 			// Remove registered entry from vpp mapping (configurator knows which mappings were registered)
 			dIdMappings := *vppIdMappings
 			*vppIdMappings = append(dIdMappings[:vppIdIndex], dIdMappings[vppIdIndex+1:]...)
-			natc.log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
+			c.log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
 		}
 	}
 }
 
 // Correlate interfaces according to MAC address, interface addresses
-func (ic *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces_Interface) *intf.Interfaces_Interface {
+func (c *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces_Interface) *intf.Interfaces_Interface {
 	// Correlate MAC address
 	if nbIf.PhysAddress != "" {
 		if nbIf.PhysAddress == vppIf.PhysAddress {
@@ -697,12 +697,12 @@ func (ic *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces
 			for _, vppIP := range vppIf.IpAddresses {
 				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
 				if err != nil {
-					ic.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
 				if err != nil {
-					ic.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
@@ -728,41 +728,41 @@ func (ic *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces
 }
 
 // Compares two interfaces. If there is any difference, returns true, false otherwise
-func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
-	ic.log.Debugf("Interface RESYNC comparison started for interface %s", nbIf.Name)
+func (c *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
+	c.log.Debugf("Interface RESYNC comparison started for interface %s", nbIf.Name)
 	// Type
 	if nbIf.Type != vppIf.Type {
-		ic.log.Debugf("Interface RESYNC comparison: type changed (NB: %v, VPP: %v)",
+		c.log.Debugf("Interface RESYNC comparison: type changed (NB: %v, VPP: %v)",
 			nbIf.Type, vppIf.Type)
 		return true
 	}
 	// Enabled
 	if nbIf.Enabled != vppIf.Enabled {
-		ic.log.Debugf("Interface RESYNC comparison: enabled state changed (NB: %t, VPP: %t)",
+		c.log.Debugf("Interface RESYNC comparison: enabled state changed (NB: %t, VPP: %t)",
 			nbIf.Enabled, vppIf.Enabled)
 		return true
 	}
 	// VRF
 	if nbIf.Vrf != vppIf.Vrf {
-		ic.log.Debugf("Interface RESYNC comparison: VRF changed (NB: %d, VPP: %d)",
+		c.log.Debugf("Interface RESYNC comparison: VRF changed (NB: %d, VPP: %d)",
 			nbIf.Vrf, vppIf.Vrf)
 		return true
 	}
 	// Container IP address
 	if nbIf.ContainerIpAddress != vppIf.ContainerIpAddress {
-		ic.log.Debugf("Interface RESYNC comparison: container IP changed (NB: %s, VPP: %s)",
+		c.log.Debugf("Interface RESYNC comparison: container IP changed (NB: %s, VPP: %s)",
 			nbIf.ContainerIpAddress, vppIf.ContainerIpAddress)
 		return true
 	}
 	// DHCP setup
 	if nbIf.SetDhcpClient != vppIf.SetDhcpClient {
-		ic.log.Debugf("Interface RESYNC comparison: DHCP setup changed (NB: %t, VPP: %t)",
+		c.log.Debugf("Interface RESYNC comparison: DHCP setup changed (NB: %t, VPP: %t)",
 			nbIf.SetDhcpClient, vppIf.SetDhcpClient)
 		return true
 	}
 	//  MTU value (not valid for VxLAN)
 	if nbIf.Mtu != vppIf.Mtu && nbIf.Type != intf.InterfaceType_VXLAN_TUNNEL {
-		ic.log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
+		c.log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
 			nbIf.Mtu, vppIf.Mtu)
 		return true
 	}
@@ -770,13 +770,13 @@ func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Inter
 	nbMac := strings.ToUpper(nbIf.PhysAddress)
 	vppMac := strings.ToUpper(vppIf.PhysAddress)
 	if nbMac != "" && nbMac != vppMac {
-		ic.log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)", nbMac, vppMac)
+		c.log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)", nbMac, vppMac)
 		return true
 	}
 	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
 	// todo dump unnumbered data
 	if nbIf.Unnumbered != nil {
-		ic.log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
+		c.log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
 		vppIf.IpAddresses = nil
 	} else {
 		// Remove IPv6 link local addresses (default values)
@@ -787,7 +787,7 @@ func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Inter
 		}
 		// Compare IP address count
 		if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
-			ic.log.Debugf("Interface RESYNC comparison: IP address count changed (NB: %d, VPP: %d)",
+			c.log.Debugf("Interface RESYNC comparison: IP address count changed (NB: %d, VPP: %d)",
 				len(nbIf.IpAddresses), len(vppIf.IpAddresses))
 			return true
 		}
@@ -797,12 +797,12 @@ func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Inter
 			for _, vppIP := range vppIf.IpAddresses {
 				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
 				if err != nil {
-					ic.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
 				if err != nil {
-					ic.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
@@ -811,35 +811,35 @@ func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Inter
 				}
 			}
 			if !ipFound {
-				ic.log.Debugf("Interface RESYNC comparison: VPP interface %s does not contain IP %s", nbIf.Name, nbIP)
+				c.log.Debugf("Interface RESYNC comparison: VPP interface %s does not contain IP %s", nbIf.Name, nbIP)
 				return true
 			}
 		}
 	}
 	// RxMode settings
 	if nbIf.RxModeSettings == nil && vppIf.RxModeSettings != nil || nbIf.RxModeSettings != nil && vppIf.RxModeSettings == nil {
-		ic.log.Debugf("Interface RESYNC comparison: RxModeSettings changed (NB: %v, VPP: %v)",
+		c.log.Debugf("Interface RESYNC comparison: RxModeSettings changed (NB: %v, VPP: %v)",
 			nbIf.RxModeSettings, vppIf.RxModeSettings)
 		return true
 	}
 	if nbIf.RxModeSettings != nil && vppIf.RxModeSettings != nil {
 		// RxMode
 		if nbIf.RxModeSettings.RxMode != vppIf.RxModeSettings.RxMode {
-			ic.log.Debugf("Interface RESYNC comparison: RxMode changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: RxMode changed (NB: %v, VPP: %v)",
 				nbIf.RxModeSettings.RxMode, vppIf.RxModeSettings.RxMode)
 			return true
 
 		}
 		// QueueID
 		if nbIf.RxModeSettings.QueueId != vppIf.RxModeSettings.QueueId {
-			ic.log.Debugf("Interface RESYNC comparison: QueueID changed (NB: %d, VPP: %d)",
+			c.log.Debugf("Interface RESYNC comparison: QueueID changed (NB: %d, VPP: %d)",
 				nbIf.RxModeSettings.QueueId, vppIf.RxModeSettings.QueueId)
 			return true
 
 		}
 		// QueueIDValid
 		if nbIf.RxModeSettings.QueueIdValid != vppIf.RxModeSettings.QueueIdValid {
-			ic.log.Debugf("Interface RESYNC comparison: QueueIDValid changed (NB: %d, VPP: %d)",
+			c.log.Debugf("Interface RESYNC comparison: QueueIDValid changed (NB: %d, VPP: %d)",
 				nbIf.RxModeSettings.QueueIdValid, vppIf.RxModeSettings.QueueIdValid)
 			return true
 
@@ -849,59 +849,59 @@ func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Inter
 	switch nbIf.Type {
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		if nbIf.Afpacket == nil && vppIf.Afpacket != nil || nbIf.Afpacket != nil && vppIf.Afpacket == nil {
-			ic.log.Debugf("Interface RESYNC comparison: AF-packet setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: AF-packet setup changed (NB: %v, VPP: %v)",
 				nbIf.Afpacket, vppIf.Afpacket)
 			return true
 		}
 		if nbIf.Afpacket != nil && vppIf.Afpacket != nil {
 			// AF-packet host name
 			if nbIf.Afpacket.HostIfName != vppIf.Afpacket.HostIfName {
-				ic.log.Debugf("Interface RESYNC comparison: AF-packet host name changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: AF-packet host name changed (NB: %s, VPP: %s)",
 					nbIf.Afpacket.HostIfName, vppIf.Afpacket.HostIfName)
 				return true
 			}
 		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		if nbIf.Memif == nil && vppIf.Memif != nil || nbIf.Memif != nil && vppIf.Memif == nil {
-			ic.log.Debugf("Interface RESYNC comparison: memif setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: memif setup changed (NB: %v, VPP: %v)",
 				nbIf.Memif, vppIf.Memif)
 			return true
 		}
 		if nbIf.Memif != nil && vppIf.Memif != nil {
 			// Memif ID
 			if nbIf.Memif.Id != vppIf.Memif.Id {
-				ic.log.Debugf("Interface RESYNC comparison: memif ID changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: memif ID changed (NB: %d, VPP: %d)",
 					nbIf.Memif.Id, vppIf.Memif.Id)
 				return true
 			}
 
 			// Memif socket
 			if nbIf.Memif.SocketFilename != vppIf.Memif.SocketFilename {
-				ic.log.Debugf("Interface RESYNC comparison: memif socket filename changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: memif socket filename changed (NB: %s, VPP: %s)",
 					nbIf.Memif.SocketFilename, vppIf.Memif.SocketFilename)
 				return true
 			}
 			// Master
 			if nbIf.Memif.Master != vppIf.Memif.Master {
-				ic.log.Debugf("Interface RESYNC comparison: memif master setup changed (NB: %t, VPP: %t)",
+				c.log.Debugf("Interface RESYNC comparison: memif master setup changed (NB: %t, VPP: %t)",
 					nbIf.Memif.Master, vppIf.Memif.Master)
 				return true
 			}
 			// Mode
 			if nbIf.Memif.Mode != vppIf.Memif.Mode {
-				ic.log.Debugf("Interface RESYNC comparison: memif mode setup changed (NB: %v, VPP: %v)",
+				c.log.Debugf("Interface RESYNC comparison: memif mode setup changed (NB: %v, VPP: %v)",
 					nbIf.Memif.Mode, vppIf.Memif.Mode)
 				return true
 			}
 			// Rx queues
 			if nbIf.Memif.RxQueues != vppIf.Memif.RxQueues {
-				ic.log.Debugf("Interface RESYNC comparison: RxQueues changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: RxQueues changed (NB: %d, VPP: %d)",
 					nbIf.Memif.RxQueues, vppIf.Memif.RxQueues)
 				return true
 			}
 			// Tx queues
 			if nbIf.Memif.TxQueues != vppIf.Memif.TxQueues {
-				ic.log.Debugf("Interface RESYNC comparison: TxQueues changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: TxQueues changed (NB: %d, VPP: %d)",
 					nbIf.Memif.TxQueues, vppIf.Memif.TxQueues)
 				return true
 			}
@@ -910,70 +910,70 @@ func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Inter
 		}
 	case intf.InterfaceType_TAP_INTERFACE:
 		if nbIf.Tap == nil && vppIf.Tap != nil || nbIf.Tap != nil && vppIf.Tap == nil {
-			ic.log.Debugf("Interface RESYNC comparison: tap setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: tap setup changed (NB: %v, VPP: %v)",
 				nbIf.Tap, vppIf.Tap)
 			return true
 		}
 		if nbIf.Tap != nil && vppIf.Tap != nil {
 			// Tap version
 			if nbIf.Tap.Version == 2 && nbIf.Tap.Version != vppIf.Tap.Version {
-				ic.log.Debugf("Interface RESYNC comparison: tap version changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: tap version changed (NB: %d, VPP: %d)",
 					nbIf.Tap.Version, vppIf.Tap.Version)
 				return true
 			}
 			// Namespace and host name
 			if nbIf.Tap.Namespace != vppIf.Tap.Namespace {
-				ic.log.Debugf("Interface RESYNC comparison: tap namespace changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: tap namespace changed (NB: %s, VPP: %s)",
 					nbIf.Tap.Namespace, vppIf.Tap.Namespace)
 				return true
 			}
 			// Namespace and host name
 			if nbIf.Tap.HostIfName != vppIf.Tap.HostIfName {
-				ic.log.Debugf("Interface RESYNC comparison: tap host name changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: tap host name changed (NB: %s, VPP: %s)",
 					nbIf.Tap.HostIfName, vppIf.Tap.HostIfName)
 				return true
 			}
 			// Rx ring size
 			if nbIf.Tap.RxRingSize != nbIf.Tap.RxRingSize {
-				ic.log.Debugf("Interface RESYNC comparison: tap Rx ring size changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: tap Rx ring size changed (NB: %d, VPP: %d)",
 					nbIf.Tap.RxRingSize, vppIf.Tap.RxRingSize)
 				return true
 			}
 			// Tx ring size
 			if nbIf.Tap.TxRingSize != nbIf.Tap.TxRingSize {
-				ic.log.Debugf("Interface RESYNC comparison: tap Tx ring size changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: tap Tx ring size changed (NB: %d, VPP: %d)",
 					nbIf.Tap.TxRingSize, vppIf.Tap.TxRingSize)
 				return true
 			}
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		if nbIf.Vxlan == nil && vppIf.Vxlan != nil || nbIf.Vxlan != nil && vppIf.Vxlan == nil {
-			ic.log.Debugf("Interface RESYNC comparison: VxLAN setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: VxLAN setup changed (NB: %v, VPP: %v)",
 				nbIf.Vxlan, vppIf.Vxlan)
 			return true
 		}
 		if nbIf.Vxlan != nil && vppIf.Vxlan != nil {
 			// VxLAN Vni
 			if nbIf.Vxlan.Vni != vppIf.Vxlan.Vni {
-				ic.log.Debugf("Interface RESYNC comparison: VxLAN Vni changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN Vni changed (NB: %d, VPP: %d)",
 					nbIf.Vxlan.Vni, vppIf.Vxlan.Vni)
 				return true
 			}
 			// VxLAN Src Address
 			if nbIf.Vxlan.SrcAddress != vppIf.Vxlan.SrcAddress {
-				ic.log.Debugf("Interface RESYNC comparison: VxLAN src address changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN src address changed (NB: %s, VPP: %s)",
 					nbIf.Vxlan.SrcAddress, vppIf.Vxlan.SrcAddress)
 				return true
 			}
 			// VxLAN Dst Address
 			if nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
-				ic.log.Debugf("Interface RESYNC comparison: VxLAN dst address changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN dst address changed (NB: %s, VPP: %s)",
 					nbIf.Vxlan.DstAddress, vppIf.Vxlan.DstAddress)
 				return true
 			}
 			// VxLAN Multicast
 			if nbIf.Vxlan.Multicast != vppIf.Vxlan.Multicast {
-				ic.log.Debugf("Interface RESYNC comparison: VxLAN multicast address changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN multicast address changed (NB: %s, VPP: %s)",
 					nbIf.Vxlan.Multicast, vppIf.Vxlan.Multicast)
 				return true
 			}
@@ -985,18 +985,18 @@ func (ic *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Inter
 }
 
 // Register interface to mapping and add tag/index to the VPP
-func (ic *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
-	ic.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
-	if err := ic.ifHandler.SetInterfaceTag(ifName, ifIdx); err != nil {
+func (c *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
+	c.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
+	if err := c.ifHandler.SetInterfaceTag(ifName, ifIdx); err != nil {
 		return errors.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
 	}
 	// Add AF-packet type interface to local cache
 	if ifData.Type == intf.InterfaceType_AF_PACKET_INTERFACE {
-		if ic.linux != nil && ic.afPacketConfigurator != nil && ifData.Afpacket != nil {
+		if c.linux != nil && c.afPacketConfigurator != nil && ifData.Afpacket != nil {
 			// Interface is already present on the VPP so it cannot be marked as pending.
-			ic.afPacketConfigurator.addToCache(ifData, false)
+			c.afPacketConfigurator.addToCache(ifData, false)
 		}
 	}
-	ic.log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)
+	c.log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)
 	return nil
 }

@@ -57,73 +57,73 @@ type BFDConfigurator struct {
 }
 
 // Init members and channels
-func (bfdc *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+func (c *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
-	bfdc.log = logger.NewLogger("-bfd-conf")
+	c.log = logger.NewLogger("-bfd-conf")
 
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
-		bfdc.stopwatch = measure.NewStopwatch("BFD-configurator", bfdc.log)
+		c.stopwatch = measure.NewStopwatch("BFD-configurator", c.log)
 	}
 
 	// Mappings
-	bfdc.ifIndexes = swIfIndexes
-	bfdc.sessionsIndexes = nametoidx.NewNameToIdx(bfdc.log, "bfd_session_indexes", nil)
-	bfdc.keysIndexes = nametoidx.NewNameToIdx(bfdc.log, "bfd_auth_keys_indexes", nil)
-	bfdc.echoFunctionIndex = nametoidx.NewNameToIdx(bfdc.log, "bfd_echo_function_index", nil)
+	c.ifIndexes = swIfIndexes
+	c.sessionsIndexes = nametoidx.NewNameToIdx(c.log, "bfd_session_indexes", nil)
+	c.keysIndexes = nametoidx.NewNameToIdx(c.log, "bfd_auth_keys_indexes", nil)
+	c.echoFunctionIndex = nametoidx.NewNameToIdx(c.log, "bfd_echo_function_index", nil)
 
 	// VPP channel
-	bfdc.vppChan, err = goVppMux.NewAPIChannel()
+	c.vppChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handler
-	bfdc.bfdHandler = vppcalls.NewBfdVppHandler(bfdc.vppChan, bfdc.ifIndexes, bfdc.log, bfdc.stopwatch)
+	c.bfdHandler = vppcalls.NewBfdVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
 
-	bfdc.log.Infof(" BFD configurator initialized")
+	c.log.Infof(" BFD configurator initialized")
 
 	return nil
 }
 
 // Close GOVPP channel
-func (bfdc *BFDConfigurator) Close() error {
-	if err := safeclose.Close(bfdc.vppChan); err != nil {
-		return bfdc.LogError(errors.Errorf("failed to safeclose BFD configurator: %v", err))
+func (c *BFDConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose BFD configurator: %v", err))
 	}
 	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (bfdc *BFDConfigurator) clearMapping() {
-	bfdc.sessionsIndexes.Clear()
-	bfdc.keysIndexes.Clear()
-	bfdc.echoFunctionIndex.Clear()
+func (c *BFDConfigurator) clearMapping() {
+	c.sessionsIndexes.Clear()
+	c.keysIndexes.Clear()
+	c.echoFunctionIndex.Clear()
 
-	bfdc.log.Debugf("BFD configurator mapping cleared")
+	c.log.Debugf("BFD configurator mapping cleared")
 }
 
 // GetBfdSessionIndexes gives access to BFD session indexes
-func (bfdc *BFDConfigurator) GetBfdSessionIndexes() idxvpp.NameToIdxRW {
-	return bfdc.sessionsIndexes
+func (c *BFDConfigurator) GetBfdSessionIndexes() idxvpp.NameToIdxRW {
+	return c.sessionsIndexes
 }
 
 // GetBfdKeyIndexes gives access to BFD key indexes
-func (bfdc *BFDConfigurator) GetBfdKeyIndexes() idxvpp.NameToIdxRW {
-	return bfdc.keysIndexes
+func (c *BFDConfigurator) GetBfdKeyIndexes() idxvpp.NameToIdxRW {
+	return c.keysIndexes
 }
 
 // GetBfdEchoFunctionIndexes gives access to BFD echo function indexes
-func (bfdc *BFDConfigurator) GetBfdEchoFunctionIndexes() idxvpp.NameToIdxRW {
-	return bfdc.echoFunctionIndex
+func (c *BFDConfigurator) GetBfdEchoFunctionIndexes() idxvpp.NameToIdxRW {
+	return c.echoFunctionIndex
 }
 
 // ConfigureBfdSession configures bfd session (including authentication if exists). Provided interface has to contain
 // ip address defined in BFD as source
-func (bfdc *BFDConfigurator) ConfigureBfdSession(bfdInput *bfd.SingleHopBFD_Session) error {
+func (c *BFDConfigurator) ConfigureBfdSession(bfdInput *bfd.SingleHopBFD_Session) error {
 	// Verify interface presence
-	ifIdx, ifMeta, found := bfdc.ifIndexes.LookupIdx(bfdInput.Interface)
+	ifIdx, ifMeta, found := c.ifIndexes.LookupIdx(bfdInput.Interface)
 	if !found {
 		return errors.Errorf("interface %s does not exist", bfdInput.Interface)
 	}
@@ -151,25 +151,25 @@ func (bfdc *BFDConfigurator) ConfigureBfdSession(bfdInput *bfd.SingleHopBFD_Sess
 	}
 
 	// Call vpp api
-	err := bfdc.bfdHandler.AddBfdUDPSession(bfdInput, ifIdx, bfdc.keysIndexes)
+	err := c.bfdHandler.AddBfdUDPSession(bfdInput, ifIdx, c.keysIndexes)
 	if err != nil {
 		return errors.Errorf("failed to configure BFD UDP session for interface %s: %v", bfdInput.Interface, err)
 	}
 
-	bfdc.sessionsIndexes.RegisterName(bfdInput.Interface, bfdc.bfdIDSeq, nil)
-	bfdc.log.Debugf("BFD session for interface %s registered", bfdInput.Interface)
-	bfdc.bfdIDSeq++
+	c.sessionsIndexes.RegisterName(bfdInput.Interface, c.bfdIDSeq, nil)
+	c.log.Debugf("BFD session for interface %s registered", bfdInput.Interface)
+	c.bfdIDSeq++
 
-	bfdc.log.Infof("BFD session for interface %s configured ", bfdInput.Interface)
+	c.log.Infof("BFD session for interface %s configured ", bfdInput.Interface)
 
 	return nil
 }
 
 // ModifyBfdSession modifies BFD session fields. Source and destination IP address for old and new config has to be the
 // same. Authentication is NOT changed here, BFD modify bin api call does not support that
-func (bfdc *BFDConfigurator) ModifyBfdSession(oldBfdInput *bfd.SingleHopBFD_Session, newBfdInput *bfd.SingleHopBFD_Session) error {
+func (c *BFDConfigurator) ModifyBfdSession(oldBfdInput *bfd.SingleHopBFD_Session, newBfdInput *bfd.SingleHopBFD_Session) error {
 	// Verify interface presence
-	ifIdx, ifMeta, found := bfdc.ifIndexes.LookupIdx(newBfdInput.Interface)
+	ifIdx, ifMeta, found := c.ifIndexes.LookupIdx(newBfdInput.Interface)
 	if !found {
 		return errors.Errorf("interface %s does not exist", newBfdInput.Interface)
 	}
@@ -197,16 +197,16 @@ func (bfdc *BFDConfigurator) ModifyBfdSession(oldBfdInput *bfd.SingleHopBFD_Sess
 	}
 
 	// Find old BFD session
-	_, _, found = bfdc.sessionsIndexes.LookupIdx(oldBfdInput.Interface)
+	_, _, found = c.sessionsIndexes.LookupIdx(oldBfdInput.Interface)
 	if !found {
-		bfdc.log.Warnf("Previous BFD session does not exist, creating a new one for interface %s", newBfdInput.Interface)
-		err := bfdc.bfdHandler.AddBfdUDPSession(newBfdInput, ifIdx, bfdc.keysIndexes)
+		c.log.Warnf("Previous BFD session does not exist, creating a new one for interface %s", newBfdInput.Interface)
+		err := c.bfdHandler.AddBfdUDPSession(newBfdInput, ifIdx, c.keysIndexes)
 		if err != nil {
 			return errors.Errorf("failed to re-add BFD UDP session for interface %s: %v", newBfdInput.Interface, err)
 		}
-		bfdc.sessionsIndexes.RegisterName(newBfdInput.Interface, bfdc.bfdIDSeq, nil)
-		bfdc.log.Debugf("BFD session for interface %s registered", newBfdInput.Interface)
-		bfdc.bfdIDSeq++
+		c.sessionsIndexes.RegisterName(newBfdInput.Interface, c.bfdIDSeq, nil)
+		c.log.Debugf("BFD session for interface %s registered", newBfdInput.Interface)
+		c.bfdIDSeq++
 	} else {
 		// Compare source and destination addresses which cannot change if BFD session is modified
 		// todo new BFD input should be compared to BFD data on the vpp, not the last change (old BFD data)
@@ -214,59 +214,59 @@ func (bfdc *BFDConfigurator) ModifyBfdSession(oldBfdInput *bfd.SingleHopBFD_Sess
 			return errors.Errorf("unable to modify BFD session, addresses do not match. Old session source: %s, dest: %s, new session source: %s, dest: %s",
 				oldBfdInput.SourceAddress, oldBfdInput.DestinationAddress, newBfdInput.SourceAddress, newBfdInput.DestinationAddress)
 		}
-		err := bfdc.bfdHandler.ModifyBfdUDPSession(newBfdInput, bfdc.ifIndexes)
+		err := c.bfdHandler.ModifyBfdUDPSession(newBfdInput, c.ifIndexes)
 		if err != nil {
 			return errors.Errorf("failed to modify BFD session for interface %s: %v", newBfdInput.Interface, err)
 		}
 	}
 
-	bfdc.log.Infof("Modified BFD session for interface %s", newBfdInput.Interface)
+	c.log.Infof("Modified BFD session for interface %s", newBfdInput.Interface)
 
 	return nil
 }
 
 // DeleteBfdSession removes BFD session
-func (bfdc *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Session) error {
-	ifIndex, _, found := bfdc.ifIndexes.LookupIdx(bfdInput.Interface)
+func (c *BFDConfigurator) DeleteBfdSession(bfdInput *bfd.SingleHopBFD_Session) error {
+	ifIndex, _, found := c.ifIndexes.LookupIdx(bfdInput.Interface)
 	if !found {
 		return errors.Errorf("cannot remove BFD session, interface %s not found", bfdInput.Interface)
 	}
 
-	err := bfdc.bfdHandler.DeleteBfdUDPSession(ifIndex, bfdInput.SourceAddress, bfdInput.DestinationAddress)
+	err := c.bfdHandler.DeleteBfdUDPSession(ifIndex, bfdInput.SourceAddress, bfdInput.DestinationAddress)
 	if err != nil {
 		return errors.Errorf("failed to remove BFD UDP session %s: %v", bfdInput.Interface, err)
 	}
 
-	bfdc.sessionsIndexes.UnregisterName(bfdInput.Interface)
-	bfdc.log.Debugf("BFD session for interface %v unregistered", bfdInput.Interface)
+	c.sessionsIndexes.UnregisterName(bfdInput.Interface)
+	c.log.Debugf("BFD session for interface %v unregistered", bfdInput.Interface)
 
-	bfdc.log.Info("BFD session for interface %s removed", bfdInput.Interface)
+	c.log.Info("BFD session for interface %s removed", bfdInput.Interface)
 
 	return nil
 }
 
 // ConfigureBfdAuthKey crates new authentication key which can be used for BFD session
-func (bfdc *BFDConfigurator) ConfigureBfdAuthKey(bfdAuthKey *bfd.SingleHopBFD_Key) error {
-	err := bfdc.bfdHandler.SetBfdUDPAuthenticationKey(bfdAuthKey)
+func (c *BFDConfigurator) ConfigureBfdAuthKey(bfdAuthKey *bfd.SingleHopBFD_Key) error {
+	err := c.bfdHandler.SetBfdUDPAuthenticationKey(bfdAuthKey)
 	if err != nil {
 		return errors.Errorf("failed to set BFD authentication key with name %s (ID %d): %v",
 			bfdAuthKey.Name, bfdAuthKey.Id, err)
 	}
 
 	authKeyIDAsString := AuthKeyIdentifier(bfdAuthKey.Id)
-	bfdc.keysIndexes.RegisterName(authKeyIDAsString, bfdc.bfdIDSeq, nil)
-	bfdc.log.Debugf("BFD authentication key with name %s (ID %d) registered", bfdAuthKey.Name, bfdAuthKey.Id)
-	bfdc.bfdIDSeq++
+	c.keysIndexes.RegisterName(authKeyIDAsString, c.bfdIDSeq, nil)
+	c.log.Debugf("BFD authentication key with name %s (ID %d) registered", bfdAuthKey.Name, bfdAuthKey.Id)
+	c.bfdIDSeq++
 
-	bfdc.log.Infof("BFD authentication key with name %s (ID %d) configured", bfdAuthKey.Name, bfdAuthKey.Id)
+	c.log.Infof("BFD authentication key with name %s (ID %d) configured", bfdAuthKey.Name, bfdAuthKey.Id)
 
 	return nil
 }
 
 // ModifyBfdAuthKey modifies auth key fields. Key which is assigned to one or more BFD session cannot be modified
-func (bfdc *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, newInput *bfd.SingleHopBFD_Key) error {
+func (c *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, newInput *bfd.SingleHopBFD_Key) error {
 	// Check that this auth key is not used in any session
-	sessionList, err := bfdc.bfdHandler.DumpBfdUDPSessionsWithID(newInput.Id)
+	sessionList, err := c.bfdHandler.DumpBfdUDPSessionsWithID(newInput.Id)
 	if err != nil {
 		return errors.Errorf("error while verifying authentication key %s (ID: %d) usage: %v",
 			oldInput.Name, oldInput.Id, err)
@@ -276,26 +276,26 @@ func (bfdc *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, ne
 		for _, bfds := range sessionList.Session {
 			sourceAddr := net.HardwareAddr(bfds.SourceAddress).String()
 			destAddr := net.HardwareAddr(bfds.DestinationAddress).String()
-			ifIdx, _, found := bfdc.ifIndexes.LookupIdx(bfds.Interface)
+			ifIdx, _, found := c.ifIndexes.LookupIdx(bfds.Interface)
 			if !found {
 				return errors.Errorf("Modify BFD auth key: interface index for %s not found in the mapping",
 					bfds.Interface)
 			}
-			err := bfdc.bfdHandler.DeleteBfdUDPSession(ifIdx, sourceAddr, destAddr)
+			err := c.bfdHandler.DeleteBfdUDPSession(ifIdx, sourceAddr, destAddr)
 			if err != nil {
 				return errors.Errorf("failed to remove BFD UDP session %s (temporary removal): %v",
 					bfds.Interface, err)
 			}
 		}
-		bfdc.log.Debugf("%d session(s) temporary removed while updating authentication keys", len(sessionList.Session))
+		c.log.Debugf("%d session(s) temporary removed while updating authentication keys", len(sessionList.Session))
 	}
 
-	err = bfdc.bfdHandler.DeleteBfdUDPAuthenticationKey(oldInput)
+	err = c.bfdHandler.DeleteBfdUDPAuthenticationKey(oldInput)
 	if err != nil {
 		return errors.Errorf("error while removing BFD auth key with name %s (ID %d): %v",
 			oldInput.Name, oldInput.Id, err)
 	}
-	err = bfdc.bfdHandler.SetBfdUDPAuthenticationKey(newInput)
+	err = c.bfdHandler.SetBfdUDPAuthenticationKey(newInput)
 	if err != nil {
 		return errors.Errorf("error while setting up BFD auth key with name %s (ID %d): %v",
 			oldInput.Name, oldInput.Id, err)
@@ -304,30 +304,30 @@ func (bfdc *BFDConfigurator) ModifyBfdAuthKey(oldInput *bfd.SingleHopBFD_Key, ne
 	// Recreate BFD sessions if necessary
 	if sessionList != nil && len(sessionList.Session) != 0 {
 		for _, bfdSession := range sessionList.Session {
-			ifIdx, _, found := bfdc.ifIndexes.LookupIdx(bfdSession.Interface)
+			ifIdx, _, found := c.ifIndexes.LookupIdx(bfdSession.Interface)
 			if !found {
 				return errors.Errorf("Modify BFD auth key: interface index for %s not found in the mapping",
 					bfdSession.Interface)
 			}
-			err := bfdc.bfdHandler.AddBfdUDPSession(bfdSession, ifIdx, bfdc.keysIndexes)
+			err := c.bfdHandler.AddBfdUDPSession(bfdSession, ifIdx, c.keysIndexes)
 			if err != nil {
 				return errors.Errorf("failed to re-add BFD UDP session for interface %s: %v",
 					bfdSession.Interface, err)
 			}
 		}
-		bfdc.log.Debugf("%d session(s) recreated after authentication key update", len(sessionList.Session))
+		c.log.Debugf("%d session(s) recreated after authentication key update", len(sessionList.Session))
 	}
 
-	bfdc.log.Infof("BFD authentication key with name %s (ID %d) modified", newInput.Name, newInput.Id)
+	c.log.Infof("BFD authentication key with name %s (ID %d) modified", newInput.Name, newInput.Id)
 
 	return nil
 }
 
 // DeleteBfdAuthKey removes BFD authentication key but only if it is not used in any BFD session
-func (bfdc *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) error {
+func (c *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) error {
 	// Check that this auth key is not used in any session
 	// TODO perhaps bfd session mapping can be used instead of dump
-	sessionList, err := bfdc.bfdHandler.DumpBfdUDPSessionsWithID(bfdInput.Id)
+	sessionList, err := c.bfdHandler.DumpBfdUDPSessionsWithID(bfdInput.Id)
 	if err != nil {
 		return errors.Errorf("Delete BFD auth key %s (ID %d): failed to dump BFD sessions: %v",
 			bfdInput.Name, bfdInput.Id, err)
@@ -336,69 +336,69 @@ func (bfdc *BFDConfigurator) DeleteBfdAuthKey(bfdInput *bfd.SingleHopBFD_Key) er
 	if sessionList != nil && len(sessionList.Session) != 0 {
 		// Authentication Key is used and cannot be removed directly
 		for _, bfds := range sessionList.Session {
-			ifIdx, _, found := bfdc.ifIndexes.LookupIdx(bfds.Interface)
+			ifIdx, _, found := c.ifIndexes.LookupIdx(bfds.Interface)
 			if !found {
 				return errors.Errorf("Delete BFD auth key: interface index %s not found in the mapping",
 					bfds.Interface)
 			}
-			err := bfdc.bfdHandler.DeleteBfdUDPSession(ifIdx, bfds.SourceAddress, bfds.DestinationAddress)
+			err := c.bfdHandler.DeleteBfdUDPSession(ifIdx, bfds.SourceAddress, bfds.DestinationAddress)
 			if err != nil {
 				return errors.Errorf("failed to remove BFD UDP session %s: %v", bfds.Interface, err)
 			}
 		}
-		bfdc.log.Debugf("%d session(s) temporary removed", len(sessionList.Session))
+		c.log.Debugf("%d session(s) temporary removed", len(sessionList.Session))
 	}
-	err = bfdc.bfdHandler.DeleteBfdUDPAuthenticationKey(bfdInput)
+	err = c.bfdHandler.DeleteBfdUDPAuthenticationKey(bfdInput)
 	if err != nil {
 		return errors.Errorf("error while removing BFD auth key %s (ID %d): %v", bfdInput.Name, bfdInput.Id, err)
 	}
 	authKeyIDAsString := AuthKeyIdentifier(bfdInput.Id)
-	bfdc.keysIndexes.UnregisterName(authKeyIDAsString)
-	bfdc.log.Debugf("BFD authentication key %s (ID %d) unregistered", bfdInput.Name, bfdInput.Id)
+	c.keysIndexes.UnregisterName(authKeyIDAsString)
+	c.log.Debugf("BFD authentication key %s (ID %d) unregistered", bfdInput.Name, bfdInput.Id)
 	// Recreate BFD sessions if necessary
 	if sessionList != nil && len(sessionList.Session) != 0 {
 		for _, bfdSession := range sessionList.Session {
-			ifIdx, _, found := bfdc.ifIndexes.LookupIdx(bfdSession.Interface)
+			ifIdx, _, found := c.ifIndexes.LookupIdx(bfdSession.Interface)
 			if !found {
 				return errors.Errorf("Delete BFD auth key: interface index for %s not found", bfdSession.Interface)
 			}
-			err := bfdc.bfdHandler.AddBfdUDPSession(bfdSession, ifIdx, bfdc.keysIndexes)
+			err := c.bfdHandler.AddBfdUDPSession(bfdSession, ifIdx, c.keysIndexes)
 			if err != nil {
 				return errors.Errorf("failed to add BFD UDP session for interface %s: %v",
 					bfdSession.Interface, err)
 			}
 		}
-		bfdc.log.Debugf("%d session(s) recreated", len(sessionList.Session))
+		c.log.Debugf("%d session(s) recreated", len(sessionList.Session))
 	}
 	return nil
 }
 
 // ConfigureBfdEchoFunction is used to setup BFD Echo function on existing interface
-func (bfdc *BFDConfigurator) ConfigureBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
+func (c *BFDConfigurator) ConfigureBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
 	// Verify interface presence
-	_, _, found := bfdc.ifIndexes.LookupIdx(bfdInput.EchoSourceInterface)
+	_, _, found := c.ifIndexes.LookupIdx(bfdInput.EchoSourceInterface)
 	if !found {
 		return errors.Errorf("BFD echo function add: interface %s does not exist", bfdInput.EchoSourceInterface)
 	}
 
-	err := bfdc.bfdHandler.AddBfdEchoFunction(bfdInput, bfdc.ifIndexes)
+	err := c.bfdHandler.AddBfdEchoFunction(bfdInput, c.ifIndexes)
 	if err != nil {
 		return errors.Errorf("failed to set BFD echo source for interface %s: %v",
 			bfdInput.EchoSourceInterface, err)
 	}
 
-	bfdc.echoFunctionIndex.RegisterName(bfdInput.EchoSourceInterface, bfdc.bfdIDSeq, nil)
-	bfdc.log.Debugf("BFD echo function for interface %s registered", bfdInput.EchoSourceInterface)
-	bfdc.bfdIDSeq++
+	c.echoFunctionIndex.RegisterName(bfdInput.EchoSourceInterface, c.bfdIDSeq, nil)
+	c.log.Debugf("BFD echo function for interface %s registered", bfdInput.EchoSourceInterface)
+	c.bfdIDSeq++
 
-	bfdc.log.Infof("BFD echo source set for interface %s ", bfdInput.EchoSourceInterface)
+	c.log.Infof("BFD echo source set for interface %s ", bfdInput.EchoSourceInterface)
 
 	return nil
 }
 
 // ModifyBfdEchoFunction handles echo function changes
-func (bfdc *BFDConfigurator) ModifyBfdEchoFunction(oldInput *bfd.SingleHopBFD_EchoFunction, newInput *bfd.SingleHopBFD_EchoFunction) error {
-	bfdc.log.Warnf("There is nothing to modify for BFD echo function")
+func (c *BFDConfigurator) ModifyBfdEchoFunction(oldInput *bfd.SingleHopBFD_EchoFunction, newInput *bfd.SingleHopBFD_EchoFunction) error {
+	c.log.Warnf("There is nothing to modify for BFD echo function")
 	// NO-OP
 
 	/* todo: the reason is echo function uses interface name in key, so if interface is changed, the key changes (despite
@@ -409,17 +409,17 @@ func (bfdc *BFDConfigurator) ModifyBfdEchoFunction(oldInput *bfd.SingleHopBFD_Ec
 }
 
 // DeleteBfdEchoFunction removes BFD echo function
-func (bfdc *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
-	err := bfdc.bfdHandler.DeleteBfdEchoFunction()
+func (c *BFDConfigurator) DeleteBfdEchoFunction(bfdInput *bfd.SingleHopBFD_EchoFunction) error {
+	err := c.bfdHandler.DeleteBfdEchoFunction()
 	if err != nil {
 		return errors.Errorf("error while removing BFD echo source for interface %s: %v",
 			bfdInput.EchoSourceInterface, err)
 	}
 
-	bfdc.echoFunctionIndex.UnregisterName(bfdInput.EchoSourceInterface)
-	bfdc.log.Debugf("BFD echo function for interface %s unregistered", bfdInput.EchoSourceInterface)
+	c.echoFunctionIndex.UnregisterName(bfdInput.EchoSourceInterface)
+	c.log.Debugf("BFD echo function for interface %s unregistered", bfdInput.EchoSourceInterface)
 
-	bfdc.log.Infof("Echo source unset (was set to %s)", bfdInput.EchoSourceInterface)
+	c.log.Infof("Echo source unset (was set to %s)", bfdInput.EchoSourceInterface)
 
 	return nil
 }
@@ -430,10 +430,10 @@ func AuthKeyIdentifier(id uint32) string {
 }
 
 // If not nil, prints error including stack trace. The same value is also returned, so it can be easily propagated further
-func (bfdc *BFDConfigurator) LogError(err error) error {
+func (c *BFDConfigurator) LogError(err error) error {
 	if err == nil {
 		return nil
 	}
-	bfdc.log.WithField("logger", bfdc.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
 	return err
 }

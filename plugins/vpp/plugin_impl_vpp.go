@@ -427,7 +427,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
-	if err :=plugin.ifStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
+	if err := plugin.ifStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
 		select {
 		case plugin.ifStateChan <- state:
 			// OK
@@ -450,7 +450,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// STN configurator
 	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
 	if err := plugin.stnConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.stnConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 

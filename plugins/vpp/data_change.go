@@ -400,9 +400,9 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.Interfaces_In
 		err = plugin.ifConfigurator.DeleteVPPInterface(prevValue)
 	} else if diff {
 		err = plugin.ifConfigurator.ModifyVPPInterface(value, prevValue)
+	} else {
+		err = plugin.ifConfigurator.ConfigureVPPInterface(value)
 	}
-	err = plugin.ifConfigurator.ConfigureVPPInterface(value)
-
 	return plugin.ifConfigurator.LogError(err)
 }
 
@@ -416,9 +416,9 @@ func (plugin *Plugin) dataChangeBfdSession(diff bool, value *bfd.SingleHopBFD_Se
 		err = plugin.bfdConfigurator.DeleteBfdSession(prevValue)
 	} else if diff {
 		err = plugin.bfdConfigurator.ModifyBfdSession(prevValue, value)
+	} else {
+		err = plugin.bfdConfigurator.ConfigureBfdSession(value)
 	}
-	err = plugin.bfdConfigurator.ConfigureBfdSession(value)
-
 	return plugin.bfdConfigurator.LogError(err)
 }
 
@@ -432,9 +432,9 @@ func (plugin *Plugin) dataChangeBfdKey(diff bool, value *bfd.SingleHopBFD_Key, p
 		err = plugin.bfdConfigurator.DeleteBfdAuthKey(prevValue)
 	} else if diff {
 		err = plugin.bfdConfigurator.ModifyBfdAuthKey(prevValue, value)
+	} else {
+		err = plugin.bfdConfigurator.ConfigureBfdAuthKey(value)
 	}
-	err = plugin.bfdConfigurator.ConfigureBfdAuthKey(value)
-
 	return plugin.bfdConfigurator.LogError(err)
 }
 
@@ -448,9 +448,9 @@ func (plugin *Plugin) dataChangeBfdEchoFunction(diff bool, value *bfd.SingleHopB
 		err = plugin.bfdConfigurator.DeleteBfdEchoFunction(prevValue)
 	} else if diff {
 		err = plugin.bfdConfigurator.ModifyBfdEchoFunction(prevValue, value)
+	} else {
+		err = plugin.bfdConfigurator.ConfigureBfdEchoFunction(value)
 	}
-	err = plugin.bfdConfigurator.ConfigureBfdEchoFunction(value)
-
 	return plugin.bfdConfigurator.LogError(err)
 }
 
@@ -586,12 +586,15 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValue *stn.STN_Rule, changeType datasync.Op) error {
 	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.stnConfigurator.Delete(prevValue)
+		err = plugin.stnConfigurator.Delete(prevValue)
 	} else if diff {
-		return plugin.stnConfigurator.Modify(prevValue, value)
+		err = plugin.stnConfigurator.Modify(prevValue, value)
+	} else {
+		err = plugin.stnConfigurator.Add(value)
 	}
-	return plugin.stnConfigurator.Add(value)
+	return plugin.stnConfigurator.LogError(err)
 }
 
 // dataChangeNatGlobal propagates data change to the nat configurator
@@ -603,9 +606,9 @@ func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44
 		err = plugin.natConfigurator.DeleteNatGlobalConfig(prevValue)
 	} else if diff {
 		err = plugin.natConfigurator.ModifyNatGlobalConfig(prevValue, value)
+	} else {
+		err = plugin.natConfigurator.SetNatGlobalConfig(value)
 	}
-	err = plugin.natConfigurator.SetNatGlobalConfig(value)
-
 	return plugin.natConfigurator.LogError(err)
 }
 
@@ -618,9 +621,9 @@ func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_
 		err = plugin.natConfigurator.DeleteSNat(prevValue)
 	} else if diff {
 		err = plugin.natConfigurator.ModifySNat(prevValue, value)
+	} else {
+		err = plugin.natConfigurator.ConfigureSNat(value)
 	}
-	err = plugin.natConfigurator.ConfigureSNat(value)
-
 	return plugin.natConfigurator.LogError(err)
 }
 
@@ -633,9 +636,9 @@ func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_
 		err = plugin.natConfigurator.DeleteDNat(prevValue)
 	} else if diff {
 		err = plugin.natConfigurator.ModifyDNat(prevValue, value)
+	} else {
+		err = plugin.natConfigurator.ConfigureDNat(value)
 	}
-	err = plugin.natConfigurator.ConfigureDNat(value)
-
 	return plugin.natConfigurator.LogError(err)
 }
 

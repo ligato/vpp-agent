@@ -237,7 +237,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(stn.Prefix) {
 		if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.stnConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(nat.GlobalPrefix) {

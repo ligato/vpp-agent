@@ -84,43 +84,43 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (isu *InterfaceStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context,
+func (c *InterfaceStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger
-	isu.log = logger.NewLogger("-if-state")
+	c.log = logger.NewLogger("-if-state")
 
 	// Mappings
-	isu.swIfIndexes = swIfIndexes
+	c.swIfIndexes = swIfIndexes
 
-	isu.publishIfState = publishIfState
-	isu.ifState = make(map[uint32]*intf.InterfacesState_Interface)
+	c.publishIfState = publishIfState
+	c.ifState = make(map[uint32]*intf.InterfacesState_Interface)
 
 	// VPP channel
-	isu.vppCh, err = goVppMux.NewAPIChannel()
+	c.vppCh, err = goVppMux.NewAPIChannel()
 	if err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
-	isu.swIdxChan = make(chan ifaceidx.SwIfIdxDto, 100)
-	swIfIndexes.WatchNameToIdx("ifplugin_ifstate", isu.swIdxChan)
-	isu.notifChan = notifChan
+	c.swIdxChan = make(chan ifaceidx.SwIfIdxDto, 100)
+	swIfIndexes.WatchNameToIdx("ifplugin_ifstate", c.swIdxChan)
+	c.notifChan = notifChan
 
 	// Create child context
 	var childCtx context.Context
-	childCtx, isu.cancel = context.WithCancel(ctx)
+	childCtx, c.cancel = context.WithCancel(ctx)
 
 	// Watch for incoming notifications
-	go isu.watchVPPNotifications(childCtx)
+	go c.watchVPPNotifications(childCtx)
 
-	isu.log.Info("Interface state updater initialized")
+	c.log.Info("Interface state updater initialized")
 
 	return nil
 }
 
 // AfterInit subscribes for watching VPP notifications on previously initialized channel
-func (isu *InterfaceStateUpdater) AfterInit() error {
-	err := isu.subscribeVPPNotifications()
+func (c *InterfaceStateUpdater) AfterInit() error {
+	err := c.subscribeVPPNotifications()
 	if err != nil {
 		return err
 	}
@@ -128,26 +128,26 @@ func (isu *InterfaceStateUpdater) AfterInit() error {
 }
 
 // subscribeVPPNotifications subscribes for interface state notifications from VPP.
-func (isu *InterfaceStateUpdater) subscribeVPPNotifications() error {
+func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	var err error
 	// subscribe for receiving SwInterfaceEvents notifications
-	if isu.vppNotifSubs, err = isu.vppCh.SubscribeNotification(isu.notifChan, interfaces.NewSwInterfaceEvent); err != nil {
+	if c.vppNotifSubs, err = c.vppCh.SubscribeNotification(c.notifChan, interfaces.NewSwInterfaceEvent); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
 	}
 
 	// subscribe for receiving VnetInterfaceSimpleCounters notifications
-	if isu.vppCountersSubs, err = isu.vppCh.SubscribeNotification(isu.notifChan, stats.NewVnetInterfaceSimpleCounters); err != nil {
+	if c.vppCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, stats.NewVnetInterfaceSimpleCounters); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_simple_counters): %v", err)
 	}
 
 	// subscribe for receiving VnetInterfaceCombinedCounters notifications
-	if isu.vppCombinedCountersSubs, err = isu.vppCh.SubscribeNotification(isu.notifChan, stats.NewVnetInterfaceCombinedCounters); err != nil {
+	if c.vppCombinedCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, stats.NewVnetInterfaceCombinedCounters); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_combined_counters): %v", err)
 	}
 
 	wantIfEventsReply := &interfaces.WantInterfaceEventsReply{}
 	// enable interface state notifications from VPP
-	err = isu.vppCh.SendRequest(&interfaces.WantInterfaceEvents{
+	err = c.vppCh.SendRequest(&interfaces.WantInterfaceEvents{
 		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantIfEventsReply)
@@ -160,7 +160,7 @@ func (isu *InterfaceStateUpdater) subscribeVPPNotifications() error {
 
 	wantStatsReply := &stats.WantStatsReply{}
 	// enable interface counters notifications from VPP
-	err = isu.vppCh.SendRequest(&stats.WantStats{
+	err = c.vppCh.SendRequest(&stats.WantStats{
 		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantStatsReply)
@@ -175,97 +175,97 @@ func (isu *InterfaceStateUpdater) subscribeVPPNotifications() error {
 }
 
 // Close unsubscribes from interface state notifications from VPP & GOVPP channel
-func (isu *InterfaceStateUpdater) Close() error {
-	isu.cancel()
-	isu.wg.Wait()
+func (c *InterfaceStateUpdater) Close() error {
+	c.cancel()
+	c.wg.Wait()
 
-	if isu.vppNotifSubs != nil {
-		if err := isu.vppCh.UnsubscribeNotification(isu.vppNotifSubs); err != nil {
-			return isu.LogError(errors.Errorf("failed to unsubscribe interface state notification on close: %v", err))
+	if c.vppNotifSubs != nil {
+		if err := c.vppCh.UnsubscribeNotification(c.vppNotifSubs); err != nil {
+			return c.LogError(errors.Errorf("failed to unsubscribe interface state notification on close: %v", err))
 		}
 	}
-	if isu.vppCountersSubs != nil {
-		if err := isu.vppCh.UnsubscribeNotification(isu.vppCountersSubs); err != nil {
-			return isu.LogError(errors.Errorf("failed to unsubscribe interface state counters on close: %v", err))
+	if c.vppCountersSubs != nil {
+		if err := c.vppCh.UnsubscribeNotification(c.vppCountersSubs); err != nil {
+			return c.LogError(errors.Errorf("failed to unsubscribe interface state counters on close: %v", err))
 		}
 	}
-	if isu.vppCombinedCountersSubs != nil {
-		if err := isu.vppCh.UnsubscribeNotification(isu.vppCombinedCountersSubs); err != nil {
-			return isu.LogError(errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err))
+	if c.vppCombinedCountersSubs != nil {
+		if err := c.vppCh.UnsubscribeNotification(c.vppCombinedCountersSubs); err != nil {
+			return c.LogError(errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err))
 		}
 	}
 
-	if err := safeclose.Close(isu.vppCh); err != nil {
-		return isu.LogError(errors.Errorf("failed to safe close interface state: %v", err))
+	if err := safeclose.Close(c.vppCh); err != nil {
+		return c.LogError(errors.Errorf("failed to safe close interface state: %v", err))
 	}
 
 	return nil
 }
 
 // watchVPPNotifications watches for delivery of notifications from VPP.
-func (isu *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
-	isu.wg.Add(1)
-	defer isu.wg.Done()
+func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
+	c.wg.Add(1)
+	defer c.wg.Done()
 
-	if isu.notifChan != nil {
-		isu.log.Debug("Interface state VPP notification watcher started")
+	if c.notifChan != nil {
+		c.log.Debug("Interface state VPP notification watcher started")
 	} else {
-		isu.log.Warn("Interface state VPP notification does not start: the channel isu nil")
+		c.log.Warn("Interface state VPP notification does not start: the channel c nil")
 		return
 	}
 
 	for {
 		select {
-		case msg := <-isu.notifChan:
+		case msg := <-c.notifChan:
 			switch notif := msg.(type) {
 			case *interfaces.SwInterfaceEvent:
-				isu.processIfStateNotification(notif)
+				c.processIfStateNotification(notif)
 			case *stats.VnetInterfaceSimpleCounters:
-				isu.processIfCounterNotification(notif)
+				c.processIfCounterNotification(notif)
 			case *stats.VnetInterfaceCombinedCounters:
-				isu.processIfCombinedCounterNotification(notif)
+				c.processIfCombinedCounterNotification(notif)
 			case *interfaces.SwInterfaceDetails:
-				isu.updateIfStateDetails(notif)
+				c.updateIfStateDetails(notif)
 			default:
-				isu.log.Debugf("Ignoring unknown VPP notification: %s, %v",
+				c.log.Debugf("Ignoring unknown VPP notification: %s, %v",
 					msg.GetMessageName(), msg)
 			}
 
-		case swIdxDto := <-isu.swIdxChan:
+		case swIdxDto := <-c.swIdxChan:
 			if swIdxDto.Del {
-				isu.setIfStateDeleted(swIdxDto.Idx, swIdxDto.Name)
+				c.setIfStateDeleted(swIdxDto.Idx, swIdxDto.Name)
 			}
 			swIdxDto.Done()
 
 		case <-ctx.Done():
 			// stop watching for notifications
-			isu.log.Debug("Interface state VPP notification watcher stopped")
+			c.log.Debug("Interface state VPP notification watcher stopped")
 			return
 		}
 	}
 }
 
 // processIfStateNotification process a VPP state notification.
-func (isu *InterfaceStateUpdater) processIfStateNotification(notif *interfaces.SwInterfaceEvent) {
+func (c *InterfaceStateUpdater) processIfStateNotification(notif *interfaces.SwInterfaceEvent) {
 	// update and return if state data
-	ifState, found := isu.updateIfStateFlags(notif)
+	ifState, found := c.updateIfStateFlags(notif)
 	if !found {
 		return
 	}
-	isu.log.Debugf("Interface state notification for %s (Idx %d)", ifState.Name, ifState.IfIndex)
+	c.log.Debugf("Interface state notification for %s (Idx %d)", ifState.Name, ifState.IfIndex)
 
 	// store data in ETCD
-	isu.publishIfState(&intf.InterfaceNotification{
+	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 }
 
 // getIfStateData returns interface state data structure for the specified interface index and interface name.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (isu *InterfaceStateUpdater) getIfStateData(swIfIndex uint32, ifName string) (*intf.InterfacesState_Interface, bool) {
+func (c *InterfaceStateUpdater) getIfStateData(swIfIndex uint32, ifName string) (*intf.InterfacesState_Interface, bool) {
 
-	ifState, ok := isu.ifState[swIfIndex]
+	ifState, ok := c.ifState[swIfIndex]
 
-	// check also if the provided logical name isu the same as the one associated
+	// check also if the provided logical name c the same as the one associated
 	// with swIfIndex, because swIfIndexes might be reused
 	if ok && ifState.Name == ifName {
 		return ifState, true
@@ -276,15 +276,15 @@ func (isu *InterfaceStateUpdater) getIfStateData(swIfIndex uint32, ifName string
 
 // getIfStateDataWLookup returns interface state data structure for the specified interface index (creates it if it does not exist).
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (isu *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
+func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 	*intf.InterfacesState_Interface, bool) {
-	ifName, _, found := isu.swIfIndexes.LookupName(ifIdx)
+	ifName, _, found := c.swIfIndexes.LookupName(ifIdx)
 	if !found {
-		isu.log.Warnf("Interface state data structure lookup for %s interrupted, not found in the mapping (not registered)", ifIdx)
+		c.log.Warnf("Interface state data structure lookup for %s interrupted, not found in the mapping (not registered)", ifIdx)
 		return nil, found
 	}
 
-	ifState, found := isu.getIfStateData(ifIdx, ifName)
+	ifState, found := c.getIfStateData(ifIdx, ifName)
 	if !found {
 		ifState = &intf.InterfacesState_Interface{
 			IfIndex:    ifIdx,
@@ -292,7 +292,7 @@ func (isu *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 			Statistics: &intf.InterfacesState_Interface_Statistics{},
 		}
 
-		isu.ifState[ifIdx] = ifState
+		c.ifState[ifIdx] = ifState
 		found = true
 	}
 
@@ -301,10 +301,10 @@ func (isu *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 
 // updateIfStateFlags updates the interface state data in memory from provided VPP flags message and returns updated state data.
 // NOTE: plugin.ifStateData needs to be locked when calling this function!
-func (isu *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfaceEvent) (
+func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfaceEvent) (
 	iface *intf.InterfacesState_Interface, found bool) {
 
-	ifState, found := isu.getIfStateDataWLookup(vppMsg.SwIfIndex)
+	ifState, found := c.getIfStateDataWLookup(vppMsg.SwIfIndex)
 	if !found {
 		return nil, false
 	}
@@ -329,13 +329,13 @@ func (isu *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterf
 }
 
 // processIfCounterNotification processes a VPP (simple) counter message.
-func (isu *InterfaceStateUpdater) processIfCounterNotification(counter *stats.VnetInterfaceSimpleCounters) {
-	isu.access.Lock()
-	defer isu.access.Unlock()
+func (c *InterfaceStateUpdater) processIfCounterNotification(counter *stats.VnetInterfaceSimpleCounters) {
+	c.access.Lock()
+	defer c.access.Unlock()
 
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
-		ifState, found := isu.getIfStateDataWLookup(swIfIndex)
+		ifState, found := c.getIfStateDataWLookup(swIfIndex)
 		if !found {
 			continue
 		}
@@ -363,9 +363,9 @@ func (isu *InterfaceStateUpdater) processIfCounterNotification(counter *stats.Vn
 }
 
 // processIfCombinedCounterNotification processes a VPP message with combined counters.
-func (isu *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *stats.VnetInterfaceCombinedCounters) {
-	isu.access.Lock()
-	defer isu.access.Unlock()
+func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *stats.VnetInterfaceCombinedCounters) {
+	c.access.Lock()
+	defer c.access.Unlock()
 
 	if counter.VnetCounterType > Tx {
 		// TODO: process other types of combined counters (RX/TX for unicast/multicast/broadcast)
@@ -375,7 +375,7 @@ func (isu *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *
 	var save bool
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
-		ifState, found := isu.getIfStateDataWLookup(swIfIndex)
+		ifState, found := c.getIfStateDataWLookup(swIfIndex)
 		if !found {
 			continue
 		}
@@ -391,19 +391,19 @@ func (isu *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *
 	}
 	if save {
 		// store counters of all interfaces into ETCD
-		for _, counter := range isu.ifState {
-			isu.publishIfState(&intf.InterfaceNotification{
+		for _, counter := range c.ifState {
+			c.publishIfState(&intf.InterfaceNotification{
 				Type: intf.InterfaceNotification_UPDOWN, State: counter})
 		}
 	}
 }
 
 // updateIfStateDetails updates the interface state data in memory from provided VPP details message.
-func (isu *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.SwInterfaceDetails) {
-	isu.access.Lock()
-	defer isu.access.Unlock()
+func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.SwInterfaceDetails) {
+	c.access.Lock()
+	defer c.access.Unlock()
 
-	ifState, found := isu.getIfStateDataWLookup(ifDetails.SwIfIndex)
+	ifState, found := c.getIfStateDataWLookup(ifDetails.SwIfIndex)
 	if !found {
 		return
 	}
@@ -453,16 +453,16 @@ func (isu *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.SwI
 		ifState.Duplex = intf.InterfacesState_Interface_UNKNOWN_DUPLEX
 	}
 
-	isu.publishIfState(&intf.InterfaceNotification{
+	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
 
 // setIfStateDeleted marks the interface as deleted in the state data structure in memory.
-func (isu *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName string) {
-	isu.access.Lock()
-	defer isu.access.Unlock()
+func (c *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName string) {
+	c.access.Lock()
+	defer c.access.Unlock()
 
-	ifState, found := isu.getIfStateData(swIfIndex, ifName)
+	ifState, found := c.getIfStateData(swIfIndex, ifName)
 	if !found {
 		return
 	}
@@ -471,15 +471,15 @@ func (isu *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName str
 	ifState.LastChange = time.Now().Unix()
 
 	// this can be post-processed by multiple plugins
-	isu.publishIfState(&intf.InterfaceNotification{
+	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
 }
 
 // If not nil, prints error including stack trace. The same value is also returned, so it can be easily propagated further
-func (isu *InterfaceStateUpdater) LogError(err error) error {
+func (c *InterfaceStateUpdater) LogError(err error) error {
 	if err == nil {
 		return nil
 	}
-	isu.log.WithField("logger", isu.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
 	return err
 }
