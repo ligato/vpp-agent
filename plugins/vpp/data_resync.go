@@ -242,17 +242,17 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(nat.GlobalPrefix) {
 		if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.natConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(nat.SNatPrefix) {
 		if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.natConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(nat.DNatPrefix) {
 		if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.natConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(ipsec.KeyPrefix) {

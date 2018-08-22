@@ -598,36 +598,45 @@ func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValu
 func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44Global, changeType datasync.Op) error {
 	plugin.Log.Debug("natGlobalChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.natConfigurator.DeleteNatGlobalConfig(prevValue)
+		err = plugin.natConfigurator.DeleteNatGlobalConfig(prevValue)
 	} else if diff {
-		return plugin.natConfigurator.ModifyNatGlobalConfig(prevValue, value)
+		err = plugin.natConfigurator.ModifyNatGlobalConfig(prevValue, value)
 	}
-	return plugin.natConfigurator.SetNatGlobalConfig(value)
+	err = plugin.natConfigurator.SetNatGlobalConfig(value)
+
+	return plugin.natConfigurator.LogError(err)
 }
 
 // dataChangeSNat propagates data change to the nat configurator
 func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_SNatConfig, changeType datasync.Op) error {
 	plugin.Log.Debug("sNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.natConfigurator.DeleteSNat(prevValue)
+		err = plugin.natConfigurator.DeleteSNat(prevValue)
 	} else if diff {
-		return plugin.natConfigurator.ModifySNat(prevValue, value)
+		err = plugin.natConfigurator.ModifySNat(prevValue, value)
 	}
-	return plugin.natConfigurator.ConfigureSNat(value)
+	err = plugin.natConfigurator.ConfigureSNat(value)
+
+	return plugin.natConfigurator.LogError(err)
 }
 
 // dataChangeDNat propagates data change to the nat configurator
 func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_DNatConfig, changeType datasync.Op) error {
 	plugin.Log.Debug("dNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.natConfigurator.DeleteDNat(prevValue)
+		err = plugin.natConfigurator.DeleteDNat(prevValue)
 	} else if diff {
-		return plugin.natConfigurator.ModifyDNat(prevValue, value)
+		err = plugin.natConfigurator.ModifyDNat(prevValue, value)
 	}
-	return plugin.natConfigurator.ConfigureDNat(value)
+	err = plugin.natConfigurator.ConfigureDNat(value)
+
+	return plugin.natConfigurator.LogError(err)
 }
 
 // dataChangeIPSecSPD propagates data change to the IPSec configurator

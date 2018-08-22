@@ -90,7 +90,7 @@ func (bfdc *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux
 // Close GOVPP channel
 func (bfdc *BFDConfigurator) Close() error {
 	if err := safeclose.Close(bfdc.vppChan); err != nil {
-		return errors.Errorf("failed to safeclose BFD configurator: %v", err)
+		return bfdc.LogError(errors.Errorf("failed to safeclose BFD configurator: %v", err))
 	}
 	return nil
 }

@@ -416,7 +416,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.ifConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
 
@@ -427,21 +427,23 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
-	plugin.ifStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
+	if err :=plugin.ifStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
 		select {
 		case plugin.ifStateChan <- state:
 			// OK
 		default:
 			plugin.Log.Debug("Unable to send to the ifStateNotifications channel - channel buffer full.")
 		}
-	})
+	}); err != nil {
+		return plugin.ifStateUpdater.LogError(err)
+	}
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
 	// BFD configurator
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
 	if err := plugin.bfdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.bfdConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
@@ -455,7 +457,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// NAT configurator
 	plugin.natConfigurator = &ifplugin.NatConfigurator{}
 	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.natConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("natConfigurator Initialized")
 

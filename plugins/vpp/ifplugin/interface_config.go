@@ -126,7 +126,7 @@ func (ic *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govp
 // Close GOVPP channel
 func (ic *InterfaceConfigurator) Close() error {
 	if err := safeclose.Close(ic.vppCh, ic.DhcpChan); err != nil {
-		return errors.Errorf("failed to safeclose interface configurator: %v", err)
+		return ic.LogError(errors.Errorf("failed to safeclose interface configurator: %v", err))
 	}
 	return nil
 }

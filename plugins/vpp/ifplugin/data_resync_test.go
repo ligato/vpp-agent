@@ -1036,6 +1036,16 @@ func TestDataResyncResyncDNat(t *testing.T) {
 				Tag:          []byte("smap|lbstat|idmap"),
 				ExternalAddr: []byte{192, 168, 10, 0},
 				ExternalPort: 88,
+				Locals: []natApi.Nat44LbAddrPort{
+					{
+						Addr: []byte{192., 168, 10, 0},
+						Port: 89,
+					},
+					{
+						Addr: []byte{192., 168, 20, 0},
+						Port: 90,
+					},
+				},
 			},
 		},
 		{
@@ -1179,8 +1189,19 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 			Name: (&natApi.Nat44LbStaticMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44LbStaticMappingDetails{
-				Protocol: 6,
-				Tag:      []byte("smap|lbstat|idmap"),
+				ExternalPort: 25,
+				Protocol:     6,
+				Tag:          []byte("smap|lbstat|idmap"),
+				Locals: []natApi.Nat44LbAddrPort{
+					{
+						Addr: []byte{192., 168, 10, 0},
+						Port: 89,
+					},
+					{
+						Addr: []byte{192., 168, 20, 0},
+						Port: 90,
+					},
+				},
 			},
 		},
 		{

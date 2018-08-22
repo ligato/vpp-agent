@@ -181,22 +181,22 @@ func (isu *InterfaceStateUpdater) Close() error {
 
 	if isu.vppNotifSubs != nil {
 		if err := isu.vppCh.UnsubscribeNotification(isu.vppNotifSubs); err != nil {
-			return errors.Errorf("failed to unsubscribe interface state notification on close: %v", err)
+			return isu.LogError(errors.Errorf("failed to unsubscribe interface state notification on close: %v", err))
 		}
 	}
 	if isu.vppCountersSubs != nil {
 		if err := isu.vppCh.UnsubscribeNotification(isu.vppCountersSubs); err != nil {
-			return errors.Errorf("failed to unsubscribe interface state counters on close: %v", err)
+			return isu.LogError(errors.Errorf("failed to unsubscribe interface state counters on close: %v", err))
 		}
 	}
 	if isu.vppCombinedCountersSubs != nil {
 		if err := isu.vppCh.UnsubscribeNotification(isu.vppCombinedCountersSubs); err != nil {
-			return errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err)
+			return isu.LogError(errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err))
 		}
 	}
 
 	if err := safeclose.Close(isu.vppCh); err != nil {
-		return errors.Errorf("failed to safe close interface state: %v", err)
+		return isu.LogError(errors.Errorf("failed to safe close interface state: %v", err))
 	}
 
 	return nil
@@ -473,4 +473,13 @@ func (isu *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName str
 	// this can be post-processed by multiple plugins
 	isu.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
+}
+
+// If not nil, prints error including stack trace. The same value is also returned, so it can be easily propagated further
+func (isu *InterfaceStateUpdater) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	isu.log.WithField("logger", isu.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	return err
 }

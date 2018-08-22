@@ -160,7 +160,9 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		plugin.appNsConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.stnConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		if err := plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.natConfigurator.LogError(err)
+		}
 		plugin.ipSecConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	} else {
@@ -177,7 +179,9 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.stnConfigurator.ResolveDeletedInterface(e.Name)
 		plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		if err := plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.natConfigurator.LogError(err)
+		}
 		plugin.ipSecConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	}
