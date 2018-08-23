@@ -485,7 +485,7 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{}
 	err := plugin.aclConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch)
 	if err != nil {
-		return err
+		return plugin.aclConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("aclConfigurator Initialized")
 

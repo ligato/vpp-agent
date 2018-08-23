@@ -167,7 +167,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(acl.Prefix) {
 		if err := plugin.aclConfigurator.Resync(req.ACLs); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.aclConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(bfd.AuthKeysPrefix) {
