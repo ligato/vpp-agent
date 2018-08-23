@@ -131,19 +131,18 @@ spec:
               mountPath: /var/run/docker.sock
 
       volumes:
-      - name: vpp-config
-        configMap:
-          name: vswitch-k8-vpp-cfg
-      - name: agent-config
-        configMap:
-          name: vswitch-k8-agent-cfg
-      - name: supervisor-config
-        configMap:
-          name: vswitch-k8-supervisord-cfg
-      - name: memif-sockets
-        hostPath:
-          path: /tmp
-      - name: veth-pair
-        hostPath:
-          path: /var/run/docker.sock
-
+        - name: vpp-config
+          configMap:
+            name: vswitch-k8-vpp-cfg
+        - name: agent-config
+          configMap:
+            name: vswitch-k8-agent-cfg
+        - name: supervisor-config
+          configMap:
+            name: vswitch-k8-supervisord-cfg
+        - name: memif-sockets
+          hostPath:
+            path: /tmp
+        - name: veth-pair
+          hostPath:
+            path: /var/run/docker.sock
