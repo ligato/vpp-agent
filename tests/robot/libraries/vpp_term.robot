@@ -494,6 +494,7 @@ vpp_term: Local SID exists
     ${localsidsStr}=   vpp_term: Show Local SIDs    ${node}
     Create File        /tmp/srv6_sh_sr_localsid_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
     ${localsidsStr}=   OperatingSystem.Get File    /tmp/srv6_sh_sr_localsid_output.txt
+    ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
     ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
     Log                ${localsidsStr}
     ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_localsid_output_match.txt
@@ -542,6 +543,7 @@ vpp_term: SRv6 Policy exists
     ${policyStr}=      vpp_term: Show SRv6 policies    ${node}
     Create File        /tmp/srv6_sh_sr_policies_output.txt    ${policyStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
     ${policyStr}=      OperatingSystem.Get File    /tmp/srv6_sh_sr_policies_output.txt
+    ${policyStr}=      Basic_Operations.Replace_Rn_N   ${policyStr}    #FIX for BUG with New Line
     ${policyStr}=      Convert To Lowercase    ${policyStr}
     Log                ${policyStr}
     ${policymatchdata}=     OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/srv6_sh_sr_policies_output_match.txt
