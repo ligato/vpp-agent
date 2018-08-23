@@ -19,6 +19,7 @@ import (
 
 	"net"
 
+	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
@@ -100,15 +101,14 @@ func (plugin *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error
 					nbRoute.Preference, vppRoute.Preference)
 				continue
 			}
+			// Set zero address in correct format if not defined
+			if nbRoute.NextHopAddr == "" {
+				nbRoute.NextHopAddr = plugin.fillEmptyNextHop(nbRoute.DstIpAddr)
+			}
 			if vppRoute.NextHopAddr != nbRoute.NextHopAddr {
-				if nbRoute.NextHopAddr == "" {
-					plugin.log.Debugf("RESYNC routes: empty next hop address matched (NB: %s, VPP %s)",
-						nbRoute.NextHopAddr, vppRoute.NextHopAddr)
-				} else {
-					plugin.log.Debugf("RESYNC routes: next hop address is different (NB: %s, VPP %s)",
-						nbRoute.NextHopAddr, vppRoute.NextHopAddr)
-					continue
-				}
+				plugin.log.Debugf("RESYNC routes: next hop address is different (NB: %s, VPP %s)",
+					nbRoute.NextHopAddr, vppRoute.NextHopAddr)
+				continue
 			}
 			if vppRoute.ViaVrfId != nbRoute.ViaVrfId {
 				plugin.log.Debugf("RESYNC routes: via VRF ID is different (NB: %d, VPP %d)",
@@ -261,4 +261,17 @@ func (p *IPNeighConfigurator) Resync(config *l3.IPScanNeighbor) error {
 
 	p.log.Debug("RESYNC IP neighbor end. ", wasError)
 	return nil
+}
+
+// Takes route destination address used to derive IP version and returns zero IP without mask
+func (plugin *RouteConfigurator) fillEmptyNextHop(dstIP string) string {
+	_, isIPv6, err := addrs.ParseIPWithPrefix(dstIP)
+	if err != nil {
+		plugin.log.Errorf("route resync error: failed to parse IP address %s", dstIP)
+		return ""
+	}
+	if isIPv6 {
+		return net.IPv6zero.String()
+	}
+	return net.IPv4zero.String()
 }
