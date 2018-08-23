@@ -459,12 +459,15 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBD ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bdConfigurator.DeleteBridgeDomain(prevValue)
+		err = plugin.bdConfigurator.DeleteBridgeDomain(prevValue)
 	} else if diff {
-		return plugin.bdConfigurator.ModifyBridgeDomain(value, prevValue)
+		err = plugin.bdConfigurator.ModifyBridgeDomain(value, prevValue)
+	} else {
+		err = plugin.bdConfigurator.ConfigureBridgeDomain(value)
 	}
-	return plugin.bdConfigurator.ConfigureBridgeDomain(value)
+	return plugin.bdConfigurator.LogError(err)
 }
 
 // dataChangeFIB propagates data change to the fibConfigurator.
@@ -485,13 +488,15 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeXCon ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.xcConfigurator.DeleteXConnectPair(prevValue)
+		err = plugin.xcConfigurator.DeleteXConnectPair(prevValue)
 	} else if diff {
-		return plugin.xcConfigurator.ModifyXConnectPair(value, prevValue)
+		err = plugin.xcConfigurator.ModifyXConnectPair(value, prevValue)
+	} else {
+		err = plugin.xcConfigurator.ConfigureXConnectPair(value)
 	}
-	return plugin.xcConfigurator.ConfigureXConnectPair(value)
-
+	return plugin.xcConfigurator.LogError(err)
 }
 
 // DataChangeStaticRoute propagates data change to the routeConfigurator.

@@ -187,7 +187,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l2.BdPrefix) {
 		if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l2.FibPrefix) {
@@ -197,7 +197,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l2.XConnectPrefix) {
 		if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.xcConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.RoutesPrefix) {
