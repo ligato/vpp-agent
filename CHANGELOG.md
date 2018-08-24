@@ -1,3 +1,18 @@
+# Release v1.6 (2018-08-xx)
+
+## Compatibility
+- VPP 18.10-rc0~169-gb11f903a
+- cn-infra v1.5 ???
+
+## Breaking Changes
+- Flavors were replaces with [new way](https://github.com/ligato/vpp-agent/tree/master/app) of managing plugins.
+- REST interface URLs were changed, see [readme](https://github.com/ligato/vpp-agent/blob/pantheon-dev/plugins/rest/README.md) for complete list.
+
+## Bugfix
+
+## New Features
+
+
 # Release v1.5.2 (2018-07-23)
 
 ## Compatibility
