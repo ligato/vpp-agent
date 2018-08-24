@@ -261,9 +261,8 @@ func (ch *channel) processReply(reply *vppReply, expSeqNum uint16, msg api.Messa
 	if strings.HasSuffix(msg.GetMessageName(), "_reply") {
 		// TODO: use categories for messages to avoid checking message name
 		if f := reflect.Indirect(reflect.ValueOf(msg)).FieldByName("Retval"); f.IsValid() {
-			if retval := f.Int(); retval != 0 {
-				err = api.VPPApiError(retval)
-			}
+			retval := int32(f.Int())
+			err = api.RetvalToVPPApiError(retval)
 		}
 	}
 
