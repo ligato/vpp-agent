@@ -1,3 +1,52 @@
+# Release v1.5 (2018-08-24)
+
+## Major topics
+
+**Flavors redesign**
+  
+  This version finally introduces new concept of flavors, system which handles plugins
+  and dependencies between them. We believe that the new flavors are much more convenient
+  and easier to understand and use. 
+  New system widely uses principle of options. Application `NewAgent(options...)` takes
+  a list of options as a parameter. The most important option is `AllPlugins(plugins...)`
+  which allows to set a list of plugins to the agent. To add single plugin, use `Plugins...`.
+  Another options can be used to set timeouts, exit signal in form of go channel or version.
+  
+  Every plugin defines default plugin instance and other useful methods to, for example, set
+  custom plugin dependency. Plugins have their `options.go` file with implementation.
+  
+  Examples go hand in hand with new flavors, so all of them were updated. The change affects
+  only example plugin initialization, the main purpose was left unchanged.
+  
+**Cryptodata plugin**
+
+  New cryptodata plugin was added, providing support for encrypting and
+  decrypting arbitrary data using configured private keys and support for wrapping 
+  key/value bytes/proto broker to automatically decrypt any read value matching specified 
+  pattern.
+
+**BoldDB store**
+
+  Our key/value databases have a new member, BoltDB. Plugin uses own configuration
+  file to define path to BoltDB file, permission, etc. Bolt supports all standard
+  cn-infra features, including resync.
+  
+## New Features
+- [agent](agent)
+  * Agent uses new concept of flavors. Since all the examples moved to this new plugin
+  management, package flavors was removed. Learn more about new flavors 
+  in [readme](agent/README.md)  
+- [cryptodata](db/cryptodata)
+  * New plugin cryptodata contains implementation files for encryption/decryption
+  support. In order to try the functionality, examples for [library](examples/cryptodata-lib) ,
+  [plugin](examples/cryptodata-plugin) and [proto-plugin](examples/cryptodata-proto-plugin) 
+  were added.
+- [boltDB](db/keyval/bolt)
+  * Added support for the BoltDB keyval database. There is also a new example 
+  for [BoltDB plugin](examples/bolt-plugin).
+- [logging](logging/logrus)   
+  * Added support for external hooks   
+
 # Release v1.4.1 (2018-07-23)
 
 ## Bugfix
