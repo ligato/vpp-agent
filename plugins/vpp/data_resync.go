@@ -161,8 +161,8 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	var resyncErrs []error
 
 	if !plugin.droppedFromResync(interfaces.Prefix) {
-		if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
-			resyncErrs = append(resyncErrs, errs...)
+		if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+			resyncErrs = append(resyncErrs, plugin.ifConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(acl.Prefix) {
@@ -172,17 +172,17 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(bfd.AuthKeysPrefix) {
 		if err := plugin.bfdConfigurator.ResyncAuthKey(req.SingleHopBFDKey); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bfdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(bfd.SessionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncSession(req.SingleHopBFDSession); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bfdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(bfd.EchoFunctionPrefix) {
 		if err := plugin.bfdConfigurator.ResyncEchoFunction(req.SingleHopBFDEcho); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bfdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l2.BdPrefix) {
@@ -237,22 +237,22 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(stn.Prefix) {
 		if err := plugin.stnConfigurator.Resync(req.StnRules); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.stnConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(nat.GlobalPrefix) {
 		if err := plugin.natConfigurator.ResyncNatGlobal(req.Nat44Global); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.natConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(nat.SNatPrefix) {
 		if err := plugin.natConfigurator.ResyncSNat(req.Nat44SNat); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.natConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(nat.DNatPrefix) {
 		if err := plugin.natConfigurator.ResyncDNat(req.Nat44DNat); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.natConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(ipsec.KeyPrefix) {

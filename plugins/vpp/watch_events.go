@@ -158,9 +158,13 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		})
 		plugin.xcConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.appNsConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.stnConfigurator.ResolveCreatedInterface(e.Name)
+		if err := plugin.stnConfigurator.ResolveCreatedInterface(e.Name); err != nil {
+			plugin.stnConfigurator.LogError(err)
+		}
 		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		if err := plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.natConfigurator.LogError(err)
+		}
 		plugin.ipSecConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	} else {
@@ -175,9 +179,13 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		})
 		plugin.xcConfigurator.ResolveDeletedInterface(e.Name)
 		plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.stnConfigurator.ResolveDeletedInterface(e.Name)
+		if err := plugin.stnConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.stnConfigurator.LogError(err)
+		}
 		plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		if err := plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.natConfigurator.LogError(err)
+		}
 		plugin.ipSecConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	}
@@ -189,13 +197,13 @@ func (plugin *Plugin) onLinuxIfaceEvent(e linux_ifaceidx.LinuxIfIndexDto) {
 	if e.Metadata != nil && e.Metadata.Data != nil && e.Metadata.Data.HostIfName != "" {
 		hostIfName = e.Metadata.Data.HostIfName
 	}
+	var err error
 	if !e.IsDelete() {
-		plugin.ifConfigurator.ResolveCreatedLinuxInterface(e.Name, hostIfName, e.Idx)
-		// TODO propagate error
+		err = plugin.ifConfigurator.ResolveCreatedLinuxInterface(e.Name, hostIfName, e.Idx)
 	} else {
-		plugin.ifConfigurator.ResolveDeletedLinuxInterface(e.Name, hostIfName, e.Idx)
-		// TODO propagate error
+		err = plugin.ifConfigurator.ResolveDeletedLinuxInterface(e.Name, hostIfName, e.Idx)
 	}
+	plugin.ifConfigurator.LogError(err)
 	e.Done()
 }
 

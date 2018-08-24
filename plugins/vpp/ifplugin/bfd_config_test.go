@@ -353,7 +353,7 @@ func TestBfdConfiguratorModifyUnusedAuthKey(t *testing.T) {
 func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
+	ctx, connection, plugin, swIfIdx := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
 	// Reply handler
 	ctx.MockVpp.RegisterBinAPITypes(bfd_api.Types)
@@ -363,6 +363,7 @@ func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
 	oldData := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
 	newData := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1)
 	// Register
+	swIfIdx.RegisterName("if1", 1, nil)
 	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(oldData.Id), 1, nil)
 	// Test key modification
 	err = plugin.ModifyBfdAuthKey(oldData, newData)
@@ -392,7 +393,7 @@ func TestBfdConfiguratorDeleteUnusedAuthKey(t *testing.T) {
 func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
+	ctx, connection, plugin, swIfIdx := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
 	// Reply handler
 	ctx.MockVpp.RegisterBinAPITypes(bfd_api.Types)
@@ -401,6 +402,7 @@ func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
 	// Data
 	data := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
 	// Register
+	swIfIdx.RegisterName("if1", 1, nil)
 	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(data.Id), 1, nil)
 	// Test key modification
 	err = plugin.DeleteBfdAuthKey(data)
