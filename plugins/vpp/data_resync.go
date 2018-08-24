@@ -202,37 +202,37 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l3.RoutesPrefix) {
 		if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.routeConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.ArpPrefix) {
 		if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.arpConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.ProxyARPInterfacePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncInterfaces(req.ProxyArpInterfaces); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.proxyArpConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.ProxyARPRangePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.proxyArpConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.IPScanNeighPrefix) {
 		if err := plugin.ipNeighConfigurator.Resync(req.IPScanNeigh); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.ipNeighConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l4.FeaturesPrefix) {
 		if err := plugin.appNsConfigurator.ResyncFeatures(req.L4Features); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.appNsConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l4.NamespacesPrefix) {
 		if err := plugin.appNsConfigurator.ResyncAppNs(req.AppNamespaces); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.appNsConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(stn.Prefix) {

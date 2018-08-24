@@ -499,12 +499,15 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 	vrfFromKey string, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeStaticRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.routeConfigurator.DeleteRoute(prevValue, vrfFromKey)
+		err = plugin.routeConfigurator.DeleteRoute(prevValue, vrfFromKey)
 	} else if diff {
-		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
+		err = plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
+	} else {
+		err = plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
 	}
-	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
+	return plugin.routeConfigurator.LogError(err)
 }
 
 // dataChangeARP propagates data change to the arpConfigurator
@@ -512,12 +515,15 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpEntry, prev
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.arpConfigurator.DeleteArp(prevValue)
+		err = plugin.arpConfigurator.DeleteArp(prevValue)
 	} else if diff {
-		return plugin.arpConfigurator.ChangeArp(value, prevValue)
+		err = plugin.arpConfigurator.ChangeArp(value, prevValue)
+	} else {
+		err = plugin.arpConfigurator.AddArp(value)
 	}
-	return plugin.arpConfigurator.AddArp(value)
+	return plugin.arpConfigurator.LogError(err)
 }
 
 // dataChangeProxyARPInterface propagates data change to the arpConfigurator
@@ -525,12 +531,15 @@ func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeProxyARPInterface diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.proxyArpConfigurator.DeleteInterface(prevValue)
+		err = plugin.proxyArpConfigurator.DeleteInterface(prevValue)
 	} else if diff {
-		return plugin.proxyArpConfigurator.ModifyInterface(value, prevValue)
+		err = plugin.proxyArpConfigurator.ModifyInterface(value, prevValue)
+	} else {
+		err = plugin.proxyArpConfigurator.AddInterface(value)
 	}
-	return plugin.proxyArpConfigurator.AddInterface(value)
+	return plugin.proxyArpConfigurator.LogError(err)
 }
 
 // dataChangeProxyARPRange propagates data change to the arpConfigurator
@@ -538,22 +547,28 @@ func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.Pr
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeProxyARPRange diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.proxyArpConfigurator.DeleteRange(prevValue)
+		err = plugin.proxyArpConfigurator.DeleteRange(prevValue)
 	} else if diff {
-		return plugin.proxyArpConfigurator.ModifyRange(value, prevValue)
+		err = plugin.proxyArpConfigurator.ModifyRange(value, prevValue)
+	} else {
+		err = plugin.proxyArpConfigurator.AddRange(value)
 	}
-	return plugin.proxyArpConfigurator.AddRange(value)
+	return plugin.proxyArpConfigurator.LogError(err)
 }
 
 // dataChangeIPScanNeigh propagates data change to the ipNeighConfigurator
 func (plugin *Plugin) dataChangeIPScanNeigh(value *l3.IPScanNeighbor,
 	changeType datasync.Op) error {
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipNeighConfigurator.Unset()
+		err = plugin.ipNeighConfigurator.Unset()
+	} else {
+		err = plugin.ipNeighConfigurator.Set(value)
 	}
-	return plugin.ipNeighConfigurator.Set(value)
+	return plugin.ipNeighConfigurator.LogError(err)
 }
 
 // DataChangeStaticRoute propagates data change to the l4Configurator
@@ -561,12 +576,15 @@ func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeL4AppNamespace ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.appNsConfigurator.DeleteAppNamespace(prevValue)
+		err = plugin.appNsConfigurator.DeleteAppNamespace(prevValue)
 	} else if diff {
-		return plugin.appNsConfigurator.ModifyAppNamespace(value, prevValue)
+		err = plugin.appNsConfigurator.ModifyAppNamespace(value, prevValue)
+	} else {
+		err = plugin.appNsConfigurator.ConfigureAppNamespace(value)
 	}
-	return plugin.appNsConfigurator.ConfigureAppNamespace(value)
+	return plugin.appNsConfigurator.LogError(err)
 }
 
 // DataChangeL4Features propagates data change to the l4Configurator
@@ -576,10 +594,13 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 
 	// diff and previous value is not important, features flag can be either set or not.
 	// If removed, it is always set to false
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.appNsConfigurator.DeleteL4FeatureFlag()
+		err = plugin.appNsConfigurator.DeleteL4FeatureFlag()
+	} else {
+		err = plugin.appNsConfigurator.ConfigureL4FeatureFlag(value)
 	}
-	return plugin.appNsConfigurator.ConfigureL4FeatureFlag(value)
+	return plugin.appNsConfigurator.LogError(err)
 }
 
 // DataChangeStnRule propagates data change to the stn configurator
