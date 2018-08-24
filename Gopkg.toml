@@ -74,6 +74,10 @@ required = [
   branch = "master"
   name = "golang.org/x/net"
 
+[[override]]
+  revision = "4910a1d54f876d7b22162a85f4d066d3ee649450"
+  name = "golang.org/x/sys"
+
 [[constraint]]
   name = "google.golang.org/grpc"
   version = "1.2.1"
