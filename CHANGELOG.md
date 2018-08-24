@@ -1,17 +1,60 @@
-# Release v1.6 (2018-08-xx)
+# Release v1.6-vpp18.10 (2018-08-24)
 
 ## Compatibility
 - VPP 18.10-rc0~169-gb11f903a
-- cn-infra v1.5 ???
+- cn-infra v1.5
 
+## Major Topics
+
+**New Flavors**
+
+  Cn-infra 1.5 brought new and better flavors and it would be a shame not to implement it
+  in the vpp-agent. The old flavors package was removed and replaced with this new concept,
+  visible in [app package vpp-agent](app/vpp_agent.go). All examples were also updated.
+  
 ## Breaking Changes
-- Flavors were replaces with [new way](https://github.com/ligato/vpp-agent/tree/master/app) of managing plugins.
-- REST interface URLs were changed, see [readme](https://github.com/ligato/vpp-agent/blob/pantheon-dev/plugins/rest/README.md) for complete list.
-
-## Bugfix
+- Flavors were replaces with [new way](app) of managing plugins.
+- REST interface URLs were changed, see [readme](plugins/rest/README.md) for complete list.
 
 ## New Features
+- [rest plugin](plugins/rest)
+  * All VPP configuration types are now supported to be dumped using REST. Output consists from two parts;
+  data formatted as NB proto model, and metadata with VPP specific configuration (interface indexes, different
+  counters, etc.).
+  * REST prefix was changed. The new URL now contains API version and purpose (dump, put). The list of all 
+  URLs can be found in the [readme](plugins/rest/README.md)
+- [ifplugin](plugins/vpp/ifplugin)
+  * Added support for NAT virtual reassembly for both, IPv4 and IPv6. See change in 
+  [nat proto file](plugins/vpp/model/nat/nat.proto)
+- [l3plugin](plugins/vpp/l3plugin)
+  * Vpp-agent now knows about DROP-type routes. They can be configured and also dumped. VPP default routes, which are
+  DROP-type are recognized and registered. Currently, resync does not remove or correlate such a route type 
+  automatically, so no default routes are unintentionally removed.
+  * New configurator for L3 IP scan neighbor was added, allowing to set/unset IP scan neigh parameters to the VPP.   
+  
+## Improvements
+- [vpp plugins](plugins/vpp)
+  * all vppcalls were unified under API defined for every configuration type (e.g. interfaces, l2, l3, ...).
+  Configurators now use special handler object to access vppcalls. This should prevent duplicates and make
+  vppcalls cleaner and more understandable.
+- [ifplugin](plugins/vpp/ifplugin)
+  * VPP interface DHCP configuration can now be dumped, and added to resync processing
+  * Interfaces and also L3 routes can be configured for non-zero VRF table if IPv6 is used. 
+- [examples](examples)
+  * All examples were reworked to use new flavors concept. The purpose was not changed.   
 
+## Bugfix
+* if VPP routes are dumped, all paths are returned
+* NAT load-ballanced static mappings should be resynced correctly  
+* telemetry plugin now correctly parses parentheses for `show node counters`
+* telemetry plugin will not hide an error caused by value loading if config file is not present
+* linux plugin namespace handler now correctly handles namespace switching for interfaces with IPv6 addresses.
+  Default IPv6 address (link local) will not be moved to new namespace, if there is no more IPv6 addresses 
+  configured within the interface. This should prevent failures in some cases where IPv6 is not enabled in the
+  destination namespace.
+* VxLAN with non-zero VRF can be successfully removed
+* Lint is now working again    
+* VPP route resync works correctly if next hop IP address is not defined
 
 # Release v1.5.2 (2018-07-23)
 
