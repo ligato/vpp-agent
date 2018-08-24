@@ -319,11 +319,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9b0e71863f18fc5de645a263184c8a6409ae731e847b35b25da4be818f1975fa"
+  digest = "1:932085fa52391fe06197b8958d77e2de717b24a66a6c373c9186cd3cbd5ee5ba"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   pruneopts = "UT"
-  revision = "c65a0412e71e8b9b3bfd22925720d23c0f054237"
+  revision = "b27b920f9e71b439b873b17bf99f56467623814a"
 
 [[projects]]
   branch = "master"
