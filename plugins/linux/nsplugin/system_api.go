@@ -22,7 +22,7 @@ import (
 	"github.com/vishvananda/netns"
 )
 
-// Defines all methods required for managing operating system, system calls and namespaces on system level
+// SystemAPI defines all methods required for managing operating system, system calls and namespaces on system level
 type SystemAPI interface {
 	OperatingSystem
 	Syscall
@@ -30,7 +30,7 @@ type SystemAPI interface {
 	NetlinkNamespace
 }
 
-// Operating system defines all methods calling os package
+// OperatingSystem defines all methods calling os package
 type OperatingSystem interface {
 	// Open file
 	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
@@ -64,52 +64,63 @@ type NetlinkNamespace interface {
 	LinkSetNsFd(link netlink.Link, fd int) (err error)
 }
 
-type systemHandler struct{}
+// SystemHandler implements interfaces.
+type SystemHandler struct{}
 
-func NewSystemHandler() *systemHandler {
-	return &systemHandler{}
+// NewSystemHandler returns new handler.
+func NewSystemHandler() *SystemHandler {
+	return &SystemHandler{}
 }
 
 /* Operating system */
 
-func (osh *systemHandler) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
+// OpenFile implements OperatingSystem.
+func (osh *SystemHandler) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
 	return os.OpenFile(name, flag, perm)
 }
 
-func (osh *systemHandler) MkDirAll(path string, perm os.FileMode) error {
+// MkDirAll implements OperatingSystem.
+func (osh *SystemHandler) MkDirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
-func (osh *systemHandler) Remove(name string) error {
+// Remove implements OperatingSystem.
+func (osh *SystemHandler) Remove(name string) error {
 	return os.Remove(name)
 }
 
 /* Syscall */
 
-func (osh *systemHandler) Mount(source string, target string, fsType string, flags uintptr, data string) error {
+// Mount implements Syscall.
+func (osh *SystemHandler) Mount(source string, target string, fsType string, flags uintptr, data string) error {
 	return syscall.Mount(source, target, fsType, flags, data)
 }
 
-func (osh *systemHandler) Unmount(target string, flags int) error {
+// Unmount implements Syscall.
+func (osh *SystemHandler) Unmount(target string, flags int) error {
 	return syscall.Unmount(target, flags)
 }
 
 /* Netns namespace */
 
-func (osh *systemHandler) NewNetworkNamespace() (ns netns.NsHandle, err error) {
+// NewNetworkNamespace implements NetNsNamespace.
+func (osh *SystemHandler) NewNetworkNamespace() (ns netns.NsHandle, err error) {
 	return netns.New()
 }
 
-func (osh *systemHandler) GetNamespaceFromName(name string) (ns netns.NsHandle, err error) {
+// GetNamespaceFromName implements NetNsNamespace.
+func (osh *SystemHandler) GetNamespaceFromName(name string) (ns netns.NsHandle, err error) {
 	return netns.GetFromName(name)
 }
 
-func (osh *systemHandler) SetNamespace(ns netns.NsHandle) (err error) {
+// SetNamespace implements NetNsNamespace.
+func (osh *SystemHandler) SetNamespace(ns netns.NsHandle) (err error) {
 	return netns.Set(ns)
 }
 
 /* Netlink namespace */
 
-func (osh *systemHandler) LinkSetNsFd(link netlink.Link, fd int) (err error) {
+// LinkSetNsFd implements NetlinkNamespace.
+func (osh *SystemHandler) LinkSetNsFd(link netlink.Link, fd int) (err error) {
 	return netlink.LinkSetNsFd(link, fd)
 }

@@ -205,7 +205,7 @@ MDLINKCHECK := $(shell command -v markdown-link-check 2> /dev/null)
 # Get link check tool
 get-linkcheck:
 ifndef MDLINKCHECK
-	sudo apt-get install npm
+	sudo apt-get update && sudo apt-get install -y npm
 	npm install -g markdown-link-check@3.6.2
 endif
 
@@ -227,6 +227,14 @@ travis:
 	@echo "Files:"
 	@echo "$$(git diff --name-only $$TRAVIS_COMMIT_RANGE)"
 
+# Install yamllint
+get-yamllint:
+	pip install --user yamllint
+
+# Lint the yaml files
+yamllint: get-yamllint
+	@echo "=> linting the yaml files"
+	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
@@ -235,4 +243,5 @@ travis:
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links \
-	travis
+	travis \
+	get-yamllint yamllint

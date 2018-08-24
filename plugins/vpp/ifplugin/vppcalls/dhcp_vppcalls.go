@@ -21,37 +21,36 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 )
 
-func (handler *ifVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
+func (h *IfVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(dhcp.DHCPClientConfig{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(dhcp.DHCPClientConfig{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &dhcp.DHCPClientConfig{
+		IsAdd: boolToUint(isAdd),
 		Client: dhcp.DHCPClient{
 			SwIfIndex:     ifIdx,
 			Hostname:      []byte(hostName),
 			WantDHCPEvent: 1,
 		},
 	}
-	if isAdd {
-		req.IsAdd = 1
-	}
-
 	reply := &dhcp.DHCPClientConfigReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *ifVppHandler) SetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
-	return handler.handleInterfaceDHCP(ifIdx, hostName, true)
+// SetInterfaceAsDHCPClient implements interface handler.
+func (h *IfVppHandler) SetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+	return h.handleInterfaceDHCP(ifIdx, hostName, true)
 }
 
-func (handler *ifVppHandler) UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
-	return handler.handleInterfaceDHCP(ifIdx, hostName, false)
+// UnsetInterfaceAsDHCPClient implements interface handler.
+func (h *IfVppHandler) UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+	return h.handleInterfaceDHCP(ifIdx, hostName, false)
 }

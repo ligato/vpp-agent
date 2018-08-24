@@ -28,3 +28,8 @@ def file_exists(path):
         exists = False
     return exists
 
+def replace_rn_n(mytext):
+    if mytext=="":
+        return ""
+    mytext=mytext.replace("\r\n", "\n")
+    return mytext

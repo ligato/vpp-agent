@@ -342,9 +342,8 @@ func (plugin *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.Li
 		if _, ok := err.(netlink.LinkNotFoundError); ok {
 			// Interface was not found
 			return nil, nil
-		} else {
-			return nil, fmt.Errorf("RESYNC Linux interface %s: %v", nbIf.HostIfName, err)
 		}
+		return nil, fmt.Errorf("RESYNC Linux interface %s: %v", nbIf.HostIfName, err)
 	}
 	if linkIf == nil || linkIf.Attrs() == nil {
 		return nil, fmt.Errorf("RESYNC Linux interface %v: link is nil", nbIf.HostIfName)

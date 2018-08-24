@@ -53,12 +53,12 @@ spec:
         - name: memif-sockets
           mountPath: /tmp
   volumes:
-  - name: vpp-config
-    configMap:
-      name: vnf-vpp-cfg
-  - name: agent-config
-    configMap:
-      name: vnf-agent-cfg
-  - name: memif-sockets
-    hostPath:
-      path: /tmp
+    - name: vpp-config
+      configMap:
+        name: vnf-vpp-cfg
+    - name: agent-config
+      configMap:
+        name: vnf-agent-cfg
+    - name: memif-sockets
+      hostPath:
+        path: /tmp

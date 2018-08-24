@@ -41,9 +41,21 @@ var setTestDataOutXConnect = []struct {
 	outData    *l2ba.SwInterfaceSetL2Xconnect
 	isResultOk bool
 }{
-	{&l2ba.SwInterfaceSetL2Xconnect{100, 200, 1}, true},
-	{&l2ba.SwInterfaceSetL2Xconnect{100, 200, 1}, false},
-	{&l2ba.SwInterfaceSetL2Xconnect{100, 200, 1}, false},
+	{&l2ba.SwInterfaceSetL2Xconnect{
+		RxSwIfIndex: 100,
+		TxSwIfIndex: 200,
+		Enable:      1,
+	}, true},
+	{&l2ba.SwInterfaceSetL2Xconnect{
+		RxSwIfIndex: 100,
+		TxSwIfIndex: 200,
+		Enable:      1,
+	}, false},
+	{&l2ba.SwInterfaceSetL2Xconnect{
+		RxSwIfIndex: 100,
+		TxSwIfIndex: 200,
+		Enable:      1,
+	}, false},
 }
 
 /**
@@ -86,9 +98,21 @@ var unsetTestDataOutXConnect = []struct {
 	outData    *l2ba.SwInterfaceSetL2Xconnect
 	isResultOk bool
 }{
-	{&l2ba.SwInterfaceSetL2Xconnect{100, 200, 0}, true},
-	{&l2ba.SwInterfaceSetL2Xconnect{100, 200, 0}, false},
-	{&l2ba.SwInterfaceSetL2Xconnect{100, 200, 0}, false},
+	{&l2ba.SwInterfaceSetL2Xconnect{
+		RxSwIfIndex: 100,
+		TxSwIfIndex: 200,
+		Enable:      0,
+	}, true},
+	{&l2ba.SwInterfaceSetL2Xconnect{
+		RxSwIfIndex: 100,
+		TxSwIfIndex: 200,
+		Enable:      0,
+	}, false},
+	{&l2ba.SwInterfaceSetL2Xconnect{
+		RxSwIfIndex: 100,
+		TxSwIfIndex: 200,
+		Enable:      0,
+	}, false},
 }
 
 /**

@@ -46,7 +46,7 @@ type LinuxArpConfigurator struct {
 	// Mappings
 	ifIndexes  ifaceidx.LinuxIfIndexRW
 	arpIndexes l3idx.LinuxARPIndexRW
-	arpIfCache map[string]*arpToInterface // Cache for non-configurable ARPs due to missing interface
+	arpIfCache map[string]*ArpToInterface // Cache for non-configurable ARPs due to missing interface
 	arpIdxSeq  uint32
 
 	// Linux namespace/calls handler
@@ -59,7 +59,7 @@ type LinuxArpConfigurator struct {
 
 // ArpToInterface is an object which stores ARP-to-interface pairs used in cache.
 // Field 'isAdd' marks whether the entry should be added or removed
-type arpToInterface struct {
+type ArpToInterface struct {
 	arp    *l3.LinuxStaticArpEntries_ArpEntry
 	ifName string
 	isAdd  bool
@@ -71,7 +71,7 @@ func (plugin *LinuxArpConfigurator) GetArpIndexes() l3idx.LinuxARPIndexRW {
 }
 
 // GetArpInterfaceCache returns internal non-configurable interface cache, mainly for testing purpose
-func (plugin *LinuxArpConfigurator) GetArpInterfaceCache() map[string]*arpToInterface {
+func (plugin *LinuxArpConfigurator) GetArpInterfaceCache() map[string]*ArpToInterface {
 	return plugin.arpIfCache
 }
 
@@ -85,7 +85,7 @@ func (plugin *LinuxArpConfigurator) Init(logger logging.PluginLogger, l3Handler 
 	// In-memory mappings
 	plugin.ifIndexes = ifIndexes
 	plugin.arpIndexes = l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(plugin.log, "linux_arp_indexes", nil))
-	plugin.arpIfCache = make(map[string]*arpToInterface)
+	plugin.arpIfCache = make(map[string]*ArpToInterface)
 	plugin.arpIdxSeq = 1
 
 	// L3 and namespace handler
@@ -117,7 +117,7 @@ func (plugin *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.Li
 	if !found || ifData == nil {
 		plugin.log.Debugf("cannot create ARP entry %s due to missing interface %s (found: %v, data: %v), cached",
 			arpEntry.Name, arpEntry.Interface, found, ifData)
-		plugin.arpIfCache[arpEntry.Name] = &arpToInterface{
+		plugin.arpIfCache[arpEntry.Name] = &ArpToInterface{
 			arp:    arpEntry,
 			ifName: arpEntry.Interface,
 			isAdd:  true,
@@ -266,7 +266,7 @@ func (plugin *LinuxArpConfigurator) DeleteLinuxStaticArpEntry(arpEntry *l3.Linux
 	_, ifData, foundIface := plugin.ifIndexes.LookupIdx(arpEntry.Interface)
 	if !foundIface || ifData == nil {
 		plugin.log.Debugf("cannot remove ARP entry %v due to missing interface %v, cached", arpEntry.Name, arpEntry.Interface)
-		plugin.arpIfCache[arpEntry.Name] = &arpToInterface{
+		plugin.arpIfCache[arpEntry.Name] = &ArpToInterface{
 			arp:    arpEntry,
 			ifName: arpEntry.Interface,
 		}
@@ -432,7 +432,7 @@ func (plugin *LinuxArpConfigurator) ResolveDeletedInterface(ifName string, ifIdx
 				HardwareAddr: mac,
 			}))
 			// Cache
-			plugin.arpIfCache[arpName] = &arpToInterface{
+			plugin.arpIfCache[arpName] = &ArpToInterface{
 				arp:    arp,
 				ifName: ifName,
 				isAdd:  true,

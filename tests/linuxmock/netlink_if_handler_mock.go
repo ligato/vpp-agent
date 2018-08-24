@@ -15,42 +15,43 @@
 package linuxmock
 
 import (
+	"net"
+
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
-	"net"
 )
 
-// NetlinkHandlerMock allows to mock netlink-related methods
+// IfNetlinkHandlerMock allows to mock netlink-related methods
 type IfNetlinkHandlerMock struct {
-	responses []*whenIfResp
+	responses []*WhenIfResp
 	calls     []*called
 	respCurr  int
 	respMax   int
 }
 
-// NewNetlinkHandlerMock creates new instance of the mock and initializes response list
+// NewIfNetlinkHandlerMock creates new instance of the mock and initializes response list
 func NewIfNetlinkHandlerMock() *IfNetlinkHandlerMock {
 	return &IfNetlinkHandlerMock{
-		responses: make([]*whenIfResp, 0),
+		responses: make([]*WhenIfResp, 0),
 	}
 }
 
-// Helper struct with single method call and desired response items
-type whenIfResp struct {
+// WhenIfResp is helper struct with single method call and desired response items
+type WhenIfResp struct {
 	methodName string
 	items      []interface{}
 }
 
-// Helper struct with method name which was called including parameters
+// called is helper struct with method name which was called including parameters
 type called struct {
 	methodName string
-	params []interface{}
+	params     []interface{}
 }
 
-// When defines name of the related method. It creates a new instance of whenIfResp with provided method name and
+// When defines name of the related method. It creates a new instance of WhenIfResp with provided method name and
 // stores it to the mock.
-func (mock *IfNetlinkHandlerMock) When(name string) *whenIfResp {
-	resp := &whenIfResp{
+func (mock *IfNetlinkHandlerMock) When(name string) *WhenIfResp {
+	resp := &WhenIfResp{
 		methodName: name,
 	}
 	mock.responses = append(mock.responses, resp)
@@ -69,7 +70,7 @@ func (mock *IfNetlinkHandlerMock) When(name string) *whenIfResp {
 // - When('method1').ThenReturn('val1')
 //
 // All mocked methods are evaluated in same order they were assigned.
-func (when *whenIfResp) ThenReturn(item ...interface{}) {
+func (when *WhenIfResp) ThenReturn(item ...interface{}) {
 	when.items = item
 }
 
@@ -100,7 +101,7 @@ func (mock *IfNetlinkHandlerMock) getReturnValues(name string) (response []inter
 }
 
 // Auxiliary method adds method/params entry to the mock
-func (mock *IfNetlinkHandlerMock) addCalled(name string, params... interface{}) {
+func (mock *IfNetlinkHandlerMock) addCalled(name string, params ...interface{}) {
 	var parameters []interface{}
 	parameters = append(parameters, params)
 	mock.calls = append(mock.calls, &called{methodName: name, params: params})
@@ -108,6 +109,7 @@ func (mock *IfNetlinkHandlerMock) addCalled(name string, params... interface{}) 
 
 /* Mocked netlink handler methods */
 
+// AddVethInterfacePair implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) AddVethInterfacePair(ifName, peerIfName string) error {
 	items := mock.getReturnValues("AddVethInterfacePair")
 	if len(items) >= 1 {
@@ -116,6 +118,7 @@ func (mock *IfNetlinkHandlerMock) AddVethInterfacePair(ifName, peerIfName string
 	return nil
 }
 
+// DelVethInterfacePair implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) DelVethInterfacePair(ifName, peerIfName string) error {
 	items := mock.getReturnValues("DelVethInterfacePair")
 	if len(items) >= 1 {
@@ -124,6 +127,7 @@ func (mock *IfNetlinkHandlerMock) DelVethInterfacePair(ifName, peerIfName string
 	return nil
 }
 
+// SetInterfaceUp implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) SetInterfaceUp(ifName string) error {
 	items := mock.getReturnValues("SetInterfaceUp")
 	if len(items) >= 1 {
@@ -132,6 +136,7 @@ func (mock *IfNetlinkHandlerMock) SetInterfaceUp(ifName string) error {
 	return nil
 }
 
+// SetInterfaceDown implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) SetInterfaceDown(ifName string) error {
 	items := mock.getReturnValues("SetInterfaceDown")
 	if len(items) >= 1 {
@@ -140,6 +145,7 @@ func (mock *IfNetlinkHandlerMock) SetInterfaceDown(ifName string) error {
 	return nil
 }
 
+// AddInterfaceIP implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) AddInterfaceIP(ifName string, addr *net.IPNet) error {
 	mock.addCalled("AddInterfaceIP", ifName, addr)
 	items := mock.getReturnValues("AddInterfaceIP")
@@ -149,6 +155,7 @@ func (mock *IfNetlinkHandlerMock) AddInterfaceIP(ifName string, addr *net.IPNet)
 	return nil
 }
 
+// DelInterfaceIP implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) DelInterfaceIP(ifName string, addr *net.IPNet) error {
 	items := mock.getReturnValues("DelInterfaceIP")
 	if len(items) >= 1 {
@@ -157,6 +164,7 @@ func (mock *IfNetlinkHandlerMock) DelInterfaceIP(ifName string, addr *net.IPNet)
 	return nil
 }
 
+// SetInterfaceMac implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) SetInterfaceMac(ifName string, macAddress string) error {
 	items := mock.getReturnValues("SetInterfaceMac")
 	if len(items) >= 1 {
@@ -165,6 +173,7 @@ func (mock *IfNetlinkHandlerMock) SetInterfaceMac(ifName string, macAddress stri
 	return nil
 }
 
+// SetInterfaceMTU implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) SetInterfaceMTU(ifName string, mtu int) error {
 	items := mock.getReturnValues("SetInterfaceMTU")
 	if len(items) >= 1 {
@@ -173,6 +182,7 @@ func (mock *IfNetlinkHandlerMock) SetInterfaceMTU(ifName string, mtu int) error 
 	return nil
 }
 
+// RenameInterface implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) RenameInterface(ifName string, newName string) error {
 	items := mock.getReturnValues("RenameInterface")
 	if len(items) >= 1 {
@@ -181,6 +191,7 @@ func (mock *IfNetlinkHandlerMock) RenameInterface(ifName string, newName string)
 	return nil
 }
 
+// GetLinkByName implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) GetLinkByName(ifName string) (netlink.Link, error) {
 	items := mock.getReturnValues("GetLinkByName")
 	if len(items) == 1 {
@@ -196,6 +207,7 @@ func (mock *IfNetlinkHandlerMock) GetLinkByName(ifName string) (netlink.Link, er
 	return nil, nil
 }
 
+// GetLinkList implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) GetLinkList() ([]netlink.Link, error) {
 	items := mock.getReturnValues("GetLinkList")
 	if len(items) == 1 {
@@ -211,6 +223,7 @@ func (mock *IfNetlinkHandlerMock) GetLinkList() ([]netlink.Link, error) {
 	return nil, nil
 }
 
+// GetAddressList implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) GetAddressList(ifName string) ([]netlink.Addr, error) {
 	items := mock.getReturnValues("GetAddressList")
 	if len(items) == 1 {
@@ -226,6 +239,7 @@ func (mock *IfNetlinkHandlerMock) GetAddressList(ifName string) ([]netlink.Addr,
 	return nil, nil
 }
 
+// InterfaceExists implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) InterfaceExists(ifName string) (bool, error) {
 	items := mock.getReturnValues("InterfaceExists")
 	if len(items) == 1 {
@@ -241,6 +255,7 @@ func (mock *IfNetlinkHandlerMock) InterfaceExists(ifName string) (bool, error) {
 	return false, nil
 }
 
+// GetInterfaceType implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) GetInterfaceType(ifName string) (string, error) {
 	items := mock.getReturnValues("GetInterfaceType")
 	if len(items) == 1 {
@@ -256,6 +271,7 @@ func (mock *IfNetlinkHandlerMock) GetInterfaceType(ifName string) (string, error
 	return "", nil
 }
 
+// GetVethPeerName implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) GetVethPeerName(ifName string) (string, error) {
 	items := mock.getReturnValues("GetVethPeerName")
 	if len(items) == 1 {
@@ -271,6 +287,7 @@ func (mock *IfNetlinkHandlerMock) GetVethPeerName(ifName string) (string, error)
 	return "", nil
 }
 
+// GetInterfaceByName implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) GetInterfaceByName(ifName string) (*net.Interface, error) {
 	items := mock.getReturnValues("GetInterfaceByName")
 	if len(items) == 1 {
@@ -286,4 +303,5 @@ func (mock *IfNetlinkHandlerMock) GetInterfaceByName(ifName string) (*net.Interf
 	return nil, nil
 }
 
+// SetStopwatch sets stopwatch.
 func (mock *IfNetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}

@@ -69,6 +69,17 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vr
     ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
     Log Many        ${out}
 
+Create Route On ${node} With IP ${ip}/${prefix} With Next Hop VRF ${next_hop_vrf} From Vrf Id ${id} And Type ${type}
+    Log Many        ${node}    ${ip}   ${prefix}    ${next_hop_vrf}    ${id}    ${type}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/route_to_other_vrf.json
+    Log Many        ${data}
+    ${data}=        replace variables           ${data}
+    Log Many        ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}
+    Log Many        ${uri}
+    ${out}=         vpp_ctl: Put Json    ${uri}   ${data}
+    Log Many        ${out}
+
 Delete IPsec On ${node} With Prefix ${prefix} And Name ${name}
     Log Many        ${node}    ${prefix}    ${name}
     vpp_ctl: Delete IPsec    ${node}    ${prefix}    ${name}

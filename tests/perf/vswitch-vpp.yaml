@@ -30,14 +30,14 @@ data:
   vppplugin.conf: |
     stopwatch: true
   linuxplugin.conf: |
-    stopwatch: true   
+    stopwatch: true
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: vswitch-supervisord-cfg
 data:
-  supervisord.conf: | 
+  supervisord.conf: |
     [supervisord]
     logfile=/var/log/supervisord.log
     loglevel=debug
@@ -55,7 +55,7 @@ data:
     autorestart=false
     redirect_stderr=true
     priority=2
-    
+
     ; This event listener waits for event of vpp or agent  exitting. Once received, it kills supervisord process and this makes
     ; subsequently the exit of docker container. You should also set agent autorestart=false.
     [eventlistener:vpp_or_agent_not_running]
@@ -89,15 +89,15 @@ spec:
         - name: memif-sockets
           mountPath: /tmp
   volumes:
-  - name: vpp-config
-    configMap:
-      name: vswitch-vpp-cfg
-  - name: agent-config
-    configMap:
-      name: vswitch-agent-cfg
-  - name: supervisor-config
-    configMap:  
-      name: vswitch-supervisord-cfg    
-  - name: memif-sockets
-    hostPath:
-      path: /tmp
+    - name: vpp-config
+      configMap:
+        name: vswitch-vpp-cfg
+    - name: agent-config
+      configMap:
+        name: vswitch-agent-cfg
+    - name: supervisor-config
+      configMap:
+        name: vswitch-supervisord-cfg
+    - name: memif-sockets
+      hostPath:
+        path: /tmp

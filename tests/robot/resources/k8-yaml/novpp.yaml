@@ -30,6 +30,6 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
       volumes:
-      - name: veth-pair
-        hostPath:
-          path: /var/run/docker.sock
+        - name: veth-pair
+          hostPath:
+            path: /var/run/docker.sock

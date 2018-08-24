@@ -64,14 +64,14 @@ type bdIndex struct {
 	mapping idxvpp.NameToIdxRW
 }
 
-// ChangeDto represents an item sent through watch channel in bdIndex.
+// BdChangeDto represents an item sent through watch channel in bdIndex.
 // In contrast to NameToIdxDto, it contains typed metadata.
 type BdChangeDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
 	Metadata *BdMetadata
 }
 
-// Bridge domain metadata consists from base bridge domain data and a list of interfaces which were
+// BdMetadata is bridge domain metadata and consists from base bridge domain data and a list of interfaces which were
 // (according to L2 bridge domain configurator) already configured as a part of bridge domain
 type BdMetadata struct {
 	BridgeDomain         *l2.BridgeDomains_BridgeDomain

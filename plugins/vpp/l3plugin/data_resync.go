@@ -198,7 +198,7 @@ func (plugin *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error 
 	return nil
 }
 
-// Resync confgures the empty VPP (overwrites the proxy arp entries)
+// ResyncInterfaces confgures the empty VPP (overwrites the proxy arp entries)
 func (plugin *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyArpInterfaces_InterfaceList) error {
 	plugin.log.Debug("RESYNC proxy ARP interfaces begin. ")
 	defer func() {
@@ -223,7 +223,7 @@ func (plugin *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyAr
 	return nil
 }
 
-// Resync confgures the empty VPP (overwrites the proxy arp ranges)
+// ResyncRanges confgures the empty VPP (overwrites the proxy arp ranges)
 func (plugin *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArpRanges_RangeList) error {
 	plugin.log.Debug("RESYNC proxy ARP ranges begin. ")
 	defer func() {

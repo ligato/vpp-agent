@@ -72,7 +72,7 @@ type NatConfigurator struct {
 	sNatMappingIndexes   idxvpp.NameToIdxRW // SNAT indices for static mapping
 	dNatIndexes          idxvpp.NameToIdxRW // DNAT indices
 	dNatStMappingIndexes idxvpp.NameToIdxRW // DNAT indices for static mapping
-	dNatIdMappingIndexes idxvpp.NameToIdxRW // DNAT indices for identity mapping
+	dNatIDMappingIndexes idxvpp.NameToIdxRW // DNAT indices for identity mapping
 	natIndexSeq          uint32             // Nat name-to-idx mapping sequence
 	natMappingTagSeq     uint32             // Static/identity mapping tag sequence
 
@@ -109,7 +109,7 @@ func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	plugin.sNatMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-mapping-indices", nil)
 	plugin.dNatIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-indices", nil)
 	plugin.dNatStMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-st-mapping-indices", nil)
-	plugin.dNatIdMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-id-mapping-indices", nil)
+	plugin.dNatIDMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-id-mapping-indices", nil)
 	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
 	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
 	plugin.natIndexSeq, plugin.natMappingTagSeq = 1, 1
@@ -140,7 +140,7 @@ func (plugin *NatConfigurator) clearMapping() {
 	plugin.sNatMappingIndexes.Clear()
 	plugin.dNatIndexes.Clear()
 	plugin.dNatStMappingIndexes.Clear()
-	plugin.dNatIdMappingIndexes.Clear()
+	plugin.dNatIDMappingIndexes.Clear()
 	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
 	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
 }
@@ -162,21 +162,21 @@ func (plugin *NatConfigurator) IsInNotDisabledIfCache(ifName string) bool {
 	return ok
 }
 
-// IsInNotDisabledIfCache checks if interface is present in 'notDisabledIfs' cache
+// IsDNatLabelRegistered checks if interface is present in 'notDisabledIfs' cache
 func (plugin *NatConfigurator) IsDNatLabelRegistered(label string) bool {
 	_, _, found := plugin.dNatIndexes.LookupIdx(label)
 	return found
 }
 
-// IsInNotDisabledIfCache checks if DNAT static mapping with provided id is registered
+// IsDNatLabelStMappingRegistered checks if DNAT static mapping with provided id is registered
 func (plugin *NatConfigurator) IsDNatLabelStMappingRegistered(id string) bool {
 	_, _, found := plugin.dNatStMappingIndexes.LookupIdx(id)
 	return found
 }
 
-// IsDNatLabelIdMappingRegistered checks if DNAT identity mapping with provided id is registered
-func (plugin *NatConfigurator) IsDNatLabelIdMappingRegistered(id string) bool {
-	_, _, found := plugin.dNatIdMappingIndexes.LookupIdx(id)
+// IsDNatLabelIDMappingRegistered checks if DNAT identity mapping with provided id is registered
+func (plugin *NatConfigurator) IsDNatLabelIDMappingRegistered(id string) bool {
+	_, _, found := plugin.dNatIDMappingIndexes.LookupIdx(id)
 	return found
 }
 
@@ -848,8 +848,8 @@ func (plugin *NatConfigurator) configureIdentityMappings(label string, mappings 
 		}
 
 		// Register DNAT identity mapping
-		mappingIdentifier := GetIdMappingIdentifier(idMapping)
-		plugin.dNatIdMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
+		mappingIdentifier := GetIDMappingIdentifier(idMapping)
+		plugin.dNatIDMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
 		plugin.natIndexSeq++
 
 		plugin.log.Debugf("DNAT identity mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
@@ -874,8 +874,8 @@ func (plugin *NatConfigurator) unconfigureIdentityMappings(mappings []*nat.Nat44
 		}
 
 		// Unregister DNAT identity mapping
-		mappingIdentifier := GetIdMappingIdentifier(idMapping)
-		plugin.dNatIdMappingIndexes.UnregisterName(mappingIdentifier)
+		mappingIdentifier := GetIDMappingIdentifier(idMapping)
+		plugin.dNatIDMappingIndexes.UnregisterName(mappingIdentifier)
 		plugin.natIndexSeq++
 
 		plugin.log.Debugf("DNAT identity (lb)mapping un-configured (ID: %v)", mappingIdentifier)
@@ -1192,8 +1192,8 @@ func GetStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMapping) str
 	return extIP + locIP + strconv.Itoa(int(mapping.LocalIps[0].VrfId))
 }
 
-// GetIdMappingIdentifier returns unique ID of the mapping
-func GetIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping) string {
+// GetIDMappingIdentifier returns unique ID of the mapping
+func GetIDMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping) string {
 	extIP := strings.Replace(mapping.IpAddress, ".", "", -1)
 	extIP = strings.Replace(extIP, "/", "", -1)
 	if mapping.AddressedInterface == "" {

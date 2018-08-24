@@ -15,21 +15,22 @@
 package aclidx_test
 
 import (
+	"testing"
+
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
-func aclIndexTestInitialization(t *testing.T) (idxvpp.NameToIdxRW, aclidx.AclIndexRW) {
+func aclIndexTestInitialization(t *testing.T) (idxvpp.NameToIdxRW, aclidx.ACLIndexRW) {
 	RegisterTestingT(t)
 
 	// initialize index
 	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "index_test", nil)
-	index := aclidx.NewAclIndex(nameToIdx)
+	index := aclidx.NewACLIndex(nameToIdx)
 	names := nameToIdx.ListNames()
 
 	// check if names were empty
@@ -108,12 +109,12 @@ func TestWatchNameToIdx(t *testing.T) {
 
 	_, aclIndex := aclIndexTestInitialization(t)
 
-	c := make(chan aclidx.AclIdxDto)
+	c := make(chan aclidx.IdxDto)
 	aclIndex.WatchNameToIdx("testName", c)
 
 	aclIndex.RegisterName("aclX", 0, &acldata)
 
-	var dto aclidx.AclIdxDto
+	var dto aclidx.IdxDto
 	Eventually(c).Should(Receive(&dto))
 	Expect(dto.Name).To(Equal("aclX"))
 	Expect(dto.NameToIdxDtoWithoutMeta.Idx).To(Equal(uint32(0)))

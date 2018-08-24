@@ -29,7 +29,7 @@ type StnRule struct {
 	IfaceIdx  uint32
 }
 
-func (handler *stnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool) error {
+func (handler *StnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(stn.StnAddDelRule{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -51,12 +51,11 @@ func (handler *stnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bo
 		req.IPAddress = []byte(addr.To4())
 		req.IsIP4 = 1
 	}
-
 	reply := &stn.StnAddDelRuleReply{}
+
 	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
@@ -64,11 +63,13 @@ func (handler *stnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bo
 
 }
 
-func (handler *stnVppHandler) AddStnRule(ifIdx uint32, addr *net.IP) error {
+// AddStnRule implements STN handler.
+func (handler *StnVppHandler) AddStnRule(ifIdx uint32, addr *net.IP) error {
 	return handler.addDelStnRule(ifIdx, addr, true)
 
 }
 
-func (handler *stnVppHandler) DelStnRule(ifIdx uint32, addr *net.IP) error {
+// DelStnRule implements STN handler.
+func (handler *StnVppHandler) DelStnRule(ifIdx uint32, addr *net.IP) error {
 	return handler.addDelStnRule(ifIdx, addr, false)
 }

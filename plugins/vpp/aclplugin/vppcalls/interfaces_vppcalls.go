@@ -29,7 +29,8 @@ type ACLInterfaceLogicalReq struct {
 	ingress   bool
 }
 
-func (handler *aclVppHandler) SetACLToInterfacesAsIngress(ACLIndex uint32, ifIndices []uint32) error {
+// SetACLToInterfacesAsIngress implements ACL handler.
+func (handler *ACLVppHandler) SetACLToInterfacesAsIngress(ACLIndex uint32, ifIndices []uint32) error {
 	return handler.requestSetACLToInterfaces(&ACLInterfaceLogicalReq{
 		aclIndex:  ACLIndex,
 		ifIndices: ifIndices,
@@ -37,7 +38,8 @@ func (handler *aclVppHandler) SetACLToInterfacesAsIngress(ACLIndex uint32, ifInd
 	})
 }
 
-func (handler *aclVppHandler) RemoveIPIngressACLFromInterfaces(ACLIndex uint32, ifIndices []uint32) error {
+// RemoveIPIngressACLFromInterfaces implements ACL handler.
+func (handler *ACLVppHandler) RemoveIPIngressACLFromInterfaces(ACLIndex uint32, ifIndices []uint32) error {
 	return handler.requestRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
 		aclIndex:  ACLIndex,
 		ifIndices: ifIndices,
@@ -45,7 +47,8 @@ func (handler *aclVppHandler) RemoveIPIngressACLFromInterfaces(ACLIndex uint32, 
 	})
 }
 
-func (handler *aclVppHandler) SetACLToInterfacesAsEgress(ACLIndex uint32, ifIndices []uint32) error {
+// SetACLToInterfacesAsEgress implements ACL handler.
+func (handler *ACLVppHandler) SetACLToInterfacesAsEgress(ACLIndex uint32, ifIndices []uint32) error {
 	return handler.requestSetACLToInterfaces(&ACLInterfaceLogicalReq{
 		aclIndex:  ACLIndex,
 		ifIndices: ifIndices,
@@ -53,7 +56,8 @@ func (handler *aclVppHandler) SetACLToInterfacesAsEgress(ACLIndex uint32, ifIndi
 	})
 }
 
-func (handler *aclVppHandler) RemoveIPEgressACLFromInterfaces(ACLIndex uint32, ifIndices []uint32) error {
+// RemoveIPEgressACLFromInterfaces implements ACL handler.
+func (handler *ACLVppHandler) RemoveIPEgressACLFromInterfaces(ACLIndex uint32, ifIndices []uint32) error {
 	return handler.requestRemoveInterfacesFromACL(&ACLInterfaceLogicalReq{
 		aclIndex:  ACLIndex,
 		ifIndices: ifIndices,
@@ -61,7 +65,8 @@ func (handler *aclVppHandler) RemoveIPEgressACLFromInterfaces(ACLIndex uint32, i
 	})
 }
 
-func (handler *aclVppHandler) SetMacIPAclToInterface(aclIndex uint32, ifIndices []uint32) error {
+// SetMacIPACLToInterface implements ACL handler.
+func (handler *ACLVppHandler) SetMacIPACLToInterface(aclIndex uint32, ifIndices []uint32) error {
 	setACLStopwatch := measure.GetTimeLog(acl_api.MacipACLInterfaceAddDel{}, handler.stopwatch)
 	for _, ingressIfIdx := range ifIndices {
 		// Measure MacipACLInterfaceAddDel time
@@ -92,7 +97,8 @@ func (handler *aclVppHandler) SetMacIPAclToInterface(aclIndex uint32, ifIndices 
 	return nil
 }
 
-func (handler *aclVppHandler) RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error {
+// RemoveMacIPIngressACLFromInterfaces implements ACL handler.
+func (handler *ACLVppHandler) RemoveMacIPIngressACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error {
 	setACLStopwatch := measure.GetTimeLog(acl_api.MacipACLInterfaceAddDel{}, handler.stopwatch)
 	for _, ifIdx := range ifIndices {
 		// Measure MacipACLInterfaceAddDel time.
@@ -106,8 +112,7 @@ func (handler *aclVppHandler) RemoveMacIPIngressACLFromInterfaces(removedACLInde
 
 		reply := &acl_api.MacipACLInterfaceAddDelReply{}
 
-		err := handler.callsChannel.SendRequest(req).ReceiveReply(reply)
-		if err != nil {
+		if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 			return fmt.Errorf("failed to remove L2 ACL %d from interface %d: %v", removedACLIndex, ifIdx, err)
 		}
 		if reply.Retval != 0 {
@@ -123,7 +128,7 @@ func (handler *aclVppHandler) RemoveMacIPIngressACLFromInterfaces(removedACLInde
 	return nil
 }
 
-func (handler *aclVppHandler) requestSetACLToInterfaces(logicalReq *ACLInterfaceLogicalReq) error {
+func (handler *ACLVppHandler) requestSetACLToInterfaces(logicalReq *ACLInterfaceLogicalReq) error {
 	setACLStopwatch := measure.GetTimeLog(acl_api.ACLInterfaceSetACLList{}, handler.stopwatch)
 	for _, aclIfIdx := range logicalReq.ifIndices {
 		// Create acl list with new entry
@@ -167,8 +172,8 @@ func (handler *aclVppHandler) requestSetACLToInterfaces(logicalReq *ACLInterface
 			SwIfIndex: aclIfIdx,
 			NInput:    nInput,
 		}
-
 		reply := &acl_api.ACLInterfaceSetACLListReply{}
+
 		err = handler.callsChannel.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
 			return err
@@ -186,7 +191,7 @@ func (handler *aclVppHandler) requestSetACLToInterfaces(logicalReq *ACLInterface
 	return nil
 }
 
-func (handler *aclVppHandler) requestRemoveInterfacesFromACL(logicalReq *ACLInterfaceLogicalReq) error {
+func (handler *ACLVppHandler) requestRemoveInterfacesFromACL(logicalReq *ACLInterfaceLogicalReq) error {
 	setACLStopwatch := measure.GetTimeLog(acl_api.ACLInterfaceSetACLList{}, handler.stopwatch)
 	var wasErr error
 	for _, aclIfIdx := range logicalReq.ifIndices {

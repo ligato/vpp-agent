@@ -108,16 +108,16 @@ type XConnectVppRead interface {
 	DumpXConnectPairs() (map[uint32]*XConnectDetails, error)
 }
 
-// bridgeDomainVppHandler is accessor for bridge domain-related vppcalls methods
-type bridgeDomainVppHandler struct {
+// BridgeDomainVppHandler is accessor for bridge domain-related vppcalls methods
+type BridgeDomainVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
-// fibVppHandler is accessor for FIB-related vppcalls methods
-type fibVppHandler struct {
+// FibVppHandler is accessor for FIB-related vppcalls methods
+type FibVppHandler struct {
 	stopwatch         *measure.Stopwatch
 	syncCallsChannel  govppapi.Channel
 	asyncCallsChannel govppapi.Channel
@@ -127,8 +127,8 @@ type fibVppHandler struct {
 	log               logging.Logger
 }
 
-// xConnectVppHandler is accessor for cross-connect-related vppcalls methods
-type xConnectVppHandler struct {
+// XConnectVppHandler is accessor for cross-connect-related vppcalls methods
+type XConnectVppHandler struct {
 	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
@@ -136,8 +136,8 @@ type xConnectVppHandler struct {
 }
 
 // NewBridgeDomainVppHandler creates new instance of bridge domain vppcalls handler
-func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *bridgeDomainVppHandler {
-	return &bridgeDomainVppHandler{
+func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *BridgeDomainVppHandler {
+	return &BridgeDomainVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
@@ -147,8 +147,8 @@ func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.Sw
 
 // NewFibVppHandler creates new instance of FIB vppcalls handler
 func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, bdIndexes l2idx.BDIndex,
-	log logging.Logger, stopwatch *measure.Stopwatch) *fibVppHandler {
-	return &fibVppHandler{
+	log logging.Logger, stopwatch *measure.Stopwatch) *FibVppHandler {
+	return &FibVppHandler{
 		syncCallsChannel:  syncChan,
 		asyncCallsChannel: asyncChan,
 		requestChan:       make(chan *FibLogicalReq),
@@ -160,8 +160,8 @@ func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, ifIndexes ifaceidx.S
 }
 
 // NewXConnectVppHandler creates new instance of cross connect vppcalls handler
-func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *xConnectVppHandler {
-	return &xConnectVppHandler{
+func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *XConnectVppHandler {
+	return &XConnectVppHandler{
 		callsChannel: callsChan,
 		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,

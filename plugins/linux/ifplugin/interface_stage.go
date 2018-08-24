@@ -49,7 +49,7 @@ type LinuxInterfaceStateUpdater struct {
 }
 
 // Init channels for interface state watcher, start it in separate go routine and subscribe to default namespace
-func (plugin *LinuxInterfaceStateUpdater) Init(logger logging.PluginLogger, ctx context.Context, ifIndexes ifaceidx.LinuxIfIndexRW,
+func (plugin *LinuxInterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, ifIndexes ifaceidx.LinuxIfIndexRW,
 	stateChan chan *LinuxInterfaceStateNotification) error {
 	// Logger
 	plugin.log = logger.NewLogger("-if-state")

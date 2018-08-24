@@ -166,6 +166,7 @@ type Config struct {
 	StatusPublishers []string `json:"status-publishers"`
 }
 
+// LinuxPluginAPI is interface for Linux plugin.
 type LinuxPluginAPI interface {
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
@@ -251,12 +252,12 @@ func (plugin *Plugin) DumpNat44DNat() (*nat.Nat44DNat, error) {
 	return plugin.natConfigurator.DumpNatDNat()
 }
 
-// GetIPSecSAIndexes
+// GetIPSecSAIndexes returns SA indexes.
 func (plugin *Plugin) GetIPSecSAIndexes() idxvpp.NameToIdx {
 	return plugin.ipSecConfigurator.GetSaIndexes()
 }
 
-// GetIPSecSPDIndexes
+// GetIPSecSPDIndexes returns SPD indexes.
 func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
 	return plugin.ipSecConfigurator.GetSpdIndexes()
 }
@@ -427,7 +428,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
-	plugin.ifStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
+	plugin.ifStateUpdater.Init(ctx, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
 		select {
 		case plugin.ifStateChan <- state:
 			// OK
@@ -506,7 +507,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// Bridge domain state updater
 	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
-	if err := plugin.bdStateUpdater.Init(plugin.Log, plugin.GoVppmux, ctx, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan,
+	if err := plugin.bdStateUpdater.Init(ctx, plugin.Log, plugin.GoVppmux, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan,
 		func(state *l2plugin.BridgeDomainStateNotification) {
 			select {
 			case plugin.bdStateChan <- state:

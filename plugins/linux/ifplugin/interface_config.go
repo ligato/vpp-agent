@@ -158,9 +158,10 @@ func (plugin *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *inter
 	case interfaces.LinuxInterfaces_AUTO_TAP:
 		if linuxIf.Tap != nil && linuxIf.Tap.TempIfName != "" {
 			return plugin.configureTapInterface(linuxIf.Tap.TempIfName, linuxIf)
-		} else {
-			return plugin.configureTapInterface(linuxIf.HostIfName, linuxIf)
 		}
+
+		return plugin.configureTapInterface(linuxIf.HostIfName, linuxIf)
+
 	default:
 		return fmt.Errorf("unknown linux interface type: %v", linuxIf.Type)
 	}
@@ -973,7 +974,7 @@ func addressExists(configured []netlink.Addr, provided *net.IPNet) bool {
 	return false
 }
 
-// ResolveCreatedInterface resolves a new vpp interfaces
+// ResolveCreatedVPPInterface resolves a new vpp interfaces
 func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
 	plugin.log.Infof("Linux IF configurator: resolve created vpp interface %v", ifConfigMetaData)
 
@@ -1007,7 +1008,7 @@ func (plugin *LinuxInterfaceConfigurator) ResolveCreatedVPPInterface(ifConfigMet
 	return plugin.configureTapInterface(hostIfName, linuxIf)
 }
 
-// ResolveDeletedInterface resolves removed vpp interfaces
+// ResolveDeletedVPPInterface resolves removed vpp interfaces
 func (plugin *LinuxInterfaceConfigurator) ResolveDeletedVPPInterface(ifConfigMetaData *vppIf.Interfaces_Interface) error {
 	plugin.log.Infof("Linux IF configurator: resolve deleted vpp interface %v", ifConfigMetaData)
 

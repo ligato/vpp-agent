@@ -22,7 +22,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
-func (handler *bridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error {
+// VppAddBridgeDomain implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -38,19 +39,19 @@ func (handler *bridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.B
 		MacAge:  uint8(bd.MacAge),
 		BdTag:   []byte(bd.Name),
 	}
-
 	reply := &l2ba.BridgeDomainAddDelReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-func (handler *bridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error {
+// VppDeleteBridgeDomain implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -59,12 +60,11 @@ func (handler *bridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error
 		IsAdd: 0,
 		BdID:  bdIdx,
 	}
-
 	reply := &l2ba.BridgeDomainAddDelReply{}
+
 	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
