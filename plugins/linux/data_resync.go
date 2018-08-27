@@ -57,12 +57,12 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 		resyncErrs = append(resyncErrs, plugin.ifConfigurator.LogError(err))
 	}
 
-	if errs := plugin.arpConfigurator.Resync(req.ARPs); errs != nil {
-		resyncErrs = append(resyncErrs, errs...)
+	if err := plugin.arpConfigurator.Resync(req.ARPs); err != nil {
+		resyncErrs = append(resyncErrs, plugin.arpConfigurator.LogError(err))
 	}
 
-	if errs := plugin.routeConfigurator.Resync(req.Routes); errs != nil {
-		resyncErrs = append(resyncErrs, errs...)
+	if err := plugin.routeConfigurator.Resync(req.Routes); err != nil {
+		resyncErrs = append(resyncErrs, plugin.routeConfigurator.LogError(err))
 	}
 
 	// log errors if any

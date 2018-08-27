@@ -15,10 +15,10 @@
 package l3plugin
 
 import (
-	"fmt"
 	"net"
 	"time"
 
+	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
@@ -26,39 +26,35 @@ import (
 )
 
 // Resync configures an initial set of ARPs. Existing Linux ARPs are registered and potentially re-configured.
-func (plugin *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntries_ArpEntry) (errs []error) {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC ARPs begin.")
-
+func (c *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntries_ArpEntry) error {
 	defer func(t time.Time) {
-		plugin.stopwatch.TimeLog("configure-linux-arp").LogTimeEntry(time.Since(t))
+		c.stopwatch.TimeLog("configure-linux-arp").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Create missing arp entries and update existing ones
 	for _, entry := range arpEntries {
-		err := plugin.ConfigureLinuxStaticArpEntry(entry)
+		err := c.ConfigureLinuxStaticArpEntry(entry)
 		if err != nil {
-			errs = append(errs, err)
+			return errors.Errorf("linux ARP resync: failed to configure ARP %s: %v", entry.Name, err)
 		}
 	}
 
 	// Dump pre-existing not managed arp entries
-	err := plugin.LookupLinuxArpEntries()
+	err := c.LookupLinuxArpEntries()
 	if err != nil {
-		errs = append(errs, err)
+		return errors.Errorf("linux ARP resync: failed to lookup ARP entries: %v", err)
 	}
 
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC ARPs end. ")
+	c.log.Info("Linux ARP resync done")
 
-	return
+	return nil
 }
 
 // Resync configures an initial set of static routes. Existing Linux static routes are registered and potentially
 // re-configured. Resync does not remove any linux route.
-func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Route) (errs []error) {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC static routes begin.")
-
+func (c *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Route) error {
 	defer func(t time.Time) {
-		plugin.stopwatch.TimeLog("configure-linux-route").LogTimeEntry(time.Since(t))
+		c.stopwatch.TimeLog("configure-linux-route").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
@@ -67,25 +63,23 @@ func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Ro
 	for _, nbRoute := range nbRoutes {
 		// Route interface exists
 		if nbRoute.Interface != "" {
-			_, _, found := plugin.ifIndexes.LookupIdx(nbRoute.Interface)
+			_, _, found := c.ifIndexes.LookupIdx(nbRoute.Interface)
 			if !found {
 				// If route interface does not exist, cache it
-				plugin.log.Debugf("RESYNC static route %v: interface %s does not exists, moving to cache",
+				c.rtCachedIfRoutes.RegisterName(nbRoute.Name, c.rtIdxSeq, nbRoute)
+				c.rtIdxSeq++
+				c.log.Debugf("Linux route %s resync: interface %s does not exists, moved to cache",
 					nbRoute.Name, nbRoute.Interface)
-				plugin.rtCachedIfRoutes.RegisterName(nbRoute.Name, plugin.rtIdxSeq, nbRoute)
-				plugin.rtIdxSeq++
 				continue
 			}
 		}
 
 		// There can be several routes found according to matching parameters
-		linuxRtList, err := plugin.findLinuxRoutes(nbRoute, nsMgmtCtx)
+		linuxRtList, err := c.findLinuxRoutes(nbRoute, nsMgmtCtx)
 		if err != nil {
-			plugin.log.Error(err)
-			errs = append(errs, err)
-			continue
+			return errors.Errorf("linux route %s resync: %v", nbRoute.Name, err)
 		}
-		plugin.log.Debugf("found %d linux routes to compare for %s", len(linuxRtList), nbRoute.Name)
+		c.log.Debugf("found %d linux routes to compare for %s", len(linuxRtList), nbRoute.Name)
 		// Find at least one route which has the same parameters
 		var rtFound bool
 		for rtIdx, linuxRtEntry := range linuxRtList {
@@ -100,67 +94,67 @@ func (plugin *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Ro
 				} else {
 					nsName = nbRoute.Namespace.Name
 				}
-				_, ifData, found = plugin.ifIndexes.LookupNameByNamespace(uint32(linuxRtEntry.LinkIndex), nsName)
+				_, ifData, found = c.ifIndexes.LookupNameByNamespace(uint32(linuxRtEntry.LinkIndex), nsName)
 				if !found || ifData == nil {
-					plugin.log.Debugf("Interface %d (data %v) not found for route", linuxRtEntry.LinkIndex, ifData)
+					c.log.Debugf("Interface %d (data %v) not found for route", linuxRtEntry.LinkIndex, ifData)
 				} else {
 					hostName = ifData.Data.HostIfName
 				}
 			}
-			linuxRt := plugin.transformRoute(linuxRtEntry, hostName)
-			if plugin.isRouteEqual(rtIdx, nbRoute, linuxRt) {
+			linuxRt := c.transformRoute(linuxRtEntry, hostName)
+			if c.isRouteEqual(rtIdx, nbRoute, linuxRt) {
 				rtFound = true
 				break
 			}
 		}
 		if rtFound {
 			// Register route if found
-			plugin.log.Debugf("RESYNC Linux routes: %s was found and will be registered without additional changes", nbRoute.Name)
-			plugin.rtIndexes.RegisterName(nbRoute.Name, plugin.rtIdxSeq, nbRoute)
-			plugin.rtIdxSeq++
+			c.rtIndexes.RegisterName(nbRoute.Name, c.rtIdxSeq, nbRoute)
+			c.rtIdxSeq++
+			c.log.Debugf("Linux route resync: %s was found and registered without additional changes", nbRoute.Name)
 			// Resolve cached routes
 			if !nbRoute.Default {
-				plugin.retryDefaultRoutes(nbRoute)
+				if err := c.retryDefaultRoutes(nbRoute); err != nil {
+					return errors.Errorf("Linux route resync error: retrying cached default routes caused %v", err)
+				}
 			}
 		} else {
 			// Configure route if not found
-			plugin.log.Debugf("RESYNC Linux routes: %s was not found and will be configured", nbRoute.Name)
-			if err := plugin.ConfigureLinuxStaticRoute(nbRoute); err != nil {
-				plugin.log.Error(err)
-				errs = append(errs, err)
+			c.log.Debugf("RLinux route resync: %s was not found and will be configured", nbRoute.Name)
+			if err := c.ConfigureLinuxStaticRoute(nbRoute); err != nil {
+				return errors.Errorf("linux route resync error: failed to configure %s: %v", nbRoute.Name, err)
 			}
 		}
 	}
 
-	return
+	return nil
 }
 
 // Look for routes similar to provided NB config in respective namespace. Routes can be read using destination address
 // or interface. FOr every config, both ways are used.
-func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRoutes_Route, nsMgmtCtx *nsplugin.NamespaceMgmtCtx) ([]netlink.Route, error) {
-	plugin.log.Debugf("Looking for equivalent linux routes for %s", nbRoute.Name)
-
+func (c *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRoutes_Route, nsMgmtCtx *nsplugin.NamespaceMgmtCtx) ([]netlink.Route, error) {
+	c.log.Debugf("Looking for equivalent linux routes for %s", nbRoute.Name)
 	// Move to proper namespace
 	if nbRoute.Namespace != nil {
 		// Switch to namespace
-		routeNs := plugin.nsHandler.RouteNsToGeneric(nbRoute.Namespace)
-		revertNs, err := plugin.nsHandler.SwitchNamespace(routeNs, nsMgmtCtx)
+		routeNs := c.nsHandler.RouteNsToGeneric(nbRoute.Namespace)
+		revertNs, err := c.nsHandler.SwitchNamespace(routeNs, nsMgmtCtx)
 		if err != nil {
-			return nil, fmt.Errorf("RESYNC Linux route %s: failed to switch to namespace %s: %v",
+			return nil, errors.Errorf("Linux route %s resync error: failed to switch to namespace %s: %v",
 				nbRoute.Name, nbRoute.Namespace.Name, err)
 		}
 		defer revertNs()
 	}
 	var linuxRoutes []netlink.Route
 	// Look for routes using destination IP address
-	if nbRoute.DstIpAddr != "" && plugin.networkReachable(nbRoute.Namespace, nbRoute.DstIpAddr) {
+	if nbRoute.DstIpAddr != "" && c.networkReachable(nbRoute.Namespace, nbRoute.DstIpAddr) {
 		_, dstNetIP, err := net.ParseCIDR(nbRoute.DstIpAddr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse destination IP address %s: %v", nbRoute.DstIpAddr, err)
+			return nil, errors.Errorf("failed to parse destination IP address %s: %v", nbRoute.DstIpAddr, err)
 		}
 		linuxRts, err := netlink.RouteGet(dstNetIP.IP)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read linux route %s using address %s: %v",
+			return nil, errors.Errorf("failed to read linux route %s using address %s: %v",
 				nbRoute.Name, nbRoute.DstIpAddr, err)
 		}
 		if linuxRts != nil {
@@ -170,21 +164,21 @@ func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRou
 	// Look for routes using interface
 	if nbRoute.Interface != "" {
 		// Look whether interface is registered
-		_, meta, found := plugin.ifIndexes.LookupIdx(nbRoute.Interface)
+		_, meta, found := c.ifIndexes.LookupIdx(nbRoute.Interface)
 		if !found {
 			// Should not happen, was successfully checked before
-			plugin.log.Errorf("Route %s interface %s is missing from the mapping", nbRoute.Name, nbRoute.Interface)
+			return nil, errors.Errorf("route %s interface %s is missing from the mapping", nbRoute.Name, nbRoute.Interface)
 		} else if meta == nil || meta.Data == nil {
-			plugin.log.Errorf("Interface %s data missing", nbRoute.Interface)
+			return nil, errors.Errorf("interface %s data missing", nbRoute.Interface)
 		} else {
 			// Look for interface using host name
 			link, err := netlink.LinkByName(meta.Data.HostIfName)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read interface %s: %v", meta.Data.HostIfName, err)
+				return nil, errors.Errorf("failed to read interface %s: %v", meta.Data.HostIfName, err)
 			}
 			linuxRts, err := netlink.RouteList(link, netlink.FAMILY_ALL)
 			if err != nil {
-				return nil, fmt.Errorf("failed to read linux route %s using interface %s: %v",
+				return nil, errors.Errorf("failed to read linux route %s using interface %s: %v",
 					nbRoute.Name, meta.Data.HostIfName, err)
 			}
 			if linuxRts != nil {
@@ -194,33 +188,33 @@ func (plugin *LinuxRouteConfigurator) findLinuxRoutes(nbRoute *l3.LinuxStaticRou
 	}
 
 	if len(linuxRoutes) == 0 {
-		plugin.log.Debugf("Equivalent for route %s was not found", nbRoute.Name)
+		c.log.Debugf("Equivalent for route %s was not found", nbRoute.Name)
 	}
 
 	return linuxRoutes, nil
 }
 
 // Compare all route parameters and returns true if routes are equal, false otherwise
-func (plugin *LinuxRouteConfigurator) isRouteEqual(rtIdx int, nbRoute, linuxRt *l3.LinuxStaticRoutes_Route) bool {
+func (c *LinuxRouteConfigurator) isRouteEqual(rtIdx int, nbRoute, linuxRt *l3.LinuxStaticRoutes_Route) bool {
 	// Interface (if exists)
 	if nbRoute.Interface != "" && nbRoute.Interface != linuxRt.Interface {
-		plugin.log.Debugf("Linux route %d: interface is different (NB: %s, Linux: %s)",
+		c.log.Debugf("Linux route %d: interface is different (NB: %s, Linux: %s)",
 			rtIdx, nbRoute.Interface, linuxRt.Interface)
 		return false
 	}
 	// Default route
 	if nbRoute.Default {
 		if !linuxRt.Default {
-			plugin.log.Debugf("Linux route %d: NB route is default, but linux route is not", rtIdx)
+			c.log.Debugf("Linux route %d: NB route is default, but linux route is not", rtIdx)
 			return false
 		}
 		if nbRoute.GwAddr != linuxRt.GwAddr {
-			plugin.log.Debugf("Linux route %d: gateway is different (NB: %s, Linux: %s)",
+			c.log.Debugf("Linux route %d: gateway is different (NB: %s, Linux: %s)",
 				rtIdx, nbRoute.GwAddr, linuxRt.GwAddr)
 			return false
 		}
 		if nbRoute.Metric != linuxRt.Metric {
-			plugin.log.Debugf("Linux route %d: metric is different (NB: %s, Linux: %s)",
+			c.log.Debugf("Linux route %d: metric is different (NB: %s, Linux: %s)",
 				rtIdx, nbRoute.Metric, linuxRt.Metric)
 			return false
 		}
@@ -229,33 +223,33 @@ func (plugin *LinuxRouteConfigurator) isRouteEqual(rtIdx int, nbRoute, linuxRt *
 	// Static route
 	_, nbIPNet, err := net.ParseCIDR(nbRoute.DstIpAddr)
 	if err != nil {
-		plugin.log.Error(err)
+		c.log.Error(err)
 		return false
 	}
 	if nbIPNet.IP.String() != linuxRt.DstIpAddr {
-		plugin.log.Debugf("Linux route %d: destination address is different (NB: %s, Linux: %s)",
+		c.log.Debugf("Linux route %d: destination address is different (NB: %s, Linux: %s)",
 			rtIdx, nbIPNet.IP.String(), linuxRt.DstIpAddr)
 		return false
 	}
 	// Compare source IP/gateway
 	if nbRoute.SrcIpAddr == "" && linuxRt.SrcIpAddr != "" || nbRoute.SrcIpAddr != "" && linuxRt.SrcIpAddr == "" {
 		if nbRoute.SrcIpAddr == "" && nbRoute.SrcIpAddr != linuxRt.GwAddr {
-			plugin.log.Debugf("Linux route %d: source does not match gateway (NB: %s, Linux: %s)",
+			c.log.Debugf("Linux route %d: source does not match gateway (NB: %s, Linux: %s)",
 				rtIdx, nbRoute.SrcIpAddr, linuxRt.SrcIpAddr)
 			return false
 		} else if linuxRt.SrcIpAddr == "" && nbRoute.GwAddr != linuxRt.SrcIpAddr {
-			plugin.log.Debugf("Linux route %d: source does not match gateway (NB: %s, Linux: %s)",
+			c.log.Debugf("Linux route %d: source does not match gateway (NB: %s, Linux: %s)",
 				rtIdx, nbRoute.SrcIpAddr, linuxRt.SrcIpAddr)
 			return false
 		}
 	} else if nbRoute.SrcIpAddr != "" && linuxRt.SrcIpAddr != "" && nbRoute.SrcIpAddr != linuxRt.SrcIpAddr {
-		plugin.log.Debugf("Linux route %d: source address is different (NB: %s, Linux: %s)",
+		c.log.Debugf("Linux route %d: source address is different (NB: %s, Linux: %s)",
 			rtIdx, nbRoute.SrcIpAddr, linuxRt.SrcIpAddr)
 		return false
 	}
 
 	if nbRoute.SrcIpAddr != "" && nbRoute.SrcIpAddr != linuxRt.SrcIpAddr {
-		plugin.log.Debugf("Linux route %d: source address is different (NB: %s, Linux: %s)",
+		c.log.Debugf("Linux route %d: source address is different (NB: %s, Linux: %s)",
 			rtIdx, nbRoute.SrcIpAddr, linuxRt.SrcIpAddr)
 		return false
 	}
@@ -266,7 +260,7 @@ func (plugin *LinuxRouteConfigurator) isRouteEqual(rtIdx int, nbRoute, linuxRt *
 		}
 	} else if linuxRt.Scope != nil {
 		if nbRoute.Scope.Type != linuxRt.Scope.Type {
-			plugin.log.Debugf("Linux route %d: scope is different (NB: %s, Linux: %s)",
+			c.log.Debugf("Linux route %d: scope is different (NB: %s, Linux: %s)",
 				rtIdx, nbRoute.Scope.Type, linuxRt.Scope.Type)
 			return false
 		}
@@ -276,7 +270,7 @@ func (plugin *LinuxRouteConfigurator) isRouteEqual(rtIdx int, nbRoute, linuxRt *
 }
 
 // Parse netlink type scope to proto
-func (plugin *LinuxRouteConfigurator) parseLinuxRouteScope(scope netlink.Scope) *l3.LinuxStaticRoutes_Route_Scope {
+func (c *LinuxRouteConfigurator) parseLinuxRouteScope(scope netlink.Scope) *l3.LinuxStaticRoutes_Route_Scope {
 	switch scope {
 	case netlink.SCOPE_UNIVERSE:
 		return &l3.LinuxStaticRoutes_Route_Scope{
@@ -295,7 +289,7 @@ func (plugin *LinuxRouteConfigurator) parseLinuxRouteScope(scope netlink.Scope) 
 			Type: l3.LinuxStaticRoutes_Route_Scope_SITE,
 		}
 	default:
-		plugin.log.Infof("Unknown scope type, setting to default (link): %v", scope)
+		c.log.Infof("Unknown scope type, setting to default (link): %v", scope)
 		return &l3.LinuxStaticRoutes_Route_Scope{
 			Type: l3.LinuxStaticRoutes_Route_Scope_LINK,
 		}
