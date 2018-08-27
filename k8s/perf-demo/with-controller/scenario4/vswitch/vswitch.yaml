@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 kind: Pod
 metadata:
@@ -38,16 +39,15 @@ spec:
         - name: docker-socket
           mountPath: /var/run/docker.sock
   volumes:
-  - name: vpp-config
-    configMap:
-      name: vswitch-vpp-cfg
-  - name: agent-config
-    configMap:
-      name: vswitch-agent-cfg
-  - name: memif-sockets
-    hostPath:
-      path: /tmp
-  - name: docker-socket
-    hostPath:
-      path: /var/run/docker.sock
-
+    - name: vpp-config
+      configMap:
+        name: vswitch-vpp-cfg
+    - name: agent-config
+      configMap:
+        name: vswitch-agent-cfg
+    - name: memif-sockets
+      hostPath:
+        path: /tmp
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock

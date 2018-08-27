@@ -19,26 +19,24 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
 func TestAddInterfaceIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
-	err = vppcalls.AddInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.AddInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 	Expect(vppMsg.Address).To(BeEquivalentTo(net.ParseIP("10.0.0.0").To4()))
 	Expect(vppMsg.AddressLength).To(BeEquivalentTo(24))
 	Expect(vppMsg.DelAll).To(BeEquivalentTo(0))
@@ -46,20 +44,20 @@ func TestAddInterfaceIP(t *testing.T) {
 }
 
 func TestAddInterfaceIPv6(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("2001:db8:0:1:1:1:1:1/128")
 	Expect(err).To(BeNil())
-	err = vppcalls.AddInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.AddInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
 	Expect(vppMsg.Address).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
 	Expect(vppMsg.AddressLength).To(BeEquivalentTo(128))
 	Expect(vppMsg.DelAll).To(BeEquivalentTo(0))
@@ -67,32 +65,32 @@ func TestAddInterfaceIPv6(t *testing.T) {
 }
 
 func TestAddInterfaceInvalidIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 
-	err := vppcalls.AddInterfaceIP(1, &net.IPNet{
+	err := ifHandler.AddInterfaceIP(1, &net.IPNet{
 		IP: []byte("invalid-ip"),
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddInterfaceIPError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddress{})
 
-	err = vppcalls.AddInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.AddInterfaceIP(1, ipNet)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestAddInterfaceIPRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
@@ -100,26 +98,26 @@ func TestAddInterfaceIPRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err = vppcalls.AddInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.AddInterfaceIP(1, ipNet)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDelInterfaceIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	Expect(err).To(BeNil())
-	err = vppcalls.DelInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.DelInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(0))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 	Expect(vppMsg.Address).To(BeEquivalentTo(net.ParseIP("10.0.0.0").To4()))
 	Expect(vppMsg.AddressLength).To(BeEquivalentTo(24))
 	Expect(vppMsg.DelAll).To(BeEquivalentTo(0))
@@ -127,20 +125,20 @@ func TestDelInterfaceIP(t *testing.T) {
 }
 
 func TestDelInterfaceIPv6(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 
 	_, ipNet, err := net.ParseCIDR("2001:db8:0:1:1:1:1:1/128")
 	Expect(err).To(BeNil())
-	err = vppcalls.DelInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.DelInterfaceIP(1, ipNet)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceAddDelAddress)
 	Expect(ok).To(BeTrue())
 	Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(1))
-	Expect(vppMsg.IsIpv6).To(BeEquivalentTo(1))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
 	Expect(vppMsg.Address).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
 	Expect(vppMsg.AddressLength).To(BeEquivalentTo(128))
 	Expect(vppMsg.DelAll).To(BeEquivalentTo(0))
@@ -148,32 +146,32 @@ func TestDelInterfaceIPv6(t *testing.T) {
 }
 
 func TestDelInterfaceInvalidIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{})
 
-	err := vppcalls.DelInterfaceIP(1, &net.IPNet{
+	err := ifHandler.DelInterfaceIP(1, &net.IPNet{
 		IP: []byte("invalid-ip"),
-	}, ctx.MockChannel, nil)
+	})
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDelInterfaceIPError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddress{})
 
-	err = vppcalls.DelInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.DelInterfaceIP(1, ipNet)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestDelInterfaceIPRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
@@ -181,18 +179,18 @@ func TestDelInterfaceIPRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err = vppcalls.DelInterfaceIP(1, ipNet, ctx.MockChannel, nil)
+	err = ifHandler.DelInterfaceIP(1, ipNet)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetUnnumberedIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
 
-	err := vppcalls.SetUnnumberedIP(1, 2, ctx.MockChannel, nil)
+	err := ifHandler.SetUnnumberedIP(1, 2)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetUnnumbered)
@@ -203,36 +201,36 @@ func TestSetUnnumberedIP(t *testing.T) {
 }
 
 func TestSetUnnumberedIPError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumbered{})
 
-	err := vppcalls.SetUnnumberedIP(1, 2, ctx.MockChannel, nil)
+	err := ifHandler.SetUnnumberedIP(1, 2)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestSetUnnumberedIPRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.SetUnnumberedIP(1, 2, ctx.MockChannel, nil)
+	err := ifHandler.SetUnnumberedIP(1, 2)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestUnsetUnnumberedIP(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{})
 
-	err := vppcalls.UnsetUnnumberedIP(1, ctx.MockChannel, nil)
+	err := ifHandler.UnsetUnnumberedIP(1)
 
 	Expect(err).To(BeNil())
 	vppMsg, ok := ctx.MockChannel.Msg.(*interfaces.SwInterfaceSetUnnumbered)
@@ -243,25 +241,25 @@ func TestUnsetUnnumberedIP(t *testing.T) {
 }
 
 func TestUnsetUnnumberedIPError(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumbered{})
 
-	err := vppcalls.UnsetUnnumberedIP(1, ctx.MockChannel, nil)
+	err := ifHandler.UnsetUnnumberedIP(1)
 
 	Expect(err).ToNot(BeNil())
 }
 
 func TestUnsetUnnumberedIPRetval(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
+	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetUnnumberedReply{
 		Retval: 1,
 	})
 
-	err := vppcalls.UnsetUnnumberedIP(1, ctx.MockChannel, nil)
+	err := ifHandler.UnsetUnnumberedIP(1)
 
 	Expect(err).ToNot(BeNil())
 }

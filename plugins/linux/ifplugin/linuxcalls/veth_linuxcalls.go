@@ -38,7 +38,7 @@ import (
 )
 
 // AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
-func (handler *netLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
+func (handler *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("add-veth-iface-pair").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -58,7 +58,7 @@ func (handler *netLinkHandler) AddVethInterfacePair(ifName, peerIfName string) e
 }
 
 // DelVethInterfacePair calls LinkDel Netlink API for the Netlink.Veth interface type.
-func (handler *netLinkHandler) DelVethInterfacePair(ifName, peerIfName string) error {
+func (handler *NetLinkHandler) DelVethInterfacePair(ifName, peerIfName string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("del-veth-iface-pair").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -78,7 +78,7 @@ func (handler *netLinkHandler) DelVethInterfacePair(ifName, peerIfName string) e
 }
 
 // GetVethPeerName return the peer name for a given VETH interface.
-func (handler *netLinkHandler) GetVethPeerName(ifName string) (string, error) {
+func (handler *NetLinkHandler) GetVethPeerName(ifName string) (string, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("get-veth-peer-name").LogTimeEntry(time.Since(t))
 	}(time.Now())

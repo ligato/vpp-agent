@@ -16,7 +16,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${CONFIG_SLEEP}=       1s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 ${RESYNC_SLEEP}=       1s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s
@@ -37,13 +38,11 @@ Setup Interfaces
     vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns2    name=ns2_veth3    host_if_name=ns2_veth3_linux    mac=92:c7:42:67:ab:cf    peer=ns3_veth3    ip=192.168.22.5    prefix=30
     vpp_ctl: Put Veth Interface Via Linux Plugin    node=agent_vpp_1    namespace=ns3    name=ns3_veth3    host_if_name=ns3_veth3_linux    mac=92:c7:42:67:ab:ce    peer=ns2_veth3    ip=192.168.22.6    prefix=30
 
-    Sleep    ${CONFIG_SLEEP}
-
 Chcek Linux Interfaces
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3
-    Check Linux Interfaces    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns2    interface=ns2_veth3
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Interfaces    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3
 
 Ping In Namespaces
     # This should work by default after veth interface setup
@@ -65,11 +64,10 @@ Create Linux Defalut Routes
     #vpp_ctl: Put Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=innercross2    ip=192.168.22.2    prefix=32    next_hop=192.168.22.6
     vpp_ctl: Put Default Linux Route    node=agent_vpp_1    namespace=ns1    interface=ns1_veth1    routename=innercross1    next_hop=192.168.22.1
     vpp_ctl: Put Default Linux Route    node=agent_vpp_1    namespace=ns3    interface=ns3_veth3    routename=innercross2    next_hop=192.168.22.6
-    Sleep    ${CONFIG_SLEEP}
 
 Check Linux Default Routes
-    Check Linux Default Routes    node=agent_vpp_1    namespace=ns1    next_hop=192.168.22.1
-    Check Linux Default Routes    node=agent_vpp_1    namespace=ns3    next_hop=192.168.22.6
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Default Routes    node=agent_vpp_1    namespace=ns1    next_hop=192.168.22.1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Default Routes    node=agent_vpp_1    namespace=ns3    next_hop=192.168.22.6
 
 Ping In Namespaces Again
     Ping in namespace    node=agent_vpp_1    namespace=ns1    ip=192.168.22.5
@@ -83,7 +81,6 @@ Create Linux Routes2
     #This needs to be fixed  - https://jira.pantheon.sk/browse/ODPM-743
     vpp_ctl: Put Linux Route Without Interface    node=agent_vpp_1    namespace=ns1    routename=outercross1    ip=192.168.22.6    prefix=32    next_hop=192.168.22.2
     vpp_ctl: Put Linux Route Without Interface    node=agent_vpp_1    namespace=ns3    routename=outercross2    ip=192.168.22.1    prefix=32    next_hop=192.168.22.5
-    Sleep    ${CONFIG_SLEEP}
 
     #temporarily - because previous commands does not work
     ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns1 ip route add 192.168.22.6/32 via 192.168.22.2
@@ -100,8 +97,8 @@ Create Linux Routes2
     ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns2 sysctl -w net.ipv4.ip_forward=1
 
 Check Linux Routes2
-    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=192.168.22.6    next_hop=192.168.22.2
-    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1    next_hop=192.168.22.5
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns1    ip=192.168.22.6    next_hop=192.168.22.2
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes Gateway    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1    next_hop=192.168.22.5
 
     Ping in namespace    node=agent_vpp_1    namespace=ns1    ip=192.168.22.6
     Ping in namespace    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1

@@ -68,7 +68,7 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) erro
 
 // DataChangeIface propagates data change to the ifConfigurator.
 func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.LinuxInterfaces_Interface, prevValue *interfaces.LinuxInterfaces_Interface,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -81,7 +81,7 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.LinuxInterfac
 
 // DataChangeArp propagates data change to the arpConfigurator
 func (plugin *Plugin) dataChangeArp(diff bool, value *l3.LinuxStaticArpEntries_ArpEntry, prevValue *l3.LinuxStaticArpEntries_ArpEntry,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeArp ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {
@@ -94,7 +94,7 @@ func (plugin *Plugin) dataChangeArp(diff bool, value *l3.LinuxStaticArpEntries_A
 
 // DataChangeRoute propagates data change to the routeConfigurator
 func (plugin *Plugin) dataChangeRoute(diff bool, value *l3.LinuxStaticRoutes_Route, prevValue *l3.LinuxStaticRoutes_Route,
-	changeType datasync.PutDel) error {
+	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
 	if datasync.Delete == changeType {

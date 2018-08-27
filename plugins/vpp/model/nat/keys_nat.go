@@ -15,43 +15,22 @@
 package nat
 
 const (
-	// natPrefix
-	prefix = "vpp/config/v1/nat"
-	// globalConfigPrefix is relative prefix for global config
-	globalConfig = prefix + "/global/"
-	// sNatPrefix is relative prefix for SNAT setup
-	sNatPrefix = prefix + "/snat/"
-	// dNatPrefix is relative prefix for DNAT setup
-	dNatPrefix = prefix + "/dnat/"
+	// Prefix is NAT prefix
+	Prefix = "vpp/config/v1/nat/"
+	// GlobalPrefix is relative prefix for global config
+	GlobalPrefix = Prefix + "global/"
+	// SNatPrefix is relative prefix for SNAT setup
+	SNatPrefix = Prefix + "snat/"
+	// DNatPrefix is relative prefix for DNAT setup
+	DNatPrefix = Prefix + "dnat/"
 )
-
-// GlobalConfigPrefix returns the prefix used in ETCD to store NAT global config
-func GlobalConfigPrefix() string {
-	return globalConfig
-}
-
-// GlobalConfigKey returns the key used in ETCD to store NAT global config. Global config can be stored only once,
-// so the prefix == key
-func GlobalConfigKey() string {
-	return globalConfig
-}
-
-// SNatPrefix returns the prefix used in ETCD to store SNAT config
-func SNatPrefix() string {
-	return sNatPrefix
-}
 
 // SNatKey returns the key used in ETCD to store SNAT config
 func SNatKey(label string) string {
-	return sNatPrefix + label
-}
-
-// DNatPrefix returns the prefix used in ETCD to store NAT DNAT config
-func DNatPrefix() string {
-	return dNatPrefix
+	return SNatPrefix + label
 }
 
 // DNatKey returns the key used in ETCD to store DNAT config
 func DNatKey(label string) string {
-	return dNatPrefix + label
+	return DNatPrefix + label
 }

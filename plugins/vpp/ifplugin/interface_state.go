@@ -15,6 +15,7 @@
 package ifplugin
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -22,10 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"bytes"
-
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -86,7 +84,7 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (plugin *InterfaceStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context,
+func (plugin *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger
@@ -106,7 +104,7 @@ func (plugin *InterfaceStateUpdater) Init(logger logging.PluginLogger, goVppMux 
 	}
 
 	plugin.swIdxChan = make(chan ifaceidx.SwIfIdxDto, 100)
-	swIfIndexes.WatchNameToIdx(core.PluginName("ifplugin_ifstate"), plugin.swIdxChan)
+	swIfIndexes.WatchNameToIdx("ifplugin_ifstate", plugin.swIdxChan)
 	plugin.notifChan = notifChan
 
 	// Create child context
@@ -151,7 +149,7 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	wantInterfaceEventsReply := &interfaces.WantInterfaceEventsReply{}
 	// enable interface state notifications from VPP
 	err = plugin.vppCh.SendRequest(&interfaces.WantInterfaceEvents{
-		Pid:           uint32(os.Getpid()),
+		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantInterfaceEventsReply)
 	plugin.log.Debug("wantInterfaceEventsReply: ", wantInterfaceEventsReply, " ", err)
@@ -165,7 +163,7 @@ func (plugin *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	wantStatsReply := &stats.WantStatsReply{}
 	// enable interface counters notifications from VPP
 	err = plugin.vppCh.SendRequest(&stats.WantStats{
-		Pid:           uint32(os.Getpid()),
+		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
 	}).ReceiveReply(wantStatsReply)
 	plugin.log.Debug("wantStatsReply: ", wantStatsReply, " ", err)
@@ -194,7 +192,7 @@ func (plugin *InterfaceStateUpdater) Close() error {
 		plugin.vppCh.UnsubscribeNotification(plugin.vppCombinedCountersSubs)
 	}
 
-	return safeclose.Close(plugin.vppCh, plugin.swIdxChan)
+	return safeclose.Close(plugin.vppCh)
 }
 
 // watchVPPNotifications watches for delivery of notifications from VPP.

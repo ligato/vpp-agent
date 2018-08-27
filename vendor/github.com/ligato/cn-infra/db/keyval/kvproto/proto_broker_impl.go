@@ -52,14 +52,18 @@ type protoKeyVal struct {
 
 // NewProtoWrapper initializes proto decorator.
 // The default serializer is used - SerializerProto.
-func NewProtoWrapper(db keyval.CoreBrokerWatcher) *ProtoWrapper {
+func NewProtoWrapper(db keyval.CoreBrokerWatcher, serializer ...keyval.Serializer) *ProtoWrapper {
+	if len(serializer) > 0 {
+		return &ProtoWrapper{db, serializer[0]}
+	}
 	return &ProtoWrapper{db, &keyval.SerializerProto{}}
 }
 
 // NewProtoWrapperWithSerializer initializes proto decorator with the specified
 // serializer.
 func NewProtoWrapperWithSerializer(db keyval.CoreBrokerWatcher, serializer keyval.Serializer) *ProtoWrapper {
-	return &ProtoWrapper{db, serializer}
+	// OBSOLETE, use NewProtoWrapper
+	return NewProtoWrapper(db, serializer)
 }
 
 // Close closes underlying connection to ETCD.

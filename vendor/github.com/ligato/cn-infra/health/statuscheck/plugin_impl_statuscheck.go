@@ -20,25 +20,18 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/cn-infra/core"
+	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 )
 
-const (
-	// Init state means that the initialization of the plugin is in progress.
-	Init PluginState = "init"
-	// OK state means that the plugin is healthy.
-	OK PluginState = "ok"
-	// Error state means that some error has occurred in the plugin.
-	Error PluginState = "error"
-
-	// frequency of periodic writes of state data into ETCD
-	periodicWriteTimeout time.Duration = time.Second * 10
-
-	// frequency of periodic plugin state probing
-	periodicProbingTimeout time.Duration = time.Second * 5
+var (
+	// PeriodicWriteTimeout is frequency of periodic writes of state data into ETCD.
+	PeriodicWriteTimeout = time.Second * 10
+	// PeriodicProbingTimeout is frequency of periodic plugin state probing.
+	PeriodicProbingTimeout = time.Second * 5
 )
 
 // Plugin struct holds all plugin-related data.
@@ -59,21 +52,21 @@ type Plugin struct {
 
 // Deps lists the dependencies of statuscheck plugin.
 type Deps struct {
-	Log        logging.PluginLogger       // inject
-	PluginName core.PluginName            // inject
-	Transport  datasync.KeyProtoValWriter // inject (optional)
+	infra.PluginName                            // inject
+	Log              logging.PluginLogger       // inject
+	Transport        datasync.KeyProtoValWriter // inject (optional)
 }
 
 // Init prepares the initial status data.
 func (p *Plugin) Init() error {
 	// write initial status data into ETCD
 	p.agentStat = &status.AgentStatus{
-		BuildVersion: core.BuildVersion,
-		BuildDate:    core.BuildDate,
 		State:        status.OperationalState_INIT,
+		BuildVersion: agent.BuildVersion,
+		BuildDate:    agent.BuildDate,
+		CommitHash:   agent.CommitHash,
 		StartTime:    time.Now().Unix(),
 		LastChange:   time.Now().Unix(),
-		CommitHash:   core.CommitHash,
 	}
 
 	// initial empty interface status
@@ -124,7 +117,7 @@ func (p *Plugin) Close() error {
 }
 
 // Register a plugin for status change reporting.
-func (p *Plugin) Register(pluginName core.PluginName, probe PluginStateProbe) {
+func (p *Plugin) Register(pluginName infra.PluginName, probe PluginStateProbe) {
 	p.access.Lock()
 	defer p.access.Unlock()
 
@@ -145,13 +138,13 @@ func (p *Plugin) Register(pluginName core.PluginName, probe PluginStateProbe) {
 }
 
 // ReportStateChange can be used to report a change in the status of a previously registered plugin.
-func (p *Plugin) ReportStateChange(pluginName core.PluginName, state PluginState, lastError error) {
+func (p *Plugin) ReportStateChange(pluginName infra.PluginName, state PluginState, lastError error) {
 	p.reportStateChange(pluginName, state, lastError)
 }
 
 // ReportStateChangeWithMeta can be used to report a change in the status of a previously registered plugin and report
 // the specific metadata state
-func (p *Plugin) ReportStateChangeWithMeta(pluginName core.PluginName, state PluginState, lastError error, meta proto.Message) {
+func (p *Plugin) ReportStateChangeWithMeta(pluginName infra.PluginName, state PluginState, lastError error, meta proto.Message) {
 	p.reportStateChange(pluginName, state, lastError)
 
 	switch data := meta.(type) {
@@ -162,7 +155,7 @@ func (p *Plugin) ReportStateChangeWithMeta(pluginName core.PluginName, state Plu
 	}
 }
 
-func (p *Plugin) reportStateChange(pluginName core.PluginName, state PluginState, lastError error) {
+func (p *Plugin) reportStateChange(pluginName infra.PluginName, state PluginState, lastError error) {
 	p.access.Lock()
 	defer p.access.Unlock()
 
@@ -260,7 +253,7 @@ func (p *Plugin) publishAgentData() error {
 }
 
 // publishPluginData writes the current plugin state into ETCD.
-func (p *Plugin) publishPluginData(pluginName core.PluginName, pluginStat *status.PluginStatus) error {
+func (p *Plugin) publishPluginData(pluginName infra.PluginName, pluginStat *status.PluginStatus) error {
 	pluginStat.LastUpdate = time.Now().Unix()
 	if p.Transport != nil {
 		return p.Transport.Put(status.PluginStatusKey(string(pluginName)), pluginStat)
@@ -275,7 +268,7 @@ func (p *Plugin) publishAllData() {
 
 	p.publishAgentData()
 	for name, s := range p.pluginStat {
-		p.publishPluginData(core.PluginName(name), s)
+		p.publishPluginData(infra.PluginName(name), s)
 	}
 }
 
@@ -287,10 +280,10 @@ func (p *Plugin) periodicProbing(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(periodicProbingTimeout):
+		case <-time.After(PeriodicProbingTimeout):
 			for pluginName, probe := range p.pluginProbe {
 				state, lastErr := probe()
-				p.ReportStateChange(core.PluginName(pluginName), state, lastErr)
+				p.ReportStateChange(infra.PluginName(pluginName), state, lastErr)
 				// just check in-between probes if the plugin is closing
 				select {
 				case <-ctx.Done():
@@ -313,7 +306,7 @@ func (p *Plugin) periodicUpdates(ctx context.Context) {
 
 	for {
 		select {
-		case <-time.After(periodicWriteTimeout):
+		case <-time.After(PeriodicWriteTimeout):
 			p.publishAllData()
 
 		case <-ctx.Done():
@@ -327,6 +320,23 @@ func (p *Plugin) getAgentState() status.OperationalState {
 	p.access.Lock()
 	defer p.access.Unlock()
 	return p.agentStat.State
+}
+
+// GetAllPluginStatus returns a map containing pluginname and its status, for all plugins
+func (p *Plugin) GetAllPluginStatus() map[string]*status.PluginStatus {
+	//TODO - used currently, will be removed after incoporating improvements for exposing copy of map
+	p.access.Lock()
+	defer p.access.Unlock()
+
+	return p.pluginStat
+}
+
+// GetInterfaceStats returns current global operational status of interfaces
+func (p *Plugin) GetInterfaceStats() status.InterfaceStats {
+	p.access.Lock()
+	defer p.access.Unlock()
+
+	return *p.interfaceStat
 }
 
 // GetAgentStatus return current global operational state of the agent.
@@ -346,21 +356,4 @@ func stateToProto(state PluginState) status.OperationalState {
 	default:
 		return status.OperationalState_ERROR
 	}
-}
-
-// GetAllPluginStatus returns a map containing pluginname and its status, for all plugins
-func (p *Plugin) GetAllPluginStatus() map[string]*status.PluginStatus {
-	//TODO - used currently, will be removed after incoporating improvements for exposing copy of map
-	p.access.Lock()
-	defer p.access.Unlock()
-
-	return p.pluginStat
-}
-
-// GetInterfaceStats returns current global operational status of interfaces
-func (p *Plugin) GetInterfaceStats() status.InterfaceStats {
-	p.access.Lock()
-	defer p.access.Unlock()
-
-	return *p.interfaceStat
 }

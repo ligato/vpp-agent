@@ -41,6 +41,7 @@ var Types = map[string]reflect.Type{
 	"MacipACLInterfaceListDetails": reflect.TypeOf((*MacipACLInterfaceListDetails)(nil)).Elem(),
 	"MacipACLInterfaceListDump": reflect.TypeOf((*MacipACLInterfaceListDump)(nil)).Elem(),
 	"MacipACLRule": reflect.TypeOf((*MacipACLRule)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{

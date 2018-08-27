@@ -5,9 +5,14 @@ package ip
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Address": reflect.TypeOf((*Address)(nil)).Elem(),
+	"AddressFamily": reflect.TypeOf((*AddressFamily)(nil)).Elem(),
+	"AddressUnion": reflect.TypeOf((*AddressUnion)(nil)).Elem(),
 	"FibMplsLabel": reflect.TypeOf((*FibMplsLabel)(nil)).Elem(),
 	"FibPath": reflect.TypeOf((*FibPath)(nil)).Elem(),
+	"IP4Address": reflect.TypeOf((*IP4Address)(nil)).Elem(),
 	"IP4ArpEvent": reflect.TypeOf((*IP4ArpEvent)(nil)).Elem(),
+	"IP6Address": reflect.TypeOf((*IP6Address)(nil)).Elem(),
 	"IP6FibDetails": reflect.TypeOf((*IP6FibDetails)(nil)).Elem(),
 	"IP6FibDump": reflect.TypeOf((*IP6FibDump)(nil)).Elem(),
 	"IP6MfibDetails": reflect.TypeOf((*IP6MfibDetails)(nil)).Elem(),
@@ -67,6 +72,8 @@ var Types = map[string]reflect.Type{
 	"IoamEnableReply": reflect.TypeOf((*IoamEnableReply)(nil)).Elem(),
 	"MfibSignalDetails": reflect.TypeOf((*MfibSignalDetails)(nil)).Elem(),
 	"MfibSignalDump": reflect.TypeOf((*MfibSignalDump)(nil)).Elem(),
+	"Mprefix": reflect.TypeOf((*Mprefix)(nil)).Elem(),
+	"Prefix": reflect.TypeOf((*Prefix)(nil)).Elem(),
 	"ProxyArp": reflect.TypeOf((*ProxyArp)(nil)).Elem(),
 	"ProxyArpAddDel": reflect.TypeOf((*ProxyArpAddDel)(nil)).Elem(),
 	"ProxyArpAddDelReply": reflect.TypeOf((*ProxyArpAddDelReply)(nil)).Elem(),
@@ -78,6 +85,7 @@ var Types = map[string]reflect.Type{
 	"ProxyArpIntfcEnableDisableReply": reflect.TypeOf((*ProxyArpIntfcEnableDisableReply)(nil)).Elem(),
 	"ResetFib": reflect.TypeOf((*ResetFib)(nil)).Elem(),
 	"ResetFibReply": reflect.TypeOf((*ResetFibReply)(nil)).Elem(),
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"SetArpNeighborLimit": reflect.TypeOf((*SetArpNeighborLimit)(nil)).Elem(),
 	"SetArpNeighborLimitReply": reflect.TypeOf((*SetArpNeighborLimitReply)(nil)).Elem(),
 	"SetIPFlowHash": reflect.TypeOf((*SetIPFlowHash)(nil)).Elem(),
@@ -192,5 +200,7 @@ var Variables = map[string]reflect.Value{
 }
 
 var Consts = map[string]reflect.Value{
+	"ADDRESS_IP4": reflect.ValueOf(ADDRESS_IP4),
+	"ADDRESS_IP6": reflect.ValueOf(ADDRESS_IP6),
 }
 

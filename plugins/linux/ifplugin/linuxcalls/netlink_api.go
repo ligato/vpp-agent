@@ -57,14 +57,14 @@ type NetlinkAPI interface {
 	GetInterfaceByName(ifName string) (*net.Interface, error)
 }
 
-// netLinkHandler is accessor for netlink methods
-type netLinkHandler struct {
+// NetLinkHandler is accessor for netlink methods
+type NetLinkHandler struct {
 	stopwatch *measure.Stopwatch
 }
 
 // NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(stopwatch *measure.Stopwatch) *netLinkHandler {
-	return &netLinkHandler{
+func NewNetLinkHandler(stopwatch *measure.Stopwatch) *NetLinkHandler {
+	return &NetLinkHandler{
 		stopwatch: stopwatch,
 	}
 }

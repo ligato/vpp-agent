@@ -19,20 +19,19 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
-func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (handler *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(l2ba.BdIPMacAddDel{}).LogTimeEntry(time.Since(t))
+		handler.stopwatch.TimeLog(l2ba.BdIPMacAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BdIPMacAddDel{
-		BdID: bdID,
+		BdID:  bdID,
+		IsAdd: boolToUint(isAdd),
 	}
 
 	macAddr, err := net.ParseMAC(mac)
@@ -47,56 +46,47 @@ func callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string, vppChan g
 	}
 	ipAddr := net.ParseIP(ip)
 	if isIpv6 {
-		req.IsIpv6 = 1
+		req.IsIPv6 = 1
 		req.IPAddress = []byte(ipAddr.To16())
 	} else {
-		req.IsIpv6 = 0
+		req.IsIPv6 = 0
 		req.IPAddress = []byte(ipAddr.To4())
 	}
-
-	if isAdd {
-		req.IsAdd = 1
-	} else {
-		req.IsAdd = 0
-	}
-
 	reply := &l2ba.BdIPMacAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-// VppAddArpTerminationTableEntry creates ARP termination entry for bridge domain.
-func VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	log.Info("Adding ARP termination entry")
+// VppAddArpTerminationTableEntry implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) VppAddArpTerminationTableEntry(bdID uint32, mac string, ip string) error {
+	handler.log.Info("Adding ARP termination entry")
 
-	err := callBdIPMacAddDel(true, bdID, mac, ip, vppChan, stopwatch)
+	err := handler.callBdIPMacAddDel(true, bdID, mac, ip)
 	if err != nil {
 		return err
 	}
 
-	log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).
-		Debug("ARP termination entry added")
+	handler.log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).Debug("ARP termination entry added")
 
 	return nil
 }
 
-// VppRemoveArpTerminationTableEntry removes ARP termination entry from bridge domain
-func VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string, log logging.Logger, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	log.Info("Removing ARP termination entry")
+// VppRemoveArpTerminationTableEntry implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) VppRemoveArpTerminationTableEntry(bdID uint32, mac string, ip string) error {
+	handler.log.Info("Removing ARP termination entry")
 
-	err := callBdIPMacAddDel(false, bdID, mac, ip, vppChan, stopwatch)
+	err := handler.callBdIPMacAddDel(false, bdID, mac, ip)
 	if err != nil {
 		return err
 	}
 
-	log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).
-		Debug("ARP termination entry removed")
+	handler.log.WithFields(logging.Fields{"bdID": bdID, "MAC": mac, "IP": ip}).Debug("ARP termination entry removed")
 
 	return nil
 }

@@ -18,49 +18,52 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-func interfaceSetFlags(ifIdx uint32, adminUp bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+// InterfaceAdminDown implements interface handler.
+func (h *IfVppHandler) InterfaceAdminDown(ifIdx uint32) error {
+	return h.interfaceSetFlags(ifIdx, false)
+}
+
+// InterfaceAdminUp implements interface handler.
+func (h *IfVppHandler) InterfaceAdminUp(ifIdx uint32) error {
+	return h.interfaceSetFlags(ifIdx, true)
+}
+
+// SetInterfaceTag implements interface handler.
+func (h *IfVppHandler) SetInterfaceTag(tag string, ifIdx uint32) error {
+	return h.handleInterfaceTag(tag, ifIdx, true)
+}
+
+// RemoveInterfaceTag implements interface handler.
+func (h *IfVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
+	return h.handleInterfaceTag(tag, ifIdx, false)
+}
+
+func (h *IfVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.SwInterfaceSetFlagsReply{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetFlagsReply{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceSetFlags{
-		SwIfIndex: ifIdx,
+		SwIfIndex:   ifIdx,
+		AdminUpDown: boolToUint(adminUp),
 	}
-	if adminUp {
-		req.AdminUpDown = 1
-	} else {
-		req.AdminUpDown = 0
-	}
-
 	reply := &interfaces.SwInterfaceSetFlagsReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
-func InterfaceAdminDown(ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return interfaceSetFlags(ifIdx, false, vppChan, stopwatch)
-}
-
-// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
-func InterfaceAdminUp(ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return interfaceSetFlags(ifIdx, true, vppChan, stopwatch)
-}
-
-func handleInterfaceTag(tag string, ifIdx uint32, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (h *IfVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.SwInterfaceTagAddDel{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceTagAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceTagAddDel{
@@ -72,30 +75,19 @@ func handleInterfaceTag(tag string, ifIdx uint32, isAdd bool, vppChan govppapi.C
 	if isAdd {
 		req.SwIfIndex = ifIdx
 	}
-
 	reply := &interfaces.SwInterfaceTagAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s %v (index %v) add/del returned %v", reply.GetMessageName(), tag, ifIdx, reply.Retval)
 	}
 
 	return nil
 }
 
-// SetInterfaceTag registers new interface index/tag pair
-func SetInterfaceTag(tag string, ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return handleInterfaceTag(tag, ifIdx, true, vppChan, stopwatch)
-}
-
-// RemoveInterfaceTag un-registers new interface index/tag pair
-func RemoveInterfaceTag(tag string, ifIdx uint32, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return handleInterfaceTag(tag, ifIdx, false, vppChan, stopwatch)
-}
-
-func boolToUint(value bool) uint8 {
-	if value {
+func boolToUint(input bool) uint8 {
+	if input {
 		return 1
 	}
 	return 0

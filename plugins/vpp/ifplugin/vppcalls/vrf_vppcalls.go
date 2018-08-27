@@ -17,99 +17,135 @@ package vppcalls
 import (
 	"fmt"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
+	"time"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
 
-// GetInterfaceVRF assigns VRF table to interface
-func GetInterfaceVRF(ifIdx uint32, log logging.Logger, vppChan govppapi.Channel) (vrfID uint32, err error) {
-	log.Debugf("Getting VRF for interface %v", ifIdx)
+// CreateVrf implements interface handler.
+func (h *IfVppHandler) CreateVrf(vrfID uint32) error {
+	return h.createVrfIfNeeded(vrfID, false)
+}
+
+// CreateVrfIPv6 implements interface handler.
+func (h *IfVppHandler) CreateVrfIPv6(vrfID uint32) error {
+	return h.createVrfIfNeeded(vrfID, true)
+}
+
+// SetInterfaceVrf implements interface handler.
+func (h *IfVppHandler) SetInterfaceVrf(ifIdx, vrfID uint32) error {
+	return h.setInterfaceVrf(ifIdx, vrfID, false)
+}
+
+// SetInterfaceVrfIPv6 implements interface handler.
+func (h *IfVppHandler) SetInterfaceVrfIPv6(ifIdx, vrfID uint32) error {
+	return h.setInterfaceVrf(ifIdx, vrfID, true)
+}
+
+// GetInterfaceVrf implements interface handler.
+func (h *IfVppHandler) GetInterfaceVrf(ifIdx uint32) (vrfID uint32, err error) {
+	return h.getInterfaceVrf(ifIdx, false)
+}
+
+// GetInterfaceVrfIPv6 implements interface handler.
+func (h *IfVppHandler) GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error) {
+	return h.getInterfaceVrf(ifIdx, true)
+}
+
+// New VRF with provided ID for IPv4 or IPv6 will be created if missing.
+func (h *IfVppHandler) createVrfIfNeeded(vrfID uint32, isIPv6 bool) error {
+	// Zero VRF exists by default
+	if vrfID == 0 {
+		return nil
+	}
+
+	// Get all VRFs for IPv4 or IPv6
+	var exists bool
+	if isIPv6 {
+		ipv6Tables, err := h.dumpVrfTablesIPv6()
+		if err != nil {
+			return fmt.Errorf("dumping IPv6 VRF tables failed: %v", err)
+		}
+		_, exists = ipv6Tables[vrfID]
+	} else {
+		tables, err := h.dumpVrfTables()
+		if err != nil {
+			return fmt.Errorf("dumping IPv4 VRF tables failed: %v", err)
+		}
+		_, exists = tables[vrfID]
+	}
+	// Create new VRF if needed
+	if !exists {
+		h.log.Debugf("VRF table %d does not exists and will be created", vrfID)
+		return h.vppAddIPTable(vrfID, isIPv6)
+	}
+
+	return nil
+}
+
+// Interface is set to VRF table. Table IP version has to be defined.
+func (h *IfVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetTable{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	if err := h.createVrfIfNeeded(vrfID, isIPv6); err != nil {
+		return fmt.Errorf("creating VRF failed: %v", err)
+	}
+
+	req := &interfaces.SwInterfaceSetTable{
+		SwIfIndex: ifIdx,
+		VrfID:     vrfID,
+		IsIPv6:    boolToUint(isIPv6),
+	}
+	reply := &interfaces.SwInterfaceSetTableReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	} else if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
+
+	h.log.Debugf("Interface %s set to VRF %d", ifIdx, vrfID)
+
+	return nil
+}
+
+// Returns VRF ID for provided interface.
+func (h *IfVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32, err error) {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(interfaces.SwInterfaceGetTable{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
 	req := &interfaces.SwInterfaceGetTable{
 		SwIfIndex: ifIdx,
+		IsIPv6:    boolToUint(isIPv6),
 	}
-	/*if table.IsIPv6 {
-		req.IsIpv6 = 1
-	} else {
-		req.IsIpv6 = 0
-	}*/
-
-	// Send message
 	reply := &interfaces.SwInterfaceGetTableReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.VrfID, nil
 }
 
-// SetInterfaceVRF retrieves VRF table from interface
-func SetInterfaceVRF(ifaceIndex, vrfID uint32, log logging.Logger, vppChan govppapi.Channel) error {
-	if err := CreateVrfIfNeeded(vrfID, vppChan); err != nil {
-		log.Warnf("creating VRF failed: %v", err)
-		return err
-	}
+// Returns all IPv4 VRF tables
+func (h *IfVppHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(ip.IPFibDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
 
-	log.Debugf("Setting interface %v to VRF %v", ifaceIndex, vrfID)
-
-	req := &interfaces.SwInterfaceSetTable{
-		VrfID:     vrfID,
-		SwIfIndex: ifaceIndex,
-	}
-	/*if table.IsIPv6 {
-		req.IsIpv6 = 1
-	} else {
-		req.IsIpv6 = 0
-	}*/
-
-	// Send message
-	reply := new(interfaces.SwInterfaceSetTableReply)
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
-
-	return nil
-}
-
-// TODO: manage VRF tables globally in separate configurator
-
-// CreateVrfIfNeeded checks if VRF exists and creates it if not
-func CreateVrfIfNeeded(vrfID uint32, vppChan govppapi.Channel) error {
-	if vrfID == 0 {
-		return nil
-	}
-
-	tables, err := dumpVrfTables(vppChan)
-	if err != nil {
-		logrus.DefaultLogger().Warnf("dumping VRF tables failed: %v", err)
-		return err
-	}
-	if _, ok := tables[vrfID]; !ok {
-		logrus.DefaultLogger().Warnf("VRF table %v does not exists, creating it", vrfID)
-		return vppAddIPTable(vrfID, vppChan)
-	}
-
-	return nil
-}
-
-func dumpVrfTables(vppChan govppapi.Channel) (map[uint32][]*ip.IPFibDetails, error) {
 	fibs := map[uint32][]*ip.IPFibDetails{}
-
-	reqCtx := vppChan.SendMultiRequest(&ip.IPFibDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPFibDump{})
 	for {
 		fibDetails := &ip.IPFibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
 		if stop {
-			break // break out of the loop
+			break
 		}
 		if err != nil {
 			return nil, err
@@ -122,18 +158,47 @@ func dumpVrfTables(vppChan govppapi.Channel) (map[uint32][]*ip.IPFibDetails, err
 	return fibs, nil
 }
 
-func vppAddIPTable(tableID uint32, vppChan govppapi.Channel) error {
-	req := &ip.IPTableAddDel{
-		TableID: tableID,
-		IsAdd:   1,
+// Returns all IPv6 VRF tables
+func (h *IfVppHandler) dumpVrfTablesIPv6() (map[uint32][]*ip.IP6FibDetails, error) {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(ip.IP6FibDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	fibs := map[uint32][]*ip.IP6FibDetails{}
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IP6FibDump{})
+	for {
+		fibDetails := &ip.IP6FibDetails{}
+		stop, err := reqCtx.ReceiveReply(fibDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tableID := fibDetails.TableID
+		fibs[tableID] = append(fibs[tableID], fibDetails)
 	}
 
-	// Send message
-	reply := &ip.IPTableAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
+	return fibs, nil
+}
+
+// Creates new VRF table with provided ID and for desired IP version
+func (h *IfVppHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(ip.IPTableAddDel{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	req := &ip.IPTableAddDel{
+		TableID: vrfID,
+		IsIPv6:  boolToUint(isIPv6),
+		IsAdd:   1,
 	}
-	if reply.Retval != 0 {
+	reply := &ip.IPTableAddDelReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

@@ -5,11 +5,14 @@ package sr
 import "reflect"
 
 var Types = map[string]reflect.Type{
+	"Services": reflect.TypeOf((*Services)(nil)).Elem(),
 	"SrIP6Address": reflect.TypeOf((*SrIP6Address)(nil)).Elem(),
 	"SrLocalsidAddDel": reflect.TypeOf((*SrLocalsidAddDel)(nil)).Elem(),
 	"SrLocalsidAddDelReply": reflect.TypeOf((*SrLocalsidAddDelReply)(nil)).Elem(),
 	"SrLocalsidsDetails": reflect.TypeOf((*SrLocalsidsDetails)(nil)).Elem(),
 	"SrLocalsidsDump": reflect.TypeOf((*SrLocalsidsDump)(nil)).Elem(),
+	"SrPoliciesDetails": reflect.TypeOf((*SrPoliciesDetails)(nil)).Elem(),
+	"SrPoliciesDump": reflect.TypeOf((*SrPoliciesDump)(nil)).Elem(),
 	"SrPolicyAdd": reflect.TypeOf((*SrPolicyAdd)(nil)).Elem(),
 	"SrPolicyAddReply": reflect.TypeOf((*SrPolicyAddReply)(nil)).Elem(),
 	"SrPolicyDel": reflect.TypeOf((*SrPolicyDel)(nil)).Elem(),
@@ -20,6 +23,10 @@ var Types = map[string]reflect.Type{
 	"SrSetEncapSourceReply": reflect.TypeOf((*SrSetEncapSourceReply)(nil)).Elem(),
 	"SrSteeringAddDel": reflect.TypeOf((*SrSteeringAddDel)(nil)).Elem(),
 	"SrSteeringAddDelReply": reflect.TypeOf((*SrSteeringAddDelReply)(nil)).Elem(),
+	"SrSteeringPolDetails": reflect.TypeOf((*SrSteeringPolDetails)(nil)).Elem(),
+	"SrSteeringPolDump": reflect.TypeOf((*SrSteeringPolDump)(nil)).Elem(),
+	"Srv6Sid": reflect.TypeOf((*Srv6Sid)(nil)).Elem(),
+	"Srv6SidList": reflect.TypeOf((*Srv6SidList)(nil)).Elem(),
 }
 
 var Functions = map[string]reflect.Value{
@@ -27,6 +34,8 @@ var Functions = map[string]reflect.Value{
 	"NewSrLocalsidAddDelReply": reflect.ValueOf(NewSrLocalsidAddDelReply),
 	"NewSrLocalsidsDetails": reflect.ValueOf(NewSrLocalsidsDetails),
 	"NewSrLocalsidsDump": reflect.ValueOf(NewSrLocalsidsDump),
+	"NewSrPoliciesDetails": reflect.ValueOf(NewSrPoliciesDetails),
+	"NewSrPoliciesDump": reflect.ValueOf(NewSrPoliciesDump),
 	"NewSrPolicyAdd": reflect.ValueOf(NewSrPolicyAdd),
 	"NewSrPolicyAddReply": reflect.ValueOf(NewSrPolicyAddReply),
 	"NewSrPolicyDel": reflect.ValueOf(NewSrPolicyDel),
@@ -37,6 +46,8 @@ var Functions = map[string]reflect.Value{
 	"NewSrSetEncapSourceReply": reflect.ValueOf(NewSrSetEncapSourceReply),
 	"NewSrSteeringAddDel": reflect.ValueOf(NewSrSteeringAddDel),
 	"NewSrSteeringAddDelReply": reflect.ValueOf(NewSrSteeringAddDelReply),
+	"NewSrSteeringPolDetails": reflect.ValueOf(NewSrSteeringPolDetails),
+	"NewSrSteeringPolDump": reflect.ValueOf(NewSrSteeringPolDump),
 }
 
 var Variables = map[string]reflect.Value{

@@ -17,7 +17,6 @@ package idxmap
 import (
 	"time"
 
-	"github.com/ligato/cn-infra/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 )
@@ -33,14 +32,14 @@ func ToChan(ch chan NamedMappingGenericEvent, opts ...interface{}) func(dto Name
 	timeout := DefaultNotifTimeout
 	var logger logging.Logger = logrus.DefaultLogger()
 
-	for _, opt := range opts {
+	/*for _, opt := range opts {
 		switch opt.(type) {
 		case *core.WithLoggerOpt:
 			logger = opt.(*core.WithLoggerOpt).Logger
 		case *core.WithTimeoutOpt:
 			timeout = opt.(*core.WithTimeoutOpt).Timeout
 		}
-	}
+	}*/
 
 	return func(dto NamedMappingGenericEvent) {
 		select {

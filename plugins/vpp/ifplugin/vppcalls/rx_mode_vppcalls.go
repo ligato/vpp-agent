@@ -18,16 +18,14 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-// SetRxMode calls SwInterfaceSetRxMode bin
-func SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+// SetRxMode implements interface handler.
+func (h *IfVppHandler) SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSettings) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.SwInterfaceSetRxMode{
@@ -36,12 +34,11 @@ func SetRxMode(ifIdx uint32, rxModeSettings *intf.Interfaces_Interface_RxModeSet
 		QueueID:      rxModeSettings.QueueId,
 		QueueIDValid: uint8(rxModeSettings.QueueIdValid),
 	}
-
 	reply := &interfaces.SwInterfaceSetRxModeReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

@@ -32,6 +32,6 @@ spec:
         - name: controller-config
           mountPath: /opt/sfc-controller/dev
   volumes:
-  - name: controller-config
-    configMap:
-      name: sfc-controller-cfg
+    - name: controller-config
+      configMap:
+        name: sfc-controller-cfg

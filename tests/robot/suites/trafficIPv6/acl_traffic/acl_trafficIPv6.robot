@@ -18,8 +18,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${FINAL_SLEEP}=        5s
-${SYNC_SLEEP}=         10s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 ${RESYNC_SLEEP}=     20s
 
 ${AGENT1_VETH_MAC}=    02:00:00:00:00:01
@@ -75,25 +75,25 @@ Create Loopbak Intfs
     Create loopback interface loop1 on agent_vpp_1 with ip ${IP_2}/64 and mac 8a:f1:be:90:20:00
 
 Check Veth Interface On Agent1
-    linux: Interface With IP Is Created    node_1    mac=${AGENT1_VETH_MAC}      ipv4=${IP_3_PREFIX}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface With IP Is Created    node_1    mac=${AGENT1_VETH_MAC}      ipv4=${IP_3_PREFIX}
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent1_veth     mac=${AGENT1_VETH_MAC}    ipv6=${IP_3}/64    mtu=1500    state=up
 
 Check Veth Interface On Agent2
-    linux: Interface With IP Is Created    node_2    mac=${AGENT2_VETH_MAC}      ipv4=${IP_4_PREFIX}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface With IP Is Created    node_2    mac=${AGENT2_VETH_MAC}      ipv4=${IP_4_PREFIX}
     # status check not implemented in linux plugin
     #linux: Check Veth Interface State     agent_vpp_1    agent2_veth     mac=${AGENT2_VETH_MAC}    ipv6=${IP_4}/64    mtu=1500    state=up
 
 Check Bridge Domain Is Created
-    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    IF_AFPIF_VSWITCH_node_2_node2_veth
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    IF_AFPIF_VSWITCH_node_2_node2_veth
 
 Check loop0 Is Created
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=8a:f1:be:90:00:00
-    vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:00:00    mtu=1500  ipv6=${IP_1}/64
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=8a:f1:be:90:00:00
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:00:00    mtu=1500  ipv6=${IP_1}/64
 
 Check loop1 Is Created
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=8a:f1:be:90:20:00
-    vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:20:00    mtu=1500  ipv6=${IP_2}/64
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=8a:f1:be:90:20:00
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Loopback Interface State    agent_vpp_1    loop0    enabled=1     mac=8a:f1:be:90:20:00    mtu=1500  ipv6=${IP_2}/64
 
 Create BD fo Loopbacks
     Create Bridge Domain bd2 With Autolearn On agent_vpp_1 with interfaces loop0, loop1

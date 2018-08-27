@@ -17,7 +17,8 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${SYNC_SLEEP}=         10s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 ${RESYNC_SLEEP}=       1s
 ${LIBMEMIF_IP1}=       192.168.1.2
 ${VPP2MEMIF_IP1}=      192.168.1.2
@@ -38,75 +39,70 @@ Show Interfaces Before Setup
 
 Add Memif1 Interface On VPP1
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=true    id=0    ip=${VPP1MEMIF_IP1}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif1 Interface Created On VPP1
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Modify Memif1 Interface On VPP1
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:62    master=true    id=0    ip=${VPP1MEMIF_IP2}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif1 Interface On VPP1 is Modified
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:62
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=master  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:62
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=master  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Modify Memif1 Interface On VPP1 To Previous Values
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=true    id=0    ip=${VPP1MEMIF_IP1}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif1 Interface On VPP1 Modified Back
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 ##############################################################################
 Add Memif1 Interface On VPP2
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_2    name=vpp2_memif1    mac=62:61:61:61:51:51    master=false    id=0    ip=${VPP2MEMIF_IP1}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif1 Interface Created And Connected On VPP2
-    vpp_term: Interface Is Created    node=agent_vpp_2    mac=62:61:61:61:51:51
-    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=62:61:61:61:51:51  role=slave  id=0  ipv4=${VPP2MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_2    mac=62:61:61:61:51:51
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=62:61:61:61:51:51  role=slave  id=0  ipv4=${VPP2MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Check Memif1 Interface On VPP1 Connected To VPP2
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Modify Memif1 Interface On VPP1 While Connected To VPP2
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:62    master=true    id=0    ip=${VPP1MEMIF_IP2}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif1 Interface On VPP1 Modified While Connected
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:62
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=master  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:62
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=master  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Delete Memif1 Interface On VPP2
     vpp_ctl: Delete VPP Interface    node=agent_vpp_2    name=vpp2_memif1
-    vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=62:61:61:61:51:51
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Deleted    node=agent_vpp_2    mac=62:61:61:61:51:51
 
 Check VPP1_memif1 Interface Is Disconnected
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=master  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:62  role=master  id=0  ipv4=${VPP1MEMIF_IP2}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Modify Memif1 Interface On VPP1 To Previous Values After Slave Delete
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=62:61:61:61:61:61    master=true    id=0    ip=${VPP1MEMIF_IP1}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif1 Interface On VPP1 Modified Back After Slave Delete
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 #############################################################################
 
 Create And Chek Memif1 On Agent Libmemif 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1   conn 0 0
+    Sleep     ${SYNC_SLEEP}
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
     Should Contain     ${out}     interface ip: ${LIBMEMIF_IP1}
     Should Contain     ${out}     link: up
 
 Check Memif1 Interface On VPP1 Connected To LibMemif
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Check Ping VPP1 -> Agent Libmemif 1
     vpp_term: Check Ping    agent_vpp_1    ${LIBMEMIF_IP1}
@@ -133,21 +129,20 @@ Delete Memif On Agent Libmemif 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1   del 0
 
 Check Memif1 Interface On VPP1 Disconnected After Slave Deleted
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
-    Sleep     ${SYNC_SLEEP}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+
 
 Check Memif1 Interface On VPP1 Disconnected After Slave Deleted Again
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=0  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Create Memif1 On Agent Libmemif 1 Again
     ${out}=      lmterm: Issue Command    agent_libmemif_1   conn 0 0
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif1 Interface On VPP1 Connected After Slave Deleted and Created
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Check Ping VPP1 -> Agent Libmemif 1 After Delete and Create
     vpp_term: Check Ping    agent_vpp_1    ${LIBMEMIF_IP1}
@@ -187,18 +182,20 @@ Add Libmemif Node Again
 
 Create And Check Memif1 On Agent Libmemif 1 After node restart
     ${out_c}=      lmterm: Issue Command    agent_libmemif_1   conn 0 0
+    Sleep    ${SYNC_SLEEP}
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
     Log Many      ${out_c}    ${out}
     Should Contain     ${out}     interface ip: ${LIBMEMIF_IP1}
     Should Contain     ${out}     link: up
 
 Check Memif1 Interface On VPP1 Connected After Node Restart
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
 
 Create Memif2 On Agent Libmemif 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1   conn 1 0
+    Sleep    ${SYNC_SLEEP}
     #Should Contain     ${out}     INFO: memif connected!
 
 Check Memif 1 and Memif2 On Agent LibMemif 1
@@ -209,19 +206,19 @@ Check Memif 1 and Memif2 On Agent LibMemif 1
     Should Contain      ${out}     link: down
 
 Check Memif1 Interface On VPP1 Connected After Second Libmemif Added
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=62:61:61:61:61:61  role=master  id=0  ipv4=${VPP1MEMIF_IP1}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
 
 ############################################################################
 ##### Here VPP crashes
 Add Memif2 Interface On VPP1
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=62:61:61:61:51:51    master=true    id=1    ip=${VPP1MEMIF_IP2}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
+
 
 Check Memif2 Interface Created On VPP1
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:51:51
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=62:61:61:61:51:51  role=master  id=1  ipv4=${VPP1MEMIF_IP2}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:51:51
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=62:61:61:61:51:51  role=master  id=1  ipv4=${VPP1MEMIF_IP2}/24  connected=1  enabled=1  socket=${AGENT_LIBMEMIF_1_MEMIF_SOCKET_FOLDER}/memif.sock
 
 Check Memif 1 and Memif2 On Agent LibMemif 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
@@ -232,11 +229,11 @@ Check Memif 1 and Memif2 On Agent LibMemif 1
 
 Delete Memif2 Interface On VPP1 After Resync
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_memif2
-    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=62:61:61:61:51:51
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=62:61:61:61:51:51
 
 Delete Memif1 Interface On VPP1
     vpp_ctl: Delete VPP Interface    node=agent_vpp_1    name=vpp1_memif1
-    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=62:61:61:61:61:61
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=62:61:61:61:61:61
 
 Check Memif 1 and Memif2 On Agent LibMemif 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
@@ -246,11 +243,10 @@ Check Memif 1 and Memif2 On Agent LibMemif 1
 
 Add Memif2 Interface On VPP1
     vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif2    mac=62:61:61:61:51:51    master=true    id=1    ip=${VPP1MEMIF_IP2}    prefix=24    socket=memif.sock
-    Sleep     ${SYNC_SLEEP}
 
 Check Memif2 Interface Created On VPP1
-    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:51:51
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=62:61:61:61:51:51  role=master  id=1  ipv4=${VPP1MEMIF_IP2}/24  connecte
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=62:61:61:61:51:51
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif2  mac=62:61:61:61:51:51  role=master  id=1  ipv4=${VPP1MEMIF_IP2}/24  connecte
 
 Check Memif 1 and Memif2 On Agent LibMemif 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show

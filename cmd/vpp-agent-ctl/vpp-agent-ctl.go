@@ -146,6 +146,10 @@ func do(ctl *VppAgentCtl) {
 			ctl.createIPsecSA()
 		case "-sad":
 			ctl.deleteIPsecSA()
+		case "-tun":
+			ctl.createIPSecTunnelInterface()
+		case "-tund":
+			ctl.deleteIPSecTunnelInterface()
 			// STN
 		case "-stn":
 			ctl.createStn()
@@ -202,6 +206,10 @@ func do(ctl *VppAgentCtl) {
 			ctl.addProxyArpRanges()
 		case "-prxrd":
 			ctl.deleteProxyArpRanges()
+		case "-ipscn":
+			ctl.setIPScanNeigh()
+		case "-ipscnd":
+			ctl.unsetIPScanNeigh()
 			// Linux ARP
 		case "-larp":
 			ctl.createLinuxArp()
@@ -258,8 +266,9 @@ func usage() {
 		-afpkt,	-afpktd	- af_packet type interface
 		-veth,	-vethd	- Linux VETH interface pair
 		-ltap,	-ltapd	- Linux TAP interface
-		-spd,   -spdd   - IPsec security policy database
-		-sa,    -sad    - IPsec security associations
+		-spd,   -spdd   - IPSec security policy database
+		-sa,    -sad    - IPSec security associations
+		-tun    -tund   - IPSec tunnel interface
 		-stn,	-stnd	- STN rule
 		-gnat,	-gnatd	- Global NAT configuration
 		-snat,	-snatd	- SNAT configuration
@@ -273,6 +282,7 @@ func usage() {
 		-prxr,	-prxrd	- Proxy ARP ranges
 		-lrte,	-lrted	- Linux route
 		-larp,	-larpd	- Linux ARP entry
+		-ipscn  -ipscnd - VPP IP scan neighbor
 		-el4,	-dl4	- L4 features
 		-appns,	-appnsd	- Application namespace
 

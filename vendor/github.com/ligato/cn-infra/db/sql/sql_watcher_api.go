@@ -27,7 +27,7 @@ type Watcher interface {
 // It is passed to the Watch callback.
 type WatchResp interface {
 	// GetChangeType returns the type of the change.
-	GetChangeType() datasync.PutDel
+	GetChangeType() datasync.Op
 
 	// GetValue returns the changed value.
 	GetValue(outBinding interface{}) error

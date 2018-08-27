@@ -18,44 +18,39 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 )
 
-func handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (h *IfVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(dhcp.DhcpClientConfig{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(dhcp.DHCPClientConfig{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	req := &dhcp.DhcpClientConfig{
-		Client: dhcp.DhcpClient{
+	req := &dhcp.DHCPClientConfig{
+		IsAdd: boolToUint(isAdd),
+		Client: dhcp.DHCPClient{
 			SwIfIndex:     ifIdx,
 			Hostname:      []byte(hostName),
-			WantDhcpEvent: 1,
+			WantDHCPEvent: 1,
 		},
 	}
-	if isAdd {
-		req.IsAdd = 1
-	}
+	reply := &dhcp.DHCPClientConfigReply{}
 
-	reply := &dhcp.DhcpClientConfigReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-// SetInterfaceAsDHCPClient sets provided interface as a DHCP client
-func SetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
-	return handleInterfaceDHCP(ifIdx, hostName, true, vppChan, stopwatch)
+// SetInterfaceAsDHCPClient implements interface handler.
+func (h *IfVppHandler) SetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+	return h.handleInterfaceDHCP(ifIdx, hostName, true)
 }
 
-// UnsetInterfaceAsDHCPClient un-sets interface as DHCP client
-func UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) (err error) {
-	return handleInterfaceDHCP(ifIdx, hostName, false, vppChan, stopwatch)
+// UnsetInterfaceAsDHCPClient implements interface handler.
+func (h *IfVppHandler) UnsetInterfaceAsDHCPClient(ifIdx uint32, hostName string) error {
+	return h.handleInterfaceDHCP(ifIdx, hostName, false)
 }

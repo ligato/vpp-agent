@@ -50,5 +50,5 @@ func ParseNameFromKey(key string) (name string, err error) {
 		return key[lastSlashPos+1:], nil
 	}
 
-	return key, fmt.Errorf("Incorrect format of the key %s", key)
+	return key, fmt.Errorf("incorrect format of the key %s", key)
 }

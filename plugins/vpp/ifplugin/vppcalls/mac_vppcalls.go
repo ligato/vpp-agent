@@ -19,15 +19,13 @@ import (
 	"net"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-// SetInterfaceMac calls SwInterfaceSetMacAddress bin API.
-func SetInterfaceMac(ifIdx uint32, macAddress string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+// SetInterfaceMac implements interface handler.
+func (h *IfVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(interfaces.SwInterfaceSetMacAddress{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.SwInterfaceSetMacAddress{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	mac, err := net.ParseMAC(macAddress)
@@ -39,12 +37,11 @@ func SetInterfaceMac(ifIdx uint32, macAddress string, vppChan govppapi.Channel, 
 		SwIfIndex:  ifIdx,
 		MacAddress: mac,
 	}
-
 	reply := &interfaces.SwInterfaceSetMacAddressReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

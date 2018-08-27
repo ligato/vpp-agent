@@ -18,12 +18,14 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
-// TODO move unique identifiable name into srv6 models
+// NamedPolicySegment represents named policy segment.
+// TODO: move unique identifiable name into srv6 models
 type NamedPolicySegment struct {
 	Name    string /* unique identifiable name */
 	Segment *srv6.PolicySegment
 }
 
+// NamedSteering represents named steetring.
 type NamedSteering struct {
 	Name     string /* unique identifiable name */
 	Steering *srv6.Steering
@@ -31,7 +33,7 @@ type NamedSteering struct {
 
 // Resync writes missing segment routing configs to the VPP and removes obsolete ones.
 func (plugin *SRv6Configurator) Resync(localSids []*srv6.LocalSID, policies []*srv6.Policy, namedSegments []*NamedPolicySegment, namedSteerings []*NamedSteering) error {
-	plugin.Log.Debug("RESYNC SR begin.")
+	plugin.log.Debug("RESYNC SR begin.")
 
 	// Re-initialize cache
 	plugin.clearMapping()
@@ -40,32 +42,32 @@ func (plugin *SRv6Configurator) Resync(localSids []*srv6.LocalSID, policies []*s
 
 	for _, localsid := range localSids {
 		if err := plugin.AddLocalSID(localsid); err != nil {
-			plugin.Log.Error(err)
+			plugin.log.Error(err)
 			continue
 		}
 	}
 
 	for _, policy := range policies {
 		if err := plugin.AddPolicy(policy); err != nil {
-			plugin.Log.Error(err)
+			plugin.log.Error(err)
 			continue
 		}
 	}
 
 	for _, namedSegment := range namedSegments {
 		if err := plugin.AddPolicySegment(namedSegment.Name, namedSegment.Segment); err != nil {
-			plugin.Log.Error(err)
+			plugin.log.Error(err)
 			continue
 		}
 	}
 
 	for _, namedSteering := range namedSteerings {
 		if err := plugin.AddSteering(namedSteering.Name, namedSteering.Steering); err != nil {
-			plugin.Log.Error(err)
+			plugin.log.Error(err)
 			continue
 		}
 	}
 
-	plugin.Log.Debug("RESYNC SR end.")
+	plugin.log.Debug("RESYNC SR end.")
 	return nil
 }

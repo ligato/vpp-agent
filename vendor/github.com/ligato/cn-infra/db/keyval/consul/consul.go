@@ -139,14 +139,14 @@ func (c *Client) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, 
 }
 
 type watchResp struct {
-	typ              datasync.PutDel
+	typ              datasync.Op
 	key              string
 	value, prevValue []byte
 	rev              int64
 }
 
 // GetChangeType returns "Put" for BytesWatchPutResp.
-func (resp *watchResp) GetChangeType() datasync.PutDel {
+func (resp *watchResp) GetChangeType() datasync.Op {
 	return resp.typ
 }
 
@@ -225,7 +225,7 @@ func (c *Client) watch(resp func(watchResp keyval.BytesWatchResp), closeCh chan 
 }
 
 type watchEvent struct {
-	Type      datasync.PutDel
+	Type      datasync.Op
 	Key       string
 	Value     []byte
 	PrevValue []byte
@@ -391,6 +391,12 @@ func (pdb *BrokerWatcher) GetValue(key string) (data []byte, found bool, revisio
 	return pdb.Client.GetValue(pdb.prefixKey(key))
 }
 
+// Delete calls 'Delete' function of the underlying BytesConnectionEtcd.
+// KeyPrefix defined in constructor is prepended to the key argument.
+func (pdb *BrokerWatcher) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
+	return pdb.Client.Delete(pdb.prefixKey(key), opts...)
+}
+
 // ListValues calls 'ListValues' function of the underlying BytesConnectionEtcd.
 // KeyPrefix defined in constructor is prepended to the key argument.
 // The prefix is removed from the keys of the returned values.
@@ -412,12 +418,6 @@ func (pdb *BrokerWatcher) ListKeys(prefix string) (keyval.BytesKeyIterator, erro
 	}
 
 	return &bytesKeyIterator{len: len(keys), keys: keys, prefix: pdb.prefix, lastIndex: qm.LastIndex}, nil
-}
-
-// Delete calls 'Delete' function of the underlying BytesConnectionEtcd.
-// KeyPrefix defined in constructor is prepended to the key argument.
-func (pdb *BrokerWatcher) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
-	return pdb.Client.Delete(pdb.prefixKey(key), opts...)
 }
 
 // Watch starts subscription for changes associated with the selected <keys>.

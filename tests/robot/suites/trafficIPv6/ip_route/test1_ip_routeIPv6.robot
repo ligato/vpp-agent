@@ -34,7 +34,8 @@ ${MAC2_MEMIF1}=         02:f1:be:90:00:02
 ${MAC3_MEMIF1}=         02:f1:be:90:00:03
 
 ${PREFIX}=             64
-${SYNC_WAIT}=          6s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       2s
 *** Test Cases ***
 # Default VRF table ...
 Start Three Agents
@@ -42,79 +43,72 @@ Start Three Agents
     Add Agent VPP Node    agent_vpp_1
     Add Agent VPP Node    agent_vpp_2
     Add Agent VPP Node    agent_vpp_3
-    Sleep    ${SYNC_WAIT}
 
 Setup Agent1 for agent2
     Create loopback interface bvi_loop0 on agent_vpp_1 with ip ${IP_1}/${PREFIX} and mac ${MAC_LOOP1}
     Create Master memif0 on agent_vpp_1 with MAC ${MAC_MEMIF1}, key 1 and m0.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_1 with interfaces bvi_loop0, memif0
-    Sleep    ${SYNC_WAIT}
+
 
 Check Interfaces on Agent1 for Agent2
-    vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop0    enabled=1     mac=${MAC_LOOP1}   ipv6=${IP_1}/${PREFIX}
-    vat_term: Check Memif Interface State     agent_vpp_1  memif0  mac=${MAC_MEMIF1}  role=master  id=1   connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m0.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop0    enabled=1     mac=${MAC_LOOP1}   ipv6=${IP_1}/${PREFIX}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Memif Interface State     agent_vpp_1  memif0  mac=${MAC_MEMIF1}  role=master  id=1   connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m0.sock
 
 Create BD on Agent1
     Create bridge domain bd1 With Autolearn on agent_vpp_1 with interfaces bvi_loop0, memif0
-    Sleep    ${SYNC_WAIT}
 
 Check1 bd1 on Agent1 Is Created
-    vat_term: BD Is Created    agent_vpp_1   bvi_loop0     memif0
-    vat_term: Check Bridge Domain State    agent_vpp_1  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_1   bvi_loop0     memif0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_1  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
 Check2 Interfaces on Agent1 for Agent2
-    vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop0    enabled=1     mac=${MAC_LOOP1}   ipv6=${IP_1}/${PREFIX}
-    vat_term: Check Memif Interface State     agent_vpp_1  memif0  mac=${MAC_MEMIF1}  role=master  id=1   connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m0.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop0    enabled=1     mac=${MAC_LOOP1}   ipv6=${IP_1}/${PREFIX}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Memif Interface State     agent_vpp_1  memif0  mac=${MAC_MEMIF1}  role=master  id=1   connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m0.sock
 
 Setup Agent1 for Agent3
     Create loopback interface bvi_loop1 on agent_vpp_1 with ip ${IP_3}/${PREFIX} and mac ${MAC_LOOP2}
     Create Master memif1 on agent_vpp_1 with MAC ${MAC_MEMIF2}, key 2 and m1.sock socket
     Create bridge domain bd2 With Autolearn on agent_vpp_1 with interfaces bvi_loop1, memif1
-    Sleep    ${SYNC_WAIT}
 
 Check Interfaces on Agent1 for Agent3
-    vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop1    enabled=1     mac=${MAC_LOOP2}   ipv6=${IP_3}/${PREFIX}
-    vat_term: Check Memif Interface State     agent_vpp_1  memif1  mac=${MAC_MEMIF2}  role=master  id=2   connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m1.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop1    enabled=1     mac=${MAC_LOOP2}   ipv6=${IP_3}/${PREFIX}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Memif Interface State     agent_vpp_1  memif1  mac=${MAC_MEMIF2}  role=master  id=2   connected=0  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/m1.sock
 
 Check bd2 on Agent1 Is Created
-    vat_term: BD Is Created    agent_vpp_1   bvi_loop1     memif1
-    vat_term: Check Bridge Domain State    agent_vpp_1  bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif1  interface=bvi_loop1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_1   bvi_loop1     memif1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_1  bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif1  interface=bvi_loop1
 
 Setup Agent2
     Create loopback interface bvi_loop0 on agent_vpp_2 with ip ${IP_2}/${PREFIX} and mac ${MAC2_LOOP1}
     Create Slave memif0 on agent_vpp_2 with MAC ${MAC2_MEMIF1}, key 1 and m0.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_2 with interfaces bvi_loop0, memif0
-    Sleep    ${SYNC_WAIT}
 
 Check Interfaces on Agent2
-    vat_term: Check Loopback Interface State    agent_vpp_2    bvi_loop0    enabled=1     mac=${MAC2_LOOP1}   ipv6=${IP_2}/${PREFIX}
-    vat_term: Check Memif Interface State     agent_vpp_2  memif0  mac=${MAC2_MEMIF1}  role=slave  id=1   connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/m0.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Loopback Interface State    agent_vpp_2    bvi_loop0    enabled=1     mac=${MAC2_LOOP1}   ipv6=${IP_2}/${PREFIX}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Memif Interface State     agent_vpp_2  memif0  mac=${MAC2_MEMIF1}  role=slave  id=1   connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/m0.sock
 
 Check bd1 on Agent2 Is Created
-    vat_term: BD Is Created    agent_vpp_2   bvi_loop0     memif0
-    vat_term: Check Bridge Domain State    agent_vpp_2  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_2   bvi_loop0     memif0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_2  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
 Setup Agent3
     Create loopback interface bvi_loop0 on agent_vpp_3 with ip ${IP_4}/${PREFIX} and mac ${MAC3_LOOP1}
     Create Slave memif0 on agent_vpp_3 with MAC ${MAC3_MEMIF1}, key 2 and m1.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_3 with interfaces bvi_loop0, memif0
-    Sleep    ${SYNC_WAIT}
 
 Check Interfaces on Agent3
-    vat_term: Check Loopback Interface State    agent_vpp_3    bvi_loop0    enabled=1     mac=${MAC3_LOOP1}   ipv6=${IP_4}/${PREFIX}
-    vat_term: Check Memif Interface State     agent_vpp_3  memif0  mac=${MAC3_MEMIF1}  role=slave  id=2   connected=1  enabled=1  socket=${AGENT_VPP_3_MEMIF_SOCKET_FOLDER}/m1.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Loopback Interface State    agent_vpp_3    bvi_loop0    enabled=1     mac=${MAC3_LOOP1}   ipv6=${IP_4}/${PREFIX}
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Memif Interface State     agent_vpp_3  memif0  mac=${MAC3_MEMIF1}  role=slave  id=2   connected=1  enabled=1  socket=${AGENT_VPP_3_MEMIF_SOCKET_FOLDER}/m1.sock
 
 Check bd1 on Agent3 Is Created
-    vat_term: BD Is Created    agent_vpp_3   bvi_loop0     memif0
-    vat_term: Check Bridge Domain State    agent_vpp_3  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_3   bvi_loop0     memif0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_3  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
 Setup route on Agent2
     Create Route On agent_vpp_2 With IP ${NET2}/${PREFIX} With Next Hop ${IP_1} And Vrf Id 0
-    Sleep    ${SYNC_WAIT}
 
 Setup route on Agent3
     Create Route On agent_vpp_3 With IP ${NET1}/${PREFIX} With Next Hop ${IP_3} And Vrf Id 0
-    Sleep    ${SYNC_WAIT}
 
 
 Pinging

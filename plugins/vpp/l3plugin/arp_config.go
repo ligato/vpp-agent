@@ -52,6 +52,8 @@ type ArpConfigurator struct {
 
 	// VPP channel
 	vppChan govppapi.Channel
+	// VPP API handler
+	arpHandler vppcalls.ArpVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -63,6 +65,11 @@ func (plugin *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	// Logger
 	plugin.log = logger.NewLogger("-l3-arp-conf")
 	plugin.log.Debug("Initializing ARP configurator")
+
+	// Configurator-wide stopwatch instance
+	if enableStopwatch {
+		plugin.stopwatch = measure.NewStopwatch("ARP-configurator", plugin.log)
+	}
 
 	// Mappings
 	plugin.ifIndexes = swIfIndexes
@@ -77,16 +84,8 @@ func (plugin *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 		return err
 	}
 
-	// Stopwatch
-	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("ARPConfigurator", plugin.log)
-	}
-
-	// Message compatibility
-	if err := plugin.vppChan.CheckMessageCompatibility(vppcalls.ArpMessages...); err != nil {
-		plugin.log.Error(err)
-		return err
-	}
+	// VPP API handler
+	plugin.arpHandler = vppcalls.NewArpVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
 
 	return nil
 }
@@ -160,7 +159,7 @@ func (plugin *ArpConfigurator) AddArp(entry *l3.ArpTable_ArpEntry) error {
 	plugin.log.Debugf("adding ARP: %+v", *arp)
 
 	// Create and register new arp entry
-	if err = vppcalls.VppAddArp(arp, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err = plugin.arpHandler.VppAddArp(arp); err != nil {
 		return err
 	}
 
@@ -235,7 +234,7 @@ func (plugin *ArpConfigurator) DeleteArp(entry *l3.ArpTable_ArpEntry) error {
 	plugin.log.Debugf("deleting ARP: %+v", arp)
 
 	// Delete and un-register new arp
-	if err = vppcalls.VppDelArp(arp, plugin.vppChan, plugin.stopwatch); err != nil {
+	if err = plugin.arpHandler.VppDelArp(arp); err != nil {
 		return err
 	}
 	_, _, found = plugin.arpIndexes.UnregisterName(arpID)
@@ -319,14 +318,10 @@ func isValidARP(arpInput *l3.ArpTable_ArpEntry, log logging.Logger) bool {
 // transformArp converts raw entry data to ARP object
 func transformArp(arpInput *l3.ArpTable_ArpEntry, ifIndex uint32) (*vppcalls.ArpEntry, error) {
 	ipAddr := net.ParseIP(arpInput.IpAddress)
-	macAddr, err := net.ParseMAC(arpInput.PhysAddress)
-	if err != nil {
-		return nil, err
-	}
 	arp := &vppcalls.ArpEntry{
 		Interface:  ifIndex,
 		IPAddress:  ipAddr,
-		MacAddress: macAddr,
+		MacAddress: arpInput.PhysAddress,
 		Static:     arpInput.Static,
 	}
 	return arp, nil

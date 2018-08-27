@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package linuxplugin implements the Linux plugin that handles management
+// Package linux implements the Linux plugin that handles management
 // of Linux VETH interfaces.
 package linux
 
@@ -21,8 +21,10 @@ import (
 	"sync"
 
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/flavors/local"
+	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
@@ -77,14 +79,17 @@ type Plugin struct {
 // Deps groups injected dependencies of plugin
 // so that they do not mix with other plugin fields.
 type Deps struct {
-	local.PluginInfraDeps                             // injected
-	Watcher               datasync.KeyValProtoWatcher // injected
-	VPP                   *vpp.Plugin
-	WatchEventsMutex      *sync.Mutex
+	infra.PluginDeps
+	StatusCheck  statuscheck.PluginStatusWriter
+	ServiceLabel servicelabel.ReaderAPI
+
+	Watcher          datasync.KeyValProtoWatcher // injected
+	VPP              *vpp.Plugin
+	WatchEventsMutex *sync.Mutex
 }
 
-// LinuxConfig holds the linuxplugin configuration.
-type LinuxConfig struct {
+// Config holds the linuxplugin configuration.
+type Config struct {
 	Stopwatch bool `json:"stopwatch"`
 	Disabled  bool `json:"disabled"`
 }
@@ -110,7 +115,7 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 // InjectVppIfIndexes injects VPP interfaces mapping into Linux plugin
 func (plugin *Plugin) InjectVppIfIndexes(indexes ifaceVPP.SwIfIndex) {
 	plugin.vppIfIndexes = indexes
-	plugin.vppIfIndexes.WatchNameToIdx(plugin.PluginName, plugin.vppIfIndexesWatchChan)
+	plugin.vppIfIndexes.WatchNameToIdx(plugin.String(), plugin.vppIfIndexesWatchChan)
 }
 
 // Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
@@ -183,7 +188,7 @@ func (plugin *Plugin) Close() error {
 		plugin.ifConfigurator, plugin.arpConfigurator, plugin.routeConfigurator,
 		// Channels
 		plugin.ifIndexesWatchChan, plugin.ifMicroserviceNotif, plugin.changeChan, plugin.resyncChan,
-		plugin.msChan, plugin.vppIfIndexesWatchChan,
+		plugin.msChan,
 		// Registrations
 		plugin.watchDataReg,
 	)
@@ -237,9 +242,9 @@ func (plugin *Plugin) initL3() error {
 	return plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch)
 }
 
-func (plugin *Plugin) retrieveLinuxConfig() (*LinuxConfig, error) {
-	config := &LinuxConfig{}
-	found, err := plugin.PluginInfraDeps.GetValue(config)
+func (plugin *Plugin) retrieveLinuxConfig() (*Config, error) {
+	config := &Config{}
+	found, err := plugin.Cfg.LoadValue(config)
 	if !found {
 		plugin.Log.Debug("Linuxplugin config not found")
 		return nil, nil

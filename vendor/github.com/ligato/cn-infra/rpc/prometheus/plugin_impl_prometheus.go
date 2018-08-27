@@ -16,14 +16,16 @@ package prometheus
 
 import (
 	"errors"
-	"github.com/ligato/cn-infra/flavors/local"
+	"net/http"
+	"strings"
+	"sync"
+
+	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/unrolled/render"
-	"net/http"
-	"strings"
-	"sync"
 )
 
 // DefaultRegistry default Prometheus metrics URL
@@ -41,6 +43,7 @@ var (
 // Plugin struct holds all plugin-related data.
 type Plugin struct {
 	Deps
+
 	sync.Mutex
 	// regs is a map of URL path(symbolic names) to registries. Registries group metrics and can be exposed at different urls.
 	regs map[string]*registry
@@ -48,7 +51,8 @@ type Plugin struct {
 
 // Deps lists dependencies of the plugin.
 type Deps struct {
-	local.PluginInfraDeps // inject
+	infra.PluginName
+	Log logging.PluginLogger
 	// HTTP server used to expose metrics
 	HTTP rest.HTTPHandlers // inject
 }
@@ -61,8 +65,7 @@ type registry struct {
 }
 
 // Init initializes the internal structures
-func (p *Plugin) Init() (err error) {
-
+func (p *Plugin) Init() error {
 	p.regs = map[string]*registry{}
 
 	// add default registry

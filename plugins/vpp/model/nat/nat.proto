@@ -32,6 +32,15 @@ message Nat44Global {
         bool twice_nat = 4;                     /* Enable/disable twice NAT. */
     }
     repeated AddressPool address_pools = 5;
+
+    message VirtualReassembly {                 /* NAT virtual reassembly */
+        uint32 timeout = 1;                     /* Reassembly timeout */
+        uint32 max_reass = 2;                   /* Maximum number of concurrent reassemblies */
+        uint32 max_frag = 3;                    /* Maximum number of fragments per reassembly */
+        bool drop_frag = 4;                     /* If set to true fragments are dropped, translated otherwise*/
+    }
+    VirtualReassembly virtual_reassembly_ipv4 = 6;
+    VirtualReassembly virtual_reassembly_ipv6 = 7;
 }
 
 /* Many-to-one (SNAT) setup */
@@ -48,16 +57,16 @@ message Nat44DNat {
     message DNatConfig {                        /* DNat configuration list. */
         string label = 1;                       /* Unique identifier of the DNAT config. */
 
-        message StaticMapping {                /* A list of static mappings in DNAT. */
-            uint32 vrf_id = 1;                   /* VRF (table) ID. */
+        message StaticMapping {                  /* A list of static mappings in DNAT. */
             string external_interface = 2;       /* External interface may be used together with IP addresses. */
             string external_ip = 3;              /* External address.  */
             uint32 external_port = 4;            /* Port (do not set for address mapping). */
 
             message LocalIP {
+                uint32 vrf_id = 4;               /* VRF (table) ID. */
                 string local_ip = 1;             /* Local IP address). */
                 uint32 local_port = 3;           /* port (do not set for address mapping). */
-                uint32 probability = 2;         /* Probability mode. */
+                uint32 probability = 2;          /* Probability mode. */
             }
             repeated LocalIP local_ips = 5;    /* List of local IP addresses. If there is more than one entry,
                                                    Load ballancer is enabled. */

@@ -23,16 +23,12 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	bfdApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
 	natApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	stnApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -44,97 +40,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type vppReplyMock struct {
-	Name     string
-	Ping     bool
-	Message  govppapi.Message
-	Messages []govppapi.Message
-}
+// TODO: use configurator initializers from other files which do the same thing
 
-func vppMockHandler(vppMock *mock.VppAdapter, dataList []*vppReplyMock) mock.ReplyHandler {
-	var sendControlPing bool
-
-	vppMock.RegisterBinAPITypes(af_packet.Types)
-	vppMock.RegisterBinAPITypes(bfdApi.Types)
-	vppMock.RegisterBinAPITypes(natApi.Types)
-	vppMock.RegisterBinAPITypes(stnApi.Types)
-	vppMock.RegisterBinAPITypes(interfaces.Types)
-	vppMock.RegisterBinAPITypes(ip.Types)
-	vppMock.RegisterBinAPITypes(memif.Types)
-	vppMock.RegisterBinAPITypes(tap.Types)
-	vppMock.RegisterBinAPITypes(tapv2.Types)
-	vppMock.RegisterBinAPITypes(vpe.Types)
-	vppMock.RegisterBinAPITypes(vxlan.Types)
-
-	return func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
-		// Following types are not automatically stored in mock adapter's map and will be sent with empty MsgName
-		// TODO: initialize mock adapter's map with these
-		switch request.MsgID {
-		case 100:
-			request.MsgName = "control_ping"
-		case 101:
-			request.MsgName = "control_ping_reply"
-		case 200:
-			request.MsgName = "sw_interface_dump"
-		case 201:
-			request.MsgName = "sw_interface_details"
-		}
-
-		if request.MsgName == "" {
-			logrus.DefaultLogger().Fatalf("mockHandler received request (ID: %v) with empty MsgName, check if compatbility check is done before using this request", request.MsgID)
-		}
-
-		if sendControlPing {
-			sendControlPing = false
-			data := &vpe.ControlPingReply{}
-			reply, err := vppMock.ReplyBytes(request, data)
-			Expect(err).To(BeNil())
-			msgID, err := vppMock.GetMsgID(data.GetMessageName(), data.GetCrcString())
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		}
-
-		for _, dataMock := range dataList {
-			if request.MsgName == dataMock.Name {
-				// Send control ping next iteration if set
-				sendControlPing = dataMock.Ping
-				if len(dataMock.Messages) > 0 {
-					logrus.DefaultLogger().Infof(" MOCK HANDLER: mocking %d messages", len(dataMock.Messages))
-					for _, msg := range dataMock.Messages {
-						vppMock.MockReply(msg)
-					}
-					return nil, 0, false
-				}
-				msgID, err := vppMock.GetMsgID(dataMock.Message.GetMessageName(), dataMock.Message.GetCrcString())
-				Expect(err).To(BeNil())
-				reply, err := vppMock.ReplyBytes(request, dataMock.Message)
-				Expect(err).To(BeNil())
-				return reply, msgID, true
-			}
-		}
-
-		replyMsg, msgID, ok := vppMock.ReplyFor(request.MsgName)
-		if ok {
-			reply, err := vppMock.ReplyBytes(request, replyMsg)
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		} else {
-			logrus.DefaultLogger().Warnf("no reply for %v found", request.MsgName)
-		}
-
-		return reply, 0, false
-	}
-}
-
-func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.InterfaceConfigurator, *govpp.Connection) {
-	// Setup
+func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *govpp.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
-
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
 
 	conn, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
@@ -143,118 +56,114 @@ func interfaceConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock
 	plugin := &ifplugin.InterfaceConfigurator{}
 
 	ifVppNotifCh := make(chan govppapi.Message, 100)
-	plugLog := logging.ForPlugin("tests", logrus.NewLogRegistry())
+	plugLog := logging.ForPlugin("tests")
 
-	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, false)
+	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, true)
 	Expect(err).To(BeNil())
 
-	return plugin, conn
+	return ctx, plugin, conn
 }
 
-func bfdConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.BFDConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
-	// Setup
+func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *govpp.Connection) {
+	conn.Disconnect()
+	Expect(plugin.Close()).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
+}
+
+func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
+	c, err := govpp.Connect(ctx.MockVpp)
+	Expect(err).To(BeNil())
 
-	connection, _ := govpp.Connect(ctx.MockVpp)
+	// initialize index
+	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_index_test", ifaceidx.IndexMetadata)
+	index := ifaceidx.NewSwIfIndex(nameToIdx)
+	names := nameToIdx.ListNames()
+	Expect(names).To(BeEmpty())
+
+	// Test init
 	plugin := &ifplugin.BFDConfigurator{}
-
-	// initialize index
-	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_index_test", ifaceidx.IndexMetadata)
-	index := ifaceidx.NewSwIfIndex(nameToIdx)
-	names := nameToIdx.ListNames()
-
-	// check if names were empty
-	Expect(names).To(BeEmpty())
-
-	// Test init
-	err := plugin.Init(
-		logging.ForPlugin("test-log",
-			logrus.NewLogRegistry()),
-		connection,
-		index,
-		false)
-
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
 	Expect(err).To(BeNil())
 
-	return plugin, connection, index
+	return ctx, plugin, c, index
 }
 
-func stnConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.StnConfigurator, *govpp.Connection) {
-	// Setup
+func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *govpp.Connection) {
+	conn.Disconnect()
+	Expect(plugin.Close()).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
+}
+
+func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *govpp.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
+	c, err := govpp.Connect(ctx.MockVpp)
+	Expect(err).To(BeNil())
 
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
+	// initialize index
+	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_index_test", ifaceidx.IndexMetadata)
+	index := ifaceidx.NewSwIfIndex(nameToIdx)
+	names := nameToIdx.ListNames()
+	Expect(names).To(BeEmpty())
 
-	connection, _ := govpp.Connect(ctx.MockVpp)
+	// Test init
 	plugin := &ifplugin.StnConfigurator{}
-
-	// initialize index
-	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_index_test", ifaceidx.IndexMetadata)
-	index := ifaceidx.NewSwIfIndex(nameToIdx)
-	names := nameToIdx.ListNames()
-
-	// check if names were empty
-	Expect(names).To(BeEmpty())
-
-	// Test init
-	err := plugin.Init(
-		logging.ForPlugin("test-log",
-			logrus.NewLogRegistry()),
-		connection,
-		index,
-		false)
-
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
 	Expect(err).To(BeNil())
-	return plugin, connection
+
+	return ctx, plugin, c
 }
 
-func natConfiguratorTestInitialization(t *testing.T, mocks []*vppReplyMock) (*ifplugin.NatConfigurator, ifaceidx.SwIfIndexRW, *govpp.Connection) {
-	// Setup
+func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *govpp.Connection) {
+	conn.Disconnect()
+	Expect(plugin.Close()).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
+}
+
+func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: &mock.VppAdapter{},
 	}
-
-	ctx.MockVpp.MockReplyHandler(vppMockHandler(ctx.MockVpp, mocks))
-
-	connection, _ := govpp.Connect(ctx.MockVpp)
-	plugin := &ifplugin.NatConfigurator{}
+	c, err := govpp.Connect(ctx.MockVpp)
+	Expect(err).To(BeNil())
 
 	// initialize index
 	nameToIdx := nametoidx.NewNameToIdx(logrus.DefaultLogger(), "sw_if_index_test", ifaceidx.IndexMetadata)
 	index := ifaceidx.NewSwIfIndex(nameToIdx)
 	names := nameToIdx.ListNames()
-
-	// check if names were empty
 	Expect(names).To(BeEmpty())
 
 	// Test init
-	err := plugin.Init(
-		logging.ForPlugin("test-log",
-			logrus.NewLogRegistry()),
-		connection,
-		index,
-		false)
-
+	plugin := &ifplugin.NatConfigurator{}
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
 	Expect(err).To(BeNil())
-	return plugin, index, connection
+
+	return ctx, plugin, c, index
+}
+
+func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *govpp.Connection) {
+	conn.Disconnect()
+	Expect(plugin.Close()).To(BeNil())
+	logging.DefaultRegistry.ClearRegistry()
 }
 
 // Tests InterfaceConfigurator resync
 func TestDataResyncResync(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -276,11 +185,6 @@ func TestDataResyncResync(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
-	Expect(plugin.IsSocketFilenameCached("testsocket")).To(BeTrue())
-
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
 		{
@@ -298,6 +202,7 @@ func TestDataResyncResync(t *testing.T) {
 
 	errs := plugin.Resync(intfaces)
 	Expect(errs).To(BeEmpty())
+	Expect(plugin.IsSocketFilenameCached("testsocket")).To(BeTrue())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -307,8 +212,10 @@ func TestDataResyncResync(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with SwIfIndex 0
 func TestDataResyncResyncIdx0(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -329,9 +236,6 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 			},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
@@ -359,8 +263,10 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with same interface name/tag
 func TestDataResyncResyncSameName(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -381,9 +287,6 @@ func TestDataResyncResyncSameName(t *testing.T) {
 			},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
@@ -409,8 +312,10 @@ func TestDataResyncResyncSameName(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnamed interface
 func TestDataResyncResyncUnnamed(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -430,9 +335,6 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 			},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
@@ -460,8 +362,10 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered VXLAN interface
 func TestDataResyncResyncUnnumbered(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -493,9 +397,6 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
 		{
@@ -526,8 +427,10 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered tap interface
 func TestDataResyncResyncUnnumberedTap(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -557,9 +460,6 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 			},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
@@ -591,8 +491,10 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered AF_PACKET interface
 func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -613,9 +515,6 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 			},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
@@ -645,8 +544,10 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered MEMIF interface
 func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -679,9 +580,6 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
 		{
@@ -713,8 +611,10 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 
 // Tests if InterfaceConfigurator VPP config is present
 func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -735,9 +635,6 @@ func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
 		{
@@ -757,8 +654,10 @@ func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
 
 // Tests if InterfaceConfigurator VPP config is not present
 func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
-	// Setup
-	plugin, conn := interfaceConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&interfaces.SwInterfaceDump{}).GetMessageName(),
 			Ping: true,
@@ -785,9 +684,6 @@ func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	ok := plugin.VerifyVPPConfigPresence([]*intf.Interfaces_Interface{})
 	Expect(ok).To(BeFalse())
@@ -799,8 +695,10 @@ func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
 
 // Tests BFDConfigurator session resync
 func TestDataResyncResyncSession(t *testing.T) {
-	// Setup
-	plugin, conn, index := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, index := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&bfdApi.BfdUDPAdd{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPAddReply{},
@@ -819,9 +717,6 @@ func TestDataResyncResyncSession(t *testing.T) {
 			Message: &bfdApi.BfdUDPSessionDetails{},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	index.RegisterName("if0", 0, &intf.Interfaces_Interface{
 		Name:        "if0",
@@ -846,8 +741,10 @@ func TestDataResyncResyncSession(t *testing.T) {
 
 // Tests BFDConfigurator session resync
 func TestDataResyncResyncSessionSameData(t *testing.T) {
-	// Setup
-	plugin, conn, index := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, index := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&bfdApi.BfdUDPAdd{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPAddReply{},
@@ -872,9 +769,6 @@ func TestDataResyncResyncSessionSameData(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	index.RegisterName("if0", 1, &intf.Interfaces_Interface{
 		Name:        "if0",
 		IpAddresses: []string{"192.168.1.10", "192.168.2.10"},
@@ -898,8 +792,10 @@ func TestDataResyncResyncSessionSameData(t *testing.T) {
 
 // Tests BFDConfigurator authorization key resync
 func TestDataResyncResyncAuthKey(t *testing.T) {
-	// Setup
-	plugin, conn, _ := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, _ := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&bfdApi.BfdAuthKeysDump{}).GetMessageName(),
 			Ping:    true,
@@ -920,9 +816,6 @@ func TestDataResyncResyncAuthKey(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	authKey := []*bfd.SingleHopBFD_Key{
 		{
@@ -939,8 +832,10 @@ func TestDataResyncResyncAuthKey(t *testing.T) {
 
 // Tests BFDConfigurator authorization key resync
 func TestDataResyncResyncAuthKeyNoMatch(t *testing.T) {
-	// Setup
-	plugin, conn, _ := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, _ := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&bfdApi.BfdAuthKeysDump{}).GetMessageName(),
 			Ping: true,
@@ -963,9 +858,6 @@ func TestDataResyncResyncAuthKeyNoMatch(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	authKey := []*bfd.SingleHopBFD_Key{
 		{
@@ -983,16 +875,15 @@ func TestDataResyncResyncAuthKeyNoMatch(t *testing.T) {
 
 // Tests BFDConfigurator echo resync
 func TestDataResyncResyncEchoFunction(t *testing.T) {
-	// Setup
-	plugin, conn, index := bfdConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, index := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&bfdApi.BfdUDPSetEchoSource{}).GetMessageName(),
 			Message: &bfdApi.BfdUDPSetEchoSourceReply{},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	index.RegisterName("if0", 0, &intf.Interfaces_Interface{
 		Name:        "if0",
@@ -1016,28 +907,22 @@ func TestDataResyncResyncEchoFunction(t *testing.T) {
 
 // Tests StnConfigurator resync
 func TestDataResyncResyncStn(t *testing.T) {
-	// Setup
-	plugin, conn := stnConfiguratorTestInitialization(t, []*vppReplyMock{
-		{
-			Name:    (&stnApi.StnRulesDump{}).GetMessageName(),
-			Ping:    true,
-			Message: &stnApi.StnRulesDetails{},
-		},
+	ctx, plugin, conn := stnConfiguratorTestInitialization(t)
+	defer stnConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&stnApi.StnAddDelRule{}).GetMessageName(),
 			Message: &stnApi.StnAddDelRuleReply{},
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	nbStnRules := []*stn.STN_Rule{
 		{
 			RuleName:  "test",
 			Interface: "if0",
-			IpAddress: "192.168.0.1/24",
+			IpAddress: "192.168.0.1",
 		},
 	}
 
@@ -1049,8 +934,10 @@ func TestDataResyncResyncStn(t *testing.T) {
 
 // Tests NATConfigurator NAT global resync
 func TestDataResyncResyncNatGlobal(t *testing.T) {
-	// Setup
-	plugin, _, conn := natConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&natApi.Nat44ForwardingIsEnabled{}).GetMessageName(),
 			Message: &natApi.Nat44ForwardingIsEnabledReply{},
@@ -1081,9 +968,6 @@ func TestDataResyncResyncNatGlobal(t *testing.T) {
 		},
 	})
 
-	defer plugin.Close()
-	defer conn.Disconnect()
-
 	// Test
 	nbGlobal := &nat.Nat44Global{
 		NatInterfaces: []*nat.Nat44Global_NatInterface{
@@ -1101,10 +985,10 @@ func TestDataResyncResyncNatGlobal(t *testing.T) {
 
 // Tests NATConfigurator SNAT resync
 func TestDataResyncResyncSNat(t *testing.T) {
-	// Setup
-	plugin, _, conn := natConfiguratorTestInitialization(t, []*vppReplyMock{})
-	defer plugin.Close()
-	defer conn.Disconnect()
+	ctx, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies(nil)
 
 	// Test
 	sNatConf := []*nat.Nat44SNat_SNatConfig{
@@ -1120,8 +1004,10 @@ func TestDataResyncResyncSNat(t *testing.T) {
 
 // Tests NATConfigurator DNAT resync
 func TestDataResyncResyncDNat(t *testing.T) {
-	// Setup
-	plugin, index, conn := natConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, index := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&natApi.Nat44AddDelStaticMapping{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelStaticMappingReply{},
@@ -1161,9 +1047,6 @@ func TestDataResyncResyncDNat(t *testing.T) {
 			},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	// Register index
 	index.RegisterName("if0", 0, &intf.Interfaces_Interface{
@@ -1256,19 +1139,21 @@ func TestDataResyncResyncDNat(t *testing.T) {
 		},
 	})
 
-	idIdent := ifplugin.GetIdMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
+	idIdent := ifplugin.GetIDMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
 		Protocol:  nat.Protocol_TCP,
 		IpAddress: "192.168.0.1",
 	})
 
-	Expect(plugin.IsDNatLabelIdMappingRegistered(idIdent)).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(idIdent)).To(BeTrue())
 	Expect(plugin.IsDNatLabelStMappingRegistered(stIdent)).To(BeTrue())
 }
 
 // Tests NATConfigurator DNAT resync
 func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
-	// Setup
-	plugin, index, conn := natConfiguratorTestInitialization(t, []*vppReplyMock{
+	ctx, plugin, conn, index := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name:    (&natApi.Nat44AddDelStaticMapping{}).GetMessageName(),
 			Message: &natApi.Nat44AddDelStaticMappingReply{},
@@ -1306,9 +1191,6 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 			},
 		},
 	})
-
-	defer plugin.Close()
-	defer conn.Disconnect()
 
 	// Register index
 	index.RegisterName("if0", 0, &intf.Interfaces_Interface{
@@ -1444,11 +1326,290 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 		},
 	})
 
-	idIdent := ifplugin.GetIdMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
+	idIdent := ifplugin.GetIDMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
 		Protocol:  nat.Protocol_TCP,
 		IpAddress: "192.168.0.1",
 	})
 
-	Expect(plugin.IsDNatLabelIdMappingRegistered(idIdent)).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(idIdent)).To(BeTrue())
 	Expect(plugin.IsDNatLabelStMappingRegistered(stIdent)).To(BeTrue())
+}
+
+// Test unexported method resolving NB static mapping equal to the VPP static mapping. Mapping
+// is expected to be registered
+func TestResolveStaticMapping(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeTrue())
+}
+
+// Test unexported method resolving NB static mapping with different local IP address as the VPP static mapping. Mapping
+// is not expected to be registered
+func TestResolveStaticMappingNoMatch1(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].LocalIps[0].LocalIp = "" // Change localIP
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB static mapping with different external IP address as the VPP static mapping.
+// Mapping  is not expected to be registered
+func TestResolveStaticMappingNoMatch2(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].ExternalIp = "" // Change external IP
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB static mapping with different VRF as the VPP static mapping. Mapping
+// is not expected to be registered
+func TestResolveStaticMappingNoMatch3(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].LocalIps[0].VrfId = 1 // Change VRF
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB static mapping with different count of local IP addresses as the VPP static
+// mapping. Mapping is not expected to be registered
+func TestResolveStaticMappingNoMatch4(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingData()
+	vppData := getNat44StaticMappingData().StMappings
+	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.2", 30, 15, 0)) // Change number of Local IPs
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping equal to the VPP load-balanced static mapping.
+// Mapping is expected to be registered
+func TestResolveStaticMappingLb(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeTrue())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different local IP in one of the entries.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch1(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].LocalIps[1].LocalIp = "" // Change localIP in second entry
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different external IP.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch2(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].ExternalIp = "" // Change external IP
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different VRF.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch3(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].LocalIps[1].VrfId = 1 // Change VRF
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB load-balanced static mapping with different count of local IP entries.
+// Mapping is expected to not be registered
+func TestResolveStaticMappingLbNoMatch4(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := getNat44StaticMappingLbData()
+	vppData := getNat44StaticMappingLbData().StMappings
+	vppData[0].LocalIps = append(vppData[0].LocalIps, getLocalIP("10.0.0.3", 35, 20, 0)) // Change number of Local IPs
+
+	// Tests where NB != VPP
+	ifplugin.ResolveMappings(plugin, nbData, &vppData, &idMappings)
+	Expect(plugin.IsDNatLabelStMappingRegistered(ifplugin.GetStMappingIdentifier(nbData.StMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB identity mapping equal to the VPP identity mapping.
+// Mapping is expected to be registered.
+func TestResolveIdentityMapping(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+
+	nbData := getNat44IdentityMappingData()
+	vppData := getNat44IdentityMappingData().IdMappings
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeTrue())
+}
+
+// Test unexported method resolving NB identity mapping with different IP address.
+// Mapping is expected to not be registered.
+func TestResolveIdentityMappingNoMatch1(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+
+	nbData := getNat44IdentityMappingData()
+	vppData := getNat44IdentityMappingData().IdMappings
+	vppData[0].IpAddress = "" // Ip address change
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+}
+
+// Test unexported method resolving NB identity mapping with different VRF.
+// Mapping is expected to not be registered.
+func TestResolveIdentityMappingNoMatch2(t *testing.T) {
+	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, conn)
+
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+
+	nbData := getNat44IdentityMappingData()
+	vppData := getNat44IdentityMappingData().IdMappings
+	vppData[0].VrfId = 1 // VRF change
+
+	// Test where NB == VPP
+	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+}
+
+func getNat44StaticMappingData() *nat.Nat44DNat_DNatConfig {
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP
+
+	nbData := &nat.Nat44DNat_DNatConfig{
+		Label:      "test-dnat",
+		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 6)),
+	}
+	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35, 0))
+	return nbData
+}
+
+func getNat44StaticMappingLbData() *nat.Nat44DNat_DNatConfig {
+	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
+	var localIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP
+
+	nbData := &nat.Nat44DNat_DNatConfig{
+		Label:      "test-dnat",
+		StMappings: append(stMappings, getStaticMapping("10.0.0.1", 25, 6)),
+	}
+	nbData.StMappings[0].LocalIps = append(localIPs, getLocalIP("192.168.0.1", 9000, 35, 0),
+		getLocalIP("192.168.0.2", 9001, 40, 0))
+	return nbData
+}
+
+func getNat44IdentityMappingData() *nat.Nat44DNat_DNatConfig {
+	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
+
+	nbData := &nat.Nat44DNat_DNatConfig{
+		Label:      "test-dnat",
+		IdMappings: append(idMappings, getIdentityMapping("10.0.0.1", 25, 0, 6)),
+	}
+	return nbData
+}
+
+func getStaticMapping(ip string, port uint32, proto nat.Protocol) *nat.Nat44DNat_DNatConfig_StaticMapping {
+	return &nat.Nat44DNat_DNatConfig_StaticMapping{
+		ExternalIp:   ip,
+		ExternalPort: port,
+		Protocol:     proto,
+	}
+}
+
+func getIdentityMapping(ip string, port, vrf uint32, proto nat.Protocol) *nat.Nat44DNat_DNatConfig_IdentityMapping {
+	return &nat.Nat44DNat_DNatConfig_IdentityMapping{
+		VrfId:     vrf,
+		IpAddress: ip,
+		Port:      port,
+		Protocol:  proto,
+	}
+}
+
+func getLocalIP(ip string, port, probability uint32, vrf uint32) *nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP {
+	return &nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
+		VrfId:       vrf,
+		LocalIp:     ip,
+		LocalPort:   port,
+		Probability: probability,
+	}
 }

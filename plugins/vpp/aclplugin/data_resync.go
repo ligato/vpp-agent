@@ -15,8 +15,6 @@
 package aclplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppdump"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
@@ -34,12 +32,12 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	plugin.clearMapping()
 
 	// Retrieve existing IpACL config
-	vppIpACLs, err := vppdump.DumpIPACL(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
+	vppIPACLs, err := plugin.aclHandler.DumpIPACL(plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
 	// Retrieve existing MacIpACL config
-	vppMacIpACLs, err := vppdump.DumpMACIPACL(plugin.ifIndexes, plugin.log, plugin.vppChan, plugin.stopwatch)
+	vppMacIPACLs, err := plugin.aclHandler.DumpMACIPACL(plugin.ifIndexes)
 	if err != nil {
 		return err
 	}
@@ -47,32 +45,32 @@ func (plugin *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
 	// Remove all configured VPP ACLs
 	// Note: due to inability to dump ACL interfaces, it is not currently possible to correctly
 	// calculate difference between configs
-	for _, vppIpACL := range vppIpACLs {
+	for _, vppIPACL := range vppIPACLs {
 
 		// ACL with IP-type rules uses different binary call to create/remove than MACIP-type.
 		// Check what type of rules is in the ACL
-		ipRulesExist := len(vppIpACL.ACLDetails.Rules) > 0 && vppIpACL.ACLDetails.Rules[0].GetMatch().GetIpRule() != nil
+		ipRulesExist := len(vppIPACL.ACL.Rules) > 0 && vppIPACL.ACL.Rules[0].GetMatch().GetIpRule() != nil
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteIPAcl(vppIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
+			if err := plugin.aclHandler.DeleteIPACL(vppIPACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
 			// Unregister.
-			plugin.l3l4AclIndexes.UnregisterName(vppIpACL.ACLDetails.AclName)
+			plugin.l3l4AclIndexes.UnregisterName(vppIPACL.ACL.AclName)
 			continue
 		}
 	}
-	for _, vppMacIpACL := range vppMacIpACLs {
-		ipRulesExist := len(vppMacIpACL.ACLDetails.Rules) > 0 && vppMacIpACL.ACLDetails.Rules[0].GetMatch().GetMacipRule() != nil
+	for _, vppMacIPACL := range vppMacIPACLs {
+		ipRulesExist := len(vppMacIPACL.ACL.Rules) > 0 && vppMacIPACL.ACL.Rules[0].GetMatch().GetMacipRule() != nil
 
 		if ipRulesExist {
-			if err := vppcalls.DeleteMacIPAcl(vppMacIpACL.Identifier.ACLIndex, plugin.log, plugin.vppChan, plugin.stopwatch); err != nil {
+			if err := plugin.aclHandler.DeleteMacIPACL(vppMacIPACL.Meta.Index); err != nil {
 				plugin.log.Error(err)
 				return err
 			}
 			// Unregister.
-			plugin.l2AclIndexes.UnregisterName(vppMacIpACL.ACLDetails.AclName)
+			plugin.l2AclIndexes.UnregisterName(vppMacIPACL.ACL.AclName)
 			continue
 		}
 	}

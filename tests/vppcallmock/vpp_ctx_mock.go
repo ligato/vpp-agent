@@ -17,15 +17,32 @@ package vppcallmock
 import (
 	"testing"
 
-	"time"
-
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
+	log "github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	. "github.com/onsi/gomega"
+	"github.com/sirupsen/logrus"
 )
 
-// TestCtx is helping structure for unit testing. It wraps VppAdapter which is used instead of real VPP
+func init() {
+	govpp.SetLogLevel(logrus.DebugLevel)
+}
+
+// TestCtx is helping structure for unit testing.
+// It wraps VppAdapter which is used instead of real VPP.
 type TestCtx struct {
 	MockVpp     *mock.VppAdapter
 	conn        *govpp.Connection
@@ -48,7 +65,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	ctx.channel, err = ctx.conn.NewAPIChannel()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	ctx.MockChannel = &mockedChannel{channel: ctx.channel}
+	ctx.MockChannel = &mockedChannel{Channel: ctx.channel}
 
 	return ctx
 }
@@ -61,7 +78,7 @@ func (ctx *TestCtx) TeardownTestCtx() {
 
 // MockedChannel implements ChannelIntf for testing purposes
 type mockedChannel struct {
-	channel govppapi.Channel
+	govppapi.Channel
 
 	// Last message which passed through method SendRequest
 	Msg govppapi.Message
@@ -74,68 +91,99 @@ type mockedChannel struct {
 func (m *mockedChannel) SendRequest(msg govppapi.Message) govppapi.RequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
-	return m.channel.SendRequest(msg)
+	return m.Channel.SendRequest(msg)
 }
 
 // SendMultiRequest just save input argument to structure field for future check
 func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiRequestCtx {
 	m.Msg = msg
 	m.Msgs = append(m.Msgs, msg)
-	return m.channel.SendMultiRequest(msg)
+	return m.Channel.SendMultiRequest(msg)
 }
 
-// CheckMessageCompatibility checks whether provided messages are compatible with the version of VPP
-// which the library is connected to
-func (m *mockedChannel) CheckMessageCompatibility(msgs ...govppapi.Message) error {
-	return m.channel.CheckMessageCompatibility(msgs...)
+// HandleReplies represents spec for MockReplyHandler.
+type HandleReplies struct {
+	Name     string
+	Ping     bool
+	Message  govppapi.Message
+	Messages []govppapi.Message
 }
 
-// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel
-func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, msgFactory func() govppapi.Message) (*govppapi.NotifSubscription, error) {
-	return m.channel.SubscribeNotification(notifChan, msgFactory)
-}
+// MockReplies sets up reply handler for give HandleReplies.
+func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
+	var sendControlPing bool
 
-// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription
-func (m *mockedChannel) UnsubscribeNotification(subscription *govppapi.NotifSubscription) error {
-	return m.channel.UnsubscribeNotification(subscription)
-}
+	ctx.MockVpp.RegisterBinAPITypes(acl.Types)
+	ctx.MockVpp.RegisterBinAPITypes(af_packet.Types)
+	ctx.MockVpp.RegisterBinAPITypes(bfd.Types)
+	ctx.MockVpp.RegisterBinAPITypes(nat.Types)
+	ctx.MockVpp.RegisterBinAPITypes(stn.Types)
+	ctx.MockVpp.RegisterBinAPITypes(interfaces.Types)
+	ctx.MockVpp.RegisterBinAPITypes(ip.Types)
+	ctx.MockVpp.RegisterBinAPITypes(memif.Types)
+	ctx.MockVpp.RegisterBinAPITypes(tap.Types)
+	ctx.MockVpp.RegisterBinAPITypes(tapv2.Types)
+	ctx.MockVpp.RegisterBinAPITypes(vpe.Types)
+	ctx.MockVpp.RegisterBinAPITypes(vxlan.Types)
 
-// SetReplyTimeout sets the timeout for replies from VPP
-func (m *mockedChannel) SetReplyTimeout(timeout time.Duration) {
-	m.channel.SetReplyTimeout(timeout)
-}
+	ctx.MockVpp.MockReplyHandler(func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
+		// Following types are not automatically stored in mock adapter's map and will be sent with empty MsgName
+		// TODO: initialize mock adapter's map with these
+		switch request.MsgID {
+		case 100:
+			request.MsgName = "control_ping"
+		case 101:
+			request.MsgName = "control_ping_reply"
+		case 200:
+			request.MsgName = "sw_interface_dump"
+		case 201:
+			request.MsgName = "sw_interface_details"
+		}
 
-// GetNotificationChannel returns notification channel
-func (m *mockedChannel) GetReplyChannel() <-chan *govppapi.VppReply {
-	return m.channel.GetReplyChannel()
-}
+		if request.MsgName == "" {
+			log.DefaultLogger().Fatalf("mockHandler received request (ID: %v) with empty MsgName, check if compatbility check is done before using this request", request.MsgID)
+		}
 
-// GetRequestChannel returns notification channel
-func (m *mockedChannel) GetRequestChannel() chan<- *govppapi.VppRequest {
-	return m.channel.GetRequestChannel()
-}
+		if sendControlPing {
+			sendControlPing = false
+			data := &vpe.ControlPingReply{}
+			reply, err := ctx.MockVpp.ReplyBytes(request, data)
+			Expect(err).To(BeNil())
+			msgID, err := ctx.MockVpp.GetMsgID(data.GetMessageName(), data.GetCrcString())
+			Expect(err).To(BeNil())
+			return reply, msgID, true
+		}
 
-// GetNotificationChannel returns notification channel
-func (m *mockedChannel) GetNotificationChannel() chan<- *govppapi.NotifSubscribeRequest {
-	return m.channel.GetNotificationChannel()
-}
+		for _, dataMock := range dataList {
+			if request.MsgName == dataMock.Name {
+				// Send control ping next iteration if set
+				sendControlPing = dataMock.Ping
+				if len(dataMock.Messages) > 0 {
+					log.DefaultLogger().Infof(" MOCK HANDLER: mocking %d messages", len(dataMock.Messages))
+					for _, msg := range dataMock.Messages {
+						ctx.MockVpp.MockReply(msg)
+					}
+					return nil, 0, false
+				}
+				msgID, err := ctx.MockVpp.GetMsgID(dataMock.Message.GetMessageName(), dataMock.Message.GetCrcString())
+				Expect(err).To(BeNil())
+				reply, err := ctx.MockVpp.ReplyBytes(request, dataMock.Message)
+				Expect(err).To(BeNil())
+				return reply, msgID, true
+			}
+		}
 
-// GetNotificationReplyChannel returns notification reply channel
-func (m *mockedChannel) GetNotificationReplyChannel() <-chan error {
-	return m.channel.GetNotificationReplyChannel()
-}
+		var err error
+		replyMsg, id, ok := ctx.MockVpp.ReplyFor(request.MsgName)
+		if ok {
+			reply, err = ctx.MockVpp.ReplyBytes(request, replyMsg)
+			Expect(err).To(BeNil())
+			msgID = id
+			prepared = true
+		} else {
+			log.DefaultLogger().Warnf("NO REPLY FOR %v FOUND", request.MsgName)
+		}
 
-// GetMessageDecoder returns message decoder
-func (m *mockedChannel) GetMessageDecoder() govppapi.MessageDecoder {
-	return m.channel.GetMessageDecoder()
-}
-
-// GetID returns channel's ID
-func (m *mockedChannel) GetID() uint16 {
-	return m.channel.GetID()
-}
-
-// Close closes channel
-func (m *mockedChannel) Close() {
-	m.channel.Close()
+		return reply, msgID, prepared
+	})
 }

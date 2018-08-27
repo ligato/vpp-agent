@@ -15,19 +15,22 @@
 package nsplugin
 
 import (
-	"github.com/vishvananda/netns"
 	"os"
 	"syscall"
+
+	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 )
 
-// Defines all methods required for managing operating system, system calls and namespaces on system level
+// SystemAPI defines all methods required for managing operating system, system calls and namespaces on system level
 type SystemAPI interface {
 	OperatingSystem
 	Syscall
+	NetNsNamespace
 	NetlinkNamespace
 }
 
-// Operating system defines all methods calling os package
+// OperatingSystem defines all methods calling os package
 type OperatingSystem interface {
 	// Open file
 	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
@@ -45,8 +48,8 @@ type Syscall interface {
 	Unmount(target string, flags int) (err error)
 }
 
-// NetlinkNamespace defines method for namespace handling from netlink package
-type NetlinkNamespace interface {
+// NetNsNamespace defines method for namespace handling from netns package
+type NetNsNamespace interface {
 	// NewNetworkNamespace crates new namespace and returns handle to manage it further
 	NewNetworkNamespace() (ns netns.NsHandle, err error)
 	// GetNamespaceFromName returns namespace handle from its name
@@ -55,46 +58,69 @@ type NetlinkNamespace interface {
 	SetNamespace(ns netns.NsHandle) (err error)
 }
 
-type systemHandler struct{}
+// NetlinkNamespace defines method for namespace handling from netlink package
+type NetlinkNamespace interface {
+	// LinkSetNsFd puts the device into a new network namespace.
+	LinkSetNsFd(link netlink.Link, fd int) (err error)
+}
 
-func NewSystemHandler() *systemHandler {
-	return &systemHandler{}
+// SystemHandler implements interfaces.
+type SystemHandler struct{}
+
+// NewSystemHandler returns new handler.
+func NewSystemHandler() *SystemHandler {
+	return &SystemHandler{}
 }
 
 /* Operating system */
 
-func (osh *systemHandler) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
+// OpenFile implements OperatingSystem.
+func (osh *SystemHandler) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
 	return os.OpenFile(name, flag, perm)
 }
 
-func (osh *systemHandler) MkDirAll(path string, perm os.FileMode) error {
+// MkDirAll implements OperatingSystem.
+func (osh *SystemHandler) MkDirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
-func (osh *systemHandler) Remove(name string) error {
+// Remove implements OperatingSystem.
+func (osh *SystemHandler) Remove(name string) error {
 	return os.Remove(name)
 }
 
 /* Syscall */
 
-func (osh *systemHandler) Mount(source string, target string, fsType string, flags uintptr, data string) error {
+// Mount implements Syscall.
+func (osh *SystemHandler) Mount(source string, target string, fsType string, flags uintptr, data string) error {
 	return syscall.Mount(source, target, fsType, flags, data)
 }
 
-func (osh *systemHandler) Unmount(target string, flags int) error {
+// Unmount implements Syscall.
+func (osh *SystemHandler) Unmount(target string, flags int) error {
 	return syscall.Unmount(target, flags)
+}
+
+/* Netns namespace */
+
+// NewNetworkNamespace implements NetNsNamespace.
+func (osh *SystemHandler) NewNetworkNamespace() (ns netns.NsHandle, err error) {
+	return netns.New()
+}
+
+// GetNamespaceFromName implements NetNsNamespace.
+func (osh *SystemHandler) GetNamespaceFromName(name string) (ns netns.NsHandle, err error) {
+	return netns.GetFromName(name)
+}
+
+// SetNamespace implements NetNsNamespace.
+func (osh *SystemHandler) SetNamespace(ns netns.NsHandle) (err error) {
+	return netns.Set(ns)
 }
 
 /* Netlink namespace */
 
-func (osh *systemHandler) NewNetworkNamespace() (ns netns.NsHandle, err error) {
-	return netns.New()
-}
-
-func (osh *systemHandler) GetNamespaceFromName(name string) (ns netns.NsHandle, err error) {
-	return netns.GetFromName(name)
-}
-
-func (osh *systemHandler) SetNamespace(ns netns.NsHandle) (err error) {
-	return netns.Set(ns)
+// LinkSetNsFd implements NetlinkNamespace.
+func (osh *SystemHandler) LinkSetNsFd(link netlink.Link, fd int) (err error) {
+	return netlink.LinkSetNsFd(link, fd)
 }

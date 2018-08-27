@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
@@ -29,9 +27,9 @@ const (
 	removeContainerIP uint8 = 0
 )
 
-func sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
+func (h *IfVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8) error {
 	defer func(t time.Time) {
-		stopwatch.TimeLog(ip.IPContainerProxyAddDel{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(ip.IPContainerProxyAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &ip.IPContainerProxyAddDel{
@@ -53,24 +51,23 @@ func sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8, vppChan gov
 		req.IP = []byte(IPaddr.IP.To4())
 		req.IsIP4 = 1
 	}
-
 	reply := &ip.IPContainerProxyAddDelReply{}
-	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-// AddContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=1
-func AddContainerIP(ifIdx uint32, addr string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return sendAndLogMessageForVpp(ifIdx, addr, addContainerIP, vppChan, stopwatch)
+// AddContainerIP implements interface handler.
+func (h *IfVppHandler) AddContainerIP(ifIdx uint32, addr string) error {
+	return h.sendAndLogMessageForVpp(ifIdx, addr, addContainerIP)
 }
 
-// DelContainerIP calls IPContainerProxyAddDel VPP API with IsAdd=0
-func DelContainerIP(ifIdx uint32, addr string, vppChan govppapi.Channel, stopwatch *measure.Stopwatch) error {
-	return sendAndLogMessageForVpp(ifIdx, addr, removeContainerIP, vppChan, stopwatch)
+// DelContainerIP implements interface handler.
+func (h *IfVppHandler) DelContainerIP(ifIdx uint32, addr string) error {
+	return h.sendAndLogMessageForVpp(ifIdx, addr, removeContainerIP)
 }
