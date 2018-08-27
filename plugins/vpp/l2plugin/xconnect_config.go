@@ -109,8 +109,8 @@ func (c *XConnectConfigurator) GetXcDelCache() l2idx.XcIndexRW {
 // ConfigureXConnectPair adds new cross connect pair
 func (c *XConnectConfigurator) ConfigureXConnectPair(xc *l2.XConnectPairs_XConnectPair) error {
 	if err := c.validateConfig(xc); err != nil {
-		return errors.Errorf("failed to configure XConnect %s-%s, config is invalid",
-			xc.ReceiveInterface, xc.TransmitInterface)
+		return errors.Errorf("failed to configure XConnect %s-%s, config is invalid: %v",
+			xc.ReceiveInterface, xc.TransmitInterface, err)
 	}
 	// Verify interface presence, eventually store cross connect to cache if either is missing
 	rxIfIdx, _, rxFound := c.ifIndexes.LookupIdx(xc.ReceiveInterface)

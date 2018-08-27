@@ -90,7 +90,7 @@ func (c *BridgeDomainStateUpdater) Init(ctx context.Context, logger logging.Plug
 	// Bridge domain notification watcher
 	go c.watchVPPNotifications(childCtx)
 
-	c.log.Info("Initializing bridge domain state updater plugin")
+	c.log.Info("Initializing bridge domain state updater")
 
 	return nil
 }
@@ -119,7 +119,8 @@ func (c *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Context) {
 				bdState, err := c.processBridgeDomainDetailsNotification(msg, bdName)
 				if err != nil {
 					// Log error but continue watching
-					c.LogError(errors.Errorf("bridge domain state updater failed to process notification for %s", bdName))
+					c.LogError(errors.Errorf("bridge domain state updater failed to process notification for %s: %v",
+						bdName, err))
 					continue
 				}
 				if bdState != nil {

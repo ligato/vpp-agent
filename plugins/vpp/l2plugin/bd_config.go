@@ -325,7 +325,8 @@ func (c *BDConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) er
 	var bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces // Single-value
 	configuredIf, err := c.bdHandler.SetInterfacesToBridgeDomain(bd.Name, bdIdx, append(bdIfs, bdIf), c.ifIndexes)
 	if err != nil {
-		return errors.Errorf("error while assigning registered interface %s to bridge domain %s", ifName, bd.Name)
+		return errors.Errorf("error while assigning registered interface %s to bridge domain %s: %v",
+			ifName, bd.Name, err)
 	}
 
 	// Refresh metadata

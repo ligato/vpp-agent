@@ -160,7 +160,7 @@ func (c *FIBConfigurator) Add(fib *l2.FibTable_FibEntry, callback func(error)) e
 			c.fibIndexSeq++
 			callback(err)
 		}); err != nil {
-		return errors.Errorf("failed to add FIB entry with MAC %s", fib.PhysAddress)
+		return errors.Errorf("failed to add FIB entry with MAC %s: %v", fib.PhysAddress, err)
 	}
 
 	c.log.Infof("FIB table entry with MAC %s configured", fib.PhysAddress)
