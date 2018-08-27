@@ -79,6 +79,10 @@ type ReadAccess interface {
 	//
 	GetSnapshot(time time.Time) []*RecordedNode
 
+	// Dump returns a human-readable string representation of the current graph
+	// content for debugging purposes.
+	Dump() string
+
 	// Release releases the graph handle (both Read() & Write() should end with
 	// release).
 	Release() // for reader release R-lock

@@ -19,6 +19,7 @@ before_install:
 script:
   - make check-links || true
   - make lint
+  - make dep-check
   - make
   - make test-cover
 #  - make test-examples # TODO: refactor tests to not check exact log output

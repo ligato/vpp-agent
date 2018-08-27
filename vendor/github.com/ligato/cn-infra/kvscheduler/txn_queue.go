@@ -65,9 +65,8 @@ type nbTxn struct {
 // retryOps encapsulates data for retry of failed operations.
 type retryOps struct {
 	txnSeqNum  uint
-	keys       map[string]struct{}
+	keys       keySet
 	period     time.Duration
-	expBackoff bool
 }
 
 // queuedTxn represents transaction queued for execution.

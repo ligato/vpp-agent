@@ -147,6 +147,7 @@ func (node *node) checkPotentialTarget(node2 *node) {
 				node2.sources[targetDef.Relation] = make(KeySet)
 			}
 			node2.sources[targetDef.Relation][node.key] = struct{}{}
+			node2.targetsUpdated = true
 		}
 	}
 }
@@ -170,6 +171,7 @@ func (node *node) removeThisFromSources() {
 			for key := range targetNodes {
 				targetNode := node.graph.nodes[key]
 				delete(targetNode.sources[relation], node.GetKey())
+				targetNode.targetsUpdated = true
 			}
 		}
 	}

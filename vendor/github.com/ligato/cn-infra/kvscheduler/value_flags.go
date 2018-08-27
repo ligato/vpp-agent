@@ -16,6 +16,8 @@ package kvscheduler
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/ligato/cn-infra/kvscheduler/api"
 )
 
@@ -53,6 +55,11 @@ type LastChangeFlag struct {
 	value     Value
 	origin    ValueOrigin
 	revert    bool
+
+	// NB txn options
+	retryEnabled    bool
+	retryPeriod     time.Duration
+	retryExpBackoff bool
 }
 
 // GetName return name of the LastChange flag.
@@ -66,7 +73,11 @@ func (flag *LastChangeFlag) GetValue() string {
 	if flag.revert {
 		revertStr = ", REVERT"
 	}
-	return fmt.Sprintf("[%s%s] TXN-%d", flag.origin.String(), revertStr, flag.txnSeqNum)
+	retryStr := ""
+	if flag.retryEnabled {
+		retryStr = ", RETRY-ENABLED"
+	}
+	return fmt.Sprintf("[%s%s%s] TXN-%d", flag.origin.String(), revertStr, retryStr, flag.txnSeqNum)
 }
 
 // LastUpdateFlag is set to all values to remember the last transaction which

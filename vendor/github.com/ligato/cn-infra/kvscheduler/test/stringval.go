@@ -16,6 +16,7 @@ package test
 
 import (
 	. "github.com/ligato/cn-infra/kvscheduler/api"
+	"strings"
 )
 
 // StringValue is used in the UTs.
@@ -56,4 +57,16 @@ func (sv *StringValue) String() string {
 // Type returns value type as chosen in the NewStringValue constructor.
 func (sv *StringValue) Type() ValueType {
 	return sv.valueType
+}
+
+// StringValueBuilder return ValueBuilder for StringValues.
+func StringValueBuilder(prefix string) func(string, interface{}) (Value, error) {
+	return func(key string, valueData interface{}) (value Value, err error) {
+		label := strings.TrimPrefix(key, prefix)
+		str, ok := valueData.(string)
+		if !ok {
+			return nil, ErrInvalidValueDataType(key)
+		}
+		return NewStringValue(Object, label, str), nil
+	}
 }

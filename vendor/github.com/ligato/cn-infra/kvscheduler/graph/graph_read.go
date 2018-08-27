@@ -19,6 +19,8 @@ import (
 
 	"github.com/ligato/cn-infra/idxmap"
 	. "github.com/ligato/cn-infra/kvscheduler/api"
+	"fmt"
+	"sort"
 )
 
 // graphR implements ReadAccess.
@@ -138,6 +140,34 @@ func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
 		}
 	}
 	return nodes
+}
+
+// Dump returns a human-readable string representation of the current graph
+// content for debugging purposes.
+func (graph *graphR) Dump() string {
+	// order nodes by keys
+	var keys []string
+	for key := range graph.nodes {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i,j int) bool {
+		return keys[i] < keys[j]
+	})
+
+	var str string
+	for _, key := range keys {
+		node := graph.nodes[key]
+		record := graph.recordNode(node, false)
+		str += fmt.Sprintf("- key: %s\n", key)
+		str += fmt.Sprintf("  value-label: %s\n", record.ValueLabel)
+		str += fmt.Sprintf("  value-type: %s\n", record.ValueType.String())
+		str += fmt.Sprintf("  value-string: %s\n", record.ValueString)
+		str += fmt.Sprintf("  flags: %v\n", record.Flags)
+		str += fmt.Sprintf("  targets: %v\n", record.Targets)
+		str += fmt.Sprintf("  sources: %v\n", node.sources)
+		str += fmt.Sprintf("  metadata-fields: %v\n", record.MetadataFields)
+	}
+	return str
 }
 
 // Release releases the graph handle (both Read() & Write() should end with

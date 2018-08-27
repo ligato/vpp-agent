@@ -15,6 +15,9 @@
 package kvscheduler
 
 import (
+	"time"
+	"strconv"
+
 	. "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/kvscheduler/graph"
 )
@@ -27,6 +30,14 @@ func (ks keySet) subtract(ks2 keySet) keySet {
 		delete(ks, key)
 	}
 	return ks
+}
+
+func stringToTime(s string) (time.Time, error) {
+	sec, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(sec, 0), nil
 }
 
 func nodesToKVPairs(nodes []graph.Node) (kvPairs []KeyValuePair) {

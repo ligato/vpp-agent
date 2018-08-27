@@ -24,13 +24,12 @@ import (
 
 // applyValueArgs collects all arguments to applyValue method.
 type applyValueArgs struct {
-	graphW    graph.RWAccess
-	txnSeqNum uint
-	txnType   txnType
-	kv        kvForTxn
+	graphW graph.RWAccess
+	txn    *preProcessedTxn
+	kv     kvForTxn
 
-	dryRun  bool
 	isRetry bool
+	dryRun  bool
 
 	// set inside of the recursive chain of applyValue-s
 	isUpdate  bool
@@ -63,14 +62,13 @@ func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool
 	for _, kv := range orderedVals {
 		ops, prevValue, err := scheduler.applyValue(
 			&applyValueArgs{
-				graphW:    graphW,
-				txnSeqNum: txn.seqNum,
-				txnType:   txn.args.txnType,
-				kv:        kv,
-				dryRun:    dryRun,
-				isRetry:   txn.args.txnType == retryFailedOps,
-				failed:    failed,
-				branch:    branch,
+				graphW:  graphW,
+				txn:     txn,
+				kv:      kv,
+				dryRun:  dryRun,
+				isRetry: txn.args.txnType == retryFailedOps,
+				failed:  failed,
+				branch:  branch,
 			})
 		executed = append(executed, ops...)
 		if err != nil {
@@ -78,10 +76,13 @@ func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool
 				// potential retry should work with the previous value of the failed one
 				node := graphW.SetNode(kv.key)
 				node.SetFlags(&LastChangeFlag{
-					txnSeqNum: txn.seqNum,
-					value:     prevValue.Value,
-					origin:    FromNB,
-					revert:    true,
+					txnSeqNum:       txn.seqNum,
+					value:           prevValue.Value,
+					origin:          FromNB,
+					revert:          true,
+					retryEnabled:    txn.args.nb.retryFailed,
+					retryPeriod:     txn.args.nb.retryPeriod,
+					retryExpBackoff: txn.args.nb.expBackoffRetry,
 				})
 				graphW.Save()
 				revert = true
@@ -97,9 +98,8 @@ func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool
 		for _, kvPair := range prevValues {
 			ops, _, _ := scheduler.applyValue(
 				&applyValueArgs{
-					graphW:    graphW,
-					txnSeqNum: txn.seqNum,
-					txnType:   txn.args.txnType,
+					graphW: graphW,
+					txn:    txn,
 					kv: kvForTxn{
 						key:      kvPair.Key,
 						value:    kvPair.Value,
@@ -134,15 +134,27 @@ func (scheduler *Scheduler) applyValue(args *applyValueArgs) (executed recordedT
 	prevValue = KeyValuePair{Key: node.GetKey(), Value: node.GetValue()}
 
 	// mark the value as newly visited
-	node.SetFlags(&LastUpdateFlag{args.txnSeqNum})
+	node.SetFlags(&LastUpdateFlag{args.txn.seqNum})
 	if !args.isUpdate {
 		if !args.isDerived {
-			node.SetFlags(&LastChangeFlag{
-				txnSeqNum: args.txnSeqNum,
+			lastChangeFlag := &LastChangeFlag{
+				txnSeqNum: args.txn.seqNum,
 				value:     args.kv.value,
 				origin:    args.kv.origin,
 				revert:    args.kv.isRevert,
-			})
+			}
+			switch args.txn.args.txnType {
+			case nbTransaction:
+				lastChangeFlag.retryEnabled = args.txn.args.nb.retryFailed
+				lastChangeFlag.retryPeriod = args.txn.args.nb.retryPeriod
+				lastChangeFlag.retryExpBackoff = args.txn.args.nb.expBackoffRetry
+			case retryFailedOps:
+				prevLastChange := getNodeLastChange(node)
+				lastChangeFlag.retryEnabled = prevLastChange.retryEnabled
+				lastChangeFlag.retryPeriod = prevLastChange.retryPeriod
+				lastChangeFlag.retryExpBackoff = prevLastChange.retryExpBackoff
+			}
+			node.SetFlags(lastChangeFlag)
 		} else {
 			node.SetFlags(&DerivedFlag{})
 		}
@@ -222,7 +234,7 @@ func (scheduler *Scheduler) applyDelete(node graph.NodeRW, txnOp *recordedTxnOp,
 	if !args.dryRun && node.GetValue().Type() != Property {
 		var err error
 		descriptor := scheduler.registry.GetDescriptorForKey(node.GetKey())
-		if args.txnType != sbNotification {
+		if args.kv.origin != FromSB {
 			err = descriptor.Delete(node.GetKey(), node.GetValue(), node.GetMetadata())
 		}
 		if err != nil {
@@ -292,7 +304,7 @@ func (scheduler *Scheduler) applyAdd(node graph.NodeRW, txnOp *recordedTxnOp, ar
 			metadata interface{}
 		)
 
-		if args.txnType != sbNotification {
+		if args.kv.origin != FromSB {
 			metadata, err = descriptor.Add(node.GetKey(), node.GetValue())
 		} else {
 			// already added in SB
@@ -354,22 +366,25 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 		defer args.graphW.Save()
 	}
 
+	equivalent := node.GetValue().Equivalent(args.kv.value)
+
 	if node.GetValue().Type() == Property {
-		// just save the new property
-		node.SetValue(args.kv.value)
-		executed = append(executed, txnOp)
-		// update values that depend on this property
-		executed = append(executed, scheduler.runUpdates(node, args)...)
+		if !equivalent {
+			// just save the new property
+			node.SetValue(args.kv.value)
+			executed = append(executed, txnOp)
+			// update values that depend on this property
+			executed = append(executed, scheduler.runUpdates(node, args)...)
+		}
 		return executed, nil
 	}
 
 	// re-create the value if required by the descriptor
 	var recreate bool
 	descriptor := scheduler.registry.GetDescriptorForKey(args.kv.key)
-	if args.txnType != sbNotification {
+	if args.kv.origin != FromSB {
 		recreate = descriptor.ModifyHasToRecreate(args.kv.key, node.GetValue(), args.kv.value, node.GetMetadata())
 	}
-	equivalent := node.GetValue().Equivalent(args.kv.value)
 	if !equivalent && recreate {
 		delOp := scheduler.preRecordTxnOp(args, node)
 		delOp.operation = del
@@ -377,6 +392,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 		addOp := scheduler.preRecordTxnOp(args, node)
 		addOp.operation = add
 		addOp.prevValue = nil
+		addOp.wasPending = true
 		delExec, err := scheduler.applyDelete(node, delOp, args, true)
 		executed = append(executed, delExec...)
 		if err != nil {
@@ -433,14 +449,13 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 	}
 
 	// execute modify operation
-	needsModify := args.txnType == sbNotification || !equivalent
-	if !args.dryRun && needsModify {
+	if !args.dryRun && !equivalent {
 		var (
 			err         error
 			newMetadata interface{}
 		)
 
-		if args.txnType != sbNotification {
+		if args.kv.origin != FromSB {
 			newMetadata, err = descriptor.Modify(node.GetKey(), prevValue, node.GetValue(), node.GetMetadata())
 		} else {
 			// already modified in SB
@@ -464,7 +479,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 	}
 
 	// if new value is equivalent, but the value is in failed state from previous txn => run update
-	if !needsModify && wasErr == nil && getNodeError(node) != nil {
+	if equivalent && wasErr == nil && getNodeError(node) != nil {
 		txnOp.operation = update
 		err := descriptor.Update(node.GetKey(), node.GetValue(), node.GetMetadata())
 		if err != nil {
@@ -482,7 +497,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 	if wasErr == nil {
 		node.DelFlags(ErrorFlagName)
 	}
-	if needsModify || txnOp.operation == update || txnOp.newErr != nil {
+	if !equivalent || txnOp.operation == update || txnOp.newErr != nil {
 		// if the value was modified, or update was executed (to clear error)
 		// or removal of obsolete derived value has failed => record operation
 		executed = append(executed, txnOp)
@@ -492,7 +507,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 	}
 
 	// update values that depend on this kv-pair
-	if needsModify {
+	if !equivalent {
 		executed = append(executed, scheduler.runUpdates(node, args)...)
 	}
 
@@ -567,17 +582,16 @@ func (scheduler *Scheduler) applyDerived(derivedVals []kvForTxn, args *applyValu
 	sort.Slice(derivedVals, func(i, j int) bool { return derivedVals[i].key < derivedVals[j].key })
 
 	for _, derived := range derivedVals {
-		if check && !scheduler.validDerivedKV(args.graphW, derived, args.txnSeqNum) {
+		if check && !scheduler.validDerivedKV(args.graphW, derived, args.txn.seqNum) {
 			continue
 		}
 		ops, _, err := scheduler.applyValue(
 			&applyValueArgs{
 				graphW:    args.graphW,
-				txnSeqNum: args.txnSeqNum,
-				txnType:   args.txnType,
+				txn:       args.txn,
 				kv:        derived,
-				dryRun:    args.dryRun,
 				isRetry:   args.isRetry,
+				dryRun:    args.dryRun,
 				isDerived: true, // <- is derived
 				failed:    args.failed,
 				branch:    args.branch,
@@ -603,18 +617,17 @@ func (scheduler *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (e
 		}
 		ops, _, _ := scheduler.applyValue(
 			&applyValueArgs{
-				graphW:    args.graphW,
-				txnSeqNum: args.txnSeqNum,
-				txnType:   args.txnType,
+				graphW: args.graphW,
+				txn:    args.txn,
 				kv: kvForTxn{
 					key:      depNode.GetKey(),
 					value:    depNode.GetValue(),
 					origin:   getNodeOrigin(depNode),
 					isRevert: args.kv.isRevert,
 				},
+				isRetry:  args.isRetry,
 				dryRun:   args.dryRun,
 				isUpdate: true, // <- update
-				isRetry:  args.isRetry,
 				failed:   args.failed,
 				branch:   args.branch,
 			})

@@ -107,6 +107,9 @@ type recordedKVPair struct {
 // recordedTxnOps is a list of recorded executed/planned transaction operations.
 type recordedTxnOps []*recordedTxnOp
 
+// recordedTxns is a list of recorded transactions.
+type recordedTxns []*recordedTxn
+
 // String returns a human-readable string representation of recorded value.
 func (value *recordedValue) String() string {
 	return value.StringWithOpts(false)
@@ -166,10 +169,8 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int, verbose bool
 		}
 
 		// planned operations
-		if txn.txnType != sbNotification {
-			str += indent1 + "* planned operations:\n"
-			str += txn.planned.StringWithOpts(indent+4, verbose)
-		}
+		str += indent1 + "* planned operations:\n"
+		str += txn.planned.StringWithOpts(indent+4, verbose)
 	}
 
 	if !txn.preRecord {
@@ -233,6 +234,29 @@ func (ops recordedTxnOps) StringWithOpts(indent int, verbose bool) string {
 	var str string
 	for idx, op := range ops {
 		str += op.StringWithOpts(idx+1, indent, verbose)
+	}
+	return str
+}
+
+// String returns a *multi-line* human-readable string representation of a transaction
+// list.
+func (txns recordedTxns) String() string {
+	return txns.StringWithOpts(false, 0, false)
+}
+
+// StringWithOpts allows to format string representation of a transaction list.
+func (txns recordedTxns) StringWithOpts(resultOnly bool, indent int, verbose bool) string {
+	if len(txns) == 0 {
+		return strings.Repeat(" ", indent) + "<NONE>\n"
+	}
+
+	var str string
+	for idx, txn := range txns {
+		str += strings.Repeat(" ", indent) + fmt.Sprintf("Transaction #%d:\n", txn.seqNum)
+		str += txn.StringWithOpts(resultOnly, indent+4, verbose)
+		if idx < len(txns)-1 {
+			str += "\n"
+		}
 	}
 	return str
 }
@@ -318,20 +342,37 @@ func (scheduler *Scheduler) recordTransaction(txnRecord *recordedTxn, executed r
 	scheduler.historyLock.Unlock()
 }
 
-func (scheduler *Scheduler) getTransactionHistory(until time.Time) (history []*recordedTxn) {
+// getTransactionHistory returns history of transactions started within the specified
+// time window, or the full recorded history if the timestamps are zero values.
+func (scheduler *Scheduler) getTransactionHistory(since, until time.Time) (history recordedTxns) {
 	scheduler.historyLock.Lock()
 	defer scheduler.historyLock.Unlock()
 
-	if until.IsZero() {
-		return scheduler.txnHistory
+	if !since.IsZero() && !until.IsZero() && until.Before(since) {
+		// invalid time window
+		return
 	}
-	firstAfter := 0
-	for ; firstAfter < len(scheduler.txnHistory); firstAfter++ {
-		if scheduler.txnHistory[firstAfter].start.After(until) {
-			break
+
+	lastBefore := -1
+	firstAfter := len(scheduler.txnHistory)
+
+	if !since.IsZero() {
+		for ; lastBefore+1 < len(scheduler.txnHistory); lastBefore++ {
+			if !scheduler.txnHistory[lastBefore+1].start.Before(since) {
+				break
+			}
 		}
 	}
-	return scheduler.txnHistory[:firstAfter]
+
+	if !until.IsZero() {
+		for ; firstAfter > 0; firstAfter-- {
+			if !scheduler.txnHistory[firstAfter-1].start.After(until) {
+				break
+			}
+		}
+	}
+
+	return scheduler.txnHistory[lastBefore+1:firstAfter]
 }
 
 func errorToString(err error) string {

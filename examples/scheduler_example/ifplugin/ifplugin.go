@@ -1,11 +1,14 @@
 package ifplugin
 
 import (
+	"errors"
+
+	"github.com/ligato/cn-infra/infra"
 	. "github.com/ligato/cn-infra/kvscheduler/api"
+
 	"github.com/ligato/vpp-agent/examples/scheduler_example/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/examples/scheduler_example/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/examples/scheduler_example/ifplugin/ifaceidx"
-	"github.com/pkg/errors"
 )
 
 type IfPlugin struct {
@@ -15,6 +18,7 @@ type IfPlugin struct {
 }
 
 type Deps struct {
+	infra.PluginDeps
 	Scheduler KVScheduler
 }
 

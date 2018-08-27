@@ -77,7 +77,7 @@ func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 	txn, preErrors := scheduler.preProcessTransaction(qTxn)
 
 	// 2. Simulation:
-	if txn.args.txnType != sbNotification && len(txn.values) > 0 {
+	if len(txn.values) > 0 {
 		simulatedOps, _ = scheduler.executeTransaction(txn, true)
 	}
 
@@ -241,24 +241,34 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 		graphW := scheduler.graph.Write(false)
 		scheduler.refreshGraph(graphW, failed, nil)
 		graphW.Save()
-		graphW.Release()
 
-		// schedule re-try for failed values
-		if txn.args.txnType == retryFailedOps ||
-			(txn.args.txnType == nbTransaction && txn.args.nb.retryFailed) {
-
-			retryArgs := &retryOps{txnSeqNum: txn.seqNum, keys: failed}
-			if txn.args.txnType == retryFailedOps {
-				retryArgs.period = txn.args.retry.period
-				if txn.args.retry.expBackoff {
-					retryArgs.period *= 2
+		// split failed values based on transactions that performed the last change
+		retryTxns := make(map[uint]*retryOps)
+		for failedKey := range failed {
+			node := graphW.GetNode(failedKey)
+			lastChange := getNodeLastChange(node)
+			seqNum := lastChange.txnSeqNum
+			if lastChange.retryEnabled {
+				if _, has := retryTxns[seqNum]; !has {
+					period := lastChange.retryPeriod
+					if seqNum == txn.seqNum && txn.args.txnType == retryFailedOps && lastChange.retryExpBackoff {
+						period = txn.args.retry.period * 2
+					}
+					retryTxns[seqNum] = &retryOps{
+						txnSeqNum: seqNum,
+						period:    period,
+						keys:      make(keySet),
+					}
 				}
-			} else {
-				retryArgs.period = txn.args.nb.retryPeriod
-				retryArgs.expBackoff = txn.args.nb.expBackoffRetry
+				retryTxns[seqNum].keys[failedKey] = struct{}{}
 			}
-			scheduler.enqueueRetry(retryArgs)
 		}
+
+		// schedule a series of re-try transactions for failed values
+		for _, retryTxn := range retryTxns {
+			scheduler.enqueueRetry(retryTxn)
+		}
+		graphW.Release()
 	}
 
 	// collect errors
@@ -296,7 +306,7 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 	// send errors to the subscribers
 	for _, errSub := range scheduler.errorSubs {
 		for _, kvWithError := range txnErrors {
-			if errSub.selector(kvWithError.Key) {
+			if errSub.selector == nil || errSub.selector(kvWithError.Key) {
 				select {
 				case errSub.channel <- kvWithError:
 				default:

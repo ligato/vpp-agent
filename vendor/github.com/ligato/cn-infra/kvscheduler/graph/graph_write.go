@@ -130,11 +130,15 @@ func (graph *graphRW) Save() {
 			// update metadata map
 			if mapping, hasMapping := destGraph.mappings[node.metadataMap]; hasMapping {
 				if node.metadataAdded {
+					if node.metadata == nil {
+						mapping.Delete(node.value.Label())
+						node.metadataAdded = false
+					}
 					mapping.Update(node.value.Label(), node.metadata)
-				} else {
+				} else if node.metadata != nil {
 					mapping.Put(node.value.Label(), node.metadata)
+					node.metadataAdded = true
 				}
-				node.metadataAdded = true
 			}
 		}
 

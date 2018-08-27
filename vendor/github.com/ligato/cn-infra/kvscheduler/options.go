@@ -16,6 +16,7 @@ package kvscheduler
 
 import (
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/rpc/rest"
 )
 
 // DefaultPlugin is a default instance of Plugin.
@@ -26,6 +27,7 @@ func NewPlugin(opts ...Option) *Scheduler {
 	p := &Scheduler{}
 
 	p.PluginName = "kvscheduler"
+	p.HTTPHandlers = &rest.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

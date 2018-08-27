@@ -146,7 +146,6 @@ func (client *Client) ListValues(keyPrefix string) (keyval.BytesKeyValIterator, 
 			boltLogger.Debugf(" listing val: %q (len=%d)", string(k), len(v))
 
 			pair := &kvPair{Key: string(k)}
-			copy(pair.Value, v) // value needs to be copied
 			pair.Value = append([]byte(nil), v...) // value needs to be copied
 
 			pairs = append(pairs, pair)

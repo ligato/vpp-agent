@@ -110,13 +110,16 @@ func (md *mockDescriptor) Build(key string, valueData interface{}) (value Value,
 // Add executes add operation in the mock SB.
 func (md *mockDescriptor) Add(key string, value Value) (metadata Metadata, err error) {
 	md.validateKey(key, md.args.KeySelector(key))
-	if md.sb != nil && md.args.WithMetadata && !md.sb.isKeyDerived(key) && value.Type() == Object {
+	withMeta := md.sb != nil && md.args.WithMetadata && !md.sb.isKeyDerived(key) && value.Type() == Object
+	if withMeta {
 		metadata = &OnlyInteger{md.nextIndex}
-		md.nextIndex++
 	}
 	if md.sb != nil {
 		md.validateKey(key, md.sb.GetValue(key) == nil)
 		err = md.sb.executeChange(md.GetName(), Add, key, value, metadata)
+	}
+	if err == nil && withMeta {
+		md.nextIndex++
 	}
 	return metadata, err
 }
@@ -209,7 +212,7 @@ func (md *mockDescriptor) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, er
 	if !md.args.DumpIsSupported || md.sb == nil {
 		return nil, ErrDumpNotSupported
 	}
-	return md.sb.dump(correlate, md.args.KeySelector)
+	return md.sb.dump(md.GetName(), correlate, md.args.KeySelector)
 }
 
 // DumpDependencies returns dump dependencies from the input arguments.

@@ -23,8 +23,12 @@ import (
 
 const (
 	descriptor1Name = "descriptor1"
+	descriptor2Name = "descriptor2"
+	descriptor3Name = "descriptor3"
 
 	prefixA = "/prefixA/"
+	prefixB = "/prefixB/"
+	prefixC = "/prefixC/"
 
 	baseValue1 = "base-value1"
 	baseValue2 = "base-value2"
@@ -34,6 +38,20 @@ const (
 func prefixSelector(prefix string) func(key string) bool {
 	return func(key string) bool {
 		return strings.HasPrefix(key, prefix)
+	}
+}
+
+func checkValues(received, expected []KeyValuePair) {
+	Expect(len(received)).To(Equal(len(expected)))
+	for _, kv := range expected {
+		found := false
+		for _, kv2 := range received {
+			if kv2.Key == kv.Key {
+				Expect(kv2.Value.Equivalent(kv.Value)).To(BeTrue())
+				found = true
+			}
+		}
+		Expect(found).To(BeTrue())
 	}
 }
 

@@ -16,6 +16,7 @@ package test
 
 import (
 	. "github.com/ligato/cn-infra/kvscheduler/api"
+	"strings"
 )
 
 // ArrayValue is used in the UTs.
@@ -85,17 +86,32 @@ func (av *ArrayValue) GetItems() []string {
 	return av.items
 }
 
-// ArrayValueDerBuilder can be used as DerValuesBuilder in MockDescriptorArgs
-// to derive one StringValue for every item in the array.
-func ArrayValueDerBuilder(key string, value Value) (derivedVals []KeyValuePair) {
-	arrayVal, isArrayVal := value.(*ArrayValue)
-	if isArrayVal {
-		for _, item := range arrayVal.GetItems() {
-			derivedVals = append(derivedVals, KeyValuePair{
-				Key:   key + "/" + item,
-				Value: NewStringValue(Object, item, item),
-			})
+// ArrayValueDerBuilder can be used to generate DerValuesBuilder for MockDescriptorArgs
+// that will derive one StringValue for every item in the array.
+func ArrayValueDerBuilder(derValueType ValueType) func(string, Value) ([]KeyValuePair) {
+	return func(key string, value Value) []KeyValuePair{
+		var derivedVals []KeyValuePair
+		arrayVal, isArrayVal := value.(*ArrayValue)
+		if isArrayVal {
+			for _, item := range arrayVal.GetItems() {
+				derivedVals = append(derivedVals, KeyValuePair{
+					Key:   key + "/" + item,
+					Value: NewStringValue(derValueType, item, item),
+				})
+			}
 		}
+		return derivedVals
 	}
-	return derivedVals
+}
+
+// ArrayValueBuilder return ValueBuilder for ArrayValues.
+func ArrayValueBuilder(prefix string) func(string, interface{}) (Value, error) {
+	return func(key string, valueData interface{}) (value Value, err error) {
+		label := strings.TrimPrefix(key, prefix)
+		items, ok := valueData.([]string)
+		if !ok {
+			return nil, ErrInvalidValueDataType(key)
+		}
+		return NewArrayValue(Object, label, items...), nil
+	}
 }

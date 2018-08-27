@@ -18,6 +18,7 @@ import (
 	"os"
 	"testing"
 
+	"bytes"
 	"github.com/boltdb/bolt"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -157,6 +158,7 @@ func TestListValues(t *testing.T) {
 	Expect(kvi).NotTo(BeNil())
 
 	expectedKeys := []string{"/my/key/1", "/my/key/2"}
+	expectedValues := [][]byte{[]byte("val1"), []byte("val2")}
 	for i := 0; i <= len(expectedKeys); i++ {
 		kv, all := kvi.GetNext()
 		if i == len(expectedKeys) {
@@ -165,6 +167,7 @@ func TestListValues(t *testing.T) {
 		}
 		Expect(all).To(BeFalse())
 		Expect(kv.GetKey()).To(BeEquivalentTo(expectedKeys[i]))
+		Expect(bytes.Compare(kv.GetValue(), expectedValues[i])).To(BeZero())
 	}
 }
 

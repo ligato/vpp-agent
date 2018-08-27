@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/cn-infra/kvscheduler/graph"
 	"github.com/ligato/cn-infra/kvscheduler/registry"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/logging"
 )
 
@@ -64,6 +65,7 @@ type Scheduler struct {
 	txnSeqNumber uint
 	resyncCount  uint
 
+	// TXN history
 	historyLock  sync.Mutex
 	txnHistory   []*recordedTxn // ordered from the oldest to the latest
 }
@@ -71,8 +73,8 @@ type Scheduler struct {
 // Deps lists dependencies of the scheduler.
 type Deps struct {
 	infra.PluginName
-	Log logging.PluginLogger
-	// REST, etc.
+	Log          logging.PluginLogger
+	HTTPHandlers rest.HTTPHandlers
 }
 
 // SchedulerTxn implements transaction for the KV scheduler.
@@ -99,6 +101,8 @@ func (scheduler *Scheduler) Init() error {
 	scheduler.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions
 	scheduler.txnQueue = make(chan *queuedTxn, 100)
+	// register REST API handlers
+	scheduler.registerHandlers(scheduler.HTTPHandlers)
 	// go routine processing serialized transactions
 	go scheduler.consumeTransactions()
 	// temporary until datasync and scheduler are properly integrated
@@ -187,7 +191,8 @@ func (scheduler *Scheduler) PushSBNotification(key string, value Value, metadata
 	txn := &queuedTxn{
 		txnType: sbNotification,
 		sb: &sbNotif{
-			value: KeyValuePair{Key: key, Value: value},
+			value:    KeyValuePair{Key: key, Value: value},
+			metadata: metadata,
 		},
 	}
 	return scheduler.enqueueTxn(txn)
