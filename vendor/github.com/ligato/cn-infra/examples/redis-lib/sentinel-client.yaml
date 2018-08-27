@@ -1,10 +1,11 @@
+---
 # github.com/ligato/cn-infra/db/keyval/redis#SentinelConfig
 db: 0
 dial-timeout: 0
 endpoints:
-- 172.17.0.7:26379
-- 172.17.0.8:26379
-- 172.17.0.9:26379
+  - 172.17.0.7:26379
+  - 172.17.0.8:26379
+  - 172.17.0.9:26379
 master-name: mymaster
 password: ""
 pool:
