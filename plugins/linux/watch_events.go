@@ -92,9 +92,13 @@ func (plugin *Plugin) onLinuxIfaceEvent(e ifaceidx.LinuxIfIndexDto) {
 
 func (plugin *Plugin) onVppIfaceEvent(e ifaceVPP.SwIfIdxDto) {
 	if e.IsDelete() {
-		plugin.ifConfigurator.ResolveDeletedVPPInterface(e.Metadata)
+		if err := plugin.ifConfigurator.ResolveDeletedVPPInterface(e.Metadata); err != nil {
+			plugin.ifConfigurator.LogError(err)
+		}
 	} else {
-		plugin.ifConfigurator.ResolveCreatedVPPInterface(e.Metadata)
+		if err := plugin.ifConfigurator.ResolveCreatedVPPInterface(e.Metadata); err != nil {
+			plugin.ifConfigurator.LogError(err)
+		}
 	}
 	e.Done()
 }

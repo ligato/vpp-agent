@@ -53,8 +53,8 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	// store all resync errors
 	var resyncErrs []error
 
-	if errs := plugin.ifConfigurator.Resync(req.Interfaces); errs != nil {
-		resyncErrs = append(resyncErrs, errs...)
+	if err := plugin.ifConfigurator.Resync(req.Interfaces); err != nil {
+		resyncErrs = append(resyncErrs, plugin.ifConfigurator.LogError(err))
 	}
 
 	if errs := plugin.arpConfigurator.Resync(req.ARPs); errs != nil {

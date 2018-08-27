@@ -218,7 +218,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes,
 		plugin.ifMicroserviceNotif, plugin.stopwatch); err != nil {
-		return err
+		return plugin.ifConfigurator.LogError(err)
 	}
 
 	return nil

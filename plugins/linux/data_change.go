@@ -71,12 +71,15 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.LinuxInterfac
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ifConfigurator.DeleteLinuxInterface(prevValue)
+		err = plugin.ifConfigurator.DeleteLinuxInterface(prevValue)
 	} else if diff {
-		return plugin.ifConfigurator.ModifyLinuxInterface(value, prevValue)
+		err = plugin.ifConfigurator.ModifyLinuxInterface(value, prevValue)
+	} else {
+		err = plugin.ifConfigurator.ConfigureLinuxInterface(value)
 	}
-	return plugin.ifConfigurator.ConfigureLinuxInterface(value)
+	return plugin.ifConfigurator.LogError(err)
 }
 
 // DataChangeArp propagates data change to the arpConfigurator
