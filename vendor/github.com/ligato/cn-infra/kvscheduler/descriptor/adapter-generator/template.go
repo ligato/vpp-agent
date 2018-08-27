@@ -44,8 +44,8 @@ type {{ .DescriptorName }}KVWithMetadata struct {
 type {{ .DescriptorName }}DescriptorAPI interface {
 	GetName() string
 	KeySelector(key string) bool
-    NBKeyPrefixes() []string
-    WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory)
+	NBKeyPrefixes() []string
+	WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory)
 {{- if .IsProtoValue }}
 	Build(key string, valueData {{ .ValueDataT }}) (value ProtoValue, err error)
 {{- else }}

@@ -26,8 +26,8 @@ type IntfKVWithMetadata struct {
 type IntfDescriptorAPI interface {
 	GetName() string
 	KeySelector(key string) bool
-    NBKeyPrefixes() []string
-    WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory)
+	NBKeyPrefixes() []string
+	WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory)
 	Build(key string, valueData *interfaces.Interfaces_Interface) (value ProtoValue, err error)
 	Add(key string, value *interfaces.Interfaces_Interface) (metadata *ifaceidx.IfaceMetadata, err error)
 	Delete(key string, value *interfaces.Interfaces_Interface, metadata *ifaceidx.IfaceMetadata) error
