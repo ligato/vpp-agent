@@ -11,6 +11,7 @@ import (
 	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/examples/scheduler_example/ifplugin"
+	"time"
 )
 
 func main() {
@@ -50,7 +51,7 @@ func (plugin *TapExamplePlugin) Init() error {
 
 // AfterInit sends an example TAP configuration to mock IfPlugin using localclient + scheduler.
 func (plugin *TapExamplePlugin) AfterInit() error {
-	plugin.testLocalClientWithScheduler()
+	go plugin.testLocalClientWithScheduler()
 	return nil
 }
 
@@ -109,6 +110,8 @@ func (plugin *TapExamplePlugin) testLocalClientWithScheduler() {
 		},
 	}
 
+	time.Sleep(time.Second*3)
+
 	// create TAP interface
 	txn := localclient.DataChangeRequest("example")
 	err := txn.Put().Interface(tap1).Send().ReceiveReply()
@@ -116,6 +119,8 @@ func (plugin *TapExamplePlugin) testLocalClientWithScheduler() {
 		fmt.Println(err)
 		return
 	}
+
+	time.Sleep(time.Second*3)
 
 	// Update TAP config without any change
 	err = txn.Put().Interface(tap1).Send().ReceiveReply()
@@ -133,12 +138,16 @@ func (plugin *TapExamplePlugin) testLocalClientWithScheduler() {
 		fmt.Printf("Interface %s has sw_if_index=%d\n", ifName, ifMeta.GetIndex())
 	}
 
+	time.Sleep(time.Second*3)
+
 	// change TAP MAC address
 	err = txn.Put().Interface(tap2).Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	time.Sleep(time.Second*3)
 
 	// Revert TAP MAC address
 	err = txn.Put().Interface(tap1).Send().ReceiveReply()
@@ -147,12 +156,16 @@ func (plugin *TapExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 
+	time.Sleep(time.Second*3)
+
 	// Change MAC address + TAP host name => requires re-create
 	err = txn.Put().Interface(tap3).Send().ReceiveReply() /* need to re-create */
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	time.Sleep(time.Second*3)
 
 	// Delete the TAP interface
 	err = txn.Delete().Interface(tap1.Name).Send().ReceiveReply()

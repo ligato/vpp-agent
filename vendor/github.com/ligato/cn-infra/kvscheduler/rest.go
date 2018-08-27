@@ -17,11 +17,11 @@ package kvscheduler
 import (
 	"net/http"
 	"time"
-	"fmt"
 	"errors"
 
 	"github.com/unrolled/render"
 	"github.com/ligato/cn-infra/rpc/rest"
+	"strings"
 )
 
 const (
@@ -52,6 +52,16 @@ const (
 	// graphSnapshotURL is URL used to obtain graph snapshot from a given point in time.
 	graphSnapshotURL = urlPrefix + "graph-snapshot"
 
+	// flagStatsURL is URL used to obtain flag statistics.
+	flagStatsURL = urlPrefix + "flag-stats"
+
+	// flagArg is the name of the argument used to define flag for "flag-stats" API.
+	flagArg = "flag"
+
+	// prefixArg is the name of the argument used to define prefix to filter keys
+	// for "flag-stats" API.
+	prefixArg = "prefix"
+
 	// time is the name of the argument used to define point in time for a graph snapshot
 	// to retrieve.
 	timeArg = "time"
@@ -69,6 +79,8 @@ func (scheduler *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	scheduler.Log.Infof("KVScheduler REST handler registered: GET %v", keyTimelineURL)
 	http.RegisterHTTPHandler(graphSnapshotURL, scheduler.graphSnapshotGetHandler, "GET")
 	scheduler.Log.Infof("KVScheduler REST handler registered: GET %v", graphSnapshotURL)
+	http.RegisterHTTPHandler(flagStatsURL, scheduler.flagStatsGetHandler, "GET")
+	scheduler.Log.Infof("KVScheduler REST handler registered: GET %v", flagStatsURL)
 }
 
 // txnHistoryGetHandler is the GET handler for "txn-history" API.
@@ -77,9 +89,8 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 		var since, until time.Time
 		var verbose bool
 		args := req.URL.Query()
-		fmt.Println(args)
 
-		// parse "verbose" argument
+		// parse optional *verbose* argument
 		if verboseStr, withVerbose := args[verboseArg]; withVerbose && len(verboseStr) == 1 {
 			verboseVal := verboseStr[0]
 			if verboseVal == "true" || verboseVal == "1" {
@@ -87,7 +98,7 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 			}
 		}
 
-		// parse *until* argument
+		// parse optional *until* argument
 		if untilStr, withUntil := args[untilArg]; withUntil && len(untilStr) == 1 {
 			var err error
 			until, err = stringToTime(untilStr[0])
@@ -97,7 +108,7 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 			}
 		}
 
-		// parse *since* argument
+		// parse optional *since* argument
 		if sinceStr, withSince := args[sinceArg]; withSince && len(sinceStr) == 1 {
 			var err error
 			since, err = stringToTime(sinceStr[0])
@@ -116,8 +127,8 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 func (scheduler *Scheduler) keyTimelineGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		args := req.URL.Query()
-		fmt.Println(args)
 
+		// parse mandatory *key* argument
 		if keys, withKey := args[keyArg]; withKey && len(keys) == 1 {
 			graphR := scheduler.graph.Read()
 			defer graphR.Release()
@@ -138,9 +149,8 @@ func (scheduler *Scheduler) graphSnapshotGetHandler(formatter *render.Render) ht
 	return func(w http.ResponseWriter, req *http.Request) {
 		timeVal := time.Now()
 		args := req.URL.Query()
-		fmt.Println(args)
 
-		// parse *time* argument
+		// parse optional *time* argument
 		if timeStr, withTime := args[timeArg]; withTime && len(timeStr) == 1 {
 			var err error
 			timeVal, err = stringToTime(timeStr[0])
@@ -155,5 +165,39 @@ func (scheduler *Scheduler) graphSnapshotGetHandler(formatter *render.Render) ht
 
 		snapshot := graphR.GetSnapshot(timeVal)
 		formatter.JSON(w, http.StatusOK, snapshot)
+	}
+}
+
+// flagStatsGetHandler is the GET handler for "flag-stats" API.
+func (scheduler *Scheduler) flagStatsGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		args := req.URL.Query()
+		var prefixes []string
+
+		// parse repeated *prefix* argument
+		prefixes, _ = args[prefixArg]
+
+		if flags, withFlag := args[flagArg]; withFlag && len(flags) == 1 {
+			graphR := scheduler.graph.Read()
+			defer graphR.Release()
+
+			stats := graphR.GetFlagStats(flags[0], func(key string) bool {
+				if len(prefixes) == 0 {
+					return true
+				}
+				for _, prefix := range prefixes {
+					if strings.HasPrefix(key, prefix) {
+						return true
+					}
+				}
+				return false
+			})
+			formatter.JSON(w, http.StatusOK, stats)
+			return
+		}
+
+		err := errors.New("missing flag argument")
+		formatter.JSON(w, http.StatusInternalServerError, err)
+		return
 	}
 }
