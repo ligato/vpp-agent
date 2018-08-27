@@ -751,8 +751,9 @@ func (c *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *nsplugin.Name
 	}
 	if !exists {
 		// already removed
-		c.ifIndexes.UnregisterName(vethName)
-		c.log.Debugf("obsolete veth %s does not exist, unregistered", vethName)
+		if _, _, exists := c.ifIndexes.UnregisterName(vethName); exists {
+			c.log.Debugf("obsolete veth %s does not exist, unregistered", vethName)
+		}
 		return nil
 	}
 	ifType, err := c.ifHandler.GetInterfaceType(hostIfName)
@@ -771,7 +772,7 @@ func (c *LinuxInterfaceConfigurator) removeObsoleteVeth(nsMgmtCtx *nsplugin.Name
 		return errors.Errorf("failed to remove obsolete veth %s: %v", vethName, err)
 	}
 	c.ifIndexes.UnregisterName(vethName)
-	c.log.Errorf("obsolete veth %s unregistered", vethName)
+	c.log.Debugf("obsolete veth %s unregistered", vethName)
 	return nil
 }
 
