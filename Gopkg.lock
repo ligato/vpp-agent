@@ -91,11 +91,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:85f4b0e48294ebfd3282f631a27c72e324c3b980e095fa254d34292bd182719d"
+  digest = "1:c3806bfe3d2c9baa0d4ebd90f0a59c7505969bcaab024b5185d20ccd66c9400c"
   name = "github.com/buger/goterm"
   packages = ["."]
   pruneopts = "UT"
-  revision = "ef0fa5b75d0fa2b31323463783a6e90353771116"
+  revision = "6d19e6a8df12fdfc44a90a24b677a6d04a80b91f"
 
 [[projects]]
   branch = "master"
