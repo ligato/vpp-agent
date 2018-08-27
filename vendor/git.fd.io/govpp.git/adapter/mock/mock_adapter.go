@@ -90,8 +90,15 @@ const (
 )
 
 // NewVppAdapter returns a new mock adapter.
-func NewVppAdapter() adapter.VppAdapter {
-	return &VppAdapter{}
+func NewVppAdapter() *VppAdapter {
+	a := &VppAdapter{
+		msgIDsToName: make(map[uint16]string),
+		msgNameToIds: make(map[string]uint16),
+		msgIDSeq:     1000,
+		binAPITypes:  make(map[string]reflect.Type),
+	}
+	a.registerBinAPITypes()
+	return a
 }
 
 // Connect emulates connecting the process to VPP.
@@ -119,21 +126,16 @@ func (a *VppAdapter) GetMsgNameByID(msgID uint16) (string, bool) {
 
 	a.access.Lock()
 	defer a.access.Unlock()
-	a.initMaps()
 	msgName, found := a.msgIDsToName[msgID]
 
 	return msgName, found
 }
 
-// RegisterBinAPITypes registers binary API message types in the mock adapter.
-func (a *VppAdapter) RegisterBinAPITypes(binAPITypes map[string]reflect.Type) {
+func (a *VppAdapter) registerBinAPITypes() {
 	a.access.Lock()
 	defer a.access.Unlock()
-	a.initMaps()
-	for _, v := range binAPITypes {
-		if msg, ok := reflect.New(v).Interface().(api.Message); ok {
-			a.binAPITypes[msg.GetMessageName()] = v
-		}
+	for _, msg := range api.GetAllMessages() {
+		a.binAPITypes[msg.GetMessageName()] = reflect.TypeOf(msg).Elem()
 	}
 }
 
@@ -177,8 +179,17 @@ func (a *VppAdapter) ReplyBytes(request MessageDTO, reply api.Message) ([]byte, 
 	log.Println("ReplyBytes ", replyMsgID, " ", reply.GetMessageName(), " clientId: ", request.ClientID)
 
 	buf := new(bytes.Buffer)
-	struc.Pack(buf, &codec.VppReplyHeader{VlMsgID: replyMsgID, Context: request.ClientID})
-	struc.Pack(buf, reply)
+	err = struc.Pack(buf, &codec.VppReplyHeader{
+		VlMsgID: replyMsgID,
+		Context: request.ClientID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = struc.Pack(buf, reply)
+	if err != nil {
+		return nil, err
+	}
 
 	return buf.Bytes(), nil
 }
@@ -198,7 +209,6 @@ func (a *VppAdapter) GetMsgID(msgName string, msgCrc string) (uint16, error) {
 
 	a.access.Lock()
 	defer a.access.Unlock()
-	a.initMaps()
 
 	msgID, found := a.msgNameToIds[msgName]
 	if found {
@@ -213,24 +223,10 @@ func (a *VppAdapter) GetMsgID(msgName string, msgCrc string) (uint16, error) {
 	return msgID, nil
 }
 
-// initMaps initializes internal maps (if not already initialized).
-func (a *VppAdapter) initMaps() {
-	if a.msgIDsToName == nil {
-		a.msgIDsToName = map[uint16]string{}
-		a.msgNameToIds = map[string]uint16{}
-		a.msgIDSeq = 1000
-	}
-
-	if a.binAPITypes == nil {
-		a.binAPITypes = map[string]reflect.Type{}
-	}
-}
-
 // SendMsg emulates sending a binary-encoded message to VPP.
 func (a *VppAdapter) SendMsg(clientID uint32, data []byte) error {
 	switch a.mode {
 	case useReplyHandlers:
-		a.initMaps()
 		for i := len(a.replyHandlers) - 1; i >= 0; i-- {
 			replyHandler := a.replyHandlers[i]
 
