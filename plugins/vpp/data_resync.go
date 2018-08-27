@@ -262,7 +262,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(srv6.BasePrefix()) {
 		if err := plugin.srv6Configurator.Resync(req.LocalSids, req.SrPolicies, req.SrPolicySegments, req.SrSteerings); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.srv6Configurator.LogError(err))
 		}
 	}
 	// log errors if any
