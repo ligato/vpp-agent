@@ -15,56 +15,48 @@
 package l4plugin
 
 import (
+	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 )
 
 // ResyncAppNs configures app namespaces to the empty VPP
-func (plugin *AppNsConfigurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppNamespace) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC application namespaces begin. ")
-
-	// Calculate and log application namespaces resync
+func (c *AppNsConfigurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppNamespace) error {
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	plugin.clearMapping()
+	c.clearMapping()
 
-	var wasError error
 	if len(appNamespaces) > 0 {
 		for _, appNs := range appNamespaces {
-			if err := plugin.ConfigureAppNamespace(appNs); err != nil {
-				plugin.log.Error(err)
-				wasError = err
+			if err := c.ConfigureAppNamespace(appNs); err != nil {
+				return errors.Errorf("app-ns resync error: failed to configure application namespace %s: %v",
+					appNs.NamespaceId, err)
 			}
 		}
 	}
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC application namespaces end.")
+	c.log.Info("Application namespace resync done.")
 
-	return wasError
+	return nil
 }
 
-// ResyncFeatures sets initital L4Features flag
-func (plugin *AppNsConfigurator) ResyncFeatures(l4Features *l4.L4Features) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC L4Features begin. ")
-
-	// Calculate and log L4Features resync
+// ResyncFeatures sets initial L4Features flag
+func (c *AppNsConfigurator) ResyncFeatures(l4Features *l4.L4Features) error {
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
-	var wasError error
 	if l4Features != nil {
-		if err := plugin.ConfigureL4FeatureFlag(l4Features); err != nil {
-			plugin.log.Error(err)
-			wasError = err
+		if err := c.ConfigureL4FeatureFlag(l4Features); err != nil {
+			return errors.Errorf("app-ns resync error: failed to configure L4: %v", err)
 		}
 	}
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC L4Features end.")
+	c.log.Info("L4 features resync done.")
 
-	return wasError
+	return nil
 }
