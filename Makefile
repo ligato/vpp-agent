@@ -100,7 +100,7 @@ generate: generate-proto generate-binapi
 
 # Get generator tools
 get-proto-generators:
-	go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+	go get github.com/gogo/protobuf/protoc-gen-gogo
 
 # Generate proto models
 generate-proto: get-proto-generators
@@ -118,8 +118,8 @@ generate-proto: get-proto-generators
 
 # Get generator tools
 get-binapi-generators:
-	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
-	go install ./vendor/github.com/ungerik/pkgreflect
+	go get github.com/FDio/govpp/cmd/binapi-generator
+	go get github.com/ungerik/pkgreflect
 
 # Generate binary api
 generate-binapi: get-binapi-generators
@@ -154,8 +154,8 @@ verify-binapi:
 		--target verify-stage .
 
 get-bindata:
-	go get -v github.com/jteeuwen/go-bindata/...
-	go get -v github.com/elazarl/go-bindata-assetfs/...
+	go get github.com/jteeuwen/go-bindata/...
+	go get github.com/elazarl/go-bindata-assetfs/...
 
 bindata: get-bindata
 	cd plugins/restplugin && go generate

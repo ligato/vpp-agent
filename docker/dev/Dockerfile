@@ -21,7 +21,6 @@ RUN /opt/genjsonapi.sh
 WORKDIR /go/src/github.com/ligato/vpp-agent
 
 COPY plugins/vpp/binapi plugins/vpp/binapi
-COPY vendor vendor
 COPY Makefile vpp.env ./
 
 RUN cp -r plugins/vpp/binapi /tmp/orig_binapi \

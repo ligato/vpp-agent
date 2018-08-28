@@ -36,11 +36,11 @@ before_install:
 script:
   - make yamllint
   - make check-links || true
-  - go mod verify
-  - make lint
+  - env GO111MODULE=on go mod verify
+  - env GO111MODULE=on make lint
   - make verify-binapi
-  - make test-cover
-  - make
+  - env GO111MODULE=on make test-cover
+  - env GO111MODULE=on make
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
