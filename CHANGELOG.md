@@ -19,18 +19,21 @@
 ## New Features
 - [rest plugin](plugins/rest)
   * All VPP configuration types are now supported to be dumped using REST. Output consists from two parts;
-  data formatted as NB proto model, and metadata with VPP specific configuration (interface indexes, different
-  counters, etc.).
+    data formatted as NB proto model, and metadata with VPP specific configuration (interface indexes, different
+    counters, etc.).
   * REST prefix was changed. The new URL now contains API version and purpose (dump, put). The list of all 
-  URLs can be found in the [readme](plugins/rest/README.md)
+    URLs can be found in the [readme](plugins/rest/README.md)
 - [ifplugin](plugins/vpp/ifplugin)
   * Added support for NAT virtual reassembly for both, IPv4 and IPv6. See change in 
-  [nat proto file](plugins/vpp/model/nat/nat.proto)
+    [nat proto file](plugins/vpp/model/nat/nat.proto)
 - [l3plugin](plugins/vpp/l3plugin)
   * Vpp-agent now knows about DROP-type routes. They can be configured and also dumped. VPP default routes, which are
-  DROP-type are recognized and registered. Currently, resync does not remove or correlate such a route type 
-  automatically, so no default routes are unintentionally removed.
-  * New configurator for L3 IP scan neighbor was added, allowing to set/unset IP scan neigh parameters to the VPP.   
+    DROP-type are recognized and registered. Currently, resync does not remove or correlate such a route type 
+    automatically, so no default routes are unintentionally removed.
+  * New configurator for L3 IP scan neighbor was added, allowing to set/unset IP scan neigh parameters to the VPP.
+  
+## Docker Images
+- using Ubuntu 18.04 as base image
   
 ## Improvements
 - [vpp plugins](plugins/vpp)
