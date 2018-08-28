@@ -167,7 +167,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(acl.Prefix) {
 		if err := plugin.aclConfigurator.Resync(req.ACLs); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.aclConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(bfd.AuthKeysPrefix) {
@@ -187,7 +187,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l2.BdPrefix) {
 		if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l2.FibPrefix) {
@@ -197,7 +197,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l2.XConnectPrefix) {
 		if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.xcConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.RoutesPrefix) {
@@ -257,7 +257,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(ipsec.KeyPrefix) {
 		if err := plugin.ipSecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.ipSecConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(srv6.BasePrefix()) {

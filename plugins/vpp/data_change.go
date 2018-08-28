@@ -382,12 +382,15 @@ func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevV
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.aclConfigurator.DeleteACL(prevValue)
+		err = plugin.aclConfigurator.DeleteACL(prevValue)
 	} else if diff {
-		return plugin.aclConfigurator.ModifyACL(prevValue, value)
+		err = plugin.aclConfigurator.ModifyACL(prevValue, value)
+	} else {
+		err = plugin.aclConfigurator.ConfigureACL(value)
 	}
-	return plugin.aclConfigurator.ConfigureACL(value)
+	return plugin.aclConfigurator.LogError(err)
 }
 
 // DataChangeIface propagates data change to the ifConfigurator.
@@ -459,12 +462,15 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBD ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bdConfigurator.DeleteBridgeDomain(prevValue)
+		err = plugin.bdConfigurator.DeleteBridgeDomain(prevValue)
 	} else if diff {
-		return plugin.bdConfigurator.ModifyBridgeDomain(value, prevValue)
+		err = plugin.bdConfigurator.ModifyBridgeDomain(value, prevValue)
+	} else {
+		err = plugin.bdConfigurator.ConfigureBridgeDomain(value)
 	}
-	return plugin.bdConfigurator.ConfigureBridgeDomain(value)
+	return plugin.bdConfigurator.LogError(err)
 }
 
 // dataChangeFIB propagates data change to the fibConfigurator.
@@ -485,13 +491,15 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeXCon ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.xcConfigurator.DeleteXConnectPair(prevValue)
+		err = plugin.xcConfigurator.DeleteXConnectPair(prevValue)
 	} else if diff {
-		return plugin.xcConfigurator.ModifyXConnectPair(value, prevValue)
+		err = plugin.xcConfigurator.ModifyXConnectPair(value, prevValue)
+	} else {
+		err = plugin.xcConfigurator.ConfigureXConnectPair(value)
 	}
-	return plugin.xcConfigurator.ConfigureXConnectPair(value)
-
+	return plugin.xcConfigurator.LogError(err)
 }
 
 // DataChangeStaticRoute propagates data change to the routeConfigurator.
@@ -667,24 +675,30 @@ func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_
 func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.SecurityPolicyDatabases_SPD, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipSecConfigurator.DeleteSPD(prevValue)
+		err = plugin.ipSecConfigurator.DeleteSPD(prevValue)
 	} else if diff {
-		return plugin.ipSecConfigurator.ModifySPD(prevValue, value)
+		err = plugin.ipSecConfigurator.ModifySPD(prevValue, value)
+	} else {
+		err = plugin.ipSecConfigurator.ConfigureSPD(value)
 	}
-	return plugin.ipSecConfigurator.ConfigureSPD(value)
+	return plugin.ipSecConfigurator.LogError(err)
 }
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
 func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipSecConfigurator.DeleteSA(prevValue)
+		err = plugin.ipSecConfigurator.DeleteSA(prevValue)
 	} else if diff {
-		return plugin.ipSecConfigurator.ModifySA(prevValue, value)
+		err = plugin.ipSecConfigurator.ModifySA(prevValue, value)
+	} else {
+		err = plugin.ipSecConfigurator.ConfigureSA(value)
 	}
-	return plugin.ipSecConfigurator.ConfigureSA(value)
+	return plugin.ipSecConfigurator.LogError(err)
 }
 
 // dataChangeIPSecTunnel propagates data change to the IPSec configurator

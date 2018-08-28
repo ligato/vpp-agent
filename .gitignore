@@ -31,3 +31,6 @@
 
 # vpp directory
 /vpp/
+
+# exclude vendor
+!/vendor/**/*

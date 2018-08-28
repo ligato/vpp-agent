@@ -471,7 +471,7 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 	// IPSec configurator
 	plugin.ipSecConfigurator = &ipsecplugin.IPSecConfigurator{}
 	if err = plugin.ipSecConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.ipSecConfigurator.LogError(err)
 	}
 
 	plugin.Log.Debug("ipSecConfigurator Initialized")
@@ -485,7 +485,7 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{}
 	err := plugin.aclConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch)
 	if err != nil {
-		return err
+		return plugin.aclConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("aclConfigurator Initialized")
 
@@ -500,7 +500,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{}
 	err := plugin.bdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdVppNotifChan, plugin.enableStopwatch)
 	if err != nil {
-		return err
+		return plugin.bdConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("bdConfigurator Initialized")
 
@@ -518,20 +518,20 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 				plugin.Log.Debug("Unable to send to the bdState channel: buffer is full.")
 			}
 		}); err != nil {
-		return err
+		return plugin.bdStateUpdater.LogError(err)
 	}
 
 	// L2 FIB configurator
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{}
 	if err := plugin.fibConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.fibConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("fibConfigurator Initialized")
 
 	// L2 cross connect
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{}
 	if err := plugin.xcConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.xcConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("xcConfigurator Initialized")
 
