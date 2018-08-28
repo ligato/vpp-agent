@@ -216,7 +216,7 @@ ProxyArpIfLoop:
 
 	// Un-register
 	c.pArpIfIndexes.UnregisterName(pArpIf.Label)
-	c.log.Debugf("Proxy ARP interface config %s un-registered", pArpIf.Label)
+	c.log.Debugf("Proxy ARP interface config %s unregistered", pArpIf.Label)
 
 	c.log.Infof("Disabling interfaces from proxy ARP config %s", pArpIf.Label)
 
@@ -324,7 +324,7 @@ func (c *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_RangeList)
 
 	// Un-register
 	c.pArpRngIndexes.UnregisterName(pArpRng.Label)
-	c.log.Debugf("Proxy ARP range config %s un-registered", pArpRng.Label)
+	c.log.Debugf("Proxy ARP range config %s unregistered", pArpRng.Label)
 
 	c.log.Infof("Proxy ARP IP range config %s removed", pArpRng.Label)
 
@@ -342,7 +342,7 @@ func (c *ProxyArpConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint
 			}
 			// Remove from cache
 			c.pArpIfCache = append(c.pArpIfCache[:idx], c.pArpIfCache[idx+1:]...)
-			c.log.Debugf("Registered interface %s configured fir Proxy ARP and removed from cache", ifName)
+			c.log.Debugf("Registered interface %s configured for Proxy ARP and removed from cache", ifName)
 			return nil
 		}
 	}

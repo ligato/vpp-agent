@@ -150,7 +150,7 @@ func (c *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error {
 				if err := c.DeleteRoute(route, fmt.Sprintf("%d", route.VrfId)); err != nil {
 					return errors.Errorf("VPP route resync error: failed to remove route %s: %v", routeID, err)
 				}
-				c.log.Debugf("RESYNC routes: vpp route %s removed", routeID)
+				c.log.Debugf("VPP route resync: vpp route %s removed", routeID)
 			}
 		}
 	}
@@ -174,7 +174,6 @@ func routeMayBeRemoved(route *vppcalls.RouteDetails) bool {
 
 // Resync confgures the empty VPP (overwrites the arp entries)
 func (c *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error {
-	c.log.WithField("cfg", c).Debug("RESYNC arp begin. ")
 	// Calculate and log arp resync
 	defer func() {
 		if c.stopwatch != nil {
