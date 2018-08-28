@@ -31,17 +31,16 @@ before_install:
   - make travis
   - make get-linkcheck
   - make get-linters
-  - make get-dep
   - go get github.com/mattn/goveralls
 
 script:
   - make yamllint
   - make check-links || true
+  - go mod verify
   - make lint
-  - make dep-check
   - make verify-binapi
-  - make
   - make test-cover
+  - make
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci

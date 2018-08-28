@@ -160,26 +160,6 @@ get-bindata:
 bindata: get-bindata
 	cd plugins/restplugin && go generate
 
-# Get dependency manager tool
-get-dep:
-	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-	dep version
-
-# Install the project's dependencies
-dep-install: get-dep
-	@echo "=> installing project's dependencies"
-	dep ensure -v
-
-# Update the locked versions of all dependencies
-dep-update: get-dep
-	@echo "=> updating all dependencies"
-	dep ensure -update
-
-# Check state of dependencies
-dep-check: get-dep
-	@echo "=> checking dependencies"
-	dep check
-
 LINTER := $(shell command -v gometalinter 2> /dev/null)
 
 # Get linter tools

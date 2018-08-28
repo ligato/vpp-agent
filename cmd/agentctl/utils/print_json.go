@@ -24,7 +24,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
-	"github.com/logrusorgru/aurora.git"
+	"github.com/logrusorgru/aurora"
 )
 
 const (

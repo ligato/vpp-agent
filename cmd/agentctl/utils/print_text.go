@@ -25,7 +25,7 @@ import (
 
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/logrusorgru/aurora.git"
+	"github.com/logrusorgru/aurora"
 )
 
 const perLevelSpaces = 3
