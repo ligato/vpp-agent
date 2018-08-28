@@ -9,13 +9,13 @@ data:
     endpoints:
      - "172.17.0.1:22379"
   sfc.conf: |
-    sfc_controller_config_version: 1
+    sfc_controller_config_version: 2
     description: Basic restarts topology
 
-    host_entities:
-    - name: agent_vpp_vswitch
+    network_nodes:
+    - metadata:
+        name: agent_vpp_vswitch
 
-    sfc_entities:
 ---
 apiVersion: v1
 kind: Pod
@@ -24,7 +24,7 @@ metadata:
 spec:
   containers:
     - name: "sfc-controller"
-      image: ligato/prod_sfc_controller:latest
+      image: ligato/dev_sfc_controller:latest
       imagePullPolicy: IfNotPresent
       securityContext:
         privileged: true

@@ -118,7 +118,7 @@ func TestBridgeDomainStateUpdater_watchVppNotificationsZeroNoName(t *testing.T) 
 
 	var notif *l2plugin.BridgeDomainStateNotification
 
-	Eventually(publishChan).Should(Receive(&notif))
+	Eventually(publishChan).ShouldNot(Receive(&notif))
 }
 
 // Tests notification processing in bridge domain state updater

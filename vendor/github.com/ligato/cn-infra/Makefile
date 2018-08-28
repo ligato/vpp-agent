@@ -98,7 +98,8 @@ test-cover-xml: test-cover
 
 # Get dependency manager tool
 get-dep:
-	go get -v github.com/golang/dep/cmd/dep
+	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+	dep version
 
 # Install the project's dependencies
 dep-install: get-dep
@@ -107,6 +108,11 @@ dep-install: get-dep
 # Update the locked versions of all dependencies
 dep-update: get-dep
 	dep ensure -update
+
+# Check state of dependencies
+dep-check: get-dep
+	@echo "=> checking dependencies"
+	dep check
 
 LINTER := $(shell command -v gometalinter 2> /dev/null)
 
@@ -143,9 +149,19 @@ check-links: get-linkcheck
 	@echo "=> checking links"
 	./scripts/check_links.sh
 
+# Install yamllint
+get-yamllint:
+	pip install --user yamllint
+
+# Lint the yaml files
+yamllint: get-yamllint
+	@echo "=> linting the yaml files"
+	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
+
 .PHONY: build clean \
 	examples examples-plugin clean-examples clean-examples-plugin test test-examples \
 	test-cover test-cover-html test-cover-xml \
 	get-dep dep-install dep-update \
 	get-linters lint format \
-	get-linkcheck check-links
+	get-linkcheck check-links \
+	get-yamllint yamllint

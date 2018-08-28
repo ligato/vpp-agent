@@ -147,38 +147,78 @@ func (plugin *Plugin) onChangeEvent(e datasync.ChangeEvent) {
 func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 	if !e.IsDelete() {
 		// Keep order.
-		plugin.aclConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.arpConfigurator.ResolveCreatedInterface(e.Name)
-		plugin.proxyArpConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.bdConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		if err := plugin.aclConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.aclConfigurator.LogError(err)
+		}
+		if err := plugin.arpConfigurator.ResolveCreatedInterface(e.Name); err != nil {
+			plugin.arpConfigurator.LogError(err)
+		}
+		if err := plugin.proxyArpConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.proxyArpConfigurator.LogError(err)
+		}
+		if err := plugin.bdConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.bdConfigurator.LogError(err)
+		}
 		plugin.fibConfigurator.ResolveCreatedInterface(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
-		plugin.xcConfigurator.ResolveCreatedInterface(e.Name)
-		plugin.appNsConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.stnConfigurator.ResolveCreatedInterface(e.Name)
-		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.ipSecConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		if err := plugin.xcConfigurator.ResolveCreatedInterface(e.Name); err != nil {
+			plugin.xcConfigurator.LogError(err)
+		}
+		if err := plugin.appNsConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.appNsConfigurator.LogError(err)
+		}
+		if err := plugin.stnConfigurator.ResolveCreatedInterface(e.Name); err != nil {
+			plugin.stnConfigurator.LogError(err)
+		}
+		if err := plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.routeConfigurator.LogError(err)
+		}
+		if err := plugin.natConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.natConfigurator.LogError(err)
+		}
+		if err := plugin.ipSecConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.ipSecConfigurator.LogError(err)
+		}
 		// TODO propagate error
 	} else {
-		plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.proxyArpConfigurator.ResolveDeletedInterface(e.Name)
-		plugin.bdConfigurator.ResolveDeletedInterface(e.Name) // TODO: e.Idx to not process data events
+		if err := plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.aclConfigurator.LogError(err)
+		}
+		if err := plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.arpConfigurator.LogError(err)
+		}
+		if err := plugin.proxyArpConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.proxyArpConfigurator.LogError(err)
+		}
+		if err := plugin.bdConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.bdConfigurator.LogError(err)
+		}
 		plugin.fibConfigurator.ResolveDeletedInterface(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
-		plugin.xcConfigurator.ResolveDeletedInterface(e.Name)
-		plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.stnConfigurator.ResolveDeletedInterface(e.Name)
-		plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.ipSecConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		if err := plugin.xcConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.xcConfigurator.LogError(err)
+		}
+		if err := plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.appNsConfigurator.LogError(err)
+		}
+		if err := plugin.stnConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.stnConfigurator.LogError(err)
+		}
+		if err := plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.routeConfigurator.LogError(err)
+		}
+		if err := plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.natConfigurator.LogError(err)
+		}
+		if err := plugin.ipSecConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.ipSecConfigurator.LogError(err)
+		}
 		// TODO propagate error
 	}
 	e.Done()
@@ -189,13 +229,13 @@ func (plugin *Plugin) onLinuxIfaceEvent(e linux_ifaceidx.LinuxIfIndexDto) {
 	if e.Metadata != nil && e.Metadata.Data != nil && e.Metadata.Data.HostIfName != "" {
 		hostIfName = e.Metadata.Data.HostIfName
 	}
+	var err error
 	if !e.IsDelete() {
-		plugin.ifConfigurator.ResolveCreatedLinuxInterface(e.Name, hostIfName, e.Idx)
-		// TODO propagate error
+		err = plugin.ifConfigurator.ResolveCreatedLinuxInterface(e.Name, hostIfName, e.Idx)
 	} else {
-		plugin.ifConfigurator.ResolveDeletedLinuxInterface(e.Name, hostIfName, e.Idx)
-		// TODO propagate error
+		err = plugin.ifConfigurator.ResolveDeletedLinuxInterface(e.Name, hostIfName, e.Idx)
 	}
+	plugin.ifConfigurator.LogError(err)
 	e.Done()
 }
 
@@ -203,21 +243,21 @@ func (plugin *Plugin) onVppBdEvent(e l2idx.BdChangeDto) {
 	if e.IsDelete() {
 		plugin.fibConfigurator.ResolveDeletedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
 		// TODO propagate error
 	} else if e.IsUpdate() {
 		plugin.fibConfigurator.ResolveUpdatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
 		// TODO propagate error
 	} else {
 		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
 		// TODO propagate error

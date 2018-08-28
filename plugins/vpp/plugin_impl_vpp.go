@@ -417,7 +417,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.ifConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
 
@@ -428,35 +428,37 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
-	plugin.ifStateUpdater.Init(ctx, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
+	if err := plugin.ifStateUpdater.Init(ctx, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
 		select {
 		case plugin.ifStateChan <- state:
 			// OK
 		default:
 			plugin.Log.Debug("Unable to send to the ifStateNotifications channel - channel buffer full.")
 		}
-	})
+	}); err != nil {
+		return plugin.ifStateUpdater.LogError(err)
+	}
 
 	plugin.Log.Debug("ifStateUpdater Initialized")
 
 	// BFD configurator
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
 	if err := plugin.bfdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.bfdConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
 	// STN configurator
 	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
 	if err := plugin.stnConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.stnConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT configurator
 	plugin.natConfigurator = &ifplugin.NatConfigurator{}
 	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.natConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("natConfigurator Initialized")
 
@@ -469,7 +471,7 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 	// IPSec configurator
 	plugin.ipSecConfigurator = &ipsecplugin.IPSecConfigurator{}
 	if err = plugin.ipSecConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.ipSecConfigurator.LogError(err)
 	}
 
 	plugin.Log.Debug("ipSecConfigurator Initialized")
@@ -483,7 +485,7 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{}
 	err := plugin.aclConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch)
 	if err != nil {
-		return err
+		return plugin.aclConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("aclConfigurator Initialized")
 
@@ -498,7 +500,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{}
 	err := plugin.bdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdVppNotifChan, plugin.enableStopwatch)
 	if err != nil {
-		return err
+		return plugin.bdConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("bdConfigurator Initialized")
 
@@ -516,20 +518,20 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 				plugin.Log.Debug("Unable to send to the bdState channel: buffer is full.")
 			}
 		}); err != nil {
-		return err
+		return plugin.bdStateUpdater.LogError(err)
 	}
 
 	// L2 FIB configurator
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{}
 	if err := plugin.fibConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.fibConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("fibConfigurator Initialized")
 
 	// L2 cross connect
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{}
 	if err := plugin.xcConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.xcConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("xcConfigurator Initialized")
 
@@ -542,28 +544,28 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 	// ARP configurator
 	plugin.arpConfigurator = &l3plugin.ArpConfigurator{}
 	if err := plugin.arpConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.arpConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
 
 	// Proxy ARP configurator
 	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{}
 	if err := plugin.proxyArpConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.proxyArpConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("proxyArpConfigurator Initialized")
 
 	// Route configurator
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{}
 	if err := plugin.routeConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.routeConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("routeConfigurator Initialized")
 
 	// IP neighbor configurator
 	plugin.ipNeighConfigurator = &l3plugin.IPNeighConfigurator{}
 	if err := plugin.ipNeighConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.ipNeighConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("ipNeighConfigurator Initialized")
 
@@ -576,7 +578,7 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 	// Application namespace configurator
 	plugin.appNsConfigurator = &l4plugin.AppNsConfigurator{}
 	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.appNsConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("l4Configurator Initialized")
 

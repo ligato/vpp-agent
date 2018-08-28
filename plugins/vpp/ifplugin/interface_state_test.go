@@ -63,6 +63,10 @@ func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwI
 	connection, err := govpp.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
+	// Prepare Init VPP replies
+	mockCtx.MockVpp.MockReply(&interfaces.WantInterfaceEventsReply{})
+	mockCtx.MockVpp.MockReply(&stats.WantStatsReply{})
+
 	// Create plugin logger
 	pluginLogger := logging.ForPlugin("testname")
 

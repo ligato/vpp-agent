@@ -382,12 +382,15 @@ func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevV
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.aclConfigurator.DeleteACL(prevValue)
+		err = plugin.aclConfigurator.DeleteACL(prevValue)
 	} else if diff {
-		return plugin.aclConfigurator.ModifyACL(prevValue, value)
+		err = plugin.aclConfigurator.ModifyACL(prevValue, value)
+	} else {
+		err = plugin.aclConfigurator.ConfigureACL(value)
 	}
-	return plugin.aclConfigurator.ConfigureACL(value)
+	return plugin.aclConfigurator.LogError(err)
 }
 
 // DataChangeIface propagates data change to the ifConfigurator.
@@ -395,12 +398,15 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.Interfaces_In
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ifConfigurator.DeleteVPPInterface(prevValue)
+		err = plugin.ifConfigurator.DeleteVPPInterface(prevValue)
 	} else if diff {
-		return plugin.ifConfigurator.ModifyVPPInterface(value, prevValue)
+		err = plugin.ifConfigurator.ModifyVPPInterface(value, prevValue)
+	} else {
+		err = plugin.ifConfigurator.ConfigureVPPInterface(value)
 	}
-	return plugin.ifConfigurator.ConfigureVPPInterface(value)
+	return plugin.ifConfigurator.LogError(err)
 }
 
 // DataChangeBfdSession propagates data change to the bfdConfigurator.
@@ -408,12 +414,15 @@ func (plugin *Plugin) dataChangeBfdSession(diff bool, value *bfd.SingleHopBFD_Se
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdSession ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bfdConfigurator.DeleteBfdSession(prevValue)
+		err = plugin.bfdConfigurator.DeleteBfdSession(prevValue)
 	} else if diff {
-		return plugin.bfdConfigurator.ModifyBfdSession(prevValue, value)
+		err = plugin.bfdConfigurator.ModifyBfdSession(prevValue, value)
+	} else {
+		err = plugin.bfdConfigurator.ConfigureBfdSession(value)
 	}
-	return plugin.bfdConfigurator.ConfigureBfdSession(value)
+	return plugin.bfdConfigurator.LogError(err)
 }
 
 // DataChangeBfdKey propagates data change to the bfdConfigurator.
@@ -421,12 +430,15 @@ func (plugin *Plugin) dataChangeBfdKey(diff bool, value *bfd.SingleHopBFD_Key, p
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdKey ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bfdConfigurator.DeleteBfdAuthKey(prevValue)
+		err = plugin.bfdConfigurator.DeleteBfdAuthKey(prevValue)
 	} else if diff {
-		return plugin.bfdConfigurator.ModifyBfdAuthKey(prevValue, value)
+		err = plugin.bfdConfigurator.ModifyBfdAuthKey(prevValue, value)
+	} else {
+		err = plugin.bfdConfigurator.ConfigureBfdAuthKey(value)
 	}
-	return plugin.bfdConfigurator.ConfigureBfdAuthKey(value)
+	return plugin.bfdConfigurator.LogError(err)
 }
 
 // DataChangeBfdEchoFunction propagates data change to the bfdConfigurator.
@@ -434,12 +446,15 @@ func (plugin *Plugin) dataChangeBfdEchoFunction(diff bool, value *bfd.SingleHopB
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBfdEchoFunction ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bfdConfigurator.DeleteBfdEchoFunction(prevValue)
+		err = plugin.bfdConfigurator.DeleteBfdEchoFunction(prevValue)
 	} else if diff {
-		return plugin.bfdConfigurator.ModifyBfdEchoFunction(prevValue, value)
+		err = plugin.bfdConfigurator.ModifyBfdEchoFunction(prevValue, value)
+	} else {
+		err = plugin.bfdConfigurator.ConfigureBfdEchoFunction(value)
 	}
-	return plugin.bfdConfigurator.ConfigureBfdEchoFunction(value)
+	return plugin.bfdConfigurator.LogError(err)
 }
 
 // dataChangeBD propagates data change to the bdConfigurator.
@@ -447,12 +462,15 @@ func (plugin *Plugin) dataChangeBD(diff bool, value *l2.BridgeDomains_BridgeDoma
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeBD ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.bdConfigurator.DeleteBridgeDomain(prevValue)
+		err = plugin.bdConfigurator.DeleteBridgeDomain(prevValue)
 	} else if diff {
-		return plugin.bdConfigurator.ModifyBridgeDomain(value, prevValue)
+		err = plugin.bdConfigurator.ModifyBridgeDomain(value, prevValue)
+	} else {
+		err = plugin.bdConfigurator.ConfigureBridgeDomain(value)
 	}
-	return plugin.bdConfigurator.ConfigureBridgeDomain(value)
+	return plugin.bdConfigurator.LogError(err)
 }
 
 // dataChangeFIB propagates data change to the fibConfigurator.
@@ -473,13 +491,15 @@ func (plugin *Plugin) dataChangeXCon(diff bool, value *l2.XConnectPairs_XConnect
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeXCon ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.xcConfigurator.DeleteXConnectPair(prevValue)
+		err = plugin.xcConfigurator.DeleteXConnectPair(prevValue)
 	} else if diff {
-		return plugin.xcConfigurator.ModifyXConnectPair(value, prevValue)
+		err = plugin.xcConfigurator.ModifyXConnectPair(value, prevValue)
+	} else {
+		err = plugin.xcConfigurator.ConfigureXConnectPair(value)
 	}
-	return plugin.xcConfigurator.ConfigureXConnectPair(value)
-
+	return plugin.xcConfigurator.LogError(err)
 }
 
 // DataChangeStaticRoute propagates data change to the routeConfigurator.
@@ -487,12 +507,15 @@ func (plugin *Plugin) dataChangeStaticRoute(diff bool, value *l3.StaticRoutes_Ro
 	vrfFromKey string, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeStaticRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.routeConfigurator.DeleteRoute(prevValue, vrfFromKey)
+		err = plugin.routeConfigurator.DeleteRoute(prevValue, vrfFromKey)
 	} else if diff {
-		return plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
+		err = plugin.routeConfigurator.ModifyRoute(value, prevValue, vrfFromKey)
+	} else {
+		err = plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
 	}
-	return plugin.routeConfigurator.ConfigureRoute(value, vrfFromKey)
+	return plugin.routeConfigurator.LogError(err)
 }
 
 // dataChangeARP propagates data change to the arpConfigurator
@@ -500,12 +523,15 @@ func (plugin *Plugin) dataChangeARP(diff bool, value *l3.ArpTable_ArpEntry, prev
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeARP diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.arpConfigurator.DeleteArp(prevValue)
+		err = plugin.arpConfigurator.DeleteArp(prevValue)
 	} else if diff {
-		return plugin.arpConfigurator.ChangeArp(value, prevValue)
+		err = plugin.arpConfigurator.ChangeArp(value, prevValue)
+	} else {
+		err = plugin.arpConfigurator.AddArp(value)
 	}
-	return plugin.arpConfigurator.AddArp(value)
+	return plugin.arpConfigurator.LogError(err)
 }
 
 // dataChangeProxyARPInterface propagates data change to the arpConfigurator
@@ -513,12 +539,15 @@ func (plugin *Plugin) dataChangeProxyARPInterface(diff bool, value, prevValue *l
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeProxyARPInterface diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.proxyArpConfigurator.DeleteInterface(prevValue)
+		err = plugin.proxyArpConfigurator.DeleteInterface(prevValue)
 	} else if diff {
-		return plugin.proxyArpConfigurator.ModifyInterface(value, prevValue)
+		err = plugin.proxyArpConfigurator.ModifyInterface(value, prevValue)
+	} else {
+		err = plugin.proxyArpConfigurator.AddInterface(value)
 	}
-	return plugin.proxyArpConfigurator.AddInterface(value)
+	return plugin.proxyArpConfigurator.LogError(err)
 }
 
 // dataChangeProxyARPRange propagates data change to the arpConfigurator
@@ -526,22 +555,28 @@ func (plugin *Plugin) dataChangeProxyARPRange(diff bool, value, prevValue *l3.Pr
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeProxyARPRange diff=", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.proxyArpConfigurator.DeleteRange(prevValue)
+		err = plugin.proxyArpConfigurator.DeleteRange(prevValue)
 	} else if diff {
-		return plugin.proxyArpConfigurator.ModifyRange(value, prevValue)
+		err = plugin.proxyArpConfigurator.ModifyRange(value, prevValue)
+	} else {
+		err = plugin.proxyArpConfigurator.AddRange(value)
 	}
-	return plugin.proxyArpConfigurator.AddRange(value)
+	return plugin.proxyArpConfigurator.LogError(err)
 }
 
 // dataChangeIPScanNeigh propagates data change to the ipNeighConfigurator
 func (plugin *Plugin) dataChangeIPScanNeigh(value *l3.IPScanNeighbor,
 	changeType datasync.Op) error {
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipNeighConfigurator.Unset()
+		err = plugin.ipNeighConfigurator.Unset()
+	} else {
+		err = plugin.ipNeighConfigurator.Set(value)
 	}
-	return plugin.ipNeighConfigurator.Set(value)
+	return plugin.ipNeighConfigurator.LogError(err)
 }
 
 // DataChangeStaticRoute propagates data change to the l4Configurator
@@ -549,12 +584,15 @@ func (plugin *Plugin) dataChangeAppNamespace(diff bool, value *l4.AppNamespaces_
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeL4AppNamespace ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.appNsConfigurator.DeleteAppNamespace(prevValue)
+		err = plugin.appNsConfigurator.DeleteAppNamespace(prevValue)
 	} else if diff {
-		return plugin.appNsConfigurator.ModifyAppNamespace(value, prevValue)
+		err = plugin.appNsConfigurator.ModifyAppNamespace(value, prevValue)
+	} else {
+		err = plugin.appNsConfigurator.ConfigureAppNamespace(value)
 	}
-	return plugin.appNsConfigurator.ConfigureAppNamespace(value)
+	return plugin.appNsConfigurator.LogError(err)
 }
 
 // DataChangeL4Features propagates data change to the l4Configurator
@@ -564,82 +602,103 @@ func (plugin *Plugin) dataChangeL4Features(value *l4.L4Features, prevValue *l4.L
 
 	// diff and previous value is not important, features flag can be either set or not.
 	// If removed, it is always set to false
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.appNsConfigurator.DeleteL4FeatureFlag()
+		err = plugin.appNsConfigurator.DeleteL4FeatureFlag()
+	} else {
+		err = plugin.appNsConfigurator.ConfigureL4FeatureFlag(value)
 	}
-	return plugin.appNsConfigurator.ConfigureL4FeatureFlag(value)
+	return plugin.appNsConfigurator.LogError(err)
 }
 
 // DataChangeStnRule propagates data change to the stn configurator
 func (plugin *Plugin) dataChangeStnRule(diff bool, value *stn.STN_Rule, prevValue *stn.STN_Rule, changeType datasync.Op) error {
 	plugin.Log.Debug("stnRuleChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.stnConfigurator.Delete(prevValue)
+		err = plugin.stnConfigurator.Delete(prevValue)
 	} else if diff {
-		return plugin.stnConfigurator.Modify(prevValue, value)
+		err = plugin.stnConfigurator.Modify(prevValue, value)
+	} else {
+		err = plugin.stnConfigurator.Add(value)
 	}
-	return plugin.stnConfigurator.Add(value)
+	return plugin.stnConfigurator.LogError(err)
 }
 
 // dataChangeNatGlobal propagates data change to the nat configurator
 func (plugin *Plugin) dataChangeNatGlobal(diff bool, value, prevValue *nat.Nat44Global, changeType datasync.Op) error {
 	plugin.Log.Debug("natGlobalChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.natConfigurator.DeleteNatGlobalConfig(prevValue)
+		err = plugin.natConfigurator.DeleteNatGlobalConfig(prevValue)
 	} else if diff {
-		return plugin.natConfigurator.ModifyNatGlobalConfig(prevValue, value)
+		err = plugin.natConfigurator.ModifyNatGlobalConfig(prevValue, value)
+	} else {
+		err = plugin.natConfigurator.SetNatGlobalConfig(value)
 	}
-	return plugin.natConfigurator.SetNatGlobalConfig(value)
+	return plugin.natConfigurator.LogError(err)
 }
 
 // dataChangeSNat propagates data change to the nat configurator
 func (plugin *Plugin) dataChangeSNat(diff bool, value, prevValue *nat.Nat44SNat_SNatConfig, changeType datasync.Op) error {
 	plugin.Log.Debug("sNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.natConfigurator.DeleteSNat(prevValue)
+		err = plugin.natConfigurator.DeleteSNat(prevValue)
 	} else if diff {
-		return plugin.natConfigurator.ModifySNat(prevValue, value)
+		err = plugin.natConfigurator.ModifySNat(prevValue, value)
+	} else {
+		err = plugin.natConfigurator.ConfigureSNat(value)
 	}
-	return plugin.natConfigurator.ConfigureSNat(value)
+	return plugin.natConfigurator.LogError(err)
 }
 
 // dataChangeDNat propagates data change to the nat configurator
 func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_DNatConfig, changeType datasync.Op) error {
 	plugin.Log.Debug("dNatChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.natConfigurator.DeleteDNat(prevValue)
+		err = plugin.natConfigurator.DeleteDNat(prevValue)
 	} else if diff {
-		return plugin.natConfigurator.ModifyDNat(prevValue, value)
+		err = plugin.natConfigurator.ModifyDNat(prevValue, value)
+	} else {
+		err = plugin.natConfigurator.ConfigureDNat(value)
 	}
-	return plugin.natConfigurator.ConfigureDNat(value)
+	return plugin.natConfigurator.LogError(err)
 }
 
 // dataChangeIPSecSPD propagates data change to the IPSec configurator
 func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.SecurityPolicyDatabases_SPD, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipSecConfigurator.DeleteSPD(prevValue)
+		err = plugin.ipSecConfigurator.DeleteSPD(prevValue)
 	} else if diff {
-		return plugin.ipSecConfigurator.ModifySPD(prevValue, value)
+		err = plugin.ipSecConfigurator.ModifySPD(prevValue, value)
+	} else {
+		err = plugin.ipSecConfigurator.ConfigureSPD(value)
 	}
-	return plugin.ipSecConfigurator.ConfigureSPD(value)
+	return plugin.ipSecConfigurator.LogError(err)
 }
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
 func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipSecConfigurator.DeleteSA(prevValue)
+		err = plugin.ipSecConfigurator.DeleteSA(prevValue)
 	} else if diff {
-		return plugin.ipSecConfigurator.ModifySA(prevValue, value)
+		err = plugin.ipSecConfigurator.ModifySA(prevValue, value)
+	} else {
+		err = plugin.ipSecConfigurator.ConfigureSA(value)
 	}
-	return plugin.ipSecConfigurator.ConfigureSA(value)
+	return plugin.ipSecConfigurator.LogError(err)
 }
 
 // dataChangeIPSecTunnel propagates data change to the IPSec configurator
