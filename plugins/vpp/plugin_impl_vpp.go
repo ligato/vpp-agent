@@ -591,7 +591,7 @@ func (plugin *Plugin) initSR(ctx context.Context) (err error) {
 	// Init SR configurator
 	plugin.srv6Configurator = &srplugin.SRv6Configurator{}
 	if err := plugin.srv6Configurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch, nil); err != nil {
-		return err
+		return plugin.srv6Configurator.LogError(err)
 	}
 
 	plugin.Log.Debug("SRConfigurator Initialized")
