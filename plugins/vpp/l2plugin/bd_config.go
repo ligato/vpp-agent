@@ -151,7 +151,7 @@ func (c *BDConfigurator) ConfigureBridgeDomain(bdConfig *l2.BridgeDomains_Bridge
 		arpTable := bdConfig.ArpTerminationTable
 		for _, arpEntry := range arpTable {
 			if err := c.bdHandler.VppAddArpTerminationTableEntry(bdIdx, arpEntry.PhysAddress, arpEntry.IpAddress); err != nil {
-				return errors.Errorf("failed to add ARP termination table entry (MAC %s) to bridge domain %s",
+				return errors.Errorf("failed to add ARP termination table entry (MAC %v) to bridge domain %s: %v",
 					arpEntry.PhysAddress, bdConfig.Name, err)
 			}
 		}
@@ -357,7 +357,7 @@ func (c *BDConfigurator) ResolveDeletedInterface(ifName string) error {
 	// However, the etcd operational state and bridge domain metadata still needs to be updated to reflect changed VPP state.
 	configuredIfs, found := c.bdIndexes.LookupConfiguredIfsForBd(bd.Name)
 	if !found {
-		return errors.Errorf("unable to get list of configured interfaces for bridge domain", bd.Name)
+		return errors.Errorf("unable to get list of configured interfaces for bridge domain %v", bd.Name)
 	}
 	for i, configuredIf := range configuredIfs {
 		if configuredIf == ifName {

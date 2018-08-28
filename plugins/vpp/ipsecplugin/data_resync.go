@@ -15,8 +15,8 @@
 package ipsecplugin
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/go-errors/errors"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
 // Resync writes missing IPSec configs to the VPP and removes obsolete ones.
@@ -33,19 +33,19 @@ func (c *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sa
 
 	for _, sa := range sas {
 		if err := c.ConfigureSA(sa); err != nil {
-			return errors.Errorf("IPSec resync error: failed to configure SA %d: %v", sa.Name, err)
+			return errors.Errorf("IPSec resync error: failed to configure SA %v: %v", sa.Name, err)
 		}
 	}
 
 	for _, spd := range spds {
 		if err := c.ConfigureSPD(spd); err != nil {
-			return errors.Errorf("IPSec resync error: failed to configure SPD %d: %v", spd.Name, err)
+			return errors.Errorf("IPSec resync error: failed to configure SPD %v: %v", spd.Name, err)
 		}
 	}
 
 	for _, tunnel := range tunnels {
 		if err := c.ConfigureTunnel(tunnel); err != nil {
-			return errors.Errorf("IPSec resync error: failed to configure tunnel interface %d: %v", tunnel.Name, err)
+			return errors.Errorf("IPSec resync error: failed to configure tunnel interface %v: %v", tunnel.Name, err)
 		}
 	}
 

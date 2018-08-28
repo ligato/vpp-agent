@@ -121,7 +121,7 @@ func (c *XConnectConfigurator) ConfigureXConnectPair(xc *l2.XConnectPairs_XConne
 	}
 	// XConnect can be configured now
 	if err := c.xcHandler.AddL2XConnect(rxIfIdx, txIfIdx); err != nil {
-		return errors.Errorf("failed to add L2 XConnect %s-%s: %v", rxIfIdx, txIfIdx, err)
+		return errors.Errorf("failed to add L2 XConnect %v-%v: %v", rxIfIdx, txIfIdx, err)
 	}
 	// Unregister from 'del' cache in case it is present
 	c.xcDelCacheIndexes.UnregisterName(xc.ReceiveInterface)
@@ -214,7 +214,7 @@ func (c *XConnectConfigurator) DeleteXConnectPair(xc *l2.XConnectPairs_XConnectP
 	}
 	// XConnect can be removed now
 	if err := c.xcHandler.DeleteL2XConnect(rxIfIdx, txIfIdx); err != nil {
-		return errors.Errorf("failed to remove XConnect pair %s-%s: %v", rxIfIdx, txIfIdx, err)
+		return errors.Errorf("failed to remove XConnect pair %v-%v: %v", rxIfIdx, txIfIdx, err)
 	}
 	// Unregister
 	c.xcIndexes.UnregisterName(xc.ReceiveInterface)
