@@ -471,7 +471,7 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 	// IPSec configurator
 	plugin.ipSecConfigurator = &ipsecplugin.IPSecConfigurator{}
 	if err = plugin.ipSecConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.enableStopwatch); err != nil {
-		return err
+		return plugin.ipSecConfigurator.LogError(err)
 	}
 
 	plugin.Log.Debug("ipSecConfigurator Initialized")

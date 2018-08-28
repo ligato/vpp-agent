@@ -654,24 +654,30 @@ func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_
 func (plugin *Plugin) dataChangeIPSecSPD(diff bool, value, prevValue *ipsec.SecurityPolicyDatabases_SPD, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSPD diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipSecConfigurator.DeleteSPD(prevValue)
+		err = plugin.ipSecConfigurator.DeleteSPD(prevValue)
 	} else if diff {
-		return plugin.ipSecConfigurator.ModifySPD(prevValue, value)
+		err = plugin.ipSecConfigurator.ModifySPD(prevValue, value)
+	} else {
+		err = plugin.ipSecConfigurator.ConfigureSPD(value)
 	}
-	return plugin.ipSecConfigurator.ConfigureSPD(value)
+	return plugin.ipSecConfigurator.LogError(err)
 }
 
 // dataChangeIPSecSA propagates data change to the IPSec configurator
 func (plugin *Plugin) dataChangeIPSecSA(diff bool, value, prevValue *ipsec.SecurityAssociations_SA, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIPSecSA diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ipSecConfigurator.DeleteSA(prevValue)
+		err = plugin.ipSecConfigurator.DeleteSA(prevValue)
 	} else if diff {
-		return plugin.ipSecConfigurator.ModifySA(prevValue, value)
+		err = plugin.ipSecConfigurator.ModifySA(prevValue, value)
+	} else {
+		err = plugin.ipSecConfigurator.ConfigureSA(value)
 	}
-	return plugin.ipSecConfigurator.ConfigureSA(value)
+	return plugin.ipSecConfigurator.LogError(err)
 }
 
 // dataChangeIPSecTunnel propagates data change to the IPSec configurator

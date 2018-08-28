@@ -257,7 +257,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(ipsec.KeyPrefix) {
 		if err := plugin.ipSecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.ipSecConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(srv6.BasePrefix()) {
