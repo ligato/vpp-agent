@@ -150,13 +150,17 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		plugin.aclConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		plugin.arpConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.proxyArpConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.bdConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		if err := plugin.bdConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.bdConfigurator.LogError(err)
+		}
 		plugin.fibConfigurator.ResolveCreatedInterface(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
-		plugin.xcConfigurator.ResolveCreatedInterface(e.Name)
+		if err := plugin.xcConfigurator.ResolveCreatedInterface(e.Name); err != nil {
+			plugin.xcConfigurator.LogError(err)
+		}
 		plugin.appNsConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		if err := plugin.stnConfigurator.ResolveCreatedInterface(e.Name); err != nil {
 			plugin.stnConfigurator.LogError(err)
@@ -171,13 +175,17 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.proxyArpConfigurator.ResolveDeletedInterface(e.Name)
-		plugin.bdConfigurator.ResolveDeletedInterface(e.Name) // TODO: e.Idx to not process data events
+		if err := plugin.bdConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.bdConfigurator.LogError(err)
+		}
 		plugin.fibConfigurator.ResolveDeletedInterface(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
-		plugin.xcConfigurator.ResolveDeletedInterface(e.Name)
+		if err := plugin.xcConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.xcConfigurator.LogError(err)
+		}
 		plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		if err := plugin.stnConfigurator.ResolveDeletedInterface(e.Name); err != nil {
 			plugin.stnConfigurator.LogError(err)
@@ -211,21 +219,21 @@ func (plugin *Plugin) onVppBdEvent(e l2idx.BdChangeDto) {
 	if e.IsDelete() {
 		plugin.fibConfigurator.ResolveDeletedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
 		// TODO propagate error
 	} else if e.IsUpdate() {
 		plugin.fibConfigurator.ResolveUpdatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
 		// TODO propagate error
 	} else {
 		plugin.fibConfigurator.ResolveCreatedBridgeDomain(e.Name, e.Idx, func(err error) {
 			if err != nil {
-				plugin.Log.Error(err)
+				plugin.fibConfigurator.LogError(err)
 			}
 		})
 		// TODO propagate error

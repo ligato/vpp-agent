@@ -15,9 +15,8 @@
 package l2plugin
 
 import (
-	"fmt"
-
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -46,236 +45,243 @@ type XConnectConfigurator struct {
 }
 
 // Init essential configurator fields.
-func (plugin *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+func (c *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-xc-conf")
-	plugin.log.Info("Initializing L2 xConnect configurator")
+	c.log = logger.NewLogger("-xc-conf")
 
 	// Stopwatch
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("XCConfigurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("XCConfigurator", c.log)
 	}
 
 	// Mappings
-	plugin.ifIndexes = swIfIndexes
-	plugin.xcIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-indexes", nil))
-	plugin.xcAddCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-add-cache-indexes", nil))
-	plugin.xcDelCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(plugin.log, "xc-del-cache-indexes", nil))
-	plugin.xcIndexSeq = 1
+	c.ifIndexes = swIfIndexes
+	c.xcIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(c.log, "xc-indexes", nil))
+	c.xcAddCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(c.log, "xc-add-cache-indexes", nil))
+	c.xcDelCacheIndexes = l2idx.NewXcIndex(nametoidx.NewNameToIdx(c.log, "xc-del-cache-indexes", nil))
+	c.xcIndexSeq = 1
 
 	// VPP channel
-	plugin.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return err
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+		errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// Cross-connect VPP API handler
-	plugin.xcHandler = vppcalls.NewXConnectVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
+	c.xcHandler = vppcalls.NewXConnectVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+
+	c.log.Info("L2 XConnect configurator initialized")
 
 	return nil
 }
 
 // Close govpp channel.
-func (plugin *XConnectConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan)
+func (c *XConnectConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan); err != nil {
+		c.LogError(errors.Errorf("failed to safeclose XConnect configurator: %v", err))
+	}
+	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *XConnectConfigurator) clearMapping() {
-	plugin.xcIndexes.Clear()
-	plugin.xcAddCacheIndexes.Clear()
-	plugin.xcDelCacheIndexes.Clear()
+func (c *XConnectConfigurator) clearMapping() {
+	c.xcIndexes.Clear()
+	c.xcAddCacheIndexes.Clear()
+	c.xcDelCacheIndexes.Clear()
+	c.log.Debugf("XConnect configurator mapping cleared")
 }
 
 // GetXcIndexes returns cross connect memory indexes
-func (plugin *XConnectConfigurator) GetXcIndexes() l2idx.XcIndexRW {
-	return plugin.xcIndexes
+func (c *XConnectConfigurator) GetXcIndexes() l2idx.XcIndexRW {
+	return c.xcIndexes
 }
 
 // GetXcAddCache returns cross connect 'add' cache (test purposes)
-func (plugin *XConnectConfigurator) GetXcAddCache() l2idx.XcIndexRW {
-	return plugin.xcAddCacheIndexes
+func (c *XConnectConfigurator) GetXcAddCache() l2idx.XcIndexRW {
+	return c.xcAddCacheIndexes
 }
 
 // GetXcDelCache returns cross connect 'del' cache (test purposes)
-func (plugin *XConnectConfigurator) GetXcDelCache() l2idx.XcIndexRW {
-	return plugin.xcDelCacheIndexes
+func (c *XConnectConfigurator) GetXcDelCache() l2idx.XcIndexRW {
+	return c.xcDelCacheIndexes
 }
 
 // ConfigureXConnectPair adds new cross connect pair
-func (plugin *XConnectConfigurator) ConfigureXConnectPair(xc *l2.XConnectPairs_XConnectPair) error {
-	plugin.log.Infof("Configuring L2 xConnect pair %s-%s", xc.ReceiveInterface, xc.TransmitInterface)
-	if err := plugin.validateConfig(xc); err != nil {
-		return err
+func (c *XConnectConfigurator) ConfigureXConnectPair(xc *l2.XConnectPairs_XConnectPair) error {
+	if err := c.validateConfig(xc); err != nil {
+		return errors.Errorf("failed to configure XConnect %s-%s, config is invalid: %v",
+			xc.ReceiveInterface, xc.TransmitInterface, err)
 	}
 	// Verify interface presence, eventually store cross connect to cache if either is missing
-	rxIfIdx, _, rxFound := plugin.ifIndexes.LookupIdx(xc.ReceiveInterface)
-	if !rxFound {
-		plugin.log.Debugf("XC Add: Receive interface %s not found.", xc.ReceiveInterface)
-	}
-	txIfIdx, _, txFound := plugin.ifIndexes.LookupIdx(xc.TransmitInterface)
-	if !txFound {
-		plugin.log.Debugf("XC Add: Transmit interface %s not found.", xc.TransmitInterface)
-	}
+	rxIfIdx, _, rxFound := c.ifIndexes.LookupIdx(xc.ReceiveInterface)
+	txIfIdx, _, txFound := c.ifIndexes.LookupIdx(xc.TransmitInterface)
 	if !rxFound || !txFound {
-		plugin.putOrUpdateCache(xc, true)
+		c.putOrUpdateCache(xc, true)
 		return nil
 	}
 	// XConnect can be configured now
-	if err := plugin.xcHandler.AddL2XConnect(rxIfIdx, txIfIdx); err != nil {
-		plugin.log.Errorf("Adding l2xConnect failed: %v", err)
-		return err
+	if err := c.xcHandler.AddL2XConnect(rxIfIdx, txIfIdx); err != nil {
+		return errors.Errorf("failed to add L2 XConnect %s-%s: %v", rxIfIdx, txIfIdx, err)
 	}
 	// Unregister from 'del' cache in case it is present
-	plugin.xcDelCacheIndexes.UnregisterName(xc.ReceiveInterface)
+	c.xcDelCacheIndexes.UnregisterName(xc.ReceiveInterface)
+	c.log.Debugf("XConnect %s-%s removed from (del) cache", rxIfIdx, txIfIdx)
 	// Register
-	plugin.xcIndexes.RegisterName(xc.ReceiveInterface, plugin.xcIndexSeq, xc)
-	plugin.xcIndexSeq++
-	plugin.log.Infof("L2 xConnect pair %s-%s configured", xc.ReceiveInterface, xc.TransmitInterface)
+	c.xcIndexes.RegisterName(xc.ReceiveInterface, c.xcIndexSeq, xc)
+	c.xcIndexSeq++
+	c.log.Debugf("XConnect %s-%s registered", rxIfIdx, txIfIdx)
+
+	c.log.Infof("L2 XConnect pair %s-%s configured", xc.ReceiveInterface, xc.TransmitInterface)
 
 	return nil
 }
 
 // ModifyXConnectPair modifies cross connect pair (its transmit interface). Old entry is replaced.
-func (plugin *XConnectConfigurator) ModifyXConnectPair(newXc, oldXc *l2.XConnectPairs_XConnectPair) error {
-	plugin.log.Infof("Modifying L2 xConnect pair %s-%s", oldXc.ReceiveInterface, oldXc.TransmitInterface)
-	if err := plugin.validateConfig(newXc); err != nil {
+func (c *XConnectConfigurator) ModifyXConnectPair(newXc, oldXc *l2.XConnectPairs_XConnectPair) error {
+	if err := c.validateConfig(newXc); err != nil {
 		return err
 	}
 	// Verify receive interface presence
-	rxIfIdx, _, rxFound := plugin.ifIndexes.LookupIdx(newXc.ReceiveInterface)
+	rxIfIdx, _, rxFound := c.ifIndexes.LookupIdx(newXc.ReceiveInterface)
 	if !rxFound {
-		plugin.log.Debugf("XC Modify: Receive interface %s not found.", newXc.ReceiveInterface)
-		plugin.putOrUpdateCache(newXc, true)
-		plugin.xcIndexes.UnregisterName(oldXc.ReceiveInterface)
+		c.putOrUpdateCache(newXc, true)
+		c.xcIndexes.UnregisterName(oldXc.ReceiveInterface)
+		c.log.Debugf("XC Modify: Receive interface %s not found, unregistered.", newXc.ReceiveInterface)
 		// Can return, without receive interface the entry cannot exist
 		return nil
 	}
 	// Verify transmit interface
-	txIfIdx, _, txFound := plugin.ifIndexes.LookupIdx(newXc.TransmitInterface)
+	txIfIdx, _, txFound := c.ifIndexes.LookupIdx(newXc.TransmitInterface)
 	if !txFound {
-		plugin.log.Debugf("XC Modify: Transmit interface %s not found.", newXc.TransmitInterface)
-		plugin.putOrUpdateCache(newXc, true)
+		c.putOrUpdateCache(newXc, true)
 		// If new transmit interface is missing and XConnect cannot be updated now, configurator can try to remove old
 		// entry, so the VPP output won't be confusing
-		oldTxIfIdx, _, oldTxFound := plugin.ifIndexes.LookupIdx(oldXc.TransmitInterface)
+		oldTxIfIdx, _, oldTxFound := c.ifIndexes.LookupIdx(oldXc.TransmitInterface)
 		if !oldTxFound {
 			return nil // Nothing more can be done
 		}
-		plugin.log.Debugf("Removing obsolete l2xConnect %s-%s", oldXc.ReceiveInterface, oldXc.TransmitInterface)
-		if err := plugin.xcHandler.DeleteL2XConnect(rxIfIdx, oldTxIfIdx); err != nil {
-			plugin.log.Errorf("Deleted obsolete l2xConnect failed: %v", err)
-			return err
+		c.log.Debugf("XC Modify: Removing obsolete l2 XConnect %s-%s", oldXc.ReceiveInterface, oldXc.TransmitInterface)
+		if err := c.xcHandler.DeleteL2XConnect(rxIfIdx, oldTxIfIdx); err != nil {
+			return errors.Errorf("failed to remove obsolete L2 XConnect %s-%s: %v",
+				oldXc.ReceiveInterface, oldXc.TransmitInterface, err)
 		}
-		plugin.xcIndexes.UnregisterName(oldXc.ReceiveInterface)
+		c.xcIndexes.UnregisterName(oldXc.ReceiveInterface)
+		c.log.Debugf("XConnect %s-%s unregistered", rxIfIdx, txIfIdx)
 		return nil
 	}
 	// Replace existing entry
-	if err := plugin.xcHandler.AddL2XConnect(rxIfIdx, txIfIdx); err != nil {
-		plugin.log.Errorf("Replacing l2xConnect failed: %v", err)
+	if err := c.xcHandler.AddL2XConnect(rxIfIdx, txIfIdx); err != nil {
+		c.log.Errorf("Replacing l2 XConnect failed: %v", err)
 		return err
 	}
-	plugin.xcIndexes.RegisterName(newXc.ReceiveInterface, plugin.xcIndexSeq, newXc)
-	plugin.xcIndexSeq++
-	plugin.log.Debugf("Modifying XConnect: new entry %s-%s added", newXc.ReceiveInterface, newXc.TransmitInterface)
+	c.xcIndexes.RegisterName(newXc.ReceiveInterface, c.xcIndexSeq, newXc)
+	c.xcIndexSeq++
+	c.log.Debugf("Modifying XConnect: new entry %s-%s added", newXc.ReceiveInterface, newXc.TransmitInterface)
+
+	c.log.Infof("L2 XConnect pair (rx: %s) modified", newXc.ReceiveInterface)
 
 	return nil
 }
 
 // DeleteXConnectPair removes XConnect if possible. Note: Xconnect pair cannot be removed if any interface is missing.
-func (plugin *XConnectConfigurator) DeleteXConnectPair(xc *l2.XConnectPairs_XConnectPair) error {
-	plugin.log.Infof("Removing L2 xConnect pair %s-%s", xc.ReceiveInterface, xc.TransmitInterface)
-	if err := plugin.validateConfig(xc); err != nil {
+func (c *XConnectConfigurator) DeleteXConnectPair(xc *l2.XConnectPairs_XConnectPair) error {
+	if err := c.validateConfig(xc); err != nil {
 		return err
 	}
 	// If receive interface is missing, XConnect entry is not configured on the VPP.
-	rxIfIdx, _, rxFound := plugin.ifIndexes.LookupIdx(xc.ReceiveInterface)
+	rxIfIdx, _, rxFound := c.ifIndexes.LookupIdx(xc.ReceiveInterface)
 	if !rxFound {
-		plugin.log.Debugf("XC Del: Receive interface %s not found.", xc.ReceiveInterface)
+		c.log.Debugf("XC Del: Receive interface %s not found.", xc.ReceiveInterface)
 		// Remove from all caches
-		plugin.xcIndexes.UnregisterName(xc.ReceiveInterface)
-		plugin.xcAddCacheIndexes.UnregisterName(xc.ReceiveInterface)
-		plugin.xcDelCacheIndexes.UnregisterName(xc.ReceiveInterface)
+		c.xcIndexes.UnregisterName(xc.ReceiveInterface)
+		c.xcAddCacheIndexes.UnregisterName(xc.ReceiveInterface)
+		c.xcDelCacheIndexes.UnregisterName(xc.ReceiveInterface)
+		c.log.Debugf("XC Del: %s unregistered from (add) cache, (del) cache and mapping.", xc.ReceiveInterface)
 		return nil
 	}
 	// Verify transmit interface. If it is missing, XConnect cannot be removed and will be put to cache for deleted
 	// interfaces
-	txIfIdx, _, txFound := plugin.ifIndexes.LookupIdx(xc.TransmitInterface)
+	txIfIdx, _, txFound := c.ifIndexes.LookupIdx(xc.TransmitInterface)
 	if !txFound {
-		plugin.log.Debugf("XC Del: Transmit interface %s for XConnect %s not found.",
+		c.log.Debugf("XC Del: Transmit interface %s for XConnect %s not found.",
 			xc.TransmitInterface, xc.ReceiveInterface)
-		plugin.putOrUpdateCache(xc, false)
+		c.putOrUpdateCache(xc, false)
 		// Remove from other caches
-		plugin.xcIndexes.UnregisterName(xc.ReceiveInterface)
-		plugin.xcAddCacheIndexes.UnregisterName(xc.ReceiveInterface)
+		c.xcIndexes.UnregisterName(xc.ReceiveInterface)
+		c.xcAddCacheIndexes.UnregisterName(xc.ReceiveInterface)
+		c.log.Debugf("XC Del: %s unregistered from mapping and (add) cache", xc.ReceiveInterface)
 		return nil
 	}
 	// XConnect can be removed now
-	if err := plugin.xcHandler.DeleteL2XConnect(rxIfIdx, txIfIdx); err != nil {
-		plugin.log.Errorf("Removing l2xConnect failed: %v", err)
-		return err
+	if err := c.xcHandler.DeleteL2XConnect(rxIfIdx, txIfIdx); err != nil {
+		return errors.Errorf("failed to remove XConnect pair %s-%s: %v", rxIfIdx, txIfIdx, err)
 	}
 	// Unregister
-	plugin.xcIndexes.UnregisterName(xc.ReceiveInterface)
-	plugin.log.Infof("L2 xConnect pair %s-%s removed", xc.ReceiveInterface, xc.TransmitInterface)
+	c.xcIndexes.UnregisterName(xc.ReceiveInterface)
+	c.log.Debugf("XConnect pair %s-%s removed from mapping", rxIfIdx, txIfIdx)
+
+	c.log.Infof("L2 XConnect pair %s-%s removed", xc.ReceiveInterface, xc.TransmitInterface)
 
 	return nil
 }
 
 // ResolveCreatedInterface resolves XConnects waiting for an interface.
-func (plugin *XConnectConfigurator) ResolveCreatedInterface(ifName string) error {
-	plugin.log.Debugf("XConnect configurator: resolving created interface %s", ifName)
-	var wasErr error
+func (c *XConnectConfigurator) ResolveCreatedInterface(ifName string) error {
 	// XConnects waiting to be configured
-	for _, xcRxIf := range plugin.xcAddCacheIndexes.GetMapping().ListNames() {
-		_, xc, _ := plugin.xcAddCacheIndexes.LookupIdx(xcRxIf)
+	for _, xcRxIf := range c.xcAddCacheIndexes.GetMapping().ListNames() {
+		_, xc, _ := c.xcAddCacheIndexes.LookupIdx(xcRxIf)
 		if xc == nil {
-			plugin.log.Errorf("XConnect entry %s has no metadata", xcRxIf)
-			continue
+			return errors.Errorf("failed to process registered interface %s: XC entry %s has no metadata",
+				ifName, xcRxIf)
 		}
 		if xc.TransmitInterface == ifName || xc.ReceiveInterface == ifName {
-			plugin.xcAddCacheIndexes.UnregisterName(xcRxIf)
-			if err := plugin.ConfigureXConnectPair(xc); err != nil {
-				plugin.log.Error(err)
-				wasErr = err
+			if _, _, found := c.xcAddCacheIndexes.UnregisterName(xcRxIf); found {
+				c.log.Debugf("XConnect %s unregistered from (add) cache", xcRxIf)
+			}
+			if err := c.ConfigureXConnectPair(xc); err != nil {
+				return errors.Errorf("failed to add new XConnect %s with registered interface %s: %v",
+					xc.ReceiveInterface, ifName, err)
 			}
 		}
 	}
 	// XConnects waiting for removal
-	for _, xcRxIf := range plugin.xcDelCacheIndexes.GetMapping().ListNames() {
-		_, xc, _ := plugin.xcDelCacheIndexes.LookupIdx(xcRxIf)
+	for _, xcRxIf := range c.xcDelCacheIndexes.GetMapping().ListNames() {
+		_, xc, _ := c.xcDelCacheIndexes.LookupIdx(xcRxIf)
 		if xc == nil {
-			plugin.log.Errorf("XConnect entry %s has no metadata", xcRxIf)
-			continue
+			return errors.Errorf("failed to process registered interface %s: XC entry %s has no metadata",
+				ifName, xcRxIf)
 		}
 		if xc.TransmitInterface == ifName || xc.ReceiveInterface == ifName {
-			plugin.xcDelCacheIndexes.UnregisterName(xcRxIf)
-			if err := plugin.DeleteXConnectPair(xc); err != nil {
-				plugin.log.Error(err)
-				wasErr = err
+			if _, _, found := c.xcDelCacheIndexes.UnregisterName(xcRxIf); found {
+				c.log.Debugf("XConnect %s unregistered from (del) cache", xcRxIf)
+			}
+			if err := c.DeleteXConnectPair(xc); err != nil {
+				return errors.Errorf("failed to delete XConnect %s with registered interface %s: %v",
+					xc.ReceiveInterface, ifName, err)
 			}
 		}
 	}
 
-	return wasErr
+	return nil
 }
 
 // ResolveDeletedInterface resolves XConnects using deleted interface
 // If deleted interface is a received interface, the XConnect was removed by the VPP
 // If deleted interface is a transmit interface, it will get flag 'DELETED' in VPP, but the entry will be kept
-func (plugin *XConnectConfigurator) ResolveDeletedInterface(ifName string) error {
-	plugin.log.Debugf("XConnect configurator: resolving deleted interface %s", ifName)
-	for _, xcRxIf := range plugin.xcIndexes.GetMapping().ListNames() {
-		_, xc, _ := plugin.xcIndexes.LookupIdx(xcRxIf)
+func (c *XConnectConfigurator) ResolveDeletedInterface(ifName string) error {
+	for _, xcRxIf := range c.xcIndexes.GetMapping().ListNames() {
+		_, xc, _ := c.xcIndexes.LookupIdx(xcRxIf)
 		if xc == nil {
-			plugin.log.Errorf("XConnect entry %s has no metadata", xcRxIf)
-			continue
+			return errors.Errorf("failed to process unregistered interface %s: XC entry %s has no metadata",
+				ifName, xcRxIf)
 		}
 		if xc.ReceiveInterface == ifName {
-			plugin.xcIndexes.UnregisterName(xc.ReceiveInterface)
-			plugin.xcAddCacheIndexes.RegisterName(xc.ReceiveInterface, plugin.xcIndexSeq, xc)
-			plugin.xcIndexSeq++
+			if _, _, found := c.xcIndexes.UnregisterName(xc.ReceiveInterface); found {
+				c.log.Debugf("XConnect %s unregistered from mapping", xcRxIf)
+			}
+			c.xcAddCacheIndexes.RegisterName(xc.ReceiveInterface, c.xcIndexSeq, xc)
+			c.xcIndexSeq++
+			c.log.Debugf("XConnect %s registered to (add) cache", xcRxIf)
 			continue
 		}
 		// Nothing to do for transmit
@@ -285,34 +291,52 @@ func (plugin *XConnectConfigurator) ResolveDeletedInterface(ifName string) error
 }
 
 // Add XConnect to 'add' or 'del' cache, or just update metadata
-func (plugin *XConnectConfigurator) putOrUpdateCache(xc *l2.XConnectPairs_XConnectPair, cacheTypeAdd bool) {
+func (c *XConnectConfigurator) putOrUpdateCache(xc *l2.XConnectPairs_XConnectPair, cacheTypeAdd bool) {
 	if cacheTypeAdd {
-		if _, _, found := plugin.xcAddCacheIndexes.LookupIdx(xc.ReceiveInterface); found {
-			plugin.xcAddCacheIndexes.UpdateMetadata(xc.ReceiveInterface, xc)
+		if _, _, found := c.xcAddCacheIndexes.LookupIdx(xc.ReceiveInterface); found {
+			c.xcAddCacheIndexes.UpdateMetadata(xc.ReceiveInterface, xc)
+			c.log.Debugf("XConnect %s-%s cached (add) medatada updated", xc.ReceiveInterface, xc.TransmitInterface)
 		} else {
-			plugin.xcAddCacheIndexes.RegisterName(xc.ReceiveInterface, plugin.xcIndexSeq, xc)
-			plugin.xcIndexSeq++
+			c.xcAddCacheIndexes.RegisterName(xc.ReceiveInterface, c.xcIndexSeq, xc)
+			c.xcIndexSeq++
+			c.log.Debugf("XConnect %s-%s registered to (add) cache", xc.ReceiveInterface, xc.TransmitInterface)
 		}
 	} else {
-		if _, _, found := plugin.xcDelCacheIndexes.LookupIdx(xc.ReceiveInterface); found {
-			plugin.xcDelCacheIndexes.UpdateMetadata(xc.ReceiveInterface, xc)
+		if _, _, found := c.xcDelCacheIndexes.LookupIdx(xc.ReceiveInterface); found {
+			c.xcDelCacheIndexes.UpdateMetadata(xc.ReceiveInterface, xc)
+			c.log.Debugf("XConnect %s-%s cached (del) medatada updated", xc.ReceiveInterface, xc.TransmitInterface)
 		} else {
-			plugin.xcDelCacheIndexes.RegisterName(xc.ReceiveInterface, plugin.xcIndexSeq, xc)
-			plugin.xcIndexSeq++
+			c.xcDelCacheIndexes.RegisterName(xc.ReceiveInterface, c.xcIndexSeq, xc)
+			c.xcIndexSeq++
+			c.log.Debugf("XConnect %s-%s registered to (del) cache", xc.ReceiveInterface, xc.TransmitInterface)
 		}
 	}
 }
 
-func (plugin *XConnectConfigurator) validateConfig(xc *l2.XConnectPairs_XConnectPair) error {
+func (c *XConnectConfigurator) validateConfig(xc *l2.XConnectPairs_XConnectPair) error {
 	if xc.ReceiveInterface == "" {
-		return fmt.Errorf("invalid XConnect configuration, receive interface is not set")
+		return errors.Errorf("invalid XConnect configuration, receive interface is not set")
 	}
 	if xc.TransmitInterface == "" {
-		return fmt.Errorf("invalid XConnect configuration, transmit interface is not set")
+		return errors.Errorf("invalid XConnect configuration, transmit interface is not set")
 	}
 	if xc.ReceiveInterface == xc.TransmitInterface {
-		return fmt.Errorf("invalid XConnect configuration, recevie interface is the same as transmit (%s)",
+		return errors.Errorf("invalid XConnect configuration, recevie interface is the same as transmit (%s)",
 			xc.ReceiveInterface)
 	}
 	return nil
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *XConnectConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }
