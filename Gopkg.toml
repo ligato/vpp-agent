@@ -10,6 +10,8 @@ required = [
     "github.com/opencontainers/runc"
 ]
 
+# Constraints
+
 [[constraint]]
   branch = "master"
   name = "github.com/ligato/cn-infra"
@@ -79,6 +81,8 @@ required = [
   name = "google.golang.org/grpc"
   version = "1.14.0"
 
+# Overrides
+
 [[override]]
   name = "github.com/docker/libnetwork"
   revision = "9ffeaf7d8b64fa0eb64cc27835dc1a5a90328024"
@@ -98,6 +102,8 @@ required = [
 [[constraint]]
   name = "github.com/opencontainers/runc"
   version = "v1.0.0-rc5"
+
+# Prunes
 
 [prune]
   go-tests = true
