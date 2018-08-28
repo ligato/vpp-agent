@@ -382,12 +382,15 @@ func (plugin *Plugin) dataChangeACL(diff bool, value *acl.AccessLists_Acl, prevV
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeAcl ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.aclConfigurator.DeleteACL(prevValue)
+		err = plugin.aclConfigurator.DeleteACL(prevValue)
 	} else if diff {
-		return plugin.aclConfigurator.ModifyACL(prevValue, value)
+		err = plugin.aclConfigurator.ModifyACL(prevValue, value)
+	} else {
+		err = plugin.aclConfigurator.ConfigureACL(value)
 	}
-	return plugin.aclConfigurator.ConfigureACL(value)
+	return plugin.aclConfigurator.LogError(err)
 }
 
 // DataChangeIface propagates data change to the ifConfigurator.

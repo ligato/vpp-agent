@@ -147,7 +147,9 @@ func (plugin *Plugin) onChangeEvent(e datasync.ChangeEvent) {
 func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 	if !e.IsDelete() {
 		// Keep order.
-		plugin.aclConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		if err := plugin.aclConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.aclConfigurator.LogError(err)
+		}
 		plugin.arpConfigurator.ResolveCreatedInterface(e.Name)
 		plugin.proxyArpConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		if err := plugin.bdConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
@@ -172,7 +174,9 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 		plugin.ipSecConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
 		// TODO propagate error
 	} else {
-		plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		if err := plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.aclConfigurator.LogError(err)
+		}
 		plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
 		plugin.proxyArpConfigurator.ResolveDeletedInterface(e.Name)
 		if err := plugin.bdConfigurator.ResolveDeletedInterface(e.Name); err != nil {
