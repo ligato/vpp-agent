@@ -89,7 +89,7 @@ required = [
 
 [[override]]
   name = "github.com/Shopify/sarama"
-  version = "~1.15.0"
+  version = ">= 1.15.0, < 1.18.0"
 
 [[override]]
   name = "github.com/bsm/sarama-cluster"
