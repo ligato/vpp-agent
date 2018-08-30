@@ -162,7 +162,7 @@ func (c *LinuxArpConfigurator) ConfigureLinuxStaticArpEntry(arpEntry *l3.LinuxSt
 	// Create a new ARP entry in interface namespace
 	err = c.l3Handler.AddArpEntry(arpEntry.Name, neigh)
 	if err != nil {
-		return errors.Errorf("faield to add linux ARP entry: %v", arpEntry.Name, err)
+		return errors.Errorf("failed to add linux ARP entry %s: %v", arpEntry.Name, err)
 	}
 
 	// Register created ARP entry
@@ -405,12 +405,12 @@ func (c *LinuxArpConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 			// Unregister
 			ip := net.ParseIP(arp.IpAddr)
 			if ip == nil {
-				return errors.Errorf("failed to resolve unregistered interface for ARP: invalid IP address %s",
+				return errors.Errorf("failed to resolve unregistered interface for ARP %s: invalid IP address %s",
 					arpName, arp.IpAddr)
 			}
 			mac, err := net.ParseMAC(arp.HwAddress)
 			if err != nil {
-				return errors.Errorf("failed to resolve unregistered interface for ARP: invalid MAC address %s",
+				return errors.Errorf("failed to resolve unregistered interface for ARP %s: invalid MAC address %s",
 					arpName, arp.HwAddress)
 			}
 			c.arpIndexes.UnregisterName(ArpIdentifier(&netlink.Neigh{
