@@ -34,14 +34,30 @@ before_install:
   - make get-dep
   - go get github.com/mattn/goveralls
 
-script:
-  - make yamllint
-  - make check-links || true
-  - make lint
-  - make dep-check
-  - make verify-binapi
-  - make
-  - make test-cover
+#script:
+#  - make yamllint
+#  - make check-links || true
+#  - make lint
+#  - make dep-check
+#  - make verify-binapi
+#  - make
+#  - make test-cover
+
+jobs:
+  include:
+    - stage: check
+      script:
+      - make yamllint
+      - make check-links || true
+    - stage: verify
+      script:
+      - make dep-check
+      - make verify-binapi
+    - stage: test
+      script:
+        - make lint
+        - make
+        - make test-cover
 
 after_success:
   - goveralls -coverprofile=/tmp/coverage.out -service=travis-ci
