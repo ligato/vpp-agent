@@ -407,22 +407,21 @@ func (c *ACLConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) e
 	// Iterate over cache in order to find out where the interface is used
 	for entryIdx, aclCacheEntry := range c.ifCache {
 		if aclCacheEntry.ifName == ifName {
-			var ifIndices []uint32
 			switch aclCacheEntry.ifAttr {
 			case L2:
-				if err := c.aclHandler.SetMacIPACLToInterface(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
-					return errors.Errorf("failed to set MAC IP %s to interfaces: %v", aclCacheEntry.aclID, err)
+				if err := c.aclHandler.SetMacIPACLToInterface(aclCacheEntry.aclID, []uint32{ifIdx}); err != nil {
+					return errors.Errorf("failed to set MAC IP ACL %v to interface %v: %v", aclCacheEntry.aclID, ifName, err)
 				}
 			case INGRESS:
-				if err := c.aclHandler.SetACLToInterfacesAsIngress(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
-					return errors.Errorf("failed to set IP %s to interfaces as ingress: %v", aclCacheEntry.aclID, err)
+				if err := c.aclHandler.SetACLToInterfacesAsIngress(aclCacheEntry.aclID, []uint32{ifIdx}); err != nil {
+					return errors.Errorf("failed to set ACL %v as ingress to interface %v: %v", aclCacheEntry.aclID, ifName, err)
 				}
 			case EGRESS:
-				if err := c.aclHandler.SetACLToInterfacesAsEgress(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
-					return errors.Errorf("failed to set IP %s to interfaces as egress: %v", aclCacheEntry.aclID, err)
+				if err := c.aclHandler.SetACLToInterfacesAsEgress(aclCacheEntry.aclID, []uint32{ifIdx}); err != nil {
+					return errors.Errorf("failed to set ACL %v as egress to interface %v: %v", aclCacheEntry.aclID, ifName, err)
 				}
 			default:
-				return errors.Errorf("ACL interface is not defined as L2, ingress or egress")
+				return errors.Errorf("ACL %v for interface %v is set as %q and not as L2, ingress or egress", aclCacheEntry.aclID, ifName, aclCacheEntry.ifAttr)
 			}
 			// Remove from cache
 			c.log.Debugf("New interface %s (%s) configured for ACL %d, removed from cache",

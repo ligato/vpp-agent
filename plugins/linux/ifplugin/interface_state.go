@@ -18,6 +18,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -49,73 +50,78 @@ type LinuxInterfaceStateUpdater struct {
 }
 
 // Init channels for interface state watcher, start it in separate go routine and subscribe to default namespace
-func (plugin *LinuxInterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, ifIndexes ifaceidx.LinuxIfIndexRW,
+func (c *LinuxInterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, ifIndexes ifaceidx.LinuxIfIndexRW,
 	stateChan chan *LinuxInterfaceStateNotification) error {
 	// Logger
-	plugin.log = logger.NewLogger("-if-state")
-	plugin.log.Debug("Initializing Linux Interface State Updater")
+	c.log = logger.NewLogger("-if-state")
 
 	// Channels
-	plugin.ifStateChan = stateChan
-	plugin.ifWatcherNotifCh = make(chan netlink.LinkUpdate, 10)
-	plugin.ifWatcherDoneCh = make(chan struct{})
+	c.ifStateChan = stateChan
+	c.ifWatcherNotifCh = make(chan netlink.LinkUpdate, 10)
+	c.ifWatcherDoneCh = make(chan struct{})
 
 	// Start watch on linux interfaces
-	go plugin.watchLinuxInterfaces(ctx)
+	go c.watchLinuxInterfaces(ctx)
 
 	// Subscribe to default linux namespace
-	return plugin.subscribeInterfaceState()
+	if err := c.subscribeInterfaceState(); err != nil {
+		return errors.Errorf("failed to subscribe interface state: %v", err)
+	}
+
+	c.log.Debug("Linux interface state updater initialized")
+
+	return nil
 }
 
 // Close watcher channel (state chan is closed in LinuxInterfaceConfigurator)
-func (plugin *LinuxInterfaceStateUpdater) Close() error {
-	return safeclose.Close(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
+func (c *LinuxInterfaceStateUpdater) Close() error {
+	if err := safeclose.Close(c.ifWatcherNotifCh, c.ifWatcherDoneCh); err != nil {
+		return errors.Errorf("failed to safeclose linux interface state updater: %v", err)
+	}
+	return nil
 }
 
 // Subscribe to linux default namespace
-func (plugin *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
-	if !plugin.stateWatcherRunning {
-		plugin.stateWatcherRunning = true
-		err := netlink.LinkSubscribe(plugin.ifWatcherNotifCh, plugin.ifWatcherDoneCh)
+func (c *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
+	if !c.stateWatcherRunning {
+		c.stateWatcherRunning = true
+		err := netlink.LinkSubscribe(c.ifWatcherNotifCh, c.ifWatcherDoneCh)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to subscribe link: %v", err)
 		}
 	}
 	return nil
 }
 
 // Watch linux interfaces and send events to processing
-func (plugin *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
-	plugin.log.Debugf("Watching on linux link notifications")
+func (c *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
+	c.log.Debugf("Watching on linux link notifications")
 
-	plugin.wg.Add(1)
-	defer plugin.wg.Done()
+	c.wg.Add(1)
+	defer c.wg.Done()
 
 	for {
 		select {
-		case linkNotif := <-plugin.ifWatcherNotifCh:
-			plugin.processLinkNotification(linkNotif)
+		case linkNotif := <-c.ifWatcherNotifCh:
+			c.processLinkNotification(linkNotif)
 
 		case <-ctx.Done():
-			close(plugin.ifWatcherDoneCh)
+			close(c.ifWatcherDoneCh)
 			return
 		}
 	}
 }
 
 // Prepare notification and send it to the state channel
-func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.Link) {
+func (c *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.Link) {
 	linkAttrs := link.Attrs()
 
 	if linkAttrs == nil {
 		return
 	}
 
-	plugin.cfgLock.Lock()
-	defer plugin.cfgLock.Unlock()
-
-	plugin.log.Debugf("Processing Linux link update: Name=%v Type=%v OperState=%v Index=%v HwAddr=%v",
-		linkAttrs.Name, link.Type(), linkAttrs.OperState, linkAttrs.Index, linkAttrs.HardwareAddr)
+	c.cfgLock.Lock()
+	defer c.cfgLock.Unlock()
 
 	// Prepare linux link notification
 	linkNotif := &LinuxInterfaceStateNotification{
@@ -125,9 +131,23 @@ func (plugin *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.L
 	}
 
 	select {
-	case plugin.ifStateChan <- linkNotif:
+	case c.ifStateChan <- linkNotif:
 		// Notification sent
 	default:
-		plugin.log.Warn("Unable to send to the linux if state notification channel - buffer is full.")
+		c.log.Warn("Unable to send to the linux if state notification channel - buffer is full.")
 	}
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *LinuxInterfaceStateUpdater) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

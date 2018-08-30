@@ -716,43 +716,55 @@ func (plugin *Plugin) dataChangeIPSecTunnel(diff bool, value, prevValue *ipsec.T
 // DataChangeLocalSID handles change events from ETCD related to local SIDs
 func (plugin *Plugin) dataChangeLocalSID(diff bool, value *srv6.LocalSID, prevValue *srv6.LocalSID, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeLocalSIDs ", diff, " ", changeType, " ", value, " ", prevValue)
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.srv6Configurator.DeleteLocalSID(prevValue)
+		err = plugin.srv6Configurator.DeleteLocalSID(prevValue)
 	} else if diff {
-		return plugin.srv6Configurator.ModifyLocalSID(value, prevValue)
+		err = plugin.srv6Configurator.ModifyLocalSID(value, prevValue)
+	} else {
+		err = plugin.srv6Configurator.AddLocalSID(value)
 	}
-	return plugin.srv6Configurator.AddLocalSID(value)
+	return plugin.srv6Configurator.LogError(err)
 }
 
 // dataChangePolicy handles change events from ETCD related to policies
 func (plugin *Plugin) dataChangePolicy(diff bool, value *srv6.Policy, prevValue *srv6.Policy, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangePolicy ", diff, " ", changeType, " ", value, " ", prevValue)
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.srv6Configurator.RemovePolicy(prevValue)
+		err = plugin.srv6Configurator.RemovePolicy(prevValue)
 	} else if diff {
-		return plugin.srv6Configurator.ModifyPolicy(value, prevValue)
+		err = plugin.srv6Configurator.ModifyPolicy(value, prevValue)
+	} else {
+		err = plugin.srv6Configurator.AddPolicy(value)
 	}
-	return plugin.srv6Configurator.AddPolicy(value)
+	return plugin.srv6Configurator.LogError(err)
 }
 
 // dataChangePolicySegment handles change events from ETCD related to policies segments
 func (plugin *Plugin) dataChangePolicySegment(segmentName string, diff bool, value *srv6.PolicySegment, prevValue *srv6.PolicySegment, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangePolicySegment ", segmentName, " ", diff, " ", changeType, " ", value, " ", prevValue)
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.srv6Configurator.RemovePolicySegment(segmentName, prevValue)
+		err = plugin.srv6Configurator.RemovePolicySegment(segmentName, prevValue)
 	} else if diff {
-		return plugin.srv6Configurator.ModifyPolicySegment(segmentName, value, prevValue)
+		err = plugin.srv6Configurator.ModifyPolicySegment(segmentName, value, prevValue)
+	} else {
+		err = plugin.srv6Configurator.AddPolicySegment(segmentName, value)
 	}
-	return plugin.srv6Configurator.AddPolicySegment(segmentName, value)
+	return plugin.srv6Configurator.LogError(err)
 }
 
 // dataChangeSteering handles change events from ETCD related to steering
 func (plugin *Plugin) dataChangeSteering(steeringName string, diff bool, value *srv6.Steering, prevValue *srv6.Steering, changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeSteering ", steeringName, " ", diff, " ", changeType, " ", value, " ", prevValue)
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.srv6Configurator.RemoveSteering(steeringName, prevValue)
+		err = plugin.srv6Configurator.RemoveSteering(steeringName, prevValue)
 	} else if diff {
-		return plugin.srv6Configurator.ModifySteering(steeringName, value, prevValue)
+		err = plugin.srv6Configurator.ModifySteering(steeringName, value, prevValue)
+	} else {
+		err = plugin.srv6Configurator.AddSteering(steeringName, value)
 	}
-	return plugin.srv6Configurator.AddSteering(steeringName, value)
+	return plugin.srv6Configurator.LogError(err)
 }

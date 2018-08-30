@@ -383,14 +383,14 @@ func (c *InterfaceConfigurator) configureIPAddresses(ifName string, ifIdx uint32
 		}
 		// Set interface as un-numbered
 		if err := c.ifHandler.SetUnnumberedIP(ifIdx, ifIdxIP); err != nil {
-			return errors.Errorf("failed to set interface %d as unnumbered for %d: %v", ifIdxIP, ifName, err)
+			return errors.Errorf("failed to set interface %v as unnumbered for %v: %v", ifName, ifIdxIP, err)
 		}
 	}
 
 	// configure optional ip address
 	for _, address := range addresses {
 		if err := c.ifHandler.AddInterfaceIP(ifIdx, address); err != nil {
-			return errors.Errorf("adding IP address %s to interface %s failed: %v", address.String(), ifName, err)
+			return errors.Errorf("adding IP address %v to interface %v failed: %v", address, ifName, err)
 		}
 	}
 
@@ -433,7 +433,7 @@ func (c *InterfaceConfigurator) resolveDependentUnnumberedInterfaces(ifNameIP st
 				continue
 			}
 			if err := c.ifHandler.SetUnnumberedIP(uIdx, ifIdxIP); err != nil {
-				return errors.Errorf("setting unnumbered IP %d for %s failed: %v", ifIdxIP, uIdx, err)
+				return errors.Errorf("setting unnumbered IP %v for interface %v (%v) failed: %v", ifIdxIP, uIface, uIdx, err)
 			}
 			delete(c.uIfaceCache, uIface)
 			c.log.Debugf("Unnumbered interface %s set and removed from cache", uIface)

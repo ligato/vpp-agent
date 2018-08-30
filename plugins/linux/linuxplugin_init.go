@@ -218,7 +218,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes,
 		plugin.ifMicroserviceNotif, plugin.stopwatch); err != nil {
-		return err
+		return plugin.ifConfigurator.LogError(err)
 	}
 
 	return nil
@@ -234,12 +234,16 @@ func (plugin *Plugin) initL3() error {
 	// Linux ARP configurator
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{}
 	if err := plugin.arpConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch); err != nil {
-		return err
+		return plugin.arpConfigurator.LogError(err)
 	}
 
 	// Linux Route configurator
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{}
-	return plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch)
+	if err := plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch); err != nil {
+		plugin.routeConfigurator.LogError(err)
+	}
+
+	return nil
 }
 
 func (plugin *Plugin) retrieveLinuxConfig() (*Config, error) {
