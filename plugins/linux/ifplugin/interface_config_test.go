@@ -169,7 +169,7 @@ func TestLinuxConfiguratorAddVethPairVethNsNotAvailable(t *testing.T) {
 	Expect(data).ToNot(BeNil())
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
-	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).Should(HaveOccurred())
 	data, found = plugin.GetInterfaceByNameCache()["veth2"]
 	Expect(found).To(BeTrue())
 	Expect(data).ToNot(BeNil())
@@ -200,7 +200,7 @@ func TestLinuxConfiguratorAddVethPairPeerNsNotAvailable(t *testing.T) {
 	Expect(data).ToNot(BeNil())
 	// Configure second veth
 	err = plugin.ConfigureLinuxInterface(getVethInterface("veth2", "veth1", 1))
-	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).Should(HaveOccurred())
 	data, found = plugin.GetInterfaceByNameCache()["veth2"]
 	Expect(found).To(BeTrue())
 	Expect(data).ToNot(BeNil())
@@ -470,7 +470,7 @@ func TestLinuxConfiguratorAddTap_TempIfName(t *testing.T) {
 
 	data := getTapInterface("tap1", "", "TempIfName")
 	err := plugin.ConfigureLinuxInterface(data)
-	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).Should(HaveOccurred())
 	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	// Verify registration
@@ -489,7 +489,7 @@ func TestLinuxConfiguratorAddTap_HostIfName(t *testing.T) {
 
 	data := getTapInterface("tap1", "HostIfName", "")
 	err := plugin.ConfigureLinuxInterface(data)
-	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).Should(HaveOccurred())
 	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	// Verify registration
