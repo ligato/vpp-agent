@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -67,364 +68,440 @@ type SRv6Configurator struct {
 }
 
 // Init members
-func (plugin *SRv6Configurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+func (c *SRv6Configurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool, srHandler vppcalls.SRv6VppAPI) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-sr-plugin")
+	c.log = logger.NewLogger("-sr-plugin")
 
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	plugin.vppChan, err = goVppMux.NewAPIChannel()
+	c.vppChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
-		return
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// Init stopwatch
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("SRConfigurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("SRConfigurator", c.log)
 	}
 
 	// VPP API handler
 	if srHandler != nil {
-		plugin.srHandler = srHandler
+		c.srHandler = srHandler
 	} else {
-		plugin.srHandler = vppcalls.NewSRv6VppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
+		c.srHandler = vppcalls.NewSRv6VppHandler(c.vppChan, c.log, c.stopwatch)
 	}
 
 	// Interface indexes
-	plugin.swIfIndexes = swIfIndexes
+	c.swIfIndexes = swIfIndexes
 
 	// Create caches
-	plugin.policyCache = cache.NewPolicyCache(plugin.log)
-	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.log)
-	plugin.steeringCache = cache.NewSteeringCache(plugin.log)
-	plugin.createdPolicies = make(map[string]struct{})
+	c.policyCache = cache.NewPolicyCache(c.log)
+	c.policySegmentsCache = cache.NewPolicySegmentCache(c.log)
+	c.steeringCache = cache.NewSteeringCache(c.log)
+	c.createdPolicies = make(map[string]struct{})
 
 	// Create indexes
-	plugin.policySegmentIndexSeq = newSequence()
-	plugin.policySegmentIndexes = nametoidx.NewNameToIdx(plugin.log, "policy-segment-indexes", nil)
-	plugin.policyIndexSeq = newSequence()
-	plugin.policyIndexes = nametoidx.NewNameToIdx(plugin.log, "policy-indexes", nil)
+	c.policySegmentIndexSeq = newSequence()
+	c.policySegmentIndexes = nametoidx.NewNameToIdx(c.log, "policy-segment-indexes", nil)
+	c.policyIndexSeq = newSequence()
+	c.policyIndexes = nametoidx.NewNameToIdx(c.log, "policy-indexes", nil)
+
+	c.log.Info("Segment routing configurator initialized")
 
 	return
 }
 
 // Close closes GOVPP channel
-func (plugin *SRv6Configurator) Close() error {
-	return safeclose.Close(plugin.vppChan)
-}
-
-// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *SRv6Configurator) clearMapping() {
-	// Clear caches
-	plugin.policyCache = cache.NewPolicyCache(plugin.log)
-	plugin.policySegmentsCache = cache.NewPolicySegmentCache(plugin.log)
-	plugin.steeringCache = cache.NewSteeringCache(plugin.log)
-	plugin.createdPolicies = make(map[string]struct{})
-
-	// Clear indexes
-	plugin.policySegmentIndexSeq = newSequence()
-	plugin.policySegmentIndexes.Clear()
-	plugin.policyIndexSeq = newSequence()
-	plugin.policyIndexes.Clear()
-}
-
-// AddLocalSID adds new Local SID into VPP using VPP's binary api
-func (plugin *SRv6Configurator) AddLocalSID(value *srv6.LocalSID) error {
-	sid, err := ParseIPv6(value.GetSid())
-	if err != nil {
-		return fmt.Errorf("sid should be valid ipv6 address: %v", err)
-	}
-	return plugin.srHandler.AddLocalSid(sid, value, plugin.swIfIndexes)
-}
-
-// DeleteLocalSID removes Local SID from VPP using VPP's binary api
-func (plugin *SRv6Configurator) DeleteLocalSID(value *srv6.LocalSID) error {
-	sid, err := ParseIPv6(value.GetSid())
-	if err != nil {
-		return fmt.Errorf("sid should be valid ipv6 address: %v", err)
-	}
-	return plugin.srHandler.DeleteLocalSid(sid)
-}
-
-// ModifyLocalSID modifies Local SID from <prevValue> to <value> in VPP using VPP's binary api
-func (plugin *SRv6Configurator) ModifyLocalSID(value *srv6.LocalSID, prevValue *srv6.LocalSID) error {
-	err := plugin.DeleteLocalSID(prevValue)
-	if err != nil {
-		return fmt.Errorf("can't delete old version of Local SID: %v", err)
-	}
-	err = plugin.AddLocalSID(value)
-	if err != nil {
-		return fmt.Errorf("can't apply new version of Local SID: %v", err)
+func (c *SRv6Configurator) Close() error {
+	if err := safeclose.Close(c.vppChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose segment routing configurator: %v", err))
 	}
 	return nil
 }
 
+// clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
+func (c *SRv6Configurator) clearMapping() {
+	// Clear caches
+	c.policyCache = cache.NewPolicyCache(c.log)
+	c.policySegmentsCache = cache.NewPolicySegmentCache(c.log)
+	c.steeringCache = cache.NewSteeringCache(c.log)
+	c.createdPolicies = make(map[string]struct{})
+
+	// Clear indexes
+	c.policySegmentIndexSeq = newSequence()
+	c.policySegmentIndexes.Clear()
+	c.policyIndexSeq = newSequence()
+	c.policyIndexes.Clear()
+
+	c.log.Debugf("segment routing configurator mapping cleared")
+}
+
+// AddLocalSID adds new Local SID into VPP using VPP's binary api
+func (c *SRv6Configurator) AddLocalSID(value *srv6.LocalSID) error {
+	sid, err := ParseIPv6(value.GetSid())
+	if err != nil {
+		return errors.Errorf("failed to parse local sid %s, should be a valid ipv6 address: %v",
+			value.GetSid(), err)
+	}
+	if err := c.srHandler.AddLocalSid(sid, value, c.swIfIndexes); err != nil {
+		return errors.Errorf("failed to add local sid %s: %v", sid.String(), err)
+	}
+	c.log.Infof("Local sid %s added", value.GetSid())
+
+	return nil
+}
+
+// DeleteLocalSID removes Local SID from VPP using VPP's binary api
+func (c *SRv6Configurator) DeleteLocalSID(value *srv6.LocalSID) error {
+	sid, err := ParseIPv6(value.GetSid())
+	if err != nil {
+		return errors.Errorf("failed to parse local sid %s, should be a valid ipv6 address: %v",
+			value.GetSid(), err)
+	}
+	if err := c.srHandler.DeleteLocalSid(sid); err != nil {
+		return errors.Errorf("failed to delete local sid %s: %v", sid.String(), err)
+	}
+	c.log.Infof("Local sid %s removed", value.GetSid())
+
+	return nil
+}
+
+// ModifyLocalSID modifies Local SID from <prevValue> to <value> in VPP using VPP's binary api
+func (c *SRv6Configurator) ModifyLocalSID(value *srv6.LocalSID, prevValue *srv6.LocalSID) error {
+	err := c.DeleteLocalSID(prevValue)
+	if err != nil {
+		return errors.Errorf("local sid modify: failed to delete old version of Local SID %s: %v", prevValue.Sid, err)
+	}
+	err = c.AddLocalSID(value)
+	if err != nil {
+		return errors.Errorf("local sid modify: failed to apply new version of Local SID %s: %v", value.Sid, err)
+	}
+	c.log.Infof("Sid %s modified", value.GetSid())
+
+	return nil
+}
+
 // AddPolicy adds new policy into VPP using VPP's binary api
-func (plugin *SRv6Configurator) AddPolicy(policy *srv6.Policy) error {
+func (c *SRv6Configurator) AddPolicy(policy *srv6.Policy) error {
 	bsid, err := ParseIPv6(policy.GetBsid())
 	if err != nil {
-		return fmt.Errorf("bsid should be valid ipv6 address: %v", err)
+		return errors.Errorf("failed to parse bsid %s, should be a valid ipv6 address: %v",
+			policy.GetBsid(), err)
 	}
-	plugin.policyCache.Put(bsid, policy)
-	segments, segmentNames := plugin.policySegmentsCache.LookupByPolicy(bsid)
+	c.policyCache.Put(bsid, policy)
+	segments, segmentNames := c.policySegmentsCache.LookupByPolicy(bsid)
 	if len(segments) == 0 {
-		plugin.log.Debugf("addition of policy (%v) postponed until first policy segment is defined for it", bsid.String())
+		c.log.Debugf("addition of policy (%v) postponed until first policy segment is defined for it", bsid.String())
 		return nil
 	}
 
-	plugin.addPolicyToIndexes(bsid)
-	plugin.addSegmentToIndexes(bsid, segmentNames[0])
-	err = plugin.srHandler.AddPolicy(bsid, policy, segments[0])
+	c.addPolicyToIndexes(bsid)
+	c.addSegmentToIndexes(bsid, segmentNames[0])
+	err = c.srHandler.AddPolicy(bsid, policy, segments[0])
 	if err != nil {
-		return fmt.Errorf("can't write policy (%v) with first segment (%v): %v", bsid, segments[0].Segments, err)
+		return errors.Errorf("failed to write policy %s with first segment %s: %v",
+			bsid.String(), segments[0].Segments, err)
 	}
-	plugin.createdPolicies[bsid.String()] = struct{}{} // write into Set that policy was successfully created
+	c.createdPolicies[bsid.String()] = struct{}{} // write into Set that policy was successfully created
 	if len(segments) > 1 {
 		for i, segment := range segments[1:] {
-			err = plugin.AddPolicySegment(segmentNames[i], segment)
+			err = c.AddPolicySegment(segmentNames[i], segment)
 			if err != nil {
-				return fmt.Errorf("can't apply subsequent policy segment (%v) to policy (%v): %v", segment.Segments, bsid.String(), err)
+				return errors.Errorf("faield to apply subsequent policy segment %s to policy %s: %v",
+					segment.Segments, bsid.String(), err)
 			}
 		}
 	}
 
 	// adding policy dependent steerings
-	idx, _, _ := plugin.policyIndexes.LookupIdx(bsid.String())
-	steerings, steeringNames := plugin.lookupSteeringByPolicy(bsid, idx)
+	idx, _, _ := c.policyIndexes.LookupIdx(bsid.String())
+	steerings, steeringNames := c.lookupSteeringByPolicy(bsid, idx)
 	for i, steering := range steerings {
-		if err := plugin.AddSteering(steeringNames[i], steering); err != nil {
-			return fmt.Errorf("can't create steering by creating policy referenced by steering: %v", err)
+		if err := c.AddSteering(steeringNames[i], steering); err != nil {
+			return fmt.Errorf("failed to create steering %s by creating policy referenced by steering: %v",
+				steeringNames[i], err)
 		}
 	}
+
+	c.log.Infof("Policy with bsid %s added", policy.Bsid)
+
 	return nil
 }
 
-func (plugin *SRv6Configurator) lookupSteeringByPolicy(bsid srv6.SID, index uint32) ([]*srv6.Steering, []string) {
+func (c *SRv6Configurator) lookupSteeringByPolicy(bsid srv6.SID, index uint32) ([]*srv6.Steering, []string) {
 	// union search by bsid and policy index
-	steerings1, steeringNames1 := plugin.steeringCache.LookupByPolicyBSID(bsid)
-	steerings2, steeringNames2 := plugin.steeringCache.LookupByPolicyIndex(index)
+	steerings1, steeringNames1 := c.steeringCache.LookupByPolicyBSID(bsid)
+	steerings2, steeringNames2 := c.steeringCache.LookupByPolicyIndex(index)
 	steerings1 = append(steerings1, steerings2...)
 	steeringNames1 = append(steeringNames1, steeringNames2...)
 	return steerings1, steeringNames1
 }
 
 // RemovePolicy removes policy from VPP using VPP's binary api
-func (plugin *SRv6Configurator) RemovePolicy(policy *srv6.Policy) error {
+func (c *SRv6Configurator) RemovePolicy(policy *srv6.Policy) error {
 	bsid, err := ParseIPv6(policy.GetBsid())
 	if err != nil {
-		return fmt.Errorf("bsid should be valid ipv6 address: %v", err)
+		return errors.Errorf("failed to parse bsid %s, should be a valid ipv6 address: %v",
+			policy.GetBsid(), err)
 	}
 	// adding policy dependent steerings
-	idx, _, _ := plugin.policyIndexes.LookupIdx(bsid.String())
-	steerings, steeringNames := plugin.lookupSteeringByPolicy(bsid, idx)
+	idx, _, _ := c.policyIndexes.LookupIdx(bsid.String())
+	steerings, steeringNames := c.lookupSteeringByPolicy(bsid, idx)
 	for i, steering := range steerings {
-		if err := plugin.RemoveSteering(steeringNames[i], steering); err != nil {
-			return fmt.Errorf("can't remove steering in process of removing policy referenced by steering: %v", err)
+		if err := c.RemoveSteering(steeringNames[i], steering); err != nil {
+			return errors.Errorf("failed to remove steering %s in process of removing policy referenced by steering: %v",
+				steeringNames[i], err)
 		}
 	}
 
-	plugin.policyCache.Delete(bsid)
-	plugin.policyIndexes.UnregisterName(bsid.String())
-	delete(plugin.createdPolicies, bsid.String())
-	_, segmentNames := plugin.policySegmentsCache.LookupByPolicy(bsid)
+	c.policyCache.Delete(bsid)
+	c.policyIndexes.UnregisterName(bsid.String())
+	c.log.Debugf("policy %s removed from cache and mapping", policy.Bsid)
+	delete(c.createdPolicies, bsid.String())
+	_, segmentNames := c.policySegmentsCache.LookupByPolicy(bsid)
 	for _, segmentName := range segmentNames {
-		plugin.policySegmentsCache.Delete(bsid, segmentName)
-		index, _, exists := plugin.policySegmentIndexes.UnregisterName(plugin.uniquePolicySegmentName(bsid, segmentName))
+		c.policySegmentsCache.Delete(bsid, segmentName)
+		index, _, exists := c.policySegmentIndexes.UnregisterName(c.uniquePolicySegmentName(bsid, segmentName))
+		c.log.Debugf("policy segment %s removed from cache and mapping", policy.Bsid)
 		if exists {
-			plugin.policySegmentIndexSeq.delete(index)
+			c.policySegmentIndexSeq.delete(index)
 		}
 	}
-	return plugin.srHandler.DeletePolicy(bsid) // expecting that policy delete will also delete policy segments in vpp
+	if err := c.srHandler.DeletePolicy(bsid); err != nil { // expecting that policy delete will also delete policy segments in vpp
+		return errors.Errorf("failed to delete policy %s: %v",
+			bsid.String(), err)
+	}
+
+	return nil
 }
 
 // ModifyPolicy modifies policy in VPP using VPP's binary api
-func (plugin *SRv6Configurator) ModifyPolicy(value *srv6.Policy, prevValue *srv6.Policy) error {
+func (c *SRv6Configurator) ModifyPolicy(value *srv6.Policy, prevValue *srv6.Policy) error {
 	bsid, err := ParseIPv6(value.GetBsid())
 	if err != nil {
-		return fmt.Errorf("bsid should be valid ipv6 address: %v", err)
+		return errors.Errorf("failed to parse modified bsid %s, should be a valid ipv6 address: %v",
+			value.GetBsid(), err)
 	}
-	segments, segmentNames := plugin.policySegmentsCache.LookupByPolicy(bsid)
-	err = plugin.RemovePolicy(prevValue)
+	segments, segmentNames := c.policySegmentsCache.LookupByPolicy(bsid)
+	err = c.RemovePolicy(prevValue)
 	if err != nil {
-		return fmt.Errorf("can't delete old version of Policy: %v", err)
+		return err
 	}
-	err = plugin.AddPolicy(value)
+	err = c.AddPolicy(value)
 	if err != nil {
-		return fmt.Errorf("can't apply new version of Policy: %v", err)
+		return err
 	}
 	for i, segment := range segments {
-		err = plugin.AddPolicySegment(segmentNames[i], segment)
+		err = c.AddPolicySegment(segmentNames[i], segment)
 		if err != nil {
-			return fmt.Errorf("can't apply segment %v (%v) as part of policy modification: %v", segmentNames[i], segment.Segments, err)
+			return errors.Errorf("can't apply segment %s (%s) as part of policy modification: %v", segmentNames[i], segment.Segments, err)
 		}
 	}
 	return nil
 }
 
 // AddPolicySegment adds policy segment <policySegment> with name <segmentName> into referenced policy in VPP using VPP's binary api.
-func (plugin *SRv6Configurator) AddPolicySegment(segmentName string, policySegment *srv6.PolicySegment) error {
+func (c *SRv6Configurator) AddPolicySegment(segmentName string, policySegment *srv6.PolicySegment) error {
 	bsid, err := ParseIPv6(policySegment.GetPolicyBsid())
 	if err != nil {
-		return fmt.Errorf("policy bsid should be valid ipv6 address: %v", err)
+		return errors.Errorf("failed to parse bsid %s, should be a valid ipv6 address: %v",
+			policySegment.GetPolicyBsid(), err)
 	}
-	plugin.policySegmentsCache.Put(bsid, segmentName, policySegment)
-	policy, exists := plugin.policyCache.GetValue(bsid)
+	c.policySegmentsCache.Put(bsid, segmentName, policySegment)
+	policy, exists := c.policyCache.GetValue(bsid)
 	if !exists {
-		plugin.log.Debugf("addition of policy segment (%v) postponed until policy with %v bsid is created", policySegment.GetSegments(), bsid.String())
+		c.log.Debugf("addition of policy segment (%v) postponed until policy with %s bsid is created",
+			policySegment.GetSegments(), bsid.String())
 		return nil
 	}
 
-	segments, _ := plugin.policySegmentsCache.LookupByPolicy(bsid)
+	segments, _ := c.policySegmentsCache.LookupByPolicy(bsid)
 	if len(segments) <= 1 {
-		if _, alreadyCreated := plugin.createdPolicies[bsid.String()]; alreadyCreated {
-			// last segment got deleted in etcd, but policy with last segment stays in VPP, and we want add another segment
-			// -> we must remove old policy with last segment from VPP to add it again with new segment
-			err := plugin.RemovePolicy(policy)
+		if _, alreadyCreated := c.createdPolicies[bsid.String()]; alreadyCreated {
+			// last segment got deleted in etcd, but policy with last segment stays in VPP, and we want to add another segment
+			// -> we must remove the old policy with last segment from the VPP to add it again with the new segment
+			err := c.RemovePolicy(policy)
 			if err != nil {
-				return fmt.Errorf("can't delete Policy (with previously deleted last policy segment) to recreated it with new policy segment: %v", err)
+				return errors.Errorf("can't delete Policy (with previously deleted last policy segment) to recreated it with new policy segment: %v", err)
 			}
-			plugin.policySegmentsCache.Put(bsid, segmentName, policySegment) // got deleted in policy removal
+			c.policySegmentsCache.Put(bsid, segmentName, policySegment) // got deleted in policy removal
 		}
-		return plugin.AddPolicy(policy)
+		return c.AddPolicy(policy)
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if addition fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
-	plugin.addSegmentToIndexes(bsid, segmentName)
-	return plugin.srHandler.AddPolicySegment(bsid, policy, policySegment)
+	c.addSegmentToIndexes(bsid, segmentName)
+	if err := c.srHandler.AddPolicySegment(bsid, policy, policySegment); err != nil {
+		return errors.Errorf("failed to add policy segment %s: %v", bsid, err)
+	}
+
+	return nil
 }
 
 // RemovePolicySegment removes policy segment <policySegment> with name <segmentName> from referenced policy in VPP using
 // VPP's binary api. In case of last policy segment in policy, policy segment is not removed, because policy can't exists
 // in VPP without policy segment. Instead it is postponed until policy removal or addition of another policy segment happen.
-func (plugin *SRv6Configurator) RemovePolicySegment(segmentName string, policySegment *srv6.PolicySegment) error {
+func (c *SRv6Configurator) RemovePolicySegment(segmentName string, policySegment *srv6.PolicySegment) error {
 	bsid, err := ParseIPv6(policySegment.GetPolicyBsid())
 	if err != nil {
-		return fmt.Errorf("policy bsid should be valid ipv6 address: %v", err)
+		return errors.Errorf("failed to parse bsid %s, should be a valid ipv6 address: %v",
+			policySegment.GetPolicyBsid(), err)
 	}
-	plugin.policySegmentsCache.Delete(bsid, segmentName)
-	index, _, exists := plugin.policySegmentIndexes.UnregisterName(plugin.uniquePolicySegmentName(bsid, segmentName))
+	c.policySegmentsCache.Delete(bsid, segmentName)
+	index, _, exists := c.policySegmentIndexes.UnregisterName(c.uniquePolicySegmentName(bsid, segmentName))
 
-	siblings, _ := plugin.policySegmentsCache.LookupByPolicy(bsid) // sibling segments in the same policy
-	if len(siblings) == 0 {                                        // last segment for policy
-		plugin.log.Debugf("removal of policy segment (%v) postponed until policy with %v bsid is deleted", policySegment.GetSegments(), bsid.String())
+	siblings, _ := c.policySegmentsCache.LookupByPolicy(bsid) // sibling segments in the same policy
+	if len(siblings) == 0 {                                   // last segment for policy
+		c.log.Debugf("removal of policy segment (%v) postponed until policy with %s bsid is deleted", policySegment.GetSegments(), bsid.String())
 		return nil
 	}
 
 	// removing not-last segment
 	if !exists {
-		return fmt.Errorf("can't find index of policy segment %v in policy with bsid %v", policySegment.Segments, bsid)
+		return errors.Errorf("can't find index of policy segment %s in policy with bsid %s", policySegment.Segments, bsid)
 	}
-	policy, exists := plugin.policyCache.GetValue(bsid)
+	policy, exists := c.policyCache.GetValue(bsid)
 	if !exists {
-		return fmt.Errorf("can't find policy with bsid %v", bsid)
+		return errors.Errorf("can't find policy with bsid %s", bsid)
 	}
 	// FIXME there is no API contract saying what happens to VPP indexes if removal fails (also different fail code can rollback or not rollback indexes) => no way how to handle this without being dependent on internal implementation inside VPP and that is just very fragile -> API should tell this but it doesn't!
-	plugin.policySegmentIndexSeq.delete(index)
-	return plugin.srHandler.DeletePolicySegment(bsid, policy, policySegment, index)
+	c.policySegmentIndexSeq.delete(index)
+	if err := c.srHandler.DeletePolicySegment(bsid, policy, policySegment, index); err != nil {
+		return errors.Errorf("failed to delete policy segment %s: %v", bsid, err)
+	}
+
+	return nil
 }
 
 // ModifyPolicySegment modifies existing policy segment with name <segmentName> from <prevValue> to <value> in referenced policy.
-func (plugin *SRv6Configurator) ModifyPolicySegment(segmentName string, value *srv6.PolicySegment, prevValue *srv6.PolicySegment) error {
+func (c *SRv6Configurator) ModifyPolicySegment(segmentName string, value *srv6.PolicySegment, prevValue *srv6.PolicySegment) error {
 	bsid, err := ParseIPv6(value.GetPolicyBsid())
 	if err != nil {
-		return fmt.Errorf("policy bsid should be valid ipv6 address: %v", err)
+		return errors.Errorf("failed to parse modified bsid %s, should be a valid ipv6 address: %v",
+			value.GetPolicyBsid(), err)
 	}
-	segments, _ := plugin.policySegmentsCache.LookupByPolicy(bsid)
+	segments, _ := c.policySegmentsCache.LookupByPolicy(bsid)
 	if len(segments) <= 1 { // last segment in policy can't be removed without removing policy itself
-		policy, exists := plugin.policyCache.GetValue(bsid)
+		policy, exists := c.policyCache.GetValue(bsid)
 		if !exists {
-			return fmt.Errorf("can't find Policy in cache when updating last policy segment in policy")
+			return errors.Errorf("can't find Policy in cache when updating last policy segment in policy")
 		}
-		err := plugin.RemovePolicy(policy)
+		err := c.RemovePolicy(policy)
 		if err != nil {
-			return fmt.Errorf("can't delete Policy as part of removing old version of last policy segment in policy: %v", err)
+			return errors.Errorf("can't delete Policy as part of removing old version of last policy segment in policy: %v", err)
 		}
-		err = plugin.AddPolicy(policy)
+		err = c.AddPolicy(policy)
 		if err != nil {
-			return fmt.Errorf("can't add Policy as part of adding new version of last policy segment in policy: %v", err)
+			return errors.Errorf("can't add Policy as part of adding new version of last policy segment in policy: %v", err)
 		}
-		err = plugin.AddPolicySegment(segmentName, value)
+		err = c.AddPolicySegment(segmentName, value)
 		if err != nil {
-			return fmt.Errorf("can't apply new version of last Policy segment: %v", err)
+			return errors.Errorf("can't apply new version of last Policy segment: %v", err)
 		}
 		return nil
 	}
-	err = plugin.RemovePolicySegment(segmentName, prevValue)
+	err = c.RemovePolicySegment(segmentName, prevValue)
 	if err != nil {
-		return fmt.Errorf("can't delete old version of Policy segment: %v", err)
+		return errors.Errorf("can't delete old version of Policy segment: %v", err)
 	}
-	err = plugin.AddPolicySegment(segmentName, value)
+	err = c.AddPolicySegment(segmentName, value)
 	if err != nil {
-		return fmt.Errorf("can't apply new version of Policy segment: %v", err)
+		return errors.Errorf("can't apply new version of Policy segment: %v", err)
 	}
 	return nil
 }
 
-func (plugin *SRv6Configurator) addSegmentToIndexes(bsid srv6.SID, segmentName string) {
-	plugin.policySegmentIndexes.RegisterName(plugin.uniquePolicySegmentName(bsid, segmentName), plugin.policySegmentIndexSeq.nextID(), nil)
+func (c *SRv6Configurator) addSegmentToIndexes(bsid srv6.SID, segmentName string) {
+	c.policySegmentIndexes.RegisterName(c.uniquePolicySegmentName(bsid, segmentName), c.policySegmentIndexSeq.nextID(), nil)
+	c.log.Debugf("policy segment with bsid %s registered", bsid.String())
 }
 
-func (plugin *SRv6Configurator) addPolicyToIndexes(bsid srv6.SID) {
-	plugin.policyIndexes.RegisterName(bsid.String(), plugin.policyIndexSeq.nextID(), nil)
+func (c *SRv6Configurator) addPolicyToIndexes(bsid srv6.SID) {
+	c.policyIndexes.RegisterName(bsid.String(), c.policyIndexSeq.nextID(), nil)
+	c.log.Debugf("policy with bsid %s registered", bsid.String())
 }
 
-func (plugin *SRv6Configurator) uniquePolicySegmentName(bsid srv6.SID, segmentName string) string {
+func (c *SRv6Configurator) uniquePolicySegmentName(bsid srv6.SID, segmentName string) string {
 	return bsid.String() + srv6.EtcdKeyPathDelimiter + segmentName
 }
 
 // AddSteering adds new steering into VPP using VPP's binary api
-func (plugin *SRv6Configurator) AddSteering(name string, steering *srv6.Steering) error {
-	plugin.steeringCache.Put(name, steering)
+func (c *SRv6Configurator) AddSteering(name string, steering *srv6.Steering) error {
+	c.steeringCache.Put(name, steering)
 	bsidStr := steering.PolicyBsid
 	if len(strings.Trim(steering.PolicyBsid, " ")) == 0 { // policy defined by index
 		var exists bool
-		bsidStr, _, exists = plugin.policyIndexes.LookupName(steering.PolicyIndex)
+		bsidStr, _, exists = c.policyIndexes.LookupName(steering.PolicyIndex)
 		if !exists {
-			plugin.log.Debugf("addition of steering (index %v) postponed until referenced policy is defined", steering.PolicyIndex)
+			c.log.Debugf("addition of steering (index %d) postponed until referenced policy is defined", steering.PolicyIndex)
 			return nil
 		}
 	}
 	// policy defined by BSID (or index defined converted to BSID defined)
 	bsid, err := ParseIPv6(bsidStr)
 	if err != nil {
-		return fmt.Errorf("can't parse policy BSID string ('%v') into IPv6 address", steering.PolicyBsid)
+		return errors.Errorf("failed to parse modified bsid %s, should be a valid ipv6 address: %v",
+			steering.GetPolicyBsid(), err)
 	}
-	if _, exists := plugin.policyCache.GetValue(bsid); !exists {
-		plugin.log.Debugf("addition of steering (bsid %v) postponed until referenced policy is defined", name)
+	if _, exists := c.policyCache.GetValue(bsid); !exists {
+		c.log.Debugf("addition of steering (bsid %s) postponed until referenced policy is defined", name)
 		return nil
 	}
 
-	return plugin.srHandler.AddSteering(steering, plugin.swIfIndexes)
+	if err := c.srHandler.AddSteering(steering, c.swIfIndexes); err != nil {
+		return errors.Errorf("failed to add steering %s: %v", name, err)
+	}
+
+	return nil
 }
 
 // RemoveSteering removes steering from VPP using VPP's binary api
-func (plugin *SRv6Configurator) RemoveSteering(name string, steering *srv6.Steering) error {
-	plugin.steeringCache.Delete(name)
-	return plugin.srHandler.RemoveSteering(steering, plugin.swIfIndexes)
+func (c *SRv6Configurator) RemoveSteering(name string, steering *srv6.Steering) error {
+	c.steeringCache.Delete(name)
+	c.log.Debugf("steering %s removed from cache", name)
+	if err := c.srHandler.RemoveSteering(steering, c.swIfIndexes); err != nil {
+		return errors.Errorf("failed to remove steering %s: %v", name, err)
+	}
+
+	return nil
 }
 
 // ModifySteering modifies existing steering in VPP using VPP's binary api
-func (plugin *SRv6Configurator) ModifySteering(name string, value *srv6.Steering, prevValue *srv6.Steering) error {
-	err := plugin.RemoveSteering(name, prevValue)
+func (c *SRv6Configurator) ModifySteering(name string, value *srv6.Steering, prevValue *srv6.Steering) error {
+	err := c.RemoveSteering(name, prevValue)
 	if err != nil {
-		return fmt.Errorf("can't delete old version of steering %v: %v", name, err)
+		return errors.Errorf("modify steering: failed to remove old value %s: %v", name, err)
 	}
-	err = plugin.AddSteering(name, value)
+	err = c.AddSteering(name, value)
 	if err != nil {
-		return fmt.Errorf("can't apply new version of steering %v: %v", name, err)
+		return errors.Errorf("modify steering: failed to apply new value %s: %v", name, err)
 	}
 	return nil
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *SRv6Configurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }
 
 // ParseIPv6 parses string <str> to IPv6 address (including IPv4 address converted to IPv6 address)
 func ParseIPv6(str string) (net.IP, error) {
 	ip := net.ParseIP(str)
 	if ip == nil {
-		return nil, fmt.Errorf(" %q is not ip address", str)
+		return nil, errors.Errorf(" %q is not ip address", str)
 	}
 	ipv6 := ip.To16()
 	if ipv6 == nil {
-		return nil, fmt.Errorf(" %q is not ipv6 address", str)
+		return nil, errors.Errorf(" %q is not ipv6 address", str)
 	}
 	return ipv6, nil
 }

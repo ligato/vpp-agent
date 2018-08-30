@@ -648,7 +648,7 @@ func (c *NatConfigurator) unconfigureStaticMappings(mappings []*nat.Nat44DNat_DN
 		// Unregister DNAT mapping
 		mappingIdentifier := GetStMappingIdentifier(mappingEntry)
 		c.dNatStMappingIndexes.UnregisterName(mappingIdentifier)
-		c.log.Debugf("DNAT lb-mapping un-registered (ID %v)", mappingIdentifier)
+		c.log.Debugf("DNAT lb-mapping unregistered (ID %v)", mappingIdentifier)
 	}
 
 	return nil

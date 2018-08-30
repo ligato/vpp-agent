@@ -167,7 +167,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(acl.Prefix) {
 		if err := plugin.aclConfigurator.Resync(req.ACLs); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.aclConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(bfd.AuthKeysPrefix) {
@@ -187,7 +187,7 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l2.BdPrefix) {
 		if err := plugin.bdConfigurator.Resync(req.BridgeDomains); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.bdConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l2.FibPrefix) {
@@ -197,42 +197,42 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(l2.XConnectPrefix) {
 		if err := plugin.xcConfigurator.Resync(req.XConnects); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.xcConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.RoutesPrefix) {
 		if err := plugin.routeConfigurator.Resync(req.StaticRoutes); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.routeConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.ArpPrefix) {
 		if err := plugin.arpConfigurator.Resync(req.ArpEntries); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.arpConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.ProxyARPInterfacePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncInterfaces(req.ProxyArpInterfaces); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.proxyArpConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.ProxyARPRangePrefix) {
 		if err := plugin.proxyArpConfigurator.ResyncRanges(req.ProxyArpRanges); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.proxyArpConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l3.IPScanNeighPrefix) {
 		if err := plugin.ipNeighConfigurator.Resync(req.IPScanNeigh); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.ipNeighConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l4.FeaturesPrefix) {
 		if err := plugin.appNsConfigurator.ResyncFeatures(req.L4Features); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.appNsConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(l4.NamespacesPrefix) {
 		if err := plugin.appNsConfigurator.ResyncAppNs(req.AppNamespaces); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.appNsConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(stn.Prefix) {
@@ -257,12 +257,12 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 	}
 	if !plugin.droppedFromResync(ipsec.KeyPrefix) {
 		if err := plugin.ipSecConfigurator.Resync(req.IPSecSPDs, req.IPSecSAs, req.IPSecTunnels); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.ipSecConfigurator.LogError(err))
 		}
 	}
 	if !plugin.droppedFromResync(srv6.BasePrefix()) {
 		if err := plugin.srv6Configurator.Resync(req.LocalSids, req.SrPolicies, req.SrPolicySegments, req.SrSteerings); err != nil {
-			resyncErrs = append(resyncErrs, err)
+			resyncErrs = append(resyncErrs, plugin.srv6Configurator.LogError(err))
 		}
 	}
 	// log errors if any

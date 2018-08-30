@@ -15,6 +15,7 @@
 package srplugin
 
 import (
+	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
@@ -32,42 +33,36 @@ type NamedSteering struct {
 }
 
 // Resync writes missing segment routing configs to the VPP and removes obsolete ones.
-func (plugin *SRv6Configurator) Resync(localSids []*srv6.LocalSID, policies []*srv6.Policy, namedSegments []*NamedPolicySegment, namedSteerings []*NamedSteering) error {
-	plugin.log.Debug("RESYNC SR begin.")
-
+func (c *SRv6Configurator) Resync(localSids []*srv6.LocalSID, policies []*srv6.Policy, namedSegments []*NamedPolicySegment, namedSteerings []*NamedSteering) error {
 	// Re-initialize cache
-	plugin.clearMapping()
+	c.clearMapping()
 
 	// TODO: dump existing configuration from VPP, compare it with etcd and change vpp according to etcd (now is handled only case when VPP is clean, i.e. from starting)
 
 	for _, localsid := range localSids {
-		if err := plugin.AddLocalSID(localsid); err != nil {
-			plugin.log.Error(err)
-			continue
+		if err := c.AddLocalSID(localsid); err != nil {
+			return errors.Errorf("sr resync error: failed to add local sid %s: %v", localsid, err)
 		}
 	}
 
 	for _, policy := range policies {
-		if err := plugin.AddPolicy(policy); err != nil {
-			plugin.log.Error(err)
-			continue
+		if err := c.AddPolicy(policy); err != nil {
+			return errors.Errorf("sr resync error: failed to add policy %s: %v", policy.GetBsid(), err)
 		}
 	}
 
 	for _, namedSegment := range namedSegments {
-		if err := plugin.AddPolicySegment(namedSegment.Name, namedSegment.Segment); err != nil {
-			plugin.log.Error(err)
-			continue
+		if err := c.AddPolicySegment(namedSegment.Name, namedSegment.Segment); err != nil {
+			return errors.Errorf("sr resync error: failed to add policy segment %s: %v", namedSegment.Name, err)
 		}
 	}
 
 	for _, namedSteering := range namedSteerings {
-		if err := plugin.AddSteering(namedSteering.Name, namedSteering.Steering); err != nil {
-			plugin.log.Error(err)
-			continue
+		if err := c.AddSteering(namedSteering.Name, namedSteering.Steering); err != nil {
+			return errors.Errorf("sr resync error: failed to add steering %s: %v", namedSteering.Name, err)
 		}
 	}
 
-	plugin.log.Debug("RESYNC SR end.")
+	c.log.Info("Segment routing resync done")
 	return nil
 }
