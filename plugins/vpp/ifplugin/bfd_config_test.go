@@ -353,7 +353,6 @@ func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
 	defer bfdTestTeardown(connection, plugin)
 
 	// Reply handler
-	//ctx.MockVpp.MockReplyHandler(bfdVppMockHandler(ctx.MockVpp))
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&bfd_api.BfdUDPSessionDump{}).GetMessageName(),
@@ -406,7 +405,6 @@ func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
 	defer bfdTestTeardown(connection, plugin)
 
 	// Reply handler
-	//ctx.MockVpp.MockReplyHandler(bfdVppMockHandler(ctx.MockVpp))
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
 			Name: (&bfd_api.BfdUDPSessionDump{}).GetMessageName(),
@@ -544,46 +542,6 @@ func bfdTestTeardown(connection *core.Connection, plugin *ifplugin.BFDConfigurat
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
-
-/*func bfdVppMockHandler(vppMock *mock.VppAdapter) mock.ReplyHandler {
-	var sendControlPing bool
-	return func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
-		logrus.DefaultLogger().Errorf("recived request %v", request.MsgName)
-		if sendControlPing {
-			sendControlPing = false
-			data := &vpe.ControlPingReply{}
-			reply, err := vppMock.ReplyBytes(request, data)
-			Expect(err).To(BeNil())
-			msgID, err := vppMock.GetMsgID(data.GetMessageName(), data.GetCrcString())
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		}
-		if strings.HasSuffix(request.MsgName, "_dump") {
-			// Send control ping after first iteration
-			sendControlPing = true
-			data := &bfd_api.BfdUDPSessionDetails{
-				SwIfIndex:       1,
-				LocalAddr:       net.ParseIP("10.0.0.1").To4(),
-				PeerAddr:        net.ParseIP("10.0.0.2").To4(),
-				IsAuthenticated: 1,
-				BfdKeyID:        1,
-			}
-			reply, err := vppMock.ReplyBytes(request, data)
-			Expect(err).To(BeNil())
-			msgID, err := vppMock.GetMsgID(data.GetMessageName(), data.GetCrcString())
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		} else {
-			if replyMsg, msgID, ok := vppMock.ReplyFor(request.MsgName); ok {
-				reply, err := vppMock.ReplyBytes(request, replyMsg)
-				Expect(err).To(BeNil())
-				return reply, msgID, true
-			}
-		}
-
-		return reply, 0, false
-	}
-}*/
 
 /* BFD Test Data */
 
