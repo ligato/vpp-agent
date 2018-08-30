@@ -25,7 +25,8 @@ cache:
     - $(npm config get prefix)/lib/node_modules
 
 env:
-  - GO_BUILD_TAGS=mockvpp
+  global:
+    - GO_BUILD_TAGS=mockvpp
 
 before_install:
   - go get github.com/mattn/goveralls
