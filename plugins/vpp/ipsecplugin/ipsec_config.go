@@ -200,10 +200,10 @@ func (c *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityPolicy
 // ModifySPD modifies Security Policy Database in VPP
 func (c *IPSecConfigurator) ModifySPD(oldSpd, newSpd *ipsec.SecurityPolicyDatabases_SPD) error {
 	if err := c.DeleteSPD(oldSpd); err != nil {
-		return errors.Errorf("failed to modify SPD %d, error while removing old entry: %v", oldSpd.Name, err)
+		return errors.Errorf("failed to modify SPD %v, error while removing old entry: %v", oldSpd.Name, err)
 	}
 	if err := c.ConfigureSPD(newSpd); err != nil {
-		return errors.Errorf("failed to modify SPD %d, error while adding new entry: %v", oldSpd.Name, err)
+		return errors.Errorf("failed to modify SPD %v, error while adding new entry: %v", oldSpd.Name, err)
 	}
 
 	c.log.Debugf("SPD %s modified", oldSpd.Name)
@@ -301,7 +301,7 @@ func (c *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error
 
 	for _, entry := range c.spdIndexes.LookupBySA(oldSa.Name) {
 		if err := c.DeleteSPD(entry.SPD); err != nil {
-			return errors.Errorf("attempt to remove SPD %s in order to cache it failed", entry.SPD, err)
+			return errors.Errorf("attempt to remove SPD %v in order to cache it failed: %v", entry.SPD.Name, err)
 		}
 		c.cachedSpdIndexes.RegisterName(entry.SPD.Name, entry.SpdID, entry.SPD)
 		c.log.Debugf("caching SPD %s due removed SA %s", entry.SPD.Name, oldSa.Name)
