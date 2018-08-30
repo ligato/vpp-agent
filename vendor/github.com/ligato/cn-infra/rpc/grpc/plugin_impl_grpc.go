@@ -63,18 +63,11 @@ func (p *Plugin) Init() (err error) {
 		grpclog.SetLogger(p.Log.NewLogger("grpc-server"))
 	}
 
-	// Start GRPC listener
-	p.netListener, err = ListenAndServe(p.Config, p.grpcServer)
-	if err != nil {
-		return err
-	}
-	p.Log.Infof("Listening GRPC on: %v", p.Config.Endpoint)
-
 	return nil
 }
 
 // AfterInit starts the HTTP netListener.
-func (p *Plugin) AfterInit() error {
+func (p *Plugin) AfterInit() (err error) {
 	if p.Deps.HTTP != nil {
 		p.Log.Infof("exposing GRPC services via HTTP (port %v) on: /service",
 			strconv.Itoa(p.Deps.HTTP.GetPort()))
@@ -84,6 +77,13 @@ func (p *Plugin) AfterInit() error {
 	} else {
 		p.Log.Infof("HTTP not set, skip exposing GRPC services")
 	}
+
+	// Start GRPC listener
+	p.netListener, err = ListenAndServe(p.Config, p.grpcServer)
+	if err != nil {
+		return err
+	}
+	p.Log.Infof("Listening GRPC on: %v", p.Config.Endpoint)
 
 	return nil
 }
