@@ -775,14 +775,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0d7055e14293468d8a849d858d43e86d4d1be9f5361ec23813b55393b299f558"
-  name = "github.com/ungerik/pkgreflect"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "bfeb2a93186329a0bb03885bea902e86842f633d"
-
-[[projects]]
-  branch = "master"
   digest = "1:e833d953c8467158fd0250a053ec390dd899945d4c6b87b07920ad431fc80dfe"
   name = "github.com/unrolled/render"
   packages = ["."]
@@ -997,7 +989,6 @@
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
-    "github.com/ungerik/pkgreflect",
     "github.com/unrolled/render",
     "github.com/vishvananda/netlink",
     "github.com/vishvananda/netns",
