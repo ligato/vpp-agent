@@ -333,7 +333,7 @@ func (c *LinuxInterfaceConfigurator) findLinuxInterface(nbIf *interfaces.LinuxIn
 		// Switch to namespace
 		revertNs, err := c.nsHandler.SwitchToNamespace(nsMgmtCtx, nbIf.Namespace)
 		if err != nil {
-			return nil, errors.Errorf("RESYNC Linux interface %s: failed to switch to namespace %s: %v",
+			return nil, errors.Errorf("linux interface %s resync: failed to switch to namespace %s: %v",
 				nbIf.HostIfName, nbIf.Namespace.Name, err)
 		}
 		defer revertNs()

@@ -158,14 +158,12 @@ func (c *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *interfaces
 			return err
 		}
 	case interfaces.LinuxInterfaces_AUTO_TAP:
-		if linuxIf.Tap != nil && linuxIf.Tap.TempIfName != "" {
-			if err := c.configureTapInterface(linuxIf.Tap.TempIfName, linuxIf); err != nil {
-				return err
-			}
-		} else {
-			if err := c.configureTapInterface(linuxIf.HostIfName, linuxIf); err != nil {
-				return err
-			}
+		hostIfName := linuxIf.HostIfName
+		if tempIfName := linuxIf.Tap.TempIfName; tempIfName != "" {
+			hostIfName = tempIfName
+		}
+		if err := c.configureTapInterface(hostIfName, linuxIf); err != nil {
+			return err
 		}
 	default:
 		return errors.Errorf("unknown linux interface type: %v", linuxIf.Type)
