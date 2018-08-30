@@ -48,7 +48,9 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 	Expect(names).To(BeEmpty())
 
 	// Create connection
-	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
+	mockCtx := &vppcallmock.TestCtx{
+		MockVpp: mock.NewVppAdapter(),
+	}
 	connection, err := core.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 

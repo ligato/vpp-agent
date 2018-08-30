@@ -383,7 +383,7 @@ func TestResolveDeletedRoute(t *testing.T) {
 func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plugin.RouteConfigurator, ifaceidx.SwIfIndex) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

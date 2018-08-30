@@ -899,7 +899,7 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.
 	RegisterTestingT(t)
 	// connection
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

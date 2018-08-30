@@ -1201,7 +1201,7 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

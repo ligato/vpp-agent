@@ -1102,7 +1102,7 @@ func blockingResolveUpdatedBridgeDomain(plugin *l2plugin.FIBConfigurator, bdName
 func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugin.FIBConfigurator, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
