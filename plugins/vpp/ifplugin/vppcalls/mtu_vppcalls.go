@@ -21,21 +21,21 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
-func (handler *ifVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
+// SetInterfaceMtu implements interface handler.
+func (h *IfVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(interfaces.HwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(interfaces.HwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &interfaces.HwInterfaceSetMtu{
 		SwIfIndex: ifIdx,
 		Mtu:       uint16(mtu),
 	}
-
 	reply := &interfaces.HwInterfaceSetMtuReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

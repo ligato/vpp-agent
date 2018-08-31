@@ -16,11 +16,10 @@ package ifplugin
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"strings"
 
-	_ "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
@@ -39,30 +38,28 @@ const ifTempName = "temp-if-name"
 // 3. Untagged interfaces are correlated heuristically (mac address, ip addresses). If correlation
 //    is found, interface is modified if needed and registered.
 // 4. All remaining NB interfaces are configured
-func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) (errs []error) {
-	plugin.log.WithField("cfg", plugin).Debugf("RESYNC Interface begin for %v", nbIfs)
-	// Calculate and log interface resync
+func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error {
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	if err := plugin.clearMapping(); err != nil {
-		return []error{err}
+	if err := c.clearMapping(); err != nil {
+		return err
 	}
-	plugin.afPacketConfigurator.clearMapping()
+	c.afPacketConfigurator.clearMapping()
 
 	var err error
-	if plugin.memifScCache, err = plugin.ifHandler.DumpMemifSocketDetails(); err != nil {
-		return []error{err}
+	if c.memifScCache, err = c.ifHandler.DumpMemifSocketDetails(); err != nil {
+		return errors.Errorf("interface resync error: failed to dump memif socket details: %v", err)
 	}
 
 	// Dump current state of the VPP interfaces
-	vppIfs, err := plugin.ifHandler.DumpInterfaces()
+	vppIfs, err := c.ifHandler.DumpInterfaces()
 	if err != nil {
-		return []error{err}
+		return errors.Errorf("interface resync error: failed to dump interfaces: %v", err)
 	}
 
 	// Cache for untagged interfaces. All un-named interfaces have to be correlated
@@ -72,14 +69,14 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	for vppIfIdx, vppIf := range vppIfs {
 		if vppIfIdx == 0 {
 			// Register local0 interface with zero index
-			if err := plugin.registerInterface(vppIf.Meta.InternalName, vppIfIdx, vppIf.Interface); err != nil {
-				errs = append(errs, err)
+			if err := c.registerInterface(vppIf.Meta.InternalName, vppIfIdx, vppIf.Interface); err != nil {
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			continue
 		}
 		if vppIf.Interface.Name == "" {
 			// If interface has no name, it is stored as unnamed and resolved later
-			plugin.log.Debugf("RESYNC interfaces: interface %v has no name (tag)", vppIfIdx)
+			c.log.Debugf("Interface resync: interface %v has no name (tag)", vppIfIdx)
 			unnamedVppIfs[vppIfIdx] = vppIf.Interface
 			continue
 		}
@@ -88,32 +85,32 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 			if vppIf.Interface.Name == nbIf.Name {
 				correlated = true
 				// Register interface to mapping and VPP tag/index
-				if err := plugin.registerInterface(vppIf.Interface.Name, vppIfIdx, nbIf); err != nil {
-					errs = append(errs, err)
+				if err := c.registerInterface(vppIf.Interface.Name, vppIfIdx, nbIf); err != nil {
+					return errors.Errorf("interface resync error: %v", err)
 				}
 				// Calculate whether modification is needed
-				if plugin.isIfModified(nbIf, vppIf.Interface) {
-					plugin.log.Debugf("RESYNC interfaces: modifying interface %v", vppIf.Interface.Name)
-					if err = plugin.ModifyVPPInterface(nbIf, vppIf.Interface); err != nil {
-						plugin.log.Errorf("Error while modifying interface: %v", err)
-						errs = append(errs, err)
+				if c.isIfModified(nbIf, vppIf.Interface) {
+					c.log.Debugf("Interface resync: modifying interface %v", vppIf.Interface.Name)
+					if err = c.ModifyVPPInterface(nbIf, vppIf.Interface); err != nil {
+						return errors.Errorf("interface resync error: failed to modify interface %s: %v",
+							vppIf.Interface.Name, err)
 					}
 				} else {
-					plugin.log.Debugf("RESYNC interfaces: %v registered without additional changes", vppIf.Interface.Name)
+					c.log.Debugf("Interface resync: %s registered without additional changes", vppIf.Interface.Name)
 				}
 				break
 			}
 		}
 		if !correlated {
 			// Register interface before removal (to keep state consistent)
-			if err := plugin.registerInterface(vppIf.Interface.Name, vppIfIdx, vppIf.Interface); err != nil {
-				errs = append(errs, err)
+			if err := c.registerInterface(vppIf.Interface.Name, vppIfIdx, vppIf.Interface); err != nil {
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			// VPP interface is obsolete and will be removed (un-configured if physical device)
-			plugin.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Interface.Name)
-			if err = plugin.deleteVPPInterface(vppIf.Interface, vppIfIdx); err != nil {
-				plugin.log.Errorf("Error while removing interface: %v", err)
-				errs = append(errs, err)
+			c.log.Debugf("RESYNC interfaces: removing obsolete interface %v", vppIf.Interface.Name)
+			if err = c.deleteVPPInterface(vppIf.Interface, vppIfIdx); err != nil {
+				return errors.Errorf("interface resync error: failed to remove interface %s: %v",
+					vppIf.Interface.Name, err)
 			}
 		}
 	}
@@ -124,12 +121,12 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 		var correlatedIf *intf.Interfaces_Interface
 		for _, nbIf := range nbIfs {
 			// Already registered interfaces cannot be correlated again
-			_, _, found := plugin.swIfIndexes.LookupIdx(nbIf.Name)
+			_, _, found := c.swIfIndexes.LookupIdx(nbIf.Name)
 			if found {
 				continue
 			}
 			// Try to correlate heuristically
-			correlatedIf = plugin.correlateInterface(vppIf, nbIf)
+			correlatedIf = c.correlateInterface(vppIf, nbIf)
 			if correlatedIf != nil {
 				break
 			}
@@ -137,29 +134,29 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 
 		if correlatedIf != nil {
 			// Register interface
-			if err := plugin.registerInterface(correlatedIf.Name, vppIfIdx, correlatedIf); err != nil {
-				errs = append(errs, err)
+			if err := c.registerInterface(correlatedIf.Name, vppIfIdx, correlatedIf); err != nil {
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			// Calculate whether modification is needed
-			if plugin.isIfModified(correlatedIf, vppIf) {
-				plugin.log.Debugf("RESYNC interfaces: modifying correlated interface %v", vppIf.Name)
-				if err = plugin.ModifyVPPInterface(correlatedIf, vppIf); err != nil {
-					plugin.log.Errorf("Error while modifying correlated interface: %v", err)
-					errs = append(errs, err)
+			if c.isIfModified(correlatedIf, vppIf) {
+				c.log.Debugf("Interface resync: modifying correlated interface %v", vppIf.Name)
+				if err = c.ModifyVPPInterface(correlatedIf, vppIf); err != nil {
+					return errors.Errorf("interface resync error: failed to modify correlated interface %s: %v",
+						vppIf.Name, err)
 				}
 			} else {
-				plugin.log.Debugf("RESYNC interfaces: correlated %v registered without additional changes", vppIf.Name)
+				c.log.Debugf("interface resync: correlated %v registered without additional changes", vppIf.Name)
 			}
 		} else {
 			// Register interface  with temporary name (will be unregistered during removal)
-			if err := plugin.registerInterface(ifTempName, vppIfIdx, vppIf); err != nil {
-				errs = append(errs, err)
+			if err := c.registerInterface(ifTempName, vppIfIdx, vppIf); err != nil {
+				return errors.Errorf("interface resync error: %v", err)
 			}
 			// VPP interface cannot be correlated and will be removed
-			plugin.log.Debugf("RESYNC interfaces: removing interface %v", vppIf.Name)
-			if err = plugin.deleteVPPInterface(vppIf, vppIfIdx); err != nil {
-				plugin.log.Errorf("Error while removing interface: %v", err)
-				errs = append(errs, err)
+			c.log.Debugf("Interface resync: removing interface %v", vppIf.Name)
+			if err = c.deleteVPPInterface(vppIf, vppIfIdx); err != nil {
+				return errors.Errorf("interface resync error: failed to remove interface %s: %v",
+					vppIf.Name, err)
 			}
 		}
 	}
@@ -167,46 +164,46 @@ func (plugin *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) 
 	// Last step is to configure all new (not-yet-registered) interfaces
 	for _, nbIf := range nbIfs {
 		// If interface is registered, it was already processed
-		_, _, found := plugin.swIfIndexes.LookupIdx(nbIf.Name)
+		_, _, found := c.swIfIndexes.LookupIdx(nbIf.Name)
 		if !found {
-			plugin.log.Debugf("RESYNC interfaces: configuring new interface %v", nbIf.Name)
-			if err := plugin.ConfigureVPPInterface(nbIf); err != nil {
-				plugin.log.Errorf("Error while configuring interface: %v", err)
-				errs = append(errs, err)
+			c.log.Debugf("Interface resync: configuring new interface %v", nbIf.Name)
+			if err := c.ConfigureVPPInterface(nbIf); err != nil {
+				return errors.Errorf("interface resync error: failed to configure interface %s: %v",
+					nbIf.Name, err)
 			}
 		}
 	}
 
 	// update the interfaces state data in memory
-	plugin.PropagateIfDetailsToStatus()
+	if err := c.propagateIfDetailsToStatus(); err != nil {
+		return errors.Errorf("interface resync error: %v", err)
+	}
 
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC Interface end.")
+	c.log.Info("Interface resync done")
 
-	return
+	return nil
 }
 
 // VerifyVPPConfigPresence dumps VPP interface configuration on the vpp. If there are any interfaces configured (except
 // the local0), it returns false (do not interrupt the resto of the resync), otherwise returns true
-func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interfaces_Interface) bool {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC Interface begin.")
+func (c *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interfaces_Interface) bool {
 	// notify that the resync should be stopped
 	var stop bool
 
 	// Step 0: Dump actual state of the VPP
-	vppIfaces, err := plugin.ifHandler.DumpInterfaces()
+	vppIfaces, err := c.ifHandler.DumpInterfaces()
 	if err != nil {
+		// Do not return error here
 		return stop
 	}
-
-	plugin.log.Infof("dumped %d interfaces", len(vppIfaces))
 
 	// The strategy is optimize-cold-start, so look over all dumped VPP interfaces and check for the configured ones
 	// (leave out the local0). If there are any other interfaces, return true (resync will continue).
 	// If not, return a false flag which cancels the VPP resync operation.
-	plugin.log.Info("optimize-cold-start VPP resync strategy chosen, resolving...")
+	c.log.Info("optimize-cold-start VPP resync strategy chosen, resolving...")
 	if len(vppIfaces) == 0 {
 		stop = true
-		plugin.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
+		c.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (no interface was found)")
 		return stop
 	}
 	// if interface exists, try to find local0 interface (index 0)
@@ -214,36 +211,33 @@ func (plugin *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.In
 	// in case local0 is the only interface on the vpp, stop the resync
 	if len(vppIfaces) == 1 && ok {
 		stop = true
-		plugin.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (only local0 was found)")
+		c.log.Infof("...VPP resync interrupted assuming there is no configuration on the VPP (only local0 was found)")
 		return stop
 	}
 	// otherwise continue normally
-	plugin.log.Infof("... VPP configuration found, continue with VPP resync")
+	c.log.Infof("... VPP configuration found, continue with VPP resync")
 
 	return stop
 }
 
 // ResyncSession writes BFD sessions to the empty VPP
-func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Session begin.")
-	// Calculate and log bfd resync
+func (c *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	plugin.clearMapping()
+	c.clearMapping()
 
 	// Dump all BFD vppSessions
-	vppBfdSessions, err := plugin.bfdHandler.DumpBfdSessions()
+	vppBfdSessions, err := c.bfdHandler.DumpBfdSessions()
 	if err != nil {
-		return err
+		return errors.Errorf("BFD resync error: failed to dump BFD sessions: %v", err)
 	}
 
 	// Correlate existing BFD sessions from the VPP and NB config, configure new ones
-	var wasErr error
 	for _, nbSession := range nbSessions {
 		// look for configured session
 		var found bool
@@ -251,20 +245,18 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 			// compare fixed fields
 			if nbSession.Interface == vppSession.Interface && nbSession.SourceAddress == vppSession.SourceAddress &&
 				nbSession.DestinationAddress == vppSession.DestinationAddress {
-				plugin.log.Debugf("found configured BFD session for interface %v", nbSession.Interface)
-				plugin.sessionsIndexes.RegisterName(nbSession.Interface, plugin.bfdIDSeq, nil)
-				if err := plugin.ModifyBfdSession(vppSession, nbSession); err != nil {
-					plugin.log.Errorf("BFD resync: error modifying BFD session for interface %v: %v", nbSession.Interface, err)
-					wasErr = err
+				c.sessionsIndexes.RegisterName(nbSession.Interface, c.bfdIDSeq, nil)
+				if err := c.ModifyBfdSession(vppSession, nbSession); err != nil {
+					return errors.Errorf("BFD resync error: failed to modify BFD session %s: %v",
+						nbSession.Interface, err)
 				}
 				found = true
 			}
 		}
 		if !found {
 			// configure new BFD session
-			if err := plugin.ConfigureBfdSession(nbSession); err != nil {
-				plugin.log.Errorf("BFD resync: error creating a new BFD session for interface %v: %v", nbSession.Interface, err)
-				wasErr = err
+			if err := c.ConfigureBfdSession(nbSession); err != nil {
+				return errors.Errorf("BFD resync error: failed to create BFD session %s: %v", nbSession.Interface, err)
 			}
 		}
 	}
@@ -272,58 +264,53 @@ func (plugin *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Sess
 	// Remove old sessions
 	for _, vppSession := range vppBfdSessions.Session {
 		// remove every not-yet-registered session
-		_, _, found := plugin.sessionsIndexes.LookupIdx(vppSession.Interface)
+		_, _, found := c.sessionsIndexes.LookupIdx(vppSession.Interface)
 		if !found {
-			if err := plugin.DeleteBfdSession(vppSession); err != nil {
-				plugin.log.Errorf("BFD resync: error removing BFD session for interface %v: %v", vppSession.Interface, err)
-				wasErr = err
+			if err := c.DeleteBfdSession(vppSession); err != nil {
+				return errors.Errorf("BFD resync error: failed to delete BFD session %s: %v", vppSession.Interface, err)
 			}
 		}
 	}
 
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Session end. ", wasErr)
+	c.log.Info("BFD session resync done")
 
-	return wasErr
+	return nil
 }
 
 // ResyncAuthKey writes BFD keys to the empty VPP
-func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Keys begin.")
-	// Calculate and log bfd resync
+func (c *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// lookup BFD auth keys
-	vppBfdKeys, err := plugin.bfdHandler.DumpBfdAuthKeys()
+	vppBfdKeys, err := c.bfdHandler.DumpBfdAuthKeys()
 	if err != nil {
-		return err
+		return errors.Errorf("BFD resync error: failed to dump BFD authentication keys: %v", err)
 	}
 
 	// Correlate existing BFD keys from the VPP and NB config, configure new ones
-	var wasErr error
 	for _, nbKey := range nbKeys {
 		// look for configured keys
 		var found bool
 		for _, vppKey := range vppBfdKeys.AuthKeys {
 			// compare key ID
 			if nbKey.Id == vppKey.Id {
-				plugin.log.Debugf("found configured BFD auth key with ID %v", nbKey.Id)
-				plugin.keysIndexes.RegisterName(AuthKeyIdentifier(nbKey.Id), plugin.bfdIDSeq, nil)
-				if err := plugin.ModifyBfdAuthKey(vppKey, nbKey); err != nil {
-					plugin.log.Errorf("BFD resync: error modifying BFD auth key with ID %v: %v", nbKey.Id, err)
-					wasErr = err
+				c.keysIndexes.RegisterName(AuthKeyIdentifier(nbKey.Id), c.bfdIDSeq, nil)
+				if err := c.ModifyBfdAuthKey(vppKey, nbKey); err != nil {
+					return errors.Errorf("BFD resync error: failed to modify BFD authentication key %s (ID %d): %v",
+						nbKey.Name, nbKey.Id, err)
 				}
 				found = true
 			}
 		}
 		if !found {
 			// configure new BFD authentication key
-			if err := plugin.ConfigureBfdAuthKey(nbKey); err != nil {
-				plugin.log.Errorf("BFD resync: error creating a new BFD auth key with ID %v: %v", nbKey.Id, err)
-				wasErr = err
+			if err := c.ConfigureBfdAuthKey(nbKey); err != nil {
+				return errors.Errorf("BFD resync error: failed to configure BFD authentication key %s (ID %d): %v",
+					nbKey.Name, nbKey.Id, err)
 			}
 		}
 	}
@@ -331,24 +318,27 @@ func (plugin *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) err
 	// Remove old keys
 	for _, vppKey := range vppBfdKeys.AuthKeys {
 		// remove every not-yet-registered keys
-		_, _, found := plugin.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
+		_, _, found := c.keysIndexes.LookupIdx(AuthKeyIdentifier(vppKey.Id))
 		if !found {
-			if err := plugin.DeleteBfdAuthKey(vppKey); err != nil {
-				plugin.log.Errorf("BFD resync: error removing BFD auth key with ID %v: %v", vppKey.Id, err)
-				wasErr = err
+			if err := c.DeleteBfdAuthKey(vppKey); err != nil {
+				return errors.Errorf("BFD resync error: failed to delete BFD authentication key %s (ID %d): %v",
+					vppKey.Name, vppKey.Id, err)
 			}
 		}
 	}
 
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Keys end. ", wasErr)
+	c.log.Info("BFD authentication key resync done")
 
-	return wasErr
+	return nil
 }
 
 // ResyncEchoFunction writes BFD echo function to the empty VPP
-func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC BFD Echo source begin.")
-
+func (c *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
+	defer func() {
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
+		}
+	}()
 	if len(echoFunctions) == 0 {
 		// Nothing to do here. Currently VPP does not support BFD echo dump so agent does not know
 		// whether there is echo function already configured and cannot remove it
@@ -357,31 +347,34 @@ func (plugin *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHop
 	// Only one config can be used to set an echo source. If there are multiple configurations,
 	// use the first one
 	if len(echoFunctions) > 1 {
-		plugin.log.Warn("Multiple configurations of BFD echo function found. Setting up %v as source",
+		c.log.Warn("BFD resync: multiple configurations of BFD echo function found. Setting up %s as source",
 			echoFunctions[0].EchoSourceInterface)
 	}
-	if err := plugin.ConfigureBfdEchoFunction(echoFunctions[0]); err != nil {
-		return err
+	if err := c.ConfigureBfdEchoFunction(echoFunctions[0]); err != nil {
+		return errors.Errorf("BFD resync error: failed to set interface %s as BFD echo source: %v",
+			echoFunctions[0], err)
 	}
+
+	c.log.Info("BFD echo function resync done")
 
 	return nil
 }
 
 // Resync writes stn rule to the the empty VPP
-func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC stn rules begin. ")
+func (c *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
+	c.log.WithField("cfg", c).Debug("RESYNC stn rules begin. ")
 	// Calculate and log stn rules resync
 	defer func() {
-		if plugin.stopwatch != nil {
-			plugin.stopwatch.PrintLog()
+		if c.stopwatch != nil {
+			c.stopwatch.PrintLog()
 		}
 	}()
 
 	// Re-initialize cache
-	plugin.clearMapping()
+	c.clearMapping()
 
 	// Dump existing STN Rules
-	vppStnDetails, err := plugin.Dump()
+	vppStnDetails, err := c.Dump()
 	if err != nil {
 		return err
 	}
@@ -393,15 +386,15 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 		var vppStnIP net.IP
 		var vppStnIPStr string
 
-		vppStnIfIdx, _, found := plugin.ifIndexes.LookupIdx(vppStnRule.Interface)
+		vppStnIfIdx, _, found := c.ifIndexes.LookupIdx(vppStnRule.Interface)
 		if !found {
 			// The rule is attached to non existing interface but it can be removed. If there is a similar
 			// rule in NB config, it will be configured (or cached)
-			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
-				plugin.log.Error(err)
+			if err := c.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
+				c.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
+			c.log.Debugf("RESYNC STN: rule IP: %v ifIdx: %v removed due to missing interface, will be reconfigured if needed",
 				vppStnIPStr, vppStnIfIdx)
 			continue
 		}
@@ -411,32 +404,32 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 		for _, nbStnRule := range nbStnRules {
 			if nbStnRule.IpAddress == vppStnIPStr && nbStnRule.Interface == vppStnRule.Interface {
 				// Register existing rule
-				plugin.indexSTNRule(nbStnRule, false)
+				c.indexSTNRule(nbStnRule, false)
 				match = true
 			}
-			plugin.log.Debugf("RESYNC STN: registered already existing rule %v", nbStnRule.RuleName)
+			c.log.Debugf("RESYNC STN: registered already existing rule %v", nbStnRule.RuleName)
 		}
 
 		// If STN rule does not exist, it is obsolete
 		if !match {
-			if err := plugin.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
-				plugin.log.Error(err)
+			if err := c.stnHandler.DelStnRule(vppStnIfIdx, &vppStnIP); err != nil {
+				c.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnRule.Interface)
+			c.log.Debugf("RESYNC STN: rule IP: %v ifName: %v removed as obsolete", vppStnIPStr, vppStnRule.Interface)
 		}
 	}
 
 	// Configure missing rules
 	for _, nbStnRule := range nbStnRules {
 		identifier := StnIdentifier(nbStnRule.Interface)
-		_, _, found := plugin.allIndexes.LookupIdx(identifier)
+		_, _, found := c.allIndexes.LookupIdx(identifier)
 		if !found {
-			if err := plugin.Add(nbStnRule); err != nil {
-				plugin.log.Error(err)
+			if err := c.Add(nbStnRule); err != nil {
+				c.log.Error(err)
 				wasErr = err
 			}
-			plugin.log.Debugf("RESYNC STN: rule %v added", nbStnRule.RuleName)
+			c.log.Debugf("RESYNC STN: rule %v added", nbStnRule.RuleName)
 		}
 	}
 
@@ -444,34 +437,38 @@ func (plugin *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
 }
 
 // ResyncNatGlobal writes NAT address pool config to the the empty VPP
-func (plugin *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error {
-	plugin.log.Debug("RESYNC nat global config.")
-
+func (c *NatConfigurator) ResyncNatGlobal(nbGlobal *nat.Nat44Global) error {
 	// Re-initialize cache
-	plugin.clearMapping()
+	c.clearMapping()
 
-	vppNatGlobal, err := plugin.natHandler.Nat44GlobalConfigDump()
+	vppNatGlobal, err := c.natHandler.Nat44GlobalConfigDump()
 	if err != nil {
-		return fmt.Errorf("failed to dump NAT44 global config: %v", err)
+		return errors.Errorf("NAT resync error: failed to dump NAT44 global config: %v", err)
 	}
 
 	// Modify will made all the diffs needed (nothing if content is equal)
-	return plugin.ModifyNatGlobalConfig(vppNatGlobal, nbGlobal)
+	if err := c.ModifyNatGlobalConfig(vppNatGlobal, nbGlobal); err != nil {
+		return err
+	}
+
+	c.log.Info("NAT global config resync done.")
+
+	return nil
 }
 
 // ResyncSNat writes NAT static mapping config to the the empty VPP
-func (plugin *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) error {
+func (c *NatConfigurator) ResyncSNat(sNatConf []*nat.Nat44SNat_SNatConfig) error {
 	// todo SNAT not implemented yet, nothing to resync
 	return nil
 }
 
 // ResyncDNat writes NAT static mapping config to the the empty VPP
-func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
-	plugin.log.Debug("RESYNC DNAT config.")
+func (c *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConfig) error {
+	c.log.Debug("RESYNC DNAT config.")
 
-	vppDNatCfg, err := plugin.natHandler.Nat44DNatDump()
+	vppDNatCfg, err := c.natHandler.Nat44DNatDump()
 	if err != nil {
-		return fmt.Errorf("failed to dump DNAT config: %v", err)
+		return errors.Errorf("NAT resync error: failed to dump NAT44 DNAT: %v", err)
 	}
 	if len(vppDNatCfg.DnatConfigs) == 0 {
 		return nil
@@ -484,97 +481,89 @@ func (plugin *NatConfigurator) ResyncDNat(nbDNatConfig []*nat.Nat44DNat_DNatConf
 				continue
 			}
 			// Compare all VPP mappings with the NB, register existing ones
-			plugin.resolveMappings(nbDNat, &vppDNat.StMappings, &vppDNat.IdMappings)
+			c.resolveMappings(nbDNat, &vppDNat.StMappings, &vppDNat.IdMappings)
 			// Configure all missing DNAT mappings
 			for _, nbMapping := range nbDNat.StMappings {
 				mappingIdentifier := GetStMappingIdentifier(nbMapping)
-				_, _, found := plugin.dNatStMappingIndexes.LookupIdx(mappingIdentifier)
+				_, _, found := c.dNatStMappingIndexes.LookupIdx(mappingIdentifier)
 				if !found {
 					// Configure missing mapping
 					if len(nbMapping.LocalIps) == 1 {
-						if err := plugin.handleStaticMapping(nbMapping, "", true); err != nil {
-							plugin.log.Errorf("NAT44 resync: failed to configure static mapping: %v", err)
-							continue
+						if err := c.handleStaticMapping(nbMapping, "", true); err != nil {
+							return err
 						}
 					} else {
-						if err := plugin.handleStaticMappingLb(nbMapping, "", true); err != nil {
-							plugin.log.Errorf("NAT44 resync: failed to configure lb-static mapping: %v", err)
-							continue
+						if err := c.handleStaticMappingLb(nbMapping, "", true); err != nil {
+							return err
 						}
 					}
 					// Register new DNAT mapping
-					plugin.dNatStMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
-					plugin.natIndexSeq++
-					plugin.log.Debugf("NAT44 resync: new (lb)static mapping %v configured", mappingIdentifier)
+					c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+					c.natIndexSeq++
+					c.log.Debugf("NAT44 resync: new (lb)static mapping %s registered", mappingIdentifier)
 				}
 			}
 			// Configure all missing DNAT identity mappings
-			for _, nbIdMapping := range nbDNat.IdMappings {
-				mappingIdentifier := GetIdMappingIdentifier(nbIdMapping)
-				_, _, found := plugin.dNatIdMappingIndexes.LookupIdx(mappingIdentifier)
+			for _, nbIDMapping := range nbDNat.IdMappings {
+				mappingIdentifier := GetIDMappingIdentifier(nbIDMapping)
+				_, _, found := c.dNatIDMappingIndexes.LookupIdx(mappingIdentifier)
 				if !found {
 					// Configure missing mapping
-					if err := plugin.handleIdentityMapping(nbIdMapping, "", true); err != nil {
-						plugin.log.Errorf("NAT44 resync: failed to configure identity mapping: %v", err)
-						continue
+					if err := c.handleIdentityMapping(nbIDMapping, "", true); err != nil {
+						return err
 					}
 
 					// Register new DNAT mapping
-					plugin.dNatIdMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
-					plugin.natIndexSeq++
-					plugin.log.Debugf("NAT44 resync: new identity mapping %v configured", mappingIdentifier)
+					c.dNatIDMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+					c.natIndexSeq++
+					c.log.Debugf("NAT44 resync: new identity mapping %s registered", mappingIdentifier)
 				}
 			}
 			// Remove obsolete mappings from DNAT
 			for _, vppMapping := range vppDNat.StMappings {
 				// Static mapping
 				if len(vppMapping.LocalIps) == 1 {
-
-					if err := plugin.handleStaticMapping(vppMapping, "", false); err != nil {
-						plugin.log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
-						continue
+					if err := c.handleStaticMapping(vppMapping, "", false); err != nil {
+						return err
 					}
 				} else {
 					// Lb-static mapping
-					if err := plugin.handleStaticMappingLb(vppMapping, "", false); err != nil {
-						plugin.log.Errorf("NAT44 resync: failed to remove static mapping: %v", err)
-						continue
+					if err := c.handleStaticMappingLb(vppMapping, "", false); err != nil {
+						return err
 					}
 				}
 			}
-			for _, vppIdMapping := range vppDNat.IdMappings {
+			for _, vppIDMapping := range vppDNat.IdMappings {
 				// Identity mapping
-				if err := plugin.handleIdentityMapping(vppIdMapping, "", false); err != nil {
-					plugin.log.Errorf("NAT44 resync: failed to remove identity mapping: %v", err)
-					continue
+				if err := c.handleIdentityMapping(vppIDMapping, "", false); err != nil {
+					return err
 				}
 			}
 			// At this point, the DNAT is completely configured and can be registered
-			plugin.dNatIndexes.RegisterName(nbDNat.Label, plugin.natIndexSeq, nil)
-			plugin.natIndexSeq++
-			plugin.log.Debugf("NAT44 resync: DNAT %v synced", nbDNat.Label)
+			c.dNatIndexes.RegisterName(nbDNat.Label, c.natIndexSeq, nil)
+			c.natIndexSeq++
+			c.log.Debugf("NAT44 resync: DNAT %s synced", nbDNat.Label)
 		}
 	}
 
 	// Remove obsolete DNAT configurations which are not registered
 	for _, vppDNat := range vppDNatCfg.DnatConfigs {
-		_, _, found := plugin.dNatIndexes.LookupIdx(vppDNat.Label)
+		_, _, found := c.dNatIndexes.LookupIdx(vppDNat.Label)
 		if !found {
-			if err := plugin.DeleteDNat(vppDNat); err != nil {
-				plugin.log.Errorf("NAT44 resync: failed to remove obsolete DNAT configuration: %v", vppDNat.Label)
-				continue
+			if err := c.DeleteDNat(vppDNat); err != nil {
+				return err
 			}
 		}
 	}
 
-	plugin.log.WithField("cfg", plugin).Debug("RESYNC DNAT config done.")
+	c.log.Info("DNAT resync done.")
 
 	return nil
 }
 
 // Looks for the same mapping in the VPP, register existing ones
-func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
-	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIdMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
+func (c *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig,
+	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIDMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	// Iterate over static mappings in NB DNAT config
 	for _, nbMapping := range nbDNatConfig.StMappings {
 		if len(nbMapping.LocalIps) > 1 {
@@ -610,13 +599,13 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 				}
 				// At this point, the NB mapping matched the VPP one, so register it
 				mappingIdentifier := GetStMappingIdentifier(nbMapping)
-				plugin.dNatStMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
-				plugin.natIndexSeq++
+				c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+				c.natIndexSeq++
 
 				// Remove registered entry from vpp mapping (configurator knows which mappings were registered)
 				dMappings := *vppMappings
 				*vppMappings = append(dMappings[:vppIndex], dMappings[vppIndex+1:]...)
-				plugin.log.Debugf("NAT44 resync: lb-mapping %v already configured", mappingIdentifier)
+				c.log.Debugf("NAT44 resync: lb-mapping %v already configured", mappingIdentifier)
 			}
 		} else {
 			// No load balancer
@@ -639,7 +628,7 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 				}
 				// Compare Local IP/Port and probability addresses (there is only one local IP address in this case)
 				if len(nbMapping.LocalIps) != 1 || len(vppMapping.LocalIps) != 1 {
-					plugin.log.Warnf("NAT44 resync: mapping without load balancer contains more than 1 local IP address")
+					c.log.Warnf("NAT44 resync: mapping without load balancer contains more than 1 local IP address")
 					continue
 				}
 				nbLocal := nbMapping.LocalIps[0]
@@ -650,47 +639,47 @@ func (plugin *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatC
 
 				// At this point, the NB mapping matched the VPP one, so register it
 				mappingIdentifier := GetStMappingIdentifier(nbMapping)
-				plugin.dNatStMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
-				plugin.natIndexSeq++
+				c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+				c.natIndexSeq++
 
 				// Remove registered entry from vpp mapping (so configurator knows which mappings were registered)
 				dMappings := *vppMappings
 				*vppMappings = append(dMappings[:vppIndex], dMappings[vppIndex+1:]...)
-				plugin.log.Debugf("NAT44 resync: mapping %v already configured", mappingIdentifier)
+				c.log.Debugf("NAT44 resync: mapping %v already configured", mappingIdentifier)
 			}
 		}
 	}
 	// Iterate over identity mappings in NB DNAT config
-	for _, nbIdMapping := range nbDNatConfig.IdMappings {
-		for vppIdIndex, vppIdMapping := range *vppIdMappings {
+	for _, nbIDMapping := range nbDNatConfig.IdMappings {
+		for vppIDIndex, vppIDMapping := range *vppIDMappings {
 			// Compare VRF and address interface
-			if nbIdMapping.VrfId != vppIdMapping.VrfId || nbIdMapping.AddressedInterface != vppIdMapping.AddressedInterface {
+			if nbIDMapping.VrfId != vppIDMapping.VrfId || nbIDMapping.AddressedInterface != vppIDMapping.AddressedInterface {
 				continue
 			}
 			// Compare IP and port values
-			if nbIdMapping.IpAddress != vppIdMapping.IpAddress || nbIdMapping.Port != vppIdMapping.Port {
+			if nbIDMapping.IpAddress != vppIDMapping.IpAddress || nbIDMapping.Port != vppIDMapping.Port {
 				continue
 			}
 			// Compare protocol
-			if nbIdMapping.Protocol != vppIdMapping.Protocol {
+			if nbIDMapping.Protocol != vppIDMapping.Protocol {
 				continue
 			}
 
 			// At this point, the NB mapping matched the VPP one, so register it
-			mappingIdentifier := GetIdMappingIdentifier(nbIdMapping)
-			plugin.dNatIdMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
-			plugin.natIndexSeq++
+			mappingIdentifier := GetIDMappingIdentifier(nbIDMapping)
+			c.dNatIDMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+			c.natIndexSeq++
 
 			// Remove registered entry from vpp mapping (configurator knows which mappings were registered)
-			dIdMappings := *vppIdMappings
-			*vppIdMappings = append(dIdMappings[:vppIdIndex], dIdMappings[vppIdIndex+1:]...)
-			plugin.log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
+			dIDMappings := *vppIDMappings
+			*vppIDMappings = append(dIDMappings[:vppIDIndex], dIDMappings[vppIDIndex+1:]...)
+			c.log.Debugf("NAT44 resync: identity mapping %v already configured", mappingIdentifier)
 		}
 	}
 }
 
 // Correlate interfaces according to MAC address, interface addresses
-func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces_Interface) *intf.Interfaces_Interface {
+func (c *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interfaces_Interface) *intf.Interfaces_Interface {
 	// Correlate MAC address
 	if nbIf.PhysAddress != "" {
 		if nbIf.PhysAddress == vppIf.PhysAddress {
@@ -707,12 +696,12 @@ func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interf
 			for _, vppIP := range vppIf.IpAddresses {
 				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
 				if err != nil {
-					plugin.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
 				if err != nil {
-					plugin.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
@@ -738,41 +727,41 @@ func (plugin *InterfaceConfigurator) correlateInterface(vppIf, nbIf *intf.Interf
 }
 
 // Compares two interfaces. If there is any difference, returns true, false otherwise
-func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
-	plugin.log.Debugf("Interface RESYNC comparison started for interface %s", nbIf.Name)
+func (c *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interface) bool {
+	c.log.Debugf("Interface RESYNC comparison started for interface %s", nbIf.Name)
 	// Type
 	if nbIf.Type != vppIf.Type {
-		plugin.log.Debugf("Interface RESYNC comparison: type changed (NB: %v, VPP: %v)",
+		c.log.Debugf("Interface RESYNC comparison: type changed (NB: %v, VPP: %v)",
 			nbIf.Type, vppIf.Type)
 		return true
 	}
 	// Enabled
 	if nbIf.Enabled != vppIf.Enabled {
-		plugin.log.Debugf("Interface RESYNC comparison: enabled state changed (NB: %t, VPP: %t)",
+		c.log.Debugf("Interface RESYNC comparison: enabled state changed (NB: %t, VPP: %t)",
 			nbIf.Enabled, vppIf.Enabled)
 		return true
 	}
 	// VRF
 	if nbIf.Vrf != vppIf.Vrf {
-		plugin.log.Debugf("Interface RESYNC comparison: VRF changed (NB: %d, VPP: %d)",
+		c.log.Debugf("Interface RESYNC comparison: VRF changed (NB: %d, VPP: %d)",
 			nbIf.Vrf, vppIf.Vrf)
 		return true
 	}
 	// Container IP address
 	if nbIf.ContainerIpAddress != vppIf.ContainerIpAddress {
-		plugin.log.Debugf("Interface RESYNC comparison: container IP changed (NB: %s, VPP: %s)",
+		c.log.Debugf("Interface RESYNC comparison: container IP changed (NB: %s, VPP: %s)",
 			nbIf.ContainerIpAddress, vppIf.ContainerIpAddress)
 		return true
 	}
 	// DHCP setup
 	if nbIf.SetDhcpClient != vppIf.SetDhcpClient {
-		plugin.log.Debugf("Interface RESYNC comparison: DHCP setup changed (NB: %t, VPP: %t)",
+		c.log.Debugf("Interface RESYNC comparison: DHCP setup changed (NB: %t, VPP: %t)",
 			nbIf.SetDhcpClient, vppIf.SetDhcpClient)
 		return true
 	}
 	//  MTU value (not valid for VxLAN)
 	if nbIf.Mtu != vppIf.Mtu && nbIf.Type != intf.InterfaceType_VXLAN_TUNNEL {
-		plugin.log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
+		c.log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
 			nbIf.Mtu, vppIf.Mtu)
 		return true
 	}
@@ -780,13 +769,13 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 	nbMac := strings.ToUpper(nbIf.PhysAddress)
 	vppMac := strings.ToUpper(vppIf.PhysAddress)
 	if nbMac != "" && nbMac != vppMac {
-		plugin.log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)", nbMac, vppMac)
+		c.log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)", nbMac, vppMac)
 		return true
 	}
 	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
 	// todo dump unnumbered data
 	if nbIf.Unnumbered != nil {
-		plugin.log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
+		c.log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
 		vppIf.IpAddresses = nil
 	} else {
 		// Remove IPv6 link local addresses (default values)
@@ -797,7 +786,7 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		}
 		// Compare IP address count
 		if len(nbIf.IpAddresses) != len(vppIf.IpAddresses) {
-			plugin.log.Debugf("Interface RESYNC comparison: IP address count changed (NB: %d, VPP: %d)",
+			c.log.Debugf("Interface RESYNC comparison: IP address count changed (NB: %d, VPP: %d)",
 				len(nbIf.IpAddresses), len(vppIf.IpAddresses))
 			return true
 		}
@@ -807,12 +796,12 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 			for _, vppIP := range vppIf.IpAddresses {
 				pNbIP, nbIPNet, err := net.ParseCIDR(nbIP)
 				if err != nil {
-					plugin.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				pVppIP, vppIPNet, err := net.ParseCIDR(vppIP)
 				if err != nil {
-					plugin.log.Error(err)
+					c.log.Error(err)
 					continue
 				}
 				if nbIPNet.Mask.String() == vppIPNet.Mask.String() && bytes.Compare(pNbIP, pVppIP) == 0 {
@@ -821,35 +810,35 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 				}
 			}
 			if !ipFound {
-				plugin.log.Debugf("Interface RESYNC comparison: VPP interface %s does not contain IP %s", nbIf.Name, nbIP)
+				c.log.Debugf("Interface RESYNC comparison: VPP interface %s does not contain IP %s", nbIf.Name, nbIP)
 				return true
 			}
 		}
 	}
 	// RxMode settings
 	if nbIf.RxModeSettings == nil && vppIf.RxModeSettings != nil || nbIf.RxModeSettings != nil && vppIf.RxModeSettings == nil {
-		plugin.log.Debugf("Interface RESYNC comparison: RxModeSettings changed (NB: %v, VPP: %v)",
+		c.log.Debugf("Interface RESYNC comparison: RxModeSettings changed (NB: %v, VPP: %v)",
 			nbIf.RxModeSettings, vppIf.RxModeSettings)
 		return true
 	}
 	if nbIf.RxModeSettings != nil && vppIf.RxModeSettings != nil {
 		// RxMode
 		if nbIf.RxModeSettings.RxMode != vppIf.RxModeSettings.RxMode {
-			plugin.log.Debugf("Interface RESYNC comparison: RxMode changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: RxMode changed (NB: %v, VPP: %v)",
 				nbIf.RxModeSettings.RxMode, vppIf.RxModeSettings.RxMode)
 			return true
 
 		}
 		// QueueID
 		if nbIf.RxModeSettings.QueueId != vppIf.RxModeSettings.QueueId {
-			plugin.log.Debugf("Interface RESYNC comparison: QueueID changed (NB: %d, VPP: %d)",
+			c.log.Debugf("Interface RESYNC comparison: QueueID changed (NB: %d, VPP: %d)",
 				nbIf.RxModeSettings.QueueId, vppIf.RxModeSettings.QueueId)
 			return true
 
 		}
 		// QueueIDValid
 		if nbIf.RxModeSettings.QueueIdValid != vppIf.RxModeSettings.QueueIdValid {
-			plugin.log.Debugf("Interface RESYNC comparison: QueueIDValid changed (NB: %d, VPP: %d)",
+			c.log.Debugf("Interface RESYNC comparison: QueueIDValid changed (NB: %d, VPP: %d)",
 				nbIf.RxModeSettings.QueueIdValid, vppIf.RxModeSettings.QueueIdValid)
 			return true
 
@@ -859,59 +848,59 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 	switch nbIf.Type {
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		if nbIf.Afpacket == nil && vppIf.Afpacket != nil || nbIf.Afpacket != nil && vppIf.Afpacket == nil {
-			plugin.log.Debugf("Interface RESYNC comparison: AF-packet setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: AF-packet setup changed (NB: %v, VPP: %v)",
 				nbIf.Afpacket, vppIf.Afpacket)
 			return true
 		}
 		if nbIf.Afpacket != nil && vppIf.Afpacket != nil {
 			// AF-packet host name
 			if nbIf.Afpacket.HostIfName != vppIf.Afpacket.HostIfName {
-				plugin.log.Debugf("Interface RESYNC comparison: AF-packet host name changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: AF-packet host name changed (NB: %s, VPP: %s)",
 					nbIf.Afpacket.HostIfName, vppIf.Afpacket.HostIfName)
 				return true
 			}
 		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
 		if nbIf.Memif == nil && vppIf.Memif != nil || nbIf.Memif != nil && vppIf.Memif == nil {
-			plugin.log.Debugf("Interface RESYNC comparison: memif setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: memif setup changed (NB: %v, VPP: %v)",
 				nbIf.Memif, vppIf.Memif)
 			return true
 		}
 		if nbIf.Memif != nil && vppIf.Memif != nil {
 			// Memif ID
 			if nbIf.Memif.Id != vppIf.Memif.Id {
-				plugin.log.Debugf("Interface RESYNC comparison: memif ID changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: memif ID changed (NB: %d, VPP: %d)",
 					nbIf.Memif.Id, vppIf.Memif.Id)
 				return true
 			}
 
 			// Memif socket
 			if nbIf.Memif.SocketFilename != vppIf.Memif.SocketFilename {
-				plugin.log.Debugf("Interface RESYNC comparison: memif socket filename changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: memif socket filename changed (NB: %s, VPP: %s)",
 					nbIf.Memif.SocketFilename, vppIf.Memif.SocketFilename)
 				return true
 			}
 			// Master
 			if nbIf.Memif.Master != vppIf.Memif.Master {
-				plugin.log.Debugf("Interface RESYNC comparison: memif master setup changed (NB: %t, VPP: %t)",
+				c.log.Debugf("Interface RESYNC comparison: memif master setup changed (NB: %t, VPP: %t)",
 					nbIf.Memif.Master, vppIf.Memif.Master)
 				return true
 			}
 			// Mode
 			if nbIf.Memif.Mode != vppIf.Memif.Mode {
-				plugin.log.Debugf("Interface RESYNC comparison: memif mode setup changed (NB: %v, VPP: %v)",
+				c.log.Debugf("Interface RESYNC comparison: memif mode setup changed (NB: %v, VPP: %v)",
 					nbIf.Memif.Mode, vppIf.Memif.Mode)
 				return true
 			}
 			// Rx queues
 			if nbIf.Memif.RxQueues != vppIf.Memif.RxQueues {
-				plugin.log.Debugf("Interface RESYNC comparison: RxQueues changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: RxQueues changed (NB: %d, VPP: %d)",
 					nbIf.Memif.RxQueues, vppIf.Memif.RxQueues)
 				return true
 			}
 			// Tx queues
 			if nbIf.Memif.TxQueues != vppIf.Memif.TxQueues {
-				plugin.log.Debugf("Interface RESYNC comparison: TxQueues changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: TxQueues changed (NB: %d, VPP: %d)",
 					nbIf.Memif.TxQueues, vppIf.Memif.TxQueues)
 				return true
 			}
@@ -920,70 +909,70 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 		}
 	case intf.InterfaceType_TAP_INTERFACE:
 		if nbIf.Tap == nil && vppIf.Tap != nil || nbIf.Tap != nil && vppIf.Tap == nil {
-			plugin.log.Debugf("Interface RESYNC comparison: tap setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: tap setup changed (NB: %v, VPP: %v)",
 				nbIf.Tap, vppIf.Tap)
 			return true
 		}
 		if nbIf.Tap != nil && vppIf.Tap != nil {
 			// Tap version
 			if nbIf.Tap.Version == 2 && nbIf.Tap.Version != vppIf.Tap.Version {
-				plugin.log.Debugf("Interface RESYNC comparison: tap version changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: tap version changed (NB: %d, VPP: %d)",
 					nbIf.Tap.Version, vppIf.Tap.Version)
 				return true
 			}
 			// Namespace and host name
 			if nbIf.Tap.Namespace != vppIf.Tap.Namespace {
-				plugin.log.Debugf("Interface RESYNC comparison: tap namespace changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: tap namespace changed (NB: %s, VPP: %s)",
 					nbIf.Tap.Namespace, vppIf.Tap.Namespace)
 				return true
 			}
 			// Namespace and host name
 			if nbIf.Tap.HostIfName != vppIf.Tap.HostIfName {
-				plugin.log.Debugf("Interface RESYNC comparison: tap host name changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: tap host name changed (NB: %s, VPP: %s)",
 					nbIf.Tap.HostIfName, vppIf.Tap.HostIfName)
 				return true
 			}
 			// Rx ring size
 			if nbIf.Tap.RxRingSize != nbIf.Tap.RxRingSize {
-				plugin.log.Debugf("Interface RESYNC comparison: tap Rx ring size changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: tap Rx ring size changed (NB: %d, VPP: %d)",
 					nbIf.Tap.RxRingSize, vppIf.Tap.RxRingSize)
 				return true
 			}
 			// Tx ring size
 			if nbIf.Tap.TxRingSize != nbIf.Tap.TxRingSize {
-				plugin.log.Debugf("Interface RESYNC comparison: tap Tx ring size changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: tap Tx ring size changed (NB: %d, VPP: %d)",
 					nbIf.Tap.TxRingSize, vppIf.Tap.TxRingSize)
 				return true
 			}
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
 		if nbIf.Vxlan == nil && vppIf.Vxlan != nil || nbIf.Vxlan != nil && vppIf.Vxlan == nil {
-			plugin.log.Debugf("Interface RESYNC comparison: VxLAN setup changed (NB: %v, VPP: %v)",
+			c.log.Debugf("Interface RESYNC comparison: VxLAN setup changed (NB: %v, VPP: %v)",
 				nbIf.Vxlan, vppIf.Vxlan)
 			return true
 		}
 		if nbIf.Vxlan != nil && vppIf.Vxlan != nil {
 			// VxLAN Vni
 			if nbIf.Vxlan.Vni != vppIf.Vxlan.Vni {
-				plugin.log.Debugf("Interface RESYNC comparison: VxLAN Vni changed (NB: %d, VPP: %d)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN Vni changed (NB: %d, VPP: %d)",
 					nbIf.Vxlan.Vni, vppIf.Vxlan.Vni)
 				return true
 			}
 			// VxLAN Src Address
 			if nbIf.Vxlan.SrcAddress != vppIf.Vxlan.SrcAddress {
-				plugin.log.Debugf("Interface RESYNC comparison: VxLAN src address changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN src address changed (NB: %s, VPP: %s)",
 					nbIf.Vxlan.SrcAddress, vppIf.Vxlan.SrcAddress)
 				return true
 			}
 			// VxLAN Dst Address
 			if nbIf.Vxlan.DstAddress != vppIf.Vxlan.DstAddress {
-				plugin.log.Debugf("Interface RESYNC comparison: VxLAN dst address changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN dst address changed (NB: %s, VPP: %s)",
 					nbIf.Vxlan.DstAddress, vppIf.Vxlan.DstAddress)
 				return true
 			}
 			// VxLAN Multicast
 			if nbIf.Vxlan.Multicast != vppIf.Vxlan.Multicast {
-				plugin.log.Debugf("Interface RESYNC comparison: VxLAN multicast address changed (NB: %s, VPP: %s)",
+				c.log.Debugf("Interface RESYNC comparison: VxLAN multicast address changed (NB: %s, VPP: %s)",
 					nbIf.Vxlan.Multicast, vppIf.Vxlan.Multicast)
 				return true
 			}
@@ -995,18 +984,18 @@ func (plugin *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_I
 }
 
 // Register interface to mapping and add tag/index to the VPP
-func (plugin *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
-	plugin.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
-	if err := plugin.ifHandler.SetInterfaceTag(ifName, ifIdx); err != nil {
-		return fmt.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
+func (c *InterfaceConfigurator) registerInterface(ifName string, ifIdx uint32, ifData *intf.Interfaces_Interface) error {
+	c.swIfIndexes.RegisterName(ifName, ifIdx, ifData)
+	if err := c.ifHandler.SetInterfaceTag(ifName, ifIdx); err != nil {
+		return errors.Errorf("error while adding interface tag %s, index %d: %v", ifName, ifIdx, err)
 	}
 	// Add AF-packet type interface to local cache
 	if ifData.Type == intf.InterfaceType_AF_PACKET_INTERFACE {
-		if plugin.linux != nil && plugin.afPacketConfigurator != nil && ifData.Afpacket != nil {
+		if c.linux != nil && c.afPacketConfigurator != nil && ifData.Afpacket != nil {
 			// Interface is already present on the VPP so it cannot be marked as pending.
-			plugin.afPacketConfigurator.addToCache(ifData, false)
+			c.afPacketConfigurator.addToCache(ifData, false)
 		}
 	}
-	plugin.log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)
+	c.log.Debugf("RESYNC interfaces: registered interface %s (index %d)", ifName, ifIdx)
 	return nil
 }

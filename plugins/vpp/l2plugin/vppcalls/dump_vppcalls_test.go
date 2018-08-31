@@ -220,8 +220,14 @@ func TestDumpFIBTableEntries(t *testing.T) {
 }
 
 var testDataInXConnect = []govppapi.Message{
-	&l2ba.L2XconnectDetails{1, 2},
-	&l2ba.L2XconnectDetails{3, 4},
+	&l2ba.L2XconnectDetails{
+		RxSwIfIndex: 1,
+		TxSwIfIndex: 2,
+	},
+	&l2ba.L2XconnectDetails{
+		RxSwIfIndex: 3,
+		TxSwIfIndex: 4,
+	},
 }
 
 var testDataOutXconnect = []*vppcalls.XConnectDetails{

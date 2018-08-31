@@ -19,6 +19,7 @@ package ipsecplugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
@@ -71,386 +72,385 @@ type IPSecConfigurator struct {
 }
 
 // Init members (channels...) and start go routines
-func (plugin *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndexRW,
+func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndexRW,
 	enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-ipsec-plugin")
-	plugin.log.Debug("Initializing IPSec configurator")
+	c.log = logger.NewLogger("-ipsec-plugin")
 
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("IPSec-configurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("IPSec-configurator", c.log)
 	}
 
 	// Mappings
-	plugin.ifIndexes = swIfIndexes
-	plugin.spdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(plugin.log, "ipsec_spd_indexes", nil))
-	plugin.cachedSpdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(plugin.log, "ipsec_cached_spd_indexes", nil))
-	plugin.saIndexes = nametoidx.NewNameToIdx(plugin.log, "ipsec_sa_indexes", ifaceidx.IndexMetadata)
-	plugin.spdIndexSeq = 1
-	plugin.saIndexSeq = 1
+	c.ifIndexes = swIfIndexes
+	c.spdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(c.log, "ipsec_spd_indexes", nil))
+	c.cachedSpdIndexes = ipsecidx.NewSPDIndex(nametoidx.NewNameToIdx(c.log, "ipsec_cached_spd_indexes", nil))
+	c.saIndexes = nametoidx.NewNameToIdx(c.log, "ipsec_sa_indexes", ifaceidx.IndexMetadata)
+	c.spdIndexSeq = 1
+	c.saIndexSeq = 1
 
 	// VPP channel
-	plugin.vppCh, err = goVppMux.NewAPIChannel()
+	c.vppCh, err = goVppMux.NewAPIChannel()
 	if err != nil {
-		return err
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handlers
-	plugin.ifHandler = iface_vppcalls.NewIfVppHandler(plugin.vppCh, plugin.log, plugin.stopwatch)
-	plugin.ipSecHandler = vppcalls.NewIPsecVppHandler(plugin.vppCh, plugin.ifIndexes, plugin.spdIndexes, plugin.log, plugin.stopwatch)
+	c.ifHandler = iface_vppcalls.NewIfVppHandler(c.vppCh, c.log, c.stopwatch)
+	c.ipSecHandler = vppcalls.NewIPsecVppHandler(c.vppCh, c.ifIndexes, c.spdIndexes, c.log, c.stopwatch)
+
+	c.log.Debug("IPSec configurator initialized")
 
 	return nil
 }
 
 // Close GOVPP channel
-func (plugin *IPSecConfigurator) Close() error {
-	return safeclose.Close(plugin.vppCh)
+func (c *IPSecConfigurator) Close() error {
+	if err := safeclose.Close(c.vppCh); err != nil {
+		c.LogError(errors.Errorf("failed to safeclose IPSec configurator: %v", err))
+	}
+	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *IPSecConfigurator) clearMapping() {
-	plugin.spdIndexes.Clear()
-	plugin.cachedSpdIndexes.Clear()
-	plugin.saIndexes.Clear()
+func (c *IPSecConfigurator) clearMapping() {
+	c.spdIndexes.Clear()
+	c.cachedSpdIndexes.Clear()
+	c.saIndexes.Clear()
+
+	c.log.Debugf("IPSec configurator mapping cleared")
 }
 
 // GetSaIndexes returns security association indexes
-func (plugin *IPSecConfigurator) GetSaIndexes() idxvpp.NameToIdxRW {
-	return plugin.saIndexes
+func (c *IPSecConfigurator) GetSaIndexes() idxvpp.NameToIdxRW {
+	return c.saIndexes
 }
 
-// GetSaIndexes returns security policy database indexes
-func (plugin *IPSecConfigurator) GetSpdIndexes() ipsecidx.SPDIndex {
-	return plugin.spdIndexes
+// GetSpdIndexes returns security policy database indexes
+func (c *IPSecConfigurator) GetSpdIndexes() ipsecidx.SPDIndex {
+	return c.spdIndexes
 }
 
 // ConfigureSPD configures Security Policy Database in VPP
-func (plugin *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.log.Debugf("Configuring SPD %v", spd.Name)
-
-	spdID := plugin.spdIndexSeq
-	plugin.spdIndexSeq++
+func (c *IPSecConfigurator) ConfigureSPD(spd *ipsec.SecurityPolicyDatabases_SPD) error {
+	spdID := c.spdIndexSeq
+	c.spdIndexSeq++
 
 	for _, entry := range spd.PolicyEntries {
 		if entry.Sa != "" {
-			if _, _, exists := plugin.saIndexes.LookupIdx(entry.Sa); !exists {
-				plugin.log.Warnf("SA %q for SPD %q not found, caching SPD configuration", entry.Sa, spd.Name)
-				plugin.cachedSpdIndexes.RegisterName(spd.Name, spdID, spd)
+			if _, _, exists := c.saIndexes.LookupIdx(entry.Sa); !exists {
+				c.cachedSpdIndexes.RegisterName(spd.Name, spdID, spd)
+				c.log.Debugf("SA %q for SPD %q not found, SPD configuration cached", entry.Sa, spd.Name)
 				return nil
 			}
 		}
 	}
 
-	return plugin.configureSPD(spdID, spd)
-}
-
-func (plugin *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.log.Debugf("configuring SPD %v (%d)", spd.Name, spdID)
-
-	if err := plugin.ipSecHandler.AddSPD(spdID); err != nil {
+	if err := c.configureSPD(spdID, spd); err != nil {
 		return err
 	}
 
-	plugin.spdIndexes.RegisterName(spd.Name, spdID, spd)
-	plugin.log.Infof("Registered SPD %v (%d)", spd.Name, spdID)
+	c.log.Debugf("SPD %s configured", spd.Name)
+
+	return nil
+}
+
+func (c *IPSecConfigurator) configureSPD(spdID uint32, spd *ipsec.SecurityPolicyDatabases_SPD) error {
+	if err := c.ipSecHandler.AddSPD(spdID); err != nil {
+		return errors.Errorf("failed to add SPD with ID %d: %v", spdID, err)
+	}
+
+	c.spdIndexes.RegisterName(spd.Name, spdID, spd)
+	c.log.Debugf("Registered SPD %s (%d)", spd.Name, spdID)
 
 	for _, iface := range spd.Interfaces {
-		plugin.log.Debugf("Assigning SPD to interface %v", iface)
-
-		swIfIdx, _, exists := plugin.ifIndexes.LookupIdx(iface.Name)
+		swIfIdx, _, exists := c.ifIndexes.LookupIdx(iface.Name)
 		if !exists {
-			plugin.log.Infof("Interface %q for SPD %q not found, caching assignment of interface to SPD", iface.Name, spd.Name)
-			plugin.cacheSPDInterfaceAssignment(spdID, iface.Name)
+			c.cacheSPDInterfaceAssignment(spdID, iface.Name)
+			c.log.Debugf("Interface %q for SPD %q not found, assignment of interface to SPD cached", iface.Name, spd.Name)
 			continue
 		}
 
-		if err := plugin.ipSecHandler.InterfaceAddSPD(spdID, swIfIdx); err != nil {
-			plugin.log.Errorf("assigning interface to SPD failed: %v", err)
-			continue
+		if err := c.ipSecHandler.InterfaceAddSPD(spdID, swIfIdx); err != nil {
+			return errors.Errorf("failed to assign interface %d to SPD %d: %v", swIfIdx, spdID, err)
 		}
-
-		plugin.log.Infof("Assigned SPD %q to interface %q", spd.Name, iface.Name)
 	}
 
 	for _, entry := range spd.PolicyEntries {
-		plugin.log.Infof("Adding SPD policy entry %v", entry)
-
 		var saID uint32
 		if entry.Sa != "" {
 			var exists bool
-			if saID, _, exists = plugin.saIndexes.LookupIdx(entry.Sa); !exists {
-				plugin.log.Warnf("SA %q for SPD %q not found, skipping SPD policy entry configuration", entry.Sa, spd.Name)
+			if saID, _, exists = c.saIndexes.LookupIdx(entry.Sa); !exists {
+				c.log.Debugf("SA %q for SPD %q not found, skipping SPD policy entry configuration", entry.Sa, spd.Name)
 				continue
 			}
 		}
 
-		if err := plugin.ipSecHandler.AddSPDEntry(spdID, saID, entry); err != nil {
-			plugin.log.Errorf("adding SPD policy entry failed: %v", err)
-			continue
+		if err := c.ipSecHandler.AddSPDEntry(spdID, saID, entry); err != nil {
+			return errors.Errorf("failed to add SPD %d entry: %v", saID, err)
 		}
-
-		plugin.log.Infof("Added SPD policy entry")
 	}
 
-	plugin.log.Infof("Configured SPD %v", spd.Name)
+	c.log.Infof("Configured SPD %v", spd.Name)
 
 	return nil
 }
 
 // ModifySPD modifies Security Policy Database in VPP
-func (plugin *IPSecConfigurator) ModifySPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD, newSpd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.log.Debugf("Modifying SPD %v", oldSpd.Name)
+func (c *IPSecConfigurator) ModifySPD(oldSpd, newSpd *ipsec.SecurityPolicyDatabases_SPD) error {
+	if err := c.DeleteSPD(oldSpd); err != nil {
+		return errors.Errorf("failed to modify SPD %v, error while removing old entry: %v", oldSpd.Name, err)
+	}
+	if err := c.ConfigureSPD(newSpd); err != nil {
+		return errors.Errorf("failed to modify SPD %v, error while adding new entry: %v", oldSpd.Name, err)
+	}
 
-	if err := plugin.DeleteSPD(oldSpd); err != nil {
-		plugin.log.Error("deleting old SPD failed:", err)
-		return err
-	}
-	if err := plugin.ConfigureSPD(newSpd); err != nil {
-		plugin.log.Error("configuring new SPD failed:", err)
-		return err
-	}
+	c.log.Debugf("SPD %s modified", oldSpd.Name)
 
 	return nil
 }
 
 // DeleteSPD deletes Security Policy Database in VPP
-func (plugin *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD) error {
-	plugin.log.Debugf("Deleting SPD %v", oldSpd.Name)
-
-	if spdID, _, found := plugin.cachedSpdIndexes.LookupIdx(oldSpd.Name); found {
-		plugin.log.Debugf("removing cached SPD %v", spdID)
-		plugin.cachedSpdIndexes.UnregisterName(oldSpd.Name)
+func (c *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD) error {
+	if spdID, _, found := c.cachedSpdIndexes.LookupIdx(oldSpd.Name); found {
+		c.cachedSpdIndexes.UnregisterName(oldSpd.Name)
+		c.log.Debugf("Cached SPD %d removed", spdID)
 		return nil
 	}
 
-	spdID, _, exists := plugin.spdIndexes.LookupIdx(oldSpd.Name)
+	spdID, _, exists := c.spdIndexes.LookupIdx(oldSpd.Name)
 	if !exists {
-		plugin.log.Warnf("SPD %q not found", oldSpd.Name)
-		return nil
+		return errors.Errorf("cannot remove SPD %s, entry not found in the mapping", oldSpd.Name)
 	}
-	if err := plugin.ipSecHandler.DelSPD(spdID); err != nil {
-		return err
+	if err := c.ipSecHandler.DelSPD(spdID); err != nil {
+		return errors.Errorf("failed to remove SPD %d: %v", spdID, err)
 	}
 
 	// remove cache entries related to the SPD
-	for i, entry := range plugin.spdIfCache {
+	for i, entry := range c.spdIfCache {
 		if entry.spdID == spdID {
-			plugin.log.Debugf("Removing cache entry for assignment of SPD %q to interface %q", entry.spdID, entry.ifaceName)
-			plugin.spdIfCache = append(plugin.spdIfCache[:i], plugin.spdIfCache[i+1:]...)
+			c.spdIfCache = append(c.spdIfCache[:i], c.spdIfCache[i+1:]...)
+			c.log.Debugf("Removed cache entry for assignment of SPD %q to interface %q", entry.spdID, entry.ifaceName)
 		}
 	}
 
-	plugin.spdIndexes.UnregisterName(oldSpd.Name)
-	plugin.log.Infof("Deleted SPD %v", oldSpd.Name)
+	c.spdIndexes.UnregisterName(oldSpd.Name)
+	c.log.Debugf("SPD %s unregistered", oldSpd.Name)
+
+	c.log.Infof("Deleted SPD %v", oldSpd.Name)
 
 	return nil
 }
 
 // ConfigureSA configures Security Association in VPP
-func (plugin *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) error {
-	plugin.log.Debugf("Configuring SA %v", sa.Name)
+func (c *IPSecConfigurator) ConfigureSA(sa *ipsec.SecurityAssociations_SA) error {
+	saID := c.saIndexSeq
+	c.saIndexSeq++
 
-	saID := plugin.saIndexSeq
-	plugin.saIndexSeq++
-
-	if err := plugin.ipSecHandler.AddSAEntry(saID, sa); err != nil {
-		return err
+	if err := c.ipSecHandler.AddSAEntry(saID, sa); err != nil {
+		return errors.Errorf("failed to add sA %d: %v", saID, err)
 	}
 
-	plugin.saIndexes.RegisterName(sa.Name, saID, nil)
-	plugin.log.Infof("Registered SA %v (%d)", sa.Name, saID)
+	c.saIndexes.RegisterName(sa.Name, saID, nil)
+	c.log.Debugf("Registered SA %v (%d)", sa.Name, saID)
 
-	for _, cached := range plugin.cachedSpdIndexes.LookupBySA(sa.Name) {
+	for _, cached := range c.cachedSpdIndexes.LookupBySA(sa.Name) {
 		for _, entry := range cached.SPD.PolicyEntries {
 			if entry.Sa != "" {
-				if _, _, exists := plugin.saIndexes.LookupIdx(entry.Sa); !exists {
-					plugin.log.Warnf("SA %q for SPD %q not found, keeping SPD in cache", entry.Sa, cached.SPD.Name)
+				if _, _, exists := c.saIndexes.LookupIdx(entry.Sa); !exists {
+					c.log.Debugf("SA %q for SPD %q not found, keeping SPD in cache", entry.Sa, cached.SPD.Name)
 					return nil
 				}
 			}
 		}
-		if err := plugin.configureSPD(cached.SpdID, cached.SPD); err != nil {
-			plugin.log.Errorf("configuring cached SPD failed: %v", err)
-		} else {
-			plugin.cachedSpdIndexes.UnregisterName(cached.SPD.Name)
+		if err := c.configureSPD(cached.SpdID, cached.SPD); err != nil {
+			return errors.Errorf("failed to configure SPD %s", cached.SPD.Name)
 		}
+		c.cachedSpdIndexes.UnregisterName(cached.SPD.Name)
+		c.log.Debugf("SPD %s unregistered from cache", cached.SPD.Name)
 	}
+
+	c.log.Infof("SA %v configured", sa.Name)
 
 	return nil
 }
 
 // ModifySA modifies Security Association in VPP
-func (plugin *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, newSa *ipsec.SecurityAssociations_SA) error {
-	plugin.log.Debugf("Modifying SA %v", oldSa.Name)
-
+func (c *IPSecConfigurator) ModifySA(oldSa *ipsec.SecurityAssociations_SA, newSa *ipsec.SecurityAssociations_SA) error {
 	// TODO: check if only keys change and use IpsecSaSetKey vpp call
 
-	if err := plugin.DeleteSA(oldSa); err != nil {
-		plugin.log.Error("deleting old SPD failed:", err)
-		return err
+	if err := c.DeleteSA(oldSa); err != nil {
+		return errors.Errorf("failed to delete SA %s: %v", oldSa.Name, err)
 	}
-	if err := plugin.ConfigureSA(newSa); err != nil {
-		plugin.log.Error("configuring new SPD failed:", err)
-		return err
+	if err := c.ConfigureSA(newSa); err != nil {
+		return errors.Errorf("failed to configure SA %s: %v", newSa.Name, err)
 	}
+
+	c.log.Debugf("SA %s modified", oldSa.Name)
 
 	return nil
 }
 
 // DeleteSA deletes Security Association in VPP
-func (plugin *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error {
-	plugin.log.Debugf("Deleting SA %v", oldSa.Name)
-
-	saID, _, exists := plugin.saIndexes.LookupIdx(oldSa.Name)
+func (c *IPSecConfigurator) DeleteSA(oldSa *ipsec.SecurityAssociations_SA) error {
+	saID, _, exists := c.saIndexes.LookupIdx(oldSa.Name)
 	if !exists {
-		plugin.log.Warnf("SA %q not found", oldSa.Name)
-		return nil
+		return errors.Errorf("cannot delete SA %s, not found in the mapping", oldSa.Name)
 	}
 
-	for _, entry := range plugin.spdIndexes.LookupBySA(oldSa.Name) {
-		if err := plugin.DeleteSPD(entry.SPD); err != nil {
-			plugin.log.Errorf("deleting SPD to be cached failed: %v", err)
-			continue
+	for _, entry := range c.spdIndexes.LookupBySA(oldSa.Name) {
+		if err := c.DeleteSPD(entry.SPD); err != nil {
+			return errors.Errorf("attempt to remove SPD %v in order to cache it failed: %v", entry.SPD.Name, err)
 		}
-		plugin.cachedSpdIndexes.RegisterName(entry.SPD.Name, entry.SpdID, entry.SPD)
-		plugin.log.Warnf("caching SPD %v due removed SA %v", entry.SPD.Name, oldSa.Name)
+		c.cachedSpdIndexes.RegisterName(entry.SPD.Name, entry.SpdID, entry.SPD)
+		c.log.Debugf("caching SPD %s due removed SA %s", entry.SPD.Name, oldSa.Name)
 	}
 
-	if err := plugin.ipSecHandler.DelSAEntry(saID, oldSa); err != nil {
-		return err
+	if err := c.ipSecHandler.DelSAEntry(saID, oldSa); err != nil {
+		return errors.Errorf("failed to remove SA %d: %v", saID, err)
 	}
 
-	plugin.saIndexes.UnregisterName(oldSa.Name)
-	plugin.log.Infof("Deleted SA %v", oldSa.Name)
+	c.saIndexes.UnregisterName(oldSa.Name)
+	c.log.Debugf("SA %s unregistered", oldSa.Name)
+
+	c.log.Infof("SA %s deleted", oldSa.Name)
 
 	return nil
 }
 
 // ConfigureTunnel configures Tunnel interface in VPP
-func (plugin *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) error {
-	plugin.log.Debugf("Configuring Tunnel %v", tunnel.Name)
-
-	ifIdx, err := plugin.ipSecHandler.AddTunnelInterface(tunnel)
+func (c *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	ifIdx, err := c.ipSecHandler.AddTunnelInterface(tunnel)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to add IPSec tunnel interface %s: %v", tunnel.Name, err)
 	}
 
-	// Register with necessary metadta info
-	plugin.ifIndexes.RegisterName(tunnel.Name, ifIdx, &interfaces.Interfaces_Interface{
+	// Register with necessary metadata info
+	c.ifIndexes.RegisterName(tunnel.Name, ifIdx, &interfaces.Interfaces_Interface{
 		Name:        tunnel.Name,
 		Enabled:     tunnel.Enabled,
 		IpAddresses: tunnel.IpAddresses,
 		Vrf:         tunnel.Vrf,
 	})
-	plugin.log.Infof("Registered Tunnel %v (%d)", tunnel.Name, ifIdx)
+	c.log.Debugf("Registered tunnel %s (%d)", tunnel.Name, ifIdx)
 
-	if err := plugin.ifHandler.SetInterfaceVRF(ifIdx, tunnel.Vrf); err != nil {
-		return err
+	if err := c.ifHandler.SetInterfaceVrf(ifIdx, tunnel.Vrf); err != nil {
+		return errors.Errorf("failed to set VRF %d to tunnel interface %s: %v", tunnel.Vrf, tunnel.Name, err)
 	}
 
 	ipAddrs, err := addrs.StrAddrsToStruct(tunnel.IpAddresses)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to parse IP Addresses %s: %v", tunnel.IpAddresses, err)
 	}
 	for _, ip := range ipAddrs {
-		if err := plugin.ifHandler.AddInterfaceIP(ifIdx, ip); err != nil {
-			plugin.log.Errorf("adding interface IP address failed: %v", err)
-			return err
+		if err := c.ifHandler.AddInterfaceIP(ifIdx, ip); err != nil {
+			return errors.Errorf("failed to add IP addresses %s to tunnel interface %s: %v",
+				tunnel.IpAddresses, tunnel.Name, err)
 		}
 	}
 
 	if tunnel.Enabled {
-		if err := plugin.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
-			plugin.log.Debugf("setting interface up failed: %v", err)
-			return err
+		if err := c.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
+			return errors.Errorf("failed to set interface %s admin status up: %v",
+				tunnel.Name, err)
 		}
 	}
+
+	c.log.Infof("IPSec %s tunnel configured", tunnel.Name)
 
 	return nil
 }
 
 // ModifyTunnel modifies Tunnel interface in VPP
-func (plugin *IPSecConfigurator) ModifyTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunnel, newTunnel *ipsec.TunnelInterfaces_Tunnel) error {
-	plugin.log.Debugf("Modifying Tunnel %v", oldTunnel.Name)
+func (c *IPSecConfigurator) ModifyTunnel(oldTunnel, newTunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	if err := c.DeleteTunnel(oldTunnel); err != nil {
+		return errors.Errorf("failed to remove modified tunnel interface %s: %v", oldTunnel.Name, err)
+	}
+	if err := c.ConfigureTunnel(newTunnel); err != nil {
+		return errors.Errorf("failed to configure modified tunnel interface %s: %v", oldTunnel.Name, err)
+	}
 
-	if err := plugin.DeleteTunnel(oldTunnel); err != nil {
-		plugin.log.Error("deleting old Tunnel failed:", err)
-		return err
-	}
-	if err := plugin.ConfigureTunnel(newTunnel); err != nil {
-		plugin.log.Error("configuring new Tunnel failed:", err)
-		return err
-	}
+	c.log.Infof("IPSec Tunnel %s modified", oldTunnel.Name)
 
 	return nil
 }
 
 // DeleteTunnel deletes Tunnel interface in VPP
-func (plugin *IPSecConfigurator) DeleteTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunnel) error {
-	plugin.log.Debugf("Deleting Tunnel %v", oldTunnel.Name)
-
-	ifIdx, _, exists := plugin.ifIndexes.LookupIdx(oldTunnel.Name)
+func (c *IPSecConfigurator) DeleteTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunnel) error {
+	ifIdx, _, exists := c.ifIndexes.LookupIdx(oldTunnel.Name)
 	if !exists {
-		plugin.log.Warnf("Tunnel %q not found", oldTunnel.Name)
-		return nil
+		return errors.Errorf("cannot delete IPSec tunnel interface %s, not found in the mapping", oldTunnel.Name)
 	}
 
-	if err := plugin.ipSecHandler.DelTunnelInterface(ifIdx, oldTunnel); err != nil {
-		return err
+	if err := c.ipSecHandler.DelTunnelInterface(ifIdx, oldTunnel); err != nil {
+		return errors.Errorf("failed to delete tunnel interface %s: %v", oldTunnel.Name, err)
 	}
 
-	plugin.ifIndexes.UnregisterName(oldTunnel.Name)
-	plugin.log.Infof("Deleted Tunnel %v", oldTunnel.Name)
+	c.ifIndexes.UnregisterName(oldTunnel.Name)
+	c.log.Debugf("tunnel interface %s unregistered", oldTunnel.Name)
+
+	c.log.Infof("Tunnel %s removed", oldTunnel.Name)
 
 	return nil
 }
 
 // ResolveCreatedInterface is responsible for reconfiguring cached assignments
-func (plugin *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx uint32) {
-	for i, entry := range plugin.spdIfCache {
+func (c *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx uint32) error {
+	for i, entry := range c.spdIfCache {
 		if entry.ifaceName == ifName {
-			plugin.log.Infof("Assigning SPD %v to interface %q", entry.spdID, ifName)
-
 			// TODO: loop through stored deletes, this is now needed because old assignment might still exist
-			if err := plugin.ipSecHandler.InterfaceDelSPD(entry.spdID, swIfIdx); err != nil {
-				plugin.log.Errorf("unassigning interface from SPD failed: %v", err)
-			} else {
-				plugin.log.Infof("Unassigned SPD %v from interface %q", entry.spdID, ifName)
+			if err := c.ipSecHandler.InterfaceDelSPD(entry.spdID, swIfIdx); err != nil {
+				// Do not return error here
+				c.log.Errorf("un-assigning interface from SPD failed: %v", err)
 			}
 
-			if err := plugin.ipSecHandler.InterfaceAddSPD(entry.spdID, swIfIdx); err != nil {
-				plugin.log.Errorf("assigning interface to SPD failed: %v", err)
-				continue
-			} else {
-				plugin.log.Infof("Assigned SPD %v to interface %q", entry.spdID, entry.ifaceName)
+			if err := c.ipSecHandler.InterfaceAddSPD(entry.spdID, swIfIdx); err != nil {
+				return errors.Errorf("failed to assign interface %s to SPD %d: %v", ifName, entry.spdID, err)
 			}
 
-			plugin.spdIfCache = append(plugin.spdIfCache[:i], plugin.spdIfCache[i+1:]...)
+			c.log.Debugf("interface %s assigned to the SPD %d", ifName, entry.spdID)
+			c.spdIfCache = append(c.spdIfCache[:i], c.spdIfCache[i+1:]...)
+			c.log.Debugf("interface %s removed from SPD cache", ifName)
 		}
 	}
+
+	return nil
 }
 
 // ResolveDeletedInterface is responsible for caching assignments for future reconfiguration
-func (plugin *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx uint32) {
-	for _, assign := range plugin.spdIndexes.LookupByInterface(ifName) {
-		plugin.log.Infof("Unassigning SPD %v from interface %q", assign.SpdID, ifName)
-
+func (c *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx uint32) error {
+	for _, assign := range c.spdIndexes.LookupByInterface(ifName) {
 		// TODO: just store this for future, because this will fail since swIfIdx no longer exists
-		if err := plugin.ipSecHandler.InterfaceDelSPD(assign.SpdID, swIfIdx); err != nil {
-			plugin.log.Errorf("unassigning interface from SPD failed: %v", err)
-		} else {
-			plugin.log.Infof("Unassigned SPD %v from interface %q", assign.SpdID, ifName)
+		if err := c.ipSecHandler.InterfaceDelSPD(assign.SpdID, swIfIdx); err != nil {
+			// Do not return error here
+			c.log.Errorf("un-assigning interface from SPD failed: %v", err)
 		}
 
-		plugin.cacheSPDInterfaceAssignment(assign.SpdID, ifName)
+		c.cacheSPDInterfaceAssignment(assign.SpdID, ifName)
 	}
+
+	return nil
 }
 
-func (plugin *IPSecConfigurator) cacheSPDInterfaceAssignment(spdID uint32, ifaceName string) {
-	plugin.log.Debugf("caching SPD %v interface assignment to %v", spdID, ifaceName)
-	plugin.spdIfCache = append(plugin.spdIfCache, SPDIfCacheEntry{
+func (c *IPSecConfigurator) cacheSPDInterfaceAssignment(spdID uint32, ifaceName string) {
+	c.log.Debugf("caching SPD %v interface assignment to %v", spdID, ifaceName)
+	c.spdIfCache = append(c.spdIfCache, SPDIfCacheEntry{
 		ifaceName: ifaceName,
 		spdID:     spdID,
 	})
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *IPSecConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

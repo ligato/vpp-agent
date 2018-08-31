@@ -50,7 +50,8 @@ type RouteMeta struct {
 	LabelStack        []l3binapi.FibMplsLabel
 }
 
-func (handler *routeHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
+// DumpStaticRoutes implements route handler.
+func (handler *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 	// IPFibDump time measurement
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
@@ -97,17 +98,17 @@ func (handler *routeHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 	return routes, nil
 }
 
-func (handler *routeHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*RouteDetails, error) {
+func (handler *RouteHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*RouteDetails, error) {
 	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 }
 
-func (handler *routeHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*RouteDetails, error) {
+func (handler *RouteHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*RouteDetails, error) {
 	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
 // dumpStaticRouteIPDetails processes static route details and returns a route objects. Number of routes returned
 // depends on size of path list.
-func (handler *routeHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*RouteDetails, error) {
+func (handler *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*RouteDetails, error) {
 	// Common fields for every route path (destination IP, VRF)
 	var dstIP string
 	if ipv6 {

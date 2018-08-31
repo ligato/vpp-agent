@@ -34,7 +34,8 @@ type ArpMeta struct {
 	SwIfIndex uint32
 }
 
-func (handler *arpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
+// DumpArpEntries implements arp handler.
+func (handler *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 	// ArpDump time measurement
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l3binapi.IPNeighborDump{}).LogTimeEntry(time.Since(t))

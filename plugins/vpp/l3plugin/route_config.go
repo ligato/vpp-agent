@@ -26,6 +26,7 @@ import (
 	"sort"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -84,55 +85,59 @@ type RouteConfigurator struct {
 }
 
 // Init members (channels...) and start go routines.
-func (plugin *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+func (c *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-l3-route-conf")
-	plugin.log.Debug("Initializing L3 Route configurator")
+	c.log = logger.NewLogger("-l3-route-conf")
 
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("Route-configurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("Route-configurator", c.log)
 	}
 
 	// Mappings
-	plugin.ifIndexes = swIfIndexes
-	plugin.rtIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(plugin.log, "route_indexes", nil))
-	plugin.rtCachedIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(plugin.log, "route_cached_indexes", nil))
-	plugin.rtIndexSeq = 1
+	c.ifIndexes = swIfIndexes
+	c.rtIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(c.log, "route_indexes", nil))
+	c.rtCachedIndexes = l3idx.NewRouteIndex(nametoidx.NewNameToIdx(c.log, "route_cached_indexes", nil))
+	c.rtIndexSeq = 1
 
 	// VPP channel
-	plugin.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return err
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handlers
-	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
-	plugin.rtHandler = vppcalls.NewRouteVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
+	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log, c.stopwatch)
+	c.rtHandler = vppcalls.NewRouteVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+
+	c.log.Debug("L3 Route configurator initialized")
 
 	return nil
 }
 
 // GetRouteIndexes exposes rtIndexes mapping
-func (plugin *RouteConfigurator) GetRouteIndexes() l3idx.RouteIndex {
-	return plugin.rtIndexes
+func (c *RouteConfigurator) GetRouteIndexes() l3idx.RouteIndex {
+	return c.rtIndexes
 }
 
 // GetCachedRouteIndexes exposes rtCachedIndexes mapping
-func (plugin *RouteConfigurator) GetCachedRouteIndexes() l3idx.RouteIndex {
-	return plugin.rtCachedIndexes
+func (c *RouteConfigurator) GetCachedRouteIndexes() l3idx.RouteIndex {
+	return c.rtCachedIndexes
 }
 
 // Close GOVPP channel.
-func (plugin *RouteConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan)
+func (c *RouteConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose VPP route configurator: %v", err))
+	}
+	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *RouteConfigurator) clearMapping() {
-	plugin.rtIndexes.Clear()
-	plugin.rtCachedIndexes.Clear()
+func (c *RouteConfigurator) clearMapping() {
+	c.rtIndexes.Clear()
+	c.rtCachedIndexes.Clear()
+	c.log.Debugf("VPP ARP configurator mapping cleared")
 }
 
 // Create unique identifier which serves as a name in name-to-index mapping.
@@ -144,181 +149,173 @@ func routeIdentifier(vrf uint32, destination string, nextHop string) string {
 }
 
 // ConfigureRoute processes the NB config and propagates it to bin api calls.
-func (plugin *RouteConfigurator) ConfigureRoute(route *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.log.Infof("Configuring new route %v -> %v", route.DstIpAddr, route.NextHopAddr)
+func (c *RouteConfigurator) ConfigureRoute(route *l3.StaticRoutes_Route, vrfFromKey string) error {
 	// Validate VRF index from key and it's value in data.
-	if err := plugin.validateVrfFromKey(route, vrfFromKey); err != nil {
+	if err := c.validateVrfFromKey(route, vrfFromKey); err != nil {
 		return err
 	}
 
 	routeID := routeIdentifier(route.VrfId, route.DstIpAddr, route.NextHopAddr)
 
-	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, plugin.ifIndexes)
+	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, c.ifIndexes)
 	if err != nil {
-		plugin.rtCachedIndexes.RegisterName(routeID, plugin.rtIndexSeq, route)
-		plugin.rtIndexSeq++
-		plugin.log.Debugf("Route %v registered to cache", routeID)
+		c.rtCachedIndexes.RegisterName(routeID, c.rtIndexSeq, route)
+		c.rtIndexSeq++
+		c.log.Debugf("Route %v registered to cache", routeID)
 		return nil
 	}
 
 	// Check mandatory destination address
 	if route.DstIpAddr == "" {
-		return fmt.Errorf("route %v does not contain destination address", routeID)
-		return nil
+		return errors.Errorf("route %s does not contain destination address", routeID)
 	}
 
 	// Create new route.
-	err = plugin.rtHandler.VppAddRoute(plugin.ifHandler, route, swIdx)
+	err = c.rtHandler.VppAddRoute(c.ifHandler, route, swIdx)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to add VPP route %s: %v", routeID, err)
 	}
 
 	// Register configured route
-	_, _, routeExists := plugin.rtIndexes.LookupIdx(routeID)
+	_, _, routeExists := c.rtIndexes.LookupIdx(routeID)
 	if !routeExists {
-		plugin.rtIndexes.RegisterName(routeID, plugin.rtIndexSeq, route)
-		plugin.rtIndexSeq++
-		plugin.log.Infof("Route %v registered", routeID)
+		c.rtIndexes.RegisterName(routeID, c.rtIndexSeq, route)
+		c.rtIndexSeq++
+		c.log.Infof("Route %v registered", routeID)
 	}
 
-	plugin.log.Infof("Route %v -> %v configured", route.DstIpAddr, route.NextHopAddr)
+	c.log.Infof("Route %v -> %v configured", route.DstIpAddr, route.NextHopAddr)
 	return nil
 }
 
 // ModifyRoute processes the NB config and propagates it to bin api calls.
-func (plugin *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
-	plugin.log.Infof("Modifying route %v -> %v", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
-
+func (c *RouteConfigurator) ModifyRoute(newConfig *l3.StaticRoutes_Route, oldConfig *l3.StaticRoutes_Route, vrfFromKey string) error {
 	routeID := routeIdentifier(oldConfig.VrfId, oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 	if newConfig.OutgoingInterface != "" {
-		_, _, existsNewOutgoing := plugin.ifIndexes.LookupIdx(newConfig.OutgoingInterface)
+		_, _, existsNewOutgoing := c.ifIndexes.LookupIdx(newConfig.OutgoingInterface)
 		newrouteID := routeIdentifier(newConfig.VrfId, newConfig.DstIpAddr, newConfig.NextHopAddr)
 		if existsNewOutgoing {
-			plugin.log.Debugf("Route %s unregistered from cache", newrouteID)
-			plugin.rtCachedIndexes.UnregisterName(newrouteID)
+			c.rtCachedIndexes.UnregisterName(newrouteID)
+			c.log.Debugf("Route %s unregistered from cache", newrouteID)
 		} else {
-			if routeIdx, _, isCached := plugin.rtCachedIndexes.LookupIdx(routeID); isCached {
-				plugin.rtCachedIndexes.RegisterName(newrouteID, routeIdx, newConfig)
+			if routeIdx, _, isCached := c.rtCachedIndexes.LookupIdx(routeID); isCached {
+				c.rtCachedIndexes.RegisterName(newrouteID, routeIdx, newConfig)
+				c.log.Debugf("Route %s registered to cache", newrouteID)
 			} else {
-				plugin.rtCachedIndexes.RegisterName(newrouteID, plugin.rtIndexSeq, newConfig)
-				plugin.rtIndexSeq++
+				c.rtCachedIndexes.RegisterName(newrouteID, c.rtIndexSeq, newConfig)
+				c.rtIndexSeq++
+				c.log.Debugf("Route %s registered to cache", newrouteID)
 			}
 		}
 	}
 
-	if err := plugin.deleteOldRoute(oldConfig, vrfFromKey); err != nil {
+	if err := c.deleteOldRoute(oldConfig, vrfFromKey); err != nil {
 		return err
 	}
 
-	if err := plugin.addNewRoute(newConfig, vrfFromKey); err != nil {
+	if err := c.addNewRoute(newConfig, vrfFromKey); err != nil {
 		return err
 	}
 
-	plugin.log.Infof("Route %v -> %v modified", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
+	c.log.Infof("Route %s -> %s modified", oldConfig.DstIpAddr, oldConfig.NextHopAddr)
 	return nil
 }
 
-func (plugin *RouteConfigurator) deleteOldRoute(route *l3.StaticRoutes_Route, vrfFromKey string) error {
+func (c *RouteConfigurator) deleteOldRoute(route *l3.StaticRoutes_Route, vrfFromKey string) error {
 	// Check if route entry is not just cached
 	routeID := routeIdentifier(route.VrfId, route.DstIpAddr, route.NextHopAddr)
-	_, _, found := plugin.rtCachedIndexes.LookupIdx(routeID)
+	_, _, found := c.rtCachedIndexes.LookupIdx(routeID)
 	if found {
-		plugin.log.Debugf("Route entry %v found in cache, removed", routeID)
-		plugin.rtCachedIndexes.UnregisterName(routeID)
+		c.rtCachedIndexes.UnregisterName(routeID)
+		c.log.Debugf("Route entry %v found in cache, removed", routeID)
 		// Cached route is not configured on the VPP, return
 		return nil
 	}
 
-	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, plugin.ifIndexes)
+	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, c.ifIndexes)
 	if err != nil {
 		return err
 	}
 
 	// Validate old cachedRoute data Vrf.
-	if err := plugin.validateVrfFromKey(route, vrfFromKey); err != nil {
+	if err := c.validateVrfFromKey(route, vrfFromKey); err != nil {
 		return err
 	}
 	// Remove and unregister old route.
-	if err := plugin.rtHandler.VppDelRoute(route, swIdx); err != nil {
-		return err
+	if err := c.rtHandler.VppDelRoute(route, swIdx); err != nil {
+		return errors.Errorf("failed to delete VPP route %s: %v", routeID, err)
 	}
-	_, _, found = plugin.rtIndexes.UnregisterName(routeID)
+	_, _, found = c.rtIndexes.UnregisterName(routeID)
 	if found {
-		plugin.log.Infof("Old route %v unregistered", routeID)
-	} else {
-		plugin.log.Warnf("Unregister failed, old route %v not found", routeID)
+		c.log.Infof("Old route %s unregistered", routeID)
 	}
 
 	return nil
 }
 
-func (plugin *RouteConfigurator) addNewRoute(route *l3.StaticRoutes_Route, vrfFromKey string) error {
+func (c *RouteConfigurator) addNewRoute(route *l3.StaticRoutes_Route, vrfFromKey string) error {
 	// Validate new route data Vrf.
-	if err := plugin.validateVrfFromKey(route, vrfFromKey); err != nil {
+	if err := c.validateVrfFromKey(route, vrfFromKey); err != nil {
 		return err
 	}
 
-	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, plugin.ifIndexes)
+	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, c.ifIndexes)
 	if err != nil {
 		return err
 	}
 
-	// Create and register new route.
-	if err = plugin.rtHandler.VppAddRoute(plugin.ifHandler, route, swIdx); err != nil {
-		return err
-	}
-
 	routeID := routeIdentifier(route.VrfId, route.DstIpAddr, route.NextHopAddr)
-	plugin.rtIndexes.RegisterName(routeID, plugin.rtIndexSeq, route)
-	plugin.rtIndexSeq++
 
-	plugin.log.Infof("New route %v registered", routeID)
+	// Create and register new route.
+	if err = c.rtHandler.VppAddRoute(c.ifHandler, route, swIdx); err != nil {
+		return errors.Errorf("failed to add VPP route %s: %v", routeID, err)
+	}
+	c.rtIndexes.RegisterName(routeID, c.rtIndexSeq, route)
+	c.rtIndexSeq++
+	c.log.Debugf("New route %v registered", routeID)
+
 	return nil
 }
 
 // DeleteRoute processes the NB config and propagates it to bin api calls.
-func (plugin *RouteConfigurator) DeleteRoute(route *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
-	plugin.log.Infof("Removing route %v -> %v", route.DstIpAddr, route.NextHopAddr)
-
+func (c *RouteConfigurator) DeleteRoute(route *l3.StaticRoutes_Route, vrfFromKey string) (wasError error) {
 	// Validate VRF index from key and it's value in data.
-	if err := plugin.validateVrfFromKey(route, vrfFromKey); err != nil {
+	if err := c.validateVrfFromKey(route, vrfFromKey); err != nil {
 		return err
 	}
 
 	// Check if route entry is not just cached
 	routeID := routeIdentifier(route.VrfId, route.DstIpAddr, route.NextHopAddr)
-	_, _, found := plugin.rtCachedIndexes.LookupIdx(routeID)
+	_, _, found := c.rtCachedIndexes.LookupIdx(routeID)
 	if found {
-		plugin.log.Debugf("Route entry %v found in cache, removed", routeID)
-		plugin.rtCachedIndexes.UnregisterName(routeID)
+		c.rtCachedIndexes.UnregisterName(routeID)
+		c.log.Debugf("Route entry %v found in cache, removed", routeID)
 		// Cached route is not configured on the VPP, return
 		return nil
 	}
 
-	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, plugin.ifIndexes)
+	swIdx, err := resolveInterfaceSwIndex(route.OutgoingInterface, c.ifIndexes)
 	if err != nil {
 		return err
 	}
 
 	// Remove and unregister route.
-	if err := plugin.rtHandler.VppDelRoute(route, swIdx); err != nil {
-		return err
+	if err := c.rtHandler.VppDelRoute(route, swIdx); err != nil {
+		return errors.Errorf("failed to delete VPP route %s: %v", routeID, err)
 	}
 
 	routeIdentifier := routeIdentifier(route.VrfId, route.DstIpAddr, route.NextHopAddr)
-	_, _, found = plugin.rtIndexes.UnregisterName(routeIdentifier)
+	_, _, found = c.rtIndexes.UnregisterName(routeIdentifier)
 	if found {
-		plugin.log.Infof("Route %v unregistered", routeIdentifier)
-	} else {
-		plugin.log.Warnf("Unregister failed, route %v not found", routeIdentifier)
+		c.log.Infof("Route %v unregistered", routeIdentifier)
 	}
 
-	plugin.log.Infof("Route %v -> %v removed", route.DstIpAddr, route.NextHopAddr)
+	c.log.Infof("Route %v -> %v removed", route.DstIpAddr, route.NextHopAddr)
 	return nil
 }
 
 // DiffRoutes calculates route diff from two sets of routes and returns routes to be added and removed
-func (plugin *RouteConfigurator) DiffRoutes(new, old []*l3.StaticRoutes_Route) (toBeDeleted, toBeAdded []*l3.StaticRoutes_Route) {
+func (c *RouteConfigurator) DiffRoutes(new, old []*l3.StaticRoutes_Route) (toBeDeleted, toBeAdded []*l3.StaticRoutes_Route) {
 	oldSorted, newSorted := SortedRoutes(old), SortedRoutes(new)
 	sort.Sort(newSorted)
 	sort.Sort(oldSorted)
@@ -351,54 +348,48 @@ func (plugin *RouteConfigurator) DiffRoutes(new, old []*l3.StaticRoutes_Route) (
 }
 
 // ResolveCreatedInterface is responsible for reconfiguring cached routes and then from removing them from route cache
-func (plugin *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx uint32) {
-	routesWithIndex := plugin.rtCachedIndexes.LookupRouteAndIDByOutgoingIfc(ifName)
+func (c *RouteConfigurator) ResolveCreatedInterface(ifName string, swIdx uint32) error {
+	routesWithIndex := c.rtCachedIndexes.LookupRouteAndIDByOutgoingIfc(ifName)
 	if len(routesWithIndex) == 0 {
-		return
+		return nil
 	}
-	plugin.log.Infof("Route configurator: resolving new interface %v for %d routes", ifName, len(routesWithIndex))
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route
-		plugin.log.WithFields(logging.Fields{
-			"ifName":    ifName,
-			"swIdx":     swIdx,
-			"vrfID":     route.VrfId,
-			"dstIPAddr": route.DstIpAddr,
-		}).Debug("Remove routes from route cache - outgoing interface was added.")
 		vrf := strconv.FormatUint(uint64(route.VrfId), 10)
-		if err := plugin.recreateRoute(route, vrf); err != nil {
-			plugin.log.Errorf("Error recreating interface %s: %v", ifName, err)
+		if err := c.recreateRoute(route, vrf); err != nil {
+			return errors.Errorf("Error recreating route %s with interface %s: %v",
+				routeWithIndex.RouteID, ifName, err)
 		}
-		plugin.rtCachedIndexes.UnregisterName(routeWithIndex.RouteID)
+		c.rtCachedIndexes.UnregisterName(routeWithIndex.RouteID)
+		c.log.Debugf("Route %s removed from cache", routeWithIndex.RouteID)
 	}
+
+	return nil
 }
 
 // ResolveDeletedInterface is responsible for moving routes of deleted interface to cache
-func (plugin *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) {
-	routesWithIndex := plugin.rtIndexes.LookupRouteAndIDByOutgoingIfc(ifName)
+func (c *RouteConfigurator) ResolveDeletedInterface(ifName string, swIdx uint32) error {
+	routesWithIndex := c.rtIndexes.LookupRouteAndIDByOutgoingIfc(ifName)
 	if len(routesWithIndex) == 0 {
-		return
+		return nil
 	}
-	plugin.log.Debugf("Route configurator: resolving deleted interface %v for %d routes", ifName, len(routesWithIndex))
 	for _, routeWithIndex := range routesWithIndex {
 		route := routeWithIndex.Route
-		plugin.log.WithFields(logging.Fields{
-			"ifName":    ifName,
-			"swIdx":     swIdx,
-			"vrfID":     route.VrfId,
-			"dstIPAddr": route.DstIpAddr,
-		}).Debug("Add routes to route cache - outgoing interface was deleted.")
-		plugin.moveRouteToCache(route)
+		if err := c.moveRouteToCache(route); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func (plugin *RouteConfigurator) validateVrfFromKey(config *l3.StaticRoutes_Route, vrfFromKey string) error {
+func (c *RouteConfigurator) validateVrfFromKey(config *l3.StaticRoutes_Route, vrfFromKey string) error {
 	intVrfFromKey, err := strconv.Atoi(vrfFromKey)
 	if intVrfFromKey != int(config.VrfId) {
 		if err != nil {
-			return err
+			return errors.Errorf("failed to validate route VRF value from key: %v", err)
 		}
-		plugin.log.Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
+		c.log.Warnf("VRF index from key (%v) and from config (%v) does not match, using value from the key",
 			intVrfFromKey, config.VrfId)
 		config.VrfId = uint32(intVrfFromKey)
 	}
@@ -416,25 +407,23 @@ It is neither possible to recreate interface and then create route.
 It is only possible to recreate interface, delete old associated routes (like clean old mess)
 and then add them again.
 */
-func (plugin *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf string) error {
-	if err := plugin.DeleteRoute(route, vrf); err != nil {
-		return nil
+func (c *RouteConfigurator) recreateRoute(route *l3.StaticRoutes_Route, vrf string) error {
+	if err := c.DeleteRoute(route, vrf); err != nil {
+		return errors.Errorf("failed to remove route which should be recreated: %v", err)
 	}
-	return plugin.ConfigureRoute(route, vrf)
+	return c.ConfigureRoute(route, vrf)
 }
 
-func (plugin *RouteConfigurator) moveRouteToCache(config *l3.StaticRoutes_Route) (wasError error) {
+func (c *RouteConfigurator) moveRouteToCache(config *l3.StaticRoutes_Route) (wasError error) {
 	routeID := routeIdentifier(config.VrfId, config.DstIpAddr, config.NextHopAddr)
-	_, _, found := plugin.rtIndexes.UnregisterName(routeID)
+	_, _, found := c.rtIndexes.UnregisterName(routeID)
 	if found {
-		plugin.log.Infof("Route %v unregistered", routeID)
-	} else {
-		plugin.log.Warnf("Unregister failed, route %v not found", routeID)
+		c.log.Infof("Route %v unregistered", routeID)
 	}
 
-	plugin.log.Infof("Route %s registrated in cache", routeID)
-	plugin.rtCachedIndexes.RegisterName(routeID, plugin.rtIndexSeq, config)
-	plugin.rtIndexSeq++
+	c.rtCachedIndexes.RegisterName(routeID, c.rtIndexSeq, config)
+	c.rtIndexSeq++
+	c.log.Debugf("Route %s registered to cache", routeID)
 
 	return nil
 }
@@ -445,7 +434,7 @@ func resolveInterfaceSwIndex(ifName string, index ifaceidx.SwIfIndex) (uint32, e
 		var exists bool
 		ifIndex, _, exists = index.LookupIdx(ifName)
 		if !exists {
-			return ifIndex, fmt.Errorf("route outgoing interface %v not found", ifName)
+			return ifIndex, errors.Errorf("route outgoing interface %s not found", ifName)
 		}
 	}
 	return ifIndex, nil
@@ -474,5 +463,18 @@ func lessRoute(a, b *l3.StaticRoutes_Route) bool {
 		return a.Preference < b.Preference
 	}
 	return a.Weight < b.Weight
+}
 
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *RouteConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

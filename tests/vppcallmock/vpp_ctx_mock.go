@@ -21,18 +21,7 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 )
@@ -55,7 +44,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 
 	ctx := &TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 
 	var err error
@@ -101,6 +90,7 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiReq
 	return m.Channel.SendMultiRequest(msg)
 }
 
+// HandleReplies represents spec for MockReplyHandler.
 type HandleReplies struct {
 	Name     string
 	Ping     bool
@@ -108,21 +98,9 @@ type HandleReplies struct {
 	Messages []govppapi.Message
 }
 
+// MockReplies sets up reply handler for give HandleReplies.
 func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 	var sendControlPing bool
-
-	ctx.MockVpp.RegisterBinAPITypes(acl.Types)
-	ctx.MockVpp.RegisterBinAPITypes(af_packet.Types)
-	ctx.MockVpp.RegisterBinAPITypes(bfd.Types)
-	ctx.MockVpp.RegisterBinAPITypes(nat.Types)
-	ctx.MockVpp.RegisterBinAPITypes(stn.Types)
-	ctx.MockVpp.RegisterBinAPITypes(interfaces.Types)
-	ctx.MockVpp.RegisterBinAPITypes(ip.Types)
-	ctx.MockVpp.RegisterBinAPITypes(memif.Types)
-	ctx.MockVpp.RegisterBinAPITypes(tap.Types)
-	ctx.MockVpp.RegisterBinAPITypes(tapv2.Types)
-	ctx.MockVpp.RegisterBinAPITypes(vpe.Types)
-	ctx.MockVpp.RegisterBinAPITypes(vxlan.Types)
 
 	ctx.MockVpp.MockReplyHandler(func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
 		// Following types are not automatically stored in mock adapter's map and will be sent with empty MsgName
@@ -171,15 +149,17 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 			}
 		}
 
-		replyMsg, msgID, ok := ctx.MockVpp.ReplyFor(request.MsgName)
+		var err error
+		replyMsg, id, ok := ctx.MockVpp.ReplyFor(request.MsgName)
 		if ok {
-			reply, err := ctx.MockVpp.ReplyBytes(request, replyMsg)
+			reply, err = ctx.MockVpp.ReplyBytes(request, replyMsg)
 			Expect(err).To(BeNil())
-			return reply, msgID, true
+			msgID = id
+			prepared = true
 		} else {
 			log.DefaultLogger().Warnf("NO REPLY FOR %v FOUND", request.MsgName)
 		}
 
-		return reply, 0, false
+		return reply, msgID, prepared
 	})
 }

@@ -58,15 +58,19 @@ func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
 		return nil, errors.New("nil message passed in")
 	}
 
-	// encode message header
 	var header interface{}
+
+	// encode message header
 	switch msg.GetMessageType() {
 	case api.RequestMessage:
 		header = &VppRequestHeader{VlMsgID: msgID}
+
 	case api.ReplyMessage:
 		header = &VppReplyHeader{VlMsgID: msgID}
+
 	case api.EventMessage:
 		header = &VppEventHeader{VlMsgID: msgID}
+
 	default:
 		header = &VppOtherHeader{VlMsgID: msgID}
 	}
@@ -94,15 +98,19 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 		return errors.New("nil message passed in")
 	}
 
-	// check which header is expected
 	var header interface{}
+
+	// check which header is expected
 	switch msg.GetMessageType() {
 	case api.RequestMessage:
 		header = new(VppRequestHeader)
+
 	case api.ReplyMessage:
 		header = new(VppReplyHeader)
+
 	case api.EventMessage:
 		header = new(VppEventHeader)
+
 	default:
 		header = new(VppOtherHeader)
 	}
@@ -127,17 +135,19 @@ func (*MsgCodec) DecodeMsgContext(data []byte, msg api.Message) (uint32, error) 
 		return 0, errors.New("nil message passed in")
 	}
 
+	var header interface{}
 	var getContext func() uint32
 
 	// check which header is expected
-	var header interface{}
 	switch msg.GetMessageType() {
 	case api.RequestMessage:
 		header = new(VppRequestHeader)
 		getContext = func() uint32 { return header.(*VppRequestHeader).Context }
+
 	case api.ReplyMessage:
 		header = new(VppReplyHeader)
 		getContext = func() uint32 { return header.(*VppReplyHeader).Context }
+
 	default:
 		return 0, nil
 	}

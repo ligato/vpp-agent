@@ -220,6 +220,7 @@ func (ctl *VppAgentCtl) createBfdKey() {
 	authKey := bfd.SingleHopBFD{
 		Keys: []*bfd.SingleHopBFD_Key{
 			{
+				Name:               "bfdKey1",
 				Id:                 1,
 				AuthenticationType: bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1, // or Keyed sha1
 				Secret:             "1981491891941891",

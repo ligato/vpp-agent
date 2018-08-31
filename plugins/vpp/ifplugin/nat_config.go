@@ -18,12 +18,12 @@ package ifplugin
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -72,7 +72,7 @@ type NatConfigurator struct {
 	sNatMappingIndexes   idxvpp.NameToIdxRW // SNAT indices for static mapping
 	dNatIndexes          idxvpp.NameToIdxRW // DNAT indices
 	dNatStMappingIndexes idxvpp.NameToIdxRW // DNAT indices for static mapping
-	dNatIdMappingIndexes idxvpp.NameToIdxRW // DNAT indices for identity mapping
+	dNatIDMappingIndexes idxvpp.NameToIdxRW // DNAT indices for identity mapping
 	natIndexSeq          uint32             // Nat name-to-idx mapping sequence
 	natMappingTagSeq     uint32             // Static/identity mapping tag sequence
 
@@ -92,388 +92,354 @@ type NatConfigurator struct {
 }
 
 // Init NAT configurator
-func (plugin *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
+func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-nat-conf")
-	plugin.log.Debug("Initializing NAT configurator")
+	c.log = logger.NewLogger("-nat-conf")
 
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("NAT-configurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("NAT-configurator", c.log)
 	}
 
 	// Mappings
-	plugin.ifIndexes = ifIndexes
-	plugin.sNatIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-indices", nil)
-	plugin.sNatMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "snat-mapping-indices", nil)
-	plugin.dNatIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-indices", nil)
-	plugin.dNatStMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-st-mapping-indices", nil)
-	plugin.dNatIdMappingIndexes = nametoidx.NewNameToIdx(plugin.log, "dnat-id-mapping-indices", nil)
-	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
-	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
-	plugin.natIndexSeq, plugin.natMappingTagSeq = 1, 1
+	c.ifIndexes = ifIndexes
+	c.sNatIndexes = nametoidx.NewNameToIdx(c.log, "snat-indices", nil)
+	c.sNatMappingIndexes = nametoidx.NewNameToIdx(c.log, "snat-mapping-indices", nil)
+	c.dNatIndexes = nametoidx.NewNameToIdx(c.log, "dnat-indices", nil)
+	c.dNatStMappingIndexes = nametoidx.NewNameToIdx(c.log, "dnat-st-mapping-indices", nil)
+	c.dNatIDMappingIndexes = nametoidx.NewNameToIdx(c.log, "dnat-id-mapping-indices", nil)
+	c.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+	c.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+	c.natIndexSeq, c.natMappingTagSeq = 1, 1
 
 	// Init VPP API channel
-	if plugin.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
-		return err
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
-	if plugin.vppDumpChan, err = goVppMux.NewAPIChannel(); err != nil {
-		return err
+	if c.vppDumpChan, err = goVppMux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create dump API channel: %v", err)
 	}
 
 	// VPP API handler
-	plugin.natHandler = vppcalls.NewNatVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.ifIndexes,
-		plugin.log, plugin.stopwatch)
+	c.natHandler = vppcalls.NewNatVppHandler(c.vppChan, c.vppDumpChan, c.ifIndexes,
+		c.log, c.stopwatch)
+
+	c.log.Info("NAT configurator initialized")
 
 	return nil
 }
 
 // Close used resources
-func (plugin *NatConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan, plugin.vppDumpChan)
+func (c *NatConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan, c.vppDumpChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose NAT configurator: %v", err))
+	}
+	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *NatConfigurator) clearMapping() {
-	plugin.sNatIndexes.Clear()
-	plugin.sNatMappingIndexes.Clear()
-	plugin.dNatIndexes.Clear()
-	plugin.dNatStMappingIndexes.Clear()
-	plugin.dNatIdMappingIndexes.Clear()
-	plugin.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
-	plugin.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+func (c *NatConfigurator) clearMapping() {
+	c.sNatIndexes.Clear()
+	c.sNatMappingIndexes.Clear()
+	c.dNatIndexes.Clear()
+	c.dNatStMappingIndexes.Clear()
+	c.dNatIDMappingIndexes.Clear()
+	c.notEnabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+	c.notDisabledIfs = make(map[string]*nat.Nat44Global_NatInterface)
+
+	c.log.Debugf("NAT configurator mapping cleared")
 }
 
 // GetGlobalNat makes current global nat accessible
-func (plugin *NatConfigurator) GetGlobalNat() *nat.Nat44Global {
-	return plugin.globalNAT
+func (c *NatConfigurator) GetGlobalNat() *nat.Nat44Global {
+	return c.globalNAT
 }
 
 // IsInNotEnabledIfCache checks if interface is present in 'notEnabledIfs' cache
-func (plugin *NatConfigurator) IsInNotEnabledIfCache(ifName string) bool {
-	_, ok := plugin.notEnabledIfs[ifName]
+func (c *NatConfigurator) IsInNotEnabledIfCache(ifName string) bool {
+	_, ok := c.notEnabledIfs[ifName]
 	return ok
 }
 
 // IsInNotDisabledIfCache checks if interface is present in 'notDisabledIfs' cache
-func (plugin *NatConfigurator) IsInNotDisabledIfCache(ifName string) bool {
-	_, ok := plugin.notDisabledIfs[ifName]
+func (c *NatConfigurator) IsInNotDisabledIfCache(ifName string) bool {
+	_, ok := c.notDisabledIfs[ifName]
 	return ok
 }
 
-// IsInNotDisabledIfCache checks if interface is present in 'notDisabledIfs' cache
-func (plugin *NatConfigurator) IsDNatLabelRegistered(label string) bool {
-	_, _, found := plugin.dNatIndexes.LookupIdx(label)
+// IsDNatLabelRegistered checks if interface is present in 'notDisabledIfs' cache
+func (c *NatConfigurator) IsDNatLabelRegistered(label string) bool {
+	_, _, found := c.dNatIndexes.LookupIdx(label)
 	return found
 }
 
-// IsInNotDisabledIfCache checks if DNAT static mapping with provided id is registered
-func (plugin *NatConfigurator) IsDNatLabelStMappingRegistered(id string) bool {
-	_, _, found := plugin.dNatStMappingIndexes.LookupIdx(id)
+// IsDNatLabelStMappingRegistered checks if DNAT static mapping with provided id is registered
+func (c *NatConfigurator) IsDNatLabelStMappingRegistered(id string) bool {
+	_, _, found := c.dNatStMappingIndexes.LookupIdx(id)
 	return found
 }
 
-// IsDNatLabelIdMappingRegistered checks if DNAT identity mapping with provided id is registered
-func (plugin *NatConfigurator) IsDNatLabelIdMappingRegistered(id string) bool {
-	_, _, found := plugin.dNatIdMappingIndexes.LookupIdx(id)
+// IsDNatLabelIDMappingRegistered checks if DNAT identity mapping with provided id is registered
+func (c *NatConfigurator) IsDNatLabelIDMappingRegistered(id string) bool {
+	_, _, found := c.dNatIDMappingIndexes.LookupIdx(id)
 	return found
 }
 
 // SetNatGlobalConfig configures common setup for all NAT use cases
-func (plugin *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error {
-	plugin.log.Info("Setting up NAT global config")
-
+func (c *NatConfigurator) SetNatGlobalConfig(config *nat.Nat44Global) error {
 	// Store global NAT configuration (serves as cache)
-	plugin.globalNAT = config
+	c.globalNAT = config
 
 	// Forwarding
-	if err := plugin.natHandler.SetNat44Forwarding(config.Forwarding); err != nil {
-		return err
-	}
-	if config.Forwarding {
-		plugin.log.Debugf("NAT forwarding enabled")
-	} else {
-		plugin.log.Debugf("NAT forwarding disabled")
+	if err := c.natHandler.SetNat44Forwarding(config.Forwarding); err != nil {
+		return errors.Errorf("failed to set NAT44 forwarding to %t: %d", config.Forwarding, err)
 	}
 
 	// Inside/outside interfaces
 	if len(config.NatInterfaces) > 0 {
-		if err := plugin.enableNatInterfaces(config.NatInterfaces); err != nil {
+		if err := c.enableNatInterfaces(config.NatInterfaces); err != nil {
 			return err
 		}
-	} else {
-		plugin.log.Debug("No NAT interfaces to configure")
 	}
 
-	if err := plugin.addAddressPool(config.AddressPools); err != nil {
+	if err := c.addAddressPool(config.AddressPools); err != nil {
 		return err
 	}
 
 	// Virtual reassembly IPv4
 	if config.VirtualReassemblyIpv4 != nil {
-		if err := plugin.natHandler.SetVirtualReassemblyIPv4(config.VirtualReassemblyIpv4); err != nil {
-			return err
+		if err := c.natHandler.SetVirtualReassemblyIPv4(config.VirtualReassemblyIpv4); err != nil {
+			return errors.Errorf("failed to set NAT virtual reassembly for IPv4: %v", err)
 		}
-		plugin.log.Debug("Nat virtual reassembly set for IPv4")
 	}
 	// Virtual reassembly IPv6
 	if config.VirtualReassemblyIpv6 != nil {
-		if err := plugin.natHandler.SetVirtualReassemblyIPv6(config.VirtualReassemblyIpv6); err != nil {
-			return err
+		if err := c.natHandler.SetVirtualReassemblyIPv6(config.VirtualReassemblyIpv6); err != nil {
+			return errors.Errorf("failed to set NAT virtual reassembly for IPv6: %v", err)
 		}
-		plugin.log.Debug("Nat virtual reassembly set for IPv6")
 	}
 
-	plugin.log.Debug("Setting up NAT global config done")
+	c.log.Info("Setting up NAT global config done")
 
 	return nil
 }
 
 // ModifyNatGlobalConfig modifies common setup for all NAT use cases
-func (plugin *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.Nat44Global) (err error) {
-	plugin.log.Info("Modifying NAT global config")
-
+func (c *NatConfigurator) ModifyNatGlobalConfig(oldConfig, newConfig *nat.Nat44Global) (err error) {
 	// Replace global NAT config
-	plugin.globalNAT = newConfig
+	c.globalNAT = newConfig
 
 	// Forwarding
 	if oldConfig.Forwarding != newConfig.Forwarding {
-		if err := plugin.natHandler.SetNat44Forwarding(newConfig.Forwarding); err != nil {
-			return err
+		if err := c.natHandler.SetNat44Forwarding(newConfig.Forwarding); err != nil {
+			return errors.Errorf("failed to set NAT44 forwarding to %t: %d", newConfig.Forwarding, err)
 		}
 	}
 
 	// Inside/outside interfaces
 	toSetIn, toSetOut, toUnsetIn, toUnsetOut := diffInterfaces(oldConfig.NatInterfaces, newConfig.NatInterfaces)
-	if err := plugin.disableNatInterfaces(toUnsetIn); err != nil {
+	if err := c.disableNatInterfaces(toUnsetIn); err != nil {
 		return err
 	}
-	if err := plugin.disableNatInterfaces(toUnsetOut); err != nil {
+	if err := c.disableNatInterfaces(toUnsetOut); err != nil {
 		return err
 	}
-	if err := plugin.enableNatInterfaces(toSetIn); err != nil {
+	if err := c.enableNatInterfaces(toSetIn); err != nil {
 		return err
 	}
-	if err := plugin.enableNatInterfaces(toSetOut); err != nil {
+	if err := c.enableNatInterfaces(toSetOut); err != nil {
 		return err
 	}
 
 	// Address pool
 	toAdd, toRemove := diffAddressPools(oldConfig.AddressPools, newConfig.AddressPools)
-	if err := plugin.delAddressPool(toRemove); err != nil {
+	if err := c.delAddressPool(toRemove); err != nil {
 		return err
 	}
-	if err := plugin.addAddressPool(toAdd); err != nil {
+	if err := c.addAddressPool(toAdd); err != nil {
 		return err
 	}
 
 	// Virtual reassembly IPv4
 	if toConfigure := isVirtualReassModified(oldConfig.VirtualReassemblyIpv4, newConfig.VirtualReassemblyIpv4); toConfigure != nil {
-		if err := plugin.natHandler.SetVirtualReassemblyIPv4(toConfigure); err != nil {
-			return err
+		if err := c.natHandler.SetVirtualReassemblyIPv4(toConfigure); err != nil {
+			return errors.Errorf("failed to set NAT virtual reassembly for IPv4: %v", err)
 		}
-		plugin.log.Debug("Nat virtual reassembly modified for IPv4")
 	}
 	// Virtual reassembly IPv6
 	if toConfigure := isVirtualReassModified(oldConfig.VirtualReassemblyIpv6, newConfig.VirtualReassemblyIpv6); toConfigure != nil {
-		if err := plugin.natHandler.SetVirtualReassemblyIPv6(toConfigure); err != nil {
-			return err
+		if err := c.natHandler.SetVirtualReassemblyIPv6(toConfigure); err != nil {
+			return errors.Errorf("failed to set NAT virtual reassembly for IPv6: %v", err)
 		}
-		plugin.log.Debug("Nat virtual reassembly modified for IPv6")
 	}
+
+	c.log.Info("NAT global config modified")
 
 	return nil
 }
 
 // DeleteNatGlobalConfig removes common setup for all NAT use cases
-func (plugin *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (err error) {
-	plugin.log.Info("Deleting NAT global config")
-
+func (c *NatConfigurator) DeleteNatGlobalConfig(config *nat.Nat44Global) (err error) {
 	// Remove global NAT config
-	plugin.globalNAT = nil
+	c.globalNAT = nil
 
 	// Inside/outside interfaces
 	if len(config.NatInterfaces) > 0 {
-		if err := plugin.disableNatInterfaces(config.NatInterfaces); err != nil {
+		if err := c.disableNatInterfaces(config.NatInterfaces); err != nil {
 			return err
 		}
 	}
 
 	// Address pools
 	if len(config.AddressPools) > 0 {
-		if err := plugin.delAddressPool(config.AddressPools); err != nil {
+		if err := c.delAddressPool(config.AddressPools); err != nil {
 			return err
 		}
 	}
 
 	// Reset virtual reassembly to default
-	if err := plugin.natHandler.SetVirtualReassemblyIPv4(getDefaultVr()); err != nil {
-		return err
+	if err := c.natHandler.SetVirtualReassemblyIPv4(getDefaultVr()); err != nil {
+		return errors.Errorf("failed to reset NAT virtual reassembly for IPv4 to default: %v", err)
 	}
-	if err := plugin.natHandler.SetVirtualReassemblyIPv6(getDefaultVr()); err != nil {
-		return err
+	if err := c.natHandler.SetVirtualReassemblyIPv6(getDefaultVr()); err != nil {
+		return errors.Errorf("failed to reset NAT virtual reassembly for IPv4 to default: %v", err)
 	}
 
-	plugin.log.Debug("Deleting NAT global config done")
+	c.log.Info("NAT global config removed")
 
 	return nil
 }
 
 // ConfigureSNat configures new SNAT setup
-func (plugin *NatConfigurator) ConfigureSNat(sNat *nat.Nat44SNat_SNatConfig) error {
-	plugin.log.Warn("SNAT CREATE not implemented")
+func (c *NatConfigurator) ConfigureSNat(sNat *nat.Nat44SNat_SNatConfig) error {
+	c.log.Warn("SNAT CREATE not implemented")
 	return nil
 }
 
 // ModifySNat modifies existing SNAT setup
-func (plugin *NatConfigurator) ModifySNat(oldSNat, newSNat *nat.Nat44SNat_SNatConfig) error {
-	plugin.log.Warn("SNAT MODIFY not implemented")
+func (c *NatConfigurator) ModifySNat(oldSNat, newSNat *nat.Nat44SNat_SNatConfig) error {
+	c.log.Warn("SNAT MODIFY not implemented")
 	return nil
 }
 
 // DeleteSNat removes existing SNAT setup
-func (plugin *NatConfigurator) DeleteSNat(sNat *nat.Nat44SNat_SNatConfig) error {
-	plugin.log.Warn("SNAT DELETE not implemented")
+func (c *NatConfigurator) DeleteSNat(sNat *nat.Nat44SNat_SNatConfig) error {
+	c.log.Warn("SNAT DELETE not implemented")
 	return nil
 }
 
 // ConfigureDNat configures new DNAT setup
-func (plugin *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) error {
-	plugin.log.Infof("Configuring DNAT with label %v", dNat.Label)
-
-	var wasErr error
-
+func (c *NatConfigurator) ConfigureDNat(dNat *nat.Nat44DNat_DNatConfig) error {
 	// Resolve static mapping
-	if err := plugin.configureStaticMappings(dNat.Label, dNat.StMappings); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to configure static mapping for DNAT %s: %v", dNat.Label, err)
+	if err := c.configureStaticMappings(dNat.Label, dNat.StMappings); err != nil {
+		return err
 	}
 
 	// Resolve identity mapping
-	if err := plugin.configureIdentityMappings(dNat.Label, dNat.IdMappings); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to configure identity mapping for DNAT %s: %v", dNat.Label, err)
+	if err := c.configureIdentityMappings(dNat.Label, dNat.IdMappings); err != nil {
+		return err
 	}
 
 	// Register DNAT configuration
-	plugin.dNatIndexes.RegisterName(dNat.Label, plugin.natIndexSeq, nil)
-	plugin.natIndexSeq++
-	plugin.log.Debugf("DNAT configuration registered (label: %v)", dNat.Label)
+	c.dNatIndexes.RegisterName(dNat.Label, c.natIndexSeq, nil)
+	c.natIndexSeq++
+	c.log.Debugf("DNAT configuration registered (label: %v)", dNat.Label)
 
-	plugin.log.Infof("DNAT %v configuration done", dNat.Label)
+	c.log.Infof("DNAT %s configured", dNat.Label)
 
-	return wasErr
+	return nil
 }
 
 // ModifyDNat modifies existing DNAT setup
-func (plugin *NatConfigurator) ModifyDNat(oldDNat, newDNat *nat.Nat44DNat_DNatConfig) error {
-	plugin.log.Infof("Modifying DNAT with label %v", newDNat.Label)
-
-	var wasErr error
-
+func (c *NatConfigurator) ModifyDNat(oldDNat, newDNat *nat.Nat44DNat_DNatConfig) error {
 	// Static mappings
-	stmToAdd, stmToRemove := plugin.diffStatic(oldDNat.StMappings, newDNat.StMappings)
+	stmToAdd, stmToRemove := c.diffStatic(oldDNat.StMappings, newDNat.StMappings)
 
-	if err := plugin.unconfigureStaticMappings(stmToRemove); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to remove static mapping from DNAT %s: %v", newDNat.Label, err)
+	if err := c.unconfigureStaticMappings(stmToRemove); err != nil {
+		return err
 	}
 
-	if err := plugin.configureStaticMappings(newDNat.Label, stmToAdd); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to configure static mapping for DNAT %s: %v", newDNat.Label, err)
+	if err := c.configureStaticMappings(newDNat.Label, stmToAdd); err != nil {
+		return err
 	}
 
 	// Identity mappings
-	idToAdd, idToRemove := plugin.diffIdentity(oldDNat.IdMappings, newDNat.IdMappings)
+	idToAdd, idToRemove := c.diffIdentity(oldDNat.IdMappings, newDNat.IdMappings)
 
-	if err := plugin.unconfigureIdentityMappings(idToRemove); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to remove identity mapping from DNAT %s: %v", newDNat.Label, err)
+	if err := c.unconfigureIdentityMappings(idToRemove); err != nil {
+		return err
 	}
 
-	if err := plugin.configureIdentityMappings(newDNat.Label, idToAdd); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to configure identity mapping for DNAT %s: %v", newDNat.Label, err)
+	if err := c.configureIdentityMappings(newDNat.Label, idToAdd); err != nil {
+		return err
 	}
 
-	plugin.log.Infof("DNAT %v modification done", newDNat.Label)
+	c.log.Infof("DNAT %s modification done", newDNat.Label)
 
-	return wasErr
+	return nil
 }
 
 // DeleteDNat removes existing DNAT setup
-func (plugin *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error {
-	plugin.log.Infof("Deleting DNAT with label %v", dNat.Label)
-
-	var wasErr error
-
+func (c *NatConfigurator) DeleteDNat(dNat *nat.Nat44DNat_DNatConfig) error {
 	// In delete case, vpp-agent attempts to reconstruct every static mapping entry and remove it from the VPP
-	if err := plugin.unconfigureStaticMappings(dNat.StMappings); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to remove static mapping from DNAT %s: %v", dNat.Label, err)
+	if err := c.unconfigureStaticMappings(dNat.StMappings); err != nil {
+		return err
 	}
 
 	// Do the same also for identity apping
-	if err := plugin.unconfigureIdentityMappings(dNat.IdMappings); err != nil {
-		wasErr = err
-		plugin.log.Errorf("Failed to remove identity mapping from DNAT %s: %v", dNat.Label, err)
+	if err := c.unconfigureIdentityMappings(dNat.IdMappings); err != nil {
+		return err
 	}
 
 	// Unregister DNAT configuration
-	plugin.dNatIndexes.UnregisterName(dNat.Label)
-	plugin.log.Debugf("DNAT configuration unregistered (label: %v)", dNat.Label)
+	c.dNatIndexes.UnregisterName(dNat.Label)
+	c.log.Debugf("DNAT configuration unregistered (label: %v)", dNat.Label)
 
-	plugin.log.Infof("DNAT %v removal done", dNat.Label)
+	c.log.Infof("DNAT %v removed", dNat.Label)
 
-	return wasErr
+	return nil
 }
 
 // ResolveCreatedInterface looks for cache of interfaces which should be enabled or disabled
 // for NAT
-func (plugin *NatConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
-	plugin.log.Debugf("NAT configurator: resolving registered interface %s", ifName)
-
-	var wasErr error
-
+func (c *NatConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
 	// Check for interfaces which should be enabled
 	var enabledIf []*nat.Nat44Global_NatInterface
-	for cachedName, data := range plugin.notEnabledIfs {
+	for cachedName, data := range c.notEnabledIfs {
 		if cachedName == ifName {
-			delete(plugin.notEnabledIfs, cachedName)
-			if err := plugin.enableNatInterfaces(append(enabledIf, data)); err != nil {
-				plugin.log.Error(err)
-				wasErr = err
+			delete(c.notEnabledIfs, cachedName)
+			c.log.Debugf("interface %s removed from not-enabled-for-NAT cache", ifName)
+			if err := c.enableNatInterfaces(append(enabledIf, data)); err != nil {
+				return errors.Errorf("failed to enable cached interface %s for NAT: %v", ifName, err)
 			}
 		}
 	}
 	// Check for interfaces which could be disabled
 	var disabledIf []*nat.Nat44Global_NatInterface
-	for cachedName, data := range plugin.notDisabledIfs {
+	for cachedName, data := range c.notDisabledIfs {
 		if cachedName == ifName {
-			delete(plugin.notDisabledIfs, cachedName)
-			if err := plugin.disableNatInterfaces(append(disabledIf, data)); err != nil {
-				plugin.log.Error(err)
-				wasErr = err
+			delete(c.notDisabledIfs, cachedName)
+			c.log.Debugf("interface %s removed from not-disabled-for-NAT cache", ifName)
+			if err := c.disableNatInterfaces(append(disabledIf, data)); err != nil {
+				return errors.Errorf("failed to disable cached interface %s for NAT: %v", ifName, err)
 			}
 		}
 	}
 
-	return wasErr
+	return nil
 }
 
 // ResolveDeletedInterface handles removed interface from NAT perspective
-func (plugin *NatConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
-	plugin.log.Debugf("NAT configurator: resolving deleted interface %s", ifName)
-
+func (c *NatConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
 	// Check global NAT for interfaces
-	if plugin.globalNAT != nil {
-		for _, natIf := range plugin.globalNAT.NatInterfaces {
+	if c.globalNAT != nil {
+		for _, natIf := range c.globalNAT.NatInterfaces {
 			if natIf.Name == ifName {
 				// This interface was removed and it is not possible to determine its state, so agent handles it as
 				// not enabled
-				plugin.notEnabledIfs[natIf.Name] = natIf
+				c.notEnabledIfs[natIf.Name] = natIf
+				c.log.Debugf("unregistered interface %s added to not-enabled-for-NAT cache", ifName)
 				return nil
 			}
 		}
@@ -483,141 +449,113 @@ func (plugin *NatConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 }
 
 // DumpNatGlobal returns the current NAT44 global config
-func (plugin *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
-	return plugin.natHandler.Nat44GlobalConfigDump()
+func (c *NatConfigurator) DumpNatGlobal() (*nat.Nat44Global, error) {
+	return c.natHandler.Nat44GlobalConfigDump()
 }
 
 // DumpNatDNat returns the current NAT44 DNAT config
-func (plugin *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
-	return plugin.natHandler.Nat44DNatDump()
+func (c *NatConfigurator) DumpNatDNat() (*nat.Nat44DNat, error) {
+	return c.natHandler.Nat44DNatDump()
 }
 
 // enables set of interfaces as inside/outside in NAT
-func (plugin *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) (err error) {
+func (c *NatConfigurator) enableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) error {
 	for _, natInterface := range natInterfaces {
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(natInterface.Name)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(natInterface.Name)
 		if !found {
-			plugin.log.Debugf("Interface %v missing, cannot enable NAT", natInterface.Name)
-			plugin.notEnabledIfs[natInterface.Name] = natInterface // cache interface
+			c.notEnabledIfs[natInterface.Name] = natInterface // cache interface
+			c.log.Debugf("Interface %s missing, cannot enable it for NAT yet, cached", natInterface.Name)
 		} else {
 			if natInterface.OutputFeature {
 				// enable nat interface and output feature
-				if err = plugin.natHandler.EnableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
-					return
-				}
-				if natInterface.IsInside {
-					plugin.log.Debugf("Interface %v output-feature enabled for NAT as inside", natInterface.Name)
-				} else {
-					plugin.log.Debugf("Interface %v output-feature enabled for NAT as outside", natInterface.Name)
+				if err := c.natHandler.EnableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
+					return errors.Errorf("failed to enable interface %s for NAT44 as output feature: %v",
+						natInterface.Name, err)
 				}
 			} else {
 				// enable interface only
-				if err = plugin.natHandler.EnableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
-					return
-				}
-				if natInterface.IsInside {
-					plugin.log.Debugf("Interface %v enabled for NAT as inside", natInterface.Name)
-				} else {
-					plugin.log.Debugf("Interface %v enabled for NAT as outside", natInterface.Name)
+				if err := c.natHandler.EnableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
+					return errors.Errorf("failed to enable interface %s for NAT44: %v", natInterface.Name, err)
 				}
 			}
 		}
 	}
 
-	return
+	return nil
 }
 
 // disables set of interfaces in NAT
-func (plugin *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) (err error) {
+func (c *NatConfigurator) disableNatInterfaces(natInterfaces []*nat.Nat44Global_NatInterface) error {
 	for _, natInterface := range natInterfaces {
 		// Check if interface is not in the cache
-		for ifName := range plugin.notEnabledIfs {
+		for ifName := range c.notEnabledIfs {
 			if ifName == natInterface.Name {
-				delete(plugin.notEnabledIfs, ifName)
+				delete(c.notEnabledIfs, ifName)
 			}
 		}
 		// Check if interface exists
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(natInterface.Name)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(natInterface.Name)
 		if !found {
-			plugin.log.Debugf("Interface %v missing, cannot disable NAT", natInterface)
-			plugin.notDisabledIfs[natInterface.Name] = natInterface // cache interface
+			c.notDisabledIfs[natInterface.Name] = natInterface // cache interface
+			c.log.Debugf("Interface %s missing, cannot disable it for NAT yet, cached", natInterface.Name)
 		} else {
 			if natInterface.OutputFeature {
 				// disable nat interface and output feature
-				if err = plugin.natHandler.DisableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
-					return
-				}
-				if natInterface.IsInside {
-					plugin.log.Debugf("Interface %v output-feature disabled for NAT as inside", natInterface.Name)
-				} else {
-					plugin.log.Debugf("Interface %v output-feature disabled for NAT as outside", natInterface.Name)
+				if err := c.natHandler.DisableNat44InterfaceOutput(ifIdx, natInterface.IsInside); err != nil {
+					return errors.Errorf("failed to disable NAT44 interface %s as output feature: %v",
+						natInterface.Name, err)
 				}
 			} else {
 				// disable interface
-				if err = plugin.natHandler.DisableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
-					return
-				}
-				if natInterface.IsInside {
-					plugin.log.Debugf("Interface %v disabled for NAT as inside", natInterface)
-				} else {
-					plugin.log.Debugf("Interface %v disabled for NAT as outside", natInterface)
+				if err := c.natHandler.DisableNat44Interface(ifIdx, natInterface.IsInside); err != nil {
+					return errors.Errorf("failed to disable NAT44 interface %s: %v", natInterface.Name, err)
 				}
 			}
 		}
 	}
 
-	return
+	return nil
 }
 
 // Configures NAT address pool. If an address pool cannot is invalid and cannot be configured, it is skipped.
-func (plugin *NatConfigurator) addAddressPool(addressPools []*nat.Nat44Global_AddressPool) (err error) {
-	var wasErr error
+func (c *NatConfigurator) addAddressPool(addressPools []*nat.Nat44Global_AddressPool) (err error) {
 	for _, addressPool := range addressPools {
 		if addressPool.FirstSrcAddress == "" && addressPool.LastSrcAddress == "" {
-			err := fmt.Errorf("invalid address pool config, no IP address provided")
-			plugin.log.Error(err)
-			wasErr = err
-			continue
+			return errors.Errorf("failed to add address pool: invalid config, no IP address provided")
 		}
 		var firstIP []byte
 		var lastIP []byte
 		if addressPool.FirstSrcAddress != "" {
 			firstIP = net.ParseIP(addressPool.FirstSrcAddress).To4()
 			if firstIP == nil {
-				err := fmt.Errorf("unable to parse IP address %v", addressPool.FirstSrcAddress)
-				plugin.log.Error(err)
-				wasErr = err
-				continue
+				return errors.Errorf("failed to add address pool: unable to parse IP address %s",
+					addressPool.FirstSrcAddress)
 			}
 		}
 		if addressPool.LastSrcAddress != "" {
 			lastIP = net.ParseIP(addressPool.LastSrcAddress).To4()
 			if lastIP == nil {
-				err := fmt.Errorf("unable to parse IP address %v", addressPool.LastSrcAddress)
-				plugin.log.Error(err)
-				wasErr = err
-				continue
+				return errors.Errorf("failed to add address pool: unable to parse IP address %s",
+					addressPool.LastSrcAddress)
 			}
 		}
 		// Both fields have to be set, at least at the same value if only one of them is set
 		if firstIP == nil {
 			firstIP = lastIP
 		} else if lastIP == nil {
-			lastIP = firstIP
+			lastIP = firstIP // Matthew 20:16
 		}
-		if err = plugin.natHandler.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
-			plugin.log.Error(err)
-			wasErr = err
+		if err = c.natHandler.AddNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
+			return errors.Errorf("failed to add NAT44 address pool %s - %s: %v", firstIP, lastIP, err)
 		}
 	}
 
-	return wasErr
+	return nil
 }
 
 // Removes NAT address pool. Invalid address pool configuration is skipped with warning, configurator assumes that
 // such a data could not be configured to the vpp.
-func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_AddressPool) (err error) {
-	var wasErr error
+func (c *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_AddressPool) error {
 	for _, addressPool := range addressPools {
 		if addressPool.FirstSrcAddress == "" && addressPool.LastSrcAddress == "" {
 			// No address pool to remove
@@ -629,7 +567,7 @@ func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Ad
 			firstIP = net.ParseIP(addressPool.FirstSrcAddress).To4()
 			if firstIP == nil {
 				// Do not return error here
-				plugin.log.Warnf("First address pool IP %s cannot be parsed and removed, skipping",
+				c.log.Warnf("First NAT44 address pool IP %s cannot be parsed and removed, skipping",
 					addressPool.FirstSrcAddress)
 				continue
 			}
@@ -638,7 +576,7 @@ func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Ad
 			lastIP = net.ParseIP(addressPool.LastSrcAddress).To4()
 			if lastIP == nil {
 				// Do not return error here
-				plugin.log.Warnf("Last address pool IP %s cannot be parsed and removed, skipping",
+				c.log.Warnf("Last NAT44 address pool IP %s cannot be parsed and removed, skipping",
 					addressPool.LastSrcAddress)
 				continue
 			}
@@ -651,101 +589,86 @@ func (plugin *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Ad
 		}
 
 		// remove address pool
-		if err = plugin.natHandler.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
-			plugin.log.Error(err)
-			wasErr = err
+		if err := c.natHandler.DelNat44AddressPool(firstIP, lastIP, addressPool.VrfId, addressPool.TwiceNat); err != nil {
+			errors.Errorf("failed to delete NAT44 address pool %s - %s: %v", firstIP, lastIP, err)
 		}
 	}
 
-	return wasErr
+	return nil
 }
 
 // configures a list of static mappings for provided label
-func (plugin *NatConfigurator) configureStaticMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_StaticMapping) error {
-	var wasErr error
+func (c *NatConfigurator) configureStaticMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_StaticMapping) error {
 	for _, mappingEntry := range mappings {
 		var tag string
 		localIPList := mappingEntry.LocalIps
 		if len(localIPList) == 0 {
-			wasErr = fmt.Errorf("cannot configure DNAT static mapping: no local address provided")
-			plugin.log.Error(wasErr)
-			continue
+			return errors.Errorf("cannot configure DNAT static mapping %s: no local address provided", label)
 		} else if len(localIPList) == 1 {
 			// Case without load balance (one local address)
-			tag = plugin.getMappingTag(label, static)
-			if err := plugin.handleStaticMapping(mappingEntry, tag, true); err != nil {
-				wasErr = fmt.Errorf("DNAT static mapping configuration failed: %v", err)
-				plugin.log.Error(wasErr)
-				continue
+			tag = c.getMappingTag(label, static)
+			if err := c.handleStaticMapping(mappingEntry, tag, true); err != nil {
+				return err
 			}
 		} else {
 			// Case with load balance (more local addresses)
-			tag = plugin.getMappingTag(label, staticLb)
-			if err := plugin.handleStaticMappingLb(mappingEntry, tag, true); err != nil {
-				wasErr = fmt.Errorf("DNAT static lb-mapping configuration failed: %v", err)
-				plugin.log.Error(wasErr)
-				continue
+			tag = c.getMappingTag(label, staticLb)
+			if err := c.handleStaticMappingLb(mappingEntry, tag, true); err != nil {
+				return err
 			}
 		}
 		// Register DNAT static mapping
 		mappingIdentifier := GetStMappingIdentifier(mappingEntry)
-		plugin.dNatStMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
-		plugin.natIndexSeq++
-
-		plugin.log.Debugf("DNAT static (lb)mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
+		c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+		c.natIndexSeq++
+		c.log.Debugf("DNAT static (lb) mapping registered (ID: %s, Tag: %s)", mappingIdentifier, tag)
 	}
 
-	return wasErr
+	return nil
 }
 
 // removes static mappings from configuration with provided label
-func (plugin *NatConfigurator) unconfigureStaticMappings(mappings []*nat.Nat44DNat_DNatConfig_StaticMapping) error {
-	var wasErr error
+func (c *NatConfigurator) unconfigureStaticMappings(mappings []*nat.Nat44DNat_DNatConfig_StaticMapping) error {
 	for mappingIdx, mappingEntry := range mappings {
 		localIPList := mappingEntry.LocalIps
 		if len(localIPList) == 0 {
-			plugin.log.Warnf("DNAT mapping %v has not local IPs, cannot remove it", mappingIdx)
+			c.log.Warnf("DNAT mapping %s has not local IPs, cannot remove it", mappingIdx)
 			continue
 		} else if len(localIPList) == 1 {
 			// Case without load balance (one local address)
-			if err := plugin.handleStaticMapping(mappingEntry, dummyTag, false); err != nil {
-				wasErr = fmt.Errorf("DNAT mapping removal failed: %v", err)
-				plugin.log.Error(wasErr)
-				continue
+			if err := c.handleStaticMapping(mappingEntry, dummyTag, false); err != nil {
+				return err
 			}
 		} else {
 			// Case with load balance (more local addresses)
-			if err := plugin.handleStaticMappingLb(mappingEntry, dummyTag, false); err != nil {
-				wasErr = fmt.Errorf("DNAT lb-mapping removal failed: %v", err)
-				plugin.log.Error(wasErr)
-				continue
+			if err := c.handleStaticMappingLb(mappingEntry, dummyTag, false); err != nil {
+				return err
 			}
 		}
 		// Unregister DNAT mapping
 		mappingIdentifier := GetStMappingIdentifier(mappingEntry)
-		plugin.dNatStMappingIndexes.UnregisterName(mappingIdentifier)
-
-		plugin.log.Debugf("DNAT lb-mapping un-configured (ID %v)", mappingIdentifier)
+		c.dNatStMappingIndexes.UnregisterName(mappingIdentifier)
+		c.log.Debugf("DNAT lb-mapping unregistered (ID %v)", mappingIdentifier)
 	}
 
-	return wasErr
+	return nil
 }
 
 // configures single static mapping entry with load balancer
-func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMapping, tag string, add bool) (err error) {
+func (c *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44DNat_DNatConfig_StaticMapping, tag string, add bool) (err error) {
 	// Validate tag
 	if tag == dummyTag && add {
-		plugin.log.Warn("Static mapping will be configured with generic tag")
+		c.log.Warn("Static mapping will be configured with generic tag")
 	}
 	// Parse external IP address
 	exIPAddrByte := net.ParseIP(staticMappingLb.ExternalIp).To4()
 	if exIPAddrByte == nil {
-		return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", staticMappingLb.ExternalIp)
+		return errors.Errorf("cannot configure DNAT lb static mapping: unable to parse external IP %s", exIPAddrByte.String())
 	}
 
 	// In this case, external port is required
 	if staticMappingLb.ExternalPort == 0 {
-		return fmt.Errorf("cannot configure DNAT mapping: external port is not set")
+		return errors.Errorf("cannot configure DNAT lb static mapping: external port is not set")
 	}
 
 	// Address mapping with load balancer
@@ -753,30 +676,36 @@ func (plugin *NatConfigurator) handleStaticMappingLb(staticMappingLb *nat.Nat44D
 		Tag:          tag,
 		ExternalIP:   exIPAddrByte,
 		ExternalPort: uint16(staticMappingLb.ExternalPort),
-		Protocol:     getProtocol(staticMappingLb.Protocol, plugin.log),
-		LocalIPs:     getLocalIPs(staticMappingLb.LocalIps, plugin.log),
+		Protocol:     getProtocol(staticMappingLb.Protocol, c.log),
+		LocalIPs:     getLocalIPs(staticMappingLb.LocalIps, c.log),
 		TwiceNat:     staticMappingLb.TwiceNat == nat.TwiceNatMode_ENABLED,
 		SelfTwiceNat: staticMappingLb.TwiceNat == nat.TwiceNatMode_SELF,
 	}
 
 	if len(ctx.LocalIPs) == 0 {
-		return fmt.Errorf("cannot configure DNAT mapping: no local IP was successfully parsed")
+		return errors.Errorf("cannot configure DNAT mapping: no local IP was successfully parsed")
 	}
 
 	if add {
-		return plugin.natHandler.AddNat44StaticMappingLb(ctx)
+		if err := c.natHandler.AddNat44StaticMappingLb(ctx); err != nil {
+			return errors.Errorf("failed to add NAT44 lb static mapping: %v", err)
+		}
+	} else {
+		if err := c.natHandler.DelNat44StaticMappingLb(ctx); err != nil {
+			return errors.Errorf("failed to delete NAT44 static mapping: %v", err)
+		}
 	}
-	return plugin.natHandler.DelNat44StaticMappingLb(ctx)
+	return nil
 }
 
 // handler for single static mapping entry
-func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_DNatConfig_StaticMapping, tag string, add bool) (err error) {
+func (c *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_DNatConfig_StaticMapping, tag string, add bool) (err error) {
 	var ifIdx uint32 = 0xffffffff // default value - means no external interface is set
-	var exIPAddr []byte
+	var exIPAddr net.IP
 
 	// Validate tag
 	if tag == dummyTag && add {
-		plugin.log.Warn("Static mapping will be configured with generic tag")
+		c.log.Warn("Static mapping will be configured with generic tag")
 	}
 
 	// Parse local IP address and port
@@ -784,22 +713,23 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 	lcPort := staticMapping.LocalIps[0].LocalPort
 	lcVrf := staticMapping.LocalIps[0].VrfId
 	if lcIPAddr == nil {
-		return fmt.Errorf("cannot configure DNAT mapping: unable to parse local IP %v", lcIPAddr)
+		return errors.Errorf("cannot configure DNAT static mapping: unable to parse local IP %s", lcIPAddr.String())
 	}
 
 	// Check external interface (prioritized over external IP)
 	if staticMapping.ExternalInterface != "" {
 		// Check external interface
 		var found bool
-		ifIdx, _, found = plugin.ifIndexes.LookupIdx(staticMapping.ExternalInterface)
+		ifIdx, _, found = c.ifIndexes.LookupIdx(staticMapping.ExternalInterface)
 		if !found {
-			return fmt.Errorf("required external interface %v is missing", staticMapping.ExternalInterface)
+			return errors.Errorf("cannot configure DNAT static mapping: required external interface %s is missing",
+				staticMapping.ExternalInterface)
 		}
 	} else {
 		// Parse external IP address
 		exIPAddr = net.ParseIP(staticMapping.ExternalIp).To4()
 		if exIPAddr == nil {
-			return fmt.Errorf("cannot configure DNAT mapping: unable to parse external IP %v", exIPAddr)
+			return errors.Errorf("cannot configure DNAT static mapping: unable to parse external IP %s", exIPAddr.String())
 		}
 	}
 
@@ -818,89 +748,86 @@ func (plugin *NatConfigurator) handleStaticMapping(staticMapping *nat.Nat44DNat_
 		ExternalIP:    exIPAddr,
 		ExternalPort:  uint16(staticMapping.ExternalPort),
 		ExternalIfIdx: ifIdx,
-		Protocol:      getProtocol(staticMapping.Protocol, plugin.log),
+		Protocol:      getProtocol(staticMapping.Protocol, c.log),
 		Vrf:           lcVrf,
 		TwiceNat:      staticMapping.TwiceNat == nat.TwiceNatMode_ENABLED,
 		SelfTwiceNat:  staticMapping.TwiceNat == nat.TwiceNatMode_SELF,
 	}
 
 	if add {
-		return plugin.natHandler.AddNat44StaticMapping(ctx)
+		if err := c.natHandler.AddNat44StaticMapping(ctx); err != nil {
+			return errors.Errorf("failed to add NAT44 static mapping: %v", err)
+		}
+	} else {
+		if err := c.natHandler.DelNat44StaticMapping(ctx); err != nil {
+			return errors.Errorf("failed to delete NAT44 static mapping: %v", err)
+		}
 	}
-	return plugin.natHandler.DelNat44StaticMapping(ctx)
+	return nil
 }
 
 // configures a list of identity mappings with label
-func (plugin *NatConfigurator) configureIdentityMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) error {
-	var wasErr error
+func (c *NatConfigurator) configureIdentityMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) error {
 	for _, idMapping := range mappings {
 		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
-			wasErr = fmt.Errorf("cannot configure DNAT identity mapping: no IP address or interface provided")
-			plugin.log.Error(wasErr)
-			continue
+			return errors.Errorf("cannot configure DNAT %s identity mapping: no IP address or interface provided", label)
 		}
 		// Case without load balance (one local address)
-		tag := plugin.getMappingTag(label, identity)
-		if err := plugin.handleIdentityMapping(idMapping, tag, true); err != nil {
-			wasErr = err
-			plugin.log.Error(err)
-			continue
+		tag := c.getMappingTag(label, identity)
+		if err := c.handleIdentityMapping(idMapping, tag, true); err != nil {
+			return err
 		}
 
 		// Register DNAT identity mapping
-		mappingIdentifier := GetIdMappingIdentifier(idMapping)
-		plugin.dNatIdMappingIndexes.RegisterName(mappingIdentifier, plugin.natIndexSeq, nil)
-		plugin.natIndexSeq++
-
-		plugin.log.Debugf("DNAT identity mapping configured (ID: %s, Tag: %s)", mappingIdentifier, tag)
+		mappingIdentifier := GetIDMappingIdentifier(idMapping)
+		c.dNatIDMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
+		c.natIndexSeq++
+		c.log.Debugf("DNAT identity mapping registered (ID: %s, Tag: %s)", mappingIdentifier, tag)
 	}
 
-	return wasErr
+	return nil
 }
 
 // removes identity mappings from configuration with provided label
-func (plugin *NatConfigurator) unconfigureIdentityMappings(mappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) error {
+func (c *NatConfigurator) unconfigureIdentityMappings(mappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) error {
 	var wasErr error
 	for mappingIdx, idMapping := range mappings {
 		if idMapping.IpAddress == "" && idMapping.AddressedInterface == "" {
-			wasErr = fmt.Errorf("cannot remove DNAT %v identity mapping: no IP address or interface provided", mappingIdx)
-			plugin.log.Error(wasErr)
-			continue
+			return errors.Errorf("cannot configure DNAT identity mapping %d: no IP address or interface provided",
+				mappingIdx)
 		}
-		if err := plugin.handleIdentityMapping(idMapping, dummyTag, false); err != nil {
-			wasErr = err
-			plugin.log.Error(err)
-			continue
+		if err := c.handleIdentityMapping(idMapping, dummyTag, false); err != nil {
+			return err
 		}
 
 		// Unregister DNAT identity mapping
-		mappingIdentifier := GetIdMappingIdentifier(idMapping)
-		plugin.dNatIdMappingIndexes.UnregisterName(mappingIdentifier)
-		plugin.natIndexSeq++
-
-		plugin.log.Debugf("DNAT identity (lb)mapping un-configured (ID: %v)", mappingIdentifier)
+		mappingIdentifier := GetIDMappingIdentifier(idMapping)
+		c.dNatIDMappingIndexes.UnregisterName(mappingIdentifier)
+		c.natIndexSeq++
+		c.log.Debugf("DNAT identity mapping unregistered (ID: %v)", mappingIdentifier)
 	}
 
 	return wasErr
 }
 
 // handler for single identity mapping entry
-func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DNatConfig_IdentityMapping, tag string, isAdd bool) (err error) {
+func (c *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DNatConfig_IdentityMapping, tag string, isAdd bool) (err error) {
 	// Verify interface if exists
 	var ifIdx uint32
 	if idMapping.AddressedInterface != "" {
 		var found bool
-		ifIdx, _, found = plugin.ifIndexes.LookupIdx(idMapping.AddressedInterface)
+		ifIdx, _, found = c.ifIndexes.LookupIdx(idMapping.AddressedInterface)
 		if !found {
 			// TODO: use cache to configure later
-			return fmt.Errorf("identity mapping config: provided interface %v does not exist", idMapping.AddressedInterface)
+			return errors.Errorf("failed to configure identity mapping: provided interface %s does not exist",
+				idMapping.AddressedInterface)
 		}
 	}
 
 	// Identity mapping (common fields)
 	ctx := &vppcalls.IdentityMappingContext{
 		Tag:      tag,
-		Protocol: getProtocol(idMapping.Protocol, plugin.log),
+		Protocol: getProtocol(idMapping.Protocol, c.log),
 		Port:     uint16(idMapping.Port),
 		IfIdx:    ifIdx,
 		Vrf:      idMapping.VrfId,
@@ -910,7 +837,7 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 		// Case with IP (optionally port). Verify and parse input IP/port
 		parsedIP := net.ParseIP(idMapping.IpAddress).To4()
 		if parsedIP == nil {
-			return fmt.Errorf("unable to parse IP address %v", idMapping.IpAddress)
+			return errors.Errorf("failed to configure identity mapping: unable to parse IP address %s", idMapping.IpAddress)
 		}
 		// Add IP address to context
 		ctx.IPAddress = parsedIP
@@ -918,9 +845,15 @@ func (plugin *NatConfigurator) handleIdentityMapping(idMapping *nat.Nat44DNat_DN
 
 	// Configure/remove identity mapping
 	if isAdd {
-		return plugin.natHandler.AddNat44IdentityMapping(ctx)
+		if err := c.natHandler.AddNat44IdentityMapping(ctx); err != nil {
+			return errors.Errorf("failed to add NAT44 identity mapping: %v", err)
+		}
+	} else {
+		if err := c.natHandler.DelNat44IdentityMapping(ctx); err != nil {
+			return errors.Errorf("failed to remove NAT44 identity mapping: %v", err)
+		}
 	}
-	return plugin.natHandler.DelNat44IdentityMapping(ctx)
+	return nil
 }
 
 // looks for new and obsolete IN interfaces
@@ -1014,7 +947,7 @@ func diffAddressPools(oldAPs, newAPs []*nat.Nat44Global_AddressPool) (toAdd, toR
 }
 
 // returns a list of static mappings to add/remove
-func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_StaticMapping) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_StaticMapping) {
+func (c *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_StaticMapping) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_StaticMapping) {
 	// Find missing mappings
 	for _, newMap := range newMappings {
 		var found bool
@@ -1029,7 +962,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 				continue
 			}
 			// Local IPs
-			if !plugin.compareLocalIPs(oldMap.LocalIps, newMap.LocalIps) {
+			if !c.compareLocalIPs(oldMap.LocalIps, newMap.LocalIps) {
 				continue
 			}
 			found = true
@@ -1052,7 +985,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 				continue
 			}
 			// Local IPs
-			if !plugin.compareLocalIPs(oldMap.LocalIps, newMap.LocalIps) {
+			if !c.compareLocalIPs(oldMap.LocalIps, newMap.LocalIps) {
 				continue
 			}
 			found = true
@@ -1066,7 +999,7 @@ func (plugin *NatConfigurator) diffStatic(oldMappings, newMappings []*nat.Nat44D
 }
 
 // returns a list of identity mappings to add/remove
-func (plugin *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_IdentityMapping) {
+func (c *NatConfigurator) diffIdentity(oldMappings, newMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping) (toAdd, toRemove []*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	// Find missing mappings
 	for _, newMap := range newMappings {
 		var found bool
@@ -1123,8 +1056,8 @@ func isVirtualReassModified(oldReass, newReass *nat.Nat44Global_VirtualReassembl
 	return nil
 }
 
-// comapares two lists of Local IP addresses, returns true if lists are equal, false otherwise
-func (plugin *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP) bool {
+// compares two lists of Local IP addresses, returns true if lists are equal, false otherwise
+func (c *NatConfigurator) compareLocalIPs(oldIPs, newIPs []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP) bool {
 	if len(oldIPs) != len(newIPs) {
 		return false
 	}
@@ -1192,8 +1125,8 @@ func GetStMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_StaticMapping) str
 	return extIP + locIP + strconv.Itoa(int(mapping.LocalIps[0].VrfId))
 }
 
-// GetIdMappingIdentifier returns unique ID of the mapping
-func GetIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping) string {
+// GetIDMappingIdentifier returns unique ID of the mapping
+func GetIDMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping) string {
 	extIP := strings.Replace(mapping.IpAddress, ".", "", -1)
 	extIP = strings.Replace(extIP, "/", "", -1)
 	if mapping.AddressedInterface == "" {
@@ -1203,12 +1136,12 @@ func GetIdMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping) s
 }
 
 // returns unique mapping tag
-func (plugin *NatConfigurator) getMappingTag(label, mType string) string {
+func (c *NatConfigurator) getMappingTag(label, mType string) string {
 	var buffer bytes.Buffer
 	buffer.WriteString(label)
 	buffer.WriteString(mType)
-	buffer.WriteString(strconv.Itoa(int(plugin.natMappingTagSeq)))
-	plugin.natMappingTagSeq++
+	buffer.WriteString(strconv.Itoa(int(c.natMappingTagSeq)))
+	c.natMappingTagSeq++
 
 	return buffer.String()
 }
@@ -1221,4 +1154,18 @@ func getDefaultVr() *nat.Nat44Global_VirtualReassembly {
 		Timeout:  timeout,
 		DropFrag: false,
 	}
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *NatConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

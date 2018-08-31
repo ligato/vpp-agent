@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,4 +12,3 @@ data:
   kafka.conf: |
     addrs:
      - "172.17.0.1:9092"
-

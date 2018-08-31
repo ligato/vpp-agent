@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package linuxplugin implements the Linux plugin that handles management
+// Package linux implements the Linux plugin that handles management
 // of Linux VETH interfaces.
 package linux
 
@@ -88,8 +88,8 @@ type Deps struct {
 	WatchEventsMutex *sync.Mutex
 }
 
-// LinuxConfig holds the linuxplugin configuration.
-type LinuxConfig struct {
+// Config holds the linuxplugin configuration.
+type Config struct {
 	Stopwatch bool `json:"stopwatch"`
 	Disabled  bool `json:"disabled"`
 }
@@ -218,7 +218,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes,
 		plugin.ifMicroserviceNotif, plugin.stopwatch); err != nil {
-		return err
+		return plugin.ifConfigurator.LogError(err)
 	}
 
 	return nil
@@ -234,16 +234,20 @@ func (plugin *Plugin) initL3() error {
 	// Linux ARP configurator
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{}
 	if err := plugin.arpConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch); err != nil {
-		return err
+		return plugin.arpConfigurator.LogError(err)
 	}
 
 	// Linux Route configurator
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{}
-	return plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch)
+	if err := plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch); err != nil {
+		plugin.routeConfigurator.LogError(err)
+	}
+
+	return nil
 }
 
-func (plugin *Plugin) retrieveLinuxConfig() (*LinuxConfig, error) {
-	config := &LinuxConfig{}
+func (plugin *Plugin) retrieveLinuxConfig() (*Config, error) {
+	config := &Config{}
 	found, err := plugin.Cfg.LoadValue(config)
 	if !found {
 		plugin.Log.Debug("Linuxplugin config not found")

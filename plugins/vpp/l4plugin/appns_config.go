@@ -17,9 +17,8 @@
 package l4plugin
 
 import (
-	"fmt"
-
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -58,230 +57,233 @@ type AppNsConfigurator struct {
 }
 
 // Init members (channels...) and start go routines
-func (plugin *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+func (c *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-l4-plugin")
-	plugin.log.Debugf("Initializing L4 configurator")
+	c.log = logger.NewLogger("-l4-plugin")
 
 	// Mappings
-	plugin.ifIndexes = swIfIndexes
-	plugin.appNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(plugin.log, "namespace_indexes", nil))
-	plugin.appNsCached = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(plugin.log, "not_configured_namespace_indexes", nil))
-	plugin.appNsIdxSeq = 1
+	c.ifIndexes = swIfIndexes
+	c.appNsIndexes = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(c.log, "namespace_indexes", nil))
+	c.appNsCached = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(c.log, "not_configured_namespace_indexes", nil))
+	c.appNsIdxSeq = 1
 
 	// Stopwatch
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("AppNsConfigurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("AppNsConfigurator", c.log)
 	}
 
 	// VPP channels
-	if plugin.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
-		return err
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handler
-	plugin.l4Handler = vppcalls.NewL4VppHandler(plugin.vppChan, plugin.log, plugin.stopwatch)
+	c.l4Handler = vppcalls.NewL4VppHandler(c.vppChan, c.log, c.stopwatch)
+
+	c.log.Debugf("L4 configurator initialized")
 
 	return nil
 }
 
 // Close members, channels
-func (plugin *AppNsConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan)
+func (c *AppNsConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose l4 configurator: %v", err))
+	}
+	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *AppNsConfigurator) clearMapping() {
-	plugin.appNsIndexes.Clear()
-	plugin.appNsCached.Clear()
+func (c *AppNsConfigurator) clearMapping() {
+	c.appNsIndexes.Clear()
+	c.appNsCached.Clear()
+	c.log.Debugf("l4 configurator mapping cleared")
 }
 
 // GetAppNsIndexes returns application namespace memory indexes
-func (plugin *AppNsConfigurator) GetAppNsIndexes() nsidx.AppNsIndexRW {
-	return plugin.appNsIndexes
+func (c *AppNsConfigurator) GetAppNsIndexes() nsidx.AppNsIndexRW {
+	return c.appNsIndexes
 }
 
 // ConfigureL4FeatureFlag process the NB Features config and propagates it to bin api calls
-func (plugin *AppNsConfigurator) ConfigureL4FeatureFlag(features *l4.L4Features) error {
-	plugin.log.Info("Setting up L4 features")
-
+func (c *AppNsConfigurator) ConfigureL4FeatureFlag(features *l4.L4Features) error {
 	if features.Enabled {
-		if err := plugin.configureL4FeatureFlag(); err != nil {
+		if err := c.configureL4FeatureFlag(); err != nil {
 			return err
 		}
-		return plugin.resolveCachedNamespaces()
-	} else {
-		return plugin.DeleteL4FeatureFlag()
+		return c.resolveCachedNamespaces()
 	}
+	c.DeleteL4FeatureFlag()
 
 	return nil
 }
 
 // configureL4FeatureFlag process the NB Features config and propagates it to bin api calls
-func (plugin *AppNsConfigurator) configureL4FeatureFlag() error {
-	plugin.log.Info("Configuring L4 features")
-
-	if err := plugin.l4Handler.EnableL4Features(); err != nil {
-		plugin.log.Errorf("Enabling L4 features failed: %v", err)
-		return err
+func (c *AppNsConfigurator) configureL4FeatureFlag() error {
+	if err := c.l4Handler.EnableL4Features(); err != nil {
+		return errors.Errorf("failed to enable L4 features: %v", err)
 	}
-	plugin.l4ftEnabled = true
-	plugin.log.Infof("L4 features enabled")
+	c.l4ftEnabled = true
+	c.log.Infof("L4 features enabled")
 
 	return nil
 }
 
 // DeleteL4FeatureFlag process the NB Features config and propagates it to bin api calls
-func (plugin *AppNsConfigurator) DeleteL4FeatureFlag() error {
-	plugin.log.Info("Removing L4 features")
-
-	if err := plugin.l4Handler.DisableL4Features(); err != nil {
-		plugin.log.Errorf("Disabling L4 features failed: %v", err)
-		return err
+func (c *AppNsConfigurator) DeleteL4FeatureFlag() error {
+	if err := c.l4Handler.DisableL4Features(); err != nil {
+		return errors.Errorf("failed to disable L4 features: %v", err)
 	}
 
-	plugin.l4ftEnabled = false
-	plugin.log.Infof("L4 features disabled")
+	c.l4ftEnabled = false
+	c.log.Infof("L4 features disabled")
 
 	return nil
 }
 
 // ConfigureAppNamespace process the NB AppNamespace config and propagates it to bin api calls
-func (plugin *AppNsConfigurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
-	plugin.log.Infof("Configuring new AppNamespace with ID %v", ns.NamespaceId)
-
+func (c *AppNsConfigurator) ConfigureAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
 	// Validate data
 	if ns.Interface == "" {
-		return fmt.Errorf("application namespace %v does not contain interface", ns.NamespaceId)
+		return errors.Errorf("application namespace %s does not contain interface", ns.NamespaceId)
 	}
 
 	// Check whether L4 l4ftEnabled are enabled. If not, all namespaces created earlier are added to cache
-	if !plugin.l4ftEnabled {
-		plugin.appNsCached.RegisterName(ns.NamespaceId, plugin.appNsIdxSeq, ns)
-		plugin.appNsIdxSeq++
-		plugin.log.Infof("Unable to configure application namespace %v due to disabled L4 features, moving to cache", ns.NamespaceId)
+	if !c.l4ftEnabled {
+		c.appNsCached.RegisterName(ns.NamespaceId, c.appNsIdxSeq, ns)
+		c.appNsIdxSeq++
+		c.log.Debugf("cannot configure application namespace %s: L4 features are disabled, moved to cache",
+			ns.NamespaceId)
 		return nil
 	}
 
 	// Find interface. If not found, add to cache for not configured namespaces
-	ifIdx, _, found := plugin.ifIndexes.LookupIdx(ns.Interface)
+	ifIdx, _, found := c.ifIndexes.LookupIdx(ns.Interface)
 	if !found {
-		plugin.appNsCached.RegisterName(ns.NamespaceId, plugin.appNsIdxSeq, ns)
-		plugin.appNsIdxSeq++
-		plugin.log.Infof("Unable to configure application namespace %v due to missing interface, moving to cache", ns.NamespaceId)
+		c.appNsCached.RegisterName(ns.NamespaceId, c.appNsIdxSeq, ns)
+		c.appNsIdxSeq++
+		c.log.Infof("cannot configure application namespace %s: interface %s is missing",
+			ns.NamespaceId, ns.Interface)
 		return nil
 	}
 
-	return plugin.configureAppNamespace(ns, ifIdx)
+	if err := c.configureAppNamespace(ns, ifIdx); err != nil {
+		return err
+	}
+
+	c.log.Info("application namespace %s configured", ns.NamespaceId)
+
+	return nil
 }
 
 // ModifyAppNamespace process the NB AppNamespace config and propagates it to bin api calls
-func (plugin *AppNsConfigurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppNamespace, oldNs *l4.AppNamespaces_AppNamespace) error {
-	plugin.log.Infof("Modifying AppNamespace with ID %v", newNs.NamespaceId)
-
+func (c *AppNsConfigurator) ModifyAppNamespace(newNs *l4.AppNamespaces_AppNamespace, oldNs *l4.AppNamespaces_AppNamespace) error {
 	// Validate data
 	if newNs.Interface == "" {
-		return fmt.Errorf("modified application namespace %v does not contain interface", newNs.NamespaceId)
+		return errors.Errorf("modified application namespace %s does not contain interface", newNs.NamespaceId)
 	}
 
 	// At first, unregister the old configuration from both mappings (if exists)
-	plugin.appNsIndexes.UnregisterName(oldNs.NamespaceId)
-	plugin.appNsCached.UnregisterName(oldNs.NamespaceId)
+	c.appNsIndexes.UnregisterName(oldNs.NamespaceId)
+	c.appNsCached.UnregisterName(oldNs.NamespaceId)
+	c.log.Debugf("application namespace %s removed from index map and cache", oldNs.NamespaceId)
 
 	// Check whether L4 l4ftEnabled are enabled. If not, all namespaces created earlier are added to cache
-	if !plugin.l4ftEnabled {
-		plugin.appNsCached.RegisterName(newNs.NamespaceId, plugin.appNsIdxSeq, newNs)
-		plugin.log.Infof("Unable to modify application namespace %v due to disabled L4 features, moving to cache", newNs.NamespaceId)
-		plugin.appNsIdxSeq++
+	if !c.l4ftEnabled {
+		c.appNsCached.RegisterName(newNs.NamespaceId, c.appNsIdxSeq, newNs)
+		c.appNsIdxSeq++
+		c.log.Debugf("cannot modify application namespace %s: L4 features are disabled, moved to cache",
+			newNs.NamespaceId)
 		return nil
 	}
 
 	// Check interface
-	ifIdx, _, found := plugin.ifIndexes.LookupIdx(newNs.Interface)
+	ifIdx, _, found := c.ifIndexes.LookupIdx(newNs.Interface)
 	if !found {
-		plugin.appNsCached.RegisterName(newNs.NamespaceId, plugin.appNsIdxSeq, newNs)
-		plugin.log.Infof("Unable to modify application namespace %v due to missing interface, moving to cache", newNs.NamespaceId)
-		plugin.appNsIdxSeq++
+		c.appNsCached.RegisterName(newNs.NamespaceId, c.appNsIdxSeq, newNs)
+		c.appNsIdxSeq++
+		c.log.Infof("cannot modify application namespace %s: interface %s is missing",
+			newNs.NamespaceId, newNs.Interface)
 		return nil
 	}
 
 	// TODO: remove namespace
-	return plugin.configureAppNamespace(newNs, ifIdx)
+	if err := c.configureAppNamespace(newNs, ifIdx); err != nil {
+		return err
+	}
+
+	c.log.Info("application namespace %s modified", newNs.NamespaceId)
+
+	return nil
 }
 
 // DeleteAppNamespace process the NB AppNamespace config and propagates it to bin api calls. This case is not currently
 // supported by VPP
-func (plugin *AppNsConfigurator) DeleteAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
+func (c *AppNsConfigurator) DeleteAppNamespace(ns *l4.AppNamespaces_AppNamespace) error {
 	// TODO: implement
-	plugin.log.Warn("AppNamespace removal not supported by the VPP")
+	c.log.Warn("cannot remove application namespace %s: unsupported", ns.NamespaceId)
 	return nil
 }
 
 // ResolveCreatedInterface looks for application namespace this interface is assigned to and configures them
-func (plugin *AppNsConfigurator) ResolveCreatedInterface(interfaceName string, interfaceIndex uint32) error {
+func (c *AppNsConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
 	// If L4 features are not enabled, skip (and keep all in cache)
-	if !plugin.l4ftEnabled {
+	if !c.l4ftEnabled {
 		return nil
 	}
 
 	// Search mapping for unregistered application namespaces using the new interface
-	cachedAppNs := plugin.appNsCached.LookupNamesByInterface(interfaceName)
+	cachedAppNs := c.appNsCached.LookupNamesByInterface(ifName)
 	if len(cachedAppNs) == 0 {
 		return nil
 	}
 
-	var wasErr error
-	plugin.log.Infof("L4 configurator: resolving new interface %v for %d app namespaces", interfaceName, len(cachedAppNs))
-	for _, appNamespace := range cachedAppNs {
-		if err := plugin.configureAppNamespace(appNamespace, interfaceIndex); err != nil {
-			plugin.log.Errorf("configuring app namespace %v failed: %v", appNamespace, err)
-			wasErr = err
+	for _, appNs := range cachedAppNs {
+		if err := c.configureAppNamespace(appNs, ifIdx); err != nil {
+			return errors.Errorf("failed to configure application namespace %s with registered interface %s: %v",
+				appNs.NamespaceId, ifName, err)
 		}
 		// Remove from cache
-		plugin.appNsCached.UnregisterName(appNamespace.NamespaceId)
+		c.appNsCached.UnregisterName(appNs.NamespaceId)
+		c.log.Debugf("application namespace %s removed from cache", appNs.NamespaceId)
 	}
-	return wasErr
+	return nil
 }
 
 // ResolveDeletedInterface looks for application namespace this interface is assigned to and removes
-func (plugin *AppNsConfigurator) ResolveDeletedInterface(interfaceName string, interfaceIndex uint32) error {
-
+func (c *AppNsConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
 	// Search mapping for configured application namespaces using the new interface
-	cachedAppNs := plugin.appNsIndexes.LookupNamesByInterface(interfaceName)
+	cachedAppNs := c.appNsIndexes.LookupNamesByInterface(ifName)
 	if len(cachedAppNs) == 0 {
 		return nil
 	}
-	plugin.log.Infof("L4 configurator: resolving deleted interface %v for %d app namespaces", interfaceName, len(cachedAppNs))
-	for _, appNamespace := range cachedAppNs {
+	for _, appNs := range cachedAppNs {
 		// TODO: remove namespace. Also check whether it can be done while L4Features are disabled
 		// Unregister from configured namespaces mapping
-		plugin.appNsIndexes.UnregisterName(appNamespace.NamespaceId)
+		c.appNsIndexes.UnregisterName(appNs.NamespaceId)
 		// Add to un-configured. If the interface will be recreated, all namespaces are configured back
-		plugin.appNsCached.RegisterName(appNamespace.NamespaceId, plugin.appNsIdxSeq, appNamespace)
-		plugin.appNsIdxSeq++
+		c.appNsCached.RegisterName(appNs.NamespaceId, c.appNsIdxSeq, appNs)
+		c.log.Debugf("application namespace %s removed from mapping and added to cache (unregistered interface %s)",
+			appNs.NamespaceId, ifName)
+		c.appNsIdxSeq++
 	}
 
 	return nil
 }
 
-func (plugin *AppNsConfigurator) configureAppNamespace(ns *l4.AppNamespaces_AppNamespace, ifIdx uint32) error {
+func (c *AppNsConfigurator) configureAppNamespace(ns *l4.AppNamespaces_AppNamespace, ifIdx uint32) error {
 	// Namespace ID
 	nsID := []byte(ns.NamespaceId)
 
-	plugin.log.Debugf("Adding App Namespace %v to interface %v", ns.NamespaceId, ifIdx)
-
-	appNsIdx, err := plugin.l4Handler.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID)
+	appNsIdx, err := c.l4Handler.AddAppNamespace(ns.Secret, ifIdx, ns.Ipv4FibId, ns.Ipv6FibId, nsID)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to add application namespace %s: %v", ns.NamespaceId, err)
 	}
 
 	// register namespace
-	plugin.appNsIndexes.RegisterName(ns.NamespaceId, appNsIdx, ns)
-	plugin.log.Debugf("Application namespace %v registered", ns.NamespaceId)
-
-	plugin.log.WithFields(logging.Fields{"appNsIdx": appNsIdx}).
-		Debugf("AppNamespace %v configured", ns.NamespaceId)
+	c.appNsIndexes.RegisterName(ns.NamespaceId, appNsIdx, ns)
+	c.log.Debugf("Application namespace %s registered", ns.NamespaceId)
 
 	return nil
 }
@@ -290,36 +292,48 @@ func (plugin *AppNsConfigurator) configureAppNamespace(ns *l4.AppNamespaces_AppN
 // 		- the required interface was missing
 //      - the L4 features were disabled
 // Namespaces skipped due to the second case are configured here
-func (plugin *AppNsConfigurator) resolveCachedNamespaces() error {
-	cachedAppNs := plugin.appNsCached.ListNames()
+func (c *AppNsConfigurator) resolveCachedNamespaces() error {
+	cachedAppNs := c.appNsCached.ListNames()
 	if len(cachedAppNs) == 0 {
 		return nil
 	}
 
-	plugin.log.Infof("Configuring %d cached namespaces after L4 features were enabled", len(cachedAppNs))
+	c.log.Debugf("Configuring %d cached namespaces after L4 features were enabled", len(cachedAppNs))
 
 	// Scan all registered indexes in mapping for un-configured application namespaces
-	var wasErr error
 	for _, name := range cachedAppNs {
-		_, ns, found := plugin.appNsCached.LookupIdx(name)
+		_, ns, found := c.appNsCached.LookupIdx(name)
 		if !found {
 			continue
 		}
 
 		// Check interface. If still missing, continue (keep namespace in cache)
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(ns.Interface)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(ns.Interface)
 		if !found {
-			plugin.log.Infof("Unable to configure application namespace %v due to missing interface, keeping in cache", ns.NamespaceId)
 			continue
 		}
 
-		if err := plugin.configureAppNamespace(ns, ifIdx); err != nil {
-			plugin.log.Errorf("configuring app namespace %v failed: %v", ns, err)
-			wasErr = err
-		} else {
-			// AppNamespace was configured, remove from cache
-			plugin.appNsCached.UnregisterName(ns.NamespaceId)
+		if err := c.configureAppNamespace(ns, ifIdx); err != nil {
+			return err
 		}
+		// AppNamespace was configured, remove from cache
+		c.appNsCached.UnregisterName(ns.NamespaceId)
+		c.log.Debugf("Application namespace %s unregistered from cache", ns.NamespaceId)
 	}
-	return wasErr
+
+	return nil
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *AppNsConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

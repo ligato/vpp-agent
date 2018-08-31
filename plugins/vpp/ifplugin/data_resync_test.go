@@ -46,7 +46,7 @@ func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 
 	conn, err := govpp.Connect(ctx.MockVpp)
@@ -74,7 +74,7 @@ func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 
 	c, err := govpp.Connect(ctx.MockVpp)
@@ -104,7 +104,7 @@ func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	c, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
@@ -133,7 +133,7 @@ func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	c, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
@@ -200,8 +200,8 @@ func TestDataResyncResync(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 	Expect(plugin.IsSocketFilenameCached("testsocket")).To(BeTrue())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
@@ -252,8 +252,8 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -301,8 +301,8 @@ func TestDataResyncResyncSameName(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -351,8 +351,8 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -416,8 +416,8 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -480,8 +480,8 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -533,8 +533,8 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -600,8 +600,8 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -792,7 +792,7 @@ func TestDataResyncResyncSessionSameData(t *testing.T) {
 
 // Tests BFDConfigurator authorization key resync
 func TestDataResyncResyncAuthKey(t *testing.T) {
-	ctx, plugin, conn, _ := bfdConfiguratorTestInitialization(t)
+	ctx, plugin, conn, swIfIdx := bfdConfiguratorTestInitialization(t)
 	defer bfdConfiguratorTestTeardown(plugin, conn)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
@@ -815,7 +815,8 @@ func TestDataResyncResyncAuthKey(t *testing.T) {
 			Message: &bfdApi.BfdAuthSetKeyReply{},
 		},
 	})
-
+	// Register
+	swIfIdx.RegisterName("if1", 0, nil)
 	// Test
 	authKey := []*bfd.SingleHopBFD_Key{
 		{
@@ -1035,6 +1036,16 @@ func TestDataResyncResyncDNat(t *testing.T) {
 				Tag:          []byte("smap|lbstat|idmap"),
 				ExternalAddr: []byte{192, 168, 10, 0},
 				ExternalPort: 88,
+				Locals: []natApi.Nat44LbAddrPort{
+					{
+						Addr: []byte{192., 168, 10, 0},
+						Port: 89,
+					},
+					{
+						Addr: []byte{192., 168, 20, 0},
+						Port: 90,
+					},
+				},
 			},
 		},
 		{
@@ -1139,12 +1150,12 @@ func TestDataResyncResyncDNat(t *testing.T) {
 		},
 	})
 
-	idIdent := ifplugin.GetIdMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
+	idIdent := ifplugin.GetIDMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
 		Protocol:  nat.Protocol_TCP,
 		IpAddress: "192.168.0.1",
 	})
 
-	Expect(plugin.IsDNatLabelIdMappingRegistered(idIdent)).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(idIdent)).To(BeTrue())
 	Expect(plugin.IsDNatLabelStMappingRegistered(stIdent)).To(BeTrue())
 }
 
@@ -1178,8 +1189,19 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 			Name: (&natApi.Nat44LbStaticMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44LbStaticMappingDetails{
-				Protocol: 6,
-				Tag:      []byte("smap|lbstat|idmap"),
+				ExternalPort: 25,
+				Protocol:     6,
+				Tag:          []byte("smap|lbstat|idmap"),
+				Locals: []natApi.Nat44LbAddrPort{
+					{
+						Addr: []byte{192., 168, 10, 0},
+						Port: 89,
+					},
+					{
+						Addr: []byte{192., 168, 20, 0},
+						Port: 90,
+					},
+				},
 			},
 		},
 		{
@@ -1326,12 +1348,12 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 		},
 	})
 
-	idIdent := ifplugin.GetIdMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
+	idIdent := ifplugin.GetIDMappingIdentifier(&nat.Nat44DNat_DNatConfig_IdentityMapping{
 		Protocol:  nat.Protocol_TCP,
 		IpAddress: "192.168.0.1",
 	})
 
-	Expect(plugin.IsDNatLabelIdMappingRegistered(idIdent)).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(idIdent)).To(BeTrue())
 	Expect(plugin.IsDNatLabelStMappingRegistered(stIdent)).To(BeTrue())
 }
 
@@ -1516,7 +1538,7 @@ func TestResolveIdentityMapping(t *testing.T) {
 
 	// Test where NB == VPP
 	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
-	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeTrue())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeTrue())
 }
 
 // Test unexported method resolving NB identity mapping with different IP address.
@@ -1533,7 +1555,7 @@ func TestResolveIdentityMappingNoMatch1(t *testing.T) {
 
 	// Test where NB == VPP
 	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
-	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
 }
 
 // Test unexported method resolving NB identity mapping with different VRF.
@@ -1550,7 +1572,7 @@ func TestResolveIdentityMappingNoMatch2(t *testing.T) {
 
 	// Test where NB == VPP
 	ifplugin.ResolveMappings(plugin, nbData, &stMappings, &vppData)
-	Expect(plugin.IsDNatLabelIdMappingRegistered(ifplugin.GetIdMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
+	Expect(plugin.IsDNatLabelIDMappingRegistered(ifplugin.GetIDMappingIdentifier(nbData.IdMappings[0]))).To(BeFalse())
 }
 
 func getNat44StaticMappingData() *nat.Nat44DNat_DNatConfig {

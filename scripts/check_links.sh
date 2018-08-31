@@ -8,11 +8,11 @@ do
         continue
     fi
 
-    echo $i;
-    if ! markdown-link-check $i; then
+	out=$(FORCE_COLOR=1 markdown-link-check -q "$i")
+    if [ "$?" -ne 0 ]; then
+    	echo "${out}"
         res=1
     fi
-    echo "";
 done
 
-exit $res
+exit ${res}

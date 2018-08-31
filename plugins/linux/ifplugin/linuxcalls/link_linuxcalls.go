@@ -38,7 +38,7 @@ import (
 )
 
 // GetLinkByName calls netlink API to get Link type from interface name
-func (handler *netLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
+func (handler *NetLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("get-link-from-interface").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -47,7 +47,7 @@ func (handler *netLinkHandler) GetLinkByName(ifName string) (netlink.Link, error
 }
 
 // GetLinkList calls netlink API to get all Links in namespace
-func (handler *netLinkHandler) GetLinkList() ([]netlink.Link, error) {
+func (handler *NetLinkHandler) GetLinkList() ([]netlink.Link, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("get-link-list").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -56,7 +56,7 @@ func (handler *netLinkHandler) GetLinkList() ([]netlink.Link, error) {
 }
 
 // GetInterfaceType returns the type (string representation) of a given interface.
-func (handler *netLinkHandler) GetInterfaceType(ifName string) (string, error) {
+func (handler *NetLinkHandler) GetInterfaceType(ifName string) (string, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("get-interface-type").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -69,7 +69,7 @@ func (handler *netLinkHandler) GetInterfaceType(ifName string) (string, error) {
 }
 
 // InterfaceExists checks if interface with a given name exists.
-func (handler *netLinkHandler) InterfaceExists(ifName string) (bool, error) {
+func (handler *NetLinkHandler) InterfaceExists(ifName string) (bool, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("interface-exists").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -85,7 +85,7 @@ func (handler *netLinkHandler) InterfaceExists(ifName string) (bool, error) {
 }
 
 // RenameInterface changes the name of the interface <ifName> to <newName>.
-func (handler *netLinkHandler) RenameInterface(ifName string, newName string) error {
+func (handler *NetLinkHandler) RenameInterface(ifName string, newName string) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("rename-interface").LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -110,7 +110,7 @@ func (handler *netLinkHandler) RenameInterface(ifName string, newName string) er
 }
 
 // GetInterfaceByName return *net.Interface type from interface name
-func (handler *netLinkHandler) GetInterfaceByName(ifName string) (*net.Interface, error) {
+func (handler *NetLinkHandler) GetInterfaceByName(ifName string) (*net.Interface, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog("get-interface-by-name").LogTimeEntry(time.Since(t))
 	}(time.Now())

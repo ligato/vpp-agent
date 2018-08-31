@@ -36,7 +36,8 @@ type BridgeDomainMeta struct {
 	BdIfIdxToName map[uint32]string `json:"bridge_domain_id_to_name"`
 }
 
-func (handler *bridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
+// DumpBridgeDomains implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -100,7 +101,8 @@ func (handler *bridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDo
 	return bds, nil
 }
 
-func (handler *bridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
+// DumpBridgeDomainIDs implements bridge domain handler.
+func (handler *BridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -123,7 +125,7 @@ func (handler *bridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 	return activeDomains, nil
 }
 
-// FIBTableDetails is the wrapper structure for the FIB table entry northbound API structure.
+// FibTableDetails is the wrapper structure for the FIB table entry northbound API structure.
 type FibTableDetails struct {
 	Fib  *l2nb.FibTable_FibEntry `json:"fib"`
 	Meta *FibMeta                `json:"fib_meta"`
@@ -135,7 +137,8 @@ type FibMeta struct {
 	IfIdx uint32 `json:"outgoing_interface_sw_if_idx"`
 }
 
-func (handler *fibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, error) {
+// DumpFIBTableEntries implements fib handler.
+func (handler *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -204,7 +207,8 @@ type XcMeta struct {
 	TransmitInterfaceSwIfIdx uint32 `json:"transmit_interface_sw_if_idx"`
 }
 
-func (handler *xConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDetails, error) {
+// DumpXConnectPairs implements xconnect handler.
+func (handler *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDetails, error) {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

@@ -7,7 +7,7 @@ set -e
 IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent'}
 DOCKERFILE=${DOCKERFILE:-'Dockerfile'}
 
-BASE_IMG=${BASE_IMG:-'ubuntu:16.04'}
+BASE_IMG=${BASE_IMG:-'ubuntu:18.04'}
 GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-amd64'}
 
 source ../../vpp.env

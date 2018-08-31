@@ -57,16 +57,16 @@ const (
 )
 
 // AddLocalSid adds local sid given by <sidAddr> and <localSID> into VPP
-func (handler *srv6VppHandler) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
+func (handler *SRv6VppHandler) AddLocalSid(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
 	return handler.addDelLocalSid(false, sidAddr, localSID, swIfIndex)
 }
 
 // DeleteLocalSid delets local sid given by <sidAddr> in VPP
-func (handler *srv6VppHandler) DeleteLocalSid(sidAddr net.IP) error {
+func (handler *SRv6VppHandler) DeleteLocalSid(sidAddr net.IP) error {
 	return handler.addDelLocalSid(true, sidAddr, nil, nil)
 }
 
-func (handler *srv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
+func (handler *SRv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
 	handler.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "FIB table ID": handler.fibTableID(localSID), "end function": handler.endFunction(localSID)}).
 		Debug("Adding/deleting Local SID", sidAddr)
 	defer func(t time.Time) {
@@ -98,14 +98,14 @@ func (handler *srv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, loc
 	return nil
 }
 
-func (handler *srv6VppHandler) fibTableID(localSID *srv6.LocalSID) string {
+func (handler *SRv6VppHandler) fibTableID(localSID *srv6.LocalSID) string {
 	if localSID != nil {
 		return string(localSID.FibTableId)
 	}
 	return "<nil>"
 }
 
-func (handler *srv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
+func (handler *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 	if localSID == nil {
 		return "<nil>"
 	} else if localSID.BaseEndFunction != nil {
@@ -128,7 +128,7 @@ func (handler *srv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 	return "unknown end function"
 }
 
-func (handler *srv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
+func (handler *SRv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
 	if localSID.BaseEndFunction != nil {
 		req.Behavior = BehaviorEnd
 		req.EndPsp = boolToUint(localSID.BaseEndFunction.Psp)
@@ -208,7 +208,7 @@ func (handler *srv6VppHandler) writeEndFunction(req *sr.SrLocalsidAddDel, sidAdd
 }
 
 // SetEncapsSourceAddress sets for SRv6 in VPP the source address used for encapsulated packet
-func (handler *srv6VppHandler) SetEncapsSourceAddress(address string) error {
+func (handler *SRv6VppHandler) SetEncapsSourceAddress(address string) error {
 	handler.log.Debugf("Configuring encapsulation source address to address %v", address)
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(sr.SrSetEncapSource{}).LogTimeEntry(time.Since(t))
@@ -237,7 +237,7 @@ func (handler *srv6VppHandler) SetEncapsSourceAddress(address string) error {
 }
 
 // AddPolicy adds SRv6 policy given by identified <bindingSid>,initial segment for policy <policySegment> and other policy settings in <policy>
-func (handler *srv6VppHandler) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment) error {
+func (handler *SRv6VppHandler) AddPolicy(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment) error {
 	handler.log.Debugf("Adding SR policy with binding SID %v and list of next SIDs %v", bindingSid, policySegment.Segments)
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(sr.SrPolicyAdd{}).LogTimeEntry(time.Since(t))
@@ -271,7 +271,7 @@ func (handler *srv6VppHandler) AddPolicy(bindingSid net.IP, policy *srv6.Policy,
 }
 
 // DeletePolicy deletes SRv6 policy given by binding SID <bindingSid>
-func (handler *srv6VppHandler) DeletePolicy(bindingSid net.IP) error {
+func (handler *SRv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 	handler.log.Debugf("Deleting SR policy with binding SID %v ", bindingSid)
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(sr.SrPolicyDel{}).LogTimeEntry(time.Since(t))
@@ -296,7 +296,7 @@ func (handler *srv6VppHandler) DeletePolicy(bindingSid net.IP) error {
 }
 
 // AddPolicySegment adds segment <policySegment> to SRv6 policy <policy> that has policy BSID <bindingSid>
-func (handler *srv6VppHandler) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment) error {
+func (handler *SRv6VppHandler) AddPolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment) error {
 	handler.log.Debugf("Adding segment %v to SR policy with binding SID %v", policySegment.Segments, bindingSid)
 	err := handler.modPolicy(AddSRList, bindingSid, policy, policySegment, 0)
 	if err == nil {
@@ -307,7 +307,7 @@ func (handler *srv6VppHandler) AddPolicySegment(bindingSid net.IP, policy *srv6.
 }
 
 // DeletePolicySegment removes segment <policySegment> (with segment index <segmentIndex>) from SRv6 policy <policy> that has policy BSID <bindingSid>
-func (handler *srv6VppHandler) DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
+func (handler *SRv6VppHandler) DeletePolicySegment(bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
 	segmentIndex uint32) error {
 	handler.log.Debugf("Removing segment %v (index %v) from SR policy with binding SID %v", policySegment.Segments, segmentIndex, bindingSid)
 	err := handler.modPolicy(DeleteSRList, bindingSid, policy, policySegment, segmentIndex)
@@ -318,7 +318,7 @@ func (handler *srv6VppHandler) DeletePolicySegment(bindingSid net.IP, policy *sr
 	return err
 }
 
-func (handler *srv6VppHandler) modPolicy(operation uint8, bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
+func (handler *SRv6VppHandler) modPolicy(operation uint8, bindingSid net.IP, policy *srv6.Policy, policySegment *srv6.PolicySegment,
 	segmentIndex uint32) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(sr.SrPolicyMod{}).LogTimeEntry(time.Since(t))
@@ -350,7 +350,7 @@ func (handler *srv6VppHandler) modPolicy(operation uint8, bindingSid net.IP, pol
 	return nil
 }
 
-func (handler *srv6VppHandler) convertPolicySegment(policySegment *srv6.PolicySegment) (*sr.Srv6SidList, error) {
+func (handler *SRv6VppHandler) convertPolicySegment(policySegment *srv6.PolicySegment) (*sr.Srv6SidList, error) {
 	var segments []sr.Srv6Sid
 	for _, sid := range policySegment.Segments {
 		// parse to IPv6 address
@@ -374,16 +374,16 @@ func (handler *srv6VppHandler) convertPolicySegment(policySegment *srv6.PolicySe
 }
 
 // AddSteering sets in VPP steering into SRv6 policy.
-func (handler *srv6VppHandler) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex) error {
+func (handler *SRv6VppHandler) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex) error {
 	return handler.addDelSteering(false, steering, swIfIndex)
 }
 
 // RemoveSteering removes in VPP steering into SRv6 policy.
-func (handler *srv6VppHandler) RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex) error {
+func (handler *SRv6VppHandler) RemoveSteering(steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex) error {
 	return handler.addDelSteering(true, steering, swIfIndex)
 }
 
-func (handler *srv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex) error {
+func (handler *SRv6VppHandler) addDelSteering(delete bool, steering *srv6.Steering, swIfIndex ifaceidx.SwIfIndex) error {
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(sr.SrSteeringAddDel{}).LogTimeEntry(time.Since(t))
 	}(time.Now())

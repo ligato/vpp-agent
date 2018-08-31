@@ -15,7 +15,9 @@
 package linux
 
 import (
+	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 )
 
@@ -34,7 +36,14 @@ func NewPlugin(opts ...Option) *Plugin {
 		o(p)
 	}
 
-	p.PluginDeps.Setup()
+	if p.Log == nil {
+		p.Log = logging.ForPlugin(p.String())
+	}
+	if p.Cfg == nil {
+		p.Cfg = config.ForPlugin(p.String(),
+			config.WithCustomizedFlag(config.FlagName(p.String()), "linux-plugin.conf"),
+		)
+	}
 
 	return p
 }

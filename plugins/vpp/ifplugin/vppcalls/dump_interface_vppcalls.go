@@ -77,9 +77,10 @@ type Lease struct {
 	HostMac       string
 }
 
-func (handler *ifVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (map[uint32]*InterfaceDetails, error) {
+// DumpInterfacesByType implements interface handler.
+func (h *IfVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (map[uint32]*InterfaceDetails, error) {
 	// Dump all
-	ifs, err := handler.DumpInterfaces()
+	ifs, err := h.DumpInterfaces()
 	if err != nil {
 		return nil, err
 	}
@@ -93,13 +94,14 @@ func (handler *ifVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (m
 	return ifs, nil
 }
 
-func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
+// DumpInterfaces implements interface handler.
+func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	start := time.Now()
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*InterfaceDetails)
 
 	// First, dump all interfaces to create initial data.
-	reqCtx := handler.callsChannel.SendMultiRequest(&interfaces.SwInterfaceDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceDump{})
 
 	for {
 		ifDetails := &interfaces.SwInterfaceDetails{}
@@ -143,16 +145,16 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 	}
 
 	// Get DHCP clients
-	dhcpClients, err := handler.dumpDhcpClients()
+	dhcpClients, err := h.dumpDhcpClients()
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump interface DHCP clients: %v", err)
 	}
 	// Get vrf for every interface and fill DHCP if set
 	for _, ifData := range ifs {
 		// VRF
-		vrf, err := handler.GetInterfaceVRF(ifData.Meta.SwIfIndex)
+		vrf, err := h.GetInterfaceVrf(ifData.Meta.SwIfIndex)
 		if err != nil {
-			handler.log.Warnf("Interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
+			h.log.Warnf("Interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 			continue
 		}
 		ifData.Interface.Vrf = vrf
@@ -164,35 +166,35 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 		}
 	}
 
-	handler.log.Debugf("dumped %d interfaces", len(ifs))
+	h.log.Debugf("dumped %d interfaces", len(ifs))
 
 	// SwInterfaceDump time
-	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, handler.stopwatch)
+	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, h.stopwatch)
 	if timeLog != nil {
 		timeLog.LogTimeEntry(time.Since(start))
 	}
 
-	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, handler.stopwatch)
-	err = handler.dumpIPAddressDetails(ifs, 0, timeLog)
+	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, h.stopwatch)
+	err = h.dumpIPAddressDetails(ifs, 0, timeLog)
 	if err != nil {
 		return nil, err
 	}
-	err = handler.dumpIPAddressDetails(ifs, 1, timeLog)
-	if err != nil {
-		return nil, err
-	}
-
-	err = handler.dumpMemifDetails(ifs)
+	err = h.dumpIPAddressDetails(ifs, 1, timeLog)
 	if err != nil {
 		return nil, err
 	}
 
-	err = handler.dumpTapDetails(ifs)
+	err = h.dumpMemifDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
 
-	err = handler.dumpVxlanDetails(ifs)
+	err = h.dumpTapDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpVxlanDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -200,15 +202,16 @@ func (handler *ifVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, err
 	return ifs, nil
 }
 
-func (handler *ifVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
+// DumpMemifSocketDetails implements interface handler.
+func (h *IfVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
 	// MemifSocketFilenameDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(memif.MemifSocketFilenameDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(memif.MemifSocketFilenameDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	memifSocketMap := make(map[string]uint32)
 
-	reqCtx := handler.callsChannel.SendMultiRequest(&memif.MemifSocketFilenameDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&memif.MemifSocketFilenameDump{})
 	for {
 		socketDetails := &memif.MemifSocketFilenameDetails{}
 		stop, err := reqCtx.ReceiveReply(socketDetails)
@@ -223,19 +226,19 @@ func (handler *ifVppHandler) DumpMemifSocketDetails() (map[string]uint32, error)
 		memifSocketMap[filename] = socketDetails.SocketID
 	}
 
-	handler.log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
+	h.log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
 
 	return memifSocketMap, nil
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
-func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
+func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
 	// Dump IP addresses of each interface.
 	for idx := range ifs {
 		// IPAddressDetails time measurement
 		start := time.Now()
 
-		reqCtx := handler.callsChannel.SendMultiRequest(&ip.IPAddressDump{
+		reqCtx := h.callsChannel.SendMultiRequest(&ip.IPAddressDump{
 			SwIfIndex: idx,
 			IsIPv6:    isIPv6,
 		})
@@ -248,7 +251,7 @@ func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetai
 			if err != nil {
 				return fmt.Errorf("failed to dump interface %d IP address details: %v", idx, err)
 			}
-			handler.processIPDetails(ifs, ipDetails)
+			h.processIPDetails(ifs, ipDetails)
 		}
 
 		// IPAddressDump time
@@ -261,7 +264,7 @@ func (handler *ifVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetai
 }
 
 // processIPDetails processes ip.IPAddressDetails binary API message and fills the details into the provided interface map.
-func (handler *ifVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, ipDetails *ip.IPAddressDetails) {
+func (h *IfVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, ipDetails *ip.IPAddressDetails) {
 	ifDetails, ifIdxExists := ifs[ipDetails.SwIfIndex]
 	if !ifIdxExists {
 		return
@@ -284,19 +287,19 @@ func fillAFPacketDetails(ifs map[uint32]*InterfaceDetails, swIfIndex uint32, ifN
 }
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
-func (handler *ifVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error {
+func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error {
 	// MemifDetails time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(memif.MemifDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(memif.MemifDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Dump all memif sockets
-	memifSocketMap, err := handler.DumpMemifSocketDetails()
+	memifSocketMap, err := h.DumpMemifSocketDetails()
 	if err != nil {
 		return err
 	}
 
-	reqCtx := handler.callsChannel.SendMultiRequest(&memif.MemifDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&memif.MemifDump{})
 	for {
 		memifDetails := &memif.MemifDetails{}
 		stop, err := reqCtx.ReceiveReply(memifDetails)
@@ -322,7 +325,7 @@ func (handler *ifVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) 
 					}
 				}
 				// Socket for configured memif should exist
-				handler.log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
+				h.log.Warnf("Socket ID not found for memif %v", memifDetails.SwIfIndex)
 				return
 			}(memifSocketMap),
 			RingSize:   memifDetails.RingSize,
@@ -336,14 +339,14 @@ func (handler *ifVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) 
 }
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.
-func (handler *ifVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
+func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 	// SwInterfaceTapDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(tap.SwInterfaceTapDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(tap.SwInterfaceTapDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Original TAP.
-	reqCtx := handler.callsChannel.SendMultiRequest(&tap.SwInterfaceTapDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&tap.SwInterfaceTapDump{})
 	for {
 		tapDetails := &tap.SwInterfaceTapDetails{}
 		stop, err := reqCtx.ReceiveReply(tapDetails)
@@ -365,7 +368,7 @@ func (handler *ifVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) er
 	}
 
 	// TAP v.2
-	reqCtx = handler.callsChannel.SendMultiRequest(&tapv2.SwInterfaceTapV2Dump{})
+	reqCtx = h.callsChannel.SendMultiRequest(&tapv2.SwInterfaceTapV2Dump{})
 	for {
 		tapDetails := &tapv2.SwInterfaceTapV2Details{}
 		stop, err := reqCtx.ReceiveReply(tapDetails)
@@ -392,13 +395,13 @@ func (handler *ifVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) er
 }
 
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
-func (handler *ifVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error {
+func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error {
 	// VxlanTunnelDump time measurement
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(vxlan.VxlanTunnelDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(vxlan.VxlanTunnelDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	reqCtx := handler.callsChannel.SendMultiRequest(&vxlan.VxlanTunnelDump{SwIfIndex: ^uint32(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&vxlan.VxlanTunnelDump{SwIfIndex: ^uint32(0)})
 	for {
 		vxlanDetails := &vxlan.VxlanTunnelDetails{}
 		stop, err := reqCtx.ReceiveReply(vxlanDetails)
@@ -441,13 +444,13 @@ func (handler *ifVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) 
 }
 
 // dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
-func (handler *ifVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
+func (h *IfVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(dhcp.DHCPClientDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(dhcp.DHCPClientDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	dhcpData := make(map[uint32]*Dhcp)
-	reqCtx := handler.callsChannel.SendMultiRequest(&dhcp.DHCPClientDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&dhcp.DHCPClientDump{})
 
 	for {
 		dhcpDetails := &dhcp.DHCPClientDetails{}

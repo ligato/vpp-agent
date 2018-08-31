@@ -22,7 +22,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
-func (h *ipNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
+// SetIPScanNeighbor implements ip neigh  handler.
+func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(ip.IPScanNeighborEnableDisable{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
@@ -35,12 +36,11 @@ func (h *ipNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
 		ScanIntDelay:   uint8(data.ScanIntDelay),
 		StaleThreshold: uint8(data.StaleThreshold),
 	}
-
 	reply := &ip.IPScanNeighborEnableDisableReply{}
+
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	}
-	if reply.Retval != 0 {
+	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 

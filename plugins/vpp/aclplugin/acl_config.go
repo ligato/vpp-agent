@@ -19,9 +19,8 @@
 package aclplugin
 
 import (
-	"fmt"
-
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -57,8 +56,8 @@ type ACLConfigurator struct {
 
 	// In-memory mappings
 	ifIndexes      ifaceidx.SwIfIndex
-	l2AclIndexes   aclidx.AclIndexRW
-	l3l4AclIndexes aclidx.AclIndexRW
+	l2AclIndexes   aclidx.ACLIndexRW
+	l3l4AclIndexes aclidx.ACLIndexRW
 
 	// Cache for ACL un-configured interfaces
 	ifCache []*ACLIfCacheEntry
@@ -68,163 +67,162 @@ type ACLConfigurator struct {
 	vppDumpChan govppapi.Channel
 
 	// ACL VPP calls handler
-	aclHandler vppcalls.AclVppAPI
+	aclHandler vppcalls.ACLVppAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
 }
 
 // Init goroutines, channels and mappings.
-func (plugin *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-acl-plugin")
-	plugin.log.Infof("Initializing ACL configurator")
+	c.log = logger.NewLogger("-acl-plugin")
+	c.log.Infof("Initializing ACL configurator")
 
 	// Mappings
-	plugin.ifIndexes = swIfIndexes
-	plugin.l2AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l2_indexes", nil))
-	plugin.l3l4AclIndexes = aclidx.NewAclIndex(nametoidx.NewNameToIdx(plugin.log, "acl_l3_l4_indexes", nil))
+	c.ifIndexes = swIfIndexes
+	c.l2AclIndexes = aclidx.NewACLIndex(nametoidx.NewNameToIdx(c.log, "acl_l2_indexes", nil))
+	c.l3l4AclIndexes = aclidx.NewACLIndex(nametoidx.NewNameToIdx(c.log, "acl_l3_l4_indexes", nil))
 
 	// VPP channels
-	plugin.vppChan, err = goVppMux.NewAPIChannel()
+	c.vppChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
-		return err
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
-	plugin.vppDumpChan, err = goVppMux.NewAPIChannel()
+	c.vppDumpChan, err = goVppMux.NewAPIChannel()
 	if err != nil {
-		return err
+		return errors.Errorf("failed to create dump API channel: %v", err)
 	}
 
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("ACL-configurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("ACL-configurator", c.log)
 	}
 
 	// ACL binary api handler
-	plugin.aclHandler = vppcalls.NewAclVppHandler(plugin.vppChan, plugin.vppDumpChan, plugin.stopwatch)
+	c.aclHandler = vppcalls.NewACLVppHandler(c.vppChan, c.vppDumpChan, c.stopwatch)
 
 	return nil
 }
 
 // Close GOVPP channel.
-func (plugin *ACLConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan, plugin.vppDumpChan)
+func (c *ACLConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan, c.vppDumpChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose interface configurator: %v", err))
+	}
+	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *ACLConfigurator) clearMapping() {
-	plugin.l2AclIndexes.Clear()
-	plugin.l3l4AclIndexes.Clear()
+func (c *ACLConfigurator) clearMapping() {
+	c.l2AclIndexes.Clear()
+	c.l3l4AclIndexes.Clear()
 }
 
 // GetL2AclIfIndexes exposes l2 acl interface name-to-index mapping
-func (plugin *ACLConfigurator) GetL2AclIfIndexes() aclidx.AclIndexRW {
-	return plugin.l2AclIndexes
+func (c *ACLConfigurator) GetL2AclIfIndexes() aclidx.ACLIndexRW {
+	return c.l2AclIndexes
 }
 
 // GetL3L4AclIfIndexes exposes l3/l4 acl interface name-to-index mapping
-func (plugin *ACLConfigurator) GetL3L4AclIfIndexes() aclidx.AclIndexRW {
-	return plugin.l3l4AclIndexes
+func (c *ACLConfigurator) GetL3L4AclIfIndexes() aclidx.ACLIndexRW {
+	return c.l3l4AclIndexes
 }
 
 // ConfigureACL creates access list with provided rules and sets this list to every relevant interface.
-func (plugin *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
-	plugin.log.Infof("Configuring new ACL %v", acl.AclName)
-
+func (c *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 	if len(acl.Rules) == 0 {
-		plugin.log.Debugf("ACL %v has no rules set, skipping configuration", acl.AclName)
-		return nil
+		return errors.Errorf("failed to configure ACL %s, no rules to set", acl.AclName)
 	}
 
-	rules, isL2MacIP := plugin.validateRules(acl.AclName, acl.Rules)
+	rules, isL2MacIP := c.validateRules(acl.AclName, acl.Rules)
 	// Configure ACL rules.
 	var vppACLIndex uint32
 	var err error
 	if isL2MacIP {
-		vppACLIndex, err = plugin.aclHandler.AddMacIPAcl(rules, acl.AclName)
+		vppACLIndex, err = c.aclHandler.AddMacIPACL(rules, acl.AclName)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to add MAC IP ACL %s: %v", acl.AclName, err)
 		}
 		// Index used for L2 registration is ACLIndex + 1 (ACL indexes start from 0).
 		agentACLIndex := vppACLIndex + 1
-		plugin.l2AclIndexes.RegisterName(acl.AclName, agentACLIndex, acl)
-		plugin.log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
+		c.l2AclIndexes.RegisterName(acl.AclName, agentACLIndex, acl)
+		c.log.Debugf("ACL %s registered to L2 mapping", acl.AclName)
 	} else {
-		vppACLIndex, err = plugin.aclHandler.AddIPAcl(rules, acl.AclName)
+		vppACLIndex, err = c.aclHandler.AddIPACL(rules, acl.AclName)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to add IP ACL %s: %v", acl.AclName, err)
 		}
 		// Index used for L3L4 registration is aclIndex + 1 (ACL indexes start from 0).
 		agentACLIndex := vppACLIndex + 1
-		plugin.l3l4AclIndexes.RegisterName(acl.AclName, agentACLIndex, acl)
-		plugin.log.Debugf("ACL %v registered with index %v", acl.AclName, agentACLIndex)
+		c.l3l4AclIndexes.RegisterName(acl.AclName, agentACLIndex, acl)
+		c.log.Debugf("ACL %s registered to L3/L4 mapping", acl.AclName)
 	}
 
 	// Set ACL to interfaces.
 	if ifaces := acl.GetInterfaces(); ifaces != nil {
 		if isL2MacIP {
-			aclIfIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, L2)
-			err := plugin.aclHandler.SetMacIPAclToInterface(vppACLIndex, aclIfIndices)
+			aclIfIndices := c.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, L2)
+			err := c.aclHandler.SetMacIPACLToInterface(vppACLIndex, aclIfIndices)
 			if err != nil {
-				return err
+				return errors.Errorf("failed to set MAC IP ACL %s to interface(s) %v: %v",
+					acl.AclName, acl.Interfaces.Ingress, err)
 			}
 		} else {
-			aclIfInIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, INGRESS)
-			err = plugin.aclHandler.SetACLToInterfacesAsIngress(vppACLIndex, aclIfInIndices)
+			aclIfInIndices := c.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, INGRESS)
+			err = c.aclHandler.SetACLToInterfacesAsIngress(vppACLIndex, aclIfInIndices)
 			if err != nil {
-				return err
+				return errors.Errorf("failed to set IP ACL %s to interface(s) %v as ingress: %v",
+					acl.AclName, acl.Interfaces.Ingress, err)
 			}
-			aclIfEgIndices := plugin.getOrCacheInterfaces(acl.Interfaces.Egress, vppACLIndex, EGRESS)
-			err = plugin.aclHandler.SetACLToInterfacesAsEgress(vppACLIndex, aclIfEgIndices)
+			aclIfEgIndices := c.getOrCacheInterfaces(acl.Interfaces.Egress, vppACLIndex, EGRESS)
+			err = c.aclHandler.SetACLToInterfacesAsEgress(vppACLIndex, aclIfEgIndices)
 			if err != nil {
-				return err
+				return errors.Errorf("failed to set IP ACL %s to interface(s) %v as egress: %v",
+					acl.AclName, acl.Interfaces.Ingress, err)
 			}
 		}
-	} else {
-		plugin.log.Infof("No interface configured for ACL %v", acl.AclName)
 	}
+
+	c.log.Errorf("ACL %s configured with ID %d", acl.AclName, vppACLIndex)
 
 	return nil
 }
 
 // ModifyACL modifies previously created access list. L2 access list is removed and recreated,
 // L3/L4 access list is modified directly. List of interfaces is refreshed as well.
-func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (err error) {
-	plugin.log.Infof("Modifying ACL %v", oldACL.AclName)
-
+func (c *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) error {
 	if newACL.Rules != nil {
 		// Validate rules.
-		rules, isL2MacIP := plugin.validateRules(newACL.AclName, newACL.Rules)
+		rules, isL2MacIP := c.validateRules(newACL.AclName, newACL.Rules)
 		var vppACLIndex uint32
 		if isL2MacIP {
-			agentACLIndex, _, found := plugin.l2AclIndexes.LookupIdx(oldACL.AclName)
+			agentACLIndex, _, found := c.l2AclIndexes.LookupIdx(oldACL.AclName)
 			if !found {
-				plugin.log.Infof("Acl %v index not found", oldACL.AclName)
-				return nil
+				return errors.Errorf("cannot modify IP MAC ACL %s, index not found in the mapping", oldACL.AclName)
 			}
 			// Index used in VPP = index used in mapping - 1
 			vppACLIndex = agentACLIndex - 1
 		} else {
-			agentACLIndex, _, found := plugin.l3l4AclIndexes.LookupIdx(oldACL.AclName)
+			agentACLIndex, _, found := c.l3l4AclIndexes.LookupIdx(oldACL.AclName)
 			if !found {
-				plugin.log.Infof("Acl %v index not found", oldACL.AclName)
-				return nil
+				return errors.Errorf("cannot modify IP ACL %s, index not found in the mapping", oldACL.AclName)
 			}
 			vppACLIndex = agentACLIndex - 1
 		}
 		if isL2MacIP {
 			// L2 ACL
-			err := plugin.aclHandler.ModifyMACIPAcl(vppACLIndex, rules, newACL.AclName)
+			err := c.aclHandler.ModifyMACIPACL(vppACLIndex, rules, newACL.AclName)
 			if err != nil {
-				return err
+				return errors.Errorf("failed to modify MAC IP ACL %s: %v", newACL.AclName, err)
 			}
 			// There is no need to update index because modified ACL keeps the old one.
 		} else {
 			// L3/L4 ACL can be modified directly.
-			err := plugin.aclHandler.ModifyIPAcl(vppACLIndex, rules, newACL.AclName)
+			err := c.aclHandler.ModifyIPACL(vppACLIndex, rules, newACL.AclName)
 			if err != nil {
-				return err
+				return errors.Errorf("failed to modify IP ACL %s: %v", newACL.AclName, err)
 			}
 			// There is no need to update index because modified ACL keeps the old one.
 		}
@@ -233,142 +231,150 @@ func (plugin *ACLConfigurator) ModifyACL(oldACL, newACL *acl.AccessLists_Acl) (e
 		if isL2MacIP {
 			// Remove L2 ACL from old interfaces.
 			if oldACL.Interfaces != nil {
-
-				err := plugin.aclHandler.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(oldACL.Interfaces.Ingress))
+				err := c.aclHandler.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, c.getInterfaces(oldACL.Interfaces.Ingress))
 				if err != nil {
-					return err
+					return errors.Errorf("failed to remove MAC IP ingress interfaces from ACL %s: %v",
+						oldACL.AclName, err)
 				}
 			}
 			// Put L2 ACL to new interfaces.
 			if newACL.Interfaces != nil {
-				aclMacInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, L2)
-				err := plugin.aclHandler.SetMacIPAclToInterface(vppACLIndex, aclMacInterfaces)
+				aclMacInterfaces := c.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, L2)
+				err := c.aclHandler.SetMacIPACLToInterface(vppACLIndex, aclMacInterfaces)
 				if err != nil {
-					return err
+					return errors.Errorf("failed to set MAC IP ingress interfaces to ACL %s: %v",
+						newACL.AclName, err)
 				}
 			}
-
 		} else {
-			aclOldInInterfaces := plugin.getInterfaces(oldACL.Interfaces.Ingress)
-			aclOldEgInterfaces := plugin.getInterfaces(oldACL.Interfaces.Egress)
-			aclNewInInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, INGRESS)
-			aclNewEgInterfaces := plugin.getOrCacheInterfaces(newACL.Interfaces.Egress, vppACLIndex, EGRESS)
+			aclOldInInterfaces := c.getInterfaces(oldACL.Interfaces.Ingress)
+			aclOldEgInterfaces := c.getInterfaces(oldACL.Interfaces.Egress)
+			aclNewInInterfaces := c.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, INGRESS)
+			aclNewEgInterfaces := c.getOrCacheInterfaces(newACL.Interfaces.Egress, vppACLIndex, EGRESS)
 			addedInInterfaces, removedInInterfaces := diffInterfaces(aclOldInInterfaces, aclNewInInterfaces)
 			addedEgInterfaces, removedEgInterfaces := diffInterfaces(aclOldEgInterfaces, aclNewEgInterfaces)
 
 			if len(removedInInterfaces) > 0 {
-				err = plugin.aclHandler.RemoveIPIngressACLFromInterfaces(vppACLIndex, removedInInterfaces)
+				err := c.aclHandler.RemoveIPIngressACLFromInterfaces(vppACLIndex, removedInInterfaces)
 				if err != nil {
-					return err
+					return errors.Errorf("failed to remove IP ingress interfaces from ACL %s: %v",
+						oldACL.AclName, err)
 				}
 			}
 			if len(removedEgInterfaces) > 0 {
-				err = plugin.aclHandler.RemoveIPEgressACLFromInterfaces(vppACLIndex, removedEgInterfaces)
+				err := c.aclHandler.RemoveIPEgressACLFromInterfaces(vppACLIndex, removedEgInterfaces)
 				if err != nil {
-					return err
+					return errors.Errorf("failed to remove IP egress interfaces from ACL %s: %v",
+						oldACL.AclName, err)
 				}
 			}
 			if len(addedInInterfaces) > 0 {
-				err = plugin.aclHandler.SetACLToInterfacesAsIngress(vppACLIndex, addedInInterfaces)
+				err := c.aclHandler.SetACLToInterfacesAsIngress(vppACLIndex, addedInInterfaces)
 				if err != nil {
-					return err
+					return errors.Errorf("failed to set IP ingress interfaces to ACL %s: %v",
+						newACL.AclName, err)
 				}
 			}
 			if len(addedEgInterfaces) > 0 {
-				err = plugin.aclHandler.SetACLToInterfacesAsEgress(vppACLIndex, addedEgInterfaces)
+				err := c.aclHandler.SetACLToInterfacesAsEgress(vppACLIndex, addedEgInterfaces)
 				if err != nil {
-					return err
+					return errors.Errorf("failed to add IP egress interfaces to ACL %s: %v",
+						oldACL.AclName, err)
 				}
 			}
 		}
 	}
 
-	return err
+	c.log.Info("ACL %s modified", newACL.AclName)
+
+	return nil
 }
 
 // DeleteACL removes existing ACL. To detach ACL from interfaces, list of interfaces has to be provided.
-func (plugin *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
-	plugin.log.Infof("Deleting ACL %v", acl.AclName)
-
+func (c *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 	// Get ACL index. Keep in mind that all ACL Indices were incremented by 1.
-	agentL2AclIndex, _, l2AclFound := plugin.l2AclIndexes.LookupIdx(acl.AclName)
-	agentL3L4AclIndex, _, l3l4AclFound := plugin.l3l4AclIndexes.LookupIdx(acl.AclName)
+	agentL2AclIndex, _, l2AclFound := c.l2AclIndexes.LookupIdx(acl.AclName)
+	agentL3L4AclIndex, _, l3l4AclFound := c.l3l4AclIndexes.LookupIdx(acl.AclName)
 	if !l2AclFound && !l3l4AclFound {
-		return fmt.Errorf("ACL %v not found, cannot be removed", acl.AclName)
+		return errors.Errorf("cannot remove ACL %s, index not found in the mapping", acl.AclName)
 	}
 	if l2AclFound {
 		// Remove interfaces from L2 ACL.
 		vppACLIndex := agentL2AclIndex - 1
 		if acl.Interfaces != nil {
-			err := plugin.aclHandler.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(acl.Interfaces.Ingress))
+			err := c.aclHandler.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, c.getInterfaces(acl.Interfaces.Ingress))
 			if err != nil {
-				return err
+				return errors.Errorf("failed to remove MAC IP interfaces from ACL %s: %v",
+					acl.AclName, err)
 			}
 		}
 		// Remove ACL L2.
-		err := plugin.aclHandler.DeleteMacIPAcl(vppACLIndex)
+		err := c.aclHandler.DeleteMacIPACL(vppACLIndex)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to remove MAC IP ACL %s: %v", acl.AclName, err)
 		}
 		// Unregister.
-		plugin.l2AclIndexes.UnregisterName(acl.AclName)
+		c.l2AclIndexes.UnregisterName(acl.AclName)
+		c.log.Debugf("ACL %s unregistered from L2 mapping", acl.AclName)
 	}
 	if l3l4AclFound {
 		// Remove interfaces.
 		vppACLIndex := agentL3L4AclIndex - 1
 		if acl.Interfaces != nil {
-			err = plugin.aclHandler.RemoveIPIngressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(acl.Interfaces.Ingress))
+			err = c.aclHandler.RemoveIPIngressACLFromInterfaces(vppACLIndex, c.getInterfaces(acl.Interfaces.Ingress))
 			if err != nil {
-				return err
+				return errors.Errorf("failed to remove IP ingress interfaces from ACL %s: %v",
+					acl.AclName, err)
 			}
 
-			err = plugin.aclHandler.RemoveIPEgressACLFromInterfaces(vppACLIndex, plugin.getInterfaces(acl.Interfaces.Egress))
+			err = c.aclHandler.RemoveIPEgressACLFromInterfaces(vppACLIndex, c.getInterfaces(acl.Interfaces.Egress))
 			if err != nil {
-				return err
+				return errors.Errorf("failed to remove IP egress interfaces from ACL %s: %v",
+					acl.AclName, err)
 			}
 		}
 		// Remove ACL L3/L4.
-		err := plugin.aclHandler.DeleteIPAcl(vppACLIndex)
+		err := c.aclHandler.DeleteIPACL(vppACLIndex)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to remove IP ACL %s: %v", acl.AclName, err)
 		}
 		// Unregister.
-		plugin.l3l4AclIndexes.UnregisterName(acl.AclName)
+		c.l3l4AclIndexes.UnregisterName(acl.AclName)
+		c.log.Debugf("ACL %s unregistered from L3/L4 mapping", acl.AclName)
 	}
 
 	return err
 }
 
 // DumpIPACL returns all configured IP ACLs in proto format
-func (plugin *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err error) {
-	aclsWithIndex, err := plugin.aclHandler.DumpIPACL(plugin.ifIndexes)
+func (c *ACLConfigurator) DumpIPACL() (acls []*acl.AccessLists_Acl, err error) {
+	aclsWithIndex, err := c.aclHandler.DumpIPACL(c.ifIndexes)
 	if err != nil {
-		plugin.log.Error(err)
-		return nil, err
+		return nil, errors.Errorf("failed to dump IP ACLs: %v", err)
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.Acl)
+		acls = append(acls, aclWithIndex.ACL)
 	}
 	return acls, nil
 }
 
 // DumpMACIPACL returns all configured MACIP ACLs in proto format
-func (plugin *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err error) {
-	aclsWithIndex, err := plugin.aclHandler.DumpMACIPACL(plugin.ifIndexes)
+func (c *ACLConfigurator) DumpMACIPACL() (acls []*acl.AccessLists_Acl, err error) {
+	aclsWithIndex, err := c.aclHandler.DumpMACIPACL(c.ifIndexes)
 	if err != nil {
-		plugin.log.Error(err)
-		return nil, err
+		c.log.Error(err)
+		return nil, errors.Errorf("failed to dump MAC IP ACLs: %v", err)
 	}
 	for _, aclWithIndex := range aclsWithIndex {
-		acls = append(acls, aclWithIndex.Acl)
+		acls = append(acls, aclWithIndex.ACL)
 	}
 	return acls, nil
 }
 
 // Returns a list of existing ACL interfaces
-func (plugin *ACLConfigurator) getInterfaces(interfaces []string) (configurableIfs []uint32) {
+func (c *ACLConfigurator) getInterfaces(interfaces []string) (configurableIfs []uint32) {
 	for _, name := range interfaces {
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(name)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(name)
 		if !found {
 			continue
 		}
@@ -397,68 +403,54 @@ func diffInterfaces(oldInterfaces, newInterfaces []uint32) (added, removed []uin
 }
 
 // ResolveCreatedInterface configures new interface for every ACL found in cache
-func (plugin *ACLConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
-	plugin.log.Debugf("ACL configurator: resolving new interface %v", ifName)
-
+func (c *ACLConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
 	// Iterate over cache in order to find out where the interface is used
-	var wasErr error
-	for entryIdx, aclCacheEntry := range plugin.ifCache {
+	for entryIdx, aclCacheEntry := range c.ifCache {
 		if aclCacheEntry.ifName == ifName {
-			var ifIndices []uint32
 			switch aclCacheEntry.ifAttr {
 			case L2:
-				if err := plugin.aclHandler.SetMacIPAclToInterface(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
-					plugin.log.Error(err)
-					wasErr = err
+				if err := c.aclHandler.SetMacIPACLToInterface(aclCacheEntry.aclID, []uint32{ifIdx}); err != nil {
+					return errors.Errorf("failed to set MAC IP ACL %v to interface %v: %v", aclCacheEntry.aclID, ifName, err)
 				}
 			case INGRESS:
-				if err := plugin.aclHandler.SetACLToInterfacesAsIngress(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
-					plugin.log.Error(err)
-					wasErr = err
+				if err := c.aclHandler.SetACLToInterfacesAsIngress(aclCacheEntry.aclID, []uint32{ifIdx}); err != nil {
+					return errors.Errorf("failed to set ACL %v as ingress to interface %v: %v", aclCacheEntry.aclID, ifName, err)
 				}
 			case EGRESS:
-				if err := plugin.aclHandler.SetACLToInterfacesAsEgress(aclCacheEntry.aclID, append(ifIndices, ifIdx)); err != nil {
-					plugin.log.Error(err)
-					wasErr = err
+				if err := c.aclHandler.SetACLToInterfacesAsEgress(aclCacheEntry.aclID, []uint32{ifIdx}); err != nil {
+					return errors.Errorf("failed to set ACL %v as egress to interface %v: %v", aclCacheEntry.aclID, ifName, err)
 				}
 			default:
-				plugin.log.Warnf("ACL interface is not defined as L2, ingress or egress")
+				return errors.Errorf("ACL %v for interface %v is set as %q and not as L2, ingress or egress", aclCacheEntry.aclID, ifName, aclCacheEntry.ifAttr)
 			}
 			// Remove from cache
-			plugin.log.Debugf("New interface %s (%s) configured for ACL %d, removed from cache",
+			c.log.Debugf("New interface %s (%s) configured for ACL %d, removed from cache",
 				ifName, aclCacheEntry.ifAttr, aclCacheEntry.aclID)
-			plugin.ifCache = append(plugin.ifCache[:entryIdx], plugin.ifCache[entryIdx+1:]...)
+			c.ifCache = append(c.ifCache[:entryIdx], c.ifCache[entryIdx+1:]...)
 		}
 	}
 
-	plugin.log.Debugf("ACL configurator: new interface %v resolution done", ifName)
-
-	return wasErr
+	return nil
 }
 
 // ResolveDeletedInterface puts removed interface to cache, including acl index. Note: it's not needed to remove ACL
 // from interface manually, VPP handles it itself and such an behavior would cause errors (ACLs cannot be dumped
 // from non-existing interface)
-func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
-	plugin.log.Debugf("ACL configurator: resolving deleted interface %v", ifName)
-
-	var wasErr error
-
+func (c *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint32) error {
 	// L3/L4 ingress/egress ACLs
-	for _, aclName := range plugin.l3l4AclIndexes.GetMapping().ListNames() {
-		aclIdx, aclData, found := plugin.l3l4AclIndexes.LookupIdx(aclName)
+	for _, aclName := range c.l3l4AclIndexes.GetMapping().ListNames() {
+		aclIdx, aclData, found := c.l3l4AclIndexes.LookupIdx(aclName)
 		if !found {
-			plugin.log.Warnf("ACL %v not found in the mapping", aclName)
-			continue
+			return errors.Errorf("cannot resolve ACL %s for interface %s, not found in the mapping", aclName, ifName)
 		}
-		vppAclIdx := aclIdx - 1
+		vppACLIdx := aclIdx - 1
 		if ifaces := aclData.GetInterfaces(); ifaces != nil {
 			// Look over ingress interfaces
 			for _, iface := range ifaces.Ingress {
 				if iface == ifName {
-					plugin.ifCache = append(plugin.ifCache, &ACLIfCacheEntry{
+					c.ifCache = append(c.ifCache, &ACLIfCacheEntry{
 						ifName: ifName,
-						aclID:  vppAclIdx,
+						aclID:  vppACLIdx,
 						ifAttr: INGRESS,
 					})
 				}
@@ -466,9 +458,9 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 			// Look over egress interfaces
 			for _, iface := range ifaces.Egress {
 				if iface == ifName {
-					plugin.ifCache = append(plugin.ifCache, &ACLIfCacheEntry{
+					c.ifCache = append(c.ifCache, &ACLIfCacheEntry{
 						ifName: ifName,
-						aclID:  vppAclIdx,
+						aclID:  vppACLIdx,
 						ifAttr: EGRESS,
 					})
 				}
@@ -476,20 +468,19 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 		}
 	}
 	// L2 ACLs
-	for _, aclName := range plugin.l2AclIndexes.GetMapping().ListNames() {
-		aclIdx, aclData, found := plugin.l2AclIndexes.LookupIdx(aclName)
+	for _, aclName := range c.l2AclIndexes.GetMapping().ListNames() {
+		aclIdx, aclData, found := c.l2AclIndexes.LookupIdx(aclName)
 		if !found {
-			plugin.log.Warnf("ACL %v not found in the mapping", aclName)
-			continue
+			return errors.Errorf("cannot resolve ACL %s for interface %s, not found in the mapping", aclName, ifName)
 		}
-		vppAclIdx := aclIdx - 1
+		vppACLIdx := aclIdx - 1
 		if ifaces := aclData.GetInterfaces(); ifaces != nil {
 			// Look over ingress interfaces
 			for _, ingressIf := range ifaces.Ingress {
 				if ingressIf == ifName {
-					plugin.ifCache = append(plugin.ifCache, &ACLIfCacheEntry{
+					c.ifCache = append(c.ifCache, &ACLIfCacheEntry{
 						ifName: ifName,
-						aclID:  vppAclIdx,
+						aclID:  vppACLIdx,
 						ifAttr: L2,
 					})
 				}
@@ -497,24 +488,22 @@ func (plugin *ACLConfigurator) ResolveDeletedInterface(ifName string, ifIdx uint
 		}
 	}
 
-	plugin.log.Debugf("ACL configurator: resolution done for removed interface %v", ifName)
-
-	return wasErr
+	return nil
 }
 
 // Returns a list of interfaces configurable on the ACL. If interface is missing, put it to the cache. It will be
 // configured when available
-func (plugin *ACLConfigurator) getOrCacheInterfaces(interfaces []string, acl uint32, attr string) (configurableIfs []uint32) {
+func (c *ACLConfigurator) getOrCacheInterfaces(interfaces []string, acl uint32, attr string) (configurableIfs []uint32) {
 	for _, name := range interfaces {
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(name)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(name)
 		if !found {
 			// Put interface to cache
-			plugin.ifCache = append(plugin.ifCache, &ACLIfCacheEntry{
+			c.ifCache = append(c.ifCache, &ACLIfCacheEntry{
 				ifName: name,
 				aclID:  acl,
 				ifAttr: attr,
 			})
-			plugin.log.Debugf("Interface %s (%s) not found for ACL %v, moving to cache", name, attr, acl)
+			c.log.Debugf("Interface %s (%s) not found for ACL %s, moving to cache", name, attr, acl)
 			continue
 		}
 		configurableIfs = append(configurableIfs, ifIdx)
@@ -525,13 +514,13 @@ func (plugin *ACLConfigurator) getOrCacheInterfaces(interfaces []string, acl uin
 // Validate rules provided in ACL. Every rule has to contain actions and matches.
 // Current limitation: L2 and L3/4 have to be split to different ACLs and
 // there cannot be L2 rules and L3/4 rules in the same ACL.
-func (plugin *ACLConfigurator) validateRules(aclName string, rules []*acl.AccessLists_Acl_Rule) ([]*acl.AccessLists_Acl_Rule, bool) {
+func (c *ACLConfigurator) validateRules(aclName string, rules []*acl.AccessLists_Acl_Rule) ([]*acl.AccessLists_Acl_Rule, bool) {
 	var validL3L4Rules []*acl.AccessLists_Acl_Rule
 	var validL2Rules []*acl.AccessLists_Acl_Rule
 
 	for index, rule := range rules {
 		if rule.GetMatch() == nil {
-			plugin.log.Warnf("Rule %v from acl %v does not contain match", index, aclName)
+			c.log.Warnf("invalid ACL %s: rule %d does not contain match", aclName, index)
 			continue
 		}
 		if rule.GetMatch().GetIpRule() != nil {
@@ -542,7 +531,7 @@ func (plugin *ACLConfigurator) validateRules(aclName string, rules []*acl.Access
 		}
 	}
 	if len(validL3L4Rules) > 0 && len(validL2Rules) > 0 {
-		plugin.log.Errorf("Acl %v contains even L2 rules and L3/L4 rules. This case is not supported yet, only L3/L4 rules will be resolved",
+		c.log.Warnf("ACL %s contains L2 rules and L3/L4 rules as well. This case is not supported, only L3/L4 rules will be resolved",
 			aclName)
 		return validL3L4Rules, false
 	} else if len(validL3L4Rules) > 0 {
@@ -550,4 +539,13 @@ func (plugin *ACLConfigurator) validateRules(aclName string, rules []*acl.Access
 	} else {
 		return validL2Rules, true
 	}
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *ACLConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	return err
 }

@@ -644,7 +644,7 @@ func TestNatConfiguratorDNatStaticMappingNoLocalIPError(t *testing.T) {
 	// Test configure DNAT without local IPs
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 }
 
 // Configure DNAT static mapping using external IP
@@ -726,7 +726,7 @@ func TestNatConfiguratorDNatStaticMappingInvalidLocalAddressError(t *testing.T) 
 	// Test configure DNAT with invalid local IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -745,7 +745,7 @@ func TestNatConfiguratorDNatStaticMappingInvalidExternalAddressError(t *testing.
 	// Test configure DNAT with invalid external IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -764,7 +764,7 @@ func TestNatConfiguratorDNatStaticMappingMissingInterfaceError(t *testing.T) {
 	// Test configure DNAT with missing external interface
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -827,7 +827,7 @@ func TestNatConfiguratorDNatStaticMappingLbInvalidLocalError(t *testing.T) {
 	// Test configure DNAT static mapping with load balancer with invalid local IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -847,7 +847,7 @@ func TestNatConfiguratorDNatStaticMappingLbMissingExternalPortError(t *testing.T
 	// Test configure static mapping with load balancer with missing external port
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -867,7 +867,7 @@ func TestNatConfiguratorDNatStaticMappingLbInvalidExternalIPError(t *testing.T) 
 	// Test DNAT static mapping invalid external IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -888,8 +888,8 @@ func TestNatConfiguratorDNatIdentityMapping(t *testing.T) {
 	err := plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
-	id := ifplugin.GetIdMappingIdentifier(data.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeTrue())
+	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeTrue())
 }
 
 // Configure NAT identity mapping with address interface
@@ -910,8 +910,8 @@ func TestNatConfiguratorDNatIdentityMappingInterface(t *testing.T) {
 	err := plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
-	id := ifplugin.GetIdMappingIdentifier(data.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeTrue())
+	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeTrue())
 }
 
 // Configure NAT identity mapping with address interface while interface is not registered
@@ -927,9 +927,9 @@ func TestNatConfiguratorDNatIdentityMappingMissingInterfaceError(t *testing.T) {
 	// Test identity mapping with address interface	while interface is not registered
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
-	id := ifplugin.GetIdMappingIdentifier(data.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeFalse())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
+	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeFalse())
 }
 
 // Create NAT identity mapping with invalid IP address
@@ -945,9 +945,9 @@ func TestNatConfiguratorDNatIdentityMappingInvalidIPError(t *testing.T) {
 	// Test identity mapping with invalid IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
-	id := ifplugin.GetIdMappingIdentifier(data.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeFalse())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
+	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeFalse())
 }
 
 // Create identity mapping without IP address and interface set
@@ -963,9 +963,9 @@ func TestNatConfiguratorDNatIdentityMappingNoInterfaceAndIPError(t *testing.T) {
 	// Test identity mapping without interface and IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
-	id := ifplugin.GetIdMappingIdentifier(data.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeFalse())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
+	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeFalse())
 }
 
 // Configure and modify static and identity mappings
@@ -1008,8 +1008,8 @@ func TestNatConfiguratorDNatModify(t *testing.T) {
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeTrue())
 	id = ifplugin.GetStMappingIdentifier(oldData.StMappings[1])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeTrue())
-	id = ifplugin.GetIdMappingIdentifier(oldData.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeTrue())
+	id = ifplugin.GetIDMappingIdentifier(oldData.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeTrue())
 	// Test modify static and identity mapping
 	err = plugin.ModifyDNat(oldData, newData)
 	Expect(err).To(BeNil())
@@ -1017,8 +1017,8 @@ func TestNatConfiguratorDNatModify(t *testing.T) {
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeTrue())
 	id = ifplugin.GetStMappingIdentifier(newData.StMappings[1])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeTrue())
-	id = ifplugin.GetIdMappingIdentifier(newData.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeTrue())
+	id = ifplugin.GetIDMappingIdentifier(newData.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeTrue())
 }
 
 // Configure and modify static and identity mappings with errors
@@ -1170,14 +1170,14 @@ func TestNatConfiguratorDNatDeleteIdentityMapping(t *testing.T) {
 	err := plugin.ConfigureDNat(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
-	id := ifplugin.GetIdMappingIdentifier(data.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeTrue())
+	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeTrue())
 	// Test delete identity mapping
 	err = plugin.DeleteDNat(data)
 	Expect(err).To(BeNil())
 	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
-	id = ifplugin.GetIdMappingIdentifier(data.IdMappings[0])
-	Expect(plugin.IsDNatLabelIdMappingRegistered(id)).To(BeFalse())
+	id = ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
+	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeFalse())
 }
 
 // Delete NAT identity mapping without ip address set
@@ -1201,7 +1201,7 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

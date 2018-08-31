@@ -14,7 +14,7 @@
 
 package stn
 
-// StnRulesPrefix stn key/
+// Prefix stn key/
 const Prefix = "vpp/config/v1/stn/rules/"
 
 // Key returns the prefix used in ETCD to store vpp STN config

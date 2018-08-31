@@ -5,18 +5,20 @@
 
 required = [
     "git.fd.io/govpp.git/cmd/binapi-generator",
-    "github.com/ungerik/pkgreflect",
-    "github.com/gogo/protobuf/protoc-gen-gogo"
+    "github.com/gogo/protobuf/protoc-gen-gogo",
+    "github.com/opencontainers/runc"
 ]
 
-[[constraint]]
-  name = "github.com/ligato/cn-infra"
-  revision = "98e10610edaf49aa2ca14c97302bc252cd6fdb63"
+# Constraints
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/ligato/cn-infra"
+
+[[constraint]]
+  branch = "master"
   name =  "git.fd.io/govpp.git"
-  revision = "0ed38dbb620ef88a2007179265f37742ee46c305"
-  source = "github.com/ligato/govpp"
+  source = "github.com/FDio/govpp"
 
 [[constraint]]
   branch = "master"
@@ -24,7 +26,7 @@ required = [
 
 [[constraint]]
   name = "github.com/fsouza/go-dockerclient"
-  revision = "9e921e30db8bcc1221fa0485ad9ce5b195fb4445"
+  version = "1.0"
 
 [[constraint]]
   name = "github.com/ghodss/yaml"
@@ -76,7 +78,31 @@ required = [
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.2.1"
+  version = "1.14.0"
+
+# Overrides
+
+[[override]]
+  name = "github.com/docker/libnetwork"
+  revision = "9ffeaf7d8b64fa0eb64cc27835dc1a5a90328024"
+
+[[override]]
+  name = "github.com/Shopify/sarama"
+  version = "~1.15.0"
+
+[[override]]
+  name = "github.com/bsm/sarama-cluster"
+  version = "2.1.11"
+
+[[override]]
+  name = "github.com/coreos/etcd"
+  version = "=3.3.9"
+
+[[constraint]]
+  name = "github.com/opencontainers/runc"
+  version = "v1.0.0-rc5"
+
+# Prunes
 
 [prune]
   go-tests = true

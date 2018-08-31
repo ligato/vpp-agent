@@ -59,16 +59,22 @@ func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwI
 	ctx, _ := context.WithCancel(context.Background())
 
 	// Create connection
-	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
+	mockCtx := &vppcallmock.TestCtx{
+		MockVpp: mock.NewVppAdapter(),
+	}
 	connection, err := govpp.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
+
+	// Prepare Init VPP replies
+	mockCtx.MockVpp.MockReply(&interfaces.WantInterfaceEventsReply{})
+	mockCtx.MockVpp.MockReply(&stats.WantStatsReply{})
 
 	// Create plugin logger
 	pluginLogger := logging.ForPlugin("testname")
 
 	// Test initialization
 	ifPlugin := &ifplugin.InterfaceStateUpdater{}
-	err = ifPlugin.Init(pluginLogger, connection, ctx, index, notifChan, publishIfState)
+	err = ifPlugin.Init(ctx, pluginLogger, connection, index, notifChan, publishIfState)
 	Expect(err).To(BeNil())
 	err = ifPlugin.AfterInit()
 	Expect(err).To(BeNil())

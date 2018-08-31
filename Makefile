@@ -119,30 +119,11 @@ generate-proto: get-proto-generators
 # Get generator tools
 get-binapi-generators:
 	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
-	go install ./vendor/github.com/ungerik/pkgreflect
 
 # Generate binary api
 generate-binapi: get-binapi-generators
 	@echo "=> generating binapi"
 	cd plugins/vpp/binapi && go generate
-	cd plugins/vpp/binapi/acl && pkgreflect
-	cd plugins/vpp/binapi/af_packet && pkgreflect
-	cd plugins/vpp/binapi/bfd && pkgreflect
-	cd plugins/vpp/binapi/dhcp && pkgreflect
-	cd plugins/vpp/binapi/interfaces && pkgreflect
-	cd plugins/vpp/binapi/ip && pkgreflect
-	cd plugins/vpp/binapi/ipsec && pkgreflect
-	cd plugins/vpp/binapi/l2 && pkgreflect
-	cd plugins/vpp/binapi/memif && pkgreflect
-	cd plugins/vpp/binapi/nat && pkgreflect
-	cd plugins/vpp/binapi/session && pkgreflect
-	cd plugins/vpp/binapi/sr && pkgreflect
-	cd plugins/vpp/binapi/stats && pkgreflect
-	cd plugins/vpp/binapi/stn && pkgreflect
-	cd plugins/vpp/binapi/tap && pkgreflect
-	cd plugins/vpp/binapi/tapv2 && pkgreflect
-	cd plugins/vpp/binapi/vpe && pkgreflect
-	cd plugins/vpp/binapi/vxlan && pkgreflect
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
 
@@ -205,7 +186,7 @@ MDLINKCHECK := $(shell command -v markdown-link-check 2> /dev/null)
 # Get link check tool
 get-linkcheck:
 ifndef MDLINKCHECK
-	sudo apt-get install npm
+	sudo apt-get update && sudo apt-get install -y npm
 	npm install -g markdown-link-check@3.6.2
 endif
 
@@ -227,6 +208,14 @@ travis:
 	@echo "Files:"
 	@echo "$$(git diff --name-only $$TRAVIS_COMMIT_RANGE)"
 
+# Install yamllint
+get-yamllint:
+	pip install --user yamllint
+
+# Lint the yaml files
+yamllint: get-yamllint
+	@echo "=> linting the yaml files"
+	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
 
 .PHONY: build clean \
 	install cmd examples clean-examples test \
@@ -235,4 +224,5 @@ travis:
 	get-dep dep-install dep-update dep-check \
 	get-linters lint format \
 	get-linkcheck check-links \
-	travis
+	travis \
+	get-yamllint yamllint

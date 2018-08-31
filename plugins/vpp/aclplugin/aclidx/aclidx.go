@@ -20,9 +20,9 @@ import (
 	acl_model "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
 
-// AclIndex provides read-only access to mapping between ACL indices (used internally in VPP)
+// ACLIndex provides read-only access to mapping between ACL indices (used internally in VPP)
 // and ACL names.
-type AclIndex interface {
+type ACLIndex interface {
 	// GetMapping returns internal read-only mapping with metadata.
 	GetMapping() idxvpp.NameToIdxRW
 
@@ -33,12 +33,12 @@ type AclIndex interface {
 	LookupName(idx uint32) (name string, metadata *acl_model.AccessLists_Acl, exists bool)
 
 	// WatchNameToIdx allows to subscribe for watching changes in aclIndex mapping.
-	WatchNameToIdx(subscriber string, pluginChannel chan AclIdxDto)
+	WatchNameToIdx(subscriber string, pluginChannel chan IdxDto)
 }
 
-// AclIndexRW is mapping between ACL indices (used internally in VPP) and ACL names.
-type AclIndexRW interface {
-	AclIndex
+// ACLIndexRW is mapping between ACL indices (used internally in VPP) and ACL names.
+type ACLIndexRW interface {
+	ACLIndex
 
 	// RegisterName adds a new item into name-to-index mapping.
 	RegisterName(name string, idx uint32, ifMeta *acl_model.AccessLists_Acl)
@@ -56,15 +56,15 @@ type aclIndex struct {
 	mapping idxvpp.NameToIdxRW
 }
 
-// AclIdxDto represents an item sent through watch channel in aclIndex.
+// IdxDto represents an item sent through watch channel in aclIndex.
 // In contrast to NameToIdxDto, it contains typed metadata.
-type AclIdxDto struct {
+type IdxDto struct {
 	idxvpp.NameToIdxDtoWithoutMeta
 	Metadata *acl_model.AccessLists_Acl
 }
 
-// NewAclIndex creates new instance of aclIndex.
-func NewAclIndex(mapping idxvpp.NameToIdxRW) AclIndexRW {
+// NewACLIndex creates new instance of aclIndex.
+func NewACLIndex(mapping idxvpp.NameToIdxRW) ACLIndexRW {
 	return &aclIndex{mapping: mapping}
 }
 
@@ -111,21 +111,19 @@ func (acl *aclIndex) castMetadata(meta interface{}) *acl_model.AccessLists_Acl {
 	if ifMeta, ok := meta.(*acl_model.AccessLists_Acl); ok {
 		return ifMeta
 	}
-
 	return nil
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping.
-func (acl *aclIndex) WatchNameToIdx(subscriber string, pluginChannel chan AclIdxDto) {
+func (acl *aclIndex) WatchNameToIdx(subscriber string, pluginChannel chan IdxDto) {
 	ch := make(chan idxvpp.NameToIdxDto)
 	acl.mapping.Watch(subscriber, nametoidx.ToChan(ch))
 	go func() {
 		for c := range ch {
-			pluginChannel <- AclIdxDto{
+			pluginChannel <- IdxDto{
 				NameToIdxDtoWithoutMeta: c.NameToIdxDtoWithoutMeta,
 				Metadata:                acl.castMetadata(c.Metadata),
 			}
-
 		}
 	}()
 }

@@ -66,7 +66,9 @@ func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater
 	ctx, _ := context.WithCancel(context.Background())
 
 	// Create connection
-	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
+	mockCtx := &vppcallmock.TestCtx{
+		MockVpp: mock.NewVppAdapter(),
+	}
 	connection, err := core.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
@@ -75,7 +77,7 @@ func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater
 
 	// Test initialization
 	plugin := &l2plugin.BridgeDomainStateUpdater{}
-	err = plugin.Init(pluginLogger, connection, ctx, index, swIfIndex, notifChan, publishIfState)
+	err = plugin.Init(ctx, pluginLogger, connection, index, swIfIndex, notifChan, publishIfState)
 	Expect(err).To(BeNil())
 
 	return plugin, connection, index, swIfIndex, notifChan, publishChan
@@ -118,7 +120,7 @@ func TestBridgeDomainStateUpdater_watchVppNotificationsZeroNoName(t *testing.T) 
 
 	var notif *l2plugin.BridgeDomainStateNotification
 
-	Eventually(publishChan).Should(Receive(&notif))
+	Eventually(publishChan).ShouldNot(Receive(&notif))
 }
 
 // Tests notification processing in bridge domain state updater

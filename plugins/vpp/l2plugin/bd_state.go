@@ -20,6 +20,7 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	l2_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -52,80 +53,86 @@ type BridgeDomainStateUpdater struct {
 	vppCh govppapi.Channel
 
 	// Notification subscriptions
-	vppNotifSubs            *govppapi.NotifSubscription
-	vppCountersSubs         *govppapi.NotifSubscription
-	vppCombinedCountersSubs *govppapi.NotifSubscription
+	vppNotifSubs            govppapi.SubscriptionCtx
+	vppCountersSubs         govppapi.SubscriptionCtx
+	vppCombinedCountersSubs govppapi.SubscriptionCtx
 	notificationChan        chan BridgeDomainStateMessage // Injected, do not close here
 	bdIdxChan               chan l2idx.BdChangeDto
 }
 
 // Init bridge domain state updater.
-func (plugin *BridgeDomainStateUpdater) Init(logger logging.PluginLogger, goVppMux govppmux.API, ctx context.Context, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
+func (c *BridgeDomainStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-l2-bd-state")
-	plugin.log.Info("Initializing BridgeDomainStateUpdater")
+	c.log = logger.NewLogger("-l2-bd-state")
 
 	// Mappings
-	plugin.bdIndexes = bdIndexes
-	plugin.ifIndexes = swIfIndexes
+	c.bdIndexes = bdIndexes
+	c.ifIndexes = swIfIndexes
 
 	// State publisher
-	plugin.notificationChan = notificationChan
-	plugin.publishBdState = publishBdState
-	plugin.bdState = make(map[uint32]*l2.BridgeDomainState_BridgeDomain)
+	c.notificationChan = notificationChan
+	c.publishBdState = publishBdState
+	c.bdState = make(map[uint32]*l2.BridgeDomainState_BridgeDomain)
 
 	// VPP channel
-	plugin.vppCh, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return err
+	if c.vppCh, err = goVppMux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// Name-to-index watcher
-	plugin.bdIdxChan = make(chan l2idx.BdChangeDto, 100)
-	bdIndexes.WatchNameToIdx("bdplugin_bdstate", plugin.bdIdxChan)
+	c.bdIdxChan = make(chan l2idx.BdChangeDto, 100)
+	bdIndexes.WatchNameToIdx("bdplugin_bdstate", c.bdIdxChan)
 
 	var childCtx context.Context
-	childCtx, plugin.cancel = context.WithCancel(ctx)
+	childCtx, c.cancel = context.WithCancel(ctx)
 
 	// Bridge domain notification watcher
-	go plugin.watchVPPNotifications(childCtx)
+	go c.watchVPPNotifications(childCtx)
+
+	c.log.Info("Initializing bridge domain state updater")
 
 	return nil
 }
 
 // watchVPPNotifications watches for delivery of notifications from VPP.
-func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Context) {
-	plugin.wg.Add(1)
-	defer plugin.wg.Done()
+func (c *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Context) {
+	c.wg.Add(1)
+	defer c.wg.Done()
 
-	if plugin.notificationChan != nil {
-		plugin.log.Info("watchVPPNotifications for bridge domain state started")
+	if c.notificationChan != nil {
+		c.log.Debugf("bridge domain state updater started to watch VPP notification")
 	} else {
-		plugin.log.Error("failed to start watchVPPNotifications for bridge domain state")
+		c.LogError(errors.Errorf("bridge domain state updater failed to start watching VPP notifications"))
 		return
 	}
 
 	for {
 		select {
-		case notif, ok := <-plugin.notificationChan:
+		case notif, ok := <-c.notificationChan:
 			if !ok {
 				continue
 			}
 			bdName := notif.Name
 			switch msg := notif.Message.(type) {
 			case *l2_api.BridgeDomainDetails:
-				bdState := plugin.processBridgeDomainDetailsNotification(msg, bdName)
+				bdState, err := c.processBridgeDomainDetailsNotification(msg, bdName)
+				if err != nil {
+					// Log error but continue watching
+					c.LogError(errors.Errorf("bridge domain state updater failed to process notification for %s: %v",
+						bdName, err))
+					continue
+				}
 				if bdState != nil {
-					plugin.publishBdState(&BridgeDomainStateNotification{
+					c.publishBdState(&BridgeDomainStateNotification{
 						State: bdState,
 					})
 				}
 			default:
-				plugin.log.Debugf("L2Plugin: Ignoring unknown VPP notification: %v", msg)
+				c.log.Debugf("L2Plugin: Ignoring unknown VPP notification: %v", msg)
 			}
 
-		case bdIdxDto := <-plugin.bdIdxChan:
+		case bdIdxDto := <-c.bdIdxChan:
 			bdIdxDto.Done()
 
 		case <-ctx.Done():
@@ -135,28 +142,26 @@ func (plugin *BridgeDomainStateUpdater) watchVPPNotifications(ctx context.Contex
 	}
 }
 
-func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails, name string) *l2.BridgeDomainState_BridgeDomain {
+func (c *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(msg *l2_api.BridgeDomainDetails, name string) (*l2.BridgeDomainState_BridgeDomain, error) {
 	bdState := &l2.BridgeDomainState_BridgeDomain{}
 	// Delete case.
 	if msg.BdID == 0 {
 		if name == "" {
-			plugin.log.Debugf("invalid bridge domain received: %+v", msg)
-			return bdState
+			return nil, errors.Errorf("failed to process bridge domain notification: invalid data")
 		}
 		// Mark index to 0 to be removed, but pass name so that the key can be constructed.
 		bdState.Index = 0
 		bdState.InternalName = name
-		return bdState
+		return bdState, nil
 	}
 	bdState.Index = msg.BdID
-	name, _, found := plugin.bdIndexes.LookupName(msg.BdID)
+	name, _, found := c.bdIndexes.LookupName(msg.BdID)
 	if !found {
-		plugin.log.Warnf("bridge domain index not found, index %v is not in the mapping", msg.BdID)
-		return bdState
+		return nil, errors.Errorf("failed to process bridge domain notification: not found in the mapping")
 	}
 	bdState.InternalName = name
 	bdState.InterfaceCount = msg.NSwIfs
-	name, _, found = plugin.ifIndexes.LookupName(msg.BviSwIfIndex)
+	name, _, found = c.ifIndexes.LookupName(msg.BviSwIfIndex)
 	if found {
 		bdState.BviInterface = name
 		bdState.BviInterfaceIndex = msg.BviSwIfIndex
@@ -164,19 +169,19 @@ func (plugin *BridgeDomainStateUpdater) processBridgeDomainDetailsNotification(m
 		bdState.BviInterface = "not_set"
 	}
 	bdState.L2Params = getBridgeDomainStateParams(msg)
-	bdState.Interfaces = plugin.getBridgeDomainInterfaces(msg)
+	bdState.Interfaces = c.getBridgeDomainInterfaces(msg)
 	bdState.LastChange = time.Now().Unix()
 
-	return bdState
+	return bdState, nil
 }
 
-func (plugin *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.BridgeDomainDetails) []*l2.BridgeDomainState_BridgeDomain_Interfaces {
+func (c *BridgeDomainStateUpdater) getBridgeDomainInterfaces(msg *l2_api.BridgeDomainDetails) []*l2.BridgeDomainState_BridgeDomain_Interfaces {
 	var bdStateInterfaces []*l2.BridgeDomainState_BridgeDomain_Interfaces
 	for _, swIfaceDetails := range msg.SwIfDetails {
 		bdIfaceState := &l2.BridgeDomainState_BridgeDomain_Interfaces{}
-		name, _, found := plugin.ifIndexes.LookupName(swIfaceDetails.SwIfIndex)
+		name, _, found := c.ifIndexes.LookupName(swIfaceDetails.SwIfIndex)
 		if !found {
-			plugin.log.Debugf("Interface name with index %v not found for bridge domain status", swIfaceDetails.SwIfIndex)
+			c.log.Warnf("Interface name with index %d not found for bridge domain status", swIfaceDetails.SwIfIndex)
 			bdIfaceState.Name = "unknown"
 		} else {
 			bdIfaceState.Name = name
@@ -204,4 +209,18 @@ func intToBool(num uint8) bool {
 		return true
 	}
 	return false
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *BridgeDomainStateUpdater) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

@@ -48,7 +48,9 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 	Expect(names).To(BeEmpty())
 
 	// Create connection
-	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
+	mockCtx := &vppcallmock.TestCtx{
+		MockVpp: mock.NewVppAdapter(),
+	}
 	connection, err := core.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
@@ -119,9 +121,12 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	plugin.GetBdIndexes().RegisterName("test", 2, nil)
 
 	err := plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 		Name:                "test",
@@ -249,7 +254,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
 	defer bdConfigTeardown(conn, plugin)
 
-	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -708,7 +713,7 @@ func TestBDConfigurator_TwoBVI(t *testing.T) {
 	}
 
 	err := plugin.ConfigureBridgeDomain(bdData)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(BeNil())
 
 	// Check for missing index after failed creation
 	_, _, found := plugin.GetBdIndexes().LookupIdx("bd1")

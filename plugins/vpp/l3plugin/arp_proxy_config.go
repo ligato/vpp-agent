@@ -15,11 +15,11 @@
 package l3plugin
 
 import (
-	"fmt"
 	"net"
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -59,328 +59,290 @@ type ProxyArpConfigurator struct {
 }
 
 // Init VPP channel and vppcalls handler
-func (plugin *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
+func (c *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	enableStopwatch bool) (err error) {
 	// Logger
-	plugin.log = logger.NewLogger("-l3-proxy-arp-conf")
-	plugin.log.Debugf("Initializing proxy ARP configurator")
+	c.log = logger.NewLogger("-l3-proxy-arp-conf")
 
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
-		plugin.stopwatch = measure.NewStopwatch("ARP-proxy-configurator", plugin.log)
+		c.stopwatch = measure.NewStopwatch("ARP-proxy-configurator", c.log)
 	}
 
 	// Mappings
-	plugin.ifIndexes = swIfIndexes
-	plugin.pArpIfIndexes = nametoidx.NewNameToIdx(plugin.log, "proxyarp_if_indices", nil)
-	plugin.pArpRngIndexes = nametoidx.NewNameToIdx(plugin.log, "proxyarp_rng_indices", nil)
-	plugin.pArpIndexSeq = 1
+	c.ifIndexes = swIfIndexes
+	c.pArpIfIndexes = nametoidx.NewNameToIdx(c.log, "proxyarp_if_indices", nil)
+	c.pArpRngIndexes = nametoidx.NewNameToIdx(c.log, "proxyarp_rng_indices", nil)
+	c.pArpIndexSeq = 1
 
 	// VPP channel
-	plugin.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return err
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handler
-	plugin.pArpHandler = vppcalls.NewProxyArpVppHandler(plugin.vppChan, plugin.ifIndexes, plugin.log, plugin.stopwatch)
+	c.pArpHandler = vppcalls.NewProxyArpVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+
+	c.log.Info("Proxy ARP configurator initialized")
 
 	return nil
 }
 
 // Close VPP channel
-func (plugin *ProxyArpConfigurator) Close() error {
-	return safeclose.Close(plugin.vppChan)
+func (c *ProxyArpConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose Proxy ARP configurator: %v", err))
+	}
+	return nil
 }
 
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
-func (plugin *ProxyArpConfigurator) clearMapping() {
-	plugin.pArpIfIndexes.Clear()
-	plugin.pArpRngIndexes.Clear()
+func (c *ProxyArpConfigurator) clearMapping() {
+	c.pArpIfIndexes.Clear()
+	c.pArpRngIndexes.Clear()
+	c.log.Debugf("Proxy ARP configurator mapping cleared")
 }
 
 // GetArpIfIndexes exposes list of proxy ARP interface indexes
-func (plugin *ProxyArpConfigurator) GetArpIfIndexes() idxvpp.NameToIdxRW {
-	return plugin.pArpIfIndexes
+func (c *ProxyArpConfigurator) GetArpIfIndexes() idxvpp.NameToIdxRW {
+	return c.pArpIfIndexes
 }
 
 // GetArpRngIndexes exposes list of proxy ARP range indexes
-func (plugin *ProxyArpConfigurator) GetArpRngIndexes() idxvpp.NameToIdxRW {
-	return plugin.pArpRngIndexes
+func (c *ProxyArpConfigurator) GetArpRngIndexes() idxvpp.NameToIdxRW {
+	return c.pArpRngIndexes
 }
 
 // GetArpIfCache exposes list of cached ARP interfaces
-func (plugin *ProxyArpConfigurator) GetArpIfCache() []string {
-	return plugin.pArpIfCache
+func (c *ProxyArpConfigurator) GetArpIfCache() []string {
+	return c.pArpIfCache
 }
 
-func (plugin *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
-	plugin.log.Infof("Enabling interfaces from proxy ARP config %s", pArpIf.Label)
-
+// AddInterface implements proxy arp handler.
+func (c *ProxyArpConfigurator) AddInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
 	for _, proxyArpIf := range pArpIf.Interfaces {
 		ifName := proxyArpIf.Name
 		if ifName == "" {
-			err := fmt.Errorf("proxy ARP interface not set")
-			plugin.log.Error(err)
-			return err
+			return errors.Errorf("proxy ARP %s interface name not set", pArpIf.Label)
 		}
 		// Check interface, cache if does not exist
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(ifName)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(ifName)
 		if !found {
-			plugin.log.Debugf("Interface %s does not exist, moving to cache", ifName)
-			plugin.pArpIfCache = append(plugin.pArpIfCache, ifName)
+			c.pArpIfCache = append(c.pArpIfCache, ifName)
+			c.log.Debugf("Interface %s does not exist, moving to cache", ifName)
 			continue
 		}
 
 		// Call VPP API to enable interface for proxy ARP
-		if err := plugin.pArpHandler.EnableProxyArpInterface(ifIdx); err == nil {
-			plugin.log.Debugf("Interface %s enabled for proxy ARP", ifName)
-		} else {
-			err := fmt.Errorf("enabling interface %s for proxy ARP failed: %v", ifName, err)
-			plugin.log.Error(err)
-			return err
+		if err := c.pArpHandler.EnableProxyArpInterface(ifIdx); err != nil {
+			return errors.Errorf("enabling interface %s for proxy ARP failed: %v", ifName, err)
 		}
 	}
 	// Register
-	plugin.pArpIfIndexes.RegisterName(pArpIf.Label, plugin.pArpIndexSeq, nil)
-	plugin.pArpIndexSeq++
-	plugin.log.Debugf("Proxy ARP interface configuration %s registered", pArpIf.Label)
+	c.pArpIfIndexes.RegisterName(pArpIf.Label, c.pArpIndexSeq, nil)
+	c.pArpIndexSeq++
+	c.log.Debugf("Proxy ARP configuration %s registered", pArpIf.Label)
+
+	c.log.Infof("Interfaces enabled for proxy ARP config %s", pArpIf.Label)
 
 	return nil
 }
 
 // ModifyInterface does nothing
-func (plugin *ProxyArpConfigurator) ModifyInterface(newPArpIf, oldPArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
-	plugin.log.Infof("Modifying proxy ARP interface configuration %s", newPArpIf.Label)
-
-	toEnable, toDisable := plugin.calculateIfDiff(newPArpIf.Interfaces, oldPArpIf.Interfaces)
+func (c *ProxyArpConfigurator) ModifyInterface(newPArpIf, oldPArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
+	toEnable, toDisable := calculateIfDiff(newPArpIf.Interfaces, oldPArpIf.Interfaces)
 	// Disable obsolete interfaces
 	for _, ifName := range toDisable {
 		// Check cache
-		for idx, cachedIf := range plugin.pArpIfCache {
+		for idx, cachedIf := range c.pArpIfCache {
 			if cachedIf == ifName {
-				plugin.pArpIfCache = append(plugin.pArpIfCache[:idx], plugin.pArpIfCache[idx+1:]...)
-				plugin.log.Debugf("Proxy ARP interface %s removed from cache", ifName)
+				c.pArpIfCache = append(c.pArpIfCache[:idx], c.pArpIfCache[idx+1:]...)
+				c.log.Debugf("Proxy ARP interface %s removed from cache", ifName)
 				continue
 			}
 		}
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(ifName)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(ifName)
 		// If interface is not found, there is nothing to do
 		if found {
-			if err := plugin.pArpHandler.DisableProxyArpInterface(ifIdx); err == nil {
-				plugin.log.Debugf("Interface %s disabled for proxy ARP", ifName)
-			} else {
-				err = fmt.Errorf("disabling interface %s for proxy ARP failed: %v", ifName, err)
-				plugin.log.Error(err)
-				return err
+			if err := c.pArpHandler.DisableProxyArpInterface(ifIdx); err != nil {
+				return errors.Errorf("failed to disable interface %s for proxy ARP: %v", ifName, err)
 			}
 		}
 	}
 	// Enable new interfaces
 	for _, ifName := range toEnable {
 		// Put to cache if interface is missing
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(ifName)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(ifName)
 		if !found {
-			plugin.log.Debugf("Interface %s does not exist, moving to cache", ifName)
-			plugin.pArpIfCache = append(plugin.pArpIfCache, ifName)
+			c.pArpIfCache = append(c.pArpIfCache, ifName)
+			c.log.Debugf("Interface %s does not exist, moving to cache", ifName)
 			continue
 		}
 		// Configure
-		if err := plugin.pArpHandler.EnableProxyArpInterface(ifIdx); err == nil {
-			plugin.log.Debugf("Interface %s enabled for proxy ARP", ifName)
-		} else {
-			err := fmt.Errorf("enabling interface %s for proxy ARP failed: %v", ifName, err)
-			plugin.log.Error(err)
-			return err
+		if err := c.pArpHandler.EnableProxyArpInterface(ifIdx); err != nil {
+			return errors.Errorf("failed to enable interface %s for proxy ARP: %v", ifName, err)
 		}
 	}
 
-	plugin.log.Debugf("Proxy ARP interface config %s modification done", newPArpIf.Label)
+	c.log.Infof("Modifying proxy ARP interface configuration %s", newPArpIf.Label)
+
 	return nil
 }
 
 // DeleteInterface disables proxy ARP interface or removes it from cache
-func (plugin *ProxyArpConfigurator) DeleteInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
-	plugin.log.Infof("Disabling interfaces from proxy ARP config %s", pArpIf.Label)
-
+func (c *ProxyArpConfigurator) DeleteInterface(pArpIf *l3.ProxyArpInterfaces_InterfaceList) error {
 ProxyArpIfLoop:
 	for _, proxyArpIf := range pArpIf.Interfaces {
 		ifName := proxyArpIf.Name
 		// Check if interface is cached
-		for idx, cachedIf := range plugin.pArpIfCache {
+		for idx, cachedIf := range c.pArpIfCache {
 			if cachedIf == ifName {
-				plugin.pArpIfCache = append(plugin.pArpIfCache[:idx], plugin.pArpIfCache[idx+1:]...)
-				plugin.log.Debugf("Proxy ARP interface %s removed from cache", ifName)
+				c.pArpIfCache = append(c.pArpIfCache[:idx], c.pArpIfCache[idx+1:]...)
+				c.log.Debugf("Proxy ARP interface %s removed from cache", ifName)
 				continue ProxyArpIfLoop
 			}
 		}
 		// Look for interface
-		ifIdx, _, found := plugin.ifIndexes.LookupIdx(ifName)
+		ifIdx, _, found := c.ifIndexes.LookupIdx(ifName)
 		if !found {
 			// Interface does not exist, nothing more to do
 			continue
 		}
 		// Call VPP API to disable interface for proxy ARP
-		if err := plugin.pArpHandler.DisableProxyArpInterface(ifIdx); err == nil {
-			plugin.log.Debugf("Interface %s disabled for proxy ARP", ifName)
-		} else {
-			err = fmt.Errorf("disabling interface %s for proxy ARP failed: %v", ifName, err)
-			plugin.log.Error(err)
-			return err
+		if err := c.pArpHandler.DisableProxyArpInterface(ifIdx); err != nil {
+			return errors.Errorf("failed to enable interface %s for proxy ARP: %v", ifName, err)
 		}
 	}
 
 	// Un-register
-	plugin.pArpIfIndexes.UnregisterName(pArpIf.Label)
-	plugin.log.Debugf("Proxy ARP interface config %s un-registered", pArpIf.Label)
+	c.pArpIfIndexes.UnregisterName(pArpIf.Label)
+	c.log.Debugf("Proxy ARP interface config %s unregistered", pArpIf.Label)
+
+	c.log.Infof("Disabling interfaces from proxy ARP config %s", pArpIf.Label)
+
 	return nil
 }
 
 // AddRange configures new IP range for proxy ARP
-func (plugin *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.log.Infof("Setting up proxy ARP IP range config %s", pArpRng.Label)
-
+func (c *ProxyArpConfigurator) AddRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
 	for _, proxyArpRange := range pArpRng.Ranges {
 		// Prune addresses
-		firstIP, err := plugin.pruneIP(proxyArpRange.FirstIp)
+		firstIP, err := c.pruneIP(proxyArpRange.FirstIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
-		lastIP, err := plugin.pruneIP(proxyArpRange.LastIp)
+		lastIP, err := c.pruneIP(proxyArpRange.LastIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
 		// Convert to byte representation
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := plugin.pArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err == nil {
-			plugin.log.Debugf("Address range %s - %s configured for proxy ARP", firstIP, lastIP)
-		} else {
-			err := fmt.Errorf("failed to configure proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
-			plugin.log.Error(err)
-			return err
+		if err := c.pArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err != nil {
+			return errors.Errorf("failed to configure proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
 		}
 	}
 
 	// Register
-	plugin.pArpRngIndexes.RegisterName(pArpRng.Label, plugin.pArpIndexSeq, nil)
-	plugin.pArpIndexSeq++
-	plugin.log.Debugf("Proxy ARP range config %s registered", pArpRng.Label)
+	c.pArpRngIndexes.RegisterName(pArpRng.Label, c.pArpIndexSeq, nil)
+	c.pArpIndexSeq++
+	c.log.Debugf("Proxy ARP range config %s registered", pArpRng.Label)
+
+	c.log.Infof("Proxy ARP IP range config %s set", pArpRng.Label)
+
 	return nil
 }
 
 // ModifyRange does nothing
-func (plugin *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.log.Infof("Modifying proxy ARP range config %s", oldPArpRng.Label)
-
-	toAdd, toDelete := plugin.calculateRngDiff(newPArpRng.Ranges, oldPArpRng.Ranges)
+func (c *ProxyArpConfigurator) ModifyRange(newPArpRng, oldPArpRng *l3.ProxyArpRanges_RangeList) error {
+	toAdd, toDelete := calculateRngDiff(newPArpRng.Ranges, oldPArpRng.Ranges)
 	// Remove old ranges
 	for _, rng := range toDelete {
 		// Prune
-		firstIP, err := plugin.pruneIP(rng.FirstIp)
+		firstIP, err := c.pruneIP(rng.FirstIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
-		lastIP, err := plugin.pruneIP(rng.LastIp)
+		lastIP, err := c.pruneIP(rng.LastIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
 		// Convert to byte representation
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := plugin.pArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err == nil {
-			plugin.log.Debugf("Address range %s - %s removed from proxy ARP setup", firstIP, lastIP)
-		} else {
-			err = fmt.Errorf("failed to remove proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
-			plugin.log.Error(err)
-			return err
+		if err := c.pArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err != nil {
+			return errors.Errorf("failed to remove proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
 		}
 	}
 	// Add new ranges
 	for _, rng := range toAdd {
 		// Prune addresses
-		firstIP, err := plugin.pruneIP(rng.FirstIp)
+		firstIP, err := c.pruneIP(rng.FirstIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
-		lastIP, err := plugin.pruneIP(rng.LastIp)
+		lastIP, err := c.pruneIP(rng.LastIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
 		// Convert to byte representation
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := plugin.pArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err == nil {
-			plugin.log.Debugf("Address range %s - %s configured for proxy ARP", firstIP, lastIP)
-		} else {
-			err := fmt.Errorf("failed to configure proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
-			plugin.log.Error(err)
-			return err
+		if err := c.pArpHandler.AddProxyArpRange(bFirstIP, bLastIP); err != nil {
+			return errors.Errorf("failed to configure proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
 		}
 	}
 
-	plugin.log.Debugf("Proxy ARP range config %s modification done", newPArpRng.Label)
+	c.log.Infof("Proxy ARP range config %s modified", oldPArpRng.Label)
+
 	return nil
 }
 
-func (plugin *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
-	plugin.log.Infof("Removing proxy ARP IP range config %s", pArpRng.Label)
-
+// DeleteRange implements proxy arp handler.
+func (c *ProxyArpConfigurator) DeleteRange(pArpRng *l3.ProxyArpRanges_RangeList) error {
 	for _, proxyArpRange := range pArpRng.Ranges {
 		// Prune addresses
-		firstIP, err := plugin.pruneIP(proxyArpRange.FirstIp)
+		firstIP, err := c.pruneIP(proxyArpRange.FirstIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
-		lastIP, err := plugin.pruneIP(proxyArpRange.LastIp)
+		lastIP, err := c.pruneIP(proxyArpRange.LastIp)
 		if err != nil {
-			plugin.log.Error(err)
 			return err
 		}
 		// Convert to byte representation
 		bFirstIP := net.ParseIP(firstIP).To4()
 		bLastIP := net.ParseIP(lastIP).To4()
 		// Call VPP API to configure IP range for proxy ARP
-		if err := plugin.pArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err == nil {
-			plugin.log.Debugf("Address range %s - %s removed from proxy ARP setup", firstIP, lastIP)
-		} else {
-			err = fmt.Errorf("failed to remove proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
-			plugin.log.Error(err)
-			return err
+		if err := c.pArpHandler.DeleteProxyArpRange(bFirstIP, bLastIP); err != nil {
+			return errors.Errorf("failed to remove proxy ARP address range %s - %s: %v", firstIP, lastIP, err)
 		}
 	}
 
 	// Un-register
-	plugin.pArpRngIndexes.UnregisterName(pArpRng.Label)
-	plugin.log.Debugf("Proxy ARP range config %s un-registered", pArpRng.Label)
+	c.pArpRngIndexes.UnregisterName(pArpRng.Label)
+	c.log.Debugf("Proxy ARP range config %s unregistered", pArpRng.Label)
+
+	c.log.Infof("Proxy ARP IP range config %s removed", pArpRng.Label)
+
 	return nil
 }
 
 // ResolveCreatedInterface handles new registered interface for proxy ARP
-func (plugin *ProxyArpConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
-	plugin.log.Debugf("Proxy ARP: handling new interface %s", ifName)
-
+func (c *ProxyArpConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) error {
 	// Look for interface in cache
-	for idx, cachedIf := range plugin.pArpIfCache {
+	for idx, cachedIf := range c.pArpIfCache {
 		if cachedIf == ifName {
 			// Configure cached interface
-			if err := plugin.pArpHandler.EnableProxyArpInterface(ifIdx); err != nil {
-				plugin.log.Error(err)
-				return err
+			if err := c.pArpHandler.EnableProxyArpInterface(ifIdx); err != nil {
+				return errors.Errorf("failed to enable registered interface %s for proxy ARP: %v", ifName, err)
 			}
 			// Remove from cache
-			plugin.pArpIfCache = append(plugin.pArpIfCache[:idx], plugin.pArpIfCache[idx+1:]...)
-			plugin.log.Debugf("Proxy ARP interface %s configured and removed from cache", ifName)
+			c.pArpIfCache = append(c.pArpIfCache[:idx], c.pArpIfCache[idx+1:]...)
+			c.log.Debugf("Registered interface %s configured for Proxy ARP and removed from cache", ifName)
 			return nil
 		}
 	}
@@ -389,35 +351,33 @@ func (plugin *ProxyArpConfigurator) ResolveCreatedInterface(ifName string, ifIdx
 }
 
 // ResolveDeletedInterface handles new registered interface for proxy ARP
-func (plugin *ProxyArpConfigurator) ResolveDeletedInterface(ifName string) error {
-	plugin.log.Debugf("Proxy ARP: handling removed interface %s", ifName)
-
+func (c *ProxyArpConfigurator) ResolveDeletedInterface(ifName string) error {
 	// Check if interface was enabled for proxy ARP
-	_, _, found := plugin.pArpIfIndexes.LookupIdx(ifName)
+	_, _, found := c.pArpIfIndexes.LookupIdx(ifName)
 	if found {
 		// Put interface to cache (no need to call delete)
-		plugin.pArpIfCache = append(plugin.pArpIfCache, ifName)
-		plugin.log.Debugf("Removed interface %s was configured for proxy ARP, added to cache", ifName)
+		c.pArpIfCache = append(c.pArpIfCache, ifName)
+		c.log.Debugf("Unregistered interface %s removed from proxy ARP cache", ifName)
 	}
 
 	return nil
 }
 
 // Remove IP mask if set
-func (plugin *ProxyArpConfigurator) pruneIP(ip string) (string, error) {
+func (c *ProxyArpConfigurator) pruneIP(ip string) (string, error) {
 	ipParts := strings.Split(ip, "/")
 	if len(ipParts) == 1 {
 		return ipParts[0], nil
 	}
 	if len(ipParts) == 2 {
-		plugin.log.Warnf("Proxy ARP range: removing unnecessary mask from IP address %s", ip)
+		c.log.Warnf("Proxy ARP range: removing unnecessary mask from IP address %s", ip)
 		return ipParts[0], nil
 	}
-	return ip, fmt.Errorf("proxy ARP range: invalid IP address format: %s", ip)
+	return ip, errors.Errorf("proxy ARP range: invalid IP address format: %s", ip)
 }
 
 // Calculate difference between old and new interfaces
-func (plugin *ProxyArpConfigurator) calculateIfDiff(newIfs, oldIfs []*l3.ProxyArpInterfaces_InterfaceList_Interface) (toEnable, toDisable []string) {
+func calculateIfDiff(newIfs, oldIfs []*l3.ProxyArpInterfaces_InterfaceList_Interface) (toEnable, toDisable []string) {
 	// Find missing new interfaces
 	for _, newIf := range newIfs {
 		var found bool
@@ -446,7 +406,7 @@ func (plugin *ProxyArpConfigurator) calculateIfDiff(newIfs, oldIfs []*l3.ProxyAr
 }
 
 // Calculate difference between old and new ranges
-func (plugin *ProxyArpConfigurator) calculateRngDiff(newRngs, oldRngs []*l3.ProxyArpRanges_RangeList_Range) (toAdd, toDelete []*l3.ProxyArpRanges_RangeList_Range) {
+func calculateRngDiff(newRngs, oldRngs []*l3.ProxyArpRanges_RangeList_Range) (toAdd, toDelete []*l3.ProxyArpRanges_RangeList_Range) {
 	// Find missing ranges
 	for _, newRng := range newRngs {
 		var found bool
@@ -472,5 +432,18 @@ func (plugin *ProxyArpConfigurator) calculateRngDiff(newRngs, oldRngs []*l3.Prox
 		}
 	}
 	return
+}
 
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *ProxyArpConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

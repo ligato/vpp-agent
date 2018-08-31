@@ -1,4 +1,4 @@
-ARG BASE_IMG=ubuntu:16.04
+ARG BASE_IMG
 
 FROM golang as verify-stage
 
@@ -34,7 +34,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     autoconf automake build-essential ca-certificates curl gdb git \
     inetutils-traceroute iproute2 ipsec-tools iputils-ping \
-    libapr1 libmbedcrypto0 libmbedtls10 libmbedx509-0 libtool \
+    libapr1 libmbedcrypto1 libmbedtls10 libmbedx509-0 libtool \
     make mc nano netcat python software-properties-common sudo supervisor \
     telnet unzip wget \
  && rm -rf /var/lib/apt/lists/*
@@ -54,7 +54,7 @@ RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
 WORKDIR /opt/vpp-agent/dev
 
-ARG VPP_REPO_URL=https://gerrit.fd.io/r/vpp.git
+ARG VPP_REPO_URL
 ARG VPP_COMMIT
 
 ARG VPP_DEBUG_DEB
@@ -77,7 +77,7 @@ RUN set -eux; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
 # install Go
-ENV GOLANG_VERSION 1.10.3
+ENV GOLANG_VERSION 1.11
 ARG GOLANG_OS_ARCH=linux-amd64
 RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \
