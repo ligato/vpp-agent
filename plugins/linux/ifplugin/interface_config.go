@@ -703,12 +703,12 @@ func (c *LinuxInterfaceConfigurator) moveTapInterfaceToDefaultNamespace(ifConfig
 		}
 		err = c.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
 		if err != nil {
-			return errors.Errorf("failed to set Linux TAP interface %s to default namespace %s: %v", ifConfig.Tap.TempIfName, err)
+			return errors.Errorf("failed to set Linux TAP interface %s to default namespace: %v", ifConfig.Tap.TempIfName, err)
 		}
 	} else {
 		err = c.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
 		if err != nil {
-			return errors.Errorf("failed to set Linux TAP interface %s to default namespace %s: %v", ifConfig.HostIfName, err)
+			return errors.Errorf("failed to set Linux TAP interface %s to default namespace: %v", ifConfig.HostIfName, err)
 		}
 	}
 	return nil

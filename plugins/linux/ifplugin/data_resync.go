@@ -76,7 +76,7 @@ func (c *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_
 			// If not, configure it
 			c.log.Debugf("linux interface %s resync: interface not found and will be configured", nbIf.Name)
 			if err := c.ConfigureLinuxInterface(nbIf); err != nil {
-				return errors.Errorf("linux interface %s resync error: %s", err)
+				return errors.Errorf("linux interface %s resync error: %v", nbIf.Name, err)
 			}
 		}
 	}
@@ -116,7 +116,7 @@ func (c *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_
 		if c.isLinuxIfModified(linkDataPair.nbIfData, linuxIf) {
 			c.log.Debugf("linux interface %s resync: configuration changed, interface will be modified", linkName)
 			if err := c.ModifyLinuxInterface(linkDataPair.nbIfData, linuxIf); err != nil {
-				return errors.Errorf("linux interface %s resync error: %s", err)
+				return errors.Errorf("linux interface %s resync error: %v", linkName, err)
 			}
 		} else {
 			c.log.Debugf("linux interface %s resync: data unchanged", linkName)
