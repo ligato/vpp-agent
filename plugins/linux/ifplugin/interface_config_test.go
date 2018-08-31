@@ -15,6 +15,7 @@
 package ifplugin_test
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -462,15 +463,16 @@ func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
 
 // Configure Tap with hostIfName
 func TestLinuxConfiguratorAddTap_TempIfName(t *testing.T) {
-	plugin, _, nsMock, msChan, msNotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, msChan, msNotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	ifMock.When("GetLinkByName").ThenReturn(errors.New(ifplugin.LinkNotFoundErr))
 
 	data := getTapInterface("tap1", "", "TempIfName")
 	err := plugin.ConfigureLinuxInterface(data)
-	Expect(err).Should(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred())
 	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	// Verify registration
@@ -481,15 +483,16 @@ func TestLinuxConfiguratorAddTap_TempIfName(t *testing.T) {
 
 // Configure Tap with hostIfName
 func TestLinuxConfiguratorAddTap_HostIfName(t *testing.T) {
-	plugin, _, nsMock, msChan, msNotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, msChan, msNotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	ifMock.When("GetLinkByName").ThenReturn(errors.New(ifplugin.LinkNotFoundErr))
 
 	data := getTapInterface("tap1", "HostIfName", "")
 	err := plugin.ConfigureLinuxInterface(data)
-	Expect(err).Should(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred())
 	Expect(plugin.GetLinuxInterfaceIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	Expect(plugin.GetCachedLinuxIfIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	// Verify registration
@@ -497,8 +500,6 @@ func TestLinuxConfiguratorAddTap_HostIfName(t *testing.T) {
 	Expect(found).To(BeTrue())
 	Expect(metadata).ToNot(BeNil())
 }
-
-// Todo
 
 /* Interface Test Setup */
 
@@ -525,6 +526,8 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 
 	return plugin, linuxMock, nsMock, msChan, ifMicroserviceNotif
 }
+
+// Todo
 
 func ifTestTeardown(plugin *ifplugin.LinuxInterfaceConfigurator,
 	msChan chan *nsplugin.MicroserviceCtx, msNotif chan *nsplugin.MicroserviceEvent) {

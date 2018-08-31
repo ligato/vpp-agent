@@ -1518,7 +1518,7 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govpp.Connection, *ifplug
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

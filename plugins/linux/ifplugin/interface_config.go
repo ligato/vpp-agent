@@ -37,6 +37,9 @@ import (
 	vppIf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
+// LinkNotFoundErr represents netlink error return value from 'GetLinkByName' if interface does not exist
+const LinkNotFoundErr = "Link not found"
+
 // LinuxInterfaceConfig is used to cache the configuration of Linux interfaces.
 type LinuxInterfaceConfig struct {
 	config *interfaces.LinuxInterfaces_Interface
@@ -345,7 +348,7 @@ func (c *LinuxInterfaceConfigurator) configureTapInterface(hostIfName string, li
 				Data:  ifConfig.config,
 			})
 			c.pIfCachedConfigSeq++
-			c.log.Debugf("linux tap interface %s does not exist, cannot configure (moved to cache)", hostIfName)
+			c.log.Debugf("creating new Linux Tap interface %v configuration entry", hostIfName)
 		} else {
 			c.log.Infof("there is no linux tap configuration entry for interface %v", hostIfName)
 			return nil
@@ -360,10 +363,22 @@ func (c *LinuxInterfaceConfigurator) configureTapInterface(hostIfName string, li
 		return nil
 	}
 
-	// Search default namespace for appropriate interface
-	linuxIfs, err := c.ifHandler.GetLinkList()
-	if err != nil {
-		return errors.Errorf("configure linux tap %s: failed to read linux interfaces: %v", linuxIf.Name, err)
+	// At this point, agent knows that VPP TAP interface exists, so let's find out its linux side. First, check
+	// if temporary name is defined
+	if ifConfig.config.Tap == nil || ifConfig.config.Tap.TempIfName == "" {
+		// In such a case, set temp name as host (look for interface named as host name)
+		ifConfig.config.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
+			TempIfName: ifConfig.config.HostIfName,
+		}
+	}
+	// Now look for interface
+	_, err := c.ifHandler.GetLinkByName(ifConfig.config.Tap.TempIfName)
+	if err != nil && err.Error() == LinkNotFoundErr {
+		c.log.Debugf("linux tap interface %s is registered but not ready yet, configuration postponed",
+			ifConfig.config.Tap.TempIfName)
+		return nil
+	} else if err != nil {
+		return errors.Errorf("failed to read TAP interface %s from linux: %v", ifConfig.config.Tap.TempIfName, err)
 	}
 
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
@@ -374,32 +389,7 @@ func (c *LinuxInterfaceConfigurator) configureTapInterface(hostIfName string, li
 			ifConfig.config.Name, ifConfig.config.Namespace)
 	}
 
-	// Check if TAP temporary name is defined
-	if ifConfig.config.Tap == nil || ifConfig.config.Tap.TempIfName == "" {
-		// In such a case, set temp name as host (look for interface named as host name)
-		ifConfig.config.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
-			TempIfName: ifConfig.config.HostIfName,
-		}
-	}
-
-	// Try to find temp interface in default namespace.
-	var found bool
-	for _, linuxIf := range linuxIfs {
-		if ifConfig.config.Tap.TempIfName == linuxIf.Attrs().Name {
-			if linuxIf.Type() == tap {
-				found = true
-				break
-			}
-			return errors.Errorf("configure linux tap %s: interface found (host name %s), but it is not the tap interface type",
-				ifConfig.config.Name, ifConfig.config.HostIfName)
-		}
-	}
-	if !found {
-		return errors.Errorf("configure linux tap %s: interface (host name %s) not found",
-			ifConfig.config.Name, ifConfig.config.HostIfName)
-	}
-
-	c.ifCachedConfigs.UnregisterName(ifConfig.config.HostIfName)
+	c.ifCachedConfigs.UnregisterName(hostIfName)
 	c.log.Debugf("cached linux tap interface %s unregistered", ifConfig.config.Name)
 
 	return c.configureLinuxInterface(nsMgmtCtx, ifConfig.config)
@@ -687,7 +677,7 @@ func (c *LinuxInterfaceConfigurator) moveTapInterfaceToDefaultNamespace(ifConfig
 	if ifConfig.Type == interfaces.LinuxInterfaces_AUTO_TAP {
 		// Rename to its original name (if possible)
 		if ifConfig.Tap == nil || ifConfig.Tap.TempIfName == "" {
-			c.log.Warnf("Cannot restore linux tap interface %s, original name (temp) is not available", ifConfig.HostIfName)
+			c.log.Debugf("Cannot restore linux tap interface %s, original name (temp) is not available", ifConfig.HostIfName)
 			ifConfig.Tap = &interfaces.LinuxInterfaces_Interface_Tap{
 				TempIfName: ifConfig.HostIfName,
 			}

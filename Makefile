@@ -119,30 +119,11 @@ generate-proto: get-proto-generators
 # Get generator tools
 get-binapi-generators:
 	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
-	go install ./vendor/github.com/ungerik/pkgreflect
 
 # Generate binary api
 generate-binapi: get-binapi-generators
 	@echo "=> generating binapi"
 	cd plugins/vpp/binapi && go generate
-	cd plugins/vpp/binapi/acl && pkgreflect
-	cd plugins/vpp/binapi/af_packet && pkgreflect
-	cd plugins/vpp/binapi/bfd && pkgreflect
-	cd plugins/vpp/binapi/dhcp && pkgreflect
-	cd plugins/vpp/binapi/interfaces && pkgreflect
-	cd plugins/vpp/binapi/ip && pkgreflect
-	cd plugins/vpp/binapi/ipsec && pkgreflect
-	cd plugins/vpp/binapi/l2 && pkgreflect
-	cd plugins/vpp/binapi/memif && pkgreflect
-	cd plugins/vpp/binapi/nat && pkgreflect
-	cd plugins/vpp/binapi/session && pkgreflect
-	cd plugins/vpp/binapi/sr && pkgreflect
-	cd plugins/vpp/binapi/stats && pkgreflect
-	cd plugins/vpp/binapi/stn && pkgreflect
-	cd plugins/vpp/binapi/tap && pkgreflect
-	cd plugins/vpp/binapi/tapv2 && pkgreflect
-	cd plugins/vpp/binapi/vpe && pkgreflect
-	cd plugins/vpp/binapi/vxlan && pkgreflect
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
 

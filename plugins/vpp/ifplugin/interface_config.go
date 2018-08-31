@@ -112,7 +112,7 @@ func (c *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govpp
 
 	// DHCP channel
 	c.DhcpChan = make(chan govppapi.Message, 1)
-	if _, err := c.vppCh.SubscribeNotification(c.DhcpChan, dhcp.NewDHCPComplEvent); err != nil {
+	if _, err := c.vppCh.SubscribeNotification(c.DhcpChan, &dhcp.DHCPComplEvent{}); err != nil {
 		return err
 	}
 

@@ -73,9 +73,9 @@ type InterfaceStateUpdater struct {
 	access  sync.Mutex                                 // lock for the state data map
 
 	vppCh                   govppapi.Channel
-	vppNotifSubs            *govppapi.NotifSubscription
-	vppCountersSubs         *govppapi.NotifSubscription
-	vppCombinedCountersSubs *govppapi.NotifSubscription
+	vppNotifSubs            govppapi.SubscriptionCtx
+	vppCountersSubs         govppapi.SubscriptionCtx
+	vppCombinedCountersSubs govppapi.SubscriptionCtx
 	notifChan               chan govppapi.Message
 	swIdxChan               chan ifaceidx.SwIfIdxDto
 
@@ -131,17 +131,17 @@ func (c *InterfaceStateUpdater) AfterInit() error {
 func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	var err error
 	// subscribe for receiving SwInterfaceEvents notifications
-	if c.vppNotifSubs, err = c.vppCh.SubscribeNotification(c.notifChan, interfaces.NewSwInterfaceEvent); err != nil {
+	if c.vppNotifSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &interfaces.SwInterfaceEvent{}); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
 	}
 
 	// subscribe for receiving VnetInterfaceSimpleCounters notifications
-	if c.vppCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, stats.NewVnetInterfaceSimpleCounters); err != nil {
+	if c.vppCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &stats.VnetInterfaceSimpleCounters{}); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_simple_counters): %v", err)
 	}
 
 	// subscribe for receiving VnetInterfaceCombinedCounters notifications
-	if c.vppCombinedCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, stats.NewVnetInterfaceCombinedCounters); err != nil {
+	if c.vppCombinedCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &stats.VnetInterfaceCombinedCounters{}); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_combined_counters): %v", err)
 	}
 
@@ -180,17 +180,17 @@ func (c *InterfaceStateUpdater) Close() error {
 	c.wg.Wait()
 
 	if c.vppNotifSubs != nil {
-		if err := c.vppCh.UnsubscribeNotification(c.vppNotifSubs); err != nil {
+		if err := c.vppNotifSubs.Unsubscribe(); err != nil {
 			return c.LogError(errors.Errorf("failed to unsubscribe interface state notification on close: %v", err))
 		}
 	}
 	if c.vppCountersSubs != nil {
-		if err := c.vppCh.UnsubscribeNotification(c.vppCountersSubs); err != nil {
+		if err := c.vppCountersSubs.Unsubscribe(); err != nil {
 			return c.LogError(errors.Errorf("failed to unsubscribe interface state counters on close: %v", err))
 		}
 	}
 	if c.vppCombinedCountersSubs != nil {
-		if err := c.vppCh.UnsubscribeNotification(c.vppCombinedCountersSubs); err != nil {
+		if err := c.vppCombinedCountersSubs.Unsubscribe(); err != nil {
 			return c.LogError(errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err))
 		}
 	}
@@ -280,7 +280,7 @@ func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 	*intf.InterfacesState_Interface, bool) {
 	ifName, _, found := c.swIfIndexes.LookupName(ifIdx)
 	if !found {
-		c.log.Warnf("Interface state data structure lookup for %s interrupted, not found in the mapping (not registered)", ifIdx)
+		c.log.Debugf("Interface state data structure lookup for %d interrupted, not registered yet", ifIdx)
 		return nil, found
 	}
 

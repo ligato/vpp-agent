@@ -66,7 +66,9 @@ func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater
 	ctx, _ := context.WithCancel(context.Background())
 
 	// Create connection
-	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
+	mockCtx := &vppcallmock.TestCtx{
+		MockVpp: mock.NewVppAdapter(),
+	}
 	connection, err := core.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
