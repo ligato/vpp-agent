@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:090b939a424724c096b5002d62ea42d9a69dc5fecc3eae0218955a5c6e4070ac"
+  digest = "1:d7cf8894d7f43182ef489ed92fde3552ad8e87f2a8b08525b3d6190b8acf4a39"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -16,7 +16,7 @@
     "core",
   ]
   pruneopts = "UT"
-  revision = "a3bb834db727a3ac9a1ffcfeae9265e5dead851f"
+  revision = "6b350c65fe0ec845cecf58bfb41ffc63dc9c04f7"
   source = "github.com/FDio/govpp"
 
 [[projects]]
@@ -775,14 +775,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0d7055e14293468d8a849d858d43e86d4d1be9f5361ec23813b55393b299f558"
-  name = "github.com/ungerik/pkgreflect"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "bfeb2a93186329a0bb03885bea902e86842f633d"
-
-[[projects]]
-  branch = "master"
   digest = "1:e833d953c8467158fd0250a053ec390dd899945d4c6b87b07920ad431fc80dfe"
   name = "github.com/unrolled/render"
   packages = ["."]
@@ -997,7 +989,6 @@
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
-    "github.com/ungerik/pkgreflect",
     "github.com/unrolled/render",
     "github.com/vishvananda/netlink",
     "github.com/vishvananda/netns",

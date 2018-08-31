@@ -391,7 +391,7 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

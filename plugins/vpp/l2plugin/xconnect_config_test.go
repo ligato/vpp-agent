@@ -594,7 +594,7 @@ func TestConfigureXConnectPairResolveDeletedRcInterface(t *testing.T) {
 func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugin.XConnectConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

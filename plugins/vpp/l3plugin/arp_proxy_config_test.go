@@ -404,7 +404,7 @@ func TestArpProxyResolveDeletedInterface(t *testing.T) {
 func proxyarpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plugin.ProxyArpConfigurator, ifaceidx.SwIfIndex) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

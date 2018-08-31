@@ -102,9 +102,9 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	if found {
-		govpp.SetHealthCheckProbeInterval(plugin.config.HealthCheckProbeInterval)
-		govpp.SetHealthCheckReplyTimeout(plugin.config.HealthCheckReplyTimeout)
-		govpp.SetHealthCheckThreshold(plugin.config.HealthCheckThreshold)
+		govpp.HealthCheckProbeInterval = plugin.config.HealthCheckProbeInterval
+		govpp.HealthCheckReplyTimeout = plugin.config.HealthCheckReplyTimeout
+		govpp.HealthCheckThreshold = plugin.config.HealthCheckThreshold
 	}
 
 	if plugin.vppAdapter == nil {

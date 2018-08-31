@@ -28,7 +28,7 @@ package vppapiclient
 #include <arpa/inet.h>
 #include <vpp-api/client/vppapiclient.h>
 
-extern void go_msg_callback(uint16_t msg_id, uint32_t context, void* data, size_t size);
+extern void go_msg_callback(uint16_t msg_id, void* data, size_t size);
 
 typedef struct __attribute__((__packed__)) _req_header {
     uint16_t msg_id;
@@ -38,14 +38,13 @@ typedef struct __attribute__((__packed__)) _req_header {
 
 typedef struct __attribute__((__packed__)) _reply_header {
     uint16_t msg_id;
-    uint32_t context; // currently not all reply messages contain context field
 } reply_header_t;
 
 static void
 govpp_msg_callback (unsigned char *data, int size)
 {
     reply_header_t *header = ((reply_header_t *)data);
-    go_msg_callback(ntohs(header->msg_id), ntohl(header->context), data, size);
+    go_msg_callback(ntohs(header->msg_id), data, size);
 }
 
 static int
@@ -204,10 +203,10 @@ func fileExists(name string) bool {
 }
 
 //export go_msg_callback
-func go_msg_callback(msgID C.uint16_t, context C.uint32_t, data unsafe.Pointer, size C.size_t) {
+func go_msg_callback(msgID C.uint16_t, data unsafe.Pointer, size C.size_t) {
 	// convert unsafe.Pointer to byte slice
 	slice := &reflect.SliceHeader{Data: uintptr(data), Len: int(size), Cap: int(size)}
 	byteArr := *(*[]byte)(unsafe.Pointer(slice))
 
-	vppClient.callback(uint16(msgID), uint32(context), byteArr)
+	vppClient.callback(uint16(msgID), byteArr)
 }

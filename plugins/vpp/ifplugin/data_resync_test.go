@@ -46,7 +46,7 @@ func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 
 	conn, err := govpp.Connect(ctx.MockVpp)
@@ -74,7 +74,7 @@ func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 
 	c, err := govpp.Connect(ctx.MockVpp)
@@ -104,7 +104,7 @@ func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	c, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
@@ -133,7 +133,7 @@ func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	c, err := govpp.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())

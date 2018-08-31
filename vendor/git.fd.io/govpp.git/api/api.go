@@ -58,21 +58,6 @@ type DataType interface {
 	GetCrcString() string
 }
 
-// MessageDecoder provides functionality for decoding binary data to generated API messages.
-type MessageDecoder interface {
-	// DecodeMsg decodes binary-encoded data of a message into provided Message structure.
-	DecodeMsg(data []byte, msg Message) error
-}
-
-// MessageIdentifier provides identification of generated API messages.
-type MessageIdentifier interface {
-	// GetMessageID returns message identifier of given API message.
-	GetMessageID(msg Message) (uint16, error)
-
-	// LookupByID looks up message name and crc by ID
-	LookupByID(msgID uint16) (Message, error)
-}
-
 // ChannelProvider provides the communication channel with govpp core.
 type ChannelProvider interface {
 	// NewAPIChannel returns a new channel for communication with VPP via govpp core.
@@ -86,9 +71,6 @@ type ChannelProvider interface {
 
 // Channel provides methods for direct communication with VPP channel.
 type Channel interface {
-	// GetID returns channel's ID
-	GetID() uint16
-
 	// SendRequest asynchronously sends a request to VPP. Returns a request context, that can be used to call ReceiveReply.
 	// In case of any errors by sending, the error will be delivered to ReplyChan (and returned by ReceiveReply).
 	SendRequest(msg Message) RequestCtx
@@ -101,10 +83,7 @@ type Channel interface {
 	// SubscribeNotification subscribes for receiving of the specified notification messages via provided Go channel.
 	// Note that the caller is responsible for creating the Go channel with preferred buffer size. If the channel's
 	// buffer is full, the notifications will not be delivered into it.
-	SubscribeNotification(notifChan chan Message, msgFactory func() Message) (*NotifSubscription, error)
-
-	// UnsubscribeNotification unsubscribes from receiving the notifications tied to the provided notification subscription.
-	UnsubscribeNotification(subscription *NotifSubscription) error
+	SubscribeNotification(notifChan chan Message, event Message) (SubscriptionCtx, error)
 
 	// SetReplyTimeout sets the timeout for replies from VPP. It represents the maximum time the API waits for a reply
 	// from VPP before returning an error.
@@ -114,14 +93,14 @@ type Channel interface {
 	Close()
 }
 
-// RequestCtx is helper interface which allows to receive reply on request context data
+// RequestCtx is helper interface which allows to receive reply on request.
 type RequestCtx interface {
 	// ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
 	// The reply will be decoded into the msg argument. Error will be returned if the response cannot be received or decoded.
 	ReceiveReply(msg Message) error
 }
 
-// MultiRequestCtx is helper interface which allows to receive reply on multi-request context data
+// MultiRequestCtx is helper interface which allows to receive reply on multi-request.
 type MultiRequestCtx interface {
 	// ReceiveReply receives a reply from VPP (blocks until a reply is delivered from VPP, or until an error occurs).
 	// The reply will be decoded into the msg argument. If the last reply has been already consumed, lastReplyReceived is
@@ -130,13 +109,13 @@ type MultiRequestCtx interface {
 	ReceiveReply(msg Message) (lastReplyReceived bool, err error)
 }
 
-// NotifSubscription represents a subscription for delivery of specific notification messages.
-type NotifSubscription struct {
-	NotifChan  chan Message   // channel where notification messages will be delivered to
-	MsgFactory func() Message // function that returns a new instance of the specific message that is expected as a notification
-	// TODO: use Message directly here, not a factory, eliminating need to allocation
+// SubscriptionCtx is helper interface which allows to control subscription for notification events.
+type SubscriptionCtx interface {
+	// Unsubscribe unsubscribes from receiving the notifications tied to the subscription context.
+	Unsubscribe() error
 }
 
+// map of registered messages
 var registeredMessages = make(map[string]Message)
 
 // RegisterMessage is called from generated code to register message.
