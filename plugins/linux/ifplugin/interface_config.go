@@ -159,8 +159,8 @@ func (c *LinuxInterfaceConfigurator) ConfigureLinuxInterface(linuxIf *interfaces
 		}
 	case interfaces.LinuxInterfaces_AUTO_TAP:
 		hostIfName := linuxIf.HostIfName
-		if tempIfName := linuxIf.Tap.TempIfName; tempIfName != "" {
-			hostIfName = tempIfName
+		if linuxIf.Tap != nil && linuxIf.Tap.TempIfName != "" {
+			hostIfName = linuxIf.Tap.TempIfName
 		}
 		if err := c.configureTapInterface(hostIfName, linuxIf); err != nil {
 			return err
