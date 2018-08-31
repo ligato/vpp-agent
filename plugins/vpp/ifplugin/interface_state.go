@@ -280,7 +280,7 @@ func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 	*intf.InterfacesState_Interface, bool) {
 	ifName, _, found := c.swIfIndexes.LookupName(ifIdx)
 	if !found {
-		c.log.Warnf("Interface state data structure lookup for %s interrupted, not found in the mapping (not registered)", ifIdx)
+		c.log.Debugf("Interface state data structure lookup for %d interrupted, not registered yet", ifIdx)
 		return nil, found
 	}
 
