@@ -82,12 +82,12 @@
   version = "v0.4.1"
 
 [[projects]]
-  digest = "1:4fdffd1724c105db8c394019cfc2444fd23466be04812850506437361ee5de55"
+  digest = "1:526d64d0a3ac6c24875724a9355895be56a21f89a5d3ab5ba88d91244269a7d8"
   name = "github.com/bsm/sarama-cluster"
   packages = ["."]
   pruneopts = "UT"
-  revision = "cf455bc755fe41ac9bb2861e7a961833d9c2ecc3"
-  version = "v2.1.13"
+  revision = "c618e605e15c0d7535f6c96ff8efbb0dba4fd66c"
+  version = "v2.1.15"
 
 [[projects]]
   branch = "master"
