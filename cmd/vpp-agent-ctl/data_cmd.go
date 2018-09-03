@@ -377,13 +377,13 @@ func (ctl *VppAgentCtl) createMemif() {
 				Enabled:     true,
 				PhysAddress: "4E:93:2A:38:A7:77",
 				Mtu:         1478,
-				IpAddresses: []string{
-					"172.125.40.1/24",
-				},
-				//Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
-				//	IsUnnumbered: true,
-				//	InterfaceWithIP: "memif1",
+				//IpAddresses: []string{
+				//	"172.125.40.1/24",
 				//},
+				Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+					IsUnnumbered: true,
+					InterfaceWithIp: "loop1",
+				},
 				Memif: &interfaces.Interfaces_Interface_Memif{
 					Id:             1,
 					Secret:         "secret",
