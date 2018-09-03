@@ -403,7 +403,6 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 			Name:        "test",
 			Type:        intf.InterfaceType_VXLAN_TUNNEL,
 			Enabled:     true,
-			IpAddresses: []string{"192.168.0.1/24"},
 			Unnumbered: &intf.Interfaces_Interface_Unnumbered{
 				IsUnnumbered:    true,
 				InterfaceWithIp: "test",
