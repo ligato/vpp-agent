@@ -68,6 +68,10 @@ func (p *Plugin) Init() (err error) {
 
 // AfterInit starts the HTTP netListener.
 func (p *Plugin) AfterInit() (err error) {
+	if p.disabled {
+		return nil
+	}
+
 	if p.Deps.HTTP != nil {
 		p.Log.Infof("exposing GRPC services via HTTP (port %v) on: /service",
 			strconv.Itoa(p.Deps.HTTP.GetPort()))
