@@ -78,7 +78,6 @@ func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	enableStopwatch bool) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-acl-plugin")
-	c.log.Infof("Initializing ACL configurator")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
@@ -102,6 +101,8 @@ func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 
 	// ACL binary api handler
 	c.aclHandler = vppcalls.NewACLVppHandler(c.vppChan, c.vppDumpChan, c.stopwatch)
+
+	c.log.Infof("ACL configurator initialized")
 
 	return nil
 }
@@ -185,7 +186,7 @@ func (c *ACLConfigurator) ConfigureACL(acl *acl.AccessLists_Acl) error {
 		}
 	}
 
-	c.log.Errorf("ACL %s configured with ID %d", acl.AclName, vppACLIndex)
+	c.log.Infof("ACL %s configured with ID %d", acl.AclName, vppACLIndex)
 
 	return nil
 }
@@ -342,6 +343,8 @@ func (c *ACLConfigurator) DeleteACL(acl *acl.AccessLists_Acl) (err error) {
 		c.l3l4AclIndexes.UnregisterName(acl.AclName)
 		c.log.Debugf("ACL %s unregistered from L3/L4 mapping", acl.AclName)
 	}
+
+	c.log.Infof("ACL %s removed", acl.AclName)
 
 	return err
 }
