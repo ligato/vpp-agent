@@ -759,7 +759,7 @@ func (c *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interf
 			nbIf.SetDhcpClient, vppIf.SetDhcpClient)
 		return true
 	}
-	//  MTU value (not valid for VxLAN)
+	// MTU value (not valid for VxLAN)
 	if nbIf.Mtu != vppIf.Mtu && nbIf.Type != intf.InterfaceType_VXLAN_TUNNEL {
 		c.log.Debugf("Interface RESYNC comparison: MTU changed (NB: %d, VPP: %d)",
 			nbIf.Mtu, vppIf.Mtu)
@@ -772,10 +772,27 @@ func (c *InterfaceConfigurator) isIfModified(nbIf, vppIf *intf.Interfaces_Interf
 		c.log.Debugf("Interface RESYNC comparison: Physical address changed (NB: %s, VPP: %s)", nbMac, vppMac)
 		return true
 	}
-	// Unnumbered settings. If interface is unnumbered, do not compare ip addresses.
-	// todo dump unnumbered data
-	if nbIf.Unnumbered != nil {
-		c.log.Debugf("RESYNC interfaces: interface %s is unnumbered, result of the comparison may not be correct", nbIf.Name)
+
+	// Check if NB or SB interface is unnumbered
+	if nbIf.Unnumbered != nil && nbIf.Unnumbered.IsUnnumbered {
+		if vppIf.Unnumbered == nil || (vppIf.Unnumbered != nil && !vppIf.Unnumbered.IsUnnumbered) {
+			c.log.Debugf("Interface RESYNC comparison: NB %s is unnumbered, VPP %s is not", nbMac, vppMac)
+			return true
+		}
+	} else {
+		// NB interface is not unnumbered, check VPP
+		if vppIf.Unnumbered != nil && vppIf.Unnumbered.IsUnnumbered {
+			c.log.Debugf("Interface RESYNC comparison: NB %s is not unnumbered, but VPP %s is", nbMac, vppMac)
+			return true
+		}
+	}
+	// If both of them are, check IP-interface. Otherwise, check IP addresses
+	if nbIf.Unnumbered != nil && nbIf.Unnumbered.IsUnnumbered {
+		if nbIf.Unnumbered.InterfaceWithIp != vppIf.Unnumbered.InterfaceWithIp {
+			c.log.Debugf("Interface RESYNC comparison: IP-unnumbered interface is different (NB: %s, VPP: %s)",
+				nbIf.Unnumbered.InterfaceWithIp, vppIf.Unnumbered.InterfaceWithIp)
+			return true
+		}
 		vppIf.IpAddresses = nil
 	} else {
 		// Remove IPv6 link local addresses (default values)

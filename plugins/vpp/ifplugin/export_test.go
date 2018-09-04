@@ -14,7 +14,10 @@
 
 package ifplugin
 
-import "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+import (
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+)
 
 // Export for testing
 
@@ -25,4 +28,8 @@ func PropagateIfDetailsToStatus(ifCfg *InterfaceConfigurator) error {
 func ResolveMappings(natCfg *NatConfigurator, nbDNatConfig *nat.Nat44DNat_DNatConfig,
 	vppMappings *[]*nat.Nat44DNat_DNatConfig_StaticMapping, vppIDMappings *[]*nat.Nat44DNat_DNatConfig_IdentityMapping) {
 	natCfg.resolveMappings(nbDNatConfig, vppMappings, vppIDMappings)
+}
+
+func IsIfModified(ifCfg *InterfaceConfigurator, nbIf, vppIf *interfaces.Interfaces_Interface) bool {
+	return ifCfg.isIfModified(nbIf, vppIf)
 }
