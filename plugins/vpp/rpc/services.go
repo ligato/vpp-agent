@@ -64,15 +64,8 @@ func (plugin *Plugin) Init() error {
 	// Notification service (represents GRPC client)
 	plugin.notifSvc.log = plugin.Log.NewLogger("notifSvc")
 
-	return nil
-}
-
-// AfterInit registers all GRPC services in vppscv package
-// (be sure that defaultvppplugins are completely initialized).
-func (plugin *Plugin) AfterInit() error {
-	if plugin.GRPCServer == nil {
-		return nil
-	}
+	// Register all GRPC services if server is available. Register needs to be done
+	// before 'ListenAndServe' is called in GRPC plugin
 	grpcServer := plugin.GRPCServer.GetServer()
 	if grpcServer != nil {
 		rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
