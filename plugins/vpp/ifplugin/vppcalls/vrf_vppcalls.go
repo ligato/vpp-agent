@@ -107,7 +107,7 @@ func (h *IfVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	h.log.Debugf("Interface %s set to VRF %d", ifIdx, vrfID)
+	h.log.Debugf("Interface %d set to VRF %d", ifIdx, vrfID)
 
 	return nil
 }
