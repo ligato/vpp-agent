@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package interfaces;
+
+import "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace/namespace.proto";
+
+enum LinuxInterfaceType {               /* Available interface types */
+    VETH = 0;
+    AUTO_TAP = 1;
+};
+
+message LinuxInterface {
+    string name = 1;                    /* Logical interface name unique across all configured interfaces (mandatory) */
+    LinuxInterfaceType type = 2;        /* Interface type (mandatory) */
+    bool enabled = 3;
+    repeated string ip_addresses = 4;   /* IP address in format <ipAddress>/<ipPrefix> */
+    string phys_address = 5;            /* MAC address */
+    uint32 mtu = 6;                     /* Maximum transmission unit value */
+    string host_if_name = 7;            /* Name of the interface in the host OS. If not set, the host name
+                                           is the same as interface name */
+
+    namespace.Namespace namespace = 8;
+
+    message Veth {
+        string peer_if_name = 1;         /* Name of the peer, i.e. other end of the linux veth (mandatory for VETH) */
+    }
+    Veth veth = 9;
+
+    message Tap {
+        string temp_if_name = 1;         /* Temporary name of the peer */
+    }
+    Tap tap = 10;
+};

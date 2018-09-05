@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package l3;
+
+/* static ip route */
+message LinuxStaticRoute {
+    string outgoing_interface = 1; /* outgoing interface logical name (mandatory) */
+
+    enum Scope {
+        GLOBAL = 0;
+        SITE = 1;
+        LINK = 2;
+        HOST = 3;
+    }
+    Scope scope = 2;               /* the scope of the area where the link is valid */
+
+    string dst_network = 3;        /* destination network address in the format <address>/<prefix> (mandatory) */
+    string gw_addr = 4;            /* gateway IP address */
+    uint32 metric = 5;             /* routing metric (weight) */
+}
+
+/* static arp entry */
+message LinuxStaticARPEntry {
+    string interface = 1;          /* logical name of the interface to which this neighbour is attached (mandatory) */
+    string ip_addr = 2;            /* ip address (mandatory) */
+    string hw_address = 3;         /* mac address (mandatory) */
+}

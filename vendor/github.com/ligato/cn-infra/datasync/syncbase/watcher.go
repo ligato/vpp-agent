@@ -15,6 +15,7 @@
 package syncbase
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -24,6 +25,9 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
+
+	"github.com/ligato/cn-infra/kvscheduler"
+	scheduler_api "github.com/ligato/cn-infra/kvscheduler/api"
 )
 
 const (
@@ -99,6 +103,35 @@ func (adapter *Registry) Watch(resyncName string, changeChan chan datasync.Chang
 func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue) error {
 	var events []func(done chan error)
 
+	// propagate transaction to KV scheduler
+	// TODO: scheduler should subscribe to registry and receive TXN as a whole
+	scheduler := &kvscheduler.DefaultPlugin // temporary hack
+	if scheduler.IsInitialized() {
+		keyPrefixes := scheduler.GetRegisteredNBKeyPrefixes()
+
+		// TODO: add options to localclient
+		txn := scheduler.StartNBTransaction(scheduler_api.WithRetry(time.Second, true))
+		for key, val := range txData {
+			registered := false
+			for _, prefix := range keyPrefixes {
+				if strings.HasPrefix(key, prefix) {
+					registered = true
+					break
+				}
+			}
+			if !registered {
+				continue
+			}
+			if val.GetChangeType() == datasync.Delete {
+				txn.SetValueData(key, nil)
+			} else {
+				txn.SetValueData(key, val)
+			}
+		}
+		// TODO: return error(s)
+		txn.Commit(context.Background())
+	}
+
 	for _, sub := range adapter.subscriptions {
 		for _, prefix := range sub.KeyPrefixes {
 			for key, val := range txData {
@@ -153,6 +186,36 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 
 // PropagateResync fills registered channels with the data.
 func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue) error {
+	// propagate transaction to KV scheduler
+	// TODO: scheduler should subscribe to registry and receive TXN as a whole
+	scheduler := &kvscheduler.DefaultPlugin // temporary hack
+	if scheduler.IsInitialized() {
+		keyPrefixes := scheduler.GetRegisteredNBKeyPrefixes()
+		var values []scheduler_api.KeyValueDataPair
+
+		// TODO: add options to localclient
+		for key, val := range txData {
+			registered := false
+			for _, prefix := range keyPrefixes {
+				if strings.HasPrefix(key, prefix) {
+					registered = true
+					break
+				}
+			}
+			if !registered {
+				continue
+			}
+			values = append(values, scheduler_api.KeyValueDataPair{
+				Key:       key,
+				ValueData: val,
+			})
+		}
+		// TODO: return error(s)
+		txn := scheduler.StartNBTransaction(scheduler_api.WithRetry(time.Second, true))
+		txn.Resync(values)
+		txn.Commit(context.Background())
+	}
+
 	adapter.lastRev.Cleanup()
 	for _, sub := range adapter.subscriptions {
 		resyncEv := NewResyncEventDB(map[string]datasync.KeyValIterator{})

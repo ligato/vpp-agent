@@ -12,8 +12,9 @@ required = [
 # Constraints
 
 [[constraint]]
-  branch = "master"
+  branch = "kvscheduler"
   name = "github.com/ligato/cn-infra"
+  source = "github.com/milanlenco/cn-infra"
 
 [[constraint]]
   branch = "master"
@@ -34,7 +35,7 @@ required = [
 
 [[constraint]]
   name = "github.com/gogo/protobuf"
-  version = "0.5.0"
+  version = "1.1.1"
 
 [[constraint]]
   branch = "master"
