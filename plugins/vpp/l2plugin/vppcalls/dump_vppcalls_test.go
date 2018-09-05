@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
@@ -87,6 +88,12 @@ var testDataOutMessage = []*vppcalls.BridgeDomainDetails{
 					Name: "if3",
 				},
 			},
+			ArpTerminationTable: []*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry{
+				{
+					IpAddress:   "192.168.0.1",
+					PhysAddress: "aa:aa:aa:aa:aa:aa",
+				},
+			},
 		},
 		Meta: &vppcalls.BridgeDomainMeta{
 			BdID: 5,
@@ -123,8 +130,6 @@ func TestDumpBridgeDomainIDs(t *testing.T) {
 	Expect(err).Should(HaveOccurred())
 }
 
-// Scenario:
-// - 2 bridge domains + 1 default in VPP
 // TestDumpBridgeDomains tests DumpBridgeDomains method
 func TestDumpBridgeDomains(t *testing.T) {
 	ctx, bdHandler, ifIndexes := bdTestSetup(t)
@@ -132,16 +137,61 @@ func TestDumpBridgeDomains(t *testing.T) {
 
 	ifIndexes.RegisterName("if1", 5, nil)
 	ifIndexes.RegisterName("if2", 7, nil)
-	ifIndexes.RegisterName("if3", 8, nil)
 
-	ctx.MockVpp.MockReply(testDataInMessagesBDs...)
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
+		{
+			Name:    (&l2ba.BdIPMacDump{}).GetMessageName(),
+			Ping:    true,
+			Message: &l2ba.BdIPMacDetails{},
+		},
+		{
+			Name:    (&l2ba.BridgeDomainDump{}).GetMessageName(),
+			Ping:    true,
+			Message: testDataInMessagesBDs[0],
+		},
+	})
 
 	bridgeDomains, err := bdHandler.DumpBridgeDomains()
 
 	Expect(err).To(BeNil())
-	Expect(bridgeDomains).To(HaveLen(2))
+	Expect(bridgeDomains).To(HaveLen(1))
 	Expect(bridgeDomains[4]).To(Equal(testDataOutMessage[0]))
+
+	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
+	_, err = bdHandler.DumpBridgeDomains()
+	Expect(err).Should(HaveOccurred())
+}
+
+// TestDumpBridgeDomains tests DumpBridgeDomains method
+func TestDumpBridgeDomainsWithARP(t *testing.T) {
+	ctx, bdHandler, ifIndexes := bdTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ifIndexes.RegisterName("if1", 5, nil)
+	ifIndexes.RegisterName("if3", 8, nil)
+
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
+		{
+			Name: (&l2ba.BdIPMacDump{}).GetMessageName(),
+			Ping: true,
+			Message: &l2ba.BdIPMacDetails{
+				BdID:       5,
+				IsIPv6:     0,
+				IPAddress:  []byte{192, 168, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				MacAddress: []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+			},
+		},
+		{
+			Name:    (&l2ba.BridgeDomainDump{}).GetMessageName(),
+			Ping:    true,
+			Message: testDataInMessagesBDs[1],
+		},
+	})
+
+	bridgeDomains, err := bdHandler.DumpBridgeDomains()
+
+	Expect(err).To(BeNil())
+	Expect(bridgeDomains).To(HaveLen(1))
 	Expect(bridgeDomains[5]).To(Equal(testDataOutMessage[1]))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})

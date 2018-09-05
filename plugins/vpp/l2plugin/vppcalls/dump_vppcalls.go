@@ -16,6 +16,7 @@ package vppcalls
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"time"
 
@@ -37,16 +38,22 @@ type BridgeDomainMeta struct {
 }
 
 // DumpBridgeDomains implements bridge domain handler.
-func (handler *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
+func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
+
+	// At first prepare bridge domain ARP termination table which needs to be dumped separately
+	bdArpTab, err := h.dumpBridgeDomainMacTable()
+	if err != nil {
+		return nil, fmt.Errorf("failed to dump bridge domains: arp termination table dump returned an error: %v", err)
+	}
 
 	// map for the resulting BDs
 	bds := make(map[uint32]*BridgeDomainDetails)
 
 	// First, dump all interfaces to create initial data.
-	reqCtx := handler.callsChannel.SendMultiRequest(&l2ba.BridgeDomainDump{BdID: ^uint32(0)})
+	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.BridgeDomainDump{BdID: ^uint32(0)})
 
 	for {
 		bdDetails := &l2ba.BridgeDomainDetails{}
@@ -75,11 +82,11 @@ func (handler *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDo
 			},
 		}
 
-		// bridge domain interfaces and metadata
+		// Bridge domain interfaces and metadata
 		for _, iface := range bdDetails.SwIfDetails {
-			ifName, _, exists := handler.ifIndexes.LookupName(iface.SwIfIndex)
+			ifName, _, exists := h.ifIndexes.LookupName(iface.SwIfIndex)
 			if !exists {
-				handler.log.Warnf("Bridge domain dump: interface name for index %d not found", iface.SwIfIndex)
+				h.log.Warnf("Bridge domain dump: interface name for index %d not found", iface.SwIfIndex)
 				continue
 			}
 			// Bvi
@@ -96,20 +103,25 @@ func (handler *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDo
 				SplitHorizonGroup:       uint32(iface.Shg),
 			})
 		}
+		// Add ARP termination entries
+		arpTable, ok := bdArpTab[bdDetails.BdID]
+		if ok {
+			bds[bdDetails.BdID].Bd.ArpTerminationTable = arpTable
+		}
 	}
 
 	return bds, nil
 }
 
 // DumpBridgeDomainIDs implements bridge domain handler.
-func (handler *BridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
+func (h *BridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	var activeDomains []uint32
-	reqCtx := handler.callsChannel.SendMultiRequest(req)
+	reqCtx := h.callsChannel.SendMultiRequest(req)
 	for {
 		msg := &l2ba.BridgeDomainDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
@@ -125,6 +137,52 @@ func (handler *BridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 	return activeDomains, nil
 }
 
+// Reads ARP termination table from all bridge domains. Result is then added to bridge domains.
+func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry, error) {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	bdArpTable := make(map[uint32][]*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry)
+	req := &l2ba.BdIPMacDump{BdID: ^uint32(0)}
+
+	reqCtx := h.callsChannel.SendMultiRequest(req)
+	for {
+		msg := &l2ba.BdIPMacDetails{}
+		stop, err := reqCtx.ReceiveReply(msg)
+		if err != nil {
+			return nil, err
+		}
+		if stop {
+			break
+		}
+
+		// Prepare ARP entry
+		arpEntry := &l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry{}
+		var ipAddr net.IP
+		if uintToBool(msg.IsIPv6) {
+			ipAddr = msg.IPAddress
+			arpEntry.IpAddress = ipAddr.To16().String()
+		} else {
+			ipAddr = msg.IPAddress[:4]
+			arpEntry.IpAddress = ipAddr.To4().String()
+		}
+		var mac net.HardwareAddr = msg.MacAddress
+		arpEntry.PhysAddress = mac.String()
+
+		// Add ARP entry to result map
+		arpEntries, ok := bdArpTable[msg.BdID]
+		if ok {
+			arpEntries = append(arpEntries, arpEntry)
+		} else {
+			var arpEntries []*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry
+			bdArpTable[msg.BdID] = append(arpEntries, arpEntry)
+		}
+	}
+
+	return bdArpTable, nil
+}
+
 // FibTableDetails is the wrapper structure for the FIB table entry northbound API structure.
 type FibTableDetails struct {
 	Fib  *l2nb.FibTable_FibEntry `json:"fib"`
@@ -138,15 +196,15 @@ type FibMeta struct {
 }
 
 // DumpFIBTableEntries implements fib handler.
-func (handler *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, error) {
+func (h *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// map for the resulting FIBs
 	fibs := make(map[string]*FibTableDetails)
 
-	reqCtx := handler.syncCallsChannel.SendMultiRequest(&l2ba.L2FibTableDump{BdID: ^uint32(0)})
+	reqCtx := h.syncCallsChannel.SendMultiRequest(&l2ba.L2FibTableDump{BdID: ^uint32(0)})
 	for {
 		fibDetails := &l2ba.L2FibTableDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -166,14 +224,14 @@ func (handler *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails
 		}
 
 		// Interface name
-		ifName, _, exists := handler.ifIndexes.LookupName(fibDetails.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupName(fibDetails.SwIfIndex)
 		if !exists {
-			handler.log.Warnf("FIB dump: interface name for index %s not found", fibDetails.SwIfIndex)
+			h.log.Warnf("FIB dump: interface name for index %s not found", fibDetails.SwIfIndex)
 		}
 		// Bridge domain name
-		bdName, _, exists := handler.bdIndexes.LookupName(fibDetails.BdID)
+		bdName, _, exists := h.bdIndexes.LookupName(fibDetails.BdID)
 		if !exists {
-			handler.log.Warnf("FIB dump: bridge domain name for index %s not found", fibDetails.BdID)
+			h.log.Warnf("FIB dump: bridge domain name for index %s not found", fibDetails.BdID)
 		}
 
 		fibs[mac] = &FibTableDetails{
@@ -208,15 +266,15 @@ type XcMeta struct {
 }
 
 // DumpXConnectPairs implements xconnect handler.
-func (handler *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDetails, error) {
+func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDetails, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*XConnectDetails)
 
-	reqCtx := handler.callsChannel.SendMultiRequest(&l2ba.L2XconnectDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.L2XconnectDump{})
 	for {
 		pairs := &l2ba.L2XconnectDetails{}
 		stop, err := reqCtx.ReceiveReply(pairs)
@@ -228,13 +286,13 @@ func (handler *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDeta
 		}
 
 		// Find interface names
-		rxIfaceName, _, exists := handler.ifIndexes.LookupName(pairs.RxSwIfIndex)
+		rxIfaceName, _, exists := h.ifIndexes.LookupName(pairs.RxSwIfIndex)
 		if !exists {
-			handler.log.Warnf("XConnect dump: rx interface name for index %s not found", pairs.RxSwIfIndex)
+			h.log.Warnf("XConnect dump: rx interface name for index %s not found", pairs.RxSwIfIndex)
 		}
-		txIfaceName, _, exists := handler.ifIndexes.LookupName(pairs.TxSwIfIndex)
+		txIfaceName, _, exists := h.ifIndexes.LookupName(pairs.TxSwIfIndex)
 		if !exists {
-			handler.log.Warnf("XConnect dump: tx interface name for index %s not found", pairs.TxSwIfIndex)
+			h.log.Warnf("XConnect dump: tx interface name for index %s not found", pairs.TxSwIfIndex)
 		}
 
 		xpairs[pairs.RxSwIfIndex] = &XConnectDetails{
@@ -250,4 +308,11 @@ func (handler *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDeta
 	}
 
 	return xpairs, nil
+}
+
+func uintToBool(value uint8) bool {
+	if value == 0 {
+		return false
+	}
+	return true
 }
