@@ -193,11 +193,12 @@ func (c *Connection) msgCallback(msgID uint16, data []byte) {
 	// treat this as a last part of the reply
 	lastReplyReceived := isMulti && msgID == c.pingReplyID
 
-	// send the data to the channel
+	// send the data to the channel, it needs to be copied,
+	// because it will be freed after this function returns
 	sendReply(ch, &vppReply{
 		msgID:        msgID,
 		seqNum:       seqNum,
-		data:         data,
+		data:         append([]byte(nil), data...),
 		lastReceived: lastReplyReceived,
 	})
 

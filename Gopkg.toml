@@ -16,9 +16,9 @@ required = [
   name = "github.com/ligato/cn-infra"
 
 [[constraint]]
-  branch = "master"
   name =  "git.fd.io/govpp.git"
-  source = "github.com/FDio/govpp"
+  revision = "6f6d2433ae72550cb4b603376ae8e6185256affe"
+  source = "github.com/ligato/govpp"
 
 [[constraint]]
   branch = "master"
