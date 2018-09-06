@@ -21,6 +21,8 @@ import (
 	"net"
 	"sync"
 
+	"github.com/ligato/cn-infra/utils/safeclose"
+
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/vishvananda/netlink"
 
@@ -64,8 +66,9 @@ type LinuxInterfaceConfigurator struct {
 	pIfCachedConfigSeq uint32
 
 	// Channels
-	ifNotif   chan *LinuxInterfaceStateNotification
-	ifMsNotif chan *nsplugin.MicroserviceEvent
+	ifNotif     chan *LinuxInterfaceStateNotification
+	ifNotifDone chan struct{}
+	ifMsNotif   chan *nsplugin.MicroserviceEvent
 
 	// Go routine management
 	cfgLock sync.Mutex
@@ -98,6 +101,7 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 
 	// Set channels
 	c.ifNotif = ifNotif
+	c.ifNotifDone = make(chan struct{})
 	c.ifMsNotif = ifMsNotif
 
 	c.ctx, c.cancel = context.WithCancel(context.Background())
@@ -120,6 +124,11 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 
 // Close does nothing for linux interface configurator. State and notification channels are closed in linux plugin.
 func (c *LinuxInterfaceConfigurator) Close() error {
+	// Close linux interface watcher
+	c.ifNotifDone <- struct{}{}
+	if err := safeclose.Close(c.ifNotifDone); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose linux interface configurator: %v", err))
+	}
 	return nil
 }
 
@@ -852,71 +861,72 @@ func (c *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
 	c.log.Debugf("Linux interface state watcher started")
 
 	for {
-		linuxIf := <-c.ifNotif
-		// Ignore empty events
-		if linuxIf == nil {
-			continue
-		}
-		ifName := linuxIf.attributes.Name
+		select {
+		case linuxIf := <-c.ifNotif:
+			ifName := linuxIf.attributes.Name
 
-		switch {
-		case linuxIf.interfaceType == tap:
-			if linuxIf.interfaceState == netlink.OperDown {
-				// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
-				for _, idxName := range c.ifIndexes.GetMapping().ListNames() {
-					_, ifMeta, found := c.ifIndexes.LookupIdx(idxName)
-					if !found {
-						// Should not happen
-						c.log.Warnf("Interface %s not found in the mapping", idxName)
-						continue
-					}
-					if ifMeta == nil {
-						// Should not happen
-						c.log.Warnf("Interface %s metadata does not exist", idxName)
-						continue
-					}
-					if ifMeta.Data.HostIfName == "" {
-						c.log.Warnf("No info about host name for %s", idxName)
-						continue
-					}
-					if ifMeta.Data.HostIfName == ifName {
-						// Registered Linux TAP interface was removed, add it to cache. Pull out metadata, so they can be
-						// saved in cache as well
-						_, ifMeta, _ := c.ifIndexes.UnregisterName(ifName)
-						c.log.Debugf("Tap interface %s unregistered according to linux state event", ifName)
-						if _, _, found := c.ifCachedConfigs.LookupIdx(ifName); !found {
-							c.ifCachedConfigs.RegisterName(ifMeta.Data.HostIfName, c.pIfCachedConfigSeq, ifMeta)
-							c.pIfCachedConfigSeq++
-							c.log.Debugf("removed linux TAP %s registered to cache according to linux state event",
-								ifName)
-						}
-					}
-				}
-			} else {
-				// Event that a TAP interface was created. Look for TAP which is using this interface as the other end.
-				for _, ifConfig := range c.ifByName {
-					if ifConfig == nil || ifConfig.config == nil {
-						c.log.Warnf("Cached config for interface %s is empty", ifName)
-						continue
-					}
-
-					if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == ifName) ||
-						ifConfig.config.HostIfName == ifName {
-						// Skip processed interfaces
-						_, _, exists := c.ifIndexes.LookupIdx(ifConfig.config.Name)
-						if exists {
+			switch {
+			case linuxIf.interfaceType == tap:
+				if linuxIf.interfaceState == netlink.OperDown {
+					// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
+					for _, idxName := range c.ifIndexes.GetMapping().ListNames() {
+						_, ifMeta, found := c.ifIndexes.LookupIdx(idxName)
+						if !found {
+							// Should not happen
+							c.log.Warnf("Interface %s not found in the mapping", idxName)
 							continue
 						}
-						// Host interface was found, configure linux TAP
-						err := c.ConfigureLinuxInterface(ifConfig.config)
-						if err != nil {
-							c.LogError(errors.Errorf("failed to process linux interface %s creation from event: %v", ifName, err))
+						if ifMeta == nil {
+							// Should not happen
+							c.log.Warnf("Interface %s metadata does not exist", idxName)
+							continue
+						}
+						if ifMeta.Data.HostIfName == "" {
+							c.log.Warnf("No info about host name for %s", idxName)
+							continue
+						}
+						if ifMeta.Data.HostIfName == ifName {
+							// Registered Linux TAP interface was removed, add it to cache. Pull out metadata, so they can be
+							// saved in cache as well
+							_, unregMeta, _ := c.ifIndexes.UnregisterName(ifName)
+							c.log.Debugf("Tap interface %s unregistered according to linux state event", ifName)
+							if _, _, found := c.ifCachedConfigs.LookupIdx(ifName); !found && unregMeta != nil {
+								c.ifCachedConfigs.RegisterName(ifMeta.Data.HostIfName, c.pIfCachedConfigSeq, unregMeta)
+								c.pIfCachedConfigSeq++
+								c.log.Debugf("removed linux TAP %s registered to cache according to linux state event",
+									ifName)
+							}
+						}
+					}
+				} else {
+					// Event that a TAP interface was created. Look for TAP which is using this interface as the other end.
+					for _, ifConfig := range c.ifByName {
+						if ifConfig == nil || ifConfig.config == nil {
+							c.log.Warnf("Cached config for interface %s is empty", ifName)
+							continue
+						}
+
+						if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == ifName) ||
+							ifConfig.config.HostIfName == ifName {
+							// Skip processed interfaces
+							_, _, exists := c.ifIndexes.LookupIdx(ifConfig.config.Name)
+							if exists {
+								continue
+							}
+							// Host interface was found, configure linux TAP
+							err := c.ConfigureLinuxInterface(ifConfig.config)
+							if err != nil {
+								c.LogError(errors.Errorf("failed to process linux interface %s creation from event: %v", ifName, err))
+							}
 						}
 					}
 				}
+			default:
+				c.log.Debugf("Linux interface type %v state processing skipped", linuxIf.interfaceType)
 			}
-		default:
-			c.log.Warnf("Linux interface type %v state processing skipped", linuxIf.interfaceType)
+		case <-c.ifNotifDone:
+			c.log.Debugf("linux interface watcher ended")
+			return
 		}
 	}
 }
