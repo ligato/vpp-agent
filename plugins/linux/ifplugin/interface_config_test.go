@@ -618,9 +618,9 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 
 func ifTestTeardown(plugin *ifplugin.LinuxInterfaceConfigurator,
 	msChan chan *nsplugin.MicroserviceCtx, msNotif chan *nsplugin.MicroserviceEvent, ifNotif chan *ifplugin.LinuxInterfaceStateNotification) {
-	err := safeclose.Close(msNotif, msChan, ifNotif)
+	err := plugin.Close()
 	Expect(err).To(BeNil())
-	err = plugin.Close()
+	err = safeclose.Close(msNotif, msChan, ifNotif)
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
