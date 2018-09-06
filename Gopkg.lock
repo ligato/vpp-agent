@@ -2,8 +2,7 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:d7cf8894d7f43182ef489ed92fde3552ad8e87f2a8b08525b3d6190b8acf4a39"
+  digest = "1:f5c2c4057938d5be90bd124c60502a63560fee7b5c9daa6cd5225ae7bfa0e94d"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -16,8 +15,8 @@
     "core",
   ]
   pruneopts = "UT"
-  revision = "6b350c65fe0ec845cecf58bfb41ffc63dc9c04f7"
-  source = "github.com/FDio/govpp"
+  revision = "6f6d2433ae72550cb4b603376ae8e6185256affe"
+  source = "github.com/ligato/govpp"
 
 [[projects]]
   branch = "master"
