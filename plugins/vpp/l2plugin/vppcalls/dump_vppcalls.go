@@ -16,9 +16,10 @@ package vppcalls
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"time"
+
+	"github.com/go-errors/errors"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -46,7 +47,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 	// At first prepare bridge domain ARP termination table which needs to be dumped separately
 	bdArpTab, err := h.dumpBridgeDomainMacTable()
 	if err != nil {
-		return nil, fmt.Errorf("failed to dump bridge domains: arp termination table dump returned an error: %v", err)
+		return nil, errors.Errorf("failed to dump arp termination table: %v", err)
 	}
 
 	// map for the resulting BDs
@@ -159,24 +160,20 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 
 		// Prepare ARP entry
 		arpEntry := &l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry{}
-		var ipAddr net.IP
+		var ipAddr net.IP = msg.IPAddress
 		if uintToBool(msg.IsIPv6) {
-			ipAddr = msg.IPAddress
 			arpEntry.IpAddress = ipAddr.To16().String()
 		} else {
-			ipAddr = msg.IPAddress[:4]
-			arpEntry.IpAddress = ipAddr.To4().String()
+			arpEntry.IpAddress = ipAddr[:4].To4().String()
 		}
-		var mac net.HardwareAddr = msg.MacAddress
-		arpEntry.PhysAddress = mac.String()
+		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress).String()
 
 		// Add ARP entry to result map
 		arpEntries, ok := bdArpTable[msg.BdID]
 		if ok {
 			arpEntries = append(arpEntries, arpEntry)
 		} else {
-			var arpEntries []*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry
-			bdArpTable[msg.BdID] = append(arpEntries, arpEntry)
+			bdArpTable[msg.BdID] = append(bdArpTable[msg.BdID], arpEntry)
 		}
 	}
 
@@ -226,12 +223,12 @@ func (h *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, erro
 		// Interface name
 		ifName, _, exists := h.ifIndexes.LookupName(fibDetails.SwIfIndex)
 		if !exists {
-			h.log.Warnf("FIB dump: interface name for index %s not found", fibDetails.SwIfIndex)
+			h.log.Warnf("FIB dump: interface name for index %d not found", fibDetails.SwIfIndex)
 		}
 		// Bridge domain name
 		bdName, _, exists := h.bdIndexes.LookupName(fibDetails.BdID)
 		if !exists {
-			h.log.Warnf("FIB dump: bridge domain name for index %s not found", fibDetails.BdID)
+			h.log.Warnf("FIB dump: bridge domain name for index %d not found", fibDetails.BdID)
 		}
 
 		fibs[mac] = &FibTableDetails{
@@ -288,11 +285,11 @@ func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDetails, e
 		// Find interface names
 		rxIfaceName, _, exists := h.ifIndexes.LookupName(pairs.RxSwIfIndex)
 		if !exists {
-			h.log.Warnf("XConnect dump: rx interface name for index %s not found", pairs.RxSwIfIndex)
+			h.log.Warnf("XConnect dump: rx interface name for index %d not found", pairs.RxSwIfIndex)
 		}
 		txIfaceName, _, exists := h.ifIndexes.LookupName(pairs.TxSwIfIndex)
 		if !exists {
-			h.log.Warnf("XConnect dump: tx interface name for index %s not found", pairs.TxSwIfIndex)
+			h.log.Warnf("XConnect dump: tx interface name for index %d not found", pairs.TxSwIfIndex)
 		}
 
 		xpairs[pairs.RxSwIfIndex] = &XConnectDetails{
