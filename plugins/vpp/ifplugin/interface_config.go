@@ -231,7 +231,7 @@ func (c *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Int
 		if !ok || ifData == nil {
 			return errors.Errorf("set rx-placement failed, no data available for interface index %d", ifIdx)
 		}
-		if err := c.ifHandler.SetRxPlacement(ifData.Meta.InternalName, iface.RxPlacementSettings); err != nil {
+		if err := c.ifHandler.SetRxPlacement(ifData.Meta.SwIfIndex, iface.RxPlacementSettings); err != nil {
 			return errors.Errorf("failed to set rx-placement for interface %s: %v", ifData.Interface.Name, err)
 		}
 	}
@@ -527,7 +527,7 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 		if !ok || ifData == nil {
 			return errors.Errorf("set rx-placement for new config failed, no data available for interface index %d", ifIdx)
 		}
-		if err := c.ifHandler.SetRxPlacement(ifData.Meta.InternalName, newConfig.RxPlacementSettings); err != nil {
+		if err := c.ifHandler.SetRxPlacement(ifData.Meta.SwIfIndex, newConfig.RxPlacementSettings); err != nil {
 			return errors.Errorf("failed to set rx-placement for interface %s: %v", newConfig.Name, err)
 		}
 	}
