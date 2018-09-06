@@ -116,6 +116,7 @@ func (c *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
 
 		case <-ctx.Done():
 			close(c.ifWatcherDoneCh)
+		    close(c.ifStateChan)
 			return
 		}
 	}

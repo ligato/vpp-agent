@@ -21,8 +21,6 @@ import (
 	"net"
 	"sync"
 
-	"github.com/ligato/cn-infra/utils/safeclose"
-
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/vishvananda/netlink"
 
@@ -122,10 +120,6 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 
 // Close does nothing for linux interface configurator. State and notification channels are closed in linux plugin.
 func (c *LinuxInterfaceConfigurator) Close() error {
-	// Close linux interface watcher
-	if err := safeclose.Close(c.ifNotif); err != nil {
-		return c.LogError(errors.Errorf("failed to safeclose linux interface configurator: %v", err))
-	}
 	return nil
 }
 
