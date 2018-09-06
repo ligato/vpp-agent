@@ -188,6 +188,8 @@ func (plugin *Plugin) Close() error {
 	return safeclose.Close(
 		// Configurators
 		plugin.ifConfigurator, plugin.arpConfigurator, plugin.routeConfigurator,
+		// Status updater
+		plugin.ifLinuxStateUpdater,
 		// Channels
 		plugin.ifIndexesWatchChan, plugin.ifMicroserviceNotif, plugin.changeChan, plugin.resyncChan,
 		plugin.msChan,
