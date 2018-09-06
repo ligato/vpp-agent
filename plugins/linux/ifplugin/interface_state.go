@@ -75,7 +75,7 @@ func (c *LinuxInterfaceStateUpdater) Init(ctx context.Context, logger logging.Pl
 
 // Close watcher channel (state chan is closed in LinuxInterfaceConfigurator)
 func (c *LinuxInterfaceStateUpdater) Close() error {
-	if err := safeclose.Close(c.ifWatcherNotifCh, c.ifWatcherDoneCh); err != nil {
+	if err := safeclose.Close(c.ifWatcherNotifCh); err != nil {
 		return errors.Errorf("failed to safeclose linux interface state updater: %v", err)
 	}
 	return nil
