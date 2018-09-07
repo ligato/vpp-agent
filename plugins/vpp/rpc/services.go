@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/rpc --proto_path=$GOPATH/src --gogo_out=plugins=grpc:../model/rpc ../model/rpc/rpc.proto
-
 package rpc
 
 import (

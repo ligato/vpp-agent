@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/interfaces --gogo_out=../model/interfaces ../model/interfaces/interfaces.proto
-//go:generate protoc --proto_path=../model/bfd --gogo_out=../model/bfd ../model/bfd/bfd.proto
-
 // Package ifplugin implements the Interface plugin that handles management
 // of VPP interfaces.
 package ifplugin
@@ -27,6 +24,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
@@ -639,7 +637,7 @@ func (c *InterfaceConfigurator) modifyRxModeForInterfaces(oldIntf, newIntf *intf
 	oldRx := oldIntf.RxModeSettings
 	newRx := newIntf.RxModeSettings
 
-	if oldRx == nil && newRx != nil || oldRx != nil && newRx == nil || *oldRx != *newRx {
+	if oldRx == nil && newRx != nil || oldRx != nil && newRx == nil || !proto.Equal(oldRx, newRx) {
 		// If new rx mode is nil, value is reset to default version (differs for interface types)
 		switch newIntf.Type {
 		case intf.InterfaceType_ETHERNET_CSMACD:
@@ -947,7 +945,7 @@ func (c *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Int
 		return true
 	}
 
-	if *newConfig != *oldConfig {
+	if !proto.Equal(newConfig, oldConfig) {
 		c.log.Debug("Difference between new & old config causing recreation of memif")
 		return false
 	}
@@ -959,7 +957,7 @@ func (c *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *intf.Int
 	if newConfig == nil || oldConfig == nil {
 		return true
 	}
-	if *newConfig != *oldConfig {
+	if !proto.Equal(newConfig, oldConfig) {
 		c.log.Debug("Difference between new & old config causing recreation of VxLAN")
 		return false
 	}
@@ -971,7 +969,7 @@ func (c *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.Inter
 	if newConfig == nil || oldConfig == nil {
 		return true
 	}
-	if *newConfig != *oldConfig {
+	if !proto.Equal(newConfig, oldConfig) {
 		c.log.Debug("Difference between new & old config causing recreation of tap")
 		return false
 	}

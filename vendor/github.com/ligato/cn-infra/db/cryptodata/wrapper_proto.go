@@ -15,8 +15,8 @@
 package cryptodata
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/golang/protobuf/proto"
 )
 
 // KvProtoPluginWrapper wraps keyval.KvProtoPlugin with additional support of reading encrypted data

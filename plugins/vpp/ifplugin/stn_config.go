@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/stn --gogo_out=../model/stn ../model/stn/stn.proto
-
 package ifplugin
 
 import (

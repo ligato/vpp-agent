@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/l3 --gogo_out=../model/l3 ../model/l3/l3.proto
-
 package l3plugin
 
 import (

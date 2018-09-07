@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"

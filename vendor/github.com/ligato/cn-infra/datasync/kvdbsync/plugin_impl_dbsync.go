@@ -17,7 +17,7 @@ package kvdbsync
 import (
 	"errors"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/datasync/syncbase"

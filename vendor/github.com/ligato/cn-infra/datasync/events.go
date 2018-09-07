@@ -1,7 +1,7 @@
 package datasync
 
 import (
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 )
 
 // Op represents datasync operations.
