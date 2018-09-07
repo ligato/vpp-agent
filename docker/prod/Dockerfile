@@ -39,7 +39,10 @@ FROM scratch
 COPY --from=base / /
 
 # install agent
-COPY --from=devimg /go/bin/vpp-agent /bin/
+COPY --from=devimg \
+    /go/bin/vpp-agent \
+    /go/bin/vpp-agent-ctl \
+ /bin/
 
 # copy configs
 COPY \
