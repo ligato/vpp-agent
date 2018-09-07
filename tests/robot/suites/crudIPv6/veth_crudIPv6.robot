@@ -25,6 +25,9 @@ ${VETH4_MAC}=          4a:00:00:44:44:44
 ${VETHIP1}=            fd33::1:b:0:0:1
 ${VETHIP2}=            fd31::1:b:0:0:1
 ${VETHIP3}=            fd33::1:b:0:0:2
+${WAIT_TIMEOUT}=       20s
+${SYNC_SLEEP}=         2s
+
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
