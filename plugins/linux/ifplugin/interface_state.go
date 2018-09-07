@@ -81,6 +81,15 @@ func (c *LinuxInterfaceStateUpdater) Close() error {
 	return nil
 }
 
+// NewLinuxInterfaceStateNotification builds up new linux interface notification object
+func NewLinuxInterfaceStateNotification(ifType string, ifState netlink.LinkOperState, attrs *netlink.LinkAttrs) *LinuxInterfaceStateNotification {
+	return &LinuxInterfaceStateNotification{
+		interfaceType:  ifType,
+		interfaceState: ifState,
+		attributes:     attrs,
+	}
+}
+
 // Subscribe to linux default namespace
 func (c *LinuxInterfaceStateUpdater) subscribeInterfaceState() error {
 	if !c.stateWatcherRunning {
@@ -107,6 +116,7 @@ func (c *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
 
 		case <-ctx.Done():
 			close(c.ifWatcherDoneCh)
+		    close(c.ifStateChan)
 			return
 		}
 	}
@@ -114,24 +124,16 @@ func (c *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
 
 // Prepare notification and send it to the state channel
 func (c *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.Link) {
-	linkAttrs := link.Attrs()
-
-	if linkAttrs == nil {
+	if link == nil || link.Attrs() == nil {
 		return
 	}
 
 	c.cfgLock.Lock()
 	defer c.cfgLock.Unlock()
 
-	// Prepare linux link notification
-	linkNotif := &LinuxInterfaceStateNotification{
-		interfaceType:  link.Type(),
-		interfaceState: linkAttrs.OperState,
-		attributes:     link.Attrs(),
-	}
-
 	select {
-	case c.ifStateChan <- linkNotif:
+	// Prepare and send linux link notification
+	case c.ifStateChan <- NewLinuxInterfaceStateNotification(link.Type(), link.Attrs().OperState, link.Attrs()):
 		// Notification sent
 	default:
 		c.log.Warn("Unable to send to the linux if state notification channel - buffer is full.")

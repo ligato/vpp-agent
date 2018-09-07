@@ -45,9 +45,10 @@ type Plugin struct {
 	disabled bool
 
 	// Configurators
-	ifConfigurator    *ifplugin.LinuxInterfaceConfigurator
-	arpConfigurator   *l3plugin.LinuxArpConfigurator
-	routeConfigurator *l3plugin.LinuxRouteConfigurator
+	ifConfigurator      *ifplugin.LinuxInterfaceConfigurator
+	ifLinuxStateUpdater *ifplugin.LinuxInterfaceStateUpdater
+	arpConfigurator     *l3plugin.LinuxArpConfigurator
+	routeConfigurator   *l3plugin.LinuxRouteConfigurator
 
 	// Shared indexes
 	ifIndexes    ifaceidx.LinuxIfIndexRW
@@ -60,6 +61,7 @@ type Plugin struct {
 	// Channels (watch, notification, ...) which should be closed
 	ifIndexesWatchChan    chan ifaceidx.LinuxIfIndexDto
 	vppIfIndexesWatchChan chan ifaceVPP.SwIfIdxDto
+	ifLinuxNotifChan      chan *ifplugin.LinuxInterfaceStateNotification
 	ifMicroserviceNotif   chan *nsplugin.MicroserviceEvent
 	resyncChan            chan datasync.ResyncEvent
 	changeChan            chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
@@ -186,6 +188,8 @@ func (plugin *Plugin) Close() error {
 	return safeclose.Close(
 		// Configurators
 		plugin.ifConfigurator, plugin.arpConfigurator, plugin.routeConfigurator,
+		// Status updater
+		plugin.ifLinuxStateUpdater,
 		// Channels
 		plugin.ifIndexesWatchChan, plugin.ifMicroserviceNotif, plugin.changeChan, plugin.resyncChan,
 		plugin.msChan,
@@ -215,9 +219,14 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(plugin.Log, "linux_if_indexes", nil))
 
 	// Linux interface configurator
+	plugin.ifLinuxNotifChan = make(chan *ifplugin.LinuxInterfaceStateNotification, 10)
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes,
-		plugin.ifMicroserviceNotif, plugin.stopwatch); err != nil {
+		plugin.ifMicroserviceNotif, plugin.ifLinuxNotifChan, plugin.stopwatch); err != nil {
+		return plugin.ifConfigurator.LogError(err)
+	}
+	plugin.ifLinuxStateUpdater = &ifplugin.LinuxInterfaceStateUpdater{}
+	if err := plugin.ifLinuxStateUpdater.Init(ctx, plugin.Log, plugin.ifIndexes, plugin.ifLinuxNotifChan); err != nil {
 		return plugin.ifConfigurator.LogError(err)
 	}
 

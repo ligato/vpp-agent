@@ -64,6 +64,7 @@ type LinuxInterfaceConfigurator struct {
 	pIfCachedConfigSeq uint32
 
 	// Channels
+	ifNotif   chan *LinuxInterfaceStateNotification
 	ifMsNotif chan *nsplugin.MicroserviceEvent
 
 	// Go routine management
@@ -82,7 +83,8 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linux plugin and start go routines.
 func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, ifNotif chan *nsplugin.MicroserviceEvent, stopwatch *measure.Stopwatch) (err error) {
+	ifIndexes ifaceidx.LinuxIfIndexRW, ifMsNotif chan *nsplugin.MicroserviceEvent, ifNotif chan *LinuxInterfaceStateNotification,
+	stopwatch *measure.Stopwatch) (err error) {
 	// Logger
 	c.log = logging.NewLogger("-if-conf")
 
@@ -94,8 +96,9 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 	c.ifCachedConfigs = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(c.log, "linux_if_cache", nil))
 	c.pIfCachedConfigSeq = 1
 
-	// Init channel
-	c.ifMsNotif = ifNotif
+	// Set channels
+	c.ifNotif = ifNotif
+	c.ifMsNotif = ifMsNotif
 
 	c.ctx, c.cancel = context.WithCancel(context.Background())
 
@@ -106,7 +109,8 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 	// Configurator-wide stopwatch instance
 	c.stopwatch = stopwatch
 
-	// Start watching on microservice events
+	// Start watching on linux and microservice events
+	go c.watchLinuxStateUpdater()
 	go c.watchMicroservices(c.ctx)
 
 	c.log.Info("Linux interface configurator initialized")
@@ -495,7 +499,7 @@ func (c *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsplugin
 	c.ifIdxSeq++
 	c.log.Debugf("Linux interface %s registered", ifConfig.Name)
 
-	return err
+	return nil
 }
 
 // Update linux interface attributes in it's namespace
@@ -841,6 +845,81 @@ func (c *LinuxInterfaceConfigurator) removeFromCache(iface *interfaces.LinuxInte
 		return config
 	}
 	return nil
+}
+
+// Watcher receives events from state updater about created/removed linux interfaces and performs appropriate actions
+func (c *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
+	c.log.Debugf("Linux interface state watcher started")
+
+	for {
+		linuxIf, ok := <-c.ifNotif
+		if !ok {
+			c.log.Debugf("linux interface watcher ended")
+			return
+		}
+		ifName := linuxIf.attributes.Name
+
+		switch {
+		case linuxIf.interfaceType == tap:
+			if linuxIf.interfaceState == netlink.OperDown {
+				// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
+				for _, idxName := range c.ifIndexes.GetMapping().ListNames() {
+					_, ifMeta, found := c.ifIndexes.LookupIdx(idxName)
+					if !found {
+						// Should not happen
+						c.log.Warnf("Interface %s not found in the mapping", idxName)
+						continue
+					}
+					if ifMeta == nil {
+						// Should not happen
+						c.log.Warnf("Interface %s metadata does not exist", idxName)
+						continue
+					}
+					if ifMeta.Data.HostIfName == "" {
+						c.log.Warnf("No info about host name for %s", idxName)
+						continue
+					}
+					if ifMeta.Data.HostIfName == ifName {
+						// Registered Linux TAP interface was removed, add it to cache. Pull out metadata, so they can be
+						// saved in cache as well
+						_, unregMeta, _ := c.ifIndexes.UnregisterName(ifName)
+						c.log.Debugf("Tap interface %s unregistered according to linux state event", ifName)
+						if _, _, found := c.ifCachedConfigs.LookupIdx(ifName); !found && unregMeta != nil {
+							c.ifCachedConfigs.RegisterName(ifMeta.Data.HostIfName, c.pIfCachedConfigSeq, unregMeta)
+							c.pIfCachedConfigSeq++
+							c.log.Debugf("removed linux TAP %s registered to cache according to linux state event",
+								ifName)
+						}
+					}
+				}
+			} else {
+				// Event that a TAP interface was created. Look for TAP which is using this interface as the other end.
+				for _, ifConfig := range c.ifByName {
+					if ifConfig == nil || ifConfig.config == nil {
+						c.log.Warnf("Cached config for interface %s is empty", ifName)
+						continue
+					}
+
+					if (ifConfig.config.Tap != nil && ifConfig.config.Tap.TempIfName == ifName) ||
+						ifConfig.config.HostIfName == ifName {
+						// Skip processed interfaces
+						_, _, exists := c.ifIndexes.LookupIdx(ifConfig.config.Name)
+						if exists {
+							continue
+						}
+						// Host interface was found, configure linux TAP
+						err := c.ConfigureLinuxInterface(ifConfig.config)
+						if err != nil {
+							c.LogError(errors.Errorf("failed to process linux interface %s creation from event: %v", ifName, err))
+						}
+					}
+				}
+			}
+		default:
+			c.log.Debugf("Linux interface type %v state processing skipped", linuxIf.interfaceType)
+		}
+
+	}
 }
 
 // watchMicroservices handles events from namespace plugin
