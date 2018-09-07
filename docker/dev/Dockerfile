@@ -39,16 +39,13 @@ RUN apt-get update \
     telnet unzip wget \
  && rm -rf /var/lib/apt/lists/*
 
-# build & install Protobuf
-RUN git clone --depth=1 https://github.com/google/protobuf.git \
- && cd protobuf \
- && ./autogen.sh \
- && ./configure \
- && make -j4 \
- && make install \
- && ldconfig \
- && cd .. \
- && rm -rf protobuf
+# install Protobuf
+ARG PROTOC_VERSION=3.6.1
+RUN wget -q https://github.com/google/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip \
+ && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc3 \
+ && mv protoc3/bin/protoc /usr/local/bin \
+ && mv protoc3/include/google /usr/local/include \
+ && rm -rf protoc-${PROTOC_VERSION}-linux-x86_64.zip protoc3
 
 RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
