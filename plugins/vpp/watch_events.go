@@ -145,7 +145,46 @@ func (plugin *Plugin) onChangeEvent(e datasync.ChangeEvent) {
 }
 
 func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
-	if !e.IsDelete() {
+	if e.IsDelete() {
+		if err := plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.aclConfigurator.LogError(err)
+		}
+		if err := plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.arpConfigurator.LogError(err)
+		}
+		if err := plugin.proxyArpConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.proxyArpConfigurator.LogError(err)
+		}
+		if err := plugin.bdConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.bdConfigurator.LogError(err)
+		}
+		plugin.fibConfigurator.ResolveDeletedInterface(e.Name, e.Idx, func(err error) {
+			if err != nil {
+				plugin.fibConfigurator.LogError(err)
+			}
+		})
+		if err := plugin.xcConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.xcConfigurator.LogError(err)
+		}
+		if err := plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.appNsConfigurator.LogError(err)
+		}
+		if err := plugin.stnConfigurator.ResolveDeletedInterface(e.Name); err != nil {
+			plugin.stnConfigurator.LogError(err)
+		}
+		if err := plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.routeConfigurator.LogError(err)
+		}
+		if err := plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.natConfigurator.LogError(err)
+		}
+		if err := plugin.ipSecConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.ipSecConfigurator.LogError(err)
+		}
+		// TODO propagate error
+	} else if e.IsUpdate() {
+		// Nothing to do here
+	} else {
 		// Keep order.
 		if err := plugin.aclConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
 			plugin.aclConfigurator.LogError(err)
@@ -180,43 +219,6 @@ func (plugin *Plugin) onVppIfaceEvent(e ifaceidx.SwIfIdxDto) {
 			plugin.natConfigurator.LogError(err)
 		}
 		if err := plugin.ipSecConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
-			plugin.ipSecConfigurator.LogError(err)
-		}
-		// TODO propagate error
-	} else {
-		if err := plugin.aclConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
-			plugin.aclConfigurator.LogError(err)
-		}
-		if err := plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
-			plugin.arpConfigurator.LogError(err)
-		}
-		if err := plugin.proxyArpConfigurator.ResolveDeletedInterface(e.Name); err != nil {
-			plugin.proxyArpConfigurator.LogError(err)
-		}
-		if err := plugin.bdConfigurator.ResolveDeletedInterface(e.Name); err != nil {
-			plugin.bdConfigurator.LogError(err)
-		}
-		plugin.fibConfigurator.ResolveDeletedInterface(e.Name, e.Idx, func(err error) {
-			if err != nil {
-				plugin.fibConfigurator.LogError(err)
-			}
-		})
-		if err := plugin.xcConfigurator.ResolveDeletedInterface(e.Name); err != nil {
-			plugin.xcConfigurator.LogError(err)
-		}
-		if err := plugin.appNsConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
-			plugin.appNsConfigurator.LogError(err)
-		}
-		if err := plugin.stnConfigurator.ResolveDeletedInterface(e.Name); err != nil {
-			plugin.stnConfigurator.LogError(err)
-		}
-		if err := plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
-			plugin.routeConfigurator.LogError(err)
-		}
-		if err := plugin.natConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
-			plugin.natConfigurator.LogError(err)
-		}
-		if err := plugin.ipSecConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
 			plugin.ipSecConfigurator.LogError(err)
 		}
 		// TODO propagate error
