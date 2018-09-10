@@ -322,20 +322,27 @@ func (c *BDConfigurator) ResolveCreatedInterface(ifName string, ifIdx uint32) er
 	if !found {
 		return nil
 	}
-	var bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces // Single-value
-	configuredIf, err := c.bdHandler.SetInterfacesToBridgeDomain(bd.Name, bdIdx, append(bdIfs, bdIf), c.ifIndexes)
+	configuredIf, err := c.bdHandler.SetInterfaceToBridgeDomain(bd.Name, bdIdx, bdIf, c.ifIndexes)
 	if err != nil {
 		return errors.Errorf("error while assigning registered interface %s to bridge domain %s: %v",
 			ifName, bd.Name, err)
 	}
 
-	// Refresh metadata
-	configuredIfs, found := c.bdIndexes.LookupConfiguredIfsForBd(bd.Name)
+	// Refresh metadata. Skip if resolved interface already exists
+	metaIfs, found := c.bdIndexes.LookupConfiguredIfsForBd(bd.Name)
 	if !found {
-		return errors.Errorf("unable to get list of configured interfaces from %s", configuredIfs)
+		return errors.Errorf("unable to get list of configured interfaces from %s", bd.Name)
 	}
-	c.bdIndexes.UpdateMetadata(bd.Name, l2idx.NewBDMetadata(bd, append(configuredIfs, configuredIf...)))
-	c.log.Debugf("Bridge domain %s metadata updated", bd.Name)
+	var isUpdated bool
+	for _, metaIf := range metaIfs {
+		if metaIf == configuredIf {
+			isUpdated = true
+		}
+	}
+	if !isUpdated {
+		c.bdIndexes.UpdateMetadata(bd.Name, l2idx.NewBDMetadata(bd, append(metaIfs, configuredIf)))
+		c.log.Debugf("Bridge domain %s metadata updated", bd.Name)
+	}
 
 	// Push to bridge domain state.
 	if err := c.propagateBdDetailsToStatus(bdIdx, bd.Name); err != nil {

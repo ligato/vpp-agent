@@ -24,47 +24,55 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
-// SetInterfacesToBridgeDomain implements bridge domain handler.
-func (handler *BridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
-	swIfIndices ifaceidx.SwIfIndex) (ifs []string, wasErr error) {
+// SetInterfaceToBridgeDomain implements bridge domain handler.
+func (h *BridgeDomainVppHandler) SetInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
+	swIfIndices ifaceidx.SwIfIndex) (string, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	if len(bdIfs) == 0 {
-		handler.log.Debugf("Bridge domain %v has no new interface to set", bdName)
-		return nil, nil
+	// Verify that interface exists, otherwise skip it.
+	ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
+	if !found {
+		h.log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
+		return "", nil
 	}
+	if err := h.addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, true); err != nil {
+		return "", err
+	}
+	h.log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface set to bridge domain")
 
+	return bdIf.Name, nil
+}
+
+// SetInterfacesToBridgeDomain implements bridge domain handler.
+func (h *BridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
+	swIfIndices ifaceidx.SwIfIndex) ([]string, error) {
+
+	var ifs []string
 	for _, bdIf := range bdIfs {
-		// Verify that interface exists, otherwise skip it.
-		ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
-		if !found {
-			handler.log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
-			continue
+		iface, err := h.SetInterfaceToBridgeDomain(bdName, bdIdx, bdIf, swIfIndices)
+		if err != nil {
+			return nil, err
 		}
-		if err := handler.addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, true); err != nil {
-			wasErr = err
-			handler.log.Error(wasErr)
-		} else {
-			handler.log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface set to bridge domain")
-			ifs = append(ifs, bdIf.Name)
+		if iface != "" {
+			ifs = append(ifs, iface)
 		}
 	}
 
-	return ifs, wasErr
+	return ifs, nil
 }
 
 // UnsetInterfacesFromBridgeDomain implements bridge domain handler.
-func (handler *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
+func (h *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (ifs []string, wasErr error) {
 
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	if len(bdIfs) == 0 {
-		handler.log.Debugf("Bridge domain %v has no obsolete interface to unset", bdName)
+		h.log.Debugf("Bridge domain %v has no obsolete interface to unset", bdName)
 		return nil, nil
 	}
 
@@ -72,14 +80,14 @@ func (handler *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName st
 		// Verify that interface exists, otherwise skip it.
 		ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
 		if !found {
-			handler.log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
+			h.log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
 			continue
 		}
-		if err := handler.addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, false); err != nil {
+		if err := h.addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, false); err != nil {
 			wasErr = err
-			handler.log.Error(wasErr)
+			h.log.Error(wasErr)
 		} else {
-			handler.log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface unset from bridge domain")
+			h.log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface unset from bridge domain")
 			ifs = append(ifs, bdIf.Name)
 		}
 	}
@@ -87,7 +95,7 @@ func (handler *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName st
 	return ifs, wasErr
 }
 
-func (handler *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
+func (h *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
 	ifIdx uint32, add bool) error {
 	req := &l2ba.SwInterfaceSetL2Bridge{
 		BdID:        bdIdx,
@@ -98,11 +106,11 @@ func (handler *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdName stri
 	// Set as BVI.
 	if bdIf.BridgedVirtualInterface {
 		req.Bvi = 1
-		handler.log.Debugf("Interface %v set as BVI", bdIf.Name)
+		h.log.Debugf("Interface %v set as BVI", bdIf.Name)
 	}
 	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("error while assigning/removing interface %v to bd %v: %v", bdIf.Name, bdName, err)
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d while assigning/removing interface %v (idx %v) to bd %v",
