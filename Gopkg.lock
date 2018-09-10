@@ -328,7 +328,7 @@
   version = "v4.1.0"
 
 [[projects]]
-  digest = "1:47f4b03084d147ec4523ed341449f6dd40fdc2b6fe35375c6bd255ec03163b02"
+  digest = "1:9b56c3d59d7899c60a02f4d0e8592fe70b19f3b6b47553849b20fe63a62efe66"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -352,14 +352,15 @@
     "protoc-gen-gogo",
     "protoc-gen-gogo/descriptor",
     "protoc-gen-gogo/generator",
+    "protoc-gen-gogo/generator/internal/remap",
     "protoc-gen-gogo/grpc",
     "protoc-gen-gogo/plugin",
     "vanity",
     "vanity/command",
   ]
   pruneopts = "UT"
-  revision = "342cbe0a04158f6dcb03ca0079991a51a4248c02"
-  version = "v0.5"
+  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
+  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
@@ -449,7 +450,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e3315b1b44e75fae0cfaaef3d6da60dab69652cd537a7efc662e7488f4ff1fdc"
+  digest = "1:e7c0f5250b55f27007df0f05ce534d6d2358411d6852462601006e71c32f1577"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -489,7 +490,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "8af133e77fd4577f230632c1cc9b629bafb3bc48"
+  revision = "10abe6a955b9aef0ae518e1f7265adeae0c649ac"
 
 [[projects]]
   branch = "master"
