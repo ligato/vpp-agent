@@ -15,8 +15,6 @@
 package l2plugin
 
 import (
-	"fmt"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
@@ -137,13 +135,13 @@ func (c *FIBConfigurator) Add(fib *l2.FibTable_FibEntry, callback func(error)) e
 		return errors.Errorf("failed to configure FIB entry, no MAC address defined")
 	}
 	if fib.BridgeDomain == "" {
-		return fmt.Errorf("failed to configure FIB entry (MAC %s), no bridge domain defined", fib.PhysAddress)
+		return errors.Errorf("failed to configure FIB entry (MAC %s), no bridge domain defined", fib.PhysAddress)
 	}
 
 	// Remove FIB from (del) cache if it's there
 	_, _, exists := c.delCacheIndexes.UnregisterName(fib.PhysAddress)
 	if exists {
-		c.log.Debugf("FIB entry %s was removed from (del) cache before configuration")
+		c.log.Debugf("FIB entry %s was removed from (del) cache before configuration", fib.PhysAddress)
 	}
 
 	// Validate required items and move to (add) cache if something's missing
