@@ -68,7 +68,6 @@ func (h *BridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdId
 // UnsetInterfacesFromBridgeDomain implements bridge domain handler. Returns a list of interfaces removed from the BD.
 func (h *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (ifs []string, wasErr error) {
-
 	defer func(t time.Time) {
 		h.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
