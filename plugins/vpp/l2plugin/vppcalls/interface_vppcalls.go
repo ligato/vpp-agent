@@ -18,13 +18,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-errors/errors"
+
 	"github.com/ligato/cn-infra/logging"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
-// SetInterfaceToBridgeDomain implements bridge domain handler.
+// SetInterfaceToBridgeDomain implements bridge domain handler. Returns an interface configured to the BD.
 func (h *BridgeDomainVppHandler) SetInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (string, error) {
 	defer func(t time.Time) {
@@ -34,7 +36,7 @@ func (h *BridgeDomainVppHandler) SetInterfaceToBridgeDomain(bdName string, bdIdx
 	// Verify that interface exists, otherwise skip it.
 	ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
 	if !found {
-		h.log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
+		h.log.Debugf("Required bridge domain %s interface %s not found", bdName, bdIf.Name)
 		return "", nil
 	}
 	if err := h.addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, true); err != nil {
@@ -45,7 +47,7 @@ func (h *BridgeDomainVppHandler) SetInterfaceToBridgeDomain(bdName string, bdIdx
 	return bdIf.Name, nil
 }
 
-// SetInterfacesToBridgeDomain implements bridge domain handler.
+// SetInterfacesToBridgeDomain implements bridge domain handler. Returns a list of interfaces configured to the BD.
 func (h *BridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) ([]string, error) {
 
@@ -63,7 +65,7 @@ func (h *BridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdId
 	return ifs, nil
 }
 
-// UnsetInterfacesFromBridgeDomain implements bridge domain handler.
+// UnsetInterfacesFromBridgeDomain implements bridge domain handler. Returns a list of interfaces removed from the BD.
 func (h *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (ifs []string, wasErr error) {
 
@@ -72,7 +74,7 @@ func (h *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, 
 	}(time.Now())
 
 	if len(bdIfs) == 0 {
-		h.log.Debugf("Bridge domain %v has no obsolete interface to unset", bdName)
+		h.log.Debugf("Bridge domain %s has no obsolete interface to unset", bdName)
 		return nil, nil
 	}
 
@@ -80,16 +82,16 @@ func (h *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, 
 		// Verify that interface exists, otherwise skip it.
 		ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
 		if !found {
-			h.log.Debugf("Required bridge domain %v interface %v not found", bdName, bdIf.Name)
+			h.log.Debugf("Required bridge domain %s interface %s not found", bdName, bdIf.Name)
+			// The interface still needs to be added to the list as un-configured
+			ifs = append(ifs, bdIf.Name)
 			continue
 		}
 		if err := h.addDelInterfaceToBridgeDomain(bdName, bdIdx, bdIf, ifIdx, false); err != nil {
-			wasErr = err
-			h.log.Error(wasErr)
-		} else {
-			h.log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface unset from bridge domain")
-			ifs = append(ifs, bdIf.Name)
+			return nil, errors.Errorf("failed to remove interface %s from bridge domain %s: %v", bdIf.Name, bdName, err)
 		}
+		h.log.WithFields(logging.Fields{"Interface": bdIf.Name, "BD": bdName}).Debug("Interface unset from bridge domain")
+		ifs = append(ifs, bdIf.Name)
 	}
 
 	return ifs, wasErr
@@ -111,9 +113,9 @@ func (h *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdName string, bd
 	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return fmt.Errorf("error while assigning/removing interface %v to bd %v: %v", bdIf.Name, bdName, err)
+		return fmt.Errorf("error while assigning/removing interface %s to bd %s: %v", bdIf.Name, bdName, err)
 	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d while assigning/removing interface %v (idx %v) to bd %v",
+		return fmt.Errorf("%s returned %d while assigning/removing interface %s (idx %d) to bd %s",
 			reply.GetMessageName(), reply.Retval, bdIf.Name, ifIdx, bdName)
 	}
 

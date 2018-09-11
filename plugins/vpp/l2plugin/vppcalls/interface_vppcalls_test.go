@@ -230,7 +230,8 @@ func TestUnsetInterfacesFromBridgeDomainMissingInterface(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(len(ctx.MockChannel.Msgs)).To(BeEquivalentTo(1))
-	Expect(configured).To(HaveLen(1))
+	// Both must be marked as un-configured
+	Expect(configured).To(HaveLen(2))
 }
 
 func TestUnsetInterfacesFromBridgeDomainError(t *testing.T) {
