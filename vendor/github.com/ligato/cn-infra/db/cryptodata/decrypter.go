@@ -15,12 +15,13 @@
 package cryptodata
 
 import (
-	"encoding/json"
-	"strings"
 	"encoding/base64"
-	"reflect"
+	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/proto"
+	"reflect"
+	"strings"
+
+	"github.com/gogo/protobuf/proto"
 )
 
 // DecryptFunc is function that decrypts input data
@@ -96,7 +97,7 @@ func (d DecrypterJSON) Decrypt(object interface{}, decryptFunc DecryptFunc) (int
 }
 
 // decryptJSON recursively navigates JSON structure and tries to decrypt all string values with Prefix
-func (d DecrypterJSON) decryptJSON(data map[string]interface{}, decryptFunc DecryptFunc) (error) {
+func (d DecrypterJSON) decryptJSON(data map[string]interface{}, decryptFunc DecryptFunc) error {
 	for k, v := range data {
 		switch t := v.(type) {
 		case string:
@@ -136,7 +137,7 @@ func NewDecrypterProto() *DecrypterProto {
 }
 
 // RegisterMapping registers mapping to decrypter that maps proto.Message type to path used to access encrypted values
-func (d DecrypterProto) RegisterMapping(object proto.Message, paths ... []string) {
+func (d DecrypterProto) RegisterMapping(object proto.Message, paths ...[]string) {
 	d.mapping[reflect.TypeOf(object)] = paths
 }
 
@@ -170,7 +171,7 @@ func (d DecrypterProto) Decrypt(object interface{}, decryptFunc DecryptFunc) (in
 }
 
 // decryptStruct recursively tries to decrypt fields in object on provided path using provided decryptFunc
-func (d DecrypterProto) decryptStruct(object interface{}, path []string, decryptFunc DecryptFunc) (error) {
+func (d DecrypterProto) decryptStruct(object interface{}, path []string, decryptFunc DecryptFunc) error {
 	v, ok := object.(reflect.Value)
 	if !ok {
 		v = reflect.ValueOf(object)

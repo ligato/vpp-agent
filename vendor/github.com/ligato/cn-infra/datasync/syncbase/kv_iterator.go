@@ -17,7 +17,7 @@ package syncbase
 import (
 	"encoding/json"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 )
 

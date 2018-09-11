@@ -14,8 +14,6 @@
 
 package ifplugin
 
-//go:generate protoc --proto_path=../model/bfd --gogo_out=../model/bfd ../model/bfd/bfd.proto
-
 import (
 	"net"
 	"strconv"

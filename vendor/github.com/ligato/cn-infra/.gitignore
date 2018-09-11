@@ -1,5 +1,6 @@
 .idea/
 glide.lock
+examples/bolt-plugin/bolt-plugin
 examples/cassandra-lib/cassandra-lib
 examples/configs-plugin/configs-plugin
 examples/consul-lib/consul-lib

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/l2 --gogo_out=../model/l2 ../model/l2/l2.proto
-
 // Package l2plugin implements the L2 plugin that handles Bridge Domains and L2 FIBs.
 package l2plugin
 

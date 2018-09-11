@@ -105,16 +105,8 @@ get-proto-generators:
 # Generate proto models
 generate-proto: get-proto-generators
 	@echo "=> generating proto"
-	cd plugins/linux/ifplugin && go generate
-	cd plugins/linux/l3plugin && go generate
-	cd plugins/vpp/aclplugin && go generate
-	cd plugins/vpp/ifplugin && go generate
-	cd plugins/vpp/ipsecplugin && go generate
-	cd plugins/vpp/l2plugin && go generate
-	cd plugins/vpp/l3plugin && go generate
-	cd plugins/vpp/l4plugin && go generate
-	cd plugins/vpp/rpc && go generate
-	cd plugins/vpp/srplugin && go generate
+	cd plugins/linux/model && go generate
+	cd plugins/vpp/model && go generate
 
 # Get generator tools
 get-binapi-generators:
