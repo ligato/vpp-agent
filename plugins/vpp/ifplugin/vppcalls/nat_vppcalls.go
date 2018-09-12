@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-errors/errors"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	nat2 "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
@@ -29,8 +31,12 @@ const (
 	UDP  uint8 = 17
 )
 
-// NoInterface is sw-if-idx which means 'no interface'
-const NoInterface uint32 = 0xffffffff
+const (
+	// NoInterface is sw-if-idx which means 'no interface'
+	NoInterface uint32 = 0xffffffff
+	// Maximal length of tag
+	maxTagLen = 64
+)
 
 // StaticMappingContext groups common fields required for static mapping
 type StaticMappingContext struct {
@@ -195,6 +201,10 @@ func (handler *NatVppHandler) handleNat44StaticMapping(ctx *StaticMappingContext
 		handler.stopwatch.TimeLog(nat.Nat44AddDelStaticMapping{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
+	if err := checkTagLength(ctx.Tag); err != nil {
+		return err
+	}
+
 	req := &nat.Nat44AddDelStaticMapping{
 		Tag:               []byte(ctx.Tag),
 		LocalIPAddress:    ctx.LocalIP,
@@ -231,6 +241,10 @@ func (handler *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbCon
 	defer func(t time.Time) {
 		handler.stopwatch.TimeLog(nat.Nat44AddDelLbStaticMapping{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
+
+	if err := checkTagLength(ctx.Tag); err != nil {
+		return err
+	}
 
 	// Transform local IP/Ports
 	var localAddrPorts []nat.Nat44LbAddrPort
@@ -273,6 +287,10 @@ func (handler *NatVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingCon
 		handler.stopwatch.TimeLog(nat.Nat44AddDelIdentityMapping{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
+	if err := checkTagLength(ctx.Tag); err != nil {
+		return err
+	}
+
 	req := &nat.Nat44AddDelIdentityMapping{
 		Tag: []byte(ctx.Tag),
 		AddrOnly: func(port uint16, ip []byte) uint8 {
@@ -302,6 +320,15 @@ func (handler *NatVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingCon
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
+	return nil
+}
+
+// checkTagLength serves as a validator for static/identity mapping tag length
+func checkTagLength(tag string) error {
+	if len(tag) > maxTagLen {
+		return errors.Errorf("load-balanced static mapping label '%s' has %d bytes, max allowed is %d",
+			tag, len(tag), maxTagLen)
+	}
 	return nil
 }
 
