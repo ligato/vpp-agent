@@ -15,8 +15,6 @@
 package l2plugin
 
 import (
-	"fmt"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
@@ -137,13 +135,13 @@ func (c *FIBConfigurator) Add(fib *l2.FibTable_FibEntry, callback func(error)) e
 		return errors.Errorf("failed to configure FIB entry, no MAC address defined")
 	}
 	if fib.BridgeDomain == "" {
-		return fmt.Errorf("failed to configure FIB entry (MAC %s), no bridge domain defined", fib.PhysAddress)
+		return errors.Errorf("failed to configure FIB entry (MAC %s), no bridge domain defined", fib.PhysAddress)
 	}
 
 	// Remove FIB from (del) cache if it's there
 	_, _, exists := c.delCacheIndexes.UnregisterName(fib.PhysAddress)
 	if exists {
-		c.log.Debugf("FIB entry %s was removed from (del) cache before configuration")
+		c.log.Debugf("FIB entry %s was removed from (del) cache before configuration", fib.PhysAddress)
 	}
 
 	// Validate required items and move to (add) cache if something's missing
@@ -154,10 +152,14 @@ func (c *FIBConfigurator) Add(fib *l2.FibTable_FibEntry, callback func(error)) e
 
 	if err := c.fibHandler.Add(fib.PhysAddress, bdIdx, ifIdx, fib.BridgedVirtualInterface, fib.StaticConfig,
 		func(err error) {
-			// Register
-			c.fibIndexes.RegisterName(fib.PhysAddress, c.fibIndexSeq, fib)
-			c.log.Debugf("Fib entry with MAC %s registered", fib.PhysAddress)
-			c.fibIndexSeq++
+			if err != nil {
+				c.log.Errorf("FIB %s callback error: %v", fib.PhysAddress, err)
+			} else {
+				// Register
+				c.fibIndexes.RegisterName(fib.PhysAddress, c.fibIndexSeq, fib)
+				c.log.Debugf("Fib entry with MAC %s registered", fib.PhysAddress)
+				c.fibIndexSeq++
+			}
 			callback(err)
 		}); err != nil {
 		return errors.Errorf("failed to add FIB entry with MAC %s: %v", fib.PhysAddress, err)
@@ -208,9 +210,14 @@ func (c *FIBConfigurator) Modify(oldFib *l2.FibTable_FibEntry,
 
 	if err := c.fibHandler.Add(newFib.PhysAddress, bdIdx, ifIdx, newFib.BridgedVirtualInterface, newFib.StaticConfig,
 		func(err error) {
-			c.fibIndexes.RegisterName(oldFib.PhysAddress, c.fibIndexSeq, newFib)
-			c.log.Debugf("FIB %s registered", newFib.PhysAddress)
-			c.fibIndexSeq++
+			if err != nil {
+				c.log.Errorf("FIB %s callback error: %v", newFib.PhysAddress, err)
+			} else {
+				// Register
+				c.fibIndexes.RegisterName(newFib.PhysAddress, c.fibIndexSeq, newFib)
+				c.log.Debugf("Fib entry with MAC %s registered", newFib.PhysAddress)
+				c.fibIndexSeq++
+			}
 			callback(err)
 		}); err != nil {
 		return errors.Errorf("failed to create FIB entry %s: %v", oldFib.PhysAddress, err)
@@ -349,10 +356,14 @@ func (c *FIBConfigurator) resolveRegisteredItem(callback func(error)) error {
 			continue
 		}
 		if err := c.fibHandler.Add(cachedFibID, bdIdx, ifIdx, fibData.BridgedVirtualInterface, fibData.StaticConfig, func(err error) {
-			// Handle registration
-			c.fibIndexes.RegisterName(cachedFibID, c.fibIndexSeq, fibData)
-			c.log.Debugf("FIB %s registered", cachedFibID)
-			c.fibIndexSeq++
+			if err != nil {
+				c.log.Errorf("FIB %s callback error: %v", cachedFibID, err)
+			} else {
+				// Register
+				c.fibIndexes.RegisterName(cachedFibID, c.fibIndexSeq, fibData)
+				c.log.Debugf("Fib entry with MAC %s registered", cachedFibID)
+				c.fibIndexSeq++
+			}
 			callback(err)
 		}); err != nil {
 			return errors.Errorf("failed to add FIB %s: %v", cachedFibID, err)
@@ -400,7 +411,8 @@ func (c *FIBConfigurator) validateFibRequirements(fib *l2.FibTable_FibEntry, add
 	}
 
 	// Check bridge domain presence
-	bdIdx, _, bdFound = c.bdIndexes.LookupIdx(fib.BridgeDomain)
+	var bdMeta *l2idx.BdMetadata
+	bdIdx, bdMeta, bdFound = c.bdIndexes.LookupIdx(fib.BridgeDomain)
 	if !bdFound {
 		c.log.Debugf("FIB entry %s is configured for bridge domain %s which does not exists",
 			fib.PhysAddress, fib.BridgeDomain)
@@ -408,8 +420,8 @@ func (c *FIBConfigurator) validateFibRequirements(fib *l2.FibTable_FibEntry, add
 
 	// Check that interface is tied with bridge domain. If interfaces are not found, metadata do not exists.
 	// They can be updated later, configurator will handle it, but they should not be missing
-	if bdInterfaces, found := c.bdIndexes.LookupConfiguredIfsForBd(fib.BridgeDomain); found {
-		for _, configured := range bdInterfaces {
+	if bdMeta != nil {
+		for _, configured := range bdMeta.ConfiguredInterfaces {
 			if configured == fib.OutgoingInterface {
 				tied = true
 				break

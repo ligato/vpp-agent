@@ -73,10 +73,10 @@ func (handler *FibVppHandler) WatchFIBReplies() {
 			handler.log.Debug("VPP L2FIB request: ", r)
 			err := handler.l2fibAddDel(r.MAC, r.BDIdx, r.SwIfIdx, r.BVI, r.Static, r.IsAdd)
 			if err != nil {
-				handler.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
+				handler.log.WithFields(logging.Fields{"mac": r.MAC, "ifIdx": r.SwIfIdx, "bdIdx": r.BDIdx}).
 					Error("Static fib entry add/delete failed:", err)
 			} else {
-				handler.log.WithFields(logging.Fields{"mac": r.MAC, "bdIdx": r.BDIdx}).
+				handler.log.WithFields(logging.Fields{"mac": r.MAC, "ifIdx": r.SwIfIdx, "bdIdx": r.BDIdx}).
 					Debug("Static fib entry added/deleted.")
 			}
 			r.callback(err)
