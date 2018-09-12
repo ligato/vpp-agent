@@ -17,7 +17,6 @@
 package ifplugin
 
 import (
-	"bytes"
 	"net"
 	"strconv"
 	"strings"
@@ -37,9 +36,6 @@ import (
 
 // Mapping labels
 const (
-	static   = "|static|"
-	staticLb = "|staticLb|"
-	identity = "|identity|"
 	dummyTag = "dummy-tag" // used for deletion where tag is not needed
 )
 
@@ -600,20 +596,17 @@ func (c *NatConfigurator) delAddressPool(addressPools []*nat.Nat44Global_Address
 // configures a list of static mappings for provided label
 func (c *NatConfigurator) configureStaticMappings(label string, mappings []*nat.Nat44DNat_DNatConfig_StaticMapping) error {
 	for _, mappingEntry := range mappings {
-		var tag string
 		localIPList := mappingEntry.LocalIps
 		if len(localIPList) == 0 {
 			return errors.Errorf("cannot configure DNAT static mapping %s: no local address provided", label)
 		} else if len(localIPList) == 1 {
 			// Case without load balance (one local address)
-			tag = c.getMappingTag(label, static)
-			if err := c.handleStaticMapping(mappingEntry, tag, true); err != nil {
+			if err := c.handleStaticMapping(mappingEntry, label, true); err != nil {
 				return err
 			}
 		} else {
 			// Case with load balance (more local addresses)
-			tag = c.getMappingTag(label, staticLb)
-			if err := c.handleStaticMappingLb(mappingEntry, tag, true); err != nil {
+			if err := c.handleStaticMappingLb(mappingEntry, label, true); err != nil {
 				return err
 			}
 		}
@@ -621,7 +614,7 @@ func (c *NatConfigurator) configureStaticMappings(label string, mappings []*nat.
 		mappingIdentifier := GetStMappingIdentifier(mappingEntry)
 		c.dNatStMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
 		c.natIndexSeq++
-		c.log.Debugf("DNAT static (lb) mapping registered (ID: %s, Tag: %s)", mappingIdentifier, tag)
+		c.log.Debugf("DNAT static (lb) mapping registered (ID: %s, Tag: %s)", mappingIdentifier, label)
 	}
 
 	return nil
@@ -773,8 +766,7 @@ func (c *NatConfigurator) configureIdentityMappings(label string, mappings []*na
 			return errors.Errorf("cannot configure DNAT %s identity mapping: no IP address or interface provided", label)
 		}
 		// Case without load balance (one local address)
-		tag := c.getMappingTag(label, identity)
-		if err := c.handleIdentityMapping(idMapping, tag, true); err != nil {
+		if err := c.handleIdentityMapping(idMapping, label, true); err != nil {
 			return err
 		}
 
@@ -782,7 +774,7 @@ func (c *NatConfigurator) configureIdentityMappings(label string, mappings []*na
 		mappingIdentifier := GetIDMappingIdentifier(idMapping)
 		c.dNatIDMappingIndexes.RegisterName(mappingIdentifier, c.natIndexSeq, nil)
 		c.natIndexSeq++
-		c.log.Debugf("DNAT identity mapping registered (ID: %s, Tag: %s)", mappingIdentifier, tag)
+		c.log.Debugf("DNAT identity mapping registered (ID: %s, Tag: %s)", mappingIdentifier, label)
 	}
 
 	return nil
@@ -1133,17 +1125,6 @@ func GetIDMappingIdentifier(mapping *nat.Nat44DNat_DNatConfig_IdentityMapping) s
 		return extIP + "-noif-" + strconv.Itoa(int(mapping.VrfId))
 	}
 	return extIP + "-" + mapping.AddressedInterface + "-" + strconv.Itoa(int(mapping.VrfId))
-}
-
-// returns unique mapping tag
-func (c *NatConfigurator) getMappingTag(label, mType string) string {
-	var buffer bytes.Buffer
-	buffer.WriteString(label)
-	buffer.WriteString(mType)
-	buffer.WriteString(strconv.Itoa(int(c.natMappingTagSeq)))
-	c.natMappingTagSeq++
-
-	return buffer.String()
 }
 
 // getDefaultVr returns default nat virtual reassembly configuration.
