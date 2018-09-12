@@ -356,24 +356,24 @@ func TestLookupConfiguredIfsForBd(t *testing.T) {
 	}
 
 	// Return correct list of configured interfaces for every bridge domain
-	configured, exists := bdIndex.LookupConfiguredIfsForBd(bdName0)
+	_, bdMeta, exists := bdIndex.LookupIdx(bdName0)
 	Expect(exists).To(BeTrue())
-	Expect(configured).To(HaveLen(2))
-	Expect(configured).To(ContainElement(ifaceAName))
-	Expect(configured).To(ContainElement(ifaceBName))
+	Expect(bdMeta.ConfiguredInterfaces).To(HaveLen(2))
+	Expect(bdMeta.ConfiguredInterfaces).To(ContainElement(ifaceAName))
+	Expect(bdMeta.ConfiguredInterfaces).To(ContainElement(ifaceBName))
 
-	configured, exists = bdIndex.LookupConfiguredIfsForBd(bdName1)
+	_, bdMeta, exists = bdIndex.LookupIdx(bdName1)
 	Expect(exists).To(BeTrue())
-	Expect(configured).To(HaveLen(1))
-	Expect(configured).To(ContainElement(ifaceCName))
+	Expect(bdMeta.ConfiguredInterfaces).To(HaveLen(1))
+	Expect(bdMeta.ConfiguredInterfaces).To(ContainElement(ifaceCName))
 
-	configured, exists = bdIndex.LookupConfiguredIfsForBd(bdName2)
-	Expect(exists).To(BeFalse())
-	Expect(configured).To(BeNil())
+	_, bdMeta, exists = bdIndex.LookupIdx(bdName2)
+	Expect(exists).To(BeTrue())
+	Expect(bdMeta).To(BeNil())
 
-	configured, exists = bdIndex.LookupConfiguredIfsForBd("")
+	_, bdMeta, exists = bdIndex.LookupIdx("")
 	Expect(exists).To(BeFalse())
-	Expect(configured).To(BeNil())
+	Expect(bdMeta).To(BeNil())
 }
 
 func TestWatchNameToIdx(t *testing.T) {
