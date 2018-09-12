@@ -201,11 +201,8 @@ func (handler *NatVppHandler) handleNat44StaticMapping(ctx *StaticMappingContext
 		handler.stopwatch.TimeLog(nat.Nat44AddDelStaticMapping{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	// Check tag length
-	tag := []byte(ctx.Tag)
-	if len(tag) > maxTagLen {
-		return errors.Errorf("static mapping label %s has '%d' bytes, max allowed is %d",
-			ctx.Tag, len(tag), maxTagLen)
+	if err := checkTagLength(ctx.Tag); err != nil {
+		return err
 	}
 
 	req := &nat.Nat44AddDelStaticMapping{
@@ -245,11 +242,8 @@ func (handler *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbCon
 		handler.stopwatch.TimeLog(nat.Nat44AddDelLbStaticMapping{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	// Check tag length
-	tag := []byte(ctx.Tag)
-	if len(tag) > maxTagLen {
-		return errors.Errorf("load-balanced static mapping label '%s' has %d bytes, max allowed is %d",
-			ctx.Tag, len(tag), maxTagLen)
+	if err := checkTagLength(ctx.Tag); err != nil {
+		return err
 	}
 
 	// Transform local IP/Ports
@@ -293,11 +287,8 @@ func (handler *NatVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingCon
 		handler.stopwatch.TimeLog(nat.Nat44AddDelIdentityMapping{}).LogTimeEntry(time.Since(t))
 	}(time.Now())
 
-	// Check tag length
-	tag := []byte(ctx.Tag)
-	if len(tag) > maxTagLen {
-		return errors.Errorf("identity mapping label '%s' has %d bytes, max allowed is %d",
-			ctx.Tag, len(tag), maxTagLen)
+	if err := checkTagLength(ctx.Tag); err != nil {
+		return err
 	}
 
 	req := &nat.Nat44AddDelIdentityMapping{
@@ -329,6 +320,15 @@ func (handler *NatVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingCon
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
+	return nil
+}
+
+// checkTagLength serves as a validator for static/identity mapping tag length
+func checkTagLength(tag string) error {
+	if len(tag) > maxTagLen {
+		return errors.Errorf("load-balanced static mapping label '%s' has %d bytes, max allowed is %d",
+			tag, len(tag), maxTagLen)
+	}
 	return nil
 }
 

@@ -783,6 +783,69 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 	Expect(msg.Protocol).To(BeEquivalentTo(16))
 }
 
+func TestNat44MappingLongTag(t *testing.T) {
+	ctx, natHandler, _ := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	normalTag := "normalTag"
+	longTag := "some-weird-tag-which-is-much-longer-than-allowed-sixty-four-bytes"
+
+	localIP1 := net.ParseIP("10.0.0.1").To4()
+	localIP2 := net.ParseIP("20.0.0.1").To4()
+	externalIP := net.ParseIP("10.0.0.2").To4()
+
+	// No other data are required
+	smCtx := &vppcalls.StaticMappingContext{
+		Tag:         normalTag,
+		AddressOnly: false,
+		LocalIP:     localIP1,
+		ExternalIP:  externalIP,
+	}
+	smLbCtx := &vppcalls.StaticMappingLbContext{
+		Tag:          normalTag,
+		LocalIPs:     localIPs(localIP1, localIP2),
+		ExternalIP:   externalIP,
+		ExternalPort: 8080,
+		Protocol:     16,
+		TwiceNat:     true,
+	}
+	imCtx := &vppcalls.IdentityMappingContext{
+		Tag:       normalTag,
+		IPAddress: localIP1,
+		Protocol:  16,
+		Vrf:       1,
+		IfIdx:     1,
+	}
+
+	// 1. test
+	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
+	ctx.MockVpp.MockReply(&nat.Nat44AddDelLbStaticMappingReply{})
+	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
+	// 2. test
+	ctx.MockVpp.MockReply(&nat.Nat44AddDelStaticMappingReply{})
+	ctx.MockVpp.MockReply(&nat.Nat44AddDelLbStaticMappingReply{})
+	ctx.MockVpp.MockReply(&nat.Nat44AddDelIdentityMappingReply{})
+
+	// Successful scenario (to ensure there is no other error)
+	err := natHandler.AddNat44StaticMapping(smCtx)
+	Expect(err).To(BeNil())
+	err = natHandler.AddNat44StaticMappingLb(smLbCtx)
+	Expect(err).To(BeNil())
+	err = natHandler.AddNat44IdentityMapping(imCtx)
+	Expect(err).To(BeNil())
+
+	// Replace tags and test again
+	smCtx.Tag = longTag
+	smLbCtx.Tag = longTag
+	imCtx.Tag = longTag
+	err = natHandler.AddNat44StaticMapping(smCtx)
+	Expect(err).ToNot(BeNil())
+	err = natHandler.AddNat44StaticMappingLb(smLbCtx)
+	Expect(err).ToNot(BeNil())
+	err = natHandler.AddNat44IdentityMapping(imCtx)
+	Expect(err).ToNot(BeNil())
+}
+
 func localIPs(addr1, addr2 []byte) []*vppcalls.LocalLbAddress {
 	return []*vppcalls.LocalLbAddress{
 		{
