@@ -53,7 +53,7 @@ func (c *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	}
 
 	// VPP channel
-	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 

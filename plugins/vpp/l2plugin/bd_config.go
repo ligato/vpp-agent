@@ -84,19 +84,18 @@ func (c *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API
 	c.bdIDSeq = 1
 	c.regIfCounter = 1
 
+	// Stopwatch
+	if enableStopwatch {
+		c.stopwatch = measure.NewStopwatch("BDConfigurator", c.log)
+	}
+
 	// VPP channel
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// Init notification channel.
 	c.notificationChan = notificationChannel
-
-	// Stopwatch
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("BDConfigurator", c.log)
-	}
 
 	// VPP API handlers
 	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log, c.stopwatch)

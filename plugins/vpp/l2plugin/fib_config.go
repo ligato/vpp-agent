@@ -75,12 +75,10 @@ func (c *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.fibIndexSeq = 1
 
 	// VPP channels
-	c.syncChannel, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.syncChannel, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create sync API channel: %v", err)
 	}
-	c.asyncChannel, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.asyncChannel, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create async API channel: %v", err)
 	}
 

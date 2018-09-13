@@ -89,7 +89,7 @@ func (c *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govpp
 	c.defaultMtu = defaultMtu
 
 	// VPP channel
-	if c.vppCh, err = goVppMux.NewAPIChannel(); err != nil {
+	if c.vppCh, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 

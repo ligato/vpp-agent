@@ -71,16 +71,15 @@ func (c *SRv6Configurator) Init(logger logging.PluginLogger, goVppMux govppmux.A
 	// Logger
 	c.log = logger.NewLogger("-sr-plugin")
 
-	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
-	// It uses default buffer sizes for the request and reply Go channels.
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create API channel: %v", err)
-	}
-
 	// Init stopwatch
 	if enableStopwatch {
 		c.stopwatch = measure.NewStopwatch("SRConfigurator", c.log)
+	}
+
+	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
+	// It uses default buffer sizes for the request and reply Go channels.
+	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handler

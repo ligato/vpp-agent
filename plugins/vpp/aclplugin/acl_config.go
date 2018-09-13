@@ -82,19 +82,19 @@ func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.l2AclIndexes = aclidx.NewACLIndex(nametoidx.NewNameToIdx(c.log, "acl_l2_indexes", nil))
 	c.l3l4AclIndexes = aclidx.NewACLIndex(nametoidx.NewNameToIdx(c.log, "acl_l3_l4_indexes", nil))
 
-	// VPP channels
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create API channel: %v", err)
-	}
-	c.vppDumpChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return errors.Errorf("failed to create dump API channel: %v", err)
-	}
-
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
 		c.stopwatch = measure.NewStopwatch("ACL-configurator", c.log)
+	}
+
+	// VPP channels
+	c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch)
+	if err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
+	}
+	c.vppDumpChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch)
+	if err != nil {
+		return errors.Errorf("failed to create dump API channel: %v", err)
 	}
 
 	// ACL binary api handler

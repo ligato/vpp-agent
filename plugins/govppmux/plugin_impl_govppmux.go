@@ -17,6 +17,7 @@ package govppmux
 import (
 	"context"
 	"errors"
+	"github.com/ligato/cn-infra/logging/measure"
 	"sync"
 	"time"
 
@@ -161,6 +162,11 @@ func (plugin *Plugin) Close() error {
 //      ch, _ := govpp_mux.NewAPIChannel()
 //      ch.SendRequest(req).ReceiveReply
 func (plugin *Plugin) NewAPIChannel() (govppapi.Channel, error) {
+	return plugin.NewMeasuredAPIChannel(nil)
+}
+
+// NewMeasuredAPIChannel allows to add optional measurement object to the resulting channel.
+func (plugin *Plugin) NewMeasuredAPIChannel(s *measure.Stopwatch) (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		return nil, err
@@ -172,7 +178,7 @@ func (plugin *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 		plugin.config.RetryRequestCount,
 		plugin.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg}, nil
+	return &goVppChan{ch, retryCfg, s}, nil
 }
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
@@ -182,6 +188,11 @@ func (plugin *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 //      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 //      ch.SendRequest(req).ReceiveReply
 func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
+	return plugin.NewMeasuredAPIChannelBuffered(reqChanBufSize, replyChanBufSize, nil)
+}
+
+// NewMeasuredAPIChannelBuffered allows to add optional measurement object to the resulting buffered channel.
+func (plugin *Plugin) NewMeasuredAPIChannelBuffered(reqChanBufSize, replyChanBufSize int, s *measure.Stopwatch) (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 	if err != nil {
 		return nil, err
@@ -193,7 +204,7 @@ func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int
 		plugin.config.RetryRequestCount,
 		plugin.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg}, nil
+	return &goVppChan{ch, retryCfg, s}, nil
 }
 
 // handleVPPConnectionEvents handles VPP connection events.

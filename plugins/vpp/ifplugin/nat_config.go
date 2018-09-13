@@ -109,10 +109,10 @@ func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.natIndexSeq, c.natMappingTagSeq = 1, 1
 
 	// Init VPP API channel
-	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
-	if c.vppDumpChan, err = goVppMux.NewAPIChannel(); err != nil {
+	if c.vppDumpChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create dump API channel: %v", err)
 	}
 

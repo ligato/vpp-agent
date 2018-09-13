@@ -72,7 +72,7 @@ func (c *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	}
 
 	// VPP channels
-	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 

@@ -89,8 +89,7 @@ func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	c.saIndexSeq = 1
 
 	// VPP channel
-	c.vppCh, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppCh, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 

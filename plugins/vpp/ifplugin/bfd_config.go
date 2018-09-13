@@ -72,8 +72,7 @@ func (c *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.echoFunctionIndex = nametoidx.NewNameToIdx(c.log, "bfd_echo_function_index", nil)
 
 	// VPP channel
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 

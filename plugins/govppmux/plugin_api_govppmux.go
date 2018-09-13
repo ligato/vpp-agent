@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/measure"
 )
 
 // API for other plugins to get connectivity to VPP.
@@ -35,4 +36,14 @@ type API interface {
 	//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 	//      ch.SendRequest(req).ReceiveReply
 	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error)
+
+	// NewMeasuredAPIChannel extends an API channel with stopwatch functionality allowing to
+	// measure time length of binary API calls. Dump-type calls are measured since request to
+	// last reply
+	NewMeasuredAPIChannel(s *measure.Stopwatch) (govppapi.Channel, error)
+
+	// NewMeasuredAPIChannelBuffered extends an API channel with custom buffer sizes with stopwatch
+	// functionality allowing to measure time length of binary API calls. Dump-type calls are measured
+	// since request to last reply
+	NewMeasuredAPIChannelBuffered(reqChanBufSize, replyChanBufSize int, s *measure.Stopwatch) (govppapi.Channel, error)
 }
