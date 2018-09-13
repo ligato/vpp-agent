@@ -53,10 +53,21 @@ type VppOtherHeader struct {
 }
 
 // EncodeMsg encodes provided `Message` structure into its binary-encoded data representation.
-func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
+func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) (data []byte, err error) {
 	if msg == nil {
 		return nil, errors.New("nil message passed in")
 	}
+
+	// try to recover panic which might possibly occur in struc.Pack call
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			if err, ok = r.(error); !ok {
+				err = fmt.Errorf("%v", r)
+			}
+			err = fmt.Errorf("panic occurred: %v", err)
+		}
+	}()
 
 	var header interface{}
 
@@ -64,13 +75,10 @@ func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
 	switch msg.GetMessageType() {
 	case api.RequestMessage:
 		header = &VppRequestHeader{VlMsgID: msgID}
-
 	case api.ReplyMessage:
 		header = &VppReplyHeader{VlMsgID: msgID}
-
 	case api.EventMessage:
 		header = &VppEventHeader{VlMsgID: msgID}
-
 	default:
 		header = &VppOtherHeader{VlMsgID: msgID}
 	}
@@ -79,13 +87,13 @@ func (*MsgCodec) EncodeMsg(msg api.Message, msgID uint16) ([]byte, error) {
 
 	// encode message header
 	if err := struc.Pack(buf, header); err != nil {
-		return nil, fmt.Errorf("unable to encode message header: %v, error %v", header, err)
+		return nil, fmt.Errorf("failed to encode message header: %+v, error: %v", header, err)
 	}
 
 	// encode message content
 	if reflect.TypeOf(msg).Elem().NumField() > 0 {
 		if err := struc.Pack(buf, msg); err != nil {
-			return nil, fmt.Errorf("unable to encode message data: %v, error %v", header, err)
+			return nil, fmt.Errorf("failed to encode message data: %+v, error: %v", data, err)
 		}
 	}
 
@@ -104,13 +112,10 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 	switch msg.GetMessageType() {
 	case api.RequestMessage:
 		header = new(VppRequestHeader)
-
 	case api.ReplyMessage:
 		header = new(VppReplyHeader)
-
 	case api.EventMessage:
 		header = new(VppEventHeader)
-
 	default:
 		header = new(VppOtherHeader)
 	}
@@ -119,12 +124,12 @@ func (*MsgCodec) DecodeMsg(data []byte, msg api.Message) error {
 
 	// decode message header
 	if err := struc.Unpack(buf, header); err != nil {
-		return fmt.Errorf("unable to decode message header: %+v, error %v", data, err)
+		return fmt.Errorf("failed to decode message header: %+v, error: %v", header, err)
 	}
 
 	// decode message content
 	if err := struc.Unpack(buf, msg); err != nil {
-		return fmt.Errorf("unable to decode message data: %+v, error %v", data, err)
+		return fmt.Errorf("failed to decode message data: %+v, error: %v", data, err)
 	}
 
 	return nil
