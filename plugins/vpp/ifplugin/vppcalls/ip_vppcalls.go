@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
@@ -29,10 +28,6 @@ const (
 )
 
 func (h *IfVppHandler) addDelInterfaceIP(ifIdx uint32, addr *net.IPNet, isAdd uint8) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.SwInterfaceAddDelAddress{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &interfaces.SwInterfaceAddDelAddress{
 		SwIfIndex: ifIdx,
 		IsAdd:     isAdd,
@@ -79,10 +74,6 @@ const (
 )
 
 func (h *IfVppHandler) setUnsetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32, isAdd uint8) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.SwInterfaceSetUnnumbered{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Prepare the message.
 	req := &interfaces.SwInterfaceSetUnnumbered{
 		SwIfIndex:           ifIdxWithIP,

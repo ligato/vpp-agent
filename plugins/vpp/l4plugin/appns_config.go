@@ -77,7 +77,7 @@ func (c *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	}
 
 	// VPP API handler
-	c.l4Handler = vppcalls.NewL4VppHandler(c.vppChan, c.log, c.stopwatch)
+	c.l4Handler = vppcalls.NewL4VppHandler(c.vppChan, c.log)
 
 	c.log.Debugf("L4 configurator initialized")
 

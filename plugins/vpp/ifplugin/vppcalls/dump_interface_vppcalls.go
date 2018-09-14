@@ -19,9 +19,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"time"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -96,7 +94,6 @@ func (h *IfVppHandler) DumpInterfacesByType(reqType ifnb.InterfaceType) (map[uin
 
 // DumpInterfaces implements interface handler.
 func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
-	start := time.Now()
 	// map for the resulting interfaces
 	ifs := make(map[uint32]*InterfaceDetails)
 
@@ -187,18 +184,11 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 		}
 	}
 
-	// SwInterfaceDump time
-	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, h.stopwatch)
-	if timeLog != nil {
-		timeLog.LogTimeEntry(time.Since(start))
-	}
-
-	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, h.stopwatch)
-	err = h.dumpIPAddressDetails(ifs, 0, timeLog)
+	err = h.dumpIPAddressDetails(ifs, 0)
 	if err != nil {
 		return nil, err
 	}
-	err = h.dumpIPAddressDetails(ifs, 1, timeLog)
+	err = h.dumpIPAddressDetails(ifs, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -223,11 +213,6 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 
 // DumpMemifSocketDetails implements interface handler.
 func (h *IfVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
-	// MemifSocketFilenameDump time measurement
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(memif.MemifSocketFilenameDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	memifSocketMap := make(map[string]uint32)
 
 	reqCtx := h.callsChannel.SendMultiRequest(&memif.MemifSocketFilenameDump{})
@@ -251,12 +236,9 @@ func (h *IfVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
-func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
+func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, isIPv6 uint8) error {
 	// Dump IP addresses of each interface.
 	for idx := range ifs {
-		// IPAddressDetails time measurement
-		start := time.Now()
-
 		reqCtx := h.callsChannel.SendMultiRequest(&ip.IPAddressDump{
 			SwIfIndex: idx,
 			IsIPv6:    isIPv6,
@@ -271,11 +253,6 @@ func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, is
 				return fmt.Errorf("failed to dump interface %d IP address details: %v", idx, err)
 			}
 			h.processIPDetails(ifs, ipDetails)
-		}
-
-		// IPAddressDump time
-		if timeLog != nil {
-			timeLog.LogTimeEntry(time.Since(start))
 		}
 	}
 
@@ -307,11 +284,6 @@ func fillAFPacketDetails(ifs map[uint32]*InterfaceDetails, swIfIndex uint32, ifN
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
 func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error {
-	// MemifDetails time measurement
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(memif.MemifDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Dump all memif sockets
 	memifSocketMap, err := h.DumpMemifSocketDetails()
 	if err != nil {
@@ -359,11 +331,6 @@ func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error 
 
 // dumpTapDetails dumps tap interface details from VPP and fills them into the provided interface map.
 func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
-	// SwInterfaceTapDump time measurement
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(tap.SwInterfaceTapDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Original TAP.
 	reqCtx := h.callsChannel.SendMultiRequest(&tap.SwInterfaceTapDump{})
 	for {
@@ -415,11 +382,6 @@ func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 
 // dumpVxlanDetails dumps VXLAN interface details from VPP and fills them into the provided interface map.
 func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error {
-	// VxlanTunnelDump time measurement
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(vxlan.VxlanTunnelDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	reqCtx := h.callsChannel.SendMultiRequest(&vxlan.VxlanTunnelDump{SwIfIndex: ^uint32(0)})
 	for {
 		vxlanDetails := &vxlan.VxlanTunnelDetails{}
@@ -464,10 +426,6 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 
 // dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
 func (h *IfVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(dhcp.DHCPClientDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	dhcpData := make(map[uint32]*Dhcp)
 	reqCtx := h.callsChannel.SendMultiRequest(&dhcp.DHCPClientDump{})
 
@@ -527,10 +485,6 @@ func (h *IfVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 
 // dumpUnnumberedDetails returns a map of unnumbered interface indexes, every with interface index of element with IP
 func (h *IfVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(ip.IPUnnumberedDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	unIfMap := make(map[uint32]uint32) // unnumbered/ip-interface
 	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPUnnumberedDump{
 		SwIfIndex: ^uint32(0),

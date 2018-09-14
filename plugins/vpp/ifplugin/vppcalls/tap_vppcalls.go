@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
@@ -26,10 +25,6 @@ import (
 
 // AddTapInterface implements interface handler.
 func (h *IfVppHandler) AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap) (swIfIdx uint32, err error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(tap.TapConnect{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	if tapIf == nil || tapIf.HostIfName == "" {
 		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}
@@ -83,10 +78,6 @@ func (h *IfVppHandler) AddTapInterface(ifName string, tapIf *interfaces.Interfac
 
 // DeleteTapInterface implements interface handler.
 func (h *IfVppHandler) DeleteTapInterface(ifName string, idx uint32, version uint32) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(tap.TapDelete{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	var (
 		err     error
 		retval  int32

@@ -117,8 +117,7 @@ func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	}
 
 	// VPP API handler
-	c.natHandler = vppcalls.NewNatVppHandler(c.vppChan, c.vppDumpChan, c.ifIndexes,
-		c.log, c.stopwatch)
+	c.natHandler = vppcalls.NewNatVppHandler(c.vppChan, c.vppDumpChan, c.ifIndexes, c.log)
 
 	c.log.Info("NAT configurator initialized")
 

@@ -17,7 +17,6 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
@@ -67,7 +66,6 @@ type IPSecVPPRead interface {
 
 // IPSecVppHandler is accessor for IPsec-related vppcalls methods
 type IPSecVppHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	spdIndexes   ipsecidx.SPDIndex // TODO workaround in order to be able to dump at least spds configurator knows about
@@ -76,10 +74,9 @@ type IPSecVppHandler struct {
 
 // NewIPsecVppHandler creates new instance of IPsec vppcalls handler
 func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, spdIndexes ipsecidx.SPDIndex,
-	log logging.Logger, stopwatch *measure.Stopwatch) *IPSecVppHandler {
+	log logging.Logger) *IPSecVppHandler {
 	return &IPSecVppHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		spdIndexes:   spdIndexes,
 		log:          log,

@@ -83,8 +83,7 @@ func (c *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	}
 
 	// VPP calls helper object
-	c.fibHandler = vppcalls.NewFibVppHandler(c.syncChannel, c.asyncChannel, c.ifIndexes,
-		c.bdIndexes, c.log, c.stopwatch)
+	c.fibHandler = vppcalls.NewFibVppHandler(c.syncChannel, c.asyncChannel, c.ifIndexes, c.bdIndexes, c.log)
 
 	// FIB reply watcher
 	go c.fibHandler.WatchFIBReplies()

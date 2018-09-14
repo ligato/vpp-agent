@@ -106,8 +106,8 @@ func (c *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	}
 
 	// VPP API handlers
-	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log, c.stopwatch)
-	c.rtHandler = vppcalls.NewRouteVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log)
+	c.rtHandler = vppcalls.NewRouteVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Debug("L3 Route configurator initialized")
 

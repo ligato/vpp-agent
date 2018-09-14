@@ -94,7 +94,7 @@ func (c *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govpp
 	}
 
 	// VPP API handler
-	c.ifHandler = vppcalls.NewIfVppHandler(c.vppCh, c.log, c.stopwatch)
+	c.ifHandler = vppcalls.NewIfVppHandler(c.vppCh, c.log)
 
 	// Mappings
 	c.swIfIndexes = ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(c.log, "sw_if_indexes", ifaceidx.IndexMetadata))

@@ -86,7 +86,7 @@ func (c *SRv6Configurator) Init(logger logging.PluginLogger, goVppMux govppmux.A
 	if srHandler != nil {
 		c.srHandler = srHandler
 	} else {
-		c.srHandler = vppcalls.NewSRv6VppHandler(c.vppChan, c.log, c.stopwatch)
+		c.srHandler = vppcalls.NewSRv6VppHandler(c.vppChan, c.log)
 	}
 
 	// Interface indexes

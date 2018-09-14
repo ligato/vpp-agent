@@ -84,7 +84,7 @@ func (c *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	}
 
 	// VPP API handler
-	c.arpHandler = vppcalls.NewArpVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.arpHandler = vppcalls.NewArpVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Info("VPP ARP configurator initialized")
 

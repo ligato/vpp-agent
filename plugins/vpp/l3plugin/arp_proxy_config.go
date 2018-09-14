@@ -81,7 +81,7 @@ func (c *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	c.pArpHandler = vppcalls.NewProxyArpVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.pArpHandler = vppcalls.NewProxyArpVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Info("Proxy ARP configurator initialized")
 

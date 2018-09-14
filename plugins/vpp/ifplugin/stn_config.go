@@ -86,7 +86,7 @@ func (c *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.allIndexesSeq, c.unstoredIndexSeq = 1, 1
 
 	// VPP API handler
-	c.stnHandler = vppcalls.NewStnVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.stnHandler = vppcalls.NewStnVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Info("STN configurator initialized")
 

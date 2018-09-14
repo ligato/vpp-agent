@@ -106,19 +106,19 @@ func (plugin *Plugin) Init() (err error) {
 	spdIndexes := plugin.VPP.GetIPSecSPDIndexes()
 
 	// Initialize handlers
-	plugin.aclHandler = aclvppcalls.NewACLVppHandler(plugin.vppChan, plugin.dumpChan, nil)
-	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.Log, nil)
-	plugin.bfdHandler = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.natHandler = ifvppcalls.NewNatVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, plugin.Log, nil)
-	plugin.stnHandler = ifvppcalls.NewStnVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log, nil)
-	plugin.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.fibHandler = l2vppcalls.NewFibVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, bdIndexes, plugin.Log, nil)
-	plugin.xcHandler = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.arpHandler = l3vppcalls.NewArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.pArpHandler = l3vppcalls.NewProxyArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.rtHandler = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.l4Handler = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log, nil)
+	plugin.aclHandler = aclvppcalls.NewACLVppHandler(plugin.vppChan, plugin.dumpChan)
+	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.Log)
+	plugin.bfdHandler = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.natHandler = ifvppcalls.NewNatVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, plugin.Log)
+	plugin.stnHandler = ifvppcalls.NewStnVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log)
+	plugin.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.fibHandler = l2vppcalls.NewFibVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, bdIndexes, plugin.Log)
+	plugin.xcHandler = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.arpHandler = l3vppcalls.NewArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.pArpHandler = l3vppcalls.NewProxyArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.rtHandler = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.l4Handler = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log)
 
 	// Fill index item lists
 	idxMap := map[string][]indexItem{

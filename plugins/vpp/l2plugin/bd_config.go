@@ -98,8 +98,8 @@ func (c *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API
 	c.notificationChan = notificationChannel
 
 	// VPP API handlers
-	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log, c.stopwatch)
-	c.bdHandler = vppcalls.NewBridgeDomainVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log)
+	c.bdHandler = vppcalls.NewBridgeDomainVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Debug("L2 Bridge domains configurator initialized")
 

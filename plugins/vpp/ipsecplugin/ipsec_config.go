@@ -94,8 +94,8 @@ func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	}
 
 	// VPP API handlers
-	c.ifHandler = iface_vppcalls.NewIfVppHandler(c.vppCh, c.log, c.stopwatch)
-	c.ipSecHandler = vppcalls.NewIPsecVppHandler(c.vppCh, c.ifIndexes, c.spdIndexes, c.log, c.stopwatch)
+	c.ifHandler = iface_vppcalls.NewIfVppHandler(c.vppCh, c.log)
+	c.ipSecHandler = vppcalls.NewIPsecVppHandler(c.vppCh, c.ifIndexes, c.spdIndexes, c.log)
 
 	c.log.Debug("IPSec configurator initialized")
 

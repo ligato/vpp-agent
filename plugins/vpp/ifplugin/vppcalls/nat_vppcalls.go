@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/go-errors/errors"
 
@@ -84,17 +83,13 @@ type LocalLbAddress struct {
 }
 
 // SetNat44Forwarding implements NAT handler.
-func (handler *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.Nat44ForwardingEnableDisable{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
 	req := &nat.Nat44ForwardingEnableDisable{
 		Enable: boolToUint(enableFwd),
 	}
 	reply := &nat.Nat44ForwardingEnableDisableReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -104,11 +99,7 @@ func (handler *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
 }
 
 // Calls VPP binary API to set/unset interface as NAT
-func (handler *NatVppHandler) handleNat44Interface(ifIdx uint32, isInside, isAdd bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.Nat44InterfaceAddDelFeature{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) handleNat44Interface(ifIdx uint32, isInside, isAdd bool) error {
 	req := &nat.Nat44InterfaceAddDelFeature{
 		SwIfIndex: ifIdx,
 		IsInside:  boolToUint(isInside),
@@ -116,7 +107,7 @@ func (handler *NatVppHandler) handleNat44Interface(ifIdx uint32, isInside, isAdd
 	}
 	reply := &nat.Nat44InterfaceAddDelFeatureReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -126,11 +117,7 @@ func (handler *NatVppHandler) handleNat44Interface(ifIdx uint32, isInside, isAdd
 }
 
 // Calls VPP binary API to set/unset interface as NAT with output feature
-func (handler *NatVppHandler) handleNat44InterfaceOutputFeature(ifIdx uint32, isInside, isAdd bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.Nat44InterfaceAddDelOutputFeature{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) handleNat44InterfaceOutputFeature(ifIdx uint32, isInside, isAdd bool) error {
 	req := &nat.Nat44InterfaceAddDelOutputFeature{
 		SwIfIndex: ifIdx,
 		IsInside:  boolToUint(isInside),
@@ -138,7 +125,7 @@ func (handler *NatVppHandler) handleNat44InterfaceOutputFeature(ifIdx uint32, is
 	}
 	reply := &nat.Nat44InterfaceAddDelOutputFeatureReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -148,11 +135,7 @@ func (handler *NatVppHandler) handleNat44InterfaceOutputFeature(ifIdx uint32, is
 }
 
 // Calls VPP binary API to add/remove address pool
-func (handler *NatVppHandler) handleNat44AddressPool(first, last []byte, vrf uint32, twiceNat, isAdd bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.Nat44AddDelAddressRange{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) handleNat44AddressPool(first, last []byte, vrf uint32, twiceNat, isAdd bool) error {
 	req := &nat.Nat44AddDelAddressRange{
 		FirstIPAddress: first,
 		LastIPAddress:  last,
@@ -162,7 +145,7 @@ func (handler *NatVppHandler) handleNat44AddressPool(first, last []byte, vrf uin
 	}
 	reply := &nat.Nat44AddDelAddressRangeReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -172,11 +155,7 @@ func (handler *NatVppHandler) handleNat44AddressPool(first, last []byte, vrf uin
 }
 
 // Calls VPP binary API to setup NAT virtual reassembly
-func (handler *NatVppHandler) handleNat44VirtualReassembly(timeout, maxReass, maxFrag uint32, dropFrag, isIpv6 bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.NatSetReass{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) handleNat44VirtualReassembly(timeout, maxReass, maxFrag uint32, dropFrag, isIpv6 bool) error {
 	req := &nat.NatSetReass{
 		Timeout:  timeout,
 		MaxReass: uint16(maxReass),
@@ -186,7 +165,7 @@ func (handler *NatVppHandler) handleNat44VirtualReassembly(timeout, maxReass, ma
 	}
 	reply := &nat.NatSetReassReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -196,11 +175,7 @@ func (handler *NatVppHandler) handleNat44VirtualReassembly(timeout, maxReass, ma
 }
 
 // Calls VPP binary API to add/remove static mapping
-func (handler *NatVppHandler) handleNat44StaticMapping(ctx *StaticMappingContext, isAdd, addrOnly bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.Nat44AddDelStaticMapping{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) handleNat44StaticMapping(ctx *StaticMappingContext, isAdd, addrOnly bool) error {
 	if err := checkTagLength(ctx.Tag); err != nil {
 		return err
 	}
@@ -227,7 +202,7 @@ func (handler *NatVppHandler) handleNat44StaticMapping(ctx *StaticMappingContext
 	}
 	reply := &nat.Nat44AddDelStaticMappingReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -237,11 +212,7 @@ func (handler *NatVppHandler) handleNat44StaticMapping(ctx *StaticMappingContext
 }
 
 // Calls VPP binary API to add/remove static mapping with load balancer
-func (handler *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbContext, isAdd bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.Nat44AddDelLbStaticMapping{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbContext, isAdd bool) error {
 	if err := checkTagLength(ctx.Tag); err != nil {
 		return err
 	}
@@ -272,7 +243,7 @@ func (handler *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbCon
 	}
 	reply := &nat.Nat44AddDelLbStaticMappingReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -282,11 +253,7 @@ func (handler *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbCon
 }
 
 // Calls VPP binary API to add/remove identity mapping
-func (handler *NatVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingContext, isAdd bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(nat.Nat44AddDelIdentityMapping{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *NatVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingContext, isAdd bool) error {
 	if err := checkTagLength(ctx.Tag); err != nil {
 		return err
 	}
@@ -314,7 +281,7 @@ func (handler *NatVppHandler) handleNat44IdentityMapping(ctx *IdentityMappingCon
 	}
 	reply := &nat.Nat44AddDelIdentityMappingReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -333,77 +300,77 @@ func checkTagLength(tag string) error {
 }
 
 // EnableNat44Interface implements NAT handler.
-func (handler *NatVppHandler) EnableNat44Interface(ifIdx uint32, isInside bool) error {
-	return handler.handleNat44Interface(ifIdx, isInside, true)
+func (h *NatVppHandler) EnableNat44Interface(ifIdx uint32, isInside bool) error {
+	return h.handleNat44Interface(ifIdx, isInside, true)
 }
 
 // DisableNat44Interface implements NAT handler.
-func (handler *NatVppHandler) DisableNat44Interface(ifIdx uint32, isInside bool) error {
-	return handler.handleNat44Interface(ifIdx, isInside, false)
+func (h *NatVppHandler) DisableNat44Interface(ifIdx uint32, isInside bool) error {
+	return h.handleNat44Interface(ifIdx, isInside, false)
 }
 
 // EnableNat44InterfaceOutput implements NAT handler.
-func (handler *NatVppHandler) EnableNat44InterfaceOutput(ifIdx uint32, isInside bool) error {
-	return handler.handleNat44InterfaceOutputFeature(ifIdx, isInside, true)
+func (h *NatVppHandler) EnableNat44InterfaceOutput(ifIdx uint32, isInside bool) error {
+	return h.handleNat44InterfaceOutputFeature(ifIdx, isInside, true)
 }
 
 // DisableNat44InterfaceOutput implements NAT handler.
-func (handler *NatVppHandler) DisableNat44InterfaceOutput(ifIdx uint32, isInside bool) error {
-	return handler.handleNat44InterfaceOutputFeature(ifIdx, isInside, false)
+func (h *NatVppHandler) DisableNat44InterfaceOutput(ifIdx uint32, isInside bool) error {
+	return h.handleNat44InterfaceOutputFeature(ifIdx, isInside, false)
 }
 
 // AddNat44AddressPool implements NAT handler.
-func (handler *NatVppHandler) AddNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
-	return handler.handleNat44AddressPool(first, last, vrf, twiceNat, true)
+func (h *NatVppHandler) AddNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
+	return h.handleNat44AddressPool(first, last, vrf, twiceNat, true)
 }
 
 // DelNat44AddressPool implements NAT handler.
-func (handler *NatVppHandler) DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
-	return handler.handleNat44AddressPool(first, last, vrf, twiceNat, false)
+func (h *NatVppHandler) DelNat44AddressPool(first, last []byte, vrf uint32, twiceNat bool) error {
+	return h.handleNat44AddressPool(first, last, vrf, twiceNat, false)
 }
 
 // SetVirtualReassemblyIPv4 implements NAT handler.
-func (handler *NatVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
-	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, false)
+func (h *NatVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
+	return h.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, false)
 }
 
 // SetVirtualReassemblyIPv6 implements NAT handler.
-func (handler *NatVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
-	return handler.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, true)
+func (h *NatVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat2.Nat44Global_VirtualReassembly) error {
+	return h.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, true)
 }
 
 // AddNat44IdentityMapping implements NAT handler.
-func (handler *NatVppHandler) AddNat44IdentityMapping(ctx *IdentityMappingContext) error {
-	return handler.handleNat44IdentityMapping(ctx, true)
+func (h *NatVppHandler) AddNat44IdentityMapping(ctx *IdentityMappingContext) error {
+	return h.handleNat44IdentityMapping(ctx, true)
 }
 
 // DelNat44IdentityMapping implements NAT handler.
-func (handler *NatVppHandler) DelNat44IdentityMapping(ctx *IdentityMappingContext) error {
-	return handler.handleNat44IdentityMapping(ctx, false)
+func (h *NatVppHandler) DelNat44IdentityMapping(ctx *IdentityMappingContext) error {
+	return h.handleNat44IdentityMapping(ctx, false)
 }
 
 // AddNat44StaticMapping implements NAT handler.
-func (handler *NatVppHandler) AddNat44StaticMapping(ctx *StaticMappingContext) error {
+func (h *NatVppHandler) AddNat44StaticMapping(ctx *StaticMappingContext) error {
 	if ctx.AddressOnly {
-		return handler.handleNat44StaticMapping(ctx, true, true)
+		return h.handleNat44StaticMapping(ctx, true, true)
 	}
-	return handler.handleNat44StaticMapping(ctx, true, false)
+	return h.handleNat44StaticMapping(ctx, true, false)
 }
 
 // DelNat44StaticMapping implements NAT handler.
-func (handler *NatVppHandler) DelNat44StaticMapping(ctx *StaticMappingContext) error {
+func (h *NatVppHandler) DelNat44StaticMapping(ctx *StaticMappingContext) error {
 	if ctx.AddressOnly {
-		return handler.handleNat44StaticMapping(ctx, false, true)
+		return h.handleNat44StaticMapping(ctx, false, true)
 	}
-	return handler.handleNat44StaticMapping(ctx, false, false)
+	return h.handleNat44StaticMapping(ctx, false, false)
 }
 
 // AddNat44StaticMappingLb implements NAT handler.
-func (handler *NatVppHandler) AddNat44StaticMappingLb(ctx *StaticMappingLbContext) error {
-	return handler.handleNat44StaticMappingLb(ctx, true)
+func (h *NatVppHandler) AddNat44StaticMappingLb(ctx *StaticMappingLbContext) error {
+	return h.handleNat44StaticMappingLb(ctx, true)
 }
 
 // DelNat44StaticMappingLb implements NAT handler.
-func (handler *NatVppHandler) DelNat44StaticMappingLb(ctx *StaticMappingLbContext) error {
-	return handler.handleNat44StaticMappingLb(ctx, false)
+func (h *NatVppHandler) DelNat44StaticMappingLb(ctx *StaticMappingLbContext) error {
+	return h.handleNat44StaticMappingLb(ctx, false)
 }

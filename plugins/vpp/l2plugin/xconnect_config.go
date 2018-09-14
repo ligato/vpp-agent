@@ -68,7 +68,7 @@ func (c *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// Cross-connect VPP API handler
-	c.xcHandler = vppcalls.NewXConnectVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.xcHandler = vppcalls.NewXConnectVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Info("L2 XConnect configurator initialized")
 

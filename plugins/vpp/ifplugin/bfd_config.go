@@ -77,7 +77,7 @@ func (c *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	}
 
 	// VPP API handler
-	c.bfdHandler = vppcalls.NewBfdVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.bfdHandler = vppcalls.NewBfdVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Infof(" BFD configurator initialized")
 

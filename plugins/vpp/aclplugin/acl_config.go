@@ -98,7 +98,7 @@ func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	}
 
 	// ACL binary api handler
-	c.aclHandler = vppcalls.NewACLVppHandler(c.vppChan, c.vppDumpChan, c.stopwatch)
+	c.aclHandler = vppcalls.NewACLVppHandler(c.vppChan, c.vppDumpChan)
 
 	c.log.Infof("ACL configurator initialized")
 
