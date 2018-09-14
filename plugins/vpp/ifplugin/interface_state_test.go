@@ -18,9 +18,10 @@ import (
 	"net"
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -34,9 +35,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater,
-	chan govppapi.Message, chan *intf.InterfaceNotification,
-) {
+func testPluginDataInitialization(t *testing.T) (*govppmux.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater,
+	chan govppapi.Message, chan *intf.InterfaceNotification) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -62,7 +62,7 @@ func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwI
 	mockCtx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govpp.Connect(mockCtx.MockVpp)
+	connection, err := govppmux.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// Prepare Init VPP replies
@@ -82,7 +82,7 @@ func testPluginDataInitialization(t *testing.T) (*govpp.Connection, ifaceidx.SwI
 	return connection, index, ifPlugin, notifChan, publishChan
 }
 
-func testPluginDataTeardown(plugin *ifplugin.InterfaceStateUpdater, connection *govpp.Connection) {
+func testPluginDataTeardown(plugin *ifplugin.InterfaceStateUpdater, connection *govppmux.Connection) {
 	connection.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

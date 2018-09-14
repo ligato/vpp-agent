@@ -18,8 +18,9 @@ import (
 	"net"
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
@@ -516,12 +517,12 @@ func TestBfdConfiguratorEchoFunctionDeleteError(t *testing.T) {
 
 /* BFD Test Setup */
 
-func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.BFDConfigurator, ifaceidx.SwIfIndexRW) {
+func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *ifplugin.BFDConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	connection, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -536,7 +537,7 @@ func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	return ctx, connection, plugin, swIfIndices
 }
 
-func bfdTestTeardown(connection *core.Connection, plugin *ifplugin.BFDConfigurator) {
+func bfdTestTeardown(connection *govppmux.Connection, plugin *ifplugin.BFDConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())

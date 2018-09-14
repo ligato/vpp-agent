@@ -17,8 +17,9 @@ package l3plugin_test
 import (
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -286,12 +287,12 @@ func TestArpResolveDeletedInterface(t *testing.T) {
 }
 
 // ARP Test Setup
-func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plugin.ArpConfigurator, ifaceidx.SwIfIndex) {
+func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l3plugin.ArpConfigurator, ifaceidx.SwIfIndex) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	connection, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	plugin := &l3plugin.ArpConfigurator{}
@@ -304,7 +305,7 @@ func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plug
 }
 
 // Test Teardown
-func arpTestTeardown(connection *core.Connection, plugin *l3plugin.ArpConfigurator) {
+func arpTestTeardown(connection *govppmux.Connection, plugin *l3plugin.ArpConfigurator) {
 	connection.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

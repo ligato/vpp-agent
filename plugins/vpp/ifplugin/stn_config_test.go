@@ -18,8 +18,9 @@ import (
 	"net"
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	stn_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
@@ -389,12 +390,12 @@ func TestStnConfiguratorResolveDeletedInterface(t *testing.T) {
 
 /* STN Test Setup */
 
-func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.StnConfigurator, ifaceidx.SwIfIndexRW) {
+func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *ifplugin.StnConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	connection, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -409,7 +410,7 @@ func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	return ctx, connection, plugin, swIfIndices
 }
 
-func stnTestTeardown(connection *core.Connection, plugin *ifplugin.StnConfigurator) {
+func stnTestTeardown(connection *govppmux.Connection, plugin *ifplugin.StnConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())

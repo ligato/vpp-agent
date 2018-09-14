@@ -17,9 +17,10 @@ package ifplugin_test
 import (
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -42,14 +43,14 @@ import (
 
 // TODO: use configurator initializers from other files which do the same thing
 
-func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *govpp.Connection) {
+func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *govppmux.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
 
-	conn, err := govpp.Connect(ctx.MockVpp)
+	conn, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// Test init
@@ -64,20 +65,20 @@ func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx
 	return ctx, plugin, conn
 }
 
-func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *govpp.Connection) {
+func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *govppmux.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
+func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *govppmux.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
 
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -94,19 +95,19 @@ func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	return ctx, plugin, c, index
 }
 
-func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *govpp.Connection) {
+func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *govppmux.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *govpp.Connection) {
+func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *govppmux.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -123,19 +124,19 @@ func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	return ctx, plugin, c
 }
 
-func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *govpp.Connection) {
+func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *govppmux.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
+func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *govppmux.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -152,7 +153,7 @@ func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 	return ctx, plugin, c, index
 }
 
-func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *govpp.Connection) {
+func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *govppmux.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

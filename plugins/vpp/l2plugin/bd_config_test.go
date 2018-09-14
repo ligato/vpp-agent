@@ -17,8 +17,9 @@ package l2plugin_test
 import (
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -33,7 +34,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator) {
+func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -51,7 +52,7 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 	mockCtx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(mockCtx.MockVpp)
+	connection, err := govppmux.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// Create plugin logger
@@ -65,7 +66,7 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 	return mockCtx, connection, swIfIndex, notifChan, bdConfiguratorPlugin
 }
 
-func bdConfigTeardown(conn *core.Connection, plugin *l2plugin.BDConfigurator) {
+func bdConfigTeardown(conn *govppmux.Connection, plugin *l2plugin.BDConfigurator) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(Succeed())
 	logging.DefaultRegistry.ClearRegistry()

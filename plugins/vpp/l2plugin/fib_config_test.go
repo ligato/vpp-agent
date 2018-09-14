@@ -19,8 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -1099,12 +1100,12 @@ func blockingResolveUpdatedBridgeDomain(plugin *l2plugin.FIBConfigurator, bdName
 
 /* FIB Test Setup */
 
-func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugin.FIBConfigurator, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
+func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l2plugin.FIBConfigurator, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	connection, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -1126,7 +1127,7 @@ func getCallback(buffer int) *mockCallback {
 	}
 }
 
-func fibTestTeardown(connection *core.Connection, plugin *l2plugin.FIBConfigurator) {
+func fibTestTeardown(connection *govppmux.Connection, plugin *l2plugin.FIBConfigurator) {
 	connection.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -895,13 +896,13 @@ func TestModifySteering(t *testing.T) {
 
 /* Srv6 Test Setup */
 
-func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.Connection) {
+func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *govppmux.Connection) {
 	RegisterTestingT(t)
 	// connection
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	connection, err := govppmux.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -919,7 +920,7 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.
 
 /* Srv6 Test Teardown */
 
-func srv6TestTeardown(connection *core.Connection, plugin *srplugin.SRv6Configurator) {
+func srv6TestTeardown(connection *govppmux.Connection, plugin *srplugin.SRv6Configurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
