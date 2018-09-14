@@ -1,8 +1,9 @@
 package govppmux
 
 import (
-	"github.com/ligato/cn-infra/logging/measure"
 	"time"
+
+	"github.com/ligato/cn-infra/logging/measure"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
@@ -68,14 +69,13 @@ func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 	requestCtx := sendRequest(request)
 
 	// Return context with value and function which allows to send request again if needed
-	logrus.DefaultLogger().Warnf("stopwatch: %v", c.stopwatch)
 	return &govppRequestCtx{
-		requestCtx: requestCtx,
+		requestCtx:  requestCtx,
 		sendRequest: sendRequest,
-		requestMsg: request,
-		retry: c.retry,
-		stopwatch: c.stopwatch,
-		started: startTime,
+		requestMsg:  request,
+		retry:       c.retry,
+		stopwatch:   c.stopwatch,
+		started:     startTime,
 	}
 }
 
@@ -116,18 +116,17 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiRequestCtx {
 	startTime := time.Now()
 
-	logrus.DefaultLogger().Warnf("multi request sent %v", request.GetMessageName())
 	sendMultiRequest := c.Channel.SendMultiRequest
 	// Send request now and wait for context
 	requestCtx := sendMultiRequest(request)
 
 	// Return context with value and function which allows to send request again if needed
 	return &govppMultirequestCtx{
-		requestCtx: requestCtx,
+		requestCtx:  requestCtx,
 		sendRequest: sendMultiRequest,
-		requestMsg: request,
-		stopwatch: c.stopwatch,
-		started: startTime,
+		requestMsg:  request,
+		stopwatch:   c.stopwatch,
+		started:     startTime,
 	}
 }
 

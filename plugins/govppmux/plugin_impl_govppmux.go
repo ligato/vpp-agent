@@ -16,7 +16,7 @@ package govppmux
 
 import (
 	"context"
-	"errors"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging/measure"
 	"sync"
 	"time"
@@ -47,6 +47,10 @@ type Plugin struct {
 
 	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	cancel context.CancelFunc
+
+	// Plugin-wide stopwatch instance used to trace and time-measure binary API calls. Can be nil if not set.
+	stopwatch *measure.Stopwatch
+
 	// Wait group allows to wait until all goroutines of the plugin have finished.
 	wg sync.WaitGroup
 }
@@ -61,6 +65,7 @@ type Deps struct {
 
 // Config groups the configurable parameter of GoVpp.
 type Config struct {
+	Stopwatch        bool     `json:"stopwatch"`
 	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
@@ -106,6 +111,10 @@ func (plugin *Plugin) Init() error {
 		govpp.HealthCheckProbeInterval = plugin.config.HealthCheckProbeInterval
 		govpp.HealthCheckReplyTimeout = plugin.config.HealthCheckReplyTimeout
 		govpp.HealthCheckThreshold = plugin.config.HealthCheckThreshold
+		if plugin.config.Stopwatch {
+			plugin.stopwatch = measure.NewStopwatch("GoVPP-mux", plugin.Log)
+			plugin.Log.Info("stopwatch enabled for VPP plugins")
+		}
 	}
 
 	if plugin.vppAdapter == nil {
@@ -162,11 +171,6 @@ func (plugin *Plugin) Close() error {
 //      ch, _ := govpp_mux.NewAPIChannel()
 //      ch.SendRequest(req).ReceiveReply
 func (plugin *Plugin) NewAPIChannel() (govppapi.Channel, error) {
-	return plugin.NewMeasuredAPIChannel(nil)
-}
-
-// NewMeasuredAPIChannel allows to add optional measurement object to the resulting channel.
-func (plugin *Plugin) NewMeasuredAPIChannel(s *measure.Stopwatch) (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
 		return nil, err
@@ -178,7 +182,7 @@ func (plugin *Plugin) NewMeasuredAPIChannel(s *measure.Stopwatch) (govppapi.Chan
 		plugin.config.RetryRequestCount,
 		plugin.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg, s}, nil
+	return &goVppChan{ch, retryCfg, plugin.stopwatch}, nil
 }
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
@@ -188,11 +192,6 @@ func (plugin *Plugin) NewMeasuredAPIChannel(s *measure.Stopwatch) (govppapi.Chan
 //      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 //      ch.SendRequest(req).ReceiveReply
 func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error) {
-	return plugin.NewMeasuredAPIChannelBuffered(reqChanBufSize, replyChanBufSize, nil)
-}
-
-// NewMeasuredAPIChannelBuffered allows to add optional measurement object to the resulting buffered channel.
-func (plugin *Plugin) NewMeasuredAPIChannelBuffered(reqChanBufSize, replyChanBufSize int, s *measure.Stopwatch) (govppapi.Channel, error) {
 	ch, err := plugin.vppConn.NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize)
 	if err != nil {
 		return nil, err
@@ -204,7 +203,7 @@ func (plugin *Plugin) NewMeasuredAPIChannelBuffered(reqChanBufSize, replyChanBuf
 		plugin.config.RetryRequestCount,
 		plugin.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg, s}, nil
+	return &goVppChan{ch, retryCfg, plugin.stopwatch}, nil
 }
 
 // handleVPPConnectionEvents handles VPP connection events.

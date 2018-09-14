@@ -21,12 +21,6 @@ import (
 
 // Resync writes missing IPSec configs to the VPP and removes obsolete ones.
 func (c *IPSecConfigurator) Resync(spds []*ipsec.SecurityPolicyDatabases_SPD, sas []*ipsec.SecurityAssociations_SA, tunnels []*ipsec.TunnelInterfaces_Tunnel) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	c.clearMapping()
 
 	// TODO: dump existing configuration from VPP

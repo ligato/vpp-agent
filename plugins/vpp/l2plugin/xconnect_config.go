@@ -18,7 +18,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -41,19 +40,12 @@ type XConnectConfigurator struct {
 
 	vppChan   govppapi.Channel
 	xcHandler vppcalls.XConnectVppAPI
-	stopwatch *measure.Stopwatch // Timer used to measure and store time
 }
 
 // Init essential configurator fields.
-func (c *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-xc-conf")
-
-	// Stopwatch
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("XCConfigurator", c.log)
-	}
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
@@ -63,7 +55,7 @@ func (c *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	c.xcIndexSeq = 1
 
 	// VPP channel
-	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
 		errors.Errorf("failed to create API channel: %v", err)
 	}
 

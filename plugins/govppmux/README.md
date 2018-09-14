@@ -79,3 +79,12 @@ elapses, the request fails
 - *shm-prefix* - used for connection to a VPP instance which is not using 
 default shared memory prefix
 - *resync-after-reconnect* - allows to run resync after recoonection
+
+## Stopwatch
+ 
+Duration of the VPP binary api call can be measured using stopwatch feature. These data are logged after 
+every event(any resync, interfaces, bridge domains, fib entries etc.). Enable stopwatch in govpp.conf: 
+ 
+`stopwatch: true` or  `stopwatch: false`
+  
+Stopwatch is disabled by default (if there is no config available). 

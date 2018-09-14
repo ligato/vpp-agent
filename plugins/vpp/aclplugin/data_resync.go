@@ -21,13 +21,6 @@ import (
 
 // Resync writes ACLs to the empty VPP.
 func (c *ACLConfigurator) Resync(nbACLs []*acl.AccessLists_Acl) error {
-	// Calculate and log acl resync.
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 

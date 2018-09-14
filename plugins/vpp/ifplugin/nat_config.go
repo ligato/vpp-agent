@@ -23,7 +23,6 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -82,20 +81,12 @@ type NatConfigurator struct {
 
 	// VPP API handler
 	natHandler vppcalls.NatVppAPI
-
-	stopwatch *measure.Stopwatch
 }
 
 // Init NAT configurator
-func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-nat-conf")
-
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("NAT-configurator", c.log)
-	}
 
 	// Mappings
 	c.ifIndexes = ifIndexes
@@ -109,10 +100,10 @@ func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.natIndexSeq, c.natMappingTagSeq = 1, 1
 
 	// Init VPP API channel
-	if c.vppChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
-	if c.vppDumpChan, err = goVppMux.NewMeasuredAPIChannel(c.stopwatch); err != nil {
+	if c.vppDumpChan, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create dump API channel: %v", err)
 	}
 
