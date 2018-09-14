@@ -17,7 +17,7 @@ package ifplugin_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"git.fd.io/govpp.git/core"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
@@ -1198,13 +1198,13 @@ func TestNatConfiguratorDNatDeleteIdentityMappingNoInterfaceAndIP(t *testing.T) 
 
 /* NAT Test Setup */
 
-func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *ifplugin.NatConfigurator, ifaceidx.SwIfIndexRW) {
+func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.NatConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govppmux.Connect(ctx.MockVpp)
+	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// Logger
@@ -1216,13 +1216,13 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *if
 
 	// Configurator
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices, true)
+	err = plugin.Init(log, connection, swIfIndices)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices
 }
 
-func natTestTeardown(connection *govppmux.Connection, plugin *ifplugin.NatConfigurator) {
+func natTestTeardown(connection *core.Connection, plugin *ifplugin.NatConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())

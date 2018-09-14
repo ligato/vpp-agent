@@ -17,7 +17,7 @@ package l3plugin_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"git.fd.io/govpp.git/core"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
@@ -402,25 +402,25 @@ func TestArpProxyResolveDeletedInterface(t *testing.T) {
 }
 
 // Test Setup
-func proxyarpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l3plugin.ProxyArpConfigurator, ifaceidx.SwIfIndex) {
+func proxyarpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plugin.ProxyArpConfigurator, ifaceidx.SwIfIndex) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govppmux.Connect(ctx.MockVpp)
+	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	plugin := &l3plugin.ProxyArpConfigurator{}
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logging.ForPlugin("test-log"), "l3-plugin", nil))
 
-	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes, false)
+	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, ifIndexes
 }
 
 // Test Teardown
-func proxyarpTestTeardown(connection *govppmux.Connection, plugin *l3plugin.ProxyArpConfigurator) {
+func proxyarpTestTeardown(connection *core.Connection, plugin *l3plugin.ProxyArpConfigurator) {
 	connection.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

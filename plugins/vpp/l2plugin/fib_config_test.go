@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"git.fd.io/govpp.git/core"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
@@ -1100,12 +1100,12 @@ func blockingResolveUpdatedBridgeDomain(plugin *l2plugin.FIBConfigurator, bdName
 
 /* FIB Test Setup */
 
-func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l2plugin.FIBConfigurator, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
+func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugin.FIBConfigurator, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govppmux.Connect(ctx.MockVpp)
+	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -1115,7 +1115,7 @@ func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l2
 	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(log, "fib-bd", nil))
 	// Configurator
 	plugin := &l2plugin.FIBConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), connection, swIfIndexes, bdIndexes, false)
+	err = plugin.Init(logging.ForPlugin("test-log"), connection, swIfIndexes, bdIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndexes, bdIndexes
@@ -1127,7 +1127,7 @@ func getCallback(buffer int) *mockCallback {
 	}
 }
 
-func fibTestTeardown(connection *govppmux.Connection, plugin *l2plugin.FIBConfigurator) {
+func fibTestTeardown(connection *core.Connection, plugin *l2plugin.FIBConfigurator) {
 	connection.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

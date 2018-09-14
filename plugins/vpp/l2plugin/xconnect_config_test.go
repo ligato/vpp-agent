@@ -17,7 +17,7 @@ package l2plugin_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"git.fd.io/govpp.git/core"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
@@ -592,12 +592,12 @@ func TestConfigureXConnectPairResolveDeletedRcInterface(t *testing.T) {
 
 /* XConnect Test Setup */
 
-func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l2plugin.XConnectConfigurator, ifaceidx.SwIfIndexRW) {
+func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugin.XConnectConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govppmux.Connect(ctx.MockVpp)
+	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -606,13 +606,13 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l2p
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if", nil))
 	// Configurator
 	plugin := &l2plugin.XConnectConfigurator{}
-	err = plugin.Init(log, connection, swIfIndexes, false)
+	err = plugin.Init(log, connection, swIfIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndexes
 }
 
-func xcTestTeardown(connection *govppmux.Connection, plugin *l2plugin.XConnectConfigurator) {
+func xcTestTeardown(connection *core.Connection, plugin *l2plugin.XConnectConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())

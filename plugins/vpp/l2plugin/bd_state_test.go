@@ -17,7 +17,7 @@ package l2plugin_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"git.fd.io/govpp.git/core"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
@@ -34,7 +34,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater, *govppmux.Connection, l2idx.BDIndexRW, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, chan *l2plugin.BridgeDomainStateNotification) {
+func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater, *core.Connection, l2idx.BDIndexRW, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, chan *l2plugin.BridgeDomainStateNotification) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -70,7 +70,7 @@ func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater
 	mockCtx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govppmux.Connect(mockCtx.MockVpp)
+	connection, err := core.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// Create plugin logger
@@ -84,7 +84,7 @@ func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater
 	return plugin, connection, index, swIfIndex, notifChan, publishChan
 }
 
-func bdStateTestTeardown(plugin *l2plugin.BridgeDomainStateUpdater, conn *govppmux.Connection) {
+func bdStateTestTeardown(plugin *l2plugin.BridgeDomainStateUpdater, conn *core.Connection) {
 	conn.Disconnect()
 	logging.DefaultRegistry.ClearRegistry()
 }

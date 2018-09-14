@@ -16,9 +16,9 @@ package aclplugin_test
 
 import (
 	"git.fd.io/govpp.git/adapter/mock"
+	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
@@ -386,13 +386,13 @@ func TestResolveDeletedInterface(t *testing.T) {
 }
 
 /* ACL Test Setup */
-func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *govppmux.Connection, *aclplugin.ACLConfigurator) {
+func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Connection, *aclplugin.ACLConfigurator) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govppmux.Connect(ctx.MockVpp)
+	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// Logger
@@ -410,14 +410,14 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *govppmux
 
 	// Configurator
 	plugin := &aclplugin.ACLConfigurator{}
-	err = plugin.Init(log, connection, ifIndexes, false)
+	err = plugin.Init(log, connection, ifIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin
 }
 
 /* ACL Test Teardown */
-func aclTestTeardown(connection *govppmux.Connection, plugin *aclplugin.ACLConfigurator) {
+func aclTestTeardown(connection *core.Connection, plugin *aclplugin.ACLConfigurator) {
 	connection.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

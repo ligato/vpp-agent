@@ -17,7 +17,7 @@ package l3plugin_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"git.fd.io/govpp.git/core"
 
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
@@ -381,18 +381,18 @@ func TestResolveDeletedRoute(t *testing.T) {
 }
 
 // Rotue Test Setup
-func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govppmux.Connection, *l3plugin.RouteConfigurator, ifaceidx.SwIfIndex) {
+func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plugin.RouteConfigurator, ifaceidx.SwIfIndex) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govppmux.Connect(ctx.MockVpp)
+	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	plugin := &l3plugin.RouteConfigurator{}
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logging.ForPlugin("test-log"), "l3-plugin", nil))
 
-	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes, false)
+	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, ifIndexes
@@ -516,7 +516,7 @@ func TestDiffRoutesMultipleChanges(t *testing.T) {
 }
 
 // Test Teardown
-func routeTestTeardown(connection *govppmux.Connection, plugin *l3plugin.RouteConfigurator) {
+func routeTestTeardown(connection *core.Connection, plugin *l3plugin.RouteConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
