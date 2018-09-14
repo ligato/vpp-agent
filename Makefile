@@ -11,6 +11,11 @@ ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
 endif
 
+ifeq ($(BUILDPIE),y)
+GO_BUILD_ARGS += -buildmode=pie
+LDFLAGS += -extldflags=-Wl,-z,now,-z,relro
+endif
+
 ifeq ($(V),1)
 GO_BUILD_ARGS += -v
 endif
