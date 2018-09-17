@@ -63,7 +63,6 @@ type govppMultirequestCtx struct {
 func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 	startTime := time.Now()
 
-	logrus.DefaultLogger().Warnf("request sent %v", request.GetMessageName())
 	sendRequest := c.Channel.SendRequest
 	// Send request now and wait for context
 	requestCtx := sendRequest(request)

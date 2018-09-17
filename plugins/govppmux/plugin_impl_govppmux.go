@@ -65,7 +65,7 @@ type Deps struct {
 
 // Config groups the configurable parameter of GoVpp.
 type Config struct {
-	Stopwatch        bool     `json:"stopwatch"`
+	StopwatchEnabled        bool     `json:"stopwatch-enabled"`
 	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
@@ -111,7 +111,7 @@ func (plugin *Plugin) Init() error {
 		govpp.HealthCheckProbeInterval = plugin.config.HealthCheckProbeInterval
 		govpp.HealthCheckReplyTimeout = plugin.config.HealthCheckReplyTimeout
 		govpp.HealthCheckThreshold = plugin.config.HealthCheckThreshold
-		if plugin.config.Stopwatch {
+		if plugin.config.StopwatchEnabled {
 			plugin.stopwatch = measure.NewStopwatch("GoVPP-mux", plugin.Log)
 			plugin.Log.Info("stopwatch enabled for VPP plugins")
 		}
