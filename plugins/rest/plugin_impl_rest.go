@@ -72,7 +72,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
-	GoVppmux     govppmux.API
+	GoVppmux     govppmux.TraceAPI
 	VPP          vpp.API
 }
 
@@ -161,6 +161,9 @@ func (plugin *Plugin) Init() (err error) {
 			{Name: "Runtime", Path: resturl.TRuntime},
 			{Name: "Node count", Path: resturl.TNodeCount},
 		},
+		"Tracer": {
+			{Name: "Binary API", Path: resturl.Tracer},
+		},
 	}
 
 	plugin.index = &index{
@@ -183,6 +186,7 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerL2Handlers()
 	plugin.registerL3Handlers()
 	plugin.registerL4Handlers()
+	plugin.registerTracerHandler()
 	plugin.registerTelemetryHandlers()
 	plugin.registerCommandHandler()
 	plugin.registerIndexHandlers()

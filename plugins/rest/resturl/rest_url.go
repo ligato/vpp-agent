@@ -121,6 +121,12 @@ const (
 	TNodeCount = "/vpp/telemetry/nodecount"
 )
 
+// Tracer
+const (
+	// Traced binary API calls
+	Tracer = "/vpp/binapitrace"
+)
+
 // Index
 const (
 	// Index can be used to get the full index page

@@ -17,9 +17,8 @@ type goVppChan struct {
 	govppapi.Channel
 	// Retry data
 	retry retryConfig
-	// Stopwatch used to measure binary api call duration. Can be nil, in that case time is not measured (stopwatch
-	// is disabled)
-	stopwatch *measure.Stopwatch
+	// tracer used to measure binary api call duration
+	tracer measure.Tracer
 }
 
 // helper struct holding info about retry configuration
@@ -38,10 +37,8 @@ type govppRequestCtx struct {
 	requestMsg govppapi.Message
 	// Retry data
 	retry retryConfig
-	// Stopwatch object
-	stopwatch *measure.Stopwatch
-	// Current duration
-	started time.Time
+	// Tracer object
+	tracer measure.Tracer
 }
 
 // govppMultirequestCtx is custom govpp MultiRequestCtx.
@@ -52,16 +49,16 @@ type govppMultirequestCtx struct {
 	sendRequest func(govppapi.Message) govppapi.MultiRequestCtx
 	// Parameter for sendRequest
 	requestMsg govppapi.Message
-	// Stopwatch object
-	stopwatch *measure.Stopwatch
-	// Current duration
-	started time.Time
+	// Tracer object
+	tracer measure.Tracer
 }
 
 // SendRequest sends asynchronous request to the vpp and receives context used to receive reply.
 // Plugin govppmux allows to re-send retry which failed because of disconnected vpp, if enabled.
 func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
-	startTime := time.Now()
+	if c.tracer != nil {
+		c.tracer.Start()
+	}
 
 	sendRequest := c.Channel.SendRequest
 	// Send request now and wait for context
@@ -73,19 +70,17 @@ func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 		sendRequest: sendRequest,
 		requestMsg:  request,
 		retry:       c.retry,
-		stopwatch:   c.stopwatch,
-		started:     startTime,
+		tracer:      c.tracer,
 	}
 }
 
 // ReceiveReply handles request and returns error if occurred. Also does retry if this option is available.
 func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
-	defer func(t time.Time) {
-		if r.stopwatch != nil {
-			r.stopwatch.TimeLog(r.requestMsg.GetMessageName()).LogTimeEntry(time.Since(r.started))
-			r.stopwatch.PrintLog()
+	defer func() {
+		if r.tracer != nil {
+			r.tracer.LogTime(r.requestMsg.GetMessageName())
 		}
-	}(time.Now())
+	}()
 
 	var timeout time.Duration
 	maxAttempts := r.retry.attempts
@@ -113,7 +108,9 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 
 // SendMultiRequest sends asynchronous request to the vpp and receives context used to receive reply.
 func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiRequestCtx {
-	startTime := time.Now()
+	if c.tracer != nil {
+		c.tracer.Start()
+	}
 
 	sendMultiRequest := c.Channel.SendMultiRequest
 	// Send request now and wait for context
@@ -124,8 +121,7 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 		requestCtx:  requestCtx,
 		sendRequest: sendMultiRequest,
 		requestMsg:  request,
-		stopwatch:   c.stopwatch,
-		started:     startTime,
+		tracer:      c.tracer,
 	}
 }
 
@@ -133,10 +129,12 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error) {
 	// Receive reply from original send
 	last, err := r.requestCtx.ReceiveReply(reply)
-	r.stopwatch.TimeLog(r.requestMsg.GetMessageName()).LogTimeEntry(time.Since(r.started))
-
-	if last && r.stopwatch != nil {
-		r.stopwatch.PrintLog()
+	if last {
+		defer func() {
+			if r.tracer != nil {
+				r.tracer.LogTime(r.requestMsg.GetMessageName())
+			}
+		}()
 	}
 	return last, err
 }
