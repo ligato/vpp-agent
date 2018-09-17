@@ -80,11 +80,11 @@ elapses, the request fails
 default shared memory prefix
 - *resync-after-reconnect* - allows to run resync after recoonection
 
-## Stopwatch
+## Trace
  
-Duration of the VPP binary api call can be measured using stopwatch feature. These data are logged after 
-every event(any resync, interfaces, bridge domains, fib entries etc.). Enable stopwatch in govpp.conf: 
+Duration of the VPP binary api call can be measured using trace feature. These data are logged after 
+every event(any resync, interfaces, bridge domains, fib entries etc.). Enable trace in govpp.conf: 
  
-`stopwatch: true` or  `stopwatch: false`
+`trace-enabled: true` or  `trace-enabled: false`
   
-Stopwatch is disabled by default (if there is no config available). 
+Trace is disabled by default (if there is no config available). 
