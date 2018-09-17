@@ -31,18 +31,12 @@
 package linuxcalls
 
 import (
-	"net"
-	"time"
-
 	"github.com/vishvananda/netlink"
+	"net"
 )
 
 // SetInterfaceMac calls LinkSetHardwareAddr netlink API.
 func (handler *NetLinkHandler) SetInterfaceMac(ifName string, macAddress string) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("set-interface-mac").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err

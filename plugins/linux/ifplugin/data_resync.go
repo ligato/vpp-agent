@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -46,10 +45,6 @@ type LinuxDataPair struct {
 // 3. If interface exists, it is correlated and modified if needed.
 // Resync configures an initial set of interfaces. Existing Linux interfaces are registered and potentially re-configured.
 func (c *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_Interface) error {
-	defer func(t time.Time) {
-		c.stopwatch.TimeLog("resync-linux-interfaces").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 
 	// Cache for interfaces modified later (interface name/link data)

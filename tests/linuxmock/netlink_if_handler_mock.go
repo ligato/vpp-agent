@@ -17,7 +17,6 @@ package linuxmock
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
@@ -302,6 +301,3 @@ func (mock *IfNetlinkHandlerMock) GetInterfaceByName(ifName string) (*net.Interf
 	}
 	return nil, nil
 }
-
-// SetStopwatch sets stopwatch.
-func (mock *IfNetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}
