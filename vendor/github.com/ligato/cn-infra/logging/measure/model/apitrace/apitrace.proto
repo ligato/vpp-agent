@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// Package apitrace provides data model for binary API trace informations.
+package apitrace;
+
+message Trace {
+    message TracedEntry {
+        uint32 index = 1;                       // Trace index
+        string msg_name = 2;                    // Message name (or any other string)
+        string duration = 3;                    // Duration in milliseconds
+    }
+    repeated TracedEntry traced_entries = 1;
+    string overall = 2;                         // Overall duration of all measured entries
+}
