@@ -136,11 +136,6 @@ func (c *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_
 		attrs := link.Attrs()
 		_, _, found := c.ifIndexes.LookupIdx(attrs.Name)
 		if !found {
-			// If interface is veth, do not register it. Agent does not know where the other
-			// end is or if it even exists.
-			if link.Type() == veth {
-				continue
-			}
 			// Register interface with name (other parameters can be read if needed)
 			c.ifIndexes.RegisterName(attrs.Name, c.ifIdxSeq, &ifaceidx.IndexedLinuxInterface{
 				Index: uint32(attrs.Index),
