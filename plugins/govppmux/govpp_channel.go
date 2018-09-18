@@ -39,6 +39,8 @@ type govppRequestCtx struct {
 	retry retryConfig
 	// Tracer object
 	tracer measure.Tracer
+	// Start time
+	start time.Time
 }
 
 // govppMultirequestCtx is custom govpp MultiRequestCtx.
@@ -51,14 +53,14 @@ type govppMultirequestCtx struct {
 	requestMsg govppapi.Message
 	// Tracer object
 	tracer measure.Tracer
+	// Start time
+	start time.Time
 }
 
 // SendRequest sends asynchronous request to the vpp and receives context used to receive reply.
 // Plugin govppmux allows to re-send retry which failed because of disconnected vpp, if enabled.
 func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
-	if c.tracer != nil {
-		c.tracer.Start()
-	}
+	start := time.Now()
 
 	sendRequest := c.Channel.SendRequest
 	// Send request now and wait for context
@@ -71,6 +73,7 @@ func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 		requestMsg:  request,
 		retry:       c.retry,
 		tracer:      c.tracer,
+		start:       start,
 	}
 }
 
@@ -78,7 +81,7 @@ func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
 func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 	defer func() {
 		if r.tracer != nil {
-			r.tracer.LogTime(r.requestMsg.GetMessageName())
+			r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
 		}
 	}()
 
@@ -108,9 +111,7 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 
 // SendMultiRequest sends asynchronous request to the vpp and receives context used to receive reply.
 func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiRequestCtx {
-	if c.tracer != nil {
-		c.tracer.Start()
-	}
+	start := time.Now()
 
 	sendMultiRequest := c.Channel.SendMultiRequest
 	// Send request now and wait for context
@@ -122,6 +123,7 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 		sendRequest: sendMultiRequest,
 		requestMsg:  request,
 		tracer:      c.tracer,
+		start:       start,
 	}
 }
 
@@ -132,7 +134,7 @@ func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error
 	if last {
 		defer func() {
 			if r.tracer != nil {
-				r.tracer.LogTime(r.requestMsg.GetMessageName())
+				r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
 			}
 		}()
 	}

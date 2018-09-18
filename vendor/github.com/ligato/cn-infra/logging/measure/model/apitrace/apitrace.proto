@@ -4,11 +4,16 @@ syntax = "proto3";
 package apitrace;
 
 message Trace {
-    message TracedEntry {
-        uint32 index = 1;                       // Trace index
+    message Entry {
+        uint64 index = 1;                       // Trace index
         string msg_name = 2;                    // Message name (or any other string)
-        string duration = 3;                    // Duration in milliseconds
+        uint64 duration = 3;                    // Duration as integer
     }
-    repeated TracedEntry traced_entries = 1;
-    string overall = 2;                         // Overall duration of all measured entries
+    repeated Entry traced_entries = 1;
+    message Average {
+        string msg_name = 1;                    // Message name (or any other string). Unique in this list.
+        uint64 average_time = 2;                // Average time duration per message as integer
+    }
+    repeated Average average_times = 2;
+    uint64 overall = 3;                         // Overall duration of all measured entries as integer
 }

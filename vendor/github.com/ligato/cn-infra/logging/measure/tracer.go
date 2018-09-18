@@ -26,12 +26,8 @@ import (
 
 // Tracer allows to measure, store and list measured time entries.
 type Tracer interface {
-	// Starts the time measurement. All logged entries are calculated since the start.
-	Start()
 	// LogTime puts measured time to the table and resets the time.
-	LogTime(entity string)
-	// Print logs all entries
-	Print()
+	LogTime(entity string, start time.Time)
 	// Get all trace entries stored
 	Get() *apitrace.Trace
 	// Clear removes entries from the log database
@@ -44,7 +40,7 @@ func NewTracer(name string, log logging.Logger) Tracer {
 		name:   name,
 		log:    log,
 		index:  1,
-		timedb: make(map[int]*entry),
+		timedb: make([]*entry, 0),
 	}
 }
 
@@ -52,32 +48,24 @@ func NewTracer(name string, log logging.Logger) Tracer {
 type tracer struct {
 	sync.Mutex
 
-	name      string
-	log       logging.Logger
-	startTime time.Time
+	name string
+	log  logging.Logger
 	// Entry index, used in database as key and increased after every entry. Never resets since the tracer object is
 	// created or the database is cleared
-	index int
+	index uint64
 	// Time database, uses index as key and entry as value
-	timedb map[int]*entry
+	timedb []*entry
 }
 
 // Single time entry
 type entry struct {
-	entryName  string
+	index      uint64
+	name       string
 	loggedTime time.Duration
 }
 
-func (t *tracer) Start() {
-	t.startTime = time.Now()
-}
-
-func (t *tracer) LogTime(entity string) {
+func (t *tracer) LogTime(entity string, start time.Time) {
 	if t == nil {
-		return
-	}
-	// Skip cli-inband
-	if entity == "cli_inband" {
 		return
 	}
 
@@ -85,55 +73,53 @@ func (t *tracer) LogTime(entity string) {
 	defer t.Unlock()
 
 	// Store time
-	t.timedb[t.index] = &entry{
-		entryName:  entity,
-		loggedTime: time.Since(t.startTime),
-	}
+	t.timedb = append(t.timedb, &entry{
+		index:      t.index,
+		name:       entity,
+		loggedTime: time.Since(start),
+	})
 	t.index++
 }
 
-func (t *tracer) Print() {
-	t.process()
-}
-
 func (t *tracer) Get() *apitrace.Trace {
-	return t.process()
-}
-
-func (t *tracer) Clear() {
-	t.timedb = make(map[int]*entry)
-}
-
-func (t *tracer) process() *apitrace.Trace {
 	t.Lock()
 	defer t.Unlock()
 
-	var (
-		trace = &apitrace.Trace{
-			TracedEntries: make([]*apitrace.Trace_TracedEntry, 0),
-		}
-		data  []*apitrace.Trace_TracedEntry
-		total time.Duration
-	)
-
-	for idx := 1; idx <= len(t.timedb); idx++ {
-		entry, ok := t.timedb[idx]
-		if !ok {
-			t.log.Errorf("failed to print tracer: timedb processing error")
-			return nil
-		}
-		total += entry.loggedTime
-		message := &apitrace.Trace_TracedEntry{
-			Index:    uint32(idx),
-			MsgName:  entry.entryName,
-			Duration: entry.loggedTime.String(),
-		}
-		data = append(data, message)
+	trace := &apitrace.Trace{
+		TracedEntries: make([]*apitrace.Trace_Entry, 0),
+		AverageTimes:  make([]*apitrace.Trace_Average, 0),
 	}
 
-	// Log overall time
-	trace.TracedEntries = data
-	trace.Overall = total.String()
+	average := make(map[string][]time.Duration) // message name -> measured times
+	for _, entry := range t.timedb {
+		// Add to total
+		trace.Overall += uint64(entry.loggedTime)
+		// Add to trace data
+		trace.TracedEntries = append(trace.TracedEntries, &apitrace.Trace_Entry{
+			Index:    entry.index,
+			MsgName:  entry.name,
+			Duration: uint64(entry.loggedTime.Nanoseconds()),
+		})
+		// Add to map for average data
+		average[entry.name] = append(average[entry.name], entry.loggedTime)
+	}
 
+	// Prepare list of average times
+	for msgName, times := range average {
+		var total time.Duration
+		for _, timeVal := range times {
+			total += timeVal
+		}
+		averageTime := total.Nanoseconds() / int64(len(times))
+
+		trace.AverageTimes = append(trace.AverageTimes, &apitrace.Trace_Average{
+			MsgName:     msgName,
+			AverageTime: uint64(averageTime),
+		})
+	}
 	return trace
+}
+
+func (t *tracer) Clear() {
+	t.timedb = make([]*entry, 0)
 }
