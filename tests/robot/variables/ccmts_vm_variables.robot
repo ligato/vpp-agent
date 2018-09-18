@@ -8,4 +8,4 @@ ${DOCKER_HOST_PSWD}               rsa_id
 
 ${AGENT_VPP_IMAGE_NAME}           ligato/vpp-agent:pantheon-dev
 ${VNF_IMAGE_NAME}                 ligato/vpp-agent:pantheon-dev
-${SFC_CONTROLLER_IMAGE_NAME}      ligato/prod_sfc_controller:latest
+${SFC_CONTROLLER_IMAGE_NAME}      ligato/dev_sfc_controller:latest
