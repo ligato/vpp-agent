@@ -54,6 +54,7 @@ type LinuxInterfaceConfigurator struct {
 	ifIndexes ifaceidx.LinuxIfIndexRW
 	ifIdxSeq  uint32
 
+	// mapMu protects ifByName and ifsByMs maps
 	mapMu    sync.RWMutex
 	ifByName map[string]*LinuxInterfaceConfig   // interface name -> interface configuration
 	ifsByMs  map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
