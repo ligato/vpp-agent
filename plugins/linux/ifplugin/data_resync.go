@@ -94,6 +94,7 @@ func (c *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_
 		if linkDataPair.nbIfData.Type == interfaces.LinuxInterfaces_VETH {
 			// Search registered config for peer
 			var found bool
+			c.mapMu.RLock()
 			for _, cachedIfCfg := range c.ifByName {
 				if cachedIfCfg.config != nil && cachedIfCfg.config.Type == interfaces.LinuxInterfaces_VETH {
 					if cachedIfCfg.config.Veth != nil && cachedIfCfg.config.Veth.PeerIfName == linuxIf.HostIfName {
@@ -104,6 +105,7 @@ func (c *LinuxInterfaceConfigurator) Resync(nbIfs []*interfaces.LinuxInterfaces_
 					}
 				}
 			}
+			c.mapMu.RUnlock()
 			if found {
 				c.log.Debugf("linux interface %s resync: found peer %s", linkName, linuxIf.Veth.PeerIfName)
 			} else {
