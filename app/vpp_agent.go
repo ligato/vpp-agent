@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/health/probe"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/vpp-agent/plugins/linux"
@@ -60,15 +61,16 @@ func New() *VPPAgent {
 	consulDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&consul.DefaultPlugin))
 	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&redis.DefaultPlugin))
 
-	watcher := datasync.KVProtoWatchers{
+	watchers := datasync.KVProtoWatchers{
 		local.Get(),
 		etcdDataSync,
 		consulDataSync,
 	}
-	publisher := datasync.KVProtoWriters{
+	writers := datasync.KVProtoWriters{
 		etcdDataSync,
 		consulDataSync,
 	}
+	statuscheck.DefaultPlugin.Transport = writers
 
 	ifStatePub := msgsync.NewPlugin(
 		msgsync.UseMessaging(&kafka.DefaultPlugin),
@@ -78,8 +80,8 @@ func New() *VPPAgent {
 	)
 
 	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Publish = publisher
-		deps.Watcher = watcher
+		deps.Publish = writers
+		deps.Watcher = watchers
 		deps.IfStatePub = ifStatePub
 		deps.DataSyncs = map[string]datasync.KeyProtoValWriter{
 			"etcd":  etcdDataSync,
@@ -89,7 +91,7 @@ func New() *VPPAgent {
 	}))
 	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
 		deps.VPP = vppPlugin
-		deps.Watcher = watcher
+		deps.Watcher = watchers
 	}))
 	vppPlugin.Deps.Linux = linuxPlugin
 
