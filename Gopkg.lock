@@ -526,6 +526,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:d0c95a34e79df79eb96ca870d6b6fc43361d34c9c05495f93a5ad0077f7bbb24"
+  name = "github.com/mitchellh/go-ps"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "4fdf99ab29366514c69ccccddab5dc58b8d84062"
+
+[[projects]]
+  branch = "master"
   digest = "1:5ab79470a1d0fb19b041a624415612f8236b3c06070161a910562f2b2d064355"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
@@ -981,6 +989,7 @@
     "github.com/ligato/cn-infra/utils/safeclose",
     "github.com/logrusorgru/aurora.git",
     "github.com/lunixbochs/struc",
+    "github.com/mitchellh/go-ps",
     "github.com/namsral/flag",
     "github.com/onsi/gomega",
     "github.com/opencontainers/runc",
