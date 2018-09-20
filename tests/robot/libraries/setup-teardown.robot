@@ -4,6 +4,7 @@
 Library       String
 Library       RequestsLibrary
 Library       SSHLibrary            timeout=60s
+Library       SSHLibrary            loglevel=TRACE
 #Resource      ssh.robot
 Resource      ${ENV}_setup-teardown.robot
 
@@ -15,7 +16,6 @@ ${snapshot_num}       0
 *** Keywords ***
 Open SSH Connection
     [Arguments]         ${name}    ${ip}    ${user}    ${pswd}
-    Log Many            ${name}    ${ip}    ${user}    ${pswd}
     Open Connection     ${ip}      ${name}
     Run Keyword If      "${pswd}"!="rsa_id"   Login                              ${user}   ${pswd}
     Run Keyword If      "${pswd}"=="rsa_id"   SSHLibrary.Login_With_Public_Key   ${user}   %{HOME}/.ssh/id_rsa   any
@@ -23,6 +23,7 @@ Open SSH Connection
 Testsuite Setup
     [Documentation]  *Testsuite Setup*
     Discard old results
+    Enable SSH Logging  ${RESULTS_FOLDER_SUITE}/ssh.log
     Open Connection To Docker Host
     Create Connections For ETCD And Kafka
     Start Kafka Server
@@ -34,7 +35,6 @@ Testsuite Setup
 Testsuite Teardown
     [Documentation]      *Testsuite Teardown*
     Make Datastore Snapshots    teardown
-#    Log All SSH Outputs
     Remove All Nodes
     Stop ETCD Server
     Stop VPP Ctl Container
@@ -42,6 +42,7 @@ Testsuite Teardown
     Get Connections
     Close All Connections
     Check Agent Logs For Errors
+    Copy File    ${RESULTS_FOLDER_SUITE}/ssh.log    ${RESULTS_FOLDER}/ssh.log
 
 Test Setup
     Open Connection To Docker Host
@@ -56,7 +57,6 @@ Test Teardown
     Stop VPP Ctl Container
     Stop Kafka Server
     Stop ETCD Server
-#    Log All SSH Outputs
     Remove All Nodes
     Get Connections
     Close All Connections
@@ -68,6 +68,7 @@ Discard old results
     #Create Directory    ${RESULTS_FOLDER}
     Remove Directory    ${RESULTS_FOLDER_SUITE}           recursive=true
     Create Directory    ${RESULTS_FOLDER}
+    Create Directory    ${RESULTS_FOLDER_SUITE}
 
 
 Log All SSH Outputs
@@ -83,10 +84,8 @@ Log All SSH Outputs
 Log ${machine} Output
     [Documentation]         *Log ${machine} Output*
     ...                     Logs actual ${machine} output from begining
-    Log                     ${machine}
     Switch Connection       ${machine}
     ${out}=                 Read                   delay=${SSH_READ_DELAY}s
-    Log                     ${out}
     Append To File          ${RESULTS_FOLDER}/output_${machine}.log                ${out}
     Append To File          ${RESULTS_FOLDER_SUITE}/output_${machine}.log                ${out}
 
@@ -94,7 +93,6 @@ Get Machine Status
     [Arguments]              ${machine}
     [Documentation]          *Get Machine Status ${machine}*
     ...                      Executing df, free, ifconfig -a, ps -aux... on ${machine}
-    Log                      ${machine}
     Execute On Machine       ${machine}                df
     Execute On Machine       ${machine}                free
     Execute On Machine       ${machine}                ifconfig -a
@@ -113,7 +111,6 @@ Create Connections For ETCD And Kafka
     
 Make Datastore Snapshots
     [Arguments]            ${tag}=notag
-    Log                    ${tag}
     ${prefix}=             Create Next Snapshot Prefix
     Take ETCD Snapshots    ${prefix}_${tag}
 
@@ -125,7 +122,6 @@ Get ETCD Dump
 
 Take ETCD Snapshots
     [Arguments]         ${tag}    ${machine}=docker
-    Log                 ${tag}
     ${dump}=            Get ETCD Dump    ${machine}
     Append To File      ${RESULTS_FOLDER}/etcd_dump-${tag}.txt    ${dump}
     Append To File      ${RESULTS_FOLDER_SUITE}/etcd_dump-${tag}.txt    ${dump}
@@ -141,7 +137,6 @@ Create Next Snapshot Prefix
 
 Check Agent Logs For Errors
     @{logs}=    OperatingSystem.List Files In Directory    ${RESULTS_FOLDER}/    *_container_agent.log
-    Log List    ${logs}
     :FOR    ${log}    IN    @{logs}
     \    ${data}=    OperatingSystem.Get File    ${RESULTS_FOLDER}/${log}
     \    Should Not Contain    ${data}    exited: agent (exit status
