@@ -20,9 +20,9 @@ Open SSH Connection
     Run Keyword If      "${pswd}"=="rsa_id"   SSHLibrary.Login_With_Public_Key   ${user}   %{HOME}/.ssh/id_rsa   any
 
 Testsuite Setup
-    [Documentation]  *Testsuite Setup*
     Discard old results
-    Enable SSH Logging  ${RESULTS_FOLDER_SUITE}/ssh.log
+    #Remove File		${OUTPUTDIR}/ssh.log
+    Enable SSH Logging		${OUTPUTDIR}/ssh.log
     Open Connection To Docker Host
     Create Connections For ETCD And Kafka
     Start Kafka Server
@@ -32,7 +32,6 @@ Testsuite Setup
 
 
 Testsuite Teardown
-    [Documentation]      *Testsuite Teardown*
     Make Datastore Snapshots    teardown
     Remove All Nodes
     Stop ETCD Server
@@ -41,7 +40,7 @@ Testsuite Teardown
     Get Connections
     Close All Connections
     Check Agent Logs For Errors
-    Copy File    ${RESULTS_FOLDER_SUITE}/ssh.log    ${RESULTS_FOLDER}/ssh.log
+    #Copy File    ${OUTPUTDIR}/ssh.log	${RESULTS_FOLDER_SUITE}/ssh.log
 
 Test Setup
     Open Connection To Docker Host
@@ -71,7 +70,6 @@ Discard old results
 
 
 Log All SSH Outputs
-    [Documentation]           *Log All SSH Outputs*
     ...                       Logs all connections outputs
     [Timeout]                 120s
     :FOR    ${id}    IN    @{NODES}
