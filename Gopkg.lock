@@ -3,6 +3,7 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:f9590f0760e544fbdd2fc795fd08c5e3c199dd48440b16e794f95d829104f565"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -16,7 +17,6 @@
   ]
   revision = "6b350c65fe0ec845cecf58bfb41ffc63dc9c04f7"
   source = "github.com/FDio/govpp"
-
 [[projects]]
   branch = "master"
   name = "github.com/Azure/go-ansiterm"
@@ -66,10 +66,19 @@
   version = "v0.4.1"
 
 [[projects]]
+<<<<<<< HEAD
   name = "github.com/bsm/sarama-cluster"
   packages = ["."]
   revision = "cf455bc755fe41ac9bb2861e7a961833d9c2ecc3"
   version = "v2.1.13"
+=======
+  digest = "1:526d64d0a3ac6c24875724a9355895be56a21f89a5d3ab5ba88d91244269a7d8"
+  name = "github.com/bsm/sarama-cluster"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c618e605e15c0d7535f6c96ff8efbb0dba4fd66c"
+  version = "v2.1.15"
+>>>>>>> upstream/pantheon-dev
 
 [[projects]]
   branch = "master"
@@ -263,6 +272,10 @@
   version = "v4.1.0"
 
 [[projects]]
+<<<<<<< HEAD
+=======
+  digest = "1:9b56c3d59d7899c60a02f4d0e8592fe70b19f3b6b47553849b20fe63a62efe66"
+>>>>>>> upstream/pantheon-dev
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -292,6 +305,10 @@
     "vanity",
     "vanity/command"
   ]
+<<<<<<< HEAD
+=======
+  pruneopts = "UT"
+>>>>>>> upstream/pantheon-dev
   revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
   version = "v1.1.1"
 
@@ -362,7 +379,12 @@
   version = "v1.0"
 
 [[projects]]
+<<<<<<< HEAD
   branch = "kvscheduler"
+=======
+  branch = "master"
+  digest = "1:e7c0f5250b55f27007df0f05ce534d6d2358411d6852462601006e71c32f1577"
+>>>>>>> upstream/pantheon-dev
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -408,8 +430,13 @@
     "utils/once",
     "utils/safeclose"
   ]
+<<<<<<< HEAD
   revision = "9dd7165d2fe9af5cefe9a868b84fb3e82959e14f"
   source = "github.com/milanlenco/cn-infra"
+=======
+  pruneopts = "T"
+  revision = "10abe6a955b9aef0ae518e1f7265adeae0c649ac"
+>>>>>>> upstream/pantheon-dev
 
 [[projects]]
   branch = "master"
@@ -650,12 +677,21 @@
 
 [[projects]]
   branch = "master"
+<<<<<<< HEAD
+=======
+  digest = "1:5f912b2a10701e13b05b826b29620f8ed5a83e855b1d4114dfff489535a96df3"
+>>>>>>> upstream/pantheon-dev
   name = "github.com/vishvananda/netlink"
   packages = [
     ".",
     "nl"
   ]
+<<<<<<< HEAD
   revision = "8aa85bfa77a45236ae842cab3a91853e2b74e07a"
+=======
+  pruneopts = "UT"
+  revision = "56b1bd27a9a363862ef67916bb450fe240787d07"
+>>>>>>> upstream/pantheon-dev
 
 [[projects]]
   branch = "master"
@@ -671,20 +707,32 @@
 
 [[projects]]
   branch = "master"
+<<<<<<< HEAD
+=======
+  digest = "1:6b9d693aad7155c20f594c83ffb8e4dc74db309236a99459a384f57264dbad24"
+>>>>>>> upstream/pantheon-dev
   name = "golang.org/x/net"
   packages = [
     "context",
     "html",
     "html/atom",
     "html/charset",
+    "http/httpguts",
     "http2",
     "http2/hpack",
     "idna",
     "internal/timeseries",
+<<<<<<< HEAD
     "lex/httplex",
     "trace"
   ]
   revision = "0ed95abb35c445290478a5348a7b38bb154135fd"
+=======
+    "trace",
+  ]
+  pruneopts = "UT"
+  revision = "26e67e76b6c3f6ce91f7c52def5af501b4e0f3a2"
+>>>>>>> upstream/pantheon-dev
 
 [[projects]]
   name = "golang.org/x/sys"
@@ -734,6 +782,10 @@
   revision = "c66870c02cf823ceb633bcd05be3c7cda29976f4"
 
 [[projects]]
+<<<<<<< HEAD
+=======
+  digest = "1:c52f29435ecb5b76c37e7f0098b6a50dbe60f8624d820827d0fede75c40199a1"
+>>>>>>> upstream/pantheon-dev
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -764,8 +816,14 @@
     "status",
     "tap"
   ]
+<<<<<<< HEAD
   revision = "32fb0ac620c32ba40a4626ddf94d90d12cce3455"
   version = "v1.14.0"
+=======
+  pruneopts = "UT"
+  revision = "8dea3dc473e90c8179e519d91302d0597c0ca1d1"
+  version = "v1.15.0"
+>>>>>>> upstream/pantheon-dev
 
 [[projects]]
   branch = "v2"
@@ -776,6 +834,68 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
+<<<<<<< HEAD
   inputs-digest = "4862b07c83a6fbbe8ad06c3cecdbdbe92e134f91d1c9215359c7bdc6d3a9e51a"
+=======
+  input-imports = [
+    "git.fd.io/govpp.git/adapter",
+    "git.fd.io/govpp.git/adapter/mock",
+    "git.fd.io/govpp.git/adapter/vppapiclient",
+    "git.fd.io/govpp.git/api",
+    "git.fd.io/govpp.git/cmd/binapi-generator",
+    "git.fd.io/govpp.git/core",
+    "github.com/buger/goterm",
+    "github.com/elazarl/go-bindata-assetfs",
+    "github.com/fsouza/go-dockerclient",
+    "github.com/ghodss/yaml",
+    "github.com/go-errors/errors",
+    "github.com/gogo/protobuf/proto",
+    "github.com/gogo/protobuf/protoc-gen-gogo",
+    "github.com/ligato/cn-infra/agent",
+    "github.com/ligato/cn-infra/config",
+    "github.com/ligato/cn-infra/datasync",
+    "github.com/ligato/cn-infra/datasync/kvdbsync",
+    "github.com/ligato/cn-infra/datasync/kvdbsync/local",
+    "github.com/ligato/cn-infra/datasync/msgsync",
+    "github.com/ligato/cn-infra/datasync/resync",
+    "github.com/ligato/cn-infra/db/keyval",
+    "github.com/ligato/cn-infra/db/keyval/consul",
+    "github.com/ligato/cn-infra/db/keyval/etcd",
+    "github.com/ligato/cn-infra/db/keyval/kvproto",
+    "github.com/ligato/cn-infra/db/keyval/redis",
+    "github.com/ligato/cn-infra/health/probe",
+    "github.com/ligato/cn-infra/health/statuscheck",
+    "github.com/ligato/cn-infra/health/statuscheck/model/status",
+    "github.com/ligato/cn-infra/idxmap",
+    "github.com/ligato/cn-infra/idxmap/mem",
+    "github.com/ligato/cn-infra/infra",
+    "github.com/ligato/cn-infra/logging",
+    "github.com/ligato/cn-infra/logging/logmanager",
+    "github.com/ligato/cn-infra/logging/logrus",
+    "github.com/ligato/cn-infra/logging/measure",
+    "github.com/ligato/cn-infra/messaging",
+    "github.com/ligato/cn-infra/messaging/kafka",
+    "github.com/ligato/cn-infra/rpc/grpc",
+    "github.com/ligato/cn-infra/rpc/prometheus",
+    "github.com/ligato/cn-infra/rpc/rest",
+    "github.com/ligato/cn-infra/servicelabel",
+    "github.com/ligato/cn-infra/utils/addrs",
+    "github.com/ligato/cn-infra/utils/safeclose",
+    "github.com/logrusorgru/aurora.git",
+    "github.com/lunixbochs/struc",
+    "github.com/namsral/flag",
+    "github.com/onsi/gomega",
+    "github.com/opencontainers/runc",
+    "github.com/prometheus/client_golang/prometheus",
+    "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/sirupsen/logrus",
+    "github.com/spf13/cobra",
+    "github.com/unrolled/render",
+    "github.com/vishvananda/netlink",
+    "github.com/vishvananda/netns",
+    "golang.org/x/net/context",
+    "google.golang.org/grpc",
+  ]
+>>>>>>> upstream/pantheon-dev
   solver-name = "gps-cdcl"
   solver-version = 1

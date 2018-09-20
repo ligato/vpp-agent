@@ -30,8 +30,8 @@ type SRv6Calls struct {
 	localSidState   map[string]*srv6.LocalSID
 	policiesState   map[string]*PolicyState
 	nextPolicyIndex uint32
-	policiesIdxs    map[uint32]string          // index to bsid
-	steeringState   map[srv6.Steering]struct{} // set of steerings
+	policiesIdxs    map[uint32]string   // index to bsid
+	steeringState   map[string]struct{} // set of steerings
 }
 
 // PolicyState is holder for one policy and its segments
@@ -46,7 +46,7 @@ func NewSRv6Calls() *SRv6Calls {
 		localSidState: make(map[string]*srv6.LocalSID, 0),
 		policiesState: make(map[string]*PolicyState, 0),
 		policiesIdxs:  make(map[uint32]string, 0),
-		steeringState: make(map[srv6.Steering]struct{}, 0),
+		steeringState: make(map[string]struct{}, 0),
 	}
 }
 
@@ -67,7 +67,7 @@ func (fake *SRv6Calls) PoliciesState() map[string]*PolicyState {
 }
 
 // SteeringState provides current state of steerings as changed by calls to SRv6Calls fake
-func (fake *SRv6Calls) SteeringState() map[srv6.Steering]struct{} {
+func (fake *SRv6Calls) SteeringState() map[string]struct{} {
 	return fake.steeringState
 }
 
@@ -217,7 +217,7 @@ func (fake *SRv6Calls) AddSteering(steering *srv6.Steering, swIfIndex ifaceidx.S
 	if _, exists := fake.policiesState[bsidStr]; !exists {
 		return fmt.Errorf("can't find policy for bsid %v (adding steering proces)", bsidStr)
 	}
-	fake.steeringState[*steering] = struct{}{}
+	fake.steeringState[steering.PolicyBsid] = struct{}{}
 	return nil
 }
 
@@ -226,6 +226,6 @@ func (fake *SRv6Calls) RemoveSteering(steering *srv6.Steering, swIfIndex ifaceid
 	if _, ok := fake.failCall.(RemoveSteeringFuncCall); ok {
 		return fake.failError
 	}
-	delete(fake.steeringState, *steering)
+	delete(fake.steeringState, steering.PolicyBsid)
 	return nil
 }

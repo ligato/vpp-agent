@@ -12,19 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/interfaces --gogo_out=../model/interfaces ../model/interfaces/interfaces.proto
-
 package ifplugin
 
 import (
+	"bytes"
 	"context"
 	"net"
 	"sync"
-
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-	"github.com/vishvananda/netlink"
-
-	"bytes"
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
@@ -34,7 +28,9 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	vppIf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/vishvananda/netlink"
 )
 
 // LinkNotFoundErr represents netlink error return value from 'GetLinkByName' if interface does not exist
@@ -57,13 +53,17 @@ type LinuxInterfaceConfigurator struct {
 	// In-memory mappings
 	ifIndexes ifaceidx.LinuxIfIndexRW
 	ifIdxSeq  uint32
-	ifByName  map[string]*LinuxInterfaceConfig   // interface name -> interface configuration
-	ifsByMs   map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
+
+	// mapMu protects ifByName and ifsByMs maps
+	mapMu    sync.RWMutex
+	ifByName map[string]*LinuxInterfaceConfig   // interface name -> interface configuration
+	ifsByMs  map[string][]*LinuxInterfaceConfig // microservice label -> list of interfaces attached to this microservice
 
 	ifCachedConfigs    ifaceidx.LinuxIfIndexRW
 	pIfCachedConfigSeq uint32
 
 	// Channels
+	ifNotif   chan *LinuxInterfaceStateNotification
 	ifMsNotif chan *nsplugin.MicroserviceEvent
 
 	// Go routine management
@@ -82,7 +82,8 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linux plugin and start go routines.
 func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, ifNotif chan *nsplugin.MicroserviceEvent, stopwatch *measure.Stopwatch) (err error) {
+	ifIndexes ifaceidx.LinuxIfIndexRW, ifMsNotif chan *nsplugin.MicroserviceEvent, ifNotif chan *LinuxInterfaceStateNotification,
+	stopwatch *measure.Stopwatch) (err error) {
 	// Logger
 	c.log = logging.NewLogger("-if-conf")
 
@@ -94,8 +95,9 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 	c.ifCachedConfigs = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(c.log, "linux_if_cache", nil))
 	c.pIfCachedConfigSeq = 1
 
-	// Init channel
-	c.ifMsNotif = ifNotif
+	// Set channels
+	c.ifNotif = ifNotif
+	c.ifMsNotif = ifMsNotif
 
 	c.ctx, c.cancel = context.WithCancel(context.Background())
 
@@ -106,7 +108,8 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 	// Configurator-wide stopwatch instance
 	c.stopwatch = stopwatch
 
-	// Start watching on microservice events
+	// Start watching on linux and microservice events
+	go c.watchLinuxStateUpdater()
 	go c.watchMicroservices(c.ctx)
 
 	c.log.Info("Linux interface configurator initialized")
@@ -495,7 +498,7 @@ func (c *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsplugin
 	c.ifIdxSeq++
 	c.log.Debugf("Linux interface %s registered", ifConfig.Name)
 
-	return err
+	return nil
 }
 
 // Update linux interface attributes in it's namespace
@@ -794,6 +797,9 @@ func (c *LinuxInterfaceConfigurator) addVethInterfacePair(nsMgmtCtx *nsplugin.Na
 
 // getInterfaceConfig returns cached configuration of a given interface.
 func (c *LinuxInterfaceConfigurator) getInterfaceConfig(ifName string) *LinuxInterfaceConfig {
+	c.mapMu.RLock()
+	defer c.mapMu.RUnlock()
+
 	config, ok := c.ifByName[ifName]
 	if ok {
 		return config
@@ -803,12 +809,20 @@ func (c *LinuxInterfaceConfigurator) getInterfaceConfig(ifName string) *LinuxInt
 
 // addToCache adds interface configuration into the cache.
 func (c *LinuxInterfaceConfigurator) addToCache(iface *interfaces.LinuxInterfaces_Interface, peerIface *LinuxInterfaceConfig) *LinuxInterfaceConfig {
-	config := &LinuxInterfaceConfig{config: iface, peer: peerIface}
-	c.ifByName[iface.Name] = config
 	c.log.Debugf("linux interface config %s cached to if-by-name", iface.Name)
+
+	c.mapMu.Lock()
+	defer c.mapMu.Unlock()
+
+	config := &LinuxInterfaceConfig{
+		config: iface,
+		peer:   peerIface,
+	}
+	c.ifByName[iface.Name] = config
 	if peerIface != nil {
 		peerIface.peer = config
 	}
+
 	if iface.Namespace != nil && iface.Namespace.Type == interfaces.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
 		if _, ok := c.ifsByMs[iface.Namespace.Microservice]; ok {
 			c.ifsByMs[iface.Namespace.Microservice] = append(c.ifsByMs[iface.Namespace.Microservice], config)
@@ -823,6 +837,9 @@ func (c *LinuxInterfaceConfigurator) addToCache(iface *interfaces.LinuxInterface
 
 // removeFromCache removes interfaces configuration from the cache.
 func (c *LinuxInterfaceConfigurator) removeFromCache(iface *interfaces.LinuxInterfaces_Interface) *LinuxInterfaceConfig {
+	c.mapMu.Lock()
+	defer c.mapMu.Unlock()
+
 	if config, ok := c.ifByName[iface.Name]; ok {
 		if config.peer != nil {
 			config.peer.peer = nil
@@ -836,11 +853,103 @@ func (c *LinuxInterfaceConfigurator) removeFromCache(iface *interfaces.LinuxInte
 			}
 			c.ifsByMs[iface.Namespace.Microservice] = filtered
 		}
+
 		delete(c.ifByName, iface.Name)
 		c.log.Debugf("Linux interface with name %v was removed from if-by-name cache", iface.Name)
+
 		return config
 	}
 	return nil
+}
+
+// Watcher receives events from state updater about created/removed linux interfaces and performs appropriate actions
+func (c *LinuxInterfaceConfigurator) watchLinuxStateUpdater() {
+	c.log.Debugf("Linux interface state watcher started")
+
+	for {
+		linuxIf, ok := <-c.ifNotif
+		if !ok {
+			c.log.Debugf("linux interface watcher ended")
+			return
+		}
+		ifName := linuxIf.attributes.Name
+
+		switch {
+		case linuxIf.interfaceType == tap:
+			if linuxIf.interfaceState == netlink.OperDown {
+				// Find whether it is a registered tap interface and un-register it. Otherwise the change is ignored.
+				for _, idxName := range c.ifIndexes.GetMapping().ListNames() {
+					_, ifMeta, found := c.ifIndexes.LookupIdx(idxName)
+					if !found {
+						// Should not happen
+						c.log.Warnf("Interface %s not found in the mapping", idxName)
+						continue
+					}
+					if ifMeta == nil {
+						// Should not happen
+						c.log.Warnf("Interface %s metadata does not exist", idxName)
+						continue
+					}
+					if ifMeta.Data.HostIfName == "" {
+						c.log.Warnf("No info about host name for %s", idxName)
+						continue
+					}
+					if ifMeta.Data.HostIfName == ifName {
+						// Registered Linux TAP interface was removed, add it to cache. Pull out metadata, so they can be
+						// saved in cache as well
+						_, unregMeta, _ := c.ifIndexes.UnregisterName(ifName)
+						c.log.Debugf("Tap interface %s unregistered according to linux state event", ifName)
+						if _, _, found := c.ifCachedConfigs.LookupIdx(ifName); !found && unregMeta != nil {
+							c.ifCachedConfigs.RegisterName(ifMeta.Data.HostIfName, c.pIfCachedConfigSeq, unregMeta)
+							c.pIfCachedConfigSeq++
+							c.log.Debugf("removed linux TAP %s registered to cache according to linux state event",
+								ifName)
+						}
+					}
+				}
+			} else {
+				// Event that a TAP interface was created. Look for TAP which is using this interface as the other end.
+				for _, cachedIfConfig := range c.getCachedIfConfigByName(ifName) {
+					// Host interface was found, configure linux TAP
+					err := c.ConfigureLinuxInterface(cachedIfConfig)
+					if err != nil {
+						c.LogError(errors.Errorf("failed to process linux interface %s creation from event: %v", ifName, err))
+					}
+				}
+			}
+		default:
+			c.log.Debugf("Linux interface type %v state processing skipped", linuxIf.interfaceType)
+		}
+
+	}
+}
+
+func (c *LinuxInterfaceConfigurator) getCachedIfConfigByName(ifName string) (ifConfigs []*interfaces.LinuxInterfaces_Interface) {
+	c.mapMu.RLock()
+	defer c.mapMu.RUnlock()
+
+	for _, ifConfig := range c.ifByName {
+		if ifConfig == nil || ifConfig.config == nil {
+			c.log.Warnf("Cached config for interface %s is empty", ifName)
+			continue
+		}
+		if ifConfig.config.GetTap().GetTempIfName() == ifName || ifConfig.config.GetHostIfName() == ifName {
+			// Skip processed interfaces
+			_, _, exists := c.ifIndexes.LookupIdx(ifConfig.config.Name)
+			if exists {
+				continue
+			}
+			ifConfigs = append(ifConfigs, ifConfig.config)
+		}
+	}
+	return
+}
+
+func (c *LinuxInterfaceConfigurator) getIfsByMsLabel(label string) []*LinuxInterfaceConfig {
+	c.mapMu.RLock()
+	defer c.mapMu.RUnlock()
+
+	return c.ifsByMs[label]
 }
 
 // watchMicroservices handles events from namespace plugin
@@ -863,7 +972,8 @@ func (c *LinuxInterfaceConfigurator) watchMicroservices(ctx context.Context) {
 			}
 			if msEvent.EventType == nsplugin.NewMicroservice {
 				skip := make(map[string]struct{}) /* interfaces to be skipped in subsequent iterations */
-				for _, iface := range c.ifsByMs[microservice.Label] {
+
+				for _, iface := range c.getIfsByMsLabel(microservice.Label) {
 					if _, toSkip := skip[iface.config.Name]; toSkip {
 						continue
 					}
@@ -901,7 +1011,7 @@ func (c *LinuxInterfaceConfigurator) watchMicroservices(ctx context.Context) {
 					}
 				}
 			} else if msEvent.EventType == nsplugin.TerminatedMicroservice {
-				for _, iface := range c.ifsByMs[microservice.Label] {
+				for _, iface := range c.getIfsByMsLabel(microservice.Label) {
 					c.removeObsoleteVeth(nsMgmtCtx, iface.config.Name, iface.config.HostIfName, iface.config.Namespace)
 					if iface.peer != nil && iface.peer.config != nil {
 						c.removeObsoleteVeth(nsMgmtCtx, iface.peer.config.Name, iface.peer.config.HostIfName, iface.peer.config.Namespace)

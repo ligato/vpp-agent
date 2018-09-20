@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
@@ -589,7 +590,7 @@ func (c *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig
 				for _, nbLocal := range nbMapping.LocalIps {
 					var found bool
 					for _, vppLocal := range vppLbMapping.LocalIps {
-						if *nbLocal == *vppLocal {
+						if proto.Equal(nbLocal, vppLocal) {
 							found = true
 						}
 					}
@@ -633,7 +634,7 @@ func (c *NatConfigurator) resolveMappings(nbDNatConfig *nat.Nat44DNat_DNatConfig
 				}
 				nbLocal := nbMapping.LocalIps[0]
 				vppLocal := vppMapping.LocalIps[0]
-				if *nbLocal != *vppLocal {
+				if !proto.Equal(nbLocal, vppLocal) {
 					continue
 				}
 

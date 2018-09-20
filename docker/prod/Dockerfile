@@ -1,6 +1,6 @@
 FROM dev_vpp_agent as devimg
 
-FROM ubuntu:18.04
+FROM ubuntu:18.04 as base
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -30,13 +30,18 @@ COPY --from=devimg \
     /opt/vpp-agent/dev/vpp/build-root/vpp-plugins*.deb \
  /opt/vpp/
 
-RUN cd /opt/vpp/ && dpkg -i vpp_*.deb vpp-lib_*.deb vpp-plugins_*.deb
+RUN cd /opt/vpp/ \
+ && dpkg -i vpp_*.deb vpp-lib_*.deb vpp-plugins_*.deb \
+ && rm vpp*.deb
+
+FROM scratch
+
+COPY --from=base / /
 
 # install agent
 COPY --from=devimg \
     /go/bin/vpp-agent \
     /go/bin/vpp-agent-ctl \
-    /go/bin/agentctl \
  /bin/
 
 # copy configs

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/l3 --gogo_out=../model/l3 ../model/l3/l3.proto
-
 // Package l3plugin implements the L3 plugin that handles L3 FIBs.
 package l3plugin
 
@@ -27,6 +25,7 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -323,7 +322,7 @@ func (c *RouteConfigurator) DiffRoutes(new, old []*l3.StaticRoutes_Route) (toBeD
 	// Compare.
 	i, j := 0, 0
 	for i < len(newSorted) && j < len(oldSorted) {
-		if *newSorted[i] == *oldSorted[j] {
+		if proto.Equal(newSorted[i], oldSorted[j]) {
 			i++
 			j++
 		} else {

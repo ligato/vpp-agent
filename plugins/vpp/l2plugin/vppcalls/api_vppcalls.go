@@ -35,6 +35,9 @@ type BridgeDomainVppWrite interface {
 	VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error
 	// VppDeleteBridgeDomain removes existing bridge domain.
 	VppDeleteBridgeDomain(bdIdx uint32) error
+	// SetInterfaceToBridgeDomain sets single interface to bridge domain. Interface name is returned if configured.
+	SetInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
+		swIfIndices ifaceidx.SwIfIndex) (iface string, wasErr error)
 	// SetInterfacesToBridgeDomain attempts to set all provided interfaces to bridge domain. It returns a list of interfaces
 	// which were successfully set.
 	SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
