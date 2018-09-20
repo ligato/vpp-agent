@@ -41,6 +41,8 @@ const (
 	dockerRetryPeriod   = 5 * time.Second
 )
 
+// MicroserviceDescriptor watches Docker and notifies KVScheduler about newly
+// started and stopped microservices.
 type MicroserviceDescriptor struct {
 	base.DescriptorBase
 

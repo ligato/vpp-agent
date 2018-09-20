@@ -56,7 +56,7 @@ type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
 	Scheduler    scheduler.KVScheduler
-	NsPlugin     nsplugin.NsPluginAPI
+	NsPlugin     nsplugin.API
 }
 
 // Config holds the nsplugin configuration.

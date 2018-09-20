@@ -31,7 +31,7 @@ import (
 )
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
-type L3PLugin struct {
+type L3Plugin struct {
 	Deps
 
 	// From configuration file
@@ -50,8 +50,8 @@ type L3PLugin struct {
 type Deps struct {
 	infra.PluginDeps
 	Scheduler scheduler.KVScheduler
-	NsPlugin  nsplugin.NsPluginAPI
-	IfPlugin  ifplugin.IfPluginAPI
+	NsPlugin  nsplugin.API
+	IfPlugin  ifplugin.API
 }
 
 // Config holds the nsplugin configuration.
@@ -60,7 +60,8 @@ type Config struct {
 	Disabled  bool `json:"disabled"`
 }
 
-func (plugin *L3PLugin) Init() error {
+// Init initializes and registers descriptors for Linux ARPs and Routes.
+func (plugin *L3Plugin) Init() error {
 	// parse configuration file
 	config, err := plugin.retrieveConfig()
 	if err != nil {
@@ -98,21 +99,22 @@ func (plugin *L3PLugin) Init() error {
 	return nil
 }
 
-func (plugin *L3PLugin) Close() error {
+// Close does nothing here.
+func (plugin *L3Plugin) Close() error {
 	return nil
 }
 
-// retrieveConfig loads L3PLugin configuration file.
-func (plugin *L3PLugin) retrieveConfig() (*Config, error) {
+// retrieveConfig loads L3Plugin configuration file.
+func (plugin *L3Plugin) retrieveConfig() (*Config, error) {
 	config := &Config{}
 	found, err := plugin.Cfg.LoadValue(config)
 	if !found {
-		plugin.Log.Debug("Linux L3PLugin config not found")
+		plugin.Log.Debug("Linux L3Plugin config not found")
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Debug("Linux L3PLugin config found")
+	plugin.Log.Debug("Linux L3Plugin config found")
 	return config, err
 }

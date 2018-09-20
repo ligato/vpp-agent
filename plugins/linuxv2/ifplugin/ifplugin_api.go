@@ -18,8 +18,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 )
 
-// IfPluginAPI defines API implemented by the Linux-IfPlugin.
-type IfPluginAPI interface {
+// API defines methods exposed by Linux-IfPlugin.
+type API interface {
 	// GetInterfaceIndex gives read-only access to map with metadata of all configured
 	// linux interfaces.
 	GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex

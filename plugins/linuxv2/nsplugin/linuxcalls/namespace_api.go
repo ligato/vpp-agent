@@ -79,7 +79,7 @@ type namedNetNsHandler struct {
 	sysHandler SystemAPI
 }
 
-// NewNamespaceHandler creates new instance of namespace handler
+// NewNamedNetNsHandler creates new instance of namespace handler
 func NewNamedNetNsHandler(sysHandler SystemAPI, log logging.Logger, stopwatch *measure.Stopwatch) NamedNetNsAPI {
 	return &namedNetNsHandler{
 		stopwatch:  stopwatch,

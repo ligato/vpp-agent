@@ -21,8 +21,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
-// NsPluginAPI defines API implemented by the NsPlugin.
-type NsPluginAPI interface {
+// API defines methods exposed by NsPlugin.
+type API interface {
 	// SwitchToNamespace switches the network namespace of the current thread.
 	// Caller should eventually call the returned "revert" function in order to get back to the original
 	// network namespace (for example using "defer revert()").

@@ -44,7 +44,7 @@ type FileSystemAPI interface {
 	Unmount(target string, flags int) (err error)
 }
 
-// NetworkNamespace defines methods for low-level handling of network namespaces.
+// NetworkNamespaceAPI defines methods for low-level handling of network namespaces.
 type NetworkNamespaceAPI interface {
 	// NewNetworkNamespace creates a new namespace and returns a handle to manage it further.
 	NewNetworkNamespace() (ns netns.NsHandle, err error)
