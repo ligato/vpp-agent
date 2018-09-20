@@ -1,10 +1,5 @@
 package api
 
-type Weights struct {
-	Passing int
-	Warning int
-}
-
 type Node struct {
 	ID              string
 	Node            string
@@ -29,7 +24,6 @@ type CatalogService struct {
 	ServiceTags              []string
 	ServiceMeta              map[string]string
 	ServicePort              int
-	ServiceWeights           Weights
 	ServiceEnableTagOverride bool
 	CreateIndex              uint64
 	ModifyIndex              uint64

@@ -17,7 +17,7 @@ vet:
 	go vet ./...
 
 fmtcheck:
-	if [ -z "$${SKIP_FMT_CHECK}" ]; then [ -z "$$(gofmt -s -d *.go ./testing | tee /dev/stderr)" ]; fi
+	[ -z "$$(gofmt -s -d *.go ./testing | tee /dev/stderr)" ]
 
 testdeps:
 	go get -u github.com/golang/dep/cmd/dep
