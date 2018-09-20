@@ -134,7 +134,7 @@ func (plugin *Plugin) Init() (err error) {
 		// Initialize Linux handlers
 		linuxNsHandler := plugin.Linux.GetNamespaceHandler()
 		plugin.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, plugin.Log, nil)
-		plugin.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxArpIndexes, linuxRouteIndexes, plugin.Log, nil)
+		plugin.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRouteIndexes, plugin.Log, nil)
 	}
 
 	// Fill index item lists
@@ -202,8 +202,10 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerL3Handlers()
 	plugin.registerL4Handlers()
 	// Linux handlers
-	plugin.registerLinuxInterfaceHandlers()
-	plugin.registerLinuxL3Handlers()
+	if plugin.Linux != nil {
+		plugin.registerLinuxInterfaceHandlers()
+		plugin.registerLinuxL3Handlers()
+	}
 	// Telemetry, command, index
 	plugin.registerTelemetryHandlers()
 	plugin.registerCommandHandler()

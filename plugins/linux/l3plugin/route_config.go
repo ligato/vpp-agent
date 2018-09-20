@@ -170,7 +170,7 @@ func (c *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStatic
 
 	err = c.l3Handler.AddStaticRoute(route.Name, netLinkRoute)
 	if err != nil {
-		return errors.Errorf("faield to add static route %s: %v", route.Name, err)
+		return errors.Errorf("failed to add static route %s: %v", route.Name, err)
 	}
 
 	c.rtIndexes.RegisterName(RouteIdentifier(netLinkRoute), c.rtIdxSeq, route)

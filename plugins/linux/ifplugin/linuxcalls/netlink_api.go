@@ -71,6 +71,8 @@ type NetlinkAPIWrite interface {
 type NetlinkAPIRead interface {
 	// DumpInterfaces returns all configured linux interfaces
 	DumpInterfaces() ([]*LinuxInterfaceDetails, error)
+	// DumpInterfaceStatistics returns statistics data for interfaces
+	DumpInterfaceStatistics() ([]*LinuxInterfaceStatistics, error)
 }
 
 // NetLinkHandler is accessor for netlink methods

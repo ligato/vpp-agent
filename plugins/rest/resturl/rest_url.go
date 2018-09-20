@@ -54,6 +54,8 @@ const (
 const (
 	// LinuxInterface is a linux interface rest path
 	LinuxInterface = "/linux/dump/v1/interfaces"
+	// LinuxInterfaceStats is a linux interface statistics rest path
+	LinuxInterfaceStats = "/linux/dump/v1/interfaces/statistics"
 )
 
 // NAT REST urls

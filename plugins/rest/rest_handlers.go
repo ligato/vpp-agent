@@ -22,8 +22,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-errors/errors"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/rest/resturl"
@@ -184,21 +182,22 @@ func (plugin *Plugin) registerL4Handlers() {
 func (plugin *Plugin) registerLinuxInterfaceHandlers() {
 	// GET linux interfaces
 	plugin.registerHTTPHandler(resturl.LinuxInterface, GET, func() (interface{}, error) {
-		if plugin.Linux == nil {
-			return nil, errors.Errorf("Linux interface is disabled")
-		}
 		return plugin.linuxIfHandler.DumpInterfaces()
+	})
+	// GET linux interface stats
+	plugin.registerHTTPHandler(resturl.LinuxInterfaceStats, GET, func() (interface{}, error) {
+		return plugin.linuxIfHandler.DumpInterfaceStatistics()
 	})
 }
 
 // Registers linux L3 plugin REST handlers
 func (plugin *Plugin) registerLinuxL3Handlers() {
 	// GET linux routes
-	plugin.registerHTTPHandler(resturl.LinuxInterface, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.LinuxRoutes, GET, func() (interface{}, error) {
 		return plugin.linuxL3Handler.DumpRoutes()
 	})
 	// GET linux ARPs
-	plugin.registerHTTPHandler(resturl.LinuxInterface, GET, func() (interface{}, error) {
+	plugin.registerHTTPHandler(resturl.LinuxArps, GET, func() (interface{}, error) {
 		return plugin.linuxL3Handler.DumpArpEntries()
 	})
 }

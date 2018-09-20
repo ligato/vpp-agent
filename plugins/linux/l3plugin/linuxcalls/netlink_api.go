@@ -17,6 +17,7 @@ package linuxcalls
 import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/vishvananda/netlink"
@@ -46,6 +47,8 @@ type NetlinkAPIWrite interface {
 	ReplaceStaticRoute(name string, route *netlink.Route) error
 	// DelStaticRoute removes linux static route
 	DelStaticRoute(name string, route *netlink.Route) error
+	// GetStaticRoutes reads linux routes. Possible to filter by interface and IP family.
+	GetStaticRoutes(link netlink.Link, family int) ([]netlink.Route, error)
 }
 
 // NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux ARP entries and routes.
@@ -59,6 +62,7 @@ type NetlinkAPIRead interface {
 // NetLinkHandler is accessor for netlink methods
 type NetLinkHandler struct {
 	nsHandler    nsplugin.NamespaceAPI
+	ifIndexes    ifaceidx.LinuxIfIndex
 	arpIndexes   l3idx.LinuxARPIndex
 	routeIndexes l3idx.LinuxRouteIndex
 	stopwatch    *measure.Stopwatch
@@ -66,10 +70,11 @@ type NetLinkHandler struct {
 }
 
 // NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, arpIndexes l3idx.LinuxARPIndex, routeIndexes l3idx.LinuxRouteIndex,
+func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, ifIndexes ifaceidx.LinuxIfIndex, arpIndexes l3idx.LinuxARPIndex, routeIndexes l3idx.LinuxRouteIndex,
 	log logging.Logger, stopwatch *measure.Stopwatch) *NetLinkHandler {
 	return &NetLinkHandler{
 		nsHandler:    nsHandler,
+		ifIndexes:    ifIndexes,
 		arpIndexes:   arpIndexes,
 		routeIndexes: routeIndexes,
 		stopwatch:    stopwatch,

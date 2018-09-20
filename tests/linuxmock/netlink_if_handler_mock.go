@@ -310,5 +310,10 @@ func (mock *IfNetlinkHandlerMock) DumpInterfaces() ([]*linuxcalls.LinuxInterface
 	return nil, nil
 }
 
+// DumpInterfaceStatistics  does not return a value
+func (mock *IfNetlinkHandlerMock) DumpInterfaceStatistics() ([]*linuxcalls.LinuxInterfaceStatistics, error) {
+	return nil, nil
+}
+
 // SetStopwatch sets stopwatch.
 func (mock *IfNetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}

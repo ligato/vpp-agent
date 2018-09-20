@@ -247,7 +247,7 @@ func (plugin *Plugin) initL3() error {
 	routeIndexes := l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(plugin.Log, "linux_route_indexes", nil))
 
 	// L3 linux calls handler
-	l3Handler := l3Linuxcalls.NewNetLinkHandler(plugin.nsHandler, arpIndexes, routeIndexes, plugin.Log, plugin.stopwatch)
+	l3Handler := l3Linuxcalls.NewNetLinkHandler(plugin.nsHandler, plugin.ifIndexes, arpIndexes, routeIndexes, plugin.Log, plugin.stopwatch)
 
 	// Linux ARP configurator
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{}
