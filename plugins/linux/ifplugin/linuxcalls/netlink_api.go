@@ -17,12 +17,22 @@ package linuxcalls
 import (
 	"net"
 
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
 // NetlinkAPI interface covers all methods inside linux calls package needed to manage linux interfaces.
 type NetlinkAPI interface {
+	NetlinkAPIWrite
+	NetlinkAPIRead
+}
+
+// NetlinkAPIWrite interface covers write methods inside linux calls package needed to manage linux interfaces.
+type NetlinkAPIWrite interface {
 	// AddVethInterfacePair configures two connected VETH interfaces
 	AddVethInterfacePair(ifName, peerIfName string) error
 	// DelVethInterfacePair removes VETH pair
@@ -57,14 +67,27 @@ type NetlinkAPI interface {
 	GetInterfaceByName(ifName string) (*net.Interface, error)
 }
 
+// NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux interfaces.
+type NetlinkAPIRead interface {
+	// DumpInterfaces returns all configured linux interfaces
+	DumpInterfaces() ([]*LinuxInterfaceDetails, error)
+}
+
 // NetLinkHandler is accessor for netlink methods
 type NetLinkHandler struct {
+	nsHandler nsplugin.NamespaceAPI
+	ifIndexes ifaceidx.LinuxIfIndex
 	stopwatch *measure.Stopwatch
+	log       logging.Logger
 }
 
 // NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(stopwatch *measure.Stopwatch) *NetLinkHandler {
+func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, ifIndexes ifaceidx.LinuxIfIndex, log logging.Logger,
+	stopwatch *measure.Stopwatch) *NetLinkHandler {
 	return &NetLinkHandler{
+		nsHandler: nsHandler,
+		ifIndexes: ifIndexes,
 		stopwatch: stopwatch,
+		log:       log,
 	}
 }

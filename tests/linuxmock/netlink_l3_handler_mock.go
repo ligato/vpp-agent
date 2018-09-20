@@ -16,6 +16,7 @@ package linuxmock
 
 import (
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/vishvananda/netlink"
 )
 
@@ -150,5 +151,15 @@ func (mock *L3NetlinkHandlerMock) DelStaticRoute(name string, route *netlink.Rou
 	return nil
 }
 
-// SetStopwatch implements .
+// DumpArpEntries does not return a value
+func (mock *L3NetlinkHandlerMock) DumpArpEntries() ([]*linuxcalls.LinuxArpDetails, error) {
+	return nil, nil
+}
+
+// DumpRoutes does not return a value
+func (mock *L3NetlinkHandlerMock) DumpRoutes() ([]*linuxcalls.LinuxRouteDetails, error) {
+	return nil, nil
+}
+
+// SetStopwatch implements NetlinkAPI
 func (mock *L3NetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}

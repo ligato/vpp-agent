@@ -72,8 +72,9 @@ type LinuxInterfaceConfigurator struct {
 	wg      sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 
 	// Linux namespace/calls handler
-	ifHandler linuxcalls.NetlinkAPI
-	nsHandler nsplugin.NamespaceAPI
+	ifHandler  linuxcalls.NetlinkAPI
+	nsHandler  nsplugin.NamespaceAPI
+	sysHandler nsplugin.SystemAPI
 
 	// Timer used to measure and store time
 	stopwatch *measure.Stopwatch
@@ -81,8 +82,8 @@ type LinuxInterfaceConfigurator struct {
 
 // Init linux plugin and start go routines.
 func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, ifMsNotif chan *nsplugin.MicroserviceEvent, ifNotif chan *LinuxInterfaceStateNotification,
-	stopwatch *measure.Stopwatch) (err error) {
+	sysHandler nsplugin.SystemAPI, ifIndexes ifaceidx.LinuxIfIndexRW, ifMsNotif chan *nsplugin.MicroserviceEvent,
+	ifNotif chan *LinuxInterfaceStateNotification, stopwatch *measure.Stopwatch) (err error) {
 	// Logger
 	c.log = logging.NewLogger("-if-conf")
 
@@ -103,6 +104,7 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 	// Interface and namespace handlers
 	c.ifHandler = ifHandler
 	c.nsHandler = nsHandler
+	c.sysHandler = sysHandler
 
 	// Configurator-wide stopwatch instance
 	c.stopwatch = stopwatch
@@ -136,7 +138,7 @@ func (c *LinuxInterfaceConfigurator) GetInterfaceByMsCache() map[string][]*Linux
 	return c.ifsByMs
 }
 
-// GetCachedLinuxIfIndexes gives access to mapping of not configurated interface indexes.
+// GetCachedLinuxIfIndexes gives access to mapping of not configured interface indexes.
 func (c *LinuxInterfaceConfigurator) GetCachedLinuxIfIndexes() ifaceidx.LinuxIfIndex {
 	return c.ifCachedConfigs
 }
@@ -405,13 +407,13 @@ func (c *LinuxInterfaceConfigurator) configureLinuxInterface(nsMgmtCtx *nsplugin
 
 	// Use temporary/host name (according to type) to set interface to different namespace
 	if ifConfig.Type == interfaces.LinuxInterfaces_AUTO_TAP {
-		err = c.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, ifConfig.Namespace)
+		err = c.setInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, ifConfig.Namespace)
 		if err != nil {
 			return errors.Errorf("failed to set TAP interface %s to namespace %s: %v",
 				ifConfig.Tap.TempIfName, ifConfig.Namespace, err)
 		}
 	} else {
-		err = c.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ifConfig.Namespace)
+		err = c.setInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, ifConfig.Namespace)
 		if err != nil {
 			return errors.Errorf("failed to set interface %s to namespace %s: %v",
 				ifConfig.HostIfName, ifConfig.Namespace, err)
@@ -693,12 +695,12 @@ func (c *LinuxInterfaceConfigurator) moveTapInterfaceToDefaultNamespace(ifConfig
 					ifConfig.Tap.TempIfName, err)
 			}
 		}
-		err = c.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
+		err = c.setInterfaceNamespace(nsMgmtCtx, ifConfig.Tap.TempIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
 		if err != nil {
 			return errors.Errorf("failed to set Linux TAP interface %s to default namespace: %v", ifConfig.Tap.TempIfName, err)
 		}
 	} else {
-		err = c.nsHandler.SetInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
+		err = c.setInterfaceNamespace(nsMgmtCtx, ifConfig.HostIfName, &interfaces.LinuxInterfaces_Interface_Namespace{})
 		if err != nil {
 			return errors.Errorf("failed to set Linux TAP interface %s to default namespace: %v", ifConfig.HostIfName, err)
 		}
@@ -1102,4 +1104,113 @@ func (c *LinuxInterfaceConfigurator) LogError(err error) error {
 		c.log.Error(err)
 	}
 	return err
+}
+
+// SetInterfaceNamespace moves a given Linux interface into a specified namespace.
+func (c *LinuxInterfaceConfigurator) setInterfaceNamespace(ctx *nsplugin.NamespaceMgmtCtx, ifName string, namespace *interfaces.LinuxInterfaces_Interface_Namespace) error {
+	// Convert microservice namespace
+	var err error
+	if namespace != nil && namespace.Type == interfaces.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
+		// Convert namespace
+		ifNs := c.nsHandler.ConvertMicroserviceNsToPidNs(namespace.Microservice)
+		// Back to interface ns type
+		namespace, err = ifNs.GenericToIfaceNs()
+		if err != nil {
+			return errors.Errorf("failed to convert generic interface namespace: %v", err)
+		}
+		if namespace == nil {
+			return errors.Errorf("microservice is not available for %s", ifName)
+		}
+	}
+
+	ifaceNs := c.nsHandler.IfNsToGeneric(namespace)
+
+	// Get network namespace file descriptor
+	ns, err := c.nsHandler.GetOrCreateNamespace(ifaceNs)
+	if err != nil {
+		return errors.Errorf("faield to get or create namespace %s: %v", namespace.Name, err)
+	}
+	defer ns.Close()
+
+	// Get the link plugin.
+	link, err := c.ifHandler.GetLinkByName(ifName)
+	if err != nil {
+		return errors.Errorf("failed to get link for interface %s: %v", ifName, err)
+	}
+
+	// When interface moves from one namespace to another, it loses all its IP addresses, admin status
+	// and MTU configuration -- we need to remember the interface configuration before the move
+	// and re-configure the interface in the new namespace.
+	addresses, isIPv6, err := c.getLinuxIfAddrs(link.Attrs().Name)
+	if err != nil {
+		return errors.Errorf("failed to get IP address list from interface %s: %v", link.Attrs().Name, err)
+	}
+
+	// Move the interface into the namespace.
+	err = c.sysHandler.LinkSetNsFd(link, int(ns))
+	if err != nil {
+		return errors.Errorf("failed to set interface %s file descriptor: %v", link.Attrs().Name, err)
+	}
+
+	// Re-configure interface in its new namespace
+	revertNs, err := c.nsHandler.SwitchNamespace(ifaceNs, ctx)
+	if err != nil {
+		return errors.Errorf("failed to switch namespace: %v", err)
+	}
+	defer revertNs()
+
+	if link.Attrs().Flags&net.FlagUp == 1 {
+		// Re-enable interface
+		err = c.ifHandler.SetInterfaceUp(ifName)
+		if nil != err {
+			return errors.Errorf("failed to re-enable Linux interface `%s`: %v", ifName, err)
+		}
+	}
+
+	// Re-add IP addresses
+	for _, address := range addresses {
+		// Skip IPv6 link local address if there is no other IPv6 address
+		if !isIPv6 && address.IP.IsLinkLocalUnicast() {
+			continue
+		}
+		err = c.ifHandler.AddInterfaceIP(ifName, address)
+		if err != nil {
+			if err.Error() == "file exists" {
+				continue
+			}
+			return errors.Errorf("failed to re-assign IP address to a Linux interface `%s`: %v", ifName, err)
+		}
+	}
+
+	// Revert back the MTU config
+	err = c.ifHandler.SetInterfaceMTU(ifName, link.Attrs().MTU)
+	if nil != err {
+		return errors.Errorf("failed to re-assign MTU of a Linux interface `%s`: %v", ifName, err)
+	}
+
+	return nil
+}
+
+// getLinuxIfAddrs returns a list of IP addresses for given linux interface with info whether there is IPv6 address
+// (except default link local)
+func (c *LinuxInterfaceConfigurator) getLinuxIfAddrs(ifName string) ([]*net.IPNet, bool, error) {
+	var networks []*net.IPNet
+	addresses, err := c.ifHandler.GetAddressList(ifName)
+	if err != nil {
+		return nil, false, errors.Errorf("failed to get IP address set from linux interface %s", ifName)
+	}
+	var containsIPv6 bool
+	for _, ipAddr := range addresses {
+		network, ipv6, err := addrs.ParseIPWithPrefix(ipAddr.String())
+		if err != nil {
+			return nil, false, errors.Errorf("failed to parse IP address %s", ipAddr.String())
+		}
+		// Set once if IP address is version 6 and not a link local address
+		if !containsIPv6 && ipv6 && !ipAddr.IP.IsLinkLocalUnicast() {
+			containsIPv6 = true
+		}
+		networks = append(networks, network)
+	}
+
+	return networks, containsIPv6, nil
 }

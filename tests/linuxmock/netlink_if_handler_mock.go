@@ -17,6 +17,8 @@ package linuxmock
 import (
 	"net"
 
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
@@ -300,6 +302,11 @@ func (mock *IfNetlinkHandlerMock) GetInterfaceByName(ifName string) (*net.Interf
 	} else if len(items) == 2 {
 		return items[0].(*net.Interface), items[1].(error)
 	}
+	return nil, nil
+}
+
+// DumpInterfaces does not return a value
+func (mock *IfNetlinkHandlerMock) DumpInterfaces() ([]*linuxcalls.LinuxInterfaceDetails, error) {
 	return nil, nil
 }
 

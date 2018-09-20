@@ -64,13 +64,13 @@ type LinuxRouteConfigurator struct {
 
 // Init initializes static route configurator and starts goroutines
 func (c *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, stopwatch *measure.Stopwatch) error {
+	rtIndexes l3idx.LinuxRouteIndexRW, ifIndexes ifaceidx.LinuxIfIndexRW, stopwatch *measure.Stopwatch) error {
 	// Logger
 	c.log = logger.NewLogger("-route-conf")
 
 	// Mappings
 	c.ifIndexes = ifIndexes
-	c.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(c.log, "linux_route_indexes", nil))
+	c.rtIndexes = rtIndexes
 	c.rtAutoIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(c.log, "linux_auto_route_indexes", nil))
 	c.rtCachedIfRoutes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(c.log, "linux_cached_route_indexes", nil))
 	c.rtCachedGwRoutes = make(map[string]*l3.LinuxStaticRoutes_Route)
