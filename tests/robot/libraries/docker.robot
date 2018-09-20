@@ -3,8 +3,7 @@
 *** Settings ***
 Library       Collections
 Library       RequestsLibrary
-Library       SSHLibrary            timeout=60s
-Library       SSHLibrary            loglevel=TRACE
+Library       SSHLibrary            timeout=60s    loglevel=TRACE
 Library       DateTime
 
 *** Variables ***
@@ -178,8 +177,8 @@ Write To Container Until Prompt
    Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}
    Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}
    Write                    ${command}
-   ${out}=                  Read Until    ${prompt}${${container}_HOSTNAME}
-   ${out2}=                 Read                     delay=${delay}
+   ${out}=                  Read Until    ${prompt}${${container}_HOSTNAME}    loglevel=TRACE
+   ${out2}=                 Read          loglevel=TRACE           delay=${delay}
    Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
    Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
    [Return]                 ${out}${out2}
@@ -194,9 +193,9 @@ Write Command to Container
    Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}
    Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Command: ${command}${\n}
    ${written}=              Write        ${command}
-   ${out}=                  Read        delay=${delay}
+   ${out}=                  Read        loglevel=TRACE    delay=${delay}
    Should Not Contain       ${out}     ${written}               # Was consumed from the output
-   ${out2}=                 Read        delay=${delay}
+   ${out2}=                 Read        loglevel=TRACE    delay=${delay}
    Append To File           ${RESULTS_FOLDER}/output_${container}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
    Append To File           ${RESULTS_FOLDER_SUITE}/output_${container}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
    [Return]                 ${out}${out2}
