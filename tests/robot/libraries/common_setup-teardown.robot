@@ -3,8 +3,7 @@
 *** Settings ***
 Library       String
 Library       RequestsLibrary
-Library       SSHLibrary            timeout=60s
-Library       SSHLibrary            loglevel=TRACE
+Library       SSHLibrary            timeout=60s     loglevel=TRACE
 Resource      ssh.robot
 
 *** Keywords ***

@@ -3,8 +3,7 @@
 *** Settings ***
 #Library       String
 #Library       RequestsLibrary
-Library       SSHLibrary            timeout=60 seconds
-Library       SSHLibrary            loglevel=TRACE
+Library       SSHLibrary            timeout=60 seconds       loglevel=TRACE
 
 *** Keywords ***
 Execute On Machine     [Arguments]              ${machine}               ${command}               ${log}=true
@@ -33,8 +32,8 @@ Write To Machine       [Arguments]              ${machine}               ${comma
                        ${currdate}=             Get Current Date
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
-                       Write                    ${command}
-                       ${out}=                  Read                     delay=${delay}
+                       Write                    ${command}      loglevel=TRACE
+                       ${out}=                  Read            loglevel=TRACE         delay=${delay}
                        Log                      ${out}
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Response: ${out}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Response: ${out}${\n}
@@ -51,10 +50,10 @@ Write To Machine Until Prompt
                        ${currdate}=             Get Current Date
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
-                       Write                    ${command}
-                       ${out}=                  Read Until               ${prompt}${${machine}_HOSTNAME}
+                       Write                    ${command}       loglevel=TRACE
+                       ${out}=                  Read Until               ${prompt}${${machine}_HOSTNAME}     loglevel=TRACE
                        Log                      ${out}
-                       ${out2}=                 Read                     delay=${delay}
+                       ${out2}=                 Read             loglevel=TRACE       delay=${delay}
                        Log                      ${out2}
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
@@ -70,10 +69,10 @@ Write To Machine Until String
                        ${currdate}=             Get Current Date
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
-                       Write                    ${command}
-                       ${out}=                  Read Until               ${string}
+                       Write                    ${command}       loglevel=TRACE
+                       ${out}=                  Read Until       ${string}       loglevel=TRACE
                        Log                      ${out}
-                       ${out2}=                 Read                     delay=${delay}
+                       ${out2}=                 Read             loglevel=TRACE        delay=${delay}
                        Log                      ${out2}
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}

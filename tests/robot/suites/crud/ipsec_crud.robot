@@ -1,5 +1,4 @@
 *** Settings ***
-Documentation    IPsec CRUD
 Library     OperatingSystem
 Library     String
 
@@ -14,6 +13,7 @@ Suite Teardown    Testsuite Teardown
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
 ${SYNC_SLEEP}=       2s
+
 *** Test Cases ***
 # CRUD tests for IPsec
 Add Agent Vpp Node
