@@ -48,7 +48,9 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 	Expect(names).To(BeEmpty())
 
 	// Create connection
-	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
+	mockCtx := &vppcallmock.TestCtx{
+		MockVpp: mock.NewVppAdapter(),
+	}
 	connection, err := core.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
@@ -119,9 +121,12 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 	defer bdConfigTeardown(conn, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	plugin.GetBdIndexes().RegisterName("test", 2, nil)
 
 	err := plugin.ModifyBridgeDomain(&l2.BridgeDomains_BridgeDomain{
 		Name:                "test",
@@ -249,7 +254,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
 	defer bdConfigTeardown(conn, plugin)
 
-	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
+	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -456,6 +461,46 @@ func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
 	Expect(found).To(BeTrue())
 	Expect(meta.ConfiguredInterfaces).To(Not(BeEmpty()))
 	Expect(meta.ConfiguredInterfaces[0]).To(Equal("test"))
+}
+
+// Tests checks that calling Resolve twice with the same interface registers it to the metadata only once
+func TestBDConfigurator_ResolveCreatedInterfaceDuplicated(t *testing.T) {
+	ctx, conn, ifIndexes, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(conn, plugin)
+
+	// Register bridge domain (as created)
+	plugin.GetBdIndexes().RegisterName("bd1", 1, &l2idx.BdMetadata{
+		BridgeDomain: &l2.BridgeDomains_BridgeDomain{
+			Name: "bd1",
+			Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+				{
+					Name: "if1",
+				},
+			},
+		},
+	})
+
+	// Register interface (as created)
+	ifIndexes.RegisterName("if1", 1, nil) // Meta is not needed
+
+	ctx.MockVpp.MockReply(&l22.SwInterfaceSetL2BridgeReply{})
+	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
+	ctx.MockVpp.MockReply(&l22.SwInterfaceSetL2BridgeReply{})
+	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{})
+
+	// 1)
+	err := plugin.ResolveCreatedInterface("if1", 1)
+	Expect(err).To(BeNil())
+	_, meta, found := plugin.GetBdIndexes().LookupIdx("bd1")
+	Expect(found).To(BeTrue())
+	Expect(meta.ConfiguredInterfaces).To(HaveLen(1))
+
+	// 2)
+	err = plugin.ResolveCreatedInterface("if1", 1)
+	Expect(err).To(BeNil())
+	_, meta, found = plugin.GetBdIndexes().LookupIdx("bd1")
+	Expect(found).To(BeTrue())
+	Expect(meta.ConfiguredInterfaces).To(HaveLen(1))
 }
 
 // Tests resolving of deleted interface (not found)
@@ -708,7 +753,7 @@ func TestBDConfigurator_TwoBVI(t *testing.T) {
 	}
 
 	err := plugin.ConfigureBridgeDomain(bdData)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(BeNil())
 
 	// Check for missing index after failed creation
 	_, _, found := plugin.GetBdIndexes().LookupIdx("bd1")

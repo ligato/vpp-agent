@@ -76,16 +76,11 @@ var macipAcls = acl.AccessLists_Acl{
 func TestConfigureACL(t *testing.T) {
 	ctx, connection, plugin := aclTestSetup(t, false)
 	defer aclTestTeardown(connection, plugin)
-
-	acl1 := acl.AccessLists_Acl{AclName: "acl1"}
-	err := plugin.ConfigureACL(&acl1)
-	Expect(err).To(BeNil())
-
 	// ipAcl Replies
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
 	// Test configure ipAcl
-	err = plugin.ConfigureACL(&ipAcls)
+	err := plugin.ConfigureACL(&ipAcls)
 	Expect(err).To(BeNil())
 
 	// macipAcl Replies
@@ -125,9 +120,9 @@ func TestModifyNonExistingACL(t *testing.T) {
 
 	// Test modify ipAcl
 	err := plugin.ModifyACL(&ipAcls, &ipAcl)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(BeNil())
 	err = plugin.ModifyACL(&macipAcls, &macipAcl)
-	Expect(err).To(BeNil())
+	Expect(err).ToNot(BeNil())
 }
 
 // Test modification of given acl
@@ -396,7 +391,7 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

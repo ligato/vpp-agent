@@ -89,7 +89,7 @@ type IfVppWrite interface {
 	// SetRxMode calls SwInterfaceSetRxMode bin
 	SetRxMode(ifIdx uint32, rxModeSettings *interfaces.Interfaces_Interface_RxModeSettings) error
 	// SetRxPlacement configures rx-placement for interface
-	SetRxPlacement(vppInternalName string, rxPlacement *interfaces.Interfaces_Interface_RxPlacementSettings) error
+	SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interfaces_Interface_RxPlacementSettings) error
 	// CreateVrf checks if VRF exists and creates it if not
 	CreateVrf(vrfID uint32) error
 	// CreateVrfIPv6 checks if IPv6 VRF exists and creates it if not

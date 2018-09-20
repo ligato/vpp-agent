@@ -72,14 +72,14 @@ var (
  *  |       |                   |            |  *
  *  | +-----+--------+    *------+-------+   |  *
  *  | | tap1         |    | (tap2)       |   |  *
- *  | | 10.0.0.11/24 |    | 10.0.0.21/24 |   |  *
+ *  | | 10.0.0.11/24 |    | 20.0.0.11/24 |   |  *
  *  | +-----+--------+    +------+-------+   |  *
  *  |       |                   |            |  *
  *  +-------+-------------------+------------+  *
  *          |                   |               *
  *  +-------+----------+   +-----+------------+ *
  *  | linux-tap1       |   | linux-tap2       | *
- *  | IP: 10.0.0.12/24 |   | IP: 10.0.0.22\24 | *
+ *  | IP: 10.0.0.12/24 |   | IP: 20.0.0.12\24 | *
  *  | Namespace: ns1   |   | Namespace: ns2   | *
  *  +------------------+   +------------------+ *
  *                                              *
@@ -269,7 +269,7 @@ func tap2() *vpp_intf.Interfaces_Interface {
 		Enabled:     true,
 		PhysAddress: "D5:BC:DC:12:E4:0E",
 		IpAddresses: []string{
-			"10.0.0.21/24",
+			"20.0.0.11/24",
 		},
 		Tap: &vpp_intf.Interfaces_Interface_Tap{
 			HostIfName: "linux-tap2",
@@ -322,7 +322,7 @@ func linuxTap2() *linux_intf.LinuxInterfaces_Interface {
 		},
 		Mtu: 1500,
 		IpAddresses: []string{
-			"10.0.0.22/24",
+			"20.0.0.12/24",
 		},
 	}
 }

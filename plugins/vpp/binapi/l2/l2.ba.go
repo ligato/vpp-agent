@@ -8,9 +8,9 @@ It is generated from this file:
 	l2.api.json
 
 It contains these VPP binary API objects:
-	43 messages
+	45 messages
 	2 types
-	21 services
+	22 services
 */
 package l2
 
@@ -19,13 +19,14 @@ import "github.com/lunixbochs/struc"
 import "bytes"
 
 // Reference imports to suppress errors if they are not otherwise used.
+var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
 
 /* Types */
 
 // MacEntry represents the VPP binary API type 'mac_entry'.
-// Generated from 'l2.api.json', line 1206:
+// Generated from 'l2.api.json', line 1264:
 //
 //            "mac_entry",
 //            [
@@ -64,7 +65,7 @@ func (*MacEntry) GetCrcString() string {
 }
 
 // BridgeDomainSwIf represents the VPP binary API type 'bridge_domain_sw_if'.
-// Generated from 'l2.api.json', line 1229:
+// Generated from 'l2.api.json', line 1287:
 //
 //            "bridge_domain_sw_if",
 //            [
@@ -1936,8 +1937,103 @@ func NewBdIPMacAddDelReply() api.Message {
 	return &BdIPMacAddDelReply{}
 }
 
-// L2InterfaceEfpFilter represents the VPP binary API message 'l2_interface_efp_filter'.
+// BdIPMacDetails represents the VPP binary API message 'bd_ip_mac_details'.
 // Generated from 'l2.api.json', line 1042:
+//
+//            "bd_ip_mac_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            [
+//                "u8",
+//                "is_ipv6"
+//            ],
+//            [
+//                "u8",
+//                "ip_address",
+//                16
+//            ],
+//            [
+//                "u8",
+//                "mac_address",
+//                6
+//            ],
+//            {
+//                "crc": "0xd3184eda"
+//            }
+//
+type BdIPMacDetails struct {
+	BdID       uint32
+	IsIPv6     uint8
+	IPAddress  []byte `struc:"[16]byte"`
+	MacAddress []byte `struc:"[6]byte"`
+}
+
+func (*BdIPMacDetails) GetMessageName() string {
+	return "bd_ip_mac_details"
+}
+func (*BdIPMacDetails) GetCrcString() string {
+	return "d3184eda"
+}
+func (*BdIPMacDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func NewBdIPMacDetails() api.Message {
+	return &BdIPMacDetails{}
+}
+
+// BdIPMacDump represents the VPP binary API message 'bd_ip_mac_dump'.
+// Generated from 'l2.api.json', line 1074:
+//
+//            "bd_ip_mac_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "bd_id"
+//            ],
+//            {
+//                "crc": "0xc25fdce6"
+//            }
+//
+type BdIPMacDump struct {
+	BdID uint32
+}
+
+func (*BdIPMacDump) GetMessageName() string {
+	return "bd_ip_mac_dump"
+}
+func (*BdIPMacDump) GetCrcString() string {
+	return "c25fdce6"
+}
+func (*BdIPMacDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func NewBdIPMacDump() api.Message {
+	return &BdIPMacDump{}
+}
+
+// L2InterfaceEfpFilter represents the VPP binary API message 'l2_interface_efp_filter'.
+// Generated from 'l2.api.json', line 1096:
 //
 //            "l2_interface_efp_filter",
 //            [
@@ -1983,7 +2079,7 @@ func NewL2InterfaceEfpFilter() api.Message {
 }
 
 // L2InterfaceEfpFilterReply represents the VPP binary API message 'l2_interface_efp_filter_reply'.
-// Generated from 'l2.api.json', line 1068:
+// Generated from 'l2.api.json', line 1122:
 //
 //            "l2_interface_efp_filter_reply",
 //            [
@@ -2020,7 +2116,7 @@ func NewL2InterfaceEfpFilterReply() api.Message {
 }
 
 // SwInterfaceSetVpath represents the VPP binary API message 'sw_interface_set_vpath'.
-// Generated from 'l2.api.json', line 1086:
+// Generated from 'l2.api.json', line 1140:
 //
 //            "sw_interface_set_vpath",
 //            [
@@ -2066,7 +2162,7 @@ func NewSwInterfaceSetVpath() api.Message {
 }
 
 // SwInterfaceSetVpathReply represents the VPP binary API message 'sw_interface_set_vpath_reply'.
-// Generated from 'l2.api.json', line 1112:
+// Generated from 'l2.api.json', line 1166:
 //
 //            "sw_interface_set_vpath_reply",
 //            [
@@ -2105,6 +2201,7 @@ func NewSwInterfaceSetVpathReply() api.Message {
 /* Services */
 
 type Services interface {
+	DumpBdIPMac(*BdIPMacDump) (*BdIPMacDetails, error)
 	DumpBridgeDomain(*BridgeDomainDump) (*BridgeDomainDetails, error)
 	DumpL2FibTable(*L2FibTableDump) (*L2FibTableDetails, error)
 	DumpL2Xconnect(*L2XconnectDump) (*L2XconnectDetails, error)
@@ -2168,6 +2265,8 @@ func init() {
 	api.RegisterMessage((*SwInterfaceSetL2BridgeReply)(nil), "l2.SwInterfaceSetL2BridgeReply")
 	api.RegisterMessage((*BdIPMacAddDel)(nil), "l2.BdIPMacAddDel")
 	api.RegisterMessage((*BdIPMacAddDelReply)(nil), "l2.BdIPMacAddDelReply")
+	api.RegisterMessage((*BdIPMacDetails)(nil), "l2.BdIPMacDetails")
+	api.RegisterMessage((*BdIPMacDump)(nil), "l2.BdIPMacDump")
 	api.RegisterMessage((*L2InterfaceEfpFilter)(nil), "l2.L2InterfaceEfpFilter")
 	api.RegisterMessage((*L2InterfaceEfpFilterReply)(nil), "l2.L2InterfaceEfpFilterReply")
 	api.RegisterMessage((*SwInterfaceSetVpath)(nil), "l2.SwInterfaceSetVpath")

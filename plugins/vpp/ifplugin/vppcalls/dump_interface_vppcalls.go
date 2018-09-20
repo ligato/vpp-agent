@@ -149,13 +149,17 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump interface DHCP clients: %v", err)
 	}
+	// Get unnumbered interfaces
+	unnumbered, err := h.dumpUnnumberedDetails()
+	if err != nil {
+		return nil, fmt.Errorf("failed to dump unnumbered interfaces: %v", err)
+	}
 	// Get vrf for every interface and fill DHCP if set
 	for _, ifData := range ifs {
 		// VRF
 		vrf, err := h.GetInterfaceVrf(ifData.Meta.SwIfIndex)
 		if err != nil {
-			h.log.Warnf("Interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
-			continue
+			return nil, fmt.Errorf("interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 		}
 		ifData.Interface.Vrf = vrf
 		// DHCP
@@ -164,9 +168,24 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 			ifData.Interface.SetDhcpClient = true
 			ifData.Meta.Dhcp = dhcpData
 		}
+		// Unnumbered
+		ifWithIPIdx, ok := unnumbered[ifData.Meta.SwIfIndex]
+		if ok {
+			// Find unnumbered interface
+			var ifWithIPName string
+			ifWithIP, ok := ifs[ifWithIPIdx]
+			if ok {
+				ifWithIPName = ifWithIP.Interface.Name
+			} else {
+				h.log.Debugf("cannot find name of the ip-interface for unnumbered %s", ifData.Interface.Name)
+				ifWithIPName = "<unknown>"
+			}
+			ifData.Interface.Unnumbered = &ifnb.Interfaces_Interface_Unnumbered{
+				IsUnnumbered:    true,
+				InterfaceWithIp: ifWithIPName,
+			}
+		}
 	}
-
-	h.log.Debugf("dumped %d interfaces", len(ifs))
 
 	// SwInterfaceDump time
 	timeLog := measure.GetTimeLog(interfaces.SwInterfaceDump{}, h.stopwatch)
@@ -504,6 +523,33 @@ func (h *IfVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 	}
 
 	return dhcpData, nil
+}
+
+// dumpUnnumberedDetails returns a map of unnumbered interface indexes, every with interface index of element with IP
+func (h *IfVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error) {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(ip.IPUnnumberedDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	unIfMap := make(map[uint32]uint32) // unnumbered/ip-interface
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPUnnumberedDump{
+		SwIfIndex: ^uint32(0),
+	})
+
+	for {
+		unDetails := &ip.IPUnnumberedDetails{}
+		last, err := reqCtx.ReceiveReply(unDetails)
+		if last {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		unIfMap[unDetails.SwIfIndex] = unDetails.IPSwIfIndex
+	}
+
+	return unIfMap, nil
 }
 
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).

@@ -16,6 +16,7 @@ package l3plugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -41,55 +42,71 @@ type IPNeighConfigurator struct {
 }
 
 // Init VPP channel and vppcalls handler
-func (p *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, enableStopwatch bool) (err error) {
+func (c *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, enableStopwatch bool) (err error) {
 	// Logger
-	p.log = logger.NewLogger("-l3-ip-neigh-conf")
-	p.log.Debugf("Initializing proxy ARP configurator")
+	c.log = logger.NewLogger("-l3-ip-neigh-conf")
+	c.log.Debugf("Initializing proxy ARP configurator")
 
 	// Configurator-wide stopwatch instance
 	if enableStopwatch {
-		p.stopwatch = measure.NewStopwatch("IPScan-Neigh-configurator", p.log)
+		c.stopwatch = measure.NewStopwatch("IPScan-Neigh-configurator", c.log)
 	}
 
 	// VPP channel
-	p.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
-		return err
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handler
-	p.ipNeighHandler = vppcalls.NewIPNeighVppHandler(p.vppChan, p.log, p.stopwatch)
+	c.ipNeighHandler = vppcalls.NewIPNeighVppHandler(c.vppChan, c.log, c.stopwatch)
 
 	return nil
 }
 
 // Close VPP channel
-func (p *IPNeighConfigurator) Close() error {
-	return safeclose.Close(p.vppChan)
+func (c *IPNeighConfigurator) Close() error {
+	if err := safeclose.Close(c.vppChan); err != nil {
+		return c.LogError(errors.Errorf("failed to safeclose IP neighbor configurator: %v", err))
+	}
+	return nil
 }
 
 // Set puts desired IP scan neighbor configuration to the VPP
-func (p *IPNeighConfigurator) Set(config *l3.IPScanNeighbor) error {
-	if err := p.ipNeighHandler.SetIPScanNeighbor(config); err != nil {
-		return err
+func (c *IPNeighConfigurator) Set(config *l3.IPScanNeighbor) error {
+	if err := c.ipNeighHandler.SetIPScanNeighbor(config); err != nil {
+		return errors.Errorf("failed to set IP neighbor: %v", err)
 	}
 
-	p.log.Debugf("IP scan neighbor set to %v", config.Mode)
+	c.log.Infof("IP scan neighbor set to %v", config.Mode)
 
 	return nil
 }
 
 // Unset returns IP scan neighbor configuration to default
-func (p *IPNeighConfigurator) Unset() error {
+func (c *IPNeighConfigurator) Unset() error {
 	defaultCfg := &l3.IPScanNeighbor{
 		Mode: l3.IPScanNeighbor_DISABLED,
 	}
 
-	if err := p.ipNeighHandler.SetIPScanNeighbor(defaultCfg); err != nil {
-		return err
+	if err := c.ipNeighHandler.SetIPScanNeighbor(defaultCfg); err != nil {
+		return errors.Errorf("failed to set IP neighbor to default: %v", err)
 	}
 
-	p.log.Debug("IP scan neighbor set to default")
+	c.log.Info("IP scan neighbor set to default")
 
 	return nil
+}
+
+// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
+func (c *IPNeighConfigurator) LogError(err error) error {
+	if err == nil {
+		return nil
+	}
+	switch err.(type) {
+	case *errors.Error:
+		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
+	default:
+		c.log.Error(err)
+	}
+	return err
 }

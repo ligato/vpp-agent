@@ -655,7 +655,7 @@ func TestAddSteering(t *testing.T) {
 			VerifyAfterAddSteering: func(steering *srv6.Steering, err error, fakeVPPCalls *SRv6Calls) {
 				Expect(err).To(BeNil())
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -668,7 +668,7 @@ func TestAddSteering(t *testing.T) {
 			},
 			VerifyAfterAddPolicy: func(steering *srv6.Steering, fakeVPPCalls *SRv6Calls) {
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -681,7 +681,7 @@ func TestAddSteering(t *testing.T) {
 			VerifyAfterAddSteering: func(steering *srv6.Steering, err error, fakeVPPCalls *SRv6Calls) {
 				Expect(err).To(BeNil())
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -695,7 +695,7 @@ func TestAddSteering(t *testing.T) {
 			},
 			VerifyAfterAddPolicy: func(steering *srv6.Steering, fakeVPPCalls *SRv6Calls) {
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -830,7 +830,7 @@ func TestModifySteering(t *testing.T) {
 			Verify: func(steering *srv6.Steering, err error, fakeVPPCalls *SRv6Calls) {
 				Expect(err).To(BeNil())
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -899,7 +899,7 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.
 	RegisterTestingT(t)
 	// connection
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())

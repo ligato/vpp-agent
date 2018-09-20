@@ -151,7 +151,7 @@ Check ETCD Running
 Start ETCD Server
     Open SSH Connection    etcd    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     Execute On Machine    etcd    ${ETCD_SERVER_CREATE}
-    Write To Machine    etcd    ${DOCKER_COMMAND} start -i etcd
+    ${out}=  Write To Machine Until String    etcd    ${DOCKER_COMMAND} start -i etcd    etcdmain: ready to serve client requests
 #    ${hostname}=    Execute On Machine    docker    ${DOCKER_COMMAND} exec etcd bash -c 'echo $HOSTNAME'
 #   etcd nema bash, preto dame hostname natvrdo
     ${hostname}=    Set Variable    etcd

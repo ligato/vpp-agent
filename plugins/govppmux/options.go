@@ -15,6 +15,7 @@
 package govppmux
 
 import (
+	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 )
 
@@ -27,6 +28,7 @@ func NewPlugin(opts ...Option) *Plugin {
 
 	p.PluginName = "govpp"
 	p.StatusCheck = &statuscheck.DefaultPlugin
+	p.Resync = &resync.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)
