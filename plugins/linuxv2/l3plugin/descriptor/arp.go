@@ -69,14 +69,14 @@ type ARPDescriptor struct {
 
 	log       logging.Logger
 	l3Handler l3linuxcalls.NetlinkAPI
-	ifPlugin  ifplugin.IfPluginAPI
-	nsPlugin  nsplugin.NsPluginAPI
+	ifPlugin  ifplugin.API
+	nsPlugin  nsplugin.API
 	scheduler scheduler.KVScheduler
 }
 
 // NewARPDescriptor creates a new instance of the ARP descriptor.
 func NewARPDescriptor(
-	scheduler scheduler.KVScheduler, ifPlugin ifplugin.IfPluginAPI, nsPlugin nsplugin.NsPluginAPI,
+	scheduler scheduler.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
 	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger) *ARPDescriptor {
 
 	return &ARPDescriptor{

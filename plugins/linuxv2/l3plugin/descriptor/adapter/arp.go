@@ -68,7 +68,7 @@ func (db *ARPDescriptorBase) Build(key string, valueData *l3.LinuxStaticARPEntry
 	//		ProtoValue
 	//      typedMsg *l3.LinuxStaticARPEntry
 	//	}
-	//
+	//	
 	//	// ... (override some methods)
 	//
 	//  return &MyProtoValue{ProtoValue: NewProtoValue(valueData), typedMsg: valueData}	, nil
@@ -249,7 +249,7 @@ func (da *ARPDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 				Origin:   kvpair.Origin,
 			})
 	}
-
+	
 	typedDump, err := da.descriptor.Dump(correlateWithType)
 	if err != nil {
 		return nil, err
@@ -260,7 +260,7 @@ func (da *ARPDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
-		}
+			}
 		value, err := da.descriptor.Build(typedKVWithMetadata.Key, typedKVWithMetadata.Value)
 		if err != nil {
 			return nil, err

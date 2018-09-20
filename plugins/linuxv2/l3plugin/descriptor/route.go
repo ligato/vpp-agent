@@ -79,14 +79,14 @@ type RouteDescriptor struct {
 
 	log       logging.Logger
 	l3Handler l3linuxcalls.NetlinkAPI
-	ifPlugin  ifplugin.IfPluginAPI
-	nsPlugin  nsplugin.NsPluginAPI
+	ifPlugin  ifplugin.API
+	nsPlugin  nsplugin.API
 	scheduler scheduler.KVScheduler
 }
 
 // NewRouteDescriptor creates a new instance of the Route descriptor.
 func NewRouteDescriptor(
-	scheduler scheduler.KVScheduler, ifPlugin ifplugin.IfPluginAPI, nsPlugin nsplugin.NsPluginAPI,
+	scheduler scheduler.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
 	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger) *RouteDescriptor {
 
 	return &RouteDescriptor{

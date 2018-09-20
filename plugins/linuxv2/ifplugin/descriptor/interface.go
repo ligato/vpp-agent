@@ -79,13 +79,13 @@ type InterfaceDescriptor struct {
 	log          logging.Logger
 	serviceLabel servicelabel.ReaderAPI
 	ifHandler    iflinuxcalls.NetlinkAPI
-	nsPlugin     nsplugin.NsPluginAPI
+	nsPlugin     nsplugin.API
 	scheduler    scheduler.KVScheduler
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(
-	scheduler scheduler.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.NsPluginAPI,
+	scheduler scheduler.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API,
 	ifHandler iflinuxcalls.NetlinkAPI, log logging.PluginLogger) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{

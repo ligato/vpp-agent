@@ -12,8 +12,8 @@ import (
 var DefaultPlugin = *NewPlugin()
 
 // NewPlugin creates a new Plugin with the provides Options
-func NewPlugin(opts ...Option) *L3PLugin {
-	p := &L3PLugin{}
+func NewPlugin(opts ...Option) *L3Plugin {
+	p := &L3Plugin{}
 
 	p.PluginName = "linux-l3plugin"
 	p.Scheduler = &kvscheduler.DefaultPlugin
@@ -37,11 +37,11 @@ func NewPlugin(opts ...Option) *L3PLugin {
 }
 
 // Option is a function that can be used in NewPlugin to customize Plugin.
-type Option func(*L3PLugin)
+type Option func(*L3Plugin)
 
 // UseDeps returns Option that can inject custom dependencies.
 func UseDeps(f func(*Deps)) Option {
-	return func(p *L3PLugin) {
+	return func(p *L3Plugin) {
 		f(&p.Deps)
 	}
 }

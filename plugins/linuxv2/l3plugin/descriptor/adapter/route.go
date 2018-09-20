@@ -68,7 +68,7 @@ func (db *RouteDescriptorBase) Build(key string, valueData *l3.LinuxStaticRoute)
 	//		ProtoValue
 	//      typedMsg *l3.LinuxStaticRoute
 	//	}
-	//
+	//	
 	//	// ... (override some methods)
 	//
 	//  return &MyProtoValue{ProtoValue: NewProtoValue(valueData), typedMsg: valueData}	, nil
@@ -249,7 +249,7 @@ func (da *RouteDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMeta
 				Origin:   kvpair.Origin,
 			})
 	}
-
+	
 	typedDump, err := da.descriptor.Dump(correlateWithType)
 	if err != nil {
 		return nil, err
@@ -260,7 +260,7 @@ func (da *RouteDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMeta
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
-		}
+			}
 		value, err := da.descriptor.Build(typedKVWithMetadata.Key, typedKVWithMetadata.Value)
 		if err != nil {
 			return nil, err
