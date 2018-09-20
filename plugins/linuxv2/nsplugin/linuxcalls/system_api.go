@@ -17,8 +17,8 @@ package linuxcalls
 import (
 	"os"
 
-	"github.com/vishvananda/netns"
 	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/vishvananda/netns"
 )
 
 // SystemAPI defines all methods required for managing network namespaces
@@ -52,8 +52,8 @@ type NetworkNamespaceAPI interface {
 	DuplicateNamespaceHandle(ns netns.NsHandle) (netns.NsHandle, error)
 	// GetCurrentNamespace gets a handle to the current threads network namespace.
 	GetCurrentNamespace() (ns netns.NsHandle, err error)
-    // GetNamespaceFromPath gets a handle to a network namespace identified
-    // by the path.
+	// GetNamespaceFromPath gets a handle to a network namespace identified
+	// by the path.
 	GetNamespaceFromPath(path string) (ns netns.NsHandle, err error)
 	// GetNamespaceFromPid gets a handle to the network namespace of a given pid.
 	GetNamespaceFromPid(pid int) (ns netns.NsHandle, err error)
@@ -64,9 +64,8 @@ type NetworkNamespaceAPI interface {
 	SetNamespace(ns netns.NsHandle) (err error)
 }
 
-
 // systemHandler implements SystemAPI using actual syscalls (i.e. not suitable for tests).
-type systemHandler struct{
+type systemHandler struct {
 	stopwatch *measure.Stopwatch
 }
 

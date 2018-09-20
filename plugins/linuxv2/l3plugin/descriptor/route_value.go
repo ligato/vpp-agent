@@ -20,10 +20,10 @@ import (
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/kvscheduler/value/protoval"
 
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	"net"
 	"bytes"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"net"
 )
 
 // RouteProtoValue overrides the default implementation of the Equivalent method.

@@ -7,8 +7,8 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	. "github.com/ligato/cn-infra/kvscheduler/api"
 	. "github.com/ligato/cn-infra/kvscheduler/value/protoval"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////
@@ -69,7 +69,7 @@ func (db *InterfaceDescriptorBase) Build(key string, valueData *interfaces.Linux
 	//		ProtoValue
 	//      typedMsg *interfaces.LinuxInterface
 	//	}
-	//	
+	//
 	//	// ... (override some methods)
 	//
 	//  return &MyProtoValue{ProtoValue: NewProtoValue(valueData), typedMsg: valueData}	, nil
@@ -250,7 +250,7 @@ func (da *InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 				Origin:   kvpair.Origin,
 			})
 	}
-	
+
 	typedDump, err := da.descriptor.Dump(correlateWithType)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func (da *InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
-			}
+		}
 		value, err := da.descriptor.Build(typedKVWithMetadata.Key, typedKVWithMetadata.Value)
 		if err != nil {
 			return nil, err

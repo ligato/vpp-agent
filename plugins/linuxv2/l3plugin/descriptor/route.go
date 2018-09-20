@@ -24,15 +24,15 @@ import (
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
 
+	"github.com/ligato/cn-infra/kvscheduler/value/emptyval"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
+	ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor/adapter"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	ifmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
-	"github.com/ligato/cn-infra/kvscheduler/value/emptyval"
 )
 
 const (
@@ -44,7 +44,7 @@ const (
 	ipv6AddrAny = "::"
 
 	// dependency labels
-	routeOutInterfaceDep = "interface"
+	routeOutInterfaceDep   = "interface"
 	routeGwReachabilityDep = "gw-reachability"
 )
 
@@ -231,7 +231,7 @@ func (rd *RouteDescriptor) Dependencies(key string, route *l3.LinuxStaticRoute) 
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: routeOutInterfaceDep,
 			Key:   ifmodel.InterfaceStateKey(route.OutgoingInterface, true),
-			})
+		})
 	}
 	// GW must be routable
 	gwAddr := net.ParseIP(getGwAddr(route))
@@ -252,7 +252,7 @@ func (rd *RouteDescriptor) Dependencies(key string, route *l3.LinuxStaticRoute) 
 				}
 				return false
 			},
-			})
+		})
 	}
 	return dependencies
 }
@@ -268,7 +268,6 @@ func (rd *RouteDescriptor) DerivedValues(key string, route *l3.LinuxStaticRoute)
 	}
 	return derValues
 }
-
 
 // Dump returns all routes associated with interfaces managed by this agent.
 func (rd *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adapter.RouteKVWithMetadata, error) {
@@ -328,7 +327,7 @@ func (rd *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adap
 				continue
 			}
 			dump = append(dump, adapter.RouteKVWithMetadata{
-				Key:   l3.StaticRouteKey(dstNet, ifName),
+				Key: l3.StaticRouteKey(dstNet, ifName),
 				Value: &l3.LinuxStaticRoute{
 					OutgoingInterface: ifName,
 					Scope:             scope,
@@ -380,4 +379,3 @@ func rtScopeFromNetlinkToNB(scope netlink.Scope) (l3.LinuxStaticRoute_Scope, err
 	}
 	return 0, ErrRouteWithUnsupportedScope
 }
-

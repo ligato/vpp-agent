@@ -18,10 +18,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/idxmap/mem"
+	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging"
 
 	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 )
@@ -80,7 +80,7 @@ type LinuxIfMetadataIndexDto struct {
 // name and metadata of type *LinuxIfMetadata.
 type linuxIfMetadataIndex struct {
 	idxmap.NamedMappingRW /* embeds */
-	log logging.Logger
+	log                   logging.Logger
 }
 
 const (
@@ -136,7 +136,7 @@ func (ifmx *linuxIfMetadataIndex) lookupBySecondaryKey(keyPrefix, namespace, val
 	if namespace == "" {
 		namespace = nsmodel.DefaultNamespaceName
 	}
-	res := ifmx.ListNames(keyPrefix + namespace, value)
+	res := ifmx.ListNames(keyPrefix+namespace, value)
 	if len(res) != 1 {
 		return
 	}
@@ -189,7 +189,7 @@ func indexMetadata(metaData interface{}) map[string][]string {
 		ns = ifMeta.Namespace.Name
 	}
 
-	indexes[linuxIfIndexKeyPrefix + ns] = []string{strconv.FormatInt(int64(ifMeta.LinuxIfIndex), 10)}
-	indexes[linuxIfNameKeyPrefix + ns] = []string{ifMeta.HostIfName}
+	indexes[linuxIfIndexKeyPrefix+ns] = []string{strconv.FormatInt(int64(ifMeta.LinuxIfIndex), 10)}
+	indexes[linuxIfNameKeyPrefix+ns] = []string{ifMeta.HostIfName}
 	return indexes
 }

@@ -43,7 +43,7 @@ const (
 	interfaceStateKeyTemplate = interfaceStateKeyPrefix + "{ifName}/{ifState}"
 
 	// interface admin state as printed in derived keys.
-	interfaceUpState = "UP"
+	interfaceUpState   = "UP"
 	interfaceDownState = "DOWN"
 
 	/* Interface Address (derived) */
@@ -142,7 +142,7 @@ func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, err
 		}
 		_, ifAddr, err = net.ParseCIDR(keyComps[1] + "/" + keyComps[2])
 		if err != nil {
-			return  "", nil, fmt.Errorf(errPrefix + "invalid address")
+			return "", nil, fmt.Errorf(errPrefix + "invalid address")
 		}
 		ifName = keyComps[0]
 		return

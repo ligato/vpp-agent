@@ -20,14 +20,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/go-errors/errors"
 
+	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
+	"github.com/ligato/cn-infra/kvscheduler/descriptor/base"
+	"github.com/ligato/cn-infra/kvscheduler/value/emptyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/kvscheduler/value/emptyval"
-	"github.com/ligato/cn-infra/kvscheduler/descriptor/base"
 
 	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 )
@@ -52,7 +52,7 @@ type MicroserviceDescriptor struct {
 	createTime map[string]time.Time
 
 	// lock used to serialize access to microservice state data
-	msStateLock   sync.Mutex
+	msStateLock sync.Mutex
 
 	// conditional variable to check if microservice state data are in-sync
 	// with the docker

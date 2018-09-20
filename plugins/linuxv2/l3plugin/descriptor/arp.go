@@ -22,16 +22,16 @@ import (
 	"github.com/vishvananda/netlink"
 
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/kvscheduler/value/protoval"
+	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor/adapter"
-	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	ifmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor/adapter"
+	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
+	ifmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
@@ -271,12 +271,12 @@ func (arpd *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapte
 			hwAddr := arp.HardwareAddr.String()
 
 			dump = append(dump, adapter.ARPKVWithMetadata{
-				Key:   l3.StaticArpKey(ifName, ipAddr),
+				Key: l3.StaticArpKey(ifName, ipAddr),
 				Value: &l3.LinuxStaticARPEntry{
 					Interface: ifName,
 					IpAddr:    ipAddr,
 					HwAddress: hwAddr,
-					},
+				},
 				Origin: scheduler.UnknownOrigin, // let the scheduler to determine the origin
 			})
 		}

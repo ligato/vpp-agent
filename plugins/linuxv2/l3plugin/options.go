@@ -4,8 +4,8 @@ import (
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/kvscheduler"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.

@@ -15,9 +15,9 @@
 package linuxcalls
 
 import (
-	"time"
 	"os"
 	"syscall"
+	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/vishvananda/netns"

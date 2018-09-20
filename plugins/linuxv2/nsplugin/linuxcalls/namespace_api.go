@@ -17,8 +17,8 @@ package linuxcalls
 import (
 	"runtime"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netns"
 )
 

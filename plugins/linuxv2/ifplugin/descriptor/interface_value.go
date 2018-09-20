@@ -20,9 +20,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/ligato/cn-infra/utils/addrs"
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/kvscheduler/value/protoval"
+	"github.com/ligato/cn-infra/utils/addrs"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 )

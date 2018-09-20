@@ -17,8 +17,8 @@ package l3
 import (
 	"fmt"
 	"net"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -142,4 +142,3 @@ func parseStaticRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *n
 	}
 	return nil, "", fmt.Errorf(errPrefix + "invalid prefix")
 }
-

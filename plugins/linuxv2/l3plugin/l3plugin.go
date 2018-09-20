@@ -23,11 +23,11 @@ import (
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging/measure"
 
+	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 )
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
@@ -49,9 +49,9 @@ type L3PLugin struct {
 // Deps lists dependencies of the interface plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler    scheduler.KVScheduler
-	NsPlugin     nsplugin.NsPluginAPI
-	IfPlugin     ifplugin.IfPluginAPI
+	Scheduler scheduler.KVScheduler
+	NsPlugin  nsplugin.NsPluginAPI
+	IfPlugin  ifplugin.IfPluginAPI
 }
 
 // Config holds the nsplugin configuration.

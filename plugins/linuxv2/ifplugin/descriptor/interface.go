@@ -51,7 +51,7 @@ const (
 
 	// dependency labels
 	tapInterfaceDep = "vpp-tap-interface"
-	vethPeerDep = "veth-peer"
+	vethPeerDep     = "veth-peer"
 	microserviceDep = "microservice"
 )
 
