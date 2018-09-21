@@ -50,8 +50,6 @@ type NetlinkAPIWrite interface {
 	SetInterfaceMTU(ifName string, mtu int) error
 	// RenameInterface changes interface host name
 	RenameInterface(ifName string, newName string) error
-	// InterfaceExists verifies interface existence
-	InterfaceExists(ifName string) (bool, error)
 }
 
 // NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux interfaces.
@@ -72,6 +70,8 @@ type NetlinkAPIRead interface {
 	DumpInterfaces() ([]*LinuxInterfaceDetails, error)
 	// DumpInterfaceStatistics returns statistics data for all known interfaces interfaces
 	DumpInterfaceStatistics() ([]*LinuxInterfaceStatistics, error)
+	// InterfaceExists verifies interface existence
+	InterfaceExists(ifName string) (bool, error)
 }
 
 // NetLinkHandler is accessor for netlink methods
