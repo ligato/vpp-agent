@@ -17,12 +17,13 @@ package linuxcalls
 import (
 	"net"
 
+	"github.com/vishvananda/netlink"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 
 	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/vishvananda/netlink"
 )
 
 // NetlinkAPI interface covers all methods inside linux calls package needed to manage linux interfaces.
@@ -51,27 +52,27 @@ type NetlinkAPIWrite interface {
 	SetInterfaceMTU(ifName string, mtu int) error
 	// RenameInterface changes interface host name
 	RenameInterface(ifName string, newName string) error
+	// InterfaceExists verifies interface existence
+	InterfaceExists(ifName string) (bool, error)
+}
+
+// NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux interfaces.
+type NetlinkAPIRead interface {
 	// GetLinkByName returns netlink interface type
 	GetLinkByName(ifName string) (netlink.Link, error)
 	// GetLinkList return all links from namespace
 	GetLinkList() ([]netlink.Link, error)
 	// GetAddressList reads all IP addresses
 	GetAddressList(ifName string) ([]netlink.Addr, error)
-	// InterfaceExists verifies interface existence
-	InterfaceExists(ifName string) (bool, error)
 	// GetInterfaceType returns linux interface type
 	GetInterfaceType(ifName string) (string, error)
 	// GetVethPeerName returns VETH's peer name
 	GetVethPeerName(ifName string) (string, error)
 	// GetInterfaceByName returns *net.Interface type from name
 	GetInterfaceByName(ifName string) (*net.Interface, error)
-}
-
-// NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux interfaces.
-type NetlinkAPIRead interface {
-	// DumpInterfaces returns all configured linux interfaces
+	// DumpInterfaces returns all configured linux interfaces in all namespaces in proto-modelled format with metadata
 	DumpInterfaces() ([]*LinuxInterfaceDetails, error)
-	// DumpInterfaceStatistics returns statistics data for interfaces
+	// DumpInterfaceStatistics returns statistics data for all known interfaces interfaces
 	DumpInterfaceStatistics() ([]*LinuxInterfaceStatistics, error)
 }
 

@@ -38,8 +38,6 @@ type NetlinkAPIWrite interface {
 	SetArpEntry(name string, arpEntry *netlink.Neigh) error
 	// DelArpEntry removes linux ARP entry
 	DelArpEntry(name string, arpEntry *netlink.Neigh) error
-	// GetArpEntries returns all configured ARP entries from current namespace
-	GetArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error)
 	/* Routes */
 	// AddStaticRoute adds new linux static route
 	AddStaticRoute(name string, route *netlink.Route) error
@@ -47,15 +45,22 @@ type NetlinkAPIWrite interface {
 	ReplaceStaticRoute(name string, route *netlink.Route) error
 	// DelStaticRoute removes linux static route
 	DelStaticRoute(name string, route *netlink.Route) error
-	// GetStaticRoutes reads linux routes. Possible to filter by interface and IP family.
-	GetStaticRoutes(link netlink.Link, family int) ([]netlink.Route, error)
 }
 
 // NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux ARP entries and routes.
 type NetlinkAPIRead interface {
-	// DumpArpEntries returns configured linux ARPs
+	/* ARP */
+	// GetArpEntries returns all configured ARP entries from current namespace in raw netlink format. Possible to
+	// filter by interface and IP family.
+	GetArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error)
+	// DumpArpEntries returns all configured ARP entries known to VPP agent from all known namespaces
+	// in proto-modelled format
 	DumpArpEntries() ([]*LinuxArpDetails, error)
-	// DumpRoutes returns configured linux Routes
+	/* Routes */
+	// GetStaticRoutes reads all linux routes from current namespace. Possible to filter by interface and IP family.
+	GetStaticRoutes(link netlink.Link, family int) ([]netlink.Route, error)
+	// DumpRoutes returns all configured routes entries known to VPP agent from all known namespaces
+	// in proto-modelled format
 	DumpRoutes() ([]*LinuxRouteDetails, error)
 }
 
