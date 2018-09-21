@@ -47,8 +47,6 @@ type govppRequestCtx struct {
 type govppMultirequestCtx struct {
 	// Original multi request context
 	requestCtx govppapi.MultiRequestCtx
-	// Function allowing to re-send request in case it's granted by the config file
-	sendRequest func(govppapi.Message) govppapi.MultiRequestCtx
 	// Parameter for sendRequest
 	requestMsg govppapi.Message
 	// Tracer object
@@ -120,7 +118,6 @@ func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiReq
 	// Return context with value and function which allows to send request again if needed
 	return &govppMultirequestCtx{
 		requestCtx:  requestCtx,
-		sendRequest: sendMultiRequest,
 		requestMsg:  request,
 		tracer:      c.tracer,
 		start:       start,

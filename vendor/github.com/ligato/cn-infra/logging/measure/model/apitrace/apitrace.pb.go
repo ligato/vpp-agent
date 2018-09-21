@@ -23,19 +23,19 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 type Trace struct {
-	TracedEntries        []*Trace_Entry   `protobuf:"bytes,1,rep,name=traced_entries,json=tracedEntries" json:"traced_entries,omitempty"`
-	AverageTimes         []*Trace_Average `protobuf:"bytes,2,rep,name=average_times,json=averageTimes" json:"average_times,omitempty"`
-	Overall              uint64           `protobuf:"varint,3,opt,name=overall,proto3" json:"overall,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	TracedEntries        []*Trace_Entry      `protobuf:"bytes,1,rep,name=traced_entries,json=tracedEntries" json:"traced_entries,omitempty"`
+	EntryStats           []*Trace_EntryStats `protobuf:"bytes,2,rep,name=entry_stats,json=entryStats" json:"entry_stats,omitempty"`
+	OverallDuration      uint64              `protobuf:"varint,3,opt,name=overall_duration,json=overallDuration,proto3" json:"overall_duration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
 }
 
 func (m *Trace) Reset()         { *m = Trace{} }
 func (m *Trace) String() string { return proto.CompactTextString(m) }
 func (*Trace) ProtoMessage()    {}
 func (*Trace) Descriptor() ([]byte, []int) {
-	return fileDescriptor_apitrace_48b9b202f3fb279b, []int{0}
+	return fileDescriptor_apitrace_41aefd52f6cc519e, []int{0}
 }
 func (m *Trace) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trace.Unmarshal(m, b)
@@ -62,24 +62,26 @@ func (m *Trace) GetTracedEntries() []*Trace_Entry {
 	return nil
 }
 
-func (m *Trace) GetAverageTimes() []*Trace_Average {
+func (m *Trace) GetEntryStats() []*Trace_EntryStats {
 	if m != nil {
-		return m.AverageTimes
+		return m.EntryStats
 	}
 	return nil
 }
 
-func (m *Trace) GetOverall() uint64 {
+func (m *Trace) GetOverallDuration() uint64 {
 	if m != nil {
-		return m.Overall
+		return m.OverallDuration
 	}
 	return 0
 }
 
 type Trace_Entry struct {
-	Index                uint64   `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
+	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
+	// called in in the VPP
 	MsgName              string   `protobuf:"bytes,2,opt,name=msg_name,json=msgName,proto3" json:"msg_name,omitempty"`
-	Duration             uint64   `protobuf:"varint,3,opt,name=duration,proto3" json:"duration,omitempty"`
+	StartTime            uint64   `protobuf:"varint,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	Duration             uint64   `protobuf:"varint,4,opt,name=duration,proto3" json:"duration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -89,7 +91,7 @@ func (m *Trace_Entry) Reset()         { *m = Trace_Entry{} }
 func (m *Trace_Entry) String() string { return proto.CompactTextString(m) }
 func (*Trace_Entry) ProtoMessage()    {}
 func (*Trace_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_apitrace_48b9b202f3fb279b, []int{0, 0}
+	return fileDescriptor_apitrace_41aefd52f6cc519e, []int{0, 0}
 }
 func (m *Trace_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trace_Entry.Unmarshal(m, b)
@@ -123,6 +125,13 @@ func (m *Trace_Entry) GetMsgName() string {
 	return ""
 }
 
+func (m *Trace_Entry) GetStartTime() uint64 {
+	if m != nil {
+		return m.StartTime
+	}
+	return 0
+}
+
 func (m *Trace_Entry) GetDuration() uint64 {
 	if m != nil {
 		return m.Duration
@@ -130,48 +139,48 @@ func (m *Trace_Entry) GetDuration() uint64 {
 	return 0
 }
 
-type Trace_Average struct {
+type Trace_EntryStats struct {
 	MsgName              string   `protobuf:"bytes,1,opt,name=msg_name,json=msgName,proto3" json:"msg_name,omitempty"`
-	AverageTime          uint64   `protobuf:"varint,2,opt,name=average_time,json=averageTime,proto3" json:"average_time,omitempty"`
+	AverageDuration      uint64   `protobuf:"varint,2,opt,name=average_duration,json=averageDuration,proto3" json:"average_duration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Trace_Average) Reset()         { *m = Trace_Average{} }
-func (m *Trace_Average) String() string { return proto.CompactTextString(m) }
-func (*Trace_Average) ProtoMessage()    {}
-func (*Trace_Average) Descriptor() ([]byte, []int) {
-	return fileDescriptor_apitrace_48b9b202f3fb279b, []int{0, 1}
+func (m *Trace_EntryStats) Reset()         { *m = Trace_EntryStats{} }
+func (m *Trace_EntryStats) String() string { return proto.CompactTextString(m) }
+func (*Trace_EntryStats) ProtoMessage()    {}
+func (*Trace_EntryStats) Descriptor() ([]byte, []int) {
+	return fileDescriptor_apitrace_41aefd52f6cc519e, []int{0, 1}
 }
-func (m *Trace_Average) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Trace_Average.Unmarshal(m, b)
+func (m *Trace_EntryStats) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Trace_EntryStats.Unmarshal(m, b)
 }
-func (m *Trace_Average) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Trace_Average.Marshal(b, m, deterministic)
+func (m *Trace_EntryStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Trace_EntryStats.Marshal(b, m, deterministic)
 }
-func (dst *Trace_Average) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Trace_Average.Merge(dst, src)
+func (dst *Trace_EntryStats) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Trace_EntryStats.Merge(dst, src)
 }
-func (m *Trace_Average) XXX_Size() int {
-	return xxx_messageInfo_Trace_Average.Size(m)
+func (m *Trace_EntryStats) XXX_Size() int {
+	return xxx_messageInfo_Trace_EntryStats.Size(m)
 }
-func (m *Trace_Average) XXX_DiscardUnknown() {
-	xxx_messageInfo_Trace_Average.DiscardUnknown(m)
+func (m *Trace_EntryStats) XXX_DiscardUnknown() {
+	xxx_messageInfo_Trace_EntryStats.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Trace_Average proto.InternalMessageInfo
+var xxx_messageInfo_Trace_EntryStats proto.InternalMessageInfo
 
-func (m *Trace_Average) GetMsgName() string {
+func (m *Trace_EntryStats) GetMsgName() string {
 	if m != nil {
 		return m.MsgName
 	}
 	return ""
 }
 
-func (m *Trace_Average) GetAverageTime() uint64 {
+func (m *Trace_EntryStats) GetAverageDuration() uint64 {
 	if m != nil {
-		return m.AverageTime
+		return m.AverageDuration
 	}
 	return 0
 }
@@ -179,26 +188,28 @@ func (m *Trace_Average) GetAverageTime() uint64 {
 func init() {
 	proto.RegisterType((*Trace)(nil), "apitrace.Trace")
 	proto.RegisterType((*Trace_Entry)(nil), "apitrace.Trace.Entry")
-	proto.RegisterType((*Trace_Average)(nil), "apitrace.Trace.Average")
+	proto.RegisterType((*Trace_EntryStats)(nil), "apitrace.Trace.EntryStats")
 }
 
-func init() { proto.RegisterFile("apitrace.proto", fileDescriptor_apitrace_48b9b202f3fb279b) }
+func init() { proto.RegisterFile("apitrace.proto", fileDescriptor_apitrace_41aefd52f6cc519e) }
 
-var fileDescriptor_apitrace_48b9b202f3fb279b = []byte{
-	// 235 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x3d, 0x4f, 0xc3, 0x30,
-	0x10, 0x86, 0xe5, 0xb4, 0x21, 0xe1, 0xfa, 0x31, 0x58, 0x20, 0x4c, 0xa6, 0xc0, 0x94, 0x29, 0x03,
-	0xac, 0x5d, 0x18, 0x2a, 0x36, 0x06, 0x2b, 0x7b, 0x64, 0xc8, 0x29, 0xb2, 0x54, 0xdb, 0x95, 0x6d,
-	0x10, 0xfc, 0x37, 0x7e, 0x1c, 0x8a, 0x9d, 0x46, 0x09, 0x9b, 0x1f, 0xeb, 0x79, 0xdf, 0x3b, 0x1b,
-	0xf6, 0xe2, 0x2c, 0xbd, 0x15, 0x1f, 0x58, 0x9f, 0xad, 0xf1, 0x86, 0xe6, 0x17, 0x7e, 0xfc, 0x4d,
-	0x20, 0x6d, 0x86, 0x13, 0x3d, 0xc0, 0x3e, 0x5c, 0x75, 0x2d, 0x6a, 0x6f, 0x25, 0x3a, 0x46, 0xca,
-	0x55, 0xb5, 0x79, 0xba, 0xad, 0xa7, 0x70, 0x10, 0xeb, 0xa3, 0xf6, 0xf6, 0x87, 0xef, 0xa2, 0x7c,
-	0x8c, 0x2e, 0x3d, 0xc0, 0x4e, 0x7c, 0xa1, 0x15, 0x3d, 0xb6, 0x5e, 0x2a, 0x74, 0x2c, 0x09, 0xe1,
-	0xbb, 0xff, 0xe1, 0x97, 0x28, 0xf1, 0xed, 0x68, 0x37, 0x83, 0x4c, 0x19, 0x64, 0x66, 0xe0, 0xd3,
-	0x89, 0xad, 0x4a, 0x52, 0xad, 0xf9, 0x05, 0x8b, 0x06, 0xd2, 0x30, 0x8f, 0xde, 0x40, 0x2a, 0x75,
-	0x87, 0xdf, 0x8c, 0x04, 0x21, 0x02, 0xbd, 0x87, 0x5c, 0xb9, 0xbe, 0xd5, 0x42, 0x21, 0x4b, 0x4a,
-	0x52, 0x5d, 0xf3, 0x4c, 0xb9, 0xfe, 0x4d, 0x28, 0xa4, 0x05, 0xe4, 0xdd, 0xa7, 0x15, 0x5e, 0x1a,
-	0x3d, 0x96, 0x4e, 0x5c, 0xbc, 0x42, 0x36, 0x2e, 0xb2, 0x68, 0x20, 0xcb, 0x86, 0x07, 0xd8, 0xce,
-	0xdf, 0x14, 0x06, 0xac, 0xf9, 0x66, 0xb6, 0xf9, 0xfb, 0x55, 0xf8, 0xcf, 0xe7, 0xbf, 0x00, 0x00,
-	0x00, 0xff, 0xff, 0x4b, 0xcd, 0x8e, 0xd5, 0x61, 0x01, 0x00, 0x00,
+var fileDescriptor_apitrace_41aefd52f6cc519e = []byte{
+	// 258 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x51, 0x41, 0x4b, 0xc3, 0x30,
+	0x14, 0x26, 0xdd, 0xaa, 0xdd, 0x1b, 0xce, 0x11, 0x14, 0x62, 0x41, 0x28, 0x9e, 0xba, 0x4b, 0x0f,
+	0x7a, 0xd4, 0xa3, 0xbb, 0x7a, 0x88, 0xbb, 0x87, 0x68, 0x1f, 0x25, 0xb0, 0xa4, 0x23, 0x79, 0x8a,
+	0xfb, 0xe3, 0x9e, 0xa5, 0x69, 0xd7, 0x51, 0xf0, 0xf6, 0xbe, 0x2f, 0xdf, 0xf7, 0xbe, 0xf7, 0x11,
+	0x58, 0xe9, 0x83, 0x21, 0xaf, 0x3f, 0xb1, 0x3a, 0xf8, 0x96, 0x5a, 0x9e, 0x9d, 0xf0, 0xc3, 0x6f,
+	0x02, 0xe9, 0xae, 0x9b, 0xf8, 0x0b, 0xac, 0x22, 0x55, 0x2b, 0x74, 0xe4, 0x0d, 0x06, 0xc1, 0x8a,
+	0x59, 0xb9, 0x7c, 0xbc, 0xad, 0x46, 0x73, 0x14, 0x56, 0x5b, 0x47, 0xfe, 0x28, 0xaf, 0x7a, 0xf1,
+	0xb6, 0xd7, 0xf2, 0x67, 0x58, 0x76, 0xb6, 0xa3, 0x0a, 0xa4, 0x29, 0x88, 0x24, 0x5a, 0xf3, 0x7f,
+	0xad, 0xef, 0x9d, 0x42, 0x02, 0x8e, 0x33, 0xdf, 0xc0, 0xba, 0xfd, 0x46, 0xaf, 0xf7, 0x7b, 0x55,
+	0x7f, 0x79, 0x4d, 0xa6, 0x75, 0x62, 0x56, 0xb0, 0x72, 0x2e, 0xaf, 0x07, 0xfe, 0x75, 0xa0, 0xf3,
+	0x00, 0x69, 0x5c, 0xc2, 0x6f, 0x20, 0x35, 0xae, 0xc6, 0x1f, 0xc1, 0xa2, 0xb0, 0x07, 0xfc, 0x0e,
+	0x32, 0x1b, 0x1a, 0xe5, 0xb4, 0x45, 0x91, 0x14, 0xac, 0x5c, 0xc8, 0x4b, 0x1b, 0x9a, 0x37, 0x6d,
+	0x91, 0xdf, 0x03, 0x04, 0xd2, 0x9e, 0x14, 0x19, 0x8b, 0xc3, 0xfa, 0x45, 0x64, 0x76, 0xc6, 0x22,
+	0xcf, 0x21, 0x1b, 0xb3, 0xe7, 0xf1, 0x71, 0xc4, 0xb9, 0x04, 0x38, 0x5f, 0x3e, 0xc9, 0x60, 0xd3,
+	0x8c, 0x0d, 0xac, 0x75, 0x77, 0x70, 0x83, 0xe7, 0x22, 0x49, 0x5f, 0x64, 0xe0, 0x4f, 0x45, 0x3e,
+	0x2e, 0xe2, 0x4f, 0x3c, 0xfd, 0x05, 0x00, 0x00, 0xff, 0xff, 0x9d, 0xe0, 0x2f, 0xb9, 0x9b, 0x01,
+	0x00, 0x00,
 }

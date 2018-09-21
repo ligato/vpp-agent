@@ -450,7 +450,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e7c0f5250b55f27007df0f05ce534d6d2358411d6852462601006e71c32f1577"
+  digest = "1:1fde4002da6a69e5e8a35e2cfb7edcfd0fcdc42ff8b4aa06159ee4576dd1bc10"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -476,6 +476,7 @@
     "logging/logmanager",
     "logging/logrus",
     "logging/measure",
+    "logging/measure/model/apitrace",
     "messaging",
     "messaging/kafka",
     "messaging/kafka/client",
@@ -490,7 +491,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "10abe6a955b9aef0ae518e1f7265adeae0c649ac"
+  revision = "0b5bfe9b247de942c552e455faac7e00e8efcda1"
 
 [[projects]]
   branch = "master"
@@ -971,6 +972,7 @@
     "github.com/ligato/cn-infra/logging/logmanager",
     "github.com/ligato/cn-infra/logging/logrus",
     "github.com/ligato/cn-infra/logging/measure",
+    "github.com/ligato/cn-infra/logging/measure/model/apitrace",
     "github.com/ligato/cn-infra/messaging",
     "github.com/ligato/cn-infra/messaging/kafka",
     "github.com/ligato/cn-infra/rpc/grpc",
