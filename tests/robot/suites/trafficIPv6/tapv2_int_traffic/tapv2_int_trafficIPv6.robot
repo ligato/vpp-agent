@@ -55,7 +55,6 @@ Add VPP1_TAP1 Interface
 
 Check VPP1_TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
-    Log                  ${interfaces}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_VPP1_TAP1}
     ${actual_state}=    vpp_term: Check TAPv2 interface State    agent_vpp_1    ${NAME_VPP1_TAP1}    mac=${MAC_VPP1_TAP1}    ipv6=${IP_VPP1_TAP1}/${PREFIX}    state=${UP_STATE}
 
@@ -75,7 +74,6 @@ Add VPP2_TAP1 Interface
 
 Check VPP2_TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
-    Log                  ${interfaces}
     vpp_term: Interface Is Created    node=agent_vpp_2    mac=${MAC_VPP2_TAP1}
     ${actual_state}=    vpp_term: Check TAPv2 interface State    agent_vpp_2    ${NAME_VPP2_TAP1}    mac=${MAC_VPP2_TAP1}    ipv6=${IP_VPP2_TAP1}/${PREFIX}    state=${UP_STATE}
 
@@ -141,12 +139,10 @@ Create linux_VPP1_TAP1 And linux_VPP2_TAP1 Interfaces After Resync
 
 Check Linux Interfaces On VPP1 After Resync
     ${out}=    Execute In Container    agent_vpp_1    ip a
-    Log    ${out}
     Should Contain    ${out}    linux_${NAME_VPP1_TAP1}
 
 Check Interfaces On VPP1 After Resync
     ${out}=    vpp_term: Show Interfaces    agent_vpp_1
-    Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    node=agent_vpp_1    interface=${NAME_VPP1_MEMIF1}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    node=agent_vpp_1    interface=${NAME_VPP1_TAP1}
@@ -154,12 +150,10 @@ Check Interfaces On VPP1 After Resync
 
 Check Linux Interfaces On VPP2 After Resync
     ${out}=    Execute In Container    agent_vpp_2    ip a
-    Log    ${out}
     Should Contain    ${out}    linux_${NAME_VPP2_TAP1}
 
 Check Interfaces On VPP2 After Resync
     ${out}=    vpp_term: Show Interfaces    agent_vpp_2
-    Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    node=agent_vpp_2    interface=${NAME_VPP2_MEMIF1}
     Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    node=agent_vpp_2    interface=${NAME_VPP2_TAP1}

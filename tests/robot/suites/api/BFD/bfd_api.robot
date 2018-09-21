@@ -45,13 +45,11 @@ Setup Interfaces
 
 Check Interfaces On VPP1
     ${out}=    vpp_term: Show Interfaces    agent_vpp_1
-    Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    ${VPP1_BFD_INTF}
     Should Contain    ${out}    ${int}
 
 Check Interfaces On VPP2
     ${out}=    vpp_term: Show Interfaces    agent_vpp_2
-    Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    ${VPP2_BFD_INTF}
     Should Contain    ${out}    ${int}
 

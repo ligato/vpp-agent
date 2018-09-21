@@ -159,7 +159,5 @@ Start Three Agents, Then Configure With Interfaces Assigned To Non Default VRF
 
 *** Keywords ***
 List of interfaces On ${node} Should Contain Interface ${int}
-    Log many    ${node} ${int}
     ${out}=   vpp_term: Show Interfaces    ${node}
-    log many    ${out}
     Should Match Regexp        ${out}  ${int}

@@ -118,9 +118,7 @@ Pinging
 
 *** Keywords ***
 List of interfaces On ${node} Should Contain Interface ${int}
-    Log many    ${node} ${int}
     ${out}=   vpp_term: Show Interfaces    ${node}
-    log many    ${out}
     Should Match Regexp        ${out}  ${int}
 
 TestSetup

@@ -3,7 +3,7 @@
 *** Settings ***
 #Library       String
 #Library       RequestsLibrary
-Library       SSHLibrary            timeout=60 seconds       loglevel=TRACE
+Library       SSHLibrary            timeout=5 seconds       loglevel=TRACE
 
 *** Keywords ***
 Execute On Machine     [Arguments]              ${machine}               ${command}               ${log}=true
@@ -27,14 +27,12 @@ Write To Machine       [Arguments]              ${machine}               ${comma
                        [Documentation]          *Write Machine ${machine} ${command}*
                        ...                      Writing ${command} to connection with name ${machine}
                        ...                      Output log is added to machine output log
-                       Log Many                 ${machine}               ${command}               ${delay}
                        Switch Connection        ${machine}
                        ${currdate}=             Get Current Date
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Write                    ${command}      loglevel=TRACE
                        ${out}=                  Read            loglevel=TRACE         delay=${delay}
-                       Log                      ${out}
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Response: ${out}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Response: ${out}${\n}
                        [Return]                 ${out}
@@ -45,16 +43,13 @@ Write To Machine Until Prompt
                        ...                      Writing ${command} to connection with name ${machine} and reading until prompt
                        ...                      Output log is added to machine output log
                        Log                      Use 'Write To Container Until Prompt' instead of this kw    level=WARN
-                       Log Many                 ${machine}    ${command}    ${prompt}    ${delay}
                        Switch Connection        ${machine}
                        ${currdate}=             Get Current Date
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Write                    ${command}       loglevel=TRACE
                        ${out}=                  Read Until               ${prompt}${${machine}_HOSTNAME}     loglevel=TRACE
-                       Log                      ${out}
                        ${out2}=                 Read             loglevel=TRACE       delay=${delay}
-                       Log                      ${out2}
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
                        [Return]                 ${out}${out2}
@@ -64,16 +59,13 @@ Write To Machine Until String
                        [Documentation]          *Write Machine ${machine} ${command}*
                        ...                      Writing ${command} to connection with name ${machine} and reading until specified string
                        ...                      Output log is added to machine output log
-                       Log Many                 ${machine}    ${command}    ${string}     ${delay}
                        Switch Connection        ${machine}
                        ${currdate}=             Get Current Date
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Command: ${command}${\n}
                        Write                    ${command}       loglevel=TRACE
                        ${out}=                  Read Until       ${string}       loglevel=TRACE
-                       Log                      ${out}
                        ${out2}=                 Read             loglevel=TRACE        delay=${delay}
-                       Log                      ${out2}
                        Append To File           ${RESULTS_FOLDER}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
                        Append To File           ${RESULTS_FOLDER_SUITE}/output_${machine}.log    *** Time:${currdate} Response: ${out}${out2}${\n}
                        [Return]                 ${out}${out2}
