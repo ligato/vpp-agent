@@ -19,6 +19,8 @@ import (
 	"net"
 	"testing"
 
+	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -325,11 +327,12 @@ func routeTestSetup(t *testing.T) (*l3plugin.LinuxRouteConfigurator, *linuxmock.
 	nsHandleLog.SetLevel(logging.DebugLevel)
 	// Linux interface indexes
 	ifIndexes := ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(pluginLog, "if", nil))
+	rtIndexes := l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(pluginLog, "rt", nil))
 	// Configurator
 	plugin := &l3plugin.LinuxRouteConfigurator{}
 	linuxMock := linuxmock.NewL3NetlinkHandlerMock()
 	nsMock := linuxmock.NewNamespacePluginMock()
-	err := plugin.Init(pluginLog, linuxMock, nsMock, ifIndexes)
+	err := plugin.Init(pluginLog, linuxMock, nsMock, rtIndexes, ifIndexes)
 	Expect(err).To(BeNil())
 
 	return plugin, linuxMock, nsMock, ifIndexes

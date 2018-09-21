@@ -21,16 +21,21 @@ import (
 )
 
 // AddStaticRoute creates the new static route
-func (handler *NetLinkHandler) AddStaticRoute(name string, route *netlink.Route) error {
+func (h *NetLinkHandler) AddStaticRoute(name string, route *netlink.Route) error {
 	return netlink.RouteAdd(route)
 }
 
 // ReplaceStaticRoute removes the static route
-func (handler *NetLinkHandler) ReplaceStaticRoute(name string, route *netlink.Route) error {
+func (h *NetLinkHandler) ReplaceStaticRoute(name string, route *netlink.Route) error {
 	return netlink.RouteReplace(route)
 }
 
 // DelStaticRoute removes the static route
-func (handler *NetLinkHandler) DelStaticRoute(name string, route *netlink.Route) error {
+func (h *NetLinkHandler) DelStaticRoute(name string, route *netlink.Route) error {
 	return netlink.RouteDel(route)
+}
+
+// GetStaticRoutes reads linux routes. Possible to filter by interface and IP family.
+func (h *NetLinkHandler) GetStaticRoutes(link netlink.Link, family int) ([]netlink.Route, error) {
+	return netlink.RouteList(link, family)
 }

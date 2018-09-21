@@ -170,11 +170,35 @@ func (plugin *Plugin) registerL3Handlers() {
 	})
 }
 
-// Registers L3 plugin REST handlers
+// Registers L4 plugin REST handlers
 func (plugin *Plugin) registerL4Handlers() {
 	// GET static routes
 	plugin.registerHTTPHandler(resturl.Sessions, GET, func() (interface{}, error) {
 		return plugin.l4Handler.DumpL4Config()
+	})
+}
+
+// Registers linux interface plugin REST handlers
+func (plugin *Plugin) registerLinuxInterfaceHandlers() {
+	// GET linux interfaces
+	plugin.registerHTTPHandler(resturl.LinuxInterface, GET, func() (interface{}, error) {
+		return plugin.linuxIfHandler.DumpInterfaces()
+	})
+	// GET linux interface stats
+	plugin.registerHTTPHandler(resturl.LinuxInterfaceStats, GET, func() (interface{}, error) {
+		return plugin.linuxIfHandler.DumpInterfaceStatistics()
+	})
+}
+
+// Registers linux L3 plugin REST handlers
+func (plugin *Plugin) registerLinuxL3Handlers() {
+	// GET linux routes
+	plugin.registerHTTPHandler(resturl.LinuxRoutes, GET, func() (interface{}, error) {
+		return plugin.linuxL3Handler.DumpRoutes()
+	})
+	// GET linux ARPs
+	plugin.registerHTTPHandler(resturl.LinuxArps, GET, func() (interface{}, error) {
+		return plugin.linuxL3Handler.DumpArpEntries()
 	})
 }
 

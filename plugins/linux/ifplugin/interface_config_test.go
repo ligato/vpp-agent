@@ -38,7 +38,7 @@ import (
 
 // Test init function
 func TestLinuxInterfaceConfiguratorInit(t *testing.T) {
-	plugin, _, _, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, _, _, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 	// Base fields
 	Expect(plugin).ToNot(BeNil())
@@ -56,7 +56,7 @@ func TestLinuxInterfaceConfiguratorInit(t *testing.T) {
 
 // Configure simple Veth without peer
 func TestLinuxConfiguratorAddSingleVeth(t *testing.T) {
-	plugin, _, _, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, _, _, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	data := getVethInterface("veth1", "peer1", 1)
@@ -67,7 +67,7 @@ func TestLinuxConfiguratorAddSingleVeth(t *testing.T) {
 
 // Configure Veth with missing data
 func TestLinuxConfiguratorAddSingleVethWithoutData(t *testing.T) {
-	plugin, _, _, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, _, _, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	data := getVethInterface("veth1", "peer1", 1)
@@ -79,12 +79,22 @@ func TestLinuxConfiguratorAddSingleVethWithoutData(t *testing.T) {
 
 // Configure simple Veth with peer
 func TestLinuxConfiguratorAddVethPair(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v2",
+		},
+	})
 	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
 		Index: 1,
 	})
@@ -116,12 +126,30 @@ func TestLinuxConfiguratorAddVethPair(t *testing.T) {
 
 // Configure simple Veth with peer in microservice-type namespace
 func TestLinuxConfiguratorAddVethPairInMicroserviceNs(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("ConvertMicroserviceNsToPidNs").ThenReturn(&nsplugin.Namespace{
+		Type: nsplugin.PidRefNs,
+	},
+	)
+	nsMock.When("ConvertMicroserviceNsToPidNs").ThenReturn(&nsplugin.Namespace{
+		Type: nsplugin.PidRefNs,
+	},
+	)
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v2",
+		},
+	})
 	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
 		Index: 1,
 	})
@@ -157,7 +185,7 @@ func TestLinuxConfiguratorAddVethPairInMicroserviceNs(t *testing.T) {
 
 // Configure simple Veth with peer while Veth ns is not available
 func TestLinuxConfiguratorAddVethPairVethNsNotAvailable(t *testing.T) {
-	plugin, _, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, _, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -188,7 +216,7 @@ func TestLinuxConfiguratorAddVethPairVethNsNotAvailable(t *testing.T) {
 
 // Configure simple Veth with peer while peer ns is not available
 func TestLinuxConfiguratorAddVethPairPeerNsNotAvailable(t *testing.T) {
-	plugin, _, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, _, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -219,7 +247,7 @@ func TestLinuxConfiguratorAddVethPairPeerNsNotAvailable(t *testing.T) {
 
 // Configure simple Veth with peer while switching ns returns error
 func TestLinuxConfiguratorAddVethPairSwitchNsError(t *testing.T) {
-	plugin, _, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, _, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -240,13 +268,31 @@ func TestLinuxConfiguratorAddVethPairSwitchNsError(t *testing.T) {
 
 // Configure simple Veth with peer while peer ns is not available
 func TestLinuxConfiguratorAddVethPairPeerSwitchToNsWhileRemovingObsoleteErr(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
 	nsMock.When("SwitchToNamespace").ThenReturn(fmt.Errorf("remove-obsolete-1-err"))
+	nsMock.When("ConvertMicroserviceNsToPidNs").ThenReturn(&nsplugin.Namespace{
+		Type: nsplugin.PidRefNs,
+	},
+	)
+	nsMock.When("ConvertMicroserviceNsToPidNs").ThenReturn(&nsplugin.Namespace{
+		Type: nsplugin.PidRefNs,
+	},
+	)
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v2",
+		},
+	})
 	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
 		Index: 1,
 	})
@@ -266,12 +312,30 @@ func TestLinuxConfiguratorAddVethPairPeerSwitchToNsWhileRemovingObsoleteErr(t *t
 
 // Configure simple Veth with peer while there is an obsolete veth which needs to be removed. Covers all 4 cases.
 func TestLinuxConfiguratorAddVethPairPeerRemoveObsolete(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	nsMock.When("ConvertMicroserviceNsToPidNs").ThenReturn(&nsplugin.Namespace{
+		Type: nsplugin.PidRefNs,
+	},
+	)
+	nsMock.When("ConvertMicroserviceNsToPidNs").ThenReturn(&nsplugin.Namespace{
+		Type: nsplugin.PidRefNs,
+	},
+	)
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Veth{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "v2",
+		},
+	})
 	// First obsolete veth removal
 	ifMock.When("InterfaceExists").ThenReturn(true)
 	ifMock.When("GetInterfaceType").ThenReturn("veth")
@@ -308,7 +372,7 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsolete(t *testing.T) {
 
 // Configure simple Veth with peer while there is an obsolete veth - interface exists error
 func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfExistsError(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -329,7 +393,7 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfExistsError(t *testing.
 
 // Configure simple Veth with peer while there is an obsolete veth - interface type error
 func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeError(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -351,7 +415,7 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeError(t *testing.T)
 
 // Configure simple Veth with peer while there is an obsolete veth - interface type does not match error
 func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeMatchError(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -377,7 +441,7 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteIfTypeMatchError(t *testi
 
 // Configure simple Veth with peer while there is an obsolete veth - get peer name error
 func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteGetPeerNameError(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -408,7 +472,7 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteGetPeerNameError(t *testi
 
 // Configure simple Veth with peer while there is an obsolete veth - delete obsotele interface error
 func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteDeletePeerNameError(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -447,7 +511,7 @@ func TestLinuxConfiguratorAddVethPairPeerRemoveObsoleteDeletePeerNameError(t *te
 
 // Configure simple Veth with peer - add veth pair error
 func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
@@ -465,11 +529,22 @@ func TestLinuxConfiguratorAddVethPairError(t *testing.T) {
 
 // Configure Tap with hostIfName
 func TestLinuxConfiguratorAddTap_TempIfName(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// Link is searched for twice
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
 	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
 		Index: 10,
 	})
@@ -487,11 +562,22 @@ func TestLinuxConfiguratorAddTap_TempIfName(t *testing.T) {
 
 // Configure Tap with hostIfName
 func TestLinuxConfiguratorAddTap_HostIfName(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifnotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifnotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifnotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// Link is searched for twice
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
 	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
 		Index: 10,
 	})
@@ -510,12 +596,23 @@ func TestLinuxConfiguratorAddTap_HostIfName(t *testing.T) {
 // Configure linux tap where interface is registered but does not exist yet. Then use event to start
 // configuration again
 func TestLinuxConfiguratorAddTapTempIfNameWithWatcher(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifNotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifNotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifNotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
 	ifMock.When("GetLinkByName").ThenReturn(errors.New(ifplugin.LinkNotFoundErr))
+	// Link is searched for twice
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
 	// Watcher
 	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
 		Index: 10,
@@ -550,11 +647,22 @@ func TestLinuxConfiguratorAddTapTempIfNameWithWatcher(t *testing.T) {
 
 // Configure linux tap where interface was created but then an event about its removal arrived.
 func TestLinuxConfiguratorRemoveTapHostIfNameWithWatcher(t *testing.T) {
-	plugin, ifMock, nsMock, msChan, msNotif, ifNotif := ifTestSetup(t)
+	plugin, ifMock, nsMock, _, msChan, msNotif, ifNotif := ifTestSetup(t)
 	defer ifTestTeardown(plugin, msChan, msNotif, ifNotif)
 
 	// Linux/namespace calls
 	nsMock.When("IsNamespaceAvailable").ThenReturn(true)
+	// Link is searched for twice
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: "t1",
+		},
+	})
 	ifMock.When("GetInterfaceByName").ThenReturn(&net.Interface{
 		Index: 10,
 	})
@@ -586,10 +694,117 @@ func TestLinuxConfiguratorRemoveTapHostIfNameWithWatcher(t *testing.T) {
 	}, 2).Should(BeTrue())
 }
 
+/* Namespace handler Test Setup */
+
+func TestSetInterfaceNamespace(t *testing.T) {
+	plugin, ifMock, _, sysMock, msChan, msNotif, ifNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, msChan, msNotif, ifNotif)
+
+	// IP address list
+	var ipAddresses []netlink.Addr
+	ipAddresses = append(ipAddresses,
+		netlink.Addr{IPNet: getIPNetAddress("10.0.0.1/24")},
+		netlink.Addr{IPNet: getIPNetAddress("172.168.0.1/24")},
+		netlink.Addr{IPNet: getIPNetAddress("192.168.0.1/24")},
+		// Link local address which should be skipped
+		netlink.Addr{IPNet: getIPNetAddress("fe80::883f:c3ff:fe9e:fba/64")})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name:  "if1",
+			Flags: net.FlagUp,
+		},
+	})
+	ifMock.When("GetAddressList").ThenReturn(ipAddresses)
+	sysMock.When("LinkSetNsFd").ThenReturn()
+
+	// Context and namespace
+	ctx := nsplugin.NewNamespaceMgmtCtx()
+	ns := &interfaces.LinuxInterfaces_Interface_Namespace{
+		Type: interfaces.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+	}
+
+	err := ifplugin.SetInterfaceNamespace(plugin, ctx, "if1", ns)
+	Expect(err).To(BeNil())
+
+	// Check calls to ensure that only required IP addresses were configured
+	num, calls := ifMock.GetCallsFor("AddInterfaceIP")
+	Expect(num).To(Equal(3))
+	Expect(calls).ToNot(BeNil())
+	for callIdx, call := range calls {
+		ifName := call[0].(string)
+		Expect(ifName).To(Equal("if1"))
+		ipAdd := call[1].(*net.IPNet)
+		if callIdx == 1 {
+			Expect(ipAdd.String()).To(Equal("10.0.0.1/24"))
+		}
+		if callIdx == 2 {
+			Expect(ipAdd.String()).To(Equal("172.168.0.1/24"))
+		}
+		if callIdx == 3 {
+			Expect(ipAdd.String()).To(Equal("192.168.0.1/24"))
+		}
+	}
+}
+
+func TestSetInterfaceNamespaceIPv6(t *testing.T) {
+	plugin, ifMock, _, sysMock, msChan, msNotif, ifNotif := ifTestSetup(t)
+	defer ifTestTeardown(plugin, msChan, msNotif, ifNotif)
+
+	// IP address list
+	var ipAddresses []netlink.Addr
+	ipAddresses = append(ipAddresses,
+		netlink.Addr{IPNet: getIPNetAddress("10.0.0.1/24")},
+		netlink.Addr{IPNet: getIPNetAddress("172.168.0.1/24")},
+		// Link local address should not be skipped if there is another non-link-local IPv6
+		netlink.Addr{IPNet: getIPNetAddress("fe80::883f:c3ff:fe9e:fba/64")},
+		netlink.Addr{IPNet: getIPNetAddress("ad48::42:e8ff:feb1:e976/64")})
+	ifMock.When("GetLinkByName").ThenReturn(&netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name:  "if1",
+			Flags: net.FlagUp,
+		},
+	})
+	ifMock.When("GetAddressList").ThenReturn(ipAddresses)
+	sysMock.When("LinkSetNsFd").ThenReturn()
+
+	// Context and namespace
+	ctx := nsplugin.NewNamespaceMgmtCtx()
+	ns := &interfaces.LinuxInterfaces_Interface_Namespace{
+		Type: interfaces.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+	}
+
+	err := ifplugin.SetInterfaceNamespace(plugin, ctx, "if1", ns)
+	Expect(err).To(BeNil())
+
+	// Check calls to ensure that only required IP addresses were configured
+	num, calls := ifMock.GetCallsFor("AddInterfaceIP")
+	Expect(num).To(Equal(4))
+	Expect(calls).ToNot(BeNil())
+	for callIdx, call := range calls {
+		ifName := call[0].(string)
+		Expect(ifName).To(Equal("if1"))
+		ipAdd := call[1].(*net.IPNet)
+		if callIdx == 1 {
+			Expect(ipAdd.String()).To(Equal("10.0.0.1/24"))
+		}
+		if callIdx == 2 {
+			Expect(ipAdd.String()).To(Equal("172.168.0.1/24"))
+		}
+		if callIdx == 3 {
+			Expect(ipAdd.String()).To(Equal("fe80::883f:c3ff:fe9e:fba/64"))
+		}
+		if callIdx == 4 {
+			Expect(ipAdd.String()).To(Equal("ad48::42:e8ff:feb1:e976/64"))
+		}
+	}
+}
+
+// Todo
+
 /* Interface Test Setup */
 
 func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock.IfNetlinkHandlerMock, *linuxmock.NamespacePluginMock,
-	chan *nsplugin.MicroserviceCtx, chan *nsplugin.MicroserviceEvent, chan *ifplugin.LinuxInterfaceStateNotification) {
+	*linuxmock.SystemMock, chan *nsplugin.MicroserviceCtx, chan *nsplugin.MicroserviceEvent, chan *ifplugin.LinuxInterfaceStateNotification) {
 	RegisterTestingT(t)
 
 	// Loggers
@@ -606,13 +821,12 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 	plugin := &ifplugin.LinuxInterfaceConfigurator{}
 	linuxMock := linuxmock.NewIfNetlinkHandlerMock()
 	nsMock := linuxmock.NewNamespacePluginMock()
-	err := plugin.Init(pluginLog, linuxMock, nsMock, swIfIndexes, ifMicroserviceNotif, ifNotif)
+	sysMock := linuxmock.NewSystemMock()
+	err := plugin.Init(pluginLog, linuxMock, nsMock, sysMock, swIfIndexes, ifMicroserviceNotif, ifNotif)
 	Expect(err).To(BeNil())
 
-	return plugin, linuxMock, nsMock, msChan, ifMicroserviceNotif, ifNotif
+	return plugin, linuxMock, nsMock, sysMock, msChan, ifMicroserviceNotif, ifNotif
 }
-
-// Todo
 
 func ifTestTeardown(plugin *ifplugin.LinuxInterfaceConfigurator,
 	msChan chan *nsplugin.MicroserviceCtx, msNotif chan *nsplugin.MicroserviceEvent, ifNotif chan *ifplugin.LinuxInterfaceStateNotification) {
@@ -660,4 +874,11 @@ func getTapInterface(ifName, hostIfName string, tempIfName string) *interfaces.L
 			TempIfName: tempIfName,
 		},
 	}
+}
+
+func getIPNetAddress(ipAddr string) *net.IPNet {
+	ip, ipNet, err := net.ParseCIDR(ipAddr)
+	ipNet.IP = ip
+	Expect(err).To(BeNil())
+	return ipNet
 }
