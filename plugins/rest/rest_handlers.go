@@ -210,6 +210,11 @@ func (plugin *Plugin) registerTelemetryHandlers() {
 	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.TNodeCount, plugin.telemetryNodeCountHandler, GET)
 }
 
+// Registers Tracer handler
+func (plugin *Plugin) registerTracerHandler() {
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.Tracer, plugin.tracerHandler, GET)
+}
+
 // Registers command handler
 func (plugin *Plugin) registerCommandHandler() {
 	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.Command, plugin.commandHandler, POST)
@@ -437,5 +442,31 @@ func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.H
 		}
 
 		formatter.JSON(w, http.StatusOK, nodeCounters)
+	}
+}
+
+// tracerHandler - returns binary API call trace
+func (plugin *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		entries := plugin.GoVppmux.GetTrace()
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		if entries == nil {
+			formatter.JSON(w, http.StatusOK, "VPP api trace is disabled")
+			return
+		}
+
+		formatter.JSON(w, http.StatusOK, entries)
 	}
 }

@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"time"
 
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
@@ -51,16 +50,10 @@ type RouteMeta struct {
 }
 
 // DumpStaticRoutes implements route handler.
-func (handler *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
-	// IPFibDump time measurement
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.IPFibDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 	var routes []*RouteDetails
-
 	// Dump IPv4 l3 FIB.
-	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.IPFibDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPFibDump{})
 	for {
 		fibDetails := &l3binapi.IPFibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -70,7 +63,7 @@ func (handler *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 		if err != nil {
 			return nil, err
 		}
-		ipv4Route, err := handler.dumpStaticRouteIPv4Details(fibDetails)
+		ipv4Route, err := h.dumpStaticRouteIPv4Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +71,7 @@ func (handler *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 	}
 
 	// Dump IPv6 l3 FIB.
-	reqCtx = handler.callsChannel.SendMultiRequest(&l3binapi.IP6FibDump{})
+	reqCtx = h.callsChannel.SendMultiRequest(&l3binapi.IP6FibDump{})
 	for {
 		fibDetails := &l3binapi.IP6FibDetails{}
 		stop, err := reqCtx.ReceiveReply(fibDetails)
@@ -88,7 +81,7 @@ func (handler *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 		if err != nil {
 			return nil, err
 		}
-		ipv6Route, err := handler.dumpStaticRouteIPv6Details(fibDetails)
+		ipv6Route, err := h.dumpStaticRouteIPv6Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -98,17 +91,17 @@ func (handler *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 	return routes, nil
 }
 
-func (handler *RouteHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*RouteDetails, error) {
-	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
+func (h *RouteHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*RouteDetails, error) {
+	return h.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 }
 
-func (handler *RouteHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*RouteDetails, error) {
-	return handler.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
+func (h *RouteHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*RouteDetails, error) {
+	return h.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
 // dumpStaticRouteIPDetails processes static route details and returns a route objects. Number of routes returned
 // depends on size of path list.
-func (handler *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*RouteDetails, error) {
+func (h *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*RouteDetails, error) {
 	// Common fields for every route path (destination IP, VRF)
 	var dstIP string
 	if ipv6 {
@@ -149,8 +142,8 @@ func (handler *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 			if path.SwIfIndex != ^uint32(0) {
 				var exists bool
 				ifIdx = path.SwIfIndex
-				if ifName, _, exists = handler.ifIndexes.LookupName(path.SwIfIndex); !exists {
-					handler.log.Warnf("Static route dump: interface name for index %d not found", path.SwIfIndex)
+				if ifName, _, exists = h.ifIndexes.LookupName(path.SwIfIndex); !exists {
+					h.log.Warnf("Static route dump: interface name for index %d not found", path.SwIfIndex)
 				}
 			}
 
@@ -192,7 +185,7 @@ func (handler *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName 
 		}
 	} else {
 		// Return route without path fields, but this is not a valid configuration
-		handler.log.Warnf("Route with destination IP %s (VRF %d) has no path specified", dstIP, tableID)
+		h.log.Warnf("Route with destination IP %s (VRF %d) has no path specified", dstIP, tableID)
 		route := &l3.StaticRoutes_Route{
 			Type:      l3.StaticRoutes_Route_INTRA_VRF, // default
 			VrfId:     tableID,

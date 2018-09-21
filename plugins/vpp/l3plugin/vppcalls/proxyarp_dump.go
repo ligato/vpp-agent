@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
@@ -29,14 +28,8 @@ type ProxyArpRangesDetails struct {
 }
 
 // DumpProxyArpRanges implements proxy arp handler.
-func (handler *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDetails, err error) {
-	// ArpDump time measurement
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.ProxyArpDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	// Dump proxy ARP rages
-	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.ProxyArpDump{})
+func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDetails, err error) {
+	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.ProxyArpDump{})
 
 	for {
 		proxyArpDetails := &l3binapi.ProxyArpDetails{}
@@ -45,7 +38,7 @@ func (handler *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRan
 			break
 		}
 		if err != nil {
-			handler.log.Error(err)
+			h.log.Error(err)
 			return nil, err
 		}
 
@@ -72,13 +65,8 @@ type ProxyArpInterfaceMeta struct {
 }
 
 // DumpProxyArpInterfaces implements proxy arp handler.
-func (handler *ProxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*ProxyArpInterfaceDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.ProxyArpIntfcDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	// Dump proxy ARP interfaces
-	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.ProxyArpIntfcDump{})
+func (h *ProxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*ProxyArpInterfaceDetails, err error) {
+	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.ProxyArpIntfcDump{})
 
 	for {
 		proxyArpDetails := &l3binapi.ProxyArpIntfcDetails{}
@@ -87,14 +75,14 @@ func (handler *ProxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*ProxyArp
 			break
 		}
 		if err != nil {
-			handler.log.Error(err)
+			h.log.Error(err)
 			return nil, err
 		}
 
 		// Interface
-		ifName, _, exists := handler.ifIndexes.LookupName(proxyArpDetails.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupName(proxyArpDetails.SwIfIndex)
 		if !exists {
-			handler.log.Warnf("Proxy ARP interface dump: missing name for interface index %d", proxyArpDetails.SwIfIndex)
+			h.log.Warnf("Proxy ARP interface dump: missing name for interface index %d", proxyArpDetails.SwIfIndex)
 		}
 
 		// Create entry

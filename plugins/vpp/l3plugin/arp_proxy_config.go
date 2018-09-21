@@ -21,7 +21,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -53,21 +52,12 @@ type ProxyArpConfigurator struct {
 	vppChan govppapi.Channel
 	// VPP API channel
 	pArpHandler vppcalls.ProxyArpVppAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init VPP channel and vppcalls handler
-func (c *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-l3-proxy-arp-conf")
-
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("ARP-proxy-configurator", c.log)
-	}
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
@@ -81,7 +71,7 @@ func (c *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppm
 	}
 
 	// VPP API handler
-	c.pArpHandler = vppcalls.NewProxyArpVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.pArpHandler = vppcalls.NewProxyArpVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Info("Proxy ARP configurator initialized")
 

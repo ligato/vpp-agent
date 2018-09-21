@@ -40,12 +40,6 @@ const ifTempName = "temp-if-name"
 //    is found, interface is modified if needed and registered.
 // 4. All remaining NB interfaces are configured
 func (c *InterfaceConfigurator) Resync(nbIfs []*intf.Interfaces_Interface) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	if err := c.clearMapping(); err != nil {
 		return err
@@ -223,12 +217,6 @@ func (c *InterfaceConfigurator) VerifyVPPConfigPresence(nbIfaces []*intf.Interfa
 
 // ResyncSession writes BFD sessions to the empty VPP
 func (c *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 
@@ -280,12 +268,6 @@ func (c *BFDConfigurator) ResyncSession(nbSessions []*bfd.SingleHopBFD_Session) 
 
 // ResyncAuthKey writes BFD keys to the empty VPP
 func (c *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// lookup BFD auth keys
 	vppBfdKeys, err := c.bfdHandler.DumpBfdAuthKeys()
 	if err != nil {
@@ -335,11 +317,6 @@ func (c *BFDConfigurator) ResyncAuthKey(nbKeys []*bfd.SingleHopBFD_Key) error {
 
 // ResyncEchoFunction writes BFD echo function to the empty VPP
 func (c *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_EchoFunction) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
 	if len(echoFunctions) == 0 {
 		// Nothing to do here. Currently VPP does not support BFD echo dump so agent does not know
 		// whether there is echo function already configured and cannot remove it
@@ -363,14 +340,6 @@ func (c *BFDConfigurator) ResyncEchoFunction(echoFunctions []*bfd.SingleHopBFD_E
 
 // Resync writes stn rule to the the empty VPP
 func (c *StnConfigurator) Resync(nbStnRules []*stn.STN_Rule) error {
-	c.log.WithField("cfg", c).Debug("RESYNC stn rules begin. ")
-	// Calculate and log stn rules resync
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 

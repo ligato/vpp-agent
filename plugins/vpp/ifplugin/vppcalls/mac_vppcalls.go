@@ -17,17 +17,12 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
 // SetInterfaceMac implements interface handler.
 func (h *IfVppHandler) SetInterfaceMac(ifIdx uint32, macAddress string) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.SwInterfaceSetMacAddress{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	mac, err := net.ParseMAC(macAddress)
 	if err != nil {
 		return err

@@ -27,7 +27,7 @@ func TestRequestSetACLToInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 0,
@@ -81,7 +81,7 @@ func TestRequestRemoveInterfacesFromACL(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{
 		SwIfIndex: 0,
@@ -135,7 +135,7 @@ func TestSetMacIPAclToInterface(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
 	err := aclHandler.SetMacIPACLToInterface(0, []uint32{0})
@@ -157,7 +157,7 @@ func TestRemoveMacIPIngressACLFromInterfaces(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	defer ctx.TeardownTestCtx()
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel, nil)
+	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceAddDelReply{})
 	err := aclHandler.RemoveMacIPIngressACLFromInterfaces(1, []uint32{0})

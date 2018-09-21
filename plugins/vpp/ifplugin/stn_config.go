@@ -22,7 +22,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -47,8 +46,6 @@ type StnConfigurator struct {
 	vppChan govppapi.Channel
 	// VPP API handler
 	stnHandler vppcalls.StnVppAPI
-	// Stopwatch
-	stopwatch *measure.Stopwatch
 }
 
 // IndexExistsFor returns true if there is and mapping entry for provided name
@@ -64,19 +61,12 @@ func (c *StnConfigurator) UnstoredIndexExistsFor(name string) bool {
 }
 
 // Init initializes STN configurator
-func (c *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex) (err error) {
 	// Init logger
 	c.log = logger.NewLogger("-stn-conf")
 
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("STN-configurator", c.log)
-	}
-
 	// Init VPP API channel
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
@@ -87,7 +77,7 @@ func (c *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.allIndexesSeq, c.unstoredIndexSeq = 1, 1
 
 	// VPP API handler
-	c.stnHandler = vppcalls.NewStnVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.stnHandler = vppcalls.NewStnVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Info("STN configurator initialized")
 

@@ -16,9 +16,12 @@ package govppmux
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
+
+	"github.com/go-errors/errors"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
 
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
@@ -46,6 +49,10 @@ type Plugin struct {
 
 	// Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
 	cancel context.CancelFunc
+
+	// Plugin-wide tracer instance used to trace and time-measure binary API calls. Can be nil if not set.
+	tracer measure.Tracer
+
 	// Wait group allows to wait until all goroutines of the plugin have finished.
 	wg sync.WaitGroup
 }
@@ -60,6 +67,7 @@ type Deps struct {
 
 // Config groups the configurable parameter of GoVpp.
 type Config struct {
+	TraceEnabled             bool          `json:"trace-enabled"`
 	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
@@ -105,6 +113,10 @@ func (plugin *Plugin) Init() error {
 		govpp.HealthCheckProbeInterval = plugin.config.HealthCheckProbeInterval
 		govpp.HealthCheckReplyTimeout = plugin.config.HealthCheckReplyTimeout
 		govpp.HealthCheckThreshold = plugin.config.HealthCheckThreshold
+		if plugin.config.TraceEnabled {
+			plugin.tracer = measure.NewTracer("GoVPP-mux-tracer", plugin.Log)
+			plugin.Log.Info("VPP API trace enabled")
+		}
 	}
 
 	if plugin.vppAdapter == nil {
@@ -172,7 +184,7 @@ func (plugin *Plugin) NewAPIChannel() (govppapi.Channel, error) {
 		plugin.config.RetryRequestCount,
 		plugin.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg}, nil
+	return &goVppChan{ch, retryCfg, plugin.tracer}, nil
 }
 
 // NewAPIChannelBuffered returns a new API channel for communication with VPP via govpp core.
@@ -193,7 +205,16 @@ func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int
 		plugin.config.RetryRequestCount,
 		plugin.config.RetryRequestTimeout,
 	}
-	return &goVppChan{ch, retryCfg}, nil
+	return &goVppChan{ch, retryCfg, plugin.tracer}, nil
+}
+
+// GetTrace returns all trace entries measured so far
+func (plugin *Plugin) GetTrace() *apitrace.Trace {
+	if !plugin.config.TraceEnabled {
+		plugin.Log.Warnf("VPP API trace is disabled")
+		return nil
+	}
+	return plugin.tracer.Get()
 }
 
 // handleVPPConnectionEvents handles VPP connection events.

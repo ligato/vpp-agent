@@ -23,7 +23,6 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -82,20 +81,12 @@ type NatConfigurator struct {
 
 	// VPP API handler
 	natHandler vppcalls.NatVppAPI
-
-	stopwatch *measure.Stopwatch
 }
 
 // Init NAT configurator
-func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-nat-conf")
-
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("NAT-configurator", c.log)
-	}
 
 	// Mappings
 	c.ifIndexes = ifIndexes
@@ -117,8 +108,7 @@ func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	}
 
 	// VPP API handler
-	c.natHandler = vppcalls.NewNatVppHandler(c.vppChan, c.vppDumpChan, c.ifIndexes,
-		c.log, c.stopwatch)
+	c.natHandler = vppcalls.NewNatVppHandler(c.vppChan, c.vppDumpChan, c.ifIndexes, c.log)
 
 	c.log.Info("NAT configurator initialized")
 

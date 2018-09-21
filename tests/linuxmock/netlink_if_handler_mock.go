@@ -19,7 +19,6 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
@@ -314,6 +313,3 @@ func (mock *IfNetlinkHandlerMock) DumpInterfaces() ([]*linuxcalls.LinuxInterface
 func (mock *IfNetlinkHandlerMock) DumpInterfaceStatistics() ([]*linuxcalls.LinuxInterfaceStatistics, error) {
 	return nil, nil
 }
-
-// SetStopwatch sets stopwatch.
-func (mock *IfNetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}

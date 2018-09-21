@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -69,9 +68,6 @@ type Plugin struct {
 
 	// Registrations
 	watchDataReg datasync.WatchRegistration
-
-	// From config file
-	stopwatch *measure.Stopwatch
 
 	// Common
 	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
@@ -138,12 +134,6 @@ func (plugin *Plugin) Init() error {
 			plugin.disabled = true
 			plugin.Log.Infof("Disabling Linux plugin")
 			return nil
-		}
-		if config.Stopwatch {
-			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
-			plugin.stopwatch = measure.NewStopwatch("LinuxPlugin", plugin.Log)
-		} else {
-			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		}
 	} else {
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
@@ -221,13 +211,13 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(plugin.Log, "linux_if_indexes", nil))
 
 	// Shared interface linux calls handler
-	plugin.ifHandler = ifLinuxcalls.NewNetLinkHandler(plugin.nsHandler, plugin.ifIndexes, plugin.Log, plugin.stopwatch)
+	plugin.ifHandler = ifLinuxcalls.NewNetLinkHandler(plugin.nsHandler, plugin.ifIndexes, plugin.Log)
 
 	// Linux interface configurator
 	plugin.ifLinuxNotifChan = make(chan *ifplugin.LinuxInterfaceStateNotification, 10)
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
 	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, nsplugin.NewSystemHandler(),
-		plugin.ifIndexes, plugin.ifMicroserviceNotif, plugin.ifLinuxNotifChan, plugin.stopwatch); err != nil {
+		plugin.ifIndexes, plugin.ifMicroserviceNotif, plugin.ifLinuxNotifChan); err != nil {
 		return plugin.ifConfigurator.LogError(err)
 	}
 	plugin.ifLinuxStateUpdater = &ifplugin.LinuxInterfaceStateUpdater{}
@@ -247,17 +237,17 @@ func (plugin *Plugin) initL3() error {
 	routeIndexes := l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(plugin.Log, "linux_route_indexes", nil))
 
 	// L3 linux calls handler
-	l3Handler := l3Linuxcalls.NewNetLinkHandler(plugin.nsHandler, plugin.ifIndexes, arpIndexes, routeIndexes, plugin.Log, plugin.stopwatch)
+	l3Handler := l3Linuxcalls.NewNetLinkHandler(plugin.nsHandler, plugin.ifIndexes, arpIndexes, routeIndexes, plugin.Log)
 
 	// Linux ARP configurator
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{}
-	if err := plugin.arpConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, arpIndexes, plugin.ifIndexes, plugin.stopwatch); err != nil {
+	if err := plugin.arpConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, arpIndexes, plugin.ifIndexes); err != nil {
 		return plugin.arpConfigurator.LogError(err)
 	}
 
 	// Linux Route configurator
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{}
-	if err := plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, routeIndexes, plugin.ifIndexes, plugin.stopwatch); err != nil {
+	if err := plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, routeIndexes, plugin.ifIndexes); err != nil {
 		plugin.routeConfigurator.LogError(err)
 	}
 

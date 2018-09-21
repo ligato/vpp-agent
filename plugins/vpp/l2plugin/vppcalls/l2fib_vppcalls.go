@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/cn-infra/logging"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -36,10 +35,10 @@ type FibLogicalReq struct {
 }
 
 // Add implements fib handler.
-func (handler *FibVppHandler) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error)) error {
-	handler.log.Debug("Adding L2 FIB table entry, mac: ", mac)
+func (h *FibVppHandler) Add(mac string, bdID uint32, ifIdx uint32, bvi bool, static bool, callback func(error)) error {
+	h.log.Debug("Adding L2 FIB table entry, mac: ", mac)
 
-	handler.requestChan <- &FibLogicalReq{
+	h.requestChan <- &FibLogicalReq{
 		IsAdd:    true,
 		MAC:      mac,
 		BDIdx:    bdID,
@@ -52,10 +51,10 @@ func (handler *FibVppHandler) Add(mac string, bdID uint32, ifIdx uint32, bvi boo
 }
 
 // Delete implements fib handler.
-func (handler *FibVppHandler) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error)) error {
-	handler.log.Debug("Removing L2 fib table entry, mac: ", mac)
+func (h *FibVppHandler) Delete(mac string, bdID uint32, ifIdx uint32, callback func(error)) error {
+	h.log.Debug("Removing L2 fib table entry, mac: ", mac)
 
-	handler.requestChan <- &FibLogicalReq{
+	h.requestChan <- &FibLogicalReq{
 		IsAdd:    false,
 		MAC:      mac,
 		BDIdx:    bdID,
@@ -66,17 +65,17 @@ func (handler *FibVppHandler) Delete(mac string, bdID uint32, ifIdx uint32, call
 }
 
 // WatchFIBReplies implements fib handler.
-func (handler *FibVppHandler) WatchFIBReplies() {
+func (h *FibVppHandler) WatchFIBReplies() {
 	for {
 		select {
-		case r := <-handler.requestChan:
-			handler.log.Debug("VPP L2FIB request: ", r)
-			err := handler.l2fibAddDel(r.MAC, r.BDIdx, r.SwIfIdx, r.BVI, r.Static, r.IsAdd)
+		case r := <-h.requestChan:
+			h.log.Debug("VPP L2FIB request: ", r)
+			err := h.l2fibAddDel(r.MAC, r.BDIdx, r.SwIfIdx, r.BVI, r.Static, r.IsAdd)
 			if err != nil {
-				handler.log.WithFields(logging.Fields{"mac": r.MAC, "ifIdx": r.SwIfIdx, "bdIdx": r.BDIdx}).
+				h.log.WithFields(logging.Fields{"mac": r.MAC, "ifIdx": r.SwIfIdx, "bdIdx": r.BDIdx}).
 					Error("Static fib entry add/delete failed:", err)
 			} else {
-				handler.log.WithFields(logging.Fields{"mac": r.MAC, "ifIdx": r.SwIfIdx, "bdIdx": r.BDIdx}).
+				h.log.WithFields(logging.Fields{"mac": r.MAC, "ifIdx": r.SwIfIdx, "bdIdx": r.BDIdx}).
 					Debug("Static fib entry added/deleted.")
 			}
 			r.callback(err)
@@ -84,11 +83,7 @@ func (handler *FibVppHandler) WatchFIBReplies() {
 	}
 }
 
-func (handler *FibVppHandler) l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool) (err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.L2fibAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *FibVppHandler) l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, bvi, static, isAdd bool) (err error) {
 	var mac []byte
 	if macstr != "" {
 		mac, err = net.ParseMAC(macstr)
@@ -107,7 +102,7 @@ func (handler *FibVppHandler) l2fibAddDel(macstr string, bdIdx, swIfIdx uint32, 
 	}
 	reply := &l2ba.L2fibAddDelReply{}
 
-	if err := handler.asyncCallsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.asyncCallsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)

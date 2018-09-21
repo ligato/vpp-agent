@@ -16,18 +16,13 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
 // VppAddBridgeDomain implements bridge domain handler.
-func (handler *BridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *BridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error {
 	req := &l2ba.BridgeDomainAddDel{
 		IsAdd:   1,
 		BdID:    bdIdx,
@@ -41,7 +36,7 @@ func (handler *BridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.B
 	}
 	reply := &l2ba.BridgeDomainAddDelReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -51,18 +46,14 @@ func (handler *BridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.B
 }
 
 // VppDeleteBridgeDomain implements bridge domain handler.
-func (handler *BridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.BridgeDomainAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *BridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error {
 	req := &l2ba.BridgeDomainAddDel{
 		IsAdd: 0,
 		BdID:  bdIdx,
 	}
 	reply := &l2ba.BridgeDomainAddDelReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)

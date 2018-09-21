@@ -842,6 +842,6 @@ func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BfdVppAPI, iface
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "bfd-if-idx", nil))
-	bfdHandler := vppcalls.NewBfdVppHandler(ctx.MockChannel, ifIndexes, log, nil)
+	bfdHandler := vppcalls.NewBfdVppHandler(ctx.MockChannel, ifIndexes, log,)
 	return ctx, bfdHandler, ifIndexes
 }

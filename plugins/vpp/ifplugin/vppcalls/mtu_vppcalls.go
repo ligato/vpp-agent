@@ -16,17 +16,12 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
 // SetInterfaceMtu implements interface handler.
 func (h *IfVppHandler) SetInterfaceMtu(ifIdx uint32, mtu uint32) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.HwInterfaceSetMtu{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &interfaces.HwInterfaceSetMtu{
 		SwIfIndex: ifIdx,
 		Mtu:       uint16(mtu),

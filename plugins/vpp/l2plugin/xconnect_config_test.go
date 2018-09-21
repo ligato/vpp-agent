@@ -17,8 +17,9 @@ package l2plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
+
+	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -605,7 +606,7 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugi
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if", nil))
 	// Configurator
 	plugin := &l2plugin.XConnectConfigurator{}
-	err = plugin.Init(log, connection, swIfIndexes, false)
+	err = plugin.Init(log, connection, swIfIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndexes

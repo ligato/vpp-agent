@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
@@ -40,11 +39,7 @@ func GetACLPluginVersion(ch govppapi.Channel) (string, error) {
 }
 
 // AddIPACL implements ACL handler.
-func (handler *ACLVppHandler) AddIPACL(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(aclapi.ACLAddReplace{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ACLVppHandler) AddIPACL(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -62,7 +57,7 @@ func (handler *ACLVppHandler) AddIPACL(rules []*acl.AccessLists_Acl_Rule, aclNam
 	}
 	reply := &aclapi.ACLAddReplaceReply{}
 
-	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
@@ -72,13 +67,9 @@ func (handler *ACLVppHandler) AddIPACL(rules []*acl.AccessLists_Acl_Rule, aclNam
 }
 
 // AddMacIPACL implements ACL handler.
-func (handler *ACLVppHandler) AddMacIPACL(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(aclapi.MacipACLAdd{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ACLVppHandler) AddMacIPACL(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {
 	// Prepare MAc Ip rules
-	aclMacIPRules, err := handler.transformACLMacIPRules(rules)
+	aclMacIPRules, err := h.transformACLMacIPRules(rules)
 	if err != nil {
 		return 0, err
 	}
@@ -93,7 +84,7 @@ func (handler *ACLVppHandler) AddMacIPACL(rules []*acl.AccessLists_Acl_Rule, acl
 	}
 	reply := &aclapi.MacipACLAddReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
@@ -103,11 +94,7 @@ func (handler *ACLVppHandler) AddMacIPACL(rules []*acl.AccessLists_Acl_Rule, acl
 }
 
 // ModifyIPACL implements ACL handler.
-func (handler *ACLVppHandler) ModifyIPACL(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(aclapi.ACLAddReplace{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ACLVppHandler) ModifyIPACL(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -125,7 +112,7 @@ func (handler *ACLVppHandler) ModifyIPACL(aclIndex uint32, rules []*acl.AccessLi
 	}
 	reply := &aclapi.ACLAddReplaceReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
@@ -135,13 +122,9 @@ func (handler *ACLVppHandler) ModifyIPACL(aclIndex uint32, rules []*acl.AccessLi
 }
 
 // ModifyMACIPACL implements ACL handler.
-func (handler *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(aclapi.ACLAddReplace{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.AccessLists_Acl_Rule, aclName string) error {
 	// Prepare MAc Ip rules
-	aclMacIPRules, err := handler.transformACLMacIPRules(rules)
+	aclMacIPRules, err := h.transformACLMacIPRules(rules)
 	if err != nil {
 		return err
 	}
@@ -157,7 +140,7 @@ func (handler *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.Acces
 	}
 	reply := &aclapi.MacipACLAddReplaceReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
@@ -167,17 +150,13 @@ func (handler *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.Acces
 }
 
 // DeleteIPACL implements ACL handler.
-func (handler *ACLVppHandler) DeleteIPACL(aclIndex uint32) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(aclapi.ACLDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ACLVppHandler) DeleteIPACL(aclIndex uint32) error {
 	req := &aclapi.ACLDel{
 		ACLIndex: aclIndex,
 	}
 	reply := &aclapi.ACLDelReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L3/L4 ACL %v: %v", aclIndex, err)
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while removing L3/L4 ACL %v", reply.GetMessageName(), reply.Retval, aclIndex)
@@ -187,17 +166,13 @@ func (handler *ACLVppHandler) DeleteIPACL(aclIndex uint32) error {
 }
 
 // DeleteMacIPACL implements ACL handler.
-func (handler *ACLVppHandler) DeleteMacIPACL(aclIndex uint32) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(aclapi.MacipACLDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ACLVppHandler) DeleteMacIPACL(aclIndex uint32) error {
 	req := &aclapi.MacipACLDel{
 		ACLIndex: aclIndex,
 	}
 	reply := &aclapi.MacipACLDelReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L2 ACL %v: %v", aclIndex, err)
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v while removing L2 ACL %v", reply.GetMessageName(), reply.Retval, aclIndex)
@@ -236,7 +211,7 @@ func transformACLIpRules(rules []*acl.AccessLists_Acl_Rule) (aclIPRules []aclapi
 	return aclIPRules, nil
 }
 
-func (handler *ACLVppHandler) transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) (aclMacIPRules []aclapi.MacipACLRule, err error) {
+func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.AccessLists_Acl_Rule) (aclMacIPRules []aclapi.MacipACLRule, err error) {
 	for _, rule := range rules {
 		aclMacIPRule := &aclapi.MacipACLRule{
 			IsPermit: uint8(rule.AclAction),

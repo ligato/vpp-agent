@@ -16,17 +16,12 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
 
 // AddAppNamespace adds app namespace.
-func (handler *L4VppHandler) AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte) (appNsIdx uint32, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(session.AppNamespaceAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *L4VppHandler) AddAppNamespace(secret uint64, swIfIdx, ip4FibID, ip6FibID uint32, id []byte) (appNsIdx uint32, err error) {
 	req := &session.AppNamespaceAddDel{
 		SwIfIndex:      swIfIdx,
 		Secret:         secret,
@@ -37,7 +32,7 @@ func (handler *L4VppHandler) AddAppNamespace(secret uint64, swIfIdx, ip4FibID, i
 	}
 	reply := &session.AppNamespaceAddDelReply{}
 
-	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
 	} else if reply.Retval != 0 {
 		return 0, fmt.Errorf("%s returned %v", reply.GetMessageName(), reply.Retval)

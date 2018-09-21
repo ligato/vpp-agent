@@ -22,8 +22,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
-
-	"github.com/ligato/cn-infra/logging/measure"
 )
 
 // NetlinkAPI interface covers all methods inside linux calls package needed to manage linux interfaces.
@@ -80,17 +78,14 @@ type NetlinkAPIRead interface {
 type NetLinkHandler struct {
 	nsHandler nsplugin.NamespaceAPI
 	ifIndexes ifaceidx.LinuxIfIndex
-	stopwatch *measure.Stopwatch
 	log       logging.Logger
 }
 
 // NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, ifIndexes ifaceidx.LinuxIfIndex, log logging.Logger,
-	stopwatch *measure.Stopwatch) *NetLinkHandler {
+func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, ifIndexes ifaceidx.LinuxIfIndex, log logging.Logger) *NetLinkHandler {
 	return &NetLinkHandler{
 		nsHandler: nsHandler,
 		ifIndexes: ifIndexes,
-		stopwatch: stopwatch,
 		log:       log,
 	}
 }

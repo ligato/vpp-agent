@@ -17,8 +17,9 @@ package l3plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
+
+	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -391,7 +392,7 @@ func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3pl
 	plugin := &l3plugin.RouteConfigurator{}
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logging.ForPlugin("test-log"), "l3-plugin", nil))
 
-	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes, false)
+	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, ifIndexes

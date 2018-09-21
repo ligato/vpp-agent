@@ -18,7 +18,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
@@ -36,21 +35,13 @@ type IPNeighConfigurator struct {
 	vppChan govppapi.Channel
 	// VPP API channel
 	ipNeighHandler vppcalls.IPNeighVppAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init VPP channel and vppcalls handler
-func (c *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, enableStopwatch bool) (err error) {
+func (c *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-l3-ip-neigh-conf")
 	c.log.Debugf("Initializing proxy ARP configurator")
-
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("IPScan-Neigh-configurator", c.log)
-	}
 
 	// VPP channel
 	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
@@ -58,7 +49,7 @@ func (c *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmu
 	}
 
 	// VPP API handler
-	c.ipNeighHandler = vppcalls.NewIPNeighVppHandler(c.vppChan, c.log, c.stopwatch)
+	c.ipNeighHandler = vppcalls.NewIPNeighVppHandler(c.vppChan, c.log)
 
 	return nil
 }

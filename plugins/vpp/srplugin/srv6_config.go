@@ -23,7 +23,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -60,34 +59,25 @@ type SRv6Configurator struct {
 	policyIndexes         idxvpp.NameToIdxRW // Mapping between policy bsid and index inside VPP
 	policySegmentIndexSeq *gaplessSequence
 	policySegmentIndexes  idxvpp.NameToIdxRW // Mapping between policy segment name as defined in ETCD key and index inside VPP
-
-	// stopwatch
-	stopwatch *measure.Stopwatch
 }
 
 // Init members
 func (c *SRv6Configurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool, srHandler vppcalls.SRv6VppAPI) (err error) {
+	srHandler vppcalls.SRv6VppAPI) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-sr-plugin")
 
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
-	}
-
-	// Init stopwatch
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("SRConfigurator", c.log)
 	}
 
 	// VPP API handler
 	if srHandler != nil {
 		c.srHandler = srHandler
 	} else {
-		c.srHandler = vppcalls.NewSRv6VppHandler(c.vppChan, c.log, c.stopwatch)
+		c.srHandler = vppcalls.NewSRv6VppHandler(c.vppChan, c.log)
 	}
 
 	// Interface indexes

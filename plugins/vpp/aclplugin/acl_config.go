@@ -20,7 +20,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -66,14 +65,10 @@ type ACLConfigurator struct {
 
 	// ACL VPP calls handler
 	aclHandler vppcalls.ACLVppAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init goroutines, channels and mappings.
-func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-acl-plugin")
 
@@ -92,13 +87,8 @@ func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 		return errors.Errorf("failed to create dump API channel: %v", err)
 	}
 
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("ACL-configurator", c.log)
-	}
-
 	// ACL binary api handler
-	c.aclHandler = vppcalls.NewACLVppHandler(c.vppChan, c.vppDumpChan, c.stopwatch)
+	c.aclHandler = vppcalls.NewACLVppHandler(c.vppChan, c.vppDumpChan)
 
 	c.log.Infof("ACL configurator initialized")
 
