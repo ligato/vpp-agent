@@ -183,7 +183,6 @@ Add Libmemif Node Again
 Create And Check Memif1 On Agent Libmemif 1 After node restart
     ${out_c}=      lmterm: Issue Command    agent_libmemif_1   conn 0 0
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
-    Log Many      ${out_c}    ${out}
     Should Contain     ${out}     interface ip: ${LIBMEMIF_IP1}
     Should Contain     ${out}     link: up
 

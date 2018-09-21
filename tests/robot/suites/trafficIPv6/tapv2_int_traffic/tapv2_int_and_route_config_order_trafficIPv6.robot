@@ -90,24 +90,20 @@ Add Static Route From VPP2 To VPP1
 
 Show Routes On VPP1 Linux
     ${out}=    Execute In Container     agent_vpp_1    ip addr show linux_${NAME_VPP1_TAP1}
-    Log    ${out}
     ${linux_vpp1_tap1_route1}=    Get Lines Containing String    ${out}    linux_${NAME_VPP1_TAP1}
     Set Suite Variable    ${linux_vpp1_tap1_route1}
 
 Show Route To VPP2 Configured On VPP1
     ${out}=    vpp_term: Show Ip Fib    agent_vpp_1    ${IP_VPP2_TAP1_NETWORK}/${PREFIX}
-    Log    ${out}
     Should Contain    ${out}    via ${IP_VPP2_MEMIF1}
 
 Show Routes On VPP2 Linux
     ${out}=    Execute In Container     agent_vpp_2    ip addr show linux_${NAME_VPP2_TAP1}
-    Log    ${out}
     ${linux_vpp2_tap1_route1}=    Get Lines Containing String    ${out}    linux_${NAME_VPP2_TAP1}
     Set Suite Variable    ${linux_vpp2_tap1_route1}
 
 Show Route To VPP1 Configured On VPP2
     ${out}=    vpp_term: Show Ip Fib    agent_vpp_2    ${IP_VPP1_TAP1_NETWORK}/${PREFIX}
-    Log    ${out}
     Should Contain    ${out}    via ${IP_VPP1_MEMIF1}
 
 Check Ping From VPP1 To VPP2_memif1
@@ -177,24 +173,20 @@ Add VPP2_memif1 Interface 2
 
 Show Routes On VPP1 Linux 2
     ${out}=    Execute In Container     agent_vpp_1    ip addr show linux_${NAME_VPP1_TAP1}
-    Log    ${out}
     ${linux_vpp1_tap1_route2}=    Get Lines Containing String    ${out}    linux_${NAME_VPP1_TAP1}
     Set Suite Variable    ${linux_vpp1_tap1_route2}
 
 Show Route To VPP2 Configured On VPP1 2
     ${out}=    vpp_term: Show Ip Fib    agent_vpp_1    ${IP_VPP2_TAP1_NETWORK}/${PREFIX}
-    Log    ${out}
     Should Contain    ${out}    via ${IP_VPP2_MEMIF1}
 
 Show Routes On VPP2 Linux 2
     ${out}=    Execute In Container     agent_vpp_2    ip addr show linux_${NAME_VPP2_TAP1}
-    Log    ${out}
     ${linux_vpp2_tap1_route2}=    Get Lines Containing String    ${out}    linux_${NAME_VPP2_TAP1}
     Set Suite Variable    ${linux_vpp2_tap1_route2}
 
 Show Route To VPP1 Configured On VPP2 2
     ${out}=    vpp_term: Show Ip Fib    agent_vpp_2    ${IP_VPP1_TAP1_NETWORK}/${PREFIX}
-    Log    ${out}
     Should Contain    ${out}    via ${IP_VPP1_MEMIF1}
 
 Check Ping From VPP1 To VPP2_memif1 Again

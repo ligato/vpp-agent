@@ -67,7 +67,6 @@ Add ARPs
 
 Check ARPSs
     ${out}=       Execute In Container    agent_vpp_1    ip neigh
-    Log           ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.155.155.156 dev vpp1_veth2 lladdr 32:51:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.155.155.155 dev vpp1_veth1 lladdr 32:51:51:51:51:51 PERMANENT
     #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.155.155.156 dev eth0 lladdr 32:51:51:51:51:52 PERMANENT
@@ -83,7 +82,6 @@ Change ARPs
 
 Check ARPSs Again
     ${out}=       Execute In Container    agent_vpp_1    ip neigh
-    Log           ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.255.155.156 dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.255.155.155 dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
     #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.255.155.156 dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
@@ -99,7 +97,6 @@ Delete ARPs
 
 Check ARPSs After Delete
     ${out}=       Execute In Container    agent_vpp_1    ip neigh
-    Log           ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    155.255.155.156 dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    155.255.155.155 dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
     #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    155.255.155.156 dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
