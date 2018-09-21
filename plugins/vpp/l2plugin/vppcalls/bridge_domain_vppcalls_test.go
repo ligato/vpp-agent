@@ -139,6 +139,6 @@ func bdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BridgeDomainVppAP
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndex := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "bd-test-ifidx", nil))
-	bdHandler := vppcalls.NewBridgeDomainVppHandler(ctx.MockChannel, ifIndex, log, nil)
+	bdHandler := vppcalls.NewBridgeDomainVppHandler(ctx.MockChannel, ifIndex, log)
 	return ctx, bdHandler, ifIndex
 }

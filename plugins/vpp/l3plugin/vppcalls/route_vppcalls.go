@@ -16,8 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
-
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
@@ -41,11 +39,7 @@ const (
 )
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
-func (handler *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32, delete bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ip.IPAddDelRoute{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32, delete bool) error {
 	req := &ip.IPAddDelRoute{}
 	if delete {
 		req.IsAdd = 0
@@ -94,7 +88,7 @@ func (handler *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 
 	// Send message
 	reply := &ip.IPAddDelRouteReply{}
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 	if reply.Retval != 0 {
@@ -105,7 +99,7 @@ func (handler *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfId
 }
 
 // VppAddRoute implements route handler.
-func (handler *RouteHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
+func (h *RouteHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
 	// Evaluate route IP version
 	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstIpAddr)
 	if err != nil {
@@ -133,10 +127,10 @@ func (handler *RouteHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route 
 			}
 		}
 	}
-	return handler.vppAddDelRoute(route, rtIfIdx, false)
+	return h.vppAddDelRoute(route, rtIfIdx, false)
 }
 
 // VppDelRoute implements route handler.
-func (handler *RouteHandler) VppDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
-	return handler.vppAddDelRoute(route, rtIfIdx, true)
+func (h *RouteHandler) VppDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
+	return h.vppAddDelRoute(route, rtIfIdx, true)
 }

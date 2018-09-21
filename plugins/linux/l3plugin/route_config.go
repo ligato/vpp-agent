@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
@@ -57,14 +56,11 @@ type LinuxRouteConfigurator struct {
 	// Linux namespace/calls handler
 	l3Handler linuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init initializes static route configurator and starts goroutines
 func (c *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, stopwatch *measure.Stopwatch) error {
+	ifIndexes ifaceidx.LinuxIfIndexRW) error {
 	// Logger
 	c.log = logger.NewLogger("-route-conf")
 
@@ -78,9 +74,6 @@ func (c *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler lin
 	// L3 and namespace handler
 	c.l3Handler = l3Handler
 	c.nsHandler = nsHandler
-
-	// Configurator-wide stopwatch instance
-	c.stopwatch = stopwatch
 
 	c.log.Debug("Linux Route configurator initialized")
 

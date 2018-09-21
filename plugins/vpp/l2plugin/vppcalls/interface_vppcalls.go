@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/go-errors/errors"
 
@@ -29,10 +28,6 @@ import (
 // SetInterfaceToBridgeDomain implements bridge domain handler. Returns an interface configured to the BD.
 func (h *BridgeDomainVppHandler) SetInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (string, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Verify that interface exists, otherwise skip it.
 	ifIdx, _, found := swIfIndices.LookupIdx(bdIf.Name)
 	if !found {
@@ -68,10 +63,6 @@ func (h *BridgeDomainVppHandler) SetInterfacesToBridgeDomain(bdName string, bdId
 // UnsetInterfacesFromBridgeDomain implements bridge domain handler. Returns a list of interfaces removed from the BD.
 func (h *BridgeDomainVppHandler) UnsetInterfacesFromBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
 	swIfIndices ifaceidx.SwIfIndex) (ifs []string, wasErr error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Bridge{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	if len(bdIfs) == 0 {
 		h.log.Debugf("Bridge domain %s has no obsolete interface to unset", bdName)
 		return nil, nil

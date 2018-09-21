@@ -15,7 +15,6 @@
 package linuxmock
 
 import (
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
@@ -149,6 +148,3 @@ func (mock *L3NetlinkHandlerMock) DelStaticRoute(name string, route *netlink.Rou
 	}
 	return nil
 }
-
-// SetStopwatch implements .
-func (mock *L3NetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}

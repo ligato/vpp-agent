@@ -19,7 +19,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -55,9 +54,6 @@ type BDConfigurator struct {
 
 	// VPP API handlers
 	ifHandler ifvppcalls.IfVppAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // BridgeDomainStateMessage is message with bridge domain state + bridge domain name (since a state message does not
@@ -74,7 +70,7 @@ func (c *BDConfigurator) GetBdIndexes() l2idx.BDIndexRW {
 
 // Init members (channels...) and start go routines.
 func (c *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	notificationChannel chan BridgeDomainStateMessage, enableStopwatch bool) (err error) {
+	notificationChannel chan BridgeDomainStateMessage) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-l2-bd-conf")
 
@@ -85,22 +81,16 @@ func (c *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API
 	c.regIfCounter = 1
 
 	// VPP channel
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// Init notification channel.
 	c.notificationChan = notificationChannel
 
-	// Stopwatch
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("BDConfigurator", c.log)
-	}
-
 	// VPP API handlers
-	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log, c.stopwatch)
-	c.bdHandler = vppcalls.NewBridgeDomainVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log)
+	c.bdHandler = vppcalls.NewBridgeDomainVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Debug("L2 Bridge domains configurator initialized")
 

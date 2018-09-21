@@ -32,17 +32,12 @@ package linuxcalls
 
 import (
 	"net"
-	"time"
 
 	"github.com/vishvananda/netlink"
 )
 
 // GetAddressList calls AddrList netlink API
 func (handler *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("get-address-list").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return nil, err
@@ -53,10 +48,6 @@ func (handler *NetLinkHandler) GetAddressList(ifName string) ([]netlink.Addr, er
 
 // AddInterfaceIP calls AddrAdd Netlink API.
 func (handler *NetLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("add-interface-ip").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
@@ -67,10 +58,6 @@ func (handler *NetLinkHandler) AddInterfaceIP(ifName string, addr *net.IPNet) er
 
 // DelInterfaceIP calls AddrDel Netlink API.
 func (handler *NetLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("del-interface-ip").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err
@@ -81,10 +68,6 @@ func (handler *NetLinkHandler) DelInterfaceIP(ifName string, addr *net.IPNet) er
 
 // SetInterfaceMTU calls LinkSetMTU Netlink API.
 func (handler *NetLinkHandler) SetInterfaceMTU(ifName string, mtu int) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("set-interface-mtu").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return err

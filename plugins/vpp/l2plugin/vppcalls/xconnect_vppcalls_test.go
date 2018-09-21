@@ -145,6 +145,6 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI, i
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if-idx", nil))
-	xcHandler := vppcalls.NewXConnectVppHandler(ctx.MockChannel, ifIndexes, log, nil)
+	xcHandler := vppcalls.NewXConnectVppHandler(ctx.MockChannel, ifIndexes, log)
 	return ctx, xcHandler, ifIndexes
 }

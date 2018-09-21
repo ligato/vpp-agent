@@ -22,7 +22,6 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -75,15 +74,11 @@ type LinuxInterfaceConfigurator struct {
 	// Linux namespace/calls handler
 	ifHandler linuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init linux plugin and start go routines.
 func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, ifMsNotif chan *nsplugin.MicroserviceEvent, ifNotif chan *LinuxInterfaceStateNotification,
-	stopwatch *measure.Stopwatch) (err error) {
+	ifIndexes ifaceidx.LinuxIfIndexRW, ifMsNotif chan *nsplugin.MicroserviceEvent, ifNotif chan *LinuxInterfaceStateNotification) (err error) {
 	// Logger
 	c.log = logging.NewLogger("-if-conf")
 
@@ -104,9 +99,6 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 	// Interface and namespace handlers
 	c.ifHandler = ifHandler
 	c.nsHandler = nsHandler
-
-	// Configurator-wide stopwatch instance
-	c.stopwatch = stopwatch
 
 	// Start watching on linux and microservice events
 	go c.watchLinuxStateUpdater()

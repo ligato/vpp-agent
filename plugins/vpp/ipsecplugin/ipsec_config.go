@@ -19,7 +19,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -64,21 +63,12 @@ type IPSecConfigurator struct {
 	// VPP API handlers
 	ifHandler    iface_vppcalls.IfVppAPI
 	ipSecHandler vppcalls.IPSecVppAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init members (channels...) and start go routines
-func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndexRW,
-	enableStopwatch bool) (err error) {
+func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndexRW) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-ipsec-plugin")
-
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("IPSec-configurator", c.log)
-	}
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
@@ -89,14 +79,13 @@ func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	c.saIndexSeq = 1
 
 	// VPP channel
-	c.vppCh, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppCh, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handlers
-	c.ifHandler = iface_vppcalls.NewIfVppHandler(c.vppCh, c.log, c.stopwatch)
-	c.ipSecHandler = vppcalls.NewIPsecVppHandler(c.vppCh, c.ifIndexes, c.spdIndexes, c.log, c.stopwatch)
+	c.ifHandler = iface_vppcalls.NewIfVppHandler(c.vppCh, c.log)
+	c.ipSecHandler = vppcalls.NewIPsecVppHandler(c.vppCh, c.ifIndexes, c.spdIndexes, c.log)
 
 	c.log.Debug("IPSec configurator initialized")
 

@@ -17,9 +17,10 @@ package ifplugin_test
 import (
 	"testing"
 
+	"git.fd.io/govpp.git/core"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -42,14 +43,14 @@ import (
 
 // TODO: use configurator initializers from other files which do the same thing
 
-func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *govpp.Connection) {
+func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *core.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
 
-	conn, err := govpp.Connect(ctx.MockVpp)
+	conn, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// Test init
@@ -58,26 +59,26 @@ func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx
 	ifVppNotifCh := make(chan govppapi.Message, 100)
 	plugLog := logging.ForPlugin("tests")
 
-	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, true)
+	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, conn
 }
 
-func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *govpp.Connection) {
+func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
+func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *core.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
 
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -88,25 +89,25 @@ func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.BFDConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, c, index
 }
 
-func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *govpp.Connection) {
+func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *govpp.Connection) {
+func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *core.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -117,25 +118,25 @@ func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.StnConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, c
 }
 
-func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *govpp.Connection) {
+func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
+func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *core.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -146,13 +147,13 @@ func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, c, index
 }
 
-func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *govpp.Connection) {
+func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

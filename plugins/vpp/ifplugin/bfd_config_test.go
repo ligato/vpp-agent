@@ -15,11 +15,11 @@
 package ifplugin_test
 
 import (
+	"git.fd.io/govpp.git/core"
 	"net"
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
@@ -530,7 +530,7 @@ func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn", nil))
 	// Configurator
 	plugin := &ifplugin.BFDConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices, true)
+	err = plugin.Init(log, connection, swIfIndices)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

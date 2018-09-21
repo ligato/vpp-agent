@@ -24,7 +24,6 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin"
@@ -607,8 +606,7 @@ func ifTestSetup(t *testing.T) (*ifplugin.LinuxInterfaceConfigurator, *linuxmock
 	plugin := &ifplugin.LinuxInterfaceConfigurator{}
 	linuxMock := linuxmock.NewIfNetlinkHandlerMock()
 	nsMock := linuxmock.NewNamespacePluginMock()
-	err := plugin.Init(pluginLog, linuxMock, nsMock, swIfIndexes,
-		ifMicroserviceNotif, ifNotif, measure.NewStopwatch("LinuxIfTest", pluginLog))
+	err := plugin.Init(pluginLog, linuxMock, nsMock, swIfIndexes, ifMicroserviceNotif, ifNotif)
 	Expect(err).To(BeNil())
 
 	return plugin, linuxMock, nsMock, msChan, ifMicroserviceNotif, ifNotif

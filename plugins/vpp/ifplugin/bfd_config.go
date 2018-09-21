@@ -22,7 +22,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -42,7 +41,6 @@ type BFDConfigurator struct {
 
 	ifIndexes ifaceidx.SwIfIndex
 	bfdIDSeq  uint32
-	stopwatch *measure.Stopwatch // timer used to measure and store time
 	// Base mappings
 	sessionsIndexes   idxvpp.NameToIdxRW
 	keysIndexes       idxvpp.NameToIdxRW
@@ -55,15 +53,9 @@ type BFDConfigurator struct {
 }
 
 // Init members and channels
-func (c *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-bfd-conf")
-
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("BFD-configurator", c.log)
-	}
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
@@ -72,13 +64,12 @@ func (c *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.echoFunctionIndex = nametoidx.NewNameToIdx(c.log, "bfd_echo_function_index", nil)
 
 	// VPP channel
-	c.vppChan, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handler
-	c.bfdHandler = vppcalls.NewBfdVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.bfdHandler = vppcalls.NewBfdVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Infof(" BFD configurator initialized")
 

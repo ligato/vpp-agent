@@ -17,34 +17,20 @@
 package linuxcalls
 
 import (
-	"time"
-
 	"github.com/vishvananda/netlink"
 )
 
 // AddStaticRoute creates the new static route
 func (handler *NetLinkHandler) AddStaticRoute(name string, route *netlink.Route) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("add-static-route").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.RouteAdd(route)
 }
 
 // ReplaceStaticRoute removes the static route
 func (handler *NetLinkHandler) ReplaceStaticRoute(name string, route *netlink.Route) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("replace-static-route").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.RouteReplace(route)
 }
 
 // DelStaticRoute removes the static route
 func (handler *NetLinkHandler) DelStaticRoute(name string, route *netlink.Route) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("del-static-route").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.RouteDel(route)
 }

@@ -3,6 +3,8 @@ package govppmux
 import (
 	"time"
 
+	"github.com/ligato/cn-infra/logging/measure"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -15,6 +17,14 @@ type goVppChan struct {
 	govppapi.Channel
 	// Retry data
 	retry retryConfig
+	// tracer used to measure binary api call duration
+	tracer measure.Tracer
+}
+
+// helper struct holding info about retry configuration
+type retryConfig struct {
+	attempts int
+	timeout  time.Duration
 }
 
 // govppRequestCtx is custom govpp RequestCtx.
@@ -27,16 +37,52 @@ type govppRequestCtx struct {
 	requestMsg govppapi.Message
 	// Retry data
 	retry retryConfig
+	// Tracer object
+	tracer measure.Tracer
+	// Start time
+	start time.Time
 }
 
-// helper struct holding info about retry configuration
-type retryConfig struct {
-	attempts int
-	timeout  time.Duration
+// govppMultirequestCtx is custom govpp MultiRequestCtx.
+type govppMultirequestCtx struct {
+	// Original multi request context
+	requestCtx govppapi.MultiRequestCtx
+	// Parameter for sendRequest
+	requestMsg govppapi.Message
+	// Tracer object
+	tracer measure.Tracer
+	// Start time
+	start time.Time
+}
+
+// SendRequest sends asynchronous request to the vpp and receives context used to receive reply.
+// Plugin govppmux allows to re-send retry which failed because of disconnected vpp, if enabled.
+func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
+	start := time.Now()
+
+	sendRequest := c.Channel.SendRequest
+	// Send request now and wait for context
+	requestCtx := sendRequest(request)
+
+	// Return context with value and function which allows to send request again if needed
+	return &govppRequestCtx{
+		requestCtx:  requestCtx,
+		sendRequest: sendRequest,
+		requestMsg:  request,
+		retry:       c.retry,
+		tracer:      c.tracer,
+		start:       start,
+	}
 }
 
 // ReceiveReply handles request and returns error if occurred. Also does retry if this option is available.
 func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
+	defer func() {
+		if r.tracer != nil {
+			r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
+		}
+	}()
+
 	var timeout time.Duration
 	maxAttempts := r.retry.attempts
 	if r.retry.timeout > 0 { // Default value is 500ms
@@ -61,13 +107,33 @@ func (r *govppRequestCtx) ReceiveReply(reply govppapi.Message) error {
 	return err
 }
 
-// SendRequest sends asynchronous request to the vpp and receives context used to receive reply.
-// Plugin govppmux allows to re-send retry which failed because of disconnected vpp, if enabled.
-func (c *goVppChan) SendRequest(request govppapi.Message) govppapi.RequestCtx {
-	sendRequest := c.Channel.SendRequest
+// SendMultiRequest sends asynchronous request to the vpp and receives context used to receive reply.
+func (c *goVppChan) SendMultiRequest(request govppapi.Message) govppapi.MultiRequestCtx {
+	start := time.Now()
+
+	sendMultiRequest := c.Channel.SendMultiRequest
 	// Send request now and wait for context
-	requestCtx := sendRequest(request)
+	requestCtx := sendMultiRequest(request)
 
 	// Return context with value and function which allows to send request again if needed
-	return &govppRequestCtx{requestCtx, sendRequest, request, c.retry}
+	return &govppMultirequestCtx{
+		requestCtx:  requestCtx,
+		requestMsg:  request,
+		tracer:      c.tracer,
+		start:       start,
+	}
+}
+
+// ReceiveReply handles request and returns error if occurred.
+func (r *govppMultirequestCtx) ReceiveReply(reply govppapi.Message) (bool, error) {
+	// Receive reply from original send
+	last, err := r.requestCtx.ReceiveReply(reply)
+	if last {
+		defer func() {
+			if r.tracer != nil {
+				r.tracer.LogTime(r.requestMsg.GetMessageName(), r.start)
+			}
+		}()
+	}
+	return last, err
 }

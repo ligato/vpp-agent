@@ -30,7 +30,7 @@ import (
 func TestDumpStaticRoutes(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "rt-dump-if-idx", nil))
-	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger(), nil)
+	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes.RegisterName("if1", 2, nil)

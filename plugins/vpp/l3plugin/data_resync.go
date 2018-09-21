@@ -27,13 +27,6 @@ import (
 
 // Resync configures the VPP static routes.
 func (c *RouteConfigurator) Resync(nbRoutes []*l3.StaticRoutes_Route) error {
-	// Calculate and log route resync.
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 
@@ -174,13 +167,6 @@ func routeMayBeRemoved(route *vppcalls.RouteDetails) bool {
 
 // Resync confgures the empty VPP (overwrites the arp entries)
 func (c *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error {
-	// Calculate and log arp resync
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 
@@ -201,12 +187,6 @@ func (c *ArpConfigurator) Resync(arpEntries []*l3.ArpTable_ArpEntry) error {
 
 // ResyncInterfaces confgures the empty VPP (overwrites the proxy arp entries)
 func (c *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyArpInterfaces_InterfaceList) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 
@@ -227,12 +207,6 @@ func (c *ProxyArpConfigurator) ResyncInterfaces(nbProxyArpIfs []*l3.ProxyArpInte
 
 // ResyncRanges confgures the empty VPP (overwrites the proxy arp ranges)
 func (c *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArpRanges_RangeList) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Todo: dump proxy arp
 
 	if len(nbProxyArpRanges) > 0 {
@@ -250,12 +224,6 @@ func (c *ProxyArpConfigurator) ResyncRanges(nbProxyArpRanges []*l3.ProxyArpRange
 
 // Resync configures the empty VPP (adds IP scan neigh config)
 func (c *IPNeighConfigurator) Resync(config *l3.IPScanNeighbor) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	if err := c.Set(config); err != nil {
 		return errors.Errorf("failed to set IP scan neighbor: %v", err)
 	}

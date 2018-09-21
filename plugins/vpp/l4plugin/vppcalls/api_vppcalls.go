@@ -17,7 +17,6 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 )
 
 // L4VppAPI provides methods for managing L4 layer configuration
@@ -44,16 +43,14 @@ type L4VppRead interface {
 
 // L4VppHandler is accessor for l4-related vppcalls methods
 type L4VppHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	log          logging.Logger
 }
 
 // NewL4VppHandler creates new instance of L4 vppcalls handler
-func NewL4VppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *L4VppHandler {
+func NewL4VppHandler(callsChan govppapi.Channel, log logging.Logger) *L4VppHandler {
 	return &L4VppHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		log:          log,
 	}
 }

@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -24,10 +23,6 @@ import (
 
 // SetRxPlacement implements interface handler.
 func (h *IfVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &interfaces.SwInterfaceSetRxPlacement{
 		SwIfIndex: ifIdx,
 		QueueID:   rxPlacement.Queue,

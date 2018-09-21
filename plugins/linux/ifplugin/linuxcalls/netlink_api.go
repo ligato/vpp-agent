@@ -17,7 +17,6 @@ package linuxcalls
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
@@ -58,13 +57,9 @@ type NetlinkAPI interface {
 }
 
 // NetLinkHandler is accessor for netlink methods
-type NetLinkHandler struct {
-	stopwatch *measure.Stopwatch
-}
+type NetLinkHandler struct{}
 
 // NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(stopwatch *measure.Stopwatch) *NetLinkHandler {
-	return &NetLinkHandler{
-		stopwatch: stopwatch,
-	}
+func NewNetLinkHandler() *NetLinkHandler {
+	return &NetLinkHandler{}
 }

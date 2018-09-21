@@ -21,12 +21,6 @@ import (
 
 // ResyncAppNs configures app namespaces to the empty VPP
 func (c *AppNsConfigurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppNamespace) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 
@@ -45,12 +39,6 @@ func (c *AppNsConfigurator) ResyncAppNs(appNamespaces []*l4.AppNamespaces_AppNam
 
 // ResyncFeatures sets initial L4Features flag
 func (c *AppNsConfigurator) ResyncFeatures(l4Features *l4.L4Features) error {
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	if l4Features != nil {
 		if err := c.ConfigureL4FeatureFlag(l4Features); err != nil {
 			return errors.Errorf("app-ns resync error: failed to configure L4: %v", err)

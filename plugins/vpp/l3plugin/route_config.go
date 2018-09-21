@@ -27,7 +27,6 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -78,21 +77,12 @@ type RouteConfigurator struct {
 	// VPP API handlers
 	ifHandler ifvppcalls.IfVppWrite
 	rtHandler vppcalls.RouteVppAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init members (channels...) and start go routines.
-func (c *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-l3-route-conf")
-
-	// Configurator-wide stopwatch instance
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("Route-configurator", c.log)
-	}
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
@@ -106,8 +96,8 @@ func (c *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	}
 
 	// VPP API handlers
-	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log, c.stopwatch)
-	c.rtHandler = vppcalls.NewRouteVppHandler(c.vppChan, c.ifIndexes, c.log, c.stopwatch)
+	c.ifHandler = ifvppcalls.NewIfVppHandler(c.vppChan, c.log)
+	c.rtHandler = vppcalls.NewRouteVppHandler(c.vppChan, c.ifIndexes, c.log)
 
 	c.log.Debug("L3 Route configurator initialized")
 

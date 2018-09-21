@@ -15,11 +15,8 @@
 package vppcalls
 
 import (
-	"time"
-
-	"net"
-
 	"fmt"
+	"net"
 
 	stnapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
@@ -37,18 +34,14 @@ type StnMeta struct {
 }
 
 // DumpStnRules implements STN handler.
-func (handler *StnVppHandler) DumpStnRules() (rules *StnDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(stnapi.StnRulesDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *StnVppHandler) DumpStnRules() (rules *StnDetails, err error) {
 	var ruleList []*stn.STN_Rule
 	meta := &StnMeta{
 		IfNameToIdx: make(map[uint32]string),
 	}
 
 	req := &stnapi.StnRulesDump{}
-	reqCtx := handler.callsChannel.SendMultiRequest(req)
+	reqCtx := h.callsChannel.SendMultiRequest(req)
 	for {
 		msg := &stnapi.StnRulesDetails{}
 		stop, err := reqCtx.ReceiveReply(msg)
@@ -58,9 +51,9 @@ func (handler *StnVppHandler) DumpStnRules() (rules *StnDetails, err error) {
 		if err != nil {
 			return nil, err
 		}
-		ifName, _, found := handler.ifIndexes.LookupName(msg.SwIfIndex)
+		ifName, _, found := h.ifIndexes.LookupName(msg.SwIfIndex)
 		if !found {
-			handler.log.Warnf("STN dump: name not found for interface %d", msg.SwIfIndex)
+			h.log.Warnf("STN dump: name not found for interface %d", msg.SwIfIndex)
 		}
 
 		var stnStrIP string

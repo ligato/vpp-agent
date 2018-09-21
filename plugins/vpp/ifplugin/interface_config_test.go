@@ -19,9 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"git.fd.io/govpp.git/core"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	dhcp_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
@@ -1514,13 +1515,13 @@ func TestModifyRxMode(t *testing.T) {
 
 /* Interface Test Setup */
 
-func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govpp.Connection, *ifplugin.InterfaceConfigurator) {
+func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.InterfaceConfigurator) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
 		MockVpp: mock.NewVppAdapter(),
 	}
-	connection, err := govpp.Connect(ctx.MockVpp)
+	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// Logger
@@ -1530,13 +1531,13 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *govpp.Connection, *ifplug
 	// Configurator
 	plugin := &ifplugin.InterfaceConfigurator{}
 	notifChan := make(chan govppapi.Message, 5)
-	err = plugin.Init(log, connection, 1, notifChan, 1500, true)
+	err = plugin.Init(log, connection, 1, notifChan, 1500)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin
 }
 
-func ifTestTeardown(connection *govpp.Connection, plugin *ifplugin.InterfaceConfigurator) {
+func ifTestTeardown(connection *core.Connection, plugin *ifplugin.InterfaceConfigurator) {
 	connection.Disconnect()
 	err := plugin.Close()
 	Expect(err).To(BeNil())

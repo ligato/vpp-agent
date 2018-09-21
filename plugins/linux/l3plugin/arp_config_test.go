@@ -21,7 +21,6 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin"
@@ -166,7 +165,7 @@ func arpTestSetup(t *testing.T) (*l3plugin.LinuxArpConfigurator, *linuxmock.L3Ne
 	plugin := &l3plugin.LinuxArpConfigurator{}
 	linuxMock := linuxmock.NewL3NetlinkHandlerMock()
 	nsMock := linuxmock.NewNamespacePluginMock()
-	err := plugin.Init(pluginLog, linuxMock, nsMock, ifIndexes, measure.NewStopwatch("LinuxArpTest", pluginLog))
+	err := plugin.Init(pluginLog, linuxMock, nsMock, ifIndexes)
 	Expect(err).To(BeNil())
 
 	return plugin, linuxMock, nsMock, ifIndexes

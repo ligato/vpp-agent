@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
 )
@@ -37,16 +36,10 @@ type SessionDetails struct {
 }
 
 // DumpL4Config implements L4VppRead.
-func (handler *L4VppHandler) DumpL4Config() ([]*SessionDetails, error) {
-	// ArpDump time measurement
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(session.SessionRulesDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *L4VppHandler) DumpL4Config() ([]*SessionDetails, error) {
 	var appNsDetails []*SessionDetails
-
 	// Dump ARPs.
-	reqCtx := handler.callsChannel.SendMultiRequest(&session.SessionRulesDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&session.SessionRulesDump{})
 
 	for {
 		sessions := &session.SessionRulesDetails{}
@@ -55,7 +48,7 @@ func (handler *L4VppHandler) DumpL4Config() ([]*SessionDetails, error) {
 			break
 		}
 		if err != nil {
-			handler.log.Error(err)
+			h.log.Error(err)
 			return nil, err
 		}
 

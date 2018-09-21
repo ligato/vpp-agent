@@ -18,7 +18,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -48,15 +47,12 @@ type AppNsConfigurator struct {
 	// VPP API handler
 	l4Handler vppcalls.L4VppAPI
 
-	stopwatch *measure.Stopwatch
-
 	// Feature flag - internal state whether the L4 features are enabled or disabled
 	l4ftEnabled bool
 }
 
 // Init members (channels...) and start go routines
-func (c *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	enableStopwatch bool) (err error) {
+func (c *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
 	c.log = logger.NewLogger("-l4-plugin")
 
@@ -66,18 +62,13 @@ func (c *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	c.appNsCached = nsidx.NewAppNsIndex(nametoidx.NewNameToIdx(c.log, "not_configured_namespace_indexes", nil))
 	c.appNsIdxSeq = 1
 
-	// Stopwatch
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("AppNsConfigurator", c.log)
-	}
-
 	// VPP channels
 	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
 	// VPP API handler
-	c.l4Handler = vppcalls.NewL4VppHandler(c.vppChan, c.log, c.stopwatch)
+	c.l4Handler = vppcalls.NewL4VppHandler(c.vppChan, c.log)
 
 	c.log.Debugf("L4 configurator initialized")
 
