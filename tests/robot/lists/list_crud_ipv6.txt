@@ -18,4 +18,3 @@
 #--suite CrudIPv6.Tapv2 CrudIPv6
 --suite CrudIPv6.Veth CrudIPv6
 --suite CrudIPv6.Vxlan CrudIPv6
-EOF
