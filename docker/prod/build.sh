@@ -11,28 +11,33 @@ set -e
 
 BUILDARCH=`uname -m`
 
-if [ ${BUILDARCH} = "aarch64" ] ; then
-  IMAGE_TAG=${IMAGE_TAG:-'prod_vpp_agent-arm64'}
-  # Dockerfile  for prod_vpp_agent expects that dev-vpp-agent:latest image is built
-  sudo docker tag dev_vpp_agent-arm64:latest dev_vpp_agent:latest
-fi
+case "$BUILDARCH" in
+  "aarch64" )
+    IMAGE_TAG=${IMAGE_TAG:-'prod_vpp_agent-arm64'}
+    # Dockerfile  for prod_vpp_agent expects that dev-vpp-agent:latest image is built
+    docker tag dev_vpp_agent-arm64:latest dev_vpp_agent:latest
+    ;;
 
+  "x86_64" )
+    # for AMD64 platform is used the default image (without suffix -amd64)
+    IMAGE_TAG=${IMAGE_TAG:-'prod_vpp_agent'}
+    # Dockerfile expects that dev-vpp-agent:latest image is built
+    # Here it is granted
+    ;;
+  * )
+    echo "Architecture ${BUILDARCH} is not supported."
+    exit
+    ;;
+esac
 
-if [ ${BUILDARCH} = "x86_64" ] ; then
-  # for AMD64 platform is used the default image (without suffix -amd64)
-  IMAGE_TAG=${IMAGE_TAG:-'prod_vpp_agent'}
-  # Dockerfile expects that dev-vpp-agent:latest image is built
-  # Here it is granted
-fi
-
-sudo docker build  ${DOCKER_BUILD_ARGS} --tag ${IMAGE_TAG} .
+docker build  ${DOCKER_BUILD_ARGS} --tag ${IMAGE_TAG} .
 
 if [[ ${BUILDARCH} = "x86_64" && ${IMAGE_TAG} = "prod_vpp_agent" ]] ; then
   # tag also explicit docker image on AMD64 platform
   docker tag  ${IMAGE_TAG}:latest prod_vpp_agent-amd64:latest
 fi
 
-# cleaning
+# cleaning for arm64 platform
 if [ ${BUILDARCH} = "aarch64" ] ; then
-  sudo docker rmi dev_vpp_agent:latest
+  docker rmi dev_vpp_agent:latest
 fi

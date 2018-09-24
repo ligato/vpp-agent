@@ -1,4 +1,7 @@
 #!/bin/bash
+# Before run of this script you can set environmental variables
+# IMAGE_TAG, DOCKERFILE, BASE_IMG, GOLANG_OS_ARCH, .. then  export them
+# and to use defined values instead of default ones
 
 cd "$(dirname "$0")"
 
@@ -17,17 +20,22 @@ BASE_IMG=${BASE_IMG:-'ubuntu:18.04'}
 
 BUILDARCH=`uname -m`
 
-if [ ${BUILDARCH} = "aarch64" ] ; then
-  IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent-arm64'}
-  GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-arm64'}
-fi
+case "$BUILDARCH" in
+  "aarch64" )
+    IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent-arm64'}
+    GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-arm64'}
+    ;;
 
-
-if [ ${BUILDARCH} = "x86_64" ] ; then
-  # for AMD64 platform is used the default image (without suffix -amd64)
-  IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent'}
-  GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-amd64'}
-fi
+  "x86_64" )
+    # for AMD64 platform is used the default image (without suffix -amd64)
+    IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent'}
+    GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-amd64'}
+    ;;
+  * )
+    echo "Architecture ${BUILDARCH} is not supported."
+    exit
+    ;;
+esac
 
 
 source ../../vpp.env
@@ -61,6 +69,6 @@ docker build -f ${DOCKERFILE} \
     ${DOCKER_BUILD_ARGS} ../..
 
 if [[ ${BUILDARCH} = "x86_64" && ${IMAGE_TAG} = "dev_vpp_agent" ]] ; then
-  # tag also explicit docker image on AMD64 platform
+  # create docker image tagged with -amd64 suffix for AMD64 platform
   docker tag  ${IMAGE_TAG}:latest dev_vpp_agent-amd64:latest
 fi
