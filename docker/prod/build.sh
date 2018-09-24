@@ -1,4 +1,7 @@
 #!/bin/bash
+# Before run of this script you can set environmental variables
+# IMAGE_TAG ... then  export them
+# and to use defined values instead of default ones
 
 cd "$(dirname "$0")"
 
@@ -32,12 +35,21 @@ esac
 
 docker build  ${DOCKER_BUILD_ARGS} --tag ${IMAGE_TAG} .
 
-if [[ ${BUILDARCH} = "x86_64" && ${IMAGE_TAG} = "prod_vpp_agent" ]] ; then
-  # tag also explicit docker image on AMD64 platform
-  docker tag  ${IMAGE_TAG}:latest prod_vpp_agent-amd64:latest
-fi
+echo "To push to repository please use command:"
+case "$BUILDARCH" in
+  "aarch64" )
+    echo "docker tag ${IMAGE_TAG}:latest ligato/prod-vpp-agent-arm64:$(git describe --always --tags)"
+    # cleaning for arm64 platform
+    docker rmi dev_vpp_agent:latest
+    ;;
 
-# cleaning for arm64 platform
-if [ ${BUILDARCH} = "aarch64" ] ; then
-  docker rmi dev_vpp_agent:latest
-fi
+  "x86_64" )
+    # create docker image tagged with -amd64 suffix for AMD64 platform
+    echo "docker tag ${IMAGE_TAG}:latest ligato/prod-vpp-agent-amd64:$(git describe --always --tags)"
+    echo "docker tag ${IMAGE_TAG}:latest ligato/prod-vpp-agent:$(git describe --always --tags)"
+    ;;
+  * )
+    echo "Architecture ${BUILDARCH} is not supported."
+    exit
+    ;;
+esac

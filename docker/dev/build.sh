@@ -68,7 +68,19 @@ docker build -f ${DOCKERFILE} \
     --build-arg COMMIT=${COMMIT} \
     ${DOCKER_BUILD_ARGS} ../..
 
-if [[ ${BUILDARCH} = "x86_64" && ${IMAGE_TAG} = "dev_vpp_agent" ]] ; then
-  # create docker image tagged with -amd64 suffix for AMD64 platform
-  docker tag  ${IMAGE_TAG}:latest dev_vpp_agent-amd64:latest
-fi
+echo "To push to repository please use command:"
+case "$BUILDARCH" in
+  "aarch64" )
+    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-arm64:$(git describe --always --tags)"
+    ;;
+
+  "x86_64" )
+    # create docker image tagged with -amd64 suffix for AMD64 platform
+    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-amd64:$(git describe --always --tags)"
+    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent:$(git describe --always --tags)"
+    ;;
+  * )
+    echo "Architecture ${BUILDARCH} is not supported."
+    exit
+    ;;
+esac
