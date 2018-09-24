@@ -72,12 +72,15 @@ echo "To push to repository please use command:"
 case "$BUILDARCH" in
   "aarch64" )
     echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-arm64:$(git describe --always --tags)"
+    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-arm64:latest"
     ;;
 
   "x86_64" )
     # create docker image tagged with -amd64 suffix for AMD64 platform
     echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-amd64:$(git describe --always --tags)"
     echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent:$(git describe --always --tags)"
+    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-amd64:latest"
+    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent:latest"
     ;;
   * )
     echo "Architecture ${BUILDARCH} is not supported."
