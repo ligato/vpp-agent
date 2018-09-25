@@ -91,7 +91,7 @@ the Agent and VPP on Dockerhub [for X86_64 architecture][14] and [for ARM64 arch
 docker pull ligato/vpp-agent
 docker run -it --name vpp --rm ligato/vpp-agent 
 ```
-or for ARM64 platform:
+   or for ARM64 platform:
 ```
 docker pull ligato/vpp-agent-arm64
 docker run -it --name vpp --rm ligato/vpp-agent-arm64
