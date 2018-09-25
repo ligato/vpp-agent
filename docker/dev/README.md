@@ -14,15 +14,20 @@ This image is used for development and debugging.
 ## Get the official image
 
 For a quick start with the development image, you can download 
-the [official image](https://hub.docker.com/r/ligato/dev-vpp-agent/) from **DockerHub**.
+the [official image for X86_64 platform](https://hub.docker.com/r/ligato/dev-vpp-agent/)
+or the [official image for ARM64 platform](https://hub.docker.com/r/ligato/dev-vpp-agent-arm64/) from **DockerHub**.
 
 ```sh
 $ docker pull docker.io/ligato/dev-vpp-agent	# latest release (stable)
 $ docker pull docker.io/ligato/dev-vpp-agent:pantheon-dev	# bleeding edge (unstable)
+
+$ docker pull docker.io/ligato/dev-vpp-agent-arm64	# latest release (stable)
+$ docker pull docker.io/ligato/dev-vpp-agent-arm64:pantheon-dev	# bleeding edge (unstable)
 ```
 
 List of all available docker image tags for development image can 
 be found [here](https://hub.docker.com/r/ligato/dev-vpp-agent/tags/).
+and [here (ARM64)](https://hub.docker.com/r/ligato/dev-vpp-agent-arm64/tags/).
 
 ## Building the image locally
 
@@ -32,7 +37,7 @@ To build the docker image on your local machine run:
 $ ./build.sh
 ```
 
-This will by default build image with name `dev_vpp_agent` 
+This will by default build image with name `dev_vpp_agent` or `dev_vpp_agent-arm64`
 and use following sources:
 - **VPP-Agent** version from local repository
 - **VPP** from repository and commit specified in `vpp.env` file
@@ -96,6 +101,8 @@ These environment variables can be set:
 - `OMIT_AGENT` - whether the start of vpp-agent should be omitted (default is unset, agent will be started normally)
 - `RETAIN_SUPERVISOR` - whether the supervisord should quit on unexpected exit of vpp or vpp-agent (default is unset, supervisord will quit)
 
+Similarly on ARM64 platform, but the suffix "-arm64" is added behind the name of image (`dev_vpp_agent` -> `dev_vpp_agent-arm64`)
+
 ## Running VPP in Debug or Release Mode
 
 You can run VPP in debug or release mode. By default the image runs in release mode.
@@ -114,6 +121,7 @@ To start the image with custom VPP build mounted from host:
 ```
 sudo docker run -it --volume $HOME/myvpp:/opt/vpp-agent/dev/vpp --rm --privileged dev_vpp_agent bash
 ```
+Similarly on ARM64 platform, but the suffix "-arm64" is added behind the name of image (`dev_vpp_agent` -> `dev_vpp_agent-arm64`)
 
 ## Running VPP and the Agent
 
@@ -196,6 +204,15 @@ Call the agent via ETCD using the testing client:
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 ```
+Note for ARM64:
+Check for proper etcd ARM64 docker image in the [official repository](here https://quay.io/repository/coreos/etcd?tag=latest&tab=tags).
+Currently you must use the parameter "-e ETCD_UNSUPPORTED_ARCH=arm64" like this:
+```
+sudo docker run -p 2379:2379 --name etcd -e ETCDCTL_API=3 -e ETCD_UNSUPPORTED_ARCH=arm64 \
+    quay.io/coreos/etcd:v3.3.8-arm64 /usr/local/bin/etcd \
+    -advertise-client-urls http://0.0.0.0:2379 \
+    -listen-client-urls http://0.0.0.0:2379
+```
 
 ## Running Kafka on Local Host
 
@@ -203,6 +220,22 @@ You can start Kafka in a separate container:
 ```
 sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
  --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
+```
+Note for ARM64:
+There is no official spotify/kafka image for ARM64 platform.
+You can build an image following steps at the [repository](https://github.com/spotify/docker-kafka#build-from-source).
+However you need to modify the kafka/Dockerfile before building like this:
+```
+#FROM java:openjdk-8-jre
+#arm version needs this....
+FROM openjdk:8-jre
+...
+...
+#ENV KAFKA_VERSION 0.10.1.0
+#arm version needs this....
+ENV KAFKA_VERSION 0.10.2.1
+...
+...
 ```
 
 ## Rebuilding the Agent
@@ -222,6 +255,7 @@ Use the `--no-cache` flag for `docker build`:
 ```
 sudo docker build --no-cache -t dev_vpp_agent .
 ```
+Similarly on ARM64 platform, but the suffix "-arm64" is added behind the name of image (`dev_vpp_agent` -> `dev_vpp_agent-arm64`)
 
 ## Mounting of a host directory into the Docker container:
 
@@ -240,6 +274,7 @@ Then you can modify the code on you host OS and us the container for
 building and testing it.
 
 ---
+Similarly on ARM64 platform, but the suffix "-arm64" is added behind the name of image (`dev_vpp_agent` -> `dev_vpp_agent-arm64`)
 
 ## Example: Using the Development Environment on a MacBook with Gogland
 
