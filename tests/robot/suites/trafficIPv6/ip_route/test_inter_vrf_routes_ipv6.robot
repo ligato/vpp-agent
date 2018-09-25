@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 Resource    ../../../libraries/all_libs.robot
 Resource    ../../../libraries/pretty_keywords.robot
 
-Force Tags        trafficIPv4
+Force Tags        traffic     IPv6
 Suite Setup       Run Keywords    Discard old results     Test Setup
 Suite Teardown    Test Teardown
 

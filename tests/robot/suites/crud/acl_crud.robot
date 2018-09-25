@@ -9,7 +9,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 Test Setup        TestSetup

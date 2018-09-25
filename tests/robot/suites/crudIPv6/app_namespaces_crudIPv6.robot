@@ -4,7 +4,7 @@ Library      OperatingSystem
 Resource     ../../variables/${VARIABLES}_variables.robot
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv6
+Force Tags        crud     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 
