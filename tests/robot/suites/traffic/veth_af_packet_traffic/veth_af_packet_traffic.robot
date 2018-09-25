@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
 
-Force Tags        trafficIPv4
+Force Tags        traffic     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 Test Setup        TestSetup
