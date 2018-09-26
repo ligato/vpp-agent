@@ -50,7 +50,7 @@ Configure Environment 4
     Execute In Container    agent_vpp_1    ls -al
     Execute On Machine    docker    ${DOCKER_COMMAND} images
     Execute On Machine    docker    ${DOCKER_COMMAND} ps -as
-    Start SFC Controller Container With Own Config    ${sfc_conf}
+#    Start SFC Controller Container With Own Config    ${sfc_conf}
     Sleep    ${SYNC_SLEEP}
 
 Configure Environment 5
