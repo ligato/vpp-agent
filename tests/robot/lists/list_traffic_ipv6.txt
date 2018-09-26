@@ -1,4 +1,4 @@
-#--suite TrafficIPv6.3X Vpp Traffic.3X Vpp TrafficIPv6
+#--suite TrafficIPv6.3x Vpp Traffic.3x Vpp TrafficIPv6
 #--suite TrafficIPv6.Acl Traffic.Acl TrafficIPv6
 --suite TrafficIPv6.Bridge Domain.Test1 Bridge DomainIPv6
 --suite TrafficIPv6.Bridge Domain.Test2 Bridge DomainIPv6
@@ -7,12 +7,12 @@
 --suite TrafficIPv6.Ip Route.Test2 Ip RouteIPv6
 --suite TrafficIPv6.Ip Route.Test3 Ip RouteIPv6
 --suite TrafficIPv6.Ip Route.Test4 Ip RouteIPv6
-#--suite TrafficIPv6.L2Xconnect Traffic.L2Xconnect TraficIPv6
+#--suite TrafficIPv6.L2xconnect Traffic.L2xconnect TraficIPv6
 #--suite TrafficIPv6.Libmemif.Libmemif Master Trafic1IPv6
 #--suite TrafficIPv6.Libmemif.Libmemif Master Trafic2IPv6
 #--suite TrafficIPv6.Libmemif.Libmemif Slave Trafic1IPv6
 #--suite TrafficIPv6.Libmemif.Libmemif Slave Trafic2IPv6
-#--suite TrafficIPv6.Linux Traffic.1X Vpp 3X Namespaces TrafficIPv6
+#--suite TrafficIPv6.Linux Traffic.1x Vpp 3x Namespaces TrafficIPv6
 #--suite TrafficIPv6.Physical Int Traffic.Physical Int TrafficIPv6
 --suite TrafficIPv6.Tap Int Traffic.Tap Int TrafficIPv6
 #--suite TrafficIPv6.Tap Int Traffic.Tap Int And Route Config Order TrafficIPv6

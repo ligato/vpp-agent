@@ -7,7 +7,7 @@
 #--suite Traffic.Libmemif.Libmemif Master Trafic2
 #--suite Traffic.Libmemif.Libmemif Slave Trafic1
 #--suite Traffic.Libmemif.Libmemif Slave Trafic2
-#--suite Traffic.Linux Traffic.1X Vpp 3X Namespaces Traffic
+#--suite Traffic.Linux Traffic.1x Vpp 3x Namespaces Traffic
 #--suite Traffic.Physical Int Traffic.Physical Int Traffic
 --suite Traffic.Tap Int Traffic.Tap Int Traffic
 #--suite Traffic.Tap Int Traffic.Tap Int And Route Config Order Traffic
