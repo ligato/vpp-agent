@@ -2,7 +2,12 @@
 
 set -e
 
-REPO_OWNER='ligato'
+# detect branch name
+BRANCH_NAME="$(git symbolic-ref HEAD 2>/dev/null)" || BRANCH_NAME="(unnamed branch)"     # detached HEAD
+BRANCH_NAME=${BRANCH_NAME##refs/heads/}
+BRANCH_HEAD_TAG=`git name-rev --name-only --tags HEAD`
+
+REPO_OWNER=${REPO_OWNER:-'ligato'}
 IMAGE_TAG_LOCAL='dev_vpp_agent'
 
 #To prepare for future fat manifest image by multi-arch manifest,
@@ -29,29 +34,32 @@ case "$BUILDARCH" in
 esac
 
 VERSION=$(git describe --always --tags --dirty)
-COMMIT=$(git rev-parse HEAD)
 
 echo "=============================="
 echo "Architecture: ${BUILDARCH}"
-echo
-echo "VPP repo URL: ${VPP_REPO_URL}"
-echo "VPP commit:   ${VPP_COMMIT}"
-echo
-echo "Agent version: ${VERSION}"
-echo "Agent commit:  ${COMMIT}"
-echo
-echo "image tag:  ${IMAGE_TAG}"
 echo "=============================="
 
-if [ ${BUILDARCH} = "x86_64" ] ; then
-  # for AMD64 platform is used also the default image (without suffix -amd64)
-  docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:${VERSION}
-  docker push ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:${VERSION}
-  docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:latest
-  docker push ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:latest
-fi
-
-docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${IMAGE_TAG}:${VERSION}
-docker push ${REPO_OWNER}/${IMAGE_TAG}:${VERSION}
-docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${IMAGE_TAG}:latest
-docker push ${REPO_OWNER}/${IMAGE_TAG}:latest
+case "${BRANCH_NAME} " in
+  "pantheon-dev" )
+    docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:pantheon-dev
+    docker push ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:pantheon-dev
+    ;;
+  "master" )
+    if [ ${BRANCH_HEAD_TAG} != "undefined" ]	  
+      if [ ${BUILDARCH} = "x86_64" ] ; then
+        # for AMD64 platform is used also the default image (without suffix -amd64)
+        docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:${VERSION}
+        docker push ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:${VERSION}
+        docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:latest
+        docker push ${REPO_OWNER}/${DEFAULT_IMAGE_TAG}:latest
+      fi
+    
+      docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${IMAGE_TAG}:${VERSION}
+      docker push ${REPO_OWNER}/${IMAGE_TAG}:${VERSION}
+      docker tag ${IMAGE_TAG_LOCAL}:latest ${REPO_OWNER}/${IMAGE_TAG}:latest
+      docker push ${REPO_OWNER}/${IMAGE_TAG}:latest
+    fi
+    ;;
+  * )
+    echo "For branch ${BRANCH_NAME} is no setup for tagging and pushing docker images."  
+esac
