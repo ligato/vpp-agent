@@ -7,28 +7,19 @@ cd "$(dirname "$0")"
 
 set -e
 
-#IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent'}
+IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent'}
 DOCKERFILE=${DOCKERFILE:-'Dockerfile'}
 
 BASE_IMG=${BASE_IMG:-'ubuntu:18.04'}
-#GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-amd64'}
-
-#To prepare for future fat manifest image by multi-arch manifest,
-#now build the docker image with its arch
-#For fat manifest, please refer
-#https://docs.docker.com/registry/spec/manifest-v2-2/#example-manifest-list
 
 BUILDARCH=`uname -m`
-
 case "$BUILDARCH" in
   "aarch64" )
-    IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent-arm64'}
     GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-arm64'}
     ;;
 
   "x86_64" )
     # for AMD64 platform is used the default image (without suffix -amd64)
-    IMAGE_TAG=${IMAGE_TAG:-'dev_vpp_agent'}
     GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-amd64'}
     ;;
   * )
@@ -67,23 +58,3 @@ docker build -f ${DOCKERFILE} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
     ${DOCKER_BUILD_ARGS} ../..
-
-echo "To push to repository please use command:"
-case "$BUILDARCH" in
-  "aarch64" )
-    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-arm64:$(git describe --always --tags)"
-    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-arm64:latest"
-    ;;
-
-  "x86_64" )
-    # create docker image tagged with -amd64 suffix for AMD64 platform
-    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-amd64:$(git describe --always --tags)"
-    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent:$(git describe --always --tags)"
-    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent-amd64:latest"
-    echo "docker tag ${IMAGE_TAG}:latest ligato/dev-vpp-agent:latest"
-    ;;
-  * )
-    echo "Architecture ${BUILDARCH} is not supported."
-    exit
-    ;;
-esac
