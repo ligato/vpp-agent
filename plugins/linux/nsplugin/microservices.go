@@ -163,7 +163,8 @@ func (h *NsHandler) detectMicroservice(nsMgmtCtx *NamespaceMgmtCtx, container *d
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
-				h.log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
+				h.log.Debugf("detected container as microservice: Name=%q ID=%v Created=%v State.StartedAt=%v",
+					container.Name, container.ID, container.Created, container.State.StartedAt)
 				last := microserviceContainerCreated[label]
 				if last.After(container.Created) {
 					h.log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)

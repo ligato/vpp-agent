@@ -72,8 +72,8 @@ type LinuxInterfaceConfigurator struct {
 	wg      sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 
 	// Linux namespace/calls handler
-	ifHandler linuxcalls.NetlinkAPI
-	nsHandler nsplugin.NamespaceAPI
+	ifHandler  linuxcalls.NetlinkAPI
+	nsHandler  nsplugin.NamespaceAPI
 	sysHandler nsplugin.SystemAPI
 }
 
@@ -293,12 +293,12 @@ func (c *LinuxInterfaceConfigurator) configureVethInterface(ifConfig, peerConfig
 		return nil
 	}
 	if !c.nsHandler.IsNamespaceAvailable(ifConfig.config.Namespace) {
-		return errors.Errorf("failed to configure veth interface %s: namespace is not available",
-			ifConfig.config.Name)
+		return errors.Errorf("failed to configure veth interface %s: namespace %q is not available",
+			ifConfig.config.Name, ifConfig.config.Namespace)
 	}
 	if !c.nsHandler.IsNamespaceAvailable(peerConfig.config.Namespace) {
-		return errors.Errorf("failed to configure veth interface %s: peer namespace is not available",
-			ifConfig.config.Name)
+		return errors.Errorf("failed to configure veth interface %s: peer namespace %q is not available",
+			ifConfig.config.Name, peerConfig.config.Namespace)
 	}
 
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
