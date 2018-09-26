@@ -32,22 +32,30 @@ const (
 	BfdAuthKey = "/vpp/dump/v1/bfd/authkeys"
 )
 
-// Interface REST urls
+// VPP interface REST urls
 const (
-	// restInterface is rest interface path
+	// Interface is rest interface path
 	Interface = "/vpp/dump/v1/interfaces"
-	// restLoopback is path for loopback interface
+	// Loopback is path for loopback interface
 	Loopback = "/vpp/dump/v1/interfaces/loopback"
-	// restLoopback is path for physical interface
+	// Ethernet is path for physical interface
 	Ethernet = "/vpp/dump/v1/interfaces/ethernet"
-	// restLoopback is path for memif interface
+	// Memif is path for memif interface
 	Memif = "/vpp/dump/v1/interfaces/memif"
-	// restLoopback is path for tap interface
+	// Tap is path for tap interface
 	Tap = "/vpp/dump/v1/interfaces/tap"
-	// restAfPacket is path for af-packet interface
+	// AfPacket is path for af-packet interface
 	AfPacket = "/vpp/dump/v1/interfaces/afpacket"
-	// restLoopback is path for vxlan interface
+	// VxLan is path for vxlan interface
 	VxLan = "/vpp/dump/v1/interfaces/vxlan"
+)
+
+// Linux interface REST urls
+const (
+	// LinuxInterface is a linux interface rest path
+	LinuxInterface = "/linux/dump/v1/interfaces"
+	// LinuxInterfaceStats is a linux interface statistics rest path
+	LinuxInterfaceStats = "/linux/dump/v1/interfaces/statistics"
 )
 
 // NAT REST urls
@@ -88,7 +96,7 @@ const (
 	Xc = "/vpp/dump/v1/xc"
 )
 
-// L3 plugin
+// VPP L3 plugin
 const (
 	// Routes is rest static route path
 	Routes = "/vpp/dump/v1/routes"
@@ -98,6 +106,14 @@ const (
 	PArpIfs = "/vpp/dump/v1/proxyarp/interfaces"
 	// PArpRngs is rest proxy ARP ranges path
 	PArpRngs = "/vpp/dump/v1/proxyarp/ranges"
+)
+
+// Linux L3 plugin
+const (
+	// LinuxRoutes is the rest linux route path
+	LinuxRoutes = "/linux/dump/v1/routes"
+	// LinuxArps is the rest linux ARPs path
+	LinuxArps = "/linux/dump/v1/arps"
 )
 
 // L4 plugin
@@ -119,6 +135,12 @@ const (
 	TMemory    = "/vpp/telemetry/memory"
 	TRuntime   = "/vpp/telemetry/runtime"
 	TNodeCount = "/vpp/telemetry/nodecount"
+)
+
+// Tracer
+const (
+	// Traced binary API calls
+	Tracer = "/vpp/binapitrace"
 )
 
 // Index

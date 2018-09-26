@@ -17,100 +17,11 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
 	"github.com/bennyscetbun/jsongo"
 )
-
-// Package represents collection of objects parsed from VPP binary API JSON data
-type Package struct {
-	APIVersion string
-	Enums      []Enum
-	Unions     []Union
-	Types      []Type
-	Messages   []Message
-	Services   []Service
-	RefMap     map[string]string
-}
-
-// MessageType represents the type of a VPP message
-type MessageType int
-
-const (
-	requestMessage MessageType = iota // VPP request message
-	replyMessage                      // VPP reply message
-	eventMessage                      // VPP event message
-	otherMessage                      // other VPP message
-)
-
-// Message represents VPP binary API message
-type Message struct {
-	Name   string
-	CRC    string
-	Fields []Field
-}
-
-// Type represents VPP binary API type
-type Type struct {
-	Name   string
-	CRC    string
-	Fields []Field
-}
-
-// Union represents VPP binary API union
-type Union struct {
-	Name   string
-	CRC    string
-	Fields []Field
-}
-
-// Field represents VPP binary API object field
-type Field struct {
-	Name     string
-	Type     string
-	Length   int
-	SizeFrom string
-}
-
-func (f *Field) IsArray() bool {
-	return f.Length > 0 || f.SizeFrom != ""
-}
-
-// Enum represents VPP binary API enum
-type Enum struct {
-	Name    string
-	Type    string
-	Entries []EnumEntry
-}
-
-// EnumEntry represents VPP binary API enum entry
-type EnumEntry struct {
-	Name  string
-	Value interface{}
-}
-
-// Service represents VPP binary API service
-type Service struct {
-	RequestType string
-	ReplyType   string
-	Stream      bool
-	Events      []string
-}
-
-func getSizeOfType(typ *Type) (size int) {
-	for _, field := range typ.Fields {
-		if n := getBinapiTypeSize(field.Type); n > 0 {
-			if field.Length > 0 {
-				size += n * field.Length
-			} else {
-				size += n
-			}
-		}
-	}
-	return size
-}
 
 func getTypeByRef(ctx *context, ref string) *Type {
 	for _, typ := range ctx.packageData.Types {
@@ -409,6 +320,7 @@ func parseMessage(ctx *context, msgNode *jsongo.JSONNode) (*Message, error) {
 	}
 	msgCRC, ok := msgNode.At(msgNode.Len() - 1).At("crc").Get().(string)
 	if !ok {
+
 		return nil, fmt.Errorf("message crc invalid or missing")
 	}
 
@@ -478,6 +390,7 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 	}
 
 	svc := Service{
+		Name:        ctx.moduleName + "." + svcName,
 		RequestType: svcName,
 	}
 
@@ -486,7 +399,6 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 		if !ok {
 			return nil, fmt.Errorf("service reply is %T, not a string", replyNode.Get())
 		}
-		// some binapi messages might have `null` reply (for example: memclnt)
 		if reply != "null" {
 			svc.ReplyType = reply
 		}
@@ -510,20 +422,24 @@ func parseService(ctx *context, svcName string, svcNode *jsongo.JSONNode) (*Serv
 	}
 
 	// validate service
-	if svc.Stream {
+	if svc.IsEventService() {
+		if !strings.HasPrefix(svc.RequestType, "want_") {
+			log.Warnf("Unusual EVENTS SERVICE: %+v\n"+
+				"- events service %q does not have 'want_' prefix in request.",
+				svc, svc.Name)
+		}
+	} else if svc.IsDumpService() {
 		if !strings.HasSuffix(svc.RequestType, "_dump") ||
 			!strings.HasSuffix(svc.ReplyType, "_details") {
-			fmt.Printf("Invalid STREAM SERVICE: %+v\n", svc)
+			log.Warnf("Unusual STREAM SERVICE: %+v\n"+
+				"- stream service %q does not have '_dump' suffix in request or reply does not have '_details' suffix.",
+				svc, svc.Name)
 		}
-	} else if len(svc.Events) > 0 {
-		if (!strings.HasSuffix(svc.RequestType, "_events") &&
-			!strings.HasSuffix(svc.RequestType, "_stats")) ||
-			!strings.HasSuffix(svc.ReplyType, "_reply") {
-			fmt.Printf("Invalid EVENTS SERVICE: %+v\n", svc)
-		}
-	} else if svc.ReplyType != "" {
+	} else if svc.IsRequestService() {
 		if !strings.HasSuffix(svc.ReplyType, "_reply") {
-			fmt.Printf("Invalid SERVICE: %+v\n", svc)
+			log.Warnf("Unusual REQUEST SERVICE: %+v\n"+
+				"- service %q does not have '_reply' suffix in reply.",
+				svc, svc.Name)
 		}
 	}
 
@@ -540,7 +456,7 @@ func convertToGoType(ctx *context, binapiType string) (typ string) {
 		typ = camelCaseName(r)
 	} else {
 		// fallback type
-		log.Printf("found unknown VPP binary API type %q, using byte", binapiType)
+		log.Warnf("found unknown VPP binary API type %q, using byte", binapiType)
 		typ = "byte"
 	}
 	return typ

@@ -8,8 +8,8 @@ It is generated from this file:
 	session.api.json
 
 It contains these VPP binary API objects:
-	42 messages
-	21 services
+	44 messages
+	22 services
 */
 package session
 
@@ -18,6 +18,7 @@ import "github.com/lunixbochs/struc"
 import "bytes"
 
 // Reference imports to suppress errors if they are not otherwise used.
+var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
 
@@ -1116,10 +1117,6 @@ func NewResetSession() api.Message {
 //            ],
 //            [
 //                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
 //                "context"
 //            ],
 //            [
@@ -1131,7 +1128,7 @@ func NewResetSession() api.Message {
 //                "handle"
 //            ],
 //            {
-//                "crc": "0xfaf37b87"
+//                "crc": "0xd6960a03"
 //            }
 //
 type ResetSessionReply struct {
@@ -1143,17 +1140,17 @@ func (*ResetSessionReply) GetMessageName() string {
 	return "reset_session_reply"
 }
 func (*ResetSessionReply) GetCrcString() string {
-	return "faf37b87"
+	return "d6960a03"
 }
 func (*ResetSessionReply) GetMessageType() api.MessageType {
-	return api.RequestMessage
+	return api.ReplyMessage
 }
 func NewResetSessionReply() api.Message {
 	return &ResetSessionReply{}
 }
 
 // BindSock represents the VPP binary API message 'bind_sock'.
-// Generated from 'session.api.json', line 643:
+// Generated from 'session.api.json', line 639:
 //
 //            "bind_sock",
 //            [
@@ -1167,6 +1164,10 @@ func NewResetSessionReply() api.Message {
 //            [
 //                "u32",
 //                "context"
+//            ],
+//            [
+//                "u32",
+//                "wrk_index"
 //            ],
 //            [
 //                "u32",
@@ -1195,23 +1196,24 @@ func NewResetSessionReply() api.Message {
 //                16
 //            ],
 //            {
-//                "crc": "0x6a6a40d0"
+//                "crc": "0x0394633f"
 //            }
 //
 type BindSock struct {
-	Vrf     uint32
-	IsIP4   uint8
-	IP      []byte `struc:"[16]byte"`
-	Port    uint16
-	Proto   uint8
-	Options []uint64 `struc:"[16]uint64"`
+	WrkIndex uint32
+	Vrf      uint32
+	IsIP4    uint8
+	IP       []byte `struc:"[16]byte"`
+	Port     uint16
+	Proto    uint8
+	Options  []uint64 `struc:"[16]uint64"`
 }
 
 func (*BindSock) GetMessageName() string {
 	return "bind_sock"
 }
 func (*BindSock) GetCrcString() string {
-	return "6a6a40d0"
+	return "0394633f"
 }
 func (*BindSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1237,22 +1239,27 @@ func NewBindSock() api.Message {
 //                "context"
 //            ],
 //            [
+//                "u32",
+//                "wrk_index"
+//            ],
+//            [
 //                "u64",
 //                "handle"
 //            ],
 //            {
-//                "crc": "0x7279205b"
+//                "crc": "0x08880908"
 //            }
 //
 type UnbindSock struct {
-	Handle uint64
+	WrkIndex uint32
+	Handle   uint64
 }
 
 func (*UnbindSock) GetMessageName() string {
 	return "unbind_sock"
 }
 func (*UnbindSock) GetCrcString() string {
-	return "7279205b"
+	return "08880908"
 }
 func (*UnbindSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1262,7 +1269,7 @@ func NewUnbindSock() api.Message {
 }
 
 // UnbindSockReply represents the VPP binary API message 'unbind_sock_reply'.
-// Generated from 'session.api.json', line 709:
+// Generated from 'session.api.json', line 713:
 //
 //            "unbind_sock_reply",
 //            [
@@ -1299,7 +1306,7 @@ func NewUnbindSockReply() api.Message {
 }
 
 // ConnectSock represents the VPP binary API message 'connect_sock'.
-// Generated from 'session.api.json', line 727:
+// Generated from 'session.api.json', line 731:
 //
 //            "connect_sock",
 //            [
@@ -1313,6 +1320,10 @@ func NewUnbindSockReply() api.Message {
 //            [
 //                "u32",
 //                "context"
+//            ],
+//            [
+//                "u32",
+//                "wrk_index"
 //            ],
 //            [
 //                "u64",
@@ -1355,10 +1366,11 @@ func NewUnbindSockReply() api.Message {
 //                "hostname_len"
 //            ],
 //            {
-//                "crc": "0x02c6e3c3"
+//                "crc": "0xa916aa77"
 //            }
 //
 type ConnectSock struct {
+	WrkIndex           uint32
 	ClientQueueAddress uint64
 	Options            []uint64 `struc:"[16]uint64"`
 	Vrf                uint32
@@ -1374,7 +1386,7 @@ func (*ConnectSock) GetMessageName() string {
 	return "connect_sock"
 }
 func (*ConnectSock) GetCrcString() string {
-	return "02c6e3c3"
+	return "a916aa77"
 }
 func (*ConnectSock) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1384,7 +1396,7 @@ func NewConnectSock() api.Message {
 }
 
 // ConnectSockReply represents the VPP binary API message 'connect_sock_reply'.
-// Generated from 'session.api.json', line 785:
+// Generated from 'session.api.json', line 793:
 //
 //            "connect_sock_reply",
 //            [
@@ -1421,7 +1433,7 @@ func NewConnectSockReply() api.Message {
 }
 
 // BindSockReply represents the VPP binary API message 'bind_sock_reply'.
-// Generated from 'session.api.json', line 803:
+// Generated from 'session.api.json', line 811:
 //
 //            "bind_sock_reply",
 //            [
@@ -1510,7 +1522,7 @@ func NewBindSockReply() api.Message {
 }
 
 // ConnectSession represents the VPP binary API message 'connect_session'.
-// Generated from 'session.api.json', line 863:
+// Generated from 'session.api.json', line 871:
 //
 //            "connect_session",
 //            [
@@ -1545,7 +1557,7 @@ func NewConnectSession() api.Message {
 }
 
 // ConnectSessionReply represents the VPP binary API message 'connect_session_reply'.
-// Generated from 'session.api.json', line 881:
+// Generated from 'session.api.json', line 889:
 //
 //            "connect_session_reply",
 //            [
@@ -1639,7 +1651,7 @@ func NewConnectSessionReply() api.Message {
 }
 
 // AppCutThroughRegistrationAdd represents the VPP binary API message 'app_cut_through_registration_add'.
-// Generated from 'session.api.json', line 945:
+// Generated from 'session.api.json', line 953:
 //
 //            "app_cut_through_registration_add",
 //            [
@@ -1663,6 +1675,10 @@ func NewConnectSessionReply() api.Message {
 //                "peer_evt_q_address"
 //            ],
 //            [
+//                "u32",
+//                "wrk_index"
+//            ],
+//            [
 //                "u8",
 //                "n_fds"
 //            ],
@@ -1671,12 +1687,13 @@ func NewConnectSessionReply() api.Message {
 //                "fd_flags"
 //            ],
 //            {
-//                "crc": "0x75093c85"
+//                "crc": "0x6d73b1b9"
 //            }
 //
 type AppCutThroughRegistrationAdd struct {
 	EvtQAddress     uint64
 	PeerEvtQAddress uint64
+	WrkIndex        uint32
 	NFds            uint8
 	FdFlags         uint8
 }
@@ -1685,7 +1702,7 @@ func (*AppCutThroughRegistrationAdd) GetMessageName() string {
 	return "app_cut_through_registration_add"
 }
 func (*AppCutThroughRegistrationAdd) GetCrcString() string {
-	return "75093c85"
+	return "6d73b1b9"
 }
 func (*AppCutThroughRegistrationAdd) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1695,7 +1712,7 @@ func NewAppCutThroughRegistrationAdd() api.Message {
 }
 
 // AppCutThroughRegistrationAddReply represents the VPP binary API message 'app_cut_through_registration_add_reply'.
-// Generated from 'session.api.json', line 979:
+// Generated from 'session.api.json', line 991:
 //
 //            "app_cut_through_registration_add_reply",
 //            [
@@ -1731,8 +1748,132 @@ func NewAppCutThroughRegistrationAddReply() api.Message {
 	return &AppCutThroughRegistrationAddReply{}
 }
 
+// AppWorkerAddDel represents the VPP binary API message 'app_worker_add_del'.
+// Generated from 'session.api.json', line 1009:
+//
+//            "app_worker_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "app_api_index"
+//            ],
+//            [
+//                "u32",
+//                "wrk_index"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            {
+//                "crc": "0x8cd304f4"
+//            }
+//
+type AppWorkerAddDel struct {
+	AppAPIIndex uint32
+	WrkIndex    uint32
+	IsAdd       uint8
+}
+
+func (*AppWorkerAddDel) GetMessageName() string {
+	return "app_worker_add_del"
+}
+func (*AppWorkerAddDel) GetCrcString() string {
+	return "8cd304f4"
+}
+func (*AppWorkerAddDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func NewAppWorkerAddDel() api.Message {
+	return &AppWorkerAddDel{}
+}
+
+// AppWorkerAddDelReply represents the VPP binary API message 'app_worker_add_del_reply'.
+// Generated from 'session.api.json', line 1039:
+//
+//            "app_worker_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "wrk_index"
+//            ],
+//            [
+//                "u64",
+//                "app_event_queue_address"
+//            ],
+//            [
+//                "u8",
+//                "n_fds"
+//            ],
+//            [
+//                "u8",
+//                "fd_flags"
+//            ],
+//            [
+//                "u8",
+//                "segment_name_length"
+//            ],
+//            [
+//                "u8",
+//                "segment_name",
+//                128
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            {
+//                "crc": "0xd5297212"
+//            }
+//
+type AppWorkerAddDelReply struct {
+	Retval               int32
+	WrkIndex             uint32
+	AppEventQueueAddress uint64
+	NFds                 uint8
+	FdFlags              uint8
+	SegmentNameLength    uint8
+	SegmentName          []byte `struc:"[128]byte"`
+	IsAdd                uint8
+}
+
+func (*AppWorkerAddDelReply) GetMessageName() string {
+	return "app_worker_add_del_reply"
+}
+func (*AppWorkerAddDelReply) GetCrcString() string {
+	return "d5297212"
+}
+func (*AppWorkerAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func NewAppWorkerAddDelReply() api.Message {
+	return &AppWorkerAddDelReply{}
+}
+
 // SessionEnableDisable represents the VPP binary API message 'session_enable_disable'.
-// Generated from 'session.api.json', line 997:
+// Generated from 'session.api.json', line 1086:
 //
 //            "session_enable_disable",
 //            [
@@ -1773,7 +1914,7 @@ func NewSessionEnableDisable() api.Message {
 }
 
 // SessionEnableDisableReply represents the VPP binary API message 'session_enable_disable_reply'.
-// Generated from 'session.api.json', line 1019:
+// Generated from 'session.api.json', line 1108:
 //
 //            "session_enable_disable_reply",
 //            [
@@ -1810,7 +1951,7 @@ func NewSessionEnableDisableReply() api.Message {
 }
 
 // AppNamespaceAddDel represents the VPP binary API message 'app_namespace_add_del'.
-// Generated from 'session.api.json', line 1037:
+// Generated from 'session.api.json', line 1126:
 //
 //            "app_namespace_add_del",
 //            [
@@ -1877,7 +2018,7 @@ func NewAppNamespaceAddDel() api.Message {
 }
 
 // AppNamespaceAddDelReply represents the VPP binary API message 'app_namespace_add_del_reply'.
-// Generated from 'session.api.json', line 1080:
+// Generated from 'session.api.json', line 1169:
 //
 //            "app_namespace_add_del_reply",
 //            [
@@ -1919,7 +2060,7 @@ func NewAppNamespaceAddDelReply() api.Message {
 }
 
 // SessionRuleAddDel represents the VPP binary API message 'session_rule_add_del'.
-// Generated from 'session.api.json', line 1102:
+// Generated from 'session.api.json', line 1191:
 //
 //            "session_rule_add_del",
 //            [
@@ -2023,7 +2164,7 @@ func NewSessionRuleAddDel() api.Message {
 }
 
 // SessionRuleAddDelReply represents the VPP binary API message 'session_rule_add_del_reply'.
-// Generated from 'session.api.json', line 1175:
+// Generated from 'session.api.json', line 1264:
 //
 //            "session_rule_add_del_reply",
 //            [
@@ -2060,7 +2201,7 @@ func NewSessionRuleAddDelReply() api.Message {
 }
 
 // SessionRulesDump represents the VPP binary API message 'session_rules_dump'.
-// Generated from 'session.api.json', line 1193:
+// Generated from 'session.api.json', line 1282:
 //
 //            "session_rules_dump",
 //            [
@@ -2095,7 +2236,7 @@ func NewSessionRulesDump() api.Message {
 }
 
 // SessionRulesDetails represents the VPP binary API message 'session_rules_details'.
-// Generated from 'session.api.json', line 1211:
+// Generated from 'session.api.json', line 1300:
 //
 //            "session_rules_details",
 //            [
@@ -2196,6 +2337,7 @@ type Services interface {
 	AcceptSession(*AcceptSession) (*AcceptSessionReply, error)
 	AppCutThroughRegistrationAdd(*AppCutThroughRegistrationAdd) (*AppCutThroughRegistrationAddReply, error)
 	AppNamespaceAddDel(*AppNamespaceAddDel) (*AppNamespaceAddDelReply, error)
+	AppWorkerAddDel(*AppWorkerAddDel) (*AppWorkerAddDelReply, error)
 	ApplicationAttach(*ApplicationAttach) (*ApplicationAttachReply, error)
 	ApplicationDetach(*ApplicationDetach) (*ApplicationDetachReply, error)
 	ApplicationTLSCertAdd(*ApplicationTLSCertAdd) (*ApplicationTLSCertAddReply, error)
@@ -2250,6 +2392,8 @@ func init() {
 	api.RegisterMessage((*ConnectSessionReply)(nil), "session.ConnectSessionReply")
 	api.RegisterMessage((*AppCutThroughRegistrationAdd)(nil), "session.AppCutThroughRegistrationAdd")
 	api.RegisterMessage((*AppCutThroughRegistrationAddReply)(nil), "session.AppCutThroughRegistrationAddReply")
+	api.RegisterMessage((*AppWorkerAddDel)(nil), "session.AppWorkerAddDel")
+	api.RegisterMessage((*AppWorkerAddDelReply)(nil), "session.AppWorkerAddDelReply")
 	api.RegisterMessage((*SessionEnableDisable)(nil), "session.SessionEnableDisable")
 	api.RegisterMessage((*SessionEnableDisableReply)(nil), "session.SessionEnableDisableReply")
 	api.RegisterMessage((*AppNamespaceAddDel)(nil), "session.AppNamespaceAddDel")

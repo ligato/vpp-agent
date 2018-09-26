@@ -72,33 +72,33 @@ type MicroserviceCtx struct {
 }
 
 // HandleMicroservices handles microservice changes
-func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
+func (h *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 	var err error
 	var newest int64
 	var containers []docker.APIContainers
 	var nextCreated []string
 
 	// First check if any microservice has terminated.
-	plugin.cfgLock.Lock()
-	for container := range plugin.microServiceByID {
-		details, err := plugin.dockerClient.InspectContainer(container)
+	h.cfgLock.Lock()
+	for container := range h.microServiceByID {
+		details, err := h.dockerClient.InspectContainer(container)
 		if err != nil || !details.State.Running {
-			plugin.processTerminatedMicroservice(ctx.nsMgmtCtx, container)
+			h.processTerminatedMicroservice(ctx.nsMgmtCtx, container)
 		}
 	}
-	plugin.cfgLock.Unlock()
+	h.cfgLock.Unlock()
 
 	// Now check if previously created containers have transitioned to the state "running".
 	for _, container := range ctx.created {
-		details, err := plugin.dockerClient.InspectContainer(container)
+		details, err := h.dockerClient.InspectContainer(container)
 		if err == nil {
 			if details.State.Running {
-				plugin.detectMicroservice(ctx.nsMgmtCtx, details)
+				h.detectMicroservice(ctx.nsMgmtCtx, details)
 			} else if details.State.Status == "created" {
 				nextCreated = append(nextCreated, container)
 			}
 		} else {
-			plugin.log.Debugf("Inspect container ID %v failed: %v", container, err)
+			h.log.Debugf("Inspect container ID %v failed: %v", container, err)
 		}
 	}
 	ctx.created = nextCreated
@@ -112,33 +112,33 @@ func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 	if ctx.since != "" {
 		listOpts.Filters["since"] = []string{ctx.since}
 	}
-	containers, err = plugin.dockerClient.ListContainers(listOpts)
+	containers, err = h.dockerClient.ListContainers(listOpts)
 	if err != nil {
 		// If 'since' container was not found, list all containers (404 is required to support older docker version)
 		if dockerErr, ok := err.(*docker.Error); ok && (dockerErr.Status == 500 || dockerErr.Status == 404) {
 			// Reset filter and list containers again
-			plugin.log.Debug("clearing 'since' %s", ctx.since)
+			h.log.Debug("clearing 'since' %s", ctx.since)
 			ctx.since = ""
 			delete(listOpts.Filters, "since")
-			containers, err = plugin.dockerClient.ListContainers(listOpts)
+			containers, err = h.dockerClient.ListContainers(listOpts)
 		}
 		if err != nil {
 			// If there is other error, return it
-			plugin.log.Errorf("Error listing docker containers: %v", err)
+			h.log.Errorf("Error listing docker containers: %v", err)
 			return
 		}
 	}
 
 	for _, container := range containers {
-		plugin.log.Debugf("processing new container %v with state %v", container.ID, container.State)
+		h.log.Debugf("processing new container %v with state %v", container.ID, container.State)
 		if container.State == "running" && container.Created > ctx.lastInspected {
 			// Inspect the container to get the list of defined environment variables.
-			details, err := plugin.dockerClient.InspectContainer(container.ID)
+			details, err := h.dockerClient.InspectContainer(container.ID)
 			if err != nil {
-				plugin.log.Debugf("Inspect container %v failed: %v", container.ID, err)
+				h.log.Debugf("Inspect container %v failed: %v", container.ID, err)
 				continue
 			}
-			plugin.detectMicroservice(ctx.nsMgmtCtx, details)
+			h.detectMicroservice(ctx.nsMgmtCtx, details)
 		}
 		if container.State == "created" {
 			ctx.created = append(ctx.created, container.ID)
@@ -156,21 +156,21 @@ func (plugin *NsHandler) HandleMicroservices(ctx *MicroserviceCtx) {
 
 // detectMicroservice inspects container to see if it is a microservice.
 // If microservice is detected, processNewMicroservice() is called to process it.
-func (plugin *NsHandler) detectMicroservice(nsMgmtCtx *NamespaceMgmtCtx, container *docker.Container) {
+func (h *NsHandler) detectMicroservice(nsMgmtCtx *NamespaceMgmtCtx, container *docker.Container) {
 	// Search for the microservice label.
 	var label string
 	for _, env := range container.Config.Env {
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
-				plugin.log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
+				h.log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
 				last := microserviceContainerCreated[label]
 				if last.After(container.Created) {
-					plugin.log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
+					h.log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
 					continue
 				}
 				microserviceContainerCreated[label] = container.Created
-				plugin.processNewMicroservice(nsMgmtCtx, label, container.ID, container.State.Pid)
+				h.processNewMicroservice(nsMgmtCtx, label, container.ID, container.State.Pid)
 			}
 		}
 	}
@@ -178,26 +178,26 @@ func (plugin *NsHandler) detectMicroservice(nsMgmtCtx *NamespaceMgmtCtx, contain
 
 // processNewMicroservice is triggered every time a new microservice gets freshly started. All pending interfaces are moved
 // to its namespace.
-func (plugin *NsHandler) processNewMicroservice(nsMgmtCtx *NamespaceMgmtCtx, microserviceLabel string, id string, pid int) {
-	plugin.cfgLock.Lock()
-	defer plugin.cfgLock.Unlock()
+func (h *NsHandler) processNewMicroservice(nsMgmtCtx *NamespaceMgmtCtx, microserviceLabel string, id string, pid int) {
+	h.cfgLock.Lock()
+	defer h.cfgLock.Unlock()
 
-	microservice, restarted := plugin.microServiceByLabel[microserviceLabel]
+	microservice, restarted := h.microServiceByLabel[microserviceLabel]
 	if restarted {
-		plugin.processTerminatedMicroservice(nsMgmtCtx, microservice.ID)
-		plugin.log.WithFields(logging.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
+		h.processTerminatedMicroservice(nsMgmtCtx, microservice.ID)
+		h.log.WithFields(logging.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
 			Warn("Microservice has been restarted")
 	} else {
-		plugin.log.WithFields(logging.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
+		h.log.WithFields(logging.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
 			Debug("Discovered new microservice")
 	}
 
 	microservice = &Microservice{Label: microserviceLabel, PID: pid, ID: id}
-	plugin.microServiceByLabel[microserviceLabel] = microservice
-	plugin.microServiceByID[id] = microservice
+	h.microServiceByLabel[microserviceLabel] = microservice
+	h.microServiceByID[id] = microservice
 
 	// Send notification to interface configurator
-	plugin.ifMicroserviceNotif <- &MicroserviceEvent{
+	h.ifMicroserviceNotif <- &MicroserviceEvent{
 		Microservice: microservice,
 		EventType:    NewMicroservice,
 	}
@@ -205,32 +205,32 @@ func (plugin *NsHandler) processNewMicroservice(nsMgmtCtx *NamespaceMgmtCtx, mic
 
 // processTerminatedMicroservice is triggered every time a known microservice has terminated. All associated interfaces
 // become obsolete and are thus removed.
-func (plugin *NsHandler) processTerminatedMicroservice(nsMgmtCtx *NamespaceMgmtCtx, id string) {
-	microservice, exists := plugin.microServiceByID[id]
+func (h *NsHandler) processTerminatedMicroservice(nsMgmtCtx *NamespaceMgmtCtx, id string) {
+	microservice, exists := h.microServiceByID[id]
 	if !exists {
-		plugin.log.WithFields(logging.Fields{"id": id}).
+		h.log.WithFields(logging.Fields{"id": id}).
 			Warn("Detected removal of an unknown microservice")
 		return
 	}
-	plugin.log.WithFields(logging.Fields{"label": microservice.Label, "pid": microservice.PID, "id": microservice.ID}).
+	h.log.WithFields(logging.Fields{"label": microservice.Label, "pid": microservice.PID, "id": microservice.ID}).
 		Debug("Microservice has terminated")
 
-	delete(plugin.microServiceByLabel, microservice.Label)
-	delete(plugin.microServiceByID, microservice.ID)
+	delete(h.microServiceByLabel, microservice.Label)
+	delete(h.microServiceByID, microservice.ID)
 
 	// Send notification to interface configurator
-	plugin.ifMicroserviceNotif <- &MicroserviceEvent{
+	h.ifMicroserviceNotif <- &MicroserviceEvent{
 		Microservice: microservice,
 		EventType:    TerminatedMicroservice,
 	}
 }
 
 // trackMicroservices is running in the background and maintains a map of microservice labels to container info.
-func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
-	plugin.wg.Add(1)
+func (h *NsHandler) trackMicroservices(ctx context.Context) {
+	h.wg.Add(1)
 	defer func() {
-		plugin.wg.Done()
-		plugin.log.Debugf("Microservice tracking ended")
+		h.wg.Done()
+		h.log.Debugf("Microservice tracking ended")
 	}()
 
 	msCtx := &MicroserviceCtx{
@@ -243,9 +243,9 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 	for {
 		select {
 		case <-timer.C:
-			if err := plugin.dockerClient.Ping(); err != nil {
+			if err := h.dockerClient.Ping(); err != nil {
 				if clientOk {
-					plugin.log.Errorf("Docker ping check failed: %v", err)
+					h.log.Errorf("Docker ping check failed: %v", err)
 				}
 				clientOk = false
 
@@ -255,7 +255,7 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 			}
 
 			if !clientOk {
-				plugin.log.Infof("Docker ping check OK")
+				h.log.Infof("Docker ping check OK")
 				/*if info, err := plugin.dockerClient.Info(); err != nil {
 					plugin.Log.Errorf("Retrieving docker info failed: %v", err)
 					timer.Reset(dockerRetryPeriod)
@@ -268,14 +268,14 @@ func (plugin *NsHandler) trackMicroservices(ctx context.Context) {
 			clientOk = true
 
 			select {
-			case plugin.microserviceChan <- msCtx:
-			case <-plugin.ctx.Done():
+			case h.microserviceChan <- msCtx:
+			case <-h.ctx.Done():
 				return
 			}
 
 			// Sleep before another refresh.
 			timer.Reset(dockerRefreshPeriod)
-		case <-plugin.ctx.Done():
+		case <-h.ctx.Done():
 			return
 		}
 	}

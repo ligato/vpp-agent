@@ -17,7 +17,6 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
@@ -97,7 +96,6 @@ type IPNeighVppAPI interface {
 
 // ArpVppHandler is accessor for ARP-related vppcalls methods
 type ArpVppHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
@@ -105,7 +103,6 @@ type ArpVppHandler struct {
 
 // ProxyArpVppHandler is accessor for proxy ARP-related vppcalls methods
 type ProxyArpVppHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
@@ -113,7 +110,6 @@ type ProxyArpVppHandler struct {
 
 // RouteHandler is accessor for route-related vppcalls methods
 type RouteHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
@@ -121,46 +117,41 @@ type RouteHandler struct {
 
 // IPNeighHandler is accessor for ip-neighbor-related vppcalls methods
 type IPNeighHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	log          logging.Logger
 }
 
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
-func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *ArpVppHandler {
+func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *ArpVppHandler {
 	return &ArpVppHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 }
 
 // NewProxyArpVppHandler creates new instance of proxy ARP vppcalls handler
-func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *ProxyArpVppHandler {
+func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *ProxyArpVppHandler {
 	return &ProxyArpVppHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 }
 
 // NewRouteVppHandler creates new instance of route vppcalls handler
-func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *RouteHandler {
+func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *RouteHandler {
 	return &RouteHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 }
 
 // NewIPNeighVppHandler creates new instance of ip neighbor vppcalls handler
-func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *IPNeighHandler {
+func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNeighHandler {
 	return &IPNeighHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		log:          log,
 	}
 }

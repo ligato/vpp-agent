@@ -18,6 +18,7 @@ import "github.com/lunixbochs/struc"
 import "bytes"
 
 // Reference imports to suppress errors if they are not otherwise used.
+var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
 

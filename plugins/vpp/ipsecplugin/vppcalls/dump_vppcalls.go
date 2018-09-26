@@ -15,12 +15,10 @@
 package vppcalls
 
 import (
-	"net"
-	"strconv"
-	"time"
-
 	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	"net"
+	"strconv"
 )
 
 // IPSecSaDetails holds security association with VPP metadata
@@ -44,17 +42,13 @@ type IPSecSaMeta struct {
 }
 
 // DumpIPSecSA implements IPSec handler.
-func (handler *IPSecVppHandler) DumpIPSecSA() (saList []*IPSecSaDetails, err error) {
-	return handler.DumpIPSecSAWithIndex(^uint32(0)) // Get everything
+func (h *IPSecVppHandler) DumpIPSecSA() (saList []*IPSecSaDetails, err error) {
+	return h.DumpIPSecSAWithIndex(^uint32(0)) // Get everything
 }
 
 // DumpIPSecSAWithIndex implements IPSec handler.
-func (handler *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ipsecapi.IpsecSaDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	saDetails, err := handler.dumpSecurityAssociations(saID)
+func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error) {
+	saDetails, err := h.dumpSecurityAssociations(saID)
 	if err != nil {
 		return nil, err
 	}
@@ -120,12 +114,8 @@ type IPSecTunnelMeta struct {
 }
 
 // DumpIPSecTunnelInterfaces implements IPSec handler.
-func (handler *IPSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ipsecapi.IpsecSaDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	saDetails, err := handler.dumpSecurityAssociations(^uint32(0))
+func (h *IPSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error) {
+	saDetails, err := h.dumpSecurityAssociations(^uint32(0))
 	if err != nil {
 		return nil, err
 	}
@@ -137,13 +127,13 @@ func (handler *IPSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelI
 		}
 
 		// Interface
-		ifName, ifData, found := handler.ifIndexes.LookupName(saData.SwIfIndex)
+		ifName, ifData, found := h.ifIndexes.LookupName(saData.SwIfIndex)
 		if !found {
-			handler.log.Warnf("IPSec SA dump: interface name not found for %d", saData.SwIfIndex)
+			h.log.Warnf("IPSec SA dump: interface name not found for %d", saData.SwIfIndex)
 			continue
 		}
 		if ifData == nil {
-			handler.log.Warnf("IPSec SA dump: interface %s has no metadata", ifName)
+			h.log.Warnf("IPSec SA dump: interface %s has no metadata", ifName)
 			continue
 		}
 
@@ -204,19 +194,15 @@ type SpdMeta struct {
 }
 
 // DumpIPSecSPD implements IPSec handler.
-func (handler *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ipsecapi.IpsecSpdDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error) {
 	metadata := &IPSecSpdMeta{
 		SpdMeta: make(map[string]*SpdMeta),
 	}
 
 	// TODO IPSec SPD dump request requires SPD ID, otherwise it returns nothing. There is currently no way
 	// to dump all SPDs available on the VPP, so let's dump at least the ones configurator knows about.
-	for _, spdName := range handler.spdIndexes.GetMapping().ListNames() {
-		spdIdx, _, found := handler.spdIndexes.LookupIdx(spdName)
+	for _, spdName := range h.spdIndexes.GetMapping().ListNames() {
+		spdIdx, _, found := h.spdIndexes.LookupIdx(spdName)
 		if !found {
 			// Shouldn't happen, call the police or something
 			continue
@@ -228,7 +214,7 @@ func (handler *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err 
 			SpdID: spdIdx,
 			SaID:  ^uint32(0),
 		}
-		requestCtx := handler.callsChannel.SendMultiRequest(req)
+		requestCtx := h.callsChannel.SendMultiRequest(req)
 
 		// Policy association index, used to generate SA name
 		var paIdx int
@@ -299,15 +285,11 @@ func (handler *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err 
 }
 
 // Get all security association (used also for tunnel interfaces) in binary api format
-func (handler *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*ipsecapi.IpsecSaDetails, err error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ipsecapi.IpsecSaDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*ipsecapi.IpsecSaDetails, err error) {
 	req := &ipsecapi.IpsecSaDump{
 		SaID: saID,
 	}
-	requestCtx := handler.callsChannel.SendMultiRequest(req)
+	requestCtx := h.callsChannel.SendMultiRequest(req)
 
 	for {
 		saDetails := &ipsecapi.IpsecSaDetails{}

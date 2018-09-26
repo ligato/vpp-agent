@@ -8,13 +8,16 @@ Open_Ssh_Connection_Kube
     [Documentation]    Create SSH connection to \{ip} aliased as \${name} and log in using \${user} and \${pswd} (or rsa).
     ...    Log to output file. The new connection is left active.
     BuiltIn.Log_Many    ${name}    ${ip}    ${user}    ${pswd}
+    ${time} =    DateTime.Get_Current_Date
     ${connection}=    Open Connection    ${ip}    alias=${name}    timeout=${SSH_TIMEOUT}
     #${out} =    BuiltIn.Run_Keyword_If    """${pswd}""" != "rsa_id"    SSHLibrary.Login    ${user}    ${pswd}
     #${out2} =    BuiltIn.Run_Keyword_If    """${pswd}""" == "rsa_id"    SSHLibrary.Login_With_Public_Key    ${user}    %{HOME}/.ssh/id_rsa    any
+    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${name}.log    ${time}${\n}*** Command: Login${\n}
     ${out} =    BuiltIn.Run_Keyword_If    """${pswd}""" != "rsa_id"     Login    ${user}    ${pswd}
     ${out2} =    BuiltIn.Run_Keyword_If    """${pswd}""" == "rsa_id"    SSHLibrary.Login_With_Public_Key    ${user}    %{HOME}/.ssh/id_rsa    any
-    BuiltIn.Run_Keyword_If    """${out}""" != "None"    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${name}.log    *** Command: Login${\n}${out}${\n}
-    BuiltIn.Run_Keyword_If    """${out2}""" != "None"    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${name}.log    *** Command: Login${\n}${out2}${\n}
+    ${time} =    DateTime.Get_Current_Date
+    BuiltIn.Run_Keyword_If    """${out}""" != "None"    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${name}.log    ${time}${\n}*** Response1: ${out}${\n}
+    BuiltIn.Run_Keyword_If    """${out2}""" != "None"    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${name}.log    ${time}${\n}*** Response2: {out2}${\n}
     [Return]    ${connection}
 
 Switch_And_Execute_With_Copied_File
@@ -95,10 +98,13 @@ Append_Command_Log
     Builtin.Log_Many    ${command}    ${output}    ${stderr}    ${rc}
     ${connection} =    SSHLibrary.Get_Connection
     ${time} =    DateTime.Get_Current_Date
+    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${connection.alias}.log    ${time}${\n}*** Command: ${command}${\n}
+    OperatingSystem.Append_To_File    ${RESULTS_FOLDER_SUITE}/output_${connection.alias}.log    ${time}${\n}*** Command: ${command}${\n}
     ${output_length} =    BuiltIn.Get_Length    ${output}
     ${if_output} =    BuiltIn.Set_Variable_If    ${output_length}    ${output}${\n}    ${EMPTY}
     ${stderr_length} =    Builtin.Get_Length    ${stderr}
     ${if_stderr} =    BuiltIn.Set_Variable_If    ${stderr_length}    *** Stderr: ${stderr}${\n}    ${EMPTY}
     ${if_rc} =    BuiltIn.Set_Variable_If    """${rc}"""    *** Return code: ${rc}${\n}    ${EMPTY}
-    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${connection.alias}.log    ${time}${\n}*** Command: ${command}${\n}${if_stderr}${if_rc}${if_output}
-    OperatingSystem.Append_To_File    ${RESULTS_FOLDER_SUITE}/output_${connection.alias}.log    ${time}${\n}*** Command: ${command}${\n}${if_stderr}${if_rc}${if_output}
+    ${time} =    DateTime.Get_Current_Date
+    OperatingSystem.Append_To_File    ${RESULTS_FOLDER}/output_${connection.alias}.log    ${time}${\n}*** Response: ${if_stderr}${if_rc}${if_output}
+    OperatingSystem.Append_To_File    ${RESULTS_FOLDER_SUITE}/output_${connection.alias}.log    ${time}${\n}*** Response: ${if_stderr}${if_rc}${if_output}

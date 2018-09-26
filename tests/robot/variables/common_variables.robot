@@ -19,7 +19,7 @@ ${KAFKA_SERVER_CREATE}             ${DOCKER_COMMAND} create -it -p 2181:2181 -p 
 ${KAFKA_SERVER_DESTROY}            ${DOCKER_COMMAND} rm -f kafka
 
 #${SFC_CONTROLLER_IMAGE_NAME}       containers.cisco.com/odpm_jenkins_gen/dev_sfc_controller:master
-${SFC_CONTROLLER_IMAGE_NAME}       ligato/prod_sfc_controller
+${SFC_CONTROLLER_IMAGE_NAME}       ligato/dev_sfc_controller
 ${SFC_CONTROLLER_CONF_PATH}        /opt/sfc-controller/dev/sfc.conf
 
 # Variables for container with agent and VPP
@@ -128,7 +128,7 @@ ${RESULTS_FOLDER}                  results
 ${RESULTS_FOLDER_SUITE}            ${RESULTS_FOLDER}/${SUITE_NAME}
 ${TEST_DATA_FOLDER}                test_data
 ${REST_CALL_SLEEP}                 0
-${SSH_READ_DELAY}                  6
+${SSH_READ_DELAY}                  1
 
 ${EXAMPLE_PLUGIN_NAME}             example_plugin.so
 

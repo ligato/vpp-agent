@@ -25,9 +25,9 @@ curl GET http://0.0.0.0:9191/vpp/dump/v1/acl/ip
 curl GET http://0.0.0.0:9191/vpp/dump/v1/acl/macip 
 ```
 
-**Interfaces**
+**VPP Interfaces**
 
-REST plugin exposes configured interfaces, which can be show all together, or only interfaces
+REST plugin exposes configured VPP interfaces, which can be show all together, or only interfaces
 of specific type.
  
 ```
@@ -39,6 +39,15 @@ curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/tap
 curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/vxlan
 curl GET http://0.0.0.0:9191/vpp/dump/v1/interfaces/afpacket
 ``` 
+ 
+**Linux Interfaces**
+
+REST plugin exposes configured Linux interfaces. All configured interfaces are dumped, together
+with all interfaces in default namespace 
+
+```
+curl GET https://0.0.0.0:9191/linux/dump/v1/interfaces
+```
  
 **BFD**
 
@@ -91,6 +100,15 @@ curl GET http://0.0.0.0:9191/vpp/dump/v1/arps
 curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp/interfaces
 curl GET http://0.0.0.0:9191/vpp/dump/v1/proxyarp/ranges
 curl GET http://0.0.0.0:9191/vpp/dump/v1/routes
+```
+
+**Linux L3 plugin**
+
+Linux ARP and linux routes exposed via REST:
+
+```
+curl GET http://0.0.0.0:9191/linux/dump/v1/arps
+curl GET http://0.0.0.0:9191/linux/dump/v1/routes
 ```
 
 **L4 plugin**

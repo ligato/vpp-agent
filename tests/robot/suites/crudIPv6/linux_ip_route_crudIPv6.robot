@@ -159,16 +159,13 @@ Start VPP1 Again
 
 Check Linux Interfaces On VPP1 After Resync
     ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns1 ip a
-    Log    ${out}
     Should Contain    ${out}    ns1_veth1_linux
 
     ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns2 ip a
-    Log    ${out}
     Should Contain    ${out}    ns2_veth2_linux
     Should Contain    ${out}    ns2_veth3_linux
 
     ${out}=    Execute In Container    agent_vpp_1    ip netns exec ns3 ip a
-    Log    ${out}
     Should Contain    ${out}    ns3_veth3_linux
 
 Check linux Routes On VPP1 After Resync
@@ -185,50 +182,38 @@ Check linux Routes On VPP1 After Resync
 *** Keywords ***
 Check Linux Interfaces
     [Arguments]    ${node}    ${namespace}    ${interface}
-    Log Many    ${node}    ${namespace}    ${interface}
     ${out}=    Execute In Container    ${node}    ip netns exec ${namespace} ip a
-    Log    ${out}
     Should Contain    ${out}    ${interface}
 
 Check Linux Routes
     [Arguments]    ${node}    ${namespace}    ${ip}
-    Log Many    ${node}    ${namespace}
     ${out}=    Execute In Container    ${node}    ip netns exec ${namespace} ip route show
-    Log    ${out}
     Should Contain    ${out}    ${ip} via
 
 Check Linux Routes Gateway
     [Arguments]    ${node}    ${namespace}    ${ip}    ${next_hop}=${EMPTY}
-    Log Many    ${node}    ${namespace}
     ${out}=    Execute In Container    ${node}    ip netns exec ${namespace} ip route show
-    Log    ${out}
     Should Contain    ${out}    ${ip} via ${next_hop}
 
 Check Linux Routes Metric
     [Arguments]    ${node}    ${namespace}    ${ip}    ${metric}
-    Log Many    ${node}    ${namespace}
     ${out}=    Execute In Container    ${node}    ip netns exec ${namespace} ip route show
-    Log    ${out}
     Should Match Regexp    ${out}    ${ip} via.*metric ${metric}\\s
 
 Check Removed Linux Route
     [Arguments]    ${node}    ${namespace}    ${ip}
-    Log Many    ${node}    ${namespace}
     ${out}=    Execute In Container    ${node}    ip netns exec ${namespace} ip route show
-    Log    ${out}
     Should Not Contain    ${out}    ${ip} via
 
 Ping in namespace
     [Arguments]    ${node}    ${namespace}    ${ip}
     ${out}=    Execute In Container    ${node}    ip netns exec ${namespace} ping -c 5 ${ip}
-    Log    ${out}
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 
 Ping6 in namespace
     [Arguments]    ${node}    ${namespace}    ${ip}
     ${out}=    Execute In Container    ${node}    ip netns exec ${namespace} ping6 -c 5 ${ip}
-    Log    ${out}
     Should Contain     ${out}    from ${ip}
     Should Not Contain    ${out}    100% packet loss
 

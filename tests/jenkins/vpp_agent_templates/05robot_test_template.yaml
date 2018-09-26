@@ -1,0 +1,39 @@
+- job-template:
+    description: |-
+      <!-- Managed by Jenkins Job Builder -->
+      {path_to_test}
+
+      This job run on Jenkins master 147.75.83.101 in container jenkins/jenkins:lts.
+      But it runs script on ARM64-node ({arm64_node}) via ssh...
+      Prepared by scripts in container jenkins/jenkins:lts folder /etc/jenkins_jobs/jobs5...
+      Then updeted by command: jenkins-jobs update --delete-old jobs5\n
+    builders:
+    - shell: |-
+        head -n1 /root/vpp-agent/CHANGELOG.md    
+        pybot -v VARIABLES:{local_variables_file} {path_to_test}
+        rm -f /var/jenkins_home/results/{name_of_test}_output.xml
+        rm -f /var/jenkins_home/results/{name_of_test}_log.html
+        rm -f /var/jenkins_home/results/{name_of_test}_report.html
+        ln -s /var/jenkins_home/workspace/05{inode_of_folder}_{name_of_test}_job/log.html /var/jenkins_home/results/{name_of_test}_log.html
+        ln -s /var/jenkins_home/workspace/05{inode_of_folder}_{name_of_test}_job/output.xml /var/jenkins_home/results/{name_of_test}_output.xml
+        ln -s /var/jenkins_home/workspace/05{inode_of_folder}_{name_of_test}_job/report.html /var/jenkins_home/results/{name_of_test}_report.html
+    name: '05{inode_of_folder}_{name_of_test}_job'
+    node: PrepareLigatoTestConfig
+    project-type: freestyle
+    publishers:
+    - raw:
+        xml: |
+          <hudson.plugins.robot.RobotPublisher plugin="robot@1.6.4">
+          <outputPath>./</outputPath>
+          <reportFileName>report.html</reportFileName>
+          <logFileName>log.html</logFileName>
+          <outputFileName>output.xml</outputFileName>
+          <disableArchiveOutput>false</disableArchiveOutput>
+          <passThreshold>0.0</passThreshold>
+          <unstableThreshold>0.0</unstableThreshold>
+          <otherFiles>
+          <string />
+          </otherFiles>
+          <enableCache>true</enableCache>
+          <onlyCritical>true</onlyCritical>
+          </hudson.plugins.robot.RobotPublisher>

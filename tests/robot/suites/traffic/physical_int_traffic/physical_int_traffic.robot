@@ -59,14 +59,12 @@ Setup Interfaces
  
 Check Linux Interfaces On VPP1
     ${out}=    Execute In Container    agent_vpp_1    ip a
-    Log    ${out}
     Should Contain    ${out}    vpp1_veth2@vpp1_veth1
     Should Contain    ${out}    vpp1_veth1@vpp1_veth2
     Should Contain    ${out}    linux_vpp1_tap1
 
 Check Interfaces On VPP1
     ${out}=    vpp_term: Show Interfaces    agent_vpp_1
-    Log    ${out}
 #    ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_memif1
 #    Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_afpacket1
@@ -82,14 +80,12 @@ Check Interfaces On VPP1
 
 Check Linux Interfaces On VPP2
     ${out}=    Execute In Container    agent_vpp_2    ip a
-    Log    ${out}
     Should Contain    ${out}    vpp2_veth2@vpp2_veth1
     Should Contain    ${out}    vpp2_veth1@vpp2_veth2
     Should Contain    ${out}    linux_vpp2_tap1            
 
 Check Interfaces On VPP2
     ${out}=    vpp_term: Show Interfaces    agent_vpp_2
-    Log    ${out}
 #   ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_memif1
 #    Should Contain    ${out}    ${int}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_afpacket1

@@ -81,20 +81,32 @@ func (plugin *Plugin) onChangeEvent(e datasync.ChangeEvent) {
 
 func (plugin *Plugin) onLinuxIfaceEvent(e ifaceidx.LinuxIfIndexDto) {
 	if e.IsDelete() {
-		plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
-		plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx)
+		if err := plugin.arpConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.arpConfigurator.LogError(err)
+		}
+		if err := plugin.routeConfigurator.ResolveDeletedInterface(e.Name, e.Idx); err != nil {
+			plugin.routeConfigurator.LogError(err)
+		}
 	} else {
-		plugin.arpConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
-		plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx)
+		if err := plugin.arpConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.arpConfigurator.LogError(err)
+		}
+		if err := plugin.routeConfigurator.ResolveCreatedInterface(e.Name, e.Idx); err != nil {
+			plugin.routeConfigurator.LogError(err)
+		}
 	}
 	e.Done()
 }
 
 func (plugin *Plugin) onVppIfaceEvent(e ifaceVPP.SwIfIdxDto) {
 	if e.IsDelete() {
-		plugin.ifConfigurator.ResolveDeletedVPPInterface(e.Metadata)
+		if err := plugin.ifConfigurator.ResolveDeletedVPPInterface(e.Metadata); err != nil {
+			plugin.ifConfigurator.LogError(err)
+		}
 	} else {
-		plugin.ifConfigurator.ResolveCreatedVPPInterface(e.Metadata)
+		if err := plugin.ifConfigurator.ResolveCreatedVPPInterface(e.Metadata); err != nil {
+			plugin.ifConfigurator.LogError(err)
+		}
 	}
 	e.Done()
 }

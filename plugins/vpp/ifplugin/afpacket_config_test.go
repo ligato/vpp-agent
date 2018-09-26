@@ -338,7 +338,8 @@ func TestAfPacketNewLinuxInterfaceHostFound(t *testing.T) {
 	_, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
 	Expect(pending).To(BeTrue())
-	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	config, err := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	Expect(err).To(BeNil())
 	Expect(config).ToNot(BeNil())
 	Expect(config.Afpacket.HostIfName).To(BeEquivalentTo("host1"))
 	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeTrue())
@@ -364,7 +365,8 @@ func TestAfPacketNewLinuxInterfaceHostNotPending(t *testing.T) {
 	_, pending, err := plugin.ConfigureAfPacketInterface(data)
 	Expect(err).To(BeNil())
 	Expect(pending).To(BeFalse())
-	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	config, err := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	Expect(err).To(BeNil())
 	Expect(config).ToNot(BeNil())
 	Expect(config.Afpacket.HostIfName).To(BeEquivalentTo("host1"))
 	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeTrue())
@@ -378,7 +380,8 @@ func TestAfPacketNewLinuxInterfaceHostNotFound(t *testing.T) {
 	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeFalse())
 
 	// Test registered linux interface
-	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	config, err := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	Expect(err).To(BeNil())
 	Expect(config).To(BeNil())
 	Expect(plugin.GetHostInterfacesEntry("host1")).To(BeTrue())
 }
@@ -395,11 +398,12 @@ func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log)
 	err := plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Test registered linux interface
-	config := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	config, err := plugin.ResolveCreatedLinuxInterface("host1", "host1", 1)
+	Expect(err).To(BeNil())
 	Expect(config).To(BeNil())
 }
 
@@ -452,7 +456,7 @@ func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log)
 	err := plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Prepare
@@ -506,7 +510,7 @@ func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.AFPacketCo
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log)
 	err := plugin.Init(log, ifHandler, struct{}{}, swIfIndices)
 	Expect(err).To(BeNil())
 

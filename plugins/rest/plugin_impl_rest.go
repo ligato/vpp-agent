@@ -18,11 +18,15 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ligato/vpp-agent/plugins/linux"
+
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/rest/resturl"
 	"github.com/ligato/vpp-agent/plugins/vpp"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
@@ -50,7 +54,7 @@ type Plugin struct {
 	vppChan  api.Channel
 	dumpChan api.Channel
 
-	// Handlers
+	// VPP Handlers
 	aclHandler   aclvppcalls.ACLVppRead
 	ifHandler    ifvppcalls.IfVppRead
 	bfdHandler   ifvppcalls.BfdVppRead
@@ -64,6 +68,9 @@ type Plugin struct {
 	pArpHandler  l3vppcalls.ProxyArpVppRead
 	rtHandler    l3vppcalls.RouteVppRead
 	l4Handler    l4vppcalls.L4VppRead
+	// Linux handlers
+	linuxIfHandler iflinuxcalls.NetlinkAPI
+	linuxL3Handler l3linuxcalls.NetlinkAPI
 
 	govppmux sync.Mutex
 }
@@ -72,8 +79,9 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
-	GoVppmux     govppmux.API
+	GoVppmux     govppmux.TraceAPI
 	VPP          vpp.API
+	Linux        linux.API
 }
 
 // index defines map of main index page entries
@@ -100,25 +108,34 @@ func (plugin *Plugin) Init() (err error) {
 	if plugin.dumpChan, err = plugin.GoVppmux.NewAPIChannel(); err != nil {
 		return err
 	}
-	// Indexes
+	// VPP Indexes
 	ifIndexes := plugin.VPP.GetSwIfIndexes()
 	bdIndexes := plugin.VPP.GetBDIndexes()
 	spdIndexes := plugin.VPP.GetIPSecSPDIndexes()
-
-	// Initialize handlers
-	plugin.aclHandler = aclvppcalls.NewACLVppHandler(plugin.vppChan, plugin.dumpChan, nil)
-	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.Log, nil)
-	plugin.bfdHandler = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.natHandler = ifvppcalls.NewNatVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, plugin.Log, nil)
-	plugin.stnHandler = ifvppcalls.NewStnVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log, nil)
-	plugin.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.fibHandler = l2vppcalls.NewFibVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, bdIndexes, plugin.Log, nil)
-	plugin.xcHandler = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.arpHandler = l3vppcalls.NewArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.pArpHandler = l3vppcalls.NewProxyArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.rtHandler = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log, nil)
-	plugin.l4Handler = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log, nil)
+	// Initialize VPP handlers
+	plugin.aclHandler = aclvppcalls.NewACLVppHandler(plugin.vppChan, plugin.dumpChan)
+	plugin.ifHandler = ifvppcalls.NewIfVppHandler(plugin.vppChan, plugin.Log)
+	plugin.bfdHandler = ifvppcalls.NewBfdVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.natHandler = ifvppcalls.NewNatVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, plugin.Log)
+	plugin.stnHandler = ifvppcalls.NewStnVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(plugin.vppChan, ifIndexes, spdIndexes, plugin.Log)
+	plugin.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.fibHandler = l2vppcalls.NewFibVppHandler(plugin.vppChan, plugin.dumpChan, ifIndexes, bdIndexes, plugin.Log)
+	plugin.xcHandler = l2vppcalls.NewXConnectVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.arpHandler = l3vppcalls.NewArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.pArpHandler = l3vppcalls.NewProxyArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.rtHandler = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
+	plugin.l4Handler = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log)
+	// Linux indexes and handlers
+	if plugin.Linux != nil {
+		linuxIfIndexes := plugin.Linux.GetLinuxIfIndexes()
+		linuxArpIndexes := plugin.Linux.GetLinuxARPIndexes()
+		linuxRtIndexes := plugin.Linux.GetLinuxRouteIndexes()
+		// Initialize Linux handlers
+		linuxNsHandler := plugin.Linux.GetNamespaceHandler()
+		plugin.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, plugin.Log)
+		plugin.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRtIndexes, plugin.Log)
+	}
 
 	// Fill index item lists
 	idxMap := map[string][]indexItem{
@@ -161,6 +178,9 @@ func (plugin *Plugin) Init() (err error) {
 			{Name: "Runtime", Path: resturl.TRuntime},
 			{Name: "Node count", Path: resturl.TNodeCount},
 		},
+		"Tracer": {
+			{Name: "Binary API", Path: resturl.Tracer},
+		},
 	}
 
 	plugin.index = &index{
@@ -174,6 +194,7 @@ func (plugin *Plugin) Init() (err error) {
 func (plugin *Plugin) AfterInit() (err error) {
 	plugin.Log.Debug("REST API Plugin is up and running")
 
+	// VPP handlers
 	plugin.registerAccessListHandlers()
 	plugin.registerInterfaceHandlers()
 	plugin.registerBfdHandlers()
@@ -183,6 +204,13 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerL2Handlers()
 	plugin.registerL3Handlers()
 	plugin.registerL4Handlers()
+	// Linux handlers
+	if plugin.Linux != nil {
+		plugin.registerLinuxInterfaceHandlers()
+		plugin.registerLinuxL3Handlers()
+	}
+	// Telemetry, command, index, tracer
+	plugin.registerTracerHandler()
 	plugin.registerTelemetryHandlers()
 	plugin.registerCommandHandler()
 	plugin.registerIndexHandlers()

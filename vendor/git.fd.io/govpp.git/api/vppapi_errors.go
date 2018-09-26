@@ -5,16 +5,26 @@ import (
 	"strconv"
 )
 
+// RetvalToVPPApiError returns error for retval value.
+// Retval 0 returns nil error.
+func RetvalToVPPApiError(retval int32) error {
+	if retval == 0 {
+		return nil
+	}
+	return VPPApiError(retval)
+}
+
 // VPPApiError represents VPP's vnet API error that is usually
 // returned as Retval field in replies from VPP binary API.
 type VPPApiError int32
 
 func (e VPPApiError) Error() string {
+	errid := int64(e)
 	var errstr string
 	if s, ok := vppApiErrors[e]; ok {
-		errstr = s
+		errstr = fmt.Sprintf("%s (%d)", s, errid)
 	} else {
-		errstr = strconv.Itoa(int(e))
+		errstr = strconv.FormatInt(errid, 10)
 	}
 	return fmt.Sprintf("VPPApiError: %s", errstr)
 }

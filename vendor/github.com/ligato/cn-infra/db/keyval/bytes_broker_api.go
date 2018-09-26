@@ -35,6 +35,22 @@ type BytesBroker interface {
 	Delete(key string, opts ...datasync.DelOption) (existed bool, err error)
 }
 
+// BytesTxn allows to group operations into the transaction.
+// Transaction executes multiple operations in a more efficient way in contrast
+// to executing them one by one.
+type BytesTxn interface {
+	// Put adds put operation (write raw <data> under the given <key>) into
+	// the transaction.
+	Put(key string, data []byte) BytesTxn
+	// Delete adds delete operation (removal of <data> under the given <key>)
+	// into the transaction.
+	Delete(key string) BytesTxn
+	// Commit tries to execute all the operations of the transaction.
+	// In the end, either all of them have been successfully applied or none
+	// of them and an error is returned.
+	Commit() error
+}
+
 // BytesKvPair groups getters for a key-value pair.
 type BytesKvPair interface {
 	// GetValue returns the value of the pair.

@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -45,9 +44,10 @@ type Plugin struct {
 	disabled bool
 
 	// Configurators
-	ifConfigurator    *ifplugin.LinuxInterfaceConfigurator
-	arpConfigurator   *l3plugin.LinuxArpConfigurator
-	routeConfigurator *l3plugin.LinuxRouteConfigurator
+	ifConfigurator      *ifplugin.LinuxInterfaceConfigurator
+	ifLinuxStateUpdater *ifplugin.LinuxInterfaceStateUpdater
+	arpConfigurator     *l3plugin.LinuxArpConfigurator
+	routeConfigurator   *l3plugin.LinuxRouteConfigurator
 
 	// Shared indexes
 	ifIndexes    ifaceidx.LinuxIfIndexRW
@@ -60,6 +60,7 @@ type Plugin struct {
 	// Channels (watch, notification, ...) which should be closed
 	ifIndexesWatchChan    chan ifaceidx.LinuxIfIndexDto
 	vppIfIndexesWatchChan chan ifaceVPP.SwIfIdxDto
+	ifLinuxNotifChan      chan *ifplugin.LinuxInterfaceStateNotification
 	ifMicroserviceNotif   chan *nsplugin.MicroserviceEvent
 	resyncChan            chan datasync.ResyncEvent
 	changeChan            chan datasync.ChangeEvent // TODO dedicated type abstracted from ETCD
@@ -67,9 +68,6 @@ type Plugin struct {
 
 	// Registrations
 	watchDataReg datasync.WatchRegistration
-
-	// From config file
-	stopwatch *measure.Stopwatch
 
 	// Common
 	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
@@ -112,6 +110,11 @@ func (plugin *Plugin) GetLinuxRouteIndexes() l3idx.LinuxRouteIndex {
 	return plugin.routeConfigurator.GetRouteIndexes()
 }
 
+// GetNamespaceHandler gives access to namespace API which allows plugins to manipulate with linux namespaces
+func (plugin *Plugin) GetNamespaceHandler() nsplugin.NamespaceAPI {
+	return plugin.nsHandler
+}
+
 // InjectVppIfIndexes injects VPP interfaces mapping into Linux plugin
 func (plugin *Plugin) InjectVppIfIndexes(indexes ifaceVPP.SwIfIndex) {
 	plugin.vppIfIndexes = indexes
@@ -131,12 +134,6 @@ func (plugin *Plugin) Init() error {
 			plugin.disabled = true
 			plugin.Log.Infof("Disabling Linux plugin")
 			return nil
-		}
-		if config.Stopwatch {
-			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
-			plugin.stopwatch = measure.NewStopwatch("LinuxPlugin", plugin.Log)
-		} else {
-			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
 		}
 	} else {
 		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
@@ -186,6 +183,8 @@ func (plugin *Plugin) Close() error {
 	return safeclose.Close(
 		// Configurators
 		plugin.ifConfigurator, plugin.arpConfigurator, plugin.routeConfigurator,
+		// Status updater
+		plugin.ifLinuxStateUpdater,
 		// Channels
 		plugin.ifIndexesWatchChan, plugin.ifMicroserviceNotif, plugin.changeChan, plugin.resyncChan,
 		plugin.msChan,
@@ -198,12 +197,9 @@ func (plugin *Plugin) Close() error {
 func (plugin *Plugin) initNs() error {
 	plugin.Log.Infof("Init Linux namespace handler")
 
-	// Shared interface linux calls handler
-	plugin.ifHandler = ifLinuxcalls.NewNetLinkHandler(plugin.stopwatch)
-
 	namespaceHandler := &nsplugin.NsHandler{}
 	plugin.nsHandler = namespaceHandler
-	return namespaceHandler.Init(plugin.Log, plugin.ifHandler, nsplugin.NewSystemHandler(), plugin.msChan,
+	return namespaceHandler.Init(plugin.Log, nsplugin.NewSystemHandler(), plugin.msChan,
 		plugin.ifMicroserviceNotif)
 }
 
@@ -214,11 +210,19 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Init shared interface index mapping
 	plugin.ifIndexes = ifaceidx.NewLinuxIfIndex(nametoidx.NewNameToIdx(plugin.Log, "linux_if_indexes", nil))
 
+	// Shared interface linux calls handler
+	plugin.ifHandler = ifLinuxcalls.NewNetLinkHandler(plugin.nsHandler, plugin.ifIndexes, plugin.Log)
+
 	// Linux interface configurator
+	plugin.ifLinuxNotifChan = make(chan *ifplugin.LinuxInterfaceStateNotification, 10)
 	plugin.ifConfigurator = &ifplugin.LinuxInterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, plugin.ifIndexes,
-		plugin.ifMicroserviceNotif, plugin.stopwatch); err != nil {
-		return err
+	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.ifHandler, plugin.nsHandler, nsplugin.NewSystemHandler(),
+		plugin.ifIndexes, plugin.ifMicroserviceNotif, plugin.ifLinuxNotifChan); err != nil {
+		return plugin.ifConfigurator.LogError(err)
+	}
+	plugin.ifLinuxStateUpdater = &ifplugin.LinuxInterfaceStateUpdater{}
+	if err := plugin.ifLinuxStateUpdater.Init(ctx, plugin.Log, plugin.ifIndexes, plugin.ifLinuxNotifChan); err != nil {
+		return plugin.ifConfigurator.LogError(err)
 	}
 
 	return nil
@@ -228,18 +232,26 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 func (plugin *Plugin) initL3() error {
 	plugin.Log.Infof("Init Linux L3 plugin")
 
+	// Init shared ARP/Route index mapping
+	arpIndexes := l3idx.NewLinuxARPIndex(nametoidx.NewNameToIdx(plugin.Log, "linux_arp_indexes", nil))
+	routeIndexes := l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(plugin.Log, "linux_route_indexes", nil))
+
 	// L3 linux calls handler
-	l3Handler := l3Linuxcalls.NewNetLinkHandler(plugin.stopwatch)
+	l3Handler := l3Linuxcalls.NewNetLinkHandler(plugin.nsHandler, plugin.ifIndexes, arpIndexes, routeIndexes, plugin.Log)
 
 	// Linux ARP configurator
 	plugin.arpConfigurator = &l3plugin.LinuxArpConfigurator{}
-	if err := plugin.arpConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch); err != nil {
-		return err
+	if err := plugin.arpConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, arpIndexes, plugin.ifIndexes); err != nil {
+		return plugin.arpConfigurator.LogError(err)
 	}
 
 	// Linux Route configurator
 	plugin.routeConfigurator = &l3plugin.LinuxRouteConfigurator{}
-	return plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, plugin.ifIndexes, plugin.stopwatch)
+	if err := plugin.routeConfigurator.Init(plugin.Log, l3Handler, plugin.nsHandler, routeIndexes, plugin.ifIndexes); err != nil {
+		plugin.routeConfigurator.LogError(err)
+	}
+
+	return nil
 }
 
 func (plugin *Plugin) retrieveLinuxConfig() (*Config, error) {
