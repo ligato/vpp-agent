@@ -13,6 +13,8 @@ This image is used for development and debugging.
 
 ## Get the official image
 
+Note: **For ARM64 see the information about [arm64 docker image][3]**.
+
 For a quick start with the development image, you can download 
 the [official image](https://hub.docker.com/r/ligato/dev-vpp-agent/) from **DockerHub**.
 
@@ -196,6 +198,7 @@ Call the agent via ETCD using the testing client:
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 ```
+Note: **For ARM64 see the information about [etcd][2]**.
 
 ## Running Kafka on Local Host
 
@@ -204,6 +207,7 @@ You can start Kafka in a separate container:
 sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
  --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
 ```
+Note: **For ARM64 see the information about [kafka][1]**.
 
 ## Rebuilding the Agent
 ```
@@ -331,3 +335,7 @@ console.
  
 - Use the newly built agent as described in Section
   '[Running VPP and the Agent](#running-vpp-and-the-agent)'.
+
+[1]: ../../docs/arm64/kafka.md
+[2]: ../../docs/arm64/etcd.md
+[3]: ../../docs/arm64/docker_images.md
