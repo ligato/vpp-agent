@@ -19,13 +19,11 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 	"github.com/fsouza/go-dockerclient"
 	"github.com/go-errors/errors"
+	prototypes "github.com/gogo/protobuf/types"
 
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/kvscheduler/descriptor/base"
-	"github.com/ligato/cn-infra/kvscheduler/value/emptyval"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
 
@@ -44,8 +42,6 @@ const (
 // MicroserviceDescriptor watches Docker and notifies KVScheduler about newly
 // started and stopped microservices.
 type MicroserviceDescriptor struct {
-	base.DescriptorBase
-
 	// input arguments
 	log       logging.Logger
 	scheduler scheduler.KVScheduler
@@ -114,14 +110,18 @@ func NewMicroserviceDescriptor(scheduler scheduler.KVScheduler, log logging.Plug
 	return descriptor, nil
 }
 
-// GetName return name of the descriptor for microservices.
-func (msd *MicroserviceDescriptor) GetName() string {
-	return MicroserviceDescriptorName
+// GetDescriptor returns descriptor suitable for registration with the KVScheduler.
+func (msd *MicroserviceDescriptor) GetDescriptor() *scheduler.KVDescriptor {
+	return &scheduler.KVDescriptor{
+		Name:        MicroserviceDescriptorName,
+		KeySelector: msd.IsMicroserviceKey,
+		Dump:        msd.Dump,
+	}
 }
 
-// KeySelector selects key prefixed with MicroserviceKeyPrefix.
-func (msd *MicroserviceDescriptor) KeySelector(key string) bool {
-	return strings.HasPrefix(key, nsmodel.MicroserviceKeyPrefix())
+// IsMicroserviceKey returns true for key identifying microservices.
+func (msd *MicroserviceDescriptor) IsMicroserviceKey(key string) bool {
+	return strings.HasPrefix(key, nsmodel.MicroserviceKeyPrefix)
 }
 
 // Dump returns key with empty value for every currently existing microservice.
@@ -136,7 +136,7 @@ func (msd *MicroserviceDescriptor) Dump(correlate []scheduler.KVWithMetadata) (d
 	for msLabel := range msd.microServiceByLabel {
 		dump = append(dump, scheduler.KVWithMetadata{
 			Key:    nsmodel.MicroserviceKey(msLabel),
-			Value:  emptyval.NewEmptyValue(),
+			Value:  &prototypes.Empty{},
 			Origin: scheduler.FromSB,
 		})
 	}
@@ -297,7 +297,7 @@ func (msd *MicroserviceDescriptor) processNewMicroservice(microserviceLabel stri
 	if msd.msStateInSync {
 		msd.scheduler.PushSBNotification(
 			nsmodel.MicroserviceKey(ms.Label),
-			emptyval.NewEmptyValue(),
+			&prototypes.Empty{},
 			nil)
 	}
 }

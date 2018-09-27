@@ -22,10 +22,10 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/vishvananda/netlink"
+	"github.com/gogo/protobuf/proto"
+	prototypes "github.com/gogo/protobuf/types"
 
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/kvscheduler/descriptor/base"
-	"github.com/ligato/cn-infra/kvscheduler/value/emptyval"
 	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
@@ -40,8 +40,6 @@ const (
 
 // InterfaceWatcher watches default namespace for newly added/removed Linux interfaces.
 type InterfaceWatcher struct {
-	base.DescriptorBase
-
 	// input arguments
 	log       logging.Logger
 	scheduler scheduler.KVScheduler
@@ -86,14 +84,19 @@ func NewInterfaceWatcher(scheduler scheduler.KVScheduler, ifHandler linuxcalls.N
 	return descriptor
 }
 
-// GetName return name of the Linux interface Watcher.
-func (intfw *InterfaceWatcher) GetName() string {
-	return InterfaceWatcherName
+// GetDescriptor returns descriptor suitable for registration with the KVScheduler.
+func (intfw *InterfaceWatcher) GetDescriptor() *scheduler.KVDescriptor {
+	return &scheduler.KVDescriptor{
+		Name:        InterfaceWatcherName,
+		KeySelector: intfw.IsLinuxInterfaceNotification,
+		Dump:        intfw.Dump,
+	}
 }
 
-// KeySelector selects key prefixed with InterfaceHostNameKeyPrefix.
-func (intfw *InterfaceWatcher) KeySelector(key string) bool {
-	return strings.HasPrefix(key, ifmodel.InterfaceHostNameKeyPrefix())
+// IsLinuxInterfaceNotification returns <true> for keys representing
+// notifications about Linux interfaces in the default network namespace.
+func (intfw *InterfaceWatcher) IsLinuxInterfaceNotification(key string) bool {
+	return strings.HasPrefix(key, ifmodel.InterfaceHostNameKeyPrefix)
 }
 
 // Dump returns key with empty value for every currently existing Linux interface
@@ -109,7 +112,7 @@ func (intfw *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump 
 	for ifName := range intfw.intfs {
 		dump = append(dump, scheduler.KVWithMetadata{
 			Key:    ifmodel.InterfaceHostNameKey(ifName),
-			Value:  emptyval.NewEmptyValue(),
+			Value:  &prototypes.Empty{},
 			Origin: scheduler.FromSB,
 		})
 	}
@@ -234,11 +237,11 @@ func (intfw *InterfaceWatcher) applyDelayedNotification(ifName string) {
 
 // notifyScheduler notifies scheduler about interface change.
 func (intfw *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
-	var value scheduler.Value
+	var value proto.Message
 
 	if enabled {
 		intfw.intfs[ifName] = struct{}{}
-		value = emptyval.NewEmptyValue()
+		value = &prototypes.Empty{}
 	} else {
 		delete(intfw.intfs, ifName)
 	}

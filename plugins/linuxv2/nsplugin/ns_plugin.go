@@ -30,6 +30,7 @@ import (
 	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
 	nsLinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
+	"strconv"
 )
 
 // NsPlugin is a plugin to handle namespaces and microservices for other linux
@@ -76,57 +77,57 @@ func (e *unavailableMicroserviceErr) Error() string {
 }
 
 // Init namespace handler caches and create config namespace
-func (plugin *NsPlugin) Init() error {
+func (p *NsPlugin) Init() error {
 	// Parse configuration file
-	config, err := plugin.retrieveConfig()
+	config, err := p.retrieveConfig()
 	if err != nil {
 		return err
 	}
 	if config != nil {
 		if config.Disabled {
-			plugin.disabled = true
-			plugin.Log.Infof("Disabling Linux Namespace plugin")
+			p.disabled = true
+			p.Log.Infof("Disabling Linux Namespace plugin")
 			return nil
 		}
 		if config.Stopwatch {
-			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
-			plugin.stopwatch = measure.NewStopwatch("Linux-NsPlugin", plugin.Log)
+			p.Log.Infof("stopwatch enabled for %v", p.PluginName)
+			p.stopwatch = measure.NewStopwatch("Linux-NsPlugin", p.Log)
 		} else {
-			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+			p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 		}
 	} else {
-		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 
 	// Handlers
-	plugin.sysHandler = nsLinuxcalls.NewSystemHandler(plugin.stopwatch)
-	plugin.namedNsHandler = nsLinuxcalls.NewNamedNetNsHandler(plugin.sysHandler, plugin.Log, plugin.stopwatch)
+	p.sysHandler = nsLinuxcalls.NewSystemHandler(p.stopwatch)
+	p.namedNsHandler = nsLinuxcalls.NewNamedNetNsHandler(p.sysHandler, p.Log, p.stopwatch)
 
 	// Default namespace
-	plugin.defaultNs, err = plugin.sysHandler.GetCurrentNamespace()
+	p.defaultNs, err = p.sysHandler.GetCurrentNamespace()
 	if err != nil {
 		return errors.Errorf("failed to init default namespace: %v", err)
 	}
 
 	// Microservice descriptor
-	plugin.msDescriptor, err = descriptor.NewMicroserviceDescriptor(plugin.Scheduler, plugin.Log)
+	p.msDescriptor, err = descriptor.NewMicroserviceDescriptor(p.Scheduler, p.Log)
 	if err != nil {
 		return err
 	}
-	plugin.Scheduler.RegisterKVDescriptor(plugin.msDescriptor)
-	plugin.msDescriptor.StartTracker()
+	p.Scheduler.RegisterKVDescriptor(p.msDescriptor.GetDescriptor())
+	p.msDescriptor.StartTracker()
 
-	plugin.Log.Infof("Namespace plugin initialized")
+	p.Log.Infof("Namespace plugin initialized")
 
 	return nil
 }
 
 // Close stops microservice tracker
-func (plugin *NsPlugin) Close() error {
-	if plugin.disabled {
+func (p *NsPlugin) Close() error {
+	if p.disabled {
 		return nil
 	}
-	plugin.msDescriptor.StopTracker()
+	p.msDescriptor.StopTracker()
 
 	return nil
 }
@@ -134,23 +135,23 @@ func (plugin *NsPlugin) Close() error {
 // GetNamespaceHandle returns low-level run-time handle for the given namespace
 // to be used with Netlink API. Do not forget to eventually close the handle using
 // the netns.NsHandle.Close() method.
-func (plugin *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespace *nsmodel.Namespace) (handle netns.NsHandle, err error) {
-	if plugin.disabled {
+func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespace *nsmodel.LinuxNetNamespace) (handle netns.NsHandle, err error) {
+	if p.disabled {
 		return 0, errors.New("NsPlugin is disabled")
 	}
 	// Convert microservice namespace
-	if namespace != nil && namespace.Type == nsmodel.Namespace_MICROSERVICE_REF_NS {
+	if namespace != nil && namespace.Type == nsmodel.LinuxNetNamespace_NETNS_REF_MICROSERVICE {
 		// Convert namespace
-		namespace = plugin.convertMicroserviceNsToPidNs(namespace.Microservice)
+		namespace = p.convertMicroserviceNsToPidNs(namespace.Reference)
 		if namespace == nil {
 			return 0, &unavailableMicroserviceErr{}
 		}
 	}
 
 	// Get network namespace file descriptor
-	ns, err := plugin.getOrCreateNs(ctx, namespace)
+	ns, err := p.getOrCreateNs(ctx, namespace)
 	if err != nil {
-		return 0, errors.Errorf("failed to get or create namespace %s: %v", namespace.Name, err)
+		return 0, errors.Errorf("failed to get or create namespace (%v): %v", namespace, err)
 	}
 
 	return ns, nil
@@ -159,8 +160,8 @@ func (plugin *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, na
 // SwitchToNamespace switches the network namespace of the current thread.
 // Caller should eventually call the returned "revert" function in order to get back to the original
 // network namespace (for example using "defer revert()").
-func (plugin *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.Namespace) (revert func(), err error) {
-	if plugin.disabled {
+func (p *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.LinuxNetNamespace) (revert func(), err error) {
+	if p.disabled {
 		return func() {}, errors.New("NsPlugin is disabled")
 	}
 
@@ -171,7 +172,7 @@ func (plugin *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns 
 	}
 
 	// Get network namespace file descriptor.
-	nsHandle, err := plugin.GetNamespaceHandle(ctx, ns)
+	nsHandle, err := p.GetNamespaceHandle(ctx, ns)
 	if err != nil {
 		origns.Close()
 		return func() {}, err
@@ -182,8 +183,8 @@ func (plugin *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns 
 	ctx.LockOSThread()
 
 	// Switch the namespace.
-	l := plugin.Log.WithFields(logging.Fields{"ns": nsHandle.String(), "ns-fd": int(nsHandle)})
-	if err := plugin.sysHandler.SetNamespace(nsHandle); err != nil {
+	l := p.Log.WithFields(logging.Fields{"ns": nsHandle.String(), "ns-fd": int(nsHandle)})
+	if err := p.sysHandler.SetNamespace(nsHandle); err != nil {
 		ctx.UnlockOSThread()
 		origns.Close()
 		l.Errorf("Failed to switch Linux network namespace (%v): %v", ns, err)
@@ -191,8 +192,8 @@ func (plugin *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns 
 	}
 
 	return func() {
-		l := plugin.Log.WithFields(logging.Fields{"orig-ns": origns.String(), "orig-ns-fd": int(origns)})
-		if err := plugin.sysHandler.SetNamespace(origns); err != nil {
+		l := p.Log.WithFields(logging.Fields{"orig-ns": origns.String(), "orig-ns-fd": int(origns)})
+		if err := p.sysHandler.SetNamespace(origns); err != nil {
 			l.Errorf("Failed to switch Linux network namespace: %v", err)
 		}
 		origns.Close()
@@ -201,78 +202,81 @@ func (plugin *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns 
 }
 
 // retrieveConfig loads NsPlugin configuration file.
-func (plugin *NsPlugin) retrieveConfig() (*Config, error) {
+func (p *NsPlugin) retrieveConfig() (*Config, error) {
 	config := &Config{}
-	found, err := plugin.Cfg.LoadValue(config)
+	found, err := p.Cfg.LoadValue(config)
 	if !found {
-		plugin.Log.Debug("Linux NsPlugin config not found")
+		p.Log.Debug("Linux NsPlugin config not found")
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Debug("Linux NsPlugin config found")
+	p.Log.Debug("Linux NsPlugin config found")
 	return config, err
 }
 
 // getOrCreateNs returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
 // It is, however, only possible to create "named" namespaces. For PID-based namespaces, process with
 // the given PID must exists, otherwise the function returns an error.
-func (plugin *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.Namespace) (netns.NsHandle, error) {
+func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.LinuxNetNamespace) (netns.NsHandle, error) {
 	var nsHandle netns.NsHandle
 	var err error
 
 	if ns == nil {
-		return plugin.sysHandler.DuplicateNamespaceHandle(plugin.defaultNs)
+		return p.sysHandler.DuplicateNamespaceHandle(p.defaultNs)
 	}
 
 	switch ns.Type {
-	case nsmodel.Namespace_PID_REF_NS:
-		if ns.Pid == 0 {
-			// We consider PID 0 as the representation of the default namespace.
-			return plugin.sysHandler.DuplicateNamespaceHandle(plugin.defaultNs)
-		}
-		nsHandle, err = plugin.sysHandler.GetNamespaceFromPid(int(ns.Pid))
+	case nsmodel.LinuxNetNamespace_NETNS_REF_PID:
+		pid, err := strconv.Atoi(ns.Reference)
 		if err != nil {
-			return netns.None(), errors.Errorf("failed to get namespace handle from pid: %v", err)
+			return netns.None(), errors.Errorf("failed to parse network namespace PID reference: %v", err)
 		}
-	case nsmodel.Namespace_NAMED_NS:
-		if ns.Name == "" {
-			return plugin.sysHandler.DuplicateNamespaceHandle(plugin.defaultNs)
+		nsHandle, err = p.sysHandler.GetNamespaceFromPid(int(pid))
+		if err != nil {
+			return netns.None(), errors.Errorf("failed to get namespace handle from PID: %v", err)
 		}
-		nsHandle, err = plugin.sysHandler.GetNamespaceFromName(ns.Name)
+
+	case nsmodel.LinuxNetNamespace_NETNS_REF_NSID:
+		nsHandle, err = p.sysHandler.GetNamespaceFromName(ns.Reference)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
-			_, err = plugin.namedNsHandler.CreateNamedNetNs(ctx, ns.Name)
+			_, err = p.namedNsHandler.CreateNamedNetNs(ctx, ns.Reference)
 			if err != nil {
 				return netns.None(), errors.Errorf("failed to create named net namspace: %v", err)
 			}
-			nsHandle, err = plugin.sysHandler.GetNamespaceFromName(ns.Name)
+			nsHandle, err = p.sysHandler.GetNamespaceFromName(ns.Reference)
 			if err != nil {
 				return netns.None(), errors.Errorf("unable to get namespace by name")
 			}
 		}
-	case nsmodel.Namespace_FILE_REF_NS:
-		if ns.Filepath == "" {
-			return plugin.sysHandler.DuplicateNamespaceHandle(plugin.defaultNs)
+
+	case nsmodel.LinuxNetNamespace_NETNS_REF_FD:
+		if ns.Reference == "" {
+			return p.sysHandler.DuplicateNamespaceHandle(p.defaultNs)
 		}
-		nsHandle, err = plugin.sysHandler.GetNamespaceFromPath(ns.Filepath)
+		nsHandle, err = p.sysHandler.GetNamespaceFromPath(ns.Reference)
 		if err != nil {
-			return netns.None(), errors.Errorf("failed to get file %s from path: %v", ns.Filepath, err)
+			return netns.None(), errors.Errorf("failed to get file %s from path: %v", ns.Reference, err)
 		}
-	case nsmodel.Namespace_MICROSERVICE_REF_NS:
+
+	case nsmodel.LinuxNetNamespace_NETNS_REF_MICROSERVICE:
 		return netns.None(), errors.Errorf("unable to convert microservice label to PID at this level")
+
+	default:
+		return netns.None(), errors.Errorf("undefined network namespace reference")
 	}
 
 	return nsHandle, nil
 }
 
 // convertMicroserviceNsToPidNs converts microservice-referenced namespace into the PID-referenced namespace.
-func (plugin *NsPlugin) convertMicroserviceNsToPidNs(microserviceLabel string) (pidNs *nsmodel.Namespace) {
-	if microservice, found := plugin.msDescriptor.GetMicroserviceStateData(microserviceLabel); found {
-		pidNamespace := &nsmodel.Namespace{}
-		pidNamespace.Type = nsmodel.Namespace_PID_REF_NS
-		pidNamespace.Pid = uint32(microservice.PID)
+func (p *NsPlugin) convertMicroserviceNsToPidNs(microserviceLabel string) (pidNs *nsmodel.LinuxNetNamespace) {
+	if microservice, found := p.msDescriptor.GetMicroserviceStateData(microserviceLabel); found {
+		pidNamespace := &nsmodel.LinuxNetNamespace{}
+		pidNamespace.Type = nsmodel.LinuxNetNamespace_NETNS_REF_PID
+		pidNamespace.Reference = strconv.Itoa(microservice.PID)
 		return pidNamespace
 	}
 	return nil

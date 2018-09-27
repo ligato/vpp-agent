@@ -3,10 +3,8 @@
 package adapter
 
 import (
-	"fmt"
-	"github.com/ligato/cn-infra/datasync"
+	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/cn-infra/kvscheduler/api"
-	. "github.com/ligato/cn-infra/kvscheduler/value/protoval"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 )
@@ -20,138 +18,88 @@ type InterfaceKVWithMetadata struct {
 	Origin   ValueOrigin
 }
 
-////////// type-safe Descriptor interface //////////
+////////// type-safe Descriptor structure //////////
 
-type InterfaceDescriptorAPI interface {
-	GetName() string
-	KeySelector(key string) bool
-	NBKeyPrefixes() []string
-	WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory)
-	Build(key string, valueData *interfaces.LinuxInterface) (value ProtoValue, err error)
-	Add(key string, value *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error)
-	Delete(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error
-	Modify(key string, oldValue, newValue *interfaces.LinuxInterface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error)
-	ModifyHasToRecreate(key string, oldValue, newValue *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) bool
-	Update(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error
-	Dependencies(key string, value *interfaces.LinuxInterface) []Dependency
-	DerivedValues(key string, value *interfaces.LinuxInterface) []KeyValuePair
-	Dump(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error)
-	DumpDependencies() []string
-}
-
-////////// Descriptor base implementation //////////
-
-// InterfaceDescriptorBase provides default(=empty) implementations
-// for all the methods to extend from.
-type InterfaceDescriptorBase struct {
-}
-
-func (db *InterfaceDescriptorBase) GetName() string {
-	return "base"
-}
-
-func (db *InterfaceDescriptorBase) KeySelector(key string) bool {
-	return false
-}
-
-func (db *InterfaceDescriptorBase) NBKeyPrefixes() []string {
-	return nil
-}
-
-func (db *InterfaceDescriptorBase) WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory) {
-	return false, nil
-}
-
-func (db *InterfaceDescriptorBase) Build(key string, valueData *interfaces.LinuxInterface) (value ProtoValue, err error) {
-	// You can override specific methods of ProtoValue using embedding:
-	//
-	//	type MyProtoValue struct {
-	//		ProtoValue
-	//      typedMsg *interfaces.LinuxInterface
-	//	}
-	//	
-	//	// ... (override some methods)
-	//
-	//  return &MyProtoValue{ProtoValue: NewProtoValue(valueData), typedMsg: valueData}	, nil
-	return NewProtoValue(valueData), nil
-}
-
-func (db *InterfaceDescriptorBase) Add(key string, value *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
-	fmt.Printf("Create for key=%s is not implemented\n", key)
-	return nil, nil
-}
-
-func (db *InterfaceDescriptorBase) Delete(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
-	fmt.Printf("Delete for key=%s is not implemented\n", key)
-	return nil
-}
-
-func (db *InterfaceDescriptorBase) Modify(key string, oldValue, newValue *interfaces.LinuxInterface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error) {
-	fmt.Printf("Modify for key=%s is not implemented\n", key)
-	return nil, nil
-}
-
-func (db *InterfaceDescriptorBase) ModifyHasToRecreate(key string, oldValue, newValue *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) bool {
-	return false
-}
-
-func (db *InterfaceDescriptorBase) Update(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
-	fmt.Printf("Update for key=%s is not implemented\n", key)
-	return nil
-}
-
-func (db *InterfaceDescriptorBase) Dependencies(key string, value *interfaces.LinuxInterface) []Dependency {
-	return nil
-}
-
-func (db *InterfaceDescriptorBase) DerivedValues(key string, value *interfaces.LinuxInterface) []KeyValuePair {
-	return nil
-}
-
-func (db *InterfaceDescriptorBase) Dump(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error) {
-	fmt.Println("Dump is not implemented")
-	return nil, nil
-}
-
-func (db *InterfaceDescriptorBase) DumpDependencies() []string {
-	return nil
+type InterfaceDescriptor struct {
+	Name               string
+	KeySelector        KeySelector
+	ValueTypeName      string
+	KeyLabel           func(key string) string
+	ValueComparator    func(key string, v1, v2 *interfaces.LinuxInterface) bool
+	NBKeyPrefix        string
+	WithMetadata       bool
+	MetadataMapFactory MetadataMapFactory
+	Add                func(key string, value *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error)
+	Delete             func(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error
+	Modify             func(key string, oldValue, newValue *interfaces.LinuxInterface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) bool
+	Update             func(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error
+	IsRetriableFailure func(err error) bool
+	Dependencies       func(key string, value *interfaces.LinuxInterface) []Dependency
+	DerivedValues      func(key string, value *interfaces.LinuxInterface) []KeyValuePair
+	Dump               func(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error)
+	DumpDependencies   []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
 type InterfaceDescriptorAdapter struct {
-	descriptor InterfaceDescriptorAPI
+	descriptor *InterfaceDescriptor
 }
 
-func NewInterfaceDescriptor(impl InterfaceDescriptorAPI) KVDescriptor {
-	return &InterfaceDescriptorAdapter{descriptor: impl}
-}
-
-func (da *InterfaceDescriptorAdapter) GetName() string {
-	return da.descriptor.GetName()
-}
-
-func (da *InterfaceDescriptorAdapter) KeySelector(key string) bool {
-	return da.descriptor.KeySelector(key)
-}
-
-func (da *InterfaceDescriptorAdapter) NBKeyPrefixes() []string {
-	return da.descriptor.NBKeyPrefixes()
-}
-
-func (da *InterfaceDescriptorAdapter) WithMetadata() (withMeta bool, customMapFactory MetadataMapFactory) {
-	return da.descriptor.WithMetadata()
-}
-
-func (da *InterfaceDescriptorAdapter) Build(key string, valueData interface{}) (value Value, err error) {
-	typedValueData, err := castInterfaceValueData(key, valueData)
-	if err != nil {
-		return nil, err
+func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor {
+	adapter := &InterfaceDescriptorAdapter{descriptor: typedDescriptor}
+	descriptor := &KVDescriptor{
+		Name:               typedDescriptor.Name,
+        KeySelector:        typedDescriptor.KeySelector,
+        ValueTypeName:      typedDescriptor.ValueTypeName,
+		KeyLabel:           typedDescriptor.KeyLabel,
+		NBKeyPrefix:        typedDescriptor.NBKeyPrefix,
+		WithMetadata:       typedDescriptor.WithMetadata,
+        MetadataMapFactory: typedDescriptor.MetadataMapFactory,
+		IsRetriableFailure: typedDescriptor.IsRetriableFailure,
+		DumpDependencies:   typedDescriptor.DumpDependencies,
 	}
-	return da.descriptor.Build(key, typedValueData)
+	if typedDescriptor.ValueComparator != nil {
+		descriptor.ValueComparator = adapter.ValueComparator
+	}
+	if typedDescriptor.Add != nil {
+		descriptor.Add = adapter.Add
+	}
+	if typedDescriptor.Delete != nil {
+		descriptor.Delete = adapter.Delete
+	}
+	if typedDescriptor.Modify != nil {
+		descriptor.Modify = adapter.Modify
+	}
+	if typedDescriptor.ModifyWithRecreate != nil {
+		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
+	}
+	if typedDescriptor.Update != nil {
+		descriptor.Update = adapter.Update
+	}
+	if typedDescriptor.Dependencies != nil {
+		descriptor.Dependencies = adapter.Dependencies
+	}
+	if typedDescriptor.DerivedValues != nil {
+		descriptor.DerivedValues = adapter.DerivedValues
+	}
+	if typedDescriptor.Dump != nil {
+		descriptor.Dump = adapter.Dump
+	}
+	return descriptor
 }
 
-func (da *InterfaceDescriptorAdapter) Add(key string, value Value) (metadata Metadata, err error) {
+func (da *InterfaceDescriptorAdapter) ValueComparator(key string, v1, v2 proto.Message) bool {
+	typedV1, err1 := castInterfaceValue(key, v1)
+	typedV2, err2 := castInterfaceValue(key, v2)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	return da.descriptor.ValueComparator(key, typedV1, typedV2)
+}
+
+func (da *InterfaceDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
 	typedValue, err := castInterfaceValue(key, value)
 	if err != nil {
 		return nil, err
@@ -159,7 +107,7 @@ func (da *InterfaceDescriptorAdapter) Add(key string, value Value) (metadata Met
 	return da.descriptor.Add(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) Modify(key string, oldValue, newValue Value, oldMetadata Metadata) (newMetadata Metadata, err error) {
+func (da *InterfaceDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
 	oldTypedValue, err := castInterfaceValue(key, oldValue)
 	if err != nil {
 		return nil, err
@@ -175,7 +123,7 @@ func (da *InterfaceDescriptorAdapter) Modify(key string, oldValue, newValue Valu
 	return da.descriptor.Modify(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Delete(key string, value Value, metadata Metadata) error {
+func (da *InterfaceDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
 	typedValue, err := castInterfaceValue(key, value)
 	if err != nil {
 		return err
@@ -187,7 +135,7 @@ func (da *InterfaceDescriptorAdapter) Delete(key string, value Value, metadata M
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) ModifyHasToRecreate(key string, oldValue, newValue Value, metadata Metadata) bool {
+func (da *InterfaceDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
 	oldTypedValue, err := castInterfaceValue(key, oldValue)
 	if err != nil {
 		return true
@@ -200,10 +148,10 @@ func (da *InterfaceDescriptorAdapter) ModifyHasToRecreate(key string, oldValue, 
 	if err != nil {
 		return true
 	}
-	return da.descriptor.ModifyHasToRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
+	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Update(key string, value Value, metadata Metadata) error {
+func (da *InterfaceDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
 	typedValue, err := castInterfaceValue(key, value)
 	if err != nil {
 		return err
@@ -215,7 +163,7 @@ func (da *InterfaceDescriptorAdapter) Update(key string, value Value, metadata M
 	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
-func (da *InterfaceDescriptorAdapter) Dependencies(key string, value Value) []Dependency {
+func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
 	typedValue, err := castInterfaceValue(key, value)
 	if err != nil {
 		return nil
@@ -223,7 +171,7 @@ func (da *InterfaceDescriptorAdapter) Dependencies(key string, value Value) []De
 	return da.descriptor.Dependencies(key, typedValue)
 }
 
-func (da *InterfaceDescriptorAdapter) DerivedValues(key string, value Value) []KeyValuePair {
+func (da *InterfaceDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
 	typedValue, err := castInterfaceValue(key, value)
 	if err != nil {
 		return nil
@@ -250,7 +198,7 @@ func (da *InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 				Origin:   kvpair.Origin,
 			})
 	}
-	
+
 	typedDump, err := da.descriptor.Dump(correlateWithType)
 	if err != nil {
 		return nil, err
@@ -262,45 +210,20 @@ func (da *InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
 			}
-		value, err := da.descriptor.Build(typedKVWithMetadata.Key, typedKVWithMetadata.Value)
-		if err != nil {
-			return nil, err
-		}
-		kvWithMetadata.Value = value
+		kvWithMetadata.Value = typedKVWithMetadata.Value
 		dump = append(dump, kvWithMetadata)
 	}
 	return dump, err
 }
 
-func (da *InterfaceDescriptorAdapter) DumpDependencies() []string {
-	return da.descriptor.DumpDependencies()
-}
-
 ////////// Helper methods //////////
 
-func castInterfaceValueData(key string, valueData interface{}) (*interfaces.LinuxInterface, error) {
-	changeValue, isChange := valueData.(datasync.ChangeValue)
-	if !isChange {
-		return nil, ErrInvalidValueDataType(key)
-	}
-	protoMessage := &interfaces.LinuxInterface{}
-	err := changeValue.GetValue(protoMessage)
-	if err != nil {
-		return nil, err
-	}
-	return protoMessage, nil
-}
-
-func castInterfaceValue(key string, value Value) (*interfaces.LinuxInterface, error) {
-	protoValue, isProto := value.(ProtoValue)
-	if !isProto {
-		return nil, ErrInvalidValueType(key, value)
-	}
-	protoWithType, ok := protoValue.GetProtoMessage().(*interfaces.LinuxInterface)
+func castInterfaceValue(key string, value proto.Message) (*interfaces.LinuxInterface, error) {
+	typedValue, ok := value.(*interfaces.LinuxInterface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
-	return protoWithType, nil
+	return typedValue, nil
 }
 
 func castInterfaceMetadata(key string, metadata Metadata) (*ifaceidx.LinuxIfMetadata, error) {

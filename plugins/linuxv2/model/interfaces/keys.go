@@ -23,24 +23,24 @@ import (
 const (
 	/* Interface Config */
 
-	// interfaceKeyPrefix is a prefix used in ETCD to store configuration for Linux interfaces.
-	interfaceKeyPrefix = "linux/config/v2/interface/"
+	// InterfaceKeyPrefix is a prefix used in ETCD to store configuration for Linux interfaces.
+	InterfaceKeyPrefix = "linux/config/v2/interface/"
 
 	/* Interface host-name (default ns only, notifications) */
 
-	// interfaceHostNameKeyPrefix is the common prefix of all keys representing
+	// InterfaceHostNameKeyPrefix is the common prefix of all keys representing
 	// existing Linux interfaces in the default namespace (referenced by host names).
-	interfaceHostNameKeyPrefix = "linux/interface/host-name/"
+	InterfaceHostNameKeyPrefix = "linux/interface/host-name/"
 
 	/* Interface State (derived) */
 
-	// interfaceStateKeyPrefix is used as a common prefix for keys derived from
+	// InterfaceStateKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent the interface admin state (up/down).
-	interfaceStateKeyPrefix = "linux/interface/state/"
+	InterfaceStateKeyPrefix = "linux/interface/state/"
 
 	// interfaceStateKeyTemplate is a template for (derived) key representing interface
 	// admin state (up/down).
-	interfaceStateKeyTemplate = interfaceStateKeyPrefix + "{ifName}/{ifState}"
+	interfaceStateKeyTemplate = InterfaceStateKeyPrefix + "{ifName}/{ifState}"
 
 	// interface admin state as printed in derived keys.
 	interfaceUpState   = "UP"
@@ -48,38 +48,27 @@ const (
 
 	/* Interface Address (derived) */
 
-	// interfaceAddressKeyPrefix is used as a common prefix for keys derived from
+	// InterfaceAddressKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent assigned IP addresses.
-	interfaceAddressKeyPrefix = "linux/interface/address/"
+	InterfaceAddressKeyPrefix = "linux/interface/address/"
 
 	// interfaceAddressKeyTemplate is a template for (derived) key representing IP address
 	// (incl. mask) assigned to a Linux interface (referenced by the logical name).
-	interfaceAddressKeyTemplate = interfaceAddressKeyPrefix + "{ifName}/{addr}/{mask}"
+	interfaceAddressKeyTemplate = InterfaceAddressKeyPrefix + "{ifName}/{addr}/{mask}"
 )
 
 /* Interface Config */
 
-// InterfaceKeyPrefix returns the prefix used in ETCD to store config for Linux interfaces.
-func InterfaceKeyPrefix() string {
-	return interfaceKeyPrefix
-}
-
 // InterfaceKey returns the key used in ETCD to store configuration of a particular Linux interface.
 func InterfaceKey(ifaceLabel string) string {
-	return interfaceKeyPrefix + ifaceLabel
+	return InterfaceKeyPrefix + ifaceLabel
 }
 
 /* Interface host-name (default ns only, notifications) */
 
-// InterfaceHostNameKeyPrefix returns the common prefix of all keys representing
-// existing Linux interfaces in the default namespace (referenced by host names).
-func InterfaceHostNameKeyPrefix() string {
-	return interfaceHostNameKeyPrefix
-}
-
 // InterfaceHostNameKey returns key representing Linux interface host name.
 func InterfaceHostNameKey(hostName string) string {
-	return interfaceHostNameKeyPrefix + hostName
+	return InterfaceHostNameKeyPrefix + hostName
 }
 
 /* Interface State (derived) */
@@ -99,8 +88,8 @@ func InterfaceStateKey(ifName string, ifIsUp bool) string {
 // from interface by InterfaceStateKey().
 func ParseInterfaceStateKey(key string) (ifName string, ifIsUp bool, err error) {
 	errPrefix := "invalid Linux interface state key: "
-	if strings.HasPrefix(key, interfaceStateKeyPrefix) {
-		keySuffix := strings.TrimPrefix(key, interfaceStateKeyPrefix)
+	if strings.HasPrefix(key, InterfaceStateKeyPrefix) {
+		keySuffix := strings.TrimPrefix(key, InterfaceStateKeyPrefix)
 		keyComps := strings.Split(keySuffix, "/")
 		if len(keyComps) != 2 {
 			return "", false, fmt.Errorf(errPrefix + "invalid suffix")
@@ -134,8 +123,8 @@ func InterfaceAddressKey(ifName string, address string) string {
 // from interface by InterfaceAddressKey().
 func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, err error) {
 	errPrefix := "invalid Linux interface address key: "
-	if strings.HasPrefix(key, interfaceAddressKeyPrefix) {
-		keySuffix := strings.TrimPrefix(key, interfaceAddressKeyPrefix)
+	if strings.HasPrefix(key, InterfaceAddressKeyPrefix) {
+		keySuffix := strings.TrimPrefix(key, InterfaceAddressKeyPrefix)
 		keyComps := strings.Split(keySuffix, "/")
 		if len(keyComps) != 3 {
 			return "", nil, fmt.Errorf(errPrefix + "invalid suffix")

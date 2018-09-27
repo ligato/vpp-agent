@@ -17,23 +17,12 @@ package namespace
 const (
 	/* Microservice (notifications) */
 
-	// microserviceKeyPrefix is the common prefix of all keys representing
+	// MicroserviceKeyPrefix is the common prefix of all keys representing
 	// existing microservices.
-	microserviceKeyPrefix = "linux/microservice/"
-
-	// DefaultNamespaceName is used in the keys to reference default namespace.
-	// In models, default namespace is represented by a undefined (nil) namespace
-	// reference.
-	DefaultNamespaceName = "default"
+	MicroserviceKeyPrefix = "linux/microservice/"
 )
-
-// MicroserviceKeyPrefix returns the common prefix of all keys representing
-// existing microservices.
-func MicroserviceKeyPrefix() string {
-	return microserviceKeyPrefix
-}
 
 // MicroserviceKey returns key representing existing microservice namespace.
 func MicroserviceKey(microservice string) string {
-	return MicroserviceKeyPrefix() + microservice
+	return MicroserviceKeyPrefix + microservice
 }

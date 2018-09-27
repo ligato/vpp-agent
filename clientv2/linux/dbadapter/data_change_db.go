@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ func (dsl *PutDSL) LinuxInterface(val *linuxIf.LinuxInterface) linuxclient.PutDS
 
 // LinuxArpEntry adds a request to create or update Linux ARP entry.
 func (dsl *PutDSL) LinuxArpEntry(val *linuxL3.LinuxStaticARPEntry) linuxclient.PutDSL {
-	dsl.parent.txn.Put(linuxL3.StaticArpKey(val.Interface, val.IpAddr), val)
+	dsl.parent.txn.Put(linuxL3.StaticArpKey(val.Interface, val.IpAddress), val)
 	return dsl
 }
 

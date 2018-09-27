@@ -24,38 +24,33 @@ import (
 const (
 	/* ARP */
 
-	// staticArpKeyPrefix is a prefix used in ETCD to store configuration for Linux static ARPs.
-	staticArpKeyPrefix = "linux/config/v2/arp/"
+	// StaticArpKeyPrefix is a prefix used in ETCD to store configuration for Linux static ARPs.
+	StaticArpKeyPrefix = "linux/config/v2/arp/"
 
 	// staticArpKeyTemplate is a template for key representing Linux ARP entry configuration.
-	staticArpKeyTemplate = staticArpKeyPrefix + "{if}/{ip}"
+	staticArpKeyTemplate = StaticArpKeyPrefix + "{if}/{ip}"
 
 	/* Route Config */
 
-	// staticRouteKeyPrefix is a prefix used in ETCD to store configuration for Linux static routes.
-	staticRouteKeyPrefix = "linux/config/v2/route/"
+	// StaticRouteKeyPrefix is a prefix used in ETCD to store configuration for Linux static routes.
+	StaticRouteKeyPrefix = "linux/config/v2/route/"
 
 	// staticRouteKeySuffix is a suffix common to all keys representing routes.
 	staticRouteKeySuffix = "{dest-net}/{dest-mask}/{out-intf}"
 
 	// staticRouteKeyTemplate is a template for key representing Linux Route configuration.
-	staticRouteKeyTemplate = staticRouteKeyPrefix + staticRouteKeySuffix
+	staticRouteKeyTemplate = StaticRouteKeyPrefix + staticRouteKeySuffix
 
 	/* Link-local route (derived) */
 
-	// staticLinkLocalRouteKeyPrefix is a prefix for keys derived from link-local routes.
-	staticLinkLocalRouteKeyPrefix = "linux/link-local-route/"
+	// StaticLinkLocalRouteKeyPrefix is a prefix for keys derived from link-local routes.
+	StaticLinkLocalRouteKeyPrefix = "linux/link-local-route/"
 
 	// staticLinkLocalRouteKeyTemplate is a template for key derived from link-local route.
-	staticLinkLocalRouteKeyTemplate = staticLinkLocalRouteKeyPrefix + staticRouteKeySuffix
+	staticLinkLocalRouteKeyTemplate = StaticLinkLocalRouteKeyPrefix + staticRouteKeySuffix
 )
 
 /* ARP */
-
-// StaticArpKeyPrefix returns the prefix used in ETCD to store config for Linux static ARPs
-func StaticArpKeyPrefix() string {
-	return staticArpKeyPrefix
-}
 
 // StaticArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
 func StaticArpKey(iface, ipAddr string) string {
@@ -67,8 +62,8 @@ func StaticArpKey(iface, ipAddr string) string {
 // ParseStaticArpKey parses ARP entry from a key.
 func ParseStaticArpKey(key string) (iface string, ipAddr net.IP, err error) {
 	errPrefix := "invalid Linux ARP key: "
-	if strings.HasPrefix(key, staticArpKeyPrefix) {
-		arpSuffix := strings.TrimPrefix(key, staticArpKeyPrefix)
+	if strings.HasPrefix(key, StaticArpKeyPrefix) {
+		arpSuffix := strings.TrimPrefix(key, StaticArpKeyPrefix)
 		arpComps := strings.Split(arpSuffix, "/")
 		if len(arpComps) != 2 {
 			return "", nil, fmt.Errorf(errPrefix + "invalid suffix")
@@ -85,11 +80,6 @@ func ParseStaticArpKey(key string) (iface string, ipAddr net.IP, err error) {
 
 /* Route Config */
 
-// StaticRouteKeyPrefix returns the prefix used in ETCD to store config for Linux static routes.
-func StaticRouteKeyPrefix() string {
-	return staticRouteKeyPrefix
-}
-
 // StaticRouteKey returns the key used in ETCD to store configuration of a particular Linux route.
 func StaticRouteKey(dstAddr, outgoingInterface string) string {
 	return staticRouteKeyFromTemplate(staticRouteKeyTemplate, dstAddr, outgoingInterface)
@@ -97,7 +87,7 @@ func StaticRouteKey(dstAddr, outgoingInterface string) string {
 
 // ParseStaticRouteKey parses Linux route attributes from a key.
 func ParseStaticRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, err error) {
-	return parseStaticRouteFromKeySuffix(key, staticRouteKeyPrefix, "invalid Linux Route key: ")
+	return parseStaticRouteFromKeySuffix(key, StaticRouteKeyPrefix, "invalid Linux Route key: ")
 }
 
 /* Link-local Route (derived) */
@@ -109,7 +99,7 @@ func StaticLinkLocalRouteKey(dstAddr, outgoingInterface string) string {
 
 // ParseStaticLinkLocalRouteKey parses route attributes from a key derived from link-local route.
 func ParseStaticLinkLocalRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, err error) {
-	return parseStaticRouteFromKeySuffix(key, staticLinkLocalRouteKeyPrefix, "invalid Linux link-local Route key: ")
+	return parseStaticRouteFromKeySuffix(key, StaticLinkLocalRouteKeyPrefix, "invalid Linux link-local Route key: ")
 }
 
 /* Route helpers */

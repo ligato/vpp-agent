@@ -15,12 +15,10 @@
 package ifaceidx
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
-	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 
 	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
@@ -35,24 +33,18 @@ type LinuxIfMetadataIndex interface {
 	// <metadata> as *nil*.
 	LookupByName(name string) (metadata *LinuxIfMetadata, exists bool)
 
-	// LookupByLinuxIfIndex retrieves a previously stored interface identified in
-	// Linux by the given <linuxIfIndex> inside the given <namespace>.
-	// If there is no interface associated with the given index, <exists> is returned
-	// as *false* with <name> and <metadata> both set to empty values.
-	LookupByLinuxIfIndex(linuxIfIndex int, namespace string) (name string, metadata *LinuxIfMetadata, exists bool)
-
-	// LookupByLinuxIfName retrieves a previously stored interface identified in
-	// Linux by the given <linuxIfName> inside the given <namespace>.
-	// If there is no interface associated with the given name, <exists> is returned
-	// as *false* with <name> and <metadata> both set to empty values.
-	LookupByLinuxIfName(linuxIfName string, namespace string) (name string, metadata *LinuxIfMetadata, exists bool)
+	// LookupByTapTempName retrieves a previously configured AUTO-TAP interface
+	// associated with the given TAP temporary name.
+	// If there is no such interface, <exists> is returned as *false* with <name>
+	// and <metadata> both set to empty values.
+	LookupByTapTempName(tapTempName string) (name string, metadata *LinuxIfMetadata, exists bool)
 
 	// ListAllInterfaces returns slice of names of all interfaces in the mapping.
 	ListAllInterfaces() (names []string)
 
 	// WatchInterfaces allows to subscribe to watch for changes in the mapping
 	// of interface metadata.
-	WatchInterfaces(subscriber infra.PluginName, channel chan<- LinuxIfMetadataIndexDto)
+	WatchInterfaces(subscriber string, channel chan<- LinuxIfMetadataIndexDto)
 }
 
 // LinuxIfMetadataIndexRW provides read-write access to mapping with interface
@@ -65,8 +57,8 @@ type LinuxIfMetadataIndexRW interface {
 // LinuxIfMetadata collects metadata for Linux interface used in secondary lookups.
 type LinuxIfMetadata struct {
 	LinuxIfIndex int
-	HostIfName   string
-	Namespace    *nsmodel.Namespace
+	TapTempName  string // empty for VETHs
+	Namespace    *nsmodel.LinuxNetNamespace
 }
 
 // LinuxIfMetadataIndexDto represents an item sent through watch channel in LinuxIfMetadataIndex.
@@ -84,13 +76,9 @@ type linuxIfMetadataIndex struct {
 }
 
 const (
-	// linuxIfNameKeyPrefix is used as prefix (appended with namespace) for secondary key
-	// used to search interface by host name.
-	linuxIfNameKeyPrefix = "linux-if-name/"
-
-	// linuxIfIndexKeyPrefix is used as prefix (appended with namespace) for secondary key
-	// used to search interface by host index.
-	linuxIfIndexKeyPrefix = "linux-if-index/"
+	// tapTempNameIndexKey is used as a secondary key used to search AUTO-TAP
+	// interface by temporary TAP name.
+	tapTempNameIndexKey = "tap-temp-name"
 )
 
 // NewLinuxIfIndex creates a new instance implementing LinuxIfMetadataIndexRW.
@@ -114,30 +102,13 @@ func (ifmx *linuxIfMetadataIndex) LookupByName(name string) (metadata *LinuxIfMe
 	return nil, false
 }
 
-// LookupByLinuxIfIndex retrieves a previously stored interface identified in
-// Linux by the given <linuxIfIndex> inside the given <namespace>.
-// If there is no interface associated with the given index, <exists> is returned
-// as *false* with <name> and <metadata> both set to empty values.
-func (ifmx *linuxIfMetadataIndex) LookupByLinuxIfIndex(linuxIfIndex int, namespace string) (name string, metadata *LinuxIfMetadata, exists bool) {
-	return ifmx.lookupBySecondaryKey(linuxIfIndexKeyPrefix, namespace, strconv.FormatInt(int64(linuxIfIndex), 10))
-}
-
-// LookupByLinuxIfName retrieves a previously stored interface identified in
-// Linux by the given <linuxIfName> inside the given <namespace>.
-// If there is no interface associated with the given name, <exists> is returned
-// as *false* with <name> and <metadata> both set to empty values.
-func (ifmx *linuxIfMetadataIndex) LookupByLinuxIfName(linuxIfName string, namespace string) (name string, metadata *LinuxIfMetadata, exists bool) {
-	return ifmx.lookupBySecondaryKey(linuxIfNameKeyPrefix, namespace, linuxIfName)
-}
-
-// lookupBySecondaryKey performs lookup by a secondary key within a single
-// namespace that should yield one or zero matches.
-func (ifmx *linuxIfMetadataIndex) lookupBySecondaryKey(keyPrefix, namespace, value string) (name string, metadata *LinuxIfMetadata, exists bool) {
-	if namespace == "" {
-		namespace = nsmodel.DefaultNamespaceName
-	}
-	res := ifmx.ListNames(keyPrefix+namespace, value)
-	if len(res) != 1 {
+// LookupByTapTempName retrieves a previously configured AUTO-TAP interface
+// associated with the given TAP temporary name.
+// If there is no such interface, <exists> is returned as *false* with <name>
+// and <metadata> both set to empty values.
+func (ifmx *linuxIfMetadataIndex) LookupByTapTempName(tapTempName string) (name string, metadata *LinuxIfMetadata, exists bool) {
+	res := ifmx.ListNames(tapTempNameIndexKey, tapTempName)
+	if len(res) == 1 {
 		return
 	}
 	untypedMeta, found := ifmx.GetValue(res[0])
@@ -156,7 +127,7 @@ func (ifmx *linuxIfMetadataIndex) ListAllInterfaces() (names []string) {
 
 // WatchInterfaces allows to subscribe to watch for changes in the mapping
 // if interface metadata.
-func (ifmx *linuxIfMetadataIndex) WatchInterfaces(subscriber infra.PluginName, channel chan<- LinuxIfMetadataIndexDto) {
+func (ifmx *linuxIfMetadataIndex) WatchInterfaces(subscriber string, channel chan<- LinuxIfMetadataIndexDto) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
 		typedMeta, ok := dto.Value.(*LinuxIfMetadata)
 		if !ok {
@@ -184,12 +155,8 @@ func indexMetadata(metaData interface{}) map[string][]string {
 		return indexes
 	}
 
-	ns := nsmodel.DefaultNamespaceName
-	if ifMeta.Namespace != nil {
-		ns = ifMeta.Namespace.Name
+	if ifMeta.TapTempName != "" {
+		indexes[tapTempNameIndexKey] = []string{ifMeta.TapTempName}
 	}
-
-	indexes[linuxIfIndexKeyPrefix+ns] = []string{strconv.FormatInt(int64(ifMeta.LinuxIfIndex), 10)}
-	indexes[linuxIfNameKeyPrefix+ns] = []string{ifMeta.HostIfName}
 	return indexes
 }

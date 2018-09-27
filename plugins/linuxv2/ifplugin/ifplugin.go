@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //go:generate protoc --proto_path=../model/interfaces --proto_path=${GOPATH}/src --gogo_out=../model/interfaces interfaces.proto
-//go:generate adapter-generator --descriptor-name Interface --is-proto --value-type *interfaces.LinuxInterface --meta-type *ifaceidx.LinuxIfMetadata --from-datasync --import "../model/interfaces" --import "ifaceidx" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Interface  --value-type *interfaces.LinuxInterface --meta-type *ifaceidx.LinuxIfMetadata --import "../model/interfaces" --import "ifaceidx" --output-dir "descriptor"
 
 package ifplugin
 
@@ -51,7 +51,7 @@ type IfPlugin struct {
 	intfIndex ifaceidx.LinuxIfMetadataIndex
 }
 
-// Deps lists dependencies of the interface plugin.
+// Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
@@ -67,49 +67,49 @@ type Config struct {
 
 // Init registers interface-related descriptors and starts watching of the default
 // network namespace for interface changes.
-func (plugin *IfPlugin) Init() error {
+func (p *IfPlugin) Init() error {
 	// parse configuration file
-	config, err := plugin.retrieveConfig()
+	config, err := p.retrieveConfig()
 	if err != nil {
 		return err
 	}
 	if config != nil {
 		if config.Disabled {
-			plugin.disabled = true
-			plugin.Log.Infof("Disabling Linux Interface plugin")
+			p.disabled = true
+			p.Log.Infof("Disabling Linux Interface plugin")
 			return nil
 		}
 		if config.Stopwatch {
-			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
-			plugin.stopwatch = measure.NewStopwatch("Linux-IfPlugin", plugin.Log)
+			p.Log.Infof("stopwatch enabled for %v", p.PluginName)
+			p.stopwatch = measure.NewStopwatch("Linux-IfPlugin", p.Log)
 		} else {
-			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+			p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 		}
 	} else {
-		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 
 	// init handlers
-	plugin.ifHandler = linuxcalls.NewNetLinkHandler(plugin.stopwatch)
+	p.ifHandler = linuxcalls.NewNetLinkHandler(p.stopwatch)
 
 	// init & register descriptors
-	plugin.ifDescriptor = descriptor.NewInterfaceDescriptor(
-		plugin.Scheduler, plugin.ServiceLabel, plugin.NsPlugin, plugin.ifHandler, plugin.Log)
-	ifDescriptor := adapter.NewInterfaceDescriptor(plugin.ifDescriptor)
-	plugin.ifWatcher = descriptor.NewInterfaceWatcher(plugin.Scheduler, plugin.ifHandler, plugin.Log)
-	plugin.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
-	plugin.Deps.Scheduler.RegisterKVDescriptor(plugin.ifWatcher)
+	p.ifDescriptor = descriptor.NewInterfaceDescriptor(
+		p.Scheduler, p.ServiceLabel, p.NsPlugin, p.ifHandler, p.Log)
+	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
+	p.ifWatcher = descriptor.NewInterfaceWatcher(p.Scheduler, p.ifHandler, p.Log)
+	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
 
 	// obtain read-only reference to index map
 	var withIndex bool
-	metadataMap := plugin.Deps.Scheduler.GetMetadataMap(ifDescriptor.GetName())
-	plugin.intfIndex, withIndex = metadataMap.(ifaceidx.LinuxIfMetadataIndex)
+	metadataMap := p.Deps.Scheduler.GetMetadataMap(ifDescriptor.Name)
+	p.intfIndex, withIndex = metadataMap.(ifaceidx.LinuxIfMetadataIndex)
 	if !withIndex {
 		return errors.New("missing index with interface metadata")
 	}
 
 	// start interface watching
-	err = plugin.ifWatcher.StartWatching()
+	err = p.ifWatcher.StartWatching()
 	if err != nil {
 		return err
 	}
@@ -118,31 +118,31 @@ func (plugin *IfPlugin) Init() error {
 }
 
 // Close stops watching of the default network namespace.
-func (plugin *IfPlugin) Close() error {
-	if plugin.disabled {
+func (p *IfPlugin) Close() error {
+	if p.disabled {
 		return nil
 	}
-	plugin.ifWatcher.StopWatching()
+	p.ifWatcher.StopWatching()
 	return nil
 }
 
 // GetInterfaceIndex gives read-only access to map with metadata of all configured
 // linux interfaces.
-func (plugin *IfPlugin) GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex {
-	return plugin.intfIndex
+func (p *IfPlugin) GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex {
+	return p.intfIndex
 }
 
 // retrieveConfig loads IfPlugin configuration file.
-func (plugin *IfPlugin) retrieveConfig() (*Config, error) {
+func (p *IfPlugin) retrieveConfig() (*Config, error) {
 	config := &Config{}
-	found, err := plugin.Cfg.LoadValue(config)
+	found, err := p.Cfg.LoadValue(config)
 	if !found {
-		plugin.Log.Debug("Linux IfPlugin config not found")
+		p.Log.Debug("Linux IfPlugin config not found")
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Debug("Linux IfPlugin config found")
+	p.Log.Debug("Linux IfPlugin config found")
 	return config, err
 }

@@ -71,7 +71,7 @@ func (intfd *InterfaceDescriptor) addAutoTAP(key string, linuxIf *interfaces.Lin
 		return nil, err
 	}
 	metadata = &ifaceidx.LinuxIfMetadata{
-		HostIfName:   getHostIfName(linuxIf),
+		TapTempName:  tempHostName,
 		Namespace:    linuxIf.Namespace,
 		LinuxIfIndex: link.Attrs().Index,
 	}
@@ -152,8 +152,9 @@ func parseTapAlias(alias string) (tapName, tapTmpName string) {
 // configuration should apply.
 func getTapTempHostName(linuxIf *interfaces.LinuxInterface) string {
 	tempIfName := getHostIfName(linuxIf)
-	if linuxIf.Tap != nil && linuxIf.Tap.TempIfName != "" {
-		tempIfName = linuxIf.Tap.TempIfName
+	ref, ok := linuxIf.Link.(*interfaces.LinuxInterface_TapTempIfName)
+	if ok && ref.TapTempIfName != "" {
+		tempIfName = ref.TapTempIfName
 	}
 	return tempIfName
 }

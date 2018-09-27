@@ -101,7 +101,6 @@ func (intfd *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxI
 		return nil, err
 	}
 	metadata = &ifaceidx.LinuxIfMetadata{
-		HostIfName:   getHostIfName(linuxIf),
 		Namespace:    linuxIf.Namespace,
 		LinuxIfIndex: link.Attrs().Index,
 	}
@@ -169,8 +168,9 @@ func parseVethAlias(alias string) (vethName, peerName string) {
 
 // getVethPeerName returns the name of the peer interface from the configuration.
 func getVethPeerName(linuxIf *interfaces.LinuxInterface) string {
-	if linuxIf.Veth != nil {
-		return linuxIf.Veth.PeerIfName
+	ref, ok := linuxIf.Link.(*interfaces.LinuxInterface_VethPeerIfName)
+	if ok {
+		return ref.VethPeerIfName
 	}
 	return ""
 }

@@ -23,27 +23,27 @@ import (
 )
 
 // AddStaticRoute creates the new static route
-func (handler *NetLinkHandler) AddStaticRoute(route *netlink.Route) error {
+func (h *NetLinkHandler) AddStaticRoute(route *netlink.Route) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("add-static-route").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("add-static-route").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	return netlink.RouteAdd(route)
 }
 
 // ReplaceStaticRoute removes the static route
-func (handler *NetLinkHandler) ReplaceStaticRoute(route *netlink.Route) error {
+func (h *NetLinkHandler) ReplaceStaticRoute(route *netlink.Route) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("replace-static-route").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("replace-static-route").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	return netlink.RouteReplace(route)
 }
 
 // DelStaticRoute removes the static route
-func (handler *NetLinkHandler) DelStaticRoute(route *netlink.Route) error {
+func (h *NetLinkHandler) DelStaticRoute(route *netlink.Route) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("del-static-route").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("del-static-route").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	return netlink.RouteDel(route)
@@ -53,9 +53,9 @@ func (handler *NetLinkHandler) DelStaticRoute(route *netlink.Route) error {
 // interface.
 // <interfaceIdx> works as filter, if set to zero, all routes in the namespace
 // are returned.
-func (handler *NetLinkHandler) GetStaticRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error) {
+func (h *NetLinkHandler) GetStaticRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("get-static-routes").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("get-static-routes").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	var link netlink.Link

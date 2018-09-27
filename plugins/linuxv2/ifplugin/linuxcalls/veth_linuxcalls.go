@@ -37,9 +37,9 @@ import (
 )
 
 // AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
-func (handler *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
+func (h *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("add-veth-iface-pair").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("add-veth-iface-pair").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	// Veth pair params

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 //go:generate protoc --proto_path=../model/l3 --proto_path=${GOPATH}/src --gogo_out=../model/l3 l3.proto
-//go:generate adapter-generator --descriptor-name ARP --is-proto --value-type *l3.LinuxStaticARPEntry --from-datasync --import "../model/l3" --output-dir "descriptor"
-//go:generate adapter-generator --descriptor-name Route --is-proto --value-type *l3.LinuxStaticRoute --from-datasync --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARP --value-type *l3.LinuxStaticARPEntry --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *l3.LinuxStaticRoute --import "../model/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -46,7 +46,7 @@ type L3Plugin struct {
 	routeDescriptor *descriptor.RouteDescriptor
 }
 
-// Deps lists dependencies of the interface plugin.
+// Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
 	Scheduler scheduler.KVScheduler
@@ -61,60 +61,60 @@ type Config struct {
 }
 
 // Init initializes and registers descriptors for Linux ARPs and Routes.
-func (plugin *L3Plugin) Init() error {
+func (p *L3Plugin) Init() error {
 	// parse configuration file
-	config, err := plugin.retrieveConfig()
+	config, err := p.retrieveConfig()
 	if err != nil {
 		return err
 	}
 	if config != nil {
 		if config.Disabled {
-			plugin.disabled = true
-			plugin.Log.Infof("Disabling Linux L3 plugin")
+			p.disabled = true
+			p.Log.Infof("Disabling Linux L3 plugin")
 			return nil
 		}
 		if config.Stopwatch {
-			plugin.Log.Infof("stopwatch enabled for %v", plugin.PluginName)
-			plugin.stopwatch = measure.NewStopwatch("Linux-L3Plugin", plugin.Log)
+			p.Log.Infof("stopwatch enabled for %v", p.PluginName)
+			p.stopwatch = measure.NewStopwatch("Linux-L3Plugin", p.Log)
 		} else {
-			plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+			p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 		}
 	} else {
-		plugin.Log.Infof("stopwatch disabled for %v", plugin.PluginName)
+		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 
 	// init handlers
-	plugin.l3Handler = linuxcalls.NewNetLinkHandler(plugin.stopwatch)
+	p.l3Handler = linuxcalls.NewNetLinkHandler(p.stopwatch)
 
 	// init & register descriptors
 	arpDescriptor := adapter.NewARPDescriptor(descriptor.NewARPDescriptor(
-		plugin.Scheduler, plugin.IfPlugin, plugin.NsPlugin, plugin.l3Handler, plugin.Log))
+		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log).GetDescriptor())
 
 	routeDescriptor := adapter.NewRouteDescriptor(descriptor.NewRouteDescriptor(
-		plugin.Scheduler, plugin.IfPlugin, plugin.NsPlugin, plugin.l3Handler, plugin.Log))
+		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log).GetDescriptor())
 
-	plugin.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
-	plugin.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
 
 	return nil
 }
 
 // Close does nothing here.
-func (plugin *L3Plugin) Close() error {
+func (p *L3Plugin) Close() error {
 	return nil
 }
 
 // retrieveConfig loads L3Plugin configuration file.
-func (plugin *L3Plugin) retrieveConfig() (*Config, error) {
+func (p *L3Plugin) retrieveConfig() (*Config, error) {
 	config := &Config{}
-	found, err := plugin.Cfg.LoadValue(config)
+	found, err := p.Cfg.LoadValue(config)
 	if !found {
-		plugin.Log.Debug("Linux L3Plugin config not found")
+		p.Log.Debug("Linux L3Plugin config not found")
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	plugin.Log.Debug("Linux L3Plugin config found")
+	p.Log.Debug("Linux L3Plugin config found")
 	return config, err
 }

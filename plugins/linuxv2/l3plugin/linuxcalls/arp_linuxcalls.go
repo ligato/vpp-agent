@@ -23,18 +23,18 @@ import (
 )
 
 // SetARPEntry updates existing arp entry
-func (handler *NetLinkHandler) SetARPEntry(arpEntry *netlink.Neigh) error {
+func (h *NetLinkHandler) SetARPEntry(arpEntry *netlink.Neigh) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("set-arp-entry").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("set-arp-entry").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	return netlink.NeighSet(arpEntry)
 }
 
 // DelARPEntry removes an static ARP entry
-func (handler *NetLinkHandler) DelARPEntry(arpEntry *netlink.Neigh) error {
+func (h *NetLinkHandler) DelARPEntry(arpEntry *netlink.Neigh) error {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("del-arp-entry").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("del-arp-entry").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	return netlink.NeighDel(arpEntry)
@@ -43,9 +43,9 @@ func (handler *NetLinkHandler) DelARPEntry(arpEntry *netlink.Neigh) error {
 // GetARPEntries reads all configured static ARP entries for given interface.
 // <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
 // are returned
-func (handler *NetLinkHandler) GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error) {
+func (h *NetLinkHandler) GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error) {
 	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("get-arp-entries").LogTimeEntry(time.Since(t))
+		h.stopwatch.TimeLog("get-arp-entries").LogTimeEntry(time.Since(t))
 	}(time.Now())
 
 	return netlink.NeighList(interfaceIdx, 0)

@@ -2,18 +2,14 @@ syntax = "proto3";
 
 package namespace;
 
-message Namespace {              /* Linux network namespace */
-    enum NamespaceType {
-        PID_REF_NS = 0;          /* namespace of a given process */
-        MICROSERVICE_REF_NS = 1; /* namespace of a docker container running given microservice */
-        NAMED_NS = 2;            /* named namespace */
-        FILE_REF_NS = 3;         /* namespace referenced by a file handle*/
+message LinuxNetNamespace {
+    enum ReferenceType {
+        NETNS_REF_UNDEFINED = 0;
+        NETNS_REF_NSID = 1;         /* named namespace */
+        NETNS_REF_PID = 2;          /* namespace of a given process */
+        NETNS_REF_FD = 3;           /* namespace referenced by a file handle */
+        NETNS_REF_MICROSERVICE = 4; /* namespace of a docker container running given microservice */
     }
-    string name = 1;             /* logical name (mandatory) - also used as the physical name if type==NAMED_NS */
-    NamespaceType type = 2;      /* type of the namespace reference (mandatory) */
-
-    /* based on the type, one of these must be defined: */
-    uint32 pid = 3;
-    string microservice = 4;
-    string filepath = 5;
+    ReferenceType type = 1; /* type of the namespace reference (mandatory) */
+    string reference = 2;   /* namespace ID / PID / file path / microservice name (mandatory) */
 };

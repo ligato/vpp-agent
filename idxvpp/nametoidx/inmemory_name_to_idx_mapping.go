@@ -20,7 +20,6 @@ import (
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
-	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp"
@@ -156,7 +155,7 @@ func (mem *nameToIdxMem) Watch(subscriber string, callback func(idxvpp.NameToIdx
 		}
 		callback(msg)
 	}
-	mem.internal.Watch(infra.PluginName(subscriber), watcher)
+	mem.internal.Watch(subscriber, watcher)
 }
 
 // ToChan is an utility that allows to receive notification through a channel.

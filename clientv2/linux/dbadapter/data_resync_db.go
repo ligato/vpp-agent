@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ func (dsl *DataResyncDSL) LinuxInterface(val *linuxIf.LinuxInterface) linuxclien
 
 // LinuxArpEntry adds Linux ARP entry to the RESYNC request.
 func (dsl *DataResyncDSL) LinuxArpEntry(val *linuxL3.LinuxStaticARPEntry) linuxclient.DataResyncDSL {
-	key := linuxL3.StaticArpKey(val.Interface, val.IpAddr)
+	key := linuxL3.StaticArpKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

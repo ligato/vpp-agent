@@ -20,9 +20,9 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/vishvananda/netlink"
+	"github.com/gogo/protobuf/proto"
 
 	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/kvscheduler/value/protoval"
 	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
@@ -65,8 +65,6 @@ var (
 
 // ARPDescriptor teaches KVScheduler how to configure Linux ARP entries.
 type ARPDescriptor struct {
-	adapter.ARPDescriptorBase
-
 	log       logging.Logger
 	l3Handler l3linuxcalls.NetlinkAPI
 	ifPlugin  ifplugin.API
@@ -88,24 +86,60 @@ func NewARPDescriptor(
 	}
 }
 
-// GetName returns name of the descriptor for Linux ARPs.
-func (arpd *ARPDescriptor) GetName() string {
-	return ARPDescriptorName
+// GetDescriptor returns descriptor suitable for registration (via adapter) with
+// the KVScheduler.
+func (arpd *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
+	return &adapter.ARPDescriptor{
+		Name:               ARPDescriptorName,
+		KeySelector:        arpd.IsARPKey,
+		ValueTypeName:      proto.MessageName(&l3.LinuxStaticARPEntry{}),
+		ValueComparator:    arpd.EquivalentARPs,
+		NBKeyPrefix:        l3.StaticArpKeyPrefix,
+		Add:                arpd.Add,
+		Delete:             arpd.Delete,
+		Modify:             arpd.Modify,
+		IsRetriableFailure: arpd.IsRetriableFailure,
+		Dependencies:       arpd.Dependencies,
+		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
+	}
 }
 
-// KeySelector selects values with the configuration for Linux ARPs.
-func (arpd *ARPDescriptor) KeySelector(key string) bool {
-	return strings.HasPrefix(key, l3.StaticArpKeyPrefix())
+// IsARPKey returns <true> if the key identifies a Linux ARP configuration.
+func (arpd *ARPDescriptor) IsARPKey(key string) bool {
+	return strings.HasPrefix(key, l3.StaticArpKeyPrefix)
 }
 
-// NBKeyPrefixes returns NB-config key prefix for Linux ARPs.
-func (arpd *ARPDescriptor) NBKeyPrefixes() []string {
-	return []string{l3.StaticArpKeyPrefix()}
+// EquivalentARPs is case-insensitive comparison function for l3.LinuxStaticARPEntry.
+func (arpd *ARPDescriptor) EquivalentARPs(key string, arp1, arp2 *l3.LinuxStaticARPEntry) bool {
+	// interfaces compared as usually:
+	if arp1.Interface != arp2.Interface {
+		return false
+	}
+
+	// compare MAC addresses case-insensitively
+	if strings.ToLower(arp1.HwAddress) != strings.ToLower(arp2.HwAddress) {
+		return false
+	}
+
+	// compare IP addresses converted to net.IPNet
+	return equalAddrs(arp1.IpAddress, arp2.IpAddress)
 }
 
-// Build creates proto value representation of a Linux ARP with overridden Equivalent method.
-func (arpd *ARPDescriptor) Build(key string, arp *l3.LinuxStaticARPEntry) (value protoval.ProtoValue, err error) {
-	return &ARPProtoValue{ProtoValue: protoval.NewProtoValue(arp), arp: arp}, nil
+// IsRetriableFailure returns <false> for errors related to invalid configuration.
+func (arpd *ARPDescriptor) IsRetriableFailure(err error) bool {
+	nonRetriable := []error{
+		ErrARPWithoutInterface,
+		ErrARPWithoutIP,
+		ErrARPWithInvalidIP,
+		ErrARPWithoutHwAddr,
+		ErrARPWithInvalidHwAddr,
+	}
+	for _, nonRetriableErr := range nonRetriable {
+		if err == nonRetriableErr {
+			return false
+		}
+	}
+	return true
 }
 
 // Add creates ARP entry.
@@ -135,7 +169,7 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 		arpd.log.Error(err)
 		return err
 	}
-	if arp.IpAddr == "" {
+	if arp.IpAddress == "" {
 		err = ErrARPWithoutIP
 		arpd.log.Error(err)
 		return err
@@ -161,7 +195,7 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 	neigh.LinkIndex = ifMeta.LinuxIfIndex
 
 	// set IP address
-	ipAddr := net.ParseIP(arp.IpAddr)
+	ipAddr := net.ParseIP(arp.IpAddress)
 	if ipAddr == nil {
 		err = ErrARPWithInvalidIP
 		arpd.log.Error(err)
@@ -207,11 +241,6 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 	}
 
 	return nil
-}
-
-// ModifyHasToRecreate returns true if the associated interfaces or IP addresses differ.
-func (arpd *ARPDescriptor) ModifyHasToRecreate(key string, oldARP *l3.LinuxStaticARPEntry, newARP *l3.LinuxStaticARPEntry, oldMetadata interface{}) bool {
-	return oldARP.Interface != newARP.Interface || !equalAddrs(oldARP.IpAddr, newARP.IpAddr)
 }
 
 // Dependencies lists dependencies for a Linux ARP entry.
@@ -274,7 +303,7 @@ func (arpd *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapte
 				Key: l3.StaticArpKey(ifName, ipAddr),
 				Value: &l3.LinuxStaticARPEntry{
 					Interface: ifName,
-					IpAddr:    ipAddr,
+					IpAddress:    ipAddr,
 					HwAddress: hwAddr,
 				},
 				Origin: scheduler.UnknownOrigin, // let the scheduler to determine the origin
@@ -283,9 +312,4 @@ func (arpd *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapte
 	}
 	arpd.log.WithField("dump", dump).Debug("Dumping Linux ARPs")
 	return dump, nil
-}
-
-// DumpDependencies tells scheduler to dump configured interfaces first.
-func (arpd *ARPDescriptor) DumpDependencies() []string {
-	return []string{ifdescriptor.InterfaceDescriptorName}
 }
