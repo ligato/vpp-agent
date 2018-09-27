@@ -35,7 +35,7 @@ docker exec -it vpp vppctl -s localhost:5002
 ```
 
 ## Next Steps
-Read the README for the [Development Docker Image](docker/dev/README.md) for more details.
+Read the README for the [Development Docker Image](../../docker/dev/README.md) for more details.
 
 [1]: https://hub.docker.com/r/ligato/vpp-agent-arm64/
 [2]: kafka.md
