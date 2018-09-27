@@ -38,6 +38,6 @@ docker exec -it vpp vppctl -s localhost:5002
 Read the README for the [Development Docker Image](docker/dev/README.md) for more details.
 
 [1]: https://hub.docker.com/r/ligato/vpp-agent-arm64/
-[2]: docs/arm64/kafka.md
-[3]: docs/arm64/etcd.md
-[4]: docs/arm64/docker_images.md
+[2]: kafka.md
+[3]: etcd.md
+[4]: docker_images.md
