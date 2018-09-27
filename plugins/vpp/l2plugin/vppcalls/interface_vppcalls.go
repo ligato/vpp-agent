@@ -97,7 +97,7 @@ func (h *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdName string, bd
 	}
 	// Set as BVI.
 	if bdIf.BridgedVirtualInterface {
-		req.Bvi = 1
+		req.PortType = l2ba.L2_API_PORT_TYPE_BVI
 		h.log.Debugf("Interface %v set as BVI", bdIf.Name)
 	}
 	reply := &l2ba.SwInterfaceSetL2BridgeReply{}
