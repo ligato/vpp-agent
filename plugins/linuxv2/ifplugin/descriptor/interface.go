@@ -122,6 +122,7 @@ func (intfd *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		IsRetriableFailure: intfd.IsRetriableFailure,
 		Dependencies:       intfd.Dependencies,
 		DerivedValues:      intfd.DerivedValues,
+		Dump:               intfd.Dump,
 		DumpDependencies:   []string{nsdescriptor.MicroserviceDescriptorName},
 	}
 }

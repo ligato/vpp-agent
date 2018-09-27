@@ -100,6 +100,7 @@ func (arpd *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 		Modify:             arpd.Modify,
 		IsRetriableFailure: arpd.IsRetriableFailure,
 		Dependencies:       arpd.Dependencies,
+		Dump:               arpd.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }

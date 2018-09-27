@@ -113,6 +113,7 @@ func (rd *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 		Modify:             rd.Modify,
 		IsRetriableFailure: rd.IsRetriableFailure,
 		Dependencies:       rd.Dependencies,
+		Dump:               rd.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
