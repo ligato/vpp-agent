@@ -110,7 +110,7 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 		keyPrefixes := scheduler.GetRegisteredNBKeyPrefixes()
 
 		// TODO: add options to localclient
-		txn := scheduler.StartNBTransaction(scheduler_api.WithRetry(time.Second, true))
+		txn := scheduler.StartNBTransaction()
 		for key, val := range txData {
 			registered := false
 			for _, prefix := range keyPrefixes {
@@ -123,13 +123,13 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 				continue
 			}
 			if val.GetChangeType() == datasync.Delete {
-				txn.SetValueData(key, nil)
+				txn.SetValue(key, nil)
 			} else {
-				txn.SetValueData(key, val)
+				txn.SetValue(key, val)
 			}
 		}
 		// TODO: return error(s)
-		txn.Commit(context.Background())
+		txn.Commit(scheduler_api.WithRetry(context.Background(), time.Second, true))
 	}
 
 	for _, sub := range adapter.subscriptions {
@@ -191,9 +191,9 @@ func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue)
 	scheduler := &kvscheduler.DefaultPlugin // temporary hack
 	if scheduler.IsInitialized() {
 		keyPrefixes := scheduler.GetRegisteredNBKeyPrefixes()
-		var values []scheduler_api.KeyValueDataPair
 
 		// TODO: add options to localclient
+		txn := scheduler.StartNBTransaction()
 		for key, val := range txData {
 			registered := false
 			for _, prefix := range keyPrefixes {
@@ -205,15 +205,14 @@ func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue)
 			if !registered {
 				continue
 			}
-			values = append(values, scheduler_api.KeyValueDataPair{
-				Key:       key,
-				ValueData: val,
-			})
+
+			txn.SetValue(key, val)
 		}
 		// TODO: return error(s)
-		txn := scheduler.StartNBTransaction(scheduler_api.WithRetry(time.Second, true))
-		txn.Resync(values)
-		txn.Commit(context.Background())
+		ctx := context.Background()
+		ctx = scheduler_api.WithRetry(ctx, time.Second, true)
+		ctx = scheduler_api.WithFullResync(ctx)
+		txn.Commit(ctx)
 	}
 
 	adapter.lastRev.Cleanup()

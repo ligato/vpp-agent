@@ -17,7 +17,8 @@ package kvscheduler
 import (
 	"fmt"
 	. "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/kvscheduler/graph"
+	"github.com/ligato/cn-infra/kvscheduler/internal/graph"
+	"github.com/ligato/cn-infra/kvscheduler/internal/utils"
 	"github.com/ligato/cn-infra/logging"
 )
 
@@ -29,11 +30,14 @@ type resyncData struct {
 
 // refreshGraph updates all/some values in the graph to their *real* state
 // using the Dump methods from descriptors.
-func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys keySet, resyncData *resyncData) {
-	refreshedKeys := make(keySet)
+func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyncData *resyncData) {
+	refreshedKeys := utils.NewKeySet()
 
 	// iterate over all descriptors, in order given by dump dependencies
 	for _, descriptor := range scheduler.registry.GetAllDescriptors() {
+		handler := &descriptorHandler{descriptor}
+
+		// check if this descriptor's key space should be refreshed as well
 		skip := len(keys) > 0
 		for key := range keys {
 			if descriptor.KeySelector(key) {
@@ -43,14 +47,14 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys keySet, res
 		}
 		if skip {
 			// nothing to refresh in the key space of this descriptor
-			scheduler.skipRefresh(graphW, descriptor.GetName(), nil, refreshedKeys)
+			scheduler.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
 			continue
 		}
 
 		// get non-pending base values for this descriptor from memory before
 		// refresh
 		prevAddedNodes := graphW.GetNodes(nil,
-			graph.WithFlags(&DescriptorFlag{descriptor.GetName()}),
+			graph.WithFlags(&DescriptorFlag{descriptor.Name}),
 			graph.WithoutFlags(&PendingFlag{}, &DerivedFlag{}))
 
 		// get key-value pairs for correlation
@@ -74,20 +78,21 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys keySet, res
 		}
 
 		// execute Dump operation
-		dump, err := descriptor.Dump(correlate)
-		if err != nil {
-			if err != ErrDumpNotSupported {
-				scheduler.Log.WithField("descriptor", descriptor.GetName()).
+		dump, ableToDump, err := handler.dump(correlate)
+
+		// mark un-dumpable as refreshed
+		if !ableToDump || err != nil {
+			if err != nil {
+				scheduler.Log.WithField("descriptor", descriptor.Name).
 					Error("failed to dump values, refresh for the descriptor will be skipped")
 			}
-			// mark un-dumpable as refreshed
-			scheduler.skipRefresh(graphW, descriptor.GetName(), nil, refreshedKeys)
+			scheduler.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
 			continue
 		}
 
 		if len(keys) > 0 {
 			// mark keys that should not be touched as refreshed
-			scheduler.skipRefresh(graphW, descriptor.GetName(), keys, refreshedKeys)
+			scheduler.skipRefresh(graphW, descriptor.Name, keys, refreshedKeys)
 		}
 
 		// process dumped kv-pairs
@@ -135,9 +140,10 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys keySet, res
 
 			// refresh node that represents this kv-pair
 			node := graphW.SetNode(dumpedKV.Key)
+			node.SetLabel(handler.keyLabel(node.GetKey()))
 			node.SetValue(dumpedKV.Value)
-			if withMeta, _ := descriptor.WithMetadata(); withMeta {
-				node.SetMetadataMap(descriptor.GetName())
+			if descriptor.WithMetadata {
+				node.SetMetadataMap(descriptor.Name)
 				node.SetMetadata(dumpedKV.Metadata)
 			}
 
@@ -162,8 +168,11 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys keySet, res
 	}
 
 	// remove nodes that do not actually exist
-	refreshable := graphW.GetNodes(nil, graph.WithoutFlags(&PendingFlag{}))
-	for _, node := range refreshable {
+	for _, node := range graphW.GetNodes(nil) {
+		if !isNodeDerived(node) && isNodePending(node) {
+			// keep pending base values
+			continue
+		}
 		if _, refreshed := refreshedKeys[node.GetKey()]; !refreshed {
 			graphW.DeleteNode(node.GetKey())
 		}
@@ -176,7 +185,7 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys keySet, res
 
 // skipRefresh is used to mark nodes as refreshed without actual refreshing
 // if they should not (or cannot) be refreshed.
-func (scheduler *Scheduler) skipRefresh(graphR graph.ReadAccess, descriptor string, except keySet, refreshed keySet) {
+func (scheduler *Scheduler) skipRefresh(graphR graph.ReadAccess, descriptor string, except utils.KeySet, refreshed utils.KeySet) {
 	skipped := graphR.GetNodes(nil,
 		graph.WithFlags(&DescriptorFlag{descriptor}),
 		graph.WithoutFlags(&DerivedFlag{}))
@@ -184,14 +193,14 @@ func (scheduler *Scheduler) skipRefresh(graphR graph.ReadAccess, descriptor stri
 		if _, toRefresh := except[node.GetKey()]; toRefresh {
 			continue
 		}
-		refreshed.add(node.GetKey())
+		refreshed.Add(node.GetKey())
 
 		// BFS over derived nodes
 		derived := getDerivedNodes(node)
 		for len(derived) > 0 {
 			var next []graph.Node
 			for _, derivedNode := range derived {
-				refreshed.add(derivedNode.GetKey())
+				refreshed.Add(derivedNode.GetKey())
 				next = append(next, getDerivedNodes(derivedNode)...)
 			}
 			derived = next
@@ -201,7 +210,7 @@ func (scheduler *Scheduler) skipRefresh(graphR graph.ReadAccess, descriptor stri
 
 // unwindDumpedRelations builds a tree of derived values based on a dumped <root> kv-pair.
 func (scheduler *Scheduler) unwindDumpedRelations(graphW graph.RWAccess, root graph.NodeRW,
-	origin ValueOrigin, refreshed keySet) {
+	origin ValueOrigin, refreshed utils.KeySet) {
 
 	// BFS over derived values
 	nodes := []graph.NodeRW{root}
@@ -209,6 +218,7 @@ func (scheduler *Scheduler) unwindDumpedRelations(graphW graph.RWAccess, root gr
 		var next []graph.NodeRW
 		for _, node := range nodes {
 			descriptor := scheduler.registry.GetDescriptorForKey(node.GetKey()) // nil for properties
+			handler := descriptorHandler{descriptor}
 
 			// refresh flags
 			if node.GetKey() == root.GetKey() {
@@ -222,19 +232,15 @@ func (scheduler *Scheduler) unwindDumpedRelations(graphW graph.RWAccess, root gr
 			}
 			node.SetFlags(&OriginFlag{origin})
 			if descriptor != nil {
-				node.SetFlags(&DescriptorFlag{descriptor.GetName()})
+				node.SetFlags(&DescriptorFlag{descriptor.Name})
 			} else {
 				node.DelFlags(DescriptorFlagName)
 			}
 			node.DelFlags(PendingFlagName)
 
 			// refresh relations with other values
-			var dependencies []Dependency
-			var derives []KeyValuePair
-			if descriptor != nil {
-				dependencies = descriptor.Dependencies(node.GetKey(), node.GetValue())
-				derives = descriptor.DerivedValues(node.GetKey(), node.GetValue())
-			}
+			dependencies := handler.dependencies(node.GetKey(), node.GetValue())
+			derives := handler.derivedValues(node.GetKey(), node.GetValue())
 			node.SetTargets(constructTargets(dependencies, derives))
 
 			// add derived values for the next iteration
@@ -243,39 +249,39 @@ func (scheduler *Scheduler) unwindDumpedRelations(graphW graph.RWAccess, root gr
 				nextNode.SetValue(derived.Value)
 				next = append(next, nextNode)
 			}
-			refreshed.add(node.GetKey())
+			refreshed.Add(node.GetKey())
 		}
 		nodes = next
 	}
 }
 
 // validDumpedKV verifies validity of a dumped KV-pair.
-func (scheduler *Scheduler) validDumpedKV(kv KVWithMetadata, descriptor KVDescriptor, refreshed keySet) bool {
+func (scheduler *Scheduler) validDumpedKV(kv KVWithMetadata, descriptor *KVDescriptor, refreshed utils.KeySet) bool {
 	if kv.Key == "" {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.GetName(),
+			"descriptor": descriptor.Name,
 		}).Warn("Descriptor dumped value with empty key")
 		return false
 	}
 	if _, alreadyDumped := refreshed[kv.Key]; alreadyDumped {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.GetName(),
+			"descriptor": descriptor.Name,
 			"key":        kv.Key,
 		}).Warn("The same value was dumped more than once")
 		return false
 	}
 	if kv.Value == nil {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.GetName(),
+			"descriptor": descriptor.Name,
 			"key":        kv.Key,
 		}).Warn("Descriptor dumped nil value")
 		return false
 	}
 	if !descriptor.KeySelector(kv.Key) {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.GetName(),
+			"descriptor": descriptor.Name,
 			"key":        kv.Key,
-			"value":      kv.Value.Label(),
+			"value":      kv.Value,
 		}).Warn("Descriptor dumped value outside of its key space")
 		return false
 	}
@@ -283,17 +289,17 @@ func (scheduler *Scheduler) validDumpedKV(kv KVWithMetadata, descriptor KVDescri
 }
 
 // validDumpedKV verifies validity of a KV-pair derived from a dumped value.
-func (scheduler *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor KVDescriptor, refreshed keySet) bool {
+func (scheduler *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor *KVDescriptor, refreshed utils.KeySet) bool {
 	if node.GetValue() == nil {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.GetName(),
+			"descriptor": descriptor.Name,
 			"key":        node.GetKey(),
 		}).Warn("Derived nil value")
 		return false
 	}
 	if _, alreadyDumped := refreshed[node.GetKey()]; alreadyDumped {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.GetName(),
+			"descriptor": descriptor.Name,
 			"key":        node.GetKey(),
 		}).Warn("The same value was dumped more than once")
 		// return true -> let's overwrite invalidly dumped derived value

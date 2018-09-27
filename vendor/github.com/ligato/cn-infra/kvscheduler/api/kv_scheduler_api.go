@@ -16,42 +16,34 @@ package api
 
 import (
 	"context"
+	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/idxmap"
 )
 
 // KeySelector is used to filter keys.
 type KeySelector func(key string) bool
 
-// Value may represent some object, action or property.
-//
-// Value can be built+added either via northbound transaction (NB-value,
-// ValueOrigin = FromNB) or pushed (as already created) through SB notification
-// (SB-value, ValueOrigin = FromSB). Values from NB take priority as they
-// overwrite existing SB values (via Modify operation), whereas notifications
-// for existing NB values are ignored. For values returned by Dump with unknown
-// origin the scheduler reviews the value's history to determine where it came
-// from.
-//
-// For descriptors the values (once built) are mutable objects - Add, Modify,
-// Delete and Update method should reflect the value content without changing it.
-// To add and maintain extra (runtime) attributes alongside the value, descriptor
-// can use the value metadata.
-type Value interface {
-	// Label should return a short string labeling the value.
-	// In the scope of a single descriptor, every described value should have
-	// a unique label.
-	Label() string
+// KeyValuePair groups key with value.
+type KeyValuePair struct {
+	// Key identifies value.
+	Key string
 
-	// String returns a human-readable string for logging & REST interface.
-	String() string
-
-	// Equivalent is used by the scheduler to determine if Modify operation is
-	// needed, i.e. it tells if this value if effectively the same as <v2> from
-	// the NB point of view.
-	// The implementation can be omitted simply by always returning false,
-	// which will result in scheduler calling Modify every time the value was
-	// updated/re-synced.
-	Equivalent(v2 Value) bool
+	// Value may represent some object, action or property.
+	//
+	// Value can be added either via northbound transaction (NB-value,
+	// ValueOrigin = FromNB) or pushed (as already created) through SB notification
+	// (SB-value, ValueOrigin = FromSB). Values from NB take priority as they
+	// overwrite existing SB values (via Modify operation), whereas notifications
+	// for existing NB values are ignored. For values returned by Dump with unknown
+	// origin the scheduler reviews the value's history to determine where it came
+	// from.
+	//
+	// For descriptors the values are mutable objects - Add, Modify, Delete and
+	// Update methods should reflect the value content without changing it.
+	// To add and maintain extra (runtime) attributes alongside the value, descriptor
+	// can use the value metadata.
+	Value proto.Message
 }
 
 // Metadata are extra information carried alongside non-derived (base) value
@@ -70,18 +62,6 @@ type Value interface {
 // is not familiar with their semantics.
 type Metadata interface{}
 
-// KeyValuePair groups key with value.
-type KeyValuePair struct {
-	Key   string
-	Value Value
-}
-
-// KeyValueDataPair groups key with value data.
-type KeyValueDataPair struct {
-	Key       string
-	ValueData interface{}
-}
-
 // KeyWithError stores error for a key whose value failed to get updated.
 type KeyWithError struct {
 	Key   string
@@ -91,7 +71,7 @@ type KeyWithError struct {
 // KVWithMetadata encapsulates key-value pair with metadata and the origin mark.
 type KVWithMetadata struct {
 	Key      string
-	Value    Value
+	Value    proto.Message
 	Metadata Metadata
 	Origin   ValueOrigin
 }
@@ -99,8 +79,8 @@ type KVWithMetadata struct {
 // KVScheduler synchronizes the *desired* system state described by northbound
 // (NB) components via transactions with the *actual* state of the southbound (SB).
 // The  system state is represented as a set of inter-dependent key-value pairs
-// that can be built, added, modified, deleted from within NB transactions
-// or be notified about via notifications from the SB plane.
+// that can be added, modified, deleted from within NB transactions or be notified
+// about via notifications from the SB plane.
 // The scheduling basically implements "state reconciliation" - periodically and
 // on any change the scheduler attempts to update every value which has satisfied
 // dependencies but is out-of-sync with the desired state given by NB.
@@ -121,7 +101,7 @@ type KVWithMetadata struct {
 //   -> A depends on B:
 //          - A cannot exist without B
 //          - request to add A without B existing must be postponed by storing
-//            A into the cache (a.k.a. pending) of values with unmet dependencies
+//            A into the cache of values with unmet dependencies (a.k.a. pending)
 //          - if B is to be removed and A exists, A must be removed first
 //            and cached in case B is restored in the future
 //          - Note: values pushed from SB are not checked for dependencies
@@ -138,7 +118,7 @@ type KVWithMetadata struct {
 //
 // Every key-value pair must have at most one descriptor associated with it.
 // Base NB value without descriptor is considered unimplemented and will never
-// be added or even built (can only be pushed from SB as already created/executed).
+// be added (can only be pushed from SB as already created/executed).
 // On the other hand, derived value is allowed to have no descriptor associated
 // with it. Typically, properties of base values are implemented as derived
 // (often empty) values without attached SB operations, used as targets for
@@ -156,11 +136,12 @@ type KVWithMetadata struct {
 //   - decreases the likelihood of race conditions and deadlocks in systems with
 //     complex dependencies
 //   - allows to write loosely-coupled SB components (mediator pattern)
-//   - descriptor interface will force new SB components to follow the same
+//   - descriptor API will force new SB components to follow the same
 //     code structure which will make them easier to familiarize with
 //   - NB components should never worry about dependencies between requests -
 //     it is taken care of by the scheduler
-//   - single cache for all pending values (exposed via REST, easier to debug)
+//   - single cache for all (not only pending) values (exposed via REST,
+//     easier to debug)
 //
 // Apart from scheduling and execution, KVScheduler also offers the following
 // features:
@@ -172,15 +153,17 @@ type KVWithMetadata struct {
 //     interface
 //   - clearly describing the sequence of actions to be executed and postponed
 //     in the log file
+//   - transaction execution tracing (using "runtime/trace" package)
 //   - TBD: consider exposing the current config as a plotted graph (returned via
 //          REST) with values as nodes (colored to distinguish cached from added
-//          ones) and dependencies as edges (unsatisfied marked with red color).
+//          ones, derived from base, etc.) and dependencies as edges (unsatisfied
+//          marked with red color).
 type KVScheduler interface {
 	// RegisterKVDescriptor registers descriptor for a set of selected
 	// keys. It should be called in the Init phase of agent plugins.
 	// Every key-value pair must have at most one descriptor associated with it
 	// (none for derived values expressing properties).
-	RegisterKVDescriptor(descriptor KVDescriptor)
+	RegisterKVDescriptor(descriptor *KVDescriptor)
 
 	// GetRegisteredNBKeyPrefixes returns a list of key prefixes from NB with values
 	// described by registered descriptors and therefore managed by the scheduler.
@@ -188,7 +171,7 @@ type KVScheduler interface {
 
 	// StartNBTransaction starts a new transaction from NB to SB plane.
 	// The enqueued actions are scheduled for execution by Txn.Commit().
-	StartNBTransaction(opts ...TxnOption) Txn
+	StartNBTransaction() Txn
 
 	// PushSBNotification notifies about a spontaneous value change in the SB
 	// plane (i.e. not triggered by NB transaction).
@@ -202,14 +185,14 @@ type KVScheduler interface {
 	// Values pushed from SB are overwritten by those created via NB transactions,
 	// however. For example, notifications for values already created by NB
 	// are ignored. But otherwise, SB values (not managed by NB) are untouched
-	// by resync or any other operation of the scheduler/descriptor.
-	PushSBNotification(key string, value Value, metadata Metadata) error
+	// by reconciliation or any other operation of the scheduler/descriptor.
+	PushSBNotification(key string, value proto.Message, metadata Metadata) error
 
 	// GetValue currently set for the given key.
 	// The function can be used from within a transaction. However, if update
 	// of A uses the value of B, then A should be marked as dependent on B
 	// so that the scheduler can ensure that B is updated before A is.
-	GetValue(key string) Value
+	GetValue(key string) proto.Message
 
 	// GetValues returns a set of values matched by the given selector.
 	GetValues(selector KeySelector) []KeyValuePair
@@ -224,7 +207,7 @@ type KVScheduler interface {
 	GetPendingValues(keySelector KeySelector) []KeyValuePair
 
 	// GetFailedValues returns a list of keys (possibly filtered by selector)
-	// whose values are in a failed state (i.e. possibly not in the state as set
+	// whose (base) values are in a failed state (i.e. possibly not in the state as set
 	// by the last transaction).
 	GetFailedValues(keySelector KeySelector) []KeyWithError
 
@@ -236,23 +219,16 @@ type KVScheduler interface {
 // Txn represent a single transaction.
 // Scheduler starts to plan and execute actions only after Commit is called.
 type Txn interface {
-	// SetValueData changes (non-derived) value data.
-	// NB provides untyped data which are build into the new value for the given
-	// key by descriptor (method BuildValue).
-	// If <valueData> is nil, the value will get deleted.
-	SetValueData(key string, valueData interface{}) Txn
-
-	// Resync all NB-values to match with <values>.
-	// The list should consist of non-derived values only - derived values will
-	// get created automatically using descriptors.
-	// Run in case the SB may be out-of-sync with NB or with the scheduler
-	// itself.
-	Resync(values []KeyValueDataPair) Txn
+	// SetValue changes (non-derived) lazy value - un-marshalled during
+	// transaction pre-processing using ValueTypeName given by descriptor.
+	// If <value> is nil, the value will get deleted.
+	SetValue(key string, value datasync.LazyValue) Txn
 
 	// Commit orders scheduler to execute enqueued operations.
 	// Operations with unmet dependencies will get postponed and possibly
 	// executed later.
-	// <ctx> allows to cancel waiting for the end of a blocking transaction.
+	// <ctx> allows to pass transaction options (see With* functions from
+	// txn_options.go) or to cancel waiting for the end of a blocking transaction.
 	// <txnError> covers validity of the transaction and the preparedness
 	// of the scheduler to execute it.
 	// <kvErrors> are related to operations from this transaction that

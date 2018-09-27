@@ -20,11 +20,13 @@ import (
 
 	. "github.com/ligato/cn-infra/kvscheduler/api"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/kvscheduler/graph"
-	"github.com/ligato/cn-infra/kvscheduler/registry"
+	"github.com/ligato/cn-infra/kvscheduler/internal/graph"
+	"github.com/ligato/cn-infra/kvscheduler/internal/registry"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/rest"
 )
@@ -46,9 +48,9 @@ type Scheduler struct {
 	isInitialized bool
 
 	// management of go routines
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	ctx     context.Context
+	cancel  context.CancelFunc
+	wg      sync.WaitGroup
 
 	// in-memory representation of all added+pending kv-pair and their dependencies
 	graph graph.Graph
@@ -60,10 +62,12 @@ type Scheduler struct {
 	keyPrefixes []string
 
 	// TXN processing
+	txnLock      sync.Mutex // can be used to pause transaction processing; always lock before the graph!
 	txnQueue     chan *queuedTxn
 	errorSubs    []errorSubscription
 	txnSeqNumber uint
 	resyncCount  uint
+	lastError    map[string]error // key -> error
 
 	// TXN history
 	historyLock sync.Mutex
@@ -81,7 +85,6 @@ type Deps struct {
 type SchedulerTxn struct {
 	scheduler *Scheduler
 	data      *queuedTxn
-	err       error
 }
 
 // errorSubscription represents one subscription for error updates.
@@ -101,6 +104,8 @@ func (scheduler *Scheduler) Init() error {
 	scheduler.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions
 	scheduler.txnQueue = make(chan *queuedTxn, 100)
+	// map of last errors (even for nodes not in the graph anymore)
+	scheduler.lastError = make(map[string]error)
 	// register REST API handlers
 	scheduler.registerHandlers(scheduler.HTTPHandlers)
 	// go routine processing serialized transactions
@@ -127,20 +132,19 @@ func (scheduler *Scheduler) Close() error {
 // keys. It should be called in the Init phase of agent plugins.
 // Every key-value pair must have at most one descriptor associated with it
 // (none for derived values expressing properties).
-func (scheduler *Scheduler) RegisterKVDescriptor(descriptor KVDescriptor) {
+func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *KVDescriptor) {
 	scheduler.registry.RegisterDescriptor(descriptor)
-	scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefixes()...)
+	scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefix)
 
-	withMeta, metadataMapFactory := descriptor.WithMetadata()
-	if withMeta {
+	if descriptor.WithMetadata {
 		var metadataMap idxmap.NamedMappingRW
-		if metadataMapFactory != nil {
-			metadataMap = metadataMapFactory()
+		if descriptor.MetadataMapFactory != nil {
+			metadataMap = descriptor.MetadataMapFactory()
 		} else {
-			metadataMap = mem.NewNamedMapping(scheduler.Log, descriptor.GetName(), nil)
+			metadataMap = mem.NewNamedMapping(scheduler.Log, descriptor.Name, nil)
 		}
 		graphW := scheduler.graph.Write(false)
-		graphW.RegisterMetadataMap(descriptor.GetName(), metadataMap)
+		graphW.RegisterMetadataMap(descriptor.Name, metadataMap)
 		graphW.Save()
 		graphW.Release()
 	}
@@ -154,40 +158,22 @@ func (scheduler *Scheduler) GetRegisteredNBKeyPrefixes() []string {
 
 // StartNBTransaction starts a new transaction from NB to SB plane.
 // The enqueued actions are scheduled for execution by Txn.Commit().
-func (scheduler *Scheduler) StartNBTransaction(opts ...TxnOption) Txn {
+func (scheduler *Scheduler) StartNBTransaction() Txn {
 	txn := &SchedulerTxn{
 		scheduler: scheduler,
 		data: &queuedTxn{
 			txnType: nbTransaction,
 			nb: &nbTxn{
-				isBlocking: true,
-				valueData:  make(map[string]interface{}),
+				value: make(map[string]datasync.LazyValue),
 			},
 		},
-	}
-
-	for _, opt := range opts {
-		switch option := opt.(type) {
-		case *NonBlockingTxn:
-			txn.data.nb.isBlocking = false
-		case *RetryFailedOps:
-			txn.data.nb.retryFailed = true
-			txn.data.nb.retryPeriod = option.Period
-			txn.data.nb.expBackoffRetry = option.ExpBackoff
-		case *RevertOnFailure:
-			txn.data.nb.revertOnFailure = true
-		}
-	}
-
-	if txn.data.nb.isBlocking {
-		txn.data.nb.resultChan = make(chan []KeyWithError, 1)
 	}
 	return txn
 }
 
 // PushSBNotification notifies about a spontaneous value change in the SB
 // plane (i.e. not triggered by NB transaction).
-func (scheduler *Scheduler) PushSBNotification(key string, value Value, metadata Metadata) error {
+func (scheduler *Scheduler) PushSBNotification(key string, value proto.Message, metadata Metadata) error {
 	txn := &queuedTxn{
 		txnType: sbNotification,
 		sb: &sbNotif{
@@ -202,7 +188,7 @@ func (scheduler *Scheduler) PushSBNotification(key string, value Value, metadata
 // The function can be used from within a transaction. However, if update
 // of A uses the value of B, then A should be marked as dependent on B
 // so that the scheduler can ensure that B is updated before A is.
-func (scheduler *Scheduler) GetValue(key string) Value {
+func (scheduler *Scheduler) GetValue(key string) proto.Message {
 	graphR := scheduler.graph.Read()
 	defer graphR.Release()
 
@@ -243,7 +229,7 @@ func (scheduler *Scheduler) GetPendingValues(selector KeySelector) []KeyValuePai
 }
 
 // GetFailedValues returns a list of keys (possibly filtered by selector)
-// whose values are in a failed state (i.e. possibly not in the state as set
+// whose (base) values are in a failed state (i.e. possibly not in the state as set
 // by the last transaction).
 func (scheduler *Scheduler) GetFailedValues(selector KeySelector) []KeyWithError {
 	graphR := scheduler.graph.Read()
@@ -259,34 +245,11 @@ func (scheduler *Scheduler) SubscribeForErrors(channel chan<- KeyWithError, sele
 	scheduler.errorSubs = append(scheduler.errorSubs, errorSubscription{channel: channel, selector: selector})
 }
 
-// SetValueData changes (non-derived) value data.
-// NB provides untyped data which are build into the new value for the given
-// key by descriptor (method BuildValue).
-// If <valueData> is nil, the value will get deleted.
-func (txn *SchedulerTxn) SetValueData(key string, valueData interface{}) Txn {
-	if txn.data.nb.isResync {
-		txn.err = ErrCombinedResyncWithChange
-		return txn
-	}
-	txn.data.nb.valueData[key] = valueData
-	return txn
-}
-
-// Resync all NB-values to match with <values>.
-// The list should consist of non-derived values only - derived values will
-// get created automatically using descriptors.
-// Run in case the SB may be out-of-sync with NB or with the scheduler
-// itself.
-func (txn *SchedulerTxn) Resync(values []KeyValueDataPair) Txn {
-	txn.data.nb.isResync = true
-	if len(txn.data.nb.valueData) > 0 {
-		txn.err = ErrCombinedResyncWithChange
-		return txn
-	}
-	for _, value := range values {
-		txn.data.nb.valueData[value.Key] = value.ValueData
-	}
-
+// SetValue changes (non-derived) lazy value - un-marshalled during
+// transaction pre-processing using ValueTypeName given by descriptor.
+// If <value> is nil, the value will get deleted.
+func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) Txn {
+	txn.data.nb.value[key] = value
 	return txn
 }
 
@@ -294,8 +257,29 @@ func (txn *SchedulerTxn) Resync(values []KeyValueDataPair) Txn {
 // Operations with unmet dependencies will get postponed and possibly
 // executed later.
 func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []KeyWithError, txnError error) {
-	if txn.err != nil {
-		return nil, txn.err
+	// parse transaction options
+	txn.data.nb.isBlocking = !IsNonBlockingTxn(ctx)
+	txn.data.nb.retryPeriod, txn.data.nb.expBackoffRetry, txn.data.nb.retryFailed = IsWithRetry(ctx)
+	txn.data.nb.revertOnFailure = IsWithRevert(ctx)
+	txn.data.nb.isFullResync = IsFullResync(ctx)
+	txn.data.nb.isDownstreamResync = IsDownstreamResync(ctx)
+
+	// validate transaction options
+	if txn.data.nb.isFullResync {
+		// full resync overrides downstream resync
+		txn.data.nb.isDownstreamResync = false
+	}
+	if txn.data.nb.isDownstreamResync && len(txn.data.nb.value) > 0 {
+		return nil, ErrCombinedDownstreamResyncWithChange
+	}
+	if txn.data.nb.revertOnFailure &&
+		(txn.data.nb.isDownstreamResync || txn.data.nb.isFullResync) {
+		return nil, ErrRevertNotSupportedWithResync
+	}
+
+	// enqueue txn and for blocking Commit wait for the errors
+	if txn.data.nb.isBlocking {
+		txn.data.nb.resultChan = make(chan []KeyWithError, 1)
 	}
 	err := txn.scheduler.enqueueTxn(txn.data)
 	if err != nil {

@@ -15,9 +15,13 @@
 package kvscheduler
 
 import (
-	. "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/logging"
 	"time"
+
+	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging"
+
+	. "github.com/ligato/cn-infra/kvscheduler/api"
+	"github.com/ligato/cn-infra/kvscheduler/internal/utils"
 )
 
 // txnType differentiates between NB transaction, retry of failed operations and
@@ -52,20 +56,21 @@ type sbNotif struct {
 
 // nbTxn encapsulates data for NB transaction.
 type nbTxn struct {
-	valueData       map[string]interface{} // key -> value data
-	isResync        bool
-	isBlocking      bool
-	retryFailed     bool
-	retryPeriod     time.Duration
-	expBackoffRetry bool
-	revertOnFailure bool
-	resultChan      chan []KeyWithError
+	value              map[string]datasync.LazyValue // key -> lazy value
+	isFullResync       bool
+	isDownstreamResync bool
+	isBlocking         bool
+	retryFailed        bool
+	retryPeriod        time.Duration
+	expBackoffRetry    bool
+	revertOnFailure    bool
+	resultChan         chan []KeyWithError
 }
 
 // retryOps encapsulates data for retry of failed operations.
 type retryOps struct {
 	txnSeqNum uint
-	keys      keySet
+	keys      utils.KeySet
 	period    time.Duration
 }
 

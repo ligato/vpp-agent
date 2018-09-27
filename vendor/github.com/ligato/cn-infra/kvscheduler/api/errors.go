@@ -17,14 +17,15 @@ package api
 import (
 	"errors"
 	"fmt"
+	"github.com/gogo/protobuf/proto"
 )
 
 var (
-	// ErrDumpNotSupported should be returned by Dump when dumping is not supported.
-	ErrDumpNotSupported = errors.New("dump operation is not supported")
+	// ErrCombinedDownstreamResyncWithChange is returned when transaction combines downstream-resync with data changes.
+	ErrCombinedDownstreamResyncWithChange = errors.New("downstream resync combined with data changes in one transaction")
 
-	// ErrCombinedResyncWithChange is returned when transaction combines resync with data changes.
-	ErrCombinedResyncWithChange = errors.New("resync combined with data changes in one transaction")
+	// ErrRevertNotSupportedWithResync is returned when transaction combines resync with revert.
+	ErrRevertNotSupportedWithResync = errors.New("it is not supported to combine resync with revert")
 
 	// ErrClosedScheduler is returned when scheduler is closed during transaction execution.
 	ErrClosedScheduler = errors.New("scheduler was closed")
@@ -35,23 +36,33 @@ var (
 	// ErrTxnQueueFull is returned when the queue of pending transactions is full.
 	ErrTxnQueueFull = errors.New("transaction queue is full")
 
+	// ErrUnregisteredValueType is returned for non-derived values whose proto.Message type
+	// is not registered.
+	ErrUnregisteredValueType = errors.New("protobuf message type is not registered")
+
 	// ErrUnimplementedKey is returned for non-derived values without provided descriptor.
 	ErrUnimplementedKey = errors.New("unimplemented key")
-)
 
-// ErrInvalidValueDataType is returned to scheduler by auto-generated descriptor adapter
-// when value data do not match expected type.
-func ErrInvalidValueDataType(key string) error {
-	return fmt.Errorf("value data have invalid type for key: %s", key)
-}
+	// ErrUnimplementedAdd is returned when NB transaction attempts to Add value
+	// for which there is a descriptor, but Add operation is not implemented.
+	ErrUnimplementedAdd = errors.New("Add operation is not implemented")
+
+	// ErrUnimplementedDelete is returned when NB transaction attempts to Delete value
+	// for which there is a descriptor, but Delete operation is not implemented.
+	ErrUnimplementedDelete = errors.New("Delete operation is not implemented")
+
+	// ErrUnimplementedModify is returned when NB transaction attempts to Modify value
+	// for which there is a descriptor, but Modify operation is not implemented.
+	ErrUnimplementedModify = errors.New("Modify operation is not implemented")
+)
 
 // ErrInvalidValueType is returned to scheduler by auto-generated descriptor adapter
 // when value does not match expected type.
-func ErrInvalidValueType(key string, value Value) error {
+func ErrInvalidValueType(key string, value proto.Message) error {
 	if key == "" {
-		return fmt.Errorf("value (%s) has invalid type", value.Label())
+		return fmt.Errorf("value (%s) has invalid type", value.String())
 	}
-	return fmt.Errorf("value (%s) has invalid type for key: %s", value.Label(), key)
+	return fmt.Errorf("value (%s) has invalid type for key: %s", value.String(), key)
 }
 
 // ErrInvalidMetadataType is returned to scheduler by auto-generated descriptor adapter

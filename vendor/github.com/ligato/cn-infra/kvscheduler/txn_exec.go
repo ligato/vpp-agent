@@ -18,7 +18,8 @@ import (
 	"sort"
 
 	. "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/kvscheduler/graph"
+	"github.com/ligato/cn-infra/kvscheduler/internal/graph"
+	"github.com/ligato/cn-infra/kvscheduler/internal/utils"
 	"github.com/ligato/cn-infra/logging"
 )
 
@@ -35,20 +36,35 @@ type applyValueArgs struct {
 	isUpdate  bool
 	isDerived bool
 
-	// failed base values for potential retry
-	failed keySet
+	// failed base values
+	failed map[string]bool // key -> retriable?
 
 	// handling of dependency cycles
-	branch keySet
+	branch utils.KeySet
+}
+
+// addFailed adds entry into the *failed* map.
+func (args *applyValueArgs) addFailed(key string, retriable bool) {
+	prevRetriable, alreadyFailed := args.failed[key]
+	args.failed[key] = retriable && (!alreadyFailed || prevRetriable)
 }
 
 // executeTransaction executes pre-processed transaction.
 // If <dry-run> is enabled, Add/Delete/Update/Modify operations will not be executed
 // and the graph will be returned to its original state at the end.
-func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (executed recordedTxnOps, failed keySet) {
+func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (executed recordedTxnOps, failed map[string]bool) {
 	graphW := scheduler.graph.Write(true)
-	failed = make(keySet)  // non-derived values in a failed state
-	branch := make(keySet) // branch of current recursive calls to applyValue used to handle cycles
+	failed = make(map[string]bool)  // non-derived values in a failed state
+	branch := utils.NewKeySet() // branch of current recursive calls to applyValue used to handle cycles
+
+	// for dry-run revert back the original content of the *lastError* map in the end
+	if dryRun {
+		prevLastError := make(map[string]error)
+		for key, err := range scheduler.lastError {
+			prevLastError[key] = err
+		}
+		defer func() {scheduler.lastError = prevLastError}()
+	}
 
 	// order to achieve the shortest sequence of operations in average
 	orderedVals := scheduler.orderValuesByOp(graphW, txn.values)
@@ -75,7 +91,8 @@ func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool
 			if txn.args.txnType == nbTransaction && txn.args.nb.revertOnFailure {
 				// refresh failed value and trigger reverting
 				delete(failed, kv.key) // do not retry unless reverting fails
-				scheduler.refreshGraph(graphW, keySet{}.add(kv.key), nil)
+				scheduler.refreshGraph(graphW, utils.NewKeySet(kv.key), nil)
+				graphW.Save() // certainly not dry-run
 				revert = true
 				break
 			}
@@ -99,9 +116,9 @@ func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool
 						origin:   FromNB,
 						isRevert: true,
 					},
-					dryRun: dryRun,
-					failed: failed,
-					branch: branch,
+					dryRun:  dryRun,
+					failed:  failed,
+					branch:  branch,
 				})
 			executed = append(executed, ops...)
 		}
@@ -118,7 +135,7 @@ func (scheduler *Scheduler) applyValue(args *applyValueArgs) (executed recordedT
 	if _, cycle := args.branch[args.kv.key]; cycle {
 		return executed, prevValue, err
 	}
-	args.branch.add(args.kv.key)
+	args.branch.Add(args.kv.key)
 	defer delete(args.branch, args.kv.key)
 
 	// create new revision of the node for the given key-value pair
@@ -129,7 +146,6 @@ func (scheduler *Scheduler) applyValue(args *applyValueArgs) (executed recordedT
 
 	// update node flags
 	prevUpdate := getNodeLastUpdate(node)
-	prevErr := getNodeError(node)
 	if !args.isUpdate {
 		// with update it is not certain if any update is actually needed,
 		// so let applyUpdate() to refresh LastUpdateFlag
@@ -162,8 +178,9 @@ func (scheduler *Scheduler) applyValue(args *applyValueArgs) (executed recordedT
 	}
 
 	// if the value is already "broken" by this transaction, do not try to update
-	// anymore, unless this is a revert (needs to be refreshed first in the post-processing
-	// stage)
+	// anymore, unless this is a revert
+	// (needs to be refreshed first in the post-processing stage)
+	prevErr := scheduler.getNodeLastError(args.kv.key)
 	if !args.kv.isRevert && prevErr != nil &&
 		prevUpdate != nil && prevUpdate.txnSeqNum == args.txn.seqNum {
 		return executed, prevValue, prevErr
@@ -212,9 +229,11 @@ func (scheduler *Scheduler) applyDelete(node graph.NodeRW, txnOp *recordedTxnOp,
 		args.graphW.DeleteNode(args.kv.key)
 		return executed, nil
 	}
+
 	if isNodePending(node) {
 		// removing value that was pending => just remove from the in-memory graph
 		args.graphW.DeleteNode(args.kv.key)
+		scheduler.lastError[node.GetKey()] = nil
 		return recordedTxnOps{txnOp}, nil
 	}
 
@@ -244,25 +263,32 @@ func (scheduler *Scheduler) applyDelete(node graph.NodeRW, txnOp *recordedTxnOp,
 
 	// execute delete operation
 	descriptor := scheduler.registry.GetDescriptorForKey(node.GetKey())
+	handler := &descriptorHandler{descriptor}
 	if !args.dryRun && descriptor != nil {
 		if args.kv.origin != FromSB {
-			err = descriptor.Delete(node.GetKey(), node.GetValue(), node.GetMetadata())
+			err = handler.delete(node.GetKey(), node.GetValue(), node.GetMetadata())
 		}
+		scheduler.lastError[node.GetKey()] = err
 		if err != nil {
 			wasErr = err
-			node.SetFlags(&ErrorFlag{err})
+			// propagate error to the base value
+			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
+			scheduler.propagateError(args.graphW, node, err)
+
 		}
-		if withMeta, _ := descriptor.WithMetadata(); canNodeHaveMetadata(node) && withMeta {
+		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
 			node.SetMetadata(nil)
 		}
 	}
 
-	// remove node or mark as failed
-	if wasErr != nil {
-		if !isNodeDerived(node) {
-			args.failed.add(node.GetKey())
-		}
-	} else if !pending {
+	// cleanup the error flag if removal was successful
+	if wasErr == nil {
+		node.DelFlags(ErrorFlagName)
+	}
+
+	// remove non-pending derived value regardless of errors, base-value only
+	// if removal was completely successful
+	if !pending && (wasErr == nil || isNodeDerived(node))  {
 		args.graphW.DeleteNode(args.kv.key)
 	}
 
@@ -281,19 +307,15 @@ func (scheduler *Scheduler) applyAdd(node graph.NodeRW, txnOp *recordedTxnOp, ar
 
 	// get descriptor
 	descriptor := scheduler.registry.GetDescriptorForKey(args.kv.key)
+	handler := &descriptorHandler{descriptor}
 	if descriptor != nil {
-		node.SetFlags(&DescriptorFlag{descriptor.GetName()})
+		node.SetFlags(&DescriptorFlag{descriptor.Name})
+		node.SetLabel(handler.keyLabel(args.kv.key))
 	}
 
 	// build relations with other targets
-	var (
-		derives      []KeyValuePair
-		dependencies []Dependency
-	)
-	if descriptor != nil {
-		derives = descriptor.DerivedValues(node.GetKey(), node.GetValue())
-		dependencies = descriptor.Dependencies(node.GetKey(), node.GetValue())
-	}
+	derives := handler.derivedValues(node.GetKey(), node.GetValue())
+	dependencies := handler.dependencies(node.GetKey(), node.GetValue())
 	node.SetTargets(constructTargets(dependencies, derives))
 
 	if !isNodeReady(node) {
@@ -301,6 +323,7 @@ func (scheduler *Scheduler) applyAdd(node graph.NodeRW, txnOp *recordedTxnOp, ar
 		node.SetFlags(&PendingFlag{})
 		node.DelFlags(ErrorFlagName)
 		txnOp.isPending = true
+		scheduler.lastError[node.GetKey()] = nil
 		return recordedTxnOps{txnOp}, nil
 	}
 
@@ -312,27 +335,27 @@ func (scheduler *Scheduler) applyAdd(node graph.NodeRW, txnOp *recordedTxnOp, ar
 		)
 
 		if args.kv.origin != FromSB {
-			metadata, err = descriptor.Add(node.GetKey(), node.GetValue())
+			metadata, err = handler.add(node.GetKey(), node.GetValue())
 		} else {
 			// already added in SB
 			metadata = args.kv.metadata
 		}
+		scheduler.lastError[node.GetKey()] = err
 
 		if err != nil {
+			// propate error to the base value
+			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
+			scheduler.propagateError(args.graphW, node, err)
 			// add failed => keep value pending
 			node.SetFlags(&PendingFlag{})
-			node.SetFlags(&ErrorFlag{err})
-			if !isNodeDerived(node) {
-				args.failed.add(node.GetKey())
-			}
 			txnOp.isPending = true
 			txnOp.newErr = err
 			return recordedTxnOps{txnOp}, err
 		}
 
 		// add metadata to the map
-		if withMeta, _ := descriptor.WithMetadata(); canNodeHaveMetadata(node) && withMeta {
-			node.SetMetadataMap(descriptor.GetName())
+		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
+			node.SetMetadataMap(descriptor.Name)
 			node.SetMetadata(metadata)
 		}
 	}
@@ -357,14 +380,10 @@ func (scheduler *Scheduler) applyAdd(node graph.NodeRW, txnOp *recordedTxnOp, ar
 			isRevert: args.kv.isRevert,
 		})
 	}
-	derExecs, err := scheduler.applyDerived(derivedVals, args, true)
+	derExecs, wasErr := scheduler.applyDerived(derivedVals, args, true)
 	executed = append(executed, derExecs...)
 
-	if err != nil && !isNodeDerived(node) {
-		args.failed.add(node.GetKey())
-	}
-
-	return executed, err
+	return executed, wasErr
 }
 
 // applyModify applies new value to existing non-pending value.
@@ -373,22 +392,24 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 		defer args.graphW.Save()
 	}
 
-	equivalent := node.GetValue().Equivalent(args.kv.value)
+	// compare new value with the old one
+	descriptor := scheduler.registry.GetDescriptorForKey(args.kv.key)
+	handler := &descriptorHandler{descriptor}
+	equivalent := handler.equivalentValues(node.GetKey(), node.GetValue(), args.kv.value)
 
 	// re-create the value if required by the descriptor
-	var recreate bool
-	descriptor := scheduler.registry.GetDescriptorForKey(args.kv.key)
-	if descriptor != nil && args.kv.origin != FromSB {
-		recreate = descriptor.ModifyHasToRecreate(args.kv.key, node.GetValue(), args.kv.value, node.GetMetadata())
-	}
-	if !equivalent && recreate {
+	recreate := !equivalent &&
+		args.kv.origin != FromSB &&
+		handler.modifyWithRecreate(args.kv.key, node.GetValue(), args.kv.value, node.GetMetadata())
+
+	if recreate {
 		// record operation as two - delete followed by add
 		delOp := scheduler.preRecordTxnOp(args, node)
 		delOp.operation = del
-		delOp.newValue = nil
+		delOp.newValue = utils.ProtoToString(nil)
 		addOp := scheduler.preRecordTxnOp(args, node)
 		addOp.operation = add
-		addOp.prevValue = nil
+		addOp.prevValue = utils.ProtoToString(nil)
 		addOp.wasPending = true
 		// remove obsolete value
 		delExec, err := scheduler.applyDelete(node, delOp, args, true)
@@ -410,19 +431,13 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 	prevDerived := getDerivedKeys(node)
 
 	// set new targets
-	var (
-		derives      []KeyValuePair
-		dependencies []Dependency
-	)
-	if descriptor != nil {
-		derives = descriptor.DerivedValues(node.GetKey(), node.GetValue())
-		dependencies = descriptor.Dependencies(node.GetKey(), node.GetValue())
-	}
+	derives := handler.derivedValues(node.GetKey(), node.GetValue())
+	dependencies := handler.dependencies(node.GetKey(), node.GetValue())
 	node.SetTargets(constructTargets(dependencies, derives))
 
 	// remove obsolete derived values
 	var obsoleteDerVals []kvForTxn
-	for obsolete := range prevDerived.subtract(getDerivedKeys(node)) {
+	for obsolete := range prevDerived.Subtract(getDerivedKeys(node)) {
 		obsoleteDerVals = append(obsoleteDerVals, kvForTxn{
 			key:      obsolete,
 			value:    nil, // delete
@@ -432,13 +447,6 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 	}
 	derExecs, wasErr := scheduler.applyDerived(obsoleteDerVals, args, false)
 	executed = append(executed, derExecs...)
-	if wasErr != nil {
-		node.SetFlags(&ErrorFlag{err: wasErr})
-		txnOp.newErr = wasErr
-		if !isNodeDerived(node) {
-			args.failed.add(node.GetKey())
-		}
-	}
 
 	// if the new dependencies are not satisfied => delete and set as pending with the new value
 	if !isNodeReady(node) {
@@ -452,57 +460,62 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 
 	// execute modify operation
 	if !args.dryRun && !equivalent && descriptor != nil {
-		var (
-			err         error
-			newMetadata interface{}
-		)
+		var newMetadata interface{}
 
+		// call Modify handler
 		if args.kv.origin != FromSB {
-			newMetadata, err = descriptor.Modify(node.GetKey(), prevValue, node.GetValue(), node.GetMetadata())
+			newMetadata, err = handler.modify(node.GetKey(), prevValue, node.GetValue(), node.GetMetadata())
 		} else {
 			// already modified in SB
 			newMetadata = args.kv.metadata
 		}
+		scheduler.lastError[node.GetKey()] = err
 
 		if err != nil {
-			node.SetFlags(&ErrorFlag{err})
-			if !isNodeDerived(node) {
-				args.failed.add(node.GetKey())
-			}
+			// propagate error to the base value
+			scheduler.propagateError(args.graphW, node, err)
+			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
+			// record transaction operation
 			txnOp.newErr = err
 			executed = append(executed, txnOp)
 			return executed, err
 		}
 
 		// update metadata
-		if withMeta, _ := descriptor.WithMetadata(); canNodeHaveMetadata(node) && withMeta {
+		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
 			node.SetMetadata(newMetadata)
 		}
 	}
 
 	// if new value is equivalent, but the value is in failed state from previous txn => run update
-	if equivalent && wasErr == nil && getNodeError(node) != nil && descriptor != nil {
+	if equivalent && wasErr == nil && scheduler.getNodeLastError(node.GetKey()) != nil {
 		txnOp.operation = update
-		err := descriptor.Update(node.GetKey(), node.GetValue(), node.GetMetadata())
+
+		// call Update handler
+		if !args.dryRun && args.kv.origin != FromSB {
+			err = handler.update(node.GetKey(), node.GetValue(), node.GetMetadata())
+		}
+		scheduler.lastError[node.GetKey()] = err
+
 		if err != nil {
-			node.SetFlags(&ErrorFlag{err})
-			if !isNodeDerived(node) {
-				args.failed.add(node.GetKey())
-			}
+			// propagate error to the base value
+			scheduler.propagateError(args.graphW, node, err)
+			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
+			// record transaction operation
 			txnOp.newErr = err
 			executed = append(executed, txnOp)
 			return executed, err
 		}
 	}
 
+	if !equivalent || txnOp.operation == update {
+		// if the value was modified, or update was executed (to clear error) => record operation
+		executed = append(executed, txnOp)
+	}
+
 	// finalize node and save before going to new/modified derived values + dependencies
 	if wasErr == nil {
 		node.DelFlags(ErrorFlagName)
-	}
-	if !equivalent || txnOp.operation == update || txnOp.newErr != nil {
-		// if the value was modified, or update was executed (to clear error)
-		// or removal of obsolete derived value has failed => record operation
-		executed = append(executed, txnOp)
 	}
 	if !args.dryRun {
 		args.graphW.Save()
@@ -529,16 +542,13 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 		wasErr = err
 	}
 
-	if wasErr != nil && !isNodeDerived(node) {
-		args.failed.add(node.GetKey())
-	}
-
 	return executed, wasErr
 }
 
 // applyUpdate updates given value since dependencies have changed.
 func (scheduler *Scheduler) applyUpdate(node graph.NodeRW, txnOp *recordedTxnOp, args *applyValueArgs) (executed recordedTxnOps, err error) {
 	descriptor := scheduler.registry.GetDescriptorForKey(args.kv.key)
+	handler := &descriptorHandler{descriptor}
 
 	// add node if dependencies are now all met
 	if isNodePending(node) {
@@ -557,24 +567,24 @@ func (scheduler *Scheduler) applyUpdate(node graph.NodeRW, txnOp *recordedTxnOp,
 			// delete value and flag node as pending if some dependency is no longer satisfied
 			delOp := scheduler.preRecordTxnOp(args, node)
 			delOp.operation = del
-			delOp.newValue = nil
+			delOp.newValue = utils.ProtoToString(nil)
 			executed, err = scheduler.applyDelete(node, delOp, args, true)
 		} else {
 			// execute Update operation
 			if !args.dryRun {
-				err = descriptor.Update(node.GetKey(), node.GetValue(), node.GetMetadata())
-				txnOp.newErr = err
+				err = handler.update(node.GetKey(), node.GetValue(), node.GetMetadata())
+				scheduler.lastError[node.GetKey()] = err
+				if err != nil {
+					// propagate error to the base value
+					txnOp.newErr = err
+					scheduler.propagateError(args.graphW, node, err)
+					args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
+				}
 			}
 			executed = append(executed, txnOp)
-			if err != nil {
-				node.SetFlags(&ErrorFlag{err})
-			}
 		}
 	}
 
-	if err != nil {
-		args.failed.add(getNodeBase(node).GetKey())
-	}
 	return executed, err
 }
 
@@ -638,6 +648,26 @@ func (scheduler *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (e
 		executed = append(executed, ops...)
 	}
 	return executed
+}
+
+// getNodeLastError return errors (or nil) from the last operation executed
+// for the given key.
+// This is not the same as reading the ErrorFlag, because the flag carries error
+// potentially propagated from derived values down to the base.
+func (scheduler *Scheduler) getNodeLastError(key string) error {
+	err, hasEntry := scheduler.lastError[key]
+	if hasEntry {
+		return err
+	}
+	return nil
+}
+
+// propagateError propagates error from a given node into its base and saves it
+// using the ErrorFlag.
+func (scheduler *Scheduler) propagateError(graphW graph.RWAccess, node graph.Node, err error) {
+	baseKey := getNodeBase(node).GetKey()
+	baseNode := graphW.SetNode(baseKey)
+	baseNode.SetFlags(&ErrorFlag{err})
 }
 
 // validDerivedKV check validity of a derived KV pair.

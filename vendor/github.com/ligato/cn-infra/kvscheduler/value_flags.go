@@ -16,6 +16,7 @@ package kvscheduler
 
 import (
 	"fmt"
+	"github.com/gogo/protobuf/proto"
 	"time"
 
 	. "github.com/ligato/cn-infra/kvscheduler/api"
@@ -52,7 +53,7 @@ const (
 // a NB transaction or a SB notification for a potential retry.
 type LastChangeFlag struct {
 	txnSeqNum uint
-	value     Value
+	value     proto.Message
 	origin    ValueOrigin
 	revert    bool
 
@@ -67,17 +68,9 @@ func (flag *LastChangeFlag) GetName() string {
 	return LastChangeFlagName
 }
 
-// GetValue describes the last change.
+// GetValue describes the last change (txn-seq number only).
 func (flag *LastChangeFlag) GetValue() string {
-	revertStr := ""
-	if flag.revert {
-		revertStr = ", REVERT"
-	}
-	retryStr := ""
-	if flag.retryEnabled {
-		retryStr = ", RETRY-ENABLED"
-	}
-	return fmt.Sprintf("[%s%s%s] TXN-%d", flag.origin.String(), revertStr, retryStr, flag.txnSeqNum)
+	return fmt.Sprintf("TXN-%d", flag.txnSeqNum)
 }
 
 // LastUpdateFlag is set to all values to remember the last transaction which
@@ -127,7 +120,9 @@ func (flag *OriginFlag) GetValue() string {
 	return flag.origin.String()
 }
 
-// ErrorFlag is used to mark values that are in a failed state.
+// ErrorFlag is used to mark base values that are in a failed state
+// (or their derived values). It is used only to inform user in the graph dump
+// about currently failing values and for statistical purposes.
 type ErrorFlag struct {
 	err error
 }

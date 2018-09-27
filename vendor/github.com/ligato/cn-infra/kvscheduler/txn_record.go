@@ -20,7 +20,8 @@ import (
 	"time"
 
 	. "github.com/ligato/cn-infra/kvscheduler/api"
-	"github.com/ligato/cn-infra/kvscheduler/graph"
+	"github.com/ligato/cn-infra/kvscheduler/internal/graph"
+	"github.com/ligato/cn-infra/kvscheduler/internal/utils"
 )
 
 // txnOperationType differentiates between add, modify (incl. re-create), delete
@@ -58,10 +59,11 @@ type recordedTxn struct {
 	stop  time.Time
 
 	// arguments
-	seqNum   uint
-	txnType  txnType
-	isResync bool
-	values   []recordedKVPair
+	seqNum             uint
+	txnType            txnType
+	isFullResync       bool
+	isDownstreamResync bool
+	values             []recordedKVPair
 
 	// result
 	preErrors []KeyWithError // pre-processing errors
@@ -74,10 +76,11 @@ type recordedTxnOp struct {
 	// identification
 	operation txnOperationType
 	key       string
+	derived   bool
 
 	// changes
-	prevValue  *recordedValue
-	newValue   *recordedValue
+	prevValue  string
+	newValue   string
 	prevOrigin ValueOrigin
 	newOrigin  ValueOrigin
 	wasPending bool
@@ -90,16 +93,10 @@ type recordedTxnOp struct {
 	isRetry  bool
 }
 
-// recordedValue is used to record value.
-type recordedValue struct {
-	label  string
-	string string
-}
-
 // recordedKVPair is used to record key-value pair.
 type recordedKVPair struct {
 	key    string
-	value  *recordedValue
+	value  string
 	origin ValueOrigin
 }
 
@@ -109,29 +106,13 @@ type recordedTxnOps []*recordedTxnOp
 // recordedTxns is a list of recorded transactions.
 type recordedTxns []*recordedTxn
 
-// String returns a human-readable string representation of recorded value.
-func (value *recordedValue) String() string {
-	return value.StringWithOpts(false)
-}
-
-// StringWithOpts allows to format string representation of recorded value.
-func (value *recordedValue) StringWithOpts(verbose bool) string {
-	if value == nil {
-		return "NIL"
-	}
-	if verbose {
-		return fmt.Sprintf("{ %s }", value.string)
-	}
-	return fmt.Sprintf("%s", value.label)
-}
-
 // String returns a *multi-line* human-readable string representation of recorded transaction.
 func (txn *recordedTxn) String() string {
-	return txn.StringWithOpts(false, 0, false)
+	return txn.StringWithOpts(false, 0)
 }
 
 // StringWithOpts allows to format string representation of recorded transaction.
-func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int, verbose bool) string {
+func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 	var str string
 	indent1 := strings.Repeat(" ", indent)
 	indent2 := strings.Repeat(" ", indent+4)
@@ -143,7 +124,8 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int, verbose bool
 		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.seqNum)
 		str += indent2 + fmt.Sprintf("- type: %s\n", txn.txnType.String())
 		if txn.txnType == nbTransaction {
-			str += indent2 + fmt.Sprintf("- is-resync: %t\n", txn.isResync)
+			str += indent2 + fmt.Sprintf("- is-full-resync: %t\n", txn.isFullResync)
+			str += indent2 + fmt.Sprintf("- is-downstream-resync: %t\n", txn.isDownstreamResync)
 		}
 		if len(txn.values) == 0 {
 			str += indent2 + fmt.Sprintf("- values: NONE\n")
@@ -151,9 +133,14 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int, verbose bool
 			str += indent2 + fmt.Sprintf("- values:\n")
 		}
 		for _, kv := range txn.values {
+			resync := txn.isFullResync || txn.isDownstreamResync
+			if resync && kv.origin == FromSB {
+				// do not print SB values updated during resync
+				continue
+			}
 			str += indent3 + fmt.Sprintf("- key: %s\n", kv.key)
-			str += indent3 + fmt.Sprintf("  value: %s\n", kv.value.StringWithOpts(verbose))
-			if txn.isResync {
+			str += indent3 + fmt.Sprintf("  value: %s\n", kv.value)
+			if resync {
 				str += indent3 + fmt.Sprintf("  origin: %s\n", kv.origin.String())
 			}
 		}
@@ -169,7 +156,7 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int, verbose bool
 
 		// planned operations
 		str += indent1 + "* planned operations:\n"
-		str += txn.planned.StringWithOpts(indent+4, verbose)
+		str += txn.planned.StringWithOpts(indent+4)
 	}
 
 	if !txn.preRecord {
@@ -179,7 +166,7 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int, verbose bool
 			str += indent1 + fmt.Sprintf("* executed operations (%s - %s):\n",
 				txn.start.String(), txn.stop.String())
 		}
-		str += txn.executed.StringWithOpts(indent+4, verbose)
+		str += txn.executed.StringWithOpts(indent+4)
 	}
 
 	return str
@@ -188,32 +175,74 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int, verbose bool
 // String returns a *multi-line* human-readable string representation of a recorded
 // transaction operation.
 func (op *recordedTxnOp) String() string {
-	return op.StringWithOpts(0, 0, false)
+	return op.StringWithOpts(0, 0)
 }
 
 // StringWithOpts allows to format string representation of a transaction operation.
-func (op *recordedTxnOp) StringWithOpts(index int, indent int, verbose bool) string {
+func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 	var str string
 	indent1 := strings.Repeat(" ", indent)
 	indent2 := strings.Repeat(" ", indent+4)
 
-	if index > 0 {
-		str += indent1 + fmt.Sprintf("%d. %s:\n", index, op.operation.String())
+	var flags []string
+	if op.derived {
+		flags = append(flags, "DERIVED")
+	}
+	if op.isRevert {
+		flags = append(flags, "REVERT")
+	}
+	if op.isRetry {
+		flags = append(flags, "RETRY")
+	}
+	if op.wasPending {
+		if op.isPending {
+			flags = append(flags, "STILL-PENDING")
+		} else {
+			flags = append(flags, "WAS-PENDING")
+		}
 	} else {
-		str += indent1 + fmt.Sprintf("%s:\n", op.operation.String())
+		if op.isPending {
+			flags = append(flags, "IS-PENDING")
+		}
+	}
+
+	if index > 0 {
+		if len(flags) == 0 {
+			str += indent1 + fmt.Sprintf("%d. %s:\n", index, op.operation.String())
+		} else {
+			str += indent1 + fmt.Sprintf("%d. %s %v:\n", index, op.operation.String(), flags)
+		}
+	} else {
+		if len(flags) == 0 {
+			str += indent1 + fmt.Sprintf("%s:\n", op.operation.String())
+		} else {
+			str += indent1 + fmt.Sprintf("%s %v:\n", op.operation.String(), flags)
+		}
 	}
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.key)
-	str += indent2 + fmt.Sprintf("- prev-value: %s\n", op.prevValue.StringWithOpts(verbose))
-	str += indent2 + fmt.Sprintf("- new-value: %s\n", op.newValue.StringWithOpts(verbose))
-	str += indent2 + fmt.Sprintf("- prev-origin: %s\n", op.prevOrigin.String())
-	str += indent2 + fmt.Sprintf("- new-origin: %s\n", op.newOrigin.String())
-	str += indent2 + fmt.Sprintf("- was-pending: %t\n", op.wasPending)
-	str += indent2 + fmt.Sprintf("- is-pending: %t\n", op.isPending)
-	str += indent2 + fmt.Sprintf("- prev-error: %s\n", errorToString(op.prevErr))
-	str += indent2 + fmt.Sprintf("- new-error: %s\n", errorToString(op.newErr))
-	str += indent2 + fmt.Sprintf("- is-revert: %t\n", op.isRevert)
-	str += indent2 + fmt.Sprintf("- is-retry: %t\n", op.isRetry)
+	if op.operation == modify || (op.operation == add && op.prevValue != op.newValue) {
+		str += indent2 + fmt.Sprintf("- prev-value: %s \n", op.prevValue)
+		str += indent2 + fmt.Sprintf("- new-value: %s \n", op.newValue)
+	}
+	if op.operation == del || op.operation == update {
+		str += indent2 + fmt.Sprintf("- value: %s \n", op.prevValue)
+	}
+	if op.operation == add && op.prevValue == op.newValue {
+		str += indent2 + fmt.Sprintf("- value: %s \n", op.newValue)
+	}
+	if op.prevOrigin != op.newOrigin {
+		str += indent2 + fmt.Sprintf("- prev-origin: %s\n", op.prevOrigin.String())
+		str += indent2 + fmt.Sprintf("- new-origin: %s\n", op.newOrigin.String())
+	} else {
+		str += indent2 + fmt.Sprintf("- origin: %s\n", op.prevOrigin.String())
+	}
+	if op.prevErr != nil {
+		str += indent2 + fmt.Sprintf("- prev-error: %s\n", utils.ErrorToString(op.prevErr))
+	}
+	if op.newErr != nil {
+		str += indent2 + fmt.Sprintf("- error: %s\n", utils.ErrorToString(op.newErr))
+	}
 
 	return str
 }
@@ -221,18 +250,18 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int, verbose bool) str
 // String returns a *multi-line* human-readable string representation of transaction
 // operations.
 func (ops recordedTxnOps) String() string {
-	return ops.StringWithOpts(0, false)
+	return ops.StringWithOpts(0)
 }
 
 // StringWithOpts allows to format string representation of transaction operations.
-func (ops recordedTxnOps) StringWithOpts(indent int, verbose bool) string {
+func (ops recordedTxnOps) StringWithOpts(indent int) string {
 	if len(ops) == 0 {
 		return strings.Repeat(" ", indent) + "<NONE>\n"
 	}
 
 	var str string
 	for idx, op := range ops {
-		str += op.StringWithOpts(idx+1, indent, verbose)
+		str += op.StringWithOpts(idx+1, indent)
 	}
 	return str
 }
@@ -240,11 +269,11 @@ func (ops recordedTxnOps) StringWithOpts(indent int, verbose bool) string {
 // String returns a *multi-line* human-readable string representation of a transaction
 // list.
 func (txns recordedTxns) String() string {
-	return txns.StringWithOpts(false, 0, false)
+	return txns.StringWithOpts(false, 0)
 }
 
 // StringWithOpts allows to format string representation of a transaction list.
-func (txns recordedTxns) StringWithOpts(resultOnly bool, indent int, verbose bool) string {
+func (txns recordedTxns) StringWithOpts(resultOnly bool, indent int) string {
 	if len(txns) == 0 {
 		return strings.Repeat(" ", indent) + "<NONE>\n"
 	}
@@ -252,7 +281,7 @@ func (txns recordedTxns) StringWithOpts(resultOnly bool, indent int, verbose boo
 	var str string
 	for idx, txn := range txns {
 		str += strings.Repeat(" ", indent) + fmt.Sprintf("Transaction #%d:\n", txn.seqNum)
-		str += txn.StringWithOpts(resultOnly, indent+4, verbose)
+		str += txn.StringWithOpts(resultOnly, indent+4)
 		if idx < len(txns)-1 {
 			str += "\n"
 		}
@@ -270,24 +299,15 @@ func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node
 	}
 	return &recordedTxnOp{
 		key:        args.kv.key,
-		prevValue:  scheduler.recordValue(node.GetValue()),
-		newValue:   scheduler.recordValue(args.kv.value),
+		derived:    isNodeDerived(node),
+		prevValue:  utils.ProtoToString(node.GetValue()),
+		newValue:   utils.ProtoToString(args.kv.value),
 		prevOrigin: prevOrigin,
 		newOrigin:  args.kv.origin,
 		wasPending: isNodePending(node),
-		prevErr:    getNodeError(node),
+		prevErr:    scheduler.getNodeLastError(args.kv.key),
 		isRevert:   args.kv.isRevert,
 		isRetry:    args.isRetry,
-	}
-}
-
-func (scheduler *Scheduler) recordValue(value Value) *recordedValue {
-	if value == nil {
-		return nil
-	}
-	return &recordedValue{
-		label:  value.Label(),
-		string: value.String(),
 	}
 }
 
@@ -296,25 +316,26 @@ func (scheduler *Scheduler) recordValue(value Value) *recordedValue {
 func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned recordedTxnOps, preErrors []KeyWithError) *recordedTxn {
 	// allocate new transaction record
 	record := &recordedTxn{
-		preRecord: true,
-		seqNum:    txn.seqNum,
-		txnType:   txn.args.txnType,
-		isResync:  txn.args.txnType == nbTransaction && txn.args.nb.isResync,
-		preErrors: preErrors,
-		planned:   planned,
+		preRecord:       true,
+		seqNum:          txn.seqNum,
+		txnType:         txn.args.txnType,
+		isFullResync:    txn.args.txnType == nbTransaction && txn.args.nb.isFullResync,
+		isDownstreamResync: txn.args.txnType == nbTransaction && txn.args.nb.isDownstreamResync,
+		preErrors:       preErrors,
+		planned:         planned,
 	}
 
 	// record values
 	for _, kv := range txn.values {
 		record.values = append(record.values, recordedKVPair{
 			key:    kv.key,
-			value:  scheduler.recordValue(kv.value),
+			value:  utils.ProtoToString(kv.value),
 			origin: kv.origin,
 		})
 	}
 
 	// send to the log
-	logMsg := "Processing new transaction:\n" + record.StringWithOpts(false, 2, true)
+	logMsg := "Processing new transaction:\n" + record.StringWithOpts(false, 2)
 	//scheduler.Log.Info(logMsg)
 	fmt.Println(logMsg)
 
@@ -330,7 +351,7 @@ func (scheduler *Scheduler) recordTransaction(txnRecord *recordedTxn, executed r
 
 	// log txn result
 	logMsg := fmt.Sprintf("Finalized transaction (seq-num=%d):\n%s",
-		txnRecord.seqNum, txnRecord.StringWithOpts(true, 2, true))
+		txnRecord.seqNum, txnRecord.StringWithOpts(true, 2))
 	//scheduler.Log.Info(logMsg)
 	fmt.Println(logMsg)
 
@@ -373,9 +394,16 @@ func (scheduler *Scheduler) getTransactionHistory(since, until time.Time) (histo
 	return scheduler.txnHistory[lastBefore+1 : firstAfter]
 }
 
-func errorToString(err error) string {
-	if err == nil {
-		return "<NIL>"
+// getRecordedTransaction returns record of a transaction referenced by the sequence number.
+func (scheduler *Scheduler) getRecordedTransaction(seqNum uint) (txn *recordedTxn) {
+	scheduler.historyLock.Lock()
+	defer scheduler.historyLock.Unlock()
+
+	for _, txn := range scheduler.txnHistory {
+		if txn.seqNum == seqNum {
+			return txn
+		}
 	}
-	return err.Error()
+
+	return nil
 }
