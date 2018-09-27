@@ -13,8 +13,11 @@ This image is used for development and debugging.
 
 ## Get the official image
 
-Note: **For ARM64 see the information about [arm64 docker image][3]**.
+Supported architectures are:
+* AMD64
+* ARM64 - see [arm64 docker image][3].
 
+Here follows the information related to AMD64 architecture:
 For a quick start with the development image, you can download 
 the [official image](https://hub.docker.com/r/ligato/dev-vpp-agent/) from **DockerHub**.
 
