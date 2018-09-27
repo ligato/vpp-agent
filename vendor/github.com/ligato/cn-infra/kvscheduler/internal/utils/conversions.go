@@ -16,12 +16,16 @@ package utils
 
 import (
 	"github.com/gogo/protobuf/proto"
+	prototypes "github.com/gogo/protobuf/types"
 )
 
 // ProtoToString converts proto message to string.
 func ProtoToString(message proto.Message) string {
 	if message == nil {
 		return "<NIL>"
+	}
+	if _, isEmpty := message.(*prototypes.Empty); isEmpty {
+		return "<EMPTY>"
 	}
 	// wrap with curly braces, it is easier to read
 	return "{ " + message.String() + " }"

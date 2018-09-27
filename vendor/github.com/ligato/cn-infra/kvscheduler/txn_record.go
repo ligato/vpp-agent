@@ -122,10 +122,17 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 		// transaction arguments
 		str += indent1 + "* transaction arguments:\n"
 		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.seqNum)
-		str += indent2 + fmt.Sprintf("- type: %s\n", txn.txnType.String())
-		if txn.txnType == nbTransaction {
-			str += indent2 + fmt.Sprintf("- is-full-resync: %t\n", txn.isFullResync)
-			str += indent2 + fmt.Sprintf("- is-downstream-resync: %t\n", txn.isDownstreamResync)
+		if txn.txnType == nbTransaction && (txn.isFullResync || txn.isDownstreamResync) {
+			resyncType := "Full-Resync"
+			if txn.isDownstreamResync {
+				resyncType = "Downstream-Resync"
+			}
+			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.txnType.String(), resyncType)
+		} else {
+			str += indent2 + fmt.Sprintf("- type: %s\n", txn.txnType.String())
+		}
+		if txn.isDownstreamResync {
+			goto printOps
 		}
 		if len(txn.values) == 0 {
 			str += indent2 + fmt.Sprintf("- values: NONE\n")
@@ -140,9 +147,6 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			}
 			str += indent3 + fmt.Sprintf("- key: %s\n", kv.key)
 			str += indent3 + fmt.Sprintf("  value: %s\n", kv.value)
-			if resync {
-				str += indent3 + fmt.Sprintf("  origin: %s\n", kv.origin.String())
-			}
 		}
 
 		// pre-processing errors
@@ -154,9 +158,10 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			}
 		}
 
+	printOps:
 		// planned operations
 		str += indent1 + "* planned operations:\n"
-		str += txn.planned.StringWithOpts(indent+4)
+		str += txn.planned.StringWithOpts(indent + 4)
 	}
 
 	if !txn.preRecord {
@@ -166,7 +171,7 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			str += indent1 + fmt.Sprintf("* executed operations (%s - %s):\n",
 				txn.start.String(), txn.stop.String())
 		}
-		str += txn.executed.StringWithOpts(indent+4)
+		str += txn.executed.StringWithOpts(indent + 4)
 	}
 
 	return str
@@ -185,6 +190,9 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 	indent2 := strings.Repeat(" ", indent+4)
 
 	var flags []string
+	if op.newOrigin == FromSB {
+		flags = append(flags, "NOTIFICATION")
+	}
 	if op.derived {
 		flags = append(flags, "DERIVED")
 	}
@@ -221,21 +229,20 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 	}
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.key)
-	if op.operation == modify || (op.operation == add && op.prevValue != op.newValue) {
+	showPrevForAdd := op.wasPending && op.prevValue != op.newValue
+	if op.operation == modify || (op.operation == add && showPrevForAdd) {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", op.prevValue)
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", op.newValue)
 	}
 	if op.operation == del || op.operation == update {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.prevValue)
 	}
-	if op.operation == add && op.prevValue == op.newValue {
+	if op.operation == add && !showPrevForAdd {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.newValue)
 	}
 	if op.prevOrigin != op.newOrigin {
 		str += indent2 + fmt.Sprintf("- prev-origin: %s\n", op.prevOrigin.String())
 		str += indent2 + fmt.Sprintf("- new-origin: %s\n", op.newOrigin.String())
-	} else {
-		str += indent2 + fmt.Sprintf("- origin: %s\n", op.prevOrigin.String())
 	}
 	if op.prevErr != nil {
 		str += indent2 + fmt.Sprintf("- prev-error: %s\n", utils.ErrorToString(op.prevErr))
@@ -316,13 +323,13 @@ func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node
 func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned recordedTxnOps, preErrors []KeyWithError) *recordedTxn {
 	// allocate new transaction record
 	record := &recordedTxn{
-		preRecord:       true,
-		seqNum:          txn.seqNum,
-		txnType:         txn.args.txnType,
-		isFullResync:    txn.args.txnType == nbTransaction && txn.args.nb.isFullResync,
+		preRecord:          true,
+		seqNum:             txn.seqNum,
+		txnType:            txn.args.txnType,
+		isFullResync:       txn.args.txnType == nbTransaction && txn.args.nb.isFullResync,
 		isDownstreamResync: txn.args.txnType == nbTransaction && txn.args.nb.isDownstreamResync,
-		preErrors:       preErrors,
-		planned:         planned,
+		preErrors:          preErrors,
+		planned:            planned,
 	}
 
 	// record values
