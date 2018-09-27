@@ -7,17 +7,12 @@ This image is a lightweight version of the dev_vpp_agent image. It contains:
 
 ### Getting a pre-built image from Dockerhub
 For a quick start with the VPP Agent, you can use pre-build Docker images with
-the Agent and VPP on Dockerhub:
-the [official image for X86_64 platform](https://hub.docker.com/r/ligato/vpp-agent/)
-or the [official image for ARM64 platform](https://hub.docker.com/r/ligato/vpp-agent-arm64/).
+the Agent and VPP on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/) or this for [ARM64](https://hub.docker.com/r/ligato/vpp-agent-arm64/).
 
 ```
 docker pull ligato/vpp-agent
 ```
-or for ARM64 platform:
-```
-docker pull ligato/vpp-agent-arm64
-```
+Note: **For ARM64 see more: [getting an ARM64 image][2]**.
 
 ### Building locally
 At first you need to have built of downloaded the `dev_vpp_agent` image.
@@ -25,7 +20,7 @@ To build the production image on your local machine, type:
 ```
 ./build.sh
 ```
-This will build `prod_vpp_agent` or `prod_vpp_agent-arm64` image with agent and vpp files taken from dev image.
+This will build `prod_vpp_agent` image with agent and vpp files taken from dev image.
 
 In addition, these environment variables can be set in Dockerfile:
 - `OMIT_AGENT` - whether the start of vpp-agent should be omitted (default is unset, agent will be started normally)
@@ -102,3 +97,4 @@ You can use the image the same way as the development image, see this
 [README](../dev/README.md).
 
 [1]: https://github.com/moby/moby/issues/26173
+[2]: docs/arm64/docker_images.md#production-images
