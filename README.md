@@ -80,11 +80,13 @@ of VNFs based on the VPP Agent:
 ## Quickstart
 
 For a quick start with the VPP Agent, you can use pre-built Docker images with
-the Agent and VPP on [Dockerhub][14].
+the Agent and VPP on [Dockerhub][14] (or this for [ARM64][17]).
 
 0. Start ETCD and Kafka on your host (e.g. in Docker as described [here][15]).
    Note: **The Agent in the pre-built Docker image will not start if it can't 
    connect to both Etcd and Kafka**.
+
+   Note: **For ARM64 see the information for [kafka][18] and for [etcd][19]**.
 
 1. Run VPP + VPP Agent in a Docker image:
 ```
@@ -134,3 +136,6 @@ If you are interested in contributing, please see the [contribution guidelines](
 [14]: https://hub.docker.com/r/ligato/vpp-agent/
 [15]: docker/dev/README.md#running-etcd-server-on-local-host
 [16]: https://github.com/ligato/cn-infra
+[17]: https://hub.docker.com/r/ligato/vpp-agent-arm64/
+[18]: docs/arm64/kafka.md
+[19]: docs/arm64/etcd.md
