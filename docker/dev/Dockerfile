@@ -61,6 +61,7 @@ RUN set -eux; \
     git clone "${VPP_REPO_URL}" vpp; \
     cd vpp; \
     git checkout "${VPP_COMMIT}"; \
+    sed -i -e 's/vpp vom japi/vpp/g' build-data/platforms/vpp.mk; \
     export UNATTENDED=y; \
     make install-dep dpdk-install-dev; \
     if [ -n "${VPP_DEBUG_DEB}" ]; then \
