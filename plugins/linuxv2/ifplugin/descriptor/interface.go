@@ -54,6 +54,9 @@ const (
 	tapInterfaceDep = "vpp-tap-interface"
 	vethPeerDep     = "veth-peer"
 	microserviceDep = "microservice"
+
+	// suffix attached to logical names of duplicate VETH interfaces
+	vethDupSuffix = "-dup"
 )
 
 // A list of non-retriable errors:
@@ -524,6 +527,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 	nsList := []*namespace.LinuxNetNamespace{nil}              // nil = default namespace, which always should be dumped
 	ifCfg := make(map[string]*interfaces.LinuxInterface)       // interface logical name -> interface config (as expected by correlate)
 	ifDump := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface dump
+	indexes := make(map[int]struct{})                          // already dumped interfaces by their Linux indexes
 
 	// process interfaces for correlation to get:
 	//  - the set of namespaces to dump
@@ -590,25 +594,16 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 			alias = strings.TrimPrefix(alias, agentPrefix)
 
 			// parse alias to obtain logical references and set the interface metadata
-			var origin scheduler.ValueOrigin
 			var tapTempIfName string
 			if link.Type() == (&netlink.Veth{}).Type() {
 				var vethPeerIfName string
 				intf.Type = interfaces.LinuxInterface_VETH
 				intf.Name, vethPeerIfName = parseVethAlias(alias)
 				intf.Link = &interfaces.LinuxInterface_VethPeerIfName{VethPeerIfName: vethPeerIfName}
-				if getVethTemporaryHostName(intf.Name) == link.Attrs().Name {
-					// this VETH end was not finalized or it was not configured yet at all,
-					// just prepared by the other end
-					origin = scheduler.UnknownOrigin
-				} else {
-					origin = scheduler.FromNB
-				}
 			} else if link.Type() == (&netlink.Tuntap{}).Type() {
 				intf.Type = interfaces.LinuxInterface_AUTO_TAP
 				intf.Name, tapTempIfName = parseTapAlias(alias)
 				intf.Link = &interfaces.LinuxInterface_TapTempIfName{TapTempIfName: tapTempIfName}
-				origin = scheduler.FromNB
 			} else {
 				// unsupported interface type supposedly configured by agent => print warning
 				intfd.log.WithFields(logging.Fields{
@@ -618,14 +613,39 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 				continue
 			}
 
+			// skip interfaces with invalid aliases
+			if intf.Name == "" {
+				continue
+			}
+
 			// skip if this interface was already dumped and this is not the expected
 			// namespace from correlation - remember, the same namespace may have
-			// multiple different logical names
-			if _, dumped := ifDump[intf.Name]; dumped {
+			// multiple different references
+			rewrite := false
+			if _, dumped := indexes[link.Attrs().Index]; dumped {
 				if expCfg, hasExpCfg := ifCfg[intf.Name]; hasExpCfg {
-					if !proto.Equal(expCfg.Namespace, nsRef) {
-						continue
+					if proto.Equal(expCfg.Namespace, nsRef) {
+						rewrite = true
 					}
+				}
+				if !rewrite {
+					continue
+				}
+			}
+			indexes[link.Attrs().Index] = struct{}{}
+
+			// test for duplicity of VETH logical names
+			if intf.Type == interfaces.LinuxInterface_VETH {
+				if _, duplicate := ifDump[intf.Name]; duplicate && !rewrite {
+					// add suffix to the duplicate to make its logical name unique
+					// (and not configured by NB so that it will get removed)
+					dupIndex := 1
+					for other := range ifDump {
+						if strings.HasPrefix(other, intf.Name+vethDupSuffix) {
+							dupIndex++
+						}
+					}
+					intf.Name = intf.Name + vethDupSuffix + strconv.Itoa(dupIndex)
 				}
 			}
 
@@ -659,7 +679,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 			ifDump[intf.Name] = adapter.InterfaceKVWithMetadata{
 				Key:    interfaces.InterfaceKey(intf.Name),
 				Value:  intf,
-				Origin: origin,
+				Origin: scheduler.FromNB,
 				Metadata: &ifaceidx.LinuxIfMetadata{
 					LinuxIfIndex: link.Attrs().Index,
 					TapTempName:  tapTempIfName,
@@ -674,12 +694,30 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 		}
 	}
 
-	// verify existence of VETH peers
+	// collect VETHs with duplicates and append vethDupSuffix to their logical
+	// names so that they will get removed.
+	var withDuplicates []adapter.InterfaceKVWithMetadata
 	for ifName, kv := range ifDump {
 		if kv.Value.Type == interfaces.LinuxInterface_VETH {
-			if _, dumped := ifDump[getVethPeerName(kv.Value)]; !dumped {
-				// drop it, VETH will be completely re-created
+			if _, hasDuplicate := ifDump[kv.Value.Name + vethDupSuffix + "1"]; hasDuplicate {
+				withDuplicates = append(withDuplicates, kv)
 				delete(ifDump, ifName)
+			}
+		}
+	}
+	for _, kv := range withDuplicates {
+		kv.Value.Name = kv.Value.Name + vethDupSuffix + "0"
+		kv.Key = interfaces.InterfaceKey(kv.Value.Name)
+		ifDump[kv.Value.Name] = kv
+	}
+
+	// verify existence of VETH peers
+	for _, kv := range ifDump {
+		if kv.Value.Type == interfaces.LinuxInterface_VETH {
+			peer, dumped := ifDump[getVethPeerName(kv.Value)]
+			if !dumped || getVethPeerName(peer.Value) != kv.Value.Name {
+				// clear peer reference - VETH will be completely re-created
+				kv.Value.Link = &interfaces.LinuxInterface_VethPeerIfName{}
 			}
 		}
 	}

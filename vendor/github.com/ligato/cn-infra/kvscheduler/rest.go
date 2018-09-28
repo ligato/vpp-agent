@@ -86,6 +86,12 @@ const (
 	internalArg = "internal"
 )
 
+// errorString wraps string representation of an error that, unlike the original
+// error, can be marshalled.
+type errorString struct {
+	Error string
+}
+
 // registerHandlers registers all supported REST APIs.
 func (scheduler *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	if http == nil {
@@ -112,14 +118,15 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 			var err error
 			seqNum, err = strconv.Atoi(seqNumStr[0])
 			if err != nil {
-				formatter.JSON(w, http.StatusInternalServerError, err)
+				formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 				return
 			}
 
 			// sequence number takes precedence over the since-until time window
 			txn := scheduler.getRecordedTransaction(uint(seqNum))
 			if txn == nil {
-				formatter.JSON(w, http.StatusNotFound, "transaction with such sequence is not recorded")
+				err := errors.New("transaction with such sequence is not recorded")
+				formatter.JSON(w, http.StatusNotFound, errorString{err.Error()})
 				return
 			}
 
@@ -132,7 +139,7 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 			var err error
 			until, err = stringToTime(untilStr[0])
 			if err != nil {
-				formatter.JSON(w, http.StatusInternalServerError, err)
+				formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 				return
 			}
 		}
@@ -142,7 +149,7 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 			var err error
 			since, err = stringToTime(sinceStr[0])
 			if err != nil {
-				formatter.JSON(w, http.StatusInternalServerError, err)
+				formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 				return
 			}
 		}
@@ -168,7 +175,7 @@ func (scheduler *Scheduler) keyTimelineGetHandler(formatter *render.Render) http
 		}
 
 		err := errors.New("missing key argument")
-		formatter.JSON(w, http.StatusInternalServerError, err)
+		formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 		return
 	}
 }
@@ -184,7 +191,7 @@ func (scheduler *Scheduler) graphSnapshotGetHandler(formatter *render.Render) ht
 			var err error
 			timeVal, err = stringToTime(timeStr[0])
 			if err != nil {
-				formatter.JSON(w, http.StatusInternalServerError, err)
+				formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 				return
 			}
 		}
@@ -226,7 +233,7 @@ func (scheduler *Scheduler) flagStatsGetHandler(formatter *render.Render) http.H
 		}
 
 		err := errors.New("missing flag argument")
-		formatter.JSON(w, http.StatusInternalServerError, err)
+		formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 		return
 	}
 }
@@ -238,14 +245,18 @@ func (scheduler *Scheduler) downstreamResyncPostHandler(formatter *render.Render
 		ctx = WithDownstreamResync(ctx)
 		kvErrors, txnError := scheduler.StartNBTransaction().Commit(ctx)
 		if txnError != nil {
-			formatter.JSON(w, http.StatusInternalServerError, txnError)
+			formatter.JSON(w, http.StatusInternalServerError, errorString{txnError.Error()})
 			return
 		}
 		if len(kvErrors) > 0 {
-			formatter.JSON(w, http.StatusInternalServerError, kvErrors)
+			kvErrorMap := make(map[string]errorString)
+			for _, keyWithError := range kvErrors {
+				kvErrorMap[keyWithError.Key] = errorString{keyWithError.Error.Error()}
+			}
+			formatter.JSON(w, http.StatusInternalServerError, kvErrorMap)
 			return
 		}
-		formatter.Text(w, http.StatusOK, "SB was successfully synchronized with KVScheduler")
+		formatter.Text(w, http.StatusOK, "SB was successfully synchronized with KVScheduler\n")
 		return
 	}
 }
@@ -259,12 +270,12 @@ func (scheduler *Scheduler) dumpGetHandler(formatter *render.Render) http.Handle
 		descriptors, withDescriptor := args[descriptorArg]
 		if !withDescriptor {
 			err := errors.New("missing descriptor argument")
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 			return
 		}
 		if len(descriptors) != 1 {
 			err := errors.New("descriptor argument listed more than once")
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 			return
 		}
 		descriptor := descriptors[0]
@@ -303,19 +314,19 @@ func (scheduler *Scheduler) dumpGetHandler(formatter *render.Render) http.Handle
 		kvDescriptor := scheduler.registry.GetDescriptor(descriptor)
 		if kvDescriptor == nil {
 			err := errors.New("descriptor is not registered")
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 			return
 		}
 		if kvDescriptor.Dump == nil {
 			err := errors.New("descriptor does not support Dump operation")
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 			return
 		}
 
 		// dump the state directly from SB via descriptor
 		dump, err := kvDescriptor.Dump(inMemNodes)
 		if err != nil {
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
 			return
 		}
 		formatter.JSON(w, http.StatusOK, dump)

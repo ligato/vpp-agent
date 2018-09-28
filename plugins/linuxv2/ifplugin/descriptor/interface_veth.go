@@ -143,8 +143,10 @@ func (intfd *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx
 			intfd.log.Error(err)
 			return err
 		}
-		// peer should be automatically removed as well, but just in case...
-		intfd.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
+		if tempPeerHostName != "" {
+			// peer should be automatically removed as well, but just in case...
+			intfd.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
+		}
 	}
 
 	return nil
@@ -178,6 +180,9 @@ func getVethPeerName(linuxIf *interfaces.LinuxInterface) string {
 // getVethTemporaryHostName (deterministically) generates a temporary host name
 // for a VETH interface.
 func getVethTemporaryHostName(vethName string) string {
+	if vethName == "" {
+		return ""
+	}
 	return fmt.Sprintf("veth-%d", fnvHash(vethName))
 }
 

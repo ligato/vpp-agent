@@ -195,12 +195,13 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 				graph.WithFlags(&OriginFlag{FromNB}),
 				graph.WithoutFlags(&DerivedFlag{}))
 			for _, node := range currentNodes {
+				lastChange := getNodeLastChange(node)
 				preTxn.values = append(preTxn.values,
 					kvForTxn{
 						key:      node.GetKey(),
-						value:    node.GetValue(),
-						metadata: node.GetMetadata(),
+						value:    lastChange.value,
 						origin:   FromNB,
+						isRevert: lastChange.revert,
 					})
 			}
 		}

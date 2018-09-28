@@ -21,10 +21,10 @@ import (
 )
 
 // Order by operations (in average should yield the shortest sequence of operations):
-//  1. modify with re-create
-//  2. add
-//  3. modify
-//  4. delete
+//  1. delete
+//  2. modify with re-create
+//  3. add
+//  4. modify
 //
 // Furthermore, operations of the same type are ordered by dependencies to limit
 // temporary pending states.
@@ -75,10 +75,10 @@ func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kv
 
 	// order keys by operation + dependencies
 	var orderedKeys []string
+	orderedKeys = append(orderedKeys, utils.TopologicalOrder(delete, deps, false, true)...)
 	orderedKeys = append(orderedKeys, utils.TopologicalOrder(recreate, deps, true, true)...)
 	orderedKeys = append(orderedKeys, utils.TopologicalOrder(add, deps, true, true)...)
 	orderedKeys = append(orderedKeys, utils.TopologicalOrder(modify, deps, true, true)...)
-	orderedKeys = append(orderedKeys, utils.TopologicalOrder(delete, deps, false, true)...)
 
 	// return values in the same order as keys are in <orderedKeys>
 	var ordered []kvForTxn
