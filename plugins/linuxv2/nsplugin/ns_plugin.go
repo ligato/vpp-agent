@@ -142,9 +142,10 @@ func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespa
 	// Convert microservice namespace
 	if namespace != nil && namespace.Type == nsmodel.LinuxNetNamespace_NETNS_REF_MICROSERVICE {
 		// Convert namespace
-		namespace = p.convertMicroserviceNsToPidNs(namespace.Reference)
+		reference := namespace.Reference
+		namespace = p.convertMicroserviceNsToPidNs(reference)
 		if namespace == nil {
-			return 0, &unavailableMicroserviceErr{label: namespace.Reference}
+			return 0, &unavailableMicroserviceErr{label: reference}
 		}
 	}
 
