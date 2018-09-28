@@ -297,6 +297,10 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 				continue
 			}
 			node := graphW.GetNode(retryKey)
+			if node == nil {
+				// delete returned error, but refresh showed that it is not in SB anymore anyway
+				continue
+			}
 			lastChange := getNodeLastChange(node)
 			seqNum := lastChange.txnSeqNum
 			if lastChange.retryEnabled {
