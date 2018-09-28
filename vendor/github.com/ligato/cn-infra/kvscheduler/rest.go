@@ -74,6 +74,10 @@ const (
 	// downstreamResyncURL is URL used to trigger downstream-resync.
 	downstreamResyncURL = urlPrefix + "downstream-resync"
 
+	// retryArg is the name of the argument used for "downstream-resync" API to tell whether
+	// to retry failed operations or not.
+	retryArg = "retry"
+
 	// dumpURL is URL used to dump either SB or scheduler's internal state of kv-pairs
 	// under the given descriptor.
 	dumpURL = urlPrefix + "dump"
@@ -241,8 +245,21 @@ func (scheduler *Scheduler) flagStatsGetHandler(formatter *render.Render) http.H
 // downstreamResyncPostHandler is the POST handler for "downstream-resync" API.
 func (scheduler *Scheduler) downstreamResyncPostHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
+		// parse optional *retry* argument
+		args := req.URL.Query()
+		retry := false
+		if retryStr, withRetry := args[retryArg]; withRetry && len(retryStr) == 1 {
+			retryVal := retryStr[0]
+			if retryVal == "true" || retryVal == "1" {
+				retry = true
+			}
+		}
+
 		ctx := context.Background()
 		ctx = WithDownstreamResync(ctx)
+		if retry {
+			ctx = WithRetry(ctx, time.Second, true)
+		}
 		kvErrors, txnError := scheduler.StartNBTransaction().Commit(ctx)
 		if txnError != nil {
 			formatter.JSON(w, http.StatusInternalServerError, errorString{txnError.Error()})
