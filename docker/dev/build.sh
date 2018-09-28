@@ -16,11 +16,13 @@ BUILDARCH=`uname -m`
 case "$BUILDARCH" in
   "aarch64" )
     GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-arm64'}
+    PROTOC_OS_ARCH=${PROTOC_OS_ARCH:-'linux-aarch_64'}
     ;;
 
   "x86_64" )
     # for AMD64 platform is used the default image (without suffix -amd64)
     GOLANG_OS_ARCH=${GOLANG_OS_ARCH:-'linux-amd64'}
+    PROTOC_OS_ARCH=${PROTOC_OS_ARCH:-'linux_x86_64'}
     ;;
   * )
     echo "Architecture ${BUILDARCH} is not supported."
@@ -55,6 +57,7 @@ docker build -f ${DOCKERFILE} \
     --build-arg VPP_REPO_URL=${VPP_REPO_URL} \
     --build-arg VPP_DEBUG_DEB=${VPP_DEBUG_DEB} \
     --build-arg GOLANG_OS_ARCH=${GOLANG_OS_ARCH} \
+    --build-arg PROTOC_OS_ARCH=${PROTOC_OS_ARCH} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
     ${DOCKER_BUILD_ARGS} ../..
