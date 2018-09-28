@@ -41,11 +41,12 @@ RUN apt-get update \
 
 # install Protobuf
 ARG PROTOC_VERSION=3.6.1
-RUN wget -q https://github.com/google/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip \
- && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc3 \
+ARG PROTOC_OS_ARCH=linux_x86_64
+RUN wget -q https://github.com/google/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-${PROTOC_OS_ARCH}.zip \
+ && unzip protoc-${PROTOC_VERSION}-${PROTOC_OS_ARCH}.zip -d protoc3 \
  && mv protoc3/bin/protoc /usr/local/bin \
  && mv protoc3/include/google /usr/local/include \
- && rm -rf protoc-${PROTOC_VERSION}-linux-x86_64.zip protoc3
+ && rm -rf protoc-${PROTOC_VERSION}-${PROTOC_OS_ARCH}.zip protoc3
 
 RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
