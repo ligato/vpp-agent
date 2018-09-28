@@ -144,7 +144,7 @@ func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespa
 		// Convert namespace
 		namespace = p.convertMicroserviceNsToPidNs(namespace.Reference)
 		if namespace == nil {
-			return 0, &unavailableMicroserviceErr{}
+			return 0, &unavailableMicroserviceErr{label: namespace.Reference}
 		}
 	}
 
