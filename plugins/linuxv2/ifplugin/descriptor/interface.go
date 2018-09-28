@@ -769,20 +769,16 @@ func (intfd *InterfaceDescriptor) getInterfaceAddresses(ifName string) (addresse
 	// get all assigned IP addresses
 	ipAddrs, err := intfd.ifHandler.GetAddressList(ifName)
 	if err != nil {
-		return nil, false, errors.Errorf("failed to get IP addresses assigned to linux interface %s", ifName)
+		return nil, false, err
 	}
 
-	// parse IP addresses
+	// iterate over IP addresses to see if there is IPv6 among them
 	for _, ipAddr := range ipAddrs {
-		network, ipv6, err := addrs.ParseIPWithPrefix(ipAddr.String())
-		if err != nil {
-			return nil, false, errors.Errorf("failed to parse IP address %s", ipAddr.String())
-		}
-		if ipv6 && !ipAddr.IP.IsLinkLocalUnicast() {
+		if ipAddr.IP.To4() == nil && !ipAddr.IP.IsLinkLocalUnicast() {
 			// IP address is version 6 and not a link local address
 			hasIPv6 = true
 		}
-		addresses = append(addresses, network)
+		addresses = append(addresses, ipAddr.IPNet)
 	}
 	return addresses, hasIPv6, nil
 }
