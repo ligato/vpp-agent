@@ -56,7 +56,10 @@ const (
 	microserviceDep = "microservice"
 
 	// suffix attached to logical names of duplicate VETH interfaces
-	vethDupSuffix = "-dup"
+	vethDuplicateSuffix = "-DUPLICATE"
+
+	// suffix attached to logical names of VETH interfaces with peers not found by Dump
+	vethMissingPeerSuffix = "-MISSING_PEER"
 )
 
 // A list of non-retriable errors:
@@ -593,7 +596,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 			}
 			alias = strings.TrimPrefix(alias, agentPrefix)
 
-			// parse alias to obtain logical references and set the interface metadata
+			// parse alias to obtain logical references
 			var tapTempIfName string
 			if link.Type() == (&netlink.Veth{}).Type() {
 				var vethPeerIfName string
@@ -640,12 +643,12 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 					// add suffix to the duplicate to make its logical name unique
 					// (and not configured by NB so that it will get removed)
 					dupIndex := 1
-					for other := range ifDump {
-						if strings.HasPrefix(other, intf.Name+vethDupSuffix) {
+					for intf2 := range ifDump {
+						if strings.HasPrefix(intf2, intf.Name + vethDuplicateSuffix) {
 							dupIndex++
 						}
 					}
-					intf.Name = intf.Name + vethDupSuffix + strconv.Itoa(dupIndex)
+					intf.Name = intf.Name + vethDuplicateSuffix + strconv.Itoa(dupIndex)
 				}
 			}
 
@@ -694,36 +697,47 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 		}
 	}
 
-	// collect VETHs with duplicates and append vethDupSuffix to their logical
-	// names so that they will get removed.
-	var withDuplicates []adapter.InterfaceKVWithMetadata
+	// first collect VETHs with duplicate logical names
+	var dump []adapter.InterfaceKVWithMetadata
 	for ifName, kv := range ifDump {
 		if kv.Value.Type == interfaces.LinuxInterface_VETH {
-			if _, hasDuplicate := ifDump[kv.Value.Name + vethDupSuffix + "1"]; hasDuplicate {
-				withDuplicates = append(withDuplicates, kv)
+			isDuplicate := strings.Contains(ifName, vethDuplicateSuffix)
+			// first interface dumped from the set of duplicate VETHs still
+			// does not have the vethDuplicateSuffix appended to the name
+			_, hasDuplicate := ifDump[ifName + vethDuplicateSuffix + "1"]
+			if hasDuplicate {
+				kv.Value.Name = ifName + vethDuplicateSuffix + "0"
+				kv.Key = interfaces.InterfaceKey(kv.Value.Name)
+			}
+			if isDuplicate || hasDuplicate {
+				// clear peer reference so that Delete removes the VETH-end
+				// as standalone
+				kv.Value.Link = &interfaces.LinuxInterface_VethPeerIfName{}
 				delete(ifDump, ifName)
+				dump = append(dump, kv)
 			}
 		}
 	}
-	for _, kv := range withDuplicates {
-		kv.Value.Name = kv.Value.Name + vethDupSuffix + "0"
-		kv.Key = interfaces.InterfaceKey(kv.Value.Name)
-		ifDump[kv.Value.Name] = kv
-	}
 
-	// verify existence of VETH peers
-	for _, kv := range ifDump {
+	// next collect VETHs with missing peer
+	for ifName, kv := range ifDump {
 		if kv.Value.Type == interfaces.LinuxInterface_VETH {
 			peer, dumped := ifDump[getVethPeerName(kv.Value)]
 			if !dumped || getVethPeerName(peer.Value) != kv.Value.Name {
-				// clear peer reference - VETH will be completely re-created
+				// append vethMissingPeerSuffix to the logical name so that VETH
+				// will get removed during resync
+				kv.Value.Name = ifName + vethMissingPeerSuffix
+				kv.Key = interfaces.InterfaceKey(kv.Value.Name)
+				// clear peer reference so that Delete removes the VETH-end
+				// as standalone
 				kv.Value.Link = &interfaces.LinuxInterface_VethPeerIfName{}
+				delete(ifDump, ifName)
+				dump = append(dump, kv)
 			}
 		}
 	}
 
-	// return dumped interfaces as list
-	var dump []adapter.InterfaceKVWithMetadata
+	// finally collect AUTO-TAPs and valid VETHs
 	for _, kv := range ifDump {
 		dump = append(dump, kv)
 	}
