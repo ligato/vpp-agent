@@ -15,7 +15,6 @@
 package syncbase
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,13 +24,12 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
-
-	"github.com/ligato/cn-infra/kvscheduler"
-	scheduler_api "github.com/ligato/cn-infra/kvscheduler/api"
 )
 
-const (
-	propagateChangesTimeout = time.Second * 20
+var (
+	// PropagateChangesTimeout defines timeout used during
+	// change propagation after which it will return an error.
+	PropagateChangesTimeout = time.Second * 20
 )
 
 // Registry of subscriptions and latest revisions.
@@ -62,7 +60,6 @@ type WatchDataReg struct {
 func NewRegistry() *Registry {
 	return &Registry{
 		subscriptions: map[string]*Subscription{},
-		access:        sync.Mutex{},
 		lastRev:       NewLatestRev(),
 	}
 }
@@ -103,69 +100,50 @@ func (adapter *Registry) Watch(resyncName string, changeChan chan datasync.Chang
 func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue) error {
 	var events []func(done chan error)
 
-	// propagate transaction to KV scheduler
-	// TODO: scheduler should subscribe to registry and receive TXN as a whole
-	scheduler := &kvscheduler.DefaultPlugin // temporary hack
-	if scheduler.IsInitialized() {
-		keyPrefixes := scheduler.GetRegisteredNBKeyPrefixes()
-
-		// TODO: add options to localclient
-		txn := scheduler.StartNBTransaction()
-		for key, val := range txData {
-			registered := false
-			for _, prefix := range keyPrefixes {
-				if strings.HasPrefix(key, prefix) {
-					registered = true
-					break
-				}
-			}
-			if !registered {
-				continue
-			}
-			if val.GetChangeType() == datasync.Delete {
-				txn.SetValue(key, nil)
-			} else {
-				txn.SetValue(key, val)
-			}
-		}
-		// TODO: return error(s)
-		txn.Commit(scheduler_api.WithRetry(context.Background(), time.Second, true))
-	}
-
 	for _, sub := range adapter.subscriptions {
+		var changes []datasync.ProtoWatchResp
+
 		for _, prefix := range sub.KeyPrefixes {
 			for key, val := range txData {
+				if !strings.HasPrefix(key, prefix) {
+					continue
+				}
+
 				var (
-					prev   datasync.LazyValueWithRev
+					prev   datasync.KeyVal
 					curRev int64
 				)
 
-				if strings.HasPrefix(key, prefix) {
-					if val.GetChangeType() == datasync.Delete {
-						if _, prev = adapter.lastRev.Del(key); prev != nil {
-							curRev = prev.GetRevision() + 1
-						} else {
-							continue
-						}
+				if val.GetChangeType() == datasync.Delete {
+					if _, prev = adapter.lastRev.Del(key); prev != nil {
+						curRev = prev.GetRevision() + 1
 					} else {
-						_, prev, curRev = adapter.lastRev.Put(key, val)
+						continue
 					}
+				} else {
+					_, prev, curRev = adapter.lastRev.Put(key, val)
+				}
 
-					sendTo := func(sub *Subscription, key string, val datasync.ChangeValue) func(done chan error) {
-						return func(done chan error) {
-							sub.ChangeChan <- &ChangeEvent{
-								Key:        key,
-								ChangeType: val.GetChangeType(),
-								CurrVal:    val,
-								CurrRev:    curRev,
-								PrevVal:    prev,
-								delegate:   NewDoneChannel(done),
-							}
-						}
+				changes = append(changes, &ChangeResp{
+					Key:        key,
+					ChangeType: val.GetChangeType(),
+					CurrVal:    val,
+					CurrRev:    curRev,
+					PrevVal:    prev,
+				})
+			}
+		}
+
+		if len(changes) > 0 {
+			sendTo := func(sub *Subscription) func(done chan error) {
+				return func(done chan error) {
+					sub.ChangeChan <- &ChangeEvent{
+						Changes:  changes,
+						delegate: &DoneChannel{done},
 					}
-					events = append(events, sendTo(sub, key, val))
 				}
 			}
+			events = append(events, sendTo(sub))
 		}
 	}
 
@@ -177,8 +155,9 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 		if err != nil {
 			return err
 		}
-	case <-time.After(propagateChangesTimeout):
-		logrus.DefaultLogger().Warn("Timeout of aggregated change callback")
+	case <-time.After(PropagateChangesTimeout):
+		logrus.DefaultLogger().Warnf("Timeout of aggregated change callback (%v)",
+			PropagateChangesTimeout)
 	}
 
 	return nil
@@ -186,36 +165,8 @@ func (adapter *Registry) PropagateChanges(txData map[string]datasync.ChangeValue
 
 // PropagateResync fills registered channels with the data.
 func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue) error {
-	// propagate transaction to KV scheduler
-	// TODO: scheduler should subscribe to registry and receive TXN as a whole
-	scheduler := &kvscheduler.DefaultPlugin // temporary hack
-	if scheduler.IsInitialized() {
-		keyPrefixes := scheduler.GetRegisteredNBKeyPrefixes()
-
-		// TODO: add options to localclient
-		txn := scheduler.StartNBTransaction()
-		for key, val := range txData {
-			registered := false
-			for _, prefix := range keyPrefixes {
-				if strings.HasPrefix(key, prefix) {
-					registered = true
-					break
-				}
-			}
-			if !registered {
-				continue
-			}
-
-			txn.SetValue(key, val)
-		}
-		// TODO: return error(s)
-		ctx := context.Background()
-		ctx = scheduler_api.WithRetry(ctx, time.Second, true)
-		ctx = scheduler_api.WithFullResync(ctx)
-		txn.Commit(ctx)
-	}
-
 	adapter.lastRev.Cleanup()
+
 	for _, sub := range adapter.subscriptions {
 		resyncEv := NewResyncEventDB(map[string]datasync.KeyValIterator{})
 
@@ -224,7 +175,9 @@ func (adapter *Registry) PropagateResync(txData map[string]datasync.ChangeValue)
 
 			for key, val := range txData {
 				if strings.HasPrefix(key, prefix) {
+					// TODO: call Put only once for each key (different subscriptions)
 					adapter.lastRev.PutWithRevision(key, val)
+
 					kvs = append(kvs, &KeyVal{
 						key:       key,
 						LazyValue: val,

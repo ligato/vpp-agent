@@ -21,17 +21,17 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
-	"github.com/vishvananda/netlink"
-	"golang.org/x/sys/unix"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 
 	"github.com/ligato/cn-infra/idxmap"
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
@@ -198,7 +198,7 @@ func (intfd *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 		ErrInterfaceReferenceMismatch,
 		ErrVETHWithoutPeer,
 		ErrNamespaceWithoutReference,
-		}
+	}
 	for _, nonRetriableErr := range nonRetriable {
 		if err == nonRetriableErr {
 			return false
@@ -603,7 +603,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 				intf.Type = interfaces.LinuxInterface_VETH
 				intf.Name, vethPeerIfName = parseVethAlias(alias)
 				intf.Link = &interfaces.LinuxInterface_Veth{
-					Veth:&interfaces.LinuxInterface_VethLink{PeerIfName: vethPeerIfName}}
+					Veth: &interfaces.LinuxInterface_VethLink{PeerIfName: vethPeerIfName}}
 			} else if link.Type() == (&netlink.Tuntap{}).Type() {
 				intf.Type = interfaces.LinuxInterface_AUTO_TAP
 				intf.Name, tapTempIfName = parseTapAlias(alias)
@@ -646,7 +646,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 					// (and not configured by NB so that it will get removed)
 					dupIndex := 1
 					for intf2 := range ifDump {
-						if strings.HasPrefix(intf2, intf.Name + vethDuplicateSuffix) {
+						if strings.HasPrefix(intf2, intf.Name+vethDuplicateSuffix) {
 							dupIndex++
 						}
 					}
@@ -706,7 +706,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 			isDuplicate := strings.Contains(ifName, vethDuplicateSuffix)
 			// first interface dumped from the set of duplicate VETHs still
 			// does not have the vethDuplicateSuffix appended to the name
-			_, hasDuplicate := ifDump[ifName + vethDuplicateSuffix + "1"]
+			_, hasDuplicate := ifDump[ifName+vethDuplicateSuffix+"1"]
 			if hasDuplicate {
 				kv.Value.Name = ifName + vethDuplicateSuffix + "0"
 				kv.Key = interfaces.InterfaceKey(kv.Value.Name)
@@ -847,7 +847,7 @@ func validateInterfaceConfig(linuxIf *interfaces.LinuxInterface) error {
 	}
 	if linuxIf.Namespace != nil &&
 		(linuxIf.Namespace.Type == namespace.LinuxNetNamespace_NETNS_REF_UNDEFINED ||
-	 	linuxIf.Namespace.Reference == "") {
+			linuxIf.Namespace.Reference == "") {
 		return ErrNamespaceWithoutReference
 	}
 	switch linuxIf.Link.(type) {

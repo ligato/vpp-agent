@@ -21,12 +21,12 @@ import (
 	"time"
 
 	"github.com/go-errors/errors"
-	"github.com/vishvananda/netlink"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/vishvananda/netlink"
 
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	ifmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"

@@ -20,8 +20,8 @@ package l3plugin
 
 import (
 	"github.com/ligato/cn-infra/infra"
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging/measure"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor"

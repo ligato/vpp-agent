@@ -2,9 +2,9 @@ package ifplugin
 
 import (
 	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/kvscheduler"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 

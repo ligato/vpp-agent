@@ -19,11 +19,11 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
-	"github.com/vishvananda/netlink"
 	"github.com/gogo/protobuf/proto"
+	"github.com/vishvananda/netlink"
 
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
@@ -304,7 +304,7 @@ func (arpd *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapte
 				Key: l3.StaticArpKey(ifName, ipAddr),
 				Value: &l3.LinuxStaticARPEntry{
 					Interface: ifName,
-					IpAddress:    ipAddr,
+					IpAddress: ipAddr,
 					HwAddress: hwAddr,
 				},
 				Origin: scheduler.UnknownOrigin, // let the scheduler to determine the origin

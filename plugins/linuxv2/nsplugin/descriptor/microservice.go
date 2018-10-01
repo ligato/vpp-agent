@@ -19,13 +19,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
 	"github.com/fsouza/go-dockerclient"
 	"github.com/go-errors/errors"
 	prototypes "github.com/gogo/protobuf/types"
 
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 )

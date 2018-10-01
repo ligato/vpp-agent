@@ -21,10 +21,10 @@ import (
 	"github.com/go-errors/errors"
 
 	"github.com/ligato/cn-infra/infra"
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
