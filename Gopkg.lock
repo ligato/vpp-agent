@@ -454,7 +454,7 @@
 
 [[projects]]
   branch = "kvscheduler"
-  digest = "1:c700ff551ed862ac2bd60595c4f4eaec6361bed981e55e2869c47d3c81bb63b8"
+  digest = "1:42b430c9442892d182b720f3e1a9e8f411b5879cb28e173a0442e3600cc42c0f"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -499,7 +499,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "e383997b8a9ba884013be7fdb9dc2aa28b1aebeb"
+  revision = "76cd2347b416feeeec094737fa762d66ca27a3d1"
   source = "github.com/milanlenco/cn-infra"
 
 [[projects]]

@@ -85,9 +85,18 @@ const (
 	// descriptorArg is the name of the argument used to define descriptor for "dump" API.
 	descriptorArg = "descriptor"
 
-	// internalArg is the name of the argument used for "dump" API to tell whether
-	// to dump SB or the scheduler's internal view of SB.
-	internalArg = "internal"
+	// stateArg is the name of the argument used for "dump" API to tell whether
+	// to dump "SB" (what there really is), "internal" state (what scheduler thinks
+	// there is) or "NB" (the requested state). Default is to dump SB.
+	stateArg = "state"
+
+	/* recognized system states: */
+	// SB = southbound (what there really is)
+	SB = "SB"
+	// internalState (scheduler's view of SB)
+	internalState = "internal"
+	// NB = northbound (the requested state)
+	NB = "NB"
 )
 
 // errorString wraps string representation of an error that, unlike the original
@@ -95,6 +104,7 @@ const (
 type errorString struct {
 	Error string
 }
+
 
 // registerHandlers registers all supported REST APIs.
 func (scheduler *Scheduler) registerHandlers(http rest.HTTPHandlers) {
@@ -297,17 +307,19 @@ func (scheduler *Scheduler) dumpGetHandler(formatter *render.Render) http.Handle
 		}
 		descriptor := descriptors[0]
 
-		// parse optional *internal* argument
-		internalDump := false
-		if internalStr, withInternal := args[internalArg]; withInternal && len(internalStr) == 1 {
-			internalVal := internalStr[0]
-			if internalVal == "true" || internalVal == "1" {
-				internalDump = true
+		// parse optional *state* argument (default = SB)
+		state := SB
+		if stateStr, withState := args[stateArg]; withState && len(stateStr) == 1 {
+			state = stateStr[0]
+			if state != SB && state != NB && state != internalState {
+				err := errors.New("unrecognized system state")
+				formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()})
+				return
 			}
 		}
 
 		// pause transaction processing
-		if !internalDump {
+		if state == SB {
 			scheduler.txnLock.Lock()
 			defer scheduler.txnLock.Unlock()
 		}
@@ -315,13 +327,36 @@ func (scheduler *Scheduler) dumpGetHandler(formatter *render.Render) http.Handle
 		graphR := scheduler.graph.Read()
 		defer graphR.Release()
 
+		if state == NB {
+			// dump the requested state
+			var kvPairs []KVWithMetadata
+			nbNodes := graphR.GetNodes(nil,
+					graph.WithFlags(&DescriptorFlag{descriptor}, &OriginFlag{FromNB}),
+					graph.WithoutFlags(&DerivedFlag{}))
+
+			for _, node := range nbNodes {
+				lastChange := getNodeLastChange(node)
+				if lastChange.value == nil {
+					// value requested to be deleted
+					continue
+				}
+				kvPairs = append(kvPairs, KVWithMetadata{
+					Key:      node.GetKey(),
+					Value:    lastChange.value,
+					Origin:   FromNB,
+				})
+			}
+		}
+
+		/* internal/SB: */
+
 		// dump from the in-memory graph first (for SB Dump it is used for correlation)
 		inMemNodes := nodesToKVPairsWithMetadata(
 			graphR.GetNodes(nil,
 				graph.WithFlags(&DescriptorFlag{descriptor}),
 				graph.WithoutFlags(&PendingFlag{}, &DerivedFlag{})))
 
-		if internalDump {
+		if state == SB {
 			// return the scheduler's view of SB for the given descriptor
 			formatter.JSON(w, http.StatusOK, inMemNodes)
 			return
