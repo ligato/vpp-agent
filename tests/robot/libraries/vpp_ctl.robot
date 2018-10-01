@@ -56,11 +56,28 @@ vpp_ctl: Put Veth Interface
     ${data}=              Replace Variables             ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
+vpp_ctl: Put Veth Interface And Namespace
+    [Arguments]    ${node}    ${name}    ${namespace}    ${mac}    ${peer}    ${enabled}=true
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/veth_interface.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/interface/${name}
+    ${data}=              Replace Variables             ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
 vpp_ctl: Put Veth Interface With IP
     [Arguments]    ${node}    ${name}    ${mac}    ${peer}    ${ip}    ${prefix}=24    ${mtu}=1500    ${vrf}=0    ${enabled}=true
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/veth_interface_with_ip.json
     ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/interface/${name}
     ${data}=              Replace Variables             ${data}
+    vpp_ctl: Put Json     ${uri}    ${data}
+
+vpp_ctl: Put Veth Interface With IP And Namespace
+    [Arguments]    ${node}    ${name}    ${namespace}    ${mac}    ${peer}    ${ip}    ${prefix}=24    ${mtu}=1500    ${enabled}=true
+    Log Many    ${node}    ${name}    ${namespace}    ${mac}    ${peer}    ${ip}    ${prefix}    ${mtu}    ${enabled}
+    ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/veth_interface_with_ip_and_ns.json
+    ${uri}=               Set Variable                  /vnf-agent/${node}/linux/config/v1/interface/${name}
+    Log Many              ${data}                       ${uri}
+    ${data}=              Replace Variables             ${data}
+    Log                   ${data}
     vpp_ctl: Put Json     ${uri}    ${data}
 
 vpp_ctl: Put Afpacket Interface

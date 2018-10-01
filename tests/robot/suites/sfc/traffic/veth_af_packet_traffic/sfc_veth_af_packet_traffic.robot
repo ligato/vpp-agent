@@ -4,9 +4,9 @@ Library      OperatingSystem
 #Library      SSHLibrary      timeout=60s
 #Library      String
 
-Resource     ../../../variables/${VARIABLES}_variables.robot
+Resource     ../../../../variables/${VARIABLES}_variables.robot
 
-Resource     ../../../libraries/all_libs.robot
+Resource     ../../../../libraries/all_libs.robot
 
 Force Tags        traffic     IPv4    ExpectedFailure
 Suite Setup       Testsuite Setup
@@ -21,9 +21,9 @@ ${WAIT_TIMEOUT}=     20s
 ${SYNC_SLEEP}=       2s
 ${RESYNC_SLEEP}=       15s
 
-${AGENT1_VETH_MAC}=    12:11:11:11:11:11
-${AGENT2_VETH_MAC}=    12:11:11:11:11:12
-${AGENT3_VETH_MAC}=    12:11:11:11:11:13
+${AGENT1_VETH_MAC}=    02:00:00:00:00:01
+${AGENT2_VETH_MAC}=    02:00:00:00:00:02
+${AGENT3_VETH_MAC}=    02:00:00:00:00:03
 
 ${VARIABLES}=       common
 ${ENV}=             common
@@ -34,26 +34,7 @@ Configure Environment
     [Tags]    setup
     ${DATA_FOLDER}=       Catenate     SEPARATOR=/       ${CURDIR}         ${TEST_DATA_FOLDER}
     Set Suite Variable          ${DATA_FOLDER}
-    Configure Environment 7
-
-Configure Interfaces
-    Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
-
-    vpp_ctl: Put Veth Interface With IP And Namespace       node=agent_vpp_1    name=node1_veth    namespace=node_1    mac=12:11:11:11:11:11    peer=vpp1_veth1    ip=10.0.0.10
-    vpp_ctl: Put Veth Interface And Namespace    node=agent_vpp_1    name=vpp1_veth1    namespace=agent_vpp_1     mac=12:12:12:12:12:11    peer=node1_veth
-    vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket1    mac=a2:a1:a1:a1:a1:a1    host_int=vpp1_veth1
-
-    vpp_ctl: Put Veth Interface With IP And Namespace       node=agent_vpp_1    name=node2_veth    namespace=node_2    mac=12:11:11:11:11:12    peer=vpp1_veth2    ip=10.0.0.11
-    vpp_ctl: Put Veth Interface And Namespace    node=agent_vpp_1    name=vpp1_veth2    namespace=agent_vpp_1     mac=12:12:12:12:12:12    peer=node2_veth
-    vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket2    mac=a2:a1:a1:a1:a1:a2    host_int=vpp1_veth2
-
-    vpp_ctl: Put Veth Interface With IP And Namespace       node=agent_vpp_1    name=node3_veth    namespace=node_3    mac=12:11:11:11:11:13    peer=vpp1_veth3    ip=10.0.0.12
-    vpp_ctl: Put Veth Interface And Namespace    node=agent_vpp_1    name=vpp1_veth3    namespace=agent_vpp_1     mac=12:12:12:12:12:13    peer=node3_veth
-    vpp_ctl: Put Afpacket Interface    node=agent_vpp_1    name=vpp1_afpacket3    mac=a2:a1:a1:a1:a1:a3    host_int=vpp1_veth3
-
-    @{ints}=    Create List    vpp1_afpacket1    vpp1_afpacket2    vpp1_afpacket3
-    vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=east-west-bd    ints=${ints}
-
+    Configure Environment 4     veth_basic.conf
     Sleep    ${SYNC_SLEEP}
     Show Interfaces And Other Objects
 
@@ -410,16 +391,14 @@ Show Interfaces And Other Objects
     Make Datastore Snapshots    before_check stuff
 
 Check Stuff
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Show Interfaces And Other Objects
-    #${WAIT_TIMEOUT} in first keyword is 60s because after restart agent_vpp_1 need waiting to interface internal name
-    #Bug: CV-595
-    Wait Until Keyword Succeeds   60s   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket1    enabled=1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket2    enabled=1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket3    enabled=1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface With IP Is Created    node=node_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface With IP Is Created    node=node_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface With IP Is Created    node=node_3    mac=${AGENT3_VETH_MAC}      ipv4=10.0.0.12/24
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Created    agent_vpp_1    vpp1_afpacket1    vpp1_afpacket2     vpp1_afpacket3
+    Show Interfaces And Other Objects
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_nod2_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_3_nod3_veth    enabled=1
+    linux: Interface With IP Is Created    node=node_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
+    linux: Interface With IP Is Created    node=node_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
+    linux: Interface With IP Is Created    node=node_3    mac=${AGENT3_VETH_MAC}      ipv4=10.0.0.12/24
+    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    IF_AFPIF_VSWITCH_node_2_nod2_veth    IF_AFPIF_VSWITCH_node_3_nod3_veth
 
 
 TestSetup
@@ -429,4 +408,5 @@ TestTeardown
     Make Datastore Snapshots    ${TEST_NAME}_test_teardown
 
 Suite Cleanup
+    Stop SFC Controller Container
     Testsuite Teardown
