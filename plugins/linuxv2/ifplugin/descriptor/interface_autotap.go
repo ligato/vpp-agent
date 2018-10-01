@@ -152,9 +152,9 @@ func parseTapAlias(alias string) (tapName, tapTmpName string) {
 // configuration should apply.
 func getTapTempHostName(linuxIf *interfaces.LinuxInterface) string {
 	tempIfName := getHostIfName(linuxIf)
-	ref, ok := linuxIf.Link.(*interfaces.LinuxInterface_TapTempIfName)
-	if ok && ref.TapTempIfName != "" {
-		tempIfName = ref.TapTempIfName
+	link, ok := linuxIf.Link.(*interfaces.LinuxInterface_AutoTap)
+	if ok && link.AutoTap != nil && link.AutoTap.TempIfName != "" {
+		tempIfName = link.AutoTap.TempIfName
 	}
 	return tempIfName
 }

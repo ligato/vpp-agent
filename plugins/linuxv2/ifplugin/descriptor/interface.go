@@ -602,11 +602,13 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 				var vethPeerIfName string
 				intf.Type = interfaces.LinuxInterface_VETH
 				intf.Name, vethPeerIfName = parseVethAlias(alias)
-				intf.Link = &interfaces.LinuxInterface_VethPeerIfName{VethPeerIfName: vethPeerIfName}
+				intf.Link = &interfaces.LinuxInterface_Veth{
+					Veth:&interfaces.LinuxInterface_VethLink{PeerIfName: vethPeerIfName}}
 			} else if link.Type() == (&netlink.Tuntap{}).Type() {
 				intf.Type = interfaces.LinuxInterface_AUTO_TAP
 				intf.Name, tapTempIfName = parseTapAlias(alias)
-				intf.Link = &interfaces.LinuxInterface_TapTempIfName{TapTempIfName: tapTempIfName}
+				intf.Link = &interfaces.LinuxInterface_AutoTap{
+					AutoTap: &interfaces.LinuxInterface_AutoTapLink{TempIfName: tapTempIfName}}
 			} else {
 				// unsupported interface type supposedly configured by agent => print warning
 				intfd.log.WithFields(logging.Fields{
@@ -712,7 +714,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 			if isDuplicate || hasDuplicate {
 				// clear peer reference so that Delete removes the VETH-end
 				// as standalone
-				kv.Value.Link = &interfaces.LinuxInterface_VethPeerIfName{}
+				kv.Value.Link = &interfaces.LinuxInterface_Veth{}
 				delete(ifDump, ifName)
 				dump = append(dump, kv)
 			}
@@ -730,7 +732,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 				kv.Key = interfaces.InterfaceKey(kv.Value.Name)
 				// clear peer reference so that Delete removes the VETH-end
 				// as standalone
-				kv.Value.Link = &interfaces.LinuxInterface_VethPeerIfName{}
+				kv.Value.Link = &interfaces.LinuxInterface_Veth{}
 				delete(ifDump, ifName)
 				dump = append(dump, kv)
 			}
@@ -849,11 +851,11 @@ func validateInterfaceConfig(linuxIf *interfaces.LinuxInterface) error {
 		return ErrNamespaceWithoutReference
 	}
 	switch linuxIf.Link.(type) {
-	case *interfaces.LinuxInterface_TapTempIfName:
+	case *interfaces.LinuxInterface_AutoTap:
 		if linuxIf.Type == interfaces.LinuxInterface_VETH {
 			return ErrInterfaceReferenceMismatch
 		}
-	case *interfaces.LinuxInterface_VethPeerIfName:
+	case *interfaces.LinuxInterface_Veth:
 		if linuxIf.Type == interfaces.LinuxInterface_AUTO_TAP {
 			return ErrInterfaceReferenceMismatch
 		}

@@ -170,9 +170,9 @@ func parseVethAlias(alias string) (vethName, peerName string) {
 
 // getVethPeerName returns the name of the peer interface from the configuration.
 func getVethPeerName(linuxIf *interfaces.LinuxInterface) string {
-	ref, ok := linuxIf.Link.(*interfaces.LinuxInterface_VethPeerIfName)
-	if ok {
-		return ref.VethPeerIfName
+	link, ok := linuxIf.Link.(*interfaces.LinuxInterface_Veth)
+	if ok && link.Veth != nil {
+		return link.Veth.PeerIfName
 	}
 	return ""
 }

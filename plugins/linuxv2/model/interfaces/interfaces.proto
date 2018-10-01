@@ -23,17 +23,17 @@ message LinuxInterface {
     string phys_address = 7;            /* MAC address */
     uint32 mtu = 8;                     /* Maximum transmission unit value */
 
-    message Veth {
+    message VethLink {
         string peer_if_name = 1;        /* Name of the VETH peer, i.e. other end of the linux veth (mandatory for VETH) */
     };
 
-    message AutoTap {
+    message AutoTapLink {
         string temp_if_name = 1;        /* Name of the TAP interface in the host as configured by VPP
                                            - optional, by default it is assumed to be the same as given by host_if_name/name */
     };
 
     oneof link {
-        Veth veth = 9;                  /* VETH-specific configuration */
-        AutoTap autoTap = 10;           /* AUTO-TAP-specific configuration */
+        VethLink veth = 9;              /* VETH-specific configuration */
+        AutoTapLink autoTap = 10;       /* AUTO-TAP-specific configuration */
     };
 };
