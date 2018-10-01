@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"runtime"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -53,10 +54,11 @@ type ClusterOptions struct {
 
 	OnConnect func(*Conn) error
 
+	Password string
+
 	MaxRetries      int
 	MinRetryBackoff time.Duration
 	MaxRetryBackoff time.Duration
-	Password        string
 
 	DialTimeout  time.Duration
 	ReadTimeout  time.Duration
@@ -64,6 +66,8 @@ type ClusterOptions struct {
 
 	// PoolSize applies per cluster node and not for the whole cluster.
 	PoolSize           int
+	MinIdleConns       int
+	MaxConnAge         time.Duration
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
@@ -80,6 +84,10 @@ func (opt *ClusterOptions) init() {
 
 	if opt.RouteByLatency || opt.RouteRandomly {
 		opt.ReadOnly = true
+	}
+
+	if opt.PoolSize == 0 {
+		opt.PoolSize = 5 * runtime.NumCPU()
 	}
 
 	switch opt.ReadTimeout {
@@ -125,10 +133,11 @@ func (opt *ClusterOptions) clientOptions() *Options {
 		ReadTimeout:  opt.ReadTimeout,
 		WriteTimeout: opt.WriteTimeout,
 
-		PoolSize:    opt.PoolSize,
-		PoolTimeout: opt.PoolTimeout,
-		IdleTimeout: opt.IdleTimeout,
-
+		PoolSize:           opt.PoolSize,
+		MinIdleConns:       opt.MinIdleConns,
+		MaxConnAge:         opt.MaxConnAge,
+		PoolTimeout:        opt.PoolTimeout,
+		IdleTimeout:        opt.IdleTimeout,
 		IdleCheckFrequency: disableIdleCheck,
 
 		TLSConfig: opt.TLSConfig,
@@ -429,13 +438,15 @@ func newClusterState(
 		createdAt:  time.Now(),
 	}
 
-	isLoopbackOrigin := isLoopbackAddr(origin)
+	originHost, _, _ := net.SplitHostPort(origin)
+	isLoopbackOrigin := isLoopback(originHost)
+
 	for _, slot := range slots {
 		var nodes []*clusterNode
 		for i, slotNode := range slot.Nodes {
 			addr := slotNode.Addr
-			if !isLoopbackOrigin && useOriginAddr(origin, addr) {
-				addr = origin
+			if !isLoopbackOrigin {
+				addr = replaceLoopbackHost(addr, originHost)
 			}
 
 			node, err := c.nodes.GetOrCreate(addr)
@@ -467,6 +478,33 @@ func newClusterState(
 	})
 
 	return &c, nil
+}
+
+func replaceLoopbackHost(nodeAddr, originHost string) string {
+	nodeHost, nodePort, err := net.SplitHostPort(nodeAddr)
+	if err != nil {
+		return nodeAddr
+	}
+
+	nodeIP := net.ParseIP(nodeHost)
+	if nodeIP == nil {
+		return nodeAddr
+	}
+
+	if !nodeIP.IsLoopback() {
+		return nodeAddr
+	}
+
+	// Use origin host which is not loopback and node port.
+	return net.JoinHostPort(originHost, nodePort)
+}
+
+func isLoopback(host string) bool {
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return true
+	}
+	return ip.IsLoopback()
 }
 
 func (c *clusterState) slotMasterNode(slot int) (*clusterNode, error) {
@@ -890,6 +928,13 @@ func (c *ClusterClient) Close() error {
 	return c.nodes.Close()
 }
 
+// Do creates a Cmd from the args and processes the cmd.
+func (c *ClusterClient) Do(args ...interface{}) *Cmd {
+	cmd := NewCmd(args...)
+	c.Process(cmd)
+	return cmd
+}
+
 func (c *ClusterClient) WrapProcess(
 	fn func(oldProcess func(Cmder) error) func(Cmder) error,
 ) {
@@ -1101,7 +1146,7 @@ func (c *ClusterClient) PoolStats() *PoolStats {
 		acc.Timeouts += s.Timeouts
 
 		acc.TotalConns += s.TotalConns
-		acc.FreeConns += s.FreeConns
+		acc.IdleConns += s.IdleConns
 		acc.StaleConns += s.StaleConns
 	}
 
@@ -1112,7 +1157,7 @@ func (c *ClusterClient) PoolStats() *PoolStats {
 		acc.Timeouts += s.Timeouts
 
 		acc.TotalConns += s.TotalConns
-		acc.FreeConns += s.FreeConns
+		acc.IdleConns += s.IdleConns
 		acc.StaleConns += s.StaleConns
 	}
 
@@ -1234,7 +1279,7 @@ func (c *ClusterClient) defaultProcessPipeline(cmds []Cmder) error {
 		cmdsMap = failedCmds
 	}
 
-	return firstCmdsErr(cmds)
+	return cmdsFirstErr(cmds)
 }
 
 func (c *ClusterClient) mapCmdsByNode(cmds []Cmder) (map[*clusterNode][]Cmder, error) {
@@ -1288,26 +1333,26 @@ func (c *ClusterClient) remapCmds(cmds []Cmder, failedCmds map[*clusterNode][]Cm
 func (c *ClusterClient) pipelineProcessCmds(
 	node *clusterNode, cn *pool.Conn, cmds []Cmder, failedCmds map[*clusterNode][]Cmder,
 ) error {
-	cn.SetWriteTimeout(c.opt.WriteTimeout)
-
-	err := writeCmd(cn, cmds...)
+	err := cn.WithWriter(c.opt.WriteTimeout, func(wr *proto.Writer) error {
+		return writeCmd(wr, cmds...)
+	})
 	if err != nil {
 		setCmdsErr(cmds, err)
 		failedCmds[node] = cmds
 		return err
 	}
 
-	// Set read timeout for all commands.
-	cn.SetReadTimeout(c.opt.ReadTimeout)
-
-	return c.pipelineReadCmds(cn, cmds, failedCmds)
+	err = cn.WithReader(c.opt.ReadTimeout, func(rd *proto.Reader) error {
+		return c.pipelineReadCmds(rd, cmds, failedCmds)
+	})
+	return err
 }
 
 func (c *ClusterClient) pipelineReadCmds(
-	cn *pool.Conn, cmds []Cmder, failedCmds map[*clusterNode][]Cmder,
+	rd *proto.Reader, cmds []Cmder, failedCmds map[*clusterNode][]Cmder,
 ) error {
 	for _, cmd := range cmds {
-		err := cmd.readReply(cn)
+		err := cmd.readReply(rd)
 		if err == nil {
 			continue
 		}
@@ -1416,7 +1461,7 @@ func (c *ClusterClient) defaultProcessTxPipeline(cmds []Cmder) error {
 		}
 	}
 
-	return firstCmdsErr(cmds)
+	return cmdsFirstErr(cmds)
 }
 
 func (c *ClusterClient) mapCmdsBySlot(cmds []Cmder) map[int][]Cmder {
@@ -1431,35 +1476,37 @@ func (c *ClusterClient) mapCmdsBySlot(cmds []Cmder) map[int][]Cmder {
 func (c *ClusterClient) txPipelineProcessCmds(
 	node *clusterNode, cn *pool.Conn, cmds []Cmder, failedCmds map[*clusterNode][]Cmder,
 ) error {
-	cn.SetWriteTimeout(c.opt.WriteTimeout)
-	if err := txPipelineWriteMulti(cn, cmds); err != nil {
+	err := cn.WithWriter(c.opt.WriteTimeout, func(wr *proto.Writer) error {
+		return txPipelineWriteMulti(wr, cmds)
+	})
+	if err != nil {
 		setCmdsErr(cmds, err)
 		failedCmds[node] = cmds
 		return err
 	}
 
-	// Set read timeout for all commands.
-	cn.SetReadTimeout(c.opt.ReadTimeout)
-
-	if err := c.txPipelineReadQueued(cn, cmds, failedCmds); err != nil {
-		setCmdsErr(cmds, err)
-		return err
-	}
-
-	return pipelineReadCmds(cn, cmds)
+	err = cn.WithReader(c.opt.ReadTimeout, func(rd *proto.Reader) error {
+		err := c.txPipelineReadQueued(rd, cmds, failedCmds)
+		if err != nil {
+			setCmdsErr(cmds, err)
+			return err
+		}
+		return pipelineReadCmds(rd, cmds)
+	})
+	return err
 }
 
 func (c *ClusterClient) txPipelineReadQueued(
-	cn *pool.Conn, cmds []Cmder, failedCmds map[*clusterNode][]Cmder,
+	rd *proto.Reader, cmds []Cmder, failedCmds map[*clusterNode][]Cmder,
 ) error {
 	// Parse queued replies.
 	var statusCmd StatusCmd
-	if err := statusCmd.readReply(cn); err != nil {
+	if err := statusCmd.readReply(rd); err != nil {
 		return err
 	}
 
 	for _, cmd := range cmds {
-		err := statusCmd.readReply(cn)
+		err := statusCmd.readReply(rd)
 		if err == nil {
 			continue
 		}
@@ -1472,7 +1519,7 @@ func (c *ClusterClient) txPipelineReadQueued(
 	}
 
 	// Parse number of replies.
-	line, err := cn.Rd.ReadLine()
+	line, err := rd.ReadLine()
 	if err != nil {
 		if err == Nil {
 			err = TxFailedErr
@@ -1547,43 +1594,6 @@ func (c *ClusterClient) PSubscribe(channels ...string) *PubSub {
 		_ = pubsub.PSubscribe(channels...)
 	}
 	return pubsub
-}
-
-func useOriginAddr(originAddr, nodeAddr string) bool {
-	nodeHost, nodePort, err := net.SplitHostPort(nodeAddr)
-	if err != nil {
-		return false
-	}
-
-	nodeIP := net.ParseIP(nodeHost)
-	if nodeIP == nil {
-		return false
-	}
-
-	if !nodeIP.IsLoopback() {
-		return false
-	}
-
-	_, originPort, err := net.SplitHostPort(originAddr)
-	if err != nil {
-		return false
-	}
-
-	return nodePort == originPort
-}
-
-func isLoopbackAddr(addr string) bool {
-	host, _, err := net.SplitHostPort(addr)
-	if err != nil {
-		return false
-	}
-
-	ip := net.ParseIP(host)
-	if ip == nil {
-		return false
-	}
-
-	return ip.IsLoopback()
 }
 
 func appendUniqueNode(nodes []*clusterNode, node *clusterNode) []*clusterNode {

@@ -53,20 +53,22 @@ func (helper *CacheHelper) DoWatching(resyncName string, watcher datasync.KeyVal
 // DoChange calls:
 // - RegisterName in case of db.Put
 // - UnregisterName in case of data.Del
-func (helper *CacheHelper) DoChange(dataChng datasync.ChangeEvent) error {
+func (helper *CacheHelper) DoChange(dataEvent datasync.ChangeEvent) error {
 	var err error
-	switch dataChng.GetChangeType() {
-	case datasync.Put:
-		current := proto.Clone(helper.DataPrototype)
-		dataChng.GetValue(current)
-		name, err := helper.ParseName(dataChng.GetKey())
-		if err == nil {
-			helper.IDX.RegisterName(name, placeHolderIndex, current)
-		}
-	case datasync.Delete:
-		name, err := helper.ParseName(dataChng.GetKey())
-		if err == nil {
-			helper.IDX.UnregisterName(name)
+	for _, dataChng := range dataEvent.GetChanges() {
+		switch dataChng.GetChangeType() {
+		case datasync.Put:
+			current := proto.Clone(helper.DataPrototype)
+			dataChng.GetValue(current)
+			name, err := helper.ParseName(dataChng.GetKey())
+			if err == nil {
+				helper.IDX.RegisterName(name, placeHolderIndex, current)
+			}
+		case datasync.Delete:
+			name, err := helper.ParseName(dataChng.GetKey())
+			if err == nil {
+				helper.IDX.UnregisterName(name)
+			}
 		}
 	}
 	return err

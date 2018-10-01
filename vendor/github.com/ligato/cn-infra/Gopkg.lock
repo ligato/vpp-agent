@@ -275,12 +275,14 @@
   revision = "153a7286a8d8aae91e5d045d84128d8de0b4eb4c"
 
 [[projects]]
-  digest = "1:bfc758d5a03d57d97226fac6934551c01bd76612adb119c177395b057a0a46db"
+  digest = "1:3f7c586d2fd571c4f2e3d313c0638b33b999055de507d5f11fafe27e5adc30db"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
     "proto",
     "protoc-gen-gogo/descriptor",
+    "sortkeys",
+    "types",
   ]
   pruneopts = "UT"
   revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
@@ -879,6 +881,7 @@
     "github.com/go-redis/redis",
     "github.com/gocql/gocql",
     "github.com/gogo/protobuf/proto",
+    "github.com/gogo/protobuf/types",
     "github.com/gorilla/mux",
     "github.com/grpc-ecosystem/grpc-gateway/runtime",
     "github.com/hashicorp/consul/api",

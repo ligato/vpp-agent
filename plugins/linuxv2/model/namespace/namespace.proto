@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package namespace;
+
+message LinuxNetNamespace {
+    enum ReferenceType {
+        NETNS_REF_UNDEFINED = 0;
+        NETNS_REF_NSID = 1;         /* named namespace */
+        NETNS_REF_PID = 2;          /* namespace of a given process */
+        NETNS_REF_FD = 3;           /* namespace referenced by a file handle */
+        NETNS_REF_MICROSERVICE = 4; /* namespace of a docker container running given microservice */
+    }
+    ReferenceType type = 1; /* type of the namespace reference (mandatory) */
+    string reference = 2;   /* namespace ID / PID / file path / microservice name (mandatory) */
+};
