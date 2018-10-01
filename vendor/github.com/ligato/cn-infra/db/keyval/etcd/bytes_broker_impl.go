@@ -52,26 +52,32 @@ type BytesBrokerWatcherEtcd struct {
 // NewEtcdConnectionWithBytes creates new connection to etcd based on the given
 // config file.
 func NewEtcdConnectionWithBytes(config ClientConfig, log logging.Logger) (*BytesConnectionEtcd, error) {
-	start := time.Now()
+	t := time.Now()
+
+	l := log.WithField("endpoints", config.Endpoints)
+	l.Debugf("Connecting to Etcd..")
+
 	etcdClient, err := clientv3.New(*config.Config)
 	if err != nil {
-		log.Debugf("Unable to connect to ETCD %v, Error: '%s'", config.Endpoints, err)
+		l.Warnf("Failed to connect to Etcd: %v", err)
 		return nil, err
 	}
-	etcdConnectTime := time.Since(start)
-	log.WithField("durationInNs", etcdConnectTime.Nanoseconds()).Info("Connecting to etcd took ", etcdConnectTime)
+
+	l.Infof("Connected to Etcd (took %v)", time.Since(t))
 
 	conn, err := NewEtcdConnectionUsingClient(etcdClient, log)
+	if err != nil {
+		return nil, err
+	}
 	conn.opTimeout = config.OpTimeout
 
-	return conn, err
+	return conn, nil
 }
 
 // NewEtcdConnectionUsingClient creates a new instance of BytesConnectionEtcd
 // using the provided etcd client.
 // This constructor is used primarily for testing.
 func NewEtcdConnectionUsingClient(etcdClient *clientv3.Client, log logging.Logger) (*BytesConnectionEtcd, error) {
-	log.Debug("NewEtcdConnectionWithBytes", etcdClient)
 	conn := BytesConnectionEtcd{
 		Logger:     log,
 		etcdClient: etcdClient,

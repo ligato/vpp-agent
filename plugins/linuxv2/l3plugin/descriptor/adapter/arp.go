@@ -4,7 +4,7 @@ package adapter
 
 import (
 	"github.com/gogo/protobuf/proto"
-	. "github.com/ligato/cn-infra/kvscheduler/api"
+	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 )
 
@@ -50,12 +50,12 @@ func NewARPDescriptor(typedDescriptor *ARPDescriptor) *KVDescriptor {
 	adapter := &ARPDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
-        KeySelector:        typedDescriptor.KeySelector,
-        ValueTypeName:      typedDescriptor.ValueTypeName,
+		KeySelector:        typedDescriptor.KeySelector,
+		ValueTypeName:      typedDescriptor.ValueTypeName,
 		KeyLabel:           typedDescriptor.KeyLabel,
 		NBKeyPrefix:        typedDescriptor.NBKeyPrefix,
 		WithMetadata:       typedDescriptor.WithMetadata,
-        MetadataMapFactory: typedDescriptor.MetadataMapFactory,
+		MetadataMapFactory: typedDescriptor.MetadataMapFactory,
 		IsRetriableFailure: typedDescriptor.IsRetriableFailure,
 		DumpDependencies:   typedDescriptor.DumpDependencies,
 	}
@@ -208,7 +208,7 @@ func (da *ARPDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
-			}
+		}
 		kvWithMetadata.Value = typedKVWithMetadata.Value
 		dump = append(dump, kvWithMetadata)
 	}

@@ -23,14 +23,15 @@ import (
 	"github.com/vishvananda/netns"
 
 	"github.com/ligato/cn-infra/infra"
-	scheduler "github.com/ligato/cn-infra/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+
+	"strconv"
 
 	"github.com/ligato/cn-infra/logging/measure"
 	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
 	nsLinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
-	"strconv"
 )
 
 // NsPlugin is a plugin to handle namespaces and microservices for other linux

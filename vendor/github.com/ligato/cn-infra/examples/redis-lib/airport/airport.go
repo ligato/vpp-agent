@@ -89,9 +89,9 @@ var priority uint32
 
 type priorities []uint32
 
-var arrivalChan = make(chan keyval.ProtoWatchResp, flightSlotCount)
-var departureChan = make(chan keyval.ProtoWatchResp, flightSlotCount)
-var hangarChan = make(chan keyval.ProtoWatchResp, hangarSlotCount)
+var arrivalChan = make(chan datasync.ProtoWatchResp, flightSlotCount)
+var departureChan = make(chan datasync.ProtoWatchResp, flightSlotCount)
+var hangarChan = make(chan datasync.ProtoWatchResp, hangarSlotCount)
 var runwayChan = make(chan flight.Info, flightSlotCount)
 
 var redisConn *redis.BytesConnectionRedis
@@ -386,7 +386,7 @@ func flightID(flight flight.Info) string {
 	return fmt.Sprintf(flightIDFormat, flight.Airline, flight.Number)
 }
 
-func processArrival(r keyval.ProtoWatchResp) {
+func processArrival(r datasync.ProtoWatchResp) {
 	switch r.GetChangeType() {
 	case datasync.Put:
 		go func() {
@@ -400,7 +400,7 @@ func processArrival(r keyval.ProtoWatchResp) {
 	}
 }
 
-func processDeparture(r keyval.ProtoWatchResp) {
+func processDeparture(r datasync.ProtoWatchResp) {
 	switch r.GetChangeType() {
 	case datasync.Put:
 		go func() {
@@ -414,7 +414,7 @@ func processDeparture(r keyval.ProtoWatchResp) {
 	}
 }
 
-func processHangar(r keyval.ProtoWatchResp) {
+func processHangar(r datasync.ProtoWatchResp) {
 	switch r.GetChangeType() {
 	case datasync.Put:
 		log.Debugf("%s updated\n", r.GetKey())
