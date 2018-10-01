@@ -17,7 +17,7 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${WAIT_TIMEOUT}=     20s
+${WAIT_TIMEOUT}=     60s
 ${SYNC_SLEEP}=       2s
 ${RESYNC_SLEEP}=       15s
 
@@ -413,7 +413,7 @@ Check Stuff
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Show Interfaces And Other Objects
     #${WAIT_TIMEOUT} in first keyword is 60s because after restart agent_vpp_1 need waiting to interface internal name
     #Bug: CV-595
-    Wait Until Keyword Succeeds   60s   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket1    enabled=1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket1    enabled=1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket2    enabled=1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Afpacket Interface State    agent_vpp_1    vpp1_afpacket3    enabled=1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    linux: Interface With IP Is Created    node=node_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
