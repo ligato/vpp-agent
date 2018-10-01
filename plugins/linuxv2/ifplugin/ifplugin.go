@@ -51,7 +51,7 @@ type IfPlugin struct {
 	intfIndex ifaceidx.LinuxIfMetadataIndex
 }
 
-// Deps lists dependencies of the interface p.
+// Deps lists dependencies of the interface plugin.
 type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI

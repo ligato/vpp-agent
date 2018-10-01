@@ -29,7 +29,7 @@ import (
 func (intfd *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
-	peerName := getVethPeerName(linuxIf)
+	peerName := linuxIf.GetVeth().GetPeerIfName()
 	tempHostName := getVethTemporaryHostName(linuxIf.Name)
 	tempPeerHostName := getVethTemporaryHostName(peerName)
 
@@ -113,7 +113,7 @@ func (intfd *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxI
 func (intfd *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
-	peerName := getVethPeerName(linuxIf)
+	peerName := linuxIf.GetVeth().GetPeerIfName()
 	tempHostName := getVethTemporaryHostName(linuxIf.Name)
 	tempPeerHostName := getVethTemporaryHostName(peerName)
 
@@ -166,15 +166,6 @@ func parseVethAlias(alias string) (vethName, peerName string) {
 		peerName = aliasParts[1]
 	}
 	return
-}
-
-// getVethPeerName returns the name of the peer interface from the configuration.
-func getVethPeerName(linuxIf *interfaces.LinuxInterface) string {
-	link, ok := linuxIf.Link.(*interfaces.LinuxInterface_Veth)
-	if ok && link.Veth != nil {
-		return link.Veth.PeerIfName
-	}
-	return ""
 }
 
 // getVethTemporaryHostName (deterministically) generates a temporary host name

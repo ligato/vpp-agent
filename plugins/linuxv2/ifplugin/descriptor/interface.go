@@ -133,7 +133,7 @@ func (intfd *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	}
 }
 
-// IsInterfaceKey returns true if the key identifying Linux interface configuration.
+// IsInterfaceKey returns true if the key is identifying Linux interface configuration.
 func (intfd *InterfaceDescriptor) IsInterfaceKey(key string) bool {
 	return strings.HasPrefix(key, interfaces.InterfaceKeyPrefix)
 }
@@ -151,7 +151,7 @@ func (intfd *InterfaceDescriptor) EquivalentInterfaces(key string, intf1, intf2 
 		getHostIfName(intf1) != getHostIfName(intf2) {
 		return false
 	}
-	if intf1.Type == interfaces.LinuxInterface_VETH && getVethPeerName(intf1) != getVethPeerName(intf2) {
+	if intf1.Type == interfaces.LinuxInterface_VETH && intf1.GetVeth().GetPeerIfName() != intf2.GetVeth().GetPeerIfName() {
 		return false
 	}
 	if !proto.Equal(intf1.Namespace, intf2.Namespace) {
@@ -463,7 +463,7 @@ func (intfd *InterfaceDescriptor) ModifyWithRecreate(key string, oldLinuxIf, new
 	}
 	switch oldLinuxIf.Type {
 	case interfaces.LinuxInterface_VETH:
-		return getVethPeerName(oldLinuxIf) != getVethPeerName(newLinuxIf)
+		return oldLinuxIf.GetVeth().GetPeerIfName() != newLinuxIf.GetVeth().GetPeerIfName()
 	case interfaces.LinuxInterface_AUTO_TAP:
 		return getTapTempHostName(oldLinuxIf) != getTapTempHostName(newLinuxIf)
 	}
@@ -485,7 +485,7 @@ func (intfd *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.L
 
 	// circular dependency between VETH ends
 	if linuxIf.Type == interfaces.LinuxInterface_VETH {
-		peerName := getVethPeerName(linuxIf)
+		peerName := linuxIf.GetVeth().GetPeerIfName()
 		if peerName != "" {
 			dependencies = append(dependencies, scheduler.Dependency{
 				Label: vethPeerDep,
@@ -724,8 +724,8 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 	// next collect VETHs with missing peer
 	for ifName, kv := range ifDump {
 		if kv.Value.Type == interfaces.LinuxInterface_VETH {
-			peer, dumped := ifDump[getVethPeerName(kv.Value)]
-			if !dumped || getVethPeerName(peer.Value) != kv.Value.Name {
+			peer, dumped := ifDump[kv.Value.GetVeth().GetPeerIfName()]
+			if !dumped || peer.Value.GetVeth().GetPeerIfName() != kv.Value.Name {
 				// append vethMissingPeerSuffix to the logical name so that VETH
 				// will get removed during resync
 				kv.Value.Name = ifName + vethMissingPeerSuffix

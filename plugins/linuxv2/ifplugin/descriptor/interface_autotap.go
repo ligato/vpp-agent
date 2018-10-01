@@ -151,10 +151,9 @@ func parseTapAlias(alias string) (tapName, tapTmpName string) {
 // getTapTempHostName returns host name of the TAP interface to which the AUTO-TAP
 // configuration should apply.
 func getTapTempHostName(linuxIf *interfaces.LinuxInterface) string {
-	tempIfName := getHostIfName(linuxIf)
-	link, ok := linuxIf.Link.(*interfaces.LinuxInterface_AutoTap)
-	if ok && link.AutoTap != nil && link.AutoTap.TempIfName != "" {
-		tempIfName = link.AutoTap.TempIfName
+	tempIfName := linuxIf.GetAutoTap().GetTempIfName()
+	if tempIfName == "" {
+		return getHostIfName(linuxIf)
 	}
 	return tempIfName
 }
