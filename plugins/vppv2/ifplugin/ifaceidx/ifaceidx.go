@@ -57,7 +57,7 @@ type IfaceMetadataIndexRW interface {
 // IfaceMetadata collects metadata for VPP interface used in secondary lookups.
 type IfaceMetadata struct {
 	SwIfIndex   uint32
-	IpAddresses []string
+	IPAddresses []string
 }
 
 // GetIndex returns sw_if_index assigned to the interface.
@@ -163,7 +163,7 @@ func indexMetadata(metaData interface{}) map[string][]string {
 		return indexes
 	}
 
-	ip := ifMeta.IpAddresses
+	ip := ifMeta.IPAddresses
 	if ip != nil {
 		indexes[ipAddressIndexKey] = ip
 	}

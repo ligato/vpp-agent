@@ -51,7 +51,7 @@ func TestIndexMetadata(t *testing.T) {
 	)
 
 	testInitialization(t)
-	iface := &IfaceMetadata{IpAddresses: []string{ipAddr0, ipAddr1}}
+	iface := &IfaceMetadata{IPAddresses: []string{ipAddr0, ipAddr1}}
 
 	result := indexMetadata(nil)
 	Expect(result).To(HaveLen(0))
@@ -68,7 +68,7 @@ func TestIndexMetadata(t *testing.T) {
 // Tests registering and unregistering name to index
 func TestRegisterAndUnregisterName(t *testing.T) {
 	index := testInitialization(t)
-	iface := &IfaceMetadata{SwIfIndex: idx0, IpAddresses: []string{ipAddr0, ipAddr1}}
+	iface := &IfaceMetadata{SwIfIndex: idx0, IPAddresses: []string{ipAddr0, ipAddr1}}
 
 	// Register iface
 	index.Put(ifName0, iface)
@@ -102,14 +102,14 @@ func TestClearInterfaces(t *testing.T) {
 // Tests updating of metadata
 func TestUpdateMetadata(t *testing.T) {
 	index := testInitialization(t)
-	iface := &IfaceMetadata{IpAddresses: []string{ipAddr0, ipAddr1}}
+	iface := &IfaceMetadata{IPAddresses: []string{ipAddr0, ipAddr1}}
 
 	ifUpdate1 := &IfaceMetadata{
-		IpAddresses: []string{ipAddr2},
+		IPAddresses: []string{ipAddr2},
 	}
 
 	ifUpdate2 := &IfaceMetadata{
-		IpAddresses: []string{ipAddr3},
+		IPAddresses: []string{ipAddr3},
 	}
 
 	// Update before registration (no entry created)
@@ -130,9 +130,9 @@ func TestUpdateMetadata(t *testing.T) {
 	metadata, found = index.LookupByName(ifName0)
 	Expect(found).To(BeTrue())
 	Expect(metadata).ToNot(BeNil())
-	Expect(metadata.IpAddresses).To(HaveLen(2))
+	Expect(metadata.IPAddresses).To(HaveLen(2))
 
-	ipaddrs := metadata.IpAddresses
+	ipaddrs := metadata.IPAddresses
 	Expect(ipaddrs).To(ContainElement(ipAddr0))
 	Expect(ipaddrs).To(ContainElement(ipAddr1))
 
@@ -144,9 +144,9 @@ func TestUpdateMetadata(t *testing.T) {
 	metadata, found = index.LookupByName(ifName0)
 	Expect(found).To(BeTrue())
 	Expect(metadata).ToNot(BeNil())
-	Expect(metadata.IpAddresses).To(HaveLen(1))
+	Expect(metadata.IPAddresses).To(HaveLen(1))
 
-	ipaddrs = metadata.IpAddresses
+	ipaddrs = metadata.IPAddresses
 	Expect(ipaddrs).To(ContainElement(ipAddr2))
 
 	// Update metadata again
@@ -157,9 +157,9 @@ func TestUpdateMetadata(t *testing.T) {
 	metadata, found = index.LookupByName(ifName0)
 	Expect(found).To(BeTrue())
 	Expect(metadata).ToNot(BeNil())
-	Expect(metadata.IpAddresses).To(HaveLen(1))
+	Expect(metadata.IPAddresses).To(HaveLen(1))
 
-	ipaddrs = metadata.IpAddresses
+	ipaddrs = metadata.IPAddresses
 	Expect(ipaddrs).To(ContainElement(ipAddr3))
 
 	// Remove interface
@@ -173,7 +173,7 @@ func TestUpdateMetadata(t *testing.T) {
 // Tests lookup by name
 func TestLookupByName(t *testing.T) {
 	index := testInitialization(t)
-	iface := &IfaceMetadata{SwIfIndex: idx0, IpAddresses: []string{ipAddr0, ipAddr1}}
+	iface := &IfaceMetadata{SwIfIndex: idx0, IPAddresses: []string{ipAddr0, ipAddr1}}
 
 	index.Put(ifName0, iface)
 
@@ -186,7 +186,7 @@ func TestLookupByName(t *testing.T) {
 // Tests lookup by index
 func TestLookupByIndex(t *testing.T) {
 	index := testInitialization(t)
-	iface := &IfaceMetadata{SwIfIndex: idx0, IpAddresses: []string{ipAddr0, ipAddr1}}
+	iface := &IfaceMetadata{SwIfIndex: idx0, IPAddresses: []string{ipAddr0, ipAddr1}}
 
 	index.Put(ifName0, iface)
 
@@ -201,9 +201,9 @@ func TestLookupByIP(t *testing.T) {
 	index := testInitialization(t)
 
 	// defines 3 interfaces
-	iface1 := &IfaceMetadata{SwIfIndex: idx0, IpAddresses: []string{ipAddr0, ipAddr1}}
-	iface2 := &IfaceMetadata{SwIfIndex: idx1, IpAddresses: []string{ipAddr0, ipAddr2}}
-	iface3 := &IfaceMetadata{SwIfIndex: idx2, IpAddresses: []string{ipAddr3}}
+	iface1 := &IfaceMetadata{SwIfIndex: idx0, IPAddresses: []string{ipAddr0, ipAddr1}}
+	iface2 := &IfaceMetadata{SwIfIndex: idx1, IPAddresses: []string{ipAddr0, ipAddr2}}
+	iface3 := &IfaceMetadata{SwIfIndex: idx2, IPAddresses: []string{ipAddr3}}
 
 	// register all interfaces
 	index.Put(ifName0, iface1)
@@ -237,7 +237,7 @@ func TestLookupByIP(t *testing.T) {
 func TestWatchNameToIdx(t *testing.T) {
 	fmt.Println("TestWatchNameToIdx")
 	index := testInitialization(t)
-	iface := &IfaceMetadata{SwIfIndex: idx0, IpAddresses: []string{ipAddr0, ipAddr1}}
+	iface := &IfaceMetadata{SwIfIndex: idx0, IPAddresses: []string{ipAddr0, ipAddr1}}
 
 	c := make(chan IfaceMetadataDto, 10)
 	index.WatchInterfaces(watchName, c)
