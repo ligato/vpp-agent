@@ -3,7 +3,7 @@
 *** Settings ***
 Library       Collections
 Library       RequestsLibrary
-Library       SSHLibrary            timeout=60s    loglevel=TRACE
+Library       SSHLibrary            timeout=15s    loglevel=TRACE
 Library       DateTime
 
 *** Variables ***
