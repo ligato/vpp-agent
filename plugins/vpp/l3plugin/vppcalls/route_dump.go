@@ -126,12 +126,12 @@ func (h *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte
 			// Route type (if via VRF is used)
 			var routeType l3.StaticRoutes_Route_RouteType
 			var viaVrfID uint32
-			if path.SwIfIndex == NextHopOutgoingIfUnset && path.TableID != tableID {
-				// outgoing interface not specified and path table id not equal to route table id = inter-VRF route
+			if uintToBool(path.IsDrop) {
+				routeType = l3.StaticRoutes_Route_DROP
+			} else if path.SwIfIndex == NextHopOutgoingIfUnset && path.TableID != tableID {
+				// outgoing interface not specified and path table is not equal to route table id = inter-VRF route
 				routeType = l3.StaticRoutes_Route_INTER_VRF
 				viaVrfID = path.TableID
-			} else if uintToBool(path.IsDrop) {
-				routeType = l3.StaticRoutes_Route_DROP
 			} else {
 				routeType = l3.StaticRoutes_Route_INTRA_VRF // default
 			}
@@ -139,7 +139,9 @@ func (h *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte
 			// Outgoing interface
 			var ifName string
 			var ifIdx uint32
-			if path.SwIfIndex != ^uint32(0) {
+			if path.SwIfIndex == NextHopOutgoingIfUnset {
+				ifIdx = NextHopOutgoingIfUnset
+			} else {
 				var exists bool
 				ifIdx = path.SwIfIndex
 				if ifName, _, exists = h.ifIndexes.LookupName(path.SwIfIndex); !exists {
