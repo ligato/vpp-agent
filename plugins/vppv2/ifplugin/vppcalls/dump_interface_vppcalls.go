@@ -459,7 +459,7 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 			}
 		} else {
 			ifs[vxlanDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Vxlan{
-				&ifnb.Interface_VxlanLink{
+				Vxlan:&ifnb.Interface_VxlanLink{
 					Multicast:  multicastIfName,
 					SrcAddress: net.IP(vxlanDetails.SrcAddress[:4]).To4().String(),
 					DstAddress: net.IP(vxlanDetails.DstAddress[:4]).To4().String(),

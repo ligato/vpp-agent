@@ -45,10 +45,12 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 	case interfaces.Interface_VXLAN_TUNNEL:
 		var multicastIfIdx uint32
-		if intf.GetVxlan().GetMulticast() != "" {
-			multicastMeta, found := d.intfIndex.LookupByName(intf.GetVxlan().GetMulticast())
+		multicastIf := intf.GetVxlan().GetMulticast()
+		if multicastIf != "" {
+			multicastMeta, found := d.intfIndex.LookupByName(multicastIf)
 			if !found {
-				err = errors.Errorf("failed to find multicast interface %s referenced by VXLAN %s")
+				err = errors.Errorf("failed to find multicast interface %s referenced by VXLAN %s",
+					multicastIf, intf.Name)
 				d.log.Error(err)
 				return nil, err
 			}
