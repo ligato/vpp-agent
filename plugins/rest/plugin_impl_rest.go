@@ -16,7 +16,10 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
+
+	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
 
 	"github.com/ligato/vpp-agent/plugins/linux"
 
@@ -137,55 +140,12 @@ func (plugin *Plugin) Init() (err error) {
 		plugin.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRtIndexes, plugin.Log)
 	}
 
-	// Fill index item lists
-	idxMap := map[string][]indexItem{
-		"ACL plugin": {
-			{Name: "IP-type access lists", Path: resturl.ACLIP},
-			{Name: "MACIP-type access lists", Path: resturl.ACLMACIP},
-		},
-		"Interface plugin": {
-			{Name: "All interfaces", Path: resturl.Interface},
-			{Name: "Loopbacks", Path: resturl.Loopback},
-			{Name: "Ethernets", Path: resturl.Ethernet},
-			{Name: "Memifs", Path: resturl.Memif},
-			{Name: "Taps", Path: resturl.Tap},
-			{Name: "VxLANs", Path: resturl.VxLan},
-			{Name: "Af-packets", Path: resturl.AfPacket},
-		},
-		"IPSec plugin": {
-			{Name: "Security policy databases", Path: resturl.IPSecSpd},
-			{Name: "Security associations", Path: resturl.IPSecSa},
-			{Name: "Tunnel interfaces", Path: resturl.IPSecTnIf},
-		},
-		"L2 plugin": {
-			{Name: "Bridge domains", Path: resturl.Bd},
-			{Name: "Bridge domain IDs", Path: resturl.BdID},
-			{Name: "L2Fibs", Path: resturl.Fib},
-			{Name: "Cross connects", Path: resturl.Xc},
-		},
-		"L3 plugin": {
-			{Name: "Bridge domains", Path: resturl.Bd},
-			{Name: "Bridge domain IDs", Path: resturl.BdID},
-			{Name: "L2Fibs", Path: resturl.Fib},
-			{Name: "Cross connects", Path: resturl.Xc},
-		},
-		"L4 plugin": {
-			{Name: "L4 sessions", Path: resturl.Sessions},
-		},
-		"Telemetry": {
-			{Name: "All data", Path: resturl.Telemetry},
-			{Name: "Memory", Path: resturl.TMemory},
-			{Name: "Runtime", Path: resturl.TRuntime},
-			{Name: "Node count", Path: resturl.TNodeCount},
-		},
-		"Tracer": {
-			{Name: "Binary API", Path: resturl.Tracer},
-		},
+	plugin.index = &index{
+		ItemMap: getIndexMap(),
 	}
 
-	plugin.index = &index{
-		ItemMap: idxMap,
-	}
+	// Register permission groups, used if REST security is enabled
+	plugin.HTTPHandlers.RegisterPermissionGroup(getPermissionsGroups()...)
 
 	return nil
 }
@@ -221,4 +181,191 @@ func (plugin *Plugin) AfterInit() (err error) {
 // Close is used to clean up resources used by Plugin
 func (plugin *Plugin) Close() (err error) {
 	return safeclose.Close(plugin.vppChan, plugin.dumpChan)
+}
+
+// Fill index item lists
+func getIndexMap() map[string][]indexItem {
+	idxMap := map[string][]indexItem{
+		"ACL plugin": {
+			{Name: "IP-type access lists", Path: resturl.ACLIP},
+			{Name: "MACIP-type access lists", Path: resturl.ACLMACIP},
+		},
+		"Interface plugin": {
+			{Name: "All interfaces", Path: resturl.Interface},
+			{Name: "Loopbacks", Path: resturl.Loopback},
+			{Name: "Ethernets", Path: resturl.Ethernet},
+			{Name: "Memifs", Path: resturl.Memif},
+			{Name: "Taps", Path: resturl.Tap},
+			{Name: "VxLANs", Path: resturl.VxLan},
+			{Name: "Af-packets", Path: resturl.AfPacket},
+		},
+		"IPSec plugin": {
+			{Name: "Security policy databases", Path: resturl.IPSecSpd},
+			{Name: "Security associations", Path: resturl.IPSecSa},
+			{Name: "Tunnel interfaces", Path: resturl.IPSecTnIf},
+		},
+		"L2 plugin": {
+			{Name: "Bridge domains", Path: resturl.Bd},
+			{Name: "Bridge domain IDs", Path: resturl.BdID},
+			{Name: "L2Fibs", Path: resturl.Fib},
+			{Name: "Cross connects", Path: resturl.Xc},
+		},
+		"L3 plugin": {
+			{Name: "Routes", Path: resturl.Routes},
+			{Name: "ARPs", Path: resturl.Arps},
+			{Name: "Proxy ARP interfaces", Path: resturl.PArpIfs},
+			{Name: "Proxy ARP ranges", Path: resturl.PArpRngs},
+		},
+		"L4 plugin": {
+			{Name: "L4 sessions", Path: resturl.Sessions},
+		},
+		"Telemetry": {
+			{Name: "All data", Path: resturl.Telemetry},
+			{Name: "Memory", Path: resturl.TMemory},
+			{Name: "Runtime", Path: resturl.TRuntime},
+			{Name: "Node count", Path: resturl.TNodeCount},
+		},
+		"Tracer": {
+			{Name: "Binary API", Path: resturl.Tracer},
+		},
+	}
+	return idxMap
+}
+
+// Create permission groups (tracer, telemetry, dump - optionally add more in the future). Used only if
+// REST security is enabled in plugin
+func getPermissionsGroups() []*access.PermissionGroup {
+	tracerPg := &access.PermissionGroup{
+		Name: "tracer",
+		Permissions: []*access.PermissionGroup_Permissions{
+			{
+				Url:            resturl.Index,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Tracer,
+				AllowedMethods: []string{http.MethodGet},
+			},
+		},
+	}
+	telemetryPg := &access.PermissionGroup{
+		Name: "telemetry",
+		Permissions: []*access.PermissionGroup_Permissions{
+			{
+				Url:            resturl.Index,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Telemetry,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.TMemory,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.TRuntime,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.TNodeCount,
+				AllowedMethods: []string{http.MethodGet},
+			},
+		},
+	}
+	dumpPg := &access.PermissionGroup{
+		Name: "dump",
+		Permissions: []*access.PermissionGroup_Permissions{
+			{
+				Url:            resturl.Index,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.ACLIP,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.ACLMACIP,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Interface,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Loopback,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Ethernet,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Memif,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Tap,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.VxLan,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.AfPacket,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.IPSecSpd,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.IPSecSa,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.IPSecTnIf,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Bd,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.BdID,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Fib,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Xc,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Arps,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Routes,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.PArpIfs,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.PArpRngs,
+				AllowedMethods: []string{http.MethodGet},
+			},
+			{
+				Url:            resturl.Sessions,
+				AllowedMethods: []string{http.MethodGet},
+			},
+		},
+	}
+
+	return []*access.PermissionGroup{tracerPg, telemetryPg, dumpPg}
 }
