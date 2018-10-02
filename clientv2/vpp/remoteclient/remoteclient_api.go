@@ -18,8 +18,8 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/clientv2/vpp/grpcadapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
+	//"github.com/ligato/vpp-agent/clientv2/vpp/grpcadapter"
+	//"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 )
 
 // DataResyncRequestDB allows creating a RESYNC request using convenient RESYNC
@@ -38,6 +38,8 @@ func DataChangeRequestDB(broker keyval.ProtoBroker) vppclient.DataChangeDSL {
 	return dbadapter.NewDataChangeDSL(broker.NewTxn())
 }
 
+// TODO: GRPC TBD
+/*
 // DataResyncRequestGRPC allows sending RESYNC requests conveniently.
 // User of the API does not need to be aware of keys.
 // User of the API does not need to delete the obsolete objects/keys during RESYNC.
@@ -50,3 +52,4 @@ func DataResyncRequestGRPC(client rpc.DataResyncServiceClient) vppclient.DataRes
 func DataChangeRequestGRPC(client rpc.DataChangeServiceClient) vppclient.DataChangeDSL {
 	return grpcadapter.NewDataChangeDSL(client)
 }
+*/
