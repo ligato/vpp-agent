@@ -39,6 +39,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	nsdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
@@ -212,6 +213,7 @@ func (intfd *InterfaceDescriptor) Add(key string, linuxIf *interfaces.LinuxInter
 	// validate configuration first
 	err = validateInterfaceConfig(linuxIf)
 	if err != nil {
+		intfd.log.Error(err)
 		return nil, err
 	}
 
@@ -342,6 +344,7 @@ func (intfd *InterfaceDescriptor) Modify(key string, oldLinuxIf, newLinuxIf *int
 	// validate the new configuration first
 	err = validateInterfaceConfig(newLinuxIf)
 	if err != nil {
+		intfd.log.Error(err)
 		return oldMetadata, err
 	}
 	// move to the namespace with the interface
@@ -474,12 +477,11 @@ func (intfd *InterfaceDescriptor) ModifyWithRecreate(key string, oldLinuxIf, new
 func (intfd *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.LinuxInterface) []scheduler.Dependency {
 	var dependencies []scheduler.Dependency
 
-	// TODO: once VPP-ifplugin is refactored, use reference to derived linux-side of the TAP interface instead
-	// (this dependency will not be satisfied as soon as the interface is moved to another ns)
 	if linuxIf.Type == interfaces.LinuxInterface_AUTO_TAP {
+		// dependency on VPP TAP
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: tapInterfaceDep,
-			Key:   interfaces.InterfaceHostNameKey(getTapTempHostName(linuxIf)),
+			Key:   vpp_intf.TAPHostNameKey(getTapTempHostName(linuxIf)),
 		})
 	}
 

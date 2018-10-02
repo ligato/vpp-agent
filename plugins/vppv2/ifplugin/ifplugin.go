@@ -13,12 +13,15 @@
 // limitations under the License.
 
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "../model/interfaces" --import "ifaceidx" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *interfaces.Interface_Unnumbered --import "../model/interfaces" --output-dir "descriptor"
 
 package ifplugin
 
 import (
 	"os"
-	"errors"
+	"github.com/go-errors/errors"
+
+	govppapi "git.fd.io/govpp.git/api"
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/datasync"
@@ -27,8 +30,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/cn-infra/logging/measure"
 )
 
 const (
@@ -41,15 +46,21 @@ const (
 type IfPlugin struct {
 	Deps
 
+	// VPP
+	vppCh     govppapi.Channel
+	ifHandler vppcalls.IfVppAPI
+
 	// descriptors
-	ifDescriptor *descriptor.InterfaceDescriptor
+	ifDescriptor   *descriptor.InterfaceDescriptor
+	unIfDescriptor *descriptor.UnnumberedIfDescriptor
 
 	// index map
 	intfIndex ifaceidx.IfaceMetadataIndex
 
 	// From config file
 	enableStopwatch bool
-	ifMtu           uint32
+	stopwatch       *measure.Stopwatch // timer used to measure and store time
+	defaultMtu      uint32
 }
 
 // Deps lists dependencies of the interface plugin.
@@ -59,7 +70,7 @@ type Deps struct {
 	GoVppmux          govppmux.API
 	PublishStatistics datasync.KeyProtoValWriter
 	DataSyncs         map[string]datasync.KeyProtoValWriter
-	LinuxIfPlugin     linux_ifplugin.API /* optional, provide if TAP+AUTO_TAP interfaces are used */
+	LinuxIfPlugin     linux_ifplugin.API /* optional, provide if AFPacket or TAP+AUTO_TAP interfaces are used */
 }
 
 // Config holds the vpp-plugin configuration.
@@ -71,13 +82,30 @@ type Config struct {
 
 // Init loads configuration file and registers interface-related descriptors.
 func (p *IfPlugin) Init() error {
+	var err error
 	// Read config file and set all related fields
 	p.fromConfigFile()
 
+	// Plugin-wide stopwatch instance
+	if p.enableStopwatch {
+		p.stopwatch = measure.NewStopwatch(string(p.PluginName), p.Log)
+	}
+
+	// VPP channel
+	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
+		return errors.Errorf("failed to create GoVPP API channel: %v", err)
+	}
+
+	// init handlers
+	p.ifHandler = vppcalls.NewIfVppHandler(p.vppCh, p.Log, p.stopwatch)
+
 	// init & register descriptors
-	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifMtu, p.LinuxIfPlugin, p.Log)
+	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu, p.LinuxIfPlugin, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
+	p.unIfDescriptor = descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.Log)
+	unIfDescriptor := adapter.NewUnnumberedDescriptor(p.unIfDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(unIfDescriptor)
 
 	// obtain read-only reference to index map
 	var withIndex bool
@@ -86,6 +114,11 @@ func (p *IfPlugin) Init() error {
 	if !withIndex {
 		return errors.New("missing index with interface metadata")
 	}
+
+	// pass read-only index map to descriptors
+	p.ifDescriptor.SetInterfaceIndex(p.intfIndex)
+	p.unIfDescriptor.SetInterfaceIndex(p.intfIndex)
+
 	return nil
 }
 
@@ -115,8 +148,8 @@ func (p *IfPlugin) fromConfigFile() {
 		}
 		p.Deps.PublishStatistics = publishers
 		if config.Mtu != 0 {
-			p.ifMtu = config.Mtu
-			p.Log.Infof("Default MTU set to %v", p.ifMtu)
+			p.defaultMtu = config.Mtu
+			p.Log.Infof("Default MTU set to %v", p.defaultMtu)
 		}
 
 		if config.Stopwatch {
