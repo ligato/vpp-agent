@@ -3,7 +3,7 @@
 *** Settings ***
 #Library       String
 #Library       RequestsLibrary
-Library       SSHLibrary            timeout=5 seconds       loglevel=TRACE
+Library       SSHLibrary            timeout=15 seconds       loglevel=TRACE
 
 *** Keywords ***
 Execute On Machine     [Arguments]              ${machine}               ${command}               ${log}=true
