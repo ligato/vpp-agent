@@ -1,3 +1,53 @@
+# Release v1.7-vpp18.10 (2018-10-2)
+
+## Compatibility
+- VPP 18.10-rc0~505-ge23edac
+- cn-infra v1.6
+- GO 1.11
+
+## New Features
+- [vpp-ifplugin](plugins/vpp/ifplugin)
+  * It is now possible to dump unnumbered interface data
+  * Rx-placement now uses specific binary API to configure instead of generic CLI API
+- [vpp-l2plugin](plugins/vpp/l2plugin)
+  * Bridge domain ARP termination table can now be dumped  
+- [vpp-ifplugin](plugins/linux/ifplugin)
+  * Linux interface watcher was reintroduced.
+  * Linux interfaces can be now dumped.
+- [vpp-l3plugin](plugins/linux/l3plugin)
+  * Linux ARP entires and routes can be dumped.   
+
+## Improvements
+- [vpp-plugins](plugins/vpp)
+  * Improved error propagation in all VPP plugin. Majority of errors now print stacktrace to the 
+  log output allowing better error tracing and debugging.
+  * Stopwatch was removed from all vppcalls
+- [linux-plugins](plugins/linux)
+  * Improved error propagation in all Linux plugins (same way as for VPP)
+  * Stopwatch was removed from all linuxcalls
+- [govpp-plugn](plugins/govppmux)
+  * Tracer (introduced in cn-infra 1.6) added to VPP message processing, replacing stopwatch. 
+  The measurement should be more precise and logged for all binary API calls. Also the rest
+  plugin now allows to show traced entries.
+  
+## Docker image
+  * The image can now be build on ARM64 platform  
+  
+## Bugfic
+  * Corrected several cases where various errors were silently ignored
+  * GRPC registration is now done in Init() phase, ensuring that it finishes before GRPC server
+    is started
+  * Removed occasional cases where linux tap interface was not configured correctly
+  * Fixed FIB configuration failures caused by wrong updating of the metadata after several 
+    modifications
+  * No additional characters are added to NAT tag and can be now configured with full length 
+    without index out of range errors
+  * Linux interface resync registers all VETH-type interfaces, despite the peer is not known
+  * Status publishing to ETCD/Consul now should work properly
+  * Fixed occasional failure caused by concurrent map access inside linux plugin interface 
+    configurator
+  * VPP route dump now correctly recognizes route type  
+    
 # Release v1.6-vpp18.10 (2018-08-24)
 
 ## Compatibility
