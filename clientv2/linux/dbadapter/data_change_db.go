@@ -19,16 +19,16 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
-	"github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
+	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 
-	"github.com/ligato/vpp-agent/clientv1/vpp"
+	"github.com/ligato/vpp-agent/clientv2/vpp"
 	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 )
@@ -97,7 +97,7 @@ func (dsl *PutDSL) LinuxRoute(val *linuxL3.LinuxStaticRoute) linuxclient.PutDSL 
 }
 
 // VppInterface adds a request to create or update VPP network interface.
-func (dsl *PutDSL) VppInterface(val *interfaces.Interfaces_Interface) linuxclient.PutDSL {
+func (dsl *PutDSL) VppInterface(val *interfaces.Interface) linuxclient.PutDSL {
 	dsl.vppPut.Interface(val)
 	return dsl
 }
