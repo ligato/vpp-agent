@@ -71,7 +71,6 @@ type Lease struct {
 	State         uint8
 	Hostname      string
 	IsIPv6        bool
-	MaskWidth     uint8
 	HostAddress   string
 	RouterAddress string
 	HostMac       string
@@ -145,7 +144,7 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	}
 
 	// Get DHCP clients
-	dhcpClients, err := h.dumpDhcpClients()
+	dhcpClients, err := h.DumpDhcpClients()
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump interface DHCP clients: %v", err)
 	}
@@ -248,6 +247,68 @@ func (h *IfVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
 	h.log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
 
 	return memifSocketMap, nil
+}
+
+// DumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
+func (h *IfVppHandler) DumpDhcpClients() (map[uint32]*Dhcp, error) {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog(dhcp.DHCPClientDump{}).LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	dhcpData := make(map[uint32]*Dhcp)
+	reqCtx := h.callsChannel.SendMultiRequest(&dhcp.DHCPClientDump{})
+
+	for {
+		dhcpDetails := &dhcp.DHCPClientDetails{}
+		last, err := reqCtx.ReceiveReply(dhcpDetails)
+		if last {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		client := dhcpDetails.Client
+		lease := dhcpDetails.Lease
+
+		var hostMac net.HardwareAddr = lease.HostMac
+		var hostAddr, routerAddr string
+		if uintToBool(lease.IsIPv6) {
+			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
+			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
+		} else {
+			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress[:4]).To4().String(), uint32(lease.MaskWidth))
+			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress[:4]).To4().String(), uint32(lease.MaskWidth))
+		}
+
+		// DHCP client data
+		dhcpClient := &Client{
+			SwIfIndex:        client.SwIfIndex,
+			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
+			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
+			WantDhcpEvent:    uintToBool(client.WantDHCPEvent),
+			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
+			Pid:              client.PID,
+		}
+
+		// DHCP lease data
+		dhcpLease := &Lease{
+			SwIfIndex:     lease.SwIfIndex,
+			State:         lease.State,
+			Hostname:      string(bytes.SplitN(lease.Hostname, []byte{0x00}, 2)[0]),
+			IsIPv6:        uintToBool(lease.IsIPv6),
+			HostAddress:   hostAddr,
+			RouterAddress: routerAddr,
+			HostMac:       hostMac.String(),
+		}
+
+		// DHCP metadata
+		dhcpData[client.SwIfIndex] = &Dhcp{
+			Client: dhcpClient,
+			Lease:  dhcpLease,
+		}
+	}
+
+	return dhcpData, nil
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
@@ -471,69 +532,6 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 	}
 
 	return nil
-}
-
-// dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
-func (h *IfVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(dhcp.DHCPClientDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	dhcpData := make(map[uint32]*Dhcp)
-	reqCtx := h.callsChannel.SendMultiRequest(&dhcp.DHCPClientDump{})
-
-	for {
-		dhcpDetails := &dhcp.DHCPClientDetails{}
-		last, err := reqCtx.ReceiveReply(dhcpDetails)
-		if last {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		client := dhcpDetails.Client
-		lease := dhcpDetails.Lease
-
-		var hostMac net.HardwareAddr = lease.HostMac
-		var hostAddr, routerAddr string
-		if uintToBool(lease.IsIPv6) {
-			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress).To16().String(), uint32(lease.MaskWidth))
-			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress).To16().String(), uint32(lease.MaskWidth))
-		} else {
-			hostAddr = fmt.Sprintf("%s/%d", net.IP(lease.HostAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-			routerAddr = fmt.Sprintf("%s/%d", net.IP(lease.RouterAddress[:4]).To4().String(), uint32(lease.MaskWidth))
-		}
-
-		// DHCP client data
-		dhcpClient := &Client{
-			SwIfIndex:        client.SwIfIndex,
-			Hostname:         string(bytes.SplitN(client.Hostname, []byte{0x00}, 2)[0]),
-			ID:               string(bytes.SplitN(client.ID, []byte{0x00}, 2)[0]),
-			WantDhcpEvent:    uintToBool(client.WantDHCPEvent),
-			SetBroadcastFlag: uintToBool(client.SetBroadcastFlag),
-			Pid:              client.PID,
-		}
-
-		// DHCP lease data
-		dhcpLease := &Lease{
-			SwIfIndex:     lease.SwIfIndex,
-			State:         lease.State,
-			Hostname:      string(bytes.SplitN(lease.Hostname, []byte{0x00}, 2)[0]),
-			IsIPv6:        uintToBool(lease.IsIPv6),
-			MaskWidth:     lease.MaskWidth,
-			HostAddress:   hostAddr,
-			RouterAddress: routerAddr,
-			HostMac:       hostMac.String(),
-		}
-
-		// DHCP metadata
-		dhcpData[client.SwIfIndex] = &Dhcp{
-			Client: dhcpClient,
-			Lease:  dhcpLease,
-		}
-	}
-
-	return dhcpData, nil
 }
 
 // dumpUnnumberedDetails returns a map of unnumbered interface indexes, every with interface index of element with IP

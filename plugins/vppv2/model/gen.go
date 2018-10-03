@@ -13,5 +13,6 @@
 //  limitations under the License.
 
 //go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/interfaces.proto
+//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/dhcp.proto
 
 package model

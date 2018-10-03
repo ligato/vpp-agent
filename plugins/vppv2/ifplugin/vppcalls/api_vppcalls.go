@@ -113,6 +113,8 @@ type IfVppRead interface {
 	GetInterfaceVrfIPv6(ifIdx uint32) (vrfID uint32, err error)
 	// DumpMemifSocketDetails dumps memif socket details from the VPP
 	DumpMemifSocketDetails() (map[string]uint32, error)
+	// DumpDhcpClients dumps DHCP-related information for all interfaces.
+	DumpDhcpClients() (map[uint32]*Dhcp, error)
 }
 
 // IfVppHandler is accessor for interface-related vppcalls methods

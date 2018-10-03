@@ -111,15 +111,6 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// DHCP client
-	if intf.SetDhcpClient {
-		if err := d.ifHandler.SetInterfaceAsDHCPClient(ifIdx, intf.Name); err != nil {
-			err = errors.Errorf("failed to set interface %s as DHCP client", intf.Name)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-
 	// Get IP addresses
 	ipAddrs, err := addrs.StrAddrsToStruct(intf.IpAddresses)
 	if err != nil {
@@ -202,16 +193,6 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 			d.log.Error(err)
 			return err
 		}
-	}
-
-	// Remove DHCP if it was set
-	if intf.SetDhcpClient {
-		if err := d.ifHandler.UnsetInterfaceAsDHCPClient(ifIdx, intf.Name); err != nil {
-			err = errors.Errorf("failed to unset interface %s as DHCP client: %v", intf.Name, err)
-			d.log.Error(err)
-			return err
-		}
-		// TODO: with DHCP descriptor, here we will send notification about unconfigured DHCP client
 	}
 
 	// unconfigure IP addresses

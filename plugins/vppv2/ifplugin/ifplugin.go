@@ -25,6 +25,8 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/datasync"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/idxmap"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
@@ -32,8 +34,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/cn-infra/logging/measure"
 )
 
 const (
@@ -53,9 +55,11 @@ type IfPlugin struct {
 	// descriptors
 	ifDescriptor   *descriptor.InterfaceDescriptor
 	unIfDescriptor *descriptor.UnnumberedIfDescriptor
+	dhcpDescriptor *descriptor.DHCPDescriptor
 
-	// index map
+	// index maps
 	intfIndex ifaceidx.IfaceMetadataIndex
+	dhcpIndex idxmap.NamedMapping
 
 	// From config file
 	enableStopwatch bool
@@ -99,13 +103,18 @@ func (p *IfPlugin) Init() error {
 	// init handlers
 	p.ifHandler = vppcalls.NewIfVppHandler(p.vppCh, p.Log, p.stopwatch)
 
-	// init & register descriptors
+	// init descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu, p.LinuxIfPlugin, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
 	p.unIfDescriptor = descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.Log)
 	unIfDescriptor := adapter.NewUnnumberedDescriptor(p.unIfDescriptor.GetDescriptor())
+	p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.Scheduler, p.ifHandler, p.Log)
+	dhcpDescriptor := p.dhcpDescriptor.GetDescriptor()
+
+	// register descriptors
 	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
 	p.Deps.Scheduler.RegisterKVDescriptor(unIfDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(dhcpDescriptor)
 
 	// obtain read-only reference to index map
 	var withIndex bool
@@ -114,11 +123,26 @@ func (p *IfPlugin) Init() error {
 	if !withIndex {
 		return errors.New("missing index with interface metadata")
 	}
+	p.dhcpIndex = p.Deps.Scheduler.GetMetadataMap(dhcpDescriptor.Name)
 
 	// pass read-only index map to descriptors
 	p.ifDescriptor.SetInterfaceIndex(p.intfIndex)
 	p.unIfDescriptor.SetInterfaceIndex(p.intfIndex)
+	p.dhcpDescriptor.SetInterfaceIndex(p.intfIndex)
 
+	// start watching for DHCP notifications
+	dhcpChan := make(chan govppapi.Message, 1)
+	if _, err := p.vppCh.SubscribeNotification(dhcpChan, &dhcp.DHCPComplEvent{}); err != nil {
+		return err
+	}
+	p.dhcpDescriptor.StartWatchingDHCP(dhcpChan)
+
+	return nil
+}
+
+// Close stops watching for DHCP notifications.
+func (p *IfPlugin) Close() error {
+	p.dhcpDescriptor.StopWatchingDHCP()
 	return nil
 }
 
@@ -126,6 +150,12 @@ func (p *IfPlugin) Init() error {
 // VPP interfaces.
 func (p *IfPlugin) GetInterfaceIndex() ifaceidx.IfaceMetadataIndex {
 	return p.intfIndex
+}
+
+// GetDHCPIndex gives read-only access to (untyped) map with DHCP leases.
+// Cast metadata to "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces".DHCPLease
+func (p *IfPlugin) GetDHCPIndex() idxmap.NamedMapping {
+	return p.dhcpIndex
 }
 
 // fromConfigFile loads plugin attributes from the configuration file.

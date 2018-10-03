@@ -15,6 +15,7 @@
 package ifplugin
 
 import (
+	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 )
 
@@ -23,4 +24,8 @@ type API interface {
 	// GetInterfaceIndex gives read-only access to map with metadata of all configured
 	// VPP interfaces.
 	GetInterfaceIndex() ifaceidx.IfaceMetadataIndex
+
+	// GetDHCPIndex gives read-only access to (untyped) map with DHCP leases.
+	// Cast metadata to "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces".DHCPLease
+	GetDHCPIndex() idxmap.NamedMapping
 }

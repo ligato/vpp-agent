@@ -269,6 +269,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 
 // DerivedValues derives:
 //  - key-value for unnumbered configuration sub-section
+//  - empty value for enabled DHCP client
 //  - empty value from a TAP interface to represent its Linux-side
 //  - one empty value for every IP address assigned to the interface.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []scheduler.KeyValuePair) {
@@ -277,6 +278,14 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   interfaces.UnnumberedKey(intf.Name),
 			Value: intf.GetUnnumbered(),
+		})
+	}
+
+	// DHCP client
+	if intf.SetDhcpClient {
+		derValues = append(derValues, scheduler.KeyValuePair{
+			Key:   interfaces.DHCPClientKey(intf.Name),
+			Value: &prototypes.Empty{},
 		})
 	}
 

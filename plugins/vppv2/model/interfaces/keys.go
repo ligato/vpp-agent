@@ -58,6 +58,15 @@ const (
 	// interfaces to represent unnumbered interfaces.
 	UnnumberedKeyPrefix = "vpp/interface/unnumbered/"
 
+	/* DHCP (client - derived, lease - notification) */
+
+	// DHCPClientKeyPrefix is used as a common prefix for keys derived from
+	// interfaces to represent enabled DHCP clients.
+	DHCPClientKeyPrefix = "vpp/interface/dhcp-client/"
+
+	// DHCPLeaseKeyPrefix is used as a common prefix for keys representing
+	// notifications with DHCP leases.
+	DHCPLeaseKeyPrefix = "vpp/interface/dhcp-lease/"
 )
 
 /* Interface Config */
@@ -73,23 +82,23 @@ func ParseNameFromKey(key string) (name string, err error) {
 
 // InterfaceKey returns the key used in ETCD to store the configuration of the
 // given vpp interface.
-func InterfaceKey(ifaceLabel string) string {
-	return Prefix + ifaceLabel
+func InterfaceKey(ifName string) string {
+	return Prefix + ifName
 }
 
 /* Interface Error */
 
 // InterfaceErrorKey returns the key used in ETCD to store the interface errors.
-func InterfaceErrorKey(ifaceLabel string) string {
-	return ErrorPrefix + ifaceLabel
+func InterfaceErrorKey(ifName string) string {
+	return ErrorPrefix + ifName
 }
 
 /* Interface State */
 
 // InterfaceStateKey returns the key used in ETCD to store the state data of the
 // given vpp interface.
-func InterfaceStateKey(ifaceLabel string) string {
-	return StatePrefix + ifaceLabel
+func InterfaceStateKey(ifName string) string {
+	return StatePrefix + ifName
 }
 
 /* Interface Address (derived) */
@@ -143,3 +152,25 @@ func TAPHostNameKey(hostIfName string) string {
 func UnnumberedKey(ifName string) string {
 	return UnnumberedKeyPrefix + ifName
 }
+
+/* DHCP (client - derived, lease - notification) */
+
+// ParseNameFromDHCPClientKey returns suffix of the key.
+func ParseNameFromDHCPClientKey(key string) (name string, err error) {
+	if strings.HasPrefix(key, DHCPClientKeyPrefix) {
+		name = strings.TrimPrefix(key, DHCPClientKeyPrefix)
+		return
+	}
+	return key, fmt.Errorf("wrong format of the key %s", key)
+}
+
+// DHCPClientKey returns a (derived) key used to represent enabled DHCP lease.
+func DHCPClientKey(ifName string) string {
+	return DHCPClientKeyPrefix + ifName
+}
+
+// DHCPLeaseKey returns a key used to represent DHCP lease for the given interface.
+func DHCPLeaseKey(ifName string) string {
+	return DHCPLeaseKeyPrefix + ifName
+}
+
