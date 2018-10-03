@@ -2,7 +2,7 @@ include vpp.env
 
 VERSION	?= $(shell git describe --always --tags --dirty)
 COMMIT	?= $(shell git rev-parse HEAD)
-DATE	:= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
+DATE	?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
@@ -214,6 +214,14 @@ yamllint: get-yamllint
 	@echo "=> linting the yaml files"
 	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
 
+images: dev-image prod-image
+
+dev-image:
+	./docker/dev/build.sh
+
+prod-image:
+	./docker/prod/build.sh
+
 .PHONY: build clean \
 	install cmd examples clean-examples test \
 	test-cover test-cover-html test-cover-xml \
@@ -222,4 +230,5 @@ yamllint: get-yamllint
 	get-linters lint format \
 	get-linkcheck check-links \
 	travis \
-	get-yamllint yamllint
+	get-yamllint yamllint \
+	images dev-image prod-image
