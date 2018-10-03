@@ -89,7 +89,6 @@ type IfPlugin struct {
 	statusCheckReg   bool
 	watchStatusReg   datasync.WatchRegistration
 	resyncStatusChan chan datasync.ResyncEvent
-	ifNotifChan      chan govppapi.Message
 	ifStateChan      chan *interfaces.InterfaceNotification
 	ifStateUpdater   *InterfaceStateUpdater
 
@@ -250,7 +249,7 @@ func (p *IfPlugin) Close() error {
 	p.dhcpDescriptor.StopWatchingDHCP()
 
 	// close all channels
-	safeclose.CloseAll(p.resyncStatusChan, p.ifStateChan, p.ifNotifChan)
+	safeclose.CloseAll(p.resyncStatusChan, p.ifStateChan)
 	return nil
 }
 
