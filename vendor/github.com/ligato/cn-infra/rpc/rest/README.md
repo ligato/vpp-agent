@@ -55,6 +55,7 @@ REST plugin allows to optionally configure following security features:
 - server certificate (HTTPS)
 - Basic HTTP Authentication - username & password
 - client certificates
+- token based authorization
 
 All of them are disabled by default and can be enabled by config file:
 
@@ -127,3 +128,90 @@ where `ca.pem` is a certificate authority where server certificate should be val
   ```
   curl --cacert ca.crt  --cert client.crt --key client.key -u user:pass  https://127.0.0.1:9292/log/list
   ```
+  
+### Token-based authorization
+
+REST plugin supports authorization based on tokens. To enable the feature, use `http.conf` file:
+
+```
+enable-token-auth: true
+```
+
+Authorization restricts access to every registered permission group URLs. The user receives token
+after login, which grants him access to all permitted sites. The token is valid until the user is logged in, or until it expires.
+
+The expiration time is a token claim, set in the config file:
+
+```
+token-expiration: 600000000000  
+```
+
+Note that time is in nanoseconds. If no time is provided, the default value of 1 hour is set.
+
+Token uses by default pre-defined signature string as the key to sign it. This can be also 
+changed via config file:
+
+```
+token-signature: <string>
+```
+
+After login, the token is required in authentication header in the format `Bearer <token>`, so it
+can be validated. If REST interface is accessed via a browser, the token is written to cookie file.
+
+#### Users and permission groups
+
+Users have to be pre-defined in `http.conf` file. User definition consists of name, hashed
+password and permission groups.
+
+**Name** defines username (login). Name "admin" is forbidden since the admin user is 
+created automatically with full permissions and password "ligato123"
+
+**Password** has to be hashed. It is possible to use 
+[password-hasher](security/password-hasher/README.md) to help with it. Password also has 
+to be hashed with the same cost value, as defined in the configuration file:
+
+```
+password-hash-cost: <number>
+```
+
+Minimal hash cost is 4, maximal value is 31. The higher the cost, the more CPU time 
+memory is required to hash the password.
+
+**Permission Groups** define a list of permissions; allowed URLs and methods. Every user needs at least one permission group defined, otherwise it will not have access to anything. Permission group is described in 
+[proto model](security/model/access-security/accesssecurity.proto). 
+
+To add permission group, use rest plugin API:
+
+```
+RegisterPermissionGroup(group ...*access.PermissionGroup)
+```
+
+Every permission group has a name and a list o permissions. Permission defines URL and
+a list of methods which may be performed. 
+
+To add permission group to the user, put its name to the config file under user's field 
+`permissions`. 
+
+#### Login and logout
+
+To log in a user, follow the URL `http://localhost:9191/login`. The site is enabled for two
+methods. It is possible to use a `POST` to directly provide credentials in the format:
+
+```
+{
+	"username": "<name>",
+	"password": "<pass>"
+}
+```
+
+The site returns access token as plain text. If URL is accessed with `GET`, it shows the login page where the credentials are supposed to be put. After successful submit, 
+it redirects to the index.
+
+To log out, post username to `http://localhost:9191/logout`.
+
+```
+{
+	"username": "<name>"
+}
+```
+ 
