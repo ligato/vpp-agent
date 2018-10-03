@@ -358,7 +358,7 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 		return ErrTapWithoutHostName
 	}
 	if intf.Type == interfaces.Interface_AF_PACKET_INTERFACE && intf.GetAfpacket().GetHostIfName() == "" {
-		return ErrAfPacketWithoutHostName
+
 	}
 	return nil
 }

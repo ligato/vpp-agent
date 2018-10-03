@@ -18,9 +18,11 @@
 package ifplugin
 
 import (
+	"context"
 	"os"
-	"github.com/go-errors/errors"
+	"sync"
 
+	"github.com/go-errors/errors"
 	govppapi "git.fd.io/govpp.git/api"
 
 	"github.com/ligato/cn-infra/infra"
@@ -28,12 +30,14 @@ import (
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/utils/safeclose"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
@@ -44,6 +48,16 @@ const (
 	// vppStatusPublishersEnv is the name of the environment variable used to
 	// override state publishers from the configuration file.
 	vppStatusPublishersEnv = "VPP_STATUS_PUBLISHERS"
+)
+
+var (
+	// noopWriter (no operation writer) helps avoiding NIL pointer based segmentation fault.
+	// It is used as default if some dependency was not injected.
+	noopWriter = datasync.KVProtoWriters{}
+
+	// noopWatcher (no operation watcher) helps avoiding NIL pointer based segmentation fault.
+	// It is used as default if some dependency was not injected.
+	noopWatcher = datasync.KVProtoWatchers{}
 )
 
 // IfPlugin configures VPP interfaces using GoVPP.
@@ -70,9 +84,22 @@ type IfPlugin struct {
 	enableStopwatch bool
 	stopwatch       *measure.Stopwatch // timer used to measure and store time
 	defaultMtu      uint32
+
+	// state data
+	statusCheckReg   bool
+	watchStatusReg   datasync.WatchRegistration
+	resyncStatusChan chan datasync.ResyncEvent
+	ifNotifChan      chan govppapi.Message
+	ifStateChan      chan *interfaces.InterfaceNotification
+	ifStateUpdater   *InterfaceStateUpdater
+
+	// go routine management
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
-// Deps lists dependencies of the interface plugin.
+// Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
 	Scheduler     scheduler.KVScheduler
@@ -83,11 +110,11 @@ type Deps struct {
 
 	// state publishing
 	StatusCheck       statuscheck.PluginStatusWriter
-	Publish           datasync.KeyProtoValWriter
-	PublishStatistics datasync.KeyProtoValWriter
-	Watcher           datasync.KeyValProtoWatcher
-	IfStatePub        datasync.KeyProtoValWriter
-	DataSyncs         map[string]datasync.KeyProtoValWriter
+	PublishErrors     datasync.KeyProtoValWriter
+	Watcher           datasync.KeyValProtoWatcher /* for resync of interface state data (PublishStatistics) */
+	NotifyStatistics  datasync.KeyProtoValWriter  /* e.g. Kafka */
+	PublishStatistics datasync.KeyProtoValWriter  /* e.g. ETCD (with resync) */
+	DataSyncs         map[string]datasync.KeyProtoValWriter /* available DBs for PublishStatistics */
 	// TODO: GRPCSvc           rpc.GRPCService
 }
 
@@ -103,6 +130,9 @@ func (p *IfPlugin) Init() error {
 	var err error
 	// Read config file and set all related fields
 	p.fromConfigFile()
+
+	// Fills nil dependencies with default values
+	p.fixNilPointers()
 
 	// Plugin-wide stopwatch instance
 	if p.enableStopwatch {
@@ -155,12 +185,72 @@ func (p *IfPlugin) Init() error {
 	}
 	p.dhcpDescriptor.StartWatchingDHCP(dhcpChan)
 
+	// Create plugin context, save cancel function into the plugin handle.
+	p.ctx, p.cancel = context.WithCancel(context.Background())
+
+	// subscribe & watch for resync of interface state data
+	p.resyncStatusChan = make(chan datasync.ResyncEvent)
+	p.watchStatusReg, err = p.Watcher.
+		Watch("VPP interface state data", nil, p.resyncStatusChan,
+		interfaces.StatePrefix)
+	if err != nil {
+		return err
+	}
+	go p.watchStatusEvents()
+
+	// start interface state publishing
+	go p.publishIfStateEvents()
+
+	// start interface state updater
+	p.ifStateChan = make(chan *interfaces.InterfaceNotification, 100)
+	// Interface state updater
+	p.ifStateUpdater = &InterfaceStateUpdater{}
+	if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.GoVppmux, p.intfIndex, func(state *interfaces.InterfaceNotification) {
+		select {
+		case p.ifStateChan <- state:
+			// OK
+		default:
+			p.Log.Debug("Unable to send to the ifStateNotifications channel - channel buffer full.")
+		}
+	}); err != nil {
+		return p.ifStateUpdater.LogError(err)
+	}
+
+	p.Log.Debug("ifStateUpdater Initialized")
+
 	return nil
 }
 
-// Close stops watching for DHCP notifications.
+// AfterInit delegates the call to ifStateUpdater.
+func (p *IfPlugin) AfterInit() error {
+	err := p.ifStateUpdater.AfterInit()
+	if err != nil {
+		return err
+	}
+
+	if p.StatusCheck != nil {
+		// Register the plugin to status check. Periodical probe is not needed,
+		// data change will be reported when changed
+		p.StatusCheck.Register(p.PluginName, nil)
+		// Notify that status check for the plugins was registered. It will
+		// prevent status report errors in case resync is executed before AfterInit.
+		p.statusCheckReg = true
+	}
+
+	return nil
+}
+
+// Close stops all go routines.
 func (p *IfPlugin) Close() error {
+	// stop publishing of state data
+	p.cancel()
+	p.wg.Wait()
+
+	// stop watching of DHCP notifications
 	p.dhcpDescriptor.StopWatchingDHCP()
+
+	// close all channels
+	safeclose.CloseAll(p.resyncStatusChan, p.ifStateChan, p.ifNotifChan)
 	return nil
 }
 
@@ -230,4 +320,24 @@ func (p *IfPlugin) loadConfig() (*Config, error) {
 	}
 
 	return config, err
+}
+
+// fixNilPointers sets noopWriter & nooWatcher for nil dependencies.
+func (p *IfPlugin) fixNilPointers() {
+	if p.Deps.PublishErrors == nil {
+		p.Deps.PublishErrors = noopWriter
+		p.Log.Debug("setting default noop writer for PublishErrors dependency")
+	}
+	if p.Deps.PublishStatistics == nil {
+		p.Deps.PublishStatistics = noopWriter
+		p.Log.Debug("setting default noop writer for PublishStatistics dependency")
+	}
+	if p.Deps.NotifyStatistics == nil {
+		p.Deps.NotifyStatistics = noopWriter
+		p.Log.Debug("setting default noop writer for NotifyStatistics dependency")
+	}
+	if p.Deps.Watcher == nil {
+		p.Deps.Watcher = noopWatcher
+		p.Log.Debug("setting default noop watcher for Watcher dependency")
+	}
 }

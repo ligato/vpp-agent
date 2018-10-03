@@ -12,7 +12,9 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/interfaces.proto
+//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/interface.proto
 //go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/dhcp.proto
+//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/state.proto
+
 
 package model
