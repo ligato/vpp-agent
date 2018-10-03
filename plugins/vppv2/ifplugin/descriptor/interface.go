@@ -18,6 +18,7 @@ import (
 	"net"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
@@ -33,6 +34,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
@@ -45,6 +47,10 @@ const (
 	// dependency labels
 	afPacketHostInterfaceDep = "afpacket-host-interface"
 	vxlanMulticastDep = "vxlan-multicast-interface"
+
+	// tapHostInterfaceWaitTimeout is the maximum waiting time for TAP host-side
+	// to be created.
+	tapHostInterfaceWaitTimeout = time.Second
 
 	// prefix prepended to internal names of untagged interfaces to construct unique
 	// logical names
@@ -67,6 +73,12 @@ var (
 	// ErrUnnumberedWithIP is returned when configuration of a VPP unnumbered interface
 	// includes an IP address.
 	ErrUnnumberedWithIP = errors.New("VPP unnumbered interface was defined with IP address")
+
+	// ErrTapWithoutHostName is returned when TAP configation is missing host interface name.
+	ErrTapWithoutHostName = errors.New("VPP TAP interface was defined without host interface name")
+
+	// ErrAfPacketWithoutHostName is returned when AF-Packet configuration is missing host interface name.
+	ErrAfPacketWithoutHostName = errors.New("VPP AF-Packet interface was defined without host interface name")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -77,7 +89,10 @@ type InterfaceDescriptor struct {
 	// dependencies
 	log              logging.Logger
 	ifHandler        vppcalls.IfVppAPI
-	linuxIfPlugin    linux_ifplugin.API /* optional, provide if AFPacket or TAP+AUTO_TAP interfaces are used */
+
+	// optional dependencies, provide if AFPacket or TAP+AUTO_TAP interfaces are used
+	linuxIfPlugin    linux_ifplugin.API
+	linuxIfHandler   linux_ifcalls.NetlinkAPI
 
 	// runtime
 	intfIndex        ifaceidx.IfaceMetadataIndex
@@ -86,12 +101,13 @@ type InterfaceDescriptor struct {
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
-	linuxIfPlugin linux_ifplugin.API, log logging.PluginLogger) *InterfaceDescriptor {
+	linuxIfHandler linux_ifcalls.NetlinkAPI, linuxIfPlugin linux_ifplugin.API, log logging.PluginLogger) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
 		ifHandler:       ifHandler,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
+		linuxIfHandler:  linuxIfHandler,
 		log:             log.NewLogger("-if-descriptor"),
 		memifSocketToID: make(map[string]uint32),
 	}
@@ -205,6 +221,8 @@ func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 		ErrInterfaceWithoutName,
 		ErrInterfaceWithoutType,
 		ErrUnnumberedWithIP,
+		ErrTapWithoutHostName,
+		ErrAfPacketWithoutHostName,
 		}
 	for _, nonRetriableErr := range nonRetriable {
 		if err == nonRetriableErr {
@@ -306,7 +324,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	}
 
 	// TAP interface host name
-	if intf.Type == interfaces.Interface_TAP_INTERFACE {
+	if intf.Type == interfaces.Interface_TAP_INTERFACE && intf.GetTap().GetHostIfName() != "" {
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   interfaces.TAPHostNameKey(intf.GetTap().GetHostIfName()),
 			Value: &prototypes.Empty{},
@@ -335,6 +353,12 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 		if len(intf.GetIpAddresses()) > 0 {
 			return ErrUnnumberedWithIP
 		}
+	}
+	if intf.Type == interfaces.Interface_TAP_INTERFACE && intf.GetTap().GetHostIfName() == "" {
+		return ErrTapWithoutHostName
+	}
+	if intf.Type == interfaces.Interface_AF_PACKET_INTERFACE && intf.GetAfpacket().GetHostIfName() == "" {
+		return ErrAfPacketWithoutHostName
 	}
 	return nil
 }

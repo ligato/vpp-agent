@@ -27,12 +27,14 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/cn-infra/health/statuscheck"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -48,9 +50,12 @@ const (
 type IfPlugin struct {
 	Deps
 
-	// VPP
+	// GoVPP
 	vppCh     govppapi.Channel
-	ifHandler vppcalls.IfVppAPI
+
+	// handlers
+	ifHandler      vppcalls.IfVppAPI
+	linuxIfHandler linux_ifcalls.NetlinkAPI
 
 	// descriptors
 	ifDescriptor   *descriptor.InterfaceDescriptor
@@ -70,11 +75,20 @@ type IfPlugin struct {
 // Deps lists dependencies of the interface plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler         scheduler.KVScheduler
-	GoVppmux          govppmux.API
+	Scheduler     scheduler.KVScheduler
+	GoVppmux      govppmux.API
+
+	/* optional, provide if AFPacket or TAP+AUTO_TAP interfaces are used */
+	LinuxIfPlugin linux_ifplugin.API
+
+	// state publishing
+	StatusCheck       statuscheck.PluginStatusWriter
+	Publish           datasync.KeyProtoValWriter
 	PublishStatistics datasync.KeyProtoValWriter
+	Watcher           datasync.KeyValProtoWatcher
+	IfStatePub        datasync.KeyProtoValWriter
 	DataSyncs         map[string]datasync.KeyProtoValWriter
-	LinuxIfPlugin     linux_ifplugin.API /* optional, provide if AFPacket or TAP+AUTO_TAP interfaces are used */
+	// TODO: GRPCSvc           rpc.GRPCService
 }
 
 // Config holds the vpp-plugin configuration.
@@ -102,9 +116,13 @@ func (p *IfPlugin) Init() error {
 
 	// init handlers
 	p.ifHandler = vppcalls.NewIfVppHandler(p.vppCh, p.Log, p.stopwatch)
+	if p.LinuxIfPlugin != nil {
+		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler(p.stopwatch)
+	}
 
 	// init descriptors
-	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu, p.LinuxIfPlugin, p.Log)
+	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu,
+		p.linuxIfHandler, p.LinuxIfPlugin, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
 	p.unIfDescriptor = descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.Log)
 	unIfDescriptor := adapter.NewUnnumberedDescriptor(p.unIfDescriptor.GetDescriptor())

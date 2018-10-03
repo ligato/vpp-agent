@@ -11,6 +11,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"time"
 )
 
 // Add creates a VPP interface.
@@ -31,6 +32,29 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
+		}
+
+		// verify that the Linux side was created
+		if d.linuxIfHandler != nil {
+			var exists bool
+			startTime := time.Now()
+
+			for !exists && time.Since(startTime) < tapHostInterfaceWaitTimeout {
+				exists, err := d.linuxIfHandler.InterfaceExists(intf.GetTap().GetHostIfName())
+				if err != nil {
+					d.log.Error(err)
+					return nil, err
+				}
+				if !exists {
+					time.Sleep(10 * time.Millisecond)
+				}
+			}
+
+			if !exists {
+				err = errors.Errorf("failed to create the Linux side of the TAP interface %s", intf.Name)
+				d.log.Error(err)
+				return nil, err
+			}
 		}
 
 	case interfaces.Interface_MEMORY_INTERFACE:
@@ -388,6 +412,33 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			// untagged interface - generate a logical name for it
 			// (apart from local0 it will get removed by resync)
 			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
+		}
+
+		// verify links between VPP and Linux side
+		if d.linuxIfPlugin != nil && d.linuxIfHandler != nil {
+			if intf.Interface.Type == interfaces.Interface_AF_PACKET_INTERFACE {
+				hostIfName := intf.Interface.GetAfpacket().HostIfName
+				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
+				if !exists {
+					// the Linux interface that the AF-Packet is attached to does not exist
+					// -> clear the host name so that the AF-Packet will be re-created
+					intf.Interface.GetAfpacket().HostIfName = ""
+				}
+			}
+			if intf.Interface.Type == interfaces.Interface_TAP_INTERFACE {
+				hostIfName := intf.Interface.GetTap().GetHostIfName()
+				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
+				if !exists {
+					// check if it was "stolen" by the Linux plugin
+					_, _, exists = d.linuxIfPlugin.GetInterfaceIndex().LookupByTapTempName(
+						intf.Interface.GetTap().GetHostIfName())
+				}
+				if !exists {
+					// the Linux side of the TAP interface side was not found
+					// -> clear the TAP host name so that the TAP will be re-created
+					intf.Interface.GetTap().HostIfName = ""
+				}
+			}
 		}
 
 		// add interface record into the dump
