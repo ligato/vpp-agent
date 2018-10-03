@@ -1,6 +1,6 @@
 *** Settings ***
 Library    OperatingSystem
-Library       SSHLibrary            timeout=60s
+Library       SSHLibrary            timeout=15s        loglevel=TRACE
 Resource    ../setup-teardown.robot
 Resource    ../SshCommons.robot
 Documentation     Contains keywords used to setup and teardown Kubernetes tests.

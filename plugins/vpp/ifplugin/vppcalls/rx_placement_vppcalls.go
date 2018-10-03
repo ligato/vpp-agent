@@ -16,41 +16,25 @@ package vppcalls
 
 import (
 	"fmt"
-	"strconv"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // SetRxPlacement implements interface handler.
-func (h *IfVppHandler) SetRxPlacement(vppInternalName string, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.SwInterfaceSetRxMode{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
-	queue := strconv.Itoa(int(rxPlacement.Queue))
-	worker := strconv.Itoa(int(rxPlacement.Worker))
-
-	command := "set interface rx-placement " + vppInternalName + " queue " + queue + " worker " + worker
-
-	h.log.Warnf("Setting rx-placement commnad %s", command)
-
-	// TODO: binary api call for rx-placement is not available
-	req := &vpe.CliInband{
-		Length: uint32(len(command)),
-		Cmd:    []byte(command),
+func (h *IfVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings) error {
+	req := &interfaces.SwInterfaceSetRxPlacement{
+		SwIfIndex: ifIdx,
+		QueueID:   rxPlacement.Queue,
+		WorkerID:  rxPlacement.Worker,
+		IsMain:    boolToUint(rxPlacement.IsMain),
 	}
-	reply := &vpe.CliInbandReply{}
+	reply := &interfaces.SwInterfaceSetRxPlacementReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
-	if reply.Length > 0 {
-		return fmt.Errorf("rx-placement setup replied with %s", string(reply.Reply))
 	}
 
 	return nil

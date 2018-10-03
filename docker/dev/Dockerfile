@@ -39,16 +39,14 @@ RUN apt-get update \
     telnet unzip wget \
  && rm -rf /var/lib/apt/lists/*
 
-# build & install Protobuf
-RUN git clone --depth=1 https://github.com/google/protobuf.git \
- && cd protobuf \
- && ./autogen.sh \
- && ./configure \
- && make -j4 \
- && make install \
- && ldconfig \
- && cd .. \
- && rm -rf protobuf
+# install Protobuf
+ARG PROTOC_VERSION=3.6.1
+ARG PROTOC_OS_ARCH=linux_x86_64
+RUN wget -q https://github.com/google/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-${PROTOC_OS_ARCH}.zip \
+ && unzip protoc-${PROTOC_VERSION}-${PROTOC_OS_ARCH}.zip -d protoc3 \
+ && mv protoc3/bin/protoc /usr/local/bin \
+ && mv protoc3/include/google /usr/local/include \
+ && rm -rf protoc-${PROTOC_VERSION}-${PROTOC_OS_ARCH}.zip protoc3
 
 RUN mkdir -p /opt/vpp-agent/dev /opt/vpp-agent/plugin
 
@@ -63,6 +61,7 @@ RUN set -eux; \
     git clone "${VPP_REPO_URL}" vpp; \
     cd vpp; \
     git checkout "${VPP_COMMIT}"; \
+    sed -i -e 's/vpp vom japi/vpp/g' build-data/platforms/vpp.mk; \
     export UNATTENDED=y; \
     make install-dep dpdk-install-dev; \
     if [ -n "${VPP_DEBUG_DEB}" ]; then \
@@ -77,7 +76,7 @@ RUN set -eux; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
 # install Go
-ENV GOLANG_VERSION 1.10.3
+ENV GOLANG_VERSION 1.11
 ARG GOLANG_OS_ARCH=linux-amd64
 RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \

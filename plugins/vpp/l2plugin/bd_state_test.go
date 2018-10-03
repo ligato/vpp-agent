@@ -17,8 +17,9 @@ package l2plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
+
+	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -66,7 +67,9 @@ func bdStateTestInitialization(t *testing.T) (*l2plugin.BridgeDomainStateUpdater
 	ctx, _ := context.WithCancel(context.Background())
 
 	// Create connection
-	mockCtx := &vppcallmock.TestCtx{MockVpp: &mock.VppAdapter{}}
+	mockCtx := &vppcallmock.TestCtx{
+		MockVpp: mock.NewVppAdapter(),
+	}
 	connection, err := core.Connect(mockCtx.MockVpp)
 	Expect(err).To(BeNil())
 
@@ -118,7 +121,7 @@ func TestBridgeDomainStateUpdater_watchVppNotificationsZeroNoName(t *testing.T) 
 
 	var notif *l2plugin.BridgeDomainStateNotification
 
-	Eventually(publishChan).Should(Receive(&notif))
+	Eventually(publishChan).ShouldNot(Receive(&notif))
 }
 
 // Tests notification processing in bridge domain state updater

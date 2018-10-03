@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
 
-Force Tags        trafficIPv4
+Force Tags        traffic     IPv4    ExpectedFailure
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -140,7 +140,6 @@ Add Libmemif Node Again
 Create And Check Memif1 On Agent Libmemif 1 After node restart2
     ${out_c}=      lmterm: Issue Command    agent_libmemif_1   conn 0 1
     ${out}=      lmterm: Issue Command    agent_libmemif_1    show
-    Log Many      ${out_c}    ${out}
     Should Contain     ${out}     interface ip: ${LIBMEMIF_IP1}
     Should Contain     ${out}     link: up
 

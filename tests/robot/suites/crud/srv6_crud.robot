@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -96,7 +96,7 @@ Check Resynchronization for clean VPP start
     Remove All VPP Nodes
     Sleep                                       3s
     Add Agent VPP Node                          agent_vpp_1
-
+    Sleep                                       8s
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Local SID Presence          node=agent_vpp_1    sidAddress=A::       interface=host-vpp1_veth2    nexthop=A::1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Policy Presence        node=agent_vpp_1    bsid=A::E            fibtable=0                   behaviour=Encapsulation    type=Spray    index=0    segmentlists=${segmentLists1}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check SRv6 Steering Presence      node=agent_vpp_1    bsid=A::E            prefixAddress=E::/64

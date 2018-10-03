@@ -17,7 +17,7 @@ package keyval
 import (
 	"encoding/json"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 )
 
 // Serializer is used to make conversions between raw and formatted data.

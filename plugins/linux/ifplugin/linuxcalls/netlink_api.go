@@ -17,12 +17,21 @@ package linuxcalls
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
+
+	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 )
 
 // NetlinkAPI interface covers all methods inside linux calls package needed to manage linux interfaces.
 type NetlinkAPI interface {
+	NetlinkAPIWrite
+	NetlinkAPIRead
+}
+
+// NetlinkAPIWrite interface covers write methods inside linux calls package needed to manage linux interfaces.
+type NetlinkAPIWrite interface {
 	// AddVethInterfacePair configures two connected VETH interfaces
 	AddVethInterfacePair(ifName, peerIfName string) error
 	// DelVethInterfacePair removes VETH pair
@@ -41,30 +50,42 @@ type NetlinkAPI interface {
 	SetInterfaceMTU(ifName string, mtu int) error
 	// RenameInterface changes interface host name
 	RenameInterface(ifName string, newName string) error
+}
+
+// NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux interfaces.
+type NetlinkAPIRead interface {
 	// GetLinkByName returns netlink interface type
 	GetLinkByName(ifName string) (netlink.Link, error)
 	// GetLinkList return all links from namespace
 	GetLinkList() ([]netlink.Link, error)
 	// GetAddressList reads all IP addresses
 	GetAddressList(ifName string) ([]netlink.Addr, error)
-	// InterfaceExists verifies interface existence
-	InterfaceExists(ifName string) (bool, error)
 	// GetInterfaceType returns linux interface type
 	GetInterfaceType(ifName string) (string, error)
 	// GetVethPeerName returns VETH's peer name
 	GetVethPeerName(ifName string) (string, error)
 	// GetInterfaceByName returns *net.Interface type from name
 	GetInterfaceByName(ifName string) (*net.Interface, error)
+	// DumpInterfaces returns all configured linux interfaces in all namespaces in proto-modelled format with metadata
+	DumpInterfaces() ([]*LinuxInterfaceDetails, error)
+	// DumpInterfaceStatistics returns statistics data for all known interfaces interfaces
+	DumpInterfaceStatistics() ([]*LinuxInterfaceStatistics, error)
+	// InterfaceExists verifies interface existence
+	InterfaceExists(ifName string) (bool, error)
 }
 
 // NetLinkHandler is accessor for netlink methods
 type NetLinkHandler struct {
-	stopwatch *measure.Stopwatch
+	nsHandler nsplugin.NamespaceAPI
+	ifIndexes ifaceidx.LinuxIfIndex
+	log       logging.Logger
 }
 
 // NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(stopwatch *measure.Stopwatch) *NetLinkHandler {
+func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, ifIndexes ifaceidx.LinuxIfIndex, log logging.Logger) *NetLinkHandler {
 	return &NetLinkHandler{
-		stopwatch: stopwatch,
+		nsHandler: nsHandler,
+		ifIndexes: ifIndexes,
+		log:       log,
 	}
 }

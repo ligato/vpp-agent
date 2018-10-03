@@ -17,10 +17,12 @@ package msg
 import (
 	"encoding/json"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging/logrus"
 )
+
+//go:generate protoc --proto_path=. --gogo_out=plugins=grpc:. datamsg.proto
 
 // NewChangeWatchResp is a constructor.
 func NewChangeWatchResp(message *DataChangeRequest, callback func(error)) *ChangeWatchResp {

@@ -16,26 +16,21 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
 // AddL2XConnect implements xconnect handler.
-func (handler *XConnectVppHandler) AddL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
-	return handler.addDelXConnect(rxIfIdx, txIfIdx, true)
+func (h *XConnectVppHandler) AddL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
+	return h.addDelXConnect(rxIfIdx, txIfIdx, true)
 }
 
 // DeleteL2XConnect implements xconnect handler.
-func (handler *XConnectVppHandler) DeleteL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
-	return handler.addDelXConnect(rxIfIdx, txIfIdx, false)
+func (h *XConnectVppHandler) DeleteL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
+	return h.addDelXConnect(rxIfIdx, txIfIdx, false)
 }
 
-func (handler *XConnectVppHandler) addDelXConnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l2ba.SwInterfaceSetL2Xconnect{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *XConnectVppHandler) addDelXConnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool) error {
 	req := &l2ba.SwInterfaceSetL2Xconnect{
 		Enable:      boolToUint(enable),
 		TxSwIfIndex: txIfaceIdx,
@@ -43,7 +38,7 @@ func (handler *XConnectVppHandler) addDelXConnect(rxIfaceIdx uint32, txIfaceIdx 
 	}
 	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)

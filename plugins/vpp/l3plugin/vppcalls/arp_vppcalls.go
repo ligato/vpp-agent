@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -32,11 +31,7 @@ type ArpEntry struct {
 }
 
 // vppAddDelArp adds or removes ARP entry according to provided input
-func (handler *ArpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(ip.IPNeighborAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ArpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
 	req := &ip.IPNeighborAddDel{
 		SwIfIndex:  entry.Interface,
 		IsNoAdjFib: 1,
@@ -71,7 +66,7 @@ func (handler *ArpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
 	reply := &ip.IPNeighborAddDelReply{}
 
 	// Send message
-	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -81,11 +76,11 @@ func (handler *ArpVppHandler) vppAddDelArp(entry *ArpEntry, delete bool) error {
 }
 
 // VppAddArp implements arp handler.
-func (handler *ArpVppHandler) VppAddArp(entry *ArpEntry) error {
-	return handler.vppAddDelArp(entry, false)
+func (h *ArpVppHandler) VppAddArp(entry *ArpEntry) error {
+	return h.vppAddDelArp(entry, false)
 }
 
 // VppDelArp implements arp handler.
-func (handler *ArpVppHandler) VppDelArp(entry *ArpEntry) error {
-	return handler.vppAddDelArp(entry, true)
+func (h *ArpVppHandler) VppDelArp(entry *ArpEntry) error {
+	return h.vppAddDelArp(entry, true)
 }

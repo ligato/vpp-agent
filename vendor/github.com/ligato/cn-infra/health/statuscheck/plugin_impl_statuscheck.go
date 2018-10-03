@@ -192,22 +192,31 @@ func (p *Plugin) reportStateChange(pluginName infra.PluginName, state PluginStat
 	}
 	p.publishPluginData(pluginName, stat)
 
-	// update global state if needed
-	changeGlobalState := true
-	if state == OK {
-		// by transition to OK state, check if all plugins are OK
-		for _, s := range p.pluginStat {
-			if s.State != status.OperationalState_OK {
-				changeGlobalState = false
-				break
-			}
+	// update global state
+	p.agentStat.State = stateToProto(state)
+	p.agentStat.LastChange = time.Now().Unix()
+	// Status for existing plugin
+	var lastErr string
+	if lastError != nil {
+		lastErr = lastError.Error()
+	}
+	var pluginStatusExists bool
+	for _, pluginStatus := range p.agentStat.Plugins {
+		if pluginStatus.Name == pluginName.String() {
+			pluginStatusExists = true
+			pluginStatus.State = stateToProto(state)
+			pluginStatus.Error = lastErr
 		}
 	}
-	if changeGlobalState {
-		p.agentStat.State = stateToProto(state)
-		p.agentStat.LastChange = time.Now().Unix()
-		p.publishAgentData()
+	// Status for new plugin
+	if !pluginStatusExists {
+		p.agentStat.Plugins = append(p.agentStat.Plugins, &status.PluginStatus{
+			Name:  pluginName.String(),
+			State: stateToProto(state),
+			Error: lastErr,
+		})
 	}
+	p.publishAgentData()
 }
 
 func (p *Plugin) reportInterfaceStateChange(data *status.InterfaceStats_Interface) {

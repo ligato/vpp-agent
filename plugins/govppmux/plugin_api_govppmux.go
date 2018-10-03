@@ -16,7 +16,16 @@ package govppmux
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
 )
+
+// TraceAPI is extended API with ability to get traced VPP binary API calls
+type TraceAPI interface {
+	API
+
+	// GetTrace serves to obtain measured binary API calls
+	GetTrace() *apitrace.Trace
+}
 
 // API for other plugins to get connectivity to VPP.
 type API interface {

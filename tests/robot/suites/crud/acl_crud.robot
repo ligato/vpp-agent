@@ -9,7 +9,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 Test Setup        TestSetup
@@ -166,22 +166,15 @@ Check All 6 ACLs Added
 
 Check ACL All Reply
     [Arguments]         ${node}    ${reply_json}     ${reply_term}
-    Log Many            ${node}    ${reply_json}     ${reply_term}
     ${acl_d}=           vpp_ctl: Get All ACL As Json    ${node}
     ${term_d}=          vat_term: Check All ACL     ${node}
     ${term_d_lines}=    Split To Lines    ${term_d}
-    Log                 ${term_d_lines}
     ${data}=            OperatingSystem.Get File    ${reply_json}
-    Log                 ${data}
     ${data}=            Replace Variables      ${data}
-    Log                 ${data}
     Should Be Equal     ${data}   ${acl_d}
     ${data}=            OperatingSystem.Get File    ${reply_term}
-    Log                 ${data}
     ${data}=            Replace Variables      ${data}
-    Log                 ${data}
     ${t_data_lines}=    Split To Lines    ${data}
-    Log                 ${t_data_lines}
     List Should Contain Sub List    ${term_d_lines}    ${t_data_lines}
 
 TestSetup

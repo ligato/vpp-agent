@@ -32,17 +32,12 @@ package linuxcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/vishvananda/netlink"
 )
 
 // AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
 func (handler *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("add-veth-iface-pair").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Veth pair params
 	veth := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{
@@ -59,10 +54,6 @@ func (handler *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) e
 
 // DelVethInterfacePair calls LinkDel Netlink API for the Netlink.Veth interface type.
 func (handler *NetLinkHandler) DelVethInterfacePair(ifName, peerIfName string) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("del-veth-iface-pair").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Veth pair params.
 	veth := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{
@@ -79,10 +70,6 @@ func (handler *NetLinkHandler) DelVethInterfacePair(ifName, peerIfName string) e
 
 // GetVethPeerName return the peer name for a given VETH interface.
 func (handler *NetLinkHandler) GetVethPeerName(ifName string) (string, error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog("get-veth-peer-name").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := handler.GetLinkByName(ifName)
 	if err != nil {
 		return "", err

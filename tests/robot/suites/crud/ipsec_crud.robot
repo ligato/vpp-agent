@@ -1,5 +1,4 @@
 *** Settings ***
-Documentation    IPsec CRUD
 Library     OperatingSystem
 Library     String
 
@@ -14,6 +13,7 @@ Suite Teardown    Testsuite Teardown
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
 ${SYNC_SLEEP}=       2s
+
 *** Test Cases ***
 # CRUD tests for IPsec
 Add Agent Vpp Node
@@ -82,22 +82,16 @@ Delete SAs And SPD2 For Default IPsec
 
 *** Keywords ***
 IP Sec On ${node} Should Not Contain SA ${sa}
-    Log many    ${node}
     ${out}=    vpp_term: Show IPsec    ${node}
-    log many    ${out}
     Should Not Contain  ${out}  ${sa}
 
 IP Sec On ${node} Should Contain SA ${sa}
-    Log many    ${node}
     ${out}=    vpp_term: Show IPsec    ${node}
-    log many    ${out}
     Should Contain  ${out}  ${sa}
 
 IP Sec Should Contain
     [Arguments]     ${node}  ${sa_name_1}  ${sa_name_2}  ${spd_name_1}  ${ipsec_esp}  ${outbound_policies}
-    Log many        ${node}
     ${out}=         vpp_term: Show IPsec    ${node}
-    log many        ${out}
     Run Keyword Unless  "${sa_name_1}" == "${EMPTY}"   Should Contain  ${out}  ${sa_name_1}
     Run Keyword Unless  "${sa_name_2}" == "${EMPTY}"   Should Contain  ${out}  ${sa_name_2}
     Run Keyword Unless  "${spd_name_1}" == "${EMPTY}"   Should Contain  ${out}  ${spd_name_1}

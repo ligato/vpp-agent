@@ -17,8 +17,9 @@ package ifplugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
+
+	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	nat_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
@@ -644,7 +645,7 @@ func TestNatConfiguratorDNatStaticMappingNoLocalIPError(t *testing.T) {
 	// Test configure DNAT without local IPs
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 }
 
 // Configure DNAT static mapping using external IP
@@ -726,7 +727,7 @@ func TestNatConfiguratorDNatStaticMappingInvalidLocalAddressError(t *testing.T) 
 	// Test configure DNAT with invalid local IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -745,7 +746,7 @@ func TestNatConfiguratorDNatStaticMappingInvalidExternalAddressError(t *testing.
 	// Test configure DNAT with invalid external IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -764,7 +765,7 @@ func TestNatConfiguratorDNatStaticMappingMissingInterfaceError(t *testing.T) {
 	// Test configure DNAT with missing external interface
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -827,7 +828,7 @@ func TestNatConfiguratorDNatStaticMappingLbInvalidLocalError(t *testing.T) {
 	// Test configure DNAT static mapping with load balancer with invalid local IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -847,7 +848,7 @@ func TestNatConfiguratorDNatStaticMappingLbMissingExternalPortError(t *testing.T
 	// Test configure static mapping with load balancer with missing external port
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -867,7 +868,7 @@ func TestNatConfiguratorDNatStaticMappingLbInvalidExternalIPError(t *testing.T) 
 	// Test DNAT static mapping invalid external IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetStMappingIdentifier(data.StMappings[0])
 	Expect(plugin.IsDNatLabelStMappingRegistered(id)).To(BeFalse())
 }
@@ -927,7 +928,7 @@ func TestNatConfiguratorDNatIdentityMappingMissingInterfaceError(t *testing.T) {
 	// Test identity mapping with address interface	while interface is not registered
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
 	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeFalse())
 }
@@ -945,7 +946,7 @@ func TestNatConfiguratorDNatIdentityMappingInvalidIPError(t *testing.T) {
 	// Test identity mapping with invalid IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
 	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeFalse())
 }
@@ -963,7 +964,7 @@ func TestNatConfiguratorDNatIdentityMappingNoInterfaceAndIPError(t *testing.T) {
 	// Test identity mapping without interface and IP
 	err := plugin.ConfigureDNat(data)
 	Expect(err).ToNot(BeNil())
-	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeTrue())
+	Expect(plugin.IsDNatLabelRegistered(data.Label)).To(BeFalse())
 	id := ifplugin.GetIDMappingIdentifier(data.IdMappings[0])
 	Expect(plugin.IsDNatLabelIDMappingRegistered(id)).To(BeFalse())
 }
@@ -1201,7 +1202,7 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
@@ -1215,7 +1216,7 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 
 	// Configurator
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices, true)
+	err = plugin.Init(log, connection, swIfIndices)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices

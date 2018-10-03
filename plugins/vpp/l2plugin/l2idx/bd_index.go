@@ -34,9 +34,6 @@ type BDIndex interface {
 	// LookupBdForInterface looks up for bridge domain the interface belongs to
 	LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces, exists bool)
 
-	// LookupConfiguredIfsForBd return a list of configured interfaces for bridge domain
-	LookupConfiguredIfsForBd(bdName string) ([]string, bool)
-
 	// WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping
 	WatchNameToIdx(subscriber string, pluginChannel chan BdChangeDto)
 }
@@ -174,19 +171,6 @@ func (bdi *bdIndex) LookupBdForInterface(ifName string) (bdIdx uint32, bd *l2.Br
 	}
 
 	return bdIdx, bd, nil, false
-}
-
-// LookupConfiguredIfsForBd returns a list of configured interfaces stored in metadata
-func (bdi *bdIndex) LookupConfiguredIfsForBd(bdName string) ([]string, bool) {
-	_, meta, exists := bdi.mapping.LookupIdx(bdName)
-	if !exists || meta == nil {
-		return nil, false
-	}
-	bdMeta := castBdMetadata(meta)
-	if bdMeta == nil {
-		return nil, false
-	}
-	return bdMeta.ConfiguredInterfaces, true
 }
 
 // WatchNameToIdx allows to subscribe for watching changes in bdIndex mapping.

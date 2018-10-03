@@ -4,6 +4,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
 	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/vishvananda/netns"
 )
 
 // NamespacePluginMock allows to mock namespace plugin methods to manage namespaces and microservices
@@ -67,6 +68,22 @@ func (mock *NamespacePluginMock) getReturnValues(name string) (response []interf
 
 /* Mocked netlink handler methods */ //todo define other
 
+// GetOrCreateNamespace implements NsManagement.
+func (mock *NamespacePluginMock) GetOrCreateNamespace(ns *nsplugin.Namespace) (netns.NsHandle, error) {
+	items := mock.getReturnValues("GetOrCreateNamespace")
+	if len(items) == 1 {
+		switch typed := items[0].(type) {
+		case netns.NsHandle:
+			return typed, nil
+		case error:
+			return 0, typed
+		}
+	} else if len(items) == 2 {
+		return items[0].(netns.NsHandle), items[1].(error)
+	}
+	return 0, nil
+}
+
 // IsNamespaceAvailable implements NsManagement.
 func (mock *NamespacePluginMock) IsNamespaceAvailable(ns *interfaces.LinuxInterfaces_Interface_Namespace) bool {
 	items := mock.getReturnValues("IsNamespaceAvailable")
@@ -105,20 +122,20 @@ func (mock *NamespacePluginMock) SwitchToNamespace(nsMgmtCtx *nsplugin.Namespace
 	return func() {}, nil
 }
 
-// SetInterfaceNamespace implements NsManagement.
-func (mock *NamespacePluginMock) SetInterfaceNamespace(ctx *nsplugin.NamespaceMgmtCtx, ifName string, namespace *interfaces.LinuxInterfaces_Interface_Namespace) error {
-	items := mock.getReturnValues("SetInterfaceNamespace")
-	if len(items) >= 1 {
-		return items[0].(error)
-	}
-	return nil
-}
-
 // GetConfigNamespace implements NsManagement.
 func (mock *NamespacePluginMock) GetConfigNamespace() *interfaces.LinuxInterfaces_Interface_Namespace {
 	items := mock.getReturnValues("GetConfigNamespace")
 	if len(items) >= 1 {
 		return items[0].(*interfaces.LinuxInterfaces_Interface_Namespace)
+	}
+	return nil
+}
+
+// ConvertMicroserviceNsToPidNs implements NsManagement
+func (mock *NamespacePluginMock) ConvertMicroserviceNsToPidNs(msLabel string) (pidNs *nsplugin.Namespace) {
+	items := mock.getReturnValues("ConvertMicroserviceNsToPidNs")
+	if len(items) >= 1 {
+		return items[0].(*nsplugin.Namespace)
 	}
 	return nil
 }

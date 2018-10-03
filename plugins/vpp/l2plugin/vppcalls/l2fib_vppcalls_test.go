@@ -195,6 +195,6 @@ func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FibVppAPI, iface
 	logger := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logger, "fib-if-idx", nil))
 	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(logger, "fib-bd-idx", nil))
-	fibHandler := vppcalls.NewFibVppHandler(ctx.MockChannel, ctx.MockChannel, ifIndexes, bdIndexes, logger, nil)
+	fibHandler := vppcalls.NewFibVppHandler(ctx.MockChannel, ctx.MockChannel, ifIndexes, bdIndexes, logger)
 	return ctx, fibHandler, ifIndexes, bdIndexes
 }
