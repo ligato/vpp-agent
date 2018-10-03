@@ -35,7 +35,7 @@ func (m *Trace) Reset()         { *m = Trace{} }
 func (m *Trace) String() string { return proto.CompactTextString(m) }
 func (*Trace) ProtoMessage()    {}
 func (*Trace) Descriptor() ([]byte, []int) {
-	return fileDescriptor_apitrace_41aefd52f6cc519e, []int{0}
+	return fileDescriptor_apitrace_232adfd711b584cf, []int{0}
 }
 func (m *Trace) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trace.Unmarshal(m, b)
@@ -77,8 +77,7 @@ func (m *Trace) GetOverallDuration() uint64 {
 }
 
 type Trace_Entry struct {
-	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
-	// called in in the VPP
+	Index                uint64   `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	MsgName              string   `protobuf:"bytes,2,opt,name=msg_name,json=msgName,proto3" json:"msg_name,omitempty"`
 	StartTime            uint64   `protobuf:"varint,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	Duration             uint64   `protobuf:"varint,4,opt,name=duration,proto3" json:"duration,omitempty"`
@@ -91,7 +90,7 @@ func (m *Trace_Entry) Reset()         { *m = Trace_Entry{} }
 func (m *Trace_Entry) String() string { return proto.CompactTextString(m) }
 func (*Trace_Entry) ProtoMessage()    {}
 func (*Trace_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_apitrace_41aefd52f6cc519e, []int{0, 0}
+	return fileDescriptor_apitrace_232adfd711b584cf, []int{0, 0}
 }
 func (m *Trace_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trace_Entry.Unmarshal(m, b)
@@ -151,7 +150,7 @@ func (m *Trace_EntryStats) Reset()         { *m = Trace_EntryStats{} }
 func (m *Trace_EntryStats) String() string { return proto.CompactTextString(m) }
 func (*Trace_EntryStats) ProtoMessage()    {}
 func (*Trace_EntryStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_apitrace_41aefd52f6cc519e, []int{0, 1}
+	return fileDescriptor_apitrace_232adfd711b584cf, []int{0, 1}
 }
 func (m *Trace_EntryStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trace_EntryStats.Unmarshal(m, b)
@@ -191,9 +190,9 @@ func init() {
 	proto.RegisterType((*Trace_EntryStats)(nil), "apitrace.Trace.EntryStats")
 }
 
-func init() { proto.RegisterFile("apitrace.proto", fileDescriptor_apitrace_41aefd52f6cc519e) }
+func init() { proto.RegisterFile("apitrace.proto", fileDescriptor_apitrace_232adfd711b584cf) }
 
-var fileDescriptor_apitrace_41aefd52f6cc519e = []byte{
+var fileDescriptor_apitrace_232adfd711b584cf = []byte{
 	// 258 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x51, 0x41, 0x4b, 0xc3, 0x30,
 	0x14, 0x26, 0xdd, 0xaa, 0xdd, 0x1b, 0xce, 0x11, 0x14, 0x62, 0x41, 0x28, 0x9e, 0xba, 0x4b, 0x0f,

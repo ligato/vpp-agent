@@ -114,7 +114,7 @@ func (plugin *Plugin) Init() error {
 		govpp.HealthCheckReplyTimeout = plugin.config.HealthCheckReplyTimeout
 		govpp.HealthCheckThreshold = plugin.config.HealthCheckThreshold
 		if plugin.config.TraceEnabled {
-			plugin.tracer = measure.NewTracer("GoVPP-mux-tracer", plugin.Log)
+			plugin.tracer = measure.NewTracer("govpp-mux")
 			plugin.Log.Info("VPP API trace enabled")
 		}
 	}

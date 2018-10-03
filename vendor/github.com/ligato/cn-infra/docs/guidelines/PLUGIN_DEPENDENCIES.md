@@ -47,9 +47,6 @@ as the other plugin (internal) fields.
 
 ```
 
-Dependencies should be **exported fields** so that they can be resolved
-through the method of dependency injection by a given flavor,
-see [Plugin Flavors Guidelines](PLUGIN_FLAVORS.md).
 The combination of exported dependency fields together with the Init()
 method makes plugin constructors unnecessary.
 Therefore, plugins can be listed in the flavors directly as instances
