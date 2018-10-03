@@ -62,7 +62,7 @@ type LinuxRouteConfigurator struct {
 func (c *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
 	rtIndexes l3idx.LinuxRouteIndexRW, ifIndexes ifaceidx.LinuxIfIndexRW) error {
 	// Logger
-	c.log = logger.NewLogger("-route-conf")
+	c.log = logger.NewLogger("route-conf")
 
 	// Mappings
 	c.ifIndexes = ifIndexes

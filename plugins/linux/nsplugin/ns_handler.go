@@ -69,7 +69,7 @@ type NsHandler struct {
 func (h *NsHandler) Init(logger logging.PluginLogger, sysHandler SystemAPI, msChan chan *MicroserviceCtx,
 	ifNotif chan *MicroserviceEvent) error {
 	// Logger
-	h.log = logger.NewLogger("-ns-handler")
+	h.log = logger.NewLogger("ns-handler")
 
 	// Init channels
 	h.microserviceChan = msChan

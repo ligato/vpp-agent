@@ -70,7 +70,7 @@ type ACLConfigurator struct {
 // Init goroutines, channels and mappings.
 func (c *ACLConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-acl-plugin")
+	c.log = logger.NewLogger("acl-plugin")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

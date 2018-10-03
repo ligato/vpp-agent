@@ -63,7 +63,7 @@ func (c *StnConfigurator) UnstoredIndexExistsFor(name string) bool {
 // Init initializes STN configurator
 func (c *StnConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex) (err error) {
 	// Init logger
-	c.log = logger.NewLogger("-stn-conf")
+	c.log = logger.NewLogger("stn-conf")
 
 	// Init VPP API channel
 	if c.vppChan, err = goVppMux.NewAPIChannel(); err != nil {

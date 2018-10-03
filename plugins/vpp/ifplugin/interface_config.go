@@ -18,6 +18,9 @@ package ifplugin
 
 import (
 	"bytes"
+	"net"
+	"strings"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
@@ -31,8 +34,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"net"
-	"strings"
 )
 
 // InterfaceConfigurator runs in the background in its own goroutine where it watches for any changes
@@ -70,7 +71,7 @@ type InterfaceConfigurator struct {
 func (c *InterfaceConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, linux interface{},
 	notifChan chan govppapi.Message, defaultMtu uint32) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-if-conf")
+	c.log = logger.NewLogger("if-conf")
 
 	// State notification channel
 	c.NotifChan = notifChan

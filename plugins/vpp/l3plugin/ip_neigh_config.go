@@ -40,7 +40,7 @@ type IPNeighConfigurator struct {
 // Init VPP channel and vppcalls handler
 func (c *IPNeighConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l3-ip-neigh-conf")
+	c.log = logger.NewLogger("l3-ip-neigh-conf")
 	c.log.Debugf("Initializing proxy ARP configurator")
 
 	// VPP channel
