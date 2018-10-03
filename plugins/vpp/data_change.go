@@ -38,7 +38,10 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 	if strings.HasPrefix(key, interfaces.ErrorPrefix) || strings.HasPrefix(key, l2.BdErrPrefix) {
 		return false, nil
 	}
-	plugin.Log.Debug("Start processing change for key: ", key)
+
+	plugin.Log.WithField("revision", dataChng.GetRevision()).
+		Debugf("Processing change for key: %q", key)
+
 	if strings.HasPrefix(key, acl.Prefix) {
 		var value, prevValue acl.AccessLists_Acl
 		if err := dataChng.GetValue(&value); err != nil {

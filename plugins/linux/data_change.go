@@ -25,7 +25,9 @@ import (
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) error {
 	var err error
 	key := dataChng.GetKey()
-	plugin.Log.Debugf("Start processing change for key: %s", key)
+
+	plugin.Log.WithField("revision", dataChng.GetRevision()).
+		Debugf("Processing change for key: %q", key)
 
 	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 		var value, prevValue interfaces.LinuxInterfaces_Interface
