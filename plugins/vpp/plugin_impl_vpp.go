@@ -133,6 +133,7 @@ type Plugin struct {
 	resyncStrategy  string
 
 	// Common
+	revisions      map[string]int64	// TODO temporary field helps to handle correct resync/change revision order
 	statusCheckReg bool
 	cancel         context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg             sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
@@ -264,6 +265,8 @@ func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing default plugins")
 
+	// Revision map
+	plugin.revisions = make(map[string]int64)
 	// Read config file and set all related fields
 	plugin.fromConfigFile()
 	// Fills nil dependencies with default values

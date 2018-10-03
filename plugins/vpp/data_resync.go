@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -277,75 +276,51 @@ func (plugin *Plugin) resyncConfig(req *DataResyncReq) error {
 
 func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	req := NewDataResyncReq()
-	for key := range resyncEv.GetValues() {
-		plugin.Log.Debugf("Received RESYNC key %q", key)
-	}
 	for key, resyncData := range resyncEv.GetValues() {
+		plugin.Log.Debugf("Received RESYNC key %q", key)
 		if plugin.droppedFromResync(key) {
 			continue
 		}
 		if strings.HasPrefix(key, acl.Prefix) {
-			numAcls := appendACLInterface(resyncData, req)
-			plugin.Log.Debug("Received RESYNC ACL values ", numAcls)
+			plugin.appendACLInterface(resyncData, req)
 		} else if strings.HasPrefix(key, interfaces.Prefix) {
-			numInterfaces := appendResyncInterface(resyncData, req)
-			plugin.Log.Debug("Received RESYNC interface values ", numInterfaces)
+			plugin.appendResyncInterface(resyncData, req)
 		} else if strings.HasPrefix(key, bfd.SessionPrefix) {
-			numBfdSession := resyncAppendBfdSession(resyncData, req)
-			plugin.Log.Debug("Received RESYNC BFD Session values ", numBfdSession)
+			plugin.resyncAppendBfdSession(resyncData, req)
 		} else if strings.HasPrefix(key, bfd.AuthKeysPrefix) {
-			numBfdAuthKeys := resyncAppendBfdAuthKeys(resyncData, req)
-			plugin.Log.Debug("Received RESYNC BFD Auth Key values ", numBfdAuthKeys)
+			plugin.resyncAppendBfdAuthKeys(resyncData, req)
 		} else if strings.HasPrefix(key, bfd.EchoFunctionPrefix) {
-			numBfdEchos := resyncAppendBfdEcho(resyncData, req)
-			plugin.Log.Debug("Received RESYNC BFD Echo values ", numBfdEchos)
+			plugin.resyncAppendBfdEcho(resyncData, req)
 		} else if strings.HasPrefix(key, l2.BdPrefix) {
-			numBDs, numL2FIBs := resyncAppendBDs(resyncData, req)
-			plugin.Log.Debug("Received RESYNC BD values ", numBDs)
-			plugin.Log.Debug("Received RESYNC L2 FIB values ", numL2FIBs)
+			plugin.resyncAppendBDs(resyncData, req)
 		} else if strings.HasPrefix(key, l2.XConnectPrefix) {
-			numXCons := resyncAppendXCons(resyncData, req)
-			plugin.Log.Debug("Received RESYNC XConnects values ", numXCons)
+			plugin.resyncAppendXCons(resyncData, req)
 		} else if strings.HasPrefix(key, l3.VrfPrefix) {
-			numVRFs, numL3FIBs := resyncAppendVRFs(resyncData, req, plugin.Log)
-			plugin.Log.Debug("Received RESYNC VRF values ", numVRFs)
-			plugin.Log.Debug("Received RESYNC L3 FIB values ", numL3FIBs)
+			plugin.resyncAppendVRFs(resyncData, req)
 		} else if strings.HasPrefix(key, l3.ArpPrefix) {
-			numARPs := resyncAppendARPs(resyncData, req, plugin.Log)
-			plugin.Log.Debug("Received RESYNC ARP values ", numARPs)
+			plugin.resyncAppendARPs(resyncData, req)
 		} else if strings.HasPrefix(key, l3.ProxyARPInterfacePrefix) {
-			numARPs := resyncAppendProxyArpInterfaces(resyncData, req, plugin.Log)
-			plugin.Log.Debug("Received RESYNC proxy ARP interface values ", numARPs)
+			plugin.resyncAppendProxyArpInterfaces(resyncData, req)
 		} else if strings.HasPrefix(key, l3.IPScanNeighPrefix) {
-			resyncAppendIPScanNeighs(resyncData, req)
-			plugin.Log.Debug("Received RESYNC IPScanNeigh")
+			plugin.resyncAppendIPScanNeighs(resyncData, req)
 		} else if strings.HasPrefix(key, l3.ProxyARPRangePrefix) {
-			numARPs := resyncAppendProxyArpRanges(resyncData, req, plugin.Log)
-			plugin.Log.Debug("Received RESYNC proxy ARP range values ", numARPs)
+			plugin.resyncAppendProxyArpRanges(resyncData, req)
 		} else if strings.HasPrefix(key, l4.FeaturesPrefix) {
-			resyncFeatures(resyncData, req)
-			plugin.Log.Debug("Received RESYNC AppNs feature flag")
+			plugin.resyncFeatures(resyncData, req)
 		} else if strings.HasPrefix(key, l4.NamespacesPrefix) {
-			numAppNs := resyncAppendAppNs(resyncData, req)
-			plugin.Log.Debug("Received RESYNC AppNamespace values ", numAppNs)
+			plugin.resyncAppendAppNs(resyncData, req)
 		} else if strings.HasPrefix(key, stn.Prefix) {
-			numStns := appendResyncStnRules(resyncData, req)
-			plugin.Log.Debug("Received RESYNC STN rules values ", numStns)
+			plugin.appendResyncStnRules(resyncData, req)
 		} else if strings.HasPrefix(key, nat.GlobalPrefix) {
-			resyncNatGlobal(resyncData, req)
-			plugin.Log.Debug("Received RESYNC NAT global config")
+			plugin.resyncNatGlobal(resyncData, req)
 		} else if strings.HasPrefix(key, nat.SNatPrefix) {
-			numSNats := appendResyncSNat(resyncData, req)
-			plugin.Log.Debug("Received RESYNC SNAT configs ", numSNats)
+			plugin.appendResyncSNat(resyncData, req)
 		} else if strings.HasPrefix(key, nat.DNatPrefix) {
-			numDNats := appendResyncDNat(resyncData, req)
-			plugin.Log.Debug("Received RESYNC DNAT configs ", numDNats)
+			plugin.appendResyncDNat(resyncData, req)
 		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
-			numIPSecs := appendResyncIPSec(resyncData, req)
-			plugin.Log.Debug("Received RESYNC IPSec configs ", numIPSecs)
+			plugin.appendResyncIPSec(resyncData, req)
 		} else if strings.HasPrefix(key, srv6.BasePrefix()) {
-			numSRs := appendResyncSR(resyncData, req)
-			plugin.Log.Debug("Received RESYNC SR configs ", numSRs)
+			plugin.appendResyncSR(resyncData, req)
 		} else {
 			plugin.Log.Warnf("ignoring prefix %q by VPP standard plugins", key)
 		}
@@ -361,91 +336,116 @@ func (plugin *Plugin) droppedFromResync(key string) bool {
 	return false
 }
 
-func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+func (plugin *Plugin) resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			entry := &l3.ArpTable_ArpEntry{}
-			if err := arpData.GetValue(entry); err == nil {
+			if err := arpData.GetValue(entry); err != nil {
+				plugin.Log.Errorf("error getting value of ARP: %v", err)
+				continue
+			}
+			if plugin.checkRevision(arpData) {
 				req.ArpEntries = append(req.ArpEntries, entry)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC ARP values %d", num)
 }
 
-func resyncAppendProxyArpInterfaces(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+func (plugin *Plugin) resyncAppendProxyArpInterfaces(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			entry := &l3.ProxyArpInterfaces_InterfaceList{}
-			if err := arpData.GetValue(entry); err == nil {
+			if err := arpData.GetValue(entry); err != nil {
+				plugin.Log.Errorf("error getting value of proxy ARP: %v", err)
+				continue
+			}
+			if plugin.checkRevision(arpData) {
 				req.ProxyArpInterfaces = append(req.ProxyArpInterfaces, entry)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC proxy ARP values %d", num)
 }
 
-func resyncAppendIPScanNeighs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+func (plugin *Plugin) resyncAppendIPScanNeighs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	num := 0
 	for {
-		arpData, stop := resyncData.GetNext()
+		ipScan, stop := resyncData.GetNext()
 		if stop {
 			break
 		}
 		entry := &l3.IPScanNeighbor{}
-		if err := arpData.GetValue(entry); err == nil {
+		if err := ipScan.GetValue(entry); err != nil {
+			plugin.Log.Errorf("error getting value of IP scan neigh: %v", err)
+			continue
+		}
+		if plugin.checkRevision(ipScan) {
 			req.IPScanNeigh = entry
+			num++
 		}
 	}
+
+	plugin.Log.Debugf("Received RESYNC IP scan neigh values %d", num)
 }
 
-func resyncAppendProxyArpRanges(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) int {
+func (plugin *Plugin) resyncAppendProxyArpRanges(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if arpData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			entry := &l3.ProxyArpRanges_RangeList{}
-			if err := arpData.GetValue(entry); err == nil {
+			if err := arpData.GetValue(entry); err != nil {
+				plugin.Log.Errorf("error getting value of proxy ARP ranges: %v", err)
+				continue
+			}
+			if plugin.checkRevision(arpData) {
 				req.ProxyArpRanges = append(req.ProxyArpRanges, entry)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC proxy ARP ranges %d ", num)
 }
 
-func resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq, log logging.Logger) error {
+func (plugin *Plugin) resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq) (bool, error) {
 	route := &l3.StaticRoutes_Route{}
 	err := fibData.GetValue(route)
 	if err != nil {
-		return err
+		return false, err
 	}
 	// Ensure every route has the corresponding VRF index.
 	intVrfKeyIndex, err := strconv.Atoi(vrfIndex)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if vrfIndex != strconv.Itoa(int(route.VrfId)) {
-		log.Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
+		plugin.Log.Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
 			intVrfKeyIndex, route.VrfId)
 		route.VrfId = uint32(intVrfKeyIndex)
 	}
+	if plugin.checkRevision(fibData) {
+		req.StaticRoutes = append(req.StaticRoutes, route)
+		return true, err
+	}
 
-	req.StaticRoutes = append(req.StaticRoutes, route)
-	return nil
+	return false, nil
 }
 
-func resyncAppendVRFs(resyncData datasync.KeyValIterator, req *DataResyncReq, log logging.Logger) (numVRFs, numL3FIBs int) {
-	numVRFs = 0
-	numL3FIBs = 0
+func (plugin *Plugin) resyncAppendVRFs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	numL3FIBs := 0
 	for {
 		if vrfData, stop := resyncData.GetNext(); stop {
 			break
@@ -453,46 +453,57 @@ func resyncAppendVRFs(resyncData datasync.KeyValIterator, req *DataResyncReq, lo
 			key := vrfData.GetKey()
 			fib, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
 			if fib {
-				err := resyncAppendL3FIB(vrfData, vrfIndex, req, log)
-				if err == nil {
+				if ok, err := plugin.resyncAppendL3FIB(vrfData, vrfIndex, req); err != nil {
+					plugin.Log.Errorf("error resyncing L3FIB: %v", err)
+					continue
+				} else if ok {
 					numL3FIBs++
 				}
 			} else {
-				log.Warn("VRF RESYNC is not implemented")
+				plugin.Log.Warn("VRF RESYNC is not implemented")
 			}
 		}
 	}
-	return numVRFs, numL3FIBs
+
+	plugin.Log.Debugf("Received RESYNC L3 FIB values %d", numL3FIBs)
 }
 
-func resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) resyncAppendXCons(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if xConnectData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			value := &l2.XConnectPairs_XConnectPair{}
-			err := xConnectData.GetValue(value)
-			if err == nil {
+			if err := xConnectData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of XConnect: %v", err)
+				continue
+			}
+			if plugin.checkRevision(xConnectData) {
 				req.XConnects = append(req.XConnects, value)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC XConnects values %d", num)
 }
-func resyncAppendL2FIB(fibData datasync.KeyVal, req *DataResyncReq) error {
+func (plugin *Plugin) resyncAppendL2FIB(fibData datasync.KeyVal, req *DataResyncReq) (bool, error) {
 	value := &l2.FibTable_FibEntry{}
-	err := fibData.GetValue(value)
-	if err == nil {
-		req.FibTableEntries = append(req.FibTableEntries, value)
+	if err := fibData.GetValue(value); err != nil {
+		return false, fmt.Errorf("error getting value of L2FIB: %v", err)
 	}
-	return err
+	if plugin.checkRevision(fibData) {
+		req.FibTableEntries = append(req.FibTableEntries, value)
+		return true, nil
+	}
+
+	return false, nil
 }
 
-func resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) (numBDs, numL2FIBs int) {
-	numBDs = 0
-	numL2FIBs = 0
+func (plugin *Plugin) resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	numBDs := 0
+	numL2FIBs := 0
 	for {
 		if bridgeDomainData, stop := resyncData.GetNext(); stop {
 			break
@@ -500,268 +511,360 @@ func resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) (nu
 			key := bridgeDomainData.GetKey()
 			fib, _, _ := l2.ParseFibKey(key)
 			if fib {
-				err := resyncAppendL2FIB(bridgeDomainData, req)
-				if err == nil {
+				if ok, err := plugin.resyncAppendL2FIB(bridgeDomainData, req); err != nil {
+					plugin.Log.Errorf("error resyncing L2FIB: %v", err)
+					continue
+				} else if ok {
 					numL2FIBs++
 				}
 			} else {
 				value := &l2.BridgeDomains_BridgeDomain{}
-				err := bridgeDomainData.GetValue(value)
-				if err == nil {
+				if err := bridgeDomainData.GetValue(value); err != nil {
+					plugin.Log.Errorf("error getting value of bridge domain: %v", err)
+					continue
+				}
+				if plugin.checkRevision(bridgeDomainData) {
 					req.BridgeDomains = append(req.BridgeDomains, value)
 					numBDs++
 				}
 			}
 		}
 	}
-	return numBDs, numL2FIBs
+
+	plugin.Log.Debugf("Received RESYNC BD values %d", numBDs)
+	plugin.Log.Debugf("Received RESYNC L2 FIB values %d", numL2FIBs)
 }
 
-func resyncAppendBfdEcho(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
-	value := &bfd.SingleHopBFD_EchoFunction{}
+func (plugin *Plugin) resyncAppendBfdEcho(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if bfdData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			err := bfdData.GetValue(value)
-			if err == nil {
-				req.SingleHopBFDEcho = append(req.SingleHopBFDEcho, value)
+			bfdEcho := &bfd.SingleHopBFD_EchoFunction{}
+			if err := bfdData.GetValue(bfdEcho); err != nil {
+				plugin.Log.Errorf("error getting value of BFD echo function: %v", err)
+				continue
+			}
+			if plugin.checkRevision(bfdData) {
+				req.SingleHopBFDEcho = append(req.SingleHopBFDEcho, bfdEcho)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC BFD Echo values %d", num)
 }
 
-func resyncAppendBfdAuthKeys(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
-	value := &bfd.SingleHopBFD_Key{}
+func (plugin *Plugin) resyncAppendBfdAuthKeys(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if bfdData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			err := bfdData.GetValue(value)
-			if err == nil {
-				req.SingleHopBFDKey = append(req.SingleHopBFDKey, value)
+			bfdKey := &bfd.SingleHopBFD_Key{}
+			if err := bfdData.GetValue(bfdKey); err != nil {
+				plugin.Log.Errorf("error getting value of BFD auth key: %v", err)
+				continue
+			}
+			if plugin.checkRevision(bfdData) {
+				req.SingleHopBFDKey = append(req.SingleHopBFDKey, bfdKey)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC BFD auth keys %d", num)
 }
 
-func resyncAppendBfdSession(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
-	value := &bfd.SingleHopBFD_Session{}
+func (plugin *Plugin) resyncAppendBfdSession(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if bfdData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			err := bfdData.GetValue(value)
-			if err == nil {
-				req.SingleHopBFDSession = append(req.SingleHopBFDSession, value)
+			bfdSession := &bfd.SingleHopBFD_Session{}
+			if err := bfdData.GetValue(bfdSession); err != nil {
+				plugin.Log.Errorf("error getting value of BFD session: %v", err)
+				continue
+			}
+			if plugin.checkRevision(bfdData) {
+				req.SingleHopBFDSession = append(req.SingleHopBFDSession, bfdSession)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC BFD auth sessions %d", num)
 }
 
-func appendACLInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) appendACLInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if data, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			value := &acl.AccessLists_Acl{}
-			err := data.GetValue(value)
-			if err == nil {
-				req.ACLs = append(req.ACLs, value)
+			aclData := &acl.AccessLists_Acl{}
+			if err := data.GetValue(aclData); err != nil {
+				plugin.Log.Errorf("error getting value of ACL: %v", err)
+				continue
+			}
+			if plugin.checkRevision(data) {
+				req.ACLs = append(req.ACLs, aclData)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC ACLs %d", num)
 }
 
-func appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) appendResyncInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if interfaceData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
-			value := &interfaces.Interfaces_Interface{}
-			err := interfaceData.GetValue(value)
-			if err == nil {
-				req.Interfaces = append(req.Interfaces, value)
+			ifData := &interfaces.Interfaces_Interface{}
+			if err := interfaceData.GetValue(ifData); err != nil {
+				plugin.Log.Errorf("error getting value of interface: %v", err)
+				continue
+			}
+			if plugin.checkRevision(interfaceData) {
+				req.Interfaces = append(req.Interfaces, ifData)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC interfaces %d", num)
 }
 
-func resyncFeatures(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+func (plugin *Plugin) resyncFeatures(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	num := 0
 	for {
 		appResyncData, stop := resyncData.GetNext()
 		if stop {
 			break
 		}
 		value := &l4.L4Features{}
-		err := appResyncData.GetValue(value)
-		if err == nil {
+		if err := appResyncData.GetValue(value); err != nil {
+			plugin.Log.Errorf("error getting value of L4 features: %v", err)
+			continue
+		}
+		if plugin.checkRevision(appResyncData) {
 			req.L4Features = value
+			num++
 		}
 	}
+
+	plugin.Log.Debugf("Received RESYNC L4 features %d", num)
 }
 
-func resyncAppendAppNs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) resyncAppendAppNs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if appResyncData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			value := &l4.AppNamespaces_AppNamespace{}
-			err := appResyncData.GetValue(value)
-			if err == nil {
+			if err := appResyncData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of App namespaces: %v", err)
+				continue
+			}
+			if plugin.checkRevision(appResyncData) {
 				req.AppNamespaces = append(req.AppNamespaces, value)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC app namespaces %d", num)
 }
 
-func appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) appendResyncStnRules(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if stnData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			value := &stn.STN_Rule{}
-			err := stnData.GetValue(value)
-			if err == nil {
+			if err := stnData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of STN rules: %v", err)
+				continue
+			}
+			if plugin.checkRevision(stnData) {
 				req.StnRules = append(req.StnRules, value)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC STN data %d", num)
 }
 
-func resyncNatGlobal(resyncData datasync.KeyValIterator, req *DataResyncReq) {
-	natGlobalData, stop := resyncData.GetNext()
-	if stop {
-		return
+func (plugin *Plugin) resyncNatGlobal(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	num := 0
+	for {
+		natGlobalData, stop := resyncData.GetNext()
+		if stop {
+			break
+		}
+		value := &nat.Nat44Global{}
+		if err := natGlobalData.GetValue(value); err != nil {
+			plugin.Log.Errorf("error getting value of NAT global: %v", err)
+			continue
+		}
+		if plugin.checkRevision(natGlobalData) {
+			req.Nat44Global = value
+			num++
+		}
 	}
-	value := &nat.Nat44Global{}
-	if err := natGlobalData.GetValue(value); err == nil {
-		req.Nat44Global = value
-	}
+
+	plugin.Log.Debugf("Received RESYNC NAT global %d", num)
 }
 
-func appendResyncSNat(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) appendResyncSNat(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if sNatData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			value := &nat.Nat44SNat_SNatConfig{}
-			err := sNatData.GetValue(value)
-			if err == nil {
+			if err := sNatData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of SNAT: %v", err)
+				continue
+			}
+			if plugin.checkRevision(sNatData) {
 				req.Nat44SNat = append(req.Nat44SNat, value)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC SNAT global %d", num)
 }
 
-func appendResyncDNat(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) appendResyncDNat(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
 		if dNatData, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			value := &nat.Nat44DNat_DNatConfig{}
-			err := dNatData.GetValue(value)
-			if err == nil {
+			if err := dNatData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of DNAT: %v", err)
+				continue
+			}
+			if plugin.checkRevision(dNatData) {
 				req.Nat44DNat = append(req.Nat44DNat, value)
 				num++
 			}
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC DNAT global %d", num)
 }
 
-func appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) (num int) {
+func (plugin *Plugin) appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	num := 0
 	for {
 		if data, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSPD) {
 				value := &ipsec.SecurityPolicyDatabases_SPD{}
-				if err := data.GetValue(value); err == nil {
+				if err := data.GetValue(value); err != nil {
+					plugin.Log.Errorf("error getting value of IPSec SPD: %v", err)
+					continue
+				}
+				if plugin.checkRevision(data) {
 					req.IPSecSPDs = append(req.IPSecSPDs, value)
 					num++
 				}
 			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSA) {
 				value := &ipsec.SecurityAssociations_SA{}
-				if err := data.GetValue(value); err == nil {
+				if err := data.GetValue(value); err != nil {
+					plugin.Log.Errorf("error getting value of IPSec SA: %v", err)
+					continue
+				}
+				if plugin.checkRevision(data) {
 					req.IPSecSAs = append(req.IPSecSAs, value)
 					num++
 				}
 			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixTunnel) {
 				value := &ipsec.TunnelInterfaces_Tunnel{}
-				if err := data.GetValue(value); err == nil {
+				if err := data.GetValue(value); err != nil {
+					plugin.Log.Errorf("error getting value of IPSec tunnel: %v", err)
+					continue
+				}
+				if plugin.checkRevision(data) {
 					req.IPSecTunnels = append(req.IPSecTunnels, value)
 					num++
 				}
 			}
 		}
 	}
-	return
+
+	plugin.Log.Debugf("Received RESYNC IPSec configs %d", num)
 }
 
-func appendResyncSR(resyncData datasync.KeyValIterator, req *DataResyncReq) (num int) {
+func (plugin *Plugin) appendResyncSR(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	num := 0
 	for {
 		if data, stop := resyncData.GetNext(); stop {
 			break
 		} else {
 			if strings.HasPrefix(data.GetKey(), srv6.LocalSIDPrefix()) {
 				value := &srv6.LocalSID{}
-				if err := data.GetValue(value); err == nil {
+				if err := data.GetValue(value); err != nil {
+					plugin.Log.Errorf("error getting value of SR sid: %v", err)
+					continue
+				}
+				if plugin.checkRevision(data) {
 					req.LocalSids = append(req.LocalSids, value)
 					num++
 				}
 			} else if strings.HasPrefix(data.GetKey(), srv6.PolicyPrefix()) {
 				if srv6.IsPolicySegmentPrefix(data.GetKey()) { //Policy segment
 					value := &srv6.PolicySegment{}
-					if err := data.GetValue(value); err == nil {
-						// TODO add proper error handling, everywhere around is missing handling of error case
-						if name, err := srv6.ParsePolicySegmentKey(data.GetKey()); err == nil {
-							req.SrPolicySegments = append(req.SrPolicySegments, &srplugin.NamedPolicySegment{Name: name, Segment: value})
-							num++
-						}
+					if err := data.GetValue(value); err != nil {
+						plugin.Log.Errorf("error getting value of SR policy segment: %v", err)
+						continue
+					}
+					if name, err := srv6.ParsePolicySegmentKey(data.GetKey()); err != nil {
+						plugin.Log.Errorf("failed to parse SR policy segment %s: %v", data.GetKey(), err)
+						continue
+					} else if plugin.checkRevision(data) {
+						req.SrPolicySegments = append(req.SrPolicySegments, &srplugin.NamedPolicySegment{Name: name, Segment: value})
+						num++
 					}
 				} else { // Policy
 					value := &srv6.Policy{}
-					if err := data.GetValue(value); err == nil {
+					if err := data.GetValue(value); err != nil {
+						plugin.Log.Errorf("error getting value of SR policy: %v", err)
+						continue
+					}
+					if plugin.checkRevision(data) {
 						req.SrPolicies = append(req.SrPolicies, value)
 						num++
 					}
 				}
 			} else if strings.HasPrefix(data.GetKey(), srv6.SteeringPrefix()) {
 				value := &srv6.Steering{}
-				if err := data.GetValue(value); err == nil {
+				if err := data.GetValue(value); err != nil {
+					plugin.Log.Errorf("error getting value of SR steering: %v", err)
+					continue
+				}
+				if plugin.checkRevision(data) {
 					req.SrSteerings = append(req.SrSteerings, &srplugin.NamedSteering{Name: strings.TrimPrefix(data.GetKey(), srv6.SteeringPrefix()), Steering: value})
 					num++
 				}
 			}
 		}
 	}
-	return
+
+	plugin.Log.Debugf("Received RESYNC SR configs %d", num)
 }
 
 // All registration for above channel select (it ensures proper order during initialization) are put here.
@@ -818,4 +921,16 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("data Transport watch finished")
 
 	return nil
+}
+
+func (plugin *Plugin) checkRevision(kv datasync.KeyVal) bool {
+	plugin.Log.WithField("revision", kv.GetRevision()).
+		Debugf("Processing resync for key: %q", kv.GetKey())
+
+	if rev, ok := plugin.revisions[kv.GetKey()]; ok && rev >= kv.GetRevision() {
+		plugin.Log.Debugf("resync vpp item %s skipped, revision is the same or older than current", kv.GetKey())
+		return false
+	}
+	plugin.revisions[kv.GetKey()] = kv.GetRevision()
+	return true
 }
