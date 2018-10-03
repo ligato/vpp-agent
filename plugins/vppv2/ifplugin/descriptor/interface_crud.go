@@ -1,14 +1,16 @@
 package descriptor
 
 import (
+	"strings"
+	"github.com/gogo/protobuf/proto"
 	"github.com/go-errors/errors"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"strings"
 )
 
 // Add creates a VPP interface.
@@ -70,12 +72,12 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 
 	case interfaces.Interface_ETHERNET_CSMACD:
-		var found bool
-		ifIdx, found = d.ethernetIntfs[intf.Name]
+		ifMeta, found := d.intfIndex.LookupByName(intf.Name)
 		if !found {
 			err = errors.Errorf("failed to find physical interface %s", intf.Name)
 			return nil, err
 		}
+		ifIdx = ifMeta.SwIfIndex
 
 	case interfaces.Interface_AF_PACKET_INTERFACE:
 		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
@@ -148,7 +150,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// Configure mtu. Prefer value in the interface config, otherwise set plugin-wide
+	// Configure mtu. Prefer value in the interface config, otherwise set the plugin-wide
 	// default value if provided.
 	if intf.Type != interfaces.Interface_VXLAN_TUNNEL {
 		mtuToConfigure := intf.Mtu
@@ -250,16 +252,157 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 		return nil, err
 	}
 
-	// TODO
+	ifIdx := oldMetadata.SwIfIndex
+
+	// Rx-mode
+	if err := d.modifyRxModeForInterfaces(oldIntf, newIntf, ifIdx); err != nil {
+		err = errors.Errorf("failed to modify rx-mode for interface %s: %v", newIntf.Name, err)
+		d.log.Error(err)
+		return oldMetadata, err
+	}
+
+	// Rx-placement
+	if newIntf.RxPlacementSettings != nil && !proto.Equal(oldIntf.RxPlacementSettings, newIntf.RxPlacementSettings) {
+		if err = d.ifHandler.SetRxPlacement(ifIdx, newIntf.GetRxPlacementSettings()); err != nil {
+			err = errors.Errorf("failed to modify rx-placement for interface %s: %v", newIntf.Name, err)
+			d.log.Error(err)
+			return oldMetadata, err
+		}
+	}
+
+	// Admin status
+	if newIntf.Enabled != oldIntf.Enabled {
+		if newIntf.Enabled {
+			if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
+				err = errors.Errorf("failed to set interface %s up: %v", newIntf.Name, err)
+				d.log.Error(err)
+				return oldMetadata, err
+			}
+		} else {
+			if err = d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
+				err = errors.Errorf("failed to set interface %s down: %v", newIntf.Name, err)
+				d.log.Error(err)
+				return oldMetadata, err
+			}
+		}
+	}
+
+	// Configure new mac address if set (and only if it was changed)
+	if newIntf.PhysAddress != "" && newIntf.PhysAddress != oldIntf.PhysAddress {
+		if err := d.ifHandler.SetInterfaceMac(ifIdx, newIntf.PhysAddress); err != nil {
+			err = errors.Errorf("setting interface %s MAC address %s failed: %v",
+				newIntf.Name, newIntf.PhysAddress, err)
+			d.log.Error(err)
+			return oldMetadata, err
+		}
+	}
+
+	// Calculate diff of IP addresses
+	newIPAddrs, err := addrs.StrAddrsToStruct(newIntf.IpAddresses)
+	if err != nil {
+		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", newIntf.Name, err)
+		d.log.Error(err)
+		return oldMetadata, err
+	}
+	oldIPAddrs, err := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
+	if err != nil {
+		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", oldIntf.Name, err)
+		d.log.Error(err)
+		return oldMetadata, err
+	}
+	del, add := addrs.DiffAddr(newIPAddrs, oldIPAddrs)
+
+	// Delete obsolete IP addresses
+	for _, address := range del {
+		err := d.ifHandler.DelInterfaceIP(ifIdx, address)
+		if nil != err {
+			err = errors.Errorf("failed to remove obsolete IP address %v from interface %s: %v",
+				address, newIntf.Name, err)
+			d.log.Error(err)
+			return oldMetadata, err
+		}
+	}
+
+	// Add new IP addresses
+	for _, address := range add {
+		err := d.ifHandler.AddInterfaceIP(ifIdx, address)
+		if nil != err {
+			err = errors.Errorf("failed to add new IP addresses %v to interface %s: %v",
+				address, newIntf.Name, err)
+			d.log.Error(err)
+			return oldMetadata, err
+		}
+	}
+
+	// update IP addresses in the metadata
+	oldMetadata.IPAddresses = newIntf.IpAddresses
+
+	// update MTU
+	if newIntf.Mtu != 0 && newIntf.Mtu != oldIntf.Mtu {
+		if err := d.ifHandler.SetInterfaceMtu(ifIdx, newIntf.Mtu); err != nil {
+			err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
+			d.log.Error(err)
+			return oldMetadata, err
+		}
+	} else if newIntf.Mtu == 0 && d.defaultMtu != 0 {
+		if err := d.ifHandler.SetInterfaceMtu(ifIdx, d.defaultMtu); err != nil {
+			err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
+			d.log.Error(err)
+			return oldMetadata, err
+		}
+	}
 
 	return oldMetadata, nil
 }
 
 // Dump returns all configured VPP interfaces.
-func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) ([]adapter.InterfaceKVWithMetadata, error) {
-	var dump []adapter.InterfaceKVWithMetadata
+func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) (dump []adapter.InterfaceKVWithMetadata, err error) {
+	// refresh the map of memif socket IDs
+	d.memifSocketToID, err = d.ifHandler.DumpMemifSocketDetails()
+	if err != nil {
+		err = errors.Errorf("failed to dump memif socket details: %v", err)
+		d.log.Error(err)
+		return dump, err
+	}
 
-	// TODO (do not forget to refill d.ethernetIntfs and d.memifSocketToID)
+	// dump current state of VPP interfaces
+	vppIfs, err := d.ifHandler.DumpInterfaces()
+	if err != nil {
+		err = errors.Errorf("failed to dump interfaces: %v", err)
+		d.log.Error(err)
+		return dump, err
+	}
+
+	for ifIdx, intf := range vppIfs {
+		origin := scheduler.FromNB
+		if ifIdx == 0 {
+			// local0 is created automatically
+			origin = scheduler.FromSB
+		}
+		if intf.Interface.Type == interfaces.Interface_ETHERNET_CSMACD &&
+			!intf.Interface.Enabled && len(intf.Interface.IpAddresses) == 0 {
+			// unconfigured physical interface
+			origin = scheduler.FromSB
+		}
+		if intf.Interface.Name == "" {
+			// untagged interface - generate a logical name for it
+			// (apart from local0 it will get removed by resync)
+			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
+		}
+
+		// add interface record into the dump
+		metadata := &ifaceidx.IfaceMetadata{
+			SwIfIndex:    ifIdx,
+			IPAddresses:  intf.Interface.IpAddresses,
+		}
+		dump = append(dump, adapter.InterfaceKVWithMetadata{
+			Key:      interfaces.InterfaceKey(intf.Interface.Name),
+			Value:    intf.Interface,
+			Metadata: metadata,
+			Origin:   origin,
+		})
+
+	}
 
 	d.log.WithField("dump", dump).Debug("Dumping VPP interfaces")
 	return dump, nil

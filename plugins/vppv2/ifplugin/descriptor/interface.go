@@ -45,6 +45,10 @@ const (
 	// dependency labels
 	afPacketHostInterfaceDep = "afpacket-host-interface"
 	vxlanMulticastDep = "vxlan-multicast-interface"
+
+	// prefix prepended to internal names of untagged interfaces to construct unique
+	// logical names
+	untaggedIfPreffix = "UNTAGGED-"
 )
 
 // A list of non-retriable errors:
@@ -77,7 +81,6 @@ type InterfaceDescriptor struct {
 
 	// runtime
 	intfIndex        ifaceidx.IfaceMetadataIndex
-	ethernetIntfs    map[string]uint32 // ethernet interface name -> sw_if_index (all known physical interfaces)
 	memifSocketToID  map[string]uint32 // memif socket filename to ID map (all known sockets)
 }
 
@@ -90,7 +93,6 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
 		log:             log.NewLogger("-if-descriptor"),
-		ethernetIntfs:   make(map[string]uint32),
 		memifSocketToID: make(map[string]uint32),
 	}
 }
@@ -212,9 +214,10 @@ func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 	return true
 }
 
-// ModifyWithRecreate returns true if Type or Type-specific attributes are different.
+// ModifyWithRecreate returns true if Type, VRF (or VRF IP version) or Type-specific
+// attributes are different.
 func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool {
-	if oldIntf.Type != newIntf.Type {
+	if oldIntf.Type != newIntf.Type || oldIntf.Vrf != newIntf.Vrf {
 		return true
 	}
 
@@ -238,6 +241,19 @@ func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *i
 			return true
 		}
 	}
+
+	// check if VRF IP version has changed
+	newAddrs, err1 := addrs.StrAddrsToStruct(newIntf.IpAddresses)
+	oldAddrs, err2 := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	wasIPv4, wasIPv6 := getIPAddressVersions(oldAddrs)
+	isIPv4, isIPv6 := getIPAddressVersions(newAddrs)
+	if wasIPv4 != isIPv4 || wasIPv6 != isIPv6 {
+		return true
+	}
+
 	return false
 }
 
@@ -382,6 +398,36 @@ func (d *InterfaceDescriptor) configRxModeForInterface(intf *interfaces.Interfac
 	}
 	return nil
 }
+
+// Modify rx-mode on specified VPP interface.
+func (d *InterfaceDescriptor) modifyRxModeForInterfaces(oldIntf, newIntf *interfaces.Interface, ifIdx uint32) error {
+	oldRx := oldIntf.RxModeSettings
+	newRx := newIntf.RxModeSettings
+
+	if !proto.Equal(oldRx, newRx) {
+		// If new rx mode is nil, value is reset to the default (differs for interface types)
+		switch newIntf.Type {
+		case interfaces.Interface_ETHERNET_CSMACD:
+			if newRx == nil {
+				return d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxModeSettings{RxMode: interfaces.Interface_RxModeSettings_POLLING})
+			} else if newRx.RxMode != interfaces.Interface_RxModeSettings_POLLING {
+				return errors.Errorf("attempt to set unsupported rx-mode %s", newRx.RxMode)
+			}
+		case interfaces.Interface_AF_PACKET_INTERFACE:
+			if newRx == nil {
+				return d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxModeSettings{RxMode: interfaces.Interface_RxModeSettings_INTERRUPT})
+			}
+		default: // All the other interface types
+			if newRx == nil {
+				return d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxModeSettings{RxMode: interfaces.Interface_RxModeSettings_DEFAULT})
+			}
+		}
+		return d.ifHandler.SetRxMode(ifIdx, newRx)
+	}
+
+	return nil
+}
+
 
 // getIPAddressVersions returns two flags to tell whether the provided list of addresses
 // contains IPv4 and/or IPv6 type addresses

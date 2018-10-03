@@ -410,8 +410,7 @@ func (intfd *InterfaceDescriptor) Modify(key string, oldLinuxIf, newLinuxIf *int
 		intfd.log.Error(err)
 		return nil, err
 	}
-	var del, add []*net.IPNet
-	del, add = addrs.DiffAddr(newAddrs, oldAddrs)
+	del, add := addrs.DiffAddr(newAddrs, oldAddrs)
 
 	for i := range del {
 		err := intfd.ifHandler.DelInterfaceIP(newLinuxIf.HostIfName, del[i])
