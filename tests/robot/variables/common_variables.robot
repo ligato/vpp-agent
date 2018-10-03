@@ -75,7 +75,7 @@ ${AGENT_VPP_4_VPP_VAT_PROMPT}      vat#
 
 # Variables for container with agent and without vpp
 #${AGENT_IMAGE_NAME}                ligato/dev-cn-infra:latest
-${AGENT_IMAGE_NAME}                ubuntu:18.04
+${AGENT_IMAGE_NAME}                ligato/vpp-agent:pantheon-dev
 ${AGENT_ETCD_CONF_PATH}            /opt/vpp-agent/dev/etcd.conf
 ${AGENT_KAFKA_CONF_PATH}           /opt/vpp-agent/dev/kafka.conf
 

@@ -54,7 +54,7 @@ Configure Interfaces
     @{ints}=    Create List    vpp1_afpacket1    vpp1_afpacket2    vpp1_afpacket3
     vpp_ctl: Put Bridge Domain    node=agent_vpp_1    name=east-west-bd    ints=${ints}
 
-    Sleep    ${SYNC_SLEEP}
+    Sleep    ${RESYNC_SLEEP}
     Show Interfaces And Other Objects
 
 Check Stuff At Beginning
