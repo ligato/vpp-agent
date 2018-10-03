@@ -13,7 +13,7 @@ ${timeout_etcd}=      30s
 Add Agent Node
     [Arguments]    ${node}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE} bash
     #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
@@ -24,7 +24,7 @@ Add Agent Node
 Add Agent Node Again
     [Arguments]    ${node}
     Open SSH Connection    ${node}_again    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}_again    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_AGAIN_REST_API_HOST_PORT}:${${node}_AGAIN_REST_API_PORT} --name ${node}_again ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}_again    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -e KAFKA_CONFIG=disabled --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_AGAIN_REST_API_HOST_PORT}:${${node}_AGAIN_REST_API_PORT} --name ${node}_again ${${node}_DOCKER_IMAGE} bash
     #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}_again    ${DOCKER_COMMAND} start ${node}_again
     Append To List    ${NODES}    ${node}_again
@@ -35,7 +35,7 @@ Add Agent Node Again
 Add Agent Node With Kafka
     [Arguments]    ${node}
     Open SSH Connection    ${node}    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE} bash
     #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}    ${DOCKER_COMMAND} start ${node}
     Append To List    ${NODES}    ${node}
@@ -46,7 +46,7 @@ Add Agent Node With Kafka
 Add Agent Node With Kafka Again
     [Arguments]    ${node}
     Open SSH Connection    ${node}_again    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Execute On Machine     ${node}_again    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_AGAIN_REST_API_HOST_PORT}:${${node}_AGAIN_REST_API_PORT} --name ${node}_again ${${node}_DOCKER_IMAGE}
+    Execute On Machine     ${node}_again    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} --sysctl net.ipv6.conf.all.disable_ipv6=0 -it -p ${${node}_AGAIN_REST_API_HOST_PORT}:${${node}_AGAIN_REST_API_PORT} --name ${node}_again ${${node}_DOCKER_IMAGE} bash
     #Execute On Machine     ${node}    ${DOCKER_COMMAND} create -e MICROSERVICE_LABEL=${node} -it -p ${${node}_PING_HOST_PORT}:${${node}_PING_PORT} -p ${${node}_REST_API_HOST_PORT}:${${node}_REST_API_PORT} --name ${node} ${${node}_DOCKER_IMAGE}
     Write To Machine       ${node}_again    ${DOCKER_COMMAND} start ${node}_again
     Append To List    ${NODES}    ${node}_again
