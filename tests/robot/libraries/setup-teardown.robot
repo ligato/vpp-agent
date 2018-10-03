@@ -25,7 +25,7 @@ Testsuite Setup
     Enable SSH Logging		${OUTPUTDIR}/ssh.log
     Open Connection To Docker Host
     Create Connections For ETCD And Kafka
-    Start Kafka Server
+    #Start Kafka Server
     Start ETCD Server
     Start VPP Ctl Container
     Make Datastore Snapshots    startup
@@ -36,7 +36,7 @@ Testsuite Teardown
     Remove All Nodes
     Stop ETCD Server
     Stop VPP Ctl Container
-    Stop Kafka Server
+    #Stop Kafka Server
     Get Connections
     Close All Connections
     Check Agent Logs For Errors
@@ -45,7 +45,7 @@ Testsuite Teardown
 Test Setup
     Open Connection To Docker Host
     Create Connections For ETCD And Kafka
-    Start Kafka Server
+    #Start Kafka Server
     Start ETCD Server
     Start VPP Ctl Container
     Make Datastore Snapshots    startup
@@ -53,7 +53,7 @@ Test Setup
 Test Teardown
     Make Datastore Snapshots    teardown
     Stop VPP Ctl Container
-    Stop Kafka Server
+    #Stop Kafka Server
     Stop ETCD Server
     Remove All Nodes
     Get Connections
@@ -104,7 +104,7 @@ Open Connection To Docker Host
 
 Create Connections For ETCD And Kafka
     Open SSH Connection    etcd    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
-    Open SSH Connection    kafka    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
+    #Open SSH Connection    kafka    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}
     
 Make Datastore Snapshots
     [Arguments]            ${tag}=notag
