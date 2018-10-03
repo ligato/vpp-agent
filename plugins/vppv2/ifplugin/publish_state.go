@@ -1,8 +1,6 @@
 package ifplugin
 
 import (
-	"context"
-
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
