@@ -238,134 +238,55 @@ func getPermissionsGroups() []*access.PermissionGroup {
 	tracerPg := &access.PermissionGroup{
 		Name: "tracer",
 		Permissions: []*access.PermissionGroup_Permissions{
-			{
-				Url:            resturl.Index,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Tracer,
-				AllowedMethods: []string{http.MethodGet},
-			},
+			newPermission(resturl.Index, http.MethodGet),
+			newPermission(resturl.Tracer, http.MethodGet),
 		},
 	}
 	telemetryPg := &access.PermissionGroup{
 		Name: "telemetry",
 		Permissions: []*access.PermissionGroup_Permissions{
-			{
-				Url:            resturl.Index,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Telemetry,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.TMemory,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.TRuntime,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.TNodeCount,
-				AllowedMethods: []string{http.MethodGet},
-			},
+			newPermission(resturl.Index, http.MethodGet),
+			newPermission(resturl.Telemetry, http.MethodGet),
+			newPermission(resturl.TMemory, http.MethodGet),
+			newPermission(resturl.TRuntime, http.MethodGet),
+			newPermission(resturl.TNodeCount, http.MethodGet),
 		},
 	}
 	dumpPg := &access.PermissionGroup{
 		Name: "dump",
 		Permissions: []*access.PermissionGroup_Permissions{
-			{
-				Url:            resturl.Index,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.ACLIP,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.ACLMACIP,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Interface,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Loopback,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Ethernet,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Memif,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Tap,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.VxLan,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.AfPacket,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.IPSecSpd,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.IPSecSa,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.IPSecTnIf,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Bd,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.BdID,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Fib,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Xc,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Arps,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Routes,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.PArpIfs,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.PArpRngs,
-				AllowedMethods: []string{http.MethodGet},
-			},
-			{
-				Url:            resturl.Sessions,
-				AllowedMethods: []string{http.MethodGet},
-			},
+			newPermission(resturl.Index, http.MethodGet),
+			newPermission(resturl.ACLIP, http.MethodGet),
+			newPermission(resturl.ACLMACIP, http.MethodGet),
+			newPermission(resturl.Interface, http.MethodGet),
+			newPermission(resturl.Loopback, http.MethodGet),
+			newPermission(resturl.Ethernet, http.MethodGet),
+			newPermission(resturl.Memif, http.MethodGet),
+			newPermission(resturl.Tap, http.MethodGet),
+			newPermission(resturl.VxLan, http.MethodGet),
+			newPermission(resturl.AfPacket, http.MethodGet),
+			newPermission(resturl.IPSecSpd, http.MethodGet),
+			newPermission(resturl.IPSecSa, http.MethodGet),
+			newPermission(resturl.IPSecTnIf, http.MethodGet),
+			newPermission(resturl.Bd, http.MethodGet),
+			newPermission(resturl.BdID, http.MethodGet),
+			newPermission(resturl.Fib, http.MethodGet),
+			newPermission(resturl.Xc, http.MethodGet),
+			newPermission(resturl.Arps, http.MethodGet),
+			newPermission(resturl.Routes, http.MethodGet),
+			newPermission(resturl.PArpIfs, http.MethodGet),
+			newPermission(resturl.PArpRngs, http.MethodGet),
+			newPermission(resturl.Sessions, http.MethodGet),
 		},
 	}
 
 	return []*access.PermissionGroup{tracerPg, telemetryPg, dumpPg}
+}
+
+// Returns permission object with url and provided methods
+func newPermission(url string, methods ...string) *access.PermissionGroup_Permissions {
+	return &access.PermissionGroup_Permissions{
+		Url:            url,
+		AllowedMethods: methods,
+	}
 }
