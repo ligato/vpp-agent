@@ -49,12 +49,6 @@ type DHCPDescriptor struct {
 	ifHandler vppcalls.IfVppAPI
 	scheduler scheduler.KVScheduler
 	intfIndex ifaceidx.IfaceMetadataIndex
-
-	// DHCP notification watching
-	ctx      context.Context
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup
-	dhcpChan chan govppapi.Message // channel to receive DHCP notifications
 }
 
 // NewDHCPDescriptor creates a new instance of DHCPDescriptor.
@@ -64,7 +58,6 @@ func NewDHCPDescriptor(scheduler scheduler.KVScheduler, ifHandler vppcalls.IfVpp
 		ifHandler: ifHandler,
 		log:       log.NewLogger("-dhcp-descriptor"),
 	}
-	descriptor.ctx, descriptor.cancel = context.WithCancel(context.Background())
 	return descriptor
 }
 
@@ -88,17 +81,9 @@ func (d *DHCPDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadataIndex
 	d.intfIndex = intfIndex
 }
 
-// StartWatchingDHCP starts watching for DHCP notifications.
-func (d *DHCPDescriptor) StartWatchingDHCP(dhcpChan chan govppapi.Message) {
-	d.dhcpChan = dhcpChan
-	go d.watchDHCPNotifications()
-}
-
-// StopWatchingDHCP stops watching for DHCP notifications.
-func (d *DHCPDescriptor) StopWatchingDHCP() {
-	d.cancel()
-	d.wg.Wait()
-	close(d.dhcpChan)
+// WatchDHCPNotifications starts watching for DHCP notifications.
+func (d *DHCPDescriptor) WatchDHCPNotifications(ctx context.Context, wg sync.WaitGroup, dhcpChan chan govppapi.Message) {
+	go d.watchDHCPNotifications(ctx, wg, dhcpChan)
 }
 
 // IsDHCPRelatedKey returns true if the key is identifying DHCP client (derived value)
@@ -217,14 +202,14 @@ func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler
 }
 
 // watchDHCPNotifications watches and processes DHCP notifications.
-func (d *DHCPDescriptor) watchDHCPNotifications() {
-	d.wg.Add(1)
-	d.wg.Done()
+func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context, wg sync.WaitGroup, dhcpChan chan govppapi.Message) {
+	wg.Add(1)
+	defer wg.Done()
 	d.log.Debug("Started watcher on DHCP notifications")
 
 	for {
 		select {
-		case notification := <-d.dhcpChan:
+		case notification := <-dhcpChan:
 			switch dhcpNotif := notification.(type) {
 			case *dhcp.DHCPComplEvent:
 				lease := dhcpNotif.Lease
@@ -268,7 +253,7 @@ func (d *DHCPDescriptor) watchDHCPNotifications() {
 					dhcpLease,
 					dhcpLease)
 			}
-		case <-d.ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 	}

@@ -223,8 +223,6 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 				c.processIfCounterNotification(notif)
 			case *stats.VnetInterfaceCombinedCounters:
 				c.processIfCombinedCounterNotification(notif)
-			case *interfaces.SwInterfaceDetails:
-				c.updateIfStateDetails(notif)
 			default:
 				c.log.Debugf("Ignoring unknown VPP notification: %s, %v",
 					msg.GetMessageName(), msg)
@@ -246,6 +244,10 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 					}
 					if err != nil {
 						c.log.Warnf("failed to receive interface dump details: %v", err)
+						continue
+					}
+					if msg.SwIfIndex != ifMetaDto.Metadata.SwIfIndex {
+						// not the added interface
 						continue
 					}
 					c.updateIfStateDetails(msg)

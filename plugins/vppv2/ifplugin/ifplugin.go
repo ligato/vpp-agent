@@ -75,17 +75,19 @@ type IfPlugin struct {
 	ifDescriptor   *descriptor.InterfaceDescriptor
 	unIfDescriptor *descriptor.UnnumberedIfDescriptor
 	dhcpDescriptor *descriptor.DHCPDescriptor
+	dhcpChan       chan govppapi.Message
 
 	// index maps
 	intfIndex ifaceidx.IfaceMetadataIndex
 	dhcpIndex idxmap.NamedMapping
 
-	// From config file
+	// from config file
 	enableStopwatch bool
 	stopwatch       *measure.Stopwatch // timer used to measure and store time
 	defaultMtu      uint32
 
 	// state data
+	publishLock      sync.Mutex
 	statusCheckReg   bool
 	watchStatusReg   datasync.WatchRegistration
 	resyncStatusChan chan datasync.ResyncEvent
@@ -109,9 +111,9 @@ type Deps struct {
 
 	// state publishing
 	StatusCheck       statuscheck.PluginStatusWriter
-	PublishErrors     datasync.KeyProtoValWriter
+	PublishErrors     datasync.KeyProtoValWriter  // TODO: to be used with a generic plugin for publishing errors (not just interfaces and BDs)
 	Watcher           datasync.KeyValProtoWatcher /* for resync of interface state data (PublishStatistics) */
-	NotifyStatistics  datasync.KeyProtoValWriter  /* e.g. Kafka */
+	NotifyStatistics  datasync.KeyProtoValWriter  /* e.g. Kafka (up/down events only)*/
 	PublishStatistics datasync.KeyProtoValWriter  /* e.g. ETCD (with resync) */
 	DataSyncs         map[string]datasync.KeyProtoValWriter /* available DBs for PublishStatistics */
 	// TODO: GRPCSvc           rpc.GRPCService
@@ -131,6 +133,7 @@ func (p *IfPlugin) Init() error {
 	p.fromConfigFile()
 
 	// Fills nil dependencies with default values
+	publishStats := p.PublishStatistics != nil || p.NotifyStatistics != nil
 	p.fixNilPointers()
 
 	// Plugin-wide stopwatch instance
@@ -163,7 +166,7 @@ func (p *IfPlugin) Init() error {
 	p.Deps.Scheduler.RegisterKVDescriptor(unIfDescriptor)
 	p.Deps.Scheduler.RegisterKVDescriptor(dhcpDescriptor)
 
-	// obtain read-only reference to index map
+	// obtain read-only references to index maps
 	var withIndex bool
 	metadataMap := p.Deps.Scheduler.GetMetadataMap(ifDescriptor.Name)
 	p.intfIndex, withIndex = metadataMap.(ifaceidx.IfaceMetadataIndex)
@@ -171,6 +174,9 @@ func (p *IfPlugin) Init() error {
 		return errors.New("missing index with interface metadata")
 	}
 	p.dhcpIndex = p.Deps.Scheduler.GetMetadataMap(dhcpDescriptor.Name)
+	if p.dhcpIndex == nil {
+		return errors.New("missing index with DHCP metadata")
+	}
 
 	// pass read-only index map to descriptors
 	p.ifDescriptor.SetInterfaceIndex(p.intfIndex)
@@ -178,44 +184,46 @@ func (p *IfPlugin) Init() error {
 	p.dhcpDescriptor.SetInterfaceIndex(p.intfIndex)
 
 	// start watching for DHCP notifications
-	dhcpChan := make(chan govppapi.Message, 1)
-	if _, err := p.vppCh.SubscribeNotification(dhcpChan, &dhcp.DHCPComplEvent{}); err != nil {
+	p.dhcpChan = make(chan govppapi.Message, 1)
+	if _, err := p.vppCh.SubscribeNotification(p.dhcpChan, &dhcp.DHCPComplEvent{}); err != nil {
 		return err
 	}
-	p.dhcpDescriptor.StartWatchingDHCP(dhcpChan)
+	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx, p.wg, p.dhcpChan)
 
 	// Create plugin context, save cancel function into the plugin handle.
 	p.ctx, p.cancel = context.WithCancel(context.Background())
 
-	// subscribe & watch for resync of interface state data
-	p.resyncStatusChan = make(chan datasync.ResyncEvent)
-	p.watchStatusReg, err = p.Watcher.
-		Watch("VPP interface state data", nil, p.resyncStatusChan,
-		interfaces.StatePrefix)
-	if err != nil {
-		return err
-	}
-	go p.watchStatusEvents()
-
-	// start interface state publishing
-	go p.publishIfStateEvents()
-
-	// start interface state updater
-	p.ifStateChan = make(chan *interfaces.InterfaceNotification, 100)
-	// Interface state updater
-	p.ifStateUpdater = &InterfaceStateUpdater{}
-	if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.GoVppmux, p.intfIndex, func(state *interfaces.InterfaceNotification) {
-		select {
-		case p.ifStateChan <- state:
-			// OK
-		default:
-			p.Log.Debug("Unable to send to the ifStateNotifications channel - channel buffer full.")
+	// interface state data
+	if publishStats {
+		// subscribe & watch for resync of interface state data
+		p.resyncStatusChan = make(chan datasync.ResyncEvent)
+		p.watchStatusReg, err = p.Watcher.
+			Watch("VPP interface state data", nil, p.resyncStatusChan,
+			interfaces.StatePrefix)
+		if err != nil {
+			return err
 		}
-	}); err != nil {
-		return p.ifStateUpdater.LogError(err)
-	}
+		go p.watchStatusEvents()
 
-	p.Log.Debug("ifStateUpdater Initialized")
+		// start interface state publishing
+		go p.publishIfStateEvents()
+
+		// start interface state updater
+		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 100)
+		// Interface state updater
+		p.ifStateUpdater = &InterfaceStateUpdater{}
+		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.GoVppmux, p.intfIndex, func(state *interfaces.InterfaceNotification) {
+			select {
+			case p.ifStateChan <- state:
+				// OK
+			default:
+				p.Log.Debug("Unable to send to the ifStateChan channel - channel buffer full.")
+			}
+		}); err != nil {
+			return p.ifStateUpdater.LogError(err)
+		}
+		p.Log.Debug("ifStateUpdater Initialized")
+	}
 
 	return nil
 }
@@ -245,11 +253,14 @@ func (p *IfPlugin) Close() error {
 	p.cancel()
 	p.wg.Wait()
 
-	// stop watching of DHCP notifications
-	p.dhcpDescriptor.StopWatchingDHCP()
-
-	// close all channels
-	safeclose.CloseAll(p.resyncStatusChan, p.ifStateChan)
+	// close all objects, channels, registrations
+	safeclose.Close(
+		// state updater
+		p.ifStateUpdater,
+		// registrations
+		p.watchStatusReg,
+		// channels
+		p.dhcpChan, p.resyncStatusChan, p.ifStateChan)
 	return nil
 }
 
