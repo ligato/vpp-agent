@@ -22,8 +22,8 @@ ${VETH1_SEC_MAC}=      1a:00:00:11:11:12
 ${VETH2_MAC}=          2a:00:00:22:22:22
 ${VETH3_MAC}=          3a:00:00:33:33:33
 ${VETH4_MAC}=          4a:00:00:44:44:44
-${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${WAIT_TIMEOUT}=     30s
+${SYNC_SLEEP}=       6s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup

@@ -38,7 +38,7 @@ ${IP_VPP2_MEMIF1}=          fd33::1:a:0:0:2
 ${PREFIX}=                  64
 ${UP_STATE}=                up
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       6s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        50s
 

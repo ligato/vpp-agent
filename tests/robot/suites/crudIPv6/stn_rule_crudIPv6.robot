@@ -31,7 +31,7 @@ ${MTU}=              4800
 ${UP_STATE}=         up
 ${RULE_NAME}         rule1
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       6s
 
 *** Test Cases ***
 Configure Environment

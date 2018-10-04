@@ -129,7 +129,7 @@ ${RESULTS_FOLDER}                  results
 ${RESULTS_FOLDER_SUITE}            ${RESULTS_FOLDER}/${SUITE_NAME}
 ${TEST_DATA_FOLDER}                test_data
 ${REST_CALL_SLEEP}                 0
-${SSH_READ_DELAY}                  1
+${SSH_READ_DELAY}                  2
 
 ${EXAMPLE_PLUGIN_NAME}             example_plugin.so
 

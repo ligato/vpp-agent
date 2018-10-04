@@ -23,8 +23,8 @@ ${RESYNC_SLEEP}=     20s
 ${VETH1_MAC}=          1a:00:00:11:11:11
 ${VETH2_MAC}=          2a:00:00:22:22:22
 ${AFP1_MAC}=           a2:01:01:01:01:01
-${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${WAIT_TIMEOUT}=     30s
+${SYNC_SLEEP}=       6s
 
 *** Test Cases ***
 Configure Environment

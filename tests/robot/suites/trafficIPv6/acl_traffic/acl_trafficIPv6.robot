@@ -19,7 +19,7 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       6s
 ${RESYNC_SLEEP}=     20s
 
 ${AGENT1_VETH_MAC}=    02:00:00:00:00:01

@@ -23,8 +23,8 @@ ${MEMIF21_MAC}=          2a:00:00:22:22:22
 ${MEMIF21_SEC_MAC}=      2a:00:00:22:22:23
 ${MEMIF12_MAC}=          3a:00:00:33:33:33
 ${MEMIF22_MAC}=          4a:00:00:44:44:44
-${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${WAIT_TIMEOUT}=     30s
+${SYNC_SLEEP}=       6s
 
 *** Test Cases ***
 Configure Environment

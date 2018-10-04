@@ -25,7 +25,7 @@ ${IP4}=                fd31::1:b:0:0:2
 ${IP10}=               fd32::1:b:0:0:1
 ${IP20}=               fd32::1:b:0:0:2
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       6s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
