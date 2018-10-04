@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
 )
@@ -76,77 +75,87 @@ func (plugin *Plugin) resyncPropageRequest(req *DataResyncReq) error {
 	return fmt.Errorf("%v errors occured during linuxplugin resync", len(resyncErrs))
 }
 
-func resyncParseEvent(resyncEv datasync.ResyncEvent, log logging.Logger) *DataResyncReq {
+func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyncReq {
 	req := NewDataResyncReq()
-	for key := range resyncEv.GetValues() {
-		log.Debug("Received RESYNC key ", key)
-	}
 	for key, resyncData := range resyncEv.GetValues() {
+		plugin.Log.Debug("Received RESYNC key ", key)
 		if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
-			numInterfaces := resyncAppendInterface(resyncData, req)
-			log.Debug("Received RESYNC interface values ", numInterfaces)
+			plugin.resyncAppendInterface(resyncData, req)
 		} else if strings.HasPrefix(key, l3.StaticArpKeyPrefix()) {
-			numARPs := resyncAppendARPs(resyncData, req)
-			log.Debug("Received RESYNC ARP entry values ", numARPs)
+			plugin.resyncAppendARPs(resyncData, req)
 		} else if strings.HasPrefix(key, l3.StaticRouteKeyPrefix()) {
-			numRoutes := resyncAppendRoutes(resyncData, req)
-			log.Debug("Received RESYNC route values ", numRoutes)
+			plugin.resyncAppendRoutes(resyncData, req)
 		} else {
-			log.Warn("ignoring ", resyncEv)
+			plugin.Log.Warn("ignoring ", resyncEv)
 		}
 	}
 	return req
 }
 
-func resyncAppendInterface(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) resyncAppendInterface(iterator datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
-		if interfaceData, stop := resyncData.GetNext(); stop {
+		if interfaceData, stop := iterator.GetNext(); stop {
 			break
 		} else {
 			value := &interfaces.LinuxInterfaces_Interface{}
-			err := interfaceData.GetValue(value)
-			if err == nil {
-				req.Interfaces = append(req.Interfaces, value)
-				num++
+			if err := interfaceData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of Linux interface: %v", err)
+				continue
 			}
+			req.Interfaces = append(req.Interfaces, value)
+			num++
+
+			plugin.Log.WithField("revision", interfaceData.GetRevision()).
+				Debugf("Processing resync for key: %q", interfaceData.GetKey())
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC Linux interface values %d", num)
 }
 
-func resyncAppendARPs(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) resyncAppendARPs(iterator datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
-		if arpData, stop := resyncData.GetNext(); stop {
+		if arpData, stop := iterator.GetNext(); stop {
 			break
 		} else {
 			value := &l3.LinuxStaticArpEntries_ArpEntry{}
-			err := arpData.GetValue(value)
-			if err == nil {
-				req.ARPs = append(req.ARPs, value)
-				num++
+			if err := arpData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of Linux ARP: %v", err)
+				continue
 			}
+			req.ARPs = append(req.ARPs, value)
+			num++
+
+			plugin.Log.WithField("revision", arpData.GetRevision()).
+				Debugf("Processing resync for key: %q", arpData.GetKey())
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC Linux ARP entry values %d", num)
 }
 
-func resyncAppendRoutes(resyncData datasync.KeyValIterator, req *DataResyncReq) int {
+func (plugin *Plugin) resyncAppendRoutes(iterator datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
-		if routeData, stop := resyncData.GetNext(); stop {
+		if routeData, stop := iterator.GetNext(); stop {
 			break
 		} else {
 			value := &l3.LinuxStaticRoutes_Route{}
-			err := routeData.GetValue(value)
-			if err == nil {
-				req.Routes = append(req.Routes, value)
-				num++
+			if err := routeData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of Linux ARP: %v", err)
+				continue
 			}
+			req.Routes = append(req.Routes, value)
+			num++
+
+			plugin.Log.WithField("revision", routeData.GetRevision()).
+				Debugf("Processing resync for key: %q", routeData.GetKey())
 		}
 	}
-	return num
+
+	plugin.Log.Debugf("Received RESYNC Linux Route values %d", num)
 }
 
 func (plugin *Plugin) subscribeWatcher() (err error) {
