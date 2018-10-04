@@ -33,7 +33,7 @@ ${IP_5}=               fd31::1:b:0:0:2
 
 ${PREFIX}=             64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 *** Test Cases ***
 
 Start Agents

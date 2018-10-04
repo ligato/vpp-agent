@@ -28,7 +28,7 @@ ${IP_LOOP2}=        fd31::1:e:0:0:1
 ${PREFIX}=          64
 ${MTU}=             4800
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment

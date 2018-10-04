@@ -29,7 +29,7 @@ ${IP_ADR_MASK}=        fd30:0:0:1:e::/64
 ${IP_ADR2}=             fd30:0:0:2:f::
 ${IP_ADR_MASK2}=        fd30:0:0:2:f::/64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment

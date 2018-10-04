@@ -27,8 +27,8 @@ ${IP_LOOP1_2}=      21.20.1.2
 ${IP_LOOP2}=        20.20.2.2
 ${PREFIX}=          24
 ${MTU}=             4800
-${WAIT_TIMEOUT}=     30s
-${SYNC_SLEEP}=       6s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment

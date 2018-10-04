@@ -35,7 +35,7 @@ ${MAC3_MEMIF1}=         02:f1:be:90:00:03
 
 ${PREFIX}=             64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 *** Test Cases ***
 # Default VRF table ...
 Start Three Agents

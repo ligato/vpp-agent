@@ -48,7 +48,7 @@ ${MTU}=             1500
 ${VARIABLES}=        common
 ${ENV}=              common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        50s
 

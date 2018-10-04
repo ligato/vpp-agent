@@ -24,8 +24,8 @@ ${VETH4_MAC}=          4a:00:00:44:44:44
 ${AFP1_MAC}=           a2:01:01:01:01:01
 ${AFP2_MAC}=           a2:02:02:02:02:02
 ${AFP2_SEC_MAC}=       a2:22:22:22:22:22
-${WAIT_TIMEOUT}=     30s
-${SYNC_SLEEP}=       6s
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment
