@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
@@ -35,16 +34,9 @@ type ArpMeta struct {
 }
 
 // DumpArpEntries implements arp handler.
-func (handler *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
-	// ArpDump time measurement
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(l3binapi.IPNeighborDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 	var entries []*ArpDetails
-
-	// Dump ARPs.
-	reqCtx := handler.callsChannel.SendMultiRequest(&l3binapi.IPNeighborDump{
+	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPNeighborDump{
 		SwIfIndex: 0xffffffff, // Send multirequest to get all ARP entries
 	})
 
@@ -55,14 +47,14 @@ func (handler *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 			break
 		}
 		if err != nil {
-			handler.log.Error(err)
+			h.log.Error(err)
 			return nil, err
 		}
 
 		// ARP interface
-		ifName, _, exists := handler.ifIndexes.LookupName(arpDetails.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupName(arpDetails.SwIfIndex)
 		if !exists {
-			handler.log.Warnf("ARP dump: interface name not found for index %d", arpDetails.SwIfIndex)
+			h.log.Warnf("ARP dump: interface name not found for index %d", arpDetails.SwIfIndex)
 		}
 		// IP & MAC address
 		var ip, mac string

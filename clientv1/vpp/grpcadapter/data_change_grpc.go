@@ -420,7 +420,7 @@ func getRequestFromData(data []proto.Message) *rpc.DataRequest {
 		case *linuxL3.LinuxStaticRoutes_Route:
 			request.LinuxRoutes = append(request.LinuxRoutes, typedItem)
 		default:
-			logrus.DefaultLogger().Warn("Unsupported data for GRPC request: %s", typedItem.String())
+			logrus.DefaultLogger().Warnf("Unsupported data for GRPC request: %v", typedItem)
 		}
 	}
 

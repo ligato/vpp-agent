@@ -17,7 +17,7 @@ package syncbase
 import (
 	"sync"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 )
 

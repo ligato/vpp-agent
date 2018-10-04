@@ -220,6 +220,7 @@ func (ctl *VppAgentCtl) createBfdKey() {
 	authKey := bfd.SingleHopBFD{
 		Keys: []*bfd.SingleHopBFD_Key{
 			{
+				Name:               "bfdKey1",
 				Id:                 1,
 				AuthenticationType: bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1, // or Keyed sha1
 				Secret:             "1981491891941891",
@@ -499,6 +500,7 @@ func (ctl *VppAgentCtl) createVethPair() {
 				Mtu: 1500,
 				IpAddresses: []string{
 					"192.168.22.1/24",
+					"10.0.2.2/24",
 				},
 				Veth: &linuxIf.LinuxInterfaces_Interface_Veth{
 					PeerIfName: "veth2",

@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4    ExpectedFailure
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -16,7 +16,7 @@ Test Teardown     TestTeardown
 
 *** Variables ***
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 ${RESYNC_SLEEP}=       15s
 ${VARIABLES}=        common
 ${ENV}=              common
@@ -46,7 +46,6 @@ Add TAP1 Interface
 
 Check TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
-    Log                  ${interfaces}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP1}
     ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv4=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 

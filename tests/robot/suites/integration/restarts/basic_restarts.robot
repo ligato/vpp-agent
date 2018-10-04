@@ -6,6 +6,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Library    SSHLibrary
 
+Force Tags        integration
 Suite Setup       Run Keywords
 ...    KubeSetup.Kubernetes Suite Setup    ${CLUSTER_ID}
 ...    AND    Restarts Suite Setup with ${1} VNFs at ${1} memifs each and ${1} non-VPP containers

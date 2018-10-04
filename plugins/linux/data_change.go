@@ -25,7 +25,9 @@ import (
 func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent) error {
 	var err error
 	key := dataChng.GetKey()
-	plugin.Log.Debugf("Start processing change for key: %s", key)
+
+	plugin.Log.WithField("revision", dataChng.GetRevision()).
+		Debugf("Processing change for key: %q", key)
 
 	if strings.HasPrefix(key, interfaces.InterfaceKeyPrefix()) {
 		var value, prevValue interfaces.LinuxInterfaces_Interface
@@ -71,12 +73,15 @@ func (plugin *Plugin) dataChangeIface(diff bool, value *interfaces.LinuxInterfac
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeIface ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.ifConfigurator.DeleteLinuxInterface(prevValue)
+		err = plugin.ifConfigurator.DeleteLinuxInterface(prevValue)
 	} else if diff {
-		return plugin.ifConfigurator.ModifyLinuxInterface(value, prevValue)
+		err = plugin.ifConfigurator.ModifyLinuxInterface(value, prevValue)
+	} else {
+		err = plugin.ifConfigurator.ConfigureLinuxInterface(value)
 	}
-	return plugin.ifConfigurator.ConfigureLinuxInterface(value)
+	return plugin.ifConfigurator.LogError(err)
 }
 
 // DataChangeArp propagates data change to the arpConfigurator
@@ -84,12 +89,15 @@ func (plugin *Plugin) dataChangeArp(diff bool, value *l3.LinuxStaticArpEntries_A
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeArp ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.arpConfigurator.DeleteLinuxStaticArpEntry(prevValue)
+		err = plugin.arpConfigurator.DeleteLinuxStaticArpEntry(prevValue)
 	} else if diff {
-		return plugin.arpConfigurator.ModifyLinuxStaticArpEntry(value, prevValue)
+		err = plugin.arpConfigurator.ModifyLinuxStaticArpEntry(value, prevValue)
+	} else {
+		err = plugin.arpConfigurator.ConfigureLinuxStaticArpEntry(value)
 	}
-	return plugin.arpConfigurator.ConfigureLinuxStaticArpEntry(value)
+	return plugin.arpConfigurator.LogError(err)
 }
 
 // DataChangeRoute propagates data change to the routeConfigurator
@@ -97,10 +105,13 @@ func (plugin *Plugin) dataChangeRoute(diff bool, value *l3.LinuxStaticRoutes_Rou
 	changeType datasync.Op) error {
 	plugin.Log.Debug("dataChangeRoute ", diff, " ", changeType, " ", value, " ", prevValue)
 
+	var err error
 	if datasync.Delete == changeType {
-		return plugin.routeConfigurator.DeleteLinuxStaticRoute(prevValue)
+		err = plugin.routeConfigurator.DeleteLinuxStaticRoute(prevValue)
 	} else if diff {
-		return plugin.routeConfigurator.ModifyLinuxStaticRoute(value, prevValue)
+		err = plugin.routeConfigurator.ModifyLinuxStaticRoute(value, prevValue)
+	} else {
+		err = plugin.routeConfigurator.ConfigureLinuxStaticRoute(value)
 	}
-	return plugin.routeConfigurator.ConfigureLinuxStaticRoute(value)
+	return plugin.routeConfigurator.LogError(err)
 }

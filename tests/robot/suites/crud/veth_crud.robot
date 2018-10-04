@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -23,7 +23,7 @@ ${VETH2_MAC}=          2a:00:00:22:22:22
 ${VETH3_MAC}=          3a:00:00:33:33:33
 ${VETH4_MAC}=          4a:00:00:44:44:44
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup

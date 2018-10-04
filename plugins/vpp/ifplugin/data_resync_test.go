@@ -17,9 +17,10 @@ package ifplugin_test
 import (
 	"testing"
 
+	"git.fd.io/govpp.git/core"
+
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
-	govpp "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -42,14 +43,14 @@ import (
 
 // TODO: use configurator initializers from other files which do the same thing
 
-func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *govpp.Connection) {
+func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *core.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 
-	conn, err := govpp.Connect(ctx.MockVpp)
+	conn, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// Test init
@@ -58,26 +59,26 @@ func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx
 	ifVppNotifCh := make(chan govppapi.Message, 100)
 	plugLog := logging.ForPlugin("tests")
 
-	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0, true)
+	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, conn
 }
 
-func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *govpp.Connection) {
+func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
+func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *core.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -88,25 +89,25 @@ func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.BFDConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, c, index
 }
 
-func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *govpp.Connection) {
+func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *govpp.Connection) {
+func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *core.Connection) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -117,25 +118,25 @@ func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.StnConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, c
 }
 
-func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *govpp.Connection) {
+func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *govpp.Connection, ifaceidx.SwIfIndexRW) {
+func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *core.Connection, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
-	c, err := govpp.Connect(ctx.MockVpp)
+	c, err := core.Connect(ctx.MockVpp)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -146,13 +147,13 @@ func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index, true)
+	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
 	Expect(err).To(BeNil())
 
 	return ctx, plugin, c, index
 }
 
-func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *govpp.Connection) {
+func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *core.Connection) {
 	conn.Disconnect()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
@@ -200,8 +201,8 @@ func TestDataResyncResync(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 	Expect(plugin.IsSocketFilenameCached("testsocket")).To(BeTrue())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
@@ -252,8 +253,8 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -301,8 +302,8 @@ func TestDataResyncResyncSameName(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -351,8 +352,8 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -400,10 +401,9 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 	// Test
 	intfaces := []*intf.Interfaces_Interface{
 		{
-			Name:        "test",
-			Type:        intf.InterfaceType_VXLAN_TUNNEL,
-			Enabled:     true,
-			IpAddresses: []string{"192.168.0.1/24"},
+			Name:    "test",
+			Type:    intf.InterfaceType_VXLAN_TUNNEL,
+			Enabled: true,
 			Unnumbered: &intf.Interfaces_Interface_Unnumbered{
 				IsUnnumbered:    true,
 				InterfaceWithIp: "test",
@@ -416,8 +416,8 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -480,8 +480,8 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -533,8 +533,8 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -600,8 +600,8 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 		},
 	}
 
-	errs := plugin.Resync(intfaces)
-	Expect(errs).To(BeEmpty())
+	err := plugin.Resync(intfaces)
+	Expect(err).To(BeNil())
 
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeTrue())
@@ -691,6 +691,236 @@ func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
 	_, meta, found := plugin.GetSwIfIndexes().LookupIdx("test")
 	Expect(found).To(BeFalse())
 	Expect(meta).To(BeNil())
+}
+
+func TestInterfaceModifyComparisonType(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name: "if1",
+		Type: intf.InterfaceType_TAP_INTERFACE,
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name: "if2",
+		Type: intf.InterfaceType_MEMORY_INTERFACE,
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	vppIf.Type = intf.InterfaceType_TAP_INTERFACE
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonEnabled(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name:    "if1",
+		Enabled: true,
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name:    "if2",
+		Enabled: false,
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	vppIf.Enabled = true
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonVrf(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name: "if1",
+		Vrf:  0,
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name: "if2",
+		Vrf:  1,
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	vppIf.Vrf = 0
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonContainerIP(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name:               "if1",
+		ContainerIpAddress: "192.168.0.1",
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name:               "if2",
+		ContainerIpAddress: "192.168.0.2",
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	vppIf.ContainerIpAddress = "192.168.0.1"
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonDHCP(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name:          "if1",
+		SetDhcpClient: true,
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name:          "if2",
+		SetDhcpClient: false,
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	vppIf.SetDhcpClient = true
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonMtu(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name: "if1",
+		Mtu:  1000,
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name: "if2",
+		Mtu:  1500,
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	// Not valid for VxLAN
+	nbIf.Type, vppIf.Type = intf.InterfaceType_VXLAN_TUNNEL, intf.InterfaceType_VXLAN_TUNNEL
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+	// Change to different type and same value
+	nbIf.Type, vppIf.Type = intf.InterfaceType_TAP_INTERFACE, intf.InterfaceType_TAP_INTERFACE
+	nbIf.Mtu, vppIf.Mtu = 1000, 1000
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonMAC(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name:        "if1",
+		PhysAddress: "00:00:00:00:00:01",
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name:        "if2",
+		PhysAddress: "00:00:00:00:00:02",
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	// Do not compare if mac is not defined in NB
+	nbIf.PhysAddress = ""
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+	nbIf.PhysAddress, vppIf.PhysAddress = "00:00:00:00:00:01", "00:00:00:00:00:01"
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonUnnumbered(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	// Unnumbered set only for NB
+	nbIf := &intf.Interfaces_Interface{
+		Name: "if1",
+		Unnumbered: &intf.Interfaces_Interface_Unnumbered{
+			IsUnnumbered: true,
+		},
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name: "if2",
+	}
+
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	vppIf.Unnumbered = &intf.Interfaces_Interface_Unnumbered{
+		IsUnnumbered: false,
+	}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+
+	// Unnumbered set only for SB
+	nbIf.Unnumbered = nil
+	vppIf.Unnumbered.IsUnnumbered = true
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	nbIf.Unnumbered = &intf.Interfaces_Interface_Unnumbered{
+		IsUnnumbered: false,
+	}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+
+	// Unnumbered set to both
+	nbIf.Unnumbered.IsUnnumbered, vppIf.Unnumbered.IsUnnumbered = true, true
+	nbIf.Unnumbered.InterfaceWithIp, vppIf.Unnumbered.InterfaceWithIp = "unif1", "unif2"
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	nbIf.Unnumbered.InterfaceWithIp, vppIf.Unnumbered.InterfaceWithIp = "unif1", "unif1"
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonIPAddress(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	// Test IP count
+	nbIf := &intf.Interfaces_Interface{
+		Name:        "if1",
+		IpAddresses: []string{"192.168.0.1/24", "192.168.0.2/24"},
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name:        "if2",
+		IpAddresses: []string{"192.168.0.1/24"},
+	}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+
+	// Same count, different IP
+	vppIf.IpAddresses = []string{"192.168.0.1/24", "192.168.0.3/24"}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+
+	// Equal case
+	vppIf.IpAddresses = []string{"192.168.0.1/24", "192.168.0.2/24"}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+
+	// IPv6 link local should not affect the result
+	vppIf.IpAddresses = []string{"192.168.0.1/24", "192.168.0.2/24", "fe80:0db8:85a3:0000:0000:8a2e:0370:7334"}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
+}
+
+func TestInterfaceModifyComparisonRxMode(t *testing.T) {
+	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, conn)
+
+	nbIf := &intf.Interfaces_Interface{
+		Name: "if1",
+		RxModeSettings: &intf.Interfaces_Interface_RxModeSettings{
+			RxMode: intf.RxModeType_DEFAULT,
+		},
+	}
+	vppIf := &intf.Interfaces_Interface{
+		Name: "if2",
+	}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	nbIf.RxModeSettings, vppIf.RxModeSettings = nil, &intf.Interfaces_Interface_RxModeSettings{
+		RxMode: intf.RxModeType_DEFAULT,
+	}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+
+	// RxMode
+	nbIf.RxModeSettings, vppIf.RxModeSettings = &intf.Interfaces_Interface_RxModeSettings{
+		RxMode: intf.RxModeType_DEFAULT,
+	}, &intf.Interfaces_Interface_RxModeSettings{
+		RxMode: intf.RxModeType_ADAPTIVE,
+	}
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeTrue())
+	vppIf.RxModeSettings.RxMode = intf.RxModeType_DEFAULT
+	Expect(ifplugin.IsIfModified(plugin, nbIf, vppIf)).To(BeFalse())
 }
 
 // Tests BFDConfigurator session resync
@@ -792,7 +1022,7 @@ func TestDataResyncResyncSessionSameData(t *testing.T) {
 
 // Tests BFDConfigurator authorization key resync
 func TestDataResyncResyncAuthKey(t *testing.T) {
-	ctx, plugin, conn, _ := bfdConfiguratorTestInitialization(t)
+	ctx, plugin, conn, swIfIdx := bfdConfiguratorTestInitialization(t)
 	defer bfdConfiguratorTestTeardown(plugin, conn)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
@@ -815,7 +1045,8 @@ func TestDataResyncResyncAuthKey(t *testing.T) {
 			Message: &bfdApi.BfdAuthSetKeyReply{},
 		},
 	})
-
+	// Register
+	swIfIdx.RegisterName("if1", 0, nil)
 	// Test
 	authKey := []*bfd.SingleHopBFD_Key{
 		{
@@ -1035,6 +1266,16 @@ func TestDataResyncResyncDNat(t *testing.T) {
 				Tag:          []byte("smap|lbstat|idmap"),
 				ExternalAddr: []byte{192, 168, 10, 0},
 				ExternalPort: 88,
+				Locals: []natApi.Nat44LbAddrPort{
+					{
+						Addr: []byte{192., 168, 10, 0},
+						Port: 89,
+					},
+					{
+						Addr: []byte{192., 168, 20, 0},
+						Port: 90,
+					},
+				},
 			},
 		},
 		{
@@ -1178,8 +1419,19 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 			Name: (&natApi.Nat44LbStaticMappingDump{}).GetMessageName(),
 			Ping: true,
 			Message: &natApi.Nat44LbStaticMappingDetails{
-				Protocol: 6,
-				Tag:      []byte("smap|lbstat|idmap"),
+				ExternalPort: 25,
+				Protocol:     6,
+				Tag:          []byte("smap|lbstat|idmap"),
+				Locals: []natApi.Nat44LbAddrPort{
+					{
+						Addr: []byte{192., 168, 10, 0},
+						Port: 89,
+					},
+					{
+						Addr: []byte{192., 168, 20, 0},
+						Port: 90,
+					},
+				},
 			},
 		},
 		{

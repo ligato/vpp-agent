@@ -9,7 +9,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 Resource     ../../../libraries/all_libs.robot
 Resource    ../../../libraries/pretty_keywords.robot
 
-Force Tags        trafficIPv4
+Force Tags        traffic     IPv4    ExpectedFailure
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 Test Setup        TestSetup
@@ -20,7 +20,7 @@ ${VARIABLES}=          common
 ${ENV}=                common
 
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 ${RESYNC_SLEEP}=     20s
 
 ${AGENT1_VETH_MAC}=    02:00:00:00:00:01

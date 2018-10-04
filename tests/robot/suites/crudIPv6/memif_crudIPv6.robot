@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv6
+Force Tags        crud     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -31,7 +31,7 @@ ${IP_5}=                 fd32::1:e:0:0:1
 ${IP_6}=                 fd32::1:e:0:0:2
 ${PREFIX}=               64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 *** Test Cases ***
 Configure Environment
     [Tags]    setup

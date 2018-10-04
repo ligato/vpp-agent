@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
 
-Force Tags        sfcIPv6
+Force Tags        sfc     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 
@@ -29,7 +29,6 @@ Configure Environment
 
 Check Memif Interface On VPP1
     ${out}=    vpp_term: Show Interfaces    agent_vpp_1
-    Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_1    vpp1_memif1
     Should Contain    ${out}    ${int}
     ${out}=    Write To Machine    agent_vpp_1_term    show h
@@ -37,7 +36,6 @@ Check Memif Interface On VPP1
 
 Check Memif Interface On VPP2
     ${out}=    vpp_term: Show Interfaces    agent_vpp_2
-    Log    ${out}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    vpp2_memif1
     Should Contain    ${out}    ${int}
     ${out}=    Write To Machine    agent_vpp_2_term    show int addr

@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
@@ -42,10 +41,6 @@ func (h *IfVppHandler) RemoveInterfaceTag(tag string, ifIdx uint32) error {
 }
 
 func (h *IfVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.SwInterfaceSetFlagsReply{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &interfaces.SwInterfaceSetFlags{
 		SwIfIndex:   ifIdx,
 		AdminUpDown: boolToUint(adminUp),
@@ -62,10 +57,6 @@ func (h *IfVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
 }
 
 func (h *IfVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.SwInterfaceTagAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &interfaces.SwInterfaceTagAddDel{
 		Tag:   []byte(tag),
 		IsAdd: boolToUint(isAdd),

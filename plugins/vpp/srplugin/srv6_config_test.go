@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
+
+	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -655,7 +656,7 @@ func TestAddSteering(t *testing.T) {
 			VerifyAfterAddSteering: func(steering *srv6.Steering, err error, fakeVPPCalls *SRv6Calls) {
 				Expect(err).To(BeNil())
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -668,7 +669,7 @@ func TestAddSteering(t *testing.T) {
 			},
 			VerifyAfterAddPolicy: func(steering *srv6.Steering, fakeVPPCalls *SRv6Calls) {
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -681,7 +682,7 @@ func TestAddSteering(t *testing.T) {
 			VerifyAfterAddSteering: func(steering *srv6.Steering, err error, fakeVPPCalls *SRv6Calls) {
 				Expect(err).To(BeNil())
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -695,7 +696,7 @@ func TestAddSteering(t *testing.T) {
 			},
 			VerifyAfterAddPolicy: func(steering *srv6.Steering, fakeVPPCalls *SRv6Calls) {
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -830,7 +831,7 @@ func TestModifySteering(t *testing.T) {
 			Verify: func(steering *srv6.Steering, err error, fakeVPPCalls *SRv6Calls) {
 				Expect(err).To(BeNil())
 				state := fakeVPPCalls.SteeringState()
-				_, exists := state[*steering]
+				_, exists := state[steering.PolicyBsid]
 				Expect(exists).To(BeTrue())
 			},
 		},
@@ -899,7 +900,7 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.
 	RegisterTestingT(t)
 	// connection
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
@@ -911,7 +912,7 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.
 	// Configurator
 	fakeVPPCalls := NewSRv6Calls()
 	configurator := &srplugin.SRv6Configurator{}
-	err = configurator.Init(log, connection, swIndex, false, fakeVPPCalls)
+	err = configurator.Init(log, connection, swIndex, fakeVPPCalls)
 	Expect(err).To(BeNil())
 
 	return configurator, fakeVPPCalls, connection

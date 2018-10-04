@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
@@ -29,11 +28,7 @@ type StnRule struct {
 	IfaceIdx  uint32
 }
 
-func (handler *StnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool) error {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(stn.StnAddDelRule{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *StnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bool) error {
 	// prepare the message
 	req := &stn.StnAddDelRule{
 		SwIfIndex: ifIdx,
@@ -53,7 +48,7 @@ func (handler *StnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bo
 	}
 	reply := &stn.StnAddDelRuleReply{}
 
-	if err = handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
@@ -64,12 +59,12 @@ func (handler *StnVppHandler) addDelStnRule(ifIdx uint32, addr *net.IP, isAdd bo
 }
 
 // AddStnRule implements STN handler.
-func (handler *StnVppHandler) AddStnRule(ifIdx uint32, addr *net.IP) error {
-	return handler.addDelStnRule(ifIdx, addr, true)
+func (h *StnVppHandler) AddStnRule(ifIdx uint32, addr *net.IP) error {
+	return h.addDelStnRule(ifIdx, addr, true)
 
 }
 
 // DelStnRule implements STN handler.
-func (handler *StnVppHandler) DelStnRule(ifIdx uint32, addr *net.IP) error {
-	return handler.addDelStnRule(ifIdx, addr, false)
+func (h *StnVppHandler) DelStnRule(ifIdx uint32, addr *net.IP) error {
+	return h.addDelStnRule(ifIdx, addr, false)
 }

@@ -7,10 +7,12 @@ This image is a lightweight version of the dev_vpp_agent image. It contains:
 
 ### Getting a pre-built image from Dockerhub
 For a quick start with the VPP Agent, you can use pre-build Docker images with
-the Agent and VPP on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/).
+the Agent and VPP on [Dockerhub](https://hub.docker.com/r/ligato/vpp-agent/) or this for [ARM64](https://hub.docker.com/r/ligato/vpp-agent-arm64/).
+
 ```
 docker pull ligato/vpp-agent
 ```
+Note: **For ARM64 see more: [getting an ARM64 image][2]**.
 
 ### Building locally
 At first you need to have built of downloaded the `dev_vpp_agent` image.
@@ -95,3 +97,4 @@ You can use the image the same way as the development image, see this
 [README](../dev/README.md).
 
 [1]: https://github.com/moby/moby/issues/26173
+[2]: docs/arm64/docker_images.md#production-images

@@ -1,14 +1,19 @@
 include vpp.env
 
-VERSION	?= $(shell git describe --always --tags --dirty)
-COMMIT	?= $(shell git rev-parse HEAD)
-DATE	:= $(shell date +'%Y-%m-%dT%H:%M%:z')
+VERSION ?= $(shell git describe --always --tags --dirty)
+COMMIT  ?= $(shell git rev-parse HEAD)
+DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
 
 ifeq ($(NOSTRIP),)
 LDFLAGS += -w -s
+endif
+
+ifeq ($(BUILDPIE),y)
+GO_BUILD_ARGS += -buildmode=pie
+LDFLAGS += -extldflags=-Wl,-z,now,-z,relro
 endif
 
 ifeq ($(V),1)
@@ -105,44 +110,17 @@ get-proto-generators:
 # Generate proto models
 generate-proto: get-proto-generators
 	@echo "=> generating proto"
-	cd plugins/linux/ifplugin && go generate
-	cd plugins/linux/l3plugin && go generate
-	cd plugins/vpp/aclplugin && go generate
-	cd plugins/vpp/ifplugin && go generate
-	cd plugins/vpp/ipsecplugin && go generate
-	cd plugins/vpp/l2plugin && go generate
-	cd plugins/vpp/l3plugin && go generate
-	cd plugins/vpp/l4plugin && go generate
-	cd plugins/vpp/rpc && go generate
-	cd plugins/vpp/srplugin && go generate
+	cd plugins/linux/model && go generate
+	cd plugins/vpp/model && go generate
 
 # Get generator tools
 get-binapi-generators:
 	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
-	go install ./vendor/github.com/ungerik/pkgreflect
 
 # Generate binary api
 generate-binapi: get-binapi-generators
 	@echo "=> generating binapi"
 	cd plugins/vpp/binapi && go generate
-	cd plugins/vpp/binapi/acl && pkgreflect
-	cd plugins/vpp/binapi/af_packet && pkgreflect
-	cd plugins/vpp/binapi/bfd && pkgreflect
-	cd plugins/vpp/binapi/dhcp && pkgreflect
-	cd plugins/vpp/binapi/interfaces && pkgreflect
-	cd plugins/vpp/binapi/ip && pkgreflect
-	cd plugins/vpp/binapi/ipsec && pkgreflect
-	cd plugins/vpp/binapi/l2 && pkgreflect
-	cd plugins/vpp/binapi/memif && pkgreflect
-	cd plugins/vpp/binapi/nat && pkgreflect
-	cd plugins/vpp/binapi/session && pkgreflect
-	cd plugins/vpp/binapi/sr && pkgreflect
-	cd plugins/vpp/binapi/stats && pkgreflect
-	cd plugins/vpp/binapi/stn && pkgreflect
-	cd plugins/vpp/binapi/tap && pkgreflect
-	cd plugins/vpp/binapi/tapv2 && pkgreflect
-	cd plugins/vpp/binapi/vpe && pkgreflect
-	cd plugins/vpp/binapi/vxlan && pkgreflect
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
 
@@ -236,6 +214,14 @@ yamllint: get-yamllint
 	@echo "=> linting the yaml files"
 	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
 
+images: dev-image prod-image
+
+dev-image:
+	./docker/dev/build.sh
+
+prod-image:
+	./docker/prod/build.sh
+
 .PHONY: build clean \
 	install cmd examples clean-examples test \
 	test-cover test-cover-html test-cover-xml \
@@ -244,4 +230,5 @@ yamllint: get-yamllint
 	get-linters lint format \
 	get-linkcheck check-links \
 	travis \
-	get-yamllint yamllint
+	get-yamllint yamllint \
+	images dev-image prod-image

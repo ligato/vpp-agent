@@ -22,7 +22,7 @@ import (
 var ErrNotImplemented = errors.New("not implemented for this OS")
 
 // MsgCallback defines func signature for message callback.
-type MsgCallback func(msgID uint16, context uint32, data []byte)
+type MsgCallback func(msgID uint16, data []byte)
 
 // VppAdapter provides connection to VPP. It is responsible for sending and receiving of binary-encoded messages to/from VPP.
 type VppAdapter interface {

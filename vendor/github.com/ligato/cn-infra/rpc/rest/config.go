@@ -21,6 +21,7 @@ import (
 
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/infra"
+	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
 	"github.com/namsral/flag"
 )
 
@@ -88,6 +89,21 @@ type Config struct {
 	// ClientCerts is a slice of the root certificate authorities
 	// that servers uses to verify a client certificate
 	ClientCerts []string `json:"client-cert-files"`
+
+	// EnableTokenAuth enables token authorization for HTTP requests
+	EnableTokenAuth bool `json:"enable-token-auth"`
+
+	// TokenExpiration set globaly for all user tokens
+	TokenExpiration time.Duration `json:"token-expiration"`
+
+	// Users laoded from config file
+	Users []access.User `json:"users"`
+
+	// Hash cost for password. High values take a lot of time to process.
+	PasswordHashCost int `json:"password-hash-cost"`
+
+	// TokenSignature is used to sign a token. Default value is used if not set.
+	TokenSignature string `json:"token-signature"`
 }
 
 // DefaultConfig returns new instance of config with default endpoint

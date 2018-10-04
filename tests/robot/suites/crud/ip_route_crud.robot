@@ -8,14 +8,14 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 Resource    ../../libraries/all_libs.robot
 Resource    ../../libraries/pretty_keywords.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Run Keywords    Discard old results
 
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 # CRUD tests for routing
@@ -157,13 +157,9 @@ Add VRF Table In Background While Creating Interface VXLAN
 
 *** Keywords ***
 IP Fib On ${node} Should Not Contain Route With IP ${ip}/${prefix}
-    Log many    ${node}
     ${out}=    vpp_term: Show IP Fib    ${node}
-    log many    ${out}
     Should Not Match Regexp    ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
 IP Fib On ${node} Should Contain Route With IP ${ip}/${prefix}
-    Log many    ${node}
     ${out}=    vpp_term: Show IP Fib    ${node}
-    log many    ${out}
     Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]

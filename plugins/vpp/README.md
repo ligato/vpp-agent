@@ -13,7 +13,6 @@
 
  The default plugins can use configuration file `vpp.conf` to:
   * set global maximum transmission unit 
-  * enable/disable stopwatch
   * set VPP resync strategy
   * to enable/disable status publishers
   
@@ -27,15 +26,6 @@
  as follows:
  
  `mtu: <value>`
- 
- *Stopwatch*
- 
- Duration of the VPP binary api call can be measured using stopwatch feature. These data are logged after 
- every event(any resync, interfaces, bridge domains, fib entries etc.). Enable stopwatch in vpp.conf: 
- 
-  `stopwatch: true` or  `stopwatch: false`
-  
- Stopwatch is disabled by default (if there is no config available). 
  
  *Resync Strategy*
  

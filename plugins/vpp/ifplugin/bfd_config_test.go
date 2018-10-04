@@ -15,14 +15,12 @@
 package ifplugin_test
 
 import (
+	"git.fd.io/govpp.git/core"
 	"net"
-	"strings"
 	"testing"
 
 	"git.fd.io/govpp.git/adapter/mock"
-	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
@@ -351,21 +349,34 @@ func TestBfdConfiguratorModifyUnusedAuthKey(t *testing.T) {
 
 // Modify BFD authentication key which is used in session
 func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
-	var err error
-	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
+	ctx, connection, plugin, swIfIdx := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
+
 	// Reply handler
-	ctx.MockVpp.RegisterBinAPITypes(bfd_api.Types)
-	ctx.MockVpp.RegisterBinAPITypes(vpe.Types)
-	ctx.MockVpp.MockReplyHandler(bfdVppMockHandler(ctx.MockVpp))
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
+		{
+			Name: (&bfd_api.BfdUDPSessionDump{}).GetMessageName(),
+			Ping: true,
+			Message: &bfd_api.BfdUDPSessionDetails{
+				SwIfIndex:       1,
+				LocalAddr:       net.ParseIP("10.0.0.1").To4(),
+				PeerAddr:        net.ParseIP("10.0.0.2").To4(),
+				IsAuthenticated: 1,
+				BfdKeyID:        1,
+			},
+		},
+	})
+
 	// Data
 	oldData := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
 	newData := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_METICULOUS_KEYED_SHA1)
+
 	// Register
+	swIfIdx.RegisterName("if1", 1, nil)
 	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(oldData.Id), 1, nil)
+
 	// Test key modification
-	err = plugin.ModifyBfdAuthKey(oldData, newData)
+	err := plugin.ModifyBfdAuthKey(oldData, newData)
 	Expect(err).To(BeNil())
 }
 
@@ -390,20 +401,33 @@ func TestBfdConfiguratorDeleteUnusedAuthKey(t *testing.T) {
 
 // Delete BFD authentication key which is used in session
 func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
-	var err error
-	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
+	ctx, connection, plugin, swIfIdx := bfdTestSetup(t)
 	defer bfdTestTeardown(connection, plugin)
+
 	// Reply handler
-	ctx.MockVpp.RegisterBinAPITypes(bfd_api.Types)
-	ctx.MockVpp.RegisterBinAPITypes(vpe.Types)
-	ctx.MockVpp.MockReplyHandler(bfdVppMockHandler(ctx.MockVpp))
+	ctx.MockReplies([]*vppcallmock.HandleReplies{
+		{
+			Name: (&bfd_api.BfdUDPSessionDump{}).GetMessageName(),
+			Ping: true,
+			Message: &bfd_api.BfdUDPSessionDetails{
+				SwIfIndex:       1,
+				LocalAddr:       net.ParseIP("10.0.0.1").To4(),
+				PeerAddr:        net.ParseIP("10.0.0.2").To4(),
+				IsAuthenticated: 1,
+				BfdKeyID:        1,
+			},
+		},
+	})
+
 	// Data
 	data := getTestBfdAuthKey("key1", "secret", 1, 1, bfd.SingleHopBFD_Key_KEYED_SHA1)
+
 	// Register
+	swIfIdx.RegisterName("if1", 1, nil)
 	plugin.GetBfdKeyIndexes().RegisterName(ifplugin.AuthKeyIdentifier(data.Id), 1, nil)
+
 	// Test key modification
-	err = plugin.DeleteBfdAuthKey(data)
+	err := plugin.DeleteBfdAuthKey(data)
 	Expect(err).To(BeNil())
 }
 
@@ -495,7 +519,7 @@ func TestBfdConfiguratorEchoFunctionDeleteError(t *testing.T) {
 func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.BFDConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: &mock.VppAdapter{},
+		MockVpp: mock.NewVppAdapter(),
 	}
 	connection, err := core.Connect(ctx.MockVpp)
 	Expect(err).ShouldNot(HaveOccurred())
@@ -506,7 +530,7 @@ func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn", nil))
 	// Configurator
 	plugin := &ifplugin.BFDConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices, true)
+	err = plugin.Init(log, connection, swIfIndices)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin, swIfIndices
@@ -517,46 +541,6 @@ func bfdTestTeardown(connection *core.Connection, plugin *ifplugin.BFDConfigurat
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
-}
-
-func bfdVppMockHandler(vppMock *mock.VppAdapter) mock.ReplyHandler {
-	var sendControlPing bool
-	return func(request mock.MessageDTO) (reply []byte, msgID uint16, prepared bool) {
-		logrus.DefaultLogger().Errorf("recived request %v", request.MsgName)
-		if sendControlPing {
-			sendControlPing = false
-			data := &vpe.ControlPingReply{}
-			reply, err := vppMock.ReplyBytes(request, data)
-			Expect(err).To(BeNil())
-			msgID, err := vppMock.GetMsgID(data.GetMessageName(), data.GetCrcString())
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		}
-		if strings.HasSuffix(request.MsgName, "_dump") {
-			// Send control ping after first iteration
-			sendControlPing = true
-			data := &bfd_api.BfdUDPSessionDetails{
-				SwIfIndex:       1,
-				LocalAddr:       net.ParseIP("10.0.0.1").To4(),
-				PeerAddr:        net.ParseIP("10.0.0.2").To4(),
-				IsAuthenticated: 1,
-				BfdKeyID:        1,
-			}
-			reply, err := vppMock.ReplyBytes(request, data)
-			Expect(err).To(BeNil())
-			msgID, err := vppMock.GetMsgID(data.GetMessageName(), data.GetCrcString())
-			Expect(err).To(BeNil())
-			return reply, msgID, true
-		} else {
-			if replyMsg, msgID, ok := vppMock.ReplyFor(request.MsgName); ok {
-				reply, err := vppMock.ReplyBytes(request, replyMsg)
-				Expect(err).To(BeNil())
-				return reply, msgID, true
-			}
-		}
-
-		return reply, 0, false
-	}
 }
 
 /* BFD Test Data */

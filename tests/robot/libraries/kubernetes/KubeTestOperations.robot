@@ -25,14 +25,12 @@ Trigger Pod Restart - VPP SIGSEGV
     [Arguments]    ${pod_name}
     BuiltIn.Log    ${pod_name}
     ${stdout} =    Run Command In Pod    pkill --signal 11 -f /usr/bin/vpp    ${pod_name}
-    log    ${stdout}
 
 Trigger Pod Restart - Pod Deletion
     [Documentation]    Trigger a pod restart by deleting the pod using kubectl.
     [Arguments]    ${ssh_session}    ${pod_name}    ${vswitch}=${FALSE}
     BuiltIn.Log Many    ${ssh_session}    ${pod_name}    ${vswitch}
     ${stdout} =    Switch_And_Execute_Command    ${ssh_session}    kubectl delete pod ${pod_name}
-    log    ${stdout}
     Wait Until Keyword Succeeds    20sec    1sec    KubeEnv.Verify_Pod_Not_Terminating    ${ssh_session}    ${pod_name}
     Run Keyword If    ${vswitch}    Get Vswitch Pod Name    ${ssh_session}
 
@@ -43,7 +41,6 @@ Ping Until Success - Unix Ping
     [Timeout]    ${timeout}
     BuiltIn.Log Many    ${source_pod_name}    ${destination_ip}    ${timeout}
     ${stdout} =    Run Command In Pod    /bin/bash -c "until ping -c1 -w1 ${destination_ip} &>/dev/null; do :; done"    ${source_pod_name}
-    log    ${stdout}
 
 Ping Until Success - VPP Ping
     [Documentation]    Repeatedly execute ping from the named pod's VPP until
@@ -122,7 +119,6 @@ Scale Pod Restart - Pod Deletion
     [Documentation]    Trigger pod restart in scale test scenario. Restart
     ...    the first pod of the specified type in each bridge segment.
     [Arguments]    ${pod_type}
-    Log Many    ${topology}    ${pod_type}
     :FOR    ${bridge_segment}    IN    @{topology}
     \    Trigger Pod Restart - Pod Deletion    ${testbed_connection}    ${bridge_segment["${pod_type}"][0]["name"]}
 
@@ -130,7 +126,6 @@ Scale Pod Restart - VPP SIGSEGV
     [Documentation]    Trigger pod restart in scale test scenario. Restart
     ...    the first pod of the specified type in each bridge segment.
     [Arguments]    ${pod_type}
-    Log Many    ${topology}    ${pod_type}
     :FOR    ${bridge_segment}    IN    @{topology}
     \    Trigger Pod Restart - VPP SIGSEGV    ${bridge_segment["${pod_type}"][0]["name"]}
 
@@ -138,7 +133,6 @@ Scale Wait For Reconnect - Unix Ping
     [Documentation]    Run "Ping Until Success" sequentially for each pod
     ...    restarted in scale test scenario.
     [Arguments]    ${timeout_per_bridge}=120s
-    Log Many    ${topology}    ${timeout_per_bridge}
     :FOR    ${bridge_segment}    IN    @{topology}
     \    Ping Until Success - Unix Ping    ${bridge_segment["novpp"][0]["name"]}    ${bridge_segment["vnf"][0]["ip"]}    ${timeout_per_bridge}
 
@@ -146,6 +140,5 @@ Scale Wait For Reconnect - VPP Ping
     [Documentation]    Run "Ping Until Success" sequentially for each pod
     ...    restarted in scale test scenario.
     [Arguments]    ${timeout_per_bridge}=120s
-    Log Many    ${topology}    ${timeout_per_bridge}
     :FOR    ${bridge_segment}    IN    @{topology}
     \    Ping Until Success - VPP Ping    ${bridge_segment["vnf"][0]["name"]}    ${bridge_segment["novpp"][0]["ip"]}    ${timeout_per_bridge}

@@ -17,7 +17,6 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -35,6 +34,9 @@ type BridgeDomainVppWrite interface {
 	VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error
 	// VppDeleteBridgeDomain removes existing bridge domain.
 	VppDeleteBridgeDomain(bdIdx uint32) error
+	// SetInterfaceToBridgeDomain sets single interface to bridge domain. Interface name is returned if configured.
+	SetInterfaceToBridgeDomain(bdName string, bdIdx uint32, bdIf *l2.BridgeDomains_BridgeDomain_Interfaces,
+		swIfIndices ifaceidx.SwIfIndex) (iface string, wasErr error)
 	// SetInterfacesToBridgeDomain attempts to set all provided interfaces to bridge domain. It returns a list of interfaces
 	// which were successfully set.
 	SetInterfacesToBridgeDomain(bdName string, bdIdx uint32, bdIfs []*l2.BridgeDomains_BridgeDomain_Interfaces,
@@ -110,7 +112,6 @@ type XConnectVppRead interface {
 
 // BridgeDomainVppHandler is accessor for bridge domain-related vppcalls methods
 type BridgeDomainVppHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
@@ -118,7 +119,6 @@ type BridgeDomainVppHandler struct {
 
 // FibVppHandler is accessor for FIB-related vppcalls methods
 type FibVppHandler struct {
-	stopwatch         *measure.Stopwatch
 	syncCallsChannel  govppapi.Channel
 	asyncCallsChannel govppapi.Channel
 	requestChan       chan *FibLogicalReq
@@ -129,17 +129,15 @@ type FibVppHandler struct {
 
 // XConnectVppHandler is accessor for cross-connect-related vppcalls methods
 type XConnectVppHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
 }
 
 // NewBridgeDomainVppHandler creates new instance of bridge domain vppcalls handler
-func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *BridgeDomainVppHandler {
+func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *BridgeDomainVppHandler {
 	return &BridgeDomainVppHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
@@ -147,12 +145,11 @@ func NewBridgeDomainVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.Sw
 
 // NewFibVppHandler creates new instance of FIB vppcalls handler
 func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, bdIndexes l2idx.BDIndex,
-	log logging.Logger, stopwatch *measure.Stopwatch) *FibVppHandler {
+	log logging.Logger) *FibVppHandler {
 	return &FibVppHandler{
 		syncCallsChannel:  syncChan,
 		asyncCallsChannel: asyncChan,
 		requestChan:       make(chan *FibLogicalReq),
-		stopwatch:         stopwatch,
 		ifIndexes:         ifIndexes,
 		bdIndexes:         bdIndexes,
 		log:               log,
@@ -160,10 +157,9 @@ func NewFibVppHandler(syncChan, asyncChan govppapi.Channel, ifIndexes ifaceidx.S
 }
 
 // NewXConnectVppHandler creates new instance of cross connect vppcalls handler
-func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger, stopwatch *measure.Stopwatch) *XConnectVppHandler {
+func NewXConnectVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *XConnectVppHandler {
 	return &XConnectVppHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}

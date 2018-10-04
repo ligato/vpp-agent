@@ -15,23 +15,30 @@
 package agent
 
 import (
-	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
-var agentLogger = logrus.NewLogger("infra")
+var infraLogger = logrus.NewLogger("infra")
 
 func init() {
 	if os.Getenv("DEBUG_INFRA") != "" {
-		agentLogger.SetLevel(logging.DebugLevel)
-		agentLogger.Debugf("agent debug logger enabled")
+		infraLogger.SetLevel(logging.DebugLevel)
+		infraLogger.Debugf("infra debug logger enabled")
 	}
 }
+
+var (
+	// use DEBUG_INFRA=lookup to print plugin verbose lookup logs
+	printPluginLookupDebugs = strings.Contains(strings.ToLower(os.Getenv("DEBUG_INFRA")), "lookup")
+	// use DEBUG_INFRA=start to print plugin start durations
+	printPluginStartDurations = strings.Contains(strings.ToLower(os.Getenv("DEBUG_INFRA")), "start")
+)
 
 func findPlugins(val reflect.Value, uniqueness map[infra.Plugin]struct{}, x ...int) (
 	res []infra.Plugin, err error,
@@ -44,10 +51,8 @@ func findPlugins(val reflect.Value, uniqueness map[infra.Plugin]struct{}, x ...i
 		for i := 0; i < n; i++ {
 			f = "\t" + f
 		}
-		//agentLogger.Debugf(f, a...)
-		if agentLogger.GetLevel() == logging.DebugLevel {
-			fmt.Printf(f+"\n", a...)
-		}
+		//infraLogger.Debugf(f, a...)
+
 	}
 
 	typ := val.Type()

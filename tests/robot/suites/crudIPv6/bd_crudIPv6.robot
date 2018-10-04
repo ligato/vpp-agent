@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv6
+Force Tags        crud     IPv6    ExpectedFailure
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -30,7 +30,7 @@ ${LOOPBACK_IP_PREFIX}=   fd32::1:1:0:0:1/64
 ${TAP_IP}=               fd33::1:1:0:0:1
 ${TAP_IP_PREFIX}=        fd33::1:1:0:0:1/64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment

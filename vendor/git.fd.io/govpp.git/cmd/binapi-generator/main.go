@@ -20,13 +20,13 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/bennyscetbun/jsongo"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -38,15 +38,26 @@ var (
 	continueOnError = flag.Bool("continue-onerror", false, "Wheter to continue with next file on error.")
 )
 
-func logf(f string, v ...interface{}) {
+func init() {
+	flag.Parse()
 	if *debug {
-		log.Printf(f, v...)
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 }
 
-func main() {
-	flag.Parse()
+func logf(f string, v ...interface{}) {
+	if *debug {
+		logrus.Debugf(f, v...)
+	}
+}
 
+var log = logrus.Logger{
+	Level:     logrus.InfoLevel,
+	Formatter: &logrus.TextFormatter{},
+	Out:       os.Stdout,
+}
+
+func main() {
 	if *inputFile == "" && *inputDir == "" {
 		fmt.Fprintln(os.Stderr, "ERROR: input-file or input-dir must be specified")
 		os.Exit(1)
@@ -143,7 +154,7 @@ func generateFromFile(inputFile, outputDir string) error {
 	// count number of lines in generated output file
 	cmd = exec.Command("wc", "-l", ctx.outputFile)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("wc command failed: %v\n%s", err, string(output))
+		log.Warnf("wc command failed: %v\n%s", err, string(output))
 	} else {
 		logf("generated lines: %s", output)
 	}

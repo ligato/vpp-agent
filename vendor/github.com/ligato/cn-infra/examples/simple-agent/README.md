@@ -16,5 +16,3 @@ If a particular config file path is left unspecified, the application
 will first try to look for the default configuration filename
 in the current working directory before skipping the initialization
 of the associated plugin.
-Default configuration file names for data sources can be found
-[here](../../flavors/connectors/connectors_util.go).
