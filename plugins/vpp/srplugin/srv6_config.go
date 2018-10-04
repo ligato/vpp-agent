@@ -65,7 +65,7 @@ type SRv6Configurator struct {
 func (c *SRv6Configurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	srHandler vppcalls.SRv6VppAPI) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-sr-plugin")
+	c.log = logger.NewLogger("sr-plugin")
 
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
 	// It uses default buffer sizes for the request and reply Go channels.

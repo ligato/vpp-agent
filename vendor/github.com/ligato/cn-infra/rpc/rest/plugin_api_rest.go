@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
 	"github.com/unrolled/render"
 )
 
@@ -35,6 +36,9 @@ type HandlerProvider func(formatter *render.Render) http.HandlerFunc
 type HTTPHandlers interface {
 	// RegisterHTTPHandler propagates to Gorilla mux
 	RegisterHTTPHandler(path string, provider HandlerProvider, methods ...string) *mux.Route
+
+	// RegisterPermissionGroup registers new permission groups for users
+	RegisterPermissionGroup(group ...*access.PermissionGroup)
 
 	// GetPort returns configured port number (for debugging purposes)
 	GetPort() int

@@ -96,6 +96,18 @@ test-cover-xml: test-cover
 	gocov convert ${COVER_DIR}/coverage.out | gocov-xml > ${COVER_DIR}/coverage.xml
 	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
 
+# Code generation
+generate: generate-proto
+
+# Get generator tools
+get-proto-generators:
+	go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+
+# Generate proto models
+generate-proto: get-proto-generators
+	@echo "=> generating proto"
+	go generate ./...
+
 # Get dependency manager tool
 get-dep:
 	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh

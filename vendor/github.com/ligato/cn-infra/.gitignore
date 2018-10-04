@@ -1,5 +1,6 @@
 .idea/
 glide.lock
+
 examples/bolt-plugin/bolt-plugin
 examples/cassandra-lib/cassandra-lib
 examples/configs-plugin/configs-plugin
@@ -43,6 +44,7 @@ messaging/kafka/examples/asyncproducer/asyncproducer
 messaging/kafka/examples/consumer/consumer
 messaging/kafka/examples/mux/mux
 messaging/kafka/examples/syncproducer/syncproducer
+rpc/rest/security/password-hasher/password-hasher
 
 #---------
 # eclipse
@@ -53,3 +55,6 @@ messaging/kafka/examples/syncproducer/syncproducer
 #---------
 # oops...
 .gitignore.swp
+
+# exclude vendor
+!/vendor/**/*

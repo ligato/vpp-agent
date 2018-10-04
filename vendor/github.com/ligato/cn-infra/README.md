@@ -28,7 +28,7 @@ The architecture of the CN-Infra platform is shown in the following figure.
 
 ![arch](docs/imgs/high_level_arch_cninfra.png "High Level Architecture of cn-infra")
 
-The CN-Infra platform consists of a **[Core](core)** that provides plugin
+The CN-Infra platform consists of a **[Agent](agent)** that provides plugin
 lifecycle management (initialization and graceful shutdown of plugins) 
 and a set of platform plugins. Note that the figure shows not only 
 CN-Infra plugins that are a part of the CN-Infra platform, but also 
@@ -101,7 +101,6 @@ in one of the following functional areas:
   - [Datasync](datasync/resync) - provides data resynchronization after HA 
     events (restart or connectivity restoration after an outage) for data
     stores, gRPC and REST.
-  - [Flavors](flavors) - predefined reusable collection of plugins.
   - [IDX Map](idxmap) - reusable thread-safe map with advanced features:
     * multiple subscribers for watching changes in the map
     * secondary indexes

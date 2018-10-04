@@ -55,7 +55,7 @@ type BFDConfigurator struct {
 // Init members and channels
 func (c *BFDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-bfd-conf")
+	c.log = logger.NewLogger("bfd-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

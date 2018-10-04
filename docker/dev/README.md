@@ -14,8 +14,8 @@ This image is used for development and debugging.
 ## Get the official image
 
 Supported architectures are:
-* AMD64
-* ARM64 - see [arm64 docker image][3].
+* AMD64 (a.k.a. x86_64)
+* ARM64 (a.k.a. aarch64) - see [arm64 docker image][3].
 
 Here follows the information related to AMD64 architecture:
 For a quick start with the development image, you can download 
@@ -41,6 +41,17 @@ This will by default build image with name `dev_vpp_agent`
 and use following sources:
 - **VPP-Agent** version from local repository
 - **VPP** from repository and commit specified in `vpp.env` file
+
+Note: The script build.sh will recognize the architecture (AMD64 or ARM64) and build the proper image.
+
+### Pushing docker image to repository
+To push the docker image into your repository, type:
+```
+REPO_OWNER=yourdockerhubreponame ./push_image.sh
+```
+Warning: use only IMMEDIATELY after docker/dev/build.sh to prevent INCONSISTENCIES such as:
+* after building image you switch to other branch which will result in mismatch of version of image and its tag
+* you do not build the new image but only simply run this script which will result in mismatch version of image and its tag because the image is older than repository
 
 ### Build VPP in _debug_ mode
 

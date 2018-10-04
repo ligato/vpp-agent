@@ -83,7 +83,6 @@ func (plugin *ExamplePlugin) Init() (err error) {
 
 	// Custom (child) logger with name
 	childLogger := plugin.Log.NewLogger("childLogger")
-	// Usage of custom loggers
 	childLogger.Infof("Log using named logger with name: %v", childLogger.GetName())
 	childLogger.Debug("Debug log using childLogger!")
 

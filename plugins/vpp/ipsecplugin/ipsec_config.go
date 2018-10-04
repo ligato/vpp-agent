@@ -68,7 +68,7 @@ type IPSecConfigurator struct {
 // Init members (channels...) and start go routines
 func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndexRW) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-ipsec-plugin")
+	c.log = logger.NewLogger("ipsec-plugin")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

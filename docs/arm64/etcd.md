@@ -20,6 +20,6 @@ vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 **Note for ARM64:**
 
 Check for proper etcd ARM64 docker image in the [official repository](https://quay.io/repository/coreos/etcd?tag=latest&tab=tags).
-Currently you must use the parameter "-e ETCD_UNSUPPORTED_ARCH=arm64" like this:
+Currently you must use the parameter "-e ETCD_UNSUPPORTED_ARCH=arm64".
 ```
 ```

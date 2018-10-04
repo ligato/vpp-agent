@@ -59,7 +59,7 @@ type ArpConfigurator struct {
 // Init initializes ARP configurator
 func (c *ArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l3-arp-conf")
+	c.log = logger.NewLogger("l3-arp-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

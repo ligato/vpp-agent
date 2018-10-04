@@ -82,7 +82,7 @@ func (c *LinuxInterfaceConfigurator) Init(logging logging.PluginLogger, ifHandle
 	sysHandler nsplugin.SystemAPI, ifIndexes ifaceidx.LinuxIfIndexRW, ifMsNotif chan *nsplugin.MicroserviceEvent,
 	ifNotif chan *LinuxInterfaceStateNotification) (err error) {
 	// Logger
-	c.log = logging.NewLogger("-if-conf")
+	c.log = logging.NewLogger("if-conf")
 
 	// Mappings
 	c.ifIndexes = ifIndexes

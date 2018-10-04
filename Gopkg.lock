@@ -166,6 +166,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   digest = "1:4ec8504b68b75f562efc4b291cba33194f88eaa4e68d9fc449e5b7ca68539329"
   name = "github.com/docker/docker"
   packages = [
@@ -450,7 +458,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1fde4002da6a69e5e8a35e2cfb7edcfd0fcdc42ff8b4aa06159ee4576dd1bc10"
+  digest = "1:900e2ee94e55b05a4cb759c82515db5673e688cf3cee2cde964142c2d5aea36e"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -484,6 +492,8 @@
     "rpc/grpc",
     "rpc/prometheus",
     "rpc/rest",
+    "rpc/rest/security",
+    "rpc/rest/security/model/access-security",
     "servicelabel",
     "utils/addrs",
     "utils/clienttls",
@@ -491,7 +501,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "0b5bfe9b247de942c552e455faac7e00e8efcda1"
+  revision = "a5986c81c8b547292eff3a942e34f5ce04e4d478"
 
 [[projects]]
   branch = "master"
@@ -811,9 +821,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:707ec3bb6ccc1cd330b8789467fa6cd8dad40f63fed028ba777a6c2ca13a9838"
+  digest = "1:19f86cbdeb3e5cf117b52da99a655e2438ec65ae3240687ef4a520582e825df8"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "bcrypt",
+    "blowfish",
+    "ssh/terminal",
+  ]
   pruneopts = "UT"
   revision = "3d37316aaa6bd9929127ac9a527abf408178ea7b"
 
@@ -978,6 +992,7 @@
     "github.com/ligato/cn-infra/rpc/grpc",
     "github.com/ligato/cn-infra/rpc/prometheus",
     "github.com/ligato/cn-infra/rpc/rest",
+    "github.com/ligato/cn-infra/rpc/rest/security/model/access-security",
     "github.com/ligato/cn-infra/servicelabel",
     "github.com/ligato/cn-infra/utils/addrs",
     "github.com/ligato/cn-infra/utils/safeclose",

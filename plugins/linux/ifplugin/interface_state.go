@@ -53,7 +53,7 @@ type LinuxInterfaceStateUpdater struct {
 func (c *LinuxInterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, ifIndexes ifaceidx.LinuxIfIndexRW,
 	stateChan chan *LinuxInterfaceStateNotification) error {
 	// Logger
-	c.log = logger.NewLogger("-if-state")
+	c.log = logger.NewLogger("if-state")
 
 	// Channels
 	c.ifStateChan = stateChan
@@ -116,7 +116,7 @@ func (c *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
 
 		case <-ctx.Done():
 			close(c.ifWatcherDoneCh)
-		    close(c.ifStateChan)
+			close(c.ifStateChan)
 			return
 		}
 	}

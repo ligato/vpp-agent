@@ -72,7 +72,7 @@ func (c *BDConfigurator) GetBdIndexes() l2idx.BDIndexRW {
 func (c *BDConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChannel chan BridgeDomainStateMessage) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l2-bd-conf")
+	c.log = logger.NewLogger("l2-bd-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
