@@ -116,7 +116,7 @@ func TestNotifications(t *testing.T) {
 	opHistory := mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(1))
 	operation := opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Dump))
+	Expect(operation.OpType).To(Equal(test.MockDump))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	checkValuesForCorrelation(operation.CorrelateDump, []KVWithMetadata{
 		{
@@ -146,7 +146,7 @@ func TestNotifications(t *testing.T) {
 
 	txnOps := recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
@@ -231,12 +231,12 @@ func TestNotifications(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(2))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item1"))
 	Expect(operation.Err).To(BeNil())
@@ -260,14 +260,14 @@ func TestNotifications(t *testing.T) {
 
 	txnOps = recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
 			prevOrigin: FromSB,
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
@@ -276,7 +276,7 @@ func TestNotifications(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -284,7 +284,7 @@ func TestNotifications(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -293,7 +293,7 @@ func TestNotifications(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -384,12 +384,12 @@ func TestNotifications(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(2))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Update))
+	Expect(operation.OpType).To(Equal(test.MockUpdate))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item2"))
 	Expect(operation.Err).To(BeNil())
@@ -413,7 +413,7 @@ func TestNotifications(t *testing.T) {
 
 	txnOps = recordedTxnOps{
 		{
-			operation:  modify,
+			operation:  Modify,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
@@ -421,7 +421,7 @@ func TestNotifications(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  update,
+			operation:  Update,
 			key:        prefixB + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
@@ -429,7 +429,7 @@ func TestNotifications(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -437,7 +437,7 @@ func TestNotifications(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -499,17 +499,17 @@ func TestNotifications(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(3))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item2"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[2]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
@@ -533,7 +533,7 @@ func TestNotifications(t *testing.T) {
 
 	txnOps = recordedTxnOps{
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue1 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -541,7 +541,7 @@ func TestNotifications(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -550,7 +550,7 @@ func TestNotifications(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -558,7 +558,7 @@ func TestNotifications(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -566,7 +566,7 @@ func TestNotifications(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -575,7 +575,7 @@ func TestNotifications(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixB + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
@@ -583,7 +583,7 @@ func TestNotifications(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromSB,
@@ -731,10 +731,12 @@ func TestNotificationsWithRetry(t *testing.T) {
 	var errorNotif KeyWithError
 	Eventually(errorChan, time.Second).Should(Receive(&errorNotif))
 	Expect(errorNotif.Key).To(Equal(prefixC + baseValue3))
+	Expect(errorNotif.TxnOperation).To(Equal(Add))
 	Expect(errorNotif.Error).ToNot(BeNil())
 	Expect(errorNotif.Error.Error()).To(BeEquivalentTo("failed to add value"))
 	Eventually(errorChan, time.Second).Should(Receive(&errorNotif))
 	Expect(errorNotif.Key).To(Equal(prefixB + baseValue2 + "/item2"))
+	Expect(errorNotif.TxnOperation).To(Equal(Add))
 	Expect(errorNotif.Error).ToNot(BeNil())
 	Expect(errorNotif.Error.Error()).To(BeEquivalentTo("failed to add derived value"))
 
@@ -764,8 +766,8 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// check failed (base) values
 	failedVals := scheduler.GetFailedValues(nil)
 	Expect(failedVals).To(HaveLen(2))
-	Expect(failedVals).To(ContainElement(KeyWithError{Key: prefixC + baseValue3, Error: errors.New("failed to add value")}))
-	Expect(failedVals).To(ContainElement(KeyWithError{Key: prefixB + baseValue2, Error: errors.New("failed to add derived value")}))
+	Expect(failedVals).To(ContainElement(KeyWithError{Key: prefixC + baseValue3, TxnOperation: Add, Error: errors.New("failed to add value")}))
+	Expect(failedVals).To(ContainElement(KeyWithError{Key: prefixB + baseValue2, TxnOperation: Add, Error: errors.New("failed to add derived value")}))
 
 	// check metadata
 	metadata, exists := nameToInteger1.LookupByName(baseValue1)
@@ -781,29 +783,29 @@ func TestNotificationsWithRetry(t *testing.T) {
 	opHistory := mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(6))
 	operation := opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[2]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).ToNot(BeNil())
 	Expect(operation.Err.Error()).To(BeEquivalentTo("failed to add value"))
 	operation = opHistory[3]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item2"))
 	Expect(operation.Err).ToNot(BeNil())
 	Expect(operation.Err.Error()).To(BeEquivalentTo("failed to add derived value"))
 	operation = opHistory[4] // refresh failed value
-	Expect(operation.OpType).To(Equal(test.Dump))
+	Expect(operation.OpType).To(Equal(test.MockDump))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	checkValuesForCorrelation(operation.CorrelateDump, []KVWithMetadata{
 		{
@@ -814,7 +816,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 		},
 	})
 	operation = opHistory[5] // refresh failed value
-	Expect(operation.OpType).To(Equal(test.Dump))
+	Expect(operation.OpType).To(Equal(test.MockDump))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	checkValuesForCorrelation(operation.CorrelateDump, []KVWithMetadata{})
 
@@ -838,14 +840,14 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// -> planned operations
 	txnOps := recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromSB,
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
@@ -854,7 +856,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -862,7 +864,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -871,7 +873,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
@@ -880,7 +882,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -888,7 +890,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  update,
+			operation:  Update,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
@@ -896,7 +898,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -904,7 +906,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -914,7 +916,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  update,
+			operation:  Update,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
@@ -927,14 +929,14 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// -> executed operations
 	txnOps = recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromSB,
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
@@ -943,7 +945,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -951,7 +953,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -960,7 +962,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
@@ -971,7 +973,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newErr:     errors.New("failed to add value"),
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -979,7 +981,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -987,7 +989,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			newOrigin:  FromSB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -1049,18 +1051,18 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// check failed values
 	failedVals = scheduler.GetFailedValues(nil)
 	Expect(failedVals).To(HaveLen(1))
-	Expect(failedVals).To(ContainElement(KeyWithError{Key: prefixC + baseValue3, Error: errors.New("failed to add value")}))
+	Expect(failedVals).To(ContainElement(KeyWithError{Key: prefixC + baseValue3, TxnOperation: Add, Error: errors.New("failed to add value")}))
 
 	// check operations executed in SB
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(2))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Modify))
+	Expect(operation.OpType).To(Equal(test.MockModify))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item2"))
 	Expect(operation.Err).To(BeNil())
@@ -1083,7 +1085,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.preErrors).To(BeEmpty())
 	txnOps = recordedTxnOps{
 		{
-			operation:  modify,
+			operation:  Modify,
 			key:        prefixB + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
@@ -1092,7 +1094,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			isRetry:    true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -1131,7 +1133,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(1))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
@@ -1154,7 +1156,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.preErrors).To(BeEmpty())
 	txnOps = recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),

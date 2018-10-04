@@ -124,7 +124,7 @@ func (md *mockDescriptor) Add(key string, value proto.Message) (metadata Metadat
 	}
 	if md.sb != nil {
 		md.validateKey(key, md.sb.GetValue(key) == nil)
-		err = md.sb.executeChange(md.args.Name, Add, key, value, metadata)
+		err = md.sb.executeChange(md.args.Name, MockAdd, key, value, metadata)
 	}
 	if err == nil && withMeta {
 		md.nextIndex++
@@ -145,7 +145,7 @@ func (md *mockDescriptor) Delete(key string, value proto.Message, metadata Metad
 			md.validateKey(key, kv.Value == value)
 		}
 		md.validateKey(key, kv.Metadata == metadata)
-		err = md.sb.executeChange(md.args.Name, Delete, key, nil, metadata)
+		err = md.sb.executeChange(md.args.Name, MockDelete, key, nil, metadata)
 	}
 	return err
 }
@@ -164,7 +164,7 @@ func (md *mockDescriptor) Modify(key string, oldValue, newValue proto.Message, o
 			md.validateKey(key, kv.Value == oldValue)
 		}
 		md.validateKey(key, kv.Metadata == oldMetadata)
-		err = md.sb.executeChange(md.args.Name, Modify, key, newValue, newMetadata)
+		err = md.sb.executeChange(md.args.Name, MockModify, key, newValue, newMetadata)
 	}
 	return newMetadata, err
 }
@@ -177,7 +177,7 @@ func (md *mockDescriptor) Update(key string, value proto.Message, metadata Metad
 		md.validateKey(key, kv != nil)
 		md.validateKey(key, md.equalValues(key, kv.Value, value))
 		md.validateKey(key, kv.Metadata == metadata)
-		err = md.sb.executeChange(md.args.Name, Update, key, value, metadata)
+		err = md.sb.executeChange(md.args.Name, MockUpdate, key, value, metadata)
 	}
 	return nil
 }

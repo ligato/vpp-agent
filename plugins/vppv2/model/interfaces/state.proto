@@ -57,13 +57,3 @@ message InterfaceNotification {
     NotifType Type = 1;                     /* Type of the notification */
     InterfaceState state = 2;               /* State of the network interface */
 }
-
-message InterfaceErrors {
-    string interface_name = 1;
-    message ErrorData {                 /* List of errors (if there are more) for every interface */
-        string change_type = 1;
-        string error_message = 2;
-        int64 last_change = 3;
-    }
-    repeated ErrorData error_data = 2;
-}

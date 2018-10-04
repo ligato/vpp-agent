@@ -38,15 +38,15 @@ type MockOpType int
 
 const (
 	// Add new KV.
-	Add MockOpType = iota
+	MockAdd MockOpType = iota
 	// Modify existing KV.
-	Modify
+	MockModify
 	// Delete existing KV.
-	Delete
+	MockDelete
 	// Update existing KV.
-	Update
+	MockUpdate
 	// Dump non-derived values.
-	Dump
+	MockDump
 )
 
 // MockOperation is used in UTs to remember executed descriptor operations.
@@ -190,7 +190,7 @@ func (ms *MockSouthbound) dump(descriptor string, correlate []KVWithMetadata, se
 	}
 
 	ms.opHistory = append(ms.opHistory, MockOperation{
-		OpType:        Dump,
+		OpType:        MockDump,
 		Descriptor:    descriptor,
 		CorrelateDump: correlate,
 	})

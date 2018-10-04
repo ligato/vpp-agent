@@ -24,32 +24,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-// txnOperationType differentiates between add, modify (incl. re-create), delete
-// and update operations.
-type txnOperationType int
-
-const (
-	add txnOperationType = iota
-	modify
-	del
-	update
-)
-
-// String returns human-readable string representation of transaction operation.
-func (txnOpType txnOperationType) String() string {
-	switch txnOpType {
-	case add:
-		return "ADD"
-	case modify:
-		return "MODIFY"
-	case del:
-		return "DELETE"
-	case update:
-		return "UPDATE"
-	}
-	return "UNKNOWN"
-}
-
 // recordedTxn is used to record executed transaction.
 type recordedTxn struct {
 	preRecord bool // not yet fully recorded, only args + plan + pre-processing errors
@@ -74,7 +48,7 @@ type recordedTxn struct {
 // recorderTxnOp is used to record executed/planned transaction operation.
 type recordedTxnOp struct {
 	// identification
-	operation txnOperationType
+	operation TxnOperation
 	key       string
 	derived   bool
 
@@ -230,14 +204,14 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.key)
 	showPrevForAdd := op.wasPending && op.prevValue != op.newValue
-	if op.operation == modify || (op.operation == add && showPrevForAdd) {
+	if op.operation == Modify || (op.operation == Add && showPrevForAdd) {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", op.prevValue)
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", op.newValue)
 	}
-	if op.operation == del || op.operation == update {
+	if op.operation == Delete || op.operation == Update {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.prevValue)
 	}
-	if op.operation == add && !showPrevForAdd {
+	if op.operation == Add && !showPrevForAdd {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.newValue)
 	}
 	if op.prevOrigin != op.newOrigin {

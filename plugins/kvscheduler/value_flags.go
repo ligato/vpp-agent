@@ -122,10 +122,12 @@ func (flag *OriginFlag) GetValue() string {
 }
 
 // ErrorFlag is used to mark base values that are in a failed state
-// (or their derived values). It is used only to inform user in the graph dump
-// about currently failing values and for statistical purposes.
+// (or their derived values). It is used for KVScheduler.GetFailedValues(),
+// also to inform user in the graph dump about currently failing values and
+// finally for statistical purposes.
 type ErrorFlag struct {
-	err error
+	err   error
+	txnOp TxnOperation
 }
 
 // GetName return name of the Origin flag.
