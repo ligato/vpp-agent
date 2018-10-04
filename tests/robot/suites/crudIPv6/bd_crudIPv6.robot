@@ -30,7 +30,7 @@ ${LOOPBACK_IP_PREFIX}=   fd32::1:1:0:0:1/64
 ${TAP_IP}=               fd33::1:1:0:0:1
 ${TAP_IP_PREFIX}=        fd33::1:1:0:0:1/64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment

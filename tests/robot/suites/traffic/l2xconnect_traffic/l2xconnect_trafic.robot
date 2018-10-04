@@ -17,7 +17,7 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment 1

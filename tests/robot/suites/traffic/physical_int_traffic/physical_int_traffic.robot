@@ -16,7 +16,7 @@ Suite Teardown    Testsuite Teardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 ${RESYNC_SLEEP}=       1s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        30s

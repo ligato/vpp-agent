@@ -18,7 +18,7 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       6s
+${SYNC_SLEEP}=       3s
 ${IP_1}=               fd30::1:b:0:0:1
 ${IP_2}=               fd30::1:b:0:0:10
 
