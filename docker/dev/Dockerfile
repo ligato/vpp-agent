@@ -76,7 +76,7 @@ RUN set -eux; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
 # install Go
-ENV GOLANG_VERSION 1.11
+ENV GOLANG_VERSION 1.11.1
 ARG GOLANG_OS_ARCH=linux-amd64
 RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \
@@ -109,12 +109,13 @@ COPY \
 
 ARG VERSION
 ARG COMMIT
+ARG DATE
 
 # copy & build agent
 COPY . $GOPATH/src/github.com/ligato/vpp-agent
 
 RUN cd $GOPATH/src/github.com/ligato/vpp-agent \
- && VERSION=$VERSION COMMIT=$COMMIT make install
+ && VERSION=$VERSION COMMIT=$COMMIT DATE=$DATE make install
 
 WORKDIR /
 
