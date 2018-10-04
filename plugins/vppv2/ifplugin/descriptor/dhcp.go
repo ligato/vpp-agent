@@ -49,6 +49,10 @@ type DHCPDescriptor struct {
 	ifHandler vppcalls.IfVppAPI
 	scheduler scheduler.KVScheduler
 	intfIndex ifaceidx.IfaceMetadataIndex
+
+	// DHCP notification watching
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 // NewDHCPDescriptor creates a new instance of DHCPDescriptor.
@@ -82,8 +86,19 @@ func (d *DHCPDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadataIndex
 }
 
 // WatchDHCPNotifications starts watching for DHCP notifications.
-func (d *DHCPDescriptor) WatchDHCPNotifications(ctx context.Context, wg sync.WaitGroup, dhcpChan chan govppapi.Message) {
-	go d.watchDHCPNotifications(ctx, wg, dhcpChan)
+func (d *DHCPDescriptor) WatchDHCPNotifications(ctx context.Context, dhcpChan chan govppapi.Message) {
+	// Create child context
+	var childCtx context.Context
+	childCtx, d.cancel = context.WithCancel(ctx)
+
+	go d.watchDHCPNotifications(childCtx, dhcpChan)
+}
+
+// Close stops watching of DHCP notifications.
+func (d *DHCPDescriptor) Close() error {
+	d.cancel()
+	d.wg.Wait()
+	return nil
 }
 
 // IsDHCPRelatedKey returns true if the key is identifying DHCP client (derived value)
@@ -202,9 +217,9 @@ func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler
 }
 
 // watchDHCPNotifications watches and processes DHCP notifications.
-func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context, wg sync.WaitGroup, dhcpChan chan govppapi.Message) {
-	wg.Add(1)
-	defer wg.Done()
+func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context, dhcpChan chan govppapi.Message) {
+	d.wg.Add(1)
+	defer d.wg.Done()
 	d.log.Debug("Started watcher on DHCP notifications")
 
 	for {

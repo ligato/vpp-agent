@@ -188,7 +188,7 @@ func (p *IfPlugin) Init() error {
 	if _, err := p.vppCh.SubscribeNotification(p.dhcpChan, &dhcp.DHCPComplEvent{}); err != nil {
 		return err
 	}
-	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx, p.wg, p.dhcpChan)
+	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx, p.dhcpChan)
 
 	// Create plugin context, save cancel function into the plugin handle.
 	p.ctx, p.cancel = context.WithCancel(context.Background())
@@ -253,8 +253,10 @@ func (p *IfPlugin) Close() error {
 	p.cancel()
 	p.wg.Wait()
 
-	// close all objects, channels, registrations
+	// close all resources
 	safeclose.Close(
+		// DHCP descriptor (DHCP notification watcher)
+		p.dhcpDescriptor,
 		// state updater
 		p.ifStateUpdater,
 		// registrations
