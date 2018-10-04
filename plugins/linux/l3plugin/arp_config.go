@@ -73,7 +73,7 @@ func (c *LinuxArpConfigurator) GetArpInterfaceCache() map[string]*ArpToInterface
 func (c *LinuxArpConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
 	arpIndexes l3idx.LinuxARPIndexRW, ifIndexes ifaceidx.LinuxIfIndexRW) error {
 	// Logger
-	c.log = logger.NewLogger("-arp-conf")
+	c.log = logger.NewLogger("arp-conf")
 
 	// In-memory mappings
 	c.ifIndexes = ifIndexes

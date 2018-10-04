@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
 )
 
@@ -35,12 +34,10 @@ type Tracer interface {
 }
 
 // NewTracer creates new tracer object
-func NewTracer(msgName string, log logging.Logger) Tracer {
+func NewTracer(msgName string) Tracer {
 	return &tracer{
 		msgName:   msgName,
-		log:       log,
 		nextIndex: 1,
-		timedb:    make([]*entry, 0),
 	}
 }
 
@@ -49,7 +46,6 @@ type tracer struct {
 	sync.Mutex
 
 	msgName string
-	log     logging.Logger
 	// Entry index, used in database as key and increased after every entry. Never resets since the tracer object is
 	// created or the database is cleared
 	nextIndex uint64
@@ -124,5 +120,8 @@ func (t *tracer) Get() *apitrace.Trace {
 }
 
 func (t *tracer) Clear() {
+	t.Lock()
+	defer t.Unlock()
+
 	t.timedb = make([]*entry, 0)
 }

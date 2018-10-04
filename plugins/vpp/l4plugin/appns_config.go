@@ -54,7 +54,7 @@ type AppNsConfigurator struct {
 // Init members (channels...) and start go routines
 func (c *AppNsConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l4-plugin")
+	c.log = logger.NewLogger("l4-plugin")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

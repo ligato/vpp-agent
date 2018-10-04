@@ -57,7 +57,7 @@ type ProxyArpConfigurator struct {
 // Init VPP channel and vppcalls handler
 func (c *ProxyArpConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l3-proxy-arp-conf")
+	c.log = logger.NewLogger("l3-proxy-arp-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

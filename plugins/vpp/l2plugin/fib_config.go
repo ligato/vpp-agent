@@ -55,7 +55,7 @@ type FIBConfigurator struct {
 func (c *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
 	bdIndexes l2idx.BDIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l2-fib-conf")
+	c.log = logger.NewLogger("l2-fib-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

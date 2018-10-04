@@ -86,7 +86,7 @@ type NatConfigurator struct {
 // Init NAT configurator
 func (c *NatConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, ifIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-nat-conf")
+	c.log = logger.NewLogger("nat-conf")
 
 	// Mappings
 	c.ifIndexes = ifIndexes

@@ -88,7 +88,7 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-if-state")
+	c.log = logger.NewLogger("if-state")
 
 	// Mappings
 	c.swIfIndexes = swIfIndexes

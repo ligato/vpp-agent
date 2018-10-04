@@ -82,7 +82,7 @@ type RouteConfigurator struct {
 // Init members (channels...) and start go routines.
 func (c *RouteConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l3-route-conf")
+	c.log = logger.NewLogger("l3-route-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

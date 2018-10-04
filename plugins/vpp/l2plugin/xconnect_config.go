@@ -45,7 +45,7 @@ type XConnectConfigurator struct {
 // Init essential configurator fields.
 func (c *XConnectConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-xc-conf")
+	c.log = logger.NewLogger("xc-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes

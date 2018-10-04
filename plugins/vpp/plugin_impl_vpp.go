@@ -129,8 +129,8 @@ type Plugin struct {
 	omittedPrefixes  []string // list of keys which won't be resynced
 
 	// From config file
-	ifMtu           uint32
-	resyncStrategy  string
+	ifMtu          uint32
+	resyncStrategy string
 
 	// Common
 	statusCheckReg bool
@@ -575,7 +575,7 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 
 	// Application namespace configurator
 	plugin.appNsConfigurator = &l4plugin.AppNsConfigurator{}
-	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes,); err != nil {
+	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
 		return plugin.appNsConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("l4Configurator Initialized")
@@ -597,7 +597,7 @@ func (plugin *Plugin) initSR(ctx context.Context) (err error) {
 }
 
 func (plugin *Plugin) initErrorHandler() error {
-	ehLogger := plugin.Log.NewLogger("-error-handler")
+	ehLogger := plugin.Log.NewLogger("error-handler")
 	plugin.errorIndexes = nametoidx.NewNameToIdx(ehLogger, "error_indexes", nil)
 
 	// Init mapping index

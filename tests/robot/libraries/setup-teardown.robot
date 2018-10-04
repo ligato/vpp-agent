@@ -3,7 +3,7 @@
 *** Settings ***
 Library       String
 Library       RequestsLibrary
-Library       SSHLibrary            timeout=5s       loglevel=TRACE
+Library       SSHLibrary            timeout=15s     loglevel=TRACE
 #Resource      ssh.robot
 Resource      ${ENV}_setup-teardown.robot
 
