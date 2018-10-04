@@ -69,7 +69,7 @@ func (plugin *Plugin) watchEvents(ctx context.Context) {
 }
 
 func (plugin *Plugin) onResyncEvent(e datasync.ResyncEvent) {
-	req := resyncParseEvent(e, plugin.Log)
+	req := plugin.resyncParseEvent(e)
 	err := plugin.resyncPropageRequest(req)
 	e.Done(err)
 }
