@@ -1,4 +1,4 @@
-# Release v1.6 (2018-10-02)
+# Release v1.6 (2018-10-04)
 
 ## Major topics
 
@@ -42,6 +42,7 @@
   * GRPC "listen and serve" call was moved to after init, which prevents calling services
   which were not yet registered. Also fixed a bug causing occasional panic if GRPC plugin 
   was disabled.
+  * ETCD reconnect resync fixed
 
 # Release v1.5 (2018-08-24)
 
