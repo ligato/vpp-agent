@@ -103,10 +103,11 @@ func (plugin *Plugin) resyncAppendInterface(iterator datasync.KeyValIterator, re
 				plugin.Log.Errorf("error getting value of Linux interface: %v", err)
 				continue
 			}
-			if plugin.checkRevision(interfaceData) {
-				req.Interfaces = append(req.Interfaces, value)
-				num++
-			}
+			req.Interfaces = append(req.Interfaces, value)
+			num++
+
+			plugin.Log.WithField("revision", interfaceData.GetRevision()).
+				Debugf("Processing resync for key: %q", interfaceData.GetKey())
 		}
 	}
 
@@ -124,10 +125,11 @@ func (plugin *Plugin) resyncAppendARPs(iterator datasync.KeyValIterator, req *Da
 				plugin.Log.Errorf("error getting value of Linux ARP: %v", err)
 				continue
 			}
-			if plugin.checkRevision(arpData) {
-				req.ARPs = append(req.ARPs, value)
-				num++
-			}
+			req.ARPs = append(req.ARPs, value)
+			num++
+
+			plugin.Log.WithField("revision", arpData.GetRevision()).
+				Debugf("Processing resync for key: %q", arpData.GetKey())
 		}
 	}
 
@@ -145,10 +147,11 @@ func (plugin *Plugin) resyncAppendRoutes(iterator datasync.KeyValIterator, req *
 				plugin.Log.Errorf("error getting value of Linux ARP: %v", err)
 				continue
 			}
-			if plugin.checkRevision(routeData) {
-				req.Routes = append(req.Routes, value)
-				num++
-			}
+			req.Routes = append(req.Routes, value)
+			num++
+
+			plugin.Log.WithField("revision", routeData.GetRevision()).
+				Debugf("Processing resync for key: %q", routeData.GetKey())
 		}
 	}
 
@@ -170,16 +173,4 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("data watcher watch finished")
 
 	return nil
-}
-
-func (plugin *Plugin) checkRevision(kv datasync.KeyVal) bool {
-	plugin.Log.WithField("revision", kv.GetRevision()).
-		Debugf("Processing resync for key: %q", kv.GetKey())
-
-	if rev, ok := plugin.revisions[kv.GetKey()]; ok && rev >= kv.GetRevision() {
-		plugin.Log.Debugf("resync linux item %s skipped, revision is the same or older than current", kv.GetKey())
-		return false
-	}
-	plugin.revisions[kv.GetKey()] = kv.GetRevision()
-	return true
 }

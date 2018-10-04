@@ -347,10 +347,11 @@ func (plugin *Plugin) resyncAppendARPs(resyncData datasync.KeyValIterator, req *
 				plugin.Log.Errorf("error getting value of ARP: %v", err)
 				continue
 			}
-			if plugin.checkRevision(arpData) {
-				req.ArpEntries = append(req.ArpEntries, entry)
-				num++
-			}
+			req.ArpEntries = append(req.ArpEntries, entry)
+			num++
+
+			plugin.Log.WithField("revision", arpData.GetRevision()).
+				Debugf("Processing resync for key: %q", arpData.GetKey())
 		}
 	}
 
@@ -368,10 +369,11 @@ func (plugin *Plugin) resyncAppendProxyArpInterfaces(resyncData datasync.KeyValI
 				plugin.Log.Errorf("error getting value of proxy ARP: %v", err)
 				continue
 			}
-			if plugin.checkRevision(arpData) {
-				req.ProxyArpInterfaces = append(req.ProxyArpInterfaces, entry)
-				num++
-			}
+			req.ProxyArpInterfaces = append(req.ProxyArpInterfaces, entry)
+			num++
+
+			plugin.Log.WithField("revision", arpData.GetRevision()).
+				Debugf("Processing resync for key: %q", arpData.GetKey())
 		}
 	}
 
@@ -390,10 +392,11 @@ func (plugin *Plugin) resyncAppendIPScanNeighs(resyncData datasync.KeyValIterato
 			plugin.Log.Errorf("error getting value of IP scan neigh: %v", err)
 			continue
 		}
-		if plugin.checkRevision(ipScan) {
-			req.IPScanNeigh = entry
-			num++
-		}
+		req.IPScanNeigh = entry
+		num++
+
+		plugin.Log.WithField("revision", ipScan.GetRevision()).
+			Debugf("Processing resync for key: %q", ipScan.GetKey())
 	}
 
 	plugin.Log.Debugf("Received RESYNC IP scan neigh values %d", num)
@@ -410,38 +413,39 @@ func (plugin *Plugin) resyncAppendProxyArpRanges(resyncData datasync.KeyValItera
 				plugin.Log.Errorf("error getting value of proxy ARP ranges: %v", err)
 				continue
 			}
-			if plugin.checkRevision(arpData) {
-				req.ProxyArpRanges = append(req.ProxyArpRanges, entry)
-				num++
-			}
+			req.ProxyArpRanges = append(req.ProxyArpRanges, entry)
+			num++
+
+			plugin.Log.WithField("revision", arpData.GetRevision()).
+				Debugf("Processing resync for key: %q", arpData.GetKey())
 		}
 	}
 
 	plugin.Log.Debugf("Received RESYNC proxy ARP ranges %d ", num)
 }
 
-func (plugin *Plugin) resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq) (bool, error) {
+func (plugin *Plugin) resyncAppendL3FIB(fibData datasync.KeyVal, vrfIndex string, req *DataResyncReq) error {
 	route := &l3.StaticRoutes_Route{}
 	err := fibData.GetValue(route)
 	if err != nil {
-		return false, err
+		return err
 	}
 	// Ensure every route has the corresponding VRF index.
 	intVrfKeyIndex, err := strconv.Atoi(vrfIndex)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if vrfIndex != strconv.Itoa(int(route.VrfId)) {
 		plugin.Log.Warnf("Resync: VRF index from key (%v) and from config (%v) does not match, using value from the key",
 			intVrfKeyIndex, route.VrfId)
 		route.VrfId = uint32(intVrfKeyIndex)
 	}
-	if plugin.checkRevision(fibData) {
-		req.StaticRoutes = append(req.StaticRoutes, route)
-		return true, err
-	}
+	req.StaticRoutes = append(req.StaticRoutes, route)
 
-	return false, nil
+	plugin.Log.WithField("revision", fibData.GetRevision()).
+		Debugf("Processing resync for key: %q", fibData.GetKey())
+
+	return nil
 }
 
 func (plugin *Plugin) resyncAppendVRFs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
@@ -453,12 +457,14 @@ func (plugin *Plugin) resyncAppendVRFs(resyncData datasync.KeyValIterator, req *
 			key := vrfData.GetKey()
 			fib, vrfIndex, _, _, _ := l3.ParseRouteKey(key)
 			if fib {
-				if ok, err := plugin.resyncAppendL3FIB(vrfData, vrfIndex, req); err != nil {
+				if err := plugin.resyncAppendL3FIB(vrfData, vrfIndex, req); err != nil {
 					plugin.Log.Errorf("error resyncing L3FIB: %v", err)
 					continue
-				} else if ok {
-					numL3FIBs++
 				}
+				numL3FIBs++
+
+				plugin.Log.WithField("revision", vrfData.GetRevision()).
+					Debugf("Processing resync for key: %q", vrfData.GetKey())
 			} else {
 				plugin.Log.Warn("VRF RESYNC is not implemented")
 			}
@@ -479,26 +485,27 @@ func (plugin *Plugin) resyncAppendXCons(resyncData datasync.KeyValIterator, req 
 				plugin.Log.Errorf("error getting value of XConnect: %v", err)
 				continue
 			}
-			if plugin.checkRevision(xConnectData) {
-				req.XConnects = append(req.XConnects, value)
-				num++
-			}
+			req.XConnects = append(req.XConnects, value)
+			num++
+
+			plugin.Log.WithField("revision", xConnectData.GetRevision()).
+				Debugf("Processing resync for key: %q", xConnectData.GetKey())
 		}
 	}
 
 	plugin.Log.Debugf("Received RESYNC XConnects values %d", num)
 }
-func (plugin *Plugin) resyncAppendL2FIB(fibData datasync.KeyVal, req *DataResyncReq) (bool, error) {
+func (plugin *Plugin) resyncAppendL2FIB(fibData datasync.KeyVal, req *DataResyncReq) error {
 	value := &l2.FibTable_FibEntry{}
 	if err := fibData.GetValue(value); err != nil {
-		return false, fmt.Errorf("error getting value of L2FIB: %v", err)
+		return fmt.Errorf("error getting value of L2FIB: %v", err)
 	}
-	if plugin.checkRevision(fibData) {
-		req.FibTableEntries = append(req.FibTableEntries, value)
-		return true, nil
-	}
+	req.FibTableEntries = append(req.FibTableEntries, value)
 
-	return false, nil
+	plugin.Log.WithField("revision", fibData.GetRevision()).
+		Debugf("Processing resync for key: %q", fibData.GetKey())
+
+	return nil
 }
 
 func (plugin *Plugin) resyncAppendBDs(resyncData datasync.KeyValIterator, req *DataResyncReq) {
@@ -511,23 +518,25 @@ func (plugin *Plugin) resyncAppendBDs(resyncData datasync.KeyValIterator, req *D
 			key := bridgeDomainData.GetKey()
 			fib, _, _ := l2.ParseFibKey(key)
 			if fib {
-				if ok, err := plugin.resyncAppendL2FIB(bridgeDomainData, req); err != nil {
+				if err := plugin.resyncAppendL2FIB(bridgeDomainData, req); err != nil {
 					plugin.Log.Errorf("error resyncing L2FIB: %v", err)
 					continue
-				} else if ok {
-					numL2FIBs++
 				}
+				numL2FIBs++
+
 			} else {
 				value := &l2.BridgeDomains_BridgeDomain{}
 				if err := bridgeDomainData.GetValue(value); err != nil {
 					plugin.Log.Errorf("error getting value of bridge domain: %v", err)
 					continue
 				}
-				if plugin.checkRevision(bridgeDomainData) {
-					req.BridgeDomains = append(req.BridgeDomains, value)
-					numBDs++
-				}
+				req.BridgeDomains = append(req.BridgeDomains, value)
+				numBDs++
+
 			}
+
+			plugin.Log.WithField("revision", bridgeDomainData.GetRevision()).
+				Debugf("Processing resync for key: %q", bridgeDomainData.GetKey())
 		}
 	}
 
@@ -546,10 +555,11 @@ func (plugin *Plugin) resyncAppendBfdEcho(resyncData datasync.KeyValIterator, re
 				plugin.Log.Errorf("error getting value of BFD echo function: %v", err)
 				continue
 			}
-			if plugin.checkRevision(bfdData) {
-				req.SingleHopBFDEcho = append(req.SingleHopBFDEcho, bfdEcho)
-				num++
-			}
+			req.SingleHopBFDEcho = append(req.SingleHopBFDEcho, bfdEcho)
+			num++
+
+			plugin.Log.WithField("revision", bfdData.GetRevision()).
+				Debugf("Processing resync for key: %q", bfdData.GetKey())
 		}
 	}
 
@@ -567,10 +577,11 @@ func (plugin *Plugin) resyncAppendBfdAuthKeys(resyncData datasync.KeyValIterator
 				plugin.Log.Errorf("error getting value of BFD auth key: %v", err)
 				continue
 			}
-			if plugin.checkRevision(bfdData) {
-				req.SingleHopBFDKey = append(req.SingleHopBFDKey, bfdKey)
-				num++
-			}
+			req.SingleHopBFDKey = append(req.SingleHopBFDKey, bfdKey)
+			num++
+
+			plugin.Log.WithField("revision", bfdData.GetRevision()).
+				Debugf("Processing resync for key: %q", bfdData.GetKey())
 		}
 	}
 
@@ -588,10 +599,11 @@ func (plugin *Plugin) resyncAppendBfdSession(resyncData datasync.KeyValIterator,
 				plugin.Log.Errorf("error getting value of BFD session: %v", err)
 				continue
 			}
-			if plugin.checkRevision(bfdData) {
-				req.SingleHopBFDSession = append(req.SingleHopBFDSession, bfdSession)
-				num++
-			}
+			req.SingleHopBFDSession = append(req.SingleHopBFDSession, bfdSession)
+			num++
+
+			plugin.Log.WithField("revision", bfdData.GetRevision()).
+				Debugf("Processing resync for key: %q", bfdData.GetKey())
 		}
 	}
 
@@ -609,10 +621,11 @@ func (plugin *Plugin) appendACLInterface(resyncData datasync.KeyValIterator, req
 				plugin.Log.Errorf("error getting value of ACL: %v", err)
 				continue
 			}
-			if plugin.checkRevision(data) {
-				req.ACLs = append(req.ACLs, aclData)
-				num++
-			}
+			req.ACLs = append(req.ACLs, aclData)
+			num++
+
+			plugin.Log.WithField("revision", data.GetRevision()).
+				Debugf("Processing resync for key: %q", data.GetKey())
 		}
 	}
 
@@ -630,10 +643,11 @@ func (plugin *Plugin) appendResyncInterface(resyncData datasync.KeyValIterator, 
 				plugin.Log.Errorf("error getting value of interface: %v", err)
 				continue
 			}
-			if plugin.checkRevision(interfaceData) {
-				req.Interfaces = append(req.Interfaces, ifData)
-				num++
-			}
+			req.Interfaces = append(req.Interfaces, ifData)
+			num++
+
+			plugin.Log.WithField("revision", interfaceData.GetRevision()).
+				Debugf("Processing resync for key: %q", interfaceData.GetKey())
 		}
 	}
 
@@ -652,10 +666,11 @@ func (plugin *Plugin) resyncFeatures(resyncData datasync.KeyValIterator, req *Da
 			plugin.Log.Errorf("error getting value of L4 features: %v", err)
 			continue
 		}
-		if plugin.checkRevision(appResyncData) {
-			req.L4Features = value
-			num++
-		}
+		req.L4Features = value
+		num++
+
+		plugin.Log.WithField("revision", appResyncData.GetRevision()).
+			Debugf("Processing resync for key: %q", appResyncData.GetKey())
 	}
 
 	plugin.Log.Debugf("Received RESYNC L4 features %d", num)
@@ -672,10 +687,11 @@ func (plugin *Plugin) resyncAppendAppNs(resyncData datasync.KeyValIterator, req 
 				plugin.Log.Errorf("error getting value of App namespaces: %v", err)
 				continue
 			}
-			if plugin.checkRevision(appResyncData) {
-				req.AppNamespaces = append(req.AppNamespaces, value)
-				num++
-			}
+			req.AppNamespaces = append(req.AppNamespaces, value)
+			num++
+
+			plugin.Log.WithField("revision", appResyncData.GetRevision()).
+				Debugf("Processing resync for key: %q", appResyncData.GetKey())
 		}
 	}
 
@@ -693,10 +709,11 @@ func (plugin *Plugin) appendResyncStnRules(resyncData datasync.KeyValIterator, r
 				plugin.Log.Errorf("error getting value of STN rules: %v", err)
 				continue
 			}
-			if plugin.checkRevision(stnData) {
-				req.StnRules = append(req.StnRules, value)
-				num++
-			}
+			req.StnRules = append(req.StnRules, value)
+			num++
+
+			plugin.Log.WithField("revision", stnData.GetRevision()).
+				Debugf("Processing resync for key: %q", stnData.GetKey())
 		}
 	}
 
@@ -715,10 +732,11 @@ func (plugin *Plugin) resyncNatGlobal(resyncData datasync.KeyValIterator, req *D
 			plugin.Log.Errorf("error getting value of NAT global: %v", err)
 			continue
 		}
-		if plugin.checkRevision(natGlobalData) {
-			req.Nat44Global = value
-			num++
-		}
+		req.Nat44Global = value
+		num++
+
+		plugin.Log.WithField("revision", natGlobalData.GetRevision()).
+			Debugf("Processing resync for key: %q", natGlobalData.GetKey())
 	}
 
 	plugin.Log.Debugf("Received RESYNC NAT global %d", num)
@@ -735,10 +753,11 @@ func (plugin *Plugin) appendResyncSNat(resyncData datasync.KeyValIterator, req *
 				plugin.Log.Errorf("error getting value of SNAT: %v", err)
 				continue
 			}
-			if plugin.checkRevision(sNatData) {
-				req.Nat44SNat = append(req.Nat44SNat, value)
-				num++
-			}
+			req.Nat44SNat = append(req.Nat44SNat, value)
+			num++
+
+			plugin.Log.WithField("revision", sNatData.GetRevision()).
+				Debugf("Processing resync for key: %q", sNatData.GetKey())
 		}
 	}
 
@@ -756,10 +775,11 @@ func (plugin *Plugin) appendResyncDNat(resyncData datasync.KeyValIterator, req *
 				plugin.Log.Errorf("error getting value of DNAT: %v", err)
 				continue
 			}
-			if plugin.checkRevision(dNatData) {
-				req.Nat44DNat = append(req.Nat44DNat, value)
-				num++
-			}
+			req.Nat44DNat = append(req.Nat44DNat, value)
+			num++
+
+			plugin.Log.WithField("revision", dNatData.GetRevision()).
+				Debugf("Processing resync for key: %q", dNatData.GetKey())
 		}
 	}
 
@@ -778,31 +798,28 @@ func (plugin *Plugin) appendResyncIPSec(resyncData datasync.KeyValIterator, req 
 					plugin.Log.Errorf("error getting value of IPSec SPD: %v", err)
 					continue
 				}
-				if plugin.checkRevision(data) {
-					req.IPSecSPDs = append(req.IPSecSPDs, value)
-					num++
-				}
+				req.IPSecSPDs = append(req.IPSecSPDs, value)
+				num++
 			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixSA) {
 				value := &ipsec.SecurityAssociations_SA{}
 				if err := data.GetValue(value); err != nil {
 					plugin.Log.Errorf("error getting value of IPSec SA: %v", err)
 					continue
 				}
-				if plugin.checkRevision(data) {
-					req.IPSecSAs = append(req.IPSecSAs, value)
-					num++
-				}
+				req.IPSecSAs = append(req.IPSecSAs, value)
+				num++
 			} else if strings.HasPrefix(data.GetKey(), ipsec.KeyPrefixTunnel) {
 				value := &ipsec.TunnelInterfaces_Tunnel{}
 				if err := data.GetValue(value); err != nil {
 					plugin.Log.Errorf("error getting value of IPSec tunnel: %v", err)
 					continue
 				}
-				if plugin.checkRevision(data) {
-					req.IPSecTunnels = append(req.IPSecTunnels, value)
-					num++
-				}
+				req.IPSecTunnels = append(req.IPSecTunnels, value)
+				num++
 			}
+
+			plugin.Log.WithField("revision", data.GetRevision()).
+				Debugf("Processing resync for key: %q", data.GetKey())
 		}
 	}
 
@@ -821,10 +838,8 @@ func (plugin *Plugin) appendResyncSR(resyncData datasync.KeyValIterator, req *Da
 					plugin.Log.Errorf("error getting value of SR sid: %v", err)
 					continue
 				}
-				if plugin.checkRevision(data) {
-					req.LocalSids = append(req.LocalSids, value)
-					num++
-				}
+				req.LocalSids = append(req.LocalSids, value)
+				num++
 			} else if strings.HasPrefix(data.GetKey(), srv6.PolicyPrefix()) {
 				if srv6.IsPolicySegmentPrefix(data.GetKey()) { //Policy segment
 					value := &srv6.PolicySegment{}
@@ -835,7 +850,7 @@ func (plugin *Plugin) appendResyncSR(resyncData datasync.KeyValIterator, req *Da
 					if name, err := srv6.ParsePolicySegmentKey(data.GetKey()); err != nil {
 						plugin.Log.Errorf("failed to parse SR policy segment %s: %v", data.GetKey(), err)
 						continue
-					} else if plugin.checkRevision(data) {
+					} else {
 						req.SrPolicySegments = append(req.SrPolicySegments, &srplugin.NamedPolicySegment{Name: name, Segment: value})
 						num++
 					}
@@ -845,10 +860,8 @@ func (plugin *Plugin) appendResyncSR(resyncData datasync.KeyValIterator, req *Da
 						plugin.Log.Errorf("error getting value of SR policy: %v", err)
 						continue
 					}
-					if plugin.checkRevision(data) {
-						req.SrPolicies = append(req.SrPolicies, value)
-						num++
-					}
+					req.SrPolicies = append(req.SrPolicies, value)
+					num++
 				}
 			} else if strings.HasPrefix(data.GetKey(), srv6.SteeringPrefix()) {
 				value := &srv6.Steering{}
@@ -856,11 +869,12 @@ func (plugin *Plugin) appendResyncSR(resyncData datasync.KeyValIterator, req *Da
 					plugin.Log.Errorf("error getting value of SR steering: %v", err)
 					continue
 				}
-				if plugin.checkRevision(data) {
-					req.SrSteerings = append(req.SrSteerings, &srplugin.NamedSteering{Name: strings.TrimPrefix(data.GetKey(), srv6.SteeringPrefix()), Steering: value})
-					num++
-				}
+				req.SrSteerings = append(req.SrSteerings, &srplugin.NamedSteering{Name: strings.TrimPrefix(data.GetKey(), srv6.SteeringPrefix()), Steering: value})
+				num++
 			}
+
+			plugin.Log.WithField("revision", data.GetRevision()).
+				Debugf("Processing resync for key: %q", data.GetKey())
 		}
 	}
 
@@ -921,16 +935,4 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("data Transport watch finished")
 
 	return nil
-}
-
-func (plugin *Plugin) checkRevision(kv datasync.KeyVal) bool {
-	plugin.Log.WithField("revision", kv.GetRevision()).
-		Debugf("Processing resync for key: %q", kv.GetKey())
-
-	if rev, ok := plugin.revisions[kv.GetKey()]; ok && rev >= kv.GetRevision() {
-		plugin.Log.Debugf("resync vpp item %s skipped, revision is the same or older than current", kv.GetKey())
-		return false
-	}
-	plugin.revisions[kv.GetKey()] = kv.GetRevision()
-	return true
 }

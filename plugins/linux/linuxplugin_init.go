@@ -70,9 +70,8 @@ type Plugin struct {
 	watchDataReg datasync.WatchRegistration
 
 	// Common
-	revisions map[string]int64   // TODO temporary field helps to handle correct resync/change revision order
-	cancel    context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
-	wg        sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
+	cancel context.CancelFunc // Cancel can be used to cancel all goroutines and their jobs inside of the plugin.
+	wg     sync.WaitGroup     // Wait group allows to wait until all goroutines of the plugin have finished.
 }
 
 // Deps groups injected dependencies of plugin
@@ -125,9 +124,6 @@ func (plugin *Plugin) InjectVppIfIndexes(indexes ifaceVPP.SwIfIndex) {
 // Init gets handlers for ETCD and Kafka and delegates them to ifConfigurator.
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing Linux plugin")
-
-	// Revision map
-	plugin.revisions = make(map[string]int64)
 
 	config, err := plugin.retrieveLinuxConfig()
 	if err != nil {

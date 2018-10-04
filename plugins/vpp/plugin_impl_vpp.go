@@ -129,11 +129,10 @@ type Plugin struct {
 	omittedPrefixes  []string // list of keys which won't be resynced
 
 	// From config file
-	ifMtu           uint32
-	resyncStrategy  string
+	ifMtu          uint32
+	resyncStrategy string
 
 	// Common
-	revisions      map[string]int64	// TODO temporary field helps to handle correct resync/change revision order
 	statusCheckReg bool
 	cancel         context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
 	wg             sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
@@ -265,8 +264,6 @@ func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
 func (plugin *Plugin) Init() error {
 	plugin.Log.Debug("Initializing default plugins")
 
-	// Revision map
-	plugin.revisions = make(map[string]int64)
 	// Read config file and set all related fields
 	plugin.fromConfigFile()
 	// Fills nil dependencies with default values
@@ -578,7 +575,7 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 
 	// Application namespace configurator
 	plugin.appNsConfigurator = &l4plugin.AppNsConfigurator{}
-	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes,); err != nil {
+	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
 		return plugin.appNsConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("l4Configurator Initialized")
