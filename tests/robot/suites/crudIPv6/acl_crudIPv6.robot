@@ -49,7 +49,7 @@ ${2DEST_PORT_U}=     2200
 ${2SRC_PORT_L}=      20010
 ${2SRC_PORT_U}=      20020
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       6s
 ${NO_ACL}=
 
 

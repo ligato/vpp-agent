@@ -18,7 +18,7 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       6s
 ${LIBMEMIF_IP1}=       192.168.1.2
 ${VPP2MEMIF_IP1}=      192.168.1.2
 ${VPP1MEMIF_IP1}=      192.168.1.1

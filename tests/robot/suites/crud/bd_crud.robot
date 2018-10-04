@@ -17,8 +17,9 @@ Test Teardown     TestTeardown
 *** Variables ***
 ${VARIABLES}=          common
 ${ENV}=                common
-${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+
+${WAIT_TIMEOUT}=     30s
+${SYNC_SLEEP}=       6s
 
 *** Test Cases ***
 Configure Environment

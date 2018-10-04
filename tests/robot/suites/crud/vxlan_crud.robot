@@ -18,13 +18,15 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 
-${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${WAIT_TIMEOUT}=     30s
+${SYNC_SLEEP}=       6s
 
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
     Configure Environment 1
+    Sleep    10s
+
 
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1
