@@ -37,15 +37,15 @@ type MockSouthbound struct {
 type MockOpType int
 
 const (
-	// Add new KV.
+	// MockAdd is a mock Add operation.
 	MockAdd MockOpType = iota
-	// Modify existing KV.
+	// MockModify is a mock Modify operation.
 	MockModify
-	// Delete existing KV.
+	// MockDelete is a mock Delete operation.
 	MockDelete
-	// Update existing KV.
+	// MockUpdate is a mock Update operation.
 	MockUpdate
-	// Dump non-derived values.
+	// MockDump is a mock Dump operation.
 	MockDump
 )
 

@@ -31,7 +31,7 @@ func nodesToKVPairs(nodes []graph.Node) (kvPairs []KeyValuePair) {
 
 func nodesToKeysWithError(nodes []graph.Node) (kvPairs []KeyWithError) {
 	for _, node := range nodes {
-		err, txnOp := getNodeError(node)
+		txnOp, err := getNodeError(node)
 		kvPairs = append(kvPairs, KeyWithError{
 			Key:          node.GetKey(),
 			TxnOperation: txnOp,
@@ -88,7 +88,7 @@ func getNodeOrigin(node graph.Node) ValueOrigin {
 }
 
 // getNodeError returns node error stored in Error flag.
-func getNodeError(node graph.Node) (err error, operation TxnOperation) {
+func getNodeError(node graph.Node) (operation TxnOperation, err error) {
 	errorFlag := node.GetFlag(ErrorFlagName)
 	if errorFlag != nil {
 		flag := errorFlag.(*ErrorFlag)
@@ -96,7 +96,7 @@ func getNodeError(node graph.Node) (err error, operation TxnOperation) {
 		operation = flag.txnOp
 		return
 	}
-	return nil, UndefinedTxnOp
+	return UndefinedTxnOp, nil
 }
 
 // getNodeLastChange returns info about the last change for a given node, stored in LastChange flag.
