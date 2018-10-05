@@ -91,6 +91,7 @@ func (d *DHCPDescriptor) WatchDHCPNotifications(ctx context.Context, dhcpChan ch
 	var childCtx context.Context
 	childCtx, d.cancel = context.WithCancel(ctx)
 
+	d.wg.Add(1)
 	go d.watchDHCPNotifications(childCtx, dhcpChan)
 }
 
@@ -217,7 +218,6 @@ func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler
 
 // watchDHCPNotifications watches and processes DHCP notifications.
 func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context, dhcpChan chan govppapi.Message) {
-	d.wg.Add(1)
 	defer d.wg.Done()
 	d.log.Debug("Started watcher on DHCP notifications")
 

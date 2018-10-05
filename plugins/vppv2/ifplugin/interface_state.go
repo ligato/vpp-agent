@@ -110,6 +110,7 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	childCtx, c.cancel = context.WithCancel(ctx)
 
 	// Watch for incoming notifications
+	c.wg.Add(1)
 	go c.watchVPPNotifications(childCtx)
 
 	c.log.Info("Interface state updater initialized")
@@ -203,7 +204,6 @@ func (c *InterfaceStateUpdater) Close() error {
 
 // watchVPPNotifications watches for delivery of notifications from VPP.
 func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
-	c.wg.Add(1)
 	defer c.wg.Done()
 
 	if c.notifChan != nil {

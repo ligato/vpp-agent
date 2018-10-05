@@ -129,6 +129,7 @@ func (intfw *InterfaceWatcher) StartWatching() error {
 		intfw.log.Error(err)
 		return err
 	}
+	intfw.wg.Add(1)
 	go intfw.watchDefaultNamespace()
 	return nil
 }
@@ -142,7 +143,6 @@ func (intfw *InterfaceWatcher) StopWatching() {
 // watchDefaultNamespace watches for notification about added/removed interfaces
 // to/from the default namespace.
 func (intfw *InterfaceWatcher) watchDefaultNamespace() {
-	intfw.wg.Add(1)
 	defer intfw.wg.Done()
 
 	// get the set of interfaces already available in the default namespace
@@ -198,6 +198,7 @@ func (intfw *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUp
 	if isEnabled {
 		// do not notify until interface is truly finished
 		intfw.pendingIntfs[ifName] = true
+		intfw.wg.Add(1)
 		go intfw.delayNotification(ifName)
 		return
 	}
@@ -210,7 +211,6 @@ func (intfw *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUp
 // interface is created in multiple stages and we do not want to notify scheduler
 // about intermediate states.
 func (intfw *InterfaceWatcher) delayNotification(ifName string) {
-	intfw.wg.Add(1)
 	defer intfw.wg.Done()
 
 	select {

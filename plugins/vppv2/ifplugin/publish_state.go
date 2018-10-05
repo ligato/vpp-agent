@@ -10,7 +10,6 @@ import (
 
 // watchStatusEvents watches for resync event of interface state data.
 func (p *IfPlugin) watchStatusEvents() {
-	p.wg.Add(1)
 	defer p.wg.Done()
 	p.Log.Debug("Start watching interface state events")
 
@@ -78,7 +77,6 @@ func (p *IfPlugin) resyncIfStateEvents(keys []string) error {
 // publishIfStateEvents goroutine is used to watch interface state notifications
 // that are propagated to Messaging topic.
 func (p *IfPlugin) publishIfStateEvents() {
-	p.wg.Add(1)
 	defer p.wg.Done()
 
 	// store last errors to prevent repeating

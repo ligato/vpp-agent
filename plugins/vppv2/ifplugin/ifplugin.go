@@ -202,9 +202,11 @@ func (p *IfPlugin) Init() error {
 		if err != nil {
 			return err
 		}
+		p.wg.Add(1)
 		go p.watchStatusEvents()
 
 		// start interface state publishing
+		p.wg.Add(1)
 		go p.publishIfStateEvents()
 
 		// start interface state updater
