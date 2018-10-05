@@ -18,14 +18,14 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/go-errors/errors"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (
@@ -48,8 +48,8 @@ type UnnumberedIfDescriptor struct {
 // NewUnnumberedIfDescriptor creates a new instance of UnnumberedIfDescriptor.
 func NewUnnumberedIfDescriptor(ifHandler vppcalls.IfVppAPI, log logging.PluginLogger) *UnnumberedIfDescriptor {
 	return &UnnumberedIfDescriptor{
-		ifHandler:     ifHandler,
-		log:           log.NewLogger("-unif-descriptor"),
+		ifHandler: ifHandler,
+		log:       log.NewLogger("-unif-descriptor"),
 	}
 }
 

@@ -126,19 +126,19 @@ func (rd *RouteDescriptor) IsRouteKey(key string) bool {
 }
 
 // EquivalentRoutes is case-insensitive comparison function for l3.LinuxStaticRoute.
-func (rd *RouteDescriptor) EquivalentRoutes(key string, route1, route2 *l3.LinuxStaticRoute) bool {
+func (rd *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.LinuxStaticRoute) bool {
 	// attributes compared as usually:
-	if route1.OutgoingInterface != route2.OutgoingInterface ||
-		route1.Scope != route2.Scope ||
-		route1.Metric != route2.Metric {
+	if oldRoute.OutgoingInterface != newRoute.OutgoingInterface ||
+		oldRoute.Scope != newRoute.Scope ||
+		oldRoute.Metric != newRoute.Metric {
 		return false
 	}
 
 	// compare IP addresses converted to net.IP(Net)
-	if !equalNetworks(route1.DstNetwork, route2.DstNetwork) {
+	if !equalNetworks(oldRoute.DstNetwork, newRoute.DstNetwork) {
 		return false
 	}
-	return equalAddrs(getGwAddr(route1), getGwAddr(route2))
+	return equalAddrs(getGwAddr(oldRoute), getGwAddr(newRoute))
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

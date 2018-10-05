@@ -121,7 +121,9 @@ type KVDescriptor struct {
 	// of values for equality.
 	// Scheduler compares values to determine if Modify operation is really
 	// needed.
-	ValueComparator func(key string, v1, v2 proto.Message) bool
+	// For NB values, <oldValue> was either previously set by NB or dumped,
+	// whereas <newValue> is a new value to be applied by NB.
+	ValueComparator func(key string, oldValue, newValue proto.Message) bool
 
 	// NBKeyPrefix is a key prefix that the scheduler should watch
 	// in NB to receive all NB-values described by this descriptor.

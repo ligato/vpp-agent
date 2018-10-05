@@ -50,12 +50,12 @@ func NewUnnumberedDescriptor(typedDescriptor *UnnumberedDescriptor) *KVDescripto
 	adapter := &UnnumberedDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
-        KeySelector:        typedDescriptor.KeySelector,
-        ValueTypeName:      typedDescriptor.ValueTypeName,
+		KeySelector:        typedDescriptor.KeySelector,
+		ValueTypeName:      typedDescriptor.ValueTypeName,
 		KeyLabel:           typedDescriptor.KeyLabel,
 		NBKeyPrefix:        typedDescriptor.NBKeyPrefix,
 		WithMetadata:       typedDescriptor.WithMetadata,
-        MetadataMapFactory: typedDescriptor.MetadataMapFactory,
+		MetadataMapFactory: typedDescriptor.MetadataMapFactory,
 		IsRetriableFailure: typedDescriptor.IsRetriableFailure,
 		DumpDependencies:   typedDescriptor.DumpDependencies,
 	}
@@ -208,7 +208,7 @@ func (da *UnnumberedDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWit
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
-			}
+		}
 		kvWithMetadata.Value = typedKVWithMetadata.Value
 		dump = append(dump, kvWithMetadata)
 	}

@@ -1,9 +1,9 @@
 package descriptor
 
 import (
-	"strings"
-	"github.com/gogo/protobuf/proto"
 	"github.com/go-errors/errors"
+	"github.com/gogo/protobuf/proto"
+	"strings"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 
@@ -17,6 +17,7 @@ import (
 // Add creates a VPP interface.
 func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error) {
 	var ifIdx uint32
+	var tapHostIfName string
 
 	// validate configuration first
 	err = d.validateInterfaceConfig(intf)
@@ -28,19 +29,21 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 	// create interface of the given type
 	switch intf.Type {
 	case interfaces.Interface_TAP_INTERFACE:
-		ifIdx, err = d.ifHandler.AddTapInterface(intf.Name, intf.GetTap())
+		tapCfg := d.getTapConfig(intf)
+		tapHostIfName = tapCfg.HostIfName
+		ifIdx, err = d.ifHandler.AddTapInterface(intf.Name, tapCfg)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
 		}
 
-		// verify that the Linux side was created
+		// TAP hardening: verify that the Linux side was created
 		if d.linuxIfHandler != nil {
 			var exists bool
 			startTime := time.Now()
 
 			for !exists && time.Since(startTime) < tapHostInterfaceWaitTimeout {
-				exists, err := d.linuxIfHandler.InterfaceExists(intf.GetTap().GetHostIfName())
+				exists, err := d.linuxIfHandler.InterfaceExists(tapHostIfName)
 				if err != nil {
 					d.log.Error(err)
 					return nil, err
@@ -202,8 +205,9 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 	// fill the metadata
 	metadata = &ifaceidx.IfaceMetadata{
-		SwIfIndex:    ifIdx,
-		IPAddresses:  intf.GetIpAddresses(),
+		SwIfIndex:     ifIdx,
+		IPAddresses:   intf.GetIpAddresses(),
+		TAPHostIfName: tapHostIfName,
 	}
 	return metadata, nil
 }
@@ -381,6 +385,12 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 
 // Dump returns all configured VPP interfaces.
 func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) (dump []adapter.InterfaceKVWithMetadata, err error) {
+	// convert interfaces for correlation into a map
+	ifCfg := make(map[string]*interfaces.Interface) // interface logical name -> interface config (as expected by correlate)
+	for _, kv := range correlate {
+		ifCfg[kv.Value.Name] = kv.Value
+	}
+
 	// refresh the map of memif socket IDs
 	d.memifSocketToID, err = d.ifHandler.DumpMemifSocketDetails()
 	if err != nil {
@@ -414,6 +424,23 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			intf.Interface.Name = untaggedIfPreffix + intf.Meta.InternalName
 		}
 
+		// get TAP host interface name
+		var tapHostIfName string
+		if intf.Interface.Type == interfaces.Interface_TAP_INTERFACE {
+			tapHostIfName = intf.Interface.GetTap().GetHostIfName()
+		}
+
+		// correlate attributes that cannot be dumped
+		if expCfg, hasExpCfg := ifCfg[intf.Interface.Name]; hasExpCfg {
+			if expCfg.Type == interfaces.Interface_TAP_INTERFACE {
+				intf.Interface.GetTap().ToMicroservice = expCfg.GetTap().GetToMicroservice()
+				intf.Interface.GetTap().RxRingSize = expCfg.GetTap().GetRxRingSize()
+				intf.Interface.GetTap().TxRingSize = expCfg.GetTap().GetTxRingSize()
+			}
+			intf.Interface.RxModeSettings = proto.Clone(expCfg.RxModeSettings).(*interfaces.Interface_RxModeSettings)
+			intf.Interface.RxPlacementSettings = proto.Clone(expCfg.RxPlacementSettings).(*interfaces.Interface_RxPlacementSettings)
+		}
+
 		// verify links between VPP and Linux side
 		if d.linuxIfPlugin != nil && d.linuxIfHandler != nil {
 			if intf.Interface.Type == interfaces.Interface_AF_PACKET_INTERFACE {
@@ -421,8 +448,8 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
 				if !exists {
 					// the Linux interface that the AF-Packet is attached to does not exist
-					// -> clear the host name so that the AF-Packet will be re-created
-					intf.Interface.GetAfpacket().HostIfName = ""
+					// - append special suffix that will make this interface unwanted
+					intf.Interface.Name += afPacketMissingAttachedIfSuffix
 				}
 			}
 			if intf.Interface.Type == interfaces.Interface_TAP_INTERFACE {
@@ -430,21 +457,22 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
 				if !exists {
 					// check if it was "stolen" by the Linux plugin
-					_, _, exists = d.linuxIfPlugin.GetInterfaceIndex().LookupByTapTempName(
-						intf.Interface.GetTap().GetHostIfName())
+					_, _, exists = d.linuxIfPlugin.GetInterfaceIndex().LookupByVPPTap(
+						intf.Interface.Name)
 				}
 				if !exists {
 					// the Linux side of the TAP interface side was not found
-					// -> clear the TAP host name so that the TAP will be re-created
-					intf.Interface.GetTap().HostIfName = ""
+					// - append special suffix that will make this interface unwanted
+					intf.Interface.Name += tapMissingLinuxSideSuffix
 				}
 			}
 		}
 
 		// add interface record into the dump
 		metadata := &ifaceidx.IfaceMetadata{
-			SwIfIndex:    ifIdx,
-			IPAddresses:  intf.Interface.IpAddresses,
+			SwIfIndex:     ifIdx,
+			IPAddresses:   intf.Interface.IpAddresses,
+			TAPHostIfName: tapHostIfName,
 		}
 		dump = append(dump, adapter.InterfaceKVWithMetadata{
 			Key:      interfaces.InterfaceKey(intf.Interface.Name),
@@ -458,4 +486,3 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 	d.log.WithField("dump", dump).Debug("Dumping VPP interfaces")
 	return dump, nil
 }
-

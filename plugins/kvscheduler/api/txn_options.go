@@ -20,6 +20,7 @@ import (
 )
 
 type schedulerCtxKey int
+
 const (
 	// fullResyncCtxKey is a key under which *full-resync* txn option is stored
 	// into the context.

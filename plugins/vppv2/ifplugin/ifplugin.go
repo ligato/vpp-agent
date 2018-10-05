@@ -22,26 +22,25 @@ import (
 	"os"
 	"sync"
 
-	"github.com/go-errors/errors"
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/go-errors/errors"
 
-	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/health/statuscheck"
+	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
 const (
@@ -65,7 +64,7 @@ type IfPlugin struct {
 	Deps
 
 	// GoVPP
-	vppCh     govppapi.Channel
+	vppCh govppapi.Channel
 
 	// handlers
 	ifHandler      vppcalls.IfVppAPI
@@ -103,18 +102,18 @@ type IfPlugin struct {
 // Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler     scheduler.KVScheduler
-	GoVppmux      govppmux.API
+	Scheduler scheduler.KVScheduler
+	GoVppmux  govppmux.API
 
-	/* optional, provide if AFPacket or TAP+AUTO_TAP interfaces are used */
-	LinuxIfPlugin linux_ifplugin.API
+	/* optional, provide if AFPacket or TAP+TAP_TO_VPP interfaces are used */
+	LinuxIfPlugin descriptor.LinuxPluginAPI
 
 	// state publishing
 	StatusCheck       statuscheck.PluginStatusWriter
-	PublishErrors     datasync.KeyProtoValWriter  // TODO: to be used with a generic plugin for publishing errors (not just interfaces and BDs)
-	Watcher           datasync.KeyValProtoWatcher /* for resync of interface state data (PublishStatistics) */
-	NotifyStatistics  datasync.KeyProtoValWriter  /* e.g. Kafka (up/down events only)*/
-	PublishStatistics datasync.KeyProtoValWriter  /* e.g. ETCD (with resync) */
+	PublishErrors     datasync.KeyProtoValWriter            // TODO: to be used with a generic plugin for publishing errors (not just interfaces and BDs)
+	Watcher           datasync.KeyValProtoWatcher           /* for resync of interface state data (PublishStatistics) */
+	NotifyStatistics  datasync.KeyProtoValWriter            /* e.g. Kafka (up/down events only)*/
+	PublishStatistics datasync.KeyProtoValWriter            /* e.g. ETCD (with resync) */
 	DataSyncs         map[string]datasync.KeyProtoValWriter /* available DBs for PublishStatistics */
 	// TODO: GRPCSvc           rpc.GRPCService
 }
@@ -199,7 +198,7 @@ func (p *IfPlugin) Init() error {
 		p.resyncStatusChan = make(chan datasync.ResyncEvent)
 		p.watchStatusReg, err = p.Watcher.
 			Watch("VPP interface state data", nil, p.resyncStatusChan,
-			interfaces.StatePrefix)
+				interfaces.StatePrefix)
 		if err != nil {
 			return err
 		}

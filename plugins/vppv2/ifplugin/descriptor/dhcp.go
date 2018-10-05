@@ -15,24 +15,24 @@
 package descriptor
 
 import (
-	"fmt"
 	"context"
+	"fmt"
+	prototypes "github.com/gogo/protobuf/types"
 	"net"
 	"strings"
 	"sync"
-	prototypes "github.com/gogo/protobuf/types"
 
 	govppapi "git.fd.io/govpp.git/api"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	"bytes"
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	"bytes"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (
@@ -68,14 +68,14 @@ func NewDHCPDescriptor(scheduler scheduler.KVScheduler, ifHandler vppcalls.IfVpp
 // GetDescriptor returns descriptor suitable for registration with the KVScheduler.
 func (d *DHCPDescriptor) GetDescriptor() *scheduler.KVDescriptor {
 	return &scheduler.KVDescriptor{
-		Name:               DHCPDescriptorName,
-		KeySelector:        d.IsDHCPRelatedKey,
-		WithMetadata:       true,            // DHCP leases
-		Add:                d.Add,           // DHCP client
-		Delete:             d.Delete,        // DHCP client
-		DerivedValues:      d.DerivedValues, // IP address from DHCP lease
-		Dump:               d.Dump,          // DHCP leases
-		DumpDependencies:   []string{InterfaceDescriptorName},
+		Name:             DHCPDescriptorName,
+		KeySelector:      d.IsDHCPRelatedKey,
+		WithMetadata:     true,            // DHCP leases
+		Add:              d.Add,           // DHCP client
+		Delete:           d.Delete,        // DHCP client
+		DerivedValues:    d.DerivedValues, // IP address from DHCP lease
+		Dump:             d.Dump,          // DHCP leases
+		DumpDependencies: []string{InterfaceDescriptorName},
 	}
 }
 
@@ -177,7 +177,6 @@ func (d *DHCPDescriptor) DerivedValues(key string, dhcpData proto.Message) (derV
 	}
 	return derValues
 }
-
 
 // Dump returns all existing DHCP leases.
 func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler.KVWithMetadata, error) {

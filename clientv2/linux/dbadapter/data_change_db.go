@@ -22,11 +22,11 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"

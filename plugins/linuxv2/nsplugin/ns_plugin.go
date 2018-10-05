@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/namespace --gogo_out=../model/namespace namespace.proto
-
 package nsplugin
 
 import (

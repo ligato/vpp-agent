@@ -5,8 +5,8 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////
@@ -51,12 +51,12 @@ func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor 
 	adapter := &InterfaceDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
-        KeySelector:        typedDescriptor.KeySelector,
-        ValueTypeName:      typedDescriptor.ValueTypeName,
+		KeySelector:        typedDescriptor.KeySelector,
+		ValueTypeName:      typedDescriptor.ValueTypeName,
 		KeyLabel:           typedDescriptor.KeyLabel,
 		NBKeyPrefix:        typedDescriptor.NBKeyPrefix,
 		WithMetadata:       typedDescriptor.WithMetadata,
-        MetadataMapFactory: typedDescriptor.MetadataMapFactory,
+		MetadataMapFactory: typedDescriptor.MetadataMapFactory,
 		IsRetriableFailure: typedDescriptor.IsRetriableFailure,
 		DumpDependencies:   typedDescriptor.DumpDependencies,
 	}
@@ -209,7 +209,7 @@ func (da *InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
-			}
+		}
 		kvWithMetadata.Value = typedKVWithMetadata.Value
 		dump = append(dump, kvWithMetadata)
 	}

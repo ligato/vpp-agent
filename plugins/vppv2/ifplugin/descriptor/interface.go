@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"fmt"
+	"hash/fnv"
 	"net"
 	"reflect"
 	"strings"
@@ -25,19 +27,19 @@ import (
 	prototypes "github.com/gogo/protobuf/types"
 
 	"github.com/ligato/cn-infra/idxmap"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
+	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
+	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
+	linux_intf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
-	linux_ifcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (
@@ -46,7 +48,8 @@ const (
 
 	// dependency labels
 	afPacketHostInterfaceDep = "afpacket-host-interface"
-	vxlanMulticastDep = "vxlan-multicast-interface"
+	vxlanMulticastDep        = "vxlan-multicast-interface"
+	microserviceDep          = "microservice"
 
 	// tapHostInterfaceWaitTimeout is the maximum waiting time for TAP host-side
 	// to be created.
@@ -55,6 +58,20 @@ const (
 	// prefix prepended to internal names of untagged interfaces to construct unique
 	// logical names
 	untaggedIfPreffix = "UNTAGGED-"
+
+	// suffix attached to logical names of dumped TAP interfaces with Linux side
+	// not found by Dump of Linux-ifplugin
+	tapMissingLinuxSideSuffix = "-MISSING_LINUX_SIDE"
+
+	// suffix attached to logical names of dumped AF-PACKET interfaces connected
+	// to missing Linux interfaces
+	afPacketMissingAttachedIfSuffix = "-MISSING_ATTACHED_INTERFACE"
+
+	// default memif attributes
+	defaultMemifSocketPath         = "/var/vpp/memif.sock"
+	defaultMemifNumOfQueues uint32 = 1
+	defaultMemifBufferSize  uint32 = 2048
+	defaultMemifRingSize    uint32 = 1024
 )
 
 // A list of non-retriable errors:
@@ -74,34 +91,47 @@ var (
 	// includes an IP address.
 	ErrUnnumberedWithIP = errors.New("VPP unnumbered interface was defined with IP address")
 
-	// ErrTapWithoutHostName is returned when TAP configation is missing host interface name.
-	ErrTapWithoutHostName = errors.New("VPP TAP interface was defined without host interface name")
-
 	// ErrAfPacketWithoutHostName is returned when AF-Packet configuration is missing host interface name.
 	ErrAfPacketWithoutHostName = errors.New("VPP AF-Packet interface was defined without host interface name")
+
+	// ErrInterfaceLinkMismatch is returned when interface type does not match the link configuration.
+	ErrInterfaceLinkMismatch = errors.New("VPP interface type and link configuration do not match")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
 type InterfaceDescriptor struct {
 	// config
-	defaultMtu       uint32
+	defaultMtu uint32
 
 	// dependencies
-	log              logging.Logger
-	ifHandler        vppcalls.IfVppAPI
+	log       logging.Logger
+	ifHandler vppcalls.IfVppAPI
 
-	// optional dependencies, provide if AFPacket or TAP+AUTO_TAP interfaces are used
-	linuxIfPlugin    linux_ifplugin.API
-	linuxIfHandler   linux_ifcalls.NetlinkAPI
+	// optional dependencies, provide if AFPacket and/or TAP+TAP_TO_VPP interfaces are used
+	linuxIfPlugin  LinuxPluginAPI
+	linuxIfHandler NetlinkAPI
 
 	// runtime
-	intfIndex        ifaceidx.IfaceMetadataIndex
-	memifSocketToID  map[string]uint32 // memif socket filename to ID map (all known sockets)
+	intfIndex       ifaceidx.IfaceMetadataIndex
+	memifSocketToID map[string]uint32 // memif socket filename to ID map (all known sockets)
+}
+
+// LinuxPluginAPI is defined here to avoid import cycles.
+type LinuxPluginAPI interface {
+	// GetInterfaceIndex gives read-only access to map with metadata of all configured
+	// linux interfaces.
+	GetInterfaceIndex() linux_ifaceidx.LinuxIfMetadataIndex
+}
+
+// NetlinkAPI here lists only those Netlink methods that are actually used by InterfaceDescriptor.
+type NetlinkAPI interface {
+	// InterfaceExists verifies interface existence
+	InterfaceExists(ifName string) (bool, error)
 }
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
-	linuxIfHandler linux_ifcalls.NetlinkAPI, linuxIfPlugin linux_ifplugin.API, log logging.PluginLogger) *InterfaceDescriptor {
+	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, log logging.PluginLogger) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
 		ifHandler:       ifHandler,
@@ -134,7 +164,7 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
 		// If Linux-IfPlugin is loaded, dump it first.
-		DumpDependencies:   []string{linux_ifdescriptor.InterfaceDescriptorName},
+		DumpDependencies: []string{linux_ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -157,56 +187,83 @@ func (d *InterfaceDescriptor) InterfaceNameFromKey(key string) string {
 
 // EquivalentInterfaces is case-insensitive comparison function for
 // interfaces.Interface, also ignoring the order of assigned IP addresses.
-func (d *InterfaceDescriptor) EquivalentInterfaces(key string, intf1, intf2 *interfaces.Interface) bool {
+func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf *interfaces.Interface) bool {
 	// attributes compared as usually:
-	if intf1.Name != intf2.Name || intf1.Type != intf2.Type || intf1.Enabled != intf2.Enabled ||
-		intf1.Vrf != intf2.Vrf || intf1.SetDhcpClient != intf2.SetDhcpClient {
+	if oldIntf.Name != newIntf.Name || oldIntf.Type != newIntf.Type || oldIntf.Enabled != newIntf.Enabled ||
+		oldIntf.Vrf != newIntf.Vrf || oldIntf.SetDhcpClient != newIntf.SetDhcpClient {
+		return false
+	}
+	if !proto.Equal(oldIntf.Unnumbered, newIntf.Unnumbered) ||
+		!proto.Equal(oldIntf.RxModeSettings, newIntf.RxModeSettings) ||
+		!proto.Equal(oldIntf.RxPlacementSettings, newIntf.RxPlacementSettings) {
 		return false
 	}
 
-	if !proto.Equal(intf1.Unnumbered, intf2.Unnumbered) || !proto.Equal(intf1.RxModeSettings, intf2.RxModeSettings) ||
-		!proto.Equal(intf1.RxPlacementSettings, intf2.RxPlacementSettings) {
+	// type-specific (defaults considered)
+	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
 		return false
 	}
 
-	switch intf1.Type {
-	case interfaces.Interface_TAP_INTERFACE:
-		if !proto.Equal(intf1.GetTap(), intf2.GetTap()) {
-			return false
-		}
-	case interfaces.Interface_VXLAN_TUNNEL:
-		if !proto.Equal(intf1.GetVxlan(), intf2.GetVxlan()) {
-			return false
-		}
-	case interfaces.Interface_AF_PACKET_INTERFACE:
-		if !proto.Equal(intf1.GetAfpacket(), intf2.GetAfpacket()) {
-			return false
-		}
-	case interfaces.Interface_MEMORY_INTERFACE:
-		if !proto.Equal(intf1.GetMemif(), intf2.GetMemif()) {
-			return false
-		}
-	}
-
-	// handle default MTU
-	if d.getInterfaceMTU(intf1) != d.getInterfaceMTU(intf2) {
+	// handle default/unspecified MTU
+	if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
 		return false
 	}
 
-	// compare MAC addresses case-insensitively
-	if strings.ToLower(intf1.PhysAddress) != strings.ToLower(intf2.PhysAddress) {
+	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
+	if newIntf.PhysAddress != "" ||
+		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
 		return false
 	}
 
 	// order-irrelevant comparison of IP addresses
-	intf1Addrs, err1 := addrs.StrAddrsToStruct(intf1.IpAddresses)
-	intf2Addrs, err2 := addrs.StrAddrsToStruct(intf2.IpAddresses)
+	oldIntfAddrs, err1 := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
+	newIntfAddrs, err2 := addrs.StrAddrsToStruct(newIntf.IpAddresses)
 	if err1 != nil || err2 != nil {
 		// one or both of the configurations are invalid, compare lazily
-		return reflect.DeepEqual(intf1.IpAddresses, intf2.IpAddresses)
+		return reflect.DeepEqual(oldIntf.IpAddresses, newIntf.IpAddresses)
 	}
-	obsolete, new := addrs.DiffAddr(intf1Addrs, intf2Addrs)
+	obsolete, new := addrs.DiffAddr(oldIntfAddrs, newIntfAddrs)
 	return len(obsolete) == 0 && len(new) == 0
+}
+
+// equivalentTypeSpecificConfig compares type-specific sections of two interface configurations.
+func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *interfaces.Interface) bool {
+	switch oldIntf.Type {
+	case interfaces.Interface_TAP_INTERFACE:
+		if !proto.Equal(d.getTapConfig(oldIntf), d.getTapConfig(newIntf)) {
+			return false
+		}
+	case interfaces.Interface_VXLAN_TUNNEL:
+		if !proto.Equal(oldIntf.GetVxlan(), newIntf.GetVxlan()) {
+			return false
+		}
+	case interfaces.Interface_AF_PACKET_INTERFACE:
+		if oldIntf.GetAfpacket().GetHostIfName() != newIntf.GetAfpacket().GetHostIfName() {
+			return false
+		}
+	case interfaces.Interface_MEMORY_INTERFACE:
+		if !d.equivalentMemifs(oldIntf.GetMemif(), newIntf.GetMemif()) {
+			return false
+		}
+	}
+	return true
+}
+
+// equivalentMemifs compares two memifs for equivalence.
+func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.Interface_MemifLink) bool {
+	if oldMemif.GetMaster() != newMemif.GetMaster() || oldMemif.GetMode() != newMemif.GetMode() ||
+		oldMemif.GetId() != newMemif.GetId() || oldMemif.GetSecret() != newMemif.GetSecret() {
+		return false
+	}
+	// default values considered:
+	if d.getMemifSocketFilename(oldMemif) != d.getMemifSocketFilename(newMemif) ||
+		d.getMemifBufferSize(oldMemif) != d.getMemifBufferSize(newMemif) ||
+		d.getMemifRingSize(oldMemif) != d.getMemifRingSize(newMemif) ||
+		d.getMemifNumOfRxQueues(oldMemif) != d.getMemifNumOfRxQueues(newMemif) ||
+		d.getMemifNumOfTxQueues(oldMemif) != d.getMemifNumOfTxQueues(newMemif) {
+		return false
+	}
+	return true
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
@@ -221,9 +278,9 @@ func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 		ErrInterfaceWithoutName,
 		ErrInterfaceWithoutType,
 		ErrUnnumberedWithIP,
-		ErrTapWithoutHostName,
 		ErrAfPacketWithoutHostName,
-		}
+		ErrInterfaceLinkMismatch,
+	}
 	for _, nonRetriableErr := range nonRetriable {
 		if err == nonRetriableErr {
 			return false
@@ -239,25 +296,9 @@ func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *i
 		return true
 	}
 
-	switch oldIntf.Type {
-	case interfaces.Interface_TAP_INTERFACE:
-		if !proto.Equal(oldIntf.GetTap(), newIntf.GetTap()) {
-			return true
-		}
-	case interfaces.Interface_MEMORY_INTERFACE:
-		if !proto.Equal(oldIntf.GetMemif(), newIntf.GetMemif()) {
-			return true
-		}
-
-	case interfaces.Interface_VXLAN_TUNNEL:
-		if !proto.Equal(oldIntf.GetVxlan(), newIntf.GetVxlan()) {
-			return true
-		}
-
-	case interfaces.Interface_AF_PACKET_INTERFACE:
-		if !proto.Equal(oldIntf.GetAfpacket(), newIntf.GetAfpacket()) {
-			return true
-		}
+	// if type-specific attributes have changed, then re-create the interface
+	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
+		return true
 	}
 
 	// check if VRF IP version has changed
@@ -287,6 +328,15 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 		})
 	}
 
+	if intf.Type == interfaces.Interface_TAP_INTERFACE && intf.GetTap().GetToMicroservice() != "" {
+		// TAP connects VPP with microservice
+		toMicroservice := intf.GetTap().GetToMicroservice()
+		dependencies = append(dependencies, scheduler.Dependency{
+			Label: microserviceDep,
+			Key:   linux_ns.MicroserviceKey(toMicroservice),
+		})
+	}
+
 	if intf.Type == interfaces.Interface_VXLAN_TUNNEL && intf.GetVxlan().GetMulticast() != "" {
 		// VXLAN referencing an interface with Multicast IP address
 		dependencies = append(dependencies, scheduler.Dependency{
@@ -304,7 +354,6 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 // DerivedValues derives:
 //  - key-value for unnumbered configuration sub-section
 //  - empty value for enabled DHCP client
-//  - empty value from a TAP interface to represent its Linux-side
 //  - one empty value for every IP address assigned to the interface.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []scheduler.KeyValuePair) {
 	// unnumbered interface
@@ -319,14 +368,6 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	if intf.SetDhcpClient {
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   interfaces.DHCPClientKey(intf.Name),
-			Value: &prototypes.Empty{},
-		})
-	}
-
-	// TAP interface host name
-	if intf.Type == interfaces.Interface_TAP_INTERFACE && intf.GetTap().GetHostIfName() != "" {
-		derValues = append(derValues, scheduler.KeyValuePair{
-			Key:   interfaces.TAPHostNameKey(intf.GetTap().GetHostIfName()),
 			Value: &prototypes.Empty{},
 		})
 	}
@@ -354,11 +395,26 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 			return ErrUnnumberedWithIP
 		}
 	}
-	if intf.Type == interfaces.Interface_TAP_INTERFACE && intf.GetTap().GetHostIfName() == "" {
-		return ErrTapWithoutHostName
-	}
 	if intf.Type == interfaces.Interface_AF_PACKET_INTERFACE && intf.GetAfpacket().GetHostIfName() == "" {
-
+		return ErrAfPacketWithoutHostName
+	}
+	switch intf.Link.(type) {
+	case *interfaces.Interface_Memif:
+		if intf.Type != interfaces.Interface_MEMORY_INTERFACE {
+			return ErrInterfaceLinkMismatch
+		}
+	case *interfaces.Interface_Afpacket:
+		if intf.Type != interfaces.Interface_AF_PACKET_INTERFACE {
+			return ErrInterfaceLinkMismatch
+		}
+	case *interfaces.Interface_Vxlan:
+		if intf.Type != interfaces.Interface_VXLAN_TUNNEL {
+			return ErrInterfaceLinkMismatch
+		}
+	case *interfaces.Interface_Tap:
+		if intf.Type != interfaces.Interface_TAP_INTERFACE {
+			return ErrInterfaceLinkMismatch
+		}
 	}
 	return nil
 }
@@ -374,7 +430,7 @@ func (d *InterfaceDescriptor) getInterfaceMTU(intf *interfaces.Interface) uint32
 
 // resolveMemifSocketFilename returns memif socket filename ID.
 // Registers it if does not exists yet.
-func (d *InterfaceDescriptor)  resolveMemifSocketFilename(memifIf *interfaces.Interface_MemifLink) (uint32, error) {
+func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Interface_MemifLink) (uint32, error) {
 	if memifIf.GetSocketFilename() == "" {
 		return 0, errors.Errorf("memif configuration does not contain socket file name")
 	}
@@ -452,6 +508,76 @@ func (d *InterfaceDescriptor) modifyRxModeForInterfaces(oldIntf, newIntf *interf
 	return nil
 }
 
+// getMemifSocketFilename returns the memif socket filename.
+func (d *InterfaceDescriptor) getMemifSocketFilename(memif *interfaces.Interface_MemifLink) string {
+	if memif.GetSocketFilename() == "" {
+		return defaultMemifSocketPath
+	}
+	return memif.GetSocketFilename()
+}
+
+// getMemifNumOfRxQueues returns the number of memif RX queues.
+func (d *InterfaceDescriptor) getMemifNumOfRxQueues(memif *interfaces.Interface_MemifLink) uint32 {
+	if memif.GetRxQueues() == 0 {
+		return defaultMemifNumOfQueues
+	}
+	return memif.GetRxQueues()
+}
+
+// getMemifNumOfTxQueues returns the number of memif TX queues.
+func (d *InterfaceDescriptor) getMemifNumOfTxQueues(memif *interfaces.Interface_MemifLink) uint32 {
+	if memif.GetTxQueues() == 0 {
+		return defaultMemifNumOfQueues
+	}
+	return memif.GetTxQueues()
+}
+
+// getMemifBufferSize returns the memif buffer size.
+func (d *InterfaceDescriptor) getMemifBufferSize(memif *interfaces.Interface_MemifLink) uint32 {
+	if memif.GetBufferSize() == 0 {
+		return defaultMemifBufferSize
+	}
+	return memif.GetBufferSize()
+}
+
+// getMemifRingSize returns the memif ring size.
+func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.Interface_MemifLink) uint32 {
+	if memif.GetRingSize() == 0 {
+		return defaultMemifRingSize
+	}
+	return memif.GetRingSize()
+}
+
+// getTapConfig returns the TAP-specific configuration section (handling undefined attributes).
+func (d *InterfaceDescriptor) getTapConfig(intf *interfaces.Interface) *interfaces.Interface_TapLink {
+	tapCfg := intf.GetTap()
+	if tapCfg == nil || intf.GetTap().GetHostIfName() == "" {
+		// build TAP config with auto-generated host interface name and copied/default attributes
+		tapCfg = &interfaces.Interface_TapLink{
+			Version:        intf.GetTap().GetVersion(),
+			HostIfName:     generateTAPHostName(intf.Name),
+			ToMicroservice: intf.GetTap().GetToMicroservice(),
+			RxRingSize:     intf.GetTap().GetRxRingSize(),
+			TxRingSize:     intf.GetTap().GetTxRingSize(),
+		}
+	}
+	return tapCfg
+}
+
+// generateTAPHostName (deterministically) generates the host name for a TAP interface.
+func generateTAPHostName(tapName string) string {
+	if tapName == "" {
+		return ""
+	}
+	return fmt.Sprintf("tap-%d", fnvHash(tapName))
+}
+
+// fnvHash hashes string using fnv32a algorithm.
+func fnvHash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
+}
 
 // getIPAddressVersions returns two flags to tell whether the provided list of addresses
 // contains IPv4 and/or IPv6 type addresses

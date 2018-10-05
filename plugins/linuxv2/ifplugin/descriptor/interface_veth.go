@@ -38,13 +38,6 @@ func (intfd *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxI
 	ifIndex := intfd.scheduler.GetMetadataMap(InterfaceDescriptorName)
 	agentPrefix := intfd.serviceLabel.GetAgentPrefix()
 
-	// validate configuration
-	if peerName == "" {
-		err = ErrVETHWithoutPeer
-		intfd.log.Error(err)
-		return nil, err
-	}
-
 	// check if this VETH-end was already created by the other end
 	_, peerExists := ifIndex.GetValue(peerName)
 	if !peerExists {

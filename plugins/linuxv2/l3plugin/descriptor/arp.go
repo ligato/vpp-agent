@@ -111,19 +111,19 @@ func (arpd *ARPDescriptor) IsARPKey(key string) bool {
 }
 
 // EquivalentARPs is case-insensitive comparison function for l3.LinuxStaticARPEntry.
-func (arpd *ARPDescriptor) EquivalentARPs(key string, arp1, arp2 *l3.LinuxStaticARPEntry) bool {
+func (arpd *ARPDescriptor) EquivalentARPs(key string, oldArp, NewArp *l3.LinuxStaticARPEntry) bool {
 	// interfaces compared as usually:
-	if arp1.Interface != arp2.Interface {
+	if oldArp.Interface != NewArp.Interface {
 		return false
 	}
 
 	// compare MAC addresses case-insensitively
-	if strings.ToLower(arp1.HwAddress) != strings.ToLower(arp2.HwAddress) {
+	if strings.ToLower(oldArp.HwAddress) != strings.ToLower(NewArp.HwAddress) {
 		return false
 	}
 
 	// compare IP addresses converted to net.IPNet
-	return equalAddrs(arp1.IpAddress, arp2.IpAddress)
+	return equalAddrs(oldArp.IpAddress, NewArp.IpAddress)
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

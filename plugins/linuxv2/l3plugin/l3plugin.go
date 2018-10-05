@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/l3 --proto_path=${GOPATH}/src --gogo_out=../model/l3 l3.proto
 //go:generate descriptor-adapter --descriptor-name ARP --value-type *l3.LinuxStaticARPEntry --import "../model/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Route --value-type *l3.LinuxStaticRoute --import "../model/l3" --output-dir "descriptor"
 

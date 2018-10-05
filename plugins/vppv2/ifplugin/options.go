@@ -2,11 +2,10 @@ package ifplugin
 
 import (
 	"github.com/ligato/cn-infra/config"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.
@@ -19,7 +18,6 @@ func NewPlugin(opts ...Option) *IfPlugin {
 	p.PluginName = "vpp-ifplugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Scheduler = &kvscheduler.DefaultPlugin
-	p.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 
 	for _, o := range opts {

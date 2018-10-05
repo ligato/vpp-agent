@@ -46,12 +46,6 @@ const (
 	// (incl. mask) assigned to a VPP interface.
 	addressKeyTemplate = AddressKeyPrefix + "{ifName}/{addr}/{mask}"
 
-	/* TAP host interface name (derived) */
-
-	// TapHostNameKeyPrefix is used as a common prefix for keys derived from
-	// TAP interfaces to represent the TAP host interface name.
-	TapHostNameKeyPrefix = "vpp/interface/tap/host-if-name/"
-
 	/* Unnumbered interface (derived) */
 
 	// UnnumberedKeyPrefix is used as a common prefix for keys derived from
@@ -128,7 +122,7 @@ func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, err
 		if len(keyComps) < 3 {
 			return "", nil, fmt.Errorf(errPrefix + "invalid suffix")
 		}
-		lastIdx := len(keyComps)-1
+		lastIdx := len(keyComps) - 1
 		_, ifAddr, err = net.ParseCIDR(keyComps[lastIdx-1] + "/" + keyComps[lastIdx])
 		if err != nil {
 			return "", nil, fmt.Errorf(errPrefix + "invalid address")
@@ -137,13 +131,6 @@ func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, err
 		return
 	}
 	return "", nil, fmt.Errorf(errPrefix + "invalid prefix")
-}
-
-/* TAP host interface name (derived) */
-
-// TAPHostNameKey returns key representing TAP interface host name.
-func TAPHostNameKey(hostIfName string) string {
-	return TapHostNameKeyPrefix + hostIfName
 }
 
 /* Unnumbered interface (derived) */
@@ -173,4 +160,3 @@ func DHCPClientKey(ifName string) string {
 func DHCPLeaseKey(ifName string) string {
 	return DHCPLeaseKeyPrefix + ifName
 }
-

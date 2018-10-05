@@ -15,7 +15,7 @@
 package descriptor
 
 import (
-	"errors"
+	"github.com/go-errors/errors"
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
@@ -24,26 +24,33 @@ import (
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
-// addAutoTAP moves Linux-side of the VPP-TAP interface to the destination namespace
-// and sets the requested host name.
-func (intfd *InterfaceDescriptor) addAutoTAP(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
-	// determine host/logical/temporary interface names
-	tempHostName := getTapTempHostName(linuxIf)
+// addTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace
+// and sets the requested host name, IP addresses, etc.
+func (intfd *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+	// determine TAP interface name as set by VPP ifplugin
+	vppTapName := linuxIf.GetTap().GetVppTapIfName()
+	vppTapMeta, found := intfd.vppIfPlugin.GetInterfaceIndex().LookupByName(vppTapName)
+	if !found {
+		err = errors.Errorf("failed to find VPP-side for the TAP-To-VPP interface %s", linuxIf.Name)
+		intfd.log.Error(err)
+		return nil, err
+	}
+	vppTapHostName := vppTapMeta.TAPHostIfName
 	hostName := getHostIfName(linuxIf)
 
 	// context
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	agentPrefix := intfd.serviceLabel.GetAgentPrefix()
 
-	// add alias to associate TAP with the logical name of the AUTO-TAP
-	err = intfd.ifHandler.SetInterfaceAlias(tempHostName, agentPrefix+getTapAlias(linuxIf))
+	// add alias to associate TAP with the logical name and VPP-TAP reference
+	err = intfd.ifHandler.SetInterfaceAlias(vppTapHostName, agentPrefix+getTapAlias(linuxIf, vppTapHostName))
 	if err != nil {
 		intfd.log.Error(err)
 		return nil, err
 	}
 
 	// move the TAP to the right namespace
-	err = intfd.setInterfaceNamespace(nsCtx, tempHostName, linuxIf.Namespace)
+	err = intfd.setInterfaceNamespace(nsCtx, vppTapHostName, linuxIf.Namespace)
 	if err != nil {
 		intfd.log.Error(err)
 		return nil, err
@@ -58,7 +65,7 @@ func (intfd *InterfaceDescriptor) addAutoTAP(key string, linuxIf *interfaces.Lin
 	defer revert()
 
 	// rename from temporary host name to the request host name
-	intfd.ifHandler.RenameInterface(tempHostName, hostName)
+	intfd.ifHandler.RenameInterface(vppTapHostName, hostName)
 	if err != nil {
 		intfd.log.Error(err)
 		return nil, err
@@ -71,7 +78,7 @@ func (intfd *InterfaceDescriptor) addAutoTAP(key string, linuxIf *interfaces.Lin
 		return nil, err
 	}
 	metadata = &ifaceidx.LinuxIfMetadata{
-		TapTempName:  tempHostName,
+		VPPTapName:   vppTapName,
 		Namespace:    linuxIf.Namespace,
 		LinuxIfIndex: link.Attrs().Index,
 	}
@@ -92,22 +99,22 @@ func (intfd *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmt
 		return err
 	}
 	alias := strings.TrimPrefix(link.Attrs().Alias, agentPrefix)
-	_, tempHostName := parseTapAlias(alias)
-	if tempHostName == "" {
+	_, _, origVppTapHostName := parseTapAlias(alias)
+	if origVppTapHostName == "" {
 		err = errors.New("failed to obtain the original TAP host name")
 		intfd.log.Error(err)
 		return err
 	}
 
 	// rename back to the temporary name
-	intfd.ifHandler.RenameInterface(hostName, tempHostName)
+	intfd.ifHandler.RenameInterface(hostName, origVppTapHostName)
 	if err != nil {
 		intfd.log.Error(err)
 		return err
 	}
 
 	// move TAP back to the default namespace
-	err = intfd.setInterfaceNamespace(nsCtx, tempHostName, nil)
+	err = intfd.setInterfaceNamespace(nsCtx, origVppTapHostName, nil)
 	if err != nil {
 		intfd.log.Error(err)
 		return err
@@ -122,7 +129,7 @@ func (intfd *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmt
 	defer revert()
 
 	// remove interface alias at last(!)
-	err = intfd.ifHandler.SetInterfaceAlias(tempHostName, "")
+	err = intfd.ifHandler.SetInterfaceAlias(origVppTapHostName, "")
 	if err != nil {
 		intfd.log.Error(err)
 		return err
@@ -132,28 +139,22 @@ func (intfd *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmt
 }
 
 // getTapAlias returns alias for Linux TAP interface managed by the agent.
-// The alias stores the AUTO-TAP logical name together with the original TAP name.
-func getTapAlias(linuxIf *interfaces.LinuxInterface) string {
-	return linuxIf.Name + "/" + getTapTempHostName(linuxIf)
+// The alias stores the TAP_TO_VPP logical name together with VPP-TAP logical name
+// and the host interface name as originally set by VPP side.
+func getTapAlias(linuxIf *interfaces.LinuxInterface, origHostIfName string) string {
+	return linuxIf.Name + "/" + linuxIf.GetTap().GetVppTapIfName() + "/" + origHostIfName
 }
 
-// parseTapAlias parses out AUTO-TAP logical name together with the original TAP
-// name from the alias.
-func parseTapAlias(alias string) (tapName, tapTmpName string) {
+// parseTapAlias parses out TAP_TO_VPP logical name together with the name of the
+// linked VPP-TAP and the original TAP host interface name.
+func parseTapAlias(alias string) (linuxTapName, vppTapName, origHostIfName string) {
 	aliasParts := strings.Split(alias, "/")
-	tapName = aliasParts[0]
-	if len(aliasParts) > 0 {
-		tapTmpName = aliasParts[1]
+	linuxTapName = aliasParts[0]
+	if len(aliasParts) > 1 {
+		vppTapName = aliasParts[1]
+	}
+	if len(aliasParts) > 2 {
+		origHostIfName = aliasParts[2]
 	}
 	return
-}
-
-// getTapTempHostName returns host name of the TAP interface to which the AUTO-TAP
-// configuration should apply.
-func getTapTempHostName(linuxIf *interfaces.LinuxInterface) string {
-	tempIfName := linuxIf.GetAutoTap().GetTempIfName()
-	if tempIfName == "" {
-		return getHostIfName(linuxIf)
-	}
-	return tempIfName
 }

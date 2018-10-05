@@ -77,14 +77,21 @@ message Interface {
     }
 
     message AfpacketLink {
-        string host_if_name = 1; /* name of the host interface to bind to */
+        string host_if_name = 1; /* name of the host interface to bind to (mandatory) */
     }
 
     message TapLink {
-        uint32 version = 1;      /* 1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP */
-        string host_if_name = 2; /* name of the TAP interface in the host OS */
-        uint32 rx_ring_size = 4; /* Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
-        uint32 tx_ring_size = 5; /* Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
+        uint32 version = 1;         /* 1 / unset = use the original TAP interface; 2 = use a fast virtio-based TAP */
+        string host_if_name = 2;    /* name of the TAP interface in the host OS;
+                                       if empty, it will be auto-generated (suitable for combination with TAP_TO_VPP
+                                       interface from Linux ifplugin, because then this name is only temporary anyway)
+                                     */
+        string to_microservice = 3; /* if TAP connects VPP with microservice, fill this parameter with the target
+                                       microservice name - should match with the namespace reference of the associated
+                                       TAP_TO_VPP interface (it is still moved to the namespace by Linux-ifplugin but
+                                       VPP-ifplugin needs to be aware of this dependency) */
+        uint32 rx_ring_size = 4;    /* Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
+        uint32 tx_ring_size = 5;    /* Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
     }
 
     oneof link {

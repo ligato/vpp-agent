@@ -27,11 +27,13 @@ import (
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
+	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
+	linux_interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 /*
@@ -51,11 +53,28 @@ func main() {
 	// Set watcher for KVScheduler.
 	kvscheduler.DefaultPlugin.Watcher = watchers
 
+	vppIfPlugin := vpp_ifplugin.NewPlugin()
+
+	linuxIfPlugin := linux_ifplugin.NewPlugin(
+		linux_ifplugin.UseDeps(func(deps *linux_ifplugin.Deps) {
+			deps.VppIfPlugin = vppIfPlugin
+		}),
+	)
+
+	vppIfPlugin.LinuxIfPlugin = linuxIfPlugin
+
+	linuxL3Plugin := linux_l3plugin.NewPlugin(
+		linux_l3plugin.UseDeps(func(deps *linux_l3plugin.Deps) {
+			deps.IfPlugin = linuxIfPlugin
+		}),
+	)
+
 	ep := &ExamplePlugin{
-		Scheduler: &kvscheduler.DefaultPlugin,
-		IfPlugin:  &ifplugin.DefaultPlugin,
-		L3Plugin:  &l3plugin.DefaultPlugin,
-		Datasync:  etcdDataSync,
+		Scheduler:     &kvscheduler.DefaultPlugin,
+		LinuxIfPlugin: linuxIfPlugin,
+		LinuxL3Plugin: linuxL3Plugin,
+		VPPIfPlugin:   vppIfPlugin,
+		Datasync:      etcdDataSync,
 	}
 
 	a := agent.NewAgent(
@@ -72,10 +91,11 @@ const PluginName = "example"
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler *kvscheduler.Scheduler
-	IfPlugin  *ifplugin.IfPlugin
-	L3Plugin  *l3plugin.L3Plugin
-	Datasync  *kvdbsync.Plugin
+	Scheduler     *kvscheduler.Scheduler
+	LinuxIfPlugin *linux_ifplugin.IfPlugin
+	LinuxL3Plugin *linux_l3plugin.L3Plugin
+	VPPIfPlugin   *vpp_ifplugin.IfPlugin
+	Datasync      *kvdbsync.Plugin
 }
 
 // String returns plugin name
@@ -102,127 +122,164 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	const (
 		veth1LogicalName = "myVETH1"
 		veth1HostName    = "veth1"
+		veth1IPAddr      = "10.11.1.1"
+		veth1HwAddr      = "66:66:66:66:66:66"
 
 		veth2LogicalName = "myVETH2"
 		veth2HostName    = "veth2"
+		veth2HwAddr      = "44:44:44:55:55:55"
 
-		veth3LogicalName = "myVETH3"
-		veth3HostName    = "veth3"
+		afPacketLogicalName = "myAFPacket"
+		afPacketHwAddr      = "a7:35:45:55:65:75"
+		afPacketIPAddr      = "10.11.1.2"
 
-		veth4LogicalName = "myVETH4"
-		veth4HostName    = "veth4"
+		vppTapLogicalName = "myVPPTap"
+		vppTapIPAddr      = "10.11.2.2"
+		vppTapHwAddr      = "b3:12:12:45:A7:B7"
+		vppTapVersion     = 2
 
-		mycroservice1Name = "myMicroservice1"
-		mycroservice1ID   = "microservice1"
+		linuxTapLogicalName = "myLinuxTAP"
+		linuxTapHostName    = "tap_to_vpp"
+		linuxTapIPAddr      = "10.11.2.1"
+		linuxTapHwAddr      = "77:77:77:77:77:77"
 
-		mycroservice2Name = "myMicroservice2"
-		mycroservice2ID   = "microservice2"
+		microserviceNetMask = "/30"
+		mycroservice1       = "microservice1"
+		mycroservice2       = "microservice2"
+		microservice1Net    = "10.11.1.0" + microserviceNetMask
+		microservice2Net    = "10.11.2.0" + microserviceNetMask
+		mycroservice1Mtu    = 1800
+		mycroservice2Mtu    = 1700
 
-		namedNs1 = "ns1"
-		namedNs2 = "ns2"
+		routeMetric = 50
 	)
 
-	veth1 := &interfaces.LinuxInterface{
+	/* microservice1 <-> VPP */
+	veth1 := &linux_interfaces.LinuxInterface{
 		Name:        veth1LogicalName,
-		Type:        interfaces.LinuxInterface_VETH,
+		Type:        linux_interfaces.LinuxInterface_VETH,
 		Enabled:     true,
-		PhysAddress: "66:66:66:66:66:66",
+		PhysAddress: veth1HwAddr,
 		IpAddresses: []string{
-			"192.168.20.1/24",
+			veth1IPAddr + microserviceNetMask,
 		},
-		Mtu:        1800,
+		Mtu:        mycroservice1Mtu,
 		HostIfName: veth1HostName,
-		Link: &interfaces.LinuxInterface_Veth{
-			Veth: &interfaces.LinuxInterface_VethLink{PeerIfName: veth2LogicalName},
+		Link: &linux_interfaces.LinuxInterface_Veth{
+			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth2LogicalName},
 		},
-		/*Namespace: &namespace.LinuxNetNamespace{
-			Type:      namespace.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
-			Reference: mycroservice1ID,
-		},*/
+		Namespace: &linux_ns.LinuxNetNamespace{
+			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+			Reference: mycroservice1,
+		},
 	}
 
-	arpForVeth1 := &l3.LinuxStaticARPEntry{
+	arpForVeth1 := &linux_l3.LinuxStaticARPEntry{
 		Interface: veth1LogicalName,
-		IpAddress: "192.168.20.100",
-		HwAddress: "b3:12:12:45:A7:B7",
+		IpAddress: vppTapIPAddr,
+		HwAddress: vppTapHwAddr,
 	}
 
-	routeForVeth1 := &l3.LinuxStaticRoute{
+	linkRouteToMs2 := &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: veth1LogicalName,
-		Scope:             l3.LinuxStaticRoute_LINK,
-		DstNetwork:        "10.8.0.0/16",
+		Scope:             linux_l3.LinuxStaticRoute_LINK,
+		DstNetwork:        vppTapIPAddr + "/32",
 	}
 
-	route2ForVeth1 := &l3.LinuxStaticRoute{
+	routeToMs2 := &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: veth1LogicalName,
-		Scope:             l3.LinuxStaticRoute_GLOBAL,
-		DstNetwork:        "11.11.11.0/24",
-		GwAddr:            "10.8.14.14",
-		Metric:            50,
+		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		DstNetwork:        microservice2Net,
+		GwAddr:            vppTapIPAddr,
+		Metric:            routeMetric,
 	}
 
-	veth2 := &interfaces.LinuxInterface{
+	veth2 := &linux_interfaces.LinuxInterface{
 		Name:        veth2LogicalName,
-		Type:        interfaces.LinuxInterface_VETH,
+		Type:        linux_interfaces.LinuxInterface_VETH,
 		Enabled:     true,
-		PhysAddress: "44:44:44:55:55:55",
+		PhysAddress: veth2HwAddr,
+		Mtu:         mycroservice1Mtu,
+		HostIfName:  veth2HostName,
+		Link: &linux_interfaces.LinuxInterface_Veth{
+			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
+		},
+	}
+
+	afpacket := &vpp_interfaces.Interface{
+		Name:        afPacketLogicalName,
+		Type:        vpp_interfaces.Interface_AF_PACKET_INTERFACE,
+		Enabled:     true,
+		PhysAddress: afPacketHwAddr,
 		IpAddresses: []string{
-			"192.168.20.2/24",
+			afPacketIPAddr + microserviceNetMask,
 		},
-		Mtu:        1500,
-		HostIfName: veth2HostName,
-		Link: &interfaces.LinuxInterface_Veth{
-			Veth: &interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
+		Mtu: mycroservice1Mtu,
+		Link: &vpp_interfaces.Interface_Afpacket{
+			Afpacket: &vpp_interfaces.Interface_AfpacketLink{
+				HostIfName: veth2HostName,
+			},
 		},
-		/*Namespace: &namespace.LinuxNetNamespace{
-			Type:      namespace.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
-			Reference: mycroservice2ID,
-		},*/
 	}
 
-	routeForVeth2 := &l3.LinuxStaticRoute{
-		OutgoingInterface: veth2LogicalName,
-		Scope:             l3.LinuxStaticRoute_GLOBAL,
-		DstNetwork:        "12.12.12.0/24",
-		GwAddr:            "192.168.20.200",
-		Metric:            50,
-	}
+	/* microservice2 <-> VPP */
 
-	arpForVeth2 := &l3.LinuxStaticARPEntry{
-		Interface: veth2LogicalName,
-		IpAddress: "192.168.20.130",
-		HwAddress: "b3:12:66:66:c7:c7",
-	}
-
-	veth3 := &interfaces.LinuxInterface{
-		Name:    veth3LogicalName,
-		Type:    interfaces.LinuxInterface_VETH,
-		Enabled: true,
+	linuxTap := &linux_interfaces.LinuxInterface{
+		Name:        linuxTapLogicalName,
+		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Enabled:     true,
+		PhysAddress: linuxTapHwAddr,
 		IpAddresses: []string{
-			"192.168.40.3/24",
+			linuxTapIPAddr + microserviceNetMask,
 		},
-		Mtu:        1800,
-		HostIfName: veth3HostName,
-		Link: &interfaces.LinuxInterface_Veth{
-			Veth: &interfaces.LinuxInterface_VethLink{PeerIfName: veth4LogicalName},
+		Mtu:        mycroservice2Mtu,
+		HostIfName: linuxTapHostName,
+		Link: &linux_interfaces.LinuxInterface_Tap{
+			Tap: &linux_interfaces.LinuxInterface_TapLink{
+				VppTapIfName: vppTapLogicalName,
+			},
 		},
-		Namespace: &namespace.LinuxNetNamespace{
-			Type:      namespace.LinuxNetNamespace_NETNS_REF_NSID,
-			Reference: namedNs1,
+		Namespace: &linux_ns.LinuxNetNamespace{
+			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+			Reference: mycroservice2,
 		},
 	}
 
-	veth4 := &interfaces.LinuxInterface{
-		Name:    veth4LogicalName,
-		Type:    interfaces.LinuxInterface_VETH,
-		Enabled: true,
+	vppTap := &vpp_interfaces.Interface{
+		Name:        vppTapLogicalName,
+		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
+		Enabled:     true,
+		PhysAddress: vppTapHwAddr,
 		IpAddresses: []string{
-			"192.168.40.4/24",
+			vppTapIPAddr + microserviceNetMask,
 		},
-		HostIfName: veth4HostName,
-		Link: &interfaces.LinuxInterface_Veth{
-			Veth: &interfaces.LinuxInterface_VethLink{PeerIfName: veth3LogicalName},
+		Mtu: mycroservice2Mtu,
+		Link: &vpp_interfaces.Interface_Tap{
+			Tap: &vpp_interfaces.Interface_TapLink{
+				Version:        vppTapVersion,
+				ToMicroservice: mycroservice2,
+			},
 		},
+	}
+
+	arpForLinuxTap := &linux_l3.LinuxStaticARPEntry{
+		Interface: linuxTapLogicalName,
+		IpAddress: afPacketIPAddr,
+		HwAddress: afPacketHwAddr,
+	}
+
+	linkRouteToMs1 := &linux_l3.LinuxStaticRoute{
+		OutgoingInterface: linuxTapLogicalName,
+		Scope:             linux_l3.LinuxStaticRoute_LINK,
+		DstNetwork:        afPacketIPAddr + "/32",
+	}
+
+	routeToMs1 := &linux_l3.LinuxStaticRoute{
+		OutgoingInterface: linuxTapLogicalName,
+		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		DstNetwork:        microservice1Net,
+		GwAddr:            afPacketIPAddr,
+		Metric:            routeMetric,
 	}
 
 	// resync
@@ -234,34 +291,49 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	err := txn.
 		LinuxInterface(veth2).
 		LinuxInterface(veth1).
-		LinuxInterface(veth3).
-		LinuxInterface(veth4).
+		LinuxInterface(linuxTap).
 		LinuxArpEntry(arpForVeth1).
-		LinuxArpEntry(arpForVeth2).
-		LinuxRoute(routeForVeth1).
-		LinuxRoute(route2ForVeth1).
-		LinuxRoute(routeForVeth2).
+		LinuxArpEntry(arpForLinuxTap).
+		LinuxRoute(linkRouteToMs1).
+		LinuxRoute(routeToMs1).
+		LinuxRoute(linkRouteToMs2).
+		LinuxRoute(routeToMs2).
+		VppInterface(afpacket).
+		VppInterface(vppTap).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	time.Sleep(time.Second * 2)
-	fmt.Println("=== CHANGE 1 ===")
+	/*
+		// data change
 
-	veth1.Enabled = false
-	txn2 := localclient.DataChangeRequest("example")
-	err = txn2.Put().
-		LinuxInterface(veth1).
-		Send().ReceiveReply()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+		time.Sleep(time.Second * 2)
+		fmt.Println("=== CHANGE 1 ===")
 
-	// Test interface metadata map
-	interfaceIndex := plugin.IfPlugin.GetInterfaceIndex()
-	metadata, exists := interfaceIndex.LookupByName(veth1HostName)
-	fmt.Printf("Interface %s: found=%t, meta=%v\n", veth1HostName, exists, metadata)
+		veth1.Enabled = false
+		txn2 := localclient.DataChangeRequest("example")
+		err = txn2.Put().
+			LinuxInterface(veth1).
+			Send().ReceiveReply()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	*/
+
+	// test Linux interface metadata map
+	linuxIfIndex := plugin.LinuxIfPlugin.GetInterfaceIndex()
+	linuxIfMeta, exists := linuxIfIndex.LookupByName(veth1LogicalName)
+	fmt.Printf("Linux interface %s: found=%t, meta=%v\n", veth1LogicalName, exists, linuxIfMeta)
+	linuxIfMeta, exists = linuxIfIndex.LookupByName(linuxTapLogicalName)
+	fmt.Printf("Linux interface %s: found=%t, meta=%v\n", linuxTapLogicalName, exists, linuxIfMeta)
+
+	// test VPP interface metadata map
+	vppIfIndex := plugin.VPPIfPlugin.GetInterfaceIndex()
+	vppIfMeta, exists := vppIfIndex.LookupByName(afPacketLogicalName)
+	fmt.Printf("VPP interface %s: found=%t, meta=%v\n", afPacketLogicalName, exists, vppIfMeta)
+	vppIfMeta, exists = vppIfIndex.LookupByName(vppTapLogicalName)
+	fmt.Printf("VPP interface %s: found=%t, meta=%v\n", vppTapLogicalName, exists, vppIfMeta)
 }

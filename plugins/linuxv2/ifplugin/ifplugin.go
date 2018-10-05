@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/interfaces --proto_path=${GOPATH}/src --gogo_out=../model/interfaces interfaces.proto
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *interfaces.LinuxInterface --meta-type *ifaceidx.LinuxIfMetadata --import "../model/interfaces" --import "ifaceidx" --output-dir "descriptor"
 
 package ifplugin
@@ -57,6 +56,7 @@ type Deps struct {
 	ServiceLabel servicelabel.ReaderAPI
 	Scheduler    scheduler.KVScheduler
 	NsPlugin     nsplugin.API
+	VppIfPlugin  descriptor.VPPIfPluginAPI /* mandatory if TAP_TO_VPP interfaces are used */
 }
 
 // Config holds the nsplugin configuration.
@@ -94,7 +94,7 @@ func (p *IfPlugin) Init() error {
 
 	// init & register descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(
-		p.Scheduler, p.ServiceLabel, p.NsPlugin, p.ifHandler, p.Log)
+		p.Scheduler, p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
 	p.ifWatcher = descriptor.NewInterfaceWatcher(p.Scheduler, p.ifHandler, p.Log)
 	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)

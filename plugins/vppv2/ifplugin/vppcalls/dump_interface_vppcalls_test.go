@@ -58,20 +58,20 @@ func TestDumpInterfacesVxLan(t *testing.T) {
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Name:    (&memif.MemifSocketFilenameDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&memif.MemifDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&memif.MemifDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&tap.SwInterfaceTapDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
 			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
@@ -119,24 +119,24 @@ func TestDumpInterfacesHost(t *testing.T) {
 			Message: &ip.IPAddressDetails{},
 		},
 		{
-			Name:    (&memif.MemifSocketFilenameDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&memif.MemifSocketFilenameDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&memif.MemifDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&memif.MemifDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&tap.SwInterfaceTapDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&vxlan.VxlanTunnelDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
 		},
 	})
 
@@ -194,16 +194,16 @@ func TestDumpInterfacesMemif(t *testing.T) {
 			},
 		},
 		{
-			Name:    (&tap.SwInterfaceTapDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&vxlan.VxlanTunnelDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
 		},
 	})
 
@@ -271,12 +271,12 @@ func TestDumpInterfacesTap1(t *testing.T) {
 			},
 		},
 		{
-			Name:    (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
-			Name:    (&vxlan.VxlanTunnelDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
 		},
 	})
 
@@ -341,8 +341,8 @@ func TestDumpInterfacesTap2(t *testing.T) {
 			},
 		},
 		{
-			Name:    (&tap.SwInterfaceTapDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&tap.SwInterfaceTapDump{}).GetMessageName(),
+			Ping: true,
 		},
 		{
 			Name: (&tapv2.SwInterfaceTapV2Dump{}).GetMessageName(),
@@ -353,8 +353,8 @@ func TestDumpInterfacesTap2(t *testing.T) {
 			},
 		},
 		{
-			Name:    (&vxlan.VxlanTunnelDump{}).GetMessageName(),
-			Ping:    true,
+			Name: (&vxlan.VxlanTunnelDump{}).GetMessageName(),
+			Ping: true,
 		},
 	})
 
