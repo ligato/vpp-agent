@@ -20,24 +20,9 @@ import (
 	"strings"
 	"time"
 
-	govppapi "git.fd.io/govpp.git/api"
 	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 )
-
-// GetACLPluginVersion retrieves ACL plugin version.
-func GetACLPluginVersion(ch govppapi.Channel) (string, error) {
-	req := &aclapi.ACLPluginGetVersion{}
-	reply := &aclapi.ACLPluginGetVersionReply{}
-
-	if err := ch.SendRequest(req).ReceiveReply(reply); err != nil {
-		return "", fmt.Errorf("failed to get VPP ACL plugin version: %v", err)
-	}
-
-	version := fmt.Sprintf("%d.%d", reply.Major, reply.Minor)
-
-	return version, nil
-}
 
 // AddIPACL implements ACL handler.
 func (handler *ACLVppHandler) AddIPACL(rules []*acl.AccessLists_Acl_Rule, aclName string) (uint32, error) {

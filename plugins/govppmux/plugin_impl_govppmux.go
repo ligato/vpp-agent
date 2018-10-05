@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 )
 
 // Plugin implements the govppmux plugin interface.
@@ -246,7 +245,7 @@ func (plugin *Plugin) retrieveVersion() {
 
 	// Get VPP ACL plugin version
 	var aclVersion string
-	if aclVersion, err = aclvppcalls.GetACLPluginVersion(vppAPIChan); err != nil {
+	if aclVersion, err = vppcalls.GetACLPluginVersion(vppAPIChan); err != nil {
 		plugin.Log.Warn("getting acl version info failed:", err)
 		return
 	}
