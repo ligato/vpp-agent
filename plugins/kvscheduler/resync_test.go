@@ -412,7 +412,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1))
 	Expect(operation.Err).To(BeNil())
 
-	// this second transaction consisted of 7 operations
+	// this second transaction consisted of 6 operations
 	txnHistory = scheduler.getTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(2))
 	txn = txnHistory[1]
@@ -454,7 +454,6 @@ func TestResyncWithEmptySB(t *testing.T) {
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
-			isPending:  true,
 		},
 		{
 			operation:  Delete,
@@ -479,14 +478,6 @@ func TestResyncWithEmptySB(t *testing.T) {
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
-		},
-		{
-			operation:  Delete,
-			key:        prefixA + baseValue2,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			wasPending: true,
 		},
 	}
 	checkTxnOperations(txn.planned, txnOps)

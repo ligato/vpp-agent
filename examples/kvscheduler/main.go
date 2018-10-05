@@ -141,7 +141,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		linuxTapLogicalName = "myLinuxTAP"
 		linuxTapHostName    = "tap_to_vpp"
 		linuxTapIPAddr      = "10.11.2.1"
-		linuxTapHwAddr      = "77:77:77:77:77:77"
+		linuxTapHwAddr      = "88:88:88:88:88:88"
 
 		microserviceNetMask = "/30"
 		mycroservice1       = "microservice1"

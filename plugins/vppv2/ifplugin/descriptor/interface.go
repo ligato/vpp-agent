@@ -210,7 +210,7 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	}
 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
-	if newIntf.PhysAddress != "" ||
+	if newIntf.PhysAddress != "" &&
 		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
 		return false
 	}

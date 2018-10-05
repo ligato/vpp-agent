@@ -623,7 +623,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 				intf.Name, vethPeerIfName = parseVethAlias(alias)
 				intf.Link = &interfaces.LinuxInterface_Veth{
 					Veth: &interfaces.LinuxInterface_VethLink{PeerIfName: vethPeerIfName}}
-			} else if link.Type() == (&netlink.Tuntap{}).Type() {
+			} else if link.Type() == (&netlink.Tuntap{}).Type() || link.Type() == "tun" /* not defined in vishvananda */ {
 				intf.Type = interfaces.LinuxInterface_TAP_TO_VPP
 				intf.Name, vppTapIfName, _ = parseTapAlias(alias)
 				intf.Link = &interfaces.LinuxInterface_Tap{
@@ -632,6 +632,7 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 				// unsupported interface type supposedly configured by agent => print warning
 				intfd.log.WithFields(logging.Fields{
 					"if-host-name": link.Attrs().Name,
+					"if-type":      link.Type(),
 					"namespace":    nsRef,
 				}).Warn("Managed interface of unsupported type")
 				continue

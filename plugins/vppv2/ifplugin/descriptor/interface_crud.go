@@ -1,9 +1,11 @@
 package descriptor
 
 import (
+	"strings"
+	"time"
+
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
-	"strings"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"time"
 )
 
 // Add creates a VPP interface.
@@ -42,11 +43,14 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			var exists bool
 			startTime := time.Now()
 
-			for !exists && time.Since(startTime) < tapHostInterfaceWaitTimeout {
-				exists, err := d.linuxIfHandler.InterfaceExists(tapHostIfName)
+			for !exists {
+				exists, err = d.linuxIfHandler.InterfaceExists(tapHostIfName)
 				if err != nil {
 					d.log.Error(err)
 					return nil, err
+				}
+				if time.Since(startTime) > tapHostInterfaceWaitTimeout {
+					break
 				}
 				if !exists {
 					time.Sleep(10 * time.Millisecond)
@@ -54,7 +58,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			}
 
 			if !exists {
-				err = errors.Errorf("failed to create the Linux side of the TAP interface %s", intf.Name)
+				err = errors.Errorf("failed to create the Linux side (%s) of the TAP interface %s", tapHostIfName, intf.Name)
 				d.log.Error(err)
 				return nil, err
 			}
@@ -456,6 +460,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				hostIfName := intf.Interface.GetTap().GetHostIfName()
 				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
 				if !exists {
+					// FIXME: there is a bug...
 					// check if it was "stolen" by the Linux plugin
 					_, _, exists = d.linuxIfPlugin.GetInterfaceIndex().LookupByVPPTap(
 						intf.Interface.Name)

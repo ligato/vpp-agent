@@ -28,21 +28,43 @@ import (
 //
 // Furthermore, operations of the same type are ordered by dependencies to limit
 // temporary pending states.
+// Dependencies are calculated only *approximately* - ordering at this stage is just
+// an *optimization*, purpose of which is to decrease the length of the transaction plan.
 func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kvForTxn) []kvForTxn {
-	recreate := utils.NewKeySet()
-	add := utils.NewKeySet()
-	modify := utils.NewKeySet()
-	delete := utils.NewKeySet()
-	valueByKey := make(map[string]kvForTxn)
-	deps := make(map[string]utils.KeySet)
 
+	// consider at least the first-level of derived values
+	derived := make(map[string]utils.KeySet) // base value key -> derived keys
+	valueByKey := make(map[string]kvForTxn)
 	for _, kv := range values {
 		valueByKey[kv.key] = kv
 		descriptor := scheduler.registry.GetDescriptorForKey(kv.key)
 		handler := &descriptorHandler{descriptor}
 		node := graphR.GetNode(kv.key)
 
-		// collect dependencies among changed values
+		var derivedKVs []KeyValuePair
+		if kv.value != nil {
+			derivedKVs = handler.derivedValues(kv.key, kv.value)
+		} else if node != nil {
+			derivedKVs = handler.derivedValues(kv.key, node.GetValue())
+		}
+
+		derived[kv.key] = utils.NewKeySet(kv.key) // include the base key itself
+		for _, derivedKV := range derivedKVs {
+			derived[kv.key].Add(derivedKV.Key)
+		}
+	}
+
+	// sort values by operations and collect dependencies among changed values
+	recreate := utils.NewKeySet()
+	add := utils.NewKeySet()
+	modify := utils.NewKeySet()
+	delete := utils.NewKeySet()
+	deps := make(map[string]utils.KeySet)
+	for _, kv := range values {
+		descriptor := scheduler.registry.GetDescriptorForKey(kv.key)
+		handler := &descriptorHandler{descriptor}
+		node := graphR.GetNode(kv.key)
+
 		var valDeps []Dependency
 		if kv.value != nil {
 			valDeps = handler.dependencies(kv.key, kv.value)
@@ -51,9 +73,11 @@ func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kv
 		}
 		deps[kv.key] = utils.NewKeySet()
 		for _, kv2 := range values {
-			for _, dep := range valDeps {
-				if kv2.key == dep.Key || (dep.AnyOf != nil && dep.AnyOf(kv2.key)) {
-					deps[kv.key].Add(kv2.key)
+			for kv2DerKey := range derived[kv2.key] {
+				for _, dep := range valDeps {
+					if kv2DerKey == dep.Key || (dep.AnyOf != nil && dep.AnyOf(kv2DerKey)) {
+						deps[kv.key].Add(kv2.key)
+					}
 				}
 			}
 		}

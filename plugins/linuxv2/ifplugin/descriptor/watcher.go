@@ -36,6 +36,11 @@ const (
 	// InterfaceWatcherName is the name of the descriptor watching Linux interfaces
 	// in the default namespace.
 	InterfaceWatcherName = "linux-interface-watcher"
+
+	// notificationDelay specifies how long to delay notification when interface changes.
+	// Typically interface is created in multiple stages and we do not want to notify
+	// scheduler about intermediate states.
+	notificationDelay = 200 * time.Millisecond
 )
 
 // InterfaceWatcher watches default namespace for newly added/removed Linux interfaces.
@@ -216,7 +221,7 @@ func (intfw *InterfaceWatcher) delayNotification(ifName string) {
 	select {
 	case <-intfw.ctx.Done():
 		return
-	case <-time.After(time.Second):
+	case <-time.After(notificationDelay):
 		intfw.applyDelayedNotification(ifName)
 	}
 }
