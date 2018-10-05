@@ -24,17 +24,17 @@ const (
 	/* Interface Config */
 
 	// Prefix is a key prefix used in ETCD to store configuration for VPP interfaces.
-	Prefix = "vpp/config/v1/interface/"
+	Prefix = "vpp/config/v2/interface/"
 
 	/* Interface State */
 
 	// StatePrefix is a key prefix used in ETCD to store interface states.
-	StatePrefix = "vpp/status/v1/interface/"
+	StatePrefix = "vpp/status/v2/interface/"
 
 	/* Interface Error */
 
 	// ErrorPrefix is a key prefix used in ETCD to store interface errors.
-	ErrorPrefix = "vpp/status/v1/interface/error/"
+	ErrorPrefix = "vpp/status/v2/interface/error/"
 
 	/* Interface Address (derived) */
 

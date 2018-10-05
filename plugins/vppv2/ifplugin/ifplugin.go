@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Interface  --value-type *interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "../model/interfaces" --import "ifaceidx" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Interface  --value-type *interfaces.Interface --meta-type *ifaceidx.IfaceMetadata --import "ifaceidx" --import "../model/interfaces" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Unnumbered  --value-type *interfaces.Interface_Unnumbered --import "../model/interfaces" --output-dir "descriptor"
 
 package ifplugin
@@ -86,6 +86,7 @@ type IfPlugin struct {
 	defaultMtu      uint32
 
 	// state data
+	publishStats     bool
 	publishLock      sync.Mutex
 	statusCheckReg   bool
 	watchStatusReg   datasync.WatchRegistration
@@ -128,11 +129,15 @@ type Config struct {
 // Init loads configuration file and registers interface-related descriptors.
 func (p *IfPlugin) Init() error {
 	var err error
+
+	// Create plugin context, save cancel function into the plugin handle.
+	p.ctx, p.cancel = context.WithCancel(context.Background())
+
 	// Read config file and set all related fields
 	p.fromConfigFile()
 
 	// Fills nil dependencies with default values
-	publishStats := p.PublishStatistics != nil || p.NotifyStatistics != nil
+	p.publishStats = p.PublishStatistics != nil || p.NotifyStatistics != nil
 	p.fixNilPointers()
 
 	// Plugin-wide stopwatch instance
@@ -189,11 +194,8 @@ func (p *IfPlugin) Init() error {
 	}
 	p.dhcpDescriptor.WatchDHCPNotifications(p.ctx, p.dhcpChan)
 
-	// Create plugin context, save cancel function into the plugin handle.
-	p.ctx, p.cancel = context.WithCancel(context.Background())
-
 	// interface state data
-	if publishStats {
+	if p.publishStats {
 		// subscribe & watch for resync of interface state data
 		p.resyncStatusChan = make(chan datasync.ResyncEvent)
 		p.watchStatusReg, err = p.Watcher.
@@ -231,9 +233,11 @@ func (p *IfPlugin) Init() error {
 
 // AfterInit delegates the call to ifStateUpdater.
 func (p *IfPlugin) AfterInit() error {
-	err := p.ifStateUpdater.AfterInit()
-	if err != nil {
-		return err
+	if p.publishStats {
+		err := p.ifStateUpdater.AfterInit()
+		if err != nil {
+			return err
+		}
 	}
 
 	if p.StatusCheck != nil {

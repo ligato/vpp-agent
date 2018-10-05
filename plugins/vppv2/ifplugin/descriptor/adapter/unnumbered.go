@@ -24,7 +24,7 @@ type UnnumberedDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, v1, v2 *interfaces.Interface_Unnumbered) bool
+	ValueComparator    func(key string, oldValue, newValue *interfaces.Interface_Unnumbered) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
@@ -89,13 +89,13 @@ func NewUnnumberedDescriptor(typedDescriptor *UnnumberedDescriptor) *KVDescripto
 	return descriptor
 }
 
-func (da *UnnumberedDescriptorAdapter) ValueComparator(key string, v1, v2 proto.Message) bool {
-	typedV1, err1 := castUnnumberedValue(key, v1)
-	typedV2, err2 := castUnnumberedValue(key, v2)
+func (da *UnnumberedDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castUnnumberedValue(key, oldValue)
+	typedNewValue, err2 := castUnnumberedValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
-	return da.descriptor.ValueComparator(key, typedV1, typedV2)
+	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
 func (da *UnnumberedDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
