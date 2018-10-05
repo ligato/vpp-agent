@@ -27,7 +27,7 @@ message LinuxInterface {
     };
 
     message TapLink {
-        string vpp_tap_if_name = 1;     /* Logical name of the VPP TAP interface */
+        string vpp_tap_if_name = 1;     /* Logical name of the VPP TAP interface (mandatory for TAP_TO_VPP) */
     };
 
     oneof link {
