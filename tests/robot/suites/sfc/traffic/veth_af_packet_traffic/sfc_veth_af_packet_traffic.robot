@@ -392,13 +392,13 @@ Show Interfaces And Other Objects
 
 Check Stuff
     Show Interfaces And Other Objects
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    enabled=1
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_nod2_veth    enabled=1
-    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_3_nod3_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_2_node2_veth    enabled=1
+    vat_term: Check Afpacket Interface State    agent_vpp_1    IF_AFPIF_VSWITCH_node_3_node3_veth    enabled=1
     linux: Interface With IP Is Created    node=node_1    mac=${AGENT1_VETH_MAC}      ipv4=10.0.0.10/24
     linux: Interface With IP Is Created    node=node_2    mac=${AGENT2_VETH_MAC}      ipv4=10.0.0.11/24
     linux: Interface With IP Is Created    node=node_3    mac=${AGENT3_VETH_MAC}      ipv4=10.0.0.12/24
-    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_nod1_veth    IF_AFPIF_VSWITCH_node_2_nod2_veth    IF_AFPIF_VSWITCH_node_3_nod3_veth
+    vat_term: BD Is Created    agent_vpp_1    IF_AFPIF_VSWITCH_node_1_node1_veth    IF_AFPIF_VSWITCH_node_2_node2_veth    IF_AFPIF_VSWITCH_node_3_node3_veth
 
 
 TestSetup
