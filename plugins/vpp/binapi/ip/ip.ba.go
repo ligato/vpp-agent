@@ -838,6 +838,10 @@ func (*IPNeighborDump) GetMessageType() api.MessageType {
 //                "sw_if_index"
 //            ],
 //            [
+//                "u32",
+//                "stats_index"
+//            ],
+//            [
 //                "u8",
 //                "is_static"
 //            ],
@@ -856,11 +860,12 @@ func (*IPNeighborDump) GetMessageType() api.MessageType {
 //                16
 //            ],
 //            {
-//                "crc": "0x85e32a72"
+//                "crc": "0xc7001770"
 //            }
 //
 type IPNeighborDetails struct {
 	SwIfIndex  uint32
+	StatsIndex uint32
 	IsStatic   uint8
 	IsIPv6     uint8
 	MacAddress []byte `struc:"[6]byte"`
@@ -871,7 +876,7 @@ func (*IPNeighborDetails) GetMessageName() string {
 	return "ip_neighbor_details"
 }
 func (*IPNeighborDetails) GetCrcString() string {
-	return "85e32a72"
+	return "c7001770"
 }
 func (*IPNeighborDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -961,19 +966,24 @@ func (*IPNeighborAddDel) GetMessageType() api.MessageType {
 //                "i32",
 //                "retval"
 //            ],
+//            [
+//                "u32",
+//                "stats_index"
+//            ],
 //            {
-//                "crc": "0xe8d4e804"
+//                "crc": "0x1992deab"
 //            }
 //
 type IPNeighborAddDelReply struct {
-	Retval int32
+	Retval     int32
+	StatsIndex uint32
 }
 
 func (*IPNeighborAddDelReply) GetMessageName() string {
 	return "ip_neighbor_add_del_reply"
 }
 func (*IPNeighborAddDelReply) GetCrcString() string {
-	return "e8d4e804"
+	return "1992deab"
 }
 func (*IPNeighborAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2066,19 +2076,24 @@ func (*IPMrouteAddDel) GetMessageType() api.MessageType {
 //                "i32",
 //                "retval"
 //            ],
+//            [
+//                "u32",
+//                "stats_index"
+//            ],
 //            {
-//                "crc": "0xe8d4e804"
+//                "crc": "0x1992deab"
 //            }
 //
 type IPMrouteAddDelReply struct {
-	Retval int32
+	Retval     int32
+	StatsIndex uint32
 }
 
 func (*IPMrouteAddDelReply) GetMessageName() string {
 	return "ip_mroute_add_del_reply"
 }
 func (*IPMrouteAddDelReply) GetCrcString() string {
-	return "e8d4e804"
+	return "1992deab"
 }
 func (*IPMrouteAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2157,13 +2172,17 @@ func (*IPMfibDump) GetMessageType() api.MessageType {
 //                "count"
 //            ],
 //            [
+//                "u32",
+//                "stats_index"
+//            ],
+//            [
 //                "vl_api_fib_path_t",
 //                "path",
 //                0,
 //                "count"
 //            ],
 //            {
-//                "crc": "0x5e530d5e"
+//                "crc": "0x21329a12"
 //            }
 //
 type IPMfibDetails struct {
@@ -2174,6 +2193,7 @@ type IPMfibDetails struct {
 	GrpAddress    []byte `struc:"[4]byte"`
 	SrcAddress    []byte `struc:"[4]byte"`
 	Count         uint32 `struc:"sizeof=Path"`
+	StatsIndex    uint32
 	Path          []FibPath
 }
 
@@ -2181,7 +2201,7 @@ func (*IPMfibDetails) GetMessageName() string {
 	return "ip_mfib_details"
 }
 func (*IPMfibDetails) GetCrcString() string {
-	return "5e530d5e"
+	return "21329a12"
 }
 func (*IPMfibDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
