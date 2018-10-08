@@ -5,8 +5,8 @@
  Package bfd is a generated from VPP binary API module 'bfd'.
 
  It contains following objects:
-	 26 messages
-	 13 services
+	 28 messages
+	 14 services
 
 */
 package bfd
@@ -153,6 +153,102 @@ func (*BfdUDPDelEchoSourceReply) GetCrcString() string {
 	return "e8d4e804"
 }
 func (*BfdUDPDelEchoSourceReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// BfdUDPGetEchoSource represents the VPP binary API message 'bfd_udp_get_echo_source'.
+//
+//            "bfd_udp_get_echo_source",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type BfdUDPGetEchoSource struct{}
+
+func (*BfdUDPGetEchoSource) GetMessageName() string {
+	return "bfd_udp_get_echo_source"
+}
+func (*BfdUDPGetEchoSource) GetCrcString() string {
+	return "51077d14"
+}
+func (*BfdUDPGetEchoSource) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// BfdUDPGetEchoSourceReply represents the VPP binary API message 'bfd_udp_get_echo_source_reply'.
+//
+//            "bfd_udp_get_echo_source_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "is_set"
+//            ],
+//            [
+//                "u8",
+//                "have_usable_ip4"
+//            ],
+//            [
+//                "u8",
+//                "ip4_addr",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "have_usable_ip6"
+//            ],
+//            [
+//                "u8",
+//                "ip6_addr",
+//                16
+//            ],
+//            {
+//                "crc": "0x6924ca6b"
+//            }
+//
+type BfdUDPGetEchoSourceReply struct {
+	Retval        int32
+	SwIfIndex     uint32
+	IsSet         uint8
+	HaveUsableIP4 uint8
+	IP4Addr       []byte `struc:"[4]byte"`
+	HaveUsableIP6 uint8
+	IP6Addr       []byte `struc:"[16]byte"`
+}
+
+func (*BfdUDPGetEchoSourceReply) GetMessageName() string {
+	return "bfd_udp_get_echo_source_reply"
+}
+func (*BfdUDPGetEchoSourceReply) GetCrcString() string {
+	return "6924ca6b"
+}
+func (*BfdUDPGetEchoSourceReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
@@ -1181,6 +1277,7 @@ type Services interface {
 	BfdUDPAuthDeactivate(*BfdUDPAuthDeactivate) (*BfdUDPAuthDeactivateReply, error)
 	BfdUDPDel(*BfdUDPDel) (*BfdUDPDelReply, error)
 	BfdUDPDelEchoSource(*BfdUDPDelEchoSource) (*BfdUDPDelEchoSourceReply, error)
+	BfdUDPGetEchoSource(*BfdUDPGetEchoSource) (*BfdUDPGetEchoSourceReply, error)
 	BfdUDPMod(*BfdUDPMod) (*BfdUDPModReply, error)
 	BfdUDPSessionSetFlags(*BfdUDPSessionSetFlags) (*BfdUDPSessionSetFlagsReply, error)
 	BfdUDPSetEchoSource(*BfdUDPSetEchoSource) (*BfdUDPSetEchoSourceReply, error)
@@ -1192,6 +1289,8 @@ func init() {
 	api.RegisterMessage((*BfdUDPSetEchoSourceReply)(nil), "bfd.BfdUDPSetEchoSourceReply")
 	api.RegisterMessage((*BfdUDPDelEchoSource)(nil), "bfd.BfdUDPDelEchoSource")
 	api.RegisterMessage((*BfdUDPDelEchoSourceReply)(nil), "bfd.BfdUDPDelEchoSourceReply")
+	api.RegisterMessage((*BfdUDPGetEchoSource)(nil), "bfd.BfdUDPGetEchoSource")
+	api.RegisterMessage((*BfdUDPGetEchoSourceReply)(nil), "bfd.BfdUDPGetEchoSourceReply")
 	api.RegisterMessage((*BfdUDPAdd)(nil), "bfd.BfdUDPAdd")
 	api.RegisterMessage((*BfdUDPAddReply)(nil), "bfd.BfdUDPAddReply")
 	api.RegisterMessage((*BfdUDPMod)(nil), "bfd.BfdUDPMod")
