@@ -208,6 +208,12 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 		return nil, err
 	}
 
+	// Rx-placement dump is last since it uses interface type-specific data
+	err = h.dumpRxPlacement(ifs)
+	if err != nil {
+		return nil, err
+	}
+
 	return ifs, nil
 }
 
@@ -233,6 +239,38 @@ func (h *IfVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
 	h.log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
 
 	return memifSocketMap, nil
+}
+
+func (h *IfVppHandler) dumpRxPlacement(ifs map[uint32]*InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceRxPlacementDump{
+		SwIfIndex: ^uint32(0),
+	})
+	for {
+		rxDetails := &interfaces.SwInterfaceRxPlacementDetails{}
+		stop, err := reqCtx.ReceiveReply(rxDetails)
+		if err != nil {
+			return fmt.Errorf("failed to dump rx-placement details: %v", err)
+		}
+		if stop {
+			break
+		}
+		ifData, ok := ifs[rxDetails.SwIfIndex]
+		if !ok {
+			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
+			continue
+		}
+
+		ifData.Interface.RxModeSettings = &ifnb.Interfaces_Interface_RxModeSettings{
+			RxMode:  getRxModeType(rxDetails.Mode),
+			QueueId: rxDetails.QueueID,
+		}
+		ifData.Interface.RxPlacementSettings = &ifnb.Interfaces_Interface_RxPlacementSettings{
+			Queue:  rxDetails.QueueID,
+			Worker: rxDetails.WorkerID,
+		}
+	}
+
+	return nil
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
@@ -538,4 +576,20 @@ func memifModetoNB(mode uint8) ifnb.Interfaces_Interface_Memif_MemifMode {
 		return ifnb.Interfaces_Interface_Memif_PUNT_INJECT
 	}
 	return ifnb.Interfaces_Interface_Memif_ETHERNET
+}
+
+// Convert binary API rx-mode to northbound representation
+func getRxModeType(mode uint8) ifnb.RxModeType {
+	switch mode {
+	case 1:
+		return ifnb.RxModeType_POLLING
+	case 2:
+		return ifnb.RxModeType_INTERRUPT
+	case 3:
+		return ifnb.RxModeType_ADAPTIVE
+	case 4:
+		return ifnb.RxModeType_DEFAULT
+	default:
+		return ifnb.RxModeType_UNKNOWN
+	}
 }
