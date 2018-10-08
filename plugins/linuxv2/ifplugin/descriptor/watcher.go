@@ -186,10 +186,8 @@ func (intfw *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUp
 	defer intfw.intfsLock.Unlock()
 
 	ifName := linkUpdate.Attrs().Name
-	isEnabled, err := intfw.ifHandler.IsInterfaceEnabled(ifName)
-	if err != nil {
-		return
-	}
+	isEnabled := linkUpdate.Attrs().OperState != netlink.OperDown &&
+		linkUpdate.Attrs().OperState != netlink.OperNotPresent
 
 	_, isPendingNotif := intfw.pendingIntfs[ifName]
 	if isPendingNotif {

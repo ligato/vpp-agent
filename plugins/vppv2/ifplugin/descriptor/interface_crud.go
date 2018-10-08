@@ -103,12 +103,12 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 
 	case interfaces.Interface_ETHERNET_CSMACD:
-		ifMeta, found := d.intfIndex.LookupByName(intf.Name)
+		var found bool
+		ifIdx, found = d.ethernetIfs[intf.Name]
 		if !found {
 			err = errors.Errorf("failed to find physical interface %s", intf.Name)
 			return nil, err
 		}
-		ifIdx = ifMeta.SwIfIndex
 
 	case interfaces.Interface_AF_PACKET_INTERFACE:
 		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
@@ -134,8 +134,10 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// MAC address (optional, for af-packet is configured in different way)
-	if intf.GetPhysAddress() != "" && intf.GetType() != interfaces.Interface_AF_PACKET_INTERFACE {
+	// MAC address (optional; af-packet uses HwAddr from the host; physical interfaces cannot have MAC changed)
+	if intf.GetPhysAddress() != "" &&
+		intf.GetType() != interfaces.Interface_AF_PACKET_INTERFACE &&
+		intf.GetType() != interfaces.Interface_ETHERNET_CSMACD {
 		if err = d.ifHandler.SetInterfaceMac(ifIdx, intf.GetPhysAddress()); err != nil {
 			err = errors.Errorf("failed to set MAC address %s to interface %s: %v",
 				intf.GetPhysAddress(), intf.Name, err)
@@ -198,7 +200,6 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 	}
 
 	// set interface up if enabled
-	// TODO: process admin up/down notification only after Add finalizes (e.g. using a "transaction barrier")
 	if intf.Enabled {
 		if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s up: %v", intf.Name, err)
@@ -220,7 +221,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error {
 	ifIdx := metadata.SwIfIndex
 
-	// Skip setting interface to ADMIN_DOWN unless the type AF_PACKET_INTERFACE
+	// Set interface to ADMIN_DOWN unless the type is AF_PACKET_INTERFACE
 	if intf.Type != interfaces.Interface_AF_PACKET_INTERFACE {
 		if err := d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s down: %v", intf.Name, err)
@@ -232,7 +233,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	// unconfigure IP addresses
 	var nonLocalIPs []string
 	for _, ipAddr := range intf.IpAddresses {
-		if strings.HasPrefix(ipAddr, "fe80") {
+		if !strings.HasPrefix(ipAddr, "fe80") {
 			nonLocalIPs = append(nonLocalIPs, ipAddr)
 		}
 	}
@@ -319,8 +320,10 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// Configure new mac address if set (and only if it was changed)
-	if newIntf.PhysAddress != "" && newIntf.PhysAddress != oldIntf.PhysAddress {
+	// Configure new mac address if set (and only if it was changed and for supported interface type)
+	if newIntf.PhysAddress != "" && newIntf.PhysAddress != oldIntf.PhysAddress &&
+		oldIntf.Type != interfaces.Interface_AF_PACKET_INTERFACE &&
+		oldIntf.Type != interfaces.Interface_ETHERNET_CSMACD {
 		if err := d.ifHandler.SetInterfaceMac(ifIdx, newIntf.PhysAddress); err != nil {
 			err = errors.Errorf("setting interface %s MAC address %s failed: %v",
 				newIntf.Name, newIntf.PhysAddress, err)
@@ -403,6 +406,9 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		return dump, err
 	}
 
+	// clear the map of ethernet interfaces
+	d.ethernetIfs = make(map[string]uint32)
+
 	// dump current state of VPP interfaces
 	vppIfs, err := d.ifHandler.DumpInterfaces()
 	if err != nil {
@@ -417,10 +423,12 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			// local0 is created automatically
 			origin = scheduler.FromSB
 		}
-		if intf.Interface.Type == interfaces.Interface_ETHERNET_CSMACD &&
-			!intf.Interface.Enabled && len(intf.Interface.IpAddresses) == 0 {
-			// unconfigured physical interface
-			origin = scheduler.FromSB
+		if intf.Interface.Type == interfaces.Interface_ETHERNET_CSMACD {
+			d.ethernetIfs[intf.Interface.Name] = ifIdx
+			if !intf.Interface.Enabled && len(intf.Interface.IpAddresses) == 0 {
+				// unconfigured physical interface => skip (but add entry to d.ethernetIfs)
+				continue
+			}
 		}
 		if intf.Interface.Name == "" {
 			// untagged interface - generate a logical name for it

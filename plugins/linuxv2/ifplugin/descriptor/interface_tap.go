@@ -129,7 +129,9 @@ func (intfd *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmt
 	defer revert()
 
 	// remove interface alias at last(!)
-	err = intfd.ifHandler.SetInterfaceAlias(origVppTapHostName, "")
+	// - actually vishvananda/netlink does not support alias removal, so we just change
+	//   it to a string which is not prefixed with agent label
+	err = intfd.ifHandler.SetInterfaceAlias(origVppTapHostName, "unconfigured")
 	if err != nil {
 		intfd.log.Error(err)
 		return err

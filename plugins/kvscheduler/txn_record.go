@@ -142,8 +142,8 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 		if len(txn.executed) == 0 {
 			str += indent1 + "* executed operations:\n"
 		} else {
-			str += indent1 + fmt.Sprintf("* executed operations (%s - %s):\n",
-				txn.start.String(), txn.stop.String())
+			str += indent1 + fmt.Sprintf("* executed operations (%s - %s, duration = %s):\n",
+				txn.start.String(), txn.stop.String(), txn.stop.Sub(txn.start).String())
 		}
 		str += txn.executed.StringWithOpts(indent + 4)
 	}

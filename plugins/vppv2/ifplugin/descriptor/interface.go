@@ -114,6 +114,7 @@ type InterfaceDescriptor struct {
 	// runtime
 	intfIndex       ifaceidx.IfaceMetadataIndex
 	memifSocketToID map[string]uint32 // memif socket filename to ID map (all known sockets)
+	ethernetIfs     map[string]uint32 // ethernet interfaces name-to-index map (entry is not removed even if interface is un-configured)
 }
 
 // LinuxPluginAPI is defined here to avoid import cycles.
@@ -140,6 +141,7 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 		linuxIfHandler:  linuxIfHandler,
 		log:             log.NewLogger("-if-descriptor"),
 		memifSocketToID: make(map[string]uint32),
+		ethernetIfs:     make(map[string]uint32),
 	}
 }
 
