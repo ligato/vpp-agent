@@ -193,11 +193,11 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	}
 
 	timeLog = measure.GetTimeLog(ip.IPAddressDump{}, h.stopwatch)
-	err = h.dumpIPAddressDetails(ifs, 0, timeLog)
+	err = h.dumpIPAddressDetails(ifs, 0, dhcpClients, timeLog)
 	if err != nil {
 		return nil, err
 	}
-	err = h.dumpIPAddressDetails(ifs, 1, timeLog)
+	err = h.dumpIPAddressDetails(ifs, 1, dhcpClients, timeLog)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (h *IfVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
 		memifSocketMap[filename] = socketDetails.SocketID
 	}
 
-	h.log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
+	h.log.Debugf("Memif socket dump completed, found %d entries: %v", len(memifSocketMap), memifSocketMap)
 
 	return memifSocketMap, nil
 }
@@ -312,7 +312,7 @@ func (h *IfVppHandler) DumpDhcpClients() (map[uint32]*Dhcp, error) {
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
-func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, isIPv6 uint8, timeLog measure.StopWatchEntry) error {
+func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, isIPv6 uint8, dhcpClients map[uint32]*Dhcp, timeLog measure.StopWatchEntry) error {
 	// Dump IP addresses of each interface.
 	for idx := range ifs {
 		// IPAddressDetails time measurement
@@ -331,7 +331,7 @@ func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, is
 			if err != nil {
 				return fmt.Errorf("failed to dump interface %d IP address details: %v", idx, err)
 			}
-			h.processIPDetails(ifs, ipDetails)
+			h.processIPDetails(ifs, ipDetails, dhcpClients)
 		}
 
 		// IPAddressDump time
@@ -344,17 +344,26 @@ func (h *IfVppHandler) dumpIPAddressDetails(ifs map[uint32]*InterfaceDetails, is
 }
 
 // processIPDetails processes ip.IPAddressDetails binary API message and fills the details into the provided interface map.
-func (h *IfVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, ipDetails *ip.IPAddressDetails) {
+func (h *IfVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, ipDetails *ip.IPAddressDetails, dhcpClients map[uint32]*Dhcp) {
 	ifDetails, ifIdxExists := ifs[ipDetails.SwIfIndex]
 	if !ifIdxExists {
 		return
 	}
+
 	var ipAddr string
 	if ipDetails.IsIPv6 == 1 {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP).To16().String(), uint32(ipDetails.PrefixLength))
 	} else {
 		ipAddr = fmt.Sprintf("%s/%d", net.IP(ipDetails.IP[:4]).To4().String(), uint32(ipDetails.PrefixLength))
 	}
+
+	// skip IP addresses given by DHCP
+	if dhcpClient, hasDhcpClient := dhcpClients[ipDetails.SwIfIndex]; hasDhcpClient {
+		if dhcpClient.Lease != nil && dhcpClient.Lease.HostAddress == ipAddr {
+			return
+		}
+	}
+
 	ifDetails.Interface.IpAddresses = append(ifDetails.Interface.IpAddresses, ipAddr)
 }
 

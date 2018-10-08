@@ -68,7 +68,6 @@ const (
 	afPacketMissingAttachedIfSuffix = "-MISSING_ATTACHED_INTERFACE"
 
 	// default memif attributes
-	defaultMemifSocketPath         = "/var/vpp/memif.sock"
 	defaultMemifNumOfQueues uint32 = 1
 	defaultMemifBufferSize  uint32 = 2048
 	defaultMemifRingSize    uint32 = 1024
@@ -112,9 +111,11 @@ type InterfaceDescriptor struct {
 	linuxIfHandler NetlinkAPI
 
 	// runtime
-	intfIndex       ifaceidx.IfaceMetadataIndex
-	memifSocketToID map[string]uint32 // memif socket filename to ID map (all known sockets)
-	ethernetIfs     map[string]uint32 // name-to-index map of ethernet interfaces (entry is not removed even if interface is un-configured)
+	intfIndex              ifaceidx.IfaceMetadataIndex
+	memifSocketToID        map[string]uint32 // memif socket filename to ID map (all known sockets)
+	defaultMemifSocketPath string
+	ethernetIfs            map[string]uint32 // name-to-index map of ethernet interfaces
+	                                         // (entry is not removed even if interface is un-configured)
 }
 
 // LinuxPluginAPI is defined here to avoid import cycles.
@@ -433,19 +434,17 @@ func (d *InterfaceDescriptor) getInterfaceMTU(intf *interfaces.Interface) uint32
 // resolveMemifSocketFilename returns memif socket filename ID.
 // Registers it if does not exists yet.
 func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Interface_MemifLink) (uint32, error) {
-	if memifIf.GetSocketFilename() == "" {
-		return 0, errors.Errorf("memif configuration does not contain socket file name")
-	}
-	registeredID, registered := d.memifSocketToID[memifIf.SocketFilename]
+	socketFileName := d.getMemifSocketFilename(memifIf)
+	registeredID, registered := d.memifSocketToID[socketFileName]
 	if !registered {
 		// Register new socket. ID is generated (default filename ID is 0, first is ID 1, second ID 2, etc)
 		registeredID = uint32(len(d.memifSocketToID))
-		err := d.ifHandler.RegisterMemifSocketFilename([]byte(memifIf.SocketFilename), registeredID)
+		err := d.ifHandler.RegisterMemifSocketFilename([]byte(socketFileName), registeredID)
 		if err != nil {
-			return 0, errors.Errorf("error registering socket file name %s (ID %d): %v", memifIf.SocketFilename, registeredID, err)
+			return 0, errors.Errorf("error registering socket file name %s (ID %d): %v", socketFileName, registeredID, err)
 		}
-		d.memifSocketToID[memifIf.SocketFilename] = registeredID
-		d.log.Debugf("Memif socket filename %s registered under ID %d", memifIf.SocketFilename, registeredID)
+		d.memifSocketToID[socketFileName] = registeredID
+		d.log.Debugf("Memif socket filename %s registered under ID %d", socketFileName, registeredID)
 	}
 	return registeredID, nil
 }
@@ -513,7 +512,7 @@ func (d *InterfaceDescriptor) modifyRxModeForInterfaces(oldIntf, newIntf *interf
 // getMemifSocketFilename returns the memif socket filename.
 func (d *InterfaceDescriptor) getMemifSocketFilename(memif *interfaces.Interface_MemifLink) string {
 	if memif.GetSocketFilename() == "" {
-		return defaultMemifSocketPath
+		return d.defaultMemifSocketPath
 	}
 	return memif.GetSocketFilename()
 }

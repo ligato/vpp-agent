@@ -291,16 +291,20 @@ func (scheduler *Scheduler) validDumpedKV(kv KVWithMetadata, descriptor *KVDescr
 
 // validDumpedKV verifies validity of a KV-pair derived from a dumped value.
 func (scheduler *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor *KVDescriptor, refreshed utils.KeySet) bool {
+	descriptorName := "<NONE>"
+	if descriptor != nil {
+		descriptorName = descriptor.Name
+	}
 	if node.GetValue() == nil {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.Name,
+			"descriptor": descriptorName,
 			"key":        node.GetKey(),
 		}).Warn("Derived nil value")
 		return false
 	}
 	if _, alreadyDumped := refreshed[node.GetKey()]; alreadyDumped {
 		scheduler.Log.WithFields(logging.Fields{
-			"descriptor": descriptor.Name,
+			"descriptor": descriptorName,
 			"key":        node.GetKey(),
 		}).Warn("The same value was dumped more than once")
 		// return true -> let's overwrite invalidly dumped derived value

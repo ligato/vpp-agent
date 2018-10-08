@@ -405,6 +405,11 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		d.log.Error(err)
 		return dump, err
 	}
+	for socketPath, socketID := range d.memifSocketToID {
+		if socketID == 0 {
+			d.defaultMemifSocketPath = socketPath
+		}
+	}
 
 	// clear the map of ethernet interfaces
 	d.ethernetIfs = make(map[string]uint32)
@@ -448,6 +453,19 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				intf.Interface.GetTap().ToMicroservice = expCfg.GetTap().GetToMicroservice()
 				intf.Interface.GetTap().RxRingSize = expCfg.GetTap().GetRxRingSize()
 				intf.Interface.GetTap().TxRingSize = expCfg.GetTap().GetTxRingSize()
+			}
+			if expCfg.Type == interfaces.Interface_MEMORY_INTERFACE {
+				intf.Interface.GetMemif().Secret = expCfg.GetMemif().GetSecret()
+				intf.Interface.GetMemif().RxQueues = expCfg.GetMemif().GetRxQueues()
+				intf.Interface.GetMemif().TxQueues = expCfg.GetMemif().GetTxQueues()
+				// if memif is not connected yet, ring-size and buffer-size are
+				// 1 and 0, respectively
+				if intf.Interface.GetMemif().GetRingSize() == 1 {
+					intf.Interface.GetMemif().RingSize = expCfg.GetMemif().GetRingSize()
+				}
+				if intf.Interface.GetMemif().GetBufferSize() == 0 {
+					intf.Interface.GetMemif().BufferSize = expCfg.GetMemif().GetBufferSize()
+				}
 			}
 			intf.Interface.RxModeSettings = proto.Clone(expCfg.RxModeSettings).(*interfaces.Interface_RxModeSettings)
 			intf.Interface.RxPlacementSettings = proto.Clone(expCfg.RxPlacementSettings).(*interfaces.Interface_RxPlacementSettings)
