@@ -5,8 +5,9 @@
  Package vpe is a generated from VPP binary API module 'vpe'.
 
  It contains following objects:
-	 16 messages
-	  8 services
+	 18 messages
+	  1 type
+	  9 services
 
 */
 package vpe
@@ -19,6 +20,31 @@ import "bytes"
 var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
+
+/* Types */
+
+// ThreadData represents the VPP binary API type 'thread_data'.
+//
+//                "thread_data",
+//                0,
+//                "count"
+//
+type ThreadData struct {
+	ID        uint32
+	Name      []byte `struc:"[64]byte"`
+	Type      []byte `struc:"[64]byte"`
+	PID       uint32
+	CPUID     uint32
+	Core      uint32
+	CPUSocket uint32
+}
+
+func (*ThreadData) GetTypeName() string {
+	return "thread_data"
+}
+func (*ThreadData) GetCrcString() string {
+	return "0f57094e"
+}
 
 /* Messages */
 
@@ -506,6 +532,82 @@ func (*ShowVersionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// ShowThreads represents the VPP binary API message 'show_threads'.
+//
+//            "show_threads",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type ShowThreads struct{}
+
+func (*ShowThreads) GetMessageName() string {
+	return "show_threads"
+}
+func (*ShowThreads) GetCrcString() string {
+	return "51077d14"
+}
+func (*ShowThreads) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// ShowThreadsReply represents the VPP binary API message 'show_threads_reply'.
+//
+//            "show_threads_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "count"
+//            ],
+//            [
+//                "vl_api_thread_data_t",
+//                "thread_data",
+//                0,
+//                "count"
+//            ],
+//            {
+//                "crc": "0x6942fb35"
+//            }
+//
+type ShowThreadsReply struct {
+	Retval     int32
+	Count      uint32 `struc:"sizeof=ThreadData"`
+	ThreadData []ThreadData
+}
+
+func (*ShowThreadsReply) GetMessageName() string {
+	return "show_threads_reply"
+}
+func (*ShowThreadsReply) GetCrcString() string {
+	return "6942fb35"
+}
+func (*ShowThreadsReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 // GetNodeGraph represents the VPP binary API message 'get_node_graph'.
 //
 //            "get_node_graph",
@@ -667,6 +769,7 @@ type Services interface {
 	GetNextIndex(*GetNextIndex) (*GetNextIndexReply, error)
 	GetNodeGraph(*GetNodeGraph) (*GetNodeGraphReply, error)
 	GetNodeIndex(*GetNodeIndex) (*GetNodeIndexReply, error)
+	ShowThreads(*ShowThreads) (*ShowThreadsReply, error)
 	ShowVersion(*ShowVersion) (*ShowVersionReply, error)
 }
 
@@ -683,6 +786,8 @@ func init() {
 	api.RegisterMessage((*AddNodeNextReply)(nil), "vpe.AddNodeNextReply")
 	api.RegisterMessage((*ShowVersion)(nil), "vpe.ShowVersion")
 	api.RegisterMessage((*ShowVersionReply)(nil), "vpe.ShowVersionReply")
+	api.RegisterMessage((*ShowThreads)(nil), "vpe.ShowThreads")
+	api.RegisterMessage((*ShowThreadsReply)(nil), "vpe.ShowThreadsReply")
 	api.RegisterMessage((*GetNodeGraph)(nil), "vpe.GetNodeGraph")
 	api.RegisterMessage((*GetNodeGraphReply)(nil), "vpe.GetNodeGraphReply")
 	api.RegisterMessage((*GetNextIndex)(nil), "vpe.GetNextIndex")

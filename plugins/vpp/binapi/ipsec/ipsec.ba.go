@@ -5,8 +5,8 @@
  Package ipsec is a generated from VPP binary API module 'ipsec'.
 
  It contains following objects:
-	 46 messages
-	 23 services
+	 48 messages
+	 24 services
 
 */
 package ipsec
@@ -1647,6 +1647,75 @@ func (*Ikev2InitiateRekeyChildSaReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// IpsecSpdsDump represents the VPP binary API message 'ipsec_spds_dump'.
+//
+//            "ipsec_spds_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type IpsecSpdsDump struct{}
+
+func (*IpsecSpdsDump) GetMessageName() string {
+	return "ipsec_spds_dump"
+}
+func (*IpsecSpdsDump) GetCrcString() string {
+	return "51077d14"
+}
+func (*IpsecSpdsDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IpsecSpdsDetails represents the VPP binary API message 'ipsec_spds_details'.
+//
+//            "ipsec_spds_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "spd_id"
+//            ],
+//            [
+//                "u32",
+//                "npolicies"
+//            ],
+//            {
+//                "crc": "0xa04bb254"
+//            }
+//
+type IpsecSpdsDetails struct {
+	SpdID     uint32
+	Npolicies uint32
+}
+
+func (*IpsecSpdsDetails) GetMessageName() string {
+	return "ipsec_spds_details"
+}
+func (*IpsecSpdsDetails) GetCrcString() string {
+	return "a04bb254"
+}
+func (*IpsecSpdsDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 // IpsecSpdDump represents the VPP binary API message 'ipsec_spd_dump'.
 //
 //            "ipsec_spd_dump",
@@ -2332,6 +2401,7 @@ func (*IpsecTunnelIfSetSaReply) GetMessageType() api.MessageType {
 type Services interface {
 	DumpIpsecSa(*IpsecSaDump) (*IpsecSaDetails, error)
 	DumpIpsecSpd(*IpsecSpdDump) (*IpsecSpdDetails, error)
+	DumpIpsecSpds(*IpsecSpdsDump) (*IpsecSpdsDetails, error)
 	Ikev2InitiateDelChildSa(*Ikev2InitiateDelChildSa) (*Ikev2InitiateDelChildSaReply, error)
 	Ikev2InitiateDelIkeSa(*Ikev2InitiateDelIkeSa) (*Ikev2InitiateDelIkeSaReply, error)
 	Ikev2InitiateRekeyChildSa(*Ikev2InitiateRekeyChildSa) (*Ikev2InitiateRekeyChildSaReply, error)
@@ -2392,6 +2462,8 @@ func init() {
 	api.RegisterMessage((*Ikev2InitiateDelChildSaReply)(nil), "ipsec.Ikev2InitiateDelChildSaReply")
 	api.RegisterMessage((*Ikev2InitiateRekeyChildSa)(nil), "ipsec.Ikev2InitiateRekeyChildSa")
 	api.RegisterMessage((*Ikev2InitiateRekeyChildSaReply)(nil), "ipsec.Ikev2InitiateRekeyChildSaReply")
+	api.RegisterMessage((*IpsecSpdsDump)(nil), "ipsec.IpsecSpdsDump")
+	api.RegisterMessage((*IpsecSpdsDetails)(nil), "ipsec.IpsecSpdsDetails")
 	api.RegisterMessage((*IpsecSpdDump)(nil), "ipsec.IpsecSpdDump")
 	api.RegisterMessage((*IpsecSpdDetails)(nil), "ipsec.IpsecSpdDetails")
 	api.RegisterMessage((*IpsecTunnelIfAddDel)(nil), "ipsec.IpsecTunnelIfAddDel")
