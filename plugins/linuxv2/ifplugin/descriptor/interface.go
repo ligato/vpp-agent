@@ -603,7 +603,6 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 			intf := &interfaces.LinuxInterface{
 				Namespace:   nsRef,
 				HostIfName:  link.Attrs().Name,
-				Enabled:     isInterfaceEnabled(link),
 				PhysAddress: link.Attrs().HardwareAddr.String(),
 				Mtu:         uint32(link.Attrs().MTU),
 			}
@@ -674,12 +673,23 @@ func (intfd *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetada
 				}
 			}
 
+			// dump interface status
+			intf.Enabled, err = intfd.ifHandler.IsInterfaceEnabled(link.Attrs().Name)
+			if err != nil {
+				intfd.log.WithFields(logging.Fields{
+					"if-host-name": link.Attrs().Name,
+					"namespace":    nsRef,
+					"err":          err,
+				}).Warn("Failed to read interface status")
+			}
+
 			// dump assigned IP addresses
 			addressList, err := intfd.ifHandler.GetAddressList(link.Attrs().Name)
 			if err != nil {
 				intfd.log.WithFields(logging.Fields{
 					"if-host-name": link.Attrs().Name,
 					"namespace":    nsRef,
+					"err":          err,
 				}).Warn("Failed to read IP addresses")
 			}
 			for _, address := range addressList {
@@ -783,6 +793,10 @@ func (intfd *InterfaceDescriptor) setInterfaceNamespace(ctx nslinuxcalls.Namespa
 	if err != nil {
 		return errors.Errorf("failed to get IP address list from interface %s: %v", link.Attrs().Name, err)
 	}
+	enabled, err := intfd.ifHandler.IsInterfaceEnabled(ifName)
+	if err != nil {
+		return errors.Errorf("failed to get admin status of the interface %s: %v", link.Attrs().Name, err)
+	}
 
 	// Move the interface into the namespace.
 	err = intfd.ifHandler.SetLinkNamespace(link, ns)
@@ -797,7 +811,7 @@ func (intfd *InterfaceDescriptor) setInterfaceNamespace(ctx nslinuxcalls.Namespa
 	}
 	defer revertNs()
 
-	if link.Attrs().Flags&net.FlagUp == 1 {
+	if enabled {
 		// Re-enable interface
 		err = intfd.ifHandler.SetInterfaceUp(ifName)
 		if nil != err {
@@ -900,12 +914,4 @@ func getInterfaceMTU(linuxIntf *interfaces.LinuxInterface) int {
 		return defaultEthernetMTU
 	}
 	return mtu
-}
-
-// isInterfaceEnabled returns true if the interface is in the enabled state.
-func isInterfaceEnabled(link netlink.Link) bool {
-	// - interface of any type is enabled when state is netlink.OperUp,
-	// - additionally, VETH may be enabled while the peer is down (OperLowerLayerDown)
-	return link.Attrs().OperState == netlink.OperUp ||
-		(link.Type() == (&netlink.Veth{}).Type() && link.Attrs().OperState == netlink.OperLowerLayerDown)
 }

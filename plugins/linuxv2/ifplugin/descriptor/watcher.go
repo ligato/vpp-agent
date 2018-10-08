@@ -40,7 +40,7 @@ const (
 	// notificationDelay specifies how long to delay notification when interface changes.
 	// Typically interface is created in multiple stages and we do not want to notify
 	// scheduler about intermediate states.
-	notificationDelay = 200 * time.Millisecond
+	notificationDelay = 500 * time.Millisecond
 )
 
 // InterfaceWatcher watches default namespace for newly added/removed Linux interfaces.
@@ -154,7 +154,7 @@ func (intfw *InterfaceWatcher) watchDefaultNamespace() {
 	links, err := intfw.ifHandler.GetLinkList()
 	if err == nil {
 		for _, link := range links {
-			if isInterfaceEnabled(link) {
+			if enabled, err := intfw.ifHandler.IsInterfaceEnabled(link.Attrs().Name); enabled && err == nil {
 				intfw.intfs[link.Attrs().Name] = struct{}{}
 			}
 		}
@@ -186,7 +186,10 @@ func (intfw *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUp
 	defer intfw.intfsLock.Unlock()
 
 	ifName := linkUpdate.Attrs().Name
-	isEnabled := isInterfaceEnabled(linkUpdate.Link)
+	isEnabled, err := intfw.ifHandler.IsInterfaceEnabled(ifName)
+	if err != nil {
+		return
+	}
 
 	_, isPendingNotif := intfw.pendingIntfs[ifName]
 	if isPendingNotif {

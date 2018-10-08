@@ -31,6 +31,7 @@
 package linuxcalls
 
 import (
+	"net"
 	"time"
 
 	"github.com/vishvananda/netlink"
@@ -101,6 +102,19 @@ func (h *NetLinkHandler) InterfaceExists(ifName string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+// IsInterfaceEnabled checks if the interface is UP.
+func (h *NetLinkHandler) IsInterfaceEnabled(ifName string) (bool, error) {
+	defer func(t time.Time) {
+		h.stopwatch.TimeLog("is-interface-enabled").LogTimeEntry(time.Since(t))
+	}(time.Now())
+
+	intf, err := net.InterfaceByName(ifName)
+	if err != nil {
+		return false, err
+	}
+	return (intf.Flags & net.FlagUp) != 0, nil
 }
 
 // DeleteInterface removes the given interface.

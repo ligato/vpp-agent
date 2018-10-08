@@ -58,6 +58,8 @@ type NetlinkAPI interface {
 	GetAddressList(ifName string) ([]netlink.Addr, error)
 	// InterfaceExists verifies interface existence
 	InterfaceExists(ifName string) (bool, error)
+	// IsInterfaceEnabled checks if the interface is UP.
+	IsInterfaceEnabled(ifName string) (bool, error)
 	// GetInterfaceType returns linux interface type
 	GetInterfaceType(ifName string) (string, error)
 }

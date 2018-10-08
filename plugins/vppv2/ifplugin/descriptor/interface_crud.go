@@ -460,7 +460,6 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				hostIfName := intf.Interface.GetTap().GetHostIfName()
 				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
 				if !exists {
-					// FIXME: there is a bug...
 					// check if it was "stolen" by the Linux plugin
 					_, _, exists = d.linuxIfPlugin.GetInterfaceIndex().LookupByVPPTap(
 						intf.Interface.Name)

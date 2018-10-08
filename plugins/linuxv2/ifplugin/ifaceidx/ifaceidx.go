@@ -108,7 +108,7 @@ func (ifmx *linuxIfMetadataIndex) LookupByName(name string) (metadata *LinuxIfMe
 // and <metadata> both set to empty values.
 func (ifmx *linuxIfMetadataIndex) LookupByVPPTap(vppTapName string) (name string, metadata *LinuxIfMetadata, exists bool) {
 	res := ifmx.ListNames(tapVPPNameIndexKey, vppTapName)
-	if len(res) == 1 {
+	if len(res) != 1 {
 		return
 	}
 	untypedMeta, found := ifmx.GetValue(res[0])
