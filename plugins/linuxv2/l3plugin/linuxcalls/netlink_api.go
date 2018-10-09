@@ -15,7 +15,6 @@
 package linuxcalls
 
 import (
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 

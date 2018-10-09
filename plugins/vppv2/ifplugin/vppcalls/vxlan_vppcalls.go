@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"

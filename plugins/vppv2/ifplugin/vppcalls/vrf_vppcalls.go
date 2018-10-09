@@ -17,8 +17,6 @@ package vppcalls
 import (
 	"fmt"
 
-	"time"
-
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
