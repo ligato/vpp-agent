@@ -29,17 +29,13 @@ type FailoverOptions struct {
 	Password string
 	DB       int
 
-	MaxRetries      int
-	MinRetryBackoff time.Duration
-	MaxRetryBackoff time.Duration
+	MaxRetries int
 
 	DialTimeout  time.Duration
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 
 	PoolSize           int
-	MinIdleConns       int
-	MaxConnAge         time.Duration
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
@@ -96,7 +92,7 @@ func NewFailoverClient(failoverOpt *FailoverOptions) *Client {
 		},
 	}
 	c.baseClient.init()
-	c.cmdable.setProcessor(c.Process)
+	c.setProcessor(c.Process)
 
 	return &c
 }
