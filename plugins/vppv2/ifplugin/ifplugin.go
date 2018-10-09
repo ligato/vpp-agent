@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -68,7 +67,7 @@ type IfPlugin struct {
 
 	// handlers
 	ifHandler      vppcalls.IfVppAPI
-	linuxIfHandler linux_ifcalls.NetlinkAPI
+	linuxIfHandler linux_ifcalls.NetlinkAPIRead
 
 	// descriptors
 	ifDescriptor   *descriptor.InterfaceDescriptor
@@ -82,7 +81,6 @@ type IfPlugin struct {
 
 	// from config file
 	enableStopwatch bool
-	stopwatch       *measure.Stopwatch // timer used to measure and store time
 	defaultMtu      uint32
 
 	// state data
@@ -122,7 +120,6 @@ type Deps struct {
 // Config holds the vpp-plugin configuration.
 type Config struct {
 	Mtu              uint32   `json:"mtu"`
-	Stopwatch        bool     `json:"stopwatch"`
 	StatusPublishers []string `json:"status-publishers"`
 }
 
@@ -140,20 +137,15 @@ func (p *IfPlugin) Init() error {
 	p.publishStats = p.PublishStatistics != nil || p.NotifyStatistics != nil
 	p.fixNilPointers()
 
-	// Plugin-wide stopwatch instance
-	if p.enableStopwatch {
-		p.stopwatch = measure.NewStopwatch(string(p.PluginName), p.Log)
-	}
-
 	// VPP channel
 	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create GoVPP API channel: %v", err)
 	}
 
 	// init handlers
-	p.ifHandler = vppcalls.NewIfVppHandler(p.vppCh, p.Log, p.stopwatch)
+	p.ifHandler = vppcalls.NewIfVppHandler(p.vppCh, p.Log)
 	if p.LinuxIfPlugin != nil {
-		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler(p.stopwatch)
+		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler()
 	}
 
 	// init descriptors
@@ -306,15 +298,6 @@ func (p *IfPlugin) fromConfigFile() {
 			p.defaultMtu = config.Mtu
 			p.Log.Infof("Default MTU set to %v", p.defaultMtu)
 		}
-
-		if config.Stopwatch {
-			p.enableStopwatch = true
-			p.Log.Info("stopwatch enabled for %v", p.PluginName)
-		} else {
-			p.Log.Info("stopwatch disabled for %v", p.PluginName)
-		}
-	} else {
-		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 }
 

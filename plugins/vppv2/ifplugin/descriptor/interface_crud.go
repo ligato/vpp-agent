@@ -467,8 +467,6 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 					intf.Interface.GetMemif().BufferSize = expCfg.GetMemif().GetBufferSize()
 				}
 			}
-			intf.Interface.RxModeSettings = proto.Clone(expCfg.RxModeSettings).(*interfaces.Interface_RxModeSettings)
-			intf.Interface.RxPlacementSettings = proto.Clone(expCfg.RxPlacementSettings).(*interfaces.Interface_RxPlacementSettings)
 		}
 
 		// verify links between VPP and Linux side

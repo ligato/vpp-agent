@@ -17,26 +17,16 @@
 package linuxcalls
 
 import (
-	"time"
-
 	"github.com/vishvananda/netlink"
 )
 
 // SetARPEntry updates existing arp entry
 func (h *NetLinkHandler) SetARPEntry(arpEntry *netlink.Neigh) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("set-arp-entry").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.NeighSet(arpEntry)
 }
 
 // DelARPEntry removes an static ARP entry
 func (h *NetLinkHandler) DelARPEntry(arpEntry *netlink.Neigh) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("del-arp-entry").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.NeighDel(arpEntry)
 }
 
@@ -44,9 +34,5 @@ func (h *NetLinkHandler) DelARPEntry(arpEntry *netlink.Neigh) error {
 // <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
 // are returned
 func (h *NetLinkHandler) GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("get-arp-entries").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.NeighList(interfaceIdx, 0)
 }

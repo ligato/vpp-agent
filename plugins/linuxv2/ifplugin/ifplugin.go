@@ -20,7 +20,6 @@ import (
 	"github.com/go-errors/errors"
 
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -37,7 +36,6 @@ type IfPlugin struct {
 
 	// From configuration file
 	disabled  bool
-	stopwatch *measure.Stopwatch
 
 	// system handlers
 	ifHandler linuxcalls.NetlinkAPI
@@ -59,9 +57,8 @@ type Deps struct {
 	VppIfPlugin  descriptor.VPPIfPluginAPI /* mandatory if TAP_TO_VPP interfaces are used */
 }
 
-// Config holds the nsplugin configuration.
+// Config holds the ifplugin configuration.
 type Config struct {
-	Stopwatch bool `json:"stopwatch"`
 	Disabled  bool `json:"disabled"`
 }
 
@@ -79,18 +76,10 @@ func (p *IfPlugin) Init() error {
 			p.Log.Infof("Disabling Linux Interface plugin")
 			return nil
 		}
-		if config.Stopwatch {
-			p.Log.Infof("stopwatch enabled for %v", p.PluginName)
-			p.stopwatch = measure.NewStopwatch("Linux-IfPlugin", p.Log)
-		} else {
-			p.Log.Infof("stopwatch disabled for %v", p.PluginName)
-		}
-	} else {
-		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 
 	// init handlers
-	p.ifHandler = linuxcalls.NewNetLinkHandler(p.stopwatch)
+	p.ifHandler = linuxcalls.NewNetLinkHandler()
 
 	// init & register descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(

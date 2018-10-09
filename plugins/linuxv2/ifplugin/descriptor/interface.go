@@ -123,7 +123,7 @@ func NewInterfaceDescriptor(
 		nsPlugin:     nsPlugin,
 		vppIfPlugin:  vppIfPlugin,
 		serviceLabel: serviceLabel,
-		log:          log.NewLogger("-descriptor"),
+		log:          log.NewLogger("if-descriptor"),
 	}
 }
 

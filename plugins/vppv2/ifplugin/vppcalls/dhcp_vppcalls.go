@@ -16,16 +16,11 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 )
 
 func (h *IfVppHandler) handleInterfaceDHCP(ifIdx uint32, hostName string, isAdd bool) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(dhcp.DHCPClientConfig{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &dhcp.DHCPClientConfig{
 		IsAdd: boolToUint(isAdd),
 		Client: dhcp.DHCPClient{

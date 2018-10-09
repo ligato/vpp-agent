@@ -82,7 +82,7 @@ func NewARPDescriptor(
 		l3Handler: l3Handler,
 		ifPlugin:  ifPlugin,
 		nsPlugin:  nsPlugin,
-		log:       log.NewLogger("-arp-descriptor"),
+		log:       log.NewLogger("arp-descriptor"),
 	}
 }
 

@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -28,10 +27,6 @@ const (
 )
 
 func (h *IfVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd uint8) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(ip.IPContainerProxyAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &ip.IPContainerProxyAddDel{
 		SwIfIndex: ifIdx,
 		IsAdd:     isAdd,

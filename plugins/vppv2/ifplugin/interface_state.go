@@ -87,7 +87,7 @@ type InterfaceStateUpdater struct {
 func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API,
 	swIfIndexes ifaceidx.IfaceMetadataIndex, publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-if-state")
+	c.log = logger.NewLogger("if-state")
 
 	// Mappings
 	c.swIfIndexes = swIfIndexes

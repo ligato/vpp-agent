@@ -48,7 +48,7 @@ type InterfaceWatcher struct {
 	// input arguments
 	log       logging.Logger
 	scheduler scheduler.KVScheduler
-	ifHandler linuxcalls.NetlinkAPI
+	ifHandler linuxcalls.NetlinkAPIRead
 
 	// go routine management
 	ctx    context.Context
@@ -75,7 +75,7 @@ type InterfaceWatcher struct {
 // NewInterfaceWatcher creates a new instance of the Interface Watcher.
 func NewInterfaceWatcher(scheduler scheduler.KVScheduler, ifHandler linuxcalls.NetlinkAPI, log logging.PluginLogger) *InterfaceWatcher {
 	descriptor := &InterfaceWatcher{
-		log:          log.NewLogger("-watcher"),
+		log:          log.NewLogger("if-watcher"),
 		scheduler:    scheduler,
 		ifHandler:    ifHandler,
 		intfs:        make(map[string]struct{}),

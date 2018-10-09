@@ -101,7 +101,7 @@ test-cover-xml: test-cover
 	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
 
 # Code generation
-generate: generate-proto generate-binapi
+generate: generate-proto generate-binapi generate-desc-adapters
 
 # Get generator tools
 get-proto-generators:
@@ -112,6 +112,8 @@ generate-proto: get-proto-generators
 	@echo "=> generating proto"
 	cd plugins/linux/model && go generate
 	cd plugins/vpp/model && go generate
+	cd plugins/linuxv2/model && go generate
+	cd plugins/vppv2/model && go generate
 
 # Get generator tools
 get-binapi-generators:
@@ -123,6 +125,15 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi && go generate
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
+
+get-desc-adapter-generator:
+	go install plugins/kvscheduler/descriptor-adapter
+
+generate-desc-adapters: get-desc-adapter-generator
+	@echo "=> generating descriptor adapters"
+	cd plugins/linuxv2/ifplugin && go generate
+	cd plugins/linuxv2/l3plugin && go generate
+	cd plugins/vppv2/ifplugin && go generate
 
 verify-binapi:
 	@echo "=> verifying binary api"

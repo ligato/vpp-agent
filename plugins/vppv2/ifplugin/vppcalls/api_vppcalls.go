@@ -19,7 +19,6 @@ import (
 
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
@@ -119,16 +118,14 @@ type IfVppRead interface {
 
 // IfVppHandler is accessor for interface-related vppcalls methods
 type IfVppHandler struct {
-	stopwatch    *measure.Stopwatch
 	callsChannel api.Channel
 	log          logging.Logger
 }
 
 // NewIfVppHandler creates new instance of interface vppcalls handler
-func NewIfVppHandler(callsChan api.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *IfVppHandler {
+func NewIfVppHandler(callsChan api.Channel, log logging.Logger) *IfVppHandler {
 	return &IfVppHandler{
 		callsChannel: callsChan,
-		stopwatch:    stopwatch,
 		log:          log,
 	}
 }

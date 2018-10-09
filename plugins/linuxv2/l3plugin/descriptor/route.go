@@ -96,7 +96,7 @@ func NewRouteDescriptor(
 		l3Handler: l3Handler,
 		ifPlugin:  ifPlugin,
 		nsPlugin:  nsPlugin,
-		log:       log.NewLogger("-route-descriptor"),
+		log:       log.NewLogger("route-descriptor"),
 	}
 }
 

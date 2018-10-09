@@ -92,7 +92,7 @@ func NewMicroserviceDescriptor(scheduler scheduler.KVScheduler, log logging.Plug
 	var err error
 
 	descriptor := &MicroserviceDescriptor{
-		log:                 log.NewLogger("-descriptor"),
+		log:                 log.NewLogger("ms-descriptor"),
 		scheduler:           scheduler,
 		createTime:          make(map[string]time.Time),
 		microServiceByLabel: make(map[string]*Microservice),

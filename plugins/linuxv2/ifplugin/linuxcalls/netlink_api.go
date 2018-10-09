@@ -17,13 +17,20 @@ package linuxcalls
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 )
 
-// NetlinkAPI interface covers all methods inside linux calls package needed to manage linux interfaces.
+// NetlinkAPI interface covers all methods inside linux calls package
+// needed to manage linux interfaces.
 type NetlinkAPI interface {
+	NetlinkAPIWrite
+	NetlinkAPIRead
+}
+
+// NetlinkAPIWrite interface covers write methods inside linux calls package
+// needed to manage linux interfaces.
+type NetlinkAPIWrite interface {
 	// AddVethInterfacePair configures two connected VETH interfaces
 	AddVethInterfacePair(ifName, peerIfName string) error
 	// DeleteInterface removes the given interface.
@@ -45,12 +52,17 @@ type NetlinkAPI interface {
 	// SetInterfaceAlias sets the alias of the given interface.
 	// Equivalent to: `ip link set dev $ifName alias $alias`
 	SetInterfaceAlias(ifName, alias string) error
+	// SetLinkNamespace puts link into a network namespace.
+	SetLinkNamespace(link netlink.Link, ns netns.NsHandle) error
+}
+
+// NetlinkAPIRead interface covers read methods inside linux calls package
+// needed to manage linux interfaces.
+type NetlinkAPIRead interface {
 	// GetLinkByName returns netlink interface type
 	GetLinkByName(ifName string) (netlink.Link, error)
 	// GetLinkList return all links from namespace
 	GetLinkList() ([]netlink.Link, error)
-	// SetLinkNamespace puts link into a network namespace.
-	SetLinkNamespace(link netlink.Link, ns netns.NsHandle) error
 	// LinkSubscribe takes a channel to which notifications will be sent
 	// when links change. Close the 'done' chan to stop subscription.
 	LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error
@@ -64,14 +76,11 @@ type NetlinkAPI interface {
 	GetInterfaceType(ifName string) (string, error)
 }
 
-// NetLinkHandler is accessor for netlink methods
+// NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
-	stopwatch *measure.Stopwatch
 }
 
-// NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(stopwatch *measure.Stopwatch) *NetLinkHandler {
-	return &NetLinkHandler{
-		stopwatch: stopwatch,
-	}
+// NewNetLinkHandler creates new instance of Netlink handler.
+func NewNetLinkHandler() *NetLinkHandler {
+	return &NetLinkHandler{}
 }
