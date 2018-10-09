@@ -15,7 +15,6 @@
 package vppclient
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
@@ -23,6 +22,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
@@ -53,7 +53,7 @@ type DataResyncDSL interface {
 	// StaticRoute adds L3 Static Route to the RESYNC request.
 	StaticRoute(staticRoute *l3.StaticRoutes_Route) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.
-	ACL(acl *acl.AccessLists_Acl) DataResyncDSL
+	ACL(acl *acl.Acl) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
 	Arp(arp *l3.ArpTable_ArpEntry) DataResyncDSL
 	// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
