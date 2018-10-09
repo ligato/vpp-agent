@@ -24,13 +24,6 @@ import (
 
 // Resync writes missing BDs to the VPP and removes obsolete ones.
 func (c *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) error {
-	// Calculate and log bd resync.
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 
@@ -144,13 +137,6 @@ func (c *BDConfigurator) Resync(nbBDs []*l2.BridgeDomains_BridgeDomain) error {
 
 // Resync writes missing FIBs to the VPP and removes obsolete ones.
 func (c *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
-	// Calculate and log fib resync.
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 
@@ -241,13 +227,6 @@ func (c *FIBConfigurator) Resync(nbFIBs []*l2.FibTable_FibEntry) error {
 
 // Resync writes missing XCons to the VPP and removes obsolete ones.
 func (c *XConnectConfigurator) Resync(nbXConns []*l2.XConnectPairs_XConnectPair) error {
-	// Calculate and log xConnect resync.
-	defer func() {
-		if c.stopwatch != nil {
-			c.stopwatch.PrintLog()
-		}
-	}()
-
 	// Re-initialize cache
 	c.clearMapping()
 

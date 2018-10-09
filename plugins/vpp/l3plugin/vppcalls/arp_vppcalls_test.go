@@ -81,6 +81,6 @@ func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ArpVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "arp-if-idx", nil))
-	arpHandler := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log, nil)
+	arpHandler := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log)
 	return ctx, arpHandler
 }

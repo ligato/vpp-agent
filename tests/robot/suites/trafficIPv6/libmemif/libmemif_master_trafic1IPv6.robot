@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../libraries/all_libs.robot
 
-Force Tags        trafficIPv6
+Force Tags        traffic     IPv6    ExpectedFailure
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -18,7 +18,7 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 ${RESYNC_SLEEP}=       1s
 ${LIBMEMIF_IP1}=       192.168.1.2
 ${VPP2MEMIF_IP1}=      192.168.1.2

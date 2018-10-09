@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 Resource    ../../../libraries/all_libs.robot
 Resource    ../../../libraries/pretty_keywords.robot
 
-Force Tags        trafficIPv6
+Force Tags        traffic     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -35,7 +35,7 @@ ${MAC3_MEMIF1}=         02:f1:be:90:00:03
 
 ${PREFIX}=             64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 *** Test Cases ***
 # Default VRF table ...
 Start Three Agents
@@ -123,9 +123,7 @@ Pinging
 
 *** Keywords ***
 List of interfaces On ${node} Should Contain Interface ${int}
-    Log many    ${node} ${int}
     ${out}=   vpp_term: Show Interfaces    ${node}
-    log many    ${out}
     Should Match Regexp        ${out}  ${int}
 
 TestSetup

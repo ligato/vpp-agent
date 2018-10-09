@@ -15,8 +15,6 @@
 package aclplugin_test
 
 import (
-	"testing"
-
 	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging"
@@ -28,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
 var ipAcls = acl.AccessLists_Acl{
@@ -411,7 +410,7 @@ func aclTestSetup(t *testing.T, createIfs bool) (*vppcallmock.TestCtx, *core.Con
 
 	// Configurator
 	plugin := &aclplugin.ACLConfigurator{}
-	err = plugin.Init(log, connection, ifIndexes, false)
+	err = plugin.Init(log, connection, ifIndexes)
 	Expect(err).To(BeNil())
 
 	return ctx, connection, plugin

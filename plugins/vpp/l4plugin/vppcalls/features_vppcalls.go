@@ -21,13 +21,13 @@ import (
 )
 
 // EnableL4Features enables L4 features.
-func (handler *L4VppHandler) EnableL4Features() error {
+func (h *L4VppHandler) EnableL4Features() error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 1,
 	}
 	reply := &session.SessionEnableDisableReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v", reply.GetMessageName(), reply.Retval)
@@ -37,13 +37,13 @@ func (handler *L4VppHandler) EnableL4Features() error {
 }
 
 // DisableL4Features disables L4 features.
-func (handler *L4VppHandler) DisableL4Features() error {
+func (h *L4VppHandler) DisableL4Features() error {
 	req := &session.SessionEnableDisable{
 		IsEnable: 0,
 	}
 	reply := &session.SessionEnableDisableReply{}
 
-	if err := handler.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	} else if reply.Retval != 0 {
 		return fmt.Errorf("%s returned %v", reply.GetMessageName(), reply.Retval)

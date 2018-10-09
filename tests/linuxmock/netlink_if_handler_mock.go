@@ -17,7 +17,8 @@ package linuxmock
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+
 	"github.com/vishvananda/netlink"
 )
 
@@ -303,5 +304,12 @@ func (mock *IfNetlinkHandlerMock) GetInterfaceByName(ifName string) (*net.Interf
 	return nil, nil
 }
 
-// SetStopwatch sets stopwatch.
-func (mock *IfNetlinkHandlerMock) SetStopwatch(stopwatch *measure.Stopwatch) {}
+// DumpInterfaces does not return a value
+func (mock *IfNetlinkHandlerMock) DumpInterfaces() ([]*linuxcalls.LinuxInterfaceDetails, error) {
+	return nil, nil
+}
+
+// DumpInterfaceStatistics  does not return a value
+func (mock *IfNetlinkHandlerMock) DumpInterfaceStatistics() ([]*linuxcalls.LinuxInterfaceStatistics, error) {
+	return nil, nil
+}

@@ -1,3 +1,49 @@
+# Release v1.6 (2018-10-04)
+
+## Major topics
+
+**Trace**
+
+  We have introduced a new component which replaces stopwatch called tracer. The core functionality
+  remained the same, it still allows to measure time duration between two parts of the code
+  and store it internally. The motive was that the original implementation was somehow cumbersome,
+  and the name did not reflect the main purpose.
+  New tracer object is created via constructor `NewTracer(<name>, <logger>)`. It has very simple 
+  API with method `LogTime(<name>, <start_time>)` which adds entry to the internal database 
+  and `Get()`, which returns a proto-modelled list of entries. Database can be purged with `Clear()`.
+  
+**REST Security**
+
+  Basic security support was added to RPC plugin. The caller can use pre-defined credentials to obtain
+  authentication tokens required for access. Permission groups are also supported. To create
+  a new permission group, use method from REST API `RegisterPermissionGroup(<groups>)`. Group
+  is assigned to the user in `http.conf` file (where all users are defined).
+  This feature is available only to REST and it is considered experimental in the current release, 
+  and will be extended in the future.
+  
+## New Features
+- [measure](logging/measure)
+  * New component [tracer](logging/measure/tracer.go) was introduced. It server the similar purpose
+  as the stopwatch. More details in the [readme](logging/measure/README.md)
+  * Stopwatch was removed
+- [statuscheck](health/statuscheck)
+  * The liveness probe now shows also a state of all registered plugins (not only the overall state)
+- [rest](rpc/rest)
+  * New security functionality for REST plugin was added. To learn more about it, see the
+  [readme](rpc/rest/README.md#token-based-authorization).  
+- [logging](logging)
+  * Logger API has two new methods, `SetOutput(<io.Writer>)` to set custom logging output 
+  and `SetFormatter(<formatter>)` to set custom formatter before logged to output.   
+  
+## Other
+  * Every proto file is generated with the gogo/proto package.  
+  
+## Bugfix
+  * GRPC "listen and serve" call was moved to after init, which prevents calling services
+  which were not yet registered. Also fixed a bug causing occasional panic if GRPC plugin 
+  was disabled.
+  * ETCD reconnect resync fixed
+
 # Release v1.5 (2018-08-24)
 
 ## Major topics
@@ -262,11 +308,11 @@ Added TLS support
   * TODO Minimalistic examples & documentation for Kafka API will be improved in a later release.
 
 ## Flavors
-* optionally GPRC server can be enabled in [rpc flavor](flavors/rpc) using --grpc-port=9111 (or using config gprc.conf)
-* [Flavor interface](core/list_flavor_plugin.go) now contains three methods: Plugins(), Inject(), LogRegistry() to standardize these methods over all flavors. Note, LogRegistry() is usually embedded using local flavor.
+* optionally GPRC server can be enabled in [rpc flavor](../v1.0.4/flavors/rpc) using --grpc-port=9111 (or using config gprc.conf)
+* [Flavor interface](../v1.0.4/core/list_flavor_plugin.go) now contains three methods: Plugins(), Inject(), LogRegistry() to standardize these methods over all flavors. Note, LogRegistry() is usually embedded using local flavor.
 
 # Release v1.0.3 (2017-09-08)
-* [FlavorAllConnectors](flavors/connectors)
+* [FlavorAllConnectors](../v1.0.3/flavors/connectors)
     * Inlined plugins: ETCD, Kafka, Redis, Cassandra
 * [Kafka Partitions](messaging/kafka)
     * Implemented new methods that allow to specify partitions & offset parameters:
@@ -286,15 +332,15 @@ The major themes for Release v1.0.2 are as follows:
     * [Redis](db/keyval/redis)
     * [Kafka](db/)
 * [Data Synchronization](datasync) plugin for watching and writing data asynchronously; it is currently implemented only for the [db/keyval API](db/keyval) API. It facilitates reading of data during startup or after reconnection to a data store and then watching incremental changes.
-* Agent [Core](core) that provides plugin lifecycle management
+* Agent [Core](../v1.0.2/core) that provides plugin lifecycle management
 (initialization and graceful shutdown of plugins) is able to run
-different [flavors](flavors) (reusable collection of plugins):
-    * [local flavor](flavors/local) - a minimal collection of plugins:
+different [flavors](../v1.0.2/flavors) (reusable collection of plugins):
+    * [local flavor](../v1.0.2/flavors/local) - a minimal collection of plugins:
       * [statuscheck](health/statuscheck)
       * [servicelabel](servicelabel)
       * [resync orch](datasync/restsync)
       * [log registry](logging)
-    * [RPC flavor](flavors/rpc) - exposes REST API for all plugins, especially for:
+    * [RPC flavor](../v1.0.2/flavors/rpc) - exposes REST API for all plugins, especially for:
       * [statuscheck](health/statuscheck) (RPCs probed from systems such as K8s)
       * [logging](logging/logmanager) (for changing log level at runtime remotely)
     * connector flavors:

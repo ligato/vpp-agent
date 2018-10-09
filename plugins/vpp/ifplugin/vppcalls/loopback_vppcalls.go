@@ -16,17 +16,12 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
 // AddLoopbackInterface implements interface handler.
 func (h *IfVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.CreateLoopback{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &interfaces.CreateLoopback{}
 	reply := &interfaces.CreateLoopbackReply{}
 
@@ -41,10 +36,6 @@ func (h *IfVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err 
 
 // DeleteLoopbackInterface implements interface handler.
 func (h *IfVppHandler) DeleteLoopbackInterface(ifName string, idx uint32) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(interfaces.DeleteLoopback{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Prepare the message.
 	req := &interfaces.DeleteLoopback{
 		SwIfIndex: idx,

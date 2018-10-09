@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
@@ -57,20 +56,17 @@ type LinuxRouteConfigurator struct {
 	// Linux namespace/calls handler
 	l3Handler linuxcalls.NetlinkAPI
 	nsHandler nsplugin.NamespaceAPI
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init initializes static route configurator and starts goroutines
 func (c *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler linuxcalls.NetlinkAPI, nsHandler nsplugin.NamespaceAPI,
-	ifIndexes ifaceidx.LinuxIfIndexRW, stopwatch *measure.Stopwatch) error {
+	rtIndexes l3idx.LinuxRouteIndexRW, ifIndexes ifaceidx.LinuxIfIndexRW) error {
 	// Logger
-	c.log = logger.NewLogger("-route-conf")
+	c.log = logger.NewLogger("route-conf")
 
 	// Mappings
 	c.ifIndexes = ifIndexes
-	c.rtIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(c.log, "linux_route_indexes", nil))
+	c.rtIndexes = rtIndexes
 	c.rtAutoIndexes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(c.log, "linux_auto_route_indexes", nil))
 	c.rtCachedIfRoutes = l3idx.NewLinuxRouteIndex(nametoidx.NewNameToIdx(c.log, "linux_cached_route_indexes", nil))
 	c.rtCachedGwRoutes = make(map[string]*l3.LinuxStaticRoutes_Route)
@@ -78,9 +74,6 @@ func (c *LinuxRouteConfigurator) Init(logger logging.PluginLogger, l3Handler lin
 	// L3 and namespace handler
 	c.l3Handler = l3Handler
 	c.nsHandler = nsHandler
-
-	// Configurator-wide stopwatch instance
-	c.stopwatch = stopwatch
 
 	c.log.Debug("Linux Route configurator initialized")
 
@@ -170,7 +163,7 @@ func (c *LinuxRouteConfigurator) ConfigureLinuxStaticRoute(route *l3.LinuxStatic
 
 	err = c.l3Handler.AddStaticRoute(route.Name, netLinkRoute)
 	if err != nil {
-		return errors.Errorf("faield to add static route %s: %v", route.Name, err)
+		return errors.Errorf("failed to add static route %s: %v", route.Name, err)
 	}
 
 	c.rtIndexes.RegisterName(RouteIdentifier(netLinkRoute), c.rtIdxSeq, route)

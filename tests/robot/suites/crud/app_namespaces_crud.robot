@@ -4,7 +4,7 @@ Library      OperatingSystem
 Resource     ../../variables/${VARIABLES}_variables.robot
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 
@@ -48,7 +48,7 @@ ${MTU}=             1500
 ${VARIABLES}=        common
 ${ENV}=              common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 # wait for resync vpps after restart
 ${RESYNC_WAIT}=        50s
 
@@ -67,14 +67,12 @@ Enable L4 Features
 
 Check Default Namespace Was Added
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
-    Log    ${out}
     Should Contain    ${out}    default
 
 Put Interface TAP1 And Namespace NS1 Associated With TAP1 And Check The Namespace Is Present In Namespaces List
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${TAP1_NAME}    mac=${TAP1_MAC}    ip=${TAP1_IP}    prefix=${PREFIX}    host_if_name=linux_${TAP1_NAME}
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS1_ID}    secret=${SECRET1}    interface=${TAP1_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
-    Log    ${out}
     ${out_lines1}=    Get Line Count    ${out}
     Set Suite Variable    ${out_lines1}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS1_ID}    1    ${SECRET1}    ${TAP1_SW_IF_INDEX}
@@ -82,7 +80,6 @@ Put Interface TAP1 And Namespace NS1 Associated With TAP1 And Check The Namespac
 Put Already Existing Namespace NS1 And Check Namespace Was Not Added To Namespaces List
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS1_ID}    secret=${SECRET1}    interface=${TAP1_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
-    Log    ${out}
     ${out_lines2}=    Get Line Count    ${out}
     Should Be Equal    ${out_lines1}    ${out_lines2}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS1_ID}    1    ${SECRET1}    ${TAP1_SW_IF_INDEX}
@@ -90,13 +87,11 @@ Put Already Existing Namespace NS1 And Check Namespace Was Not Added To Namespac
 Update Namespace NS1 Secret And Check The Namespace's Update Is Reflected In Namespaces List
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS1_ID}    secret=${SECRET2}    interface=${TAP1_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
-    Log    ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS1_ID}    1    ${SECRET2}    ${TAP1_SW_IF_INDEX}
 
 Put New NS2 Namespace And Check The Namespace Is Present In Namespaces List And Namespace NS1 Is Still Configured
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS2_ID}    secret=${SECRET3}    interface=${TAP1_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
-    Log    ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS2_ID}    2    ${SECRET3}    ${TAP1_SW_IF_INDEX}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS1_ID}    1    ${SECRET2}    ${TAP1_SW_IF_INDEX}
 
@@ -104,7 +99,6 @@ Put Interface TAP2 And Namespace NS3 Associated With TAP2 And Check The Namespac
     vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${TAP2_NAME}    mac=${TAP2_MAC}    ip=${TAP2_IP}    prefix=${PREFIX}    host_if_name=linux_${TAP2_NAME}
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS3_ID}    secret=${SECRET4}    interface=${TAP2_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
-    Log    ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS3_ID}    3    ${SECRET4}    ${TAP2_SW_IF_INDEX}
 
 Check NS1 And NS2 Namespaces Remained Configured
@@ -114,7 +108,6 @@ Check NS1 And NS2 Namespaces Remained Configured
 Update Namespace NS2 Associated Interface To TAP2 And Secret And Check The Namespace's Update Is Reflected In Namespaces List
     vpp_ctl: Put Application Namespace    node=agent_vpp_1    id=${NS2_ID}    secret=${SECRET1}    interface=${TAP2_NAME}
     ${out}=    vpp_term: Show Application Namespaces    node=agent_vpp_1
-    Log    ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS2_ID}    2    ${SECRET1}    ${TAP2_SW_IF_INDEX}
 
 Check NS1 And NS3 Namespaces Are Still Configured

@@ -16,21 +16,26 @@ package agent
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/once"
 	"github.com/namsral/flag"
 )
 
+var agentLogger = logging.DefaultRegistry.NewLogger("agent")
+
 // Variables set by the compiler using ldflags
 var (
 	// BuildVersion describes version for the build. It is usually set using `git describe --always --tags --dirty`.
-	BuildVersion = "dev"
+	BuildVersion = "v0.0.0-dev"
 	// BuildDate describes time of the build.
 	BuildDate string
 	// CommitHash describes commit hash for the build.
@@ -72,14 +77,15 @@ func NewAgent(opts ...Option) Agent {
 		config.DefineDirFlag()
 		for _, p := range options.Plugins {
 			name := p.String()
-			agentLogger.Debugf("registering flags for: %q", name)
+			infraLogger.Debugf("registering flags for: %q", name)
 			config.DefineFlagsFor(name)
 		}
 		flag.Parse()
 	}
 
 	return &agent{
-		opts: options,
+		opts:   options,
+		tracer: measure.NewTracer("agent-plugins"),
 	}
 }
 
@@ -90,6 +96,8 @@ type agent struct {
 
 	startOnce once.ReturnError
 	stopOnce  once.ReturnError
+
+	tracer measure.Tracer
 }
 
 // Options returns the Options the agent was created with
@@ -117,10 +125,10 @@ func (a *agent) Run() error {
 }
 
 func (a *agent) starter() error {
-	logging.DefaultLogger.WithFields(logging.Fields{
+	agentLogger.WithFields(logging.Fields{
 		"CommitHash": CommitHash,
 		"BuildDate":  BuildDate,
-	}).Infof("Starting agent: %v", BuildVersion)
+	}).Infof("Starting agent version: %v", BuildVersion)
 
 	// If we want to properly handle cleanup when a SIG comes in *during*
 	// agent startup (ie, clean up after its finished) we need to register
@@ -131,7 +139,6 @@ func (a *agent) starter() error {
 	}
 
 	started := make(chan struct{})
-	defer close(started)
 
 	if timeout := a.opts.StartTimeout; timeout > 0 {
 		go func() {
@@ -139,7 +146,7 @@ func (a *agent) starter() error {
 			case <-started:
 				// agent started
 			case <-time.After(timeout):
-				logging.DefaultLogger.Errorf("agent failed to start before timeout (%v)", timeout)
+				agentLogger.Errorf("Agent failed to start before timeout (%v)", timeout)
 				os.Exit(1)
 			}
 		}()
@@ -147,12 +154,17 @@ func (a *agent) starter() error {
 
 	// If the agent started, we have things to clean up if here is a SIG
 	// So fire off a goroutine to do that
+
+	t := time.Now()
+
 	if err := a.start(); err != nil {
 		signal.Stop(sig)
 		return err
 	}
+	close(started)
 
-	logging.DefaultLogger.Infof("Agent started with %d plugins", len(a.opts.Plugins))
+	agentLogger.Infof("Agent started with %d plugins (took %v)",
+		len(a.opts.Plugins), time.Since(t).Round(time.Millisecond))
 
 	a.stopCh = make(chan struct{}) // If we are started, we have a stopCh to signal stopping
 
@@ -164,12 +176,13 @@ func (a *agent) starter() error {
 		// Wait for signal or agent stop
 		select {
 		case <-a.opts.QuitChan:
-			logging.DefaultLogger.Info("Quit channel closed, stopping.")
+			agentLogger.Info("Quit channel closed, stopping.")
 		case <-quit:
-			logging.DefaultLogger.Info("Context canceled, stopping.")
+			agentLogger.Info("Context canceled, stopping.")
 		case s := <-sig:
-			logging.DefaultLogger.Infof("Signal %v received, stopping.", s)
+			agentLogger.Infof("Signal %v received, stopping.", s)
 		case <-a.stopCh:
+			// agent stopped
 		}
 		// Doesn't hurt to call Stop twice, its idempotent because of the
 		// stopOnce
@@ -181,33 +194,54 @@ func (a *agent) starter() error {
 }
 
 func (a *agent) start() error {
-	agentLogger.Debugf("starting %d plugins", len(a.opts.Plugins))
+	agentLogger.Infof("Starting agent with %d plugins", len(a.opts.Plugins))
 
 	// Init plugins
 	for _, plugin := range a.opts.Plugins {
-		agentLogger.Debugf("=> Init(): %v", plugin)
+		t := time.Now()
+
+		agentLogger.Debugf("-> Init(): %v", plugin)
 		if err := plugin.Init(); err != nil {
 			return err
 		}
+
+		a.tracer.LogTime(fmt.Sprintf("%v.Init", plugin), t)
 	}
 
 	// AfterInit plugins
 	for _, plugin := range a.opts.Plugins {
+		t := time.Now()
+
 		if postPlugin, ok := plugin.(infra.PostInit); ok {
-			agentLogger.Debugf("=> AfterInit(): %v", plugin)
+			agentLogger.Debugf("-> AfterInit(): %v", plugin)
 			if err := postPlugin.AfterInit(); err != nil {
 				return err
 			}
 		} else {
-			agentLogger.Debugf("-- plugin %v has no AfterInit()", plugin)
+			agentLogger.Debugf("-- AfterInit(): %v (not used)", plugin)
 		}
+
+		a.tracer.LogTime(fmt.Sprintf("%v.AfterInit", plugin), t)
+	}
+
+	if printPluginStartDurations && infraLogger.GetLevel() >= logging.DebugLevel {
+		var b strings.Builder
+		b.WriteString("plugin start durations:\n")
+		for _, entry := range a.tracer.Get().GetTracedEntries() {
+			dur := "<1ms"
+			if d := time.Duration(entry.Duration); d > time.Millisecond {
+				dur = d.Round(time.Millisecond).String()
+			}
+			b.WriteString(fmt.Sprintf(" - %v: %v\n", entry.MsgName, dur))
+		}
+		fmt.Fprintf(os.Stdout, b.String())
 	}
 
 	return nil
 }
 
 func (a *agent) stopper() error {
-	logging.DefaultLogger.Infof("Stopping agent")
+	agentLogger.Infof("Stopping agent")
 
 	stopped := make(chan struct{})
 	defer close(stopped)
@@ -218,7 +252,7 @@ func (a *agent) stopper() error {
 			case <-stopped:
 				// agent stopped
 			case <-time.After(timeout):
-				logging.DefaultLogger.Errorf("agent failed to stop before timeout (%v)", timeout)
+				agentLogger.Errorf("agent failed to stop before timeout (%v)", timeout)
 				os.Exit(1)
 			}
 		}()
@@ -228,15 +262,15 @@ func (a *agent) stopper() error {
 		return err
 	}
 
-	logging.DefaultLogger.Info("Agent stopped")
+	agentLogger.Info("Agent stopped")
 
 	return nil
 }
 
 func (a *agent) stop() error {
 	if a.stopCh == nil {
-		err := errors.New("attempted to stop an agent that wasn't Started")
-		logging.DefaultLogger.Error(err)
+		err := errors.New("attempted to stop an agent that was not Started")
+		agentLogger.Error(err)
 		return err
 	}
 	agentLogger.Debugf("stopping %d plugins", len(a.opts.Plugins))
@@ -246,7 +280,7 @@ func (a *agent) stop() error {
 	// Close plugins in reverse order
 	for i := len(a.opts.Plugins) - 1; i >= 0; i-- {
 		p := a.opts.Plugins[i]
-		agentLogger.Debugf("=> Close(): %v", p)
+		agentLogger.Debugf("-> Close(): %v", p)
 		if err := p.Close(); err != nil {
 			return err
 		}
@@ -261,7 +295,7 @@ func (a *agent) stop() error {
 func (a *agent) Wait() error {
 	if a.stopCh == nil {
 		err := errors.New("attempted to wait on an agent that wasn't Started")
-		logging.DefaultLogger.Error(err)
+		agentLogger.Error(err)
 		return err
 	}
 	<-a.stopCh

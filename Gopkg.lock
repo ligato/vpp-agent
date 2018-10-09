@@ -480,6 +480,7 @@
     "logging/logmanager",
     "logging/logrus",
     "logging/measure",
+    "logging/measure/model/apitrace",
     "messaging",
     "messaging/kafka",
     "messaging/kafka/client",
@@ -487,6 +488,8 @@
     "rpc/grpc",
     "rpc/prometheus",
     "rpc/rest",
+    "rpc/rest/security",
+    "rpc/rest/security/model/access-security",
     "servicelabel",
     "utils/addrs",
     "utils/clienttls",
@@ -816,7 +819,11 @@
   branch = "master"
   digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "bcrypt",
+    "blowfish",
+    "ssh/terminal",
+  ]
   pruneopts = "UT"
   revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
 
@@ -977,11 +984,13 @@
     "github.com/ligato/cn-infra/logging/logmanager",
     "github.com/ligato/cn-infra/logging/logrus",
     "github.com/ligato/cn-infra/logging/measure",
+    "github.com/ligato/cn-infra/logging/measure/model/apitrace",
     "github.com/ligato/cn-infra/messaging",
     "github.com/ligato/cn-infra/messaging/kafka",
     "github.com/ligato/cn-infra/rpc/grpc",
     "github.com/ligato/cn-infra/rpc/prometheus",
     "github.com/ligato/cn-infra/rpc/rest",
+    "github.com/ligato/cn-infra/rpc/rest/security/model/access-security",
     "github.com/ligato/cn-infra/servicelabel",
     "github.com/ligato/cn-infra/utils/addrs",
     "github.com/ligato/cn-infra/utils/safeclose",

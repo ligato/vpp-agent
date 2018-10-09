@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -19,12 +19,14 @@ ${VARIABLES}=          common
 ${ENV}=                common
 
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment
     [Tags]    setup
     Configure Environment 1
+    Sleep    10s
+
 
 Show Interfaces Before Setup
     vpp_term: Show Interfaces    agent_vpp_1

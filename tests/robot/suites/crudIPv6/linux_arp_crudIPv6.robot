@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv6
+Force Tags        crud     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -18,7 +18,7 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 ${VETH1_MAC}=          1a:00:00:11:11:11
 ${VETH2_MAC}=          2a:00:00:22:22:22
 ${AFP1_MAC}=           a2:01:01:01:01:01
@@ -72,7 +72,6 @@ Add ARPs
 
 Check ARPSs
     ${out}=       Execute In Container    agent_vpp_1    ip neigh
-    Log           ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    ${ARP_IP2} dev vpp1_veth2 lladdr 32:51:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    ${ARP_IP1} dev vpp1_veth1 lladdr 32:51:51:51:51:51 PERMANENT
     #Should Contain     ${out}    ${ARP_IP2} dev eth0 lladdr 32:51:51:51:51:52 PERMANENT
@@ -86,7 +85,6 @@ Change ARPs
 
 Check ARPSs Again
     ${out}=       Execute In Container    agent_vpp_1    ip neigh
-    Log           ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    ${ARP_IP4} dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    ${ARP_IP3} dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
     #Should Contain     ${out}    ${ARP_IP4} dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
@@ -100,7 +98,6 @@ Delete ARPs
 
 Check ARPSs After Delete
     ${out}=       Execute In Container    agent_vpp_1    ip neigh
-    Log           ${out}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    ${ARP_IP4} dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    ${ARP_IP3} dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
     #Should Not Contain     ${out}    ${ARP_IP4} dev eth0 lladdr 32:61:51:51:51:52 PERMANENT

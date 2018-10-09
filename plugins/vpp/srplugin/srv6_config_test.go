@@ -18,8 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
+
+	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -911,7 +912,7 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.
 	// Configurator
 	fakeVPPCalls := NewSRv6Calls()
 	configurator := &srplugin.SRv6Configurator{}
-	err = configurator.Init(log, connection, swIndex, false, fakeVPPCalls)
+	err = configurator.Init(log, connection, swIndex, fakeVPPCalls)
 	Expect(err).To(BeNil())
 
 	return configurator, fakeVPPCalls, connection

@@ -16,7 +16,6 @@ package l3plugin
 
 import (
 	"net"
-	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
@@ -27,10 +26,6 @@ import (
 
 // Resync configures an initial set of ARPs. Existing Linux ARPs are registered and potentially re-configured.
 func (c *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntries_ArpEntry) error {
-	defer func(t time.Time) {
-		c.stopwatch.TimeLog("configure-linux-arp").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Create missing arp entries and update existing ones
 	for _, entry := range arpEntries {
 		err := c.ConfigureLinuxStaticArpEntry(entry)
@@ -53,10 +48,6 @@ func (c *LinuxArpConfigurator) Resync(arpEntries []*l3.LinuxStaticArpEntries_Arp
 // Resync configures an initial set of static routes. Existing Linux static routes are registered and potentially
 // re-configured. Resync does not remove any linux route.
 func (c *LinuxRouteConfigurator) Resync(nbRoutes []*l3.LinuxStaticRoutes_Route) error {
-	defer func(t time.Time) {
-		c.stopwatch.TimeLog("configure-linux-route").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	nsMgmtCtx := nsplugin.NewNamespaceMgmtCtx()
 
 	// First step is to find a linux equivalent for NB route config

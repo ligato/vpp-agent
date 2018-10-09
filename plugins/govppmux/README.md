@@ -79,3 +79,12 @@ elapses, the request fails
 - *shm-prefix* - used for connection to a VPP instance which is not using 
 default shared memory prefix
 - *resync-after-reconnect* - allows to run resync after recoonection
+
+## Trace
+ 
+Duration of the VPP binary api call can be measured using trace feature. These data are logged after 
+every event(any resync, interfaces, bridge domains, fib entries etc.). Enable trace in govpp.conf: 
+ 
+`trace-enabled: true` or  `trace-enabled: false`
+  
+Trace is disabled by default (if there is no config available). 

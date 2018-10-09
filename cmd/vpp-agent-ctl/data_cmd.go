@@ -500,6 +500,7 @@ func (ctl *VppAgentCtl) createVethPair() {
 				Mtu: 1500,
 				IpAddresses: []string{
 					"192.168.22.1/24",
+					"10.0.2.2/24",
 				},
 				Veth: &linuxIf.LinuxInterfaces_Interface_Veth{
 					PeerIfName: "veth2",

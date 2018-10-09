@@ -17,8 +17,9 @@ package l2plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
 	"git.fd.io/govpp.git/core"
+
+	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -59,7 +60,7 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 
 	// Test initialization
 	bdConfiguratorPlugin := &l2plugin.BDConfigurator{}
-	err = bdConfiguratorPlugin.Init(pluginLogger, connection, swIfIndex, notifChan, false)
+	err = bdConfiguratorPlugin.Init(pluginLogger, connection, swIfIndex, notifChan)
 	Expect(err).To(BeNil())
 
 	return mockCtx, connection, swIfIndex, notifChan, bdConfiguratorPlugin

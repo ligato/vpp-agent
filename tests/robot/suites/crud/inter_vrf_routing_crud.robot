@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 Resource    ../../libraries/all_libs.robot
 Resource    ../../libraries/pretty_keywords.robot
 
-Force Tags        trafficIPv4
+Force Tags        crud    IPv4
 Suite Setup       Run Keywords    Discard old results     Test Setup
 Suite Teardown    Test Teardown
 
@@ -153,19 +153,13 @@ Final Sleep For Manual Checking
 
 *** Keywords ***
 List of interfaces On ${node} Should Contain Interface ${int}
-    Log many    ${node} ${int}
     ${out}=   vpp_term: Show Interfaces    ${node}
-    log many    ${out}
     Should Match Regexp        ${out}  ${int}
 
 IP Fib Table ${table_id} On ${node} Should Contain Vrf ${inter_vrf_string}
-    Log many    ${table_id}    ${node}    ${inter_vrf_string}
     ${out}=    vpp_term: Show IP Fib Table    ${node}    ${table_id}
-    log many    ${out}
     Should Contain  ${out}  ${inter_vrf_string}
 
 IP6 Fib Table ${table_id} On ${node} Should Contain Vrf ${inter_vrf_string}
-    Log many    ${table_id}    ${node}    ${inter_vrf_string}
     ${out}=    vpp_term: Show IP6 Fib Table    ${node}    ${table_id}
-    log many    ${out}
     Should Contain  ${out}  ${inter_vrf_string}
