@@ -127,7 +127,6 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 		veth2LogicalName = "myVETH2"
 		veth2HostName    = "veth2"
-		veth2HwAddr      = "44:44:44:55:55:55"
 
 		afPacketLogicalName = "myAFPacket"
 		afPacketHwAddr      = "a7:35:45:55:65:75"
@@ -198,7 +197,6 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		Name:        veth2LogicalName,
 		Type:        linux_interfaces.LinuxInterface_VETH,
 		Enabled:     true,
-		PhysAddress: veth2HwAddr,
 		Mtu:         mycroservice1Mtu,
 		HostIfName:  veth2HostName,
 		Link: &linux_interfaces.LinuxInterface_Veth{

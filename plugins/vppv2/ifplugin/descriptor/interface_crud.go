@@ -118,11 +118,30 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// Rx-mode
-	if err = d.configRxModeForInterface(intf, ifIdx); err != nil {
-		err = errors.Errorf("failed to set Rx-mode for interface %s: %v", intf.Name, err)
-		d.log.Error(err)
-		return nil, err
+	/*
+	Rx-mode
+
+	Legend:
+	P - polling
+	I - interrupt
+	A - adaptive
+
+	Interfaces - supported modes:
+		* tap interface - PIA
+		* memory interface - PIA
+		* vxlan tunnel - PIA
+		* software loopback - PIA
+		* ethernet csmad - P
+		* af packet - PIA
+	*/
+	if intf.RxModeSettings != nil {
+		rxMode := d.getRxMode(intf)
+		err = d.ifHandler.SetRxMode(ifIdx, rxMode)
+		if err != nil {
+			err = errors.Errorf("failed to set Rx-mode for interface %s: %v", intf.Name, err)
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	// Rx-placement
@@ -288,14 +307,19 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 	ifIdx := oldMetadata.SwIfIndex
 
 	// Rx-mode
-	if err := d.modifyRxModeForInterfaces(oldIntf, newIntf, ifIdx); err != nil {
-		err = errors.Errorf("failed to modify rx-mode for interface %s: %v", newIntf.Name, err)
-		d.log.Error(err)
-		return oldMetadata, err
+	oldRx := d.getRxMode(oldIntf)
+	newRx := d.getRxMode(newIntf)
+	if !proto.Equal(oldRx, newRx) {
+		err = d.ifHandler.SetRxMode(ifIdx, newRx)
+		if err != nil {
+			err = errors.Errorf("failed to modify rx-mode for interface %s: %v", newIntf.Name, err)
+			d.log.Error(err)
+			return oldMetadata, err
+		}
 	}
 
 	// Rx-placement
-	if newIntf.RxPlacementSettings != nil && !proto.Equal(oldIntf.RxPlacementSettings, newIntf.RxPlacementSettings) {
+	if !proto.Equal(d.getRxPlacement(oldIntf), d.getRxPlacement(newIntf)) {
 		if err = d.ifHandler.SetRxPlacement(ifIdx, newIntf.GetRxPlacementSettings()); err != nil {
 			err = errors.Errorf("failed to modify rx-placement for interface %s: %v", newIntf.Name, err)
 			d.log.Error(err)

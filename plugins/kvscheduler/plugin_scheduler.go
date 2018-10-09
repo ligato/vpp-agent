@@ -243,6 +243,13 @@ func (scheduler *Scheduler) StartNBTransaction() Txn {
 	return txn
 }
 
+// TransactionBarrier ensures that all notifications received prior to the call
+// are associated with transactions that have already finalized.
+func (scheduler *Scheduler) TransactionBarrier() {
+	scheduler.txnLock.Lock()
+	scheduler.txnLock.Unlock()
+}
+
 // PushSBNotification notifies about a spontaneous value change in the SB
 // plane (i.e. not triggered by NB transaction).
 func (scheduler *Scheduler) PushSBNotification(key string, value proto.Message, metadata Metadata) error {

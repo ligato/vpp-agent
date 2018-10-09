@@ -211,6 +211,10 @@ type KVScheduler interface {
 	// The enqueued actions are scheduled for execution by Txn.Commit().
 	StartNBTransaction() Txn
 
+	// TransactionBarrier ensures that all notifications received prior to the call
+	// are associated with transactions that have already finalized.
+	TransactionBarrier()
+
 	// PushSBNotification notifies about a spontaneous value change in the SB
 	// plane (i.e. not triggered by NB transaction).
 	//

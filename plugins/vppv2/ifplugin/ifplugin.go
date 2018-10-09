@@ -206,14 +206,15 @@ func (p *IfPlugin) Init() error {
 		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 100)
 		// Interface state updater
 		p.ifStateUpdater = &InterfaceStateUpdater{}
-		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.GoVppmux, p.intfIndex, func(state *interfaces.InterfaceNotification) {
-			select {
-			case p.ifStateChan <- state:
-				// OK
-			default:
-				p.Log.Debug("Unable to send to the ifStateChan channel - channel buffer full.")
-			}
-		}); err != nil {
+		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.Scheduler, p.GoVppmux, p.intfIndex,
+			func(state *interfaces.InterfaceNotification) {
+				select {
+				case p.ifStateChan <- state:
+					// OK
+				default:
+					p.Log.Debug("Unable to send to the ifStateChan channel - channel buffer full.")
+				}
+			}); err != nil {
 			return p.ifStateUpdater.LogError(err)
 		}
 		p.Log.Debug("ifStateUpdater Initialized")

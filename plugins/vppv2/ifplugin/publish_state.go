@@ -88,12 +88,8 @@ func (p *IfPlugin) publishIfStateEvents() {
 		case ifState := <-p.ifStateChan:
 			p.publishLock.Lock()
 			key := interfaces.InterfaceStateKey(ifState.State.Name)
-			// TODO: get rid of this log once the plugin is tested
-			p.Log.Debugf("Publishing state data for interface %s: %v", ifState.State.Name, ifState)
 
 			if p.PublishStatistics != nil {
-				// TODO: consider using datasync.WithTTL(<more than 10 seconds>) - than we do not need resync,
-				// also when agent is down the state data would not hang in there
 				err := p.PublishStatistics.Put(key, ifState.State)
 				if err != nil {
 					if lastPublishErr == nil || lastPublishErr.Error() != err.Error() {

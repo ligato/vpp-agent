@@ -95,6 +95,10 @@ var (
 
 	// ErrInterfaceLinkMismatch is returned when interface type does not match the link configuration.
 	ErrInterfaceLinkMismatch = errors.New("VPP interface type and link configuration do not match")
+
+	// ErrUnsupportedRxMode is returned when the given interface type does not support the chosen
+	// RX mode.
+	ErrUnsupportedRxMode = errors.New("unsupported RX Mode")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -197,8 +201,8 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		return false
 	}
 	if !proto.Equal(oldIntf.Unnumbered, newIntf.Unnumbered) ||
-		!proto.Equal(oldIntf.RxModeSettings, newIntf.RxModeSettings) ||
-		!proto.Equal(oldIntf.RxPlacementSettings, newIntf.RxPlacementSettings) {
+		!proto.Equal(d.getRxMode(oldIntf), d.getRxMode(newIntf)) ||
+		!proto.Equal(d.getRxPlacement(oldIntf), d.getRxPlacement(newIntf)) {
 		return false
 	}
 
@@ -283,6 +287,7 @@ func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 		ErrUnnumberedWithIP,
 		ErrAfPacketWithoutHostName,
 		ErrInterfaceLinkMismatch,
+		ErrUnsupportedRxMode,
 	}
 	for _, nonRetriableErr := range nonRetriable {
 		if err == nonRetriableErr {
@@ -401,6 +406,11 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 	if intf.Type == interfaces.Interface_AF_PACKET_INTERFACE && intf.GetAfpacket().GetHostIfName() == "" {
 		return ErrAfPacketWithoutHostName
 	}
+	if intf.Type == interfaces.Interface_ETHERNET_CSMACD {
+		if d.getRxMode(intf).RxMode != interfaces.Interface_RxModeSettings_POLLING {
+			return ErrUnsupportedRxMode
+		}
+	}
 	switch intf.Link.(type) {
 	case *interfaces.Interface_Memif:
 		if intf.Type != interfaces.Interface_MEMORY_INTERFACE {
@@ -449,64 +459,46 @@ func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Int
 	return registeredID, nil
 }
 
-/**
-Set rx-mode on specified VPP interface
-
-Legend:
-P - polling
-I - interrupt
-A - adaptive
-
-Interfaces - supported modes:
-* tap interface - PIA
-* memory interface - PIA
-* vxlan tunnel - PIA
-* software loopback - PIA
-* ethernet csmad - P
-* af packet - PIA
-*/
-func (d *InterfaceDescriptor) configRxModeForInterface(intf *interfaces.Interface, ifIdx uint32) error {
-	rxModeSettings := intf.RxModeSettings
-	if rxModeSettings != nil {
+// getRxMode returns the RX mode of the given interface.
+// If the mode is not defined, it returns the default settings for the given
+// interface type.
+func (d *InterfaceDescriptor) getRxMode(intf *interfaces.Interface) *interfaces.Interface_RxModeSettings {
+	if intf.RxModeSettings == nil {
+		// return default mode for the given interface type
 		switch intf.Type {
 		case interfaces.Interface_ETHERNET_CSMACD:
-			if rxModeSettings.RxMode == interfaces.Interface_RxModeSettings_POLLING {
-				return d.ifHandler.SetRxMode(ifIdx, rxModeSettings)
-			}
-		default:
-			return d.ifHandler.SetRxMode(ifIdx, rxModeSettings)
-		}
-	}
-	return nil
-}
-
-// Modify rx-mode on specified VPP interface.
-func (d *InterfaceDescriptor) modifyRxModeForInterfaces(oldIntf, newIntf *interfaces.Interface, ifIdx uint32) error {
-	oldRx := oldIntf.RxModeSettings
-	newRx := newIntf.RxModeSettings
-
-	if !proto.Equal(oldRx, newRx) {
-		// If new rx mode is nil, value is reset to the default (differs for interface types)
-		switch newIntf.Type {
-		case interfaces.Interface_ETHERNET_CSMACD:
-			if newRx == nil {
-				return d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxModeSettings{RxMode: interfaces.Interface_RxModeSettings_POLLING})
-			} else if newRx.RxMode != interfaces.Interface_RxModeSettings_POLLING {
-				return errors.Errorf("attempt to set unsupported rx-mode %s", newRx.RxMode)
+			return &interfaces.Interface_RxModeSettings{
+				RxMode: interfaces.Interface_RxModeSettings_POLLING,
 			}
 		case interfaces.Interface_AF_PACKET_INTERFACE:
-			if newRx == nil {
-				return d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxModeSettings{RxMode: interfaces.Interface_RxModeSettings_INTERRUPT})
+			return &interfaces.Interface_RxModeSettings{
+				RxMode: interfaces.Interface_RxModeSettings_INTERRUPT,
 			}
-		default: // All the other interface types
-			if newRx == nil {
-				return d.ifHandler.SetRxMode(ifIdx, &interfaces.Interface_RxModeSettings{RxMode: interfaces.Interface_RxModeSettings_DEFAULT})
+		case interfaces.Interface_TAP_INTERFACE:
+			if intf.GetTap().GetVersion() == 2 {
+				return &interfaces.Interface_RxModeSettings{
+					RxMode: interfaces.Interface_RxModeSettings_INTERRUPT,
+				}
+			} else {
+				return &interfaces.Interface_RxModeSettings{
+					RxMode: interfaces.Interface_RxModeSettings_DEFAULT,
+				}
+			}
+		default:
+			return &interfaces.Interface_RxModeSettings{
+				RxMode: interfaces.Interface_RxModeSettings_DEFAULT,
 			}
 		}
-		return d.ifHandler.SetRxMode(ifIdx, newRx)
 	}
+	return intf.RxModeSettings
+}
 
-	return nil
+// getRxPlacement returns the RX placement of the given interface.
+func (d *InterfaceDescriptor) getRxPlacement(intf *interfaces.Interface) *interfaces.Interface_RxPlacementSettings {
+	if intf.RxPlacementSettings == nil {
+		return &interfaces.Interface_RxPlacementSettings{}
+	}
+	return intf.RxPlacementSettings
 }
 
 // getMemifSocketFilename returns the memif socket filename.

@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 // counterType is the basic counter type - contains only packet statistics.
@@ -66,6 +67,7 @@ const (
 type InterfaceStateUpdater struct {
 	log logging.Logger
 
+	kvScheduler    scheduler.KVScheduler
 	swIfIndexes    ifaceidx.IfaceMetadataIndex
 	publishIfState func(notification *intf.InterfaceNotification)
 
@@ -84,14 +86,17 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API,
-	swIfIndexes ifaceidx.IfaceMetadataIndex, publishIfState func(notification *intf.InterfaceNotification)) (err error) {
+func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, kvScheduler scheduler.KVScheduler,
+	goVppMux govppmux.API, swIfIndexes ifaceidx.IfaceMetadataIndex,
+	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
+
 	// Logger
 	c.log = logger.NewLogger("if-state")
 
 	// Mappings
 	c.swIfIndexes = swIfIndexes
 
+	c.kvScheduler = kvScheduler
 	c.publishIfState = publishIfState
 	c.ifState = make(map[uint32]*intf.InterfaceState)
 
@@ -158,17 +163,30 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 		return errors.Errorf("%s returned %d", wantIfEventsReply.GetMessageName(), wantIfEventsReply.Retval)
 	}
 
-	wantStatsReply := &stats.WantStatsReply{}
+	wantSimpleStatsReply := &stats.WantInterfaceSimpleStatsReply{}
 	// enable interface counters notifications from VPP
-	err = c.vppCh.SendRequest(&stats.WantStats{
+	err = c.vppCh.SendRequest(&stats.WantInterfaceSimpleStats{
 		PID:           uint32(os.Getpid()),
 		EnableDisable: 1,
-	}).ReceiveReply(wantStatsReply)
+	}).ReceiveReply(wantSimpleStatsReply)
 	if err != nil {
-		return errors.Errorf("failed to get interface events: %v", err)
+		return errors.Errorf("failed to subscribe for interface simple stats: %v", err)
 	}
-	if wantStatsReply.Retval != 0 {
-		return errors.Errorf("%s returned %d", wantStatsReply.GetMessageName(), wantStatsReply.Retval)
+	if wantSimpleStatsReply.Retval != 0 {
+		return errors.Errorf("%s returned %d", wantSimpleStatsReply.GetMessageName(), wantSimpleStatsReply.Retval)
+	}
+
+	wantCombinedStatsReply := &stats.WantInterfaceCombinedStatsReply{}
+	// enable interface counters notifications from VPP
+	err = c.vppCh.SendRequest(&stats.WantInterfaceCombinedStats{
+		PID:           uint32(os.Getpid()),
+		EnableDisable: 1,
+	}).ReceiveReply(wantCombinedStatsReply)
+	if err != nil {
+		return errors.Errorf("failed to subscribe for interface combined stats: %v", err)
+	}
+	if wantCombinedStatsReply.Retval != 0 {
+		return errors.Errorf("%s returned %d", wantCombinedStatsReply.GetMessageName(), wantCombinedStatsReply.Retval)
 	}
 
 	return nil
@@ -216,6 +234,10 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 	for {
 		select {
 		case msg := <-c.notifChan:
+			// if the notification is a result of a configuration change,
+			// make sure the associated transaction has already finalized
+			c.kvScheduler.TransactionBarrier()
+
 			switch notif := msg.(type) {
 			case *interfaces.SwInterfaceEvent:
 				c.processIfStateNotification(notif)
@@ -297,7 +319,6 @@ func (c *InterfaceStateUpdater) getIfStateDataWLookup(ifIdx uint32) (
 	*intf.InterfaceState, bool) {
 	ifName, _, found := c.swIfIndexes.LookupBySwIfIndex(ifIdx)
 	if !found {
-		c.log.Debugf("Interface state data structure lookup for %d interrupted, not registered yet", ifIdx)
 		return nil, found
 	}
 
