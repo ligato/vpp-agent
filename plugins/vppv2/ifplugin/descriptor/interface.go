@@ -479,10 +479,10 @@ func (d *InterfaceDescriptor) getRxMode(intf *interfaces.Interface) *interfaces.
 				return &interfaces.Interface_RxModeSettings{
 					RxMode: interfaces.Interface_RxModeSettings_INTERRUPT,
 				}
-			} else {
-				return &interfaces.Interface_RxModeSettings{
-					RxMode: interfaces.Interface_RxModeSettings_DEFAULT,
-				}
+			}
+			// TAP v1
+			return &interfaces.Interface_RxModeSettings{
+				RxMode: interfaces.Interface_RxModeSettings_DEFAULT,
 			}
 		default:
 			return &interfaces.Interface_RxModeSettings{
