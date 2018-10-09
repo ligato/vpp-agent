@@ -204,7 +204,9 @@ func (scheduler *Scheduler) Close() error {
 // (none for derived values expressing properties).
 func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *KVDescriptor) {
 	scheduler.registry.RegisterDescriptor(descriptor)
-	scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefix)
+	if descriptor.NBKeyPrefix != "" {
+		scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefix)
+	}
 
 	if descriptor.WithMetadata {
 		var metadataMap idxmap.NamedMappingRW
