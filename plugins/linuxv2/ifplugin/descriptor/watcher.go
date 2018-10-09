@@ -90,175 +90,175 @@ func NewInterfaceWatcher(scheduler scheduler.KVScheduler, ifHandler linuxcalls.N
 }
 
 // GetDescriptor returns descriptor suitable for registration with the KVScheduler.
-func (intfw *InterfaceWatcher) GetDescriptor() *scheduler.KVDescriptor {
+func (w *InterfaceWatcher) GetDescriptor() *scheduler.KVDescriptor {
 	return &scheduler.KVDescriptor{
 		Name:        InterfaceWatcherName,
-		KeySelector: intfw.IsLinuxInterfaceNotification,
-		Dump:        intfw.Dump,
+		KeySelector: w.IsLinuxInterfaceNotification,
+		Dump:        w.Dump,
 	}
 }
 
 // IsLinuxInterfaceNotification returns <true> for keys representing
 // notifications about Linux interfaces in the default network namespace.
-func (intfw *InterfaceWatcher) IsLinuxInterfaceNotification(key string) bool {
+func (w *InterfaceWatcher) IsLinuxInterfaceNotification(key string) bool {
 	return strings.HasPrefix(key, ifmodel.InterfaceHostNameKeyPrefix)
 }
 
 // Dump returns key with empty value for every currently existing Linux interface
 // in the default network namespace.
-func (intfw *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump []scheduler.KVWithMetadata, err error) {
+func (w *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump []scheduler.KVWithMetadata, err error) {
 	// wait until the set of interfaces is in-sync with the Linux network stack
-	intfw.intfsLock.Lock()
-	if !intfw.intfsInSync {
-		intfw.intfsInSyncCond.Wait()
+	w.intfsLock.Lock()
+	if !w.intfsInSync {
+		w.intfsInSyncCond.Wait()
 	}
-	defer intfw.intfsLock.Unlock()
+	defer w.intfsLock.Unlock()
 
-	for ifName := range intfw.intfs {
+	for ifName := range w.intfs {
 		dump = append(dump, scheduler.KVWithMetadata{
 			Key:    ifmodel.InterfaceHostNameKey(ifName),
 			Value:  &prototypes.Empty{},
 			Origin: scheduler.FromSB,
 		})
 	}
-	intfw.log.WithField("dump", dump).Debug("Dumping Linux interface host names in default namespace")
+	w.log.WithField("dump", dump).Debug("Dumping Linux interface host names in default namespace")
 	return dump, nil
 }
 
 // StartWatching starts interface watching.
-func (intfw *InterfaceWatcher) StartWatching() error {
+func (w *InterfaceWatcher) StartWatching() error {
 	// watch default namespace to be aware of interfaces not created by this plugin
-	err := intfw.ifHandler.LinkSubscribe(intfw.notifCh, intfw.doneCh)
+	err := w.ifHandler.LinkSubscribe(w.notifCh, w.doneCh)
 	if err != nil {
 		err = errors.Errorf("failed to subscribe link: %v", err)
-		intfw.log.Error(err)
+		w.log.Error(err)
 		return err
 	}
-	intfw.wg.Add(1)
-	go intfw.watchDefaultNamespace()
+	w.wg.Add(1)
+	go w.watchDefaultNamespace()
 	return nil
 }
 
 // StopWatching stops interface watching.
-func (intfw *InterfaceWatcher) StopWatching() {
-	intfw.cancel()
-	intfw.wg.Wait()
+func (w *InterfaceWatcher) StopWatching() {
+	w.cancel()
+	w.wg.Wait()
 }
 
 // watchDefaultNamespace watches for notification about added/removed interfaces
 // to/from the default namespace.
-func (intfw *InterfaceWatcher) watchDefaultNamespace() {
-	defer intfw.wg.Done()
+func (w *InterfaceWatcher) watchDefaultNamespace() {
+	defer w.wg.Done()
 
 	// get the set of interfaces already available in the default namespace
-	links, err := intfw.ifHandler.GetLinkList()
+	links, err := w.ifHandler.GetLinkList()
 	if err == nil {
 		for _, link := range links {
-			if enabled, err := intfw.ifHandler.IsInterfaceEnabled(link.Attrs().Name); enabled && err == nil {
-				intfw.intfs[link.Attrs().Name] = struct{}{}
+			if enabled, err := w.ifHandler.IsInterfaceEnabled(link.Attrs().Name); enabled && err == nil {
+				w.intfs[link.Attrs().Name] = struct{}{}
 			}
 		}
 	} else {
-		intfw.log.Warnf("failed to list interfaces in the default namespace: %v", err)
+		w.log.Warnf("failed to list interfaces in the default namespace: %v", err)
 	}
 
 	// mark the state in-sync with the Linux network stack
-	intfw.intfsLock.Lock()
-	intfw.intfsInSync = true
-	intfw.intfsLock.Unlock()
-	intfw.intfsInSyncCond.Broadcast()
+	w.intfsLock.Lock()
+	w.intfsInSync = true
+	w.intfsLock.Unlock()
+	w.intfsInSyncCond.Broadcast()
 
 	for {
 		select {
-		case linkNotif := <-intfw.notifCh:
-			intfw.processLinkNotification(linkNotif)
+		case linkNotif := <-w.notifCh:
+			w.processLinkNotification(linkNotif)
 
-		case <-intfw.ctx.Done():
-			close(intfw.doneCh)
+		case <-w.ctx.Done():
+			close(w.doneCh)
 			return
 		}
 	}
 }
 
 // processLinkNotification processes link notification received from Linux.
-func (intfw *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate) {
-	intfw.intfsLock.Lock()
-	defer intfw.intfsLock.Unlock()
+func (w *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate) {
+	w.intfsLock.Lock()
+	defer w.intfsLock.Unlock()
 
 	ifName := linkUpdate.Attrs().Name
 	isEnabled := linkUpdate.Attrs().OperState != netlink.OperDown &&
 		linkUpdate.Attrs().OperState != netlink.OperNotPresent
 
-	_, isPendingNotif := intfw.pendingIntfs[ifName]
+	_, isPendingNotif := w.pendingIntfs[ifName]
 	if isPendingNotif {
 		// notification for this interface is already scheduled, just update the state
-		intfw.pendingIntfs[ifName] = isEnabled
+		w.pendingIntfs[ifName] = isEnabled
 		return
 	}
 
-	if !intfw.needsUpdate(ifName, isEnabled) {
+	if !w.needsUpdate(ifName, isEnabled) {
 		// ignore notification if the interface admin status remained the same
 		return
 	}
 
 	if isEnabled {
 		// do not notify until interface is truly finished
-		intfw.pendingIntfs[ifName] = true
-		intfw.wg.Add(1)
-		go intfw.delayNotification(ifName)
+		w.pendingIntfs[ifName] = true
+		w.wg.Add(1)
+		go w.delayNotification(ifName)
 		return
 	}
 
 	// notification about removed interface is propagated immediately
-	intfw.notifyScheduler(ifName, false)
+	w.notifyScheduler(ifName, false)
 }
 
 // delayNotification delays notification about enabled interface - typically
 // interface is created in multiple stages and we do not want to notify scheduler
 // about intermediate states.
-func (intfw *InterfaceWatcher) delayNotification(ifName string) {
-	defer intfw.wg.Done()
+func (w *InterfaceWatcher) delayNotification(ifName string) {
+	defer w.wg.Done()
 
 	select {
-	case <-intfw.ctx.Done():
+	case <-w.ctx.Done():
 		return
 	case <-time.After(notificationDelay):
-		intfw.applyDelayedNotification(ifName)
+		w.applyDelayedNotification(ifName)
 	}
 }
 
 // applyDelayedNotification applies delayed interface notification.
-func (intfw *InterfaceWatcher) applyDelayedNotification(ifName string) {
-	intfw.intfsLock.Lock()
-	defer intfw.intfsLock.Unlock()
+func (w *InterfaceWatcher) applyDelayedNotification(ifName string) {
+	w.intfsLock.Lock()
+	defer w.intfsLock.Unlock()
 
 	// in the meantime the status may have changed and may not require update anymore
-	isEnabled := intfw.pendingIntfs[ifName]
-	if intfw.needsUpdate(ifName, isEnabled) {
-		intfw.notifyScheduler(ifName, isEnabled)
+	isEnabled := w.pendingIntfs[ifName]
+	if w.needsUpdate(ifName, isEnabled) {
+		w.notifyScheduler(ifName, isEnabled)
 	}
 
-	delete(intfw.pendingIntfs, ifName)
+	delete(w.pendingIntfs, ifName)
 }
 
 // notifyScheduler notifies scheduler about interface change.
-func (intfw *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
+func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 	var value proto.Message
 
 	if enabled {
-		intfw.intfs[ifName] = struct{}{}
+		w.intfs[ifName] = struct{}{}
 		value = &prototypes.Empty{}
 	} else {
-		delete(intfw.intfs, ifName)
+		delete(w.intfs, ifName)
 	}
 
-	intfw.scheduler.PushSBNotification(
+	w.scheduler.PushSBNotification(
 		ifmodel.InterfaceHostNameKey(ifName),
 		value,
 		nil)
 }
 
-func (intfw *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {
-	_, wasEnabled := intfw.intfs[ifName]
+func (w *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {
+	_, wasEnabled := w.intfs[ifName]
 	return isEnabled != wasEnabled
 }

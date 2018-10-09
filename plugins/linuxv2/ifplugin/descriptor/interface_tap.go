@@ -26,13 +26,13 @@ import (
 
 // addTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace
 // and sets the requested host name, IP addresses, etc.
-func (intfd *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 	// determine TAP interface name as set by VPP ifplugin
 	vppTapName := linuxIf.GetTap().GetVppTapIfName()
-	vppTapMeta, found := intfd.vppIfPlugin.GetInterfaceIndex().LookupByName(vppTapName)
+	vppTapMeta, found := d.vppIfPlugin.GetInterfaceIndex().LookupByName(vppTapName)
 	if !found {
 		err = errors.Errorf("failed to find VPP-side for the TAP-To-VPP interface %s", linuxIf.Name)
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 	vppTapHostName := vppTapMeta.TAPHostIfName
@@ -40,41 +40,41 @@ func (intfd *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.Li
 
 	// context
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	agentPrefix := intfd.serviceLabel.GetAgentPrefix()
+	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
 	// add alias to associate TAP with the logical name and VPP-TAP reference
-	err = intfd.ifHandler.SetInterfaceAlias(vppTapHostName, agentPrefix+getTapAlias(linuxIf, vppTapHostName))
+	err = d.ifHandler.SetInterfaceAlias(vppTapHostName, agentPrefix+getTapAlias(linuxIf, vppTapHostName))
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 
 	// move the TAP to the right namespace
-	err = intfd.setInterfaceNamespace(nsCtx, vppTapHostName, linuxIf.Namespace)
+	err = d.setInterfaceNamespace(nsCtx, vppTapHostName, linuxIf.Namespace)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 
 	// move to the namespace with the interface
-	revert, err := intfd.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 	defer revert()
 
 	// rename from temporary host name to the request host name
-	intfd.ifHandler.RenameInterface(vppTapHostName, hostName)
+	d.ifHandler.RenameInterface(vppTapHostName, hostName)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 
 	// build metadata
-	link, err := intfd.ifHandler.GetLinkByName(hostName)
+	link, err := d.ifHandler.GetLinkByName(hostName)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 	metadata = &ifaceidx.LinuxIfMetadata{
@@ -88,42 +88,42 @@ func (intfd *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.Li
 
 // deleteAutoTAP returns TAP interface back to the default namespace and renames
 // the interface back to original name.
-func (intfd *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
+func (d *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
 	hostName := getHostIfName(linuxIf)
-	agentPrefix := intfd.serviceLabel.GetAgentPrefix()
+	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
 	// get original TAP name
-	link, err := intfd.ifHandler.GetLinkByName(hostName)
+	link, err := d.ifHandler.GetLinkByName(hostName)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 	alias := strings.TrimPrefix(link.Attrs().Alias, agentPrefix)
 	_, _, origVppTapHostName := parseTapAlias(alias)
 	if origVppTapHostName == "" {
 		err = errors.New("failed to obtain the original TAP host name")
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 
 	// rename back to the temporary name
-	intfd.ifHandler.RenameInterface(hostName, origVppTapHostName)
+	d.ifHandler.RenameInterface(hostName, origVppTapHostName)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 
 	// move TAP back to the default namespace
-	err = intfd.setInterfaceNamespace(nsCtx, origVppTapHostName, nil)
+	err = d.setInterfaceNamespace(nsCtx, origVppTapHostName, nil)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 
 	// move to the default namespace
-	revert, err := intfd.nsPlugin.SwitchToNamespace(nsCtx, nil)
+	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 	defer revert()
@@ -131,9 +131,9 @@ func (intfd *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmt
 	// remove interface alias at last(!)
 	// - actually vishvananda/netlink does not support alias removal, so we just change
 	//   it to a string which is not prefixed with agent label
-	err = intfd.ifHandler.SetInterfaceAlias(origVppTapHostName, "unconfigured")
+	err = d.ifHandler.SetInterfaceAlias(origVppTapHostName, "unconfigured")
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 

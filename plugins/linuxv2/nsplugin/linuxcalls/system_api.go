@@ -17,7 +17,6 @@ package linuxcalls
 import (
 	"os"
 
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netns"
 )
 
@@ -66,12 +65,9 @@ type NetworkNamespaceAPI interface {
 
 // systemHandler implements SystemAPI using actual syscalls (i.e. not suitable for tests).
 type systemHandler struct {
-	stopwatch *measure.Stopwatch
 }
 
 // NewSystemHandler returns new handler.
-func NewSystemHandler(stopwatch *measure.Stopwatch) SystemAPI {
-	return &systemHandler{
-		stopwatch: stopwatch,
-	}
+func NewSystemHandler() SystemAPI {
+	return &systemHandler{}
 }

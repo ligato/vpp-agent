@@ -80,7 +80,6 @@ type IfPlugin struct {
 	dhcpIndex idxmap.NamedMapping
 
 	// from config file
-	enableStopwatch bool
 	defaultMtu      uint32
 
 	// state data
