@@ -10,6 +10,7 @@ It is generated from this file:
 It contains these VPP binary API objects:
 	45 messages
 	2 types
+	2 enums
 	22 services
 */
 package l2
@@ -23,10 +24,78 @@ var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
 
+/* Enums */
+
+// BdFlags represents the VPP binary API enum 'bd_flags'.
+// Generated from 'l2.api.json', line 1267:
+//
+//            "bd_flags",
+//            [
+//                "BRIDGE_API_FLAG_LEARN",
+//                1
+//            ],
+//            [
+//                "BRIDGE_API_FLAG_FWD",
+//                2
+//            ],
+//            [
+//                "BRIDGE_API_FLAG_FLOOD",
+//                4
+//            ],
+//            [
+//                "BRIDGE_API_FLAG_UU_FLOOD",
+//                8
+//            ],
+//            [
+//                "BRIDGE_API_FLAG_ARP_TERM",
+//                16
+//            ],
+//            {
+//                "enumtype": "u32"
+//            }
+//
+type BdFlags uint32
+
+const (
+	BRIDGE_API_FLAG_LEARN    BdFlags = 1
+	BRIDGE_API_FLAG_FWD      BdFlags = 2
+	BRIDGE_API_FLAG_FLOOD    BdFlags = 4
+	BRIDGE_API_FLAG_UU_FLOOD BdFlags = 8
+	BRIDGE_API_FLAG_ARP_TERM BdFlags = 16
+)
+
+// L2PortType represents the VPP binary API enum 'l2_port_type'.
+// Generated from 'l2.api.json', line 1293:
+//
+//            "l2_port_type",
+//            [
+//                "L2_API_PORT_TYPE_NORMAL",
+//                0
+//            ],
+//            [
+//                "L2_API_PORT_TYPE_BVI",
+//                1
+//            ],
+//            [
+//                "L2_API_PORT_TYPE_UU_FWD",
+//                2
+//            ],
+//            {
+//                "enumtype": "u32"
+//            }
+//
+type L2PortType uint32
+
+const (
+	L2_API_PORT_TYPE_NORMAL L2PortType = 0
+	L2_API_PORT_TYPE_BVI    L2PortType = 1
+	L2_API_PORT_TYPE_UU_FWD L2PortType = 2
+)
+
 /* Types */
 
 // MacEntry represents the VPP binary API type 'mac_entry'.
-// Generated from 'l2.api.json', line 1264:
+// Generated from 'l2.api.json', line 1313:
 //
 //            "mac_entry",
 //            [
@@ -65,7 +134,7 @@ func (*MacEntry) GetCrcString() string {
 }
 
 // BridgeDomainSwIf represents the VPP binary API type 'bridge_domain_sw_if'.
-// Generated from 'l2.api.json', line 1287:
+// Generated from 'l2.api.json', line 1336:
 //
 //            "bridge_domain_sw_if",
 //            [
@@ -1223,6 +1292,10 @@ func NewBridgeDomainDump() api.Message {
 //            ],
 //            [
 //                "u32",
+//                "uu_fwd_sw_if_index"
+//            ],
+//            [
+//                "u32",
 //                "n_sw_ifs"
 //            ],
 //            [
@@ -1232,28 +1305,29 @@ func NewBridgeDomainDump() api.Message {
 //                "n_sw_ifs"
 //            ],
 //            {
-//                "crc": "0x5527b45f"
+//                "crc": "0xb2134997"
 //            }
 //
 type BridgeDomainDetails struct {
-	BdID         uint32
-	Flood        uint8
-	UuFlood      uint8
-	Forward      uint8
-	Learn        uint8
-	ArpTerm      uint8
-	MacAge       uint8
-	BdTag        []byte `struc:"[64]byte"`
-	BviSwIfIndex uint32
-	NSwIfs       uint32 `struc:"sizeof=SwIfDetails"`
-	SwIfDetails  []BridgeDomainSwIf
+	BdID           uint32
+	Flood          uint8
+	UuFlood        uint8
+	Forward        uint8
+	Learn          uint8
+	ArpTerm        uint8
+	MacAge         uint8
+	BdTag          []byte `struc:"[64]byte"`
+	BviSwIfIndex   uint32
+	UuFwdSwIfIndex uint32
+	NSwIfs         uint32 `struc:"sizeof=SwIfDetails"`
+	SwIfDetails    []BridgeDomainSwIf
 }
 
 func (*BridgeDomainDetails) GetMessageName() string {
 	return "bridge_domain_details"
 }
 func (*BridgeDomainDetails) GetCrcString() string {
-	return "5527b45f"
+	return "b2134997"
 }
 func (*BridgeDomainDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -1263,7 +1337,7 @@ func NewBridgeDomainDetails() api.Message {
 }
 
 // BridgeFlags represents the VPP binary API message 'bridge_flags'.
-// Generated from 'l2.api.json', line 658:
+// Generated from 'l2.api.json', line 662:
 //
 //            "bridge_flags",
 //            [
@@ -1287,24 +1361,24 @@ func NewBridgeDomainDetails() api.Message {
 //                "is_set"
 //            ],
 //            [
-//                "u32",
-//                "feature_bitmap"
+//                "vl_api_bd_flags_t",
+//                "flags"
 //            ],
 //            {
-//                "crc": "0x6b81f158"
+//                "crc": "0x8563d406"
 //            }
 //
 type BridgeFlags struct {
-	BdID          uint32
-	IsSet         uint8
-	FeatureBitmap uint32
+	BdID  uint32
+	IsSet uint8
+	Flags BdFlags
 }
 
 func (*BridgeFlags) GetMessageName() string {
 	return "bridge_flags"
 }
 func (*BridgeFlags) GetCrcString() string {
-	return "6b81f158"
+	return "8563d406"
 }
 func (*BridgeFlags) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1314,7 +1388,7 @@ func NewBridgeFlags() api.Message {
 }
 
 // BridgeFlagsReply represents the VPP binary API message 'bridge_flags_reply'.
-// Generated from 'l2.api.json', line 688:
+// Generated from 'l2.api.json', line 692:
 //
 //            "bridge_flags_reply",
 //            [
@@ -1356,7 +1430,7 @@ func NewBridgeFlagsReply() api.Message {
 }
 
 // L2InterfaceVlanTagRewrite represents the VPP binary API message 'l2_interface_vlan_tag_rewrite'.
-// Generated from 'l2.api.json', line 710:
+// Generated from 'l2.api.json', line 714:
 //
 //            "l2_interface_vlan_tag_rewrite",
 //            [
@@ -1417,7 +1491,7 @@ func NewL2InterfaceVlanTagRewrite() api.Message {
 }
 
 // L2InterfaceVlanTagRewriteReply represents the VPP binary API message 'l2_interface_vlan_tag_rewrite_reply'.
-// Generated from 'l2.api.json', line 748:
+// Generated from 'l2.api.json', line 752:
 //
 //            "l2_interface_vlan_tag_rewrite_reply",
 //            [
@@ -1454,7 +1528,7 @@ func NewL2InterfaceVlanTagRewriteReply() api.Message {
 }
 
 // L2InterfacePbbTagRewrite represents the VPP binary API message 'l2_interface_pbb_tag_rewrite'.
-// Generated from 'l2.api.json', line 766:
+// Generated from 'l2.api.json', line 770:
 //
 //            "l2_interface_pbb_tag_rewrite",
 //            [
@@ -1527,7 +1601,7 @@ func NewL2InterfacePbbTagRewrite() api.Message {
 }
 
 // L2InterfacePbbTagRewriteReply represents the VPP binary API message 'l2_interface_pbb_tag_rewrite_reply'.
-// Generated from 'l2.api.json', line 814:
+// Generated from 'l2.api.json', line 818:
 //
 //            "l2_interface_pbb_tag_rewrite_reply",
 //            [
@@ -1564,7 +1638,7 @@ func NewL2InterfacePbbTagRewriteReply() api.Message {
 }
 
 // L2PatchAddDel represents the VPP binary API message 'l2_patch_add_del'.
-// Generated from 'l2.api.json', line 832:
+// Generated from 'l2.api.json', line 836:
 //
 //            "l2_patch_add_del",
 //            [
@@ -1615,7 +1689,7 @@ func NewL2PatchAddDel() api.Message {
 }
 
 // L2PatchAddDelReply represents the VPP binary API message 'l2_patch_add_del_reply'.
-// Generated from 'l2.api.json', line 862:
+// Generated from 'l2.api.json', line 866:
 //
 //            "l2_patch_add_del_reply",
 //            [
@@ -1652,7 +1726,7 @@ func NewL2PatchAddDelReply() api.Message {
 }
 
 // SwInterfaceSetL2Xconnect represents the VPP binary API message 'sw_interface_set_l2_xconnect'.
-// Generated from 'l2.api.json', line 880:
+// Generated from 'l2.api.json', line 884:
 //
 //            "sw_interface_set_l2_xconnect",
 //            [
@@ -1703,7 +1777,7 @@ func NewSwInterfaceSetL2Xconnect() api.Message {
 }
 
 // SwInterfaceSetL2XconnectReply represents the VPP binary API message 'sw_interface_set_l2_xconnect_reply'.
-// Generated from 'l2.api.json', line 910:
+// Generated from 'l2.api.json', line 914:
 //
 //            "sw_interface_set_l2_xconnect_reply",
 //            [
@@ -1740,7 +1814,7 @@ func NewSwInterfaceSetL2XconnectReply() api.Message {
 }
 
 // SwInterfaceSetL2Bridge represents the VPP binary API message 'sw_interface_set_l2_bridge'.
-// Generated from 'l2.api.json', line 928:
+// Generated from 'l2.api.json', line 932:
 //
 //            "sw_interface_set_l2_bridge",
 //            [
@@ -1764,26 +1838,26 @@ func NewSwInterfaceSetL2XconnectReply() api.Message {
 //                "bd_id"
 //            ],
 //            [
-//                "u8",
-//                "shg"
+//                "vl_api_l2_port_type_t",
+//                "port_type"
 //            ],
 //            [
 //                "u8",
-//                "bvi"
+//                "shg"
 //            ],
 //            [
 //                "u8",
 //                "enable"
 //            ],
 //            {
-//                "crc": "0x95b4e4cf"
+//                "crc": "0x2af7795e"
 //            }
 //
 type SwInterfaceSetL2Bridge struct {
 	RxSwIfIndex uint32
 	BdID        uint32
+	PortType    L2PortType
 	Shg         uint8
-	Bvi         uint8
 	Enable      uint8
 }
 
@@ -1791,7 +1865,7 @@ func (*SwInterfaceSetL2Bridge) GetMessageName() string {
 	return "sw_interface_set_l2_bridge"
 }
 func (*SwInterfaceSetL2Bridge) GetCrcString() string {
-	return "95b4e4cf"
+	return "2af7795e"
 }
 func (*SwInterfaceSetL2Bridge) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1801,7 +1875,7 @@ func NewSwInterfaceSetL2Bridge() api.Message {
 }
 
 // SwInterfaceSetL2BridgeReply represents the VPP binary API message 'sw_interface_set_l2_bridge_reply'.
-// Generated from 'l2.api.json', line 966:
+// Generated from 'l2.api.json', line 970:
 //
 //            "sw_interface_set_l2_bridge_reply",
 //            [
@@ -1838,7 +1912,7 @@ func NewSwInterfaceSetL2BridgeReply() api.Message {
 }
 
 // BdIPMacAddDel represents the VPP binary API message 'bd_ip_mac_add_del'.
-// Generated from 'l2.api.json', line 984:
+// Generated from 'l2.api.json', line 988:
 //
 //            "bd_ip_mac_add_del",
 //            [
@@ -1901,7 +1975,7 @@ func NewBdIPMacAddDel() api.Message {
 }
 
 // BdIPMacAddDelReply represents the VPP binary API message 'bd_ip_mac_add_del_reply'.
-// Generated from 'l2.api.json', line 1024:
+// Generated from 'l2.api.json', line 1028:
 //
 //            "bd_ip_mac_add_del_reply",
 //            [
@@ -1938,7 +2012,7 @@ func NewBdIPMacAddDelReply() api.Message {
 }
 
 // BdIPMacDetails represents the VPP binary API message 'bd_ip_mac_details'.
-// Generated from 'l2.api.json', line 1042:
+// Generated from 'l2.api.json', line 1046:
 //
 //            "bd_ip_mac_details",
 //            [
@@ -1992,7 +2066,7 @@ func NewBdIPMacDetails() api.Message {
 }
 
 // BdIPMacDump represents the VPP binary API message 'bd_ip_mac_dump'.
-// Generated from 'l2.api.json', line 1074:
+// Generated from 'l2.api.json', line 1078:
 //
 //            "bd_ip_mac_dump",
 //            [
@@ -2033,7 +2107,7 @@ func NewBdIPMacDump() api.Message {
 }
 
 // L2InterfaceEfpFilter represents the VPP binary API message 'l2_interface_efp_filter'.
-// Generated from 'l2.api.json', line 1096:
+// Generated from 'l2.api.json', line 1100:
 //
 //            "l2_interface_efp_filter",
 //            [
@@ -2079,7 +2153,7 @@ func NewL2InterfaceEfpFilter() api.Message {
 }
 
 // L2InterfaceEfpFilterReply represents the VPP binary API message 'l2_interface_efp_filter_reply'.
-// Generated from 'l2.api.json', line 1122:
+// Generated from 'l2.api.json', line 1126:
 //
 //            "l2_interface_efp_filter_reply",
 //            [
@@ -2116,7 +2190,7 @@ func NewL2InterfaceEfpFilterReply() api.Message {
 }
 
 // SwInterfaceSetVpath represents the VPP binary API message 'sw_interface_set_vpath'.
-// Generated from 'l2.api.json', line 1140:
+// Generated from 'l2.api.json', line 1144:
 //
 //            "sw_interface_set_vpath",
 //            [
@@ -2162,7 +2236,7 @@ func NewSwInterfaceSetVpath() api.Message {
 }
 
 // SwInterfaceSetVpathReply represents the VPP binary API message 'sw_interface_set_vpath_reply'.
-// Generated from 'l2.api.json', line 1166:
+// Generated from 'l2.api.json', line 1170:
 //
 //            "sw_interface_set_vpath_reply",
 //            [

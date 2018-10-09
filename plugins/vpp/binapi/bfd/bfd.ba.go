@@ -8,8 +8,8 @@ It is generated from this file:
 	bfd.api.json
 
 It contains these VPP binary API objects:
-	26 messages
-	13 services
+	28 messages
+	14 services
 */
 package bfd
 
@@ -174,8 +174,112 @@ func NewBfdUDPDelEchoSourceReply() api.Message {
 	return &BfdUDPDelEchoSourceReply{}
 }
 
-// BfdUDPAdd represents the VPP binary API message 'bfd_udp_add'.
+// BfdUDPGetEchoSource represents the VPP binary API message 'bfd_udp_get_echo_source'.
 // Generated from 'bfd.api.json', line 80:
+//
+//            "bfd_udp_get_echo_source",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type BfdUDPGetEchoSource struct{}
+
+func (*BfdUDPGetEchoSource) GetMessageName() string {
+	return "bfd_udp_get_echo_source"
+}
+func (*BfdUDPGetEchoSource) GetCrcString() string {
+	return "51077d14"
+}
+func (*BfdUDPGetEchoSource) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func NewBfdUDPGetEchoSource() api.Message {
+	return &BfdUDPGetEchoSource{}
+}
+
+// BfdUDPGetEchoSourceReply represents the VPP binary API message 'bfd_udp_get_echo_source_reply'.
+// Generated from 'bfd.api.json', line 98:
+//
+//            "bfd_udp_get_echo_source_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "is_set"
+//            ],
+//            [
+//                "u8",
+//                "have_usable_ip4"
+//            ],
+//            [
+//                "u8",
+//                "ip4_addr",
+//                4
+//            ],
+//            [
+//                "u8",
+//                "have_usable_ip6"
+//            ],
+//            [
+//                "u8",
+//                "ip6_addr",
+//                16
+//            ],
+//            {
+//                "crc": "0x6924ca6b"
+//            }
+//
+type BfdUDPGetEchoSourceReply struct {
+	Retval        int32
+	SwIfIndex     uint32
+	IsSet         uint8
+	HaveUsableIP4 uint8
+	IP4Addr       []byte `struc:"[4]byte"`
+	HaveUsableIP6 uint8
+	IP6Addr       []byte `struc:"[16]byte"`
+}
+
+func (*BfdUDPGetEchoSourceReply) GetMessageName() string {
+	return "bfd_udp_get_echo_source_reply"
+}
+func (*BfdUDPGetEchoSourceReply) GetCrcString() string {
+	return "6924ca6b"
+}
+func (*BfdUDPGetEchoSourceReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func NewBfdUDPGetEchoSourceReply() api.Message {
+	return &BfdUDPGetEchoSourceReply{}
+}
+
+// BfdUDPAdd represents the VPP binary API message 'bfd_udp_add'.
+// Generated from 'bfd.api.json', line 142:
 //
 //            "bfd_udp_add",
 //            [
@@ -263,7 +367,7 @@ func NewBfdUDPAdd() api.Message {
 }
 
 // BfdUDPAddReply represents the VPP binary API message 'bfd_udp_add_reply'.
-// Generated from 'bfd.api.json', line 140:
+// Generated from 'bfd.api.json', line 202:
 //
 //            "bfd_udp_add_reply",
 //            [
@@ -300,7 +404,7 @@ func NewBfdUDPAddReply() api.Message {
 }
 
 // BfdUDPMod represents the VPP binary API message 'bfd_udp_mod'.
-// Generated from 'bfd.api.json', line 158:
+// Generated from 'bfd.api.json', line 220:
 //
 //            "bfd_udp_mod",
 //            [
@@ -373,7 +477,7 @@ func NewBfdUDPMod() api.Message {
 }
 
 // BfdUDPModReply represents the VPP binary API message 'bfd_udp_mod_reply'.
-// Generated from 'bfd.api.json', line 206:
+// Generated from 'bfd.api.json', line 268:
 //
 //            "bfd_udp_mod_reply",
 //            [
@@ -410,7 +514,7 @@ func NewBfdUDPModReply() api.Message {
 }
 
 // BfdUDPDel represents the VPP binary API message 'bfd_udp_del'.
-// Generated from 'bfd.api.json', line 224:
+// Generated from 'bfd.api.json', line 286:
 //
 //            "bfd_udp_del",
 //            [
@@ -468,7 +572,7 @@ func NewBfdUDPDel() api.Message {
 }
 
 // BfdUDPDelReply represents the VPP binary API message 'bfd_udp_del_reply'.
-// Generated from 'bfd.api.json', line 260:
+// Generated from 'bfd.api.json', line 322:
 //
 //            "bfd_udp_del_reply",
 //            [
@@ -505,7 +609,7 @@ func NewBfdUDPDelReply() api.Message {
 }
 
 // BfdUDPSessionDump represents the VPP binary API message 'bfd_udp_session_dump'.
-// Generated from 'bfd.api.json', line 278:
+// Generated from 'bfd.api.json', line 340:
 //
 //            "bfd_udp_session_dump",
 //            [
@@ -540,7 +644,7 @@ func NewBfdUDPSessionDump() api.Message {
 }
 
 // BfdUDPSessionDetails represents the VPP binary API message 'bfd_udp_session_details'.
-// Generated from 'bfd.api.json', line 296:
+// Generated from 'bfd.api.json', line 358:
 //
 //            "bfd_udp_session_details",
 //            [
@@ -629,7 +733,7 @@ func NewBfdUDPSessionDetails() api.Message {
 }
 
 // BfdUDPSessionSetFlags represents the VPP binary API message 'bfd_udp_session_set_flags'.
-// Generated from 'bfd.api.json', line 356:
+// Generated from 'bfd.api.json', line 418:
 //
 //            "bfd_udp_session_set_flags",
 //            [
@@ -692,7 +796,7 @@ func NewBfdUDPSessionSetFlags() api.Message {
 }
 
 // BfdUDPSessionSetFlagsReply represents the VPP binary API message 'bfd_udp_session_set_flags_reply'.
-// Generated from 'bfd.api.json', line 396:
+// Generated from 'bfd.api.json', line 458:
 //
 //            "bfd_udp_session_set_flags_reply",
 //            [
@@ -729,7 +833,7 @@ func NewBfdUDPSessionSetFlagsReply() api.Message {
 }
 
 // WantBfdEvents represents the VPP binary API message 'want_bfd_events'.
-// Generated from 'bfd.api.json', line 414:
+// Generated from 'bfd.api.json', line 476:
 //
 //            "want_bfd_events",
 //            [
@@ -775,7 +879,7 @@ func NewWantBfdEvents() api.Message {
 }
 
 // WantBfdEventsReply represents the VPP binary API message 'want_bfd_events_reply'.
-// Generated from 'bfd.api.json', line 440:
+// Generated from 'bfd.api.json', line 502:
 //
 //            "want_bfd_events_reply",
 //            [
@@ -812,7 +916,7 @@ func NewWantBfdEventsReply() api.Message {
 }
 
 // BfdAuthSetKey represents the VPP binary API message 'bfd_auth_set_key'.
-// Generated from 'bfd.api.json', line 458:
+// Generated from 'bfd.api.json', line 520:
 //
 //            "bfd_auth_set_key",
 //            [
@@ -869,7 +973,7 @@ func NewBfdAuthSetKey() api.Message {
 }
 
 // BfdAuthSetKeyReply represents the VPP binary API message 'bfd_auth_set_key_reply'.
-// Generated from 'bfd.api.json', line 493:
+// Generated from 'bfd.api.json', line 555:
 //
 //            "bfd_auth_set_key_reply",
 //            [
@@ -906,7 +1010,7 @@ func NewBfdAuthSetKeyReply() api.Message {
 }
 
 // BfdAuthDelKey represents the VPP binary API message 'bfd_auth_del_key'.
-// Generated from 'bfd.api.json', line 511:
+// Generated from 'bfd.api.json', line 573:
 //
 //            "bfd_auth_del_key",
 //            [
@@ -947,7 +1051,7 @@ func NewBfdAuthDelKey() api.Message {
 }
 
 // BfdAuthDelKeyReply represents the VPP binary API message 'bfd_auth_del_key_reply'.
-// Generated from 'bfd.api.json', line 533:
+// Generated from 'bfd.api.json', line 595:
 //
 //            "bfd_auth_del_key_reply",
 //            [
@@ -984,7 +1088,7 @@ func NewBfdAuthDelKeyReply() api.Message {
 }
 
 // BfdAuthKeysDump represents the VPP binary API message 'bfd_auth_keys_dump'.
-// Generated from 'bfd.api.json', line 551:
+// Generated from 'bfd.api.json', line 613:
 //
 //            "bfd_auth_keys_dump",
 //            [
@@ -1019,7 +1123,7 @@ func NewBfdAuthKeysDump() api.Message {
 }
 
 // BfdAuthKeysDetails represents the VPP binary API message 'bfd_auth_keys_details'.
-// Generated from 'bfd.api.json', line 569:
+// Generated from 'bfd.api.json', line 631:
 //
 //            "bfd_auth_keys_details",
 //            [
@@ -1066,7 +1170,7 @@ func NewBfdAuthKeysDetails() api.Message {
 }
 
 // BfdUDPAuthActivate represents the VPP binary API message 'bfd_udp_auth_activate'.
-// Generated from 'bfd.api.json', line 595:
+// Generated from 'bfd.api.json', line 657:
 //
 //            "bfd_udp_auth_activate",
 //            [
@@ -1139,7 +1243,7 @@ func NewBfdUDPAuthActivate() api.Message {
 }
 
 // BfdUDPAuthActivateReply represents the VPP binary API message 'bfd_udp_auth_activate_reply'.
-// Generated from 'bfd.api.json', line 643:
+// Generated from 'bfd.api.json', line 705:
 //
 //            "bfd_udp_auth_activate_reply",
 //            [
@@ -1176,7 +1280,7 @@ func NewBfdUDPAuthActivateReply() api.Message {
 }
 
 // BfdUDPAuthDeactivate represents the VPP binary API message 'bfd_udp_auth_deactivate'.
-// Generated from 'bfd.api.json', line 661:
+// Generated from 'bfd.api.json', line 723:
 //
 //            "bfd_udp_auth_deactivate",
 //            [
@@ -1239,7 +1343,7 @@ func NewBfdUDPAuthDeactivate() api.Message {
 }
 
 // BfdUDPAuthDeactivateReply represents the VPP binary API message 'bfd_udp_auth_deactivate_reply'.
-// Generated from 'bfd.api.json', line 701:
+// Generated from 'bfd.api.json', line 763:
 //
 //            "bfd_udp_auth_deactivate_reply",
 //            [
@@ -1287,6 +1391,7 @@ type Services interface {
 	BfdUDPAuthDeactivate(*BfdUDPAuthDeactivate) (*BfdUDPAuthDeactivateReply, error)
 	BfdUDPDel(*BfdUDPDel) (*BfdUDPDelReply, error)
 	BfdUDPDelEchoSource(*BfdUDPDelEchoSource) (*BfdUDPDelEchoSourceReply, error)
+	BfdUDPGetEchoSource(*BfdUDPGetEchoSource) (*BfdUDPGetEchoSourceReply, error)
 	BfdUDPMod(*BfdUDPMod) (*BfdUDPModReply, error)
 	BfdUDPSessionSetFlags(*BfdUDPSessionSetFlags) (*BfdUDPSessionSetFlagsReply, error)
 	BfdUDPSetEchoSource(*BfdUDPSetEchoSource) (*BfdUDPSetEchoSourceReply, error)
@@ -1298,6 +1403,8 @@ func init() {
 	api.RegisterMessage((*BfdUDPSetEchoSourceReply)(nil), "bfd.BfdUDPSetEchoSourceReply")
 	api.RegisterMessage((*BfdUDPDelEchoSource)(nil), "bfd.BfdUDPDelEchoSource")
 	api.RegisterMessage((*BfdUDPDelEchoSourceReply)(nil), "bfd.BfdUDPDelEchoSourceReply")
+	api.RegisterMessage((*BfdUDPGetEchoSource)(nil), "bfd.BfdUDPGetEchoSource")
+	api.RegisterMessage((*BfdUDPGetEchoSourceReply)(nil), "bfd.BfdUDPGetEchoSourceReply")
 	api.RegisterMessage((*BfdUDPAdd)(nil), "bfd.BfdUDPAdd")
 	api.RegisterMessage((*BfdUDPAddReply)(nil), "bfd.BfdUDPAddReply")
 	api.RegisterMessage((*BfdUDPMod)(nil), "bfd.BfdUDPMod")

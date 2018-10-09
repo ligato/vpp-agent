@@ -8,8 +8,8 @@ It is generated from this file:
 	ipsec.api.json
 
 It contains these VPP binary API objects:
-	46 messages
-	23 services
+	48 messages
+	24 services
 */
 package ipsec
 
@@ -1793,8 +1793,85 @@ func NewIkev2InitiateRekeyChildSaReply() api.Message {
 	return &Ikev2InitiateRekeyChildSaReply{}
 }
 
-// IpsecSpdDump represents the VPP binary API message 'ipsec_spd_dump'.
+// IpsecSpdsDump represents the VPP binary API message 'ipsec_spds_dump'.
 // Generated from 'ipsec.api.json', line 1021:
+//
+//            "ipsec_spds_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type IpsecSpdsDump struct{}
+
+func (*IpsecSpdsDump) GetMessageName() string {
+	return "ipsec_spds_dump"
+}
+func (*IpsecSpdsDump) GetCrcString() string {
+	return "51077d14"
+}
+func (*IpsecSpdsDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+func NewIpsecSpdsDump() api.Message {
+	return &IpsecSpdsDump{}
+}
+
+// IpsecSpdsDetails represents the VPP binary API message 'ipsec_spds_details'.
+// Generated from 'ipsec.api.json', line 1039:
+//
+//            "ipsec_spds_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "spd_id"
+//            ],
+//            [
+//                "u32",
+//                "npolicies"
+//            ],
+//            {
+//                "crc": "0xa04bb254"
+//            }
+//
+type IpsecSpdsDetails struct {
+	SpdID     uint32
+	Npolicies uint32
+}
+
+func (*IpsecSpdsDetails) GetMessageName() string {
+	return "ipsec_spds_details"
+}
+func (*IpsecSpdsDetails) GetCrcString() string {
+	return "a04bb254"
+}
+func (*IpsecSpdsDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+func NewIpsecSpdsDetails() api.Message {
+	return &IpsecSpdsDetails{}
+}
+
+// IpsecSpdDump represents the VPP binary API message 'ipsec_spd_dump'.
+// Generated from 'ipsec.api.json', line 1061:
 //
 //            "ipsec_spd_dump",
 //            [
@@ -1840,7 +1917,7 @@ func NewIpsecSpdDump() api.Message {
 }
 
 // IpsecSpdDetails represents the VPP binary API message 'ipsec_spd_details'.
-// Generated from 'ipsec.api.json', line 1047:
+// Generated from 'ipsec.api.json', line 1087:
 //
 //            "ipsec_spd_details",
 //            [
@@ -1961,7 +2038,7 @@ func NewIpsecSpdDetails() api.Message {
 }
 
 // IpsecTunnelIfAddDel represents the VPP binary API message 'ipsec_tunnel_if_add_del'.
-// Generated from 'ipsec.api.json', line 1133:
+// Generated from 'ipsec.api.json', line 1173:
 //
 //            "ipsec_tunnel_if_add_del",
 //            [
@@ -2098,7 +2175,7 @@ func NewIpsecTunnelIfAddDel() api.Message {
 }
 
 // IpsecTunnelIfAddDelReply represents the VPP binary API message 'ipsec_tunnel_if_add_del_reply'.
-// Generated from 'ipsec.api.json', line 1233:
+// Generated from 'ipsec.api.json', line 1273:
 //
 //            "ipsec_tunnel_if_add_del_reply",
 //            [
@@ -2140,7 +2217,7 @@ func NewIpsecTunnelIfAddDelReply() api.Message {
 }
 
 // IpsecSaDump represents the VPP binary API message 'ipsec_sa_dump'.
-// Generated from 'ipsec.api.json', line 1255:
+// Generated from 'ipsec.api.json', line 1295:
 //
 //            "ipsec_sa_dump",
 //            [
@@ -2181,7 +2258,7 @@ func NewIpsecSaDump() api.Message {
 }
 
 // IpsecSaDetails represents the VPP binary API message 'ipsec_sa_details'.
-// Generated from 'ipsec.api.json', line 1277:
+// Generated from 'ipsec.api.json', line 1317:
 //
 //            "ipsec_sa_details",
 //            [
@@ -2327,7 +2404,7 @@ func NewIpsecSaDetails() api.Message {
 }
 
 // IpsecTunnelIfSetKey represents the VPP binary API message 'ipsec_tunnel_if_set_key'.
-// Generated from 'ipsec.api.json', line 1383:
+// Generated from 'ipsec.api.json', line 1423:
 //
 //            "ipsec_tunnel_if_set_key",
 //            [
@@ -2389,7 +2466,7 @@ func NewIpsecTunnelIfSetKey() api.Message {
 }
 
 // IpsecTunnelIfSetKeyReply represents the VPP binary API message 'ipsec_tunnel_if_set_key_reply'.
-// Generated from 'ipsec.api.json', line 1422:
+// Generated from 'ipsec.api.json', line 1462:
 //
 //            "ipsec_tunnel_if_set_key_reply",
 //            [
@@ -2426,7 +2503,7 @@ func NewIpsecTunnelIfSetKeyReply() api.Message {
 }
 
 // IpsecTunnelIfSetSa represents the VPP binary API message 'ipsec_tunnel_if_set_sa'.
-// Generated from 'ipsec.api.json', line 1440:
+// Generated from 'ipsec.api.json', line 1480:
 //
 //            "ipsec_tunnel_if_set_sa",
 //            [
@@ -2477,7 +2554,7 @@ func NewIpsecTunnelIfSetSa() api.Message {
 }
 
 // IpsecTunnelIfSetSaReply represents the VPP binary API message 'ipsec_tunnel_if_set_sa_reply'.
-// Generated from 'ipsec.api.json', line 1470:
+// Generated from 'ipsec.api.json', line 1510:
 //
 //            "ipsec_tunnel_if_set_sa_reply",
 //            [
@@ -2518,6 +2595,7 @@ func NewIpsecTunnelIfSetSaReply() api.Message {
 type Services interface {
 	DumpIpsecSa(*IpsecSaDump) (*IpsecSaDetails, error)
 	DumpIpsecSpd(*IpsecSpdDump) (*IpsecSpdDetails, error)
+	DumpIpsecSpds(*IpsecSpdsDump) (*IpsecSpdsDetails, error)
 	Ikev2InitiateDelChildSa(*Ikev2InitiateDelChildSa) (*Ikev2InitiateDelChildSaReply, error)
 	Ikev2InitiateDelIkeSa(*Ikev2InitiateDelIkeSa) (*Ikev2InitiateDelIkeSaReply, error)
 	Ikev2InitiateRekeyChildSa(*Ikev2InitiateRekeyChildSa) (*Ikev2InitiateRekeyChildSaReply, error)
@@ -2578,6 +2656,8 @@ func init() {
 	api.RegisterMessage((*Ikev2InitiateDelChildSaReply)(nil), "ipsec.Ikev2InitiateDelChildSaReply")
 	api.RegisterMessage((*Ikev2InitiateRekeyChildSa)(nil), "ipsec.Ikev2InitiateRekeyChildSa")
 	api.RegisterMessage((*Ikev2InitiateRekeyChildSaReply)(nil), "ipsec.Ikev2InitiateRekeyChildSaReply")
+	api.RegisterMessage((*IpsecSpdsDump)(nil), "ipsec.IpsecSpdsDump")
+	api.RegisterMessage((*IpsecSpdsDetails)(nil), "ipsec.IpsecSpdsDetails")
 	api.RegisterMessage((*IpsecSpdDump)(nil), "ipsec.IpsecSpdDump")
 	api.RegisterMessage((*IpsecSpdDetails)(nil), "ipsec.IpsecSpdDetails")
 	api.RegisterMessage((*IpsecTunnelIfAddDel)(nil), "ipsec.IpsecTunnelIfAddDel")

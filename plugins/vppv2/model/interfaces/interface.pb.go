@@ -53,7 +53,7 @@ func (x Interface_Type) String() string {
 	return proto.EnumName(Interface_Type_name, int32(x))
 }
 func (Interface_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 0}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 0}
 }
 
 // from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
@@ -86,7 +86,7 @@ func (x Interface_RxModeSettings_RxModeType) String() string {
 	return proto.EnumName(Interface_RxModeSettings_RxModeType_name, int32(x))
 }
 func (Interface_RxModeSettings_RxModeType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 1, 0}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 1, 0}
 }
 
 type Interface_MemifLink_MemifMode int32
@@ -112,7 +112,7 @@ func (x Interface_MemifLink_MemifMode) String() string {
 	return proto.EnumName(Interface_MemifLink_MemifMode_name, int32(x))
 }
 func (Interface_MemifLink_MemifMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 3, 0}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 3, 0}
 }
 
 type Interface struct {
@@ -142,7 +142,7 @@ func (m *Interface) Reset()         { *m = Interface{} }
 func (m *Interface) String() string { return proto.CompactTextString(m) }
 func (*Interface) ProtoMessage()    {}
 func (*Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0}
+	return fileDescriptor_interface_c19779f243337e56, []int{0}
 }
 func (m *Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface.Unmarshal(m, b)
@@ -420,7 +420,7 @@ func (m *Interface_Unnumbered) Reset()         { *m = Interface_Unnumbered{} }
 func (m *Interface_Unnumbered) String() string { return proto.CompactTextString(m) }
 func (*Interface_Unnumbered) ProtoMessage()    {}
 func (*Interface_Unnumbered) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 0}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 0}
 }
 func (m *Interface_Unnumbered) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_Unnumbered.Unmarshal(m, b)
@@ -467,7 +467,7 @@ func (m *Interface_RxModeSettings) Reset()         { *m = Interface_RxModeSettin
 func (m *Interface_RxModeSettings) String() string { return proto.CompactTextString(m) }
 func (*Interface_RxModeSettings) ProtoMessage()    {}
 func (*Interface_RxModeSettings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 1}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 1}
 }
 func (m *Interface_RxModeSettings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_RxModeSettings.Unmarshal(m, b)
@@ -521,7 +521,7 @@ func (m *Interface_RxPlacementSettings) Reset()         { *m = Interface_RxPlace
 func (m *Interface_RxPlacementSettings) String() string { return proto.CompactTextString(m) }
 func (*Interface_RxPlacementSettings) ProtoMessage()    {}
 func (*Interface_RxPlacementSettings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 2}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 2}
 }
 func (m *Interface_RxPlacementSettings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_RxPlacementSettings.Unmarshal(m, b)
@@ -581,7 +581,7 @@ func (m *Interface_MemifLink) Reset()         { *m = Interface_MemifLink{} }
 func (m *Interface_MemifLink) String() string { return proto.CompactTextString(m) }
 func (*Interface_MemifLink) ProtoMessage()    {}
 func (*Interface_MemifLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 3}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 3}
 }
 func (m *Interface_MemifLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_MemifLink.Unmarshal(m, b)
@@ -678,7 +678,7 @@ func (m *Interface_VxlanLink) Reset()         { *m = Interface_VxlanLink{} }
 func (m *Interface_VxlanLink) String() string { return proto.CompactTextString(m) }
 func (*Interface_VxlanLink) ProtoMessage()    {}
 func (*Interface_VxlanLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 4}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 4}
 }
 func (m *Interface_VxlanLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_VxlanLink.Unmarshal(m, b)
@@ -737,7 +737,7 @@ func (m *Interface_AfpacketLink) Reset()         { *m = Interface_AfpacketLink{}
 func (m *Interface_AfpacketLink) String() string { return proto.CompactTextString(m) }
 func (*Interface_AfpacketLink) ProtoMessage()    {}
 func (*Interface_AfpacketLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 5}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 5}
 }
 func (m *Interface_AfpacketLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_AfpacketLink.Unmarshal(m, b)
@@ -779,7 +779,7 @@ func (m *Interface_TapLink) Reset()         { *m = Interface_TapLink{} }
 func (m *Interface_TapLink) String() string { return proto.CompactTextString(m) }
 func (*Interface_TapLink) ProtoMessage()    {}
 func (*Interface_TapLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_dc2d98013fb08eff, []int{0, 6}
+	return fileDescriptor_interface_c19779f243337e56, []int{0, 6}
 }
 func (m *Interface_TapLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_TapLink.Unmarshal(m, b)
@@ -848,9 +848,9 @@ func init() {
 	proto.RegisterEnum("interfaces.Interface_MemifLink_MemifMode", Interface_MemifLink_MemifMode_name, Interface_MemifLink_MemifMode_value)
 }
 
-func init() { proto.RegisterFile("interface.proto", fileDescriptor_interface_dc2d98013fb08eff) }
+func init() { proto.RegisterFile("interface.proto", fileDescriptor_interface_c19779f243337e56) }
 
-var fileDescriptor_interface_dc2d98013fb08eff = []byte{
+var fileDescriptor_interface_c19779f243337e56 = []byte{
 	// 1047 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0xdd, 0x72, 0xdb, 0x44,
 	0x14, 0x8e, 0x1c, 0xc7, 0xb6, 0x8e, 0xff, 0xd4, 0x4d, 0x4b, 0x85, 0x81, 0xa9, 0x09, 0x1d, 0x48,

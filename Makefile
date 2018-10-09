@@ -127,7 +127,7 @@ generate-binapi: get-binapi-generators
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
 
 get-desc-adapter-generator:
-	go install plugins/kvscheduler/descriptor-adapter
+	go install ./plugins/kvscheduler/descriptor-adapter
 
 generate-desc-adapters: get-desc-adapter-generator
 	@echo "=> generating descriptor adapters"

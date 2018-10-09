@@ -42,7 +42,7 @@ func (x LinuxInterface_Type) String() string {
 	return proto.EnumName(LinuxInterface_Type_name, int32(x))
 }
 func (LinuxInterface_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_23713784a9d09635, []int{0, 0}
+	return fileDescriptor_interfaces_79570b6fbe4d29ae, []int{0, 0}
 }
 
 type LinuxInterface struct {
@@ -67,7 +67,7 @@ func (m *LinuxInterface) Reset()         { *m = LinuxInterface{} }
 func (m *LinuxInterface) String() string { return proto.CompactTextString(m) }
 func (*LinuxInterface) ProtoMessage()    {}
 func (*LinuxInterface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_23713784a9d09635, []int{0}
+	return fileDescriptor_interfaces_79570b6fbe4d29ae, []int{0}
 }
 func (m *LinuxInterface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LinuxInterface.Unmarshal(m, b)
@@ -263,7 +263,7 @@ func (m *LinuxInterface_VethLink) Reset()         { *m = LinuxInterface_VethLink
 func (m *LinuxInterface_VethLink) String() string { return proto.CompactTextString(m) }
 func (*LinuxInterface_VethLink) ProtoMessage()    {}
 func (*LinuxInterface_VethLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_23713784a9d09635, []int{0, 0}
+	return fileDescriptor_interfaces_79570b6fbe4d29ae, []int{0, 0}
 }
 func (m *LinuxInterface_VethLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LinuxInterface_VethLink.Unmarshal(m, b)
@@ -301,7 +301,7 @@ func (m *LinuxInterface_TapLink) Reset()         { *m = LinuxInterface_TapLink{}
 func (m *LinuxInterface_TapLink) String() string { return proto.CompactTextString(m) }
 func (*LinuxInterface_TapLink) ProtoMessage()    {}
 func (*LinuxInterface_TapLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_23713784a9d09635, []int{0, 1}
+	return fileDescriptor_interfaces_79570b6fbe4d29ae, []int{0, 1}
 }
 func (m *LinuxInterface_TapLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LinuxInterface_TapLink.Unmarshal(m, b)
@@ -335,9 +335,9 @@ func init() {
 	proto.RegisterEnum("interfaces.LinuxInterface_Type", LinuxInterface_Type_name, LinuxInterface_Type_value)
 }
 
-func init() { proto.RegisterFile("interfaces.proto", fileDescriptor_interfaces_23713784a9d09635) }
+func init() { proto.RegisterFile("interfaces.proto", fileDescriptor_interfaces_79570b6fbe4d29ae) }
 
-var fileDescriptor_interfaces_23713784a9d09635 = []byte{
+var fileDescriptor_interfaces_79570b6fbe4d29ae = []byte{
 	// 423 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0x51, 0x8b, 0xda, 0x40,
 	0x14, 0x85, 0x37, 0x6b, 0xaa, 0xe6, 0xea, 0xda, 0x30, 0x4f, 0x83, 0x14, 0x9a, 0x5a, 0x0a, 0x79,
