@@ -21,8 +21,8 @@ ${IP_1}=               fd30::1:b:0:0:1
 ${IP_2}=               fd30::1:b:0:0:2
 ${IP_3}=               fd31::1:b:0:0:1
 ${IP_4}=               fd31::1:b:0:0:2
-${NET1}=               fd30::1:0:0:0:0
-${NET2}=               fd31::1:0:0:0:0
+${NET1}=               fd30:0:0:1::
+${NET2}=               fd31:0:0:1::
 ${MAC_LOOP1}=          8a:f1:be:90:00:00
 ${MAC_LOOP2}=          8a:f1:be:90:02:00
 ${MAC_MEMIF1}=         02:f1:be:90:00:00
@@ -135,10 +135,10 @@ Pinging
     Ping6 From agent_vpp_1 To ${IP_4}
     #Ping From agent_vpp_2 To ${IP_4}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_2    bvi_loop0
-    Ping6 On agent_vpp_2 With IP ${IP_4}, Source ${int}
+    Ping On agent_vpp_2 With IP ${IP_4}, Source ${int}
     #Ping From agent_vpp_3 To ${IP_2}
     ${int}=    vpp_ctl: Get Interface Internal Name    agent_vpp_3    bvi_loop0
-    Ping6 On agent_vpp_3 With IP ${IP_2}, Source ${int}
+    Ping On agent_vpp_3 With IP ${IP_2}, Source ${int}
 
 *** Keywords ***
 
