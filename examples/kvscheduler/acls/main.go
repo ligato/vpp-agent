@@ -88,14 +88,12 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		Name: "acl1",
 		Rules: []*acl.Acl_Rule{
 			{
-				AclAction: acl.Acl_Rule_PERMIT,
-				Match: &acl.Acl_Rule_Match{
-					MacipRule: &acl.Acl_Rule_Match_MacIpRule{
-						SourceAddress:        "192.168.0.1",
-						SourceAddressPrefix:  16,
-						SourceMacAddress:     "b2:74:8c:12:67:d2",
-						SourceMacAddressMask: "ff:ff:ff:ff:00:00",
-					},
+				Action: acl.Acl_Rule_PERMIT,
+				MacipRule: &acl.Acl_Rule_MacIpRule{
+					SourceAddress:        "192.168.0.1",
+					SourceAddressPrefix:  16,
+					SourceMacAddress:     "b2:74:8c:12:67:d2",
+					SourceMacAddressMask: "ff:ff:ff:ff:00:00",
 				},
 			},
 		},

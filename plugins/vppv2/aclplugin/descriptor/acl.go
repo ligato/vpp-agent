@@ -32,9 +32,11 @@ import (
 )
 
 const (
+	// AclDescriptorName is descriptor name
 	AclDescriptorName = "vpp-acl"
 )
 
+// AclDescriptor is descriptor for ACL
 type AclDescriptor struct {
 	// dependencies
 	log        logging.Logger
@@ -44,6 +46,7 @@ type AclDescriptor struct {
 	ifPlugin ifplugin.API
 }
 
+// NewAclDescriptor is constructor for ACL descriptor
 func NewAclDescriptor(aclHandler vppcalls.ACLVppAPI, ifPlugin ifplugin.API,
 	logger logging.PluginLogger) *AclDescriptor {
 	return &AclDescriptor{
@@ -84,12 +87,12 @@ func (d *AclDescriptor) GetDescriptor() *adapter.AclDescriptor {
 	}
 }
 
+// EquivalentACLs compares two ACLs
 func (d *AclDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool {
-
 	return proto.Equal(oldACL, newACL)
 }
 
-var nonRetriableErrs = []error{}
+var nonRetriableErrs []error
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
 func (d *AclDescriptor) IsRetriableFailure(err error) bool {
@@ -101,6 +104,7 @@ func (d *AclDescriptor) IsRetriableFailure(err error) bool {
 	return true
 }
 
+// Add configures ACL
 func (d *AclDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.AclMetadata, err error) {
 	if len(acl.Rules) == 0 {
 		return nil, errors.Errorf("failed to configure ACL %s, no rules to set", acl.Name)
@@ -157,24 +161,20 @@ func (d *AclDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.AclMetad
 // validateRules provided in ACL. Every rule has to contain actions and matches.
 // Current limitation: L2 and L3/4 have to be split to different ACLs and
 // there cannot be L2 rules and L3/4 rules in the same ACL.
-func (c *AclDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]*acl.Acl_Rule, bool) {
+func (d *AclDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]*acl.Acl_Rule, bool) {
 	var validL3L4Rules []*acl.Acl_Rule
 	var validL2Rules []*acl.Acl_Rule
 
-	for index, rule := range rules {
-		if rule.GetMatch() == nil {
-			c.log.Warnf("invalid ACL %s: rule %d does not contain match", aclName, index)
-			continue
-		}
-		if rule.GetMatch().GetIpRule() != nil {
+	for _, rule := range rules {
+		if rule.GetIpRule() != nil {
 			validL3L4Rules = append(validL3L4Rules, rule)
 		}
-		if rule.GetMatch().GetMacipRule() != nil {
+		if rule.GetMacipRule() != nil {
 			validL2Rules = append(validL2Rules, rule)
 		}
 	}
 	if len(validL3L4Rules) > 0 && len(validL2Rules) > 0 {
-		c.log.Warnf("ACL %s contains L2 rules and L3/L4 rules as well. This case is not supported, only L3/L4 rules will be resolved",
+		d.log.Warnf("ACL %s contains L2 rules and L3/L4 rules as well. This case is not supported, only L3/L4 rules will be resolved",
 			aclName)
 		return validL3L4Rules, false
 	} else if len(validL3L4Rules) > 0 {
@@ -184,6 +184,7 @@ func (c *AclDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]
 	}
 }
 
+// Delete deletes ACL
 func (d *AclDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.AclMetadata) error {
 	if metadata.L2 {
 		/*if acl.GetInterfaces() != nil {
@@ -229,6 +230,7 @@ func (d *AclDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.AclMet
 	return nil
 }
 
+// Modify modifies ACL
 func (d *AclDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata *aclidx.AclMetadata) (newMetadata *aclidx.AclMetadata, err error) {
 	// Validate rules.
 	rules, isL2MacIP := d.validateRules(newACL.Name, newACL.Rules)
@@ -325,12 +327,13 @@ func (d *AclDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata 
 	return newMetadata, nil
 }
 
+// ModifyWithRecreate checks if modification requires recreation
 func (d *AclDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, metadata *aclidx.AclMetadata) bool {
 	var hasL2 bool
 	for _, rule := range oldACL.Rules {
-		if rule.GetMatch().GetMacipRule() != nil {
+		if rule.GetMacipRule() != nil {
 			hasL2 = true
-		} else if rule.GetMatch().GetIpRule() != nil && hasL2 {
+		} else if rule.GetIpRule() != nil && hasL2 {
 			return true
 		}
 	}
@@ -341,14 +344,17 @@ func (d *AclDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, 
 
 }*/
 
+// Dependencies returns list of dependencies for ACL
 func (d *AclDescriptor) Dependencies(key string, value *acl.Acl) []api.Dependency {
 	return nil
 }
 
+// DervicedValues returns list of derived values for ACL
 func (d *AclDescriptor) DerivedValues(key string, value *acl.Acl) []api.KeyValuePair {
 	return nil
 }
 
+// Dump returns list of dumped ACLs with metadata
 func (d *AclDescriptor) Dump(correlate []adapter.AclKVWithMetadata) (dump []adapter.AclKVWithMetadata, err error) {
 	ipACLs, err := d.aclHandler.DumpIPACL(d.ifPlugin.GetInterfaceIndex())
 	if err != nil {

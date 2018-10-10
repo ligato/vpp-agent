@@ -23,7 +23,7 @@ message Acl {
             PERMIT = 1;
             REFLECT = 2;
         };
-        Action action = 2;
+        Action action = 1;
 
         // Access List entry that can define:
         // - IPv4/IPv6 src/dst IP prefix
@@ -88,7 +88,7 @@ message Acl {
             }
             Udp udp = 4;
         }
-        IpRule ip_rule = 1;
+        IpRule ip_rule = 2;
 
         message MacIpRule {
             // Source IP address.
@@ -104,7 +104,7 @@ message Acl {
             // before it is compared with source-mac-address.
             string source_mac_address_mask = 4;
         }
-        MacIpRule macip_rule = 2;
+        MacIpRule macip_rule = 3;
     }
     repeated Rule rules = 2;
 

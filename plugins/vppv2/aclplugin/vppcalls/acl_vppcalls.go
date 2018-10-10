@@ -170,10 +170,10 @@ func (h *ACLVppHandler) DeleteMacIPACL(aclIndex uint32) error {
 func transformACLIpRules(rules []*acl.Acl_Rule) (aclIPRules []aclapi.ACLRule, err error) {
 	for _, rule := range rules {
 		aclRule := &aclapi.ACLRule{
-			IsPermit: uint8(rule.AclAction),
+			IsPermit: uint8(rule.Action),
 		}
 		// Match
-		if ipRule := rule.GetMatch().GetIpRule(); ipRule != nil {
+		if ipRule := rule.GetIpRule(); ipRule != nil {
 			// Concerned to IP rules only
 			// L3
 			if ipRule.Ip != nil {
@@ -199,10 +199,10 @@ func transformACLIpRules(rules []*acl.Acl_Rule) (aclIPRules []aclapi.ACLRule, er
 func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.Acl_Rule) (aclMacIPRules []aclapi.MacipACLRule, err error) {
 	for _, rule := range rules {
 		aclMacIPRule := &aclapi.MacipACLRule{
-			IsPermit: uint8(rule.AclAction),
+			IsPermit: uint8(rule.Action),
 		}
 		// Matche
-		if macIPRule := rule.GetMatch().GetMacipRule(); macIPRule != nil {
+		if macIPRule := rule.GetMacipRule(); macIPRule != nil {
 			// Concerned to MAC IP rules only
 			// Source IP Address + Prefix
 			srcIPAddress := net.ParseIP(macIPRule.SourceAddress)
@@ -236,7 +236,7 @@ func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.Acl_Rule) (aclMacIPR
 
 // The function sets an IP ACL rule fields into provided ACL Rule object. Source
 // and destination addresses have to be the same IP version and contain a network mask.
-func ipACL(ipRule *acl.Acl_Rule_Match_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACLRule, error) {
+func ipACL(ipRule *acl.Acl_Rule_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACLRule, error) {
 	var (
 		err        error
 		srcIP      net.IP
@@ -303,7 +303,7 @@ func ipACL(ipRule *acl.Acl_Rule_Match_IpRule_Ip, aclRule *aclapi.ACLRule) (*acla
 
 // The function sets an ICMP ACL rule fields into provided ACL Rule object.
 // The ranges are exclusive, use first = 0 and last = 255/65535 (icmpv4/icmpv6) to match "any".
-func icmpACL(icmpRule *acl.Acl_Rule_Match_IpRule_Icmp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+func icmpACL(icmpRule *acl.Acl_Rule_IpRule_Icmp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
 	if icmpRule == nil {
 		return aclRule
 	}
@@ -330,7 +330,7 @@ func icmpACL(icmpRule *acl.Acl_Rule_Match_IpRule_Icmp, aclRule *aclapi.ACLRule) 
 }
 
 // Sets an TCP ACL rule fields into provided ACL Rule object.
-func tcpACL(tcpRule *acl.Acl_Rule_Match_IpRule_Tcp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+func tcpACL(tcpRule *acl.Acl_Rule_IpRule_Tcp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
 	aclRule.Proto = TCPProto // IANA TCP
 	aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(tcpRule.SourcePortRange.UpperPort)
@@ -342,7 +342,7 @@ func tcpACL(tcpRule *acl.Acl_Rule_Match_IpRule_Tcp, aclRule *aclapi.ACLRule) *ac
 }
 
 // Sets an UDP ACL rule fields into provided ACL Rule object.
-func udpACL(udpRule *acl.Acl_Rule_Match_IpRule_Udp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+func udpACL(udpRule *acl.Acl_Rule_IpRule_Udp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
 	aclRule.Proto = UDPProto // IANA UDP
 	aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(udpRule.SourcePortRange.UpperPort)

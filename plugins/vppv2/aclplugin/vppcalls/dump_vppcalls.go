@@ -484,14 +484,9 @@ func (h *ACLVppHandler) getIPRuleDetails(rule acl_api.ACLRule) (*acl.Acl_Rule, e
 		return nil, err
 	}
 
-	// Resolve rule matches
-	match := &acl.Acl_Rule_Match{
-		IpRule: h.getIPRuleMatches(rule),
-	}
-
 	return &acl.Acl_Rule{
-		AclAction: aclAction,
-		Match:     match,
+		Action: aclAction,
+		IpRule: h.getIPRuleMatches(rule),
 	}, nil
 }
 
@@ -513,17 +508,13 @@ func (h *ACLVppHandler) getIPACLDetails(idx uint32) (aclRule *acl.Acl, err error
 
 		ipRule, _ := h.getIPRuleDetails(r)
 
-		match := &acl.Acl_Rule_Match{
-			IpRule: ipRule.GetMatch().GetIpRule(),
-		}
-
 		aclAction, err := h.resolveRuleAction(r.IsPermit)
 		if err != nil {
 			return nil, err
 		}
 
-		rule.Match = match
-		rule.AclAction = aclAction
+		rule.IpRule = ipRule.GetIpRule()
+		rule.Action = aclAction
 		ruleData = append(ruleData, rule)
 	}
 
@@ -537,14 +528,9 @@ func (h *ACLVppHandler) getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.Acl
 		return nil, err
 	}
 
-	// Resolve rule matches
-	match := &acl.Acl_Rule_Match{
-		MacipRule: h.getMACIPRuleMatches(rule),
-	}
-
 	return &acl.Acl_Rule{
-		AclAction: aclAction,
-		Match:     match,
+		Action:    aclAction,
+		MacipRule: h.getMACIPRuleMatches(rule),
 	}, nil
 }
 
@@ -566,17 +552,13 @@ func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.Acl, err er
 
 		ipRule, _ := h.getMACIPRuleDetails(r)
 
-		match := &acl.Acl_Rule_Match{
-			IpRule: ipRule.GetMatch().GetIpRule(),
-		}
-
 		aclAction, err := h.resolveRuleAction(r.IsPermit)
 		if err != nil {
 			return nil, err
 		}
 
-		rule.Match = match
-		rule.AclAction = aclAction
+		rule.IpRule = ipRule.GetIpRule()
+		rule.Action = aclAction
 		ruleData = append(ruleData, rule)
 	}
 
@@ -585,7 +567,7 @@ func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.Acl, err er
 
 // getIPRuleMatches translates an IP rule from the binary VPP API format into the
 // ACL Plugin's NB format
-func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.Acl_Rule_Match_IpRule {
+func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.Acl_Rule_IpRule {
 	var srcIP, dstIP string
 	if r.IsIPv6 == 1 {
 		srcIP = net.IP(r.SrcIPAddr).To16().String()
@@ -595,8 +577,8 @@ func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.Acl_Rule_Match_
 		dstIP = net.IP(r.DstIPAddr[:4]).To4().String()
 	}
 
-	ipRule := &acl.Acl_Rule_Match_IpRule{
-		Ip: &acl.Acl_Rule_Match_IpRule_Ip{
+	ipRule := &acl.Acl_Rule_IpRule{
+		Ip: &acl.Acl_Rule_IpRule_Ip{
 			SourceNetwork:      fmt.Sprintf("%s/%d", srcIP, r.SrcIPPrefixLen),
 			DestinationNetwork: fmt.Sprintf("%s/%d", dstIP, r.DstIPPrefixLen),
 		},
@@ -615,7 +597,7 @@ func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.Acl_Rule_Match_
 
 // getMACIPRuleMatches translates an MACIP rule from the binary VPP API format into the
 // ACL Plugin's NB format
-func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.Acl_Rule_Match_MacIpRule {
+func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.Acl_Rule_MacIpRule {
 	var srcAddr string
 	if rule.IsIPv6 == 1 {
 		srcAddr = net.IP(rule.SrcIPAddr).To16().String()
@@ -624,7 +606,7 @@ func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.Acl_
 	}
 	srcMacAddr := net.HardwareAddr(rule.SrcMac)
 	srcMacAddrMask := net.HardwareAddr(rule.SrcMacMask)
-	return &acl.Acl_Rule_Match_MacIpRule{
+	return &acl.Acl_Rule_MacIpRule{
 		SourceAddress:        srcAddr,
 		SourceAddressPrefix:  uint32(rule.SrcIPPrefixLen),
 		SourceMacAddress:     srcMacAddr.String(),
@@ -634,16 +616,16 @@ func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.Acl_
 
 // getTCPMatchRule translates a TCP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
-func (h *ACLVppHandler) getTCPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_Match_IpRule_Tcp {
-	dstPortRange := &acl.Acl_Rule_Match_IpRule_PortRange{
+func (h *ACLVppHandler) getTCPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_Tcp {
+	dstPortRange := &acl.Acl_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
 	}
-	srcPortRange := &acl.Acl_Rule_Match_IpRule_PortRange{
+	srcPortRange := &acl.Acl_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.SrcportOrIcmptypeFirst),
 		UpperPort: uint32(r.SrcportOrIcmptypeLast),
 	}
-	tcp := acl.Acl_Rule_Match_IpRule_Tcp{
+	tcp := acl.Acl_Rule_IpRule_Tcp{
 		DestinationPortRange: dstPortRange,
 		SourcePortRange:      srcPortRange,
 		TcpFlagsMask:         uint32(r.TCPFlagsMask),
@@ -654,16 +636,16 @@ func (h *ACLVppHandler) getTCPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_Match_I
 
 // getUDPMatchRule translates a UDP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
-func (h *ACLVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_Match_IpRule_Udp {
-	dstPortRange := &acl.Acl_Rule_Match_IpRule_PortRange{
+func (h *ACLVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_Udp {
+	dstPortRange := &acl.Acl_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
 	}
-	srcPortRange := &acl.Acl_Rule_Match_IpRule_PortRange{
+	srcPortRange := &acl.Acl_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.SrcportOrIcmptypeFirst),
 		UpperPort: uint32(r.SrcportOrIcmptypeLast),
 	}
-	udp := acl.Acl_Rule_Match_IpRule_Udp{
+	udp := acl.Acl_Rule_IpRule_Udp{
 		DestinationPortRange: dstPortRange,
 		SourcePortRange:      srcPortRange,
 	}
@@ -672,11 +654,11 @@ func (h *ACLVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_Match_I
 
 // getIcmpMatchRule translates an ICMP match rule from the binary VPP API
 // format into the ACL Plugin's NB format
-func (h *ACLVppHandler) getIcmpMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_Match_IpRule_Icmp {
-	icmp := &acl.Acl_Rule_Match_IpRule_Icmp{
+func (h *ACLVppHandler) getIcmpMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_Icmp {
+	icmp := &acl.Acl_Rule_IpRule_Icmp{
 		Icmpv6:        r.IsIPv6 > 0,
-		IcmpCodeRange: &acl.Acl_Rule_Match_IpRule_Icmp_Range{},
-		IcmpTypeRange: &acl.Acl_Rule_Match_IpRule_Icmp_Range{},
+		IcmpCodeRange: &acl.Acl_Rule_IpRule_Icmp_Range{},
+		IcmpTypeRange: &acl.Acl_Rule_IpRule_Icmp_Range{},
 	}
 	return icmp
 }
