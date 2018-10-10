@@ -97,7 +97,7 @@ type IfPlugin struct {
 	wg     sync.WaitGroup
 }
 
-// Deps lists dependencies of the interface p.
+// Deps lists dependencies of the interface plugin.
 type Deps struct {
 	infra.PluginDeps
 	Scheduler scheduler.KVScheduler
