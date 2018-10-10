@@ -14,6 +14,11 @@
 
 package acl
 
+import (
+	fmt "fmt"
+	"strings"
+)
+
 const (
 	// Prefix is ACL key prefix
 	Prefix = "vpp/config/v2/acl/"
@@ -23,4 +28,13 @@ const (
 // of a particular ACL in selected vpp instance.
 func Key(aclName string) string {
 	return Prefix + aclName
+}
+
+// ParseNameFromKey returns suffix of the key.
+func ParseNameFromKey(key string) (name string, err error) {
+	name = strings.TrimPrefix(key, Prefix)
+	if name == key {
+		return name, fmt.Errorf("wrong format of the key %s", key)
+	}
+	return name, nil
 }

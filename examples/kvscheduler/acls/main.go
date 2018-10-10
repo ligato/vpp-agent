@@ -55,9 +55,6 @@ func main() {
 	}
 }
 
-// PluginName is a constant with name of main plugin.
-const PluginName = "acls-example"
-
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
@@ -67,26 +64,26 @@ type ExamplePlugin struct {
 }
 
 // String returns plugin name
-func (plugin *ExamplePlugin) String() string {
-	return PluginName
+func (p *ExamplePlugin) String() string {
+	return "acls-example"
 }
 
 // Init handles initialization phase.
-func (plugin *ExamplePlugin) Init() error {
+func (p *ExamplePlugin) Init() error {
 	return nil
 }
 
 // AfterInit handles phase after initialization.
-func (plugin *ExamplePlugin) AfterInit() error {
-	go plugin.testLocalClientWithScheduler()
+func (p *ExamplePlugin) AfterInit() error {
+	go p.testLocalClientWithScheduler()
 	return nil
 }
 
 // Close cleans up the resources.
-func (plugin *ExamplePlugin) Close() error {
+func (p *ExamplePlugin) Close() error {
 	return nil
 }
-func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
+func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	acl1 := &acl.Acl{
 		Name: "acl1",
 		Rules: []*acl.Acl_Rule{
@@ -136,14 +133,14 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	*/
 
 	// test Linux interface metadata map
-	/*linuxIfIndex := plugin.LinuxIfPlugin.GetInterfaceIndex()
+	/*linuxIfIndex := p.LinuxIfPlugin.GetInterfaceIndex()
 	linuxIfMeta, exists := linuxIfIndex.LookupByName(veth1LogicalName)
 	fmt.Printf("Linux interface %s: found=%t, meta=%v\n", veth1LogicalName, exists, linuxIfMeta)
 	linuxIfMeta, exists = linuxIfIndex.LookupByName(linuxTapLogicalName)
 	fmt.Printf("Linux interface %s: found=%t, meta=%v\n", linuxTapLogicalName, exists, linuxIfMeta)
 
 	// test VPP interface metadata map
-	vppIfIndex := plugin.VPPIfPlugin.GetInterfaceIndex()
+	vppIfIndex := p.VPPIfPlugin.GetInterfaceIndex()
 	vppIfMeta, exists := vppIfIndex.LookupByName(afPacketLogicalName)
 	fmt.Printf("VPP interface %s: found=%t, meta=%v\n", afPacketLogicalName, exists, vppIfMeta)
 	vppIfMeta, exists = vppIfIndex.LookupByName(vppTapLogicalName)

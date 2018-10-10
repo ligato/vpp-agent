@@ -77,7 +77,7 @@ func (p *AclPlugin) Init() (err error) {
 	p.aclHandler = vppcalls.NewACLVppHandler(p.vppCh, p.dumpVppCh)
 
 	// init descriptors
-	p.aclDesriptor = descriptor.NewAclDescriptor(p.aclHandler, p.IfPlugin)
+	p.aclDesriptor = descriptor.NewAclDescriptor(p.aclHandler, p.IfPlugin, p.Log)
 	aclDescriptor := adapter.NewAclDescriptor(p.aclDesriptor.GetDescriptor())
 
 	// register descriptors
@@ -92,7 +92,7 @@ func (p *AclPlugin) Init() (err error) {
 	}
 
 	// pass read-only index map to descriptors
-	p.aclDesriptor.SetACLIndex(p.aclIndex)
+	//p.aclDesriptor.SetACLIndex(p.aclIndex)
 
 	return nil
 }
