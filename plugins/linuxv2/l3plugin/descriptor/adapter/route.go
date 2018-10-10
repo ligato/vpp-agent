@@ -24,7 +24,7 @@ type RouteDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, v1, v2 *l3.LinuxStaticRoute) bool
+	ValueComparator    func(key string, oldValue, newValue *l3.LinuxStaticRoute) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
@@ -89,13 +89,13 @@ func NewRouteDescriptor(typedDescriptor *RouteDescriptor) *KVDescriptor {
 	return descriptor
 }
 
-func (da *RouteDescriptorAdapter) ValueComparator(key string, v1, v2 proto.Message) bool {
-	typedV1, err1 := castRouteValue(key, v1)
-	typedV2, err2 := castRouteValue(key, v2)
+func (da *RouteDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castRouteValue(key, oldValue)
+	typedNewValue, err2 := castRouteValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
-	return da.descriptor.ValueComparator(key, typedV1, typedV2)
+	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
 func (da *RouteDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {

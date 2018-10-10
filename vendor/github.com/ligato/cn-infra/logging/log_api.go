@@ -16,6 +16,7 @@ package logging
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -113,11 +114,11 @@ type LogWithLevel interface {
 
 // Logger provides logging capabilities
 type Logger interface {
-	// GetName return the logger name
+	// GetName returns the logger name
 	GetName() string
-	// SetLevel modifies the LogLevel
+	// SetLevel modifies the log level
 	SetLevel(level LogLevel)
-	// GetLevel returns currently set logLevel
+	// GetLevel returns currently set log level
 	GetLevel() LogLevel
 	// WithField creates one structured field
 	WithField(key string, value interface{}) LogWithLevel
@@ -125,6 +126,10 @@ type Logger interface {
 	WithFields(fields Fields) LogWithLevel
 	// Add hook to send log to external address
 	AddHook(hook logrus.Hook)
+	// SetOutput sets output writer
+	SetOutput(out io.Writer)
+	// SetFormatter sets custom formatter
+	SetFormatter(formatter logrus.Formatter)
 
 	LogWithLevel
 }
@@ -169,32 +174,37 @@ type PluginLogger interface {
 func ForPlugin(name string) PluginLogger {
 	if logger, found := DefaultRegistry.Lookup(name); found {
 		DefaultLogger.Debugf("using plugin logger for %q that was already initialized", name)
-		return &pluginLogger{
-			Logger:        logger,
-			LoggerFactory: &prefixedLoggerFactory{name, DefaultRegistry},
+		return &ParentLogger{
+			Logger:  logger,
+			Prefix:  name,
+			Factory: DefaultRegistry,
 		}
 	}
-	return NewPluginLogger(name, DefaultRegistry)
+	return NewParentLogger(name, DefaultRegistry)
 }
 
-// NewPluginLogger creates new logger with given LoggerFactory.
-func NewPluginLogger(name string, factory LoggerFactory) PluginLogger {
-	return &pluginLogger{
-		Logger:        factory.NewLogger(name),
-		LoggerFactory: &prefixedLoggerFactory{name, factory},
+// NewParentLogger creates new parent logger with given LoggerFactory and name as prefix.
+func NewParentLogger(name string, factory LoggerFactory) *ParentLogger {
+	return &ParentLogger{
+		Logger:  factory.NewLogger(name),
+		Prefix:  name,
+		Factory: factory,
 	}
 }
 
-type pluginLogger struct {
+// ParentLogger provides logger with logger factory that creates loggers with prefix.
+type ParentLogger struct {
 	Logger
-	LoggerFactory
+	Prefix  string
+	Factory LoggerFactory
 }
 
-type prefixedLoggerFactory struct {
-	prefix  string
-	factory LoggerFactory
-}
-
-func (p *prefixedLoggerFactory) NewLogger(name string) Logger {
-	return p.factory.NewLogger(p.prefix + name)
+// NewLogger returns logger using name prefixed with prefix defined in parent logger.
+// If Factory is nil, DefaultRegistry is used.
+func (p *ParentLogger) NewLogger(name string) Logger {
+	factory := p.Factory
+	if factory == nil {
+		factory = DefaultRegistry
+	}
+	return factory.NewLogger(fmt.Sprintf("%s.%s", p.Prefix, name))
 }

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/interfaces --proto_path=${GOPATH}/src --gogo_out=../model/interfaces interfaces.proto
 //go:generate descriptor-adapter --descriptor-name Interface  --value-type *interfaces.LinuxInterface --meta-type *ifaceidx.LinuxIfMetadata --import "../model/interfaces" --import "ifaceidx" --output-dir "descriptor"
 
 package ifplugin
@@ -21,7 +20,6 @@ import (
 	"github.com/go-errors/errors"
 
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/servicelabel"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -38,7 +36,6 @@ type IfPlugin struct {
 
 	// From configuration file
 	disabled  bool
-	stopwatch *measure.Stopwatch
 
 	// system handlers
 	ifHandler linuxcalls.NetlinkAPI
@@ -57,11 +54,11 @@ type Deps struct {
 	ServiceLabel servicelabel.ReaderAPI
 	Scheduler    scheduler.KVScheduler
 	NsPlugin     nsplugin.API
+	VppIfPlugin  descriptor.VPPIfPluginAPI /* mandatory if TAP_TO_VPP interfaces are used */
 }
 
-// Config holds the nsplugin configuration.
+// Config holds the ifplugin configuration.
 type Config struct {
-	Stopwatch bool `json:"stopwatch"`
 	Disabled  bool `json:"disabled"`
 }
 
@@ -79,22 +76,14 @@ func (p *IfPlugin) Init() error {
 			p.Log.Infof("Disabling Linux Interface plugin")
 			return nil
 		}
-		if config.Stopwatch {
-			p.Log.Infof("stopwatch enabled for %v", p.PluginName)
-			p.stopwatch = measure.NewStopwatch("Linux-IfPlugin", p.Log)
-		} else {
-			p.Log.Infof("stopwatch disabled for %v", p.PluginName)
-		}
-	} else {
-		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 
 	// init handlers
-	p.ifHandler = linuxcalls.NewNetLinkHandler(p.stopwatch)
+	p.ifHandler = linuxcalls.NewNetLinkHandler()
 
 	// init & register descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(
-		p.Scheduler, p.ServiceLabel, p.NsPlugin, p.ifHandler, p.Log)
+		p.Scheduler, p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
 	p.ifWatcher = descriptor.NewInterfaceWatcher(p.Scheduler, p.ifHandler, p.Log)
 	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)

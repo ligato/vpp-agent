@@ -170,11 +170,35 @@ func (plugin *Plugin) registerL3Handlers() {
 	})
 }
 
-// Registers L3 plugin REST handlers
+// Registers L4 plugin REST handlers
 func (plugin *Plugin) registerL4Handlers() {
 	// GET static routes
 	plugin.registerHTTPHandler(resturl.Sessions, GET, func() (interface{}, error) {
 		return plugin.l4Handler.DumpL4Config()
+	})
+}
+
+// Registers linux interface plugin REST handlers
+func (plugin *Plugin) registerLinuxInterfaceHandlers() {
+	// GET linux interfaces
+	plugin.registerHTTPHandler(resturl.LinuxInterface, GET, func() (interface{}, error) {
+		return plugin.linuxIfHandler.DumpInterfaces()
+	})
+	// GET linux interface stats
+	plugin.registerHTTPHandler(resturl.LinuxInterfaceStats, GET, func() (interface{}, error) {
+		return plugin.linuxIfHandler.DumpInterfaceStatistics()
+	})
+}
+
+// Registers linux L3 plugin REST handlers
+func (plugin *Plugin) registerLinuxL3Handlers() {
+	// GET linux routes
+	plugin.registerHTTPHandler(resturl.LinuxRoutes, GET, func() (interface{}, error) {
+		return plugin.linuxL3Handler.DumpRoutes()
+	})
+	// GET linux ARPs
+	plugin.registerHTTPHandler(resturl.LinuxArps, GET, func() (interface{}, error) {
+		return plugin.linuxL3Handler.DumpArpEntries()
 	})
 }
 
@@ -184,6 +208,11 @@ func (plugin *Plugin) registerTelemetryHandlers() {
 	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.TMemory, plugin.telemetryMemoryHandler, GET)
 	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.TRuntime, plugin.telemetryRuntimeHandler, GET)
 	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.TNodeCount, plugin.telemetryNodeCountHandler, GET)
+}
+
+// Registers Tracer handler
+func (plugin *Plugin) registerTracerHandler() {
+	plugin.HTTPHandlers.RegisterHTTPHandler(resturl.Tracer, plugin.tracerHandler, GET)
 }
 
 // Registers command handler
@@ -413,5 +442,31 @@ func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.H
 		}
 
 		formatter.JSON(w, http.StatusOK, nodeCounters)
+	}
+}
+
+// tracerHandler - returns binary API call trace
+func (plugin *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		ch, err := plugin.GoVppmux.NewAPIChannel()
+		if err != nil {
+			plugin.Log.Errorf("Error creating channel: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		defer ch.Close()
+
+		entries := plugin.GoVppmux.GetTrace()
+		if err != nil {
+			plugin.Log.Errorf("Sending command failed: %v", err)
+			formatter.JSON(w, http.StatusInternalServerError, err)
+			return
+		}
+		if entries == nil {
+			formatter.JSON(w, http.StatusOK, "VPP api trace is disabled")
+			return
+		}
+
+		formatter.JSON(w, http.StatusOK, entries)
 	}
 }

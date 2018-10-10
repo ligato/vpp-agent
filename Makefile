@@ -1,8 +1,8 @@
 include vpp.env
 
-VERSION	?= $(shell git describe --always --tags --dirty)
-COMMIT	?= $(shell git rev-parse HEAD)
-DATE	:= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
+VERSION ?= $(shell git describe --always --tags --dirty)
+COMMIT  ?= $(shell git rev-parse HEAD)
+DATE    ?= $(shell git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
 
 CNINFRA := github.com/ligato/vpp-agent/vendor/github.com/ligato/cn-infra/agent
 LDFLAGS = -X $(CNINFRA).BuildVersion=$(VERSION) -X $(CNINFRA).CommitHash=$(COMMIT) -X $(CNINFRA).BuildDate=$(DATE)
@@ -101,7 +101,7 @@ test-cover-xml: test-cover
 	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
 
 # Code generation
-generate: generate-proto generate-binapi
+generate: generate-proto generate-binapi generate-desc-adapters
 
 # Get generator tools
 get-proto-generators:
@@ -112,6 +112,8 @@ generate-proto: get-proto-generators
 	@echo "=> generating proto"
 	cd plugins/linux/model && go generate
 	cd plugins/vpp/model && go generate
+	cd plugins/linuxv2/model && go generate
+	cd plugins/vppv2/model && go generate
 
 # Get generator tools
 get-binapi-generators:
@@ -123,6 +125,15 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi && go generate
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
+
+get-desc-adapter-generator:
+	go install ./plugins/kvscheduler/descriptor-adapter
+
+generate-desc-adapters: get-desc-adapter-generator
+	@echo "=> generating descriptor adapters"
+	cd plugins/linuxv2/ifplugin && go generate
+	cd plugins/linuxv2/l3plugin && go generate
+	cd plugins/vppv2/ifplugin && go generate
 
 verify-binapi:
 	@echo "=> verifying binary api"
@@ -214,6 +225,14 @@ yamllint: get-yamllint
 	@echo "=> linting the yaml files"
 	yamllint -c .yamllint.yml $(shell git ls-files '*.yaml' '*.yml' | grep -v 'vendor/')
 
+images: dev-image prod-image
+
+dev-image:
+	./docker/dev/build.sh
+
+prod-image:
+	./docker/prod/build.sh
+
 .PHONY: build clean \
 	install cmd examples clean-examples test \
 	test-cover test-cover-html test-cover-xml \
@@ -222,4 +241,5 @@ yamllint: get-yamllint
 	get-linters lint format \
 	get-linkcheck check-links \
 	travis \
-	get-yamllint yamllint
+	get-yamllint yamllint \
+	images dev-image prod-image

@@ -16,7 +16,6 @@ package nsplugin
 
 import (
 	"context"
-	"net"
 	"runtime"
 	"sync"
 	"syscall"
@@ -24,8 +23,6 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	ipAddrs "github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
 	intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
 	"github.com/vishvananda/netns"
@@ -58,7 +55,6 @@ type NsHandler struct {
 	configNs *intf.LinuxInterfaces_Interface_Namespace
 
 	// Handlers
-	ifHandler  linuxcalls.NetlinkAPI
 	sysHandler SystemAPI
 
 	// Context within which all goroutines are running
@@ -70,10 +66,10 @@ type NsHandler struct {
 }
 
 // Init namespace handler caches and create config namespace
-func (h *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.NetlinkAPI, sysHandler SystemAPI,
-	msChan chan *MicroserviceCtx, ifNotif chan *MicroserviceEvent) error {
+func (h *NsHandler) Init(logger logging.PluginLogger, sysHandler SystemAPI, msChan chan *MicroserviceCtx,
+	ifNotif chan *MicroserviceEvent) error {
 	// Logger
-	h.log = logger.NewLogger("-ns-handler")
+	h.log = logger.NewLogger("ns-handler")
 
 	// Init channels
 	h.microserviceChan = msChan
@@ -84,8 +80,7 @@ func (h *NsHandler) Init(logger logging.PluginLogger, ifHandler linuxcalls.Netli
 	h.microServiceByLabel = make(map[string]*Microservice)
 	h.microServiceByID = make(map[string]*Microservice)
 
-	// Handlers
-	h.ifHandler = ifHandler
+	// System handler
 	h.sysHandler = sysHandler
 
 	// Default namespace
@@ -145,96 +140,11 @@ func (h *NsHandler) GetMicroserviceByID() map[string]*Microservice {
 	return h.microServiceByID
 }
 
-// SetInterfaceNamespace moves a given Linux interface into a specified namespace.
-func (h *NsHandler) SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *intf.LinuxInterfaces_Interface_Namespace) error {
-	// Convert microservice namespace
-	var err error
-	if namespace != nil && namespace.Type == intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
-		// Convert namespace
-		ifNs := h.convertMicroserviceNsToPidNs(namespace.Microservice)
-		// Back to interface ns type
-		namespace, err = ifNs.GenericToIfaceNs()
-		if err != nil {
-			return errors.Errorf("failed to convert generic interface namespace: %v", err)
-		}
-		if namespace == nil {
-			return &unavailableMicroserviceErr{}
-		}
-	}
-
-	ifaceNs := h.IfNsToGeneric(namespace)
-
-	// Get network namespace file descriptor
-	ns, err := h.getOrCreateNs(ifaceNs)
-	if err != nil {
-		return errors.Errorf("faield to get or create namespace %s: %v", namespace.Name, err)
-	}
-	defer ns.Close()
-
-	// Get the link plugin.
-	link, err := h.ifHandler.GetLinkByName(ifName)
-	if err != nil {
-		return errors.Errorf("failed to get link for interface %s: %v", ifName, err)
-	}
-
-	// When interface moves from one namespace to another, it loses all its IP addresses, admin status
-	// and MTU configuration -- we need to remember the interface configuration before the move
-	// and re-configure the interface in the new namespace.
-	addresses, isIPv6, err := h.getLinuxIfAddrs(link.Attrs().Name)
-	if err != nil {
-		return errors.Errorf("failed to get IP address list from interface %s: %v", link.Attrs().Name, err)
-	}
-
-	// Move the interface into the namespace.
-	err = h.sysHandler.LinkSetNsFd(link, int(ns))
-	if err != nil {
-		return errors.Errorf("failed to set interface %s file descriptor: %v", link.Attrs().Name, err)
-	}
-
-	// Re-configure interface in its new namespace
-	revertNs, err := h.SwitchNamespace(ifaceNs, ctx)
-	if err != nil {
-		return errors.Errorf("failed to switch namespace: %v", err)
-	}
-	defer revertNs()
-
-	if link.Attrs().Flags&net.FlagUp == 1 {
-		// Re-enable interface
-		err = h.ifHandler.SetInterfaceUp(ifName)
-		if nil != err {
-			return errors.Errorf("failed to re-enable Linux interface `%s`: %v", ifName, err)
-		}
-	}
-
-	// Re-add IP addresses
-	for _, address := range addresses {
-		// Skip IPv6 link local address if there is no other IPv6 address
-		if !isIPv6 && address.IP.IsLinkLocalUnicast() {
-			continue
-		}
-		err = h.ifHandler.AddInterfaceIP(ifName, address)
-		if err != nil {
-			if err.Error() == "file exists" {
-				continue
-			}
-			return errors.Errorf("failed to re-assign IP address to a Linux interface `%s`: %v", ifName, err)
-		}
-	}
-
-	// Revert back the MTU config
-	err = h.ifHandler.SetInterfaceMTU(ifName, link.Attrs().MTU)
-	if nil != err {
-		return errors.Errorf("failed to re-assign MTU of a Linux interface `%s`: %v", ifName, err)
-	}
-
-	return nil
-}
-
 // SwitchToNamespace switches the network namespace of the current thread.
 func (h *NsHandler) SwitchToNamespace(nsMgmtCtx *NamespaceMgmtCtx, ns *intf.LinuxInterfaces_Interface_Namespace) (revert func(), err error) {
 	if ns != nil && ns.Type == intf.LinuxInterfaces_Interface_Namespace_MICROSERVICE_REF_NS {
 		// Convert namespace
-		ifNs := h.convertMicroserviceNsToPidNs(ns.Microservice)
+		ifNs := h.ConvertMicroserviceNsToPidNs(ns.Microservice)
 		// Back to interface ns type
 		ns, err = ifNs.GenericToIfaceNs()
 		if err != nil {
@@ -257,7 +167,7 @@ func (h *NsHandler) SwitchToNamespace(nsMgmtCtx *NamespaceMgmtCtx, ns *intf.Linu
 func (h *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx) (revert func(), err error) {
 	var nsHandle netns.NsHandle
 	if ns != nil && ns.Type == MicroserviceRefNs {
-		ns = h.convertMicroserviceNsToPidNs(ns.Microservice)
+		ns = h.ConvertMicroserviceNsToPidNs(ns.Microservice)
 		if ns == nil {
 			return func() {}, &unavailableMicroserviceErr{}
 		}
@@ -270,7 +180,7 @@ func (h *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx) (rever
 	}
 
 	// Get network namespace file descriptor.
-	nsHandle, err = h.getOrCreateNs(ns)
+	nsHandle, err = h.GetOrCreateNamespace(ns)
 	if err != nil {
 		return func() {}, err
 	}
@@ -341,10 +251,10 @@ func (h *NsHandler) RouteNsToGeneric(ns *l3.LinuxStaticRoutes_Route_Namespace) *
 	return &Namespace{Type: int32(ns.Type), Pid: ns.Pid, Microservice: ns.Microservice, Name: ns.Name, FilePath: ns.Filepath}
 }
 
-// getOrCreateNs returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
+// GetOrCreateNamespace returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
 // It is, however, only possible to create "named" namespaces. For PID-based namespaces, process with
 // the given PID must exists, otherwise the function returns an error.
-func (h *NsHandler) getOrCreateNs(ns *Namespace) (netns.NsHandle, error) {
+func (h *NsHandler) GetOrCreateNamespace(ns *Namespace) (netns.NsHandle, error) {
 	var nsHandle netns.NsHandle
 	var err error
 
@@ -424,8 +334,8 @@ func (h *NsHandler) prepareConfigNamespace() error {
 	return nil
 }
 
-// convertMicroserviceNsToPidNs converts microservice-referenced namespace into the PID-referenced namespace.
-func (h *NsHandler) convertMicroserviceNsToPidNs(microserviceLabel string) (pidNs *Namespace) {
+// ConvertMicroserviceNsToPidNs converts microservice-referenced namespace into the PID-referenced namespace.
+func (h *NsHandler) ConvertMicroserviceNsToPidNs(microserviceLabel string) (pidNs *Namespace) {
 	if microservice, ok := h.microServiceByLabel[microserviceLabel]; ok {
 		pidNamespace := &Namespace{}
 		pidNamespace.Type = PidRefNs
@@ -433,30 +343,6 @@ func (h *NsHandler) convertMicroserviceNsToPidNs(microserviceLabel string) (pidN
 		return pidNamespace
 	}
 	return nil
-}
-
-// getLinuxIfAddrs returns a list of IP addresses for given linux interface with info whether there is IPv6 address
-// (except default link local)
-func (h *NsHandler) getLinuxIfAddrs(ifName string) ([]*net.IPNet, bool, error) {
-	var networks []*net.IPNet
-	addrs, err := h.ifHandler.GetAddressList(ifName)
-	if err != nil {
-		return nil, false, errors.Errorf("failed to get IP address set from linux interface %s", ifName)
-	}
-	var containsIPv6 bool
-	for _, ipAddr := range addrs {
-		network, ipv6, err := ipAddrs.ParseIPWithPrefix(ipAddr.String())
-		if err != nil {
-			return nil, false, errors.Errorf("failed to parse IP address %s", ipAddr.String())
-		}
-		// Set once if IP address is version 6 and not a link local address
-		if !containsIPv6 && ipv6 && !ipAddr.IP.IsLinkLocalUnicast() {
-			containsIPv6 = true
-		}
-		networks = append(networks, network)
-	}
-
-	return networks, containsIPv6, nil
 }
 
 // dupNsHandle duplicates namespace handle.

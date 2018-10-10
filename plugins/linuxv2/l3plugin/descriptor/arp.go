@@ -82,52 +82,52 @@ func NewARPDescriptor(
 		l3Handler: l3Handler,
 		ifPlugin:  ifPlugin,
 		nsPlugin:  nsPlugin,
-		log:       log.NewLogger("-arp-descriptor"),
+		log:       log.NewLogger("arp-descriptor"),
 	}
 }
 
 // GetDescriptor returns descriptor suitable for registration (via adapter) with
 // the KVScheduler.
-func (arpd *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
+func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 	return &adapter.ARPDescriptor{
 		Name:               ARPDescriptorName,
-		KeySelector:        arpd.IsARPKey,
+		KeySelector:        d.IsARPKey,
 		ValueTypeName:      proto.MessageName(&l3.LinuxStaticARPEntry{}),
-		ValueComparator:    arpd.EquivalentARPs,
+		ValueComparator:    d.EquivalentARPs,
 		NBKeyPrefix:        l3.StaticArpKeyPrefix,
-		Add:                arpd.Add,
-		Delete:             arpd.Delete,
-		Modify:             arpd.Modify,
-		IsRetriableFailure: arpd.IsRetriableFailure,
-		Dependencies:       arpd.Dependencies,
-		Dump:               arpd.Dump,
+		Add:                d.Add,
+		Delete:             d.Delete,
+		Modify:             d.Modify,
+		IsRetriableFailure: d.IsRetriableFailure,
+		Dependencies:       d.Dependencies,
+		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
 // IsARPKey returns <true> if the key identifies a Linux ARP configuration.
-func (arpd *ARPDescriptor) IsARPKey(key string) bool {
+func (d *ARPDescriptor) IsARPKey(key string) bool {
 	return strings.HasPrefix(key, l3.StaticArpKeyPrefix)
 }
 
 // EquivalentARPs is case-insensitive comparison function for l3.LinuxStaticARPEntry.
-func (arpd *ARPDescriptor) EquivalentARPs(key string, arp1, arp2 *l3.LinuxStaticARPEntry) bool {
+func (d *ARPDescriptor) EquivalentARPs(key string, oldArp, NewArp *l3.LinuxStaticARPEntry) bool {
 	// interfaces compared as usually:
-	if arp1.Interface != arp2.Interface {
+	if oldArp.Interface != NewArp.Interface {
 		return false
 	}
 
 	// compare MAC addresses case-insensitively
-	if strings.ToLower(arp1.HwAddress) != strings.ToLower(arp2.HwAddress) {
+	if strings.ToLower(oldArp.HwAddress) != strings.ToLower(NewArp.HwAddress) {
 		return false
 	}
 
 	// compare IP addresses converted to net.IPNet
-	return equalAddrs(arp1.IpAddress, arp2.IpAddress)
+	return equalAddrs(oldArp.IpAddress, NewArp.IpAddress)
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (arpd *ARPDescriptor) IsRetriableFailure(err error) bool {
+func (d *ARPDescriptor) IsRetriableFailure(err error) bool {
 	nonRetriable := []error{
 		ErrARPWithoutInterface,
 		ErrARPWithoutIP,
@@ -144,40 +144,40 @@ func (arpd *ARPDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Add creates ARP entry.
-func (arpd *ARPDescriptor) Add(key string, arp *l3.LinuxStaticARPEntry) (metadata interface{}, err error) {
-	err = arpd.updateARPEntry(arp, "add", arpd.l3Handler.SetARPEntry)
+func (d *ARPDescriptor) Add(key string, arp *l3.LinuxStaticARPEntry) (metadata interface{}, err error) {
+	err = d.updateARPEntry(arp, "add", d.l3Handler.SetARPEntry)
 	return nil, err
 }
 
 // Delete removes ARP entry.
-func (arpd *ARPDescriptor) Delete(key string, arp *l3.LinuxStaticARPEntry, metadata interface{}) error {
-	return arpd.updateARPEntry(arp, "delete", arpd.l3Handler.DelARPEntry)
+func (d *ARPDescriptor) Delete(key string, arp *l3.LinuxStaticARPEntry, metadata interface{}) error {
+	return d.updateARPEntry(arp, "delete", d.l3Handler.DelARPEntry)
 }
 
 // Modify is able to change MAC address of the ARP entry.
-func (arpd *ARPDescriptor) Modify(key string, oldARP, newARP *l3.LinuxStaticARPEntry, oldMetadata interface{}) (newMetadata interface{}, err error) {
-	err = arpd.updateARPEntry(newARP, "modify", arpd.l3Handler.SetARPEntry)
+func (d *ARPDescriptor) Modify(key string, oldARP, newARP *l3.LinuxStaticARPEntry, oldMetadata interface{}) (newMetadata interface{}, err error) {
+	err = d.updateARPEntry(newARP, "modify", d.l3Handler.SetARPEntry)
 	return nil, err
 }
 
 // updateARPEntry adds, modifies or deletes an ARP entry.
-func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionName string, actionClb func(arpEntry *netlink.Neigh) error) error {
+func (d *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionName string, actionClb func(arpEntry *netlink.Neigh) error) error {
 	var err error
 
 	// validate the configuration first
 	if arp.Interface == "" {
 		err = ErrARPWithoutInterface
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 	if arp.IpAddress == "" {
 		err = ErrARPWithoutIP
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 	if arp.HwAddress == "" {
 		err = ErrARPWithoutHwAddr
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 
@@ -185,10 +185,10 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 	neigh := &netlink.Neigh{}
 
 	// Get interface metadata
-	ifMeta, found := arpd.ifPlugin.GetInterfaceIndex().LookupByName(arp.Interface)
+	ifMeta, found := d.ifPlugin.GetInterfaceIndex().LookupByName(arp.Interface)
 	if !found || ifMeta == nil {
 		err = errors.Errorf("failed to obtain metadata for interface %s", arp.Interface)
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 
@@ -199,7 +199,7 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 	ipAddr := net.ParseIP(arp.IpAddress)
 	if ipAddr == nil {
 		err = ErrARPWithInvalidIP
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 	neigh.IP = ipAddr
@@ -208,7 +208,7 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 	mac, err := net.ParseMAC(arp.HwAddress)
 	if err != nil {
 		err = ErrARPWithInvalidHwAddr
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 	neigh.HardwareAddr = mac
@@ -225,10 +225,10 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 
 	// move to the namespace of the associated interface
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	revertNs, err := arpd.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
+	revertNs, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
 	if err != nil {
 		err = errors.Errorf("failed to switch namespace: %v", err)
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 	defer revertNs()
@@ -237,7 +237,7 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 	err = actionClb(neigh)
 	if err != nil {
 		err = errors.Errorf("failed to %s linux ARP entry: %v", actionName, err)
-		arpd.log.Error(err)
+		d.log.Error(err)
 		return err
 	}
 
@@ -245,7 +245,7 @@ func (arpd *ARPDescriptor) updateARPEntry(arp *l3.LinuxStaticARPEntry, actionNam
 }
 
 // Dependencies lists dependencies for a Linux ARP entry.
-func (arpd *ARPDescriptor) Dependencies(key string, arp *l3.LinuxStaticARPEntry) []scheduler.Dependency {
+func (d *ARPDescriptor) Dependencies(key string, arp *l3.LinuxStaticARPEntry) []scheduler.Dependency {
 	// the associated interface must exist and be UP
 	if arp.Interface != "" {
 		return []scheduler.Dependency{
@@ -259,11 +259,11 @@ func (arpd *ARPDescriptor) Dependencies(key string, arp *l3.LinuxStaticARPEntry)
 }
 
 // Dump returns all ARP entries associated with interfaces managed by this agent.
-func (arpd *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapter.ARPKVWithMetadata, error) {
+func (d *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapter.ARPKVWithMetadata, error) {
 	var err error
 	var dump []adapter.ARPKVWithMetadata
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	ifMetaIdx := arpd.ifPlugin.GetInterfaceIndex()
+	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
 
 	// dump only ARP entries which are associated with interfaces managed by this agent.
 	for _, ifName := range ifMetaIdx.ListAllInterfaces() {
@@ -271,23 +271,23 @@ func (arpd *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapte
 		ifMeta, found := ifMetaIdx.LookupByName(ifName)
 		if !found || ifMeta == nil {
 			err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
-			arpd.log.Error(err)
+			d.log.Error(err)
 			return dump, err
 		}
 
 		// switch to the namespace of the interface
-		revertNs, err := arpd.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
+		revertNs, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
 		if err != nil {
 			err = errors.Errorf("failed to switch namespace: %v", err)
-			arpd.log.Error(err)
+			d.log.Error(err)
 			return dump, err
 		}
 
 		// get ARPs assigned to this interface
-		arps, err := arpd.l3Handler.GetARPEntries(ifMeta.LinuxIfIndex)
+		arps, err := d.l3Handler.GetARPEntries(ifMeta.LinuxIfIndex)
 		revertNs()
 		if err != nil {
-			arpd.log.Error(err)
+			d.log.Error(err)
 			return dump, err
 		}
 
@@ -311,6 +311,6 @@ func (arpd *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapte
 			})
 		}
 	}
-	arpd.log.WithField("dump", dump).Debug("Dumping Linux ARPs")
+	d.log.WithField("dump", dump).Debug("Dumping Linux ARPs")
 	return dump, nil
 }

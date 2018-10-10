@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -25,10 +24,6 @@ import (
 
 // AddAfPacketInterface implements AfPacket handler.
 func (h *IfVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interfaces_Interface_Afpacket) (swIndex uint32, err error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(af_packet.AfPacketCreate{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &af_packet.AfPacketCreate{
 		HostIfName: []byte(afPacketIntf.HostIfName),
 	}
@@ -54,10 +49,6 @@ func (h *IfVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPack
 
 // DeleteAfPacketInterface implements AfPacket handler.
 func (h *IfVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interfaces_Interface_Afpacket) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(af_packet.AfPacketDelete{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &af_packet.AfPacketDelete{
 		HostIfName: []byte(afPacketIntf.HostIfName),
 	}

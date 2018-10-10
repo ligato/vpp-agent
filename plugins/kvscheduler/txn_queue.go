@@ -64,6 +64,7 @@ type nbTxn struct {
 	retryPeriod        time.Duration
 	expBackoffRetry    bool
 	revertOnFailure    bool
+	description        string
 	resultChan         chan []KeyWithError
 }
 

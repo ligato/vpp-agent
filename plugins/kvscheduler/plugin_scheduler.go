@@ -204,7 +204,9 @@ func (scheduler *Scheduler) Close() error {
 // (none for derived values expressing properties).
 func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *KVDescriptor) {
 	scheduler.registry.RegisterDescriptor(descriptor)
-	scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefix)
+	if descriptor.NBKeyPrefix != "" {
+		scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefix)
+	}
 
 	if descriptor.WithMetadata {
 		var metadataMap idxmap.NamedMappingRW
@@ -239,6 +241,13 @@ func (scheduler *Scheduler) StartNBTransaction() Txn {
 		},
 	}
 	return txn
+}
+
+// TransactionBarrier ensures that all notifications received prior to the call
+// are associated with transactions that have already finalized.
+func (scheduler *Scheduler) TransactionBarrier() {
+	scheduler.txnLock.Lock()
+	scheduler.txnLock.Unlock()
 }
 
 // PushSBNotification notifies about a spontaneous value change in the SB
@@ -333,6 +342,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []KeyWithError, t
 	txn.data.nb.revertOnFailure = IsWithRevert(ctx)
 	txn.data.nb.isFullResync = IsFullResync(ctx)
 	txn.data.nb.isDownstreamResync = IsDownstreamResync(ctx)
+	txn.data.nb.description, _ = IsWithDescription(ctx)
 
 	// validate transaction options
 	if txn.data.nb.isFullResync {

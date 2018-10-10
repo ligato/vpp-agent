@@ -17,35 +17,21 @@
 package linuxcalls
 
 import (
-	"time"
-
 	"github.com/vishvananda/netlink"
 )
 
 // AddStaticRoute creates the new static route
 func (h *NetLinkHandler) AddStaticRoute(route *netlink.Route) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("add-static-route").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.RouteAdd(route)
 }
 
 // ReplaceStaticRoute removes the static route
 func (h *NetLinkHandler) ReplaceStaticRoute(route *netlink.Route) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("replace-static-route").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.RouteReplace(route)
 }
 
 // DelStaticRoute removes the static route
 func (h *NetLinkHandler) DelStaticRoute(route *netlink.Route) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("del-static-route").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.RouteDel(route)
 }
 
@@ -54,10 +40,6 @@ func (h *NetLinkHandler) DelStaticRoute(route *netlink.Route) error {
 // <interfaceIdx> works as filter, if set to zero, all routes in the namespace
 // are returned.
 func (h *NetLinkHandler) GetStaticRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("get-static-routes").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	var link netlink.Link
 	if interfaceIdx != 0 {
 		// netlink.RouteList reads only link index

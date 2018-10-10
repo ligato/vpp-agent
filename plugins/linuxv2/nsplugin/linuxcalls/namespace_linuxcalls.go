@@ -21,7 +21,6 @@ import (
 	"path"
 	"strconv"
 	"syscall"
-	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/vishvananda/netns"
@@ -37,10 +36,6 @@ const (
 // CreateNamedNetNs creates a new named Linux network namespace.
 // It does exactly the same thing as the command "ip netns add NAMESPACE".
 func (nh *namedNetNsHandler) CreateNamedNetNs(ctx NamespaceMgmtCtx, nsName string) (netns.NsHandle, error) {
-	defer func(t time.Time) {
-		nh.stopwatch.TimeLog("create-named-namespace").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Lock the OS Thread so we don't accidentally switch namespaces.
 	ctx.LockOSThread()
 	defer ctx.UnlockOSThread()
@@ -117,10 +112,6 @@ func (nh *namedNetNsHandler) CreateNamedNetNs(ctx NamespaceMgmtCtx, nsName strin
 // DeleteNamedNetNs deletes an existing named Linux network namespace.
 // It does exactly the same thing as the command "ip netns del NAMESPACE".
 func (nh *namedNetNsHandler) DeleteNamedNetNs(nsName string) error {
-	defer func(t time.Time) {
-		nh.stopwatch.TimeLog("delete-named-namespace").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// Unmount the namespace.
 	netnsMountFile := path.Join(netNsMountDir, nsName)
 	err := nh.sysHandler.Unmount(netnsMountFile, syscall.MNT_DETACH)
@@ -139,10 +130,6 @@ func (nh *namedNetNsHandler) DeleteNamedNetNs(nsName string) error {
 
 // NamedNetNsExists checks whether named  namespace exists.
 func (nh *namedNetNsHandler) NamedNetNsExists(nsName string) (bool, error) {
-	defer func(t time.Time) {
-		nh.stopwatch.TimeLog("stat-named-namespace").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	netnsMountFile := path.Join(netNsMountDir, nsName)
 	return nh.sysHandler.FileExists(netnsMountFile)
 }

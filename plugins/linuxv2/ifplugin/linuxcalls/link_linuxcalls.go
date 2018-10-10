@@ -31,7 +31,7 @@
 package linuxcalls
 
 import (
-	"time"
+	"net"
 
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
@@ -39,47 +39,27 @@ import (
 
 // GetLinkByName calls netlink API to get Link type from interface name
 func (h *NetLinkHandler) GetLinkByName(ifName string) (netlink.Link, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("get-link-from-interface").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.LinkByName(ifName)
 }
 
 // GetLinkList calls netlink API to get all Links in namespace
 func (h *NetLinkHandler) GetLinkList() ([]netlink.Link, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("get-link-list").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.LinkList()
 }
 
 // SetLinkNamespace puts link into a network namespace.
 func (h *NetLinkHandler) SetLinkNamespace(link netlink.Link, ns netns.NsHandle) (err error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("set-link-namespace").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.LinkSetNsFd(link, int(ns))
 }
 
 // LinkSubscribe takes a channel to which notifications will be sent
 // when links change. Close the 'done' chan to stop subscription.
 func (h *NetLinkHandler) LinkSubscribe(ch chan<- netlink.LinkUpdate, done <-chan struct{}) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("link-subscribe").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	return netlink.LinkSubscribe(ch, done)
 }
 
 // GetInterfaceType returns the type (string representation) of a given interface.
 func (h *NetLinkHandler) GetInterfaceType(ifName string) (string, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("get-interface-type").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return "", err
@@ -89,10 +69,6 @@ func (h *NetLinkHandler) GetInterfaceType(ifName string) (string, error) {
 
 // InterfaceExists checks if interface with a given name exists.
 func (h *NetLinkHandler) InterfaceExists(ifName string) (bool, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("interface-exists").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	_, err := h.GetLinkByName(ifName)
 	if err == nil {
 		return true, nil
@@ -103,12 +79,17 @@ func (h *NetLinkHandler) InterfaceExists(ifName string) (bool, error) {
 	return false, err
 }
 
+// IsInterfaceEnabled checks if the interface is UP.
+func (h *NetLinkHandler) IsInterfaceEnabled(ifName string) (bool, error) {
+	intf, err := net.InterfaceByName(ifName)
+	if err != nil {
+		return false, err
+	}
+	return (intf.Flags & net.FlagUp) != 0, nil
+}
+
 // DeleteInterface removes the given interface.
 func (h *NetLinkHandler) DeleteInterface(ifName string) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("delete-interface").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return err
@@ -119,10 +100,6 @@ func (h *NetLinkHandler) DeleteInterface(ifName string) error {
 
 // RenameInterface changes the name of the interface <ifName> to <newName>.
 func (h *NetLinkHandler) RenameInterface(ifName string, newName string) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("rename-interface").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return err
@@ -145,10 +122,6 @@ func (h *NetLinkHandler) RenameInterface(ifName string, newName string) error {
 // SetInterfaceAlias sets the alias of the given interface.
 // Equivalent to: `ip link set dev $ifName alias $alias`
 func (h *NetLinkHandler) SetInterfaceAlias(ifName, alias string) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog("set-link-alias").LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return err

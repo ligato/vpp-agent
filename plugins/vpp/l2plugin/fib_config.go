@@ -18,7 +18,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -50,21 +49,13 @@ type FIBConfigurator struct {
 	// VPP channels
 	syncChannel  govppapi.Channel
 	asyncChannel govppapi.Channel
-
-	// Timer used to measure and store time
-	stopwatch *measure.Stopwatch
 }
 
 // Init goroutines, mappings, channels..
 func (c *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.API, swIfIndexes ifaceidx.SwIfIndex,
-	bdIndexes l2idx.BDIndex, enableStopwatch bool) (err error) {
+	bdIndexes l2idx.BDIndex) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l2-fib-conf")
-
-	// Stopwatch
-	if enableStopwatch {
-		c.stopwatch = measure.NewStopwatch("FIBConfigurator", c.log)
-	}
+	c.log = logger.NewLogger("l2-fib-conf")
 
 	// Mappings
 	c.ifIndexes = swIfIndexes
@@ -75,18 +66,15 @@ func (c *FIBConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.AP
 	c.fibIndexSeq = 1
 
 	// VPP channels
-	c.syncChannel, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.syncChannel, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create sync API channel: %v", err)
 	}
-	c.asyncChannel, err = goVppMux.NewAPIChannel()
-	if err != nil {
+	if c.asyncChannel, err = goVppMux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create async API channel: %v", err)
 	}
 
 	// VPP calls helper object
-	c.fibHandler = vppcalls.NewFibVppHandler(c.syncChannel, c.asyncChannel, c.ifIndexes,
-		c.bdIndexes, c.log, c.stopwatch)
+	c.fibHandler = vppcalls.NewFibVppHandler(c.syncChannel, c.asyncChannel, c.ifIndexes, c.bdIndexes, c.log)
 
 	// FIB reply watcher
 	go c.fibHandler.WatchFIBReplies()

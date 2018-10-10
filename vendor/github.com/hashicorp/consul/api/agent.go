@@ -51,12 +51,6 @@ type AgentCheck struct {
 	Definition  HealthCheckDefinition
 }
 
-// AgentWeights represent optional weights for a service
-type AgentWeights struct {
-	Passing int
-	Warning int
-}
-
 // AgentService represents a service known to the agent
 type AgentService struct {
 	Kind              ServiceKind
@@ -66,7 +60,6 @@ type AgentService struct {
 	Meta              map[string]string
 	Port              int
 	Address           string
-	Weights           AgentWeights
 	EnableTagOverride bool
 	CreateIndex       uint64
 	ModifyIndex       uint64
@@ -126,7 +119,6 @@ type AgentServiceRegistration struct {
 	Address           string            `json:",omitempty"`
 	EnableTagOverride bool              `json:",omitempty"`
 	Meta              map[string]string `json:",omitempty"`
-	Weights           *AgentWeights     `json:",omitempty"`
 	Check             *AgentServiceCheck
 	Checks            AgentServiceChecks
 	ProxyDestination  string               `json:",omitempty"`

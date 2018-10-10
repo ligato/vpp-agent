@@ -111,6 +111,11 @@ func (p *Plugin) Init() (err error) {
 // AfterInit is called in the second phase of the initialization. The kafka multiplexerNewWatcher
 // is started, all consumers have to be subscribed until this phase.
 func (p *Plugin) AfterInit() error {
+	if p.disabled {
+		p.Log.Debugf("kafka plugin disabled, skipping AfterInit")
+		return nil
+	}
+
 	if p.mux != nil {
 		err := p.mux.Start()
 		if err != nil {
@@ -119,7 +124,7 @@ func (p *Plugin) AfterInit() error {
 	}
 
 	// Register for providing status reports (polling mode)
-	if p.StatusCheck != nil && !p.disabled {
+	if p.StatusCheck != nil {
 		p.StatusCheck.Register(p.PluginName, func() (statuscheck.PluginState, error) {
 			if p.hsClient == nil || p.hsClient.Closed() {
 				return statuscheck.Error, fmt.Errorf("kafka client/consumer not available")

@@ -101,6 +101,7 @@ func New() *VPPAgent {
 
 	restPlugin := rest.NewPlugin(rest.UseDeps(func(deps *rest.Deps) {
 		deps.VPP = vppPlugin
+		deps.Linux = linuxPlugin
 	}))
 
 	return &VPPAgent{

@@ -62,10 +62,48 @@ type KeyValuePair struct {
 // is not familiar with their semantics.
 type Metadata interface{}
 
+// TxnOperation is one of: Pre-process, Add, Modify, Delete and Update.
+type TxnOperation int
+
+const (
+	// UndefinedTxnOp represents undefined transaction operation.
+	UndefinedTxnOp TxnOperation = iota
+	// PreProcess key-value pair.
+	PreProcess
+	// Add new value.
+	Add
+	// Modify existing value.
+	Modify
+	// Delete existing value.
+	Delete
+	// Update (reflect modified dependencies) existing value.
+	Update
+)
+
+// String returns human-readable string representation of transaction operation.
+func (txnOpType TxnOperation) String() string {
+	switch txnOpType {
+	case UndefinedTxnOp:
+		return "UNDEFINED"
+	case PreProcess:
+		return "PRE-PROCESS"
+	case Add:
+		return "ADD"
+	case Modify:
+		return "MODIFY"
+	case Delete:
+		return "DELETE"
+	case Update:
+		return "UPDATE"
+	}
+	return "INVALID"
+}
+
 // KeyWithError stores error for a key whose value failed to get updated.
 type KeyWithError struct {
-	Key   string
-	Error error
+	Key          string
+	TxnOperation TxnOperation
+	Error        error
 }
 
 // KVWithMetadata encapsulates key-value pair with metadata and the origin mark.
@@ -172,6 +210,10 @@ type KVScheduler interface {
 	// StartNBTransaction starts a new transaction from NB to SB plane.
 	// The enqueued actions are scheduled for execution by Txn.Commit().
 	StartNBTransaction() Txn
+
+	// TransactionBarrier ensures that all notifications received prior to the call
+	// are associated with transactions that have already finalized.
+	TransactionBarrier()
 
 	// PushSBNotification notifies about a spontaneous value change in the SB
 	// plane (i.e. not triggered by NB transaction).

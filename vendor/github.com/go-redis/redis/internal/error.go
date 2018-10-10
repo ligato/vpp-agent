@@ -8,15 +8,9 @@ import (
 	"github.com/go-redis/redis/internal/proto"
 )
 
-func IsRetryableError(err error, retryTimeout bool) bool {
-	if err == io.EOF {
-		return true
-	}
-	if netErr, ok := err.(net.Error); ok {
-		if netErr.Timeout() {
-			return retryTimeout
-		}
-		return true
+func IsRetryableError(err error, retryNetError bool) bool {
+	if IsNetworkError(err) {
+		return retryNetError
 	}
 	s := err.Error()
 	if s == "ERR max number of clients reached" {
@@ -36,6 +30,14 @@ func IsRetryableError(err error, retryTimeout bool) bool {
 
 func IsRedisError(err error) bool {
 	_, ok := err.(proto.RedisError)
+	return ok
+}
+
+func IsNetworkError(err error) bool {
+	if err == io.EOF {
+		return true
+	}
+	_, ok := err.(net.Error)
 	return ok
 }
 

@@ -13,6 +13,11 @@ This image is used for development and debugging.
 
 ## Get the official image
 
+Supported architectures are:
+* AMD64 (a.k.a. x86_64)
+* ARM64 (a.k.a. aarch64) - see [arm64 docker image][3].
+
+Here follows the information related to AMD64 architecture:
 For a quick start with the development image, you can download 
 the [official image](https://hub.docker.com/r/ligato/dev-vpp-agent/) from **DockerHub**.
 
@@ -36,6 +41,17 @@ This will by default build image with name `dev_vpp_agent`
 and use following sources:
 - **VPP-Agent** version from local repository
 - **VPP** from repository and commit specified in `vpp.env` file
+
+Note: The script build.sh will recognize the architecture (AMD64 or ARM64) and build the proper image.
+
+### Pushing docker image to repository
+To push the docker image into your repository, type:
+```
+REPO_OWNER=yourdockerhubreponame ./push_image.sh
+```
+Warning: use only IMMEDIATELY after docker/dev/build.sh to prevent INCONSISTENCIES such as:
+* after building image you switch to other branch which will result in mismatch of version of image and its tag
+* you do not build the new image but only simply run this script which will result in mismatch version of image and its tag because the image is older than repository
 
 ### Build VPP in _debug_ mode
 
@@ -196,6 +212,7 @@ Call the agent via ETCD using the testing client:
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tap
 vpp-agent-ctl /opt/vpp-agent/dev/etcd.conf -tapd
 ```
+Note: **For ARM64 see the information about [etcd][2]**.
 
 ## Running Kafka on Local Host
 
@@ -204,6 +221,7 @@ You can start Kafka in a separate container:
 sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
  --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
 ```
+Note: **For ARM64 see the information about [kafka][1]**.
 
 ## Rebuilding the Agent
 ```
@@ -331,3 +349,7 @@ console.
  
 - Use the newly built agent as described in Section
   '[Running VPP and the Agent](#running-vpp-and-the-agent)'.
+
+[1]: ../../docs/arm64/kafka.md
+[2]: ../../docs/arm64/etcd.md
+[3]: ../../docs/arm64/docker_images.md

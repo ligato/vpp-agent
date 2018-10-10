@@ -17,17 +17,12 @@ package vppcalls
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(vxlan.VxlanAddDelTunnel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// this is temporary fix to solve creation of VRF table for VxLAN
 	if err := h.CreateVrf(vrf); err != nil {
 		return 0, err

@@ -191,13 +191,13 @@ func (scheduler *Scheduler) applyValue(args *applyValueArgs) (executed recordedT
 
 	// determine the operation type
 	if args.isUpdate {
-		txnOp.operation = update // triggered from within recursive applyValue-s
+		txnOp.operation = Update // triggered from within recursive applyValue-s
 	} else if args.kv.value == nil {
-		txnOp.operation = del
+		txnOp.operation = Delete
 	} else if node.GetValue() == nil || isNodePending(node) {
-		txnOp.operation = add
+		txnOp.operation = Add
 	} else {
-		txnOp.operation = modify
+		txnOp.operation = Modify
 	}
 
 	// remaining txnOp attributes to fill:
@@ -205,13 +205,13 @@ func (scheduler *Scheduler) applyValue(args *applyValueArgs) (executed recordedT
 	//		newErr     error
 
 	switch txnOp.operation {
-	case del:
+	case Delete:
 		executed, err = scheduler.applyDelete(node, txnOp, args, false)
-	case add:
+	case Add:
 		executed, err = scheduler.applyAdd(node, txnOp, args)
-	case modify:
+	case Modify:
 		executed, err = scheduler.applyModify(node, txnOp, args)
-	case update:
+	case Update:
 		executed, err = scheduler.applyUpdate(node, txnOp, args)
 	}
 
@@ -273,7 +273,7 @@ func (scheduler *Scheduler) applyDelete(node graph.NodeRW, txnOp *recordedTxnOp,
 			wasErr = err
 			// propagate error to the base value
 			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
-			scheduler.propagateError(args.graphW, node, err)
+			scheduler.propagateError(args.graphW, node, err, Delete)
 
 		}
 		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
@@ -345,7 +345,7 @@ func (scheduler *Scheduler) applyAdd(node graph.NodeRW, txnOp *recordedTxnOp, ar
 		if err != nil {
 			// propate error to the base value
 			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
-			scheduler.propagateError(args.graphW, node, err)
+			scheduler.propagateError(args.graphW, node, err, Add)
 			// add failed => keep value pending
 			node.SetFlags(&PendingFlag{})
 			txnOp.isPending = true
@@ -405,10 +405,10 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 	if recreate {
 		// record operation as two - delete followed by add
 		delOp := scheduler.preRecordTxnOp(args, node)
-		delOp.operation = del
+		delOp.operation = Delete
 		delOp.newValue = utils.ProtoToString(nil)
 		addOp := scheduler.preRecordTxnOp(args, node)
-		addOp.operation = add
+		addOp.operation = Add
 		addOp.prevValue = utils.ProtoToString(nil)
 		addOp.wasPending = true
 		// remove obsolete value
@@ -473,7 +473,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 
 		if err != nil {
 			// propagate error to the base value
-			scheduler.propagateError(args.graphW, node, err)
+			scheduler.propagateError(args.graphW, node, err, Modify)
 			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
 			// record transaction operation
 			txnOp.newErr = err
@@ -489,7 +489,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 
 	// if new value is equivalent, but the value is in failed state from previous txn => run update
 	if equivalent && wasErr == nil && scheduler.getNodeLastError(node.GetKey()) != nil {
-		txnOp.operation = update
+		txnOp.operation = Update
 
 		// call Update handler
 		if !args.dryRun && args.kv.origin != FromSB {
@@ -499,7 +499,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 
 		if err != nil {
 			// propagate error to the base value
-			scheduler.propagateError(args.graphW, node, err)
+			scheduler.propagateError(args.graphW, node, err, Update)
 			args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
 			// record transaction operation
 			txnOp.newErr = err
@@ -508,7 +508,7 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 		}
 	}
 
-	if !equivalent || txnOp.operation == update {
+	if !equivalent || txnOp.operation == Update {
 		// if the value was modified, or update was executed (to clear error) => record operation
 		executed = append(executed, txnOp)
 	}
@@ -558,7 +558,7 @@ func (scheduler *Scheduler) applyUpdate(node graph.NodeRW, txnOp *recordedTxnOp,
 		}
 		node.SetFlags(&LastUpdateFlag{args.txn.seqNum})
 		addOp := scheduler.preRecordTxnOp(args, node)
-		addOp.operation = add
+		addOp.operation = Add
 		executed, err = scheduler.applyAdd(node, addOp, args)
 	} else {
 		node.SetFlags(&LastUpdateFlag{args.txn.seqNum})
@@ -566,7 +566,7 @@ func (scheduler *Scheduler) applyUpdate(node graph.NodeRW, txnOp *recordedTxnOp,
 		if !isNodeReady(node) {
 			// delete value and flag node as pending if some dependency is no longer satisfied
 			delOp := scheduler.preRecordTxnOp(args, node)
-			delOp.operation = del
+			delOp.operation = Delete
 			delOp.newValue = utils.ProtoToString(nil)
 			executed, err = scheduler.applyDelete(node, delOp, args, true)
 		} else {
@@ -577,7 +577,7 @@ func (scheduler *Scheduler) applyUpdate(node graph.NodeRW, txnOp *recordedTxnOp,
 				if err != nil {
 					// propagate error to the base value
 					txnOp.newErr = err
-					scheduler.propagateError(args.graphW, node, err)
+					scheduler.propagateError(args.graphW, node, err, Update)
 					args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
 				}
 			}
@@ -664,10 +664,10 @@ func (scheduler *Scheduler) getNodeLastError(key string) error {
 
 // propagateError propagates error from a given node into its base and saves it
 // using the ErrorFlag.
-func (scheduler *Scheduler) propagateError(graphW graph.RWAccess, node graph.Node, err error) {
+func (scheduler *Scheduler) propagateError(graphW graph.RWAccess, node graph.Node, err error, txnOp TxnOperation) {
 	baseKey := getNodeBase(node).GetKey()
 	baseNode := graphW.SetNode(baseKey)
-	baseNode.SetFlags(&ErrorFlag{err})
+	baseNode.SetFlags(&ErrorFlag{err: err, txnOp: txnOp})
 }
 
 // validDerivedKV check validity of a derived KV pair.

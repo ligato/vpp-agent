@@ -18,13 +18,15 @@ message AgentStatus {
     int64 last_update = 6;  /* last update of the state by some plugin */
     InterfaceStats interface_stats = 7;
     string commit_hash = 8;
+    repeated PluginStatus plugins = 9;
 }
 
 message PluginStatus {
-    OperationalState state = 1;
-    int64 last_change = 4;  /* last change of the state */
-    int64 last_update = 5;  /* last update of the state */
-    string error = 6;       /* last seen error */
+    string name = 1;
+    OperationalState state = 2;
+    int64 last_change = 3;  /* last change of the state */
+    int64 last_update = 4;  /* last update of the state */
+    string error = 5;       /* last seen error */
 }
 
 message InterfaceStats {

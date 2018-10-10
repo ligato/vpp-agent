@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 Resource    ../../libraries/all_libs.robot
 Resource    ../../libraries/pretty_keywords.robot
 
-Force Tags        crudIPv6
+Force Tags        crud     IPv6
 Suite Setup       Run Keywords    Discard old results
 
 *** Variables ***
@@ -161,13 +161,9 @@ Add VRF Table In Background While Creating Interface VXLAN
 
 *** Keywords ***
 IP6 Fib On ${node} Should Not Contain Route With IP ${ip}/${prefix}
-    Log many    ${node}
     ${out}=    vpp_term: Show IP6 Fib    ${node}
-    log many    ${out}
     Should Not Match Regexp    ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip6-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip6\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
 IP6 Fib On ${node} Should Contain Route With IP ${ip}/${prefix}
-    Log many    ${node}
     ${out}=    vpp_term: Show IP6 Fib    ${node}
-    log many    ${out}
     Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip6-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip6\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]

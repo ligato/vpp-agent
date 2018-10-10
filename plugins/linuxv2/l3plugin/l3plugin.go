@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/l3 --proto_path=${GOPATH}/src --gogo_out=../model/l3 l3.proto
 //go:generate descriptor-adapter --descriptor-name ARP --value-type *l3.LinuxStaticARPEntry --import "../model/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name Route --value-type *l3.LinuxStaticRoute --import "../model/l3" --output-dir "descriptor"
 
@@ -20,7 +19,6 @@ package l3plugin
 
 import (
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/measure"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
@@ -36,7 +34,6 @@ type L3Plugin struct {
 
 	// From configuration file
 	disabled  bool
-	stopwatch *measure.Stopwatch
 
 	// system handlers
 	l3Handler linuxcalls.NetlinkAPI
@@ -54,9 +51,8 @@ type Deps struct {
 	IfPlugin  ifplugin.API
 }
 
-// Config holds the nsplugin configuration.
+// Config holds the l3plugin configuration.
 type Config struct {
-	Stopwatch bool `json:"stopwatch"`
 	Disabled  bool `json:"disabled"`
 }
 
@@ -73,18 +69,10 @@ func (p *L3Plugin) Init() error {
 			p.Log.Infof("Disabling Linux L3 plugin")
 			return nil
 		}
-		if config.Stopwatch {
-			p.Log.Infof("stopwatch enabled for %v", p.PluginName)
-			p.stopwatch = measure.NewStopwatch("Linux-L3Plugin", p.Log)
-		} else {
-			p.Log.Infof("stopwatch disabled for %v", p.PluginName)
-		}
-	} else {
-		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 
 	// init handlers
-	p.l3Handler = linuxcalls.NewNetLinkHandler(p.stopwatch)
+	p.l3Handler = linuxcalls.NewNetLinkHandler()
 
 	// init & register descriptors
 	arpDescriptor := adapter.NewARPDescriptor(descriptor.NewARPDescriptor(

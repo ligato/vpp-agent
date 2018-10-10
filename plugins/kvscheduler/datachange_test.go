@@ -113,7 +113,8 @@ func TestDataChangeTransactions(t *testing.T) {
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item2"))
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(context.Background())
+	description := "testing data change"
+	kvErrors, txnError := schedulerTxn.Commit(WithDescription(context.Background(), description))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -194,37 +195,37 @@ func TestDataChangeTransactions(t *testing.T) {
 	opHistory := mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(7))
 	operation := opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item2"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[2]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[3]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[4]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[5]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[6]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item2"))
 	Expect(operation.Err).To(BeNil())
@@ -241,6 +242,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item2")), origin: FromNB},
 		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
@@ -250,14 +252,14 @@ func TestDataChangeTransactions(t *testing.T) {
 
 	txnOps := recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item2")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -265,14 +267,14 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -280,7 +282,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -289,14 +291,14 @@ func TestDataChangeTransactions(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -304,7 +306,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -423,52 +425,52 @@ func TestDataChangeTransactions(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(10))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item2"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[2]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[3]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[4]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[5]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item2"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[6]
-	Expect(operation.OpType).To(Equal(test.Modify))
+	Expect(operation.OpType).To(Equal(test.MockModify))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[7]
-	Expect(operation.OpType).To(Equal(test.Update))
+	Expect(operation.OpType).To(Equal(test.MockUpdate))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[8]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[9]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item2"))
 	Expect(operation.Err).To(BeNil())
@@ -485,6 +487,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
 		{key: prefixC + baseValue3, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -493,7 +496,7 @@ func TestDataChangeTransactions(t *testing.T) {
 
 	txnOps = recordedTxnOps{
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -501,7 +504,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -509,7 +512,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
@@ -517,7 +520,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
 			prevOrigin: FromNB,
@@ -525,7 +528,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -533,7 +536,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -541,7 +544,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  modify,
+			operation:  Modify,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item2")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
@@ -549,7 +552,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  update,
+			operation:  Update,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -558,7 +561,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -566,7 +569,7 @@ func TestDataChangeTransactions(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -720,12 +723,14 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(HaveLen(1))
 	Expect(kvErrors[0].Key).To(BeEquivalentTo(prefixA + baseValue1))
+	Expect(kvErrors[0].TxnOperation).To(BeEquivalentTo(Modify))
 	Expect(kvErrors[0].Error.Error()).To(BeEquivalentTo("failed to modify value"))
 
 	// receive the error notification
 	var errorNotif KeyWithError
 	Eventually(errorChan, time.Second).Should(Receive(&errorNotif))
 	Expect(errorNotif.Key).To(Equal(prefixA + baseValue1))
+	Expect(errorNotif.TxnOperation).To(BeEquivalentTo(Modify))
 	Expect(errorNotif.Error).ToNot(BeNil())
 	Expect(errorNotif.Error.Error()).To(BeEquivalentTo("failed to modify value"))
 
@@ -798,44 +803,44 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	opHistory := mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(16))
 	operation := opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item2"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[2]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[3]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[4]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[5]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item2"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[6]
-	Expect(operation.OpType).To(Equal(test.Modify))
+	Expect(operation.OpType).To(Equal(test.MockModify))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1))
 	Expect(operation.Err).ToNot(BeNil())
 	Expect(operation.Err.Error()).To(BeEquivalentTo("failed to modify value"))
 	// reverting:
 	operation = opHistory[7] // refresh failed value
-	Expect(operation.OpType).To(Equal(test.Dump))
+	Expect(operation.OpType).To(Equal(test.MockDump))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	checkValuesForCorrelation(operation.CorrelateDump, []KVWithMetadata{
 		{
@@ -846,42 +851,42 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 		},
 	})
 	operation = opHistory[8]
-	Expect(operation.OpType).To(Equal(test.Modify))
+	Expect(operation.OpType).To(Equal(test.MockModify))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[9]
-	Expect(operation.OpType).To(Equal(test.Update))
+	Expect(operation.OpType).To(Equal(test.MockUpdate))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor2Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixB + baseValue2 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[10]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item2"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[11]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[12]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[13]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[14]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item1"))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[15]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor3Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixC + baseValue3 + "/item2"))
 	Expect(operation.Err).To(BeNil())
@@ -898,6 +903,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
 		{key: prefixC + baseValue3, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -907,7 +913,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	// planned operations
 	txnOps := recordedTxnOps{
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -915,7 +921,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -923,7 +929,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
@@ -931,7 +937,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
 			prevOrigin: FromNB,
@@ -939,7 +945,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -947,7 +953,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -955,7 +961,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  modify,
+			operation:  Modify,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item2")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
@@ -963,7 +969,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  update,
+			operation:  Update,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -972,7 +978,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -980,7 +986,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixB + baseValue2 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -995,7 +1001,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	// executed operations
 	txnOps = recordedTxnOps{
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -1003,7 +1009,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -1011,7 +1017,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
@@ -1019,7 +1025,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
 			prevOrigin: FromNB,
@@ -1027,7 +1033,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -1035,7 +1041,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
@@ -1043,7 +1049,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  modify,
+			operation:  Modify,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item2")),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
@@ -1053,7 +1059,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 		},
 		// reverting:
 		{
-			operation:  modify,
+			operation:  Modify,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewArrayValue()),
 			newValue:   utils.ProtoToString(test.NewArrayValue("item2")),
@@ -1063,7 +1069,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isRevert:   true,
 		},
 		{
-			operation:  update,
+			operation:  Update,
 			key:        prefixB + baseValue2 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -1073,7 +1079,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isRevert:   true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -1082,7 +1088,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isRevert:   true,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
@@ -1091,7 +1097,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isRevert:   true,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixC + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
 			prevOrigin: FromNB,
@@ -1100,7 +1106,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isRevert:   true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3,
 			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
 			prevOrigin: FromNB,
@@ -1109,7 +1115,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3 + "/item1",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
@@ -1118,7 +1124,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 			isRevert:   true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixC + baseValue3 + "/item2",
 			derived:    true,
 			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
@@ -1214,7 +1220,8 @@ func TestDependencyCycles(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyStringValue("base-value1-data"))
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyStringValue("base-value2-data"))
 	schedulerTxn.SetValue(prefixA+baseValue3, test.NewLazyStringValue("base-value3-data"))
-	kvErrors, txnError := schedulerTxn.Commit(context.Background())
+	description := "testing dependency cycles"
+	kvErrors, txnError := schedulerTxn.Commit(WithDescription(context.Background(), description))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -1247,6 +1254,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewStringValue("base-value1-data")), origin: FromNB},
 		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewStringValue("base-value2-data")), origin: FromNB},
@@ -1256,7 +1264,7 @@ func TestDependencyCycles(t *testing.T) {
 
 	txnOps := recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1,
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value1-data")),
 			prevOrigin: FromNB,
@@ -1264,17 +1272,17 @@ func TestDependencyCycles(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  add,
-			key:        prefixA + baseValue3,
-			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
+			operation:  Add,
+			key:        prefixA + baseValue2,
+			newValue:   utils.ProtoToString(test.NewStringValue("base-value2-data")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
 			isPending:  true,
 		},
 		{
-			operation:  add,
-			key:        prefixA + baseValue2,
-			newValue:   utils.ProtoToString(test.NewStringValue("base-value2-data")),
+			operation:  Add,
+			key:        prefixA + baseValue3,
+			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
 			isPending:  true,
@@ -1350,22 +1358,22 @@ func TestDependencyCycles(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(4))
 	operation := opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue4))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[2]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue2))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[3]
-	Expect(operation.OpType).To(Equal(test.Add))
+	Expect(operation.OpType).To(Equal(test.MockAdd))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1))
 	Expect(operation.Err).To(BeNil())
@@ -1382,6 +1390,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue4, value: utils.ProtoToString(test.NewStringValue("base-value4-data")), origin: FromNB},
 	})
@@ -1389,14 +1398,14 @@ func TestDependencyCycles(t *testing.T) {
 
 	txnOps = recordedTxnOps{
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue4,
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value4-data")),
 			prevOrigin: FromNB,
 			newOrigin:  FromNB,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
@@ -1405,7 +1414,7 @@ func TestDependencyCycles(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value2-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value2-data")),
@@ -1414,7 +1423,7 @@ func TestDependencyCycles(t *testing.T) {
 			wasPending: true,
 		},
 		{
-			operation:  add,
+			operation:  Add,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value1-data")),
 			newValue:   utils.ProtoToString(test.NewStringValue("base-value1-data")),
@@ -1460,6 +1469,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(HaveLen(1))
 	Expect(kvErrors[0].Key).To(BeEquivalentTo(prefixA + baseValue2))
+	Expect(kvErrors[0].TxnOperation).To(BeEquivalentTo(Delete))
 	Expect(kvErrors[0].Error.Error()).To(BeEquivalentTo("failed to remove the value"))
 
 	// check the state of SB
@@ -1495,17 +1505,17 @@ func TestDependencyCycles(t *testing.T) {
 	opHistory = mockSB.PopHistoryOfOps()
 	Expect(opHistory).To(HaveLen(3))
 	operation = opHistory[0]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue3))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[1]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue1))
 	Expect(operation.Err).To(BeNil())
 	operation = opHistory[2]
-	Expect(operation.OpType).To(Equal(test.Delete))
+	Expect(operation.OpType).To(Equal(test.MockDelete))
 	Expect(operation.Descriptor).To(BeEquivalentTo(descriptor1Name))
 	Expect(operation.Key).To(BeEquivalentTo(prefixA + baseValue2))
 	Expect(operation.Err.Error()).To(BeEquivalentTo("failed to remove the value"))
@@ -1522,6 +1532,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue2, value: utils.ProtoToString(nil), origin: FromNB},
 	})
@@ -1529,7 +1540,7 @@ func TestDependencyCycles(t *testing.T) {
 
 	txnOps = recordedTxnOps{
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue3,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
 			prevOrigin: FromNB,
@@ -1537,7 +1548,7 @@ func TestDependencyCycles(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue1,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value1-data")),
 			prevOrigin: FromNB,
@@ -1545,7 +1556,7 @@ func TestDependencyCycles(t *testing.T) {
 			isPending:  true,
 		},
 		{
-			operation:  del,
+			operation:  Delete,
 			key:        prefixA + baseValue2,
 			prevValue:  utils.ProtoToString(test.NewStringValue("base-value2-data")),
 			prevOrigin: FromNB,
@@ -1678,6 +1689,7 @@ func TestSpecialCase(t *testing.T) {
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(HaveLen(1))
 	Expect(kvErrors[0].Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item1"))
+	Expect(kvErrors[0].TxnOperation).To(BeEquivalentTo(Delete))
 	Expect(kvErrors[0].Error.Error()).To(BeEquivalentTo("failed to delete value"))
 
 	//Expect(false).To(BeTrue())

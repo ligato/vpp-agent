@@ -5,8 +5,8 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 )
 
 ////////// type-safe key-value pair with metadata //////////
@@ -25,7 +25,7 @@ type InterfaceDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, v1, v2 *interfaces.LinuxInterface) bool
+	ValueComparator    func(key string, oldValue, newValue *interfaces.LinuxInterface) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
@@ -90,13 +90,13 @@ func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *InterfaceDescriptorAdapter) ValueComparator(key string, v1, v2 proto.Message) bool {
-	typedV1, err1 := castInterfaceValue(key, v1)
-	typedV2, err2 := castInterfaceValue(key, v2)
+func (da *InterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castInterfaceValue(key, oldValue)
+	typedNewValue, err2 := castInterfaceValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
-	return da.descriptor.ValueComparator(key, typedV1, typedV2)
+	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
 func (da *InterfaceDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {

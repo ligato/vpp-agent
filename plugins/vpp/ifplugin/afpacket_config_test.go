@@ -398,7 +398,7 @@ func TestAfPacketNewLinuxInterfaceNoLinux(t *testing.T) {
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log)
 	err := plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Test registered linux interface
@@ -456,7 +456,7 @@ func TestAfPacketDeleteLinuxInterfaceNoLinux(t *testing.T) {
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log)
 	err := plugin.Init(log, ifHandler, nil, swIfIndices)
 	Expect(err).To(BeNil())
 	// Prepare
@@ -510,7 +510,7 @@ func afPacketTestSetup(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.AFPacketCo
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "afpacket", nil))
 	// Configurator
 	plugin := &ifplugin.AFPacketConfigurator{}
-	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log, nil)
+	ifHandler := vppcalls.NewIfVppHandler(ctx.MockChannel, log)
 	err := plugin.Init(log, ifHandler, struct{}{}, swIfIndices)
 	Expect(err).To(BeNil())
 

@@ -18,7 +18,6 @@ import (
 	"runtime"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netns"
 )
 
@@ -74,15 +73,13 @@ func NewNamespaceMgmtCtx() NamespaceMgmtCtx {
 
 // namedNetNsHandler implements NamedNetNsAPI using provided system handler.
 type namedNetNsHandler struct {
-	stopwatch  *measure.Stopwatch
 	log        logging.Logger
 	sysHandler SystemAPI
 }
 
 // NewNamedNetNsHandler creates new instance of namespace handler
-func NewNamedNetNsHandler(sysHandler SystemAPI, log logging.Logger, stopwatch *measure.Stopwatch) NamedNetNsAPI {
+func NewNamedNetNsHandler(sysHandler SystemAPI, log logging.Logger) NamedNetNsAPI {
 	return &namedNetNsHandler{
-		stopwatch:  stopwatch,
 		log:        log,
 		sysHandler: sysHandler,
 	}

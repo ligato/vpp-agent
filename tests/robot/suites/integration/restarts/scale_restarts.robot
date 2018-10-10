@@ -6,6 +6,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 
 Library    SSHLibrary
 
+Force Tags        integration    ExpectedFailure
 Suite Setup       Run Keywords
 ...    KubeSetup.Kubernetes Suite Setup    ${CLUSTER_ID}
 ...    AND    Restarts Suite Setup with ${16} VNFs at ${6} memifs each and ${48} non-VPP containers

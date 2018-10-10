@@ -24,32 +24,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-// txnOperationType differentiates between add, modify (incl. re-create), delete
-// and update operations.
-type txnOperationType int
-
-const (
-	add txnOperationType = iota
-	modify
-	del
-	update
-)
-
-// String returns human-readable string representation of transaction operation.
-func (txnOpType txnOperationType) String() string {
-	switch txnOpType {
-	case add:
-		return "ADD"
-	case modify:
-		return "MODIFY"
-	case del:
-		return "DELETE"
-	case update:
-		return "UPDATE"
-	}
-	return "UNKNOWN"
-}
-
 // recordedTxn is used to record executed transaction.
 type recordedTxn struct {
 	preRecord bool // not yet fully recorded, only args + plan + pre-processing errors
@@ -63,6 +37,7 @@ type recordedTxn struct {
 	txnType            txnType
 	isFullResync       bool
 	isDownstreamResync bool
+	description        string
 	values             []recordedKVPair
 
 	// result
@@ -74,7 +49,7 @@ type recordedTxn struct {
 // recorderTxnOp is used to record executed/planned transaction operation.
 type recordedTxnOp struct {
 	// identification
-	operation txnOperationType
+	operation TxnOperation
 	key       string
 	derived   bool
 
@@ -131,6 +106,9 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 		} else {
 			str += indent2 + fmt.Sprintf("- type: %s\n", txn.txnType.String())
 		}
+		if txn.description != "" {
+			str += indent2 + fmt.Sprintf("- description: %s\n", txn.description)
+		}
 		if txn.isDownstreamResync {
 			goto printOps
 		}
@@ -168,8 +146,8 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 		if len(txn.executed) == 0 {
 			str += indent1 + "* executed operations:\n"
 		} else {
-			str += indent1 + fmt.Sprintf("* executed operations (%s - %s):\n",
-				txn.start.String(), txn.stop.String())
+			str += indent1 + fmt.Sprintf("* executed operations (%s - %s, duration = %s):\n",
+				txn.start.String(), txn.stop.String(), txn.stop.Sub(txn.start).String())
 		}
 		str += txn.executed.StringWithOpts(indent + 4)
 	}
@@ -230,14 +208,14 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.key)
 	showPrevForAdd := op.wasPending && op.prevValue != op.newValue
-	if op.operation == modify || (op.operation == add && showPrevForAdd) {
+	if op.operation == Modify || (op.operation == Add && showPrevForAdd) {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", op.prevValue)
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", op.newValue)
 	}
-	if op.operation == del || op.operation == update {
+	if op.operation == Delete || op.operation == Update {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.prevValue)
 	}
-	if op.operation == add && !showPrevForAdd {
+	if op.operation == Add && !showPrevForAdd {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.newValue)
 	}
 	if op.prevOrigin != op.newOrigin {
@@ -330,6 +308,9 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 		isDownstreamResync: txn.args.txnType == nbTransaction && txn.args.nb.isDownstreamResync,
 		preErrors:          preErrors,
 		planned:            planned,
+	}
+	if txn.args.txnType == nbTransaction {
+		record.description = txn.args.nb.description
 	}
 
 	// record values

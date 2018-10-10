@@ -33,11 +33,11 @@ type LinuxIfMetadataIndex interface {
 	// <metadata> as *nil*.
 	LookupByName(name string) (metadata *LinuxIfMetadata, exists bool)
 
-	// LookupByTapTempName retrieves a previously configured AUTO-TAP interface
-	// associated with the given TAP temporary name.
+	// LookupByVPPTap retrieves a previously configured TAP_TO_VPP interface
+	// by the logical name of the associated VPP-side of the TAP.
 	// If there is no such interface, <exists> is returned as *false* with <name>
 	// and <metadata> both set to empty values.
-	LookupByTapTempName(tapTempName string) (name string, metadata *LinuxIfMetadata, exists bool)
+	LookupByVPPTap(vppTapName string) (name string, metadata *LinuxIfMetadata, exists bool)
 
 	// ListAllInterfaces returns slice of names of all interfaces in the mapping.
 	ListAllInterfaces() (names []string)
@@ -57,7 +57,7 @@ type LinuxIfMetadataIndexRW interface {
 // LinuxIfMetadata collects metadata for Linux interface used in secondary lookups.
 type LinuxIfMetadata struct {
 	LinuxIfIndex int
-	TapTempName  string // empty for VETHs
+	VPPTapName   string // empty for VETHs
 	Namespace    *nsmodel.LinuxNetNamespace
 }
 
@@ -76,9 +76,9 @@ type linuxIfMetadataIndex struct {
 }
 
 const (
-	// tapTempNameIndexKey is used as a secondary key used to search AUTO-TAP
-	// interface by temporary TAP name.
-	tapTempNameIndexKey = "tap-temp-name"
+	// tapVPPNameIndexKey is used as a secondary key used to search TAP_TO_VPP
+	// interface by the logical name of the VPP-side of the TAP.
+	tapVPPNameIndexKey = "tap-vpp-name"
 )
 
 // NewLinuxIfIndex creates a new instance implementing LinuxIfMetadataIndexRW.
@@ -102,13 +102,13 @@ func (ifmx *linuxIfMetadataIndex) LookupByName(name string) (metadata *LinuxIfMe
 	return nil, false
 }
 
-// LookupByTapTempName retrieves a previously configured AUTO-TAP interface
-// associated with the given TAP temporary name.
+// LookupByVPPTap retrieves a previously configured TAP_TO_VPP interface
+// by the logical name of the associated VPP-side of the TAP.
 // If there is no such interface, <exists> is returned as *false* with <name>
 // and <metadata> both set to empty values.
-func (ifmx *linuxIfMetadataIndex) LookupByTapTempName(tapTempName string) (name string, metadata *LinuxIfMetadata, exists bool) {
-	res := ifmx.ListNames(tapTempNameIndexKey, tapTempName)
-	if len(res) == 1 {
+func (ifmx *linuxIfMetadataIndex) LookupByVPPTap(vppTapName string) (name string, metadata *LinuxIfMetadata, exists bool) {
+	res := ifmx.ListNames(tapVPPNameIndexKey, vppTapName)
+	if len(res) != 1 {
 		return
 	}
 	untypedMeta, found := ifmx.GetValue(res[0])
@@ -155,8 +155,8 @@ func indexMetadata(metaData interface{}) map[string][]string {
 		return indexes
 	}
 
-	if ifMeta.TapTempName != "" {
-		indexes[tapTempNameIndexKey] = []string{ifMeta.TapTempName}
+	if ifMeta.VPPTapName != "" {
+		indexes[tapVPPNameIndexKey] = []string{ifMeta.VPPTapName}
 	}
 	return indexes
 }

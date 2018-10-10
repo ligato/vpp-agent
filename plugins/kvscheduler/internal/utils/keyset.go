@@ -32,7 +32,7 @@ func (ks KeySet) String() string {
 	idx := 0
 	for key := range ks {
 		str += key
-		if idx < len(ks) - 1 {
+		if idx < len(ks)-1 {
 			str += ", "
 		}
 		idx++
@@ -86,4 +86,3 @@ func (ks KeySet) Intersect(ks2 KeySet) KeySet {
 	}
 	return intersection
 }
-

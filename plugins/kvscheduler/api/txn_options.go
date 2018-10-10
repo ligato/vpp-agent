@@ -20,6 +20,7 @@ import (
 )
 
 type schedulerCtxKey int
+
 const (
 	// fullResyncCtxKey is a key under which *full-resync* txn option is stored
 	// into the context.
@@ -40,6 +41,10 @@ const (
 	// revertCtxKey is a key under which *revert* txn option is stored into
 	// the context.
 	revertCtxKey
+
+	// txnDescriptionKey is a key under which transaction description is stored
+	// into the context.
+	txnDescriptionKey
 )
 
 /* Full-Resync */
@@ -157,4 +162,28 @@ func WithRevert(ctx context.Context) context.Context {
 func IsWithRevert(ctx context.Context) bool {
 	_, isWithRevert := ctx.Value(revertCtxKey).(*revertOpt)
 	return isWithRevert
+}
+
+/* Txn Description */
+
+// txnDescriptionOpt represents the *txn-description* transaction option.
+type txnDescriptionOpt struct {
+	description string
+}
+
+// WithDescription prepares context for transaction that will have description
+// provided.
+// By default, transactions are without description.
+func WithDescription(ctx context.Context, description string) context.Context {
+	return context.WithValue(ctx, txnDescriptionKey, &txnDescriptionOpt{description: description})
+}
+
+// IsWithDescription returns true if the transaction context is configured
+// to include transaction description.
+func IsWithDescription(ctx context.Context) (description string, withDescription bool) {
+	descriptionOpt, withDescription := ctx.Value(txnDescriptionKey).(*txnDescriptionOpt)
+	if !withDescription {
+		return "", false
+	}
+	return descriptionOpt.description, true
 }

@@ -8,7 +8,7 @@ Resource     ../../../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../../../libraries/all_libs.robot
 
-Force Tags        sfcIPv6
+Force Tags        sfc     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Suite Cleanup
 Test Setup        TestSetup
@@ -18,7 +18,7 @@ Test Teardown     TestTeardown
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 ${IP_1}=               fd30::1:b:0:0:1
 ${IP_2}=               fd30::1:b:0:0:10
 

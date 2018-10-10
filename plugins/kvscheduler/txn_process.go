@@ -151,7 +151,7 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 		descriptor := scheduler.registry.GetDescriptorForKey(key)
 		if descriptor == nil {
 			// unimplemented base value
-			errors = append(errors, KeyWithError{Key: key, Error: ErrUnimplementedKey})
+			errors = append(errors, KeyWithError{Key: key, TxnOperation: PreProcess, Error: ErrUnimplementedKey})
 			continue
 		}
 		var value proto.Message
@@ -159,14 +159,14 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 			// create an instance of the target proto.Message type
 			valueType := proto.MessageType(descriptor.ValueTypeName)
 			if valueType == nil {
-				errors = append(errors, KeyWithError{Key: key, Error: ErrUnregisteredValueType})
+				errors = append(errors, KeyWithError{Key: key, TxnOperation: PreProcess, Error: ErrUnregisteredValueType})
 				continue
 			}
 			value = reflect.New(valueType.Elem()).Interface().(proto.Message)
 			// try to deserialize the value
 			err := lazyValue.GetValue(value)
 			if err != nil {
-				errors = append(errors, KeyWithError{Key: key, Error: err})
+				errors = append(errors, KeyWithError{Key: key, TxnOperation: PreProcess, Error: err})
 				continue
 			}
 		}
@@ -337,8 +337,9 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 		}
 		txnErrors = append(txnErrors,
 			KeyWithError{
-				Key:   txnOp.key,
-				Error: txnOp.newErr,
+				Key:          txnOp.key,
+				TxnOperation: txnOp.operation,
+				Error:        txnOp.newErr,
 			})
 	}
 

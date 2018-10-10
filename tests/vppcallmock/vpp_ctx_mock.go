@@ -141,6 +141,9 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 					}
 					return nil, 0, false
 				}
+				if dataMock.Message == nil {
+					return nil, 0, false
+				}
 				msgID, err := ctx.MockVpp.GetMsgID(dataMock.Message.GetMessageName(), dataMock.Message.GetCrcString())
 				Expect(err).To(BeNil())
 				reply, err := ctx.MockVpp.ReplyBytes(request, dataMock.Message)

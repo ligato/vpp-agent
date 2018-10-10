@@ -15,19 +15,19 @@
 package linuxclient
 
 import (
-	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
+	vpp_clientv2 "github.com/ligato/vpp-agent/clientv2/vpp"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -45,7 +45,7 @@ type DataResyncDSL interface {
 	LinuxRoute(route *l3.LinuxStaticRoute) DataResyncDSL
 
 	// VppInterface adds VPP interface to the RESYNC request.
-	VppInterface(intf *vpp_intf.Interfaces_Interface) DataResyncDSL
+	VppInterface(intf *vpp_intf.Interface) DataResyncDSL
 	// BfdSession adds VPP bidirectional forwarding detection session
 	// to the RESYNC request.
 	BfdSession(val *vpp_bfd.SingleHopBFD_Session) DataResyncDSL
@@ -83,5 +83,5 @@ type DataResyncDSL interface {
 	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
-	Send() vpp_clientv1.Reply
+	Send() vpp_clientv2.Reply
 }

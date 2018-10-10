@@ -43,7 +43,7 @@ type {{ .DescriptorName }}Descriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, v1, v2 {{ .ValueT }}) bool
+	ValueComparator    func(key string, oldValue, newValue {{ .ValueT }}) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
@@ -69,12 +69,12 @@ func New{{ .DescriptorName }}Descriptor(typedDescriptor *{{ .DescriptorName }}De
 	adapter := &{{ .DescriptorName }}DescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
-        KeySelector:        typedDescriptor.KeySelector,
-        ValueTypeName:      typedDescriptor.ValueTypeName,
+		KeySelector:        typedDescriptor.KeySelector,
+		ValueTypeName:      typedDescriptor.ValueTypeName,
 		KeyLabel:           typedDescriptor.KeyLabel,
 		NBKeyPrefix:        typedDescriptor.NBKeyPrefix,
 		WithMetadata:       typedDescriptor.WithMetadata,
-        MetadataMapFactory: typedDescriptor.MetadataMapFactory,
+		MetadataMapFactory: typedDescriptor.MetadataMapFactory,
 		IsRetriableFailure: typedDescriptor.IsRetriableFailure,
 		DumpDependencies:   typedDescriptor.DumpDependencies,
 	}
@@ -108,13 +108,13 @@ func New{{ .DescriptorName }}Descriptor(typedDescriptor *{{ .DescriptorName }}De
 	return descriptor
 }
 
-func (da *{{ .DescriptorName }}DescriptorAdapter) ValueComparator(key string, v1, v2 proto.Message) bool {
-	typedV1, err1 := cast{{ .DescriptorName }}Value(key, v1)
-	typedV2, err2 := cast{{ .DescriptorName }}Value(key, v2)
+func (da *{{ .DescriptorName }}DescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := cast{{ .DescriptorName }}Value(key, oldValue)
+	typedNewValue, err2 := cast{{ .DescriptorName }}Value(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
-	return da.descriptor.ValueComparator(key, typedV1, typedV2)
+	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
 func (da *{{ .DescriptorName }}DescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -227,7 +227,7 @@ func (da *{{ .DescriptorName }}DescriptorAdapter) Dump(correlate []KVWithMetadat
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
-			}
+		}
 		kvWithMetadata.Value = typedKVWithMetadata.Value
 		dump = append(dump, kvWithMetadata)
 	}

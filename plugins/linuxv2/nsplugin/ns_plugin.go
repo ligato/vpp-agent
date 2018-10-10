@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate protoc --proto_path=../model/namespace --gogo_out=../model/namespace namespace.proto
-
 package nsplugin
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/go-errors/errors"
 	"github.com/vishvananda/netns"
@@ -26,9 +25,6 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	"strconv"
-
-	"github.com/ligato/cn-infra/logging/measure"
 	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
 	nsLinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
@@ -43,7 +39,6 @@ type NsPlugin struct {
 
 	// From configuration file
 	disabled  bool
-	stopwatch *measure.Stopwatch
 
 	// Default namespace
 	defaultNs netns.NsHandle
@@ -64,7 +59,6 @@ type Deps struct {
 
 // Config holds the nsplugin configuration.
 type Config struct {
-	Stopwatch bool `json:"stopwatch"`
 	Disabled  bool `json:"disabled"`
 }
 
@@ -90,19 +84,11 @@ func (p *NsPlugin) Init() error {
 			p.Log.Infof("Disabling Linux Namespace plugin")
 			return nil
 		}
-		if config.Stopwatch {
-			p.Log.Infof("stopwatch enabled for %v", p.PluginName)
-			p.stopwatch = measure.NewStopwatch("Linux-NsPlugin", p.Log)
-		} else {
-			p.Log.Infof("stopwatch disabled for %v", p.PluginName)
-		}
-	} else {
-		p.Log.Infof("stopwatch disabled for %v", p.PluginName)
 	}
 
 	// Handlers
-	p.sysHandler = nsLinuxcalls.NewSystemHandler(p.stopwatch)
-	p.namedNsHandler = nsLinuxcalls.NewNamedNetNsHandler(p.sysHandler, p.Log, p.stopwatch)
+	p.sysHandler = nsLinuxcalls.NewSystemHandler()
+	p.namedNsHandler = nsLinuxcalls.NewNamedNetNsHandler(p.sysHandler, p.Log)
 
 	// Default namespace
 	p.defaultNs, err = p.sysHandler.GetCurrentNamespace()

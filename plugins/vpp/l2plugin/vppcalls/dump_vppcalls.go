@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"bytes"
 	"net"
-	"time"
 
 	"github.com/go-errors/errors"
 
@@ -40,10 +39,6 @@ type BridgeDomainMeta struct {
 
 // DumpBridgeDomains implements bridge domain handler.
 func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// At first prepare bridge domain ARP termination table which needs to be dumped separately
 	bdArpTab, err := h.dumpBridgeDomainMacTable()
 	if err != nil {
@@ -116,10 +111,6 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 
 // DumpBridgeDomainIDs implements bridge domain handler.
 func (h *BridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &l2ba.BridgeDomainDump{BdID: ^uint32(0)}
 	var activeDomains []uint32
 	reqCtx := h.callsChannel.SendMultiRequest(req)
@@ -140,10 +131,6 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomainIDs() ([]uint32, error) {
 
 // Reads ARP termination table from all bridge domains. Result is then added to bridge domains.
 func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(l2ba.BridgeDomainDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	bdArpTable := make(map[uint32][]*l2nb.BridgeDomains_BridgeDomain_ArpTerminationEntry)
 	req := &l2ba.BdIPMacDump{BdID: ^uint32(0)}
 
@@ -194,10 +181,6 @@ type FibMeta struct {
 
 // DumpFIBTableEntries implements fib handler.
 func (h *FibVppHandler) DumpFIBTableEntries() (map[string]*FibTableDetails, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(l2ba.L2FibTableDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// map for the resulting FIBs
 	fibs := make(map[string]*FibTableDetails)
 
@@ -264,10 +247,6 @@ type XcMeta struct {
 
 // DumpXConnectPairs implements xconnect handler.
 func (h *XConnectVppHandler) DumpXConnectPairs() (map[uint32]*XConnectDetails, error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(l2ba.L2XconnectDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	// map for the resulting xconnect pairs
 	xpairs := make(map[uint32]*XConnectDetails)
 

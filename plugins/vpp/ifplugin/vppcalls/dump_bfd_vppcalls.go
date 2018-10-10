@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"net"
-	"time"
 
 	bfdapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
@@ -35,12 +34,12 @@ type BfdMeta struct {
 }
 
 // DumpBfdSingleHop implements BFD handler.
-func (handler *BfdVppHandler) DumpBfdSingleHop() (*BfdDetails, error) {
-	sessionDetails, err := handler.DumpBfdSessions()
+func (h *BfdVppHandler) DumpBfdSingleHop() (*BfdDetails, error) {
+	sessionDetails, err := h.DumpBfdSessions()
 	if err != nil {
 		return nil, err
 	}
-	keyDetails, err := handler.DumpBfdAuthKeys()
+	keyDetails, err := h.DumpBfdAuthKeys()
 	if err != nil {
 		return nil, err
 	}
@@ -69,18 +68,14 @@ type BfdSessionMeta struct {
 }
 
 // DumpBfdSessions implements BFD handler.
-func (handler *BfdVppHandler) DumpBfdSessions() (*BfdSessionDetails, error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(bfdapi.BfdUDPSessionDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *BfdVppHandler) DumpBfdSessions() (*BfdSessionDetails, error) {
 	var sessions []*bfd.SingleHopBFD_Session
 	meta := &BfdSessionMeta{
 		SessionIfToIdx: make(map[uint32]string),
 	}
 
 	req := &bfdapi.BfdUDPSessionDump{}
-	sessionsRequest := handler.callsChannel.SendMultiRequest(req)
+	sessionsRequest := h.callsChannel.SendMultiRequest(req)
 
 	for {
 		sessionDetails := &bfdapi.BfdUDPSessionDetails{}
@@ -92,9 +87,9 @@ func (handler *BfdVppHandler) DumpBfdSessions() (*BfdSessionDetails, error) {
 			return nil, err
 		}
 
-		ifName, _, exists := handler.ifIndexes.LookupName(sessionDetails.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupName(sessionDetails.SwIfIndex)
 		if !exists {
-			handler.log.Warnf("BFD session dump: interface name not found for index %d", sessionDetails.SwIfIndex)
+			h.log.Warnf("BFD session dump: interface name not found for index %d", sessionDetails.SwIfIndex)
 		}
 		var srcAddr, dstAddr net.IP = sessionDetails.LocalAddr, sessionDetails.PeerAddr
 
@@ -122,8 +117,8 @@ func (handler *BfdVppHandler) DumpBfdSessions() (*BfdSessionDetails, error) {
 }
 
 // DumpBfdUDPSessionsWithID implements BFD handler.
-func (handler *BfdVppHandler) DumpBfdUDPSessionsWithID(authKeyIndex uint32) (*BfdSessionDetails, error) {
-	details, err := handler.DumpBfdSessions()
+func (h *BfdVppHandler) DumpBfdUDPSessionsWithID(authKeyIndex uint32) (*BfdSessionDetails, error) {
+	details, err := h.DumpBfdSessions()
 	if err != nil || len(details.Session) == 0 {
 		return nil, err
 	}
@@ -152,18 +147,14 @@ type BfdAuthKeyMeta struct {
 }
 
 // DumpBfdAuthKeys implements BFD handler.
-func (handler *BfdVppHandler) DumpBfdAuthKeys() (*BfdAuthKeyDetails, error) {
-	defer func(t time.Time) {
-		handler.stopwatch.TimeLog(bfdapi.BfdAuthKeysDump{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
+func (h *BfdVppHandler) DumpBfdAuthKeys() (*BfdAuthKeyDetails, error) {
 	var authKeys []*bfd.SingleHopBFD_Key
 	meta := &BfdAuthKeyMeta{
 		KeyIDToUseCount: make(map[uint32]uint32),
 	}
 
 	req := &bfdapi.BfdAuthKeysDump{}
-	keysRequest := handler.callsChannel.SendMultiRequest(req)
+	keysRequest := h.callsChannel.SendMultiRequest(req)
 
 	for {
 		keyDetails := &bfdapi.BfdAuthKeysDetails{}

@@ -15,22 +15,24 @@
 package linuxcalls
 
 import (
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/vishvananda/netlink"
 )
 
 // NetlinkAPI interface covers all methods inside linux calls package needed
 // to manage linux ARP entries and routes.
 type NetlinkAPI interface {
+	NetlinkAPIWrite
+	NetlinkAPIRead
+}
+
+// NetlinkAPIWrite interface covers write methods inside linux calls package
+// needed to manage linux ARP entries and routes.
+type NetlinkAPIWrite interface {
 	/* ARP */
 	// SetARPEntry adds/modifies existing linux ARP entry.
 	SetARPEntry(arpEntry *netlink.Neigh) error
 	// DelARPEntry removes linux ARP entry.
 	DelARPEntry(arpEntry *netlink.Neigh) error
-	// GetARPEntries reads all configured static ARP entries for given interface.
-	// <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
-	// are returned.
-	GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error)
 
 	/* Routes */
 	// AddStaticRoute adds new linux static route.
@@ -39,6 +41,16 @@ type NetlinkAPI interface {
 	ReplaceStaticRoute(route *netlink.Route) error
 	// DelStaticRoute removes linux static route.
 	DelStaticRoute(route *netlink.Route) error
+}
+
+// NetlinkAPIRead interface covers read methods inside linux calls package
+// needed to manage linux ARP entries and routes.
+type NetlinkAPIRead interface {
+	// GetARPEntries reads all configured static ARP entries for given interface.
+	// <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
+	// are returned.
+	GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error)
+
 	// GetStaticRoutes reads all configured static routes with the given outgoing
 	// interface.
 	// <interfaceIdx> works as filter, if set to zero, all routes in the namespace
@@ -46,14 +58,11 @@ type NetlinkAPI interface {
 	GetStaticRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error)
 }
 
-// NetLinkHandler is accessor for netlink methods
+// NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
-	stopwatch *measure.Stopwatch
 }
 
-// NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(stopwatch *measure.Stopwatch) *NetLinkHandler {
-	return &NetLinkHandler{
-		stopwatch: stopwatch,
-	}
+// NewNetLinkHandler creates new instance of Netlink handler.
+func NewNetLinkHandler() *NetLinkHandler {
+	return &NetLinkHandler{}
 }

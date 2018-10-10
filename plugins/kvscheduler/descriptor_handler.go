@@ -20,11 +20,11 @@ func (h *descriptorHandler) keyLabel(key string) string {
 }
 
 // equivalentValues by default uses proto.Equal().
-func (h *descriptorHandler) equivalentValues(key string, v1, v2 proto.Message) bool {
+func (h *descriptorHandler) equivalentValues(key string, oldValue, newValue proto.Message) bool {
 	if h.descriptor == nil || h.descriptor.ValueComparator == nil {
-		return proto.Equal(v1, v2)
+		return proto.Equal(oldValue, newValue)
 	}
-	return h.descriptor.ValueComparator(key, v1, v2)
+	return h.descriptor.ValueComparator(key, oldValue, newValue)
 }
 
 // add returns ErrUnimplementedAdd is Add is not provided.

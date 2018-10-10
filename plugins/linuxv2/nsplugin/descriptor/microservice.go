@@ -92,7 +92,7 @@ func NewMicroserviceDescriptor(scheduler scheduler.KVScheduler, log logging.Plug
 	var err error
 
 	descriptor := &MicroserviceDescriptor{
-		log:                 log.NewLogger("-descriptor"),
+		log:                 log.NewLogger("ms-descriptor"),
 		scheduler:           scheduler,
 		createTime:          make(map[string]time.Time),
 		microServiceByLabel: make(map[string]*Microservice),
@@ -112,29 +112,29 @@ func NewMicroserviceDescriptor(scheduler scheduler.KVScheduler, log logging.Plug
 }
 
 // GetDescriptor returns descriptor suitable for registration with the KVScheduler.
-func (msd *MicroserviceDescriptor) GetDescriptor() *scheduler.KVDescriptor {
+func (d *MicroserviceDescriptor) GetDescriptor() *scheduler.KVDescriptor {
 	return &scheduler.KVDescriptor{
 		Name:        MicroserviceDescriptorName,
-		KeySelector: msd.IsMicroserviceKey,
-		Dump:        msd.Dump,
+		KeySelector: d.IsMicroserviceKey,
+		Dump:        d.Dump,
 	}
 }
 
 // IsMicroserviceKey returns true for key identifying microservices.
-func (msd *MicroserviceDescriptor) IsMicroserviceKey(key string) bool {
+func (d *MicroserviceDescriptor) IsMicroserviceKey(key string) bool {
 	return strings.HasPrefix(key, nsmodel.MicroserviceKeyPrefix)
 }
 
 // Dump returns key with empty value for every currently existing microservice.
-func (msd *MicroserviceDescriptor) Dump(correlate []scheduler.KVWithMetadata) (dump []scheduler.KVWithMetadata, err error) {
+func (d *MicroserviceDescriptor) Dump(correlate []scheduler.KVWithMetadata) (dump []scheduler.KVWithMetadata, err error) {
 	// wait until microservice state data are in-sync with the docker
-	msd.msStateLock.Lock()
-	if !msd.msStateInSync {
-		msd.msStateInSyncCond.Wait()
+	d.msStateLock.Lock()
+	if !d.msStateInSync {
+		d.msStateInSyncCond.Wait()
 	}
-	defer msd.msStateLock.Unlock()
+	defer d.msStateLock.Unlock()
 
-	for msLabel := range msd.microServiceByLabel {
+	for msLabel := range d.microServiceByLabel {
 		dump = append(dump, scheduler.KVWithMetadata{
 			Key:    nsmodel.MicroserviceKey(msLabel),
 			Value:  &prototypes.Empty{},
@@ -142,61 +142,61 @@ func (msd *MicroserviceDescriptor) Dump(correlate []scheduler.KVWithMetadata) (d
 		})
 	}
 
-	msd.log.WithField("dump", dump).Debug("Dumping Microservices")
+	d.log.WithField("dump", dump).Debug("Dumping Microservices")
 	return dump, nil
 }
 
 // StartTracker starts microservice tracker,
-func (msd *MicroserviceDescriptor) StartTracker() {
-	go msd.trackMicroservices(msd.ctx)
+func (d *MicroserviceDescriptor) StartTracker() {
+	go d.trackMicroservices(d.ctx)
 }
 
 // StopTracker stops microservice tracker,
-func (msd *MicroserviceDescriptor) StopTracker() {
-	msd.cancel()
-	msd.wg.Wait()
+func (d *MicroserviceDescriptor) StopTracker() {
+	d.cancel()
+	d.wg.Wait()
 }
 
 // GetMicroserviceStateData returns state data for the given microservice.
-func (msd *MicroserviceDescriptor) GetMicroserviceStateData(msLabel string) (ms *Microservice, found bool) {
-	msd.msStateLock.Lock()
-	if !msd.msStateInSync {
-		msd.msStateInSyncCond.Wait()
+func (d *MicroserviceDescriptor) GetMicroserviceStateData(msLabel string) (ms *Microservice, found bool) {
+	d.msStateLock.Lock()
+	if !d.msStateInSync {
+		d.msStateInSyncCond.Wait()
 	}
-	defer msd.msStateLock.Unlock()
+	defer d.msStateLock.Unlock()
 
-	ms, found = msd.microServiceByLabel[msLabel]
+	ms, found = d.microServiceByLabel[msLabel]
 	return ms, found
 }
 
 // handleMicroservices handles microservice changes.
-func (msd *MicroserviceDescriptor) handleMicroservices(ctx *microserviceCtx) {
+func (d *MicroserviceDescriptor) handleMicroservices(ctx *microserviceCtx) {
 	var err error
 	var newest int64
 	var containers []docker.APIContainers
 	var nextCreated []string
 
 	// First check if any microservice has terminated.
-	msd.msStateLock.Lock()
-	for container := range msd.microServiceByID {
-		details, err := msd.dockerClient.InspectContainer(container)
+	d.msStateLock.Lock()
+	for container := range d.microServiceByID {
+		details, err := d.dockerClient.InspectContainer(container)
 		if err != nil || !details.State.Running {
-			msd.processTerminatedMicroservice(container)
+			d.processTerminatedMicroservice(container)
 		}
 	}
-	msd.msStateLock.Unlock()
+	d.msStateLock.Unlock()
 
 	// Now check if previously created containers have transitioned to the state "running".
 	for _, container := range ctx.created {
-		details, err := msd.dockerClient.InspectContainer(container)
+		details, err := d.dockerClient.InspectContainer(container)
 		if err == nil {
 			if details.State.Running {
-				msd.detectMicroservice(details)
+				d.detectMicroservice(details)
 			} else if details.State.Status == "created" {
 				nextCreated = append(nextCreated, container)
 			}
 		} else {
-			msd.log.Debugf("Inspect container ID %v failed: %v", container, err)
+			d.log.Debugf("Inspect container ID %v failed: %v", container, err)
 		}
 	}
 	ctx.created = nextCreated
@@ -210,33 +210,33 @@ func (msd *MicroserviceDescriptor) handleMicroservices(ctx *microserviceCtx) {
 	if ctx.since != "" {
 		listOpts.Filters["since"] = []string{ctx.since}
 	}
-	containers, err = msd.dockerClient.ListContainers(listOpts)
+	containers, err = d.dockerClient.ListContainers(listOpts)
 	if err != nil {
 		// If 'since' container was not found, list all containers (404 is required to support older docker version)
 		if dockerErr, ok := err.(*docker.Error); ok && (dockerErr.Status == 500 || dockerErr.Status == 404) {
 			// Reset filter and list containers again
-			msd.log.Debugf("clearing 'since' %s", ctx.since)
+			d.log.Debugf("clearing 'since' %s", ctx.since)
 			ctx.since = ""
 			delete(listOpts.Filters, "since")
-			containers, err = msd.dockerClient.ListContainers(listOpts)
+			containers, err = d.dockerClient.ListContainers(listOpts)
 		}
 		if err != nil {
 			// If there is other error, return it
-			msd.log.Errorf("Error listing docker containers: %v", err)
+			d.log.Errorf("Error listing docker containers: %v", err)
 			return
 		}
 	}
 
 	for _, container := range containers {
-		msd.log.Debugf("processing new container %v with state %v", container.ID, container.State)
+		d.log.Debugf("processing new container %v with state %v", container.ID, container.State)
 		if container.State == "running" && container.Created > ctx.lastInspected {
 			// Inspect the container to get the list of defined environment variables.
-			details, err := msd.dockerClient.InspectContainer(container.ID)
+			details, err := d.dockerClient.InspectContainer(container.ID)
 			if err != nil {
-				msd.log.Debugf("Inspect container %v failed: %v", container.ID, err)
+				d.log.Debugf("Inspect container %v failed: %v", container.ID, err)
 				continue
 			}
-			msd.detectMicroservice(details)
+			d.detectMicroservice(details)
 		}
 		if container.State == "created" {
 			ctx.created = append(ctx.created, container.ID)
@@ -254,21 +254,21 @@ func (msd *MicroserviceDescriptor) handleMicroservices(ctx *microserviceCtx) {
 
 // detectMicroservice inspects container to see if it is a microservice.
 // If microservice is detected, processNewMicroservice() is called to process it.
-func (msd *MicroserviceDescriptor) detectMicroservice(container *docker.Container) {
+func (d *MicroserviceDescriptor) detectMicroservice(container *docker.Container) {
 	// Search for the microservice label.
 	var label string
 	for _, env := range container.Config.Env {
 		if strings.HasPrefix(env, servicelabel.MicroserviceLabelEnvVar+"=") {
 			label = env[len(servicelabel.MicroserviceLabelEnvVar)+1:]
 			if label != "" {
-				msd.log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
-				last := msd.createTime[label]
+				d.log.Debugf("detected container as microservice: Name=%v ID=%v Created=%v State.StartedAt=%v", container.Name, container.ID, container.Created, container.State.StartedAt)
+				last := d.createTime[label]
 				if last.After(container.Created) {
-					msd.log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
+					d.log.Debugf("ignoring older container created at %v as microservice: %+v", last, container)
 					continue
 				}
-				msd.createTime[label] = container.Created
-				msd.processNewMicroservice(label, container.ID, container.State.Pid)
+				d.createTime[label] = container.Created
+				d.processNewMicroservice(label, container.ID, container.State.Pid)
 			}
 		}
 	}
@@ -276,27 +276,27 @@ func (msd *MicroserviceDescriptor) detectMicroservice(container *docker.Containe
 
 // processNewMicroservice is triggered every time a new microservice gets freshly started. All pending interfaces are moved
 // to its namespace.
-func (msd *MicroserviceDescriptor) processNewMicroservice(microserviceLabel string, id string, pid int) {
-	msd.msStateLock.Lock()
-	defer msd.msStateLock.Unlock()
+func (d *MicroserviceDescriptor) processNewMicroservice(microserviceLabel string, id string, pid int) {
+	d.msStateLock.Lock()
+	defer d.msStateLock.Unlock()
 
-	ms, restarted := msd.microServiceByLabel[microserviceLabel]
+	ms, restarted := d.microServiceByLabel[microserviceLabel]
 	if restarted {
-		msd.processTerminatedMicroservice(ms.ID)
-		msd.log.WithFields(logging.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
+		d.processTerminatedMicroservice(ms.ID)
+		d.log.WithFields(logging.Fields{"label": microserviceLabel, "new-pid": pid, "new-id": id}).
 			Warn("Microservice has been restarted")
 	} else {
-		msd.log.WithFields(logging.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
+		d.log.WithFields(logging.Fields{"label": microserviceLabel, "pid": pid, "id": id}).
 			Debug("Discovered new microservice")
 	}
 
 	ms = &Microservice{Label: microserviceLabel, PID: pid, ID: id}
-	msd.microServiceByLabel[microserviceLabel] = ms
-	msd.microServiceByID[id] = ms
+	d.microServiceByLabel[microserviceLabel] = ms
+	d.microServiceByID[id] = ms
 
 	// Notify scheduler about new microservice
-	if msd.msStateInSync {
-		msd.scheduler.PushSBNotification(
+	if d.msStateInSync {
+		d.scheduler.PushSBNotification(
 			nsmodel.MicroserviceKey(ms.Label),
 			&prototypes.Empty{},
 			nil)
@@ -305,22 +305,22 @@ func (msd *MicroserviceDescriptor) processNewMicroservice(microserviceLabel stri
 
 // processTerminatedMicroservice is triggered every time a known microservice
 // has terminated. All associated interfaces become obsolete and are thus removed.
-func (msd *MicroserviceDescriptor) processTerminatedMicroservice(id string) {
-	ms, exists := msd.microServiceByID[id]
+func (d *MicroserviceDescriptor) processTerminatedMicroservice(id string) {
+	ms, exists := d.microServiceByID[id]
 	if !exists {
-		msd.log.WithFields(logging.Fields{"id": id}).
+		d.log.WithFields(logging.Fields{"id": id}).
 			Warn("Detected removal of an unknown microservice")
 		return
 	}
-	msd.log.WithFields(logging.Fields{"label": ms.Label, "pid": ms.PID, "id": ms.ID}).
+	d.log.WithFields(logging.Fields{"label": ms.Label, "pid": ms.PID, "id": ms.ID}).
 		Debug("Microservice has terminated")
 
-	delete(msd.microServiceByLabel, ms.Label)
-	delete(msd.microServiceByID, ms.ID)
+	delete(d.microServiceByLabel, ms.Label)
+	delete(d.microServiceByID, ms.ID)
 
 	// Notify scheduler about terminated microservice
-	if msd.msStateInSync {
-		msd.scheduler.PushSBNotification(
+	if d.msStateInSync {
+		d.scheduler.PushSBNotification(
 			nsmodel.MicroserviceKey(ms.Label),
 			nil,
 			nil)
@@ -328,11 +328,11 @@ func (msd *MicroserviceDescriptor) processTerminatedMicroservice(id string) {
 }
 
 // trackMicroservices is running in the background and maintains a map of microservice labels to container info.
-func (msd *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
-	msd.wg.Add(1)
+func (d *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
+	d.wg.Add(1)
 	defer func() {
-		msd.wg.Done()
-		msd.log.Debugf("Microservice tracking ended")
+		d.wg.Done()
+		d.log.Debugf("Microservice tracking ended")
 	}()
 
 	msCtx := &microserviceCtx{}
@@ -343,9 +343,9 @@ func (msd *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
 	for {
 		select {
 		case <-timer.C:
-			if err := msd.dockerClient.Ping(); err != nil {
+			if err := d.dockerClient.Ping(); err != nil {
 				if clientOk {
-					msd.log.Errorf("Docker ping check failed: %v", err)
+					d.log.Errorf("Docker ping check failed: %v", err)
 				}
 				clientOk = false
 
@@ -355,31 +355,31 @@ func (msd *MicroserviceDescriptor) trackMicroservices(ctx context.Context) {
 			}
 
 			if !clientOk {
-				msd.log.Infof("Docker ping check OK")
-				/*if info, err := msd.dockerClient.Info(); err != nil {
-					msd.log.Errorf("Retrieving docker info failed: %v", err)
+				d.log.Infof("Docker ping check OK")
+				/*if info, err := d.dockerClient.Info(); err != nil {
+					d.log.Errorf("Retrieving docker info failed: %v", err)
 					timer.Reset(dockerRetryPeriod)
 					continue
 				} else {
-					msd.log.Infof("Docker connection established: server version: %v (%v %v %v)",
+					d.log.Infof("Docker connection established: server version: %v (%v %v %v)",
 						info.ServerVersion, info.OperatingSystem, info.Architecture, info.KernelVersion)
 				}*/
 			}
 			clientOk = true
 
-			msd.handleMicroservices(msCtx)
+			d.handleMicroservices(msCtx)
 
 			// Sleep before another refresh.
 			timer.Reset(dockerRefreshPeriod)
-		case <-msd.ctx.Done():
+		case <-d.ctx.Done():
 			return
 		}
 
 		// mark state data as in-sync - if connection to docker is failing,
 		// empty set of microservices is considered
-		msd.msStateLock.Lock()
-		msd.msStateInSync = true
-		msd.msStateLock.Unlock()
-		msd.msStateInSyncCond.Broadcast()
+		d.msStateLock.Lock()
+		d.msStateInSync = true
+		d.msStateLock.Unlock()
+		d.msStateInSyncCond.Broadcast()
 	}
 }

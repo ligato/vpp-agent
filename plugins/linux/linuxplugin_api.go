@@ -17,6 +17,7 @@ package linux
 import (
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
+	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 )
 
 // API of Linux Plugin
@@ -35,4 +36,7 @@ type API interface {
 	// route indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux routes.
 	GetLinuxRouteIndexes() l3idx.LinuxRouteIndex
+
+	// GetNamespaceHandler gives access to namespace API which allows plugins to manipulate with linux namespaces
+	GetNamespaceHandler() nsplugin.NamespaceAPI
 }

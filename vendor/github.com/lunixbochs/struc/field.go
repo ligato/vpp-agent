@@ -222,21 +222,13 @@ func (f *Field) unpackVal(buf []byte, val reflect.Value, length int, options *Op
 	case Bool, Int8, Int16, Int32, Int64, Uint8, Uint16, Uint32, Uint64:
 		var n uint64
 		switch typ {
-		case Int8:
-			n = uint64(int64(int8(buf[0])))
-		case Int16:
-			n = uint64(int64(int16(order.Uint16(buf))))
-		case Int32:
-			n = uint64(int64(int32(order.Uint32(buf))))
-		case Int64:
-			n = uint64(int64(order.Uint64(buf)))
-		case Bool, Uint8:
+		case Bool, Int8, Uint8:
 			n = uint64(buf[0])
-		case Uint16:
+		case Int16, Uint16:
 			n = uint64(order.Uint16(buf))
-		case Uint32:
+		case Int32, Uint32:
 			n = uint64(order.Uint32(buf))
-		case Uint64:
+		case Int64, Uint64:
 			n = uint64(order.Uint64(buf))
 		}
 		switch f.kind {

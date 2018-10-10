@@ -10,8 +10,7 @@ message LinuxInterface {
     enum Type {                         /* Available interface types */
         UNDEFINED = 0;
         VETH = 1;
-        AUTO_TAP = 2;                   /* TAP created by VPP to be further configured
-                                           - for Linux ifplugin the TAP is created *automatically* */
+        TAP_TO_VPP = 2;                 /* TAP created by VPP to have the Linux-side further configured */
     };
     Type type = 2;                      /* Interface type (mandatory) */
 
@@ -27,13 +26,12 @@ message LinuxInterface {
         string peer_if_name = 1;        /* Name of the VETH peer, i.e. other end of the linux veth (mandatory for VETH) */
     };
 
-    message AutoTapLink {
-        string temp_if_name = 1;        /* Name of the TAP interface in the host as configured by VPP
-                                           - optional, by default it is assumed to be the same as given by host_if_name/name */
+    message TapLink {
+        string vpp_tap_if_name = 1;     /* Logical name of the VPP TAP interface (mandatory for TAP_TO_VPP) */
     };
 
     oneof link {
         VethLink veth = 9;              /* VETH-specific configuration */
-        AutoTapLink autoTap = 10;       /* AUTO-TAP-specific configuration */
+        TapLink tap = 10;               /* TAP_TO_VPP-specific configuration */
     };
 };

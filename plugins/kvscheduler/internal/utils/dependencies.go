@@ -80,11 +80,13 @@ func TopologicalOrder(keys KeySet, deps map[string]KeySet, depFirst bool, handle
 		}
 
 		// handle cycles
+		var cycle bool
 		if len(candidates) == 0 {
+			cycle = true
 			if !handleCycle {
 				panic("Dependency cycle!")
 			}
-			// select one of the keys that depend on themselves
+			// select keys that depend on themselves
 			for key := range remains {
 				if DependsOn(key, key, deps, nil) {
 					candidates = append(candidates, key)
@@ -93,17 +95,26 @@ func TopologicalOrder(keys KeySet, deps map[string]KeySet, depFirst bool, handle
 		}
 
 		// to make the algorithm deterministic (for simplified testing),
-		// order the candidates and select the first one
+		// order the candidates
 		sort.Strings(candidates)
-		key := candidates[0]
-		sorted = append(sorted, key)
 
-		// remove key from the set of remaining keys
-		remains.Del(key)
-		delete(remainsDeps, key)
-		// remove dependency edges going to this key
-		for _, key2Deps := range remainsDeps {
-			key2Deps.Del(key)
+		// in case of cycle output all the keys from the cycle, otherwise just the first candidate
+		var selected []string
+		if cycle {
+			selected = candidates
+		} else {
+			selected = append(selected, candidates[0])
+		}
+		sorted = append(sorted, selected...)
+
+		// remove selected key(s) from the set of remaining keys
+		for _, key := range selected {
+			remains.Del(key)
+			delete(remainsDeps, key)
+			// remove dependency edges going to this key
+			for _, key2Deps := range remainsDeps {
+				key2Deps.Del(key)
+			}
 		}
 	}
 	return sorted

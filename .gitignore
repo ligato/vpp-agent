@@ -23,6 +23,7 @@
 /examples/localclient_linux/veth/veth
 /examples/localclient_vpp/nat/nat
 /examples/localclient_vpp/plugins/plugins
+/examples/kvscheduler/kvscheduler
 
 # test results
 /tests/perf/log

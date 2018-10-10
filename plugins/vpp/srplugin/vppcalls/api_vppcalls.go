@@ -19,7 +19,6 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/measure"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
@@ -61,14 +60,12 @@ type SRv6VPPRead interface {
 type SRv6VppHandler struct {
 	log          logging.Logger
 	callsChannel govppapi.Channel
-	stopwatch    *measure.Stopwatch
 }
 
 // NewSRv6VppHandler creates new instance of SRv6 vppcalls handler
-func NewSRv6VppHandler(vppChan govppapi.Channel, log logging.Logger, stopwatch *measure.Stopwatch) *SRv6VppHandler {
+func NewSRv6VppHandler(vppChan govppapi.Channel, log logging.Logger) *SRv6VppHandler {
 	return &SRv6VppHandler{
 		callsChannel: vppChan,
 		log:          log,
-		stopwatch:    stopwatch,
 	}
 }

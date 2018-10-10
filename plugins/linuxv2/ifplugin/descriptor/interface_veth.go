@@ -26,7 +26,7 @@ import (
 
 // addVETH creates a new VETH pair if neither of VETH-ends are configured, or just
 // applies configuration to the unfinished VETH-end with a temporary host name.
-func (intfd *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
 	peerName := linuxIf.GetVeth().GetPeerIfName()
@@ -35,69 +35,62 @@ func (intfd *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxI
 
 	// context
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	ifIndex := intfd.scheduler.GetMetadataMap(InterfaceDescriptorName)
-	agentPrefix := intfd.serviceLabel.GetAgentPrefix()
-
-	// validate configuration
-	if peerName == "" {
-		err = ErrVETHWithoutPeer
-		intfd.log.Error(err)
-		return nil, err
-	}
+	ifIndex := d.scheduler.GetMetadataMap(InterfaceDescriptorName)
+	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
 	// check if this VETH-end was already created by the other end
 	_, peerExists := ifIndex.GetValue(peerName)
 	if !peerExists {
 		// delete obsolete/invalid unfinished VETH (ignore errors)
-		intfd.ifHandler.DeleteInterface(tempHostName)
-		intfd.ifHandler.DeleteInterface(tempPeerHostName)
+		d.ifHandler.DeleteInterface(tempHostName)
+		d.ifHandler.DeleteInterface(tempPeerHostName)
 
 		// create a new VETH pair
-		err = intfd.ifHandler.AddVethInterfacePair(tempHostName, tempPeerHostName)
+		err = d.ifHandler.AddVethInterfacePair(tempHostName, tempPeerHostName)
 		if err != nil {
-			intfd.log.Error(err)
+			d.log.Error(err)
 			return nil, err
 		}
 
 		// add alias to both VETH ends
-		err = intfd.ifHandler.SetInterfaceAlias(tempHostName, agentPrefix+getVethAlias(linuxIf.Name, peerName))
+		err = d.ifHandler.SetInterfaceAlias(tempHostName, agentPrefix+getVethAlias(linuxIf.Name, peerName))
 		if err != nil {
-			intfd.log.Error(err)
+			d.log.Error(err)
 			return nil, err
 		}
-		err = intfd.ifHandler.SetInterfaceAlias(tempPeerHostName, agentPrefix+getVethAlias(peerName, linuxIf.Name))
+		err = d.ifHandler.SetInterfaceAlias(tempPeerHostName, agentPrefix+getVethAlias(peerName, linuxIf.Name))
 		if err != nil {
-			intfd.log.Error(err)
+			d.log.Error(err)
 			return nil, err
 		}
 	}
 
 	// move the VETH-end to the right namespace
-	err = intfd.setInterfaceNamespace(nsCtx, tempHostName, linuxIf.Namespace)
+	err = d.setInterfaceNamespace(nsCtx, tempHostName, linuxIf.Namespace)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 
 	// move to the namespace with the interface
-	revert, err := intfd.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 	defer revert()
 
 	// rename from the temporary host name to the requested host name
-	intfd.ifHandler.RenameInterface(tempHostName, hostName)
+	d.ifHandler.RenameInterface(tempHostName, hostName)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 
 	// build metadata
-	link, err := intfd.ifHandler.GetLinkByName(hostName)
+	link, err := d.ifHandler.GetLinkByName(hostName)
 	if err != nil {
-		intfd.log.Error(err)
+		d.log.Error(err)
 		return nil, err
 	}
 	metadata = &ifaceidx.LinuxIfMetadata{
@@ -110,7 +103,7 @@ func (intfd *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxI
 
 // deleteVETH either un-configures one VETH-end if the other end is still configured, or
 // removes the entire VETH pair.
-func (intfd *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
+func (d *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
 	peerName := linuxIf.GetVeth().GetPeerIfName()
@@ -118,34 +111,34 @@ func (intfd *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx
 	tempPeerHostName := getVethTemporaryHostName(peerName)
 
 	// check if the other end is still configured
-	ifIndex := intfd.scheduler.GetMetadataMap(InterfaceDescriptorName)
+	ifIndex := d.scheduler.GetMetadataMap(InterfaceDescriptorName)
 	_, peerExists := ifIndex.GetValue(peerName)
 	if peerExists {
 		// just un-configure this VETH-end, but do not delete the pair
 
 		// rename to the temporary host name
-		err := intfd.ifHandler.RenameInterface(hostName, tempHostName)
+		err := d.ifHandler.RenameInterface(hostName, tempHostName)
 		if err != nil {
-			intfd.log.Error(err)
+			d.log.Error(err)
 			return err
 		}
 
 		// move this VETH-end to the default namespace
-		err = intfd.setInterfaceNamespace(nsCtx, tempHostName, nil)
+		err = d.setInterfaceNamespace(nsCtx, tempHostName, nil)
 		if err != nil {
-			intfd.log.Error(err)
+			d.log.Error(err)
 			return err
 		}
 	} else {
 		// remove the VETH pair completely now
-		err := intfd.ifHandler.DeleteInterface(hostName)
+		err := d.ifHandler.DeleteInterface(hostName)
 		if err != nil {
-			intfd.log.Error(err)
+			d.log.Error(err)
 			return err
 		}
 		if tempPeerHostName != "" {
 			// peer should be automatically removed as well, but just in case...
-			intfd.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
+			d.ifHandler.DeleteInterface(tempPeerHostName) // ignore errors
 		}
 	}
 

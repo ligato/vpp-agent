@@ -12,38 +12,35 @@ type UniversalOptions struct {
 	// of cluster/sentinel nodes.
 	Addrs []string
 
+	// The sentinel master name.
+	// Only failover clients.
+	MasterName string
+
 	// Database to be selected after connecting to the server.
 	// Only single-node and failover clients.
 	DB int
 
-	// Common options.
+	// Only cluster clients.
+
+	// Enables read only queries on slave nodes.
+	ReadOnly bool
+
+	MaxRedirects   int
+	RouteByLatency bool
+
+	// Common options
 
 	OnConnect          func(*Conn) error
-	Password           string
 	MaxRetries         int
-	MinRetryBackoff    time.Duration
-	MaxRetryBackoff    time.Duration
+	Password           string
 	DialTimeout        time.Duration
 	ReadTimeout        time.Duration
 	WriteTimeout       time.Duration
 	PoolSize           int
-	MinIdleConns       int
-	MaxConnAge         time.Duration
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
 	TLSConfig          *tls.Config
-
-	// Only cluster clients.
-
-	MaxRedirects   int
-	ReadOnly       bool
-	RouteByLatency bool
-	RouteRandomly  bool
-
-	// The sentinel master name.
-	// Only failover clients.
-	MasterName string
 }
 
 func (o *UniversalOptions) cluster() *ClusterOptions {
@@ -52,31 +49,22 @@ func (o *UniversalOptions) cluster() *ClusterOptions {
 	}
 
 	return &ClusterOptions{
-		Addrs:     o.Addrs,
-		OnConnect: o.OnConnect,
-
-		Password: o.Password,
-
+		Addrs:          o.Addrs,
 		MaxRedirects:   o.MaxRedirects,
-		ReadOnly:       o.ReadOnly,
 		RouteByLatency: o.RouteByLatency,
-		RouteRandomly:  o.RouteRandomly,
+		ReadOnly:       o.ReadOnly,
 
-		MaxRetries:      o.MaxRetries,
-		MinRetryBackoff: o.MinRetryBackoff,
-		MaxRetryBackoff: o.MaxRetryBackoff,
-
+		OnConnect:          o.OnConnect,
+		MaxRetries:         o.MaxRetries,
+		Password:           o.Password,
 		DialTimeout:        o.DialTimeout,
 		ReadTimeout:        o.ReadTimeout,
 		WriteTimeout:       o.WriteTimeout,
 		PoolSize:           o.PoolSize,
-		MinIdleConns:       o.MinIdleConns,
-		MaxConnAge:         o.MaxConnAge,
 		PoolTimeout:        o.PoolTimeout,
 		IdleTimeout:        o.IdleTimeout,
 		IdleCheckFrequency: o.IdleCheckFrequency,
-
-		TLSConfig: o.TLSConfig,
+		TLSConfig:          o.TLSConfig,
 	}
 }
 
@@ -88,27 +76,19 @@ func (o *UniversalOptions) failover() *FailoverOptions {
 	return &FailoverOptions{
 		SentinelAddrs: o.Addrs,
 		MasterName:    o.MasterName,
-		OnConnect:     o.OnConnect,
+		DB:            o.DB,
 
-		DB:       o.DB,
-		Password: o.Password,
-
-		MaxRetries:      o.MaxRetries,
-		MinRetryBackoff: o.MinRetryBackoff,
-		MaxRetryBackoff: o.MaxRetryBackoff,
-
-		DialTimeout:  o.DialTimeout,
-		ReadTimeout:  o.ReadTimeout,
-		WriteTimeout: o.WriteTimeout,
-
+		OnConnect:          o.OnConnect,
+		MaxRetries:         o.MaxRetries,
+		Password:           o.Password,
+		DialTimeout:        o.DialTimeout,
+		ReadTimeout:        o.ReadTimeout,
+		WriteTimeout:       o.WriteTimeout,
 		PoolSize:           o.PoolSize,
-		MinIdleConns:       o.MinIdleConns,
-		MaxConnAge:         o.MaxConnAge,
 		PoolTimeout:        o.PoolTimeout,
 		IdleTimeout:        o.IdleTimeout,
 		IdleCheckFrequency: o.IdleCheckFrequency,
-
-		TLSConfig: o.TLSConfig,
+		TLSConfig:          o.TLSConfig,
 	}
 }
 
@@ -119,28 +99,20 @@ func (o *UniversalOptions) simple() *Options {
 	}
 
 	return &Options{
-		Addr:      addr,
-		OnConnect: o.OnConnect,
+		Addr: addr,
+		DB:   o.DB,
 
-		DB:       o.DB,
-		Password: o.Password,
-
-		MaxRetries:      o.MaxRetries,
-		MinRetryBackoff: o.MinRetryBackoff,
-		MaxRetryBackoff: o.MaxRetryBackoff,
-
-		DialTimeout:  o.DialTimeout,
-		ReadTimeout:  o.ReadTimeout,
-		WriteTimeout: o.WriteTimeout,
-
+		OnConnect:          o.OnConnect,
+		MaxRetries:         o.MaxRetries,
+		Password:           o.Password,
+		DialTimeout:        o.DialTimeout,
+		ReadTimeout:        o.ReadTimeout,
+		WriteTimeout:       o.WriteTimeout,
 		PoolSize:           o.PoolSize,
-		MinIdleConns:       o.MinIdleConns,
-		MaxConnAge:         o.MaxConnAge,
 		PoolTimeout:        o.PoolTimeout,
 		IdleTimeout:        o.IdleTimeout,
 		IdleCheckFrequency: o.IdleCheckFrequency,
-
-		TLSConfig: o.TLSConfig,
+		TLSConfig:          o.TLSConfig,
 	}
 }
 

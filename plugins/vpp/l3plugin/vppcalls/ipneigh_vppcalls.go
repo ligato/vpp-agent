@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
@@ -24,10 +23,6 @@ import (
 
 // SetIPScanNeighbor implements ip neigh  handler.
 func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(ip.IPScanNeighborEnableDisable{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &ip.IPScanNeighborEnableDisable{
 		Mode:           uint8(data.Mode),
 		ScanInterval:   uint8(data.ScanInterval),

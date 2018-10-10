@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 Resource     ../../../libraries/all_libs.robot
 Resource     ../../../libraries/pretty_keywords.robot
 
-Force Tags        trafficIPv6
+Force Tags        traffic     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -32,7 +32,7 @@ ${IP_5}=               fd31::1:b:0:0:2
 
 ${PREFIX}=             64
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 *** Test Cases ***
 
 Start 2 Agents

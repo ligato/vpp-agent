@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -24,10 +23,6 @@ import (
 
 // AddMemifInterface implements interface handler.
 func (h *IfVppHandler) AddMemifInterface(ifName string, memIface *intf.Interfaces_Interface_Memif, socketID uint32) (swIdx uint32, err error) {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(memif.MemifCreate{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &memif.MemifCreate{
 		ID:         memIface.Id,
 		Mode:       uint8(memIface.Mode),
@@ -63,10 +58,6 @@ func (h *IfVppHandler) AddMemifInterface(ifName string, memIface *intf.Interface
 
 // DeleteMemifInterface implements interface handler.
 func (h *IfVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(memif.MemifDelete{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &memif.MemifDelete{
 		SwIfIndex: idx,
 	}
@@ -83,10 +74,6 @@ func (h *IfVppHandler) DeleteMemifInterface(ifName string, idx uint32) error {
 
 // RegisterMemifSocketFilename implements interface handler.
 func (h *IfVppHandler) RegisterMemifSocketFilename(filename []byte, id uint32) error {
-	defer func(t time.Time) {
-		h.stopwatch.TimeLog(memif.MemifSocketFilenameAddDel{}).LogTimeEntry(time.Since(t))
-	}(time.Now())
-
 	req := &memif.MemifSocketFilenameAddDel{
 		SocketFilename: filename,
 		SocketID:       id,

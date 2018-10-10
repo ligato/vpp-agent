@@ -64,7 +64,7 @@ type BridgeDomainStateUpdater struct {
 func (c *BridgeDomainStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.API, bdIndexes l2idx.BDIndex, swIfIndexes ifaceidx.SwIfIndex,
 	notificationChan chan BridgeDomainStateMessage, publishBdState func(notification *BridgeDomainStateNotification)) (err error) {
 	// Logger
-	c.log = logger.NewLogger("-l2-bd-state")
+	c.log = logger.NewLogger("l2-bd-state")
 
 	// Mappings
 	c.bdIndexes = bdIndexes

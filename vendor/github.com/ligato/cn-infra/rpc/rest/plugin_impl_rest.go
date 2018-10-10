@@ -18,10 +18,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/unrolled/render"
-
 	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/rpc/rest/security"
+	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/unrolled/render"
 )
 
 // Plugin struct holds all plugin-related data.
@@ -33,6 +34,9 @@ type Plugin struct {
 	server    *http.Server
 	mx        *mux.Router
 	formatter *render.Render
+
+	// Access to HTTP security API
+	auth security.AuthenticatorAPI
 }
 
 // Deps lists the dependencies of the Rest plugin.
@@ -43,7 +47,7 @@ type Deps struct {
 	// If there is no authenticator injected and config contains
 	// user password, the default staticAuthenticator is instantiated.
 	// By default the authenticator is disabled.
-	Authenticator BasicHTTPAuthenticator //inject
+	Authenticator BasicHTTPAuthenticator
 }
 
 // Init is the plugin entry point called by Agent Core
@@ -69,6 +73,17 @@ func (p *Plugin) Init() (err error) {
 	p.formatter = render.New(render.Options{
 		IndentJSON: true,
 	})
+
+	// Enable authentication if defined by config
+	if p.EnableTokenAuth {
+		p.Log.Info("Token authentication for HTTP enabled")
+		p.auth = security.NewAuthenticator(p.mx, &security.Settings{
+			Users:     p.Users,
+			ExpTime:   p.TokenExpiration,
+			Cost:      p.PasswordHashCost,
+			Signature: p.TokenSignature,
+		}, p.Log)
+	}
 
 	return err
 }
@@ -96,11 +111,22 @@ func (p *Plugin) AfterInit() (err error) {
 	return nil
 }
 
-// RegisterHTTPHandler registers HTTP <handler> at the given <path>.
+// RegisterHTTPHandler registers HTTP <handler> at the given <path>. Every request is validated if enabled.
 func (p *Plugin) RegisterHTTPHandler(path string, provider HandlerProvider, methods ...string) *mux.Route {
-	p.Log.Debug("Registering handler: ", path)
+	p.Log.Debugf("Registering handler: %s", path)
 
+	if p.Config.EnableTokenAuth {
+		return p.mx.Handle(path, p.auth.Validate(provider(p.formatter))).Methods(methods...)
+	}
 	return p.mx.Handle(path, provider(p.formatter)).Methods(methods...)
+}
+
+// RegisterPermissionGroup adds new permission group if token authentication is enabled
+func (p *Plugin) RegisterPermissionGroup(group ...*access.PermissionGroup) {
+	if p.Config.EnableTokenAuth {
+		p.Log.Debugf("Registering permission group(s): %s", group)
+		p.auth.AddPermissionGroup(group...)
+	}
 }
 
 // GetPort returns plugin configuration port

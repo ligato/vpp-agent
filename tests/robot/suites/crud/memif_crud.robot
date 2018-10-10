@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crudIPv4
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -24,7 +24,7 @@ ${MEMIF21_SEC_MAC}=      2a:00:00:22:22:23
 ${MEMIF12_MAC}=          3a:00:00:33:33:33
 ${MEMIF22_MAC}=          4a:00:00:44:44:44
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       2s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 Configure Environment
@@ -95,7 +95,7 @@ Update VPP2_memif1 Interface
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif1  mac=${MEMIF21_SEC_MAC}  role=slave  id=1  ipv4=192.168.10.2/24  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif1 Is Still Configured And Connected
-    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_1  vpp1_memif1  mac=${MEMIF11_SEC_MAC}  role=master  id=1  ipv4=192.168.10.1/30  connected=1  enabled=1  socket=${AGENT_VPP_1_MEMIF_SOCKET_FOLDER}/default.sock
 
 Check That VPP1_memif2 And VPP2_memif2 Are Not Affected By VPP2_memif1 Update
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Memif Interface State     agent_vpp_2  vpp2_memif2  mac=${MEMIF22_MAC}  role=slave  id=2  ipv4=192.168.2.2/28  connected=1  enabled=1  socket=${AGENT_VPP_2_MEMIF_SOCKET_FOLDER}/default.sock

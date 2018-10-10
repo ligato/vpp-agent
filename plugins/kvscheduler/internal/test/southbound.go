@@ -37,16 +37,16 @@ type MockSouthbound struct {
 type MockOpType int
 
 const (
-	// Add new KV.
-	Add MockOpType = iota
-	// Modify existing KV.
-	Modify
-	// Delete existing KV.
-	Delete
-	// Update existing KV.
-	Update
-	// Dump non-derived values.
-	Dump
+	// MockAdd is a mock Add operation.
+	MockAdd MockOpType = iota
+	// MockModify is a mock Modify operation.
+	MockModify
+	// MockDelete is a mock Delete operation.
+	MockDelete
+	// MockUpdate is a mock Update operation.
+	MockUpdate
+	// MockDump is a mock Dump operation.
+	MockDump
 )
 
 // MockOperation is used in UTs to remember executed descriptor operations.
@@ -190,7 +190,7 @@ func (ms *MockSouthbound) dump(descriptor string, correlate []KVWithMetadata, se
 	}
 
 	ms.opHistory = append(ms.opHistory, MockOperation{
-		OpType:        Dump,
+		OpType:        MockDump,
 		Descriptor:    descriptor,
 		CorrelateDump: correlate,
 	})

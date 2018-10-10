@@ -17,6 +17,7 @@ package nsplugin
 import (
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
+	"github.com/vishvananda/netns"
 )
 
 // NamespaceAPI defines all methods required for managing namespaces and microservices
@@ -28,16 +29,19 @@ type NamespaceAPI interface {
 
 // NsManagement defines methods to manage namespaces
 type NsManagement interface {
+	// GetOrCreateNamespace returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
+	// Only named namespaces can be created
+	GetOrCreateNamespace(ns *Namespace) (netns.NsHandle, error)
 	// IsNamespaceAvailable verifies whether required namespace exists and is accessible
 	IsNamespaceAvailable(ns *interfaces.LinuxInterfaces_Interface_Namespace) bool
 	// SwitchNamespace switches the network namespace of the current thread
 	SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx) (revert func(), err error)
 	// SwitchToNamespace switches the network namespace of the current thread // todo merge these two methods if possible
 	SwitchToNamespace(nsMgmtCtx *NamespaceMgmtCtx, ns *interfaces.LinuxInterfaces_Interface_Namespace) (revert func(), err error)
-	// SetInterfaceNamespace moves linux interface to desired namespace
-	SetInterfaceNamespace(ctx *NamespaceMgmtCtx, ifName string, namespace *interfaces.LinuxInterfaces_Interface_Namespace) error
 	// GetConfigNamespace returns configuration namespace (used for VETHs)
 	GetConfigNamespace() *interfaces.LinuxInterfaces_Interface_Namespace
+	//ConvertMicroserviceNsToPidNs converts microservice-referenced namespace into the PID-referenced namespace
+	ConvertMicroserviceNsToPidNs(msLabel string) (pidNs *Namespace)
 }
 
 // NsConvertor defines common methods to convert namespace types

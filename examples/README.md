@@ -54,6 +54,7 @@ Current examples:
   -advertise-client-urls http://0.0.0.0:2379 \
   -listen-client-urls http://0.0.0.0:2379
   ```
+  Note: **For ARM64 see the information for [etcd][3]**.
   
  **2. Start Kafka on localhost**
 
@@ -61,7 +62,8 @@ Current examples:
  sudo docker run -p 2181:2181 -p 9092:9092 --name kafka --rm \
   --env ADVERTISED_HOST=172.17.0.1 --env ADVERTISED_PORT=9092 spotify/kafka
  ```
- 
+  Note: **For ARM64 see the information for [kafka][2]**.
+
  **3. Start VPP**
  ```
  vpp unix { interactive } plugins { plugin dpdk_plugin.so { disable } }
@@ -76,3 +78,5 @@ Current examples:
  --kafka-config=/opt/vpp-agent/dev/kafka.conf
  ```
 [1]: https://github.com/ligato/cn-infra/tree/master/examples 
+[2]: docs/arm64/kafka.md
+[3]: docs/arm64/etcd.md
