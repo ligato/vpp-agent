@@ -139,6 +139,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
 	})
@@ -253,6 +254,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromSB},
 	})
@@ -406,6 +408,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromSB},
 	})
@@ -526,6 +529,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(nil), origin: FromSB},
 	})
@@ -832,6 +836,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromSB},
 	})
@@ -1079,6 +1084,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(retryFailedOps))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
 	})
@@ -1150,6 +1156,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(retryFailedOps))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixC + baseValue3, value: utils.ProtoToString(test.NewStringValue("base-value3-data")), origin: FromNB},
 	})

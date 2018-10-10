@@ -37,6 +37,7 @@ type recordedTxn struct {
 	txnType            txnType
 	isFullResync       bool
 	isDownstreamResync bool
+	description        string
 	values             []recordedKVPair
 
 	// result
@@ -104,6 +105,9 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.txnType.String(), resyncType)
 		} else {
 			str += indent2 + fmt.Sprintf("- type: %s\n", txn.txnType.String())
+		}
+		if txn.description != "" {
+			str += indent2 + fmt.Sprintf("- description: %s\n", txn.description)
 		}
 		if txn.isDownstreamResync {
 			goto printOps
@@ -304,6 +308,9 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 		isDownstreamResync: txn.args.txnType == nbTransaction && txn.args.nb.isDownstreamResync,
 		preErrors:          preErrors,
 		planned:            planned,
+	}
+	if txn.args.txnType == nbTransaction {
+		record.description = txn.args.nb.description
 	}
 
 	// record values

@@ -63,7 +63,10 @@ func TestEmptyResync(t *testing.T) {
 
 	// run transaction with empty resync
 	startTime := time.Now()
-	kvErrors, txnError := scheduler.StartNBTransaction().Commit(WithFullResync(context.Background()))
+	ctx := WithFullResync(context.Background())
+	description := "testing empty resync"
+	ctx = WithDescription(ctx, description)
+	kvErrors, txnError := scheduler.StartNBTransaction().Commit(ctx)
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -94,6 +97,7 @@ func TestEmptyResync(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(Equal(description))
 	Expect(txn.values).To(BeEmpty())
 	Expect(txn.preErrors).To(BeEmpty())
 	Expect(txn.planned).To(BeEmpty())
@@ -171,7 +175,10 @@ func TestResyncWithEmptySB(t *testing.T) {
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyArrayValue("item1"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithFullResync(context.Background()))
+	ctx := WithFullResync(context.Background())
+	description := "testing resync against empty SB"
+	ctx = WithDescription(ctx, description)
+	kvErrors, txnError := schedulerTxn.Commit(ctx)
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -292,6 +299,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
 		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -424,6 +432,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(nil), origin: FromNB},
 		{key: prefixA + baseValue2, value: utils.ProtoToString(nil), origin: FromNB},
@@ -740,6 +749,7 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item2")), origin: FromNB},
 		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
@@ -987,6 +997,7 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewStringValue(baseValue1)), origin: FromSB},
 		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -1315,6 +1326,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item2")), origin: FromNB},
 		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
@@ -1495,9 +1507,11 @@ func TestResyncWithRetry(t *testing.T) {
 	startTime := time.Now()
 	resyncTxn := scheduler.StartNBTransaction()
 	resyncTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item1", "item2"))
+	description := "testing resync with retry"
 	ctx := context.Background()
 	ctx = WithRetry(ctx, 3*time.Second, false)
 	ctx = WithFullResync(ctx)
+	ctx = WithDescription(ctx, description)
 	kvErrors, txnError := resyncTxn.Commit(ctx)
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
@@ -1585,6 +1599,7 @@ func TestResyncWithRetry(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeTrue())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
 	})
@@ -1711,6 +1726,7 @@ func TestResyncWithRetry(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(retryFailedOps))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
 	})

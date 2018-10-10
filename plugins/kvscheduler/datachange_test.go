@@ -113,7 +113,8 @@ func TestDataChangeTransactions(t *testing.T) {
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item2"))
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(context.Background())
+	description := "testing data change"
+	kvErrors, txnError := schedulerTxn.Commit(WithDescription(context.Background(), description))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -241,6 +242,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item2")), origin: FromNB},
 		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
@@ -485,6 +487,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
 		{key: prefixC + baseValue3, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -900,6 +903,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
 		{key: prefixC + baseValue3, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -1216,7 +1220,8 @@ func TestDependencyCycles(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyStringValue("base-value1-data"))
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyStringValue("base-value2-data"))
 	schedulerTxn.SetValue(prefixA+baseValue3, test.NewLazyStringValue("base-value3-data"))
-	kvErrors, txnError := schedulerTxn.Commit(context.Background())
+	description := "testing dependency cycles"
+	kvErrors, txnError := schedulerTxn.Commit(WithDescription(context.Background(), description))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -1249,6 +1254,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewStringValue("base-value1-data")), origin: FromNB},
 		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewStringValue("base-value2-data")), origin: FromNB},
@@ -1384,6 +1390,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue4, value: utils.ProtoToString(test.NewStringValue("base-value4-data")), origin: FromNB},
 	})
@@ -1525,6 +1532,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
 	Expect(txn.isFullResync).To(BeFalse())
 	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue2, value: utils.ProtoToString(nil), origin: FromNB},
 	})

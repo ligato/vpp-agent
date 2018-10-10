@@ -342,6 +342,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []KeyWithError, t
 	txn.data.nb.revertOnFailure = IsWithRevert(ctx)
 	txn.data.nb.isFullResync = IsFullResync(ctx)
 	txn.data.nb.isDownstreamResync = IsDownstreamResync(ctx)
+	txn.data.nb.description, _ = IsWithDescription(ctx)
 
 	// validate transaction options
 	if txn.data.nb.isFullResync {
