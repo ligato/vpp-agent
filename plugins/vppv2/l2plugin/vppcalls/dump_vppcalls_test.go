@@ -219,8 +219,8 @@ func TestDumpFIBTableEntries(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex:1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex:2})
-	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{10})
-	bdIndexes.Put("bd2", &idxvpp2.OnlyIndex{20})
+	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{Index:10})
+	bdIndexes.Put("bd2", &idxvpp2.OnlyIndex{Index:20})
 
 	ctx.MockVpp.MockReply(testDataInMessagesFIBs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
