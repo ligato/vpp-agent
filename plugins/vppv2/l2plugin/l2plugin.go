@@ -48,7 +48,7 @@ type L2Plugin struct {
 	bdIndex idxvpp2.NameToIndex
 }
 
-// Deps lists dependencies of the interface L2 plugin.
+// Deps lists dependencies of the L2 plugin.
 type Deps struct {
 	infra.PluginDeps
 	Scheduler   scheduler.KVScheduler
