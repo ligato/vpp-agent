@@ -15,5 +15,8 @@
 //go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/interface.proto
 //go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/dhcp.proto
 //go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/state.proto
+//go:generate protoc --proto_path=l2 --gogo_out=l2 l2/bd.proto
+//go:generate protoc --proto_path=l2 --gogo_out=l2 l2/fib.proto
+//go:generate protoc --proto_path=l2 --gogo_out=l2 l2/xconnect.proto
 
 package model
