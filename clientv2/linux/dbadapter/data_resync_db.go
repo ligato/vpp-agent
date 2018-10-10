@@ -15,23 +15,21 @@
 package dbadapter
 
 import (
+	"github.com/ligato/cn-infra/db/keyval"
+
 	"github.com/ligato/vpp-agent/clientv2/linux"
-
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
-
 	"github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-
-	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -133,7 +131,7 @@ func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.StaticRoutes_Route) linuxc
 }
 
 // ACL adds VPP Access Control List to the RESYNC request.
-func (dsl *DataResyncDSL) ACL(acl *acl.AccessLists_Acl) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) ACL(acl *acl.Acl) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.ACL(acl)
 	return dsl
 }

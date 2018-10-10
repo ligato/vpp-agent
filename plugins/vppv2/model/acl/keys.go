@@ -12,9 +12,15 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate protoc --proto_path=acl --gogo_out=acl acl/acl.proto
-//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/dhcp.proto
-//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/interface.proto
-//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/state.proto
+package acl
 
-package model
+const (
+	// Prefix is ACL key prefix
+	Prefix = "vpp/config/v2/acl/"
+)
+
+// Key returns the prefix used in ETCD to store vpp ACL config
+// of a particular ACL in selected vpp instance.
+func Key(aclName string) string {
+	return Prefix + aclName
+}
