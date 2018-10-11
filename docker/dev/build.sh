@@ -36,18 +36,26 @@ VPP_DEBUG_DEB=${VPP_DEBUG_DEB:-}
 
 VERSION=$(git describe --always --tags --dirty)
 COMMIT=$(git rev-parse HEAD)
+DATE=$(git log -1 --format="%ct" | xargs -I{} date -d @{} +'%Y-%m-%dT%H:%M%:z')
 
 echo "=============================="
-echo "Architecture: ${BUILDARCH}"
 echo
-echo "VPP repo URL: ${VPP_REPO_URL}"
-echo "VPP commit:   ${VPP_COMMIT}"
+echo "VPP"
+echo "-----------------------------"
+echo " repo URL: ${VPP_REPO_URL}"
+echo " commit:   ${VPP_COMMIT}"
+echo "-----------------------------"
 echo
-echo "Agent version: ${VERSION}"
-echo "Agent commit:  ${COMMIT}"
+echo "Agent"
+echo "-----------------------------"
+echo " version: ${VERSION}"
+echo " commit:  ${COMMIT}"
+echo " date:    ${DATE}"
+echo "-----------------------------"
 echo
 echo "base image: ${BASE_IMG}"
 echo "image tag:  ${IMAGE_TAG}"
+echo "architecture: ${BUILDARCH}"
 echo "=============================="
 
 docker build -f ${DOCKERFILE} \
@@ -60,4 +68,5 @@ docker build -f ${DOCKERFILE} \
     --build-arg PROTOC_OS_ARCH=${PROTOC_OS_ARCH} \
     --build-arg VERSION=${VERSION} \
     --build-arg COMMIT=${COMMIT} \
+    --build-arg DATE=${DATE} \
     ${DOCKER_BUILD_ARGS} ../..
