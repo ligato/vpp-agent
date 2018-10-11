@@ -51,6 +51,7 @@ type L2Plugin struct {
 	// descriptors
 	bdDescriptor      *descriptor.BridgeDomainDescriptor
 	bdIfaceDescriptor *descriptor.BDInterfaceDescriptor
+	fibDescriptor     *descriptor.FIBDescriptor
 
 	// index maps
 	bdIndex idxvpp2.NameToIndex
@@ -97,8 +98,11 @@ func (p *L2Plugin) Init() error {
 	// TODO: register BDInterface, FIB and xConnect descriptors
 	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.bdHandler, p.Log)
 	bdIfaceDescriptor := adapter.NewBDInterfaceDescriptor(p.bdIfaceDescriptor.GetDescriptor())
-
 	p.Scheduler.RegisterKVDescriptor(bdIfaceDescriptor)
+
+	p.fibDescriptor = descriptor.NewFIBDescriptor(p.fibHandler, p.Log)
+	fibDescriptor := adapter.NewFIBDescriptor(p.fibDescriptor.GetDescriptor())
+	p.Scheduler.RegisterKVDescriptor(fibDescriptor)
 
 	return nil
 }

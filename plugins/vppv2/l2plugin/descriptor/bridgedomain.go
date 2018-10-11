@@ -145,6 +145,13 @@ func (d *BridgeDomainDescriptor) IsRetriableFailure(err error) bool {
 
 // Add adds new bridge domain.
 func (d *BridgeDomainDescriptor) Add(key string, bd *l2.BridgeDomain) (metadata *idxvpp2.OnlyIndex, err error) {
+	// validate the configuration first
+	err = d.validateBridgeDomainConfig(bd)
+	if err != nil {
+		d.log.Error(err)
+		return nil, err
+	}
+
 	// allocate new bridge domain ID
 	bdIdx := d.bdIDSeq
 	d.bdIDSeq++
