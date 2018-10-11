@@ -126,7 +126,7 @@ func (d *BridgeDomainDescriptor) EquivalentBridgeDomains(key string, oldBD, newB
 
 // MetadataFactory is a factory for index-map customized for VPP bridge domains.
 func (d *BridgeDomainDescriptor) MetadataFactory() idxmap.NamedMappingRW {
-	return idxvpp2.NewNameToIndex(logrus.DefaultLogger(), "vpp-bd-index", nil)
+	return idxvpp2.NewNameToIndex(d.log, "vpp-bd-index", nil)
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

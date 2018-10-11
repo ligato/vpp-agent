@@ -31,7 +31,7 @@ import (
 const (
 	// BDInterfaceDescriptorName is the name of the descriptor for bindings between
 	// VPP bridge domains and interfaces.
-	BDInterfaceDescriptorName = "vpp-bridge-domain"
+	BDInterfaceDescriptorName = "vpp-bd-interface"
 
 	// dependency labels
 	interfaceDep = "interface"

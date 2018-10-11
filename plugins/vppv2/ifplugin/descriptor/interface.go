@@ -270,7 +270,7 @@ func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.In
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
 func (d *InterfaceDescriptor) MetadataFactory() idxmap.NamedMappingRW {
-	return ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "vpp-interface-index")
+	return ifaceidx.NewIfaceIndex(d.log, "vpp-interface-index")
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
