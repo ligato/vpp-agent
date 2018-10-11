@@ -146,7 +146,7 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 
 // FibTableDetails is the wrapper structure for the FIB table entry northbound API structure.
 type FibTableDetails struct {
-	Fib  *l2nb.FibEntry `json:"fib"`
+	Fib  *l2nb.FIBEntry `json:"fib"`
 	Meta *FibMeta       `json:"fib_meta"`
 }
 
@@ -174,11 +174,11 @@ func (h *FIBVppHandler) DumpL2FIBs() (map[string]*FibTableDetails, error) {
 		}
 
 		mac := net.HardwareAddr(fibDetails.Mac).String()
-		var action l2nb.FibEntry_Action
+		var action l2nb.FIBEntry_Action
 		if fibDetails.FilterMac > 0 {
-			action = l2nb.FibEntry_DROP
+			action = l2nb.FIBEntry_DROP
 		} else {
-			action = l2nb.FibEntry_FORWARD
+			action = l2nb.FIBEntry_FORWARD
 		}
 
 		// Interface name
@@ -195,7 +195,7 @@ func (h *FIBVppHandler) DumpL2FIBs() (map[string]*FibTableDetails, error) {
 		}
 
 		fibs[mac] = &FibTableDetails{
-			Fib: &l2nb.FibEntry{
+			Fib: &l2nb.FIBEntry{
 				PhysAddress:             mac,
 				BridgeDomain:            bdName,
 				Action:                  action,

@@ -47,7 +47,7 @@ import (
 
 const (
 	// InterfaceDescriptorName is the name of the descriptor for Linux interfaces.
-	InterfaceDescriptorName = "linux-interfaces"
+	InterfaceDescriptorName = "linux-interface"
 
 	// defaultEthernetMTU - expected when MTU is not specified in the config.
 	defaultEthernetMTU = 1500

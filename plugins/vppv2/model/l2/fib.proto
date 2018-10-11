@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package l2;
 
-message FibEntry {
+message FIBEntry {
     string phys_address = 1;                    /* unique destination MAC address */
     string bridge_domain = 2;                   /* name of bridge domain this FIB table entry belongs to */
     enum Action {

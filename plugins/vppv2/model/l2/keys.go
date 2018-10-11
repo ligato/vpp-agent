@@ -15,7 +15,6 @@
 package l2
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -53,12 +52,15 @@ func BridgeDomainKey(bdName string) string {
 }
 
 // ParseBDNameFromKey returns BD name from the key.
-func ParseBDNameFromKey(key string) (name string, err error) {
+func ParseBDNameFromKey(key string) (name string, isBDKey bool) {
 	if strings.HasPrefix(key, BDPrefix) {
-		name = strings.TrimPrefix(key, BDPrefix)
-		return
+		suffix := strings.TrimPrefix(key, BDPrefix)
+		if strings.ContainsAny(suffix, "/") {
+			return "", false
+		}
+		return suffix, true
 	}
-	return key, fmt.Errorf("wrong format of the key %s", key)
+	return "", false
 }
 
 /* BD <-> interface binding (derived) */

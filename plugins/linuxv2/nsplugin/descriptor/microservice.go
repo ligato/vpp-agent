@@ -33,7 +33,7 @@ import (
 
 const (
 	// MicroserviceDescriptorName is the name of the descriptor for microservices.
-	MicroserviceDescriptorName = "microservices"
+	MicroserviceDescriptorName = "microservice"
 
 	// how often in seconds to refresh the microservice state data
 	dockerRefreshPeriod = 3 * time.Second

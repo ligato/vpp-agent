@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *l2.BridgeDomain --meta-type *idxvpp2.OnlyIndex --import "github.com/ligato/vpp-agent/idxvpp2" --import "../model/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BDInterface --value-type *l2.BridgeDomain_Interface --import "../model/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name FIB  --value-type *l2.FIBEntry --import "../model/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name XConnect  --value-type *l2.XConnectPair --import "../model/l2" --output-dir "descriptor"
+
 package l2plugin
 
 import (
@@ -24,6 +29,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/idxvpp2"
 )
@@ -42,7 +49,8 @@ type L2Plugin struct {
 	xCHandler  vppcalls.XConnectVppAPI
 
 	// descriptors
-	// TODO
+	bdDescriptor      *descriptor.BridgeDomainDescriptor
+	bdIfaceDescriptor *descriptor.BDInterfaceDescriptor
 
 	// index maps
 	bdIndex idxvpp2.NameToIndex
@@ -57,12 +65,6 @@ type Deps struct {
 	StatusCheck statuscheck.PluginStatusWriter /* optional */
 }
 
-// Config holds the vpp-plugin configuration.
-type Config struct {
-	Mtu              uint32   `json:"mtu"`
-	StatusPublishers []string `json:"status-publishers"`
-}
-
 // Init registers L2-related descriptors.
 func (p *L2Plugin) Init() error {
 	var err error
@@ -75,13 +77,28 @@ func (p *L2Plugin) Init() error {
 	// init BD handler
 	p.bdHandler = vppcalls.NewBridgeDomainVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
-	// TODO: register BD, BDInterface descriptors, get BD indexes
+	// init and register bridge domain descriptor
+	p.bdDescriptor = descriptor.NewBridgeDomainDescriptor(p.bdHandler, p.Log)
+	bdDescriptor := adapter.NewBridgeDomainDescriptor(p.bdDescriptor.GetDescriptor())
+	p.Scheduler.RegisterKVDescriptor(bdDescriptor)
+
+	// obtain read-only references to BD index map
+	var withIndex bool
+	metadataMap := p.Deps.Scheduler.GetMetadataMap(bdDescriptor.Name)
+	p.bdIndex, withIndex = metadataMap.(idxvpp2.NameToIndex)
+	if !withIndex {
+		return errors.New("missing index with bridge domain metadata")
+	}
 
 	// init FIB and xConnect handlers
 	p.fibHandler = vppcalls.NewFIBVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.bdIndex, p.Log)
 	p.xCHandler = vppcalls.NewXConnectVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
-	// TODO: register FIB, xConnect descriptors
+	// TODO: register BDInterface, FIB and xConnect descriptors
+	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.bdHandler, p.Log)
+	bdIfaceDescriptor := adapter.NewBDInterfaceDescriptor(p.bdIfaceDescriptor.GetDescriptor())
+
+	p.Scheduler.RegisterKVDescriptor(bdIfaceDescriptor)
 
 	return nil
 }

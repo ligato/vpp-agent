@@ -181,10 +181,10 @@ var testDataInMessagesFIBs = []govppapi.Message{
 
 var testDataOutFIBs = []*vppcalls.FibTableDetails{
 	{
-		Fib: &l2nb.FibEntry{
+		Fib: &l2nb.FIBEntry{
 			PhysAddress:             "aa:aa:aa:aa:aa:aa",
 			BridgeDomain:            "bd1",
-			Action:                  l2nb.FibEntry_DROP,
+			Action:                  l2nb.FIBEntry_DROP,
 			StaticConfig:            true,
 			BridgedVirtualInterface: true,
 			OutgoingInterface:       "if1",
@@ -195,10 +195,10 @@ var testDataOutFIBs = []*vppcalls.FibTableDetails{
 		},
 	},
 	{
-		Fib: &l2nb.FibEntry{
+		Fib: &l2nb.FIBEntry{
 			PhysAddress:             "bb:bb:bb:bb:bb:bb",
 			BridgeDomain:            "bd2",
-			Action:                  l2nb.FibEntry_FORWARD,
+			Action:                  l2nb.FIBEntry_FORWARD,
 			StaticConfig:            false,
 			BridgedVirtualInterface: false,
 			OutgoingInterface:       "if2",

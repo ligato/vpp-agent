@@ -24,6 +24,7 @@
 /examples/localclient_vpp/nat/nat
 /examples/localclient_vpp/plugins/plugins
 /examples/kvscheduler/kvscheduler
+/examples/kvscheduler/l2/l2
 
 # test results
 /tests/perf/log

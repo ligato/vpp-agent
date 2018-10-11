@@ -31,7 +31,7 @@ import (
 const (
 	// UnnumberedIfDescriptorName is the name of the descriptor for the unnumbered
 	// config-subsection of VPP interfaces.
-	UnnumberedIfDescriptorName = "vpp-unnumbered-interfaces"
+	UnnumberedIfDescriptorName = "vpp-unnumbered-interface"
 
 	// dependency labels
 	unnumberedInterfaceWithIPDep = "unnumbered-interface-with-IP"
@@ -49,7 +49,7 @@ type UnnumberedIfDescriptor struct {
 func NewUnnumberedIfDescriptor(ifHandler vppcalls.IfVppAPI, log logging.PluginLogger) *UnnumberedIfDescriptor {
 	return &UnnumberedIfDescriptor{
 		ifHandler: ifHandler,
-		log:       log.NewLogger("-unif-descriptor"),
+		log:       log.NewLogger("unif-descriptor"),
 	}
 }
 

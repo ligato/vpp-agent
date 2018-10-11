@@ -22,7 +22,7 @@ import (
 
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
@@ -76,11 +76,11 @@ type PutDSL interface {
 	// forwarding detection echo function.
 	BfdEchoFunction(val *vpp_bfd.SingleHopBFD_EchoFunction) PutDSL
 	// BD adds a request to create or update VPP Bridge Domain.
-	BD(val *vpp_l2.BridgeDomains_BridgeDomain) PutDSL
+	BD(val *vpp_l2.BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-	BDFIB(fib *vpp_l2.FibTable_FibEntry) PutDSL
+	BDFIB(fib *vpp_l2.FIBEntry) PutDSL
 	// XConnect adds a request to create or update VPP Cross Connect.
-	XConnect(val *vpp_l2.XConnectPairs_XConnectPair) PutDSL
+	XConnect(val *vpp_l2.XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
 	StaticRoute(val *vpp_l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.

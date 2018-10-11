@@ -60,7 +60,7 @@ func NewDHCPDescriptor(scheduler scheduler.KVScheduler, ifHandler vppcalls.IfVpp
 	descriptor := &DHCPDescriptor{
 		scheduler: scheduler,
 		ifHandler: ifHandler,
-		log:       log.NewLogger("-dhcp-descriptor"),
+		log:       log.NewLogger("dhcp-descriptor"),
 	}
 	return descriptor
 }
