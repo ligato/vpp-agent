@@ -16,25 +16,39 @@ package vppcalls
 
 import (
 	"fmt"
+	"errors"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 )
 
 // AddL2XConnect creates xConnect between two existing interfaces.
-func (h *XConnectVppHandler) AddL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
-	return h.addDelXConnect(rxIfIdx, txIfIdx, true)
+func (h *XConnectVppHandler) AddL2XConnect(rxIface, txIface string) error {
+	return h.addDelXConnect(rxIface, txIface, true)
 }
 
 // DeleteL2XConnect removes xConnect between two interfaces.
-func (h *XConnectVppHandler) DeleteL2XConnect(rxIfIdx uint32, txIfIdx uint32) error {
-	return h.addDelXConnect(rxIfIdx, txIfIdx, false)
+func (h *XConnectVppHandler) DeleteL2XConnect(rxIface, txIface string) error {
+	return h.addDelXConnect(rxIface, txIface, false)
 }
 
-func (h *XConnectVppHandler) addDelXConnect(rxIfaceIdx uint32, txIfaceIdx uint32, enable bool) error {
+func (h *XConnectVppHandler) addDelXConnect(rxIface, txIface string, enable bool) error {
+	// get Rx interface metadata
+	rxIfaceMeta, found := h.ifIndexes.LookupByName(rxIface)
+	if !found {
+		return errors.New("failed to get Rx interface metadata")
+	}
+
+	// get Tx interface metadata
+	txIfaceMeta, found := h.ifIndexes.LookupByName(txIface)
+	if !found {
+		return errors.New("failed to get Tx interface metadata")
+	}
+
+	// add/del xConnect pair
 	req := &l2ba.SwInterfaceSetL2Xconnect{
 		Enable:      boolToUint(enable),
-		TxSwIfIndex: txIfaceIdx,
-		RxSwIfIndex: rxIfaceIdx,
+		TxSwIfIndex: txIfaceMeta.GetIndex(),
+		RxSwIfIndex: rxIfaceMeta.GetIndex(),
 	}
 	reply := &l2ba.SwInterfaceSetL2XconnectReply{}
 

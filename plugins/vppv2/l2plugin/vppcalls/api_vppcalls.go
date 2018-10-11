@@ -85,9 +85,9 @@ type XConnectVppAPI interface {
 // XConnectVppWrite provides write methods for cross connects.
 type XConnectVppWrite interface {
 	// AddL2XConnect creates xConnect between two existing interfaces.
-	AddL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32) error
+	AddL2XConnect(rxIface, txIface string) error
 	// DeleteL2XConnect removes xConnect between two interfaces.
-	DeleteL2XConnect(rxIfaceIdx uint32, txIfaceIdx uint32) error
+	DeleteL2XConnect(rxIface, txIface string) error
 }
 
 // XConnectVppRead provides read methods for cross connects.

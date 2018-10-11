@@ -26,34 +26,31 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var setTestDataInXConnect = []struct {
-	receiveIfaceIndex  uint32
-	transmitIfaceIndex uint32
+var inTestDataXConnect = []struct {
+	receiveIfaceIndex  string
+	transmitIfaceIndex string
 	message            govppapi.Message
 }{
-	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{}},
-	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{Retval: 1}},
-	{100, 200, &l2ba.BridgeDomainAddDelReply{}},
+	{"rxIf1", "txIf1", &l2ba.SwInterfaceSetL2XconnectReply{}},
+	{"rxIf2", "txIf2", &l2ba.SwInterfaceSetL2XconnectReply{Retval: 1}},
+	{"rxIf2", "txIf2", &l2ba.BridgeDomainAddDelReply{}},
 }
 
-var setTestDataOutXConnect = []struct {
+var outTestDataXConnect = []struct {
 	outData    *l2ba.SwInterfaceSetL2Xconnect
 	isResultOk bool
 }{
 	{&l2ba.SwInterfaceSetL2Xconnect{
 		RxSwIfIndex: 100,
 		TxSwIfIndex: 200,
-		Enable:      1,
 	}, true},
 	{&l2ba.SwInterfaceSetL2Xconnect{
-		RxSwIfIndex: 100,
-		TxSwIfIndex: 200,
-		Enable:      1,
+		RxSwIfIndex: 101,
+		TxSwIfIndex: 201,
 	}, false},
 	{&l2ba.SwInterfaceSetL2Xconnect{
-		RxSwIfIndex: 100,
-		TxSwIfIndex: 200,
-		Enable:      1,
+		RxSwIfIndex: 101,
+		TxSwIfIndex: 201,
 	}, false},
 }
 
@@ -66,84 +63,65 @@ scenarios:
 */
 // TestVppSetL2XConnect tests VppSetL2XConnect method
 func TestVppSetL2XConnect(t *testing.T) {
-	ctx, xcHandler, _ := xcTestSetup(t)
+	ctx, xcHandler, ifaceIdx := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	for i := 0; i < len(setTestDataInXConnect); i++ {
-		ctx.MockVpp.MockReply(setTestDataInXConnect[i].message)
-		err := xcHandler.AddL2XConnect(setTestDataInXConnect[i].receiveIfaceIndex,
-			setTestDataInXConnect[i].transmitIfaceIndex)
+	ifaceIdx.Put("rxIf1", &ifaceidx.IfaceMetadata{SwIfIndex: 100})
+	ifaceIdx.Put("rxIf2", &ifaceidx.IfaceMetadata{SwIfIndex: 101})
+	ifaceIdx.Put("txIf1", &ifaceidx.IfaceMetadata{SwIfIndex: 200})
+	ifaceIdx.Put("txIf2", &ifaceidx.IfaceMetadata{SwIfIndex: 201})
 
-		if setTestDataOutXConnect[i].isResultOk {
+	for i := 0; i < len(inTestDataXConnect); i++ {
+		ctx.MockVpp.MockReply(inTestDataXConnect[i].message)
+		err := xcHandler.AddL2XConnect(inTestDataXConnect[i].receiveIfaceIndex,
+			inTestDataXConnect[i].transmitIfaceIndex)
+
+		if outTestDataXConnect[i].isResultOk {
 			Expect(err).To(BeNil())
 		} else {
 			Expect(err).NotTo(BeNil())
 		}
-		Expect(ctx.MockChannel.Msg).To(Equal(setTestDataOutXConnect[i].outData))
+		outTestDataXConnect[i].outData.Enable = 1
+		Expect(ctx.MockChannel.Msg).To(Equal(outTestDataXConnect[i].outData))
 	}
-}
-
-var unsetTestDataInXConnect = []struct {
-	receiveIfaceIndex  uint32
-	transmitIfaceIndex uint32
-	message            govppapi.Message
-}{
-	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{}},
-	{100, 200, &l2ba.SwInterfaceSetL2XconnectReply{Retval: 1}},
-	{100, 200, &l2ba.BridgeDomainAddDelReply{}},
-}
-
-var unsetTestDataOutXConnect = []struct {
-	outData    *l2ba.SwInterfaceSetL2Xconnect
-	isResultOk bool
-}{
-	{&l2ba.SwInterfaceSetL2Xconnect{
-		RxSwIfIndex: 100,
-		TxSwIfIndex: 200,
-		Enable:      0,
-	}, true},
-	{&l2ba.SwInterfaceSetL2Xconnect{
-		RxSwIfIndex: 100,
-		TxSwIfIndex: 200,
-		Enable:      0,
-	}, false},
-	{&l2ba.SwInterfaceSetL2Xconnect{
-		RxSwIfIndex: 100,
-		TxSwIfIndex: 200,
-		Enable:      0,
-	}, false},
 }
 
 /**
 scenarios:
-- enabling xconnect
+- disabling xconnect
 	- ok
 	- retvalue != 0
 	- returned VPP message != what is expected
 */
 // TestVppUnsetL2XConnect tests VppUnsetL2XConnect method
 func TestVppUnsetL2XConnect(t *testing.T) {
-	ctx, xcHandler, _ := xcTestSetup(t)
+	ctx, xcHandler, ifaceIdx := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	for i := 0; i < len(unsetTestDataInXConnect); i++ {
-		ctx.MockVpp.MockReply(unsetTestDataInXConnect[i].message)
-		err := xcHandler.DeleteL2XConnect(unsetTestDataInXConnect[i].receiveIfaceIndex,
-			unsetTestDataInXConnect[i].transmitIfaceIndex)
+	ifaceIdx.Put("rxIf1", &ifaceidx.IfaceMetadata{SwIfIndex: 100})
+	ifaceIdx.Put("rxIf2", &ifaceidx.IfaceMetadata{SwIfIndex: 101})
+	ifaceIdx.Put("txIf1", &ifaceidx.IfaceMetadata{SwIfIndex: 200})
+	ifaceIdx.Put("txIf2", &ifaceidx.IfaceMetadata{SwIfIndex: 201})
 
-		if unsetTestDataOutXConnect[i].isResultOk {
+	for i := 0; i < len(inTestDataXConnect); i++ {
+		ctx.MockVpp.MockReply(inTestDataXConnect[i].message)
+		err := xcHandler.DeleteL2XConnect(inTestDataXConnect[i].receiveIfaceIndex,
+			inTestDataXConnect[i].transmitIfaceIndex)
+
+		if outTestDataXConnect[i].isResultOk {
 			Expect(err).To(BeNil())
 		} else {
 			Expect(err).NotTo(BeNil())
 		}
-		Expect(ctx.MockChannel.Msg).To(Equal(unsetTestDataOutXConnect[i].outData))
+		outTestDataXConnect[i].outData.Enable = 0
+		Expect(ctx.MockChannel.Msg).To(Equal(outTestDataXConnect[i].outData))
 	}
 }
 
 func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.XConnectVppAPI, ifaceidx.IfaceMetadataIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifIndexes := ifaceidx.NewIfaceIndex(log, "xc-if-idx")
-	xcHandler := vppcalls.NewXConnectVppHandler(ctx.MockChannel, ifIndexes, log)
-	return ctx, xcHandler, ifIndexes
+	ifaceIdx := ifaceidx.NewIfaceIndex(log, "xc-if-idx")
+	xcHandler := vppcalls.NewXConnectVppHandler(ctx.MockChannel, ifaceIdx, log)
+	return ctx, xcHandler, ifaceIdx
 }
