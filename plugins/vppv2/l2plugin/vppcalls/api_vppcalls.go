@@ -64,9 +64,9 @@ type FIBVppAPI interface {
 // FIBVppWrite provides write methods for FIBs.
 type FIBVppWrite interface {
 	// AddL2FIB creates L2 FIB table entry.
-	AddL2FIB(mac string, bdID uint32, ifaceIdx uint32, bvi bool, static bool) error
+	AddL2FIB(fib *l2.FIBEntry) error
 	// DeleteL2FIB removes existing L2 FIB table entry.
-	DeleteL2FIB(mac string, bdID uint32, ifaceIdx uint32) error
+	DeleteL2FIB(fib *l2.FIBEntry) error
 }
 
 // FIBVppRead provides read methods for FIBs.

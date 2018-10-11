@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/idxvpp2"
@@ -27,76 +28,83 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var testDataInFib = []struct {
-	mac    string
-	bdID   uint32
-	ifIdx  uint32
-	bvi    bool
-	static bool
-}{
-	{"FF:FF:FF:FF:FF:FF", 5, 55, true, true},
-	{"FF:FF:FF:FF:FF:FF", 5, 55, false, true},
-	{"FF:FF:FF:FF:FF:FF", 5, 55, true, false},
-	{"FF:FF:FF:FF:FF:FF", 5, 55, false, false},
+var testDataInFib = []*l2nb.FIBEntry {
+	{PhysAddress: "FF:FF:FF:FF:FF:FF", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD, StaticConfig: true, BridgedVirtualInterface: true},
+	{PhysAddress: "AA:AA:AA:AA:AA:AA", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD, StaticConfig: true},
+	{PhysAddress: "BB:BB:BB:BB:BB:BB", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_DROP, BridgedVirtualInterface: true},
+	{PhysAddress: "CC:CC:CC:CC:CC:CC", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD},
 }
 
-var createTestDatasOutFib = []*l2ba.L2fibAddDel{
-	{BdID: 5, IsAdd: 1, SwIfIndex: 55, BviMac: 1, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: 1},
-	{BdID: 5, IsAdd: 1, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: 1},
-	{BdID: 5, IsAdd: 1, SwIfIndex: 55, BviMac: 1, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: 0},
-	{BdID: 5, IsAdd: 1, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: 0},
+var testDatasOutFib = []*l2ba.L2fibAddDel{
+	{BdID: 5, SwIfIndex: 55, BviMac: 1, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: 1, FilterMac: 0},
+	{BdID: 5, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}, StaticMac: 1, FilterMac: 0},
+	{BdID: 5, SwIfIndex: 55, BviMac: 1, Mac: []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB}, StaticMac: 0, FilterMac: 1},
+	{BdID: 5, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC}, StaticMac: 0, FilterMac: 0},
 }
 
-var deleteTestDataOutFib = &l2ba.L2fibAddDel{
-	BdID: 5, IsAdd: 0, SwIfIndex: 55, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
-}
 
 func TestL2FibAdd(t *testing.T) {
-	ctx, fibHandler, _, _ := fibTestSetup(t)
+	ctx, fibHandler, ifaceIdx, bdIndexes := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
+
+	ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 55})
+	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{Index: 5})
 
 	for i := 0; i < len(testDataInFib); i++ {
 		ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{})
-		err := fibHandler.AddL2FIB(testDataInFib[i].mac, testDataInFib[i].bdID, testDataInFib[i].ifIdx,
-			testDataInFib[i].bvi, testDataInFib[i].static)
+		err := fibHandler.AddL2FIB(testDataInFib[i])
 		Expect(err).ShouldNot(HaveOccurred())
-		Expect(ctx.MockChannel.Msg).To(Equal(createTestDatasOutFib[i]))
+		testDatasOutFib[i].IsAdd = 1
+		Expect(ctx.MockChannel.Msg).To(Equal(testDatasOutFib[i]))
 	}
 }
 
 func TestL2FibAddError(t *testing.T) {
-	ctx, fibHandler, _, _ := fibTestSetup(t)
+	ctx, fibHandler, ifaceIdx, bdIndexes := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	err := fibHandler.AddL2FIB("not:mac:addr", 4, 10, false, false)
+	ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 55})
+	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{Index: 5})
+
+	err := fibHandler.AddL2FIB(&l2nb.FIBEntry{PhysAddress: "not:mac:addr", BridgeDomain: "bd1", OutgoingInterface: "if1"})
 	Expect(err).Should(HaveOccurred())
 
 	ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{Retval: 1})
-	err = fibHandler.AddL2FIB("FF:FF:FF:FF:FF:FF", 4, 10, false, false)
+	err = fibHandler.AddL2FIB(testDataInFib[0])
 	Expect(err).Should(HaveOccurred())
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	err = fibHandler.AddL2FIB("FF:FF:FF:FF:FF:FF", 4, 10, false, false)
+	err = fibHandler.AddL2FIB(testDataInFib[0])
+	Expect(err).Should(HaveOccurred())
+
+	err = fibHandler.AddL2FIB(&l2nb.FIBEntry{PhysAddress: "CC:CC:CC:CC:CC:CC", BridgeDomain: "non-existing-bd", OutgoingInterface: "if1"})
+	Expect(err).Should(HaveOccurred())
+
+	err = fibHandler.AddL2FIB(&l2nb.FIBEntry{PhysAddress: "CC:CC:CC:CC:CC:CC", BridgeDomain: "bd1", OutgoingInterface: "non-existing-iface"})
 	Expect(err).Should(HaveOccurred())
 }
 
 func TestL2FibDelete(t *testing.T) {
-	ctx, fibHandler, _, _ := fibTestSetup(t)
+	ctx, fibHandler, ifaceIdx, bdIndexes := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
+
+	ifaceIdx.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 55})
+	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{Index: 5})
 
 	for i := 0; i < len(testDataInFib); i++ {
 		ctx.MockVpp.MockReply(&l2ba.L2fibAddDelReply{})
-		err := fibHandler.DeleteL2FIB(testDataInFib[i].mac, testDataInFib[i].bdID, testDataInFib[i].ifIdx)
+		err := fibHandler.DeleteL2FIB(testDataInFib[i])
 		Expect(err).ShouldNot(HaveOccurred())
-		Expect(ctx.MockChannel.Msg).To(Equal(deleteTestDataOutFib))
+		testDatasOutFib[i].IsAdd = 0
+		Expect(ctx.MockChannel.Msg).To(Equal(testDatasOutFib[i]))
 	}
 }
 
 func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.FIBVppAPI, ifaceidx.IfaceMetadataIndexRW, idxvpp2.NameToIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	logger := logrus.NewLogger("test-log")
-	ifIndexes := ifaceidx.NewIfaceIndex(logger, "fib-if-idx")
+	ifaceIdx := ifaceidx.NewIfaceIndex(logger, "fib-if-idx")
 	bdIndexes := idxvpp2.NewNameToIndex(logger, "fib-bd-idx", nil)
-	fibHandler := vppcalls.NewFIBVppHandler(ctx.MockChannel, ifIndexes, bdIndexes, logger)
-	return ctx, fibHandler, ifIndexes, bdIndexes
+	fibHandler := vppcalls.NewFIBVppHandler(ctx.MockChannel, ifaceIdx, bdIndexes, logger)
+	return ctx, fibHandler, ifaceIdx, bdIndexes
 }

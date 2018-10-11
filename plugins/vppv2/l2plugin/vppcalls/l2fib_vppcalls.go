@@ -17,37 +17,54 @@ package vppcalls
 import (
 	"fmt"
 	"net"
+	"errors"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 
 // AddL2FIB creates L2 FIB table entry.
-func (h *FIBVppHandler) AddL2FIB(mac string, bdID uint32, ifaceIdx uint32, bvi bool, static bool) error {
-	return h.l2fibAddDel(mac, bdID, ifaceIdx, bvi, static, true)
+func (h *FIBVppHandler) AddL2FIB(fib *l2nb.FIBEntry) error {
+	return h.l2fibAddDel(fib, true)
 }
 
 // DeleteL2FIB removes existing L2 FIB table entry.
-func (h *FIBVppHandler) DeleteL2FIB(mac string, bdID uint32, ifaceIdx uint32) error {
-	return h.l2fibAddDel(mac, bdID, ifaceIdx, false, false, false)
+func (h *FIBVppHandler) DeleteL2FIB(fib *l2nb.FIBEntry) error {
+	return h.l2fibAddDel(fib, false)
 }
 
-func (h *FIBVppHandler) l2fibAddDel(macstr string, bdID, ifaceIdx uint32, bvi, static, isAdd bool) (err error) {
+func (h *FIBVppHandler) l2fibAddDel(fib *l2nb.FIBEntry, isAdd bool) (err error) {
+	// get bridge domain metadata
+	bdMeta, found := h.bdIndexes.LookupByName(fib.BridgeDomain)
+	if !found {
+		return errors.New("failed to get bridge domain metadata")
+	}
+
+	// get outgoing interface metadata
+	ifaceMeta, found := h.ifIndexes.LookupByName(fib.OutgoingInterface)
+	if !found {
+		return errors.New("failed to get interface metadata")
+	}
+
+	// parse MAC address
 	var mac []byte
-	if macstr != "" {
-		mac, err = net.ParseMAC(macstr)
+	if fib.PhysAddress != "" {
+		mac, err = net.ParseMAC(fib.PhysAddress)
 		if err != nil {
 			return err
 		}
 	}
 
+	// add L2 FIB
 	req := &l2ba.L2fibAddDel{
 		IsAdd:     boolToUint(isAdd),
 		Mac:       mac,
-		BdID:      bdID,
-		SwIfIndex: ifaceIdx,
-		BviMac:    boolToUint(bvi),
-		StaticMac: boolToUint(static),
+		BdID:      bdMeta.GetIndex(),
+		SwIfIndex: ifaceMeta.GetIndex(),
+		BviMac:    boolToUint(fib.BridgedVirtualInterface),
+		StaticMac: boolToUint(fib.StaticConfig),
+		FilterMac: boolToUint(fib.Action == l2nb.FIBEntry_DROP),
 	}
 	reply := &l2ba.L2fibAddDelReply{}
 
