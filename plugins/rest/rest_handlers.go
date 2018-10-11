@@ -249,7 +249,7 @@ func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interfac
 			if err != nil {
 				errMsg := fmt.Sprintf("500 Internal server error: request failed: %v\n", err)
 				plugin.Log.Error(errMsg)
-				formatter.Text(w, http.StatusInternalServerError, errMsg)
+				formatter.JSON(w, http.StatusInternalServerError, errMsg)
 				return
 			}
 			plugin.Deps.Log.Debugf("Rest uri: %s, data: %v", key, res)
@@ -318,7 +318,7 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 		}
 
 		plugin.Log.Debugf("VPPCLI response: %s", reply.Reply)
-		formatter.Text(w, http.StatusOK, string(reply.Reply))
+		formatter.JSON(w, http.StatusOK, string(reply.Reply))
 	}
 }
 
