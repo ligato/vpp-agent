@@ -23,8 +23,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 )
 
-// AddIPACL implements ACL handler.
-func (h *ACLVppHandler) AddIPACL(rules []*acl.Acl_Rule, aclName string) (uint32, error) {
+// AddACL implements ACL handler.
+func (h *ACLVppHandler) AddACL(rules []*acl.Acl_Rule, aclName string) (uint32, error) {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -51,8 +51,8 @@ func (h *ACLVppHandler) AddIPACL(rules []*acl.Acl_Rule, aclName string) (uint32,
 	return reply.ACLIndex, nil
 }
 
-// AddMacIPACL implements ACL handler.
-func (h *ACLVppHandler) AddMacIPACL(rules []*acl.Acl_Rule, aclName string) (uint32, error) {
+// AddMACIPACL implements ACL handler.
+func (h *ACLVppHandler) AddMACIPACL(rules []*acl.Acl_Rule, aclName string) (uint32, error) {
 	// Prepare MAc Ip rules
 	aclMacIPRules, err := h.transformACLMacIPRules(rules)
 	if err != nil {
@@ -78,8 +78,8 @@ func (h *ACLVppHandler) AddMacIPACL(rules []*acl.Acl_Rule, aclName string) (uint
 	return reply.ACLIndex, nil
 }
 
-// ModifyIPACL implements ACL handler.
-func (h *ACLVppHandler) ModifyIPACL(aclIndex uint32, rules []*acl.Acl_Rule, aclName string) error {
+// ModifyACL implements ACL handler.
+func (h *ACLVppHandler) ModifyACL(aclIndex uint32, rules []*acl.Acl_Rule, aclName string) error {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -134,8 +134,8 @@ func (h *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.Acl_Rule, a
 	return nil
 }
 
-// DeleteIPACL implements ACL handler.
-func (h *ACLVppHandler) DeleteIPACL(aclIndex uint32) error {
+// DeleteACL implements ACL handler.
+func (h *ACLVppHandler) DeleteACL(aclIndex uint32) error {
 	req := &aclapi.ACLDel{
 		ACLIndex: aclIndex,
 	}
@@ -150,8 +150,8 @@ func (h *ACLVppHandler) DeleteIPACL(aclIndex uint32) error {
 	return nil
 }
 
-// DeleteMacIPACL implements ACL handler.
-func (h *ACLVppHandler) DeleteMacIPACL(aclIndex uint32) error {
+// DeleteMACIPACL implements ACL handler.
+func (h *ACLVppHandler) DeleteMACIPACL(aclIndex uint32) error {
 	req := &aclapi.MacipACLDel{
 		ACLIndex: aclIndex,
 	}

@@ -18,10 +18,9 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -142,10 +141,10 @@ func TestDumpIPACL(t *testing.T) {
 
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
-	swIfIndexes.RegisterName("if0", 1, nil)
+	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test")
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	ifaces, err := aclHandler.DumpIPACL(swIfIndexes)
+	ifaces, err := aclHandler.DumpACL(swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(3))
 	//Expect(ifaces[0].Identifier.ACLIndex).To(Equal(uint32(0)))
@@ -188,8 +187,8 @@ func TestDumpMACIPACL(t *testing.T) {
 
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
-	swIfIndexes.RegisterName("if0", 1, nil)
+	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test")
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
 	ifaces, err := aclHandler.DumpMACIPACL(swIfIndexes)
 	Expect(err).To(Succeed())
@@ -215,11 +214,11 @@ func TestDumpACLInterfaces(t *testing.T) {
 
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test", nil))
-	swIfIndexes.RegisterName("if0", 1, nil)
+	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test")
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
 	indexes := []uint32{0, 2}
-	ifaces, err := aclHandler.DumpIPACLInterfaces(indexes, swIfIndexes)
+	ifaces, err := aclHandler.DumpACLInterfaces(indexes, swIfIndexes)
 	Expect(err).To(Succeed())
 	Expect(ifaces).To(HaveLen(2))
 	Expect(ifaces[0].Ingress).To(Equal([]string{"if0"}))
@@ -240,8 +239,8 @@ func TestDumpMACIPACLInterfaces(t *testing.T) {
 
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
-	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "test-sw_if_indexes", ifaceidx.IndexMetadata))
-	swIfIndexes.RegisterName("if0", 1, nil)
+	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test")
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
 	indexes := []uint32{0, 1}
 	ifaces, err := aclHandler.DumpMACIPACLInterfaces(indexes, swIfIndexes)
@@ -314,9 +313,9 @@ func TestDumpInterfaceIPAcls(t *testing.T) {
 
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
-	ACLs, err := aclHandler.DumpInterfaceIPAcls(0)
+	ACLs, err := aclHandler.DumpInterfaceACLs(0)
 	Expect(err).To(Succeed())
-	Expect(ACLs.Acls).To(HaveLen(2))
+	Expect(ACLs).To(HaveLen(2))
 }
 
 func TestDumpInterfaceMACIPAcls(t *testing.T) {
@@ -341,9 +340,9 @@ func TestDumpInterfaceMACIPAcls(t *testing.T) {
 
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
-	ACLs, err := aclHandler.DumpInterfaceMACIPAcls(0)
+	ACLs, err := aclHandler.DumpInterfaceMACIPACLs(0)
 	Expect(err).To(Succeed())
-	Expect(ACLs.Acls).To(HaveLen(2))
+	Expect(ACLs).To(HaveLen(2))
 }
 
 func TestDumpInterface(t *testing.T) {
@@ -358,12 +357,12 @@ func TestDumpInterface(t *testing.T) {
 		NInput:    1,
 		Acls:      []uint32{0, 1},
 	})
-	IPacls, err := aclHandler.DumpInterfaceIPACLs(0)
+	IPacls, err := aclHandler.DumpInterfaceACLList(0)
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(2))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLInterfaceListDetails{})
-	IPacls, err = aclHandler.DumpInterfaceIPACLs(0)
+	IPacls, err = aclHandler.DumpInterfaceACLList(0)
 	Expect(err).To(BeNil())
 	Expect(IPacls.Acls).To(HaveLen(0))
 
@@ -372,12 +371,12 @@ func TestDumpInterface(t *testing.T) {
 		Count:     2,
 		Acls:      []uint32{0, 1},
 	})
-	MACIPacls, err := aclHandler.DumpInterfaceMACIPACLs(0)
+	MACIPacls, err := aclHandler.DumpInterfaceMACIPACLList(0)
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(2))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLInterfaceListDetails{})
-	MACIPacls, err = aclHandler.DumpInterfaceMACIPACLs(0)
+	MACIPacls, err = aclHandler.DumpInterfaceMACIPACLList(0)
 	Expect(err).To(BeNil())
 	Expect(MACIPacls.Acls).To(HaveLen(0))
 }
@@ -420,7 +419,7 @@ func TestDumpInterfaces(t *testing.T) {
 
 	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
 
-	IPacls, MACIPacls, err := aclHandler.DumpInterfaces()
+	IPacls, MACIPacls, err := aclHandler.DumpInterfacesLists()
 	Expect(err).To(BeNil())
 	Expect(IPacls).To(HaveLen(3))
 	Expect(MACIPacls).To(HaveLen(2))

@@ -54,8 +54,8 @@ type ACLToInterface struct {
 	EgressACL  []uint32
 }
 
-// DumpIPACL implements ACL handler.
-func (h *ACLVppHandler) DumpIPACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([]*ACLDetails, error) {
+// DumpACL implements ACL handler.
+func (h *ACLVppHandler) DumpACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([]*ACLDetails, error) {
 	ruleIPData := make(map[ACLMeta][]*acl.Acl_Rule)
 
 	// get all ACLs with IP ruleData
@@ -89,7 +89,7 @@ func (h *ACLVppHandler) DumpIPACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([]*A
 	}
 
 	// Get all ACL indices with ingress and egress interfaces
-	interfaceData, err := h.DumpIPACLInterfaces(indices, swIfIndices)
+	interfaceData, err := h.DumpACLInterfaces(indices, swIfIndices)
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +167,8 @@ func (h *ACLVppHandler) DumpMACIPACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([
 	return ACLs, nil
 }
 
-// DumpIPACLInterfaces implements ACL handler.
-func (h *ACLVppHandler) DumpIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.IfaceMetadataIndex) (map[uint32]*acl.Acl_Interfaces, error) {
+// DumpACLInterfaces implements ACL handler.
+func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.IfaceMetadataIndex) (map[uint32]*acl.Acl_Interfaces, error) {
 	// list of ACL-to-interfaces
 	aclsWithInterfaces := make(map[uint32]*acl.Acl_Interfaces)
 	if swIfIndices == nil {
@@ -362,9 +362,9 @@ func (h *ACLVppHandler) DumpMacIPAcls() (map[ACLMeta][]acl_api.MacipACLRule, err
 	return aclMACIPRules, nil
 }
 
-// DumpInterfaceIPAcls implements ACL handler.
-func (h *ACLVppHandler) DumpInterfaceIPAcls(swIndex uint32) (acls []*acl.Acl, err error) {
-	res, err := h.DumpInterfaceIPACLs(swIndex)
+// DumpInterfaceACLs implements ACL handler.
+func (h *ACLVppHandler) DumpInterfaceACLs(swIndex uint32) (acls []*acl.Acl, err error) {
+	res, err := h.DumpInterfaceACLList(swIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -383,9 +383,9 @@ func (h *ACLVppHandler) DumpInterfaceIPAcls(swIndex uint32) (acls []*acl.Acl, er
 	return acls, nil
 }
 
-// DumpInterfaceMACIPAcls implements ACL handler.
-func (h *ACLVppHandler) DumpInterfaceMACIPAcls(swIndex uint32) (acls []*acl.Acl, err error) {
-	resMacIP, err := h.DumpInterfaceMACIPACLs(swIndex)
+// DumpInterfaceMACIPACLs implements ACL handler.
+func (h *ACLVppHandler) DumpInterfaceMACIPACLs(swIndex uint32) (acls []*acl.Acl, err error) {
+	resMacIP, err := h.DumpInterfaceMACIPACLList(swIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -404,8 +404,8 @@ func (h *ACLVppHandler) DumpInterfaceMACIPAcls(swIndex uint32) (acls []*acl.Acl,
 	return acls, nil
 }
 
-// DumpInterfaceIPACLs implements ACL handler.
-func (h *ACLVppHandler) DumpInterfaceIPACLs(swIndex uint32) (*acl_api.ACLInterfaceListDetails, error) {
+// DumpInterfaceACLList implements ACL handler.
+func (h *ACLVppHandler) DumpInterfaceACLList(swIndex uint32) (*acl_api.ACLInterfaceListDetails, error) {
 	req := &acl_api.ACLInterfaceListDump{
 		SwIfIndex: swIndex,
 	}
@@ -418,8 +418,8 @@ func (h *ACLVppHandler) DumpInterfaceIPACLs(swIndex uint32) (*acl_api.ACLInterfa
 	return reply, nil
 }
 
-// DumpInterfaceMACIPACLs implements ACL handler.
-func (h *ACLVppHandler) DumpInterfaceMACIPACLs(swIndex uint32) (*acl_api.MacipACLInterfaceListDetails, error) {
+// DumpInterfaceMACIPACLList implements ACL handler.
+func (h *ACLVppHandler) DumpInterfaceMACIPACLList(swIndex uint32) (*acl_api.MacipACLInterfaceListDetails, error) {
 	req := &acl_api.MacipACLInterfaceListDump{
 		SwIfIndex: swIndex,
 	}
@@ -433,7 +433,7 @@ func (h *ACLVppHandler) DumpInterfaceMACIPACLs(swIndex uint32) (*acl_api.MacipAC
 }
 
 // DumpInterfaces implements ACL handler.
-func (h *ACLVppHandler) DumpInterfaces() ([]*acl_api.ACLInterfaceListDetails, []*acl_api.MacipACLInterfaceListDetails, error) {
+func (h *ACLVppHandler) DumpInterfacesLists() ([]*acl_api.ACLInterfaceListDetails, []*acl_api.MacipACLInterfaceListDetails, error) {
 	msgIPACL := &acl_api.ACLInterfaceListDump{
 		SwIfIndex: 0xffffffff, // dump all
 	}

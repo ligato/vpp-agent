@@ -101,7 +101,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 
 	// resync
 
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second / 2)
 	fmt.Println("=== RESYNC 0 ===")
 
 	txn := localclient.DataResyncRequest("example")
@@ -128,20 +128,5 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			fmt.Println(err)
 			return
 		}
-	*/
-
-	// test Linux interface metadata map
-	/*linuxIfIndex := p.LinuxIfPlugin.GetInterfaceIndex()
-	linuxIfMeta, exists := linuxIfIndex.LookupByName(veth1LogicalName)
-	fmt.Printf("Linux interface %s: found=%t, meta=%v\n", veth1LogicalName, exists, linuxIfMeta)
-	linuxIfMeta, exists = linuxIfIndex.LookupByName(linuxTapLogicalName)
-	fmt.Printf("Linux interface %s: found=%t, meta=%v\n", linuxTapLogicalName, exists, linuxIfMeta)
-
-	// test VPP interface metadata map
-	vppIfIndex := p.VPPIfPlugin.GetInterfaceIndex()
-	vppIfMeta, exists := vppIfIndex.LookupByName(afPacketLogicalName)
-	fmt.Printf("VPP interface %s: found=%t, meta=%v\n", afPacketLogicalName, exists, vppIfMeta)
-	vppIfMeta, exists = vppIfIndex.LookupByName(vppTapLogicalName)
-	fmt.Printf("VPP interface %s: found=%t, meta=%v\n", vppTapLogicalName, exists, vppIfMeta)
 	*/
 }

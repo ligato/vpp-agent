@@ -89,7 +89,22 @@ func (d *AclDescriptor) GetDescriptor() *adapter.AclDescriptor {
 
 // EquivalentACLs compares two ACLs
 func (d *AclDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool {
-	return proto.Equal(oldACL, newACL)
+	// check if ACL name changed
+	if oldACL.Name != newACL.Name {
+		return false
+	}
+
+	// check if rules changed (order matters)
+	if len(oldACL.Rules) != len(newACL.Rules) {
+		return false
+	}
+	for i := 0; i < len(oldACL.Rules); i++ {
+		if !proto.Equal(oldACL.Rules[i], newACL.Rules[i]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 var nonRetriableErrs []error
@@ -115,12 +130,12 @@ func (d *AclDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.AclMetad
 	// Configure ACL rules.
 	var vppACLIndex uint32
 	if isL2MacIP {
-		vppACLIndex, err = d.aclHandler.AddMacIPACL(rules, acl.Name)
+		vppACLIndex, err = d.aclHandler.AddMACIPACL(rules, acl.Name)
 		if err != nil {
-			return nil, errors.Errorf("failed to add MAC IP ACL %s: %v", acl.Name, err)
+			return nil, errors.Errorf("failed to add MACIP ACL %s: %v", acl.Name, err)
 		}
 	} else {
-		vppACLIndex, err = d.aclHandler.AddIPACL(rules, acl.Name)
+		vppACLIndex, err = d.aclHandler.AddACL(rules, acl.Name)
 		if err != nil {
 			return nil, errors.Errorf("failed to add IP ACL %s: %v", acl.Name, err)
 		}
@@ -195,7 +210,7 @@ func (d *AclDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.AclMet
 			}
 		}*/
 		// Remove ACL L2.
-		err := d.aclHandler.DeleteMacIPACL(metadata.Index)
+		err := d.aclHandler.DeleteMACIPACL(metadata.Index)
 		if err != nil {
 			return errors.Errorf("failed to delete MACIP ACL %s: %v", acl.Name, err)
 		}
@@ -219,7 +234,7 @@ func (d *AclDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.AclMet
 			}
 		}*/
 		// Remove ACL L3/L4.
-		err := d.aclHandler.DeleteIPACL(metadata.Index)
+		err := d.aclHandler.DeleteACL(metadata.Index)
 		if err != nil {
 			return errors.Errorf("failed to delete IP ACL %s: %v", acl.Name, err)
 		}
@@ -257,7 +272,7 @@ func (d *AclDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata 
 		}
 	} else {
 		// L3/L4 ACL can be modified directly.
-		err := d.aclHandler.ModifyIPACL(oldMetadata.Index, rules, newACL.Name)
+		err := d.aclHandler.ModifyACL(oldMetadata.Index, rules, newACL.Name)
 		if err != nil {
 			return nil, errors.Errorf("failed to modify IP ACL %s: %v", newACL.Name, err)
 		}
@@ -356,7 +371,7 @@ func (d *AclDescriptor) DerivedValues(key string, value *acl.Acl) []api.KeyValue
 
 // Dump returns list of dumped ACLs with metadata
 func (d *AclDescriptor) Dump(correlate []adapter.AclKVWithMetadata) (dump []adapter.AclKVWithMetadata, err error) {
-	ipACLs, err := d.aclHandler.DumpIPACL(d.ifPlugin.GetInterfaceIndex())
+	ipACLs, err := d.aclHandler.DumpACL(d.ifPlugin.GetInterfaceIndex())
 	if err != nil {
 		return nil, errors.Errorf("failed to dump IP ACLs: %v", err)
 	}

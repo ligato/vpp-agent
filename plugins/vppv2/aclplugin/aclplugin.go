@@ -12,7 +12,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Acl  --value-type *acl.Acl --meta-type *aclidx.AclMetadata --import "aclidx" --import "../model/acl" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Acl --value-type *acl.Acl --meta-type *aclidx.AclMetadata --import "aclidx" --import "../model/acl" --output-dir "descriptor"
+///go:generate descriptor-adapter --descriptor-name AclInterface --value-type *acl.Acl_Interface --import "aclidx" --import "../model/acl" --output-dir "descriptor"
 
 package aclplugin
 

@@ -15,7 +15,7 @@
 package acl
 
 import (
-	fmt "fmt"
+	"fmt"
 	"strings"
 )
 
@@ -32,9 +32,8 @@ func Key(aclName string) string {
 
 // ParseNameFromKey returns suffix of the key.
 func ParseNameFromKey(key string) (name string, err error) {
-	name = strings.TrimPrefix(key, Prefix)
-	if name == key {
-		return name, fmt.Errorf("wrong format of the key %s", key)
+	if name = strings.TrimPrefix(key, Prefix); name == key {
+		return name, fmt.Errorf("missing ACL prefix in key: %s", key)
 	}
 	return name, nil
 }
