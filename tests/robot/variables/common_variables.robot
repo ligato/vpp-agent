@@ -130,6 +130,8 @@ ${RESULTS_FOLDER_SUITE}            ${RESULTS_FOLDER}/${SUITE_NAME}
 ${TEST_DATA_FOLDER}                test_data
 ${REST_CALL_SLEEP}                 0
 ${SSH_READ_DELAY}                  1
+#${CTL_TOOL}=       vppctl
+${CTL_TOOL}=       etcdctl
 
 ${EXAMPLE_PLUGIN_NAME}             example_plugin.so
 

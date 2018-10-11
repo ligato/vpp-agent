@@ -27,7 +27,7 @@ Testsuite Setup
     Create Connections For ETCD And Kafka
     #Start Kafka Server
     Start ETCD Server
-    Start VPP Ctl Container
+    Run Keyword If     "${CTL_TOOL}"== "vppctl"     Start VPP Ctl Container
     Make Datastore Snapshots    startup
 
 
@@ -35,7 +35,7 @@ Testsuite Teardown
     Make Datastore Snapshots    teardown
     Remove All Nodes
     Stop ETCD Server
-    Stop VPP Ctl Container
+    Run Keyword If     "${CTL_TOOL}"== "vppctl"     Stop VPP Ctl Container
     #Stop Kafka Server
     Get Connections
     Close All Connections
@@ -47,12 +47,12 @@ Test Setup
     Create Connections For ETCD And Kafka
     #Start Kafka Server
     Start ETCD Server
-    Start VPP Ctl Container
+    Run Keyword If     "${CTL_TOOL}"== "vppctl"     Start VPP Ctl Container
     Make Datastore Snapshots    startup
 
 Test Teardown
     Make Datastore Snapshots    teardown
-    Stop VPP Ctl Container
+    Run Keyword If     "${CTL_TOOL}"== "vppctl"     Stop VPP Ctl Container
     #Stop Kafka Server
     Stop ETCD Server
     Remove All Nodes
