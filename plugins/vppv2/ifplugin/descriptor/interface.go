@@ -27,7 +27,6 @@ import (
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
