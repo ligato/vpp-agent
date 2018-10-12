@@ -52,18 +52,25 @@ type ACLVppWrite interface {
 	SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uint32) error
 	// RemoveMACIPACLFromInterfaces removes MACIP ACL from interfaces.
 	RemoveMACIPACLFromInterfaces(removedACLIndex uint32, ifIndices []uint32) error
+
+	AddACLToInterfaceAsIngress(aclIndex uint32, ifName string) error
+	AddACLToInterfaceAsEgress(aclIndex uint32, ifName string) error
+	DeleteACLFromInterfaceAsIngress(aclIndex uint32, ifName string) error
+	DeleteACLFromInterfaceAsEgress(aclIndex uint32, ifName string) error
+	AddMACIPACLToInterface(aclIndex uint32, ifName string) error
+	DeleteMACIPACLFromInterface(aclIndex uint32, ifName string) error
 }
 
 // ACLVppRead provides read methods for ACL plugin
 type ACLVppRead interface {
 	// DumpACL dumps all ACLs (L3/L4).
-	DumpACL(ifIndex ifaceidx.IfaceMetadataIndex) ([]*ACLDetails, error)
+	DumpACL() ([]*ACLDetails, error)
 	// DumpMACIPACL dumps all MACIP ACLs (L2).
-	DumpMACIPACL(ifIndex ifaceidx.IfaceMetadataIndex) ([]*ACLDetails, error)
+	DumpMACIPACL() ([]*ACLDetails, error)
 	// DumpACLInterfaces dumps all ACLs (L3/L4) for given ACL indexes. Returns map of ACL indexes with assigned interfaces.
-	DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.IfaceMetadataIndex) (map[uint32]*acl.Acl_Interfaces, error)
+	DumpACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error)
 	// DumpMACIPACLInterfaces dumps all ACLs (L2) for given ACL indexes. Returns map of MACIP ACL indexes with assigned interfaces.
-	DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.IfaceMetadataIndex) (map[uint32]*acl.Acl_Interfaces, error)
+	DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error)
 	// DumpInterfaceAcls finds interface in VPP and returns its ACL (L3/L4) configuration.
 	DumpInterfaceACLs(ifIdx uint32) ([]*acl.Acl, error)
 	// DumpInterfaceMACIPACLs finds interface in VPP and returns its MACIP ACL (L2) configuration.
@@ -74,12 +81,14 @@ type ACLVppRead interface {
 type ACLVppHandler struct {
 	callsChannel govppapi.Channel
 	dumpChannel  govppapi.Channel
+	ifIndexes    ifaceidx.IfaceMetadataIndex
 }
 
 // NewACLVppHandler creates new instance of acl vppcalls handler
-func NewACLVppHandler(callsChan, dumpChan govppapi.Channel) *ACLVppHandler {
+func NewACLVppHandler(callsChan, dumpChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex) *ACLVppHandler {
 	return &ACLVppHandler{
 		callsChannel: callsChan,
 		dumpChannel:  dumpChan,
+		ifIndexes:    ifIndexes,
 	}
 }

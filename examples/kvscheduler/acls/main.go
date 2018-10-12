@@ -21,6 +21,7 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
@@ -84,6 +85,19 @@ func (p *ExamplePlugin) Close() error {
 	return nil
 }
 func (p *ExamplePlugin) testLocalClientWithScheduler() {
+	memif0 := &interfaces.Interface{
+		Name:    "memif0",
+		Enabled: true,
+		Type:    interfaces.Interface_MEMORY_INTERFACE,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.Interface_MemifLink{
+				Id:             1,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
+	}
 	acl1 := &acl.Acl{
 		Name: "acl1",
 		Rules: []*acl.Acl_Rule{
@@ -97,6 +111,9 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 				},
 			},
 		},
+		Interfaces: &acl.Acl_Interfaces{
+			Ingress: []string{"memif0"},
+		},
 	}
 
 	// resync
@@ -106,6 +123,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
+		VppInterface(memif0).
 		ACL(acl1).
 		Send().ReceiveReply()
 	if err != nil {

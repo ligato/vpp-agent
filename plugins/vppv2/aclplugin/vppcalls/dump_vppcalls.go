@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 )
 
@@ -55,7 +54,7 @@ type ACLToInterface struct {
 }
 
 // DumpACL implements ACL handler.
-func (h *ACLVppHandler) DumpACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([]*ACLDetails, error) {
+func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
 	ruleIPData := make(map[ACLMeta][]*acl.Acl_Rule)
 
 	// get all ACLs with IP ruleData
@@ -89,7 +88,7 @@ func (h *ACLVppHandler) DumpACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([]*ACL
 	}
 
 	// Get all ACL indices with ingress and egress interfaces
-	interfaceData, err := h.DumpACLInterfaces(indices, swIfIndices)
+	interfaceData, err := h.DumpACLInterfaces(indices)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func (h *ACLVppHandler) DumpACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([]*ACL
 }
 
 // DumpMACIPACL implements ACL handler.
-func (h *ACLVppHandler) DumpMACIPACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([]*ACLDetails, error) {
+func (h *ACLVppHandler) DumpMACIPACL() ([]*ACLDetails, error) {
 	ruleMACIPData := make(map[ACLMeta][]*acl.Acl_Rule)
 
 	// get all ACLs with MACIP ruleData
@@ -144,7 +143,7 @@ func (h *ACLVppHandler) DumpMACIPACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([
 	}
 
 	// Get all ACL indices with ingress and egress interfaces
-	interfaceData, err := h.DumpMACIPACLInterfaces(indices, swIfIndices)
+	interfaceData, err := h.DumpMACIPACLInterfaces(indices)
 	if err != nil {
 		return nil, err
 	}
@@ -168,12 +167,9 @@ func (h *ACLVppHandler) DumpMACIPACL(swIfIndices ifaceidx.IfaceMetadataIndex) ([
 }
 
 // DumpACLInterfaces implements ACL handler.
-func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx.IfaceMetadataIndex) (map[uint32]*acl.Acl_Interfaces, error) {
+func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error) {
 	// list of ACL-to-interfaces
 	aclsWithInterfaces := make(map[uint32]*acl.Acl_Interfaces)
-	if swIfIndices == nil {
-		return aclsWithInterfaces, nil
-	}
 
 	var interfaceData []*ACLToInterface
 	var wasErr error
@@ -215,7 +211,7 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx
 			// look for ingress
 			for _, ingressACLIdx := range data.IngressACL {
 				if ingressACLIdx == aclIdx {
-					name, _, found := swIfIndices.LookupBySwIfIndex(data.SwIfIdx)
+					name, _, found := h.ifIndexes.LookupBySwIfIndex(data.SwIfIdx)
 					if !found {
 						continue
 					}
@@ -225,7 +221,7 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx
 			// look for egress
 			for _, egressACLIdx := range data.EgressACL {
 				if egressACLIdx == aclIdx {
-					name, _, found := swIfIndices.LookupBySwIfIndex(data.SwIfIdx)
+					name, _, found := h.ifIndexes.LookupBySwIfIndex(data.SwIfIdx)
 					if !found {
 						continue
 					}
@@ -244,12 +240,9 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32, swIfIndices ifaceidx
 }
 
 // DumpMACIPACLInterfaces implements ACL handler.
-func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifaceidx.IfaceMetadataIndex) (map[uint32]*acl.Acl_Interfaces, error) {
+func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error) {
 	// list of ACL-to-interfaces
 	aclsWithInterfaces := make(map[uint32]*acl.Acl_Interfaces)
-	if swIfIndices == nil {
-		return aclsWithInterfaces, nil
-	}
 
 	var interfaceData []*ACLToInterface
 
@@ -283,7 +276,7 @@ func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32, swIfIndices ifa
 			// look for ingress
 			for _, ingressACLIdx := range data.IngressACL {
 				if ingressACLIdx == aclIdx {
-					name, _, found := swIfIndices.LookupBySwIfIndex(data.SwIfIdx)
+					name, _, found := h.ifIndexes.LookupBySwIfIndex(data.SwIfIdx)
 					if !found {
 						continue
 					}

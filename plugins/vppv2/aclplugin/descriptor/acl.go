@@ -20,6 +20,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
+	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -365,17 +366,29 @@ func (d *AclDescriptor) Dependencies(key string, value *acl.Acl) []api.Dependenc
 }
 
 // DervicedValues returns list of derived values for ACL
-func (d *AclDescriptor) DerivedValues(key string, value *acl.Acl) []api.KeyValuePair {
-	return nil
+func (d *AclDescriptor) DerivedValues(key string, value *acl.Acl) (derived []api.KeyValuePair) {
+	for _, ifName := range value.GetInterfaces().GetIngress() {
+		derived = append(derived, api.KeyValuePair{
+			Key:   acl.ACLToInterfaceKey(value.Name, ifName, "ingress"),
+			Value: &prototypes.Empty{},
+		})
+	}
+	for _, ifName := range value.GetInterfaces().GetEgress() {
+		derived = append(derived, api.KeyValuePair{
+			Key:   acl.ACLToInterfaceKey(value.Name, ifName, "egress"),
+			Value: &prototypes.Empty{},
+		})
+	}
+	return derived
 }
 
 // Dump returns list of dumped ACLs with metadata
 func (d *AclDescriptor) Dump(correlate []adapter.AclKVWithMetadata) (dump []adapter.AclKVWithMetadata, err error) {
-	ipACLs, err := d.aclHandler.DumpACL(d.ifPlugin.GetInterfaceIndex())
+	ipACLs, err := d.aclHandler.DumpACL()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump IP ACLs: %v", err)
 	}
-	macipACLs, err := d.aclHandler.DumpMACIPACL(d.ifPlugin.GetInterfaceIndex())
+	macipACLs, err := d.aclHandler.DumpMACIPACL()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump MAC IP ACLs: %v", err)
 	}

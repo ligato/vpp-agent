@@ -22,6 +22,14 @@ import (
 const (
 	// Prefix is ACL key prefix
 	Prefix = "vpp/config/v2/acl/"
+
+	// ACLToInterfacePrefix
+	//ACLToInterfacePrefix = "vpp/acl/interface/"
+
+	ACLToInterfaceTemplate = "vpp/acl/{acl}/interface/{flow}/{iface}"
+	//ACLToInterfaceIngressPrefix = ACLToInterfacePrefix + "ingress/"
+	//ACLToInterfaceEgressPrefix = ACLToInterfacePrefix + "egress/"
+
 )
 
 // Key returns the prefix used in ETCD to store vpp ACL config
@@ -36,4 +44,23 @@ func ParseNameFromKey(key string) (name string, err error) {
 		return name, fmt.Errorf("missing ACL prefix in key: %s", key)
 	}
 	return name, nil
+}
+
+// ACLToInterfaceKey returns key for ACL to interface
+func ACLToInterfaceKey(acl, iface, flow string) string {
+	key := ACLToInterfaceTemplate
+	key = strings.Replace(key, "{acl}", acl, 1)
+	key = strings.Replace(key, "{flow}", flow, 1)
+	key = strings.Replace(key, "{iface}", iface, 1)
+	return key
+}
+
+// ParseACLToInterfaceKey parses ACL to interface key
+func ParseACLToInterfaceKey(key string) (acl, iface, flow string, isACLToInterface bool) {
+	keyComps := strings.Split(key, "/")
+	if len(keyComps) == 6 && keyComps[0] == "vpp" && keyComps[1] == "acl" &&
+		keyComps[3] == "interface" {
+		return keyComps[2], keyComps[5], keyComps[4], true
+	}
+	return "", "", "", false
 }

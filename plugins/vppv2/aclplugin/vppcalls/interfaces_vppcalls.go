@@ -56,6 +56,146 @@ func (h *ACLVppHandler) RemoveACLFromInterfacesAsEgress(ACLIndex uint32, ifIndic
 	})
 }
 
+// AddACLToInterfaceAsIngress implements ACL handler.
+func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName string) error {
+	meta, ok := h.ifIndexes.LookupByName(ifName)
+	if !ok {
+		return fmt.Errorf("metadata for interface %s not found", ifName)
+	}
+	ifIdx := meta.SwIfIndex
+
+	req := &acl_api.ACLInterfaceAddDel{
+		ACLIndex:  aclIndex,
+		IsAdd:     1,
+		SwIfIndex: ifIdx,
+		IsInput:   1,
+	}
+	reply := &acl_api.ACLInterfaceAddDelReply{}
+
+	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
+	}
+
+	return nil
+}
+
+// AddACLToInterfaceAsIngress implements ACL handler.
+func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string) error {
+	meta, ok := h.ifIndexes.LookupByName(ifName)
+	if !ok {
+		return fmt.Errorf("metadata for interface %s not found", ifName)
+	}
+	ifIdx := meta.SwIfIndex
+
+	req := &acl_api.ACLInterfaceAddDel{
+		ACLIndex:  aclIndex,
+		IsAdd:     1,
+		SwIfIndex: ifIdx,
+		IsInput:   0,
+	}
+	reply := &acl_api.ACLInterfaceAddDelReply{}
+
+	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
+	}
+
+	return nil
+}
+
+// DeleteACLFromInterfaceAsIngress implements ACL handler.
+func (h *ACLVppHandler) DeleteACLFromInterfaceAsIngress(aclIndex uint32, ifName string) error {
+	meta, ok := h.ifIndexes.LookupByName(ifName)
+	if !ok {
+		return fmt.Errorf("metadata for interface %s not found", ifName)
+	}
+	ifIdx := meta.SwIfIndex
+
+	req := &acl_api.ACLInterfaceAddDel{
+		ACLIndex:  aclIndex,
+		IsAdd:     0,
+		SwIfIndex: ifIdx,
+		IsInput:   1,
+	}
+	reply := &acl_api.ACLInterfaceAddDelReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
+	}
+
+	return nil
+}
+
+// DeleteACLFromInterfaceAsEgress implements ACL handler.
+func (h *ACLVppHandler) DeleteACLFromInterfaceAsEgress(aclIndex uint32, ifName string) error {
+	meta, ok := h.ifIndexes.LookupByName(ifName)
+	if !ok {
+		return fmt.Errorf("metadata for interface %s not found", ifName)
+	}
+	ifIdx := meta.SwIfIndex
+
+	req := &acl_api.ACLInterfaceAddDel{
+		ACLIndex:  aclIndex,
+		IsAdd:     0,
+		SwIfIndex: ifIdx,
+		IsInput:   0,
+	}
+	reply := &acl_api.ACLInterfaceAddDelReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
+	}
+
+	return nil
+}
+
+// AddMACIPACLToInterface implements ACL handler.
+func (h *ACLVppHandler) AddMACIPACLToInterface(aclIndex uint32, ifName string) error {
+	meta, ok := h.ifIndexes.LookupByName(ifName)
+	if !ok {
+		return fmt.Errorf("metadata for interface %s not found", ifName)
+	}
+	ifIdx := meta.SwIfIndex
+
+	req := &acl_api.MacipACLInterfaceAddDel{
+		ACLIndex:  aclIndex,
+		IsAdd:     1,
+		SwIfIndex: ifIdx,
+	}
+	reply := &acl_api.MacipACLInterfaceAddDelReply{}
+
+	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return fmt.Errorf("failed to add interface %d to MACIP ACL (L2) %d: %v", ifIdx, aclIndex, err)
+	}
+
+	return nil
+}
+
+// DeleteMACIPACLFromInterface implements ACL handler.
+func (h *ACLVppHandler) DeleteMACIPACLFromInterface(aclIndex uint32, ifName string) error {
+	meta, ok := h.ifIndexes.LookupByName(ifName)
+	if !ok {
+		return fmt.Errorf("metadata for interface %s not found", ifName)
+	}
+	ifIdx := meta.SwIfIndex
+
+	req := &acl_api.MacipACLInterfaceAddDel{
+		ACLIndex:  aclIndex,
+		IsAdd:     0,
+		SwIfIndex: ifIdx,
+	}
+	reply := &acl_api.MacipACLInterfaceAddDelReply{}
+
+	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
+	if err != nil {
+		return fmt.Errorf("failed to delete interface %d from MACIP ACL (L2) %d: %v", ifIdx, aclIndex, err)
+	}
+
+	return nil
+}
+
 // SetMACIPACLToInterfaces implements ACL handler.
 func (h *ACLVppHandler) SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uint32) error {
 	for _, ingressIfIdx := range ifIndices {
@@ -64,7 +204,6 @@ func (h *ACLVppHandler) SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uin
 			IsAdd:     1,
 			SwIfIndex: ingressIfIdx,
 		}
-
 		reply := &acl_api.MacipACLInterfaceAddDelReply{}
 
 		err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
@@ -87,7 +226,6 @@ func (h *ACLVppHandler) RemoveMACIPACLFromInterfaces(removedACLIndex uint32, ifI
 			SwIfIndex: ifIdx,
 			IsAdd:     0,
 		}
-
 		reply := &acl_api.MacipACLInterfaceAddDelReply{}
 
 		if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {

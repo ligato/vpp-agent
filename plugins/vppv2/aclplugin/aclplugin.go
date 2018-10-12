@@ -42,8 +42,9 @@ type AclPlugin struct {
 	vppCh     govppapi.Channel
 	dumpVppCh govppapi.Channel
 
-	aclHandler   vppcalls.ACLVppAPI
-	aclDesriptor *descriptor.AclDescriptor
+	aclHandler             vppcalls.ACLVppAPI
+	aclDesriptor           *descriptor.AclDescriptor
+	aclInterfaceDescriptor *descriptor.ACLToInterfaceDescriptor
 
 	aclIndex aclidx.AclMetadataIndex
 
@@ -75,7 +76,7 @@ func (p *AclPlugin) Init() (err error) {
 	}
 
 	// init handlers
-	p.aclHandler = vppcalls.NewACLVppHandler(p.vppCh, p.dumpVppCh)
+	p.aclHandler = vppcalls.NewACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex())
 
 	// init descriptors
 	p.aclDesriptor = descriptor.NewAclDescriptor(p.aclHandler, p.IfPlugin, p.Log)
@@ -91,6 +92,11 @@ func (p *AclPlugin) Init() (err error) {
 	if !withIndex {
 		return errors.New("missing index with acl metadata")
 	}
+
+	p.aclInterfaceDescriptor = descriptor.NewACLToInterfaceDescriptor(p.aclIndex, p.aclHandler, p.Log)
+	aclInterfaceDescriptor := p.aclInterfaceDescriptor.GetDescriptor()
+
+	p.Scheduler.RegisterKVDescriptor(aclInterfaceDescriptor)
 
 	// pass read-only index map to descriptors
 	//p.aclDesriptor.SetACLIndex(p.aclIndex)
