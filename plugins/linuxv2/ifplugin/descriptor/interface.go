@@ -766,7 +766,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		dump = append(dump, kv)
 	}
 
-	d.log.WithField("dump", dump).Debug("Dumping Linux interfaces")
+	d.log.Debugf("Dumping Linux interfaces: %v", dump)
 	return dump, nil
 }
 

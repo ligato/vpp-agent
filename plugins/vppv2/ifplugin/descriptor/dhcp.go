@@ -212,7 +212,7 @@ func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler
 			Origin:   scheduler.FromSB,
 		})
 	}
-	d.log.WithField("dump", dump).Debug("Dumping DHCP leases")
+	d.log.Debugf("Dumping DHCP leases: %v", dump)
 	return dump, nil
 }
 

@@ -177,6 +177,7 @@ func (d *FIBDescriptor) Dump(correlate []adapter.FIBKVWithMetadata) (dump []adap
 		})
 	}
 
+	d.log.Debugf("Dumping L2 FIBs: %v", dump)
 	return dump, nil
 }
 

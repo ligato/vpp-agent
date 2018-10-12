@@ -157,6 +157,8 @@ func (d *XConnectDescriptor) Dump(correlate []adapter.XConnectKVWithMetadata) (d
 			Origin:   scheduler.FromNB,
 		})
 	}
+
+	d.log.Debugf("Dumping xConnect pairs: %v", dump)
 	return dump, nil
 }
 

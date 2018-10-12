@@ -522,6 +522,6 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 
 	}
 
-	d.log.WithField("dump", dump).Debug("Dumping VPP interfaces")
+	d.log.Debugf("Dumping VPP interfaces: %v", dump)
 	return dump, nil
 }

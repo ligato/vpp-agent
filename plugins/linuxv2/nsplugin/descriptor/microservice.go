@@ -142,7 +142,7 @@ func (d *MicroserviceDescriptor) Dump(correlate []scheduler.KVWithMetadata) (dum
 		})
 	}
 
-	d.log.WithField("dump", dump).Debug("Dumping Microservices")
+	d.log.Debugf("Dumping Microservices: %v", dump)
 	return dump, nil
 }
 

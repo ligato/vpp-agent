@@ -271,6 +271,7 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 	// update d.bdIDSeq
 	d.bdIDSeq = bdIDSeq
 
+	d.log.Debugf("Dumping bridge domains: %v", dump)
 	return dump, nil
 }
 

@@ -278,6 +278,9 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		Type:        vpp_interfaces.Interface_SOFTWARE_LOOPBACK,
 		Enabled:     true,
 		PhysAddress: bviLoopHwAddr,
+		IpAddresses: []string{
+			bviLoopIP + bdNetMask,
+		},
 	}
 
 	// resync
