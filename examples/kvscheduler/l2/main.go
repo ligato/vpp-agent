@@ -165,10 +165,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		bviLoopHwAddr = "cd:cd:cd:cd:cd:cd"
 
 		bdName = "myBridgeDomain"
-		bdFlood = false
-		bdUnknownUnicastFlood = false
+		bdFlood = true
+		bdUnknownUnicastFlood = true
 		bdForward = true
-		bdLearn = true
+		bdLearn = false /* Learning turned off, FIBs are needed for connectivity */
 		bdArpTermination = true
 		bdMacAge = 0
 	)
@@ -283,10 +283,47 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		},
 	}
 
+	/* FIB entries */
+
+	fibForLoop := &vpp_l2.FIBEntry{
+		PhysAddress:             bviLoopHwAddr,
+		BridgeDomain:            bdName,
+		Action:                  vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface:       bviLoopName,
+		BridgedVirtualInterface: true,
+		StaticConfig:            true,
+	}
+
+	fibForVETH := &vpp_l2.FIBEntry{
+		PhysAddress:             veth1HwAddr,
+		BridgeDomain:            bdName,
+		Action:                  vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface:       afPacketLogicalName,
+	}
+
+	fibForTAP := &vpp_l2.FIBEntry{
+		PhysAddress:             linuxTapHwAddr,
+		BridgeDomain:            bdName,
+		Action:                  vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface:       vppTapLogicalName,
+	}
+
+	/* XConnect */
+
+	xConnectMs1ToMs2 := &vpp_l2.XConnectPair{
+		ReceiveInterface:  afPacketLogicalName,
+		TransmitInterface: vppTapLogicalName,
+	}
+
+	xConnectMs2ToMs1 := &vpp_l2.XConnectPair{
+		ReceiveInterface:  vppTapLogicalName,
+		TransmitInterface: afPacketLogicalName,
+	}
+
 	// resync
 
 	time.Sleep(time.Second * 2)
-	fmt.Println("=== RESYNC 0 ===")
+	fmt.Println("=== RESYNC 0 (using bridge domain) ===")
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
@@ -297,6 +334,9 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		VppInterface(vppTap).
 		VppInterface(bviLoop).
 		BD(bd).
+		BDFIB(fibForLoop).
+		BDFIB(fibForTAP).
+		BDFIB(fibForVETH).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -305,26 +345,18 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	// data changes
 
-
-	/*
 	time.Sleep(time.Second * 60)
-	fmt.Printf("=== CHANGE 1 ===\n")
+	fmt.Printf("=== CHANGE 1 (switching to XConnect) ===\n")
 
 	txn3 := localclient.DataChangeRequest("example")
 	err = txn3.Delete().
-		VppInterface(memifName).
+		BD(bd.Name). // FIBs will be pending
+		Put().
+		XConnect(xConnectMs1ToMs2).
+		XConnect(xConnectMs2ToMs1).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	*/
-
-
-	// test bridge domain metadata map
-	vppIfIndex := plugin.VPPIfPlugin.GetInterfaceIndex()
-	vppIfMeta, exists := vppIfIndex.LookupByName(afPacketLogicalName)
-	fmt.Printf("VPP interface %s: found=%t, meta=%v\n", afPacketLogicalName, exists, vppIfMeta)
-	vppIfMeta, exists = vppIfIndex.LookupByName(vppTapLogicalName)
-	fmt.Printf("VPP interface %s: found=%t, meta=%v\n", vppTapLogicalName, exists, vppIfMeta)
 }

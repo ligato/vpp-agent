@@ -173,7 +173,7 @@ func (d *FIBDescriptor) Dump(correlate []adapter.FIBKVWithMetadata) (dump []adap
 		dump = append(dump, adapter.FIBKVWithMetadata{
 			Key:      l2.FIBKey(fib.Fib.BridgeDomain, fib.Fib.PhysAddress),
 			Value:    fib.Fib,
-			Origin:   scheduler.FromNB, // TODO: check if there are any automatic FIBs
+			Origin:   scheduler.UnknownOrigin, // there can be automatically created FIBs
 		})
 	}
 
