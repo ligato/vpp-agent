@@ -41,10 +41,14 @@ func (h *FIBVppHandler) l2fibAddDel(fib *l2nb.FIBEntry, isAdd bool) (err error) 
 		return errors.New("failed to get bridge domain metadata")
 	}
 
-	// get outgoing interface metadata
-	ifaceMeta, found := h.ifIndexes.LookupByName(fib.OutgoingInterface)
-	if !found {
-		return errors.New("failed to get interface metadata")
+	// get outgoing interface index
+	swIfIndex := ^uint32(0) // ~0 is used by DROP entries
+	if fib.Action == l2nb.FIBEntry_FORWARD {
+		ifaceMeta, found := h.ifIndexes.LookupByName(fib.OutgoingInterface)
+		if !found {
+			return errors.New("failed to get interface metadata")
+		}
+		swIfIndex = ifaceMeta.GetIndex()
 	}
 
 	// parse MAC address
@@ -61,7 +65,7 @@ func (h *FIBVppHandler) l2fibAddDel(fib *l2nb.FIBEntry, isAdd bool) (err error) 
 		IsAdd:     boolToUint(isAdd),
 		Mac:       mac,
 		BdID:      bdMeta.GetIndex(),
-		SwIfIndex: ifaceMeta.GetIndex(),
+		SwIfIndex: swIfIndex,
 		BviMac:    boolToUint(fib.BridgedVirtualInterface),
 		StaticMac: boolToUint(fib.StaticConfig),
 		FilterMac: boolToUint(fib.Action == l2nb.FIBEntry_DROP),

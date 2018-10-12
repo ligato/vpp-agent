@@ -31,14 +31,14 @@ import (
 var testDataInFib = []*l2nb.FIBEntry {
 	{PhysAddress: "FF:FF:FF:FF:FF:FF", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD, StaticConfig: true, BridgedVirtualInterface: true},
 	{PhysAddress: "AA:AA:AA:AA:AA:AA", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD, StaticConfig: true},
-	{PhysAddress: "BB:BB:BB:BB:BB:BB", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_DROP, BridgedVirtualInterface: true},
+	{PhysAddress: "BB:BB:BB:BB:BB:BB", BridgeDomain: "bd1", Action: l2nb.FIBEntry_DROP},
 	{PhysAddress: "CC:CC:CC:CC:CC:CC", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD},
 }
 
 var testDatasOutFib = []*l2ba.L2fibAddDel{
 	{BdID: 5, SwIfIndex: 55, BviMac: 1, Mac: []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, StaticMac: 1, FilterMac: 0},
 	{BdID: 5, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA}, StaticMac: 1, FilterMac: 0},
-	{BdID: 5, SwIfIndex: 55, BviMac: 1, Mac: []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB}, StaticMac: 0, FilterMac: 1},
+	{BdID: 5, SwIfIndex: ^uint32(0), BviMac: 0, Mac: []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB}, StaticMac: 0, FilterMac: 1},
 	{BdID: 5, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC}, StaticMac: 0, FilterMac: 0},
 }
 

@@ -198,7 +198,7 @@ func (d *BridgeDomainDescriptor) Modify(key string, oldBD, newBD *l2.BridgeDomai
 	err = d.validateBridgeDomainConfig(newBD)
 	if err != nil {
 		d.log.Error(err)
-		return nil, err
+		return oldMetadata, err
 	}
 
 	// update ARP termination entries
@@ -256,7 +256,7 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 		// handle untagged bridge domain - construct name that is unlikely to
 		// collide with NB, thus the bridge domain will get removed by resync
 		if bd.Bd.Name == "" {
-			bd.Bd.Name = fmt.Sprintf("%s-%d", untaggedBDPreffix, untaggedSeq)
+			bd.Bd.Name = fmt.Sprintf("%s%d", untaggedBDPreffix, untaggedSeq)
 			untaggedSeq++
 		}
 

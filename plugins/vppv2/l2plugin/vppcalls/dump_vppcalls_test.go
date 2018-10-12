@@ -170,12 +170,12 @@ var testDataInMessagesFIBs = []govppapi.Message{
 	&l2ba.L2FibTableDetails{
 		BdID:   10,
 		Mac:    []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
-		BviMac: 1, SwIfIndex: 1, FilterMac: 1, StaticMac: 1,
+		BviMac: 0, SwIfIndex: ^uint32(0), FilterMac: 1, StaticMac: 0,
 	},
 	&l2ba.L2FibTableDetails{
 		BdID:   20,
 		Mac:    []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB},
-		BviMac: 0, SwIfIndex: 2, FilterMac: 0, StaticMac: 0,
+		BviMac: 1, SwIfIndex: 1, FilterMac: 0, StaticMac: 1,
 	},
 }
 
@@ -185,13 +185,13 @@ var testDataOutFIBs = []*vppcalls.FibTableDetails{
 			PhysAddress:             "aa:aa:aa:aa:aa:aa",
 			BridgeDomain:            "bd1",
 			Action:                  l2nb.FIBEntry_DROP,
-			StaticConfig:            true,
-			BridgedVirtualInterface: true,
-			OutgoingInterface:       "if1",
+			StaticConfig:            false,
+			BridgedVirtualInterface: false,
+			OutgoingInterface:       "",
 		},
 		Meta: &vppcalls.FibMeta{
 			BdID:  10,
-			IfIdx: 1,
+			IfIdx: ^uint32(0),
 		},
 	},
 	{
@@ -199,13 +199,13 @@ var testDataOutFIBs = []*vppcalls.FibTableDetails{
 			PhysAddress:             "bb:bb:bb:bb:bb:bb",
 			BridgeDomain:            "bd2",
 			Action:                  l2nb.FIBEntry_FORWARD,
-			StaticConfig:            false,
-			BridgedVirtualInterface: false,
-			OutgoingInterface:       "if2",
+			StaticConfig:            true,
+			BridgedVirtualInterface: true,
+			OutgoingInterface:       "if1",
 		},
 		Meta: &vppcalls.FibMeta{
 			BdID:  20,
-			IfIdx: 2,
+			IfIdx: 1,
 		},
 	},
 }
@@ -218,7 +218,6 @@ func TestDumpFIBTableEntries(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex:1})
-	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex:2})
 	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{Index:10})
 	bdIndexes.Put("bd2", &idxvpp2.OnlyIndex{Index:20})
 

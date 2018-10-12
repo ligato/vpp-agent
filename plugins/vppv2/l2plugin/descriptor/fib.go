@@ -35,6 +35,7 @@ const (
 
 	// dependency labels
 	bridgedInterfaceDep = "bridged-interface"
+	bridgeDomainDep = "bridge-domain"
 )
 
 // A list of non-retriable errors:
@@ -46,8 +47,8 @@ var (
 	// ErrFIBWithoutBD is returned when VPP L2 FIB has undefined bridge domain.
 	ErrFIBWithoutBD = errors.New("VPP L2 FIB defined without bridge domain")
 
-	// ErrFIBWithoutInterface is returned when VPP L2 FIB has undefined outgoing interface.
-	ErrFIBWithoutInterface = errors.New("VPP L2 FIB defined without outgoing interface")
+	// ErrForwardFIBWithoutInterface is returned when VPP L2 FORWARD FIB has undefined outgoing interface.
+	ErrForwardFIBWithoutInterface = errors.New("VPP L2 FORWARD FIB defined without outgoing interface")
 
 )
 
@@ -95,11 +96,17 @@ func (d *FIBDescriptor) IsFIBKey(key string) bool {
 // EquivalentFIBs is case-insensitive comparison function for l2.FIBEntry.
 func (d *FIBDescriptor) EquivalentFIBs(key string, oldFIB, newFIB *l2.FIBEntry) bool {
 	// parameters compared as usually
-	if oldFIB.OutgoingInterface != newFIB.OutgoingInterface ||
-		oldFIB.BridgeDomain != newFIB.BridgeDomain ||
-		oldFIB.BridgedVirtualInterface != newFIB.BridgedVirtualInterface ||
-		oldFIB.StaticConfig != newFIB.StaticConfig || oldFIB.Action != newFIB.Action {
+	if oldFIB.Action != newFIB.Action || oldFIB.BridgeDomain != newFIB.BridgeDomain {
 		return false
+	}
+
+	// parameters relevant only for FORWARD FIBs
+	if oldFIB.Action == l2.FIBEntry_FORWARD {
+		if oldFIB.OutgoingInterface != newFIB.OutgoingInterface ||
+			oldFIB.BridgedVirtualInterface != newFIB.BridgedVirtualInterface ||
+			oldFIB.StaticConfig != newFIB.StaticConfig {
+			return false
+		}
 	}
 
 	// MAC addresses compared case-insensitively
@@ -111,7 +118,7 @@ func (d *FIBDescriptor) IsRetriableFailure(err error) bool {
 	nonRetriable := []error{
 		ErrFIBWithoutBD,
 		ErrFIBWithoutHwAddr,
-		ErrFIBWithoutInterface,
+		ErrForwardFIBWithoutInterface,
 	}
 	for _, nonRetriableErr := range nonRetriable {
 		if err == nonRetriableErr {
@@ -152,14 +159,22 @@ func (d *FIBDescriptor) ModifyWithRecreate(key string, oldFIB, newFIB *l2.FIBEnt
 	return true
 }
 
-// Dependencies lists outgoing *bridged* interface as the only dependency.
-func (d *FIBDescriptor) Dependencies(key string, fib *l2.FIBEntry) []scheduler.Dependency {
-	return []scheduler.Dependency{
-		{
+// Dependencies for FIBs are:
+//  * FORWARD FIB: bridge domain + outgoing interface already put into the bridge domain
+//  * DROP FIB: bridge domain
+func (d *FIBDescriptor) Dependencies(key string, fib *l2.FIBEntry) (dependencies []scheduler.Dependency) {
+	if fib.Action == l2.FIBEntry_FORWARD {
+		dependencies = append(dependencies, scheduler.Dependency{
 			Label: bridgedInterfaceDep,
 			Key:   l2.BDInterfaceKey(fib.BridgeDomain, fib.OutgoingInterface),
-		},
+		})
+	} else {
+		dependencies = append(dependencies, scheduler.Dependency{
+			Label: bridgeDomainDep,
+			Key:   l2.BridgeDomainKey(fib.BridgeDomain),
+		})
 	}
+	return dependencies
 }
 
 // Dump returns all configured VPP L2 FIBs.
@@ -186,8 +201,8 @@ func (d *FIBDescriptor) validateFIBConfig(fib *l2.FIBEntry) error {
 	if fib.PhysAddress == "" {
 		return ErrFIBWithoutHwAddr
 	}
-	if fib.OutgoingInterface == "" {
-		return ErrFIBWithoutInterface
+	if fib.Action == l2.FIBEntry_FORWARD && fib.OutgoingInterface == "" {
+		return ErrForwardFIBWithoutInterface
 	}
 	if fib.BridgeDomain == "" {
 		return ErrFIBWithoutBD

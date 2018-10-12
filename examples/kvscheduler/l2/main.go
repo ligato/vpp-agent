@@ -164,6 +164,9 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		bviLoopIP = bdNetPrefix + "3"
 		bviLoopHwAddr = "cd:cd:cd:cd:cd:cd"
 
+		loop2Name = "myLoopback2"
+		loop2HwAddr = "ef:ef:ef:ef:ef:ef"
+
 		bdName = "myBridgeDomain"
 		bdFlood = true
 		bdUnknownUnicastFlood = true
@@ -283,6 +286,13 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		},
 	}
 
+	loop2 := &vpp_interfaces.Interface{
+		Name:        loop2Name,
+		Type:        vpp_interfaces.Interface_SOFTWARE_LOOPBACK,
+		Enabled:     true,
+		PhysAddress: loop2HwAddr,
+	}
+
 	/* FIB entries */
 
 	fibForLoop := &vpp_l2.FIBEntry{
@@ -306,6 +316,12 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		BridgeDomain:            bdName,
 		Action:                  vpp_l2.FIBEntry_FORWARD,
 		OutgoingInterface:       vppTapLogicalName,
+	}
+
+	dropFIB := &vpp_l2.FIBEntry{
+		PhysAddress:             loop2HwAddr,
+		BridgeDomain:            bdName,
+		Action:                  vpp_l2.FIBEntry_DROP,
 	}
 
 	/* XConnect */
@@ -333,10 +349,12 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		VppInterface(afpacket).
 		VppInterface(vppTap).
 		VppInterface(bviLoop).
+		VppInterface(loop2).
 		BD(bd).
 		BDFIB(fibForLoop).
 		BDFIB(fibForTAP).
 		BDFIB(fibForVETH).
+		BDFIB(dropFIB).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

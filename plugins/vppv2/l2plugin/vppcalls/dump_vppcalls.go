@@ -181,11 +181,15 @@ func (h *FIBVppHandler) DumpL2FIBs() (map[string]*FibTableDetails, error) {
 			action = l2nb.FIBEntry_FORWARD
 		}
 
-		// Interface name
-		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(fibDetails.SwIfIndex)
-		if !exists {
-			h.log.Warnf("FIB dump: interface name for index %d not found", fibDetails.SwIfIndex)
-			continue
+		// Interface name (only for FORWARD entries)
+		var ifName string
+		if action == l2nb.FIBEntry_FORWARD {
+			var exists bool
+			ifName, _, exists = h.ifIndexes.LookupBySwIfIndex(fibDetails.SwIfIndex)
+			if !exists {
+				h.log.Warnf("FIB dump: interface name for index %d not found", fibDetails.SwIfIndex)
+				continue
+			}
 		}
 		// Bridge domain name
 		bdName, _, exists := h.bdIndexes.LookupByIndex(fibDetails.BdID)
