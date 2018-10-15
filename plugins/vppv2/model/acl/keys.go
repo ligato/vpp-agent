@@ -23,13 +23,12 @@ const (
 	// Prefix is ACL key prefix
 	Prefix = "vpp/config/v2/acl/"
 
-	// ACLToInterfacePrefix
-	//ACLToInterfacePrefix = "vpp/acl/interface/"
+	aclToInterfaceTemplate = "vpp/acl/{acl}/interface/{flow}/{iface}"
 
-	ACLToInterfaceTemplate = "vpp/acl/{acl}/interface/{flow}/{iface}"
-	//ACLToInterfaceIngressPrefix = ACLToInterfacePrefix + "ingress/"
-	//ACLToInterfaceEgressPrefix = ACLToInterfacePrefix + "egress/"
-
+	// IngressFlow represents ingress packet flow
+	IngressFlow = "ingress"
+	// EgressFlow represents egress packet flow
+	EgressFlow = "egress"
 )
 
 // Key returns the prefix used in ETCD to store vpp ACL config
@@ -48,7 +47,7 @@ func ParseNameFromKey(key string) (name string, err error) {
 
 // ACLToInterfaceKey returns key for ACL to interface
 func ACLToInterfaceKey(acl, iface, flow string) string {
-	key := ACLToInterfaceTemplate
+	key := aclToInterfaceTemplate
 	key = strings.Replace(key, "{acl}", acl, 1)
 	key = strings.Replace(key, "{flow}", flow, 1)
 	key = strings.Replace(key, "{iface}", iface, 1)
@@ -57,10 +56,11 @@ func ACLToInterfaceKey(acl, iface, flow string) string {
 
 // ParseACLToInterfaceKey parses ACL to interface key
 func ParseACLToInterfaceKey(key string) (acl, iface, flow string, isACLToInterface bool) {
-	keyComps := strings.Split(key, "/")
-	if len(keyComps) == 6 && keyComps[0] == "vpp" && keyComps[1] == "acl" &&
-		keyComps[3] == "interface" {
-		return keyComps[2], keyComps[5], keyComps[4], true
+	parts := strings.Split(key, "/")
+	if len(parts) == 6 &&
+		parts[0] == "vpp" && parts[1] == "acl" && parts[3] == "interface" &&
+		(parts[4] == IngressFlow || parts[4] == EgressFlow) {
+		return parts[2], parts[5], parts[4], true
 	}
 	return "", "", "", false
 }

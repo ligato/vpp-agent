@@ -98,6 +98,24 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 		},
 	}
+	acl0 := &acl.Acl{
+		Name: "acl0",
+		Rules: []*acl.Acl_Rule{
+			{
+				Action: acl.Acl_Rule_PERMIT,
+				IpRule: &acl.Acl_Rule_IpRule{
+					Ip: &acl.Acl_Rule_IpRule_Ip{
+						SourceNetwork:      "10.0.0.0/24",
+						DestinationNetwork: "20.0.0.0/24",
+					},
+				},
+			},
+		},
+		Interfaces: &acl.Acl_Interfaces{
+			Ingress: []string{"memif0"},
+			Egress:  []string{"memif0"},
+		},
+	}
 	acl1 := &acl.Acl{
 		Name: "acl1",
 		Rules: []*acl.Acl_Rule{
@@ -124,6 +142,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
 		VppInterface(memif0).
+		ACL(acl0).
 		ACL(acl1).
 		Send().ReceiveReply()
 	if err != nil {
@@ -131,20 +150,20 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 
-	/*
-		// data change
+	// data change
+	time.Sleep(time.Second * 1)
+	fmt.Println("=== CHANGE 1 ===")
 
-		time.Sleep(time.Second * 2)
-		fmt.Println("=== CHANGE 1 ===")
+	acl1.Interfaces = nil
+	acl0.Interfaces.Egress = nil
 
-		veth1.Enabled = false
-		txn2 := localclient.DataChangeRequest("example")
-		err = txn2.Put().
-			LinuxInterface(veth1).
-			Send().ReceiveReply()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	*/
+	txn2 := localclient.DataChangeRequest("example")
+	err = txn2.Put().
+		ACL(acl0).
+		ACL(acl1).
+		Send().ReceiveReply()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }

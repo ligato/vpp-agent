@@ -16,17 +16,15 @@ package linuxclient
 
 import (
 	vpp_clientv2 "github.com/ligato/vpp-agent/clientv2/vpp"
-
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
@@ -84,7 +82,7 @@ type PutDSL interface {
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
 	StaticRoute(val *vpp_l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
-	ACL(acl *vpp_acl.AccessLists_Acl) PutDSL
+	ACL(acl *vpp_acl.Acl) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
 	Arp(arp *vpp_l3.ArpTable_ArpEntry) PutDSL
 	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces

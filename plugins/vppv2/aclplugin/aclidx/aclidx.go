@@ -23,41 +23,40 @@ import (
 	"github.com/ligato/vpp-agent/idxvpp2"
 )
 
-// AclMetadataIndex provides read-only access to mapping between ACL indices (used internally in VPP)
+// ACLMetadataIndex provides read-only access to mapping between ACL indices (used internally in VPP)
 // and ACL names.
-type AclMetadataIndex interface {
+type ACLMetadataIndex interface {
 	// LookupIdx looks up previously stored item identified by index in mapping.
-	LookupByName(name string) (metadata *AclMetadata, exists bool)
+	LookupByName(name string) (metadata *ACLMetadata, exists bool)
 
 	// LookupName looks up previously stored item identified by name in mapping.
-	LookupByIndex(idx uint32) (name string, metadata *AclMetadata, exists bool)
+	LookupByIndex(idx uint32) (name string, metadata *ACLMetadata, exists bool)
 
 	// WatchAcls
-	WatchAcls(subscriber string, channel chan<- AclMetadataDto)
+	WatchAcls(subscriber string, channel chan<- ACLMetadataDto)
 }
 
-// AclMetadataIndexRW is mapping between ACL indices (used internally in VPP) and ACL names.
-type AclMetadataIndexRW interface {
-	AclMetadataIndex
+// ACLMetadataIndexRW is mapping between ACL indices (used internally in VPP) and ACL names.
+type ACLMetadataIndexRW interface {
+	ACLMetadataIndex
 	idxmap.NamedMappingRW
 }
 
-// AclMetadata ...
-type AclMetadata struct {
+// ACLMetadata represents metadata for ACL.
+type ACLMetadata struct {
 	Index uint32
 	L2    bool
 }
 
-// GetIndex ...
-func (m *AclMetadata) GetIndex() uint32 {
+// GetIndex returns index of the ACL.
+func (m *ACLMetadata) GetIndex() uint32 {
 	return m.Index
 }
 
-// IdxDto represents an item sent through watch channel in aclIndex.
-// In contrast to NameToIdxDto, it contains typed metadata.
-type AclMetadataDto struct {
+// ACLMetadataDto represents an item sent through watch channel in aclIndex.
+type ACLMetadataDto struct {
 	idxmap.NamedMappingEvent
-	Metadata *AclMetadata
+	Metadata *ACLMetadata
 }
 
 type aclMetadataIndex struct {
@@ -67,8 +66,8 @@ type aclMetadataIndex struct {
 	nameToIndex idxvpp2.NameToIndex
 }
 
-// NewAclIndex creates new instance of aclIndex.
-func NewAclIndex(logger logging.Logger, title string) AclMetadataIndexRW {
+// NewACLIndex creates new instance of aclMetadataIndex.
+func NewACLIndex(logger logging.Logger, title string) ACLMetadataIndexRW {
 	mapping := idxvpp2.NewNameToIndex(logger, title, indexMetadata)
 	return &aclMetadataIndex{
 		NamedMappingRW: mapping,
@@ -78,10 +77,10 @@ func NewAclIndex(logger logging.Logger, title string) AclMetadataIndexRW {
 }
 
 // LookupByName looks up previously stored item identified by index in mapping.
-func (aclIdx *aclMetadataIndex) LookupByName(name string) (metadata *AclMetadata, exists bool) {
+func (aclIdx *aclMetadataIndex) LookupByName(name string) (metadata *ACLMetadata, exists bool) {
 	meta, found := aclIdx.GetValue(name)
 	if found {
-		if typedMeta, ok := meta.(*AclMetadata); ok {
+		if typedMeta, ok := meta.(*ACLMetadata); ok {
 			return typedMeta, found
 		}
 	}
@@ -89,12 +88,12 @@ func (aclIdx *aclMetadataIndex) LookupByName(name string) (metadata *AclMetadata
 }
 
 // LookupByIndex looks up previously stored item identified by name in mapping.
-func (aclIdx *aclMetadataIndex) LookupByIndex(idx uint32) (name string, metadata *AclMetadata, exists bool) {
+func (aclIdx *aclMetadataIndex) LookupByIndex(idx uint32) (name string, metadata *ACLMetadata, exists bool) {
 	var item idxvpp2.WithIndex
 	name, item, exists = aclIdx.nameToIndex.LookupByIndex(idx)
 	if exists {
 		var isIfaceMeta bool
-		metadata, isIfaceMeta = item.(*AclMetadata)
+		metadata, isIfaceMeta = item.(*ACLMetadata)
 		if !isIfaceMeta {
 			exists = false
 		}
@@ -103,13 +102,13 @@ func (aclIdx *aclMetadataIndex) LookupByIndex(idx uint32) (name string, metadata
 }
 
 // WatchAcls ...
-func (aclIdx *aclMetadataIndex) WatchAcls(subscriber string, channel chan<- AclMetadataDto) {
+func (aclIdx *aclMetadataIndex) WatchAcls(subscriber string, channel chan<- ACLMetadataDto) {
 	watcher := func(dto idxmap.NamedMappingGenericEvent) {
-		typedMeta, ok := dto.Value.(*AclMetadata)
+		typedMeta, ok := dto.Value.(*ACLMetadata)
 		if !ok {
 			return
 		}
-		msg := AclMetadataDto{
+		msg := ACLMetadataDto{
 			NamedMappingEvent: dto.NamedMappingEvent,
 			Metadata:          typedMeta,
 		}
@@ -126,7 +125,7 @@ func (aclIdx *aclMetadataIndex) WatchAcls(subscriber string, channel chan<- AclM
 func indexMetadata(metaData interface{}) map[string][]string {
 	indexes := make(map[string][]string)
 
-	ifMeta, ok := metaData.(*AclMetadata)
+	ifMeta, ok := metaData.(*ACLMetadata)
 	if !ok || ifMeta == nil {
 		return indexes
 	}

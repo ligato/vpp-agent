@@ -11,16 +11,16 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type AclKVWithMetadata struct {
+type ACLKVWithMetadata struct {
 	Key      string
 	Value    *acl.Acl
-	Metadata *aclidx.AclMetadata
+	Metadata *aclidx.ACLMetadata
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type AclDescriptor struct {
+type ACLDescriptor struct {
 	Name               string
 	KeySelector        KeySelector
 	ValueTypeName      string
@@ -29,26 +29,26 @@ type AclDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *acl.Acl) (metadata *aclidx.AclMetadata, err error)
-	Delete             func(key string, value *acl.Acl, metadata *aclidx.AclMetadata) error
-	Modify             func(key string, oldValue, newValue *acl.Acl, oldMetadata *aclidx.AclMetadata) (newMetadata *aclidx.AclMetadata, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *acl.Acl, metadata *aclidx.AclMetadata) bool
-	Update             func(key string, value *acl.Acl, metadata *aclidx.AclMetadata) error
+	Add                func(key string, value *acl.Acl) (metadata *aclidx.ACLMetadata, err error)
+	Delete             func(key string, value *acl.Acl, metadata *aclidx.ACLMetadata) error
+	Modify             func(key string, oldValue, newValue *acl.Acl, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *acl.Acl, metadata *aclidx.ACLMetadata) bool
+	Update             func(key string, value *acl.Acl, metadata *aclidx.ACLMetadata) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *acl.Acl) []Dependency
 	DerivedValues      func(key string, value *acl.Acl) []KeyValuePair
-	Dump               func(correlate []AclKVWithMetadata) ([]AclKVWithMetadata, error)
+	Dump               func(correlate []ACLKVWithMetadata) ([]ACLKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type AclDescriptorAdapter struct {
-	descriptor *AclDescriptor
+type ACLDescriptorAdapter struct {
+	descriptor *ACLDescriptor
 }
 
-func NewAclDescriptor(typedDescriptor *AclDescriptor) *KVDescriptor {
-	adapter := &AclDescriptorAdapter{descriptor: typedDescriptor}
+func NewACLDescriptor(typedDescriptor *ACLDescriptor) *KVDescriptor {
+	adapter := &ACLDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
 		KeySelector:        typedDescriptor.KeySelector,
@@ -90,108 +90,108 @@ func NewAclDescriptor(typedDescriptor *AclDescriptor) *KVDescriptor {
 	return descriptor
 }
 
-func (da *AclDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castAclValue(key, oldValue)
-	typedNewValue, err2 := castAclValue(key, newValue)
+func (da *ACLDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castACLValue(key, oldValue)
+	typedNewValue, err2 := castACLValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *AclDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castAclValue(key, value)
+func (da *ACLDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castACLValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Add(key, typedValue)
 }
 
-func (da *AclDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castAclValue(key, oldValue)
+func (da *ACLDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castACLValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castAclValue(key, newValue)
+	newTypedValue, err := castACLValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castAclMetadata(key, oldMetadata)
+	typedOldMetadata, err := castACLMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Modify(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *AclDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castAclValue(key, value)
+func (da *ACLDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castACLValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castAclMetadata(key, metadata)
+	typedMetadata, err := castACLMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *AclDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castAclValue(key, oldValue)
+func (da *ACLDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castACLValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castAclValue(key, newValue)
+	newTypedValue, err := castACLValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castAclMetadata(key, metadata)
+	typedMetadata, err := castACLMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *AclDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castAclValue(key, value)
+func (da *ACLDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castACLValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castAclMetadata(key, metadata)
+	typedMetadata, err := castACLMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
-func (da *AclDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castAclValue(key, value)
+func (da *ACLDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castACLValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.Dependencies(key, typedValue)
 }
 
-func (da *AclDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castAclValue(key, value)
+func (da *ACLDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castACLValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *AclDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []AclKVWithMetadata
+func (da *ACLDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []ACLKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castAclValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castACLValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castAclMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castACLMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			AclKVWithMetadata{
+			ACLKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -218,7 +218,7 @@ func (da *AclDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 
 ////////// Helper methods //////////
 
-func castAclValue(key string, value proto.Message) (*acl.Acl, error) {
+func castACLValue(key string, value proto.Message) (*acl.Acl, error) {
 	typedValue, ok := value.(*acl.Acl)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
@@ -226,11 +226,11 @@ func castAclValue(key string, value proto.Message) (*acl.Acl, error) {
 	return typedValue, nil
 }
 
-func castAclMetadata(key string, metadata Metadata) (*aclidx.AclMetadata, error) {
+func castACLMetadata(key string, metadata Metadata) (*aclidx.ACLMetadata, error) {
 	if metadata == nil {
 		return nil, nil
 	}
-	typedMetadata, ok := metadata.(*aclidx.AclMetadata)
+	typedMetadata, ok := metadata.(*aclidx.ACLMetadata)
 	if !ok {
 		return nil, ErrInvalidMetadataType(key)
 	}

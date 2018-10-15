@@ -18,11 +18,11 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/pkg/errors"
-
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
+
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/descriptor/adapter"
@@ -33,12 +33,12 @@ import (
 )
 
 const (
-	// AclDescriptorName is descriptor name
-	AclDescriptorName = "vpp-acl"
+	// ACLDescriptorName is descriptor name
+	ACLDescriptorName = "vpp-acl"
 )
 
-// AclDescriptor is descriptor for ACL
-type AclDescriptor struct {
+// ACLDescriptor is descriptor for ACL
+type ACLDescriptor struct {
 	// dependencies
 	log        logging.Logger
 	aclHandler vppcalls.ACLVppAPI
@@ -47,10 +47,10 @@ type AclDescriptor struct {
 	ifPlugin ifplugin.API
 }
 
-// NewAclDescriptor is constructor for ACL descriptor
-func NewAclDescriptor(aclHandler vppcalls.ACLVppAPI, ifPlugin ifplugin.API,
-	logger logging.PluginLogger) *AclDescriptor {
-	return &AclDescriptor{
+// NewACLDescriptor is constructor for ACL descriptor
+func NewACLDescriptor(aclHandler vppcalls.ACLVppAPI, ifPlugin ifplugin.API,
+	logger logging.PluginLogger) *ACLDescriptor {
+	return &ACLDescriptor{
 		log:        logger.NewLogger("acl-descriptor"),
 		ifPlugin:   ifPlugin,
 		aclHandler: aclHandler,
@@ -59,9 +59,9 @@ func NewAclDescriptor(aclHandler vppcalls.ACLVppAPI, ifPlugin ifplugin.API,
 
 // GetDescriptor returns descriptor suitable for registration (via adapter) with
 // the KVScheduler.
-func (d *AclDescriptor) GetDescriptor() *adapter.AclDescriptor {
-	return &adapter.AclDescriptor{
-		Name:        AclDescriptorName,
+func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
+	return &adapter.ACLDescriptor{
+		Name:        ACLDescriptorName,
 		NBKeyPrefix: acl.Prefix,
 		KeySelector: func(key string) bool {
 			return strings.HasPrefix(key, acl.Prefix)
@@ -74,14 +74,13 @@ func (d *AclDescriptor) GetDescriptor() *adapter.AclDescriptor {
 		ValueComparator: d.EquivalentACLs,
 		WithMetadata:    true,
 		MetadataMapFactory: func() idxmap.NamedMappingRW {
-			return aclidx.NewAclIndex(d.log, "vpp-acl-index")
+			return aclidx.NewACLIndex(d.log, "vpp-acl-index")
 		},
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
 		ModifyWithRecreate: d.ModifyWithRecreate,
 		IsRetriableFailure: d.IsRetriableFailure,
-		Dependencies:       d.Dependencies,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
@@ -89,7 +88,7 @@ func (d *AclDescriptor) GetDescriptor() *adapter.AclDescriptor {
 }
 
 // EquivalentACLs compares two ACLs
-func (d *AclDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool {
+func (d *ACLDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool {
 	// check if ACL name changed
 	if oldACL.Name != newACL.Name {
 		return false
@@ -111,7 +110,7 @@ func (d *AclDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool
 var nonRetriableErrs []error
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *AclDescriptor) IsRetriableFailure(err error) bool {
+func (d *ACLDescriptor) IsRetriableFailure(err error) bool {
 	for _, e := range nonRetriableErrs {
 		if err == e {
 			return false
@@ -121,7 +120,7 @@ func (d *AclDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Add configures ACL
-func (d *AclDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.AclMetadata, err error) {
+func (d *ACLDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.ACLMetadata, err error) {
 	if len(acl.Rules) == 0 {
 		return nil, errors.Errorf("failed to configure ACL %s, no rules to set", acl.Name)
 	}
@@ -142,32 +141,7 @@ func (d *AclDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.AclMetad
 		}
 	}
 
-	// Set ACL to interfaces.
-	/*if ifaces := acl.GetInterfaces(); ifaces != nil {
-		if isL2MacIP {
-			aclIfIndices := d.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, L2)
-			err := d.aclHandler.SetMacIPACLToInterface(vppACLIndex, aclIfIndices)
-			if err != nil {
-				return nil, errors.Errorf("failed to set MAC IP ACL %s to interface(s) %v: %v",
-					acl.Name, acl.Interfaces.Ingress, err)
-			}
-		} else {
-			aclIfInIndices := d.getOrCacheInterfaces(acl.Interfaces.Ingress, vppACLIndex, INGRESS)
-			err = d.aclHandler.SetACLToInterfacesAsIngress(vppACLIndex, aclIfInIndices)
-			if err != nil {
-				return nil, errors.Errorf("failed to set IP ACL %s to interface(s) %v as ingress: %v",
-					acl.Name, acl.Interfaces.Ingress, err)
-			}
-			aclIfEgIndices := d.getOrCacheInterfaces(acl.Interfaces.Egress, vppACLIndex, EGRESS)
-			err = d.aclHandler.SetACLToInterfacesAsEgress(vppACLIndex, aclIfEgIndices)
-			if err != nil {
-				return nil, errors.Errorf("failed to set IP ACL %s to interface(s) %v as egress: %v",
-					acl.Name, acl.Interfaces.Ingress, err)
-			}
-		}
-	}*/
-
-	metadata = &aclidx.AclMetadata{
+	metadata = &aclidx.ACLMetadata{
 		Index: vppACLIndex,
 		L2:    isL2MacIP,
 	}
@@ -177,7 +151,7 @@ func (d *AclDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.AclMetad
 // validateRules provided in ACL. Every rule has to contain actions and matches.
 // Current limitation: L2 and L3/4 have to be split to different ACLs and
 // there cannot be L2 rules and L3/4 rules in the same ACL.
-func (d *AclDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]*acl.Acl_Rule, bool) {
+func (d *ACLDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]*acl.Acl_Rule, bool) {
 	var validL3L4Rules []*acl.Acl_Rule
 	var validL2Rules []*acl.Acl_Rule
 
@@ -201,70 +175,28 @@ func (d *AclDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]
 }
 
 // Delete deletes ACL
-func (d *AclDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.AclMetadata) error {
+func (d *ACLDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.ACLMetadata) error {
 	if metadata.L2 {
-		/*if acl.GetInterfaces() != nil {
-			err := c.aclHandler.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, c.getInterfaces(acl.Interfaces.Ingress))
-			if err != nil {
-				return errors.Errorf("failed to remove MAC IP interfaces from ACL %s: %v",
-					acl.AclName, err)
-			}
-		}*/
 		// Remove ACL L2.
 		err := d.aclHandler.DeleteMACIPACL(metadata.Index)
 		if err != nil {
 			return errors.Errorf("failed to delete MACIP ACL %s: %v", acl.Name, err)
 		}
-		// Unregister.
-		//d.l2AclIndexes.UnregisterName(acl.AclName)
-		d.log.Debugf("MACIP ACL %s deleted", acl.Name)
 	} else {
-		// Remove interfaces.
-		//vppACLIndex := agentL3L4AclIndex - 1
-		/*if acl.Interfaces != nil {
-			err = c.aclHandler.RemoveIPIngressACLFromInterfaces(vppACLIndex, c.getInterfaces(acl.Interfaces.Ingress))
-			if err != nil {
-				return errors.Errorf("failed to remove IP ingress interfaces from ACL %s: %v",
-					acl.AclName, err)
-			}
-
-			err = c.aclHandler.RemoveIPEgressACLFromInterfaces(vppACLIndex, c.getInterfaces(acl.Interfaces.Egress))
-			if err != nil {
-				return errors.Errorf("failed to remove IP egress interfaces from ACL %s: %v",
-					acl.AclName, err)
-			}
-		}*/
 		// Remove ACL L3/L4.
 		err := d.aclHandler.DeleteACL(metadata.Index)
 		if err != nil {
 			return errors.Errorf("failed to delete IP ACL %s: %v", acl.Name, err)
 		}
-		// Unregister.
-		//c.l3l4AclIndexes.UnregisterName(acl.AclName)
-		d.log.Debugf("IP ACL %s deleted", acl.Name)
 	}
 	return nil
 }
 
 // Modify modifies ACL
-func (d *AclDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata *aclidx.AclMetadata) (newMetadata *aclidx.AclMetadata, err error) {
+func (d *ACLDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error) {
 	// Validate rules.
 	rules, isL2MacIP := d.validateRules(newACL.Name, newACL.Rules)
-	/*var vppACLIndex uint32
-	if isL2MacIP {
-		agentACLIndex, _, found := c.l2AclIndexes.LookupIdx(oldACL.AclName)
-		if !found {
-			return errors.Errorf("cannot modify IP MAC ACL %s, index not found in the mapping", oldACL.AclName)
-		}
-		// Index used in VPP = index used in mapping - 1
-		vppACLIndex = agentACLIndex - 1
-	} else {
-		agentACLIndex, _, found := c.l3l4AclIndexes.LookupIdx(oldACL.AclName)
-		if !found {
-			return errors.Errorf("cannot modify IP ACL %s, index not found in the mapping", oldACL.AclName)
-		}
-		vppACLIndex = agentACLIndex - 1
-	}*/
+
 	if isL2MacIP {
 		// L2 ACL
 		err := d.aclHandler.ModifyMACIPACL(oldMetadata.Index, rules, newACL.Name)
@@ -279,64 +211,7 @@ func (d *AclDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata 
 		}
 	}
 
-	// Update interfaces.
-	/*if isL2MacIP {
-		// Remove L2 ACL from old interfaces.
-		if oldACL.Interfaces != nil {
-			err := c.aclHandler.RemoveMacIPIngressACLFromInterfaces(vppACLIndex, c.getInterfaces(oldACL.Interfaces.Ingress))
-			if err != nil {
-				return errors.Errorf("failed to remove MAC IP ingress interfaces from ACL %s: %v",
-					oldACL.AclName, err)
-			}
-		}
-		// Put L2 ACL to new interfaces.
-		if newACL.Interfaces != nil {
-			aclMacInterfaces := c.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, L2)
-			err := c.aclHandler.SetMacIPACLToInterface(vppACLIndex, aclMacInterfaces)
-			if err != nil {
-				return errors.Errorf("failed to set MAC IP ingress interfaces to ACL %s: %v",
-					newACL.AclName, err)
-			}
-		}
-	} else {
-		aclOldInInterfaces := c.getInterfaces(oldACL.Interfaces.Ingress)
-		aclOldEgInterfaces := c.getInterfaces(oldACL.Interfaces.Egress)
-		aclNewInInterfaces := c.getOrCacheInterfaces(newACL.Interfaces.Ingress, vppACLIndex, INGRESS)
-		aclNewEgInterfaces := c.getOrCacheInterfaces(newACL.Interfaces.Egress, vppACLIndex, EGRESS)
-		addedInInterfaces, removedInInterfaces := diffInterfaces(aclOldInInterfaces, aclNewInInterfaces)
-		addedEgInterfaces, removedEgInterfaces := diffInterfaces(aclOldEgInterfaces, aclNewEgInterfaces)
-
-		if len(removedInInterfaces) > 0 {
-			err := c.aclHandler.RemoveIPIngressACLFromInterfaces(vppACLIndex, removedInInterfaces)
-			if err != nil {
-				return errors.Errorf("failed to remove IP ingress interfaces from ACL %s: %v",
-					oldACL.AclName, err)
-			}
-		}
-		if len(removedEgInterfaces) > 0 {
-			err := c.aclHandler.RemoveIPEgressACLFromInterfaces(vppACLIndex, removedEgInterfaces)
-			if err != nil {
-				return errors.Errorf("failed to remove IP egress interfaces from ACL %s: %v",
-					oldACL.AclName, err)
-			}
-		}
-		if len(addedInInterfaces) > 0 {
-			err := c.aclHandler.SetACLToInterfacesAsIngress(vppACLIndex, addedInInterfaces)
-			if err != nil {
-				return errors.Errorf("failed to set IP ingress interfaces to ACL %s: %v",
-					newACL.AclName, err)
-			}
-		}
-		if len(addedEgInterfaces) > 0 {
-			err := c.aclHandler.SetACLToInterfacesAsEgress(vppACLIndex, addedEgInterfaces)
-			if err != nil {
-				return errors.Errorf("failed to add IP egress interfaces to ACL %s: %v",
-					oldACL.AclName, err)
-			}
-		}
-	}*/
-
-	newMetadata = &aclidx.AclMetadata{
+	newMetadata = &aclidx.ACLMetadata{
 		Index: oldMetadata.Index,
 		L2:    isL2MacIP,
 	}
@@ -344,7 +219,7 @@ func (d *AclDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata 
 }
 
 // ModifyWithRecreate checks if modification requires recreation
-func (d *AclDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, metadata *aclidx.AclMetadata) bool {
+func (d *ACLDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, metadata *aclidx.ACLMetadata) bool {
 	var hasL2 bool
 	for _, rule := range oldACL.Rules {
 		if rule.GetMacipRule() != nil {
@@ -356,26 +231,17 @@ func (d *AclDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, 
 	return false
 }
 
-/*func (d *AclDescriptor) Update(key string, value *acl.Acl, metadata *aclidx.AclMetadata) error {
-
-}*/
-
-// Dependencies returns list of dependencies for ACL
-func (d *AclDescriptor) Dependencies(key string, value *acl.Acl) []api.Dependency {
-	return nil
-}
-
 // DervicedValues returns list of derived values for ACL
-func (d *AclDescriptor) DerivedValues(key string, value *acl.Acl) (derived []api.KeyValuePair) {
+func (d *ACLDescriptor) DerivedValues(key string, value *acl.Acl) (derived []api.KeyValuePair) {
 	for _, ifName := range value.GetInterfaces().GetIngress() {
 		derived = append(derived, api.KeyValuePair{
-			Key:   acl.ACLToInterfaceKey(value.Name, ifName, "ingress"),
+			Key:   acl.ACLToInterfaceKey(value.Name, ifName, acl.IngressFlow),
 			Value: &prototypes.Empty{},
 		})
 	}
 	for _, ifName := range value.GetInterfaces().GetEgress() {
 		derived = append(derived, api.KeyValuePair{
-			Key:   acl.ACLToInterfaceKey(value.Name, ifName, "egress"),
+			Key:   acl.ACLToInterfaceKey(value.Name, ifName, acl.EgressFlow),
 			Value: &prototypes.Empty{},
 		})
 	}
@@ -383,7 +249,7 @@ func (d *AclDescriptor) DerivedValues(key string, value *acl.Acl) (derived []api
 }
 
 // Dump returns list of dumped ACLs with metadata
-func (d *AclDescriptor) Dump(correlate []adapter.AclKVWithMetadata) (dump []adapter.AclKVWithMetadata, err error) {
+func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (dump []adapter.ACLKVWithMetadata, err error) {
 	ipACLs, err := d.aclHandler.DumpACL()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump IP ACLs: %v", err)
@@ -394,20 +260,20 @@ func (d *AclDescriptor) Dump(correlate []adapter.AclKVWithMetadata) (dump []adap
 	}
 
 	for _, ipACL := range ipACLs {
-		dump = append(dump, adapter.AclKVWithMetadata{
+		dump = append(dump, adapter.ACLKVWithMetadata{
 			Key:   acl.Key(ipACL.ACL.Name),
 			Value: ipACL.ACL,
-			Metadata: &aclidx.AclMetadata{
+			Metadata: &aclidx.ACLMetadata{
 				Index: ipACL.Meta.Index,
 			},
 			Origin: api.FromNB,
 		})
 	}
 	for _, macipACL := range macipACLs {
-		dump = append(dump, adapter.AclKVWithMetadata{
+		dump = append(dump, adapter.ACLKVWithMetadata{
 			Key:   acl.Key(macipACL.ACL.Name),
 			Value: macipACL.ACL,
-			Metadata: &aclidx.AclMetadata{
+			Metadata: &aclidx.ACLMetadata{
 				Index: macipACL.Meta.Index,
 				L2:    true,
 			},

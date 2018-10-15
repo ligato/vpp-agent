@@ -12,8 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Acl --value-type *acl.Acl --meta-type *aclidx.AclMetadata --import "aclidx" --import "../model/acl" --output-dir "descriptor"
-///go:generate descriptor-adapter --descriptor-name AclInterface --value-type *acl.Acl_Interface --import "aclidx" --import "../model/acl" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ACL --value-type *acl.Acl --meta-type *aclidx.ACLMetadata --import "aclidx" --import "../model/acl" --output-dir "descriptor"
 
 package aclplugin
 
@@ -43,10 +42,10 @@ type AclPlugin struct {
 	dumpVppCh govppapi.Channel
 
 	aclHandler             vppcalls.ACLVppAPI
-	aclDesriptor           *descriptor.AclDescriptor
+	aclDesriptor           *descriptor.ACLDescriptor
 	aclInterfaceDescriptor *descriptor.ACLToInterfaceDescriptor
 
-	aclIndex aclidx.AclMetadataIndex
+	aclIndex aclidx.ACLMetadataIndex
 
 	// go routine management
 	ctx    context.Context
@@ -79,8 +78,8 @@ func (p *AclPlugin) Init() (err error) {
 	p.aclHandler = vppcalls.NewACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex())
 
 	// init descriptors
-	p.aclDesriptor = descriptor.NewAclDescriptor(p.aclHandler, p.IfPlugin, p.Log)
-	aclDescriptor := adapter.NewAclDescriptor(p.aclDesriptor.GetDescriptor())
+	p.aclDesriptor = descriptor.NewACLDescriptor(p.aclHandler, p.IfPlugin, p.Log)
+	aclDescriptor := adapter.NewACLDescriptor(p.aclDesriptor.GetDescriptor())
 
 	// register descriptors
 	p.Scheduler.RegisterKVDescriptor(aclDescriptor)
@@ -88,7 +87,7 @@ func (p *AclPlugin) Init() (err error) {
 	// obtain read-only references to index maps
 	var withIndex bool
 	metadataMap := p.Scheduler.GetMetadataMap(aclDescriptor.Name)
-	p.aclIndex, withIndex = metadataMap.(aclidx.AclMetadataIndex)
+	p.aclIndex, withIndex = metadataMap.(aclidx.ACLMetadataIndex)
 	if !withIndex {
 		return errors.New("missing index with acl metadata")
 	}
