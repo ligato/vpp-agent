@@ -19,12 +19,12 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
@@ -97,19 +97,19 @@ func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) vppclient
 }
 
 // BD adds a request to create or update VPP Bridge Domain.
-func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) vppclient.PutDSL {
+func (dsl *PutDSL) BD(val *l2.BridgeDomain) vppclient.PutDSL {
 	dsl.parent.txn.Put(l2.BridgeDomainKey(val.Name), val)
 	return dsl
 }
 
 // BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-func (dsl *PutDSL) BDFIB(val *l2.FibTable_FibEntry) vppclient.PutDSL {
-	dsl.parent.txn.Put(l2.FibKey(val.BridgeDomain, val.PhysAddress), val)
+func (dsl *PutDSL) BDFIB(val *l2.FIBEntry) vppclient.PutDSL {
+	dsl.parent.txn.Put(l2.FIBKey(val.BridgeDomain, val.PhysAddress), val)
 	return dsl
 }
 
 // XConnect adds a request to create or update VPP Cross Connect.
-func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) vppclient.PutDSL {
+func (dsl *PutDSL) XConnect(val *l2.XConnectPair) vppclient.PutDSL {
 	dsl.parent.txn.Put(l2.XConnectKey(val.ReceiveInterface), val)
 	return dsl
 }
@@ -234,7 +234,7 @@ func (dsl *DeleteDSL) BD(bdName string) vppclient.DeleteDSL {
 // BDFIB adds a request to delete an existing VPP L2 Forwarding Information
 // Base.
 func (dsl *DeleteDSL) BDFIB(bdName string, mac string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l2.FibKey(bdName, mac))
+	dsl.parent.txn.Delete(l2.FIBKey(bdName, mac))
 	return dsl
 }
 

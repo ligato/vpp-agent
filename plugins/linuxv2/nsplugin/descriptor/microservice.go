@@ -33,7 +33,7 @@ import (
 
 const (
 	// MicroserviceDescriptorName is the name of the descriptor for microservices.
-	MicroserviceDescriptorName = "microservices"
+	MicroserviceDescriptorName = "microservice"
 
 	// how often in seconds to refresh the microservice state data
 	dockerRefreshPeriod = 3 * time.Second
@@ -142,7 +142,7 @@ func (d *MicroserviceDescriptor) Dump(correlate []scheduler.KVWithMetadata) (dum
 		})
 	}
 
-	d.log.WithField("dump", dump).Debug("Dumping Microservices")
+	d.log.Debugf("Dumping Microservices: %v", dump)
 	return dump, nil
 }
 

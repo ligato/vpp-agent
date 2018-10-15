@@ -20,7 +20,6 @@ import (
 	"net"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
@@ -28,7 +27,6 @@ import (
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/addrs"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
@@ -44,16 +42,12 @@ import (
 
 const (
 	// InterfaceDescriptorName is the name of the descriptor for VPP interfaces.
-	InterfaceDescriptorName = "vpp-interfaces"
+	InterfaceDescriptorName = "vpp-interface"
 
 	// dependency labels
 	afPacketHostInterfaceDep = "afpacket-host-interface"
 	vxlanMulticastDep        = "vxlan-multicast-interface"
 	microserviceDep          = "microservice"
-
-	// tapHostInterfaceWaitTimeout is the maximum waiting time for TAP host-side
-	// to be created.
-	tapHostInterfaceWaitTimeout = time.Second
 
 	// prefix prepended to internal names of untagged interfaces to construct unique
 	// logical names
@@ -144,7 +138,7 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
 		linuxIfHandler:  linuxIfHandler,
-		log:             log.NewLogger("-if-descriptor"),
+		log:             log.NewLogger("if-descriptor"),
 		memifSocketToID: make(map[string]uint32),
 		ethernetIfs:     make(map[string]uint32),
 	}
@@ -275,7 +269,7 @@ func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.In
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
 func (d *InterfaceDescriptor) MetadataFactory() idxmap.NamedMappingRW {
-	return ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "vpp-interface-index")
+	return ifaceidx.NewIfaceIndex(d.log, "vpp-interface-index")
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

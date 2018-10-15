@@ -379,7 +379,7 @@ func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adapt
 			})
 		}
 	}
-	d.log.WithField("dump", dump).Debug("Dumping Linux Routes")
+	d.log.Debugf("Dumping Linux Routes: %v", dump)
 	return dump, nil
 }
 

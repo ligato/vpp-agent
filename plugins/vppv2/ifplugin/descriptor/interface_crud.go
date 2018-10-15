@@ -2,7 +2,6 @@ package descriptor
 
 import (
 	"strings"
-	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
@@ -40,23 +39,11 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 		// TAP hardening: verify that the Linux side was created
 		if d.linuxIfHandler != nil {
-			var exists bool
-			startTime := time.Now()
-
-			for !exists {
-				exists, err = d.linuxIfHandler.InterfaceExists(tapHostIfName)
-				if err != nil {
-					d.log.Error(err)
-					return nil, err
-				}
-				if time.Since(startTime) > tapHostInterfaceWaitTimeout {
-					break
-				}
-				if !exists {
-					time.Sleep(10 * time.Millisecond)
-				}
+			exists, err := d.linuxIfHandler.InterfaceExists(tapHostIfName)
+			if err != nil {
+				d.log.Error(err)
+				return nil, err
 			}
-
 			if !exists {
 				err = errors.Errorf("failed to create the Linux side (%s) of the TAP interface %s", tapHostIfName, intf.Name)
 				d.log.Error(err)
@@ -535,6 +522,6 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 
 	}
 
-	d.log.WithField("dump", dump).Debug("Dumping VPP interfaces")
+	d.log.Debugf("Dumping VPP interfaces: %v", dump)
 	return dump, nil
 }

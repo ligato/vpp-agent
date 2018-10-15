@@ -311,6 +311,6 @@ func (d *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapter.A
 			})
 		}
 	}
-	d.log.WithField("dump", dump).Debug("Dumping Linux ARPs")
+	d.log.Debugf("Dumping Linux ARPs: %v", dump)
 	return dump, nil
 }

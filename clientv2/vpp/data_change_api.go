@@ -17,12 +17,12 @@ package vppclient
 import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
@@ -65,11 +65,11 @@ type PutDSL interface {
 	// forwarding detection echo function.
 	BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) PutDSL
 	// BD adds a request to create or update VPP Bridge Domain.
-	BD(val *l2.BridgeDomains_BridgeDomain) PutDSL
+	BD(val *l2.BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-	BDFIB(fib *l2.FibTable_FibEntry) PutDSL
+	BDFIB(fib *l2.FIBEntry) PutDSL
 	// XConnect adds a request to create or update VPP Cross Connect.
-	XConnect(val *l2.XConnectPairs_XConnectPair) PutDSL
+	XConnect(val *l2.XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.

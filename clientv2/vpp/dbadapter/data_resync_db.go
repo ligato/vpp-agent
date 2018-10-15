@@ -19,12 +19,12 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
@@ -84,7 +84,7 @@ func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) vp
 }
 
 // BD adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) vppclient.DataResyncDSL {
+func (dsl *DataResyncDSL) BD(val *l2.BridgeDomain) vppclient.DataResyncDSL {
 	key := l2.BridgeDomainKey(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -93,8 +93,8 @@ func (dsl *DataResyncDSL) BD(val *l2.BridgeDomains_BridgeDomain) vppclient.DataR
 }
 
 // BDFIB adds Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BDFIB(val *l2.FibTable_FibEntry) vppclient.DataResyncDSL {
-	key := l2.FibKey(val.BridgeDomain, val.PhysAddress)
+func (dsl *DataResyncDSL) BDFIB(val *l2.FIBEntry) vppclient.DataResyncDSL {
+	key := l2.FIBKey(val.BridgeDomain, val.PhysAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -102,7 +102,7 @@ func (dsl *DataResyncDSL) BDFIB(val *l2.FibTable_FibEntry) vppclient.DataResyncD
 }
 
 // XConnect adds Cross Connect to the RESYNC request.
-func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPairs_XConnectPair) vppclient.DataResyncDSL {
+func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPair) vppclient.DataResyncDSL {
 	key := l2.XConnectKey(val.ReceiveInterface)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -249,7 +249,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l2.BdPrefix)
+		keys, err = dsl.listKeys(l2.BDPrefix)
 		if err != nil {
 			break
 		}

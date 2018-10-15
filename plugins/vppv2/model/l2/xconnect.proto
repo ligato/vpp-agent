@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package l2;
+
+message XConnectPair {
+    string receive_interface = 1;    /* receive interface name */
+    string transmit_interface = 2;   /* transmit interface name */
+}
