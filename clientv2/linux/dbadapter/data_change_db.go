@@ -22,10 +22,10 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 
 	"github.com/ligato/vpp-agent/clientv2/vpp"
@@ -124,19 +124,19 @@ func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) linuxclie
 }
 
 // BD adds a request to create or update VPP Bridge Domain.
-func (dsl *PutDSL) BD(val *l2.BridgeDomains_BridgeDomain) linuxclient.PutDSL {
+func (dsl *PutDSL) BD(val *l2.BridgeDomain) linuxclient.PutDSL {
 	dsl.vppPut.BD(val)
 	return dsl
 }
 
 // BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
-func (dsl *PutDSL) BDFIB(fib *l2.FibTable_FibEntry) linuxclient.PutDSL {
+func (dsl *PutDSL) BDFIB(fib *l2.FIBEntry) linuxclient.PutDSL {
 	dsl.vppPut.BDFIB(fib)
 	return dsl
 }
 
 // XConnect adds a request to create or update VPP Cross Connect.
-func (dsl *PutDSL) XConnect(val *l2.XConnectPairs_XConnectPair) linuxclient.PutDSL {
+func (dsl *PutDSL) XConnect(val *l2.XConnectPair) linuxclient.PutDSL {
 	dsl.vppPut.XConnect(val)
 	return dsl
 }

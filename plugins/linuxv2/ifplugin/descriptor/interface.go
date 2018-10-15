@@ -47,7 +47,7 @@ import (
 
 const (
 	// InterfaceDescriptorName is the name of the descriptor for Linux interfaces.
-	InterfaceDescriptorName = "linux-interfaces"
+	InterfaceDescriptorName = "linux-interface"
 
 	// defaultEthernetMTU - expected when MTU is not specified in the config.
 	defaultEthernetMTU = 1500
@@ -766,7 +766,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		dump = append(dump, kv)
 	}
 
-	d.log.WithField("dump", dump).Debug("Dumping Linux interfaces")
+	d.log.Debugf("Dumping Linux interfaces: %v", dump)
 	return dump, nil
 }
 

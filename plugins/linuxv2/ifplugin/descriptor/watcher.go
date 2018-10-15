@@ -121,7 +121,7 @@ func (w *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump []sc
 			Origin: scheduler.FromSB,
 		})
 	}
-	w.log.WithField("dump", dump).Debug("Dumping Linux interface host names in default namespace")
+	w.log.Debugf("Dumping Linux interface host names in the default namespace: %v", dump)
 	return dump, nil
 }
 

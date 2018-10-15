@@ -18,11 +18,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
@@ -45,11 +45,11 @@ type DataResyncDSL interface {
 	// to the RESYNC request.
 	BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) DataResyncDSL
 	// BD adds Bridge Domain to the RESYNC request.
-	BD(bd *l2.BridgeDomains_BridgeDomain) DataResyncDSL
+	BD(bd *l2.BridgeDomain) DataResyncDSL
 	// BDFIB adds L2 Forwarding Information Base.
-	BDFIB(fib *l2.FibTable_FibEntry) DataResyncDSL
+	BDFIB(fib *l2.FIBEntry) DataResyncDSL
 	// XConnect adds Cross Connect to the RESYNC request.
-	XConnect(xcon *l2.XConnectPairs_XConnectPair) DataResyncDSL
+	XConnect(xcon *l2.XConnectPair) DataResyncDSL
 	// StaticRoute adds L3 Static Route to the RESYNC request.
 	StaticRoute(staticRoute *l3.StaticRoutes_Route) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.

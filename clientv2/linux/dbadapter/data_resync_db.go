@@ -22,10 +22,10 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 
 	"github.com/ligato/cn-infra/db/keyval"
@@ -109,19 +109,19 @@ func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) li
 }
 
 // BD adds VPP Bridge Domain to the RESYNC request.
-func (dsl *DataResyncDSL) BD(bd *l2.BridgeDomains_BridgeDomain) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) BD(bd *l2.BridgeDomain) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.BD(bd)
 	return dsl
 }
 
 // BDFIB adds VPP L2 FIB to the RESYNC request.
-func (dsl *DataResyncDSL) BDFIB(fib *l2.FibTable_FibEntry) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) BDFIB(fib *l2.FIBEntry) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.BDFIB(fib)
 	return dsl
 }
 
 // XConnect adds VPP Cross Connect to the RESYNC request.
-func (dsl *DataResyncDSL) XConnect(xcon *l2.XConnectPairs_XConnectPair) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) XConnect(xcon *l2.XConnectPair) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.XConnect(xcon)
 	return dsl
 }

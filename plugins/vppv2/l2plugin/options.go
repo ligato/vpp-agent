@@ -12,27 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ifplugin
+package l2plugin
 
 import (
-	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 )
 
-// DefaultPlugin is a default instance of IfPlugin.
+// DefaultPlugin is a default instance of L2Plugin.
 var DefaultPlugin = *NewPlugin()
 
-// NewPlugin creates a new Plugin with the provides Options
-func NewPlugin(opts ...Option) *IfPlugin {
-	p := &IfPlugin{}
+// NewPlugin creates a new Plugin with the provided Options.
+func NewPlugin(opts ...Option) *L2Plugin {
+	p := &L2Plugin{}
 
-	p.PluginName = "vpp-ifplugin"
+	p.PluginName = "vpp-l2plugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Scheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
+	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)
@@ -41,21 +42,16 @@ func NewPlugin(opts ...Option) *IfPlugin {
 	if p.Log == nil {
 		p.Log = logging.ForPlugin(p.String())
 	}
-	if p.Cfg == nil {
-		p.Cfg = config.ForPlugin(p.String(),
-			config.WithCustomizedFlag(config.FlagName(p.String()), "vpp-ifplugin.conf"),
-		)
-	}
 
 	return p
 }
 
 // Option is a function that can be used in NewPlugin to customize Plugin.
-type Option func(*IfPlugin)
+type Option func(*L2Plugin)
 
 // UseDeps returns Option that can inject custom dependencies.
 func UseDeps(f func(*Deps)) Option {
-	return func(p *IfPlugin) {
+	return func(p *L2Plugin) {
 		f(&p.Deps)
 	}
 }
