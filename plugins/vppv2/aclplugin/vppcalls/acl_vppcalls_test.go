@@ -17,7 +17,9 @@ package vppcalls
 import (
 	"testing"
 
+	"github.com/ligato/cn-infra/logging/logrus"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
@@ -221,82 +223,99 @@ var aclMACIPrules = []*acl.Acl_Rule{
 	},
 }
 
+type testCtx struct {
+	*vppcallmock.TestCtx
+	aclHandler *ACLVppHandler
+	ifIndexes  ifaceidx.IfaceMetadataIndexRW
+}
+
+func setupACLTest(t *testing.T) *testCtx {
+	ctx := vppcallmock.SetupTestCtx(t)
+
+	ifaceIdx := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
+	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel, ifaceIdx)
+
+	return &testCtx{
+		TestCtx:    ctx,
+		aclHandler: aclHandler,
+		ifIndexes:  ifaceIdx,
+	}
+}
+
+func (ctx *testCtx) teardownACLTest() {
+	ctx.TeardownTestCtx()
+}
+
 // Test add IP acl rules
 func TestAddIPAcl(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	aclIndex, err := aclHandler.AddACL(aclIPrules, "test0")
+	aclIndex, err := ctx.aclHandler.AddACL(aclIPrules, "test0")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	_, err = aclHandler.AddACL(aclNoRules, "test1")
+	_, err = ctx.aclHandler.AddACL(aclNoRules, "test1")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = aclHandler.AddACL(aclErr1Rules, "test2")
+	_, err = ctx.aclHandler.AddACL(aclErr1Rules, "test2")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = aclHandler.AddACL(aclErr2Rules, "test3")
+	_, err = ctx.aclHandler.AddACL(aclErr2Rules, "test3")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = aclHandler.AddACL(aclErr3Rules, "test4")
+	_, err = ctx.aclHandler.AddACL(aclErr3Rules, "test4")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-	_, err = aclHandler.AddACL(aclIPrules, "test5")
+	_, err = ctx.aclHandler.AddACL(aclIPrules, "test5")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
-	_, err = aclHandler.AddACL(aclIPrules, "test6")
+	_, err = ctx.aclHandler.AddACL(aclIPrules, "test6")
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test add MACIP acl rules
 func TestAddMacIPAcl(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	aclIndex, err := aclHandler.AddMACIPACL(aclMACIPrules, "test6")
+	aclIndex, err := ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test6")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	_, err = aclHandler.AddMACIPACL(aclNoRules, "test7")
+	_, err = ctx.aclHandler.AddMACIPACL(aclNoRules, "test7")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = aclHandler.AddMACIPACL(aclErr4Rules, "test8")
+	_, err = ctx.aclHandler.AddMACIPACL(aclErr4Rules, "test8")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = aclHandler.AddMACIPACL(aclErr5Rules, "test9")
+	_, err = ctx.aclHandler.AddMACIPACL(aclErr5Rules, "test9")
 	Expect(err).To(Not(BeNil()))
 
-	_, err = aclHandler.AddMACIPACL(aclErr6Rules, "test10")
+	_, err = ctx.aclHandler.AddMACIPACL(aclErr6Rules, "test10")
 	Expect(err).To(Not(BeNil()))
 	Expect(err.Error()).To(BeEquivalentTo("invalid IP address "))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	_, err = aclHandler.AddMACIPACL(aclMACIPrules, "test11")
+	_, err = ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test11")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{Retval: -1})
-	_, err = aclHandler.AddMACIPACL(aclMACIPrules, "test12")
+	_, err = ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test12")
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test deletion of IP acl rules
 func TestDeleteIPAcl(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	aclIndex, err := aclHandler.AddACL(aclIPrules, "test_del0")
+	aclIndex, err := ctx.aclHandler.AddACL(aclIPrules, "test_del0")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -313,32 +332,30 @@ func TestDeleteIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{ACLIndex: 1})
-	aclIndex, err = aclHandler.AddACL(rule2del, "test_del1")
+	aclIndex, err = ctx.aclHandler.AddACL(rule2del, "test_del1")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	err = aclHandler.DeleteACL(5)
+	err = ctx.aclHandler.DeleteACL(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{Retval: -1})
-	err = aclHandler.DeleteACL(5)
+	err = ctx.aclHandler.DeleteACL(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLDelReply{})
-	err = aclHandler.DeleteACL(1)
+	err = ctx.aclHandler.DeleteACL(1)
 	Expect(err).To(BeNil())
 }
 
 // Test deletion of MACIP acl rules
 func TestDeleteMACIPAcl(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	aclIndex, err := aclHandler.AddMACIPACL(aclMACIPrules, "test_del2")
+	aclIndex, err := ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test_del2")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -355,32 +372,30 @@ func TestDeleteMACIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{ACLIndex: 1})
-	aclIndex, err = aclHandler.AddMACIPACL(rule2del, "test_del3")
+	aclIndex, err = ctx.aclHandler.AddMACIPACL(rule2del, "test_del3")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(1))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
-	err = aclHandler.DeleteMACIPACL(5)
+	err = ctx.aclHandler.DeleteMACIPACL(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{Retval: -1})
-	err = aclHandler.DeleteMACIPACL(5)
+	err = ctx.aclHandler.DeleteMACIPACL(5)
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLDelReply{})
-	err = aclHandler.DeleteMACIPACL(1)
+	err = ctx.aclHandler.DeleteMACIPACL(1)
 	Expect(err).To(BeNil())
 }
 
 // Test modification of IP acl rule
 func TestModifyIPAcl(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	aclIndex, err := aclHandler.AddACL(aclIPrules, "test_modify")
+	aclIndex, err := ctx.aclHandler.AddACL(aclIPrules, "test_modify")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -406,33 +421,31 @@ func TestModifyIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{})
-	err = aclHandler.ModifyACL(0, rule2modify, "test_modify0")
+	err = ctx.aclHandler.ModifyACL(0, rule2modify, "test_modify0")
 	Expect(err).To(BeNil())
 
-	err = aclHandler.ModifyACL(0, aclErr1Rules, "test_modify1")
+	err = ctx.aclHandler.ModifyACL(0, aclErr1Rules, "test_modify1")
 	Expect(err).To(Not(BeNil()))
 
-	err = aclHandler.ModifyACL(0, aclNoRules, "test_modify2")
+	err = ctx.aclHandler.ModifyACL(0, aclNoRules, "test_modify2")
 	Expect(err).To(BeNil())
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.ModifyACL(0, aclIPrules, "test_modify3")
+	err = ctx.aclHandler.ModifyACL(0, aclIPrules, "test_modify3")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.ACLAddReplaceReply{Retval: -1})
-	err = aclHandler.ModifyACL(0, aclIPrules, "test_modify4")
+	err = ctx.aclHandler.ModifyACL(0, aclIPrules, "test_modify4")
 	Expect(err).To(Not(BeNil()))
 }
 
 // Test modification of MACIP acl rule
 func TestModifyMACIPAcl(t *testing.T) {
-	ctx := vppcallmock.SetupTestCtx(t)
-	defer ctx.TeardownTestCtx()
+	ctx := setupACLTest(t)
+	defer ctx.teardownACLTest()
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReply{})
 
-	aclHandler := NewACLVppHandler(ctx.MockChannel, ctx.MockChannel)
-
-	aclIndex, err := aclHandler.AddMACIPACL(aclMACIPrules, "test_modify")
+	aclIndex, err := ctx.aclHandler.AddMACIPACL(aclMACIPrules, "test_modify")
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
@@ -458,17 +471,17 @@ func TestModifyMACIPAcl(t *testing.T) {
 	}
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.ModifyMACIPACL(0, rule2modify, "test_modify0")
+	err = ctx.aclHandler.ModifyMACIPACL(0, rule2modify, "test_modify0")
 	Expect(err).To(BeNil())
 
-	err = aclHandler.ModifyMACIPACL(0, aclErr1Rules, "test_modify1")
+	err = ctx.aclHandler.ModifyMACIPACL(0, aclErr1Rules, "test_modify1")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{})
-	err = aclHandler.ModifyMACIPACL(0, aclIPrules, "test_modify3")
+	err = ctx.aclHandler.ModifyMACIPACL(0, aclIPrules, "test_modify3")
 	Expect(err).To(Not(BeNil()))
 
 	ctx.MockVpp.MockReply(&acl_api.MacipACLAddReplaceReply{Retval: -1})
-	err = aclHandler.ModifyMACIPACL(0, aclIPrules, "test_modify4")
+	err = ctx.aclHandler.ModifyMACIPACL(0, aclIPrules, "test_modify4")
 	Expect(err).To(Not(BeNil()))
 }

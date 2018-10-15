@@ -80,7 +80,7 @@ func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName strin
 	return nil
 }
 
-// AddACLToInterfaceAsIngress implements ACL handler.
+// AddACLToInterfaceAsEgress implements ACL handler.
 func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string) error {
 	meta, ok := h.ifIndexes.LookupByName(ifName)
 	if !ok {

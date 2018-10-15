@@ -25,8 +25,8 @@ import (
 var DefaultPlugin = *NewPlugin()
 
 // NewPlugin creates a new Plugin with the provides Options
-func NewPlugin(opts ...Option) *AclPlugin {
-	p := &AclPlugin{}
+func NewPlugin(opts ...Option) *ACLPlugin {
+	p := &ACLPlugin{}
 
 	p.PluginName = "vpp-aclplugin"
 	//p.StatusCheck = &statuscheck.DefaultPlugin
@@ -50,11 +50,11 @@ func NewPlugin(opts ...Option) *AclPlugin {
 }
 
 // Option is a function that can be used in NewPlugin to customize Plugin.
-type Option func(*AclPlugin)
+type Option func(*ACLPlugin)
 
 // UseDeps returns Option that can inject custom dependencies.
 func UseDeps(f func(*Deps)) Option {
-	return func(p *AclPlugin) {
+	return func(p *ACLPlugin) {
 		f(&p.Deps)
 	}
 }

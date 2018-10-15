@@ -45,8 +45,8 @@ func ParseNameFromKey(key string) (name string, err error) {
 	return name, nil
 }
 
-// ACLToInterfaceKey returns key for ACL to interface
-func ACLToInterfaceKey(acl, iface, flow string) string {
+// ToInterfaceKey returns key for ACL to interface
+func ToInterfaceKey(acl, iface, flow string) string {
 	key := aclToInterfaceTemplate
 	key = strings.Replace(key, "{acl}", acl, 1)
 	key = strings.Replace(key, "{flow}", flow, 1)

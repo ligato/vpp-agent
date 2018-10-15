@@ -425,7 +425,7 @@ func (h *ACLVppHandler) DumpInterfaceMACIPACLList(swIndex uint32) (*acl_api.Maci
 	return reply, nil
 }
 
-// DumpInterfaces implements ACL handler.
+// DumpInterfacesLists implements ACL handler.
 func (h *ACLVppHandler) DumpInterfacesLists() ([]*acl_api.ACLInterfaceListDetails, []*acl_api.MacipACLInterfaceListDetails, error) {
 	msgIPACL := &acl_api.ACLInterfaceListDump{
 		SwIfIndex: 0xffffffff, // dump all

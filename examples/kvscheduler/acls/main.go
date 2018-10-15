@@ -61,7 +61,7 @@ func main() {
 type ExamplePlugin struct {
 	Scheduler    *kvscheduler.Scheduler
 	VPPIfPlugin  *vpp_ifplugin.IfPlugin
-	VPPACLPlugin *vpp_aclplugin.AclPlugin
+	VPPACLPlugin *vpp_aclplugin.ACLPlugin
 }
 
 // String returns plugin name

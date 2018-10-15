@@ -14,7 +14,7 @@ import (
 
 const (
 	// ACLToInterfaceDescriptorName is name for descriptor
-	ACLToInterfaceDescriptorName = "vpp-acl-interface"
+	ACLToInterfaceDescriptorName = "vpp-acl-to-interface"
 
 	// dependency labels
 	interfaceDep = "interface-exists"

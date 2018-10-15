@@ -231,17 +231,17 @@ func (d *ACLDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, 
 	return false
 }
 
-// DervicedValues returns list of derived values for ACL
+// DerivedValues returns list of derived values for ACL.
 func (d *ACLDescriptor) DerivedValues(key string, value *acl.Acl) (derived []api.KeyValuePair) {
 	for _, ifName := range value.GetInterfaces().GetIngress() {
 		derived = append(derived, api.KeyValuePair{
-			Key:   acl.ACLToInterfaceKey(value.Name, ifName, acl.IngressFlow),
+			Key:   acl.ToInterfaceKey(value.Name, ifName, acl.IngressFlow),
 			Value: &prototypes.Empty{},
 		})
 	}
 	for _, ifName := range value.GetInterfaces().GetEgress() {
 		derived = append(derived, api.KeyValuePair{
-			Key:   acl.ACLToInterfaceKey(value.Name, ifName, acl.EgressFlow),
+			Key:   acl.ToInterfaceKey(value.Name, ifName, acl.EgressFlow),
 			Value: &prototypes.Empty{},
 		})
 	}

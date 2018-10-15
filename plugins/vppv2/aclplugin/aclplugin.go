@@ -33,8 +33,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 )
 
-// AclPlugin ...
-type AclPlugin struct {
+// ACLPlugin is a plugin that manages ACLs.
+type ACLPlugin struct {
 	Deps
 
 	// GoVPP channels
@@ -53,7 +53,7 @@ type AclPlugin struct {
 	wg     sync.WaitGroup
 }
 
-// Deps ...
+// Deps represents dependencies for the plugin.
 type Deps struct {
 	infra.PluginDeps
 	Scheduler scheduler.KVScheduler
@@ -61,8 +61,8 @@ type Deps struct {
 	IfPlugin  ifplugin.API
 }
 
-// Init ...
-func (p *AclPlugin) Init() (err error) {
+// Init initializes ACL plugin.
+func (p *ACLPlugin) Init() (err error) {
 	// Create plugin context, save cancel function into the plugin handle.
 	p.ctx, p.cancel = context.WithCancel(context.Background())
 
@@ -97,21 +97,18 @@ func (p *AclPlugin) Init() (err error) {
 
 	p.Scheduler.RegisterKVDescriptor(aclInterfaceDescriptor)
 
-	// pass read-only index map to descriptors
-	//p.aclDesriptor.SetACLIndex(p.aclIndex)
-
 	return nil
 }
 
-// AfterInit ...
-func (p *AclPlugin) AfterInit() error {
+// AfterInit initializes extra things.
+func (p *ACLPlugin) AfterInit() error {
 	// TODO: statucheck
 
 	return nil
 }
 
-// Close stops all go routines.
-func (p *AclPlugin) Close() error {
+// Close stops all go routines and frees resources.
+func (p *ACLPlugin) Close() error {
 	// stop publishing of state data
 	p.cancel()
 	p.wg.Wait()
