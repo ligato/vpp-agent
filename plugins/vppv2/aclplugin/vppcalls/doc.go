@@ -12,12 +12,6 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-//go:generate protoc --proto_path=acl --gogo_out=acl acl/acl.proto
-//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/dhcp.proto
-//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/interface.proto
-//go:generate protoc --proto_path=interfaces --gogo_out=interfaces interfaces/state.proto
-//go:generate protoc --proto_path=l2 --gogo_out=l2 l2/bd.proto
-//go:generate protoc --proto_path=l2 --gogo_out=l2 l2/fib.proto
-//go:generate protoc --proto_path=l2 --gogo_out=l2 l2/xconnect.proto
-
-package model
+// Package vppcalls contains wrappers over VPP ACL binary APIs and helpers to dump ACLs configured in VPP - per
+// interface and total.
+package vppcalls

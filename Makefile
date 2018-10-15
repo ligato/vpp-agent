@@ -134,6 +134,7 @@ generate-desc-adapters: get-desc-adapter-generator
 	cd plugins/linuxv2/ifplugin && go generate
 	cd plugins/linuxv2/l3plugin && go generate
 	cd plugins/vppv2/ifplugin && go generate
+	cd plugins/vppv2/aclplugin && go generate
 
 verify-binapi:
 	@echo "=> verifying binary api"

@@ -15,15 +15,15 @@
 package vppclient
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 // DataChangeDSL defines Domain Specific Language (DSL) for data change.
@@ -73,7 +73,7 @@ type PutDSL interface {
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
 	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
-	ACL(acl *acl.AccessLists_Acl) PutDSL
+	ACL(acl *acl.Acl) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
 	Arp(arp *l3.ArpTable_ArpEntry) PutDSL
 	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces

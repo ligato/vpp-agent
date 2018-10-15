@@ -17,15 +17,15 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -121,8 +121,8 @@ func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) vppclient.PutDSL {
 }
 
 // ACL adds a request to create or update VPP Access Control List.
-func (dsl *PutDSL) ACL(val *acl.AccessLists_Acl) vppclient.PutDSL {
-	dsl.parent.txn.Put(acl.Key(val.AclName), val)
+func (dsl *PutDSL) ACL(val *acl.Acl) vppclient.PutDSL {
+	dsl.parent.txn.Put(acl.Key(val.Name), val)
 	return dsl
 }
 
