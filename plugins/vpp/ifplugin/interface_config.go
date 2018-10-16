@@ -201,6 +201,8 @@ func (c *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Int
 	case intf.InterfaceType_IPSEC_TUNNEL:
 		c.log.Warnf("Cannot process new IPSec tunnel interface %s, use definition in IPSec plugin instead", iface.Name)
 		return nil
+	default:
+		return errors.Errorf("failed to create interface %s: unsupported type", iface.Name)
 	}
 	if err != nil {
 		return err
