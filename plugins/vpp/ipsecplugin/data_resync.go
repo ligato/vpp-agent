@@ -17,6 +17,7 @@ package ipsecplugin
 import (
 	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
@@ -36,6 +37,10 @@ func (c *IPSecConfigurator) Resync(nbSpds []*ipsec.SecurityPolicyDatabases_SPD, 
 	if err != nil {
 		return errors.Errorf("IPSec resync: failed to dump security policy databases: %v", err)
 	}
+	vppTunnels, err := c.ipSecHandler.DumpIPSecTunnelInterfaces()
+	if err != nil {
+		return errors.Errorf("IPSec resync: failed to dump tunnel interfaces: %v", err)
+	}
 
 	// Remove all security policy databases before manipulating security associations.
 	// TODO since IPSec interface dump is missing, all SPDs will be removed since diff cannot be calculated
@@ -44,7 +49,7 @@ func (c *IPSecConfigurator) Resync(nbSpds []*ipsec.SecurityPolicyDatabases_SPD, 
 		vppSpd := vppSpdDetails.Spd
 		for _, spdPolicyEntry := range vppSpdDetails.Spd.PolicyEntries {
 			// Find ID for given policy
-			meta, ok := vppSpdDetails.Meta.SpdMeta[spdPolicyEntry.Sa]
+			meta, ok := vppSpdDetails.PolicyMeta[spdPolicyEntry.Sa]
 			if !ok {
 				c.log.Warnf("Metadata for SPD gen name %s not found", spdPolicyEntry.Sa)
 				continue
@@ -71,10 +76,42 @@ func (c *IPSecConfigurator) Resync(nbSpds []*ipsec.SecurityPolicyDatabases_SPD, 
 		c.log.Debugf("IPSec resync: configured VPP SPD %s", nbSpd.Name)
 	}
 
-	// Tunnel interfaces
-	for _, nbTunnel := range nbTunnels {
-		if err := c.ConfigureTunnel(nbTunnel); err != nil {
-			return errors.Errorf("IPSec resync: failed to configure NB tunnel interface %s: %v", nbTunnel.Name, err)
+	// Sync tunnel interfaces
+	resolvedVppIfs := make(map[uint32]string)
+	for _, nbTun := range nbTunnels {
+		var correlated bool
+		for _, vppTun := range vppTunnels {
+			if nbTun.Name == vppTun.Tunnel.Name {
+				if c.isIfModified(nbTun, vppTun.Tunnel) {
+					if err := c.ModifyTunnel(vppTun.Tunnel, nbTun); err != nil {
+						return errors.Errorf("IPSec resync: failed to modify tunnel interface %s: %v", nbTun.Name, err)
+					}
+				} else {
+					// Update metadata for tunnel interface. Tunnel was registered during interface plugin resync.
+					c.ifIndexes.UpdateMetadata(nbTun.Name, &interfaces.Interfaces_Interface{
+						Name:        nbTun.Name,
+						Enabled:     nbTun.Enabled,
+						IpAddresses: nbTun.IpAddresses,
+						Vrf:         nbTun.Vrf,
+					})
+				}
+				correlated = true
+				resolvedVppIfs[vppTun.Meta.SwIfIndex] = vppTun.Tunnel.Name
+			}
+		}
+		if !correlated {
+			if err := c.ConfigureTunnel(nbTun); err != nil {
+				return errors.Errorf("IPSec resync: failed to configure tunnel interface %s: %v", nbTun.Name, err)
+			}
+		}
+	}
+	// Remove obsolete tunnels
+	for _, vppTun := range vppTunnels {
+		_, ok := resolvedVppIfs[vppTun.Meta.SwIfIndex]
+		if !ok {
+			if err := c.DeleteTunnel(vppTun.Tunnel); err != nil {
+				return errors.Errorf("IPSec resync: failed to remove tunnel interface %s: %v", vppTun.Tunnel.Name, err)
+			}
 		}
 	}
 
@@ -82,6 +119,7 @@ func (c *IPSecConfigurator) Resync(nbSpds []*ipsec.SecurityPolicyDatabases_SPD, 
 	return nil
 }
 
+// Correlates security associations, removes obsolete and configures new ones
 func (c *IPSecConfigurator) synchronizeSA(vppSAs []*vppcalls.IPSecSaDetails, nbSAs []*ipsec.SecurityAssociations_SA) error {
 	for _, nbSa := range nbSAs {
 		var found bool
@@ -169,4 +207,86 @@ func (c *IPSecConfigurator) synchronizeSA(vppSAs []*vppcalls.IPSecSaDetails, nbS
 	}
 
 	return nil
+}
+
+// Returns true if provided tunnel interfaces are different, false if they are equal
+func (c *IPSecConfigurator) isIfModified(vppTun, nbTun *ipsec.TunnelInterfaces_Tunnel) bool {
+	if nbTun.GetName() != vppTun.GetName() {
+		c.log.Debugf("Tunnel comparison: different name (nb: %s vs vpp: %s)", nbTun.GetName(), vppTun.GetName())
+		return true
+	}
+	if nbTun.GetEsn() != vppTun.GetEsn() {
+		c.log.Debugf("Tunnel comparison: different esn (nb: %v vs vpp: %v)", nbTun.GetEsn(), vppTun.GetEsn())
+		return true
+	}
+	if nbTun.GetAntiReplay() != vppTun.GetAntiReplay() {
+		c.log.Debugf("Tunnel comparison: different anti replay (nb: %v vs vpp: %v)", nbTun.GetAntiReplay(), vppTun.GetAntiReplay())
+		return true
+	}
+	if c.localRemoteIPSpiIsDifferent(nbTun, vppTun) {
+		return true
+	}
+	if nbTun.GetCryptoAlg() != vppTun.GetCryptoAlg() {
+		c.log.Debugf("Tunnel comparison: different crypto alg (nb: %v vs vpp: %v)", nbTun.GetCryptoAlg(), vppTun.GetCryptoAlg())
+		return true
+	}
+	if nbTun.GetIntegAlg() != vppTun.GetIntegAlg() {
+		c.log.Debugf("Tunnel comparison: different integ alg (nb: %v vs vpp: %v)", nbTun.GetIntegAlg(), vppTun.GetIntegAlg())
+		return true
+	}
+	if len(nbTun.GetIpAddresses()) != len(vppTun.GetIpAddresses()) {
+		c.log.Debugf("Tunnel comparison: different IP address count (nb: %v vs vpp: %v)", len(nbTun.GetIpAddresses()), len(vppTun.GetIpAddresses()))
+		return true
+	}
+	if c.ipAddressesAreDifferent(nbTun.GetIpAddresses(), vppTun.GetIpAddresses()) {
+		return true
+	}
+	if nbTun.GetVrf() != vppTun.GetVrf() {
+		c.log.Debugf("SA comparison: different protocol (nb: %d vs vpp: %d)", nbTun.GetVrf(), vppTun.GetVrf())
+		return true
+	}
+	return false
+}
+
+func (c *IPSecConfigurator) localRemoteIPSpiIsDifferent(nbTun, vppTun *ipsec.TunnelInterfaces_Tunnel) bool {
+	if nbTun.GetLocalIp() == vppTun.GetLocalIp() && nbTun.GetLocalSpi() == vppTun.GetLocalSpi() {
+		if nbTun.GetRemoteIp() != vppTun.GetRemoteIp() {
+			c.log.Debugf("Tunnel comparison: different remote IP (nb: %s vs vpp: %s)", nbTun.GetRemoteIp(), vppTun.GetRemoteIp())
+			return true
+		}
+		if nbTun.GetRemoteSpi() != vppTun.GetRemoteSpi() {
+			c.log.Debugf("Tunnel comparison: different remote spi (nb: %d vs vpp: %d)", nbTun.GetRemoteSpi(), vppTun.GetRemoteSpi())
+			return true
+		}
+	} else if nbTun.GetLocalIp() == vppTun.GetRemoteIp() && nbTun.GetLocalSpi() == vppTun.GetRemoteSpi() {
+		if nbTun.GetRemoteIp() != vppTun.GetLocalIp() {
+			c.log.Debugf("Tunnel comparison: different remote IP (nb: %s vs vpp: %s)", nbTun.GetRemoteIp(), vppTun.GetRemoteIp())
+			return true
+		}
+		if nbTun.GetRemoteSpi() != vppTun.GetLocalSpi() {
+			c.log.Debugf("Tunnel comparison: different remote spi (nb: %d vs vpp: %d)", nbTun.GetRemoteSpi(), vppTun.GetRemoteSpi())
+			return true
+		}
+	} else {
+		c.log.Debugf("Tunnel comparison: different local ip/spi (nb: %s/%d vs vpp: %s/%d)",
+			nbTun.GetLocalIp(), nbTun.GetLocalSpi(), vppTun.GetLocalIp(), vppTun.GetLocalSpi())
+		return true
+	}
+	return false
+}
+
+func (c *IPSecConfigurator) ipAddressesAreDifferent(nbIPs, vppIPs []string) bool {
+	for _, nbIP := range nbIPs {
+		var found bool
+		for _, vppIP := range vppIPs {
+			if nbIP == vppIP {
+				found = true
+			}
+		}
+		if !found {
+			c.log.Debugf("SA comparison: IP address %s is missing on vpp tunnel", nbIP)
+			return true
+		}
+	}
+	return false
 }
