@@ -115,7 +115,15 @@ Add Static Route From VPP2 Linux To VPP1
     linux: Add Route    node=agent_vpp_2    destination_ip=${IP_VPP1_TAP1_NETWORK}    prefix=${PREFIX}    next_hop_ip=${IP_VPP2_TAP1}
 
 Add Static Route From VPP2 To VPP1
-    Create Route On agent_vpp_2 With IP ${IP_VPP2_TAP1_NETWORK}/${PREFIX} With Next Hop ${IP_VPP1_MEMIF1} And Vrf Id 0
+    Create Route On agent_vpp_2 With IP ${IP_VPP1_TAP1_NETWORK}/${PREFIX} With Next Hop ${IP_VPP1_MEMIF1} And Vrf Id 0
+
+Check Interfaces And Fib Table
+    Show Interfaces On agent_vpp_1
+    Show Interfaces Address On agent_vpp_1
+    Show IP6 Fib On agent_vpp_1
+    Show Interfaces On agent_vpp_2
+    Show Interfaces Address On agent_vpp_2
+    Show IP6 Fib On agent_vpp_2
 
 Check Ping From VPP1 Linux To VPP2_TAP1 And LINUX_VPP2_TAP1
     linux: Check Ping    node=agent_vpp_1    ip=${IP_VPP2_TAP1}
@@ -174,7 +182,6 @@ Check Ping From VPP2 Linux To VPP1_TAP1 And LINUX_VPP1_TAP1 After Resync
     linux: Check Ping    node=agent_vpp_2    ip=${IP_VPP1_TAP1}
     linux: Check Ping    node=agent_vpp_2    ip=${IP_LINUX_VPP1_TAP1}
 
-#*** Keywords ***
 *** Keywords ***
 TestSetup
     Make Datastore Snapshots    ${TEST_NAME}_test_setup

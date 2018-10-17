@@ -82,7 +82,7 @@ Check bd2 on Agent1 Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_1  bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif1  interface=bvi_loop1
 
 Setup Agent2
-    Create loopback interface bvi_loop0 on agent_vpp_2 with ip ${IP_2}/${PREFIX} and mac ${MAC2_LOOP1}
+    Create Loopback Interface bvi_loop0 On agent_vpp_2 With VRF 2, Ip ${IP_2}/${PREFIX} And Mac ${MAC2_LOOP1}
     Create Slave memif0 on agent_vpp_2 with MAC ${MAC2_MEMIF1}, key 1 and m0.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_2 with interfaces bvi_loop0, memif0
 
@@ -96,7 +96,7 @@ Check bd1 on Agent2 Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_2  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
 Setup Agent3
-    Create loopback interface bvi_loop0 on agent_vpp_3 with ip ${IP_4}/${PREFIX} and mac ${MAC3_LOOP1}
+    Create Loopback Interface bvi_loop0 On agent_vpp_3 With VRF 3, Ip ${IP_4}/${PREFIX} And Mac ${MAC3_LOOP1}
     Create Slave memif0 on agent_vpp_3 with MAC ${MAC3_MEMIF1}, key 2 and m1.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_3 with interfaces bvi_loop0, memif0
 
@@ -109,14 +109,13 @@ Check bd1 on Agent3 Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: BD Is Created    agent_vpp_3   bvi_loop0     memif0
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vat_term: Check Bridge Domain State    agent_vpp_3  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
-
-# setup routes
+Create Routes
     Create Route On agent_vpp_2 With IP ${NET2}/64 With Next Hop ${IP_1} And Vrf Id 2
     Create Route On agent_vpp_3 With IP ${NET1}/64 With Next Hop ${IP_3} And Vrf Id 3
-
     Sleep    ${SYNC_WAIT}
     Sleep    ${SYNC_WAIT}
 
+Check Interfaces And FIB
     Show Interfaces On agent_vpp_1
     Show Interfaces Address On agent_vpp_2
     Show IP6 Fib On agent_vpp_2
@@ -125,6 +124,7 @@ Check bd1 on Agent3 Is Created
     Show IP6 Fib On agent_vpp_3
     IP6 Fib Table 3 On agent_vpp_3 Should Contain Route With IP ${NET1}/64
 
+Check Pinging
     # try ping
     Ping6 From agent_vpp_1 To ${IP_2}
     Ping6 From agent_vpp_1 To ${IP_4}

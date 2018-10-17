@@ -53,12 +53,12 @@ Setup1 Agent1 for Agent3
     Create bridge domain bd2 With Autolearn on agent_vpp_1 with interfaces bvi_loop1, memif1
 
 Setup Agent2
-    Create loopback interface bvi_loop0 on agent_vpp_2 with ip ${IP_2}/${PREFIX} and mac ${MAC2_LOOP1}
+    Create Loopback Interface bvi_loop0 On agent_vpp_2 With VRF 2, Ip ${IP_2}/${PREFIX} And Mac ${MAC2_LOOP1}
     Create Slave memif0 on agent_vpp_2 with MAC ${MAC2_MEMIF1}, key 1 and m0.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_2 with interfaces bvi_loop0, memif0
 
 Setup Agent3
-    Create loopback interface bvi_loop0 on agent_vpp_3 with ip ${IP_4}/${PREFIX} and mac ${MAC3_LOOP1}
+    Create Loopback Interface bvi_loop0 On agent_vpp_3 With VRF 3, Ip ${IP_4}/${PREFIX} And Mac ${MAC3_LOOP1}
     Create Slave memif0 on agent_vpp_3 with MAC ${MAC3_MEMIF1}, key 2 and m1.sock socket
     Create bridge domain bd1 With Autolearn on agent_vpp_3 with interfaces bvi_loop0, memif0
 

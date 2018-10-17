@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -204,6 +206,11 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	}
 
 	err = h.dumpVxlanDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpIPSecDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -462,6 +469,37 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 	return nil
 }
 
+// dumpIPSecDetails reads IPSec interfaces and fills the type in the interface map.
+// Note: no other interface info is stored, since ipsec interfaces are defined in different model and have its own
+// resync procedure.
+func (h *IfVppHandler) dumpIPSecDetails(ifs map[uint32]*InterfaceDetails) error {
+	req := &ipsec.IpsecSaDump{
+		SaID: ^uint32(0),
+	}
+	requestCtx := h.callsChannel.SendMultiRequest(req)
+
+	for {
+		ipsecDetails := &ipsec.IpsecSaDetails{}
+		stop, err := requestCtx.ReceiveReply(ipsecDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		if uintToBool(ipsecDetails.IsTunnel) || uintToBool(ipsecDetails.IsTunnelIP6) {
+			_, ifIdxExists := ifs[ipsecDetails.SwIfIndex]
+			if !ifIdxExists {
+				continue
+			}
+			ifs[ipsecDetails.SwIfIndex].Interface.Type = ifnb.InterfaceType_IPSEC_TUNNEL
+		}
+	}
+
+	return nil
+}
+
 // dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
 func (h *IfVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 	dhcpData := make(map[uint32]*Dhcp)
@@ -561,6 +599,8 @@ func guessInterfaceType(ifName string) ifnb.InterfaceType {
 		return ifnb.InterfaceType_AF_PACKET_INTERFACE
 	case strings.HasPrefix(ifName, "vxlan"):
 		return ifnb.InterfaceType_VXLAN_TUNNEL
+	case strings.HasPrefix(ifName, "ipsec"):
+		return ifnb.InterfaceType_IPSEC_TUNNEL
 	}
 	return ifnb.InterfaceType_ETHERNET_CSMACD
 }

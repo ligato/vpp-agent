@@ -8,7 +8,7 @@ Resource     ../../../variables/${VARIABLES}_variables.robot
 Resource     ../../../libraries/all_libs.robot
 Resource     ../../../libraries/pretty_keywords.robot
 
-Force Tags        traffic     IPv6    ExpectedFailure
+Force Tags        traffic     IPv6
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -44,8 +44,8 @@ Create 2 Memifs On VPP3
     Sleep    2s
 
 Ping Loopback1 X Loopback2
-    vpp_term: Check No Ping Within Interface    agent_vpp_1     ${IP_2}    loop0    15
-    vpp_term: Check No Ping Within Interface    agent_vpp_1     ${IP_1}    loop1    15
+    vpp_term: Check No Ping Within Interface    agent_vpp_1     ${IP_2}    loop0    10
+    vpp_term: Check No Ping Within Interface    agent_vpp_1     ${IP_1}    loop1    10
 
 Add L2XConnect for Memif1 and Memif2 On VPP3
     Put L2XConnect  agent_vpp_3    memif0    memif1
@@ -57,14 +57,14 @@ Add Trace for Memif
 
 Check Memif1 and Memif2 in XConnect mode on VPP3
     ${out}=      vpp_term: Show Interface Mode    agent_vpp_3
-    Should Contain     ${out}      l2 xconnect memif0/2 memif1/3
-    Should Contain     ${out}      l2 xconnect memif1/3 memif0/2
+    Should Contain     ${out}      l2 xconnect memif1/2 memif2/3
+    Should Contain     ${out}      l2 xconnect memif2/3 memif1/2
 
 Ping Loopback1 -> Loopback2
-    vpp_term: Check Ping Within Interface    agent_vpp_1     ${IP_2}    loop0    15
+    vpp_term: Check Ping Within Interface    agent_vpp_1     ${IP_2}    loop0    10
 
 Ping Loopback2 -> Loopback1
-    vpp_term: Check Ping Within Interface    agent_vpp_1     ${IP_1}    loop1    15
+    vpp_term: Check Ping Within Interface    agent_vpp_1     ${IP_1}    loop1    10
 
 Show Traces
     vpp_term: Show Trace     agent_vpp_1

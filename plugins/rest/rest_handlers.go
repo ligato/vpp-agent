@@ -247,9 +247,9 @@ func (plugin *Plugin) registerHTTPHandler(key, method string, f func() (interfac
 
 			res, err := f()
 			if err != nil {
-				plugin.Deps.Log.Errorf("Error: %v", err)
-				errStr := fmt.Sprintf("500 Internal server error: %s\n", err.Error())
-				formatter.Text(w, http.StatusInternalServerError, errStr)
+				errMsg := fmt.Sprintf("500 Internal server error: request failed: %v\n", err)
+				plugin.Log.Error(errMsg)
+				formatter.JSON(w, http.StatusInternalServerError, errMsg)
 				return
 			}
 			plugin.Deps.Log.Debugf("Rest uri: %s, data: %v", key, res)
@@ -265,23 +265,26 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			plugin.Log.Error("Failed to parse request body.")
-			formatter.JSON(w, http.StatusBadRequest, err)
+			errMsg := fmt.Sprintf("400 Bad request: failed to parse request body: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}
 
 		var reqParam map[string]string
 		err = json.Unmarshal(body, &reqParam)
 		if err != nil {
-			plugin.Log.Error("Failed to unmarshal request body.")
-			formatter.JSON(w, http.StatusBadRequest, err)
+			errMsg := fmt.Sprintf("400 Bad request: failed to unmarshall request body: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}
 
 		command, ok := reqParam["vppclicommand"]
 		if !ok || command == "" {
-			plugin.Log.Error("vppclicommand parameter missing or empty")
-			formatter.JSON(w, http.StatusBadRequest, "vppclicommand parameter missing or empty")
+			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusBadRequest, errMsg)
 			return
 		}
 
@@ -289,8 +292,9 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 		defer ch.Close()
@@ -302,19 +306,19 @@ func (plugin *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc 
 		reply := &vpe.CliInbandReply{}
 		err = ch.SendRequest(r).ReceiveReply(reply)
 		if err != nil {
-			err = fmt.Errorf("sending request failed: %v", err)
-			plugin.Log.Error(err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		} else if reply.Retval > 0 {
-			err = fmt.Errorf("request returned error code: %v", reply.Retval)
+			errMsg := fmt.Sprintf("500 Internal server error: request returned error code: %v\n", reply.Retval)
 			plugin.Log.Error(err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 
 		plugin.Log.Debugf("VPPCLI response: %s", reply.Reply)
-		formatter.Text(w, http.StatusOK, string(reply.Reply))
+		formatter.JSON(w, http.StatusOK, string(reply.Reply))
 	}
 }
 
@@ -340,8 +344,9 @@ func (plugin *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFun
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 		defer ch.Close()
@@ -355,8 +360,9 @@ func (plugin *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFun
 		var runCmd = func(command string) {
 			out, err := plugin.sendCommand(ch, command)
 			if err != nil {
-				plugin.Log.Errorf("Sending command failed: %v", err)
-				formatter.JSON(w, http.StatusInternalServerError, err)
+				errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
+				plugin.Log.Error(errMsg)
+				formatter.JSON(w, http.StatusInternalServerError, errMsg)
 				return
 			}
 			cmdOuts = append(cmdOuts, cmdOut{
@@ -382,16 +388,18 @@ func (plugin *Plugin) telemetryMemoryHandler(formatter *render.Render) http.Hand
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 		defer ch.Close()
 
 		info, err := vppcalls.GetMemory(ch)
 		if err != nil {
-			plugin.Log.Errorf("Sending command failed: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 
@@ -405,16 +413,18 @@ func (plugin *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.Han
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 		defer ch.Close()
 
 		runtimeInfo, err := vppcalls.GetRuntimeInfo(ch)
 		if err != nil {
-			plugin.Log.Errorf("Sending command failed: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 
@@ -428,16 +438,18 @@ func (plugin *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.H
 
 		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 		defer ch.Close()
 
 		nodeCounters, err := vppcalls.GetNodeCounters(ch)
 		if err != nil {
-			plugin.Log.Errorf("Sending command failed: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 
@@ -450,16 +462,18 @@ func (plugin *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		ch, err := plugin.GoVppmux.NewAPIChannel()
 		if err != nil {
-			plugin.Log.Errorf("Error creating channel: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 		defer ch.Close()
 
 		entries := plugin.GoVppmux.GetTrace()
 		if err != nil {
-			plugin.Log.Errorf("Sending command failed: %v", err)
-			formatter.JSON(w, http.StatusInternalServerError, err)
+			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
+			plugin.Log.Error(errMsg)
+			formatter.JSON(w, http.StatusInternalServerError, errMsg)
 			return
 		}
 		if entries == nil {
