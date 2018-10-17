@@ -174,7 +174,8 @@
   version = "v3.2.0"
 
 [[projects]]
-  digest = "1:4ec8504b68b75f562efc4b291cba33194f88eaa4e68d9fc449e5b7ca68539329"
+  branch = "master"
+  digest = "1:9947f1584dea52b039a8653d5e74339619c0b082e38ca579d1ce1a7da2624897"
   name = "github.com/docker/docker"
   packages = [
     "api/types",
@@ -188,6 +189,7 @@
     "api/types/swarm",
     "api/types/swarm/runtime",
     "api/types/versions",
+    "errdefs",
     "opts",
     "pkg/fileutils",
     "pkg/homedir",
@@ -200,7 +202,7 @@
     "pkg/system",
   ]
   pruneopts = "UT"
-  revision = "3dfb26ab3cbf961298f8ce3f94659b5fe4146ceb"
+  revision = "5271c7cb484d44a22b96709894080ea85c8eef14"
 
 [[projects]]
   digest = "1:87dcb59127512b84097086504c16595cf8fef35b9e0bfca565dfc06e198158d7"
@@ -282,7 +284,7 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:027133e2c23fd4ff467e66d928ab4a64f7fd7cb2f77acdb580c483f7389d22d7"
+  digest = "1:e4d1d8f3455dadab4e0f159acaff9075985ddaf6e807247923c088d964f1c845"
   name = "github.com/fsouza/go-dockerclient"
   packages = [
     ".",
@@ -291,8 +293,8 @@
     "internal/term",
   ]
   pruneopts = "UT"
-  revision = "8842d40dbf5ee062d80f9dc429db31a0fe0cdc73"
-  version = "v1.2.2"
+  revision = "f3bdb27a96799b10006a884ef2fed89284466276"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
