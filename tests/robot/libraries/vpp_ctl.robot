@@ -8,63 +8,27 @@ Library        String
 
 *** Keywords ***
 
-#***** Put Json
 Put Json
-    [Arguments]        ${key}    ${json}    ${container}=vpp_agent_ctl
-    ${ret}=            Run Keyword If     "${CTL_TOOL}"=="vppctl"  VPPAgentCtl Put Json    ${key}    ${json}    ${container}
-    ...                ELSE IF            "${CTL_TOOL}"=="etcdctl"  EtcdCtl Put Json    ${key}    ${json}
-    [Return]           ${ret}
-
-VPPAgentCtl Put Json
-    [Arguments]        ${key}    ${json}    ${container}=vpp_agent_ctl
-    ${command}=        Set Variable    echo '${json}' | vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -put ${key} -
-    ${out}=            Write To Container Until Prompt    ${container}    ${command}
-    [Return]           ${out}
-
-EtcdCtl Put Json
     [Arguments]        ${key}    ${json}
     ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl put ${key} '${json}'
     ${out}=             Execute On Machine    docker    ${command}    log=false
     [Return]           ${out}
 
-#***** Read Key
 Read Key
-    [Arguments]        ${key}    ${container}=vpp_agent_ctl
-    ${out}=            Run Keyword If     "${CTL_TOOL}"=="vppctl"   VPPAgentCtl Read Key    ${key}    ${container}
-    ...                ELSE IF            "${CTL_TOOL}"=="etcdctl"  EtcdCtl Read Key    ${key}
-    [Return]           ${out}
-
-VPPAgentCtl Read Key
-    [Arguments]        ${key}    ${container}=vpp_agent_ctl
-    ${command}=        Set Variable    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -get ${key}
-#    ${out}=            Write To Container Until Prompt    ${container}    ${command}
-    ${out}=            Execute In Container    ${container}    ${command}
-    [Return]           ${out}
-
-EtcdCtl Read Key
-    [Arguments]        ${key}
-    ${command}=        Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get ${key} --write-out="simple"
+    [Arguments]        ${key}       ${prefix}=false
+    ${command}=        Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl get ${key} --write-out="simple" --prefix="${prefix}"
     ${out}=            Execute On Machine    docker    ${command}    log=false
     ${length}=         Get Length      ${out}
-    @{ret}=            Run Keyword Unless    ${length} == 0    Split String     ${out}    {    1
-    ${length}=         Get Length      ${ret}
-    ${out}=            Run Keyword Unless  ${length}== 0    Set Variable      \{@{ret}[1]
-    ${out0}=            Run Keyword Unless  ${length}== 0    set Variable      \{@{ret}[0]
-    [Return]           ${out}
+    #${out}=            Remove Empty Lines     ${out}
+    #@{ret}=            Run Keyword Unless    ${length} == 0    Split String     ${out}    {    1
+    ${ret}=            Run Keyword Unless    ${length} == 0    Split To Lines     ${out}
+    #${length}=         Get Length      ${ret}
+    #${out}=            Run Keyword Unless  ${length}== 0    Set Variable      \{@{ret}[1]
+    #${out0}=            Run Keyword Unless  ${length}== 0    set Variable      \{@{ret}[0]
+    ${out0}=            Run Keyword Unless  ${length}== 0    Remove Keys     ${ret}
+    [Return]           ${out0}
 
-#*****  Delete key
-Delete key
-    [Arguments]        ${key}    ${container}=vpp_agent_ctl
-    ${out}=            Run Keyword If     "${CTL_TOOL}"=="vppctl"   VPPAgentCtl Delete Key    ${key}    ${container}
-    ...                ELSE IF            "${CTL_TOOL}"=="etcdctl"   EtcdCtl Delete Key    ${key}
-    [Return]           ${out}
-
-VPPAgentCtl Delete key
-    [Arguments]     ${key}    ${container}=vpp_agent_ctl
-    ${out}=         Write To Container Until Prompt    ${container}   vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -del ${key}
-    [Return]        ${out}
-
-EtcdCtl Delete Key
+Delete Key
     [Arguments]        ${key}
     ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl del ${key}
     ${out}=             Execute On Machine    docker    ${command}    log=false
@@ -383,7 +347,8 @@ Get ACL As Json
 Get All ACL As Json
     [Arguments]           ${node}
     ${key}=               Set Variable          /vnf-agent/${node}/vpp/config/v1/acl
-    ${data}=              etcd: Get ETCD Tree    ${key}
+    #${data}=              etcd: Get ETCD Tree    ${key}
+    ${data}=              Read Key    ${key}    true
     ${data}=              Set Variable If      '''${data}'''=="" or '''${data}'''=='None'    {}    ${data}
     #${output}=            Evaluate             json.loads('''${data}''')     json
     #log                   ${output}

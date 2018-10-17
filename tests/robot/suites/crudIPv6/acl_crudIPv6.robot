@@ -78,26 +78,26 @@ Check ACL2 is created and ACL1 still Configured
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL2_NAME}   ${REPLY_DATA_FOLDER}/reply_acl2IPv6_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl2IPv6_tcp_term.txt
 
 
-
-Update ACL1
-    Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}     ${I_INTF1}      ${ACTION_PERMIT}     ${DEST_NTW}    ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
-
-Check ACL1 Is Changed and ACL2 not changed
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl1IPv6_update_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl1IPv6_update_tcp_term.txt
-
-Delete ACL2
-    Delete ACL     agent_vpp_1    ${ACL2_NAME}
-
-Check ACL2 Is Deleted and ACL1 Is Not Changed
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL2_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl2IPv6_delete_tcp_term.txt
-
-Delete ACL1
-    Delete ACL     agent_vpp_1    ${ACL1_NAME}
-
-Check ACL1 Is Deleted
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt   ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
-
-
+#
+#Update ACL1
+#    Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}     ${I_INTF1}      ${ACTION_PERMIT}     ${DEST_NTW}    ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
+#
+#Check ACL1 Is Changed and ACL2 not changed
+#    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl1IPv6_update_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl1IPv6_update_tcp_term.txt
+#
+#Delete ACL2
+#    Delete ACL     agent_vpp_1    ${ACL2_NAME}
+#
+#Check ACL2 Is Deleted and ACL1 Is Not Changed
+#    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL2_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl2IPv6_delete_tcp_term.txt
+#
+#Delete ACL1
+#    Delete ACL     agent_vpp_1    ${ACL1_NAME}
+#
+#Check ACL1 Is Deleted
+#    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL1_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt   ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
+#
+#
 ADD ACL3_UDP
     Put ACL UDP    agent_vpp_1    ${ACL3_NAME}    ${E_INTF1}   ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
 
@@ -109,19 +109,19 @@ ADD ACL4_UDP
 
 Check ACL4 Is Created And ACL3 Still Configured
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL4_NAME}    ${REPLY_DATA_FOLDER}/reply_acl4IPv6_udp.txt     ${REPLY_DATA_FOLDER}/reply_acl4IPv6_udp_term.txt
-
-Delete ACL4
-    Delete ACL     agent_vpp_1    ${ACL4_NAME}
-
-Check ACL4 Is Deleted and ACL3 Is Not Changed
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL4_NAME}   ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl3IPv6_udp_term.txt
-
-Delete ACL3
-    Delete ACL     agent_vpp_1    ${ACL3_NAME}
-
-Check ACL3 Is Deleted
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL3_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
-
+#
+#Delete ACL4
+#    Delete ACL     agent_vpp_1    ${ACL4_NAME}
+#
+#Check ACL4 Is Deleted and ACL3 Is Not Changed
+#    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL4_NAME}   ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl3IPv6_udp_term.txt
+#
+#Delete ACL3
+#    Delete ACL     agent_vpp_1    ${ACL3_NAME}
+#
+#Check ACL3 Is Deleted
+#    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL3_NAME}    ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
+#
 ADD ACL5_ICMP
     Put ACL UDP    agent_vpp_1    ${ACL5_NAME}    ${E_INTF1}    ${I_INTF1}    ${E_INTF2}    ${I_INTF2}    ${ACTION_DENY}    ${DEST_NTW}     ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
 
@@ -133,18 +133,18 @@ ADD ACL6_ICMP
 
 Check ACL6 Is Created And ACL5 Still Configured
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL6_NAME}    ${REPLY_DATA_FOLDER}/reply_acl6IPv6_icmp.txt    ${REPLY_DATA_FOLDER}/reply_acl6IPv6_icmp_term.txt
-
-Delete ACL6
-    Delete ACL     agent_vpp_1    ${ACL6_NAME}
-
-Check ACL6 Is Deleted and ACL5 Is Not Changed
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL6_NAME}     ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl5IPv6_icmp_term.txt
-
-Delete ACL5
-    Delete ACL     agent_vpp_1    ${ACL5_NAME}
-
-Check ACL5 Is Deleted
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL5_NAME}   ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
+#
+#Delete ACL6
+#    Delete ACL     agent_vpp_1    ${ACL6_NAME}
+#
+#Check ACL6 Is Deleted and ACL5 Is Not Changed
+#    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL6_NAME}     ${REPLY_DATA_FOLDER}/reply_acl_empty.txt    ${REPLY_DATA_FOLDER}/reply_acl5IPv6_icmp_term.txt
+#
+#Delete ACL5
+#    Delete ACL     agent_vpp_1    ${ACL5_NAME}
+#
+#Check ACL5 Is Deleted
+#    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL5_NAME}   ${REPLY_DATA_FOLDER}/reply_acl_empty.txt     ${REPLY_DATA_FOLDER}/reply_acl_empty_term.txt
 
 
 Add 6 ACL
