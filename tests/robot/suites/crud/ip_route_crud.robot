@@ -15,7 +15,7 @@ Suite Setup       Run Keywords    Discard old results
 ${VARIABLES}=          common
 ${ENV}=                common
 ${WAIT_TIMEOUT}=     20s
-${SYNC_SLEEP}=       3s
+${SYNC_SLEEP}=       10s
 
 *** Test Cases ***
 # CRUD tests for routing

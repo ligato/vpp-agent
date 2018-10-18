@@ -247,7 +247,8 @@ Delete Route
 Delete Routes
     [Arguments]    ${node}    ${id}
     ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib
-    ${out}=         Delete key  ${uri}
+    ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl del --prefix="true" ${uri}
+    ${out}=             Execute On Machine    docker    ${command}    log=false
     [Return]       ${out}
 
 Delete IPsec
