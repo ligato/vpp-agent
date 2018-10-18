@@ -1,4 +1,3 @@
-/vnf-agent/agent_vpp_1/vpp/config/v1/acl/acl1_tcp
 {
     "acl_name": "acl1_tcp",
     "interfaces": {
@@ -35,8 +34,6 @@
         }
     ]
 }
-
-/vnf-agent/agent_vpp_1/vpp/config/v1/acl/acl2_tcp
 {
     "acl_name": "acl2_tcp",
     "interfaces": {
@@ -73,8 +70,6 @@
         }
     ]
 }
-
-/vnf-agent/agent_vpp_1/vpp/config/v1/acl/acl3_UDP
 {
     "acl_name": "acl3_UDP",
     "interfaces": {
@@ -113,8 +108,6 @@
         }
     ]
 }
-
-/vnf-agent/agent_vpp_1/vpp/config/v1/acl/acl4_UDP
 {
     "acl_name": "acl4_UDP",
     "interfaces": {
@@ -153,8 +146,6 @@
         }
     ]
 }
-
-/vnf-agent/agent_vpp_1/vpp/config/v1/acl/acl5_ICMP
 {
     "acl_name": "acl5_ICMP",
     "interfaces": {
@@ -193,8 +184,6 @@
         }
     ]
 }
-
-/vnf-agent/agent_vpp_1/vpp/config/v1/acl/acl6_ICMP
 {
     "acl_name": "acl6_ICMP",
     "interfaces": {
