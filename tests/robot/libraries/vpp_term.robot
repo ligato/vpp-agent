@@ -201,7 +201,7 @@ vpp_term: Show Memif
 vpp_term: Check TAP Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
     ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
@@ -217,7 +217,7 @@ vpp_term: Check TAP IP6 Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     [Documentation]    Get operational state of the specified interface and compare with expected state.
     Sleep                 10s    Time to let etcd to get state of newly setup tap interface.
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
     ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
@@ -251,7 +251,7 @@ vpp_term: Check ARP
     [Arguments]        ${node}      ${interface}    ${ipv4}     ${MAC}    ${presence}
     [Documentation]    Check ARPs presence on interface
     ${out}=            vpp_term: Show ARP    ${node}
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${interface}
     #Should Not Be Equal      ${internal_name}    ${None}
     ${status}=         Run Keyword If     '${internal_name}'!='${None}'  Parse ARP    ${out}   ${internal_name}   ${ipv4}     ${MAC}   ELSE    Set Variable   False
     Should Be Equal As Strings   ${status}   ${presence}
@@ -287,7 +287,7 @@ vpp_term: Show Interface Mode
 vpp_term: Check TAPv2 Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Sleep                 10s    Time to let etcd to get state of newly setup tapv2 interface.
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
     ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
@@ -302,7 +302,7 @@ vpp_term: Check TAPv2 Interface State
 vpp_term: Check TAPv2 IP6 Interface State
     [Arguments]          ${node}    ${name}    @{desired_state}
     Sleep                 10s    Time to let etcd to get state of newly setup tapv2 interface.
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${name}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${name}
     ${interface}=        vpp_term: Show Interfaces    ${node}    ${internal_name}
     ${state}=            Set Variable    up
     ${status}=           Evaluate     "${state}" in """${interface}"""
@@ -338,7 +338,7 @@ vpp_term: Check STN Rule State
     [Arguments]        ${node}  ${interface}  ${ip}
     [Documentation]    Check STN Rules
     ${out}=            vpp_term: Show STN Rules    ${node}
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${interface}
     ${ip_address}  ${iface}  ${next_node}  Parse STN Rule    ${out}
     Should Be Equal As Strings   ${ip}  ${ip_address}
     Should Be Equal As Strings   ${internal_name}  ${iface}
@@ -347,7 +347,7 @@ vpp_term: Check STN Rule Deleted
     [Arguments]        ${node}  ${interface}  ${ip}
     [Documentation]    Check STN Rules
     ${out}=            vpp_term: Show STN Rules    ${node}
-    ${internal_name}=    vpp_ctl: Get Interface Internal Name    ${node}    ${interface}
+    ${internal_name}=    Get Interface Internal Name    ${node}    ${interface}
     Should Not Contain     ${out}    ${ip}
     Should Not Contain     ${out}    ${internal_name}
 
