@@ -1,7 +1,7 @@
 [Documentation]     Keywords for working with VPP Ctl container
 
 *** Settings ***
-Library        vpp_ctl.py
+Library        etcdctl.py
 Library        String
 
 *** Variables ***
