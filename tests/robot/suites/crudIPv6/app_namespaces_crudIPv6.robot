@@ -28,19 +28,19 @@ ${TAP1_IP}=                fd30:0:0:1:1::
 ${TAP1_SW_IF_INDEX}=       1
 ${TAP2_NAME}=              tap2
 ${TAP2_MAC}=               22:21:21:11:11:11
-${TAP2_IP}=                fd30:0:0:1:2::
+${TAP2_IP}=                fd30:0:0:2:2::
 ${TAP2_SW_IF_INDEX}=       2
 ${MEMIF1_NAME}=            memif1
-${MEMIF1_IP}=              192.168.1.1
+${MEMIF1_IP}=              fd30:0:0:4:e::2
 ${MEMIF1_MAC}=             33:21:21:11:11:11
 ${MEMIF1_SW_IF_INDEX}=     3
 ${LOOP1_NAME}=             loop1
 ${LOOP1_MAC}=              44:21:21:11:11:11
-${LOOP1_IP}=               fd30:0:0:1:3::
+${LOOP1_IP}=               fd30:0:0:3:3::
 ${LOOP1_SW_IF_INDEX}=      4
 ${VXLAN1_NAME}=            vxlan1
-${VXLAN1_SRC}=             fd30:0:0:1:e::1
-${VXLAN1_DST}=             fd30:0:0:1:e::2
+${VXLAN1_SRC}=             fd30:0:0:5:e::1
+${VXLAN1_DST}=             fd30:0:0:5:e::2
 ${VXLAN1_VNI}=             15
 ${VXLAN1_SW_IF_INDEX}=     5
 ${PREFIX}=          64
@@ -155,7 +155,7 @@ Put Namespace NS5 Associated With MEMIF1 Interface That Is Not Created And Check
     Should Not Contain    ${out}    ${NS5_ID}
 
 Put MEMIF1 Interface And Check Namespace NS5 Is Present In Namespaces List
-    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=memif1    mac=${MEMIF1_MAC}    master=true    id=1    ip=fd30:0:0:1:e::2    prefix=${PREFIX}    socket=default.sock
+    vpp_ctl: Put Memif Interface With IP    node=agent_vpp_1    name=memif1    mac=${MEMIF1_MAC}    master=true    id=1    ip=${MEMIF1_IP}    prefix=${PREFIX}    socket=default.sock
     Sleep    1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check Data In Show Application Namespaces Output    agent_vpp_1    ${NS5_ID}    5    ${SECRET1}    ${MEMIF1_SW_IF_INDEX}
 
