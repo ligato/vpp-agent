@@ -17,13 +17,13 @@ package vppclient
 import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // DataChangeDSL defines Domain Specific Language (DSL) for data change.
@@ -55,6 +55,8 @@ type DataChangeDSL interface {
 type PutDSL interface {
 	// Interface adds a request to create or update VPP network interface.
 	Interface(val *interfaces.Interface) PutDSL
+	// ACL adds a request to create or update VPP Access Control List.
+	ACL(acl *acl.Acl) PutDSL
 	// BfdSession adds a request to create or update bidirectional forwarding
 	// detection session.
 	BfdSession(val *bfd.SingleHopBFD_Session) PutDSL
@@ -71,15 +73,13 @@ type PutDSL interface {
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *l2.XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
-	StaticRoute(val *l3.StaticRoutes_Route) PutDSL
-	// ACL adds a request to create or update VPP Access Control List.
-	ACL(acl *acl.Acl) PutDSL
+	StaticRoute(val *l3.StaticRoute) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
-	Arp(arp *l3.ArpTable_ArpEntry) PutDSL
+	Arp(arp *l3.ARPEntry) PutDSL
 	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
-	ProxyArpInterfaces(pArpIfs *l3.ProxyArpInterfaces_InterfaceList) PutDSL
+	ProxyArpInterfaces(pArpIfs *l3.ProxyARPInterfaceList) PutDSL
 	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
-	ProxyArpRanges(pArpRng *l3.ProxyArpRanges_RangeList) PutDSL
+	ProxyArpRanges(pArpRng *l3.ProxyARPRangeList) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
@@ -108,6 +108,8 @@ type PutDSL interface {
 type DeleteDSL interface {
 	// Interface adds a request to delete an existing VPP network interface.
 	Interface(ifaceName string) DeleteDSL
+	// ACL adds a request to delete an existing VPP Access Control List.
+	ACL(aclName string) DeleteDSL
 	// BfdSession adds a request to delete an existing bidirectional forwarding
 	// detection session.
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
@@ -126,8 +128,6 @@ type DeleteDSL interface {
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
-	// ACL adds a request to delete an existing VPP Access Control List.
-	ACL(aclName string) DeleteDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features() DeleteDSL
 	// AppNamespace adds a request to delete VPP Application namespace

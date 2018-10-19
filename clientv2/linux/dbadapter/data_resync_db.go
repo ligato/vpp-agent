@@ -23,13 +23,13 @@ import (
 	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -85,6 +85,12 @@ func (dsl *DataResyncDSL) VppInterface(intf *interfaces.Interface) linuxclient.D
 	return dsl
 }
 
+// ACL adds VPP Access Control List to the RESYNC request.
+func (dsl *DataResyncDSL) ACL(acl *acl.Acl) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.ACL(acl)
+	return dsl
+}
+
 // BfdSession adds VPP bidirectional forwarding detection session
 // to the RESYNC request.
 func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.DataResyncDSL {
@@ -125,31 +131,25 @@ func (dsl *DataResyncDSL) XConnect(xcon *l2.XConnectPair) linuxclient.DataResync
 }
 
 // StaticRoute adds VPP L3 Static Route to the RESYNC request.
-func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.StaticRoutes_Route) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.StaticRoute) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.StaticRoute(staticRoute)
 	return dsl
 }
 
-// ACL adds VPP Access Control List to the RESYNC request.
-func (dsl *DataResyncDSL) ACL(acl *acl.Acl) linuxclient.DataResyncDSL {
-	dsl.vppDataResync.ACL(acl)
-	return dsl
-}
-
 // Arp adds VPP L3 ARP to the RESYNC request.
-func (dsl *DataResyncDSL) Arp(arp *l3.ArpTable_ArpEntry) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) Arp(arp *l3.ARPEntry) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.Arp(arp)
 	return dsl
 }
 
 // ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyARPInterfaceList) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.ProxyArpInterfaces(val)
 	return dsl
 }
 
 // ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyARPRangeList) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.ProxyArpRanges(val)
 	return dsl
 }

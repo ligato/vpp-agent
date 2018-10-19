@@ -19,13 +19,13 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -47,6 +47,15 @@ type DataResyncDSL struct {
 // Interface adds VPP interface to the RESYNC request.
 func (dsl *DataResyncDSL) Interface(val *intf.Interface) vppclient.DataResyncDSL {
 	key := intf.InterfaceKey(val.Name)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// ACL adds Access Control List to the RESYNC request.
+func (dsl *DataResyncDSL) ACL(val *acl.Acl) vppclient.DataResyncDSL {
+	key := acl.Key(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -111,17 +120,35 @@ func (dsl *DataResyncDSL) XConnect(val *l2.XConnectPair) vppclient.DataResyncDSL
 }
 
 // StaticRoute adds L3 Static Route to the RESYNC request.
-func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoutes_Route) vppclient.DataResyncDSL {
-	key := l3.RouteKey(val.VrfId, val.DstIpAddr, val.NextHopAddr)
+func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoute) vppclient.DataResyncDSL {
+	key := l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl
 }
 
-// ACL adds Access Control List to the RESYNC request.
-func (dsl *DataResyncDSL) ACL(val *acl.Acl) vppclient.DataResyncDSL {
-	key := acl.Key(val.Name)
+// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyARPInterfaceList) vppclient.DataResyncDSL {
+	key := l3.ProxyArpInterfaceKey(val.Label)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
+func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyARPRangeList) vppclient.DataResyncDSL {
+	key := l3.ProxyArpRangeKey(val.Label)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// Arp adds L3 ARP entry to the RESYNC request.
+func (dsl *DataResyncDSL) Arp(val *l3.ARPEntry) vppclient.DataResyncDSL {
+	key := l3.ArpEntryKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -140,33 +167,6 @@ func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) vppclient.DataResyncDSL
 // AppNamespace adds Application Namespace to the RESYNC request
 func (dsl *DataResyncDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) vppclient.DataResyncDSL {
 	key := l4.AppNamespacesKey(val.NamespaceId)
-	dsl.txn.Put(key, val)
-	dsl.txnKeys = append(dsl.txnKeys, key)
-
-	return dsl
-}
-
-// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyArpInterfaces_InterfaceList) vppclient.DataResyncDSL {
-	key := l3.ProxyArpInterfaceKey(val.Label)
-	dsl.txn.Put(key, val)
-	dsl.txnKeys = append(dsl.txnKeys, key)
-
-	return dsl
-}
-
-// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyArpRanges_RangeList) vppclient.DataResyncDSL {
-	key := l3.ProxyArpRangeKey(val.Label)
-	dsl.txn.Put(key, val)
-	dsl.txnKeys = append(dsl.txnKeys, key)
-
-	return dsl
-}
-
-// Arp adds L3 ARP entry to the RESYNC request.
-func (dsl *DataResyncDSL) Arp(val *l3.ArpTable_ArpEntry) vppclient.DataResyncDSL {
-	key := l3.ArpEntryKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -259,7 +259,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.RoutesPrefix)
+		keys, err = dsl.listKeys(l3.VrfPrefix)
 		if err != nil {
 			break
 		}

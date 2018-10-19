@@ -19,5 +19,6 @@
 //go:generate protoc --proto_path=l2 --gogo_out=l2 l2/bd.proto
 //go:generate protoc --proto_path=l2 --gogo_out=l2 l2/fib.proto
 //go:generate protoc --proto_path=l2 --gogo_out=l2 l2/xconnect.proto
+//go:generate protoc --proto_path=l3 --gogo_out=l3 l3/l3.proto
 
 package model

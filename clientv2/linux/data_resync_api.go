@@ -21,13 +21,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -46,6 +46,8 @@ type DataResyncDSL interface {
 
 	// VppInterface adds VPP interface to the RESYNC request.
 	VppInterface(intf *vpp_intf.Interface) DataResyncDSL
+	// ACL adds VPP Access Control List to the RESYNC request.
+	ACL(acl *vpp_acl.Acl) DataResyncDSL
 	// BfdSession adds VPP bidirectional forwarding detection session
 	// to the RESYNC request.
 	BfdSession(val *vpp_bfd.SingleHopBFD_Session) DataResyncDSL
@@ -62,15 +64,13 @@ type DataResyncDSL interface {
 	// XConnect adds VPP Cross Connect to the RESYNC request.
 	XConnect(xcon *vpp_l2.XConnectPair) DataResyncDSL
 	// StaticRoute adds VPP L3 Static Route to the RESYNC request.
-	StaticRoute(staticRoute *vpp_l3.StaticRoutes_Route) DataResyncDSL
-	// ACL adds VPP Access Control List to the RESYNC request.
-	ACL(acl *vpp_acl.Acl) DataResyncDSL
+	StaticRoute(staticRoute *vpp_l3.StaticRoute) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
-	Arp(arp *vpp_l3.ArpTable_ArpEntry) DataResyncDSL
+	Arp(arp *vpp_l3.ARPEntry) DataResyncDSL
 	// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
-	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) DataResyncDSL
+	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyARPInterfaceList) DataResyncDSL
 	// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
-	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) DataResyncDSL
+	ProxyArpRanges(pArpRng *vpp_l3.ProxyARPRangeList) DataResyncDSL
 	// L4Features adds L4 features to the RESYNC request
 	L4Features(val *vpp_l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request
