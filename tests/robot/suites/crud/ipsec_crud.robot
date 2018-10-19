@@ -21,19 +21,19 @@ Add Agent Vpp Node
 
 Add SA1 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 1
-    vpp_ctl: Create IPsec With SA And Json  agent_vpp_1   sa10   ipsec-sa.json  sa10  1001  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
+    Create IPsec With SA And Json  agent_vpp_1   sa10   ipsec-sa.json  sa10  1001  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
 #    Create IPsec On agent_vpp_1 With SA sa10 And Json ipsec-sa.json
     IP Sec On agent_vpp_1 Should Contain SA sa 1
 
 Add SA2 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 2
-    vpp_ctl: Create IPsec With SA And Json  agent_vpp_1   sa20   ipsec-sa.json  sa20  1000  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
+    Create IPsec With SA And Json  agent_vpp_1   sa20   ipsec-sa.json  sa20  1000  4a506a794f574265564551694d653768  4339314b55523947594d6d3547666b45764e6a58
 #    Create IPsec On agent_vpp_1 With SA sa20 And Json ipsec-sa20.json
     IP Sec On agent_vpp_1 Should Contain SA sa 2
 
 Add SPD1 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA spd 1
-    vpp_ctl: Create IPsec With SPD And Json  agent_vpp_1    spd1    ipsec-spd.json    afp1    10.0.0.1    10.0.0.2    sa10  sa20
+    Create IPsec With SPD And Json  agent_vpp_1    spd1    ipsec-spd.json    afp1    10.0.0.1    10.0.0.2    sa10  sa20
     IP Sec On agent_vpp_1 Should Contain SA spd 1
 
 Check IPsec config_1 On VPP
@@ -41,17 +41,17 @@ Check IPsec config_1 On VPP
 
 Add SA3 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 3
-    vpp_ctl: Create IPsec With SA And Json  agent_vpp_1   sa30   ipsec-sa.json  sa30  1003  4a506a794f574265564551694d653770  4339314b55523947594d6d3547666b45764e6a60
+    Create IPsec With SA And Json  agent_vpp_1   sa30   ipsec-sa.json  sa30  1003  4a506a794f574265564551694d653770  4339314b55523947594d6d3547666b45764e6a60
     IP Sec On agent_vpp_1 Should Contain SA sa 3
 
 Add SA4 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA sa 4
-    vpp_ctl: Create IPsec With SA And Json  agent_vpp_1   sa40   ipsec-sa.json  sa40  1002  4a506a794f574265564551694d653770  4339314b55523947594d6d3547666b45764e6a60
+    Create IPsec With SA And Json  agent_vpp_1   sa40   ipsec-sa.json  sa40  1002  4a506a794f574265564551694d653770  4339314b55523947594d6d3547666b45764e6a60
     IP Sec On agent_vpp_1 Should Contain SA sa 4
 
 Add SPD2 Into VPP
     IP Sec On agent_vpp_1 Should Not Contain SA spd 2
-    vpp_ctl: Create IPsec With SPD And Json  agent_vpp_1    spd2    ipsec-spd.json    afp2    10.0.0.3    10.0.0.4    sa30  sa40
+    Create IPsec With SPD And Json  agent_vpp_1    spd2    ipsec-spd.json    afp2    10.0.0.3    10.0.0.4    sa30  sa40
     IP Sec On agent_vpp_1 Should Contain SA spd 2
 
 Check IPsec config_1 On VPP After Add SPD2
