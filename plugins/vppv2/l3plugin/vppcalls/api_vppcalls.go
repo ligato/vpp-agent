@@ -18,7 +18,6 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
@@ -77,15 +76,18 @@ type RouteVppAPI interface {
 
 // RouteVppWrite provides write methods for routes
 type RouteVppWrite interface {
-	// VppAddRoute adds new route, according to provided input. Every route has to contain VRF ID (default is 0).
-	VppAddRoute(ifHandler vppcalls.IfVppWrite, route *l3.StaticRoute, rtIfIdx uint32) error
-	// VppDelRoute removes old route, according to provided input. Every route has to contain VRF ID (default is 0).
+	// VppAddRoute adds new route, according to provided input.
+	// Every route has to contain VRF ID (default is 0).
+	VppAddRoute(route *l3.StaticRoute, ifName string) error
+	// VppDelRoute removes old route, according to provided input.
+	// Every route has to contain VRF ID (default is 0).
 	VppDelRoute(route *l3.StaticRoute, rtIfIdx uint32) error
 }
 
 // RouteVppRead provides read methods for routes
 type RouteVppRead interface {
-	// DumpStaticRoutes dumps l3 routes from VPP and fills them into the provided static route map.
+	// DumpStaticRoutes dumps l3 routes from VPP and fills them
+	// into the provided static route map.
 	DumpStaticRoutes() ([]*RouteDetails, error)
 }
 
@@ -164,4 +166,11 @@ func uintToBool(value uint8) bool {
 		return false
 	}
 	return true
+}
+
+func boolToUint(input bool) uint8 {
+	if input {
+		return 1
+	}
+	return 0
 }

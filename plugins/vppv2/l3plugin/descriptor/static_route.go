@@ -83,21 +83,19 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.St
 	return proto.Equal(oldRoute, newRoute)
 }
 
-var nonRetriableErrs = []error{}
-
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
 func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
-	for _, nonRetriableErr := range nonRetriableErrs {
-		if err == nonRetriableErr {
-			return false
-		}
-	}
-	return true
+	return false // nothing retriable
 }
 
 // Add adds Linux route.
 func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata interface{}, err error) {
-	return nil, fmt.Errorf("not implemented")
+	err = d.l3Handler.VppAddRoute(route, route.GetOutgoingInterface())
+	if err != nil {
+		return nil, errors.Errorf("failed to add VPP route: %v", err)
+	}
+
+	return nil, nil //fmt.Errorf("not implemented")
 }
 
 // Delete removes Linux route.
@@ -117,7 +115,7 @@ func (d *RouteDescriptor) Dependencies(key string, route *l3.StaticRoute) []sche
 	if route.OutgoingInterface != "" {
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: routeOutInterfaceDep,
-			Key:   interfaces.InterfaceStateKey(route.OutgoingInterface),
+			Key:   interfaces.InterfaceKey(route.OutgoingInterface),
 		})
 	}
 	// GW must be routable
@@ -170,7 +168,7 @@ func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
 		dump = append(dump, adapter.StaticRouteKVWithMetadata{
 			Key:    l3.RouteKey(staticRoute.Route.VrfId, staticRoute.Route.DstNetwork, staticRoute.Route.NextHopAddr),
 			Value:  staticRoute.Route,
-			Origin: scheduler.FromNB,
+			Origin: scheduler.FromSB,
 		})
 	}
 
