@@ -251,19 +251,16 @@ func (c *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Int
 		return errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", iface.Name, err)
 	}
 
-	// VRF (optional, unavailable for VxLAN interfaces), has to be done before IP addresses are configured
-	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
-		// Configured separately for IPv4/IPv6
-		isIPv4, isIPv6 := getIPAddressVersions(IPAddrs)
-		if isIPv4 {
-			if err := c.ifHandler.SetInterfaceVrf(ifIdx, iface.Vrf); err != nil {
-				return errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", iface.Name, iface.Vrf, err)
-			}
+	// VRF, has to be done before IP addresses are configured. Done separately for IPv4/IPv6
+	isIPv4, isIPv6 := getIPAddressVersions(IPAddrs)
+	if isIPv4 {
+		if err := c.ifHandler.SetInterfaceVrf(ifIdx, iface.Vrf); err != nil {
+			return errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", iface.Name, iface.Vrf, err)
 		}
-		if isIPv6 {
-			if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, iface.Vrf); err != nil {
-				return errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", iface.Name, iface.Vrf, err)
-			}
+	}
+	if isIPv6 {
+		if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, iface.Vrf); err != nil {
+			return errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", iface.Name, iface.Vrf, err)
 		}
 	}
 
@@ -576,32 +573,29 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 		return errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", oldConfig.Name, err)
 	}
 
-	// Reconfigure VRF
-	if ifaceType != intf.InterfaceType_VXLAN_TUNNEL {
-		// Interface must not have IP when setting VRF
-		if err := c.removeIPAddresses(ifIdx, oldAddrs, oldConfig.Unnumbered); err != nil {
-			return err
-		}
+	// Reconfigure VRF, interface must not have IP when setting VRF
+	if err := c.removeIPAddresses(ifIdx, oldAddrs, oldConfig.Unnumbered); err != nil {
+		return err
+	}
 
-		// Get VRF IP version using new list of addresses. During modify, interface VRF IP version
-		// should be updated as well.
-		isIPv4, isIPv6 := getIPAddressVersions(newAddrs)
-		if isIPv4 {
-			if err := c.ifHandler.SetInterfaceVrf(ifIdx, newConfig.Vrf); err != nil {
-				return errors.Errorf("failed to set IPv4 VRF %d for interface %s: %v",
-					newConfig.Vrf, newConfig.Name, err)
-			}
+	// Get VRF IP version using new list of addresses. During modify, interface VRF IP version
+	// should be updated as well.
+	isIPv4, isIPv6 := getIPAddressVersions(newAddrs)
+	if isIPv4 {
+		if err := c.ifHandler.SetInterfaceVrf(ifIdx, newConfig.Vrf); err != nil {
+			return errors.Errorf("failed to set IPv4 VRF %d for interface %s: %v",
+				newConfig.Vrf, newConfig.Name, err)
 		}
-		if isIPv6 {
-			if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, newConfig.Vrf); err != nil {
-				return errors.Errorf("failed to set IPv6 VRF %d for interface %s: %v",
-					newConfig.Vrf, newConfig.Name, err)
-			}
+	}
+	if isIPv6 {
+		if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, newConfig.Vrf); err != nil {
+			return errors.Errorf("failed to set IPv6 VRF %d for interface %s: %v",
+				newConfig.Vrf, newConfig.Name, err)
 		}
+	}
 
-		if err = c.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered); err != nil {
-			return err
-		}
+	if err = c.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered); err != nil {
+		return err
 	}
 
 	// Container ip address
