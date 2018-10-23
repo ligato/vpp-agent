@@ -5,11 +5,11 @@
  Package ip is a generated from VPP binary API module 'ip'.
 
  It contains following objects:
-	 87 messages
+	 89 messages
 	 10 types
 	  1 enum
 	  1 union
-	 42 services
+	 43 services
 
 */
 package ip
@@ -2900,6 +2900,75 @@ func (*IPContainerProxyAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
+// IPContainerProxyDump represents the VPP binary API message 'ip_container_proxy_dump'.
+//
+//            "ip_container_proxy_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            {
+//                "crc": "0x51077d14"
+//            }
+//
+type IPContainerProxyDump struct{}
+
+func (*IPContainerProxyDump) GetMessageName() string {
+	return "ip_container_proxy_dump"
+}
+func (*IPContainerProxyDump) GetCrcString() string {
+	return "51077d14"
+}
+func (*IPContainerProxyDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IPContainerProxyDetails represents the VPP binary API message 'ip_container_proxy_details'.
+//
+//            "ip_container_proxy_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "vl_api_prefix_t",
+//                "prefix"
+//            ],
+//            {
+//                "crc": "0xd528df63"
+//            }
+//
+type IPContainerProxyDetails struct {
+	SwIfIndex uint32
+	Prefix    Prefix
+}
+
+func (*IPContainerProxyDetails) GetMessageName() string {
+	return "ip_container_proxy_details"
+}
+func (*IPContainerProxyDetails) GetCrcString() string {
+	return "d528df63"
+}
+func (*IPContainerProxyDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
 // IPSourceAndPortRangeCheckAddDel represents the VPP binary API message 'ip_source_and_port_range_check_add_del'.
 //
 //            "ip_source_and_port_range_check_add_del",
@@ -4560,6 +4629,7 @@ type Services interface {
 	DumpIP6Mfib(*IP6MfibDump) (*IP6MfibDetails, error)
 	DumpIP6ndProxy(*IP6ndProxyDump) (*IP6ndProxyDetails, error)
 	DumpIPAddress(*IPAddressDump) (*IPAddressDetails, error)
+	DumpIPContainerProxy(*IPContainerProxyDump) (*IPContainerProxyDetails, error)
 	DumpIP(*IPDump) (*IPDetails, error)
 	DumpIPFib(*IPFibDump) (*IPFibDetails, error)
 	DumpIPMfib(*IPMfibDump) (*IPMfibDetails, error)
@@ -4649,6 +4719,8 @@ func init() {
 	api.RegisterMessage((*IPPuntRedirectReply)(nil), "ip.IPPuntRedirectReply")
 	api.RegisterMessage((*IPContainerProxyAddDel)(nil), "ip.IPContainerProxyAddDel")
 	api.RegisterMessage((*IPContainerProxyAddDelReply)(nil), "ip.IPContainerProxyAddDelReply")
+	api.RegisterMessage((*IPContainerProxyDump)(nil), "ip.IPContainerProxyDump")
+	api.RegisterMessage((*IPContainerProxyDetails)(nil), "ip.IPContainerProxyDetails")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckAddDel)(nil), "ip.IPSourceAndPortRangeCheckAddDel")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckAddDelReply)(nil), "ip.IPSourceAndPortRangeCheckAddDelReply")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckInterfaceAddDel)(nil), "ip.IPSourceAndPortRangeCheckInterfaceAddDel")
