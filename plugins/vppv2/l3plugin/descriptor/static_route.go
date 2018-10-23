@@ -32,7 +32,7 @@ import (
 
 const (
 	// StaticRouteDescriptorName is the name of the descriptor for static routes.
-	StaticRouteDescriptorName = "static-route"
+	StaticRouteDescriptorName = "vpp-static-route"
 
 	// dependency labels
 	routeOutInterfaceDep = "interface-exists"
