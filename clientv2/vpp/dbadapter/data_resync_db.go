@@ -182,7 +182,7 @@ func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) vppclient.DataResyncDSL {
 	return dsl
 }
 
-// NAT44Global adds a request to RESYNC global configuration for NAT44
+// NAT44Global adds global NAT44 configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResyncDSL {
 	key := nat.GlobalNAT44Key
 	dsl.txn.Put(key, nat44)
@@ -191,8 +191,8 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResy
 	return dsl
 }
 
-// NAT44DNat adds a request to RESYNC a new DNAT configuration
-func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat) vppclient.DataResyncDSL {
+// DNat44 adds DNAT44 configuration to the RESYNC request
+func (dsl *DataResyncDSL) DNat44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
 	key := nat.DNAT44Key(nat44.Label)
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)

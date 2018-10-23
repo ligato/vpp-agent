@@ -172,16 +172,16 @@ func (dsl *DataResyncDSL) StnRule(stn *stn.STN_Rule) linuxclient.DataResyncDSL {
 	return dsl
 }
 
-// NAT44Global adds a request to RESYNC global configuration for NAT44
+// NAT44Global adds global NAT44 configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.NAT44Global(nat44)
 
 	return dsl
 }
 
-// NAT44DNat adds a request to RESYNC a new DNAT configuration
-func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat) linuxclient.DataResyncDSL {
-	dsl.vppDataResync.NAT44DNat(nat44)
+// DNat44 adds DNAT44 configuration to the RESYNC request
+func (dsl *DataResyncDSL) DNat44(nat44 *nat.DNat44) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.DNat44(nat44)
 
 	return dsl
 }

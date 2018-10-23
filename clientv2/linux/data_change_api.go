@@ -97,8 +97,8 @@ type PutDSL interface {
 	StnRule(stn *vpp_stn.STN_Rule) PutDSL
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
-	// NAT44DNat adds a request to create a new DNAT configuration
-	NAT44DNat(dnat *nat.Nat44DNat) PutDSL
+	// DNat44 adds a request to create or update DNAT44 configuration
+	DNat44(dnat *nat.DNat44) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -156,8 +156,8 @@ type DeleteDSL interface {
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44
 	NAT44Global() DeleteDSL
-	// NAT44DNat adds a request to delete a new DNAT configuration
-	NAT44DNat(label string) DeleteDSL
+	// DNat44 adds a request to delete an existing DNAT-44 configuration
+	DNat44(label string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().
