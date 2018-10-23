@@ -74,7 +74,7 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 
 	return &NAT44GlobalDescriptor{
 		natHandler: natHandler,
-		log:        log.NewLogger("nat-descriptor"),
+		log:        log.NewLogger("nat44-global-descriptor"),
 	}
 }
 
@@ -197,7 +197,7 @@ func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Gl
 	// NAT interfaces
 	for _, natIface := range globalCfg.NatInterfaces {
 		derValues = append(derValues, scheduler.KeyValuePair{
-			Key:   nat.NATInterfaceKey(natIface.Name, natIface.IsInside),
+			Key:   nat.InterfaceKey(natIface.Name, natIface.IsInside),
 			Value: natIface,
 		})
 	}

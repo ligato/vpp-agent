@@ -30,9 +30,13 @@ const (
 
 	/* NAT interface */
 
+	// natInterfaceKeyPrefix is a common prefix for (derived) keys each representing
+	// NAT configuration for a single interface.
+	natInterfaceKeyPrefix = "vpp/nat/interface/"
+
 	// natInterfaceKeyTemplate is a template for (derived) key representing
 	// NAT configuration for a single interface.
-	natInterfaceKeyTemplate = "vpp/nat/interface/{iface}/{feature}"
+	natInterfaceKeyTemplate = natInterfaceKeyPrefix + "{iface}/feature/{feature}"
 
 	// NAT interface features
 	inFeature = "in"
@@ -49,9 +53,9 @@ func DNatKey(label string) string {
 
 /* NAT interface */
 
-// NATInterfaceKey returns (derived) key representing NAT configuration of a given
+// InterfaceKey returns (derived) key representing NAT configuration of a given
 // interface.
-func NATInterfaceKey(iface string, isInside bool) string {
+func InterfaceKey(iface string, isInside bool) string {
 	key := strings.Replace(natInterfaceKeyTemplate, "{iface}", iface, 1)
 	feature := inFeature
 	if !isInside {
@@ -59,4 +63,20 @@ func NATInterfaceKey(iface string, isInside bool) string {
 	}
 	key = strings.Replace(key, "{feature}", feature, 1)
 	return key
+}
+
+// ParseInterfaceKey parses interface name and the assigned feature from NAT interface key.
+func ParseInterfaceKey(key string) (iface string, isInside bool, isNATInterfaceKey bool) {
+	if strings.HasPrefix(key, natInterfaceKeyPrefix) {
+		keySuffix := strings.TrimPrefix(key, natInterfaceKeyPrefix)
+		fibComps := strings.Split(keySuffix, "/")
+		if len(fibComps) == 3 && fibComps[1] == "feature" {
+			isInside := true
+			if fibComps[2] == outFeature {
+				isInside = false
+			}
+			return fibComps[0], isInside, true
+		}
+	}
+	return "", false, false
 }

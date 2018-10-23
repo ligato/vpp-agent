@@ -13,6 +13,7 @@
 // limitations under the License.
 
 //go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *nat.Nat44Global --import "../model/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NATInterface --value-type *nat.Nat44Global_NatInterface --import "../model/nat" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name NAT44DNAT --value-type *nat.Nat44DNat --import "../model/nat" --output-dir "descriptor"
 
 package natplugin
@@ -27,8 +28,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
-	//"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor"
-	//"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 )
 
@@ -44,7 +45,8 @@ type NATPlugin struct {
 	natHandler vppcalls.NatVppAPI
 
 	// descriptors
-	// TODO
+	nat44GlobalDescriptor *descriptor.NAT44GlobalDescriptor
+	natIfaceDescriptor    *descriptor.NATInterfaceDescriptor
 }
 
 // Deps lists dependencies of the NAT plugin.
@@ -68,8 +70,14 @@ func (p *NATPlugin) Init() error {
 	// init NAT handler
 	p.natHandler = vppcalls.NewNatVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
-	// TODO init and register descriptors...
+	// init and register descriptors
+	p.nat44GlobalDescriptor = descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)
+	nat44GlobalDescriptor := adapter.NewNAT44GlobalDescriptor(p.nat44GlobalDescriptor.GetDescriptor())
+	p.Scheduler.RegisterKVDescriptor(nat44GlobalDescriptor)
 
+	p.natIfaceDescriptor = descriptor.NewNATInterfaceDescriptor(p.natHandler, p.Log)
+	natIfaceDescriptor := adapter.NewNATInterfaceDescriptor(p.natIfaceDescriptor.GetDescriptor())
+	p.Scheduler.RegisterKVDescriptor(natIfaceDescriptor)
 
 	return nil
 }
