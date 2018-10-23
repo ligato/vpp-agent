@@ -113,17 +113,11 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 	Expect(globalCfg.NatInterfaces[2].IsInside).To(BeTrue())
 	Expect(globalCfg.NatInterfaces[2].OutputFeature).To(BeTrue())
 
-	Expect(globalCfg.VirtualReassemblyIpv4).ToNot(BeNil())
-	Expect(globalCfg.VirtualReassemblyIpv4.Timeout).To(BeEquivalentTo(10))
-	Expect(globalCfg.VirtualReassemblyIpv4.MaxReass).To(BeEquivalentTo(5))
-	Expect(globalCfg.VirtualReassemblyIpv4.MaxFrag).To(BeEquivalentTo(7))
-	Expect(globalCfg.VirtualReassemblyIpv4.DropFrag).To(BeTrue())
-
-	Expect(globalCfg.VirtualReassemblyIpv6).ToNot(BeNil())
-	Expect(globalCfg.VirtualReassemblyIpv6.Timeout).To(BeEquivalentTo(20))
-	Expect(globalCfg.VirtualReassemblyIpv6.MaxReass).To(BeEquivalentTo(8))
-	Expect(globalCfg.VirtualReassemblyIpv6.MaxFrag).To(BeEquivalentTo(13))
-	Expect(globalCfg.VirtualReassemblyIpv6.DropFrag).To(BeFalse())
+	Expect(globalCfg.VirtualReassembly).ToNot(BeNil())
+	Expect(globalCfg.VirtualReassembly.Timeout).To(BeEquivalentTo(10))
+	Expect(globalCfg.VirtualReassembly.MaxReassemblies).To(BeEquivalentTo(5))
+	Expect(globalCfg.VirtualReassembly.MaxFragments).To(BeEquivalentTo(7))
+	Expect(globalCfg.VirtualReassembly.DropFragments).To(BeTrue())
 }
 
 func TestDNATDump(t *testing.T) {
@@ -202,7 +196,7 @@ func TestDNATDump(t *testing.T) {
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	dnats, err := natHandler.Nat44DNatDump()
+	dnats, err := natHandler.DNat44Dump()
 	Expect(err).To(Succeed())
 
 	Expect(dnats).To(HaveLen(3))
@@ -211,8 +205,8 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.Label).To(Equal("DNAT 1"))
 	Expect(dnat.IdMappings).To(HaveLen(0))
 	Expect(dnat.StMappings).To(HaveLen(1))
-	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.Nat44DNat_StaticMapping_ENABLED))
-	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.Nat44DNat_TCP))
+	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.DNat44_StaticMapping_ENABLED))
+	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.DNat44_TCP))
 	Expect(dnat.StMappings[0].ExternalInterface).To(Equal("if0"))
 	Expect(dnat.StMappings[0].ExternalIp).To(Equal("10.36.20.20"))
 	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
@@ -227,8 +221,8 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.Label).To(Equal("DNAT 2"))
 	Expect(dnat.IdMappings).To(HaveLen(0))
 	Expect(dnat.StMappings).To(HaveLen(2))
-	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.Nat44DNat_StaticMapping_SELF))
-	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.Nat44DNat_TCP))
+	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.DNat44_StaticMapping_SELF))
+	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.DNat44_TCP))
 	Expect(dnat.StMappings[0].ExternalInterface).To(Equal("if1"))
 	Expect(dnat.StMappings[0].ExternalIp).To(Equal("10.36.20.40"))
 	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
@@ -238,8 +232,8 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings[0].LocalIps[0].LocalPort).To(BeEquivalentTo(8081))
 	Expect(dnat.StMappings[0].LocalIps[0].Probability).To(BeEquivalentTo(0))
 	// -> LB mapping
-	Expect(dnat.StMappings[1].TwiceNat).To(Equal(nat.Nat44DNat_StaticMapping_DISABLED))
-	Expect(dnat.StMappings[1].Protocol).To(Equal(nat.Nat44DNat_UDP))
+	Expect(dnat.StMappings[1].TwiceNat).To(Equal(nat.DNat44_StaticMapping_DISABLED))
+	Expect(dnat.StMappings[1].Protocol).To(Equal(nat.DNat44_UDP))
 	Expect(dnat.StMappings[1].ExternalInterface).To(BeEmpty())
 	Expect(dnat.StMappings[1].ExternalIp).To(Equal("10.36.20.60"))
 	Expect(dnat.StMappings[1].ExternalPort).To(BeEquivalentTo(53))
@@ -258,10 +252,10 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings).To(HaveLen(0))
 	Expect(dnat.IdMappings).To(HaveLen(1))
 	Expect(dnat.IdMappings[0].VrfId).To(BeEquivalentTo(1))
-	Expect(dnat.IdMappings[0].Protocol).To(Equal(nat.Nat44DNat_UDP))
+	Expect(dnat.IdMappings[0].Protocol).To(Equal(nat.DNat44_UDP))
 	Expect(dnat.IdMappings[0].Port).To(BeEquivalentTo(0))
 	Expect(dnat.IdMappings[0].IpAddress).To(Equal("10.10.11.200"))
-	Expect(dnat.IdMappings[0].AddressedInterface).To(BeEmpty())
+	Expect(dnat.IdMappings[0].Interface).To(BeEmpty())
 }
 
 func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW) {

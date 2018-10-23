@@ -27,37 +27,37 @@ import (
 )
 
 const (
-	// NATInterfaceDescriptorName is the name of the descriptor for VPP NAT features
-	// applied to interfaces.
-	NATInterfaceDescriptorName = "vpp-nat-interface"
+	// NAT44InterfaceDescriptorName is the name of the descriptor for VPP NAT44
+	// features applied to interfaces.
+	NAT44InterfaceDescriptorName = "vpp-nat44-interface"
 
 	// dependency labels
-	interfaceDep = "interface-exists"
+	natInterfaceDep = "interface-exists"
 )
 
-// NATInterfaceDescriptor teaches KVScheduler how to configure VPP NAT interface
+// NAT44InterfaceDescriptor teaches KVScheduler how to configure VPP NAT interface
 // features.
-type NATInterfaceDescriptor struct {
+type NAT44InterfaceDescriptor struct {
 	log        logging.Logger
 	natHandler vppcalls.NatVppAPI
 }
 
-// NewNATInterfaceDescriptor creates a new instance of the NATInterface descriptor.
-func NewNATInterfaceDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *NATInterfaceDescriptor {
+// NewNAT44InterfaceDescriptor creates a new instance of the NAT44Interface descriptor.
+func NewNAT44InterfaceDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger) *NAT44InterfaceDescriptor {
 
-	return &NATInterfaceDescriptor{
+	return &NAT44InterfaceDescriptor{
 		natHandler: natHandler,
-		log:        log.NewLogger("nat-iface-descriptor"),
+		log:        log.NewLogger("nat44-iface-descriptor"),
 	}
 }
 
 // GetDescriptor returns descriptor suitable for registration (via adapter) with
 // the KVScheduler.
-func (d *NATInterfaceDescriptor) GetDescriptor() *adapter.NATInterfaceDescriptor {
-	return &adapter.NATInterfaceDescriptor{
-		Name:               NATInterfaceDescriptorName,
-		KeySelector:        d.IsNATInterfaceKey,
-		ValueTypeName:      proto.MessageName(&nat.Nat44Global_NatInterface{}),
+func (d *NAT44InterfaceDescriptor) GetDescriptor() *adapter.NAT44InterfaceDescriptor {
+	return &adapter.NAT44InterfaceDescriptor{
+		Name:               NAT44InterfaceDescriptorName,
+		KeySelector:        d.IsNAT44InterfaceKey,
+		ValueTypeName:      proto.MessageName(&nat.Nat44Global_Interface{}),
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
@@ -65,15 +65,15 @@ func (d *NATInterfaceDescriptor) GetDescriptor() *adapter.NATInterfaceDescriptor
 	}
 }
 
-// IsNATInterfaceKey returns true if the key is identifying NAT configuration
+// IsNAT44InterfaceKey returns true if the key is identifying NAT-44 configuration
 // for interface.
-func (d *NATInterfaceDescriptor) IsNATInterfaceKey(key string) bool {
-	_, _, isNATIfaceKey := nat.ParseInterfaceKey(key)
+func (d *NAT44InterfaceDescriptor) IsNAT44InterfaceKey(key string) bool {
+	_, _, isNATIfaceKey := nat.ParseInterfaceNAT44Key(key)
 	return isNATIfaceKey
 }
 
-// Add puts interface into bridge domain.
-func (d *NATInterfaceDescriptor) Add(key string, natIface *nat.Nat44Global_NatInterface) (metadata interface{}, err error) {
+// Add enables NAT44 for an interface.
+func (d *NAT44InterfaceDescriptor) Add(key string, natIface *nat.Nat44Global_Interface) (metadata interface{}, err error) {
 	err = d.natHandler.EnableNat44Interface(natIface.Name, natIface.IsInside, natIface.OutputFeature)
 	if err != nil {
 		d.log.Error(err)
@@ -83,8 +83,8 @@ func (d *NATInterfaceDescriptor) Add(key string, natIface *nat.Nat44Global_NatIn
 	return nil, nil
 }
 
-// Delete removes interface from bridge domain.
-func (d *NATInterfaceDescriptor) Delete(key string, natIface *nat.Nat44Global_NatInterface, metadata interface{}) error {
+// Delete disables NAT44 for an interface.
+func (d *NAT44InterfaceDescriptor) Delete(key string, natIface *nat.Nat44Global_Interface, metadata interface{}) error {
 	err := d.natHandler.DisableNat44Interface(natIface.Name, natIface.IsInside, natIface.OutputFeature)
 	if err != nil {
 		d.log.Error(err)
@@ -95,15 +95,15 @@ func (d *NATInterfaceDescriptor) Delete(key string, natIface *nat.Nat44Global_Na
 }
 
 // ModifyWithRecreate returns always true - a change in OUTPUT is always performed via Delete+Add.
-func (d *NATInterfaceDescriptor) ModifyWithRecreate(key string, oldNATIface, newNATIface *nat.Nat44Global_NatInterface, metadata interface{}) bool {
+func (d *NAT44InterfaceDescriptor) ModifyWithRecreate(key string, oldNATIface, newNATIface *nat.Nat44Global_Interface, metadata interface{}) bool {
 	return true
 }
 
 // Dependencies lists the interface as the only dependency.
-func (d *NATInterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Global_NatInterface) []scheduler.Dependency {
+func (d *NAT44InterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Global_Interface) []scheduler.Dependency {
 	return []scheduler.Dependency{
 		{
-			Label: interfaceDep,
+			Label: natInterfaceDep,
 			Key:   interfaces.InterfaceKey(natIface.Name),
 		},
 	}

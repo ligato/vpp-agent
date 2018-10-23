@@ -48,17 +48,11 @@ var (
 
 // defaultGlobalCfg is the default NAT44 global configuration.
 var defaultGlobalCfg = &nat.Nat44Global{
-	VirtualReassemblyIpv4: &nat.Nat44Global_VirtualReassembly{
-		Timeout:  natReassTimeoutDefault,
-		MaxReass: natMaxReassDefault,
-		MaxFrag:  natMaxFragDefault,
-		DropFrag: natDropFragDefault,
-	},
-	VirtualReassemblyIpv6: &nat.Nat44Global_VirtualReassembly{
-		Timeout:  natReassTimeoutDefault,
-		MaxReass: natMaxReassDefault,
-		MaxFrag:  natMaxFragDefault,
-		DropFrag: natDropFragDefault,
+	VirtualReassembly: &nat.VirtualReassembly{
+		Timeout:         natReassTimeoutDefault,
+		MaxReassemblies: natMaxReassDefault,
+		MaxFragments:    natMaxFragDefault,
+		DropFragments:   natDropFragDefault,
 	},
 }
 
@@ -85,7 +79,7 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 		Name:               NAT44GlobalDescriptorName,
 		KeySelector:        d.IsNAT44GlobalKey,
 		ValueTypeName:      proto.MessageName(&nat.Nat44Global{}),
-		NBKeyPrefix:        nat.Prefix,
+		NBKeyPrefix:        nat.PrefixNAT44,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
@@ -98,7 +92,12 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 
 // IsNAT44GlobalKey returns true if the key is identifying global VPP NAT44 options.
 func (d *NAT44GlobalDescriptor) IsNAT44GlobalKey(key string) bool {
-	return key == nat.GlobalKey
+	return key == nat.GlobalNAT44Key
+}
+
+// IsRetriableFailure returns <false> for errors related to invalid configuration.
+func (d *NAT44GlobalDescriptor) IsRetriableFailure(err error) bool {
+	return err != ErrNATInterfaceFeatureCollision
 }
 
 // Add applies NAT44 global options.
@@ -131,18 +130,9 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 	}
 
 	// update virtual reassembly for IPv4
-	if !proto.Equal(getVirtualReassembly(oldGlobalCfg, false), getVirtualReassembly(newGlobalCfg, false)) {
-		if err = d.natHandler.SetVirtualReassemblyIPv4(getVirtualReassembly(newGlobalCfg, false)); err != nil {
+	if !proto.Equal(getVirtualReassembly(oldGlobalCfg), getVirtualReassembly(newGlobalCfg)) {
+		if err = d.natHandler.SetVirtualReassemblyIPv4(getVirtualReassembly(newGlobalCfg)); err != nil {
 			err = errors.Errorf("failed to set NAT virtual reassembly for IPv4: %v", err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-
-	// update virtual reassembly for IPv6
-	if !proto.Equal(getVirtualReassembly(oldGlobalCfg, true), getVirtualReassembly(newGlobalCfg, true)) {
-		if err = d.natHandler.SetVirtualReassemblyIPv6(getVirtualReassembly(newGlobalCfg, false)); err != nil {
-			err = errors.Errorf("failed to set NAT virtual reassembly for IPv6: %v", err)
 			d.log.Error(err)
 			return nil, err
 		}
@@ -187,17 +177,12 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 	return nil, nil
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *NAT44GlobalDescriptor) IsRetriableFailure(err error) bool {
-	return err != ErrNATInterfaceFeatureCollision
-}
-
 // DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration.
 func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []scheduler.KeyValuePair) {
 	// NAT interfaces
 	for _, natIface := range globalCfg.NatInterfaces {
 		derValues = append(derValues, scheduler.KeyValuePair{
-			Key:   nat.InterfaceKey(natIface.Name, natIface.IsInside),
+			Key:   nat.InterfaceNAT44Key(natIface.Name, natIface.IsInside),
 			Value: natIface,
 		})
 	}
@@ -219,7 +204,7 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 
 	dump := []adapter.NAT44GlobalKVWithMetadata{
 		{
-			Key:    nat.GlobalKey,
+			Key:    nat.GlobalNAT44Key,
 			Value:  globalCfg,
 			Origin: origin,
 		},
@@ -247,12 +232,12 @@ func (d *NAT44GlobalDescriptor) validateNAT44GlobalConfig(globalCfg *nat.Nat44Gl
 		}
 		ifaceCfg := natIfaceMap[natIface.Name]
 		if natIface.IsInside {
-			ifaceCfg.in += 1
+			ifaceCfg.in++
 		} else {
-			ifaceCfg.out += 1
+			ifaceCfg.out++
 		}
 		if natIface.OutputFeature {
-			ifaceCfg.output += 1
+			ifaceCfg.output++
 		}
 	}
 	for _, ifaceCfg := range natIfaceMap {
@@ -272,15 +257,9 @@ func (d *NAT44GlobalDescriptor) validateNAT44GlobalConfig(globalCfg *nat.Nat44Gl
 	return nil
 }
 
-func getVirtualReassembly(globalCfg *nat.Nat44Global, ipv6 bool) *nat.Nat44Global_VirtualReassembly {
-	if ipv6 {
-		if globalCfg.VirtualReassemblyIpv6 == nil {
-			return defaultGlobalCfg.VirtualReassemblyIpv6
-		}
-		return globalCfg.VirtualReassemblyIpv6
+func getVirtualReassembly(globalCfg *nat.Nat44Global) *nat.VirtualReassembly {
+	if globalCfg.VirtualReassembly == nil {
+		return defaultGlobalCfg.VirtualReassembly
 	}
-	if globalCfg.VirtualReassemblyIpv4 == nil {
-		return defaultGlobalCfg.VirtualReassemblyIpv4
-	}
-	return globalCfg.VirtualReassemblyIpv4
+	return globalCfg.VirtualReassembly
 }

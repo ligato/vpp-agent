@@ -10,44 +10,44 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type NAT44DNATKVWithMetadata struct {
+type DNAT44KVWithMetadata struct {
 	Key      string
-	Value    *nat.Nat44DNat
+	Value    *nat.DNat44
 	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type NAT44DNATDescriptor struct {
+type DNAT44Descriptor struct {
 	Name               string
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *nat.Nat44DNat) bool
+	ValueComparator    func(key string, oldValue, newValue *nat.DNat44) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *nat.Nat44DNat) (metadata interface{}, err error)
-	Delete             func(key string, value *nat.Nat44DNat, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *nat.Nat44DNat, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *nat.Nat44DNat, metadata interface{}) bool
-	Update             func(key string, value *nat.Nat44DNat, metadata interface{}) error
+	Add                func(key string, value *nat.DNat44) (metadata interface{}, err error)
+	Delete             func(key string, value *nat.DNat44, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *nat.DNat44, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *nat.DNat44, metadata interface{}) bool
+	Update             func(key string, value *nat.DNat44, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *nat.Nat44DNat) []Dependency
-	DerivedValues      func(key string, value *nat.Nat44DNat) []KeyValuePair
-	Dump               func(correlate []NAT44DNATKVWithMetadata) ([]NAT44DNATKVWithMetadata, error)
+	Dependencies       func(key string, value *nat.DNat44) []Dependency
+	DerivedValues      func(key string, value *nat.DNat44) []KeyValuePair
+	Dump               func(correlate []DNAT44KVWithMetadata) ([]DNAT44KVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type NAT44DNATDescriptorAdapter struct {
-	descriptor *NAT44DNATDescriptor
+type DNAT44DescriptorAdapter struct {
+	descriptor *DNAT44Descriptor
 }
 
-func NewNAT44DNATDescriptor(typedDescriptor *NAT44DNATDescriptor) *KVDescriptor {
-	adapter := &NAT44DNATDescriptorAdapter{descriptor: typedDescriptor}
+func NewDNAT44Descriptor(typedDescriptor *DNAT44Descriptor) *KVDescriptor {
+	adapter := &DNAT44DescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
 		KeySelector:        typedDescriptor.KeySelector,
@@ -89,108 +89,108 @@ func NewNAT44DNATDescriptor(typedDescriptor *NAT44DNATDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *NAT44DNATDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castNAT44DNATValue(key, oldValue)
-	typedNewValue, err2 := castNAT44DNATValue(key, newValue)
+func (da *DNAT44DescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castDNAT44Value(key, oldValue)
+	typedNewValue, err2 := castDNAT44Value(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *NAT44DNATDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castNAT44DNATValue(key, value)
+func (da *DNAT44DescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castDNAT44Value(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Add(key, typedValue)
 }
 
-func (da *NAT44DNATDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castNAT44DNATValue(key, oldValue)
+func (da *DNAT44DescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castDNAT44Value(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castNAT44DNATValue(key, newValue)
+	newTypedValue, err := castDNAT44Value(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castNAT44DNATMetadata(key, oldMetadata)
+	typedOldMetadata, err := castDNAT44Metadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Modify(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *NAT44DNATDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castNAT44DNATValue(key, value)
+func (da *DNAT44DescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castDNAT44Value(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castNAT44DNATMetadata(key, metadata)
+	typedMetadata, err := castDNAT44Metadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *NAT44DNATDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castNAT44DNATValue(key, oldValue)
+func (da *DNAT44DescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castDNAT44Value(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castNAT44DNATValue(key, newValue)
+	newTypedValue, err := castDNAT44Value(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castNAT44DNATMetadata(key, metadata)
+	typedMetadata, err := castDNAT44Metadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *NAT44DNATDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castNAT44DNATValue(key, value)
+func (da *DNAT44DescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castDNAT44Value(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castNAT44DNATMetadata(key, metadata)
+	typedMetadata, err := castDNAT44Metadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
-func (da *NAT44DNATDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castNAT44DNATValue(key, value)
+func (da *DNAT44DescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castDNAT44Value(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.Dependencies(key, typedValue)
 }
 
-func (da *NAT44DNATDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castNAT44DNATValue(key, value)
+func (da *DNAT44DescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castDNAT44Value(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *NAT44DNATDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []NAT44DNATKVWithMetadata
+func (da *DNAT44DescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []DNAT44KVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castNAT44DNATValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castDNAT44Value(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castNAT44DNATMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castDNAT44Metadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			NAT44DNATKVWithMetadata{
+			DNAT44KVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -217,15 +217,15 @@ func (da *NAT44DNATDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 
 ////////// Helper methods //////////
 
-func castNAT44DNATValue(key string, value proto.Message) (*nat.Nat44DNat, error) {
-	typedValue, ok := value.(*nat.Nat44DNat)
+func castDNAT44Value(key string, value proto.Message) (*nat.DNat44, error) {
+	typedValue, ok := value.(*nat.DNat44)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castNAT44DNATMetadata(key string, metadata Metadata) (interface{}, error) {
+func castDNAT44Metadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}

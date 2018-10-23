@@ -166,13 +166,13 @@ func (dsl *PutDSL) StnRule(val *stn.STN_Rule) vppclient.PutDSL {
 
 // NAT44Global adds a request to set global configuration for NAT44
 func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.PutDSL {
-	dsl.parent.txn.Put(nat.GlobalKey, nat44)
+	dsl.parent.txn.Put(nat.GlobalNAT44Key, nat44)
 	return dsl
 }
 
 // NAT44DNat adds a request to create a new DNAT configuration
 func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat) vppclient.PutDSL {
-	dsl.parent.txn.Put(nat.DNatKey(nat44.Label), nat44)
+	dsl.parent.txn.Put(nat.DNAT44Key(nat44.Label), nat44)
 	return dsl
 }
 
@@ -294,13 +294,13 @@ func (dsl *DeleteDSL) StnRule(ruleName string) vppclient.DeleteDSL {
 
 // NAT44Global adds a request to remove global configuration for NAT44
 func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(nat.GlobalKey)
+	dsl.parent.txn.Delete(nat.GlobalNAT44Key)
 	return dsl
 }
 
 // NAT44DNat adds a request to delete a new DNAT configuration
 func (dsl *DeleteDSL) NAT44DNat(label string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(nat.DNatKey(label))
+	dsl.parent.txn.Delete(nat.DNAT44Key(label))
 	return dsl
 }
 

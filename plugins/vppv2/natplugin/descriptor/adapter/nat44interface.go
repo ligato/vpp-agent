@@ -10,7 +10,7 @@ import (
 
 ////////// type-safe key-value pair with metadata //////////
 
-type NATInterfaceKVWithMetadata struct {
+type NAT44InterfaceKVWithMetadata struct {
 	Key      string
 	Value    *nat.Nat44Global_NatInterface
 	Metadata interface{}
@@ -19,7 +19,7 @@ type NATInterfaceKVWithMetadata struct {
 
 ////////// type-safe Descriptor structure //////////
 
-type NATInterfaceDescriptor struct {
+type NAT44InterfaceDescriptor struct {
 	Name               string
 	KeySelector        KeySelector
 	ValueTypeName      string
@@ -36,18 +36,18 @@ type NATInterfaceDescriptor struct {
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *nat.Nat44Global_NatInterface) []Dependency
 	DerivedValues      func(key string, value *nat.Nat44Global_NatInterface) []KeyValuePair
-	Dump               func(correlate []NATInterfaceKVWithMetadata) ([]NATInterfaceKVWithMetadata, error)
+	Dump               func(correlate []NAT44InterfaceKVWithMetadata) ([]NAT44InterfaceKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type NATInterfaceDescriptorAdapter struct {
-	descriptor *NATInterfaceDescriptor
+type NAT44InterfaceDescriptorAdapter struct {
+	descriptor *NAT44InterfaceDescriptor
 }
 
-func NewNATInterfaceDescriptor(typedDescriptor *NATInterfaceDescriptor) *KVDescriptor {
-	adapter := &NATInterfaceDescriptorAdapter{descriptor: typedDescriptor}
+func NewNAT44InterfaceDescriptor(typedDescriptor *NAT44InterfaceDescriptor) *KVDescriptor {
+	adapter := &NAT44InterfaceDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
 		KeySelector:        typedDescriptor.KeySelector,
@@ -89,108 +89,108 @@ func NewNATInterfaceDescriptor(typedDescriptor *NATInterfaceDescriptor) *KVDescr
 	return descriptor
 }
 
-func (da *NATInterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castNATInterfaceValue(key, oldValue)
-	typedNewValue, err2 := castNATInterfaceValue(key, newValue)
+func (da *NAT44InterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castNAT44InterfaceValue(key, oldValue)
+	typedNewValue, err2 := castNAT44InterfaceValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *NATInterfaceDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castNATInterfaceValue(key, value)
+func (da *NAT44InterfaceDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castNAT44InterfaceValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Add(key, typedValue)
 }
 
-func (da *NATInterfaceDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castNATInterfaceValue(key, oldValue)
+func (da *NAT44InterfaceDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castNAT44InterfaceValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castNATInterfaceValue(key, newValue)
+	newTypedValue, err := castNAT44InterfaceValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castNATInterfaceMetadata(key, oldMetadata)
+	typedOldMetadata, err := castNAT44InterfaceMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Modify(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *NATInterfaceDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castNATInterfaceValue(key, value)
+func (da *NAT44InterfaceDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castNAT44InterfaceValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castNATInterfaceMetadata(key, metadata)
+	typedMetadata, err := castNAT44InterfaceMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *NATInterfaceDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castNATInterfaceValue(key, oldValue)
+func (da *NAT44InterfaceDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castNAT44InterfaceValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castNATInterfaceValue(key, newValue)
+	newTypedValue, err := castNAT44InterfaceValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castNATInterfaceMetadata(key, metadata)
+	typedMetadata, err := castNAT44InterfaceMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *NATInterfaceDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castNATInterfaceValue(key, value)
+func (da *NAT44InterfaceDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castNAT44InterfaceValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castNATInterfaceMetadata(key, metadata)
+	typedMetadata, err := castNAT44InterfaceMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
-func (da *NATInterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castNATInterfaceValue(key, value)
+func (da *NAT44InterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castNAT44InterfaceValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.Dependencies(key, typedValue)
 }
 
-func (da *NATInterfaceDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castNATInterfaceValue(key, value)
+func (da *NAT44InterfaceDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castNAT44InterfaceValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *NATInterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []NATInterfaceKVWithMetadata
+func (da *NAT44InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []NAT44InterfaceKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castNATInterfaceValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castNAT44InterfaceValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castNATInterfaceMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castNAT44InterfaceMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			NATInterfaceKVWithMetadata{
+			NAT44InterfaceKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -217,7 +217,7 @@ func (da *NATInterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVW
 
 ////////// Helper methods //////////
 
-func castNATInterfaceValue(key string, value proto.Message) (*nat.Nat44Global_NatInterface, error) {
+func castNAT44InterfaceValue(key string, value proto.Message) (*nat.Nat44Global_NatInterface, error) {
 	typedValue, ok := value.(*nat.Nat44Global_NatInterface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
@@ -225,7 +225,7 @@ func castNATInterfaceValue(key string, value proto.Message) (*nat.Nat44Global_Na
 	return typedValue, nil
 }
 
-func castNATInterfaceMetadata(key string, metadata Metadata) (interface{}, error) {
+func castNAT44InterfaceMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}

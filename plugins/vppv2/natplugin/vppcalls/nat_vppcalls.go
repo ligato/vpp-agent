@@ -38,7 +38,7 @@ const (
 	maxTagLen = 64
 )
 
-//  SetNat44Forwarding configures global forwarding setup for NAT44
+// SetNat44Forwarding configures NAT44 forwarding.
 func (h *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
 	req := &binapi.Nat44ForwardingEnableDisable{
 		Enable: boolToUint(enableFwd),
@@ -54,7 +54,7 @@ func (h *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
 	return nil
 }
 
-// EnableNat44Interface enables NAT feature for provided interface
+// EnableNat44Interface enables NAT44 feature for provided interface.
 func (h *NatVppHandler) EnableNat44Interface(iface string, isInside, isOutput bool) error {
 	if isOutput {
 		return h.handleNat44InterfaceOutputFeature(iface, isInside, true)
@@ -62,7 +62,7 @@ func (h *NatVppHandler) EnableNat44Interface(iface string, isInside, isOutput bo
 	return h.handleNat44Interface(iface, isInside, true)
 }
 
-// DisableNat44Interface disables NAT feature for provided interface
+// DisableNat44Interface disables NAT44 feature for provided interface.
 func (h *NatVppHandler) DisableNat44Interface(iface string, isInside, isOutput bool) error {
 	if isOutput {
 		return h.handleNat44InterfaceOutputFeature(iface, isInside, false)
@@ -70,38 +70,38 @@ func (h *NatVppHandler) DisableNat44Interface(iface string, isInside, isOutput b
 	return h.handleNat44Interface(iface, isInside, false)
 }
 
-// AddNat44Address adds new NAT address into the pool.
+// AddNat44Address adds new IPv4 address into the NAT44 pool.
 func (h *NatVppHandler) AddNat44Address(address string, vrf uint32, twiceNat bool) error {
 	return h.handleNat44AddressPool(address, vrf, twiceNat, true)
 }
 
-// DelNat44Address removes existing NAT address from the pool.
+// DelNat44Address removes existing IPv4 address from the NAT44 pool.
 func (h *NatVppHandler) DelNat44Address(address string, vrf uint32, twiceNat bool) error {
 	return h.handleNat44AddressPool(address, vrf, twiceNat, false)
 }
 
 // SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets.
-func (h *NatVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassembly) error {
-	return h.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, false)
+func (h *NatVppHandler) SetVirtualReassemblyIPv4(vrCfg *nat.VirtualReassembly) error {
+	return h.handleNatVirtualReassembly(vrCfg, false)
 }
 
 // SetVirtualReassemblyIPv6 configures NAT virtual reassembly for IPv6 packets.
-func (h *NatVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat.Nat44Global_VirtualReassembly) error {
-	return h.handleNat44VirtualReassembly(vrCfg.Timeout, vrCfg.MaxReass, vrCfg.MaxFrag, vrCfg.DropFrag, true)
+func (h *NatVppHandler) SetVirtualReassemblyIPv6(vrCfg *nat.VirtualReassembly) error {
+	return h.handleNatVirtualReassembly(vrCfg, true)
 }
 
 // AddNat44IdentityMapping adds new NAT44 identity mapping
-func (h *NatVppHandler) AddNat44IdentityMapping(mapping *nat.Nat44DNat_IdentityMapping, dnatLabel string) error {
+func (h *NatVppHandler) AddNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string) error {
 	return h.handleNat44IdentityMapping(mapping, dnatLabel, true)
 }
 
-// DelNat44IdentityMapping removes NAT44 identity mapping
-func (h *NatVppHandler) DelNat44IdentityMapping(mapping *nat.Nat44DNat_IdentityMapping, dnatLabel string) error {
+// DelNat44IdentityMapping removes existing NAT44 identity mapping
+func (h *NatVppHandler) DelNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string) error {
 	return h.handleNat44IdentityMapping(mapping, dnatLabel, false)
 }
 
-// AddNat44StaticMapping creates new static mapping entry.
-func (h *NatVppHandler) AddNat44StaticMapping(mapping *nat.Nat44DNat_StaticMapping, dnatLabel string) error {
+// AddNat44StaticMapping creates new NAT44 static mapping entry.
+func (h *NatVppHandler) AddNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string) error {
 	if len(mapping.LocalIps) == 0 {
 		return errors.Errorf("cannot configure static mapping for DNAT %s: no local address provided", dnatLabel)
 	}
@@ -111,8 +111,8 @@ func (h *NatVppHandler) AddNat44StaticMapping(mapping *nat.Nat44DNat_StaticMappi
 	return h.handleNat44StaticMappingLb(mapping, dnatLabel, true)
 }
 
-// DelNat44StaticMapping removes existing static mapping entry.
-func (h *NatVppHandler) DelNat44StaticMapping(mapping *nat.Nat44DNat_StaticMapping, dnatLabel string) error {
+// DelNat44StaticMapping removes existing NAT44 static mapping entry.
+func (h *NatVppHandler) DelNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string) error {
 	if len(mapping.LocalIps) == 0 {
 		return errors.Errorf("cannot un-configure static mapping from DNAT %s: no local address provided", dnatLabel)
 	}
@@ -122,7 +122,7 @@ func (h *NatVppHandler) DelNat44StaticMapping(mapping *nat.Nat44DNat_StaticMappi
 	return h.handleNat44StaticMappingLb(mapping, dnatLabel, false)
 }
 
-// Calls VPP binary API to set/unset interface NAT feature.
+// Calls VPP binary API to set/unset interface NAT44 feature.
 func (h *NatVppHandler) handleNat44Interface(iface string, isInside, isAdd bool) error {
 	// get interface metadata
 	ifaceMeta, found := h.ifIndexes.LookupByName(iface)
@@ -146,7 +146,7 @@ func (h *NatVppHandler) handleNat44Interface(iface string, isInside, isAdd bool)
 	return nil
 }
 
-// Calls VPP binary API to set/unset interface NAT output feature
+// Calls VPP binary API to set/unset interface NAT44 output feature
 func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside, isAdd bool) error {
 	// get interface metadata
 	ifaceMeta, found := h.ifIndexes.LookupByName(iface)
@@ -170,7 +170,7 @@ func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside
 	return nil
 }
 
-// Calls VPP binary API to add/remove address to/from the pool.
+// Calls VPP binary API to add/remove address to/from the NAT44 pool.
 func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twiceNat, isAdd bool) error {
 	ipAddr := net.ParseIP(address).To4()
 	if ipAddr == nil {
@@ -197,12 +197,12 @@ func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twice
 }
 
 // Calls VPP binary API to setup NAT virtual reassembly
-func (h *NatVppHandler) handleNat44VirtualReassembly(timeout, maxReass, maxFrag uint32, dropFrag, isIpv6 bool) error {
+func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly, isIpv6 bool) error {
 	req := &binapi.NatSetReass{
-		Timeout:  timeout,
-		MaxReass: uint16(maxReass),
-		MaxFrag:  uint8(maxFrag),
-		DropFrag: boolToUint(dropFrag),
+		Timeout:  vrCfg.Timeout,
+		MaxReass: uint16(vrCfg.MaxReassemblies),
+		MaxFrag:  uint8(vrCfg.MaxFragments),
+		DropFrag: boolToUint(vrCfg.DropFragments),
 		IsIP6:    boolToUint(isIpv6),
 	}
 	reply := &binapi.NatSetReassReply{}
@@ -216,8 +216,8 @@ func (h *NatVppHandler) handleNat44VirtualReassembly(timeout, maxReass, maxFrag 
 	return nil
 }
 
-// Calls VPP binary API to add/remove static mapping
-func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.Nat44DNat_StaticMapping, dnatLabel string, isAdd bool) error {
+// Calls VPP binary API to add/remove NAT44 static mapping
+func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
 	var ifIdx = NoInterface
 	var exIPAddr net.IP
 
@@ -266,8 +266,8 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.Nat44DNat_StaticMa
 		Protocol:          h.protocolNBValueToNumber(mapping.Protocol),
 		ExternalSwIfIndex: ifIdx,
 		VrfID:             lcVrf,
-		TwiceNat:          boolToUint(mapping.TwiceNat == nat.Nat44DNat_StaticMapping_ENABLED),
-		SelfTwiceNat:      boolToUint(mapping.TwiceNat == nat.Nat44DNat_StaticMapping_SELF),
+		TwiceNat:          boolToUint(mapping.TwiceNat == nat.DNat44_StaticMapping_ENABLED),
+		SelfTwiceNat:      boolToUint(mapping.TwiceNat == nat.DNat44_StaticMapping_SELF),
 		Out2inOnly:        1,
 		IsAdd:             boolToUint(isAdd),
 	}
@@ -290,8 +290,8 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.Nat44DNat_StaticMa
 	return nil
 }
 
-// Calls VPP binary API to add/remove static mapping with load balancer.
-func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.Nat44DNat_StaticMapping, dnatLabel string, isAdd bool) error {
+// Calls VPP binary API to add/remove NAT44 static mapping with load balancing.
+func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
 	// check tag length limit
 	if err := checkTagLength(dnatLabel); err != nil {
 		return err
@@ -338,8 +338,8 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.Nat44DNat_Static
 		ExternalAddr: exIPAddrByte,
 		ExternalPort: uint16(mapping.ExternalPort),
 		Protocol:     h.protocolNBValueToNumber(mapping.Protocol),
-		TwiceNat:     boolToUint(mapping.TwiceNat == nat.Nat44DNat_StaticMapping_ENABLED),
-		SelfTwiceNat: boolToUint(mapping.TwiceNat == nat.Nat44DNat_StaticMapping_SELF),
+		TwiceNat:     boolToUint(mapping.TwiceNat == nat.DNat44_StaticMapping_ENABLED),
+		SelfTwiceNat: boolToUint(mapping.TwiceNat == nat.DNat44_StaticMapping_SELF),
 		Out2inOnly:   1,
 		IsAdd:        boolToUint(isAdd),
 	}
@@ -354,8 +354,8 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.Nat44DNat_Static
 	return nil
 }
 
-// Calls VPP binary API to add/remove identity mapping
-func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.Nat44DNat_IdentityMapping, dnatLabel string, isAdd bool) error {
+// Calls VPP binary API to add/remove NAT44 identity mapping.
+func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string, isAdd bool) error {
 	var ifIdx = NoInterface
 	var ipAddr net.IP
 
@@ -365,11 +365,11 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.Nat44DNat_Identi
 	}
 
 	// get interface index
-	if mapping.AddressedInterface != "" {
-		ifMeta, found := h.ifIndexes.LookupByName(mapping.AddressedInterface)
+	if mapping.Interface != "" {
+		ifMeta, found := h.ifIndexes.LookupByName(mapping.Interface)
 		if !found {
 			return errors.Errorf("failed to configure identity mapping for DNAT %s: addressed interface %s does not exist",
-				dnatLabel, mapping.AddressedInterface)
+				dnatLabel, mapping.Interface)
 		}
 		ifIdx = ifMeta.SwIfIndex
 	}

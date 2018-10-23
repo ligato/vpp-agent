@@ -17,46 +17,46 @@ package nat
 import "strings"
 
 const (
-	/* NAT */
+	/* NAT44 */
 
-	// Prefix is a key prefix used in NB DB to store configuration for NAT.
-	Prefix = "vpp/config/v2/nat/"
+	// PrefixNAT44 is a key prefix used in NB DB to store configuration for NAT44.
+	PrefixNAT44 = "vpp/config/v2/nat44/"
 
-	// GlobalKey is the key used in NB DB to store global NAT configuration.
-	GlobalKey = Prefix + "global/"
+	// GlobalNAT44Key is the key used in NB DB to store global NAT44 configuration.
+	GlobalNAT44Key = PrefixNAT44 + "global/"
 
-	// DNatPrefix is a key prefix used in NB DB to store DNAT configuration.
-	DNatPrefix = Prefix + "dnat/"
+	// DNAT44Prefix is a key prefix used in NB DB to store DNAT-44 configuration.
+	DNAT44Prefix = PrefixNAT44 + "dnat/"
 
-	/* NAT interface */
+	/* NAT44 interface */
 
-	// natInterfaceKeyPrefix is a common prefix for (derived) keys each representing
-	// NAT configuration for a single interface.
-	natInterfaceKeyPrefix = "vpp/nat/interface/"
+	// interfaceNAT44KeyPrefix is a common prefix for (derived) keys each representing
+	// NAT44 configuration for a single interface.
+	interfaceNAT44KeyPrefix = "vpp/nat44/interface/"
 
-	// natInterfaceKeyTemplate is a template for (derived) key representing
-	// NAT configuration for a single interface.
-	natInterfaceKeyTemplate = natInterfaceKeyPrefix + "{iface}/feature/{feature}"
+	// interfaceNAT44KeyTemplate is a template for (derived) key representing
+	// NAT44 configuration for a single interface.
+	interfaceNAT44KeyTemplate = interfaceNAT44KeyPrefix + "{iface}/feature/{feature}"
 
 	// NAT interface features
 	inFeature = "in"
 	outFeature = "out"
 )
 
-/* NAT */
+/* NAT44 */
 
-// DNatKey returns the key used in NB DB to store the configuration of the
-// given DNAT configuration.
-func DNatKey(label string) string {
-	return DNatPrefix + label
+// DNAT44Key returns the key used in NB DB to store the configuration of the
+// given DNAT-44 configuration.
+func DNAT44Key(label string) string {
+	return DNAT44Prefix + label
 }
 
-/* NAT interface */
+/* NAT44 interface */
 
-// InterfaceKey returns (derived) key representing NAT configuration of a given
-// interface.
-func InterfaceKey(iface string, isInside bool) string {
-	key := strings.Replace(natInterfaceKeyTemplate, "{iface}", iface, 1)
+// InterfaceNAT44Key returns (derived) key representing NAT44 configuration
+// for a given interface.
+func InterfaceNAT44Key(iface string, isInside bool) string {
+	key := strings.Replace(interfaceNAT44KeyTemplate, "{iface}", iface, 1)
 	feature := inFeature
 	if !isInside {
 		feature = outFeature
@@ -65,10 +65,11 @@ func InterfaceKey(iface string, isInside bool) string {
 	return key
 }
 
-// ParseInterfaceKey parses interface name and the assigned feature from NAT interface key.
-func ParseInterfaceKey(key string) (iface string, isInside bool, isNATInterfaceKey bool) {
-	if strings.HasPrefix(key, natInterfaceKeyPrefix) {
-		keySuffix := strings.TrimPrefix(key, natInterfaceKeyPrefix)
+// ParseInterfaceNAT44Key parses interface name and the assigned NAT44 feature
+// from Interface-NAT44 key.
+func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isNATInterfaceKey bool) {
+	if strings.HasPrefix(key, interfaceNAT44KeyPrefix) {
+		keySuffix := strings.TrimPrefix(key, interfaceNAT44KeyPrefix)
 		fibComps := strings.Split(keySuffix, "/")
 		if len(fibComps) == 3 && fibComps[1] == "feature" {
 			isInside := true

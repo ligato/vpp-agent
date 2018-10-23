@@ -13,8 +13,8 @@
 // limitations under the License.
 
 //go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *nat.Nat44Global --import "../model/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NATInterface --value-type *nat.Nat44Global_NatInterface --import "../model/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44DNAT --value-type *nat.Nat44DNat --import "../model/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *nat.Nat44Global_NatInterface --import "../model/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *nat.DNat44 --import "../model/nat" --output-dir "descriptor"
 
 package natplugin
 
@@ -46,7 +46,8 @@ type NATPlugin struct {
 
 	// descriptors
 	nat44GlobalDescriptor *descriptor.NAT44GlobalDescriptor
-	natIfaceDescriptor    *descriptor.NATInterfaceDescriptor
+	nat44IfaceDescriptor  *descriptor.NAT44InterfaceDescriptor
+	dnat44Descriptor      *descriptor.DNAT44Descriptor
 }
 
 // Deps lists dependencies of the NAT plugin.
@@ -75,9 +76,13 @@ func (p *NATPlugin) Init() error {
 	nat44GlobalDescriptor := adapter.NewNAT44GlobalDescriptor(p.nat44GlobalDescriptor.GetDescriptor())
 	p.Scheduler.RegisterKVDescriptor(nat44GlobalDescriptor)
 
-	p.natIfaceDescriptor = descriptor.NewNATInterfaceDescriptor(p.natHandler, p.Log)
-	natIfaceDescriptor := adapter.NewNATInterfaceDescriptor(p.natIfaceDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(natIfaceDescriptor)
+	p.nat44IfaceDescriptor = descriptor.NewNAT44InterfaceDescriptor(p.natHandler, p.Log)
+	nat44IfaceDescriptor := adapter.NewNAT44InterfaceDescriptor(p.nat44IfaceDescriptor.GetDescriptor())
+	p.Scheduler.RegisterKVDescriptor(nat44IfaceDescriptor)
+
+	p.dnat44Descriptor = descriptor.NewDNAT44Descriptor(p.natHandler, p.Log)
+	dnat44Descriptor := adapter.NewDNAT44Descriptor(p.dnat44Descriptor.GetDescriptor())
+	p.Scheduler.RegisterKVDescriptor(dnat44Descriptor)
 
 	return nil
 }

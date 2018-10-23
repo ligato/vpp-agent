@@ -18,75 +18,74 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
-type Nat44DNat_Protocol int32
+type DNat44_Protocol int32
 
 const (
-	Nat44DNat_TCP  Nat44DNat_Protocol = 0
-	Nat44DNat_UDP  Nat44DNat_Protocol = 1
-	Nat44DNat_ICMP Nat44DNat_Protocol = 2
+	DNat44_TCP  DNat44_Protocol = 0
+	DNat44_UDP  DNat44_Protocol = 1
+	DNat44_ICMP DNat44_Protocol = 2
 )
 
-var Nat44DNat_Protocol_name = map[int32]string{
+var DNat44_Protocol_name = map[int32]string{
 	0: "TCP",
 	1: "UDP",
 	2: "ICMP",
 }
-var Nat44DNat_Protocol_value = map[string]int32{
+var DNat44_Protocol_value = map[string]int32{
 	"TCP":  0,
 	"UDP":  1,
 	"ICMP": 2,
 }
 
-func (x Nat44DNat_Protocol) String() string {
-	return proto.EnumName(Nat44DNat_Protocol_name, int32(x))
+func (x DNat44_Protocol) String() string {
+	return proto.EnumName(DNat44_Protocol_name, int32(x))
 }
-func (Nat44DNat_Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{1, 0}
+func (DNat44_Protocol) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{1, 0}
 }
 
-type Nat44DNat_StaticMapping_TwiceNatMode int32
+type DNat44_StaticMapping_TwiceNatMode int32
 
 const (
-	Nat44DNat_StaticMapping_DISABLED Nat44DNat_StaticMapping_TwiceNatMode = 0
-	Nat44DNat_StaticMapping_ENABLED  Nat44DNat_StaticMapping_TwiceNatMode = 1
-	Nat44DNat_StaticMapping_SELF     Nat44DNat_StaticMapping_TwiceNatMode = 2
+	DNat44_StaticMapping_DISABLED DNat44_StaticMapping_TwiceNatMode = 0
+	DNat44_StaticMapping_ENABLED  DNat44_StaticMapping_TwiceNatMode = 1
+	DNat44_StaticMapping_SELF     DNat44_StaticMapping_TwiceNatMode = 2
 )
 
-var Nat44DNat_StaticMapping_TwiceNatMode_name = map[int32]string{
+var DNat44_StaticMapping_TwiceNatMode_name = map[int32]string{
 	0: "DISABLED",
 	1: "ENABLED",
 	2: "SELF",
 }
-var Nat44DNat_StaticMapping_TwiceNatMode_value = map[string]int32{
+var DNat44_StaticMapping_TwiceNatMode_value = map[string]int32{
 	"DISABLED": 0,
 	"ENABLED":  1,
 	"SELF":     2,
 }
 
-func (x Nat44DNat_StaticMapping_TwiceNatMode) String() string {
-	return proto.EnumName(Nat44DNat_StaticMapping_TwiceNatMode_name, int32(x))
+func (x DNat44_StaticMapping_TwiceNatMode) String() string {
+	return proto.EnumName(DNat44_StaticMapping_TwiceNatMode_name, int32(x))
 }
-func (Nat44DNat_StaticMapping_TwiceNatMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{1, 0, 0}
+func (DNat44_StaticMapping_TwiceNatMode) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{1, 0, 0}
 }
 
 // NAT44 global config
 type Nat44Global struct {
-	Forwarding            bool                           `protobuf:"varint,1,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
-	NatInterfaces         []*Nat44Global_NatInterface    `protobuf:"bytes,2,rep,name=nat_interfaces,json=natInterfaces" json:"nat_interfaces,omitempty"`
-	AddressPool           []*Nat44Global_NatAddress      `protobuf:"bytes,3,rep,name=address_pool,json=addressPool" json:"address_pool,omitempty"`
-	VirtualReassemblyIpv4 *Nat44Global_VirtualReassembly `protobuf:"bytes,4,opt,name=virtual_reassembly_ipv4,json=virtualReassemblyIpv4" json:"virtual_reassembly_ipv4,omitempty"`
-	VirtualReassemblyIpv6 *Nat44Global_VirtualReassembly `protobuf:"bytes,5,opt,name=virtual_reassembly_ipv6,json=virtualReassemblyIpv6" json:"virtual_reassembly_ipv6,omitempty"`
-	XXX_NoUnkeyedLiteral  struct{}                       `json:"-"`
-	XXX_unrecognized      []byte                         `json:"-"`
-	XXX_sizecache         int32                          `json:"-"`
+	Forwarding           bool                     `protobuf:"varint,1,opt,name=forwarding,proto3" json:"forwarding,omitempty"`
+	NatInterfaces        []*Nat44Global_Interface `protobuf:"bytes,2,rep,name=nat_interfaces,json=natInterfaces" json:"nat_interfaces,omitempty"`
+	AddressPool          []*Nat44Global_Address   `protobuf:"bytes,3,rep,name=address_pool,json=addressPool" json:"address_pool,omitempty"`
+	VirtualReassembly    *VirtualReassembly       `protobuf:"bytes,4,opt,name=virtual_reassembly,json=virtualReassembly" json:"virtual_reassembly,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
 }
 
 func (m *Nat44Global) Reset()         { *m = Nat44Global{} }
 func (m *Nat44Global) String() string { return proto.CompactTextString(m) }
 func (*Nat44Global) ProtoMessage()    {}
 func (*Nat44Global) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{0}
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{0}
 }
 func (m *Nat44Global) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Nat44Global.Unmarshal(m, b)
@@ -113,35 +112,28 @@ func (m *Nat44Global) GetForwarding() bool {
 	return false
 }
 
-func (m *Nat44Global) GetNatInterfaces() []*Nat44Global_NatInterface {
+func (m *Nat44Global) GetNatInterfaces() []*Nat44Global_Interface {
 	if m != nil {
 		return m.NatInterfaces
 	}
 	return nil
 }
 
-func (m *Nat44Global) GetAddressPool() []*Nat44Global_NatAddress {
+func (m *Nat44Global) GetAddressPool() []*Nat44Global_Address {
 	if m != nil {
 		return m.AddressPool
 	}
 	return nil
 }
 
-func (m *Nat44Global) GetVirtualReassemblyIpv4() *Nat44Global_VirtualReassembly {
+func (m *Nat44Global) GetVirtualReassembly() *VirtualReassembly {
 	if m != nil {
-		return m.VirtualReassemblyIpv4
+		return m.VirtualReassembly
 	}
 	return nil
 }
 
-func (m *Nat44Global) GetVirtualReassemblyIpv6() *Nat44Global_VirtualReassembly {
-	if m != nil {
-		return m.VirtualReassemblyIpv6
-	}
-	return nil
-}
-
-type Nat44Global_NatInterface struct {
+type Nat44Global_Interface struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	IsInside             bool     `protobuf:"varint,2,opt,name=is_inside,json=isInside,proto3" json:"is_inside,omitempty"`
 	OutputFeature        bool     `protobuf:"varint,3,opt,name=output_feature,json=outputFeature,proto3" json:"output_feature,omitempty"`
@@ -150,52 +142,52 @@ type Nat44Global_NatInterface struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Nat44Global_NatInterface) Reset()         { *m = Nat44Global_NatInterface{} }
-func (m *Nat44Global_NatInterface) String() string { return proto.CompactTextString(m) }
-func (*Nat44Global_NatInterface) ProtoMessage()    {}
-func (*Nat44Global_NatInterface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{0, 0}
+func (m *Nat44Global_Interface) Reset()         { *m = Nat44Global_Interface{} }
+func (m *Nat44Global_Interface) String() string { return proto.CompactTextString(m) }
+func (*Nat44Global_Interface) ProtoMessage()    {}
+func (*Nat44Global_Interface) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{0, 0}
 }
-func (m *Nat44Global_NatInterface) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Nat44Global_NatInterface.Unmarshal(m, b)
+func (m *Nat44Global_Interface) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Nat44Global_Interface.Unmarshal(m, b)
 }
-func (m *Nat44Global_NatInterface) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Nat44Global_NatInterface.Marshal(b, m, deterministic)
+func (m *Nat44Global_Interface) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Nat44Global_Interface.Marshal(b, m, deterministic)
 }
-func (dst *Nat44Global_NatInterface) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Nat44Global_NatInterface.Merge(dst, src)
+func (dst *Nat44Global_Interface) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Nat44Global_Interface.Merge(dst, src)
 }
-func (m *Nat44Global_NatInterface) XXX_Size() int {
-	return xxx_messageInfo_Nat44Global_NatInterface.Size(m)
+func (m *Nat44Global_Interface) XXX_Size() int {
+	return xxx_messageInfo_Nat44Global_Interface.Size(m)
 }
-func (m *Nat44Global_NatInterface) XXX_DiscardUnknown() {
-	xxx_messageInfo_Nat44Global_NatInterface.DiscardUnknown(m)
+func (m *Nat44Global_Interface) XXX_DiscardUnknown() {
+	xxx_messageInfo_Nat44Global_Interface.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Nat44Global_NatInterface proto.InternalMessageInfo
+var xxx_messageInfo_Nat44Global_Interface proto.InternalMessageInfo
 
-func (m *Nat44Global_NatInterface) GetName() string {
+func (m *Nat44Global_Interface) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *Nat44Global_NatInterface) GetIsInside() bool {
+func (m *Nat44Global_Interface) GetIsInside() bool {
 	if m != nil {
 		return m.IsInside
 	}
 	return false
 }
 
-func (m *Nat44Global_NatInterface) GetOutputFeature() bool {
+func (m *Nat44Global_Interface) GetOutputFeature() bool {
 	if m != nil {
 		return m.OutputFeature
 	}
 	return false
 }
 
-type Nat44Global_NatAddress struct {
+type Nat44Global_Address struct {
 	Address              string   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	VrfId                uint32   `protobuf:"varint,2,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
 	TwiceNat             bool     `protobuf:"varint,3,opt,name=twice_nat,json=twiceNat,proto3" json:"twice_nat,omitempty"`
@@ -204,247 +196,185 @@ type Nat44Global_NatAddress struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Nat44Global_NatAddress) Reset()         { *m = Nat44Global_NatAddress{} }
-func (m *Nat44Global_NatAddress) String() string { return proto.CompactTextString(m) }
-func (*Nat44Global_NatAddress) ProtoMessage()    {}
-func (*Nat44Global_NatAddress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{0, 1}
+func (m *Nat44Global_Address) Reset()         { *m = Nat44Global_Address{} }
+func (m *Nat44Global_Address) String() string { return proto.CompactTextString(m) }
+func (*Nat44Global_Address) ProtoMessage()    {}
+func (*Nat44Global_Address) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{0, 1}
 }
-func (m *Nat44Global_NatAddress) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Nat44Global_NatAddress.Unmarshal(m, b)
+func (m *Nat44Global_Address) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Nat44Global_Address.Unmarshal(m, b)
 }
-func (m *Nat44Global_NatAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Nat44Global_NatAddress.Marshal(b, m, deterministic)
+func (m *Nat44Global_Address) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Nat44Global_Address.Marshal(b, m, deterministic)
 }
-func (dst *Nat44Global_NatAddress) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Nat44Global_NatAddress.Merge(dst, src)
+func (dst *Nat44Global_Address) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Nat44Global_Address.Merge(dst, src)
 }
-func (m *Nat44Global_NatAddress) XXX_Size() int {
-	return xxx_messageInfo_Nat44Global_NatAddress.Size(m)
+func (m *Nat44Global_Address) XXX_Size() int {
+	return xxx_messageInfo_Nat44Global_Address.Size(m)
 }
-func (m *Nat44Global_NatAddress) XXX_DiscardUnknown() {
-	xxx_messageInfo_Nat44Global_NatAddress.DiscardUnknown(m)
+func (m *Nat44Global_Address) XXX_DiscardUnknown() {
+	xxx_messageInfo_Nat44Global_Address.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Nat44Global_NatAddress proto.InternalMessageInfo
+var xxx_messageInfo_Nat44Global_Address proto.InternalMessageInfo
 
-func (m *Nat44Global_NatAddress) GetAddress() string {
+func (m *Nat44Global_Address) GetAddress() string {
 	if m != nil {
 		return m.Address
 	}
 	return ""
 }
 
-func (m *Nat44Global_NatAddress) GetVrfId() uint32 {
+func (m *Nat44Global_Address) GetVrfId() uint32 {
 	if m != nil {
 		return m.VrfId
 	}
 	return 0
 }
 
-func (m *Nat44Global_NatAddress) GetTwiceNat() bool {
+func (m *Nat44Global_Address) GetTwiceNat() bool {
 	if m != nil {
 		return m.TwiceNat
 	}
 	return false
 }
 
-type Nat44Global_VirtualReassembly struct {
-	Timeout              uint32   `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	MaxReass             uint32   `protobuf:"varint,2,opt,name=max_reass,json=maxReass,proto3" json:"max_reass,omitempty"`
-	MaxFrag              uint32   `protobuf:"varint,3,opt,name=max_frag,json=maxFrag,proto3" json:"max_frag,omitempty"`
-	DropFrag             bool     `protobuf:"varint,4,opt,name=drop_frag,json=dropFrag,proto3" json:"drop_frag,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+// A grouping of one-to-many IPv4->IPv4 (Destination-NAT44) mappings
+type DNat44 struct {
+	Label                string                    `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	StMappings           []*DNat44_StaticMapping   `protobuf:"bytes,2,rep,name=st_mappings,json=stMappings" json:"st_mappings,omitempty"`
+	IdMappings           []*DNat44_IdentityMapping `protobuf:"bytes,3,rep,name=id_mappings,json=idMappings" json:"id_mappings,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
 }
 
-func (m *Nat44Global_VirtualReassembly) Reset()         { *m = Nat44Global_VirtualReassembly{} }
-func (m *Nat44Global_VirtualReassembly) String() string { return proto.CompactTextString(m) }
-func (*Nat44Global_VirtualReassembly) ProtoMessage()    {}
-func (*Nat44Global_VirtualReassembly) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{0, 2}
+func (m *DNat44) Reset()         { *m = DNat44{} }
+func (m *DNat44) String() string { return proto.CompactTextString(m) }
+func (*DNat44) ProtoMessage()    {}
+func (*DNat44) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{1}
 }
-func (m *Nat44Global_VirtualReassembly) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Nat44Global_VirtualReassembly.Unmarshal(m, b)
+func (m *DNat44) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DNat44.Unmarshal(m, b)
 }
-func (m *Nat44Global_VirtualReassembly) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Nat44Global_VirtualReassembly.Marshal(b, m, deterministic)
+func (m *DNat44) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DNat44.Marshal(b, m, deterministic)
 }
-func (dst *Nat44Global_VirtualReassembly) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Nat44Global_VirtualReassembly.Merge(dst, src)
+func (dst *DNat44) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DNat44.Merge(dst, src)
 }
-func (m *Nat44Global_VirtualReassembly) XXX_Size() int {
-	return xxx_messageInfo_Nat44Global_VirtualReassembly.Size(m)
+func (m *DNat44) XXX_Size() int {
+	return xxx_messageInfo_DNat44.Size(m)
 }
-func (m *Nat44Global_VirtualReassembly) XXX_DiscardUnknown() {
-	xxx_messageInfo_Nat44Global_VirtualReassembly.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Nat44Global_VirtualReassembly proto.InternalMessageInfo
-
-func (m *Nat44Global_VirtualReassembly) GetTimeout() uint32 {
-	if m != nil {
-		return m.Timeout
-	}
-	return 0
+func (m *DNat44) XXX_DiscardUnknown() {
+	xxx_messageInfo_DNat44.DiscardUnknown(m)
 }
 
-func (m *Nat44Global_VirtualReassembly) GetMaxReass() uint32 {
-	if m != nil {
-		return m.MaxReass
-	}
-	return 0
-}
+var xxx_messageInfo_DNat44 proto.InternalMessageInfo
 
-func (m *Nat44Global_VirtualReassembly) GetMaxFrag() uint32 {
-	if m != nil {
-		return m.MaxFrag
-	}
-	return 0
-}
-
-func (m *Nat44Global_VirtualReassembly) GetDropFrag() bool {
-	if m != nil {
-		return m.DropFrag
-	}
-	return false
-}
-
-// One-to-many (DNAT) mappings
-type Nat44DNat struct {
-	Label                string                       `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	StMappings           []*Nat44DNat_StaticMapping   `protobuf:"bytes,2,rep,name=st_mappings,json=stMappings" json:"st_mappings,omitempty"`
-	IdMappings           []*Nat44DNat_IdentityMapping `protobuf:"bytes,3,rep,name=id_mappings,json=idMappings" json:"id_mappings,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
-	XXX_unrecognized     []byte                       `json:"-"`
-	XXX_sizecache        int32                        `json:"-"`
-}
-
-func (m *Nat44DNat) Reset()         { *m = Nat44DNat{} }
-func (m *Nat44DNat) String() string { return proto.CompactTextString(m) }
-func (*Nat44DNat) ProtoMessage()    {}
-func (*Nat44DNat) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{1}
-}
-func (m *Nat44DNat) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Nat44DNat.Unmarshal(m, b)
-}
-func (m *Nat44DNat) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Nat44DNat.Marshal(b, m, deterministic)
-}
-func (dst *Nat44DNat) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Nat44DNat.Merge(dst, src)
-}
-func (m *Nat44DNat) XXX_Size() int {
-	return xxx_messageInfo_Nat44DNat.Size(m)
-}
-func (m *Nat44DNat) XXX_DiscardUnknown() {
-	xxx_messageInfo_Nat44DNat.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Nat44DNat proto.InternalMessageInfo
-
-func (m *Nat44DNat) GetLabel() string {
+func (m *DNat44) GetLabel() string {
 	if m != nil {
 		return m.Label
 	}
 	return ""
 }
 
-func (m *Nat44DNat) GetStMappings() []*Nat44DNat_StaticMapping {
+func (m *DNat44) GetStMappings() []*DNat44_StaticMapping {
 	if m != nil {
 		return m.StMappings
 	}
 	return nil
 }
 
-func (m *Nat44DNat) GetIdMappings() []*Nat44DNat_IdentityMapping {
+func (m *DNat44) GetIdMappings() []*DNat44_IdentityMapping {
 	if m != nil {
 		return m.IdMappings
 	}
 	return nil
 }
 
-type Nat44DNat_StaticMapping struct {
-	ExternalInterface    string                               `protobuf:"bytes,1,opt,name=external_interface,json=externalInterface,proto3" json:"external_interface,omitempty"`
-	ExternalIp           string                               `protobuf:"bytes,2,opt,name=external_ip,json=externalIp,proto3" json:"external_ip,omitempty"`
-	ExternalPort         uint32                               `protobuf:"varint,3,opt,name=external_port,json=externalPort,proto3" json:"external_port,omitempty"`
-	LocalIps             []*Nat44DNat_StaticMapping_LocalIP   `protobuf:"bytes,4,rep,name=local_ips,json=localIps" json:"local_ips,omitempty"`
-	Protocol             Nat44DNat_Protocol                   `protobuf:"varint,5,opt,name=protocol,proto3,enum=nat.Nat44DNat_Protocol" json:"protocol,omitempty"`
-	TwiceNat             Nat44DNat_StaticMapping_TwiceNatMode `protobuf:"varint,6,opt,name=twice_nat,json=twiceNat,proto3,enum=nat.Nat44DNat_StaticMapping_TwiceNatMode" json:"twice_nat,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
-	XXX_unrecognized     []byte                               `json:"-"`
-	XXX_sizecache        int32                                `json:"-"`
+type DNat44_StaticMapping struct {
+	ExternalInterface    string                            `protobuf:"bytes,1,opt,name=external_interface,json=externalInterface,proto3" json:"external_interface,omitempty"`
+	ExternalIp           string                            `protobuf:"bytes,2,opt,name=external_ip,json=externalIp,proto3" json:"external_ip,omitempty"`
+	ExternalPort         uint32                            `protobuf:"varint,3,opt,name=external_port,json=externalPort,proto3" json:"external_port,omitempty"`
+	LocalIps             []*DNat44_StaticMapping_LocalIP   `protobuf:"bytes,4,rep,name=local_ips,json=localIps" json:"local_ips,omitempty"`
+	Protocol             DNat44_Protocol                   `protobuf:"varint,5,opt,name=protocol,proto3,enum=nat.DNat44_Protocol" json:"protocol,omitempty"`
+	TwiceNat             DNat44_StaticMapping_TwiceNatMode `protobuf:"varint,6,opt,name=twice_nat,json=twiceNat,proto3,enum=nat.DNat44_StaticMapping_TwiceNatMode" json:"twice_nat,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
 }
 
-func (m *Nat44DNat_StaticMapping) Reset()         { *m = Nat44DNat_StaticMapping{} }
-func (m *Nat44DNat_StaticMapping) String() string { return proto.CompactTextString(m) }
-func (*Nat44DNat_StaticMapping) ProtoMessage()    {}
-func (*Nat44DNat_StaticMapping) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{1, 0}
+func (m *DNat44_StaticMapping) Reset()         { *m = DNat44_StaticMapping{} }
+func (m *DNat44_StaticMapping) String() string { return proto.CompactTextString(m) }
+func (*DNat44_StaticMapping) ProtoMessage()    {}
+func (*DNat44_StaticMapping) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{1, 0}
 }
-func (m *Nat44DNat_StaticMapping) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Nat44DNat_StaticMapping.Unmarshal(m, b)
+func (m *DNat44_StaticMapping) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DNat44_StaticMapping.Unmarshal(m, b)
 }
-func (m *Nat44DNat_StaticMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Nat44DNat_StaticMapping.Marshal(b, m, deterministic)
+func (m *DNat44_StaticMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DNat44_StaticMapping.Marshal(b, m, deterministic)
 }
-func (dst *Nat44DNat_StaticMapping) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Nat44DNat_StaticMapping.Merge(dst, src)
+func (dst *DNat44_StaticMapping) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DNat44_StaticMapping.Merge(dst, src)
 }
-func (m *Nat44DNat_StaticMapping) XXX_Size() int {
-	return xxx_messageInfo_Nat44DNat_StaticMapping.Size(m)
+func (m *DNat44_StaticMapping) XXX_Size() int {
+	return xxx_messageInfo_DNat44_StaticMapping.Size(m)
 }
-func (m *Nat44DNat_StaticMapping) XXX_DiscardUnknown() {
-	xxx_messageInfo_Nat44DNat_StaticMapping.DiscardUnknown(m)
+func (m *DNat44_StaticMapping) XXX_DiscardUnknown() {
+	xxx_messageInfo_DNat44_StaticMapping.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Nat44DNat_StaticMapping proto.InternalMessageInfo
+var xxx_messageInfo_DNat44_StaticMapping proto.InternalMessageInfo
 
-func (m *Nat44DNat_StaticMapping) GetExternalInterface() string {
+func (m *DNat44_StaticMapping) GetExternalInterface() string {
 	if m != nil {
 		return m.ExternalInterface
 	}
 	return ""
 }
 
-func (m *Nat44DNat_StaticMapping) GetExternalIp() string {
+func (m *DNat44_StaticMapping) GetExternalIp() string {
 	if m != nil {
 		return m.ExternalIp
 	}
 	return ""
 }
 
-func (m *Nat44DNat_StaticMapping) GetExternalPort() uint32 {
+func (m *DNat44_StaticMapping) GetExternalPort() uint32 {
 	if m != nil {
 		return m.ExternalPort
 	}
 	return 0
 }
 
-func (m *Nat44DNat_StaticMapping) GetLocalIps() []*Nat44DNat_StaticMapping_LocalIP {
+func (m *DNat44_StaticMapping) GetLocalIps() []*DNat44_StaticMapping_LocalIP {
 	if m != nil {
 		return m.LocalIps
 	}
 	return nil
 }
 
-func (m *Nat44DNat_StaticMapping) GetProtocol() Nat44DNat_Protocol {
+func (m *DNat44_StaticMapping) GetProtocol() DNat44_Protocol {
 	if m != nil {
 		return m.Protocol
 	}
-	return Nat44DNat_TCP
+	return DNat44_TCP
 }
 
-func (m *Nat44DNat_StaticMapping) GetTwiceNat() Nat44DNat_StaticMapping_TwiceNatMode {
+func (m *DNat44_StaticMapping) GetTwiceNat() DNat44_StaticMapping_TwiceNatMode {
 	if m != nil {
 		return m.TwiceNat
 	}
-	return Nat44DNat_StaticMapping_DISABLED
+	return DNat44_StaticMapping_DISABLED
 }
 
-type Nat44DNat_StaticMapping_LocalIP struct {
+type DNat44_StaticMapping_LocalIP struct {
 	VrfId                uint32   `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
 	LocalIp              string   `protobuf:"bytes,2,opt,name=local_ip,json=localIp,proto3" json:"local_ip,omitempty"`
 	LocalPort            uint32   `protobuf:"varint,3,opt,name=local_port,json=localPort,proto3" json:"local_port,omitempty"`
@@ -454,190 +384,252 @@ type Nat44DNat_StaticMapping_LocalIP struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Nat44DNat_StaticMapping_LocalIP) Reset()         { *m = Nat44DNat_StaticMapping_LocalIP{} }
-func (m *Nat44DNat_StaticMapping_LocalIP) String() string { return proto.CompactTextString(m) }
-func (*Nat44DNat_StaticMapping_LocalIP) ProtoMessage()    {}
-func (*Nat44DNat_StaticMapping_LocalIP) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{1, 0, 0}
+func (m *DNat44_StaticMapping_LocalIP) Reset()         { *m = DNat44_StaticMapping_LocalIP{} }
+func (m *DNat44_StaticMapping_LocalIP) String() string { return proto.CompactTextString(m) }
+func (*DNat44_StaticMapping_LocalIP) ProtoMessage()    {}
+func (*DNat44_StaticMapping_LocalIP) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{1, 0, 0}
 }
-func (m *Nat44DNat_StaticMapping_LocalIP) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Nat44DNat_StaticMapping_LocalIP.Unmarshal(m, b)
+func (m *DNat44_StaticMapping_LocalIP) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DNat44_StaticMapping_LocalIP.Unmarshal(m, b)
 }
-func (m *Nat44DNat_StaticMapping_LocalIP) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Nat44DNat_StaticMapping_LocalIP.Marshal(b, m, deterministic)
+func (m *DNat44_StaticMapping_LocalIP) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DNat44_StaticMapping_LocalIP.Marshal(b, m, deterministic)
 }
-func (dst *Nat44DNat_StaticMapping_LocalIP) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Nat44DNat_StaticMapping_LocalIP.Merge(dst, src)
+func (dst *DNat44_StaticMapping_LocalIP) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DNat44_StaticMapping_LocalIP.Merge(dst, src)
 }
-func (m *Nat44DNat_StaticMapping_LocalIP) XXX_Size() int {
-	return xxx_messageInfo_Nat44DNat_StaticMapping_LocalIP.Size(m)
+func (m *DNat44_StaticMapping_LocalIP) XXX_Size() int {
+	return xxx_messageInfo_DNat44_StaticMapping_LocalIP.Size(m)
 }
-func (m *Nat44DNat_StaticMapping_LocalIP) XXX_DiscardUnknown() {
-	xxx_messageInfo_Nat44DNat_StaticMapping_LocalIP.DiscardUnknown(m)
+func (m *DNat44_StaticMapping_LocalIP) XXX_DiscardUnknown() {
+	xxx_messageInfo_DNat44_StaticMapping_LocalIP.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Nat44DNat_StaticMapping_LocalIP proto.InternalMessageInfo
+var xxx_messageInfo_DNat44_StaticMapping_LocalIP proto.InternalMessageInfo
 
-func (m *Nat44DNat_StaticMapping_LocalIP) GetVrfId() uint32 {
+func (m *DNat44_StaticMapping_LocalIP) GetVrfId() uint32 {
 	if m != nil {
 		return m.VrfId
 	}
 	return 0
 }
 
-func (m *Nat44DNat_StaticMapping_LocalIP) GetLocalIp() string {
+func (m *DNat44_StaticMapping_LocalIP) GetLocalIp() string {
 	if m != nil {
 		return m.LocalIp
 	}
 	return ""
 }
 
-func (m *Nat44DNat_StaticMapping_LocalIP) GetLocalPort() uint32 {
+func (m *DNat44_StaticMapping_LocalIP) GetLocalPort() uint32 {
 	if m != nil {
 		return m.LocalPort
 	}
 	return 0
 }
 
-func (m *Nat44DNat_StaticMapping_LocalIP) GetProbability() uint32 {
+func (m *DNat44_StaticMapping_LocalIP) GetProbability() uint32 {
 	if m != nil {
 		return m.Probability
 	}
 	return 0
 }
 
-type Nat44DNat_IdentityMapping struct {
-	VrfId                uint32             `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
-	AddressedInterface   string             `protobuf:"bytes,2,opt,name=addressed_interface,json=addressedInterface,proto3" json:"addressed_interface,omitempty"`
-	IpAddress            string             `protobuf:"bytes,3,opt,name=ip_address,json=ipAddress,proto3" json:"ip_address,omitempty"`
-	Port                 uint32             `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
-	Protocol             Nat44DNat_Protocol `protobuf:"varint,5,opt,name=protocol,proto3,enum=nat.Nat44DNat_Protocol" json:"protocol,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
-	XXX_unrecognized     []byte             `json:"-"`
-	XXX_sizecache        int32              `json:"-"`
+type DNat44_IdentityMapping struct {
+	VrfId                uint32          `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	Interface            string          `protobuf:"bytes,2,opt,name=interface,proto3" json:"interface,omitempty"`
+	IpAddress            string          `protobuf:"bytes,3,opt,name=ip_address,json=ipAddress,proto3" json:"ip_address,omitempty"`
+	Port                 uint32          `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
+	Protocol             DNat44_Protocol `protobuf:"varint,5,opt,name=protocol,proto3,enum=nat.DNat44_Protocol" json:"protocol,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *Nat44DNat_IdentityMapping) Reset()         { *m = Nat44DNat_IdentityMapping{} }
-func (m *Nat44DNat_IdentityMapping) String() string { return proto.CompactTextString(m) }
-func (*Nat44DNat_IdentityMapping) ProtoMessage()    {}
-func (*Nat44DNat_IdentityMapping) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_add660bf1db938a6, []int{1, 1}
+func (m *DNat44_IdentityMapping) Reset()         { *m = DNat44_IdentityMapping{} }
+func (m *DNat44_IdentityMapping) String() string { return proto.CompactTextString(m) }
+func (*DNat44_IdentityMapping) ProtoMessage()    {}
+func (*DNat44_IdentityMapping) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{1, 1}
 }
-func (m *Nat44DNat_IdentityMapping) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Nat44DNat_IdentityMapping.Unmarshal(m, b)
+func (m *DNat44_IdentityMapping) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DNat44_IdentityMapping.Unmarshal(m, b)
 }
-func (m *Nat44DNat_IdentityMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Nat44DNat_IdentityMapping.Marshal(b, m, deterministic)
+func (m *DNat44_IdentityMapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DNat44_IdentityMapping.Marshal(b, m, deterministic)
 }
-func (dst *Nat44DNat_IdentityMapping) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Nat44DNat_IdentityMapping.Merge(dst, src)
+func (dst *DNat44_IdentityMapping) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DNat44_IdentityMapping.Merge(dst, src)
 }
-func (m *Nat44DNat_IdentityMapping) XXX_Size() int {
-	return xxx_messageInfo_Nat44DNat_IdentityMapping.Size(m)
+func (m *DNat44_IdentityMapping) XXX_Size() int {
+	return xxx_messageInfo_DNat44_IdentityMapping.Size(m)
 }
-func (m *Nat44DNat_IdentityMapping) XXX_DiscardUnknown() {
-	xxx_messageInfo_Nat44DNat_IdentityMapping.DiscardUnknown(m)
+func (m *DNat44_IdentityMapping) XXX_DiscardUnknown() {
+	xxx_messageInfo_DNat44_IdentityMapping.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Nat44DNat_IdentityMapping proto.InternalMessageInfo
+var xxx_messageInfo_DNat44_IdentityMapping proto.InternalMessageInfo
 
-func (m *Nat44DNat_IdentityMapping) GetVrfId() uint32 {
+func (m *DNat44_IdentityMapping) GetVrfId() uint32 {
 	if m != nil {
 		return m.VrfId
 	}
 	return 0
 }
 
-func (m *Nat44DNat_IdentityMapping) GetAddressedInterface() string {
+func (m *DNat44_IdentityMapping) GetInterface() string {
 	if m != nil {
-		return m.AddressedInterface
+		return m.Interface
 	}
 	return ""
 }
 
-func (m *Nat44DNat_IdentityMapping) GetIpAddress() string {
+func (m *DNat44_IdentityMapping) GetIpAddress() string {
 	if m != nil {
 		return m.IpAddress
 	}
 	return ""
 }
 
-func (m *Nat44DNat_IdentityMapping) GetPort() uint32 {
+func (m *DNat44_IdentityMapping) GetPort() uint32 {
 	if m != nil {
 		return m.Port
 	}
 	return 0
 }
 
-func (m *Nat44DNat_IdentityMapping) GetProtocol() Nat44DNat_Protocol {
+func (m *DNat44_IdentityMapping) GetProtocol() DNat44_Protocol {
 	if m != nil {
 		return m.Protocol
 	}
-	return Nat44DNat_TCP
+	return DNat44_TCP
+}
+
+// VirtualReassembly is defined in the global scope to be re-used for NAT64 and NAT66
+type VirtualReassembly struct {
+	Timeout              uint32   `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	MaxReassemblies      uint32   `protobuf:"varint,2,opt,name=max_reassemblies,json=maxReassemblies,proto3" json:"max_reassemblies,omitempty"`
+	MaxFragments         uint32   `protobuf:"varint,3,opt,name=max_fragments,json=maxFragments,proto3" json:"max_fragments,omitempty"`
+	DropFragments        bool     `protobuf:"varint,4,opt,name=drop_fragments,json=dropFragments,proto3" json:"drop_fragments,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VirtualReassembly) Reset()         { *m = VirtualReassembly{} }
+func (m *VirtualReassembly) String() string { return proto.CompactTextString(m) }
+func (*VirtualReassembly) ProtoMessage()    {}
+func (*VirtualReassembly) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nat_2b8e2d2339aefc2b, []int{2}
+}
+func (m *VirtualReassembly) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VirtualReassembly.Unmarshal(m, b)
+}
+func (m *VirtualReassembly) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VirtualReassembly.Marshal(b, m, deterministic)
+}
+func (dst *VirtualReassembly) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VirtualReassembly.Merge(dst, src)
+}
+func (m *VirtualReassembly) XXX_Size() int {
+	return xxx_messageInfo_VirtualReassembly.Size(m)
+}
+func (m *VirtualReassembly) XXX_DiscardUnknown() {
+	xxx_messageInfo_VirtualReassembly.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VirtualReassembly proto.InternalMessageInfo
+
+func (m *VirtualReassembly) GetTimeout() uint32 {
+	if m != nil {
+		return m.Timeout
+	}
+	return 0
+}
+
+func (m *VirtualReassembly) GetMaxReassemblies() uint32 {
+	if m != nil {
+		return m.MaxReassemblies
+	}
+	return 0
+}
+
+func (m *VirtualReassembly) GetMaxFragments() uint32 {
+	if m != nil {
+		return m.MaxFragments
+	}
+	return 0
+}
+
+func (m *VirtualReassembly) GetDropFragments() bool {
+	if m != nil {
+		return m.DropFragments
+	}
+	return false
 }
 
 func init() {
 	proto.RegisterType((*Nat44Global)(nil), "nat.Nat44Global")
-	proto.RegisterType((*Nat44Global_NatInterface)(nil), "nat.Nat44Global.NatInterface")
-	proto.RegisterType((*Nat44Global_NatAddress)(nil), "nat.Nat44Global.NatAddress")
-	proto.RegisterType((*Nat44Global_VirtualReassembly)(nil), "nat.Nat44Global.VirtualReassembly")
-	proto.RegisterType((*Nat44DNat)(nil), "nat.Nat44DNat")
-	proto.RegisterType((*Nat44DNat_StaticMapping)(nil), "nat.Nat44DNat.StaticMapping")
-	proto.RegisterType((*Nat44DNat_StaticMapping_LocalIP)(nil), "nat.Nat44DNat.StaticMapping.LocalIP")
-	proto.RegisterType((*Nat44DNat_IdentityMapping)(nil), "nat.Nat44DNat.IdentityMapping")
-	proto.RegisterEnum("nat.Nat44DNat_Protocol", Nat44DNat_Protocol_name, Nat44DNat_Protocol_value)
-	proto.RegisterEnum("nat.Nat44DNat_StaticMapping_TwiceNatMode", Nat44DNat_StaticMapping_TwiceNatMode_name, Nat44DNat_StaticMapping_TwiceNatMode_value)
+	proto.RegisterType((*Nat44Global_Interface)(nil), "nat.Nat44Global.Interface")
+	proto.RegisterType((*Nat44Global_Address)(nil), "nat.Nat44Global.Address")
+	proto.RegisterType((*DNat44)(nil), "nat.DNat44")
+	proto.RegisterType((*DNat44_StaticMapping)(nil), "nat.DNat44.StaticMapping")
+	proto.RegisterType((*DNat44_StaticMapping_LocalIP)(nil), "nat.DNat44.StaticMapping.LocalIP")
+	proto.RegisterType((*DNat44_IdentityMapping)(nil), "nat.DNat44.IdentityMapping")
+	proto.RegisterType((*VirtualReassembly)(nil), "nat.VirtualReassembly")
+	proto.RegisterEnum("nat.DNat44_Protocol", DNat44_Protocol_name, DNat44_Protocol_value)
+	proto.RegisterEnum("nat.DNat44_StaticMapping_TwiceNatMode", DNat44_StaticMapping_TwiceNatMode_name, DNat44_StaticMapping_TwiceNatMode_value)
 }
 
-func init() { proto.RegisterFile("nat.proto", fileDescriptor_nat_add660bf1db938a6) }
+func init() { proto.RegisterFile("nat.proto", fileDescriptor_nat_2b8e2d2339aefc2b) }
 
-var fileDescriptor_nat_add660bf1db938a6 = []byte{
-	// 747 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0x4d, 0x6f, 0xd3, 0x40,
-	0x10, 0x6d, 0xbe, 0x1a, 0x67, 0x1c, 0x97, 0x74, 0xa1, 0xaa, 0x9b, 0xd2, 0x12, 0x85, 0x0f, 0x95,
-	0x03, 0x41, 0x6a, 0xa3, 0xde, 0x00, 0x95, 0xa6, 0x41, 0x96, 0xda, 0x28, 0x72, 0x0b, 0x87, 0x5e,
-	0xac, 0x4d, 0xbc, 0x89, 0x56, 0x72, 0xbc, 0xd6, 0x7a, 0x93, 0xa6, 0x12, 0x27, 0x2e, 0xfc, 0x21,
-	0xfe, 0x00, 0xbf, 0x8a, 0x2b, 0xf2, 0xee, 0x3a, 0x31, 0x29, 0xed, 0x01, 0x6e, 0xbb, 0x33, 0x6f,
-	0xde, 0xcc, 0x3c, 0xbf, 0x35, 0x54, 0x42, 0x2c, 0x5a, 0x11, 0x67, 0x82, 0xa1, 0x42, 0x88, 0x45,
-	0xf3, 0x47, 0x09, 0xcc, 0x1e, 0x16, 0xed, 0xf6, 0xa7, 0x80, 0x0d, 0x70, 0x80, 0xf6, 0x01, 0x46,
-	0x8c, 0xdf, 0x60, 0xee, 0xd3, 0x70, 0x6c, 0xe7, 0x1a, 0xb9, 0x03, 0xc3, 0xcd, 0x44, 0x50, 0x07,
-	0x36, 0x42, 0x2c, 0x3c, 0x1a, 0x0a, 0xc2, 0x47, 0x78, 0x48, 0x62, 0x3b, 0xdf, 0x28, 0x1c, 0x98,
-	0x87, 0x7b, 0xad, 0x84, 0x38, 0xc3, 0x94, 0x9c, 0x9d, 0x14, 0xe5, 0x5a, 0x61, 0xe6, 0x16, 0xa3,
-	0xf7, 0x50, 0xc5, 0xbe, 0xcf, 0x49, 0x1c, 0x7b, 0x11, 0x63, 0x81, 0x5d, 0x90, 0x1c, 0xbb, 0x7f,
-	0xe3, 0x38, 0x51, 0x38, 0xd7, 0xd4, 0x05, 0x7d, 0xc6, 0x02, 0x74, 0x0d, 0xdb, 0x33, 0xca, 0xc5,
-	0x14, 0x07, 0x1e, 0x27, 0x38, 0x8e, 0xc9, 0x64, 0x10, 0xdc, 0x7a, 0x34, 0x9a, 0xb5, 0xed, 0x62,
-	0x23, 0x77, 0x60, 0x1e, 0x36, 0xef, 0x50, 0x7d, 0x51, 0x78, 0x77, 0x01, 0x77, 0xb7, 0x66, 0xab,
-	0x21, 0x27, 0x9a, 0xb5, 0xef, 0xe7, 0x3e, 0xb6, 0x4b, 0xff, 0xc7, 0x7d, 0x5c, 0x1f, 0x41, 0x35,
-	0x2b, 0x0b, 0x42, 0x50, 0x0c, 0xf1, 0x84, 0x48, 0x9d, 0x2b, 0xae, 0x3c, 0xa3, 0x5d, 0xa8, 0xd0,
-	0xd8, 0xa3, 0x61, 0x4c, 0x7d, 0x62, 0xe7, 0xe5, 0x07, 0x30, 0x68, 0xec, 0xc8, 0x3b, 0x7a, 0x09,
-	0x1b, 0x6c, 0x2a, 0xa2, 0xa9, 0xf0, 0x46, 0x04, 0x8b, 0x29, 0x27, 0x76, 0x41, 0x22, 0x2c, 0x15,
-	0xed, 0xaa, 0x60, 0xfd, 0x1a, 0x60, 0x29, 0x1d, 0xb2, 0xa1, 0xac, 0xc5, 0xd3, 0x8d, 0xd2, 0x2b,
-	0xda, 0x82, 0xf5, 0x19, 0x1f, 0x79, 0xd4, 0x97, 0x8d, 0x2c, 0xb7, 0x34, 0xe3, 0x23, 0xc7, 0x4f,
-	0x46, 0x10, 0x37, 0x74, 0x48, 0xbc, 0x10, 0x0b, 0xdd, 0xc0, 0x90, 0x81, 0x1e, 0x16, 0xf5, 0x6f,
-	0x39, 0xd8, 0xbc, 0xb3, 0x70, 0xd2, 0x43, 0xd0, 0x09, 0x61, 0x53, 0x21, 0x7b, 0x58, 0x6e, 0x7a,
-	0x4d, 0xc8, 0x26, 0x78, 0xae, 0xb4, 0xd4, 0x6d, 0x8c, 0x09, 0x9e, 0xcb, 0x5a, 0xb4, 0x03, 0xc9,
-	0xd9, 0x1b, 0x71, 0x3c, 0x96, 0x8d, 0x2c, 0xb7, 0x3c, 0xc1, 0xf3, 0x2e, 0xc7, 0xe3, 0xa4, 0xce,
-	0xe7, 0x2c, 0x52, 0xb9, 0xa2, 0x1a, 0x22, 0x09, 0x24, 0xc9, 0xe6, 0xf7, 0x32, 0x54, 0xe4, 0x17,
-	0xe8, 0xf4, 0xb0, 0x40, 0x4f, 0xa0, 0x14, 0xe0, 0x01, 0x09, 0xf4, 0x7a, 0xea, 0x82, 0xde, 0x81,
-	0x19, 0x0b, 0x6f, 0x82, 0xa3, 0x88, 0x86, 0xe3, 0xd4, 0xa7, 0x4f, 0x97, 0x1f, 0x2f, 0x29, 0x6d,
-	0x5d, 0x0a, 0x2c, 0xe8, 0xf0, 0x42, 0x81, 0x5c, 0x88, 0x85, 0x3e, 0xc6, 0xe8, 0x03, 0x98, 0xd4,
-	0x5f, 0x96, 0x2b, 0x8b, 0xee, 0xaf, 0x94, 0x3b, 0x3e, 0x09, 0x05, 0x15, 0xb7, 0x0b, 0x02, 0xea,
-	0xa7, 0x04, 0xf5, 0x5f, 0x05, 0xb0, 0xfe, 0xa0, 0x47, 0x6f, 0x00, 0x91, 0xb9, 0x20, 0x3c, 0xc4,
-	0xc1, 0xf2, 0x05, 0xe9, 0xa1, 0x37, 0xd3, 0xcc, 0xd2, 0x1d, 0xcf, 0xc0, 0x5c, 0xc2, 0x23, 0xa9,
-	0x5d, 0xc5, 0x85, 0x05, 0x2e, 0x42, 0xcf, 0xc1, 0x5a, 0x00, 0x22, 0xc6, 0x85, 0x96, 0xb0, 0x9a,
-	0x06, 0xfb, 0x8c, 0x0b, 0x74, 0x02, 0x95, 0x80, 0x0d, 0x25, 0x45, 0x6c, 0x17, 0xe5, 0x16, 0x2f,
-	0x1e, 0x12, 0xa1, 0x75, 0x9e, 0xa0, 0x9d, 0xbe, 0x6b, 0xc8, 0x32, 0x27, 0x8a, 0xd1, 0x11, 0x18,
-	0xf2, 0x97, 0x31, 0x64, 0x81, 0x7c, 0x03, 0x1b, 0x87, 0xdb, 0x2b, 0x0c, 0x7d, 0x9d, 0x76, 0x17,
-	0x40, 0xd4, 0xcd, 0x9a, 0x68, 0x5d, 0x56, 0xbd, 0x7e, 0xb0, 0xef, 0x95, 0x76, 0xd8, 0x05, 0xf3,
-	0x49, 0xc6, 0x6f, 0x5f, 0xa1, 0xac, 0x27, 0xca, 0xd8, 0x35, 0x97, 0xb5, 0xeb, 0x0e, 0x18, 0xe9,
-	0x86, 0x5a, 0xa4, 0xb2, 0x1e, 0x1d, 0xed, 0x01, 0xa8, 0x54, 0x46, 0x1e, 0x25, 0x87, 0xd4, 0xa6,
-	0x01, 0x66, 0xc4, 0xd9, 0x00, 0x0f, 0x68, 0x40, 0xc5, 0xad, 0x74, 0x99, 0xe5, 0x66, 0x43, 0xcd,
-	0x23, 0xa8, 0x66, 0xe7, 0x42, 0x55, 0x30, 0x3a, 0xce, 0xe5, 0xc9, 0xc7, 0xf3, 0xb3, 0x4e, 0x6d,
-	0x0d, 0x99, 0x50, 0x3e, 0xeb, 0xa9, 0x4b, 0x0e, 0x19, 0x50, 0xbc, 0x3c, 0x3b, 0xef, 0xd6, 0xf2,
-	0xf5, 0x9f, 0x39, 0x78, 0xb4, 0xe2, 0x8c, 0xfb, 0x66, 0x7f, 0x0b, 0x8f, 0xf5, 0x63, 0x24, 0x7e,
-	0xc6, 0x13, 0x6a, 0x0d, 0xb4, 0x48, 0x2d, 0x4d, 0xb1, 0x07, 0x40, 0x23, 0x2f, 0x7d, 0xcf, 0x05,
-	0x89, 0xab, 0xd0, 0x28, 0x7d, 0xeb, 0x08, 0x8a, 0x72, 0x55, 0xb5, 0x8a, 0x3c, 0xff, 0xd3, 0xe7,
-	0x6b, 0xbe, 0x02, 0x23, 0x8d, 0xa2, 0x32, 0x14, 0xae, 0x4e, 0xfb, 0xb5, 0xb5, 0xe4, 0xf0, 0xb9,
-	0xd3, 0x57, 0xbb, 0x3a, 0xa7, 0x17, 0xfd, 0x5a, 0x7e, 0xb0, 0x2e, 0x2b, 0x8e, 0x7e, 0x07, 0x00,
-	0x00, 0xff, 0xff, 0x6d, 0x2a, 0xe6, 0x9b, 0x59, 0x06, 0x00, 0x00,
+var fileDescriptor_nat_2b8e2d2339aefc2b = []byte{
+	// 728 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xdd, 0x6e, 0xd3, 0x4a,
+	0x10, 0xae, 0xe3, 0x34, 0x71, 0xc6, 0x49, 0x9b, 0xae, 0x7a, 0x8e, 0xdc, 0xf4, 0x1c, 0x08, 0x41,
+	0x54, 0xe1, 0x82, 0x08, 0xb5, 0xbd, 0x02, 0x84, 0x54, 0x9a, 0x14, 0x59, 0x6a, 0xab, 0xc8, 0x2d,
+	0x70, 0x69, 0x6d, 0xe2, 0x4d, 0xb5, 0x92, 0xed, 0xb5, 0xd6, 0x9b, 0x34, 0x95, 0x78, 0x1c, 0xee,
+	0xb8, 0xe3, 0x85, 0x78, 0x03, 0x9e, 0x01, 0x79, 0x77, 0xfd, 0x43, 0xab, 0x5e, 0x70, 0xb7, 0xf3,
+	0xcd, 0x37, 0xb3, 0xf3, 0xcd, 0xcc, 0x2e, 0xb4, 0x62, 0x2c, 0x46, 0x09, 0x67, 0x82, 0x21, 0x33,
+	0xc6, 0x62, 0xf0, 0xc3, 0x04, 0xfb, 0x12, 0x8b, 0xe3, 0xe3, 0x8f, 0x21, 0x9b, 0xe1, 0x10, 0x3d,
+	0x01, 0x58, 0x30, 0x7e, 0x8b, 0x79, 0x40, 0xe3, 0x1b, 0xc7, 0xe8, 0x1b, 0x43, 0xcb, 0xab, 0x20,
+	0xe8, 0x04, 0xb6, 0x62, 0x2c, 0x7c, 0x1a, 0x0b, 0xc2, 0x17, 0x78, 0x4e, 0x52, 0xa7, 0xd6, 0x37,
+	0x87, 0xf6, 0x61, 0x6f, 0x94, 0x25, 0xae, 0x64, 0x1a, 0xb9, 0x39, 0xc5, 0xeb, 0xc4, 0x58, 0x14,
+	0x56, 0x8a, 0xde, 0x42, 0x1b, 0x07, 0x01, 0x27, 0x69, 0xea, 0x27, 0x8c, 0x85, 0x8e, 0x29, 0x13,
+	0x38, 0x0f, 0x12, 0x9c, 0x28, 0x92, 0x67, 0x6b, 0xf6, 0x94, 0xb1, 0x10, 0x4d, 0x00, 0xad, 0x28,
+	0x17, 0x4b, 0x1c, 0xfa, 0x9c, 0xe0, 0x34, 0x25, 0xd1, 0x2c, 0xbc, 0x73, 0xea, 0x7d, 0x63, 0x68,
+	0x1f, 0xfe, 0x2b, 0x53, 0x7c, 0x56, 0x6e, 0xaf, 0xf0, 0x7a, 0x3b, 0xab, 0xfb, 0x50, 0x6f, 0x0e,
+	0xad, 0xa2, 0x22, 0x84, 0xa0, 0x1e, 0xe3, 0x88, 0x48, 0xb5, 0x2d, 0x4f, 0x9e, 0xd1, 0x3e, 0xb4,
+	0x68, 0xea, 0xd3, 0x38, 0xa5, 0x01, 0x71, 0x6a, 0xb2, 0x0d, 0x16, 0x4d, 0x5d, 0x69, 0xa3, 0x17,
+	0xb0, 0xc5, 0x96, 0x22, 0x59, 0x0a, 0x7f, 0x41, 0xb0, 0x58, 0x72, 0xe2, 0x98, 0x92, 0xd1, 0x51,
+	0xe8, 0x99, 0x02, 0x7b, 0x5f, 0xa0, 0xa9, 0x35, 0x20, 0x07, 0x9a, 0x5a, 0x85, 0xbe, 0x25, 0x37,
+	0xd1, 0x3f, 0xd0, 0x58, 0xf1, 0x85, 0x4f, 0x03, 0x79, 0x4b, 0xc7, 0xdb, 0x5c, 0xf1, 0x85, 0x1b,
+	0x64, 0xf7, 0x8b, 0x5b, 0x3a, 0x27, 0x7e, 0x8c, 0x85, 0xce, 0x6e, 0x49, 0xe0, 0x12, 0x8b, 0xc1,
+	0xcf, 0x06, 0x34, 0xc6, 0xb2, 0x55, 0x68, 0x17, 0x36, 0x43, 0x3c, 0x23, 0xa1, 0x4e, 0xab, 0x0c,
+	0xf4, 0x06, 0xec, 0x54, 0xf8, 0x11, 0x4e, 0x12, 0x1a, 0xdf, 0xe4, 0x23, 0xda, 0x93, 0xed, 0x51,
+	0x71, 0xa3, 0x2b, 0x81, 0x05, 0x9d, 0x5f, 0x28, 0x86, 0x07, 0xa9, 0xd0, 0xc7, 0x14, 0xbd, 0x03,
+	0x9b, 0x06, 0x65, 0xac, 0x9a, 0xce, 0x7e, 0x35, 0xd6, 0x0d, 0x48, 0x2c, 0xa8, 0xb8, 0x2b, 0xa2,
+	0x69, 0x90, 0x47, 0xf7, 0x7e, 0x99, 0xd0, 0xf9, 0x23, 0x37, 0x7a, 0x05, 0x88, 0xac, 0x05, 0xe1,
+	0x31, 0x0e, 0xcb, 0xb5, 0xd1, 0xe5, 0xee, 0xe4, 0x9e, 0x72, 0x18, 0x4f, 0xc1, 0x2e, 0xe9, 0x89,
+	0x6c, 0x4a, 0xcb, 0x83, 0x82, 0x97, 0xa0, 0xe7, 0xd0, 0x29, 0x08, 0x09, 0xe3, 0xaa, 0x3b, 0x1d,
+	0xaf, 0x9d, 0x83, 0x53, 0xc6, 0x05, 0x7a, 0x0f, 0xad, 0x90, 0xcd, 0x65, 0x8a, 0xd4, 0xa9, 0x4b,
+	0x09, 0xcf, 0x1e, 0x95, 0x3f, 0x3a, 0xcf, 0xa8, 0xee, 0xd4, 0xb3, 0x64, 0x8c, 0x9b, 0xa4, 0xe8,
+	0x35, 0x58, 0xf2, 0x91, 0xcc, 0x59, 0xe8, 0x6c, 0xf6, 0x8d, 0xe1, 0xd6, 0xe1, 0x6e, 0x35, 0x7c,
+	0xaa, 0x7d, 0x5e, 0xc1, 0x42, 0xa7, 0xd5, 0x81, 0x35, 0x64, 0xc8, 0xc1, 0xe3, 0x37, 0x5e, 0xeb,
+	0x51, 0x5e, 0xb0, 0x80, 0x94, 0x83, 0xed, 0x7d, 0x85, 0xa6, 0xae, 0xa5, 0xb2, 0x17, 0x46, 0x75,
+	0x2f, 0xf6, 0xc0, 0xca, 0x85, 0xe9, 0xde, 0x34, 0x75, 0xd1, 0xe8, 0x7f, 0x00, 0xe5, 0xaa, 0x74,
+	0x45, 0x75, 0x41, 0xb6, 0xa4, 0x0f, 0x76, 0xc2, 0xd9, 0x0c, 0xcf, 0x68, 0x48, 0x85, 0x7a, 0x32,
+	0x1d, 0xaf, 0x0a, 0x0d, 0x8e, 0xa0, 0x5d, 0xad, 0x0b, 0xb5, 0xc1, 0x1a, 0xbb, 0x57, 0x27, 0x1f,
+	0xce, 0x27, 0xe3, 0xee, 0x06, 0xb2, 0xa1, 0x39, 0xb9, 0x54, 0x86, 0x81, 0x2c, 0xa8, 0x5f, 0x4d,
+	0xce, 0xcf, 0xba, 0xb5, 0xde, 0x77, 0x03, 0xb6, 0xef, 0x2d, 0xc4, 0x63, 0xb5, 0xff, 0x07, 0xad,
+	0x72, 0x01, 0x54, 0xf1, 0x25, 0x90, 0x95, 0x4f, 0x13, 0x3f, 0x7f, 0x25, 0xa6, 0x76, 0x27, 0xf9,
+	0x0b, 0x42, 0x50, 0x97, 0xba, 0x54, 0xdd, 0xf2, 0xfc, 0xf7, 0x53, 0x1a, 0x1c, 0x80, 0x95, 0xa3,
+	0xa8, 0x09, 0xe6, 0xf5, 0xe9, 0xb4, 0xbb, 0x91, 0x1d, 0x3e, 0x8d, 0xa7, 0x4a, 0x95, 0x7b, 0x7a,
+	0x31, 0xed, 0xd6, 0x06, 0xdf, 0x0c, 0xd8, 0x79, 0xf0, 0x91, 0x64, 0xaf, 0x58, 0xd0, 0x88, 0xb0,
+	0xa5, 0xd0, 0xc2, 0x72, 0x13, 0xbd, 0x84, 0x6e, 0x84, 0xd7, 0xe5, 0x97, 0x44, 0xe5, 0xc7, 0x98,
+	0x51, 0xb6, 0x23, 0xbc, 0xf6, 0x2a, 0x70, 0xb6, 0xbf, 0x19, 0x75, 0xc1, 0xf1, 0x4d, 0x44, 0x62,
+	0x91, 0xe6, 0xfb, 0x1b, 0xe1, 0xf5, 0x59, 0x8e, 0x65, 0x3f, 0x4c, 0xc0, 0x59, 0x52, 0x61, 0xd5,
+	0xd5, 0x0f, 0x93, 0xa1, 0x05, 0x6d, 0xd6, 0x90, 0xc2, 0x8e, 0x7e, 0x07, 0x00, 0x00, 0xff, 0xff,
+	0x99, 0x0f, 0xa1, 0xb9, 0xd6, 0x05, 0x00, 0x00,
 }

@@ -30,36 +30,36 @@ type NatVppAPI interface {
 
 // NatVppWrite provides write methods for VPP NAT configuration.
 type NatVppWrite interface {
-	// SetNat44Forwarding configures global forwarding setup for NAT44
+	// SetNat44Forwarding configures NAT44 forwarding.
 	SetNat44Forwarding(enableFwd bool) error
-	// EnableNat44Interface enables NAT feature for provided interface
+	// EnableNat44Interface enables NAT44 feature for provided interface
 	EnableNat44Interface(iface string, isInside, isOutput bool) error
 	// DisableNat44Interface disables NAT feature for provided interface
 	DisableNat44Interface(iface string, isInside, isOutput bool) error
-	// AddNat44Address adds new NAT address into the pool.
+	// AddNat44Address adds new IPV4 address into the NAT pool.
 	AddNat44Address(address string, vrf uint32, twiceNat bool) error
-	// DelNat44Address removes existing NAT address from the pool.
+	// DelNat44Address removes existing IPv4 address from the NAT pool.
 	DelNat44Address(address string, vrf uint32, twiceNat bool) error
 	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets.
-	SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassembly) error
+	SetVirtualReassemblyIPv4(vrCfg *nat.VirtualReassembly) error
 	// SetVirtualReassemblyIPv6 configures NAT virtual reassembly for IPv6 packets.
-	SetVirtualReassemblyIPv6(vrCfg *nat.Nat44Global_VirtualReassembly) error
+	SetVirtualReassemblyIPv6(vrCfg *nat.VirtualReassembly) error
 	// AddNat44IdentityMapping adds new NAT44 identity mapping
-	AddNat44IdentityMapping(mapping *nat.Nat44DNat_IdentityMapping, dnatLabel string) error
+	AddNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string) error
 	// DelNat44IdentityMapping removes NAT44 identity mapping
-	DelNat44IdentityMapping(mapping *nat.Nat44DNat_IdentityMapping, dnatLabel string) error
-	// AddNat44StaticMapping creates new static mapping entry.
-	AddNat44StaticMapping(mapping *nat.Nat44DNat_StaticMapping, dnatLabel string) error
-	// DelNat44StaticMapping removes existing static mapping entry.
-	DelNat44StaticMapping(mapping *nat.Nat44DNat_StaticMapping, dnatLabel string) error
+	DelNat44IdentityMapping(mapping *nat.DNat44_IdentityMapping, dnatLabel string) error
+	// AddNat44StaticMapping creates new NAT44 static mapping entry.
+	AddNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string) error
+	// DelNat44StaticMapping removes existing NAT44 static mapping entry.
+	DelNat44StaticMapping(mapping *nat.DNat44_StaticMapping, dnatLabel string) error
 }
 
 // NatVppRead provides read methods for VPP NAT configuration.
 type NatVppRead interface {
-	// Nat44GlobalConfigDump dumps global NAT config in NB format.
+	// Nat44GlobalConfigDump dumps global NAT44 config in NB format.
 	Nat44GlobalConfigDump() (*nat.Nat44Global, error)
-	// NAT44NatDump dumps all configured DNAT configurations ordered by label.
-	Nat44DNatDump() ([]*nat.Nat44DNat, error)
+	// DNat44Dump dumps all configured DNAT-44 configurations ordered by label.
+	DNat44Dump() ([]*nat.DNat44, error)
 }
 
 // NatVppHandler is accessor for NAT-related vppcalls methods.
