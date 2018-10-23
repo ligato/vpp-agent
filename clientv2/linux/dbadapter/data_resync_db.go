@@ -25,11 +25,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -180,7 +180,7 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.DataRe
 }
 
 // NAT44DNat adds a request to RESYNC a new DNAT configuration
-func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.NAT44DNat(nat44)
 
 	return dsl

@@ -19,11 +19,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DataChangeDSL defines Domain Specific Language (DSL) for data change.
@@ -89,7 +89,7 @@ type PutDSL interface {
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// NAT44DNat adds a request to create a new DNAT configuration
-	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
+	NAT44DNat(dnat *nat.Nat44DNat) PutDSL
 	// IPSecSA adds request to create a new Security Association
 	IPSecSA(sa *ipsec.SecurityAssociations_SA) PutDSL
 	// IPSecSPD adds request to create a new Security Policy Database

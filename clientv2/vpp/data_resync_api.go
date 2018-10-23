@@ -19,11 +19,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -69,7 +69,7 @@ type DataResyncDSL interface {
 	// NAT44Global adds a request to RESYNC global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
 	// NAT44DNat adds a request to RESYNC a new DNAT configuration
-	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) DataResyncDSL
+	NAT44DNat(dnat *nat.Nat44DNat) DataResyncDSL
 	// IPSecSA adds request to RESYNC a new Security Association
 	IPSecSA(sa *ipsec.SecurityAssociations_SA) DataResyncDSL
 	// IPSecSPD adds request to RESYNC a new Security Policy Database

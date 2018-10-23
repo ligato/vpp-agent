@@ -24,10 +24,10 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC

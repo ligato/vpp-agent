@@ -22,10 +22,10 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change
@@ -98,7 +98,7 @@ type PutDSL interface {
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// NAT44DNat adds a request to create a new DNAT configuration
-	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
+	NAT44DNat(dnat *nat.Nat44DNat) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().

@@ -21,11 +21,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -166,12 +166,12 @@ func (dsl *PutDSL) StnRule(val *stn.STN_Rule) vppclient.PutDSL {
 
 // NAT44Global adds a request to set global configuration for NAT44
 func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.PutDSL {
-	dsl.parent.txn.Put(nat.GlobalPrefix, nat44)
+	dsl.parent.txn.Put(nat.GlobalKey, nat44)
 	return dsl
 }
 
 // NAT44DNat adds a request to create a new DNAT configuration
-func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) vppclient.PutDSL {
+func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat) vppclient.PutDSL {
 	dsl.parent.txn.Put(nat.DNatKey(nat44.Label), nat44)
 	return dsl
 }
@@ -294,7 +294,7 @@ func (dsl *DeleteDSL) StnRule(ruleName string) vppclient.DeleteDSL {
 
 // NAT44Global adds a request to remove global configuration for NAT44
 func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(nat.GlobalPrefix)
+	dsl.parent.txn.Delete(nat.GlobalKey)
 	return dsl
 }
 
