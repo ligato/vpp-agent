@@ -1,0 +1,273 @@
+//  Copyright (c) 2018 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
+package vppcalls_test
+
+import (
+	. "github.com/onsi/gomega"
+	"net"
+	"testing"
+
+	"github.com/ligato/cn-infra/logging/logrus"
+
+	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
+	"github.com/ligato/vpp-agent/tests/vppcallmock"
+)
+
+func TestNat44GlobalConfigDump(t *testing.T) {
+	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	// forwarding
+	ctx.MockVpp.MockReply(&bin_api.Nat44ForwardingIsEnabledReply{
+		Enabled: 1,
+	})
+
+	// non-output interfaces
+	ctx.MockVpp.MockReply(
+		&bin_api.Nat44InterfaceDetails{
+			SwIfIndex: 1,
+			IsInside:  0,
+		},
+		&bin_api.Nat44InterfaceDetails{
+			SwIfIndex: 2,
+			IsInside:  1,
+		})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	// output interfaces
+	ctx.MockVpp.MockReply(&bin_api.Nat44InterfaceOutputFeatureDetails{
+		SwIfIndex: 3,
+		IsInside:  1,
+	})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	// address pool
+	ctx.MockVpp.MockReply(
+		&bin_api.Nat44AddressDetails{
+			IPAddress: net.ParseIP("192.168.10.1").To4(),
+			TwiceNat:  1,
+			VrfID:     1,
+		},
+		&bin_api.Nat44AddressDetails{
+			IPAddress: net.ParseIP("192.168.10.2").To4(),
+			TwiceNat:  0,
+			VrfID:     2,
+		})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	// virtual reassembly
+	ctx.MockVpp.MockReply(&bin_api.NatGetReassReply{
+		// IPv4
+		IP4Timeout:  10,
+		IP4MaxReass: 5,
+		IP4MaxFrag:  7,
+		IP4DropFrag: 1,
+		// IPv6
+		IP6Timeout:  20,
+		IP6MaxReass: 8,
+		IP6MaxFrag:  13,
+		IP6DropFrag: 0,
+	})
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+	swIfIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 3})
+
+	globalCfg, err := natHandler.Nat44GlobalConfigDump()
+	Expect(err).To(Succeed())
+
+	Expect(globalCfg.Forwarding).To(BeTrue())
+
+	Expect(globalCfg.AddressPool).To(HaveLen(2))
+	Expect(globalCfg.AddressPool[0].Address).To(Equal("192.168.10.1"))
+	Expect(globalCfg.AddressPool[0].TwiceNat).To(BeTrue())
+	Expect(globalCfg.AddressPool[0].VrfId).To(BeEquivalentTo(1))
+	Expect(globalCfg.AddressPool[1].Address).To(Equal("192.168.10.2"))
+	Expect(globalCfg.AddressPool[1].TwiceNat).To(BeFalse())
+	Expect(globalCfg.AddressPool[1].VrfId).To(BeEquivalentTo(2))
+
+	Expect(globalCfg.NatInterfaces).To(HaveLen(3))
+	Expect(globalCfg.NatInterfaces[0].Name).To(Equal("if0"))
+	Expect(globalCfg.NatInterfaces[0].IsInside).To(BeFalse())
+	Expect(globalCfg.NatInterfaces[0].OutputFeature).To(BeFalse())
+	Expect(globalCfg.NatInterfaces[1].Name).To(Equal("if1"))
+	Expect(globalCfg.NatInterfaces[1].IsInside).To(BeTrue())
+	Expect(globalCfg.NatInterfaces[1].OutputFeature).To(BeFalse())
+	Expect(globalCfg.NatInterfaces[2].Name).To(Equal("if2"))
+	Expect(globalCfg.NatInterfaces[2].IsInside).To(BeTrue())
+	Expect(globalCfg.NatInterfaces[2].OutputFeature).To(BeTrue())
+
+	Expect(globalCfg.VirtualReassemblyIpv4).ToNot(BeNil())
+	Expect(globalCfg.VirtualReassemblyIpv4.Timeout).To(BeEquivalentTo(10))
+	Expect(globalCfg.VirtualReassemblyIpv4.MaxReass).To(BeEquivalentTo(5))
+	Expect(globalCfg.VirtualReassemblyIpv4.MaxFrag).To(BeEquivalentTo(7))
+	Expect(globalCfg.VirtualReassemblyIpv4.DropFrag).To(BeTrue())
+
+	Expect(globalCfg.VirtualReassemblyIpv6).ToNot(BeNil())
+	Expect(globalCfg.VirtualReassemblyIpv6.Timeout).To(BeEquivalentTo(20))
+	Expect(globalCfg.VirtualReassemblyIpv6.MaxReass).To(BeEquivalentTo(8))
+	Expect(globalCfg.VirtualReassemblyIpv6.MaxFrag).To(BeEquivalentTo(13))
+	Expect(globalCfg.VirtualReassemblyIpv6.DropFrag).To(BeFalse())
+}
+
+func TestDNATDump(t *testing.T) {
+	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	// non-LB static mappings
+	ctx.MockVpp.MockReply(
+		&bin_api.Nat44StaticMappingDetails{
+			LocalIPAddress:    net.ParseIP("10.10.11.120").To4(),
+			ExternalIPAddress: net.ParseIP("10.36.20.20").To4(),
+			Protocol:          6,
+			LocalPort:         8080,
+			ExternalPort:      80,
+			ExternalSwIfIndex: 1,
+			VrfID:             1,
+			TwiceNat:          1,
+			SelfTwiceNat:      0,
+			Tag:               []byte("DNAT 1"),
+		},
+		&bin_api.Nat44StaticMappingDetails{
+			LocalIPAddress:    net.ParseIP("10.10.11.140").To4(),
+			ExternalIPAddress: net.ParseIP("10.36.20.40").To4(),
+			Protocol:          6,
+			LocalPort:         8081,
+			ExternalPort:      80,
+			ExternalSwIfIndex: 2,
+			VrfID:             1,
+			TwiceNat:          0,
+			SelfTwiceNat:      1,
+			Tag:               []byte("DNAT 2"),
+		})
+
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	// LB static mappings
+	ctx.MockVpp.MockReply(&bin_api.Nat44LbStaticMappingDetails{
+		ExternalAddr: net.ParseIP("10.36.20.60").To4(),
+		ExternalPort: 53,
+		Protocol:     17,
+		TwiceNat:     0,
+		SelfTwiceNat: 0,
+		Out2inOnly:   1,
+		Tag:          []byte("DNAT 2"),
+		LocalNum:     2,
+		Locals: []bin_api.Nat44LbAddrPort{
+			{
+				Addr:        net.ParseIP("10.10.11.161").To4(),
+				Port:        53,
+				Probability: 1,
+				VrfID:       0,
+			},
+			{
+				Addr:        net.ParseIP("10.10.11.162").To4(),
+				Port:        153,
+				Probability: 2,
+				VrfID:       0,
+			},
+		},
+	})
+
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	// identity mappings
+	ctx.MockVpp.MockReply(&bin_api.Nat44IdentityMappingDetails{
+		AddrOnly:  1,
+		Protocol:  17,
+		IPAddress: net.ParseIP("10.10.11.200").To4(),
+		SwIfIndex: vppcalls.NoInterface,
+		VrfID:     1,
+		Tag:       []byte("DNAT 3"),
+	})
+
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+
+	dnats, err := natHandler.Nat44DNatDump()
+	Expect(err).To(Succeed())
+
+	Expect(dnats).To(HaveLen(3))
+
+	dnat := dnats[0]
+	Expect(dnat.Label).To(Equal("DNAT 1"))
+	Expect(dnat.IdMappings).To(HaveLen(0))
+	Expect(dnat.StMappings).To(HaveLen(1))
+	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.Nat44DNat_StaticMapping_ENABLED))
+	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.Nat44DNat_TCP))
+	Expect(dnat.StMappings[0].ExternalInterface).To(Equal("if0"))
+	Expect(dnat.StMappings[0].ExternalIp).To(Equal("10.36.20.20"))
+	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
+	Expect(dnat.StMappings[0].LocalIps).To(HaveLen(1))
+	Expect(dnat.StMappings[0].LocalIps[0].VrfId).To(BeEquivalentTo(1))
+	Expect(dnat.StMappings[0].LocalIps[0].LocalIp).To(Equal("10.10.11.120"))
+	Expect(dnat.StMappings[0].LocalIps[0].LocalPort).To(BeEquivalentTo(8080))
+	Expect(dnat.StMappings[0].LocalIps[0].Probability).To(BeEquivalentTo(0))
+
+	dnat = dnats[1]
+	// -> non-LB mapping
+	Expect(dnat.Label).To(Equal("DNAT 2"))
+	Expect(dnat.IdMappings).To(HaveLen(0))
+	Expect(dnat.StMappings).To(HaveLen(2))
+	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.Nat44DNat_StaticMapping_SELF))
+	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.Nat44DNat_TCP))
+	Expect(dnat.StMappings[0].ExternalInterface).To(Equal("if1"))
+	Expect(dnat.StMappings[0].ExternalIp).To(Equal("10.36.20.40"))
+	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
+	Expect(dnat.StMappings[0].LocalIps).To(HaveLen(1))
+	Expect(dnat.StMappings[0].LocalIps[0].VrfId).To(BeEquivalentTo(1))
+	Expect(dnat.StMappings[0].LocalIps[0].LocalIp).To(Equal("10.10.11.140"))
+	Expect(dnat.StMappings[0].LocalIps[0].LocalPort).To(BeEquivalentTo(8081))
+	Expect(dnat.StMappings[0].LocalIps[0].Probability).To(BeEquivalentTo(0))
+	// -> LB mapping
+	Expect(dnat.StMappings[1].TwiceNat).To(Equal(nat.Nat44DNat_StaticMapping_DISABLED))
+	Expect(dnat.StMappings[1].Protocol).To(Equal(nat.Nat44DNat_UDP))
+	Expect(dnat.StMappings[1].ExternalInterface).To(BeEmpty())
+	Expect(dnat.StMappings[1].ExternalIp).To(Equal("10.36.20.60"))
+	Expect(dnat.StMappings[1].ExternalPort).To(BeEquivalentTo(53))
+	Expect(dnat.StMappings[1].LocalIps).To(HaveLen(2))
+	Expect(dnat.StMappings[1].LocalIps[0].VrfId).To(BeEquivalentTo(0))
+	Expect(dnat.StMappings[1].LocalIps[0].LocalIp).To(Equal("10.10.11.161"))
+	Expect(dnat.StMappings[1].LocalIps[0].LocalPort).To(BeEquivalentTo(53))
+	Expect(dnat.StMappings[1].LocalIps[0].Probability).To(BeEquivalentTo(1))
+	Expect(dnat.StMappings[1].LocalIps[1].VrfId).To(BeEquivalentTo(0))
+	Expect(dnat.StMappings[1].LocalIps[1].LocalIp).To(Equal("10.10.11.162"))
+	Expect(dnat.StMappings[1].LocalIps[1].LocalPort).To(BeEquivalentTo(153))
+	Expect(dnat.StMappings[1].LocalIps[1].Probability).To(BeEquivalentTo(2))
+
+	dnat = dnats[2]
+	Expect(dnat.Label).To(Equal("DNAT 3"))
+	Expect(dnat.StMappings).To(HaveLen(0))
+	Expect(dnat.IdMappings).To(HaveLen(1))
+	Expect(dnat.IdMappings[0].VrfId).To(BeEquivalentTo(1))
+	Expect(dnat.IdMappings[0].Protocol).To(Equal(nat.Nat44DNat_UDP))
+	Expect(dnat.IdMappings[0].Port).To(BeEquivalentTo(0))
+	Expect(dnat.IdMappings[0].IpAddress).To(Equal("10.10.11.200"))
+	Expect(dnat.IdMappings[0].AddressedInterface).To(BeEmpty())
+}
+
+func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+	ctx := vppcallmock.SetupTestCtx(t)
+	log := logrus.NewLogger("test-log")
+	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
+	natHandler := vppcalls.NewNatVppHandler(ctx.MockChannel, swIfIndexes, log)
+	return ctx, natHandler, swIfIndexes
+}
