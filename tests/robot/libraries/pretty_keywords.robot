@@ -44,13 +44,13 @@ Create Bridge Domain ${name} Without Autolearn On ${node} With Interfaces ${inte
 Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vrf Id ${id}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/static_route.json
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
     ${out}=         Put Json    ${uri}   ${data}
 
 Create Route On ${node} With IP ${ip}/${prefix} With Next Hop VRF ${next_hop_vrf} From Vrf Id ${id} And Type ${type}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/route_to_other_vrf.json
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/vrf/${id}/fib/${ip}/${prefix}
     ${out}=         Put Json    ${uri}   ${data}
 
 Delete IPsec On ${node} With Prefix ${prefix} And Name ${name}
@@ -120,5 +120,5 @@ Show Interfaces Address On ${node}
 Create Linux Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vrf Id ${id}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/linux_static_route.json
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
     ${out}=         Put Json    ${uri}   ${data}

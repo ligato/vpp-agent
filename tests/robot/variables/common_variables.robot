@@ -133,6 +133,8 @@ ${SSH_READ_DELAY}                  1
 
 ${EXAMPLE_PLUGIN_NAME}             example_plugin.so
 
+${AGENT_VER}                       v2
+
 # temporary vars
 ${DEV_IMAGE}                       dev_vpp_agent
 

@@ -43,7 +43,7 @@ Add Interfaces For BDs
 
 Add BD1 Bridge Domain
     @{ints}=    Create List   vpp1_memif1  vpp1_vxlan1    vpp1_afpacket1
-    vat_term: BD Not Exists    agent_vpp_1    @{ints}
+    #vat_term: BD Not Exists    agent_vpp_1    @{ints}
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Put Bridge Domain    node=agent_vpp_1    name=vpp1_bd1    ints=${ints}    flood=true    unicast=true    forward=true    learn=true    arp_term=true
 
 Check BD1 Is Created

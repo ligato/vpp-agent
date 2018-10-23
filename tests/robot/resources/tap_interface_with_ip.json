@@ -1,6 +1,6 @@
 {
   "name": "${name}",
-  "type": 3,
+  "type": 4,
   "enabled": ${enabled},
   "phys_address": "${mac}",
   "mtu": ${mtu},
