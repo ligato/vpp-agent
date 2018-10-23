@@ -68,6 +68,8 @@ type RingOptions struct {
 	WriteTimeout time.Duration
 
 	PoolSize           int
+	MinIdleConns       int
+	MaxConnAge         time.Duration
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
@@ -108,6 +110,8 @@ func (opt *RingOptions) clientOptions() *Options {
 		WriteTimeout: opt.WriteTimeout,
 
 		PoolSize:           opt.PoolSize,
+		MinIdleConns:       opt.MinIdleConns,
+		MaxConnAge:         opt.MaxConnAge,
 		PoolTimeout:        opt.PoolTimeout,
 		IdleTimeout:        opt.IdleTimeout,
 		IdleCheckFrequency: opt.IdleCheckFrequency,
@@ -404,7 +408,7 @@ func (c *Ring) PoolStats() *PoolStats {
 		acc.Misses += s.Misses
 		acc.Timeouts += s.Timeouts
 		acc.TotalConns += s.TotalConns
-		acc.FreeConns += s.FreeConns
+		acc.IdleConns += s.IdleConns
 	}
 	return &acc
 }
@@ -512,7 +516,16 @@ func (c *Ring) cmdShard(cmd Cmder) (*ringShard, error) {
 	return c.shards.GetByKey(firstKey)
 }
 
-func (c *Ring) WrapProcess(fn func(oldProcess func(cmd Cmder) error) func(cmd Cmder) error) {
+// Do creates a Cmd from the args and processes the cmd.
+func (c *Ring) Do(args ...interface{}) *Cmd {
+	cmd := NewCmd(args...)
+	c.Process(cmd)
+	return cmd
+}
+
+func (c *Ring) WrapProcess(
+	fn func(oldProcess func(cmd Cmder) error) func(cmd Cmder) error,
+) {
 	c.ForEachShard(func(c *Client) error {
 		c.WrapProcess(fn)
 		return nil
@@ -598,7 +611,7 @@ func (c *Ring) defaultProcessPipeline(cmds []Cmder) error {
 		cmdsMap = failedCmdsMap
 	}
 
-	return firstCmdsErr(cmds)
+	return cmdsFirstErr(cmds)
 }
 
 func (c *Ring) TxPipeline() Pipeliner {
