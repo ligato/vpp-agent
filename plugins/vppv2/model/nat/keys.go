@@ -14,6 +14,8 @@
 
 package nat
 
+import "strings"
+
 const (
 	/* NAT */
 
@@ -28,9 +30,13 @@ const (
 
 	/* NAT interface */
 
-	// natInterfacePrefix is a common prefix of (derived) keys each representing
-	// NAT configuration for a single interface (suffix = interface name).
-	natInterfacePrefix = "vpp/nat/interface/"
+	// natInterfaceKeyTemplate is a template for (derived) key representing
+	// NAT configuration for a single interface.
+	natInterfaceKeyTemplate = "vpp/nat/interface/{iface}/{feature}"
+
+	// NAT interface features
+	inFeature = "in"
+	outFeature = "out"
 )
 
 /* NAT */
@@ -45,6 +51,12 @@ func DNatKey(label string) string {
 
 // NATInterfaceKey returns (derived) key representing NAT configuration of a given
 // interface.
-func NATInterfaceKey(iface string) string {
-	return natInterfacePrefix + iface
+func NATInterfaceKey(iface string, isInside bool) string {
+	key := strings.Replace(natInterfaceKeyTemplate, "{iface}", iface, 1)
+	feature := inFeature
+	if !isInside {
+		feature = outFeature
+	}
+	key = strings.Replace(key, "{feature}", feature, 1)
+	return key
 }

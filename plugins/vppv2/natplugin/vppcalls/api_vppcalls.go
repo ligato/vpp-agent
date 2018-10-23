@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"net"
 
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
@@ -38,9 +37,9 @@ type NatVppWrite interface {
 	// DisableNat44Interface disables NAT feature for provided interface
 	DisableNat44Interface(iface string, isInside, isOutput bool) error
 	// AddNat44Address adds new NAT address into the pool.
-	AddNat44Address(address net.IP, vrf uint32, twiceNat bool) error
+	AddNat44Address(address string, vrf uint32, twiceNat bool) error
 	// DelNat44Address removes existing NAT address from the pool.
-	DelNat44Address(address net.IP, vrf uint32, twiceNat bool) error
+	DelNat44Address(address string, vrf uint32, twiceNat bool) error
 	// SetVirtualReassemblyIPv4 configures NAT virtual reassembly for IPv4 packets.
 	SetVirtualReassemblyIPv4(vrCfg *nat.Nat44Global_VirtualReassembly) error
 	// SetVirtualReassemblyIPv6 configures NAT virtual reassembly for IPv6 packets.

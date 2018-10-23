@@ -71,12 +71,12 @@ func (h *NatVppHandler) DisableNat44Interface(iface string, isInside, isOutput b
 }
 
 // AddNat44Address adds new NAT address into the pool.
-func (h *NatVppHandler) AddNat44Address(address net.IP, vrf uint32, twiceNat bool) error {
+func (h *NatVppHandler) AddNat44Address(address string, vrf uint32, twiceNat bool) error {
 	return h.handleNat44AddressPool(address, vrf, twiceNat, true)
 }
 
 // DelNat44Address removes existing NAT address from the pool.
-func (h *NatVppHandler) DelNat44Address(address net.IP, vrf uint32, twiceNat bool) error {
+func (h *NatVppHandler) DelNat44Address(address string, vrf uint32, twiceNat bool) error {
 	return h.handleNat44AddressPool(address, vrf, twiceNat, false)
 }
 
@@ -171,10 +171,16 @@ func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside
 }
 
 // Calls VPP binary API to add/remove address to/from the pool.
-func (h *NatVppHandler) handleNat44AddressPool(address net.IP, vrf uint32, twiceNat, isAdd bool) error {
+func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twiceNat, isAdd bool) error {
+	ipAddr := net.ParseIP(address).To4()
+	if ipAddr == nil {
+		return errors.Errorf("unable to parse address %s from the NAT pool",
+			address)
+	}
+
 	req := &binapi.Nat44AddDelAddressRange{
-		FirstIPAddress: address,
-		LastIPAddress:  address,
+		FirstIPAddress: ipAddr,
+		LastIPAddress:  ipAddr,
 		VrfID:          vrf,
 		TwiceNat:       boolToUint(twiceNat),
 		IsAdd:          boolToUint(isAdd),

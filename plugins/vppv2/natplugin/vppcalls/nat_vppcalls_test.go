@@ -292,7 +292,7 @@ func TestAddNat44Address(t *testing.T) {
 	addr := net.ParseIP("10.0.0.1").To4()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelAddressRangeReply{})
-	err := natHandler.AddNat44Address(addr, 0, false)
+	err := natHandler.AddNat44Address(addr.String(), 0, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
@@ -313,7 +313,7 @@ func TestAddNat44AddressError(t *testing.T) {
 
 	// Incorrect reply object
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelIdentityMappingReply{})
-	err := natHandler.AddNat44Address(addr, 0, false)
+	err := natHandler.AddNat44Address(addr.String(), 0, false)
 
 	Expect(err).Should(HaveOccurred())
 }
@@ -327,7 +327,7 @@ func TestAddNat44AddressPoolRetval(t *testing.T) {
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelAddressRangeReply{
 		Retval: 1,
 	})
-	err := natHandler.AddNat44Address(addr, 0, false)
+	err := natHandler.AddNat44Address(addr.String(), 0, false)
 
 	Expect(err).Should(HaveOccurred())
 }
@@ -339,7 +339,7 @@ func TestDelNat44Address(t *testing.T) {
 	addr := net.ParseIP("10.0.0.1").To4()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelAddressRangeReply{})
-	err := natHandler.DelNat44Address(addr, 0, false)
+	err := natHandler.DelNat44Address(addr.String(), 0, false)
 
 	Expect(err).ShouldNot(HaveOccurred())
 
