@@ -226,17 +226,17 @@ type natIface struct {
 func (d *NAT44GlobalDescriptor) validateNAT44GlobalConfig(globalCfg *nat.Nat44Global) error {
 	// check NAT interface features for collisions
 	natIfaceMap := make(map[string]*natIface)
-	for _, natIface := range globalCfg.NatInterfaces {
-		if _, hasEntry := natIfaceMap[natIface.Name]; !hasEntry {
-			natIfaceMap[natIface.Name] = &natIface{}
+	for _, iface := range globalCfg.NatInterfaces {
+		if _, hasEntry := natIfaceMap[iface.Name]; !hasEntry {
+			natIfaceMap[iface.Name] = &natIface{}
 		}
-		ifaceCfg := natIfaceMap[natIface.Name]
-		if natIface.IsInside {
+		ifaceCfg := natIfaceMap[iface.Name]
+		if iface.IsInside {
 			ifaceCfg.in++
 		} else {
 			ifaceCfg.out++
 		}
-		if natIface.OutputFeature {
+		if iface.OutputFeature {
 			ifaceCfg.output++
 		}
 	}

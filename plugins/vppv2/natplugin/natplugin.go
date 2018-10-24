@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *nat.Nat44Global --import "../model/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *nat.Nat44Global_NatInterface --import "../model/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *nat.Nat44Global_Interface --import "../model/nat" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *nat.DNat44 --import "../model/nat" --output-dir "descriptor"
 
 package natplugin
