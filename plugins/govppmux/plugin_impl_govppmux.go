@@ -40,7 +40,7 @@ type Plugin struct {
 	Deps
 
 	vppConn    *govpp.Connection
-	vppAdapter adapter.VppAdapter
+	vppAdapter adapter.VppAPI
 	vppConChan chan govpp.ConnectionEvent
 
 	lastConnErr error

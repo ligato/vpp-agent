@@ -9,7 +9,7 @@ jsongo
 
 ***If you want an easy way to turn your json into a structure you should use the "[Print](#print)" function after unmarshalling json in a JSONNODE***
 
-***[2017/11/30] Project is not dead. We are using it quite often. We haven't found any necessary update***
+***[2018/10/11] Project is not dead. We are using it quite often. We haven't found any necessary update***
 
 You can find the doc on godoc.org [![GoDoc](https://godoc.org/github.com/bennyscetbun/jsongo?status.png)](https://godoc.org/github.com/bennyscetbun/jsongo)
 
