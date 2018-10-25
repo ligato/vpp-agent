@@ -71,7 +71,7 @@ RUN set -eux; \
         make vpp_configure_args_vpp='--disable-japi' build-release pkg-deb; \
     fi; \
     cd build-root; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb; \
+    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
     rm -rf .ccache /var/lib/apt/lists/*; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
