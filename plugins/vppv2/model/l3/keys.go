@@ -25,14 +25,19 @@ const (
 	// RoutePrefix is the relative key prefix for VRFs.
 	RoutePrefix = "vpp/config/v2/route/"
 
-	// routeTemplate is the relative key prefix for routes.
-	routeTemplate = RoutePrefix + "vrf/{vrf}/dst/{dst-ip}/{dst-mask}/gw/{next-hop}"
+	// routeKeyTemplate is the relative key prefix for routes.
+	routeKeyTemplate = RoutePrefix + "vrf/{vrf}/dst/{dst-ip}/{dst-mask}/gw/{next-hop}"
+)
 
+const (
 	// ArpPrefix is the relative key prefix for ARP.
 	ArpPrefix = "vpp/config/v2/arp/"
-	// ArpEntryPrefix is the relative key prefix for ARP table entries.
-	ArpKey = ArpPrefix + "{if}/{ip}"
 
+	// arpKeyTemplate is the relative key prefix for ARP table entries.
+	arpKeyTemplate = ArpPrefix + "{if}/{ip}"
+)
+
+const (
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
 	ProxyARPRangePrefix = "vpp/config/v2/proxyarp/range/"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
@@ -53,7 +58,7 @@ const (
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
 func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
-	var key = routeTemplate
+	var key = routeKeyTemplate
 
 	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
 
@@ -103,7 +108,7 @@ func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr str
 
 // ArpEntryKey returns the key to store ARP entry
 func ArpEntryKey(iface, ipAddr string) string {
-	key := ArpKey
+	key := arpKeyTemplate
 	key = strings.Replace(key, "{if}", iface, 1)
 	key = strings.Replace(key, "{ip}", ipAddr, 1)
 	//key = strings.Replace(key, "{mac}", macAddr, 1)
@@ -112,8 +117,7 @@ func ArpEntryKey(iface, ipAddr string) string {
 
 // ParseArpKey parses ARP entry from a key
 func ParseArpKey(key string) (iface string, ipAddr string, err error) {
-	if strings.HasPrefix(key, ArpPrefix) {
-		arpSuffix := strings.TrimPrefix(key, ArpPrefix)
+	if arpSuffix := strings.TrimPrefix(key, ArpPrefix); arpSuffix != key {
 		arpComps := strings.Split(arpSuffix, "/")
 		if len(arpComps) == 2 {
 			return arpComps[0], arpComps[1], nil

@@ -42,19 +42,19 @@ const (
 
 // RouteDescriptor teaches KVScheduler how to configure VPP routes.
 type RouteDescriptor struct {
-	log       logging.Logger
-	l3Handler vppcalls.RouteVppAPI
-	scheduler scheduler.KVScheduler
+	log          logging.Logger
+	routeHandler vppcalls.RouteVppAPI
+	scheduler    scheduler.KVScheduler
 }
 
 // NewRouteDescriptor creates a new instance of the Route descriptor.
 func NewRouteDescriptor(scheduler scheduler.KVScheduler,
-	l3Handler vppcalls.RouteVppAPI, log logging.PluginLogger) *RouteDescriptor {
+	routeHandler vppcalls.RouteVppAPI, log logging.PluginLogger) *RouteDescriptor {
 
 	return &RouteDescriptor{
-		scheduler: scheduler,
-		l3Handler: l3Handler,
-		log:       log.NewLogger("route-descriptor"),
+		scheduler:    scheduler,
+		routeHandler: routeHandler,
+		log:          log.NewLogger("route-descriptor"),
 	}
 }
 
@@ -115,7 +115,7 @@ func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
 // Add adds VPP static route.
 func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata interface{}, err error) {
 
-	err = d.l3Handler.VppAddRoute(route, route.GetOutgoingInterface())
+	err = d.routeHandler.VppAddRoute(route, route.GetOutgoingInterface())
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata inter
 // Delete removes VPP static route.
 func (d *RouteDescriptor) Delete(key string, route *l3.StaticRoute, metadata interface{}) error {
 
-	err := d.l3Handler.VppDelRoute(route, route.GetOutgoingInterface())
+	err := d.routeHandler.VppDelRoute(route, route.GetOutgoingInterface())
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
 	dump []adapter.StaticRouteKVWithMetadata, err error) {
 
 	// Retrieve VPP route configuration
-	staticRoutes, err := d.l3Handler.DumpStaticRoutes()
+	staticRoutes, err := d.routeHandler.DumpStaticRoutes()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump VPP routes: %v", err)
 	}

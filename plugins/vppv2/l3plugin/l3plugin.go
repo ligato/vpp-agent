@@ -13,6 +13,7 @@
 // limitations under the License.
 
 //go:generate descriptor-adapter --descriptor-name StaticRoute --value-type *l3.StaticRoute --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *l3.ARPEntry --import "../model/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -42,11 +43,13 @@ type L3Plugin struct {
 	// GoVPP channels
 	vppCh govppapi.Channel
 
-	// system handlers
-	l3Handler vppcalls.RouteVppAPI
+	// VPP handlers
+	routeHandler vppcalls.RouteVppAPI
+	arpandler    vppcalls.ArpVppAPI
 
 	// descriptors
 	routeDescriptor *descriptor.RouteDescriptor
+	arpDescriptor   *descriptor.ArpDescriptor
 
 	// go routine management
 	ctx    context.Context
@@ -88,13 +91,17 @@ func (p *L3Plugin) Init() error {
 	}
 
 	// init handlers
-	p.l3Handler = vppcalls.NewRouteVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
+	p.routeHandler = vppcalls.NewRouteVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
+	p.arpandler = vppcalls.NewArpVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
 
 	// init & register descriptors
 	routeDescriptor := adapter.NewStaticRouteDescriptor(descriptor.NewRouteDescriptor(
-		p.Scheduler, p.l3Handler, p.Log).GetDescriptor())
+		p.Scheduler, p.routeHandler, p.Log).GetDescriptor())
+	arpDescriptor := adapter.NewARPEntryDescriptor(descriptor.NewArpDescriptor(
+		p.Scheduler, p.arpandler, p.Log).GetDescriptor())
 
 	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
 
 	return nil
 }

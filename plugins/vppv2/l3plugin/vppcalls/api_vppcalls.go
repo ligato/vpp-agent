@@ -17,11 +17,11 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
-/*
 // ArpVppAPI provides methods for managing ARP entries
 type ArpVppAPI interface {
 	ArpVppWrite
@@ -31,9 +31,9 @@ type ArpVppAPI interface {
 // ArpVppWrite provides write methods for ARPs
 type ArpVppWrite interface {
 	// VppAddArp adds ARP entry according to provided input
-	VppAddArp(entry *ArpEntry) error
+	VppAddArp(entry *l3.ARPEntry) error
 	// VppDelArp removes old ARP entry according to provided input
-	VppDelArp(entry *ArpEntry) error
+	VppDelArp(entry *l3.ARPEntry) error
 }
 
 // ArpVppRead provides read methods for ARPs
@@ -42,6 +42,7 @@ type ArpVppRead interface {
 	DumpArpEntries() ([]*ArpDetails, error)
 }
 
+/*
 // ProxyArpVppAPI provides methods for managing proxy ARP entries
 type ProxyArpVppAPI interface {
 	ProxyArpVppWrite
@@ -97,16 +98,15 @@ type IPNeighVppAPI interface {
 	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
 }
 
-/*
 // ArpVppHandler is accessor for ARP-related vppcalls methods
 type ArpVppHandler struct {
 	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.SwIfIndex
+	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
 }
 
 // ProxyArpVppHandler is accessor for proxy ARP-related vppcalls methods
-type ProxyArpVppHandler struct {
+/*type ProxyArpVppHandler struct {
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.SwIfIndex
 	log          logging.Logger
@@ -125,9 +125,11 @@ type IPNeighHandler struct {
 	log          logging.Logger
 }
 
-/*
 // NewArpVppHandler creates new instance of IPsec vppcalls handler
-func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *ArpVppHandler {
+func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *ArpVppHandler {
+	if log == nil {
+		log = logrus.NewLogger("arp-handler")
+	}
 	return &ArpVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
@@ -136,7 +138,7 @@ func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, 
 }
 
 // NewProxyArpVppHandler creates new instance of proxy ARP vppcalls handler
-func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *ProxyArpVppHandler {
+/*func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *ProxyArpVppHandler {
 	return &ProxyArpVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
@@ -146,6 +148,9 @@ func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIn
 */
 // NewRouteVppHandler creates new instance of route vppcalls handler
 func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *RouteHandler {
+	if log == nil {
+		log = logrus.NewLogger("route-handler")
+	}
 	return &RouteHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,

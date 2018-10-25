@@ -86,9 +86,10 @@ func (p *ExamplePlugin) Close() error {
 }
 func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	memif0 := &interfaces.Interface{
-		Name:    "memif0",
-		Enabled: true,
-		Type:    interfaces.Interface_MEMORY_INTERFACE,
+		Name:        "memif0",
+		Enabled:     true,
+		Type:        interfaces.Interface_MEMORY_INTERFACE,
+		IpAddresses: []string{"3.3.0.1/16"},
 		Link: &interfaces.Interface_Memif{
 			Memif: &interfaces.Interface_MemifLink{
 				Id:             1,
@@ -108,6 +109,12 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		OutgoingInterface: "memif0",
 		Weight:            100,
 	}
+	arp0 := &l3.ARPEntry{
+		Interface:   "memif0",
+		PhysAddress: "33:33:33:33:33:33",
+		IpAddress:   "3.3.3.3",
+		Static:      true,
+	}
 
 	// resync
 
@@ -119,6 +126,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		VppInterface(memif0).
 		StaticRoute(route0).
 		StaticRoute(route1).
+		Arp(arp0).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -130,11 +138,13 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	fmt.Println("=== CHANGE 1 ===")
 
 	route0.OutgoingInterface = ""
+	arp0.PhysAddress = "22:22:22:22:22:22"
 
 	txn2 := localclient.DataChangeRequest("example")
 	err = txn2.
 		Put().StaticRoute(route0).
 		Delete().StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
+		Put().Arp(arp0).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

@@ -14,18 +14,17 @@
 
 package vppcalls
 
-/*
 import (
 	"fmt"
 	"net"
 
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // ArpDetails holds info about ARP entry as a proto model
 type ArpDetails struct {
-	Arp  *l3.ArpTable_ArpEntry
+	Arp  *l3.ARPEntry
 	Meta *ArpMeta
 }
 
@@ -53,24 +52,23 @@ func (h *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 		}
 
 		// ARP interface
-		ifName, _, exists := h.ifIndexes.LookupName(arpDetails.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(arpDetails.SwIfIndex)
 		if !exists {
 			h.log.Warnf("ARP dump: interface name not found for index %d", arpDetails.SwIfIndex)
 		}
 		// IP & MAC address
-		var ip, mac string
-		if uintToBool(arpDetails.IsIPv6) {
+		var ip string
+		if arpDetails.IsIPv6 == 1 {
 			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress).To16().String())
 		} else {
 			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress[:4]).To4().String())
 		}
-		mac = net.HardwareAddr(arpDetails.MacAddress).String()
 
 		// ARP entry
-		arp := &l3.ArpTable_ArpEntry{
+		arp := &l3.ARPEntry{
 			Interface:   ifName,
 			IpAddress:   ip,
-			PhysAddress: mac,
+			PhysAddress: net.HardwareAddr(arpDetails.MacAddress).String(),
 			Static:      uintToBool(arpDetails.IsStatic),
 		}
 		// ARP meta
@@ -86,5 +84,3 @@ func (h *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 
 	return entries, nil
 }
-
-*/
