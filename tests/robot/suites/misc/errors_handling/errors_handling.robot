@@ -31,8 +31,8 @@ Show Interfaces Before Setup
 
 Interface Should Not Be Present
     vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MAC_GOOD}
-    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_memif1
-    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
+    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/vpp1_memif1
+    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/error/vpp1_memif1
     ${out}=    Read Key    ${int_key}
     Should Be Empty    ${out}
     ${out}=    Read Key    ${int_error_key}
@@ -41,15 +41,15 @@ Interface Should Not Be Present
 Add Memif With Wrong MAC
     Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD1}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
     vpp_term: Interface Not Exists    node=agent_vpp_1    mac=${MAC_BAD1}
-    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
+    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/error/vpp1_memif1
     ${out}=    Read Key    ${int_error_key}
     Should Contain    ${out}    error_data
 
 Correct MAC In Memif
     Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_GOOD}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
     vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_GOOD}
-    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_memif1
-    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
+    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/vpp1_memif1
+    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/error/vpp1_memif1
     ${out}=    Read Key    ${int_key}
     Should Not Be Empty    ${out}
     ${out}=    Read Key    ${int_error_key}
@@ -58,8 +58,8 @@ Correct MAC In Memif
 Set Wrong MAC To Memif Again
     Put Memif Interface With IP    node=agent_vpp_1    name=vpp1_memif1    mac=${MAC_BAD2}    master=true    id=1    ip=192.168.1.1    prefix=24    socket=default.sock
     vpp_term: Interface Is Deleted    node=agent_vpp_1    mac=${MAC_GOOD}   
-    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_memif1
-    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
+    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/vpp1_memif1
+    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/error/vpp1_memif1
     ${out}=    Read Key    ${int_key}
     Should Contain    ${out}    vpp1_memif1
     ${out}=    Read Key    ${int_error_key}
@@ -70,8 +70,8 @@ Set Wrong MAC To Memif Again
 Delete Memif
     Delete VPP Interface    node=agent_vpp_1    name=vpp1_memif1
     Sleep    5s
-    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/vpp1_memif1
-    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/v1/interface/error/vpp1_memif1
+    ${int_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/vpp1_memif1
+    ${int_error_key}=    Set Variable    /vnf-agent/agent_vpp_1/vpp/status/${AGENT_VER}/interface/error/vpp1_memif1
     ${out}=    Read Key    ${int_key}
     Should Be Empty    ${out}
     ${out}=    Read Key    ${int_error_key}

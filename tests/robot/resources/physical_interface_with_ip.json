@@ -1,6 +1,6 @@
 {
   "name": "${name}",
-  "type": 1,
+  "type": 2,
   "enabled": ${enabled},
   "mtu": ${mtu},
   "ip_addresses": [
