@@ -211,27 +211,27 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		serviceNetMask = "/24"
 
 		tcpServiceLabel = "tcp-service"
-		tcpServiceExternalIP1 = serviceNetPrefix + ".1"
-		tcpServiceExternalIP2 = serviceNetPrefix + ".2"
-		tcpServiceExternalIP3 = serviceNetPrefix + ".3"
+		tcpServiceExternalIP1 = serviceNetPrefix + "1"
+		tcpServiceExternalIP2 = serviceNetPrefix + "2"
+		tcpServiceExternalIP3 = serviceNetPrefix + "3"
 		tcpServiceExternalPort = 80
 		tcpServiceLocalPortServer1 = 8080
 		tcpServiceLocalPortServer2 = 8081
 
 		udpServiceLabel = "udp-service"
-		udpServiceExternalIP1 = serviceNetPrefix + ".10"
-		udpServiceExternalIP2 = serviceNetPrefix + ".11"
-		udpServiceExternalIP3 = serviceNetPrefix + ".12"
+		udpServiceExternalIP1 = serviceNetPrefix + "10"
+		udpServiceExternalIP2 = serviceNetPrefix + "11"
+		udpServiceExternalIP3 = serviceNetPrefix + "12"
 		udpServiceExternalPort = 90
 		udpServiceLocalPortServer1 = 9090
 		udpServiceLocalPortServer2 = 9091
 
 		idDNATLabel = "id-dnat"
-		idDNATPort = 9090
+		idDNATPort = 7777
 
-		natPoolAddr1 = hostNetPrefix + "1"
-		natPoolAddr2 = hostNetPrefix + "2"
-		natPoolAddr3 = hostNetPrefix + "3"
+		natPoolAddr1 = hostNetPrefix + "110"
+		natPoolAddr2 = hostNetPrefix + "120"
+		natPoolAddr3 = hostNetPrefix + "130"
 	)
 
 	/* host <-> VPP */
@@ -545,7 +545,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			{
 				ExternalIp:   udpServiceExternalIP3, // server 2 only
 				ExternalPort: udpServiceExternalPort,
-				Protocol:     vpp_nat.DNat44_TCP,
+				Protocol:     vpp_nat.DNat44_UDP,
 				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
 						LocalIp:     linuxTapServer2IPAddr,

@@ -140,7 +140,7 @@ func TestDNATDump(t *testing.T) {
 		},
 		&bin_api.Nat44StaticMappingDetails{
 			LocalIPAddress:    net.ParseIP("10.10.11.140").To4(),
-			ExternalIPAddress: net.ParseIP("10.36.20.40").To4(),
+			// ExternalIPAddress is all zeroes
 			Protocol:          6,
 			LocalPort:         8081,
 			ExternalPort:      80,
@@ -224,7 +224,7 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.DNat44_StaticMapping_SELF))
 	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.DNat44_TCP))
 	Expect(dnat.StMappings[0].ExternalInterface).To(Equal("if1"))
-	Expect(dnat.StMappings[0].ExternalIp).To(Equal("10.36.20.40"))
+	Expect(dnat.StMappings[0].ExternalIp).To(BeEmpty())
 	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
 	Expect(dnat.StMappings[0].LocalIps).To(HaveLen(1))
 	Expect(dnat.StMappings[0].LocalIps[0].VrfId).To(BeEquivalentTo(1))

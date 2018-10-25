@@ -78,6 +78,7 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 	return &adapter.NAT44GlobalDescriptor{
 		Name:               NAT44GlobalDescriptorName,
 		KeySelector:        d.IsNAT44GlobalKey,
+		ValueComparator:    d.EquivalentNAT44Global,
 		ValueTypeName:      proto.MessageName(&nat.Nat44Global{}),
 		NBKeyPrefix:        nat.PrefixNAT44,
 		Add:                d.Add,
@@ -93,6 +94,57 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 // IsNAT44GlobalKey returns true if the key is identifying global VPP NAT44 options.
 func (d *NAT44GlobalDescriptor) IsNAT44GlobalKey(key string) bool {
 	return key == nat.GlobalNAT44Key
+}
+
+// EquivalentNAT44Global compares two NAT44 global configs for equality.
+func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, newGlobalCfg *nat.Nat44Global) bool {
+	if oldGlobalCfg.Forwarding != newGlobalCfg.Forwarding {
+		return false
+	}
+	if !proto.Equal(getVirtualReassembly(oldGlobalCfg), getVirtualReassembly(newGlobalCfg)) {
+		return false
+	}
+
+	// compare interfaces ignoring the order
+	if !d.equivalentNAT44Interfaces(oldGlobalCfg.NatInterfaces, newGlobalCfg.NatInterfaces) {
+		return false
+	}
+
+	// compare address pools
+	obsoleteAddrs, newAddrs := diffNat44AddressPools(oldGlobalCfg.AddressPool, newGlobalCfg.AddressPool)
+	return len(obsoleteAddrs) == 0 && len(newAddrs) == 0
+}
+
+// equivalentNAT44Interfaces compares two *sets* of NAT44 interfaces.
+func (d *NAT44GlobalDescriptor) equivalentNAT44Interfaces(oldIfaces, newIfaces []*nat.Nat44Global_Interface) bool {
+	if len(oldIfaces) != len(newIfaces) {
+		return false
+	}
+	for _, oldIface := range oldIfaces {
+		var found bool
+		for _, newIface := range newIfaces {
+			if proto.Equal(oldIface, newIface) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	for _, newIface := range newIfaces{
+		var found bool
+		for _, oldIface := range oldIfaces {
+			if proto.Equal(oldIface, newIface) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
@@ -138,39 +190,21 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 		}
 	}
 
+	// update the address pool
+	obsoleteAddrs, newAddrs := diffNat44AddressPools(oldGlobalCfg.AddressPool, newGlobalCfg.AddressPool)
 	// remove obsolete addresses from the pool
-	for _, oldAddr := range oldGlobalCfg.AddressPool {
-		found := false
-		for _, newAddr := range newGlobalCfg.AddressPool {
-			if proto.Equal(oldAddr, newAddr) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if err = d.natHandler.DelNat44Address(oldAddr.Address, oldAddr.VrfId, oldAddr.TwiceNat); err != nil {
-				err = errors.Errorf("failed to remove address %s from the NAT pool: %v", oldAddr.Address, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	for _, obsoleteAddr := range obsoleteAddrs {
+		if err = d.natHandler.DelNat44Address(obsoleteAddr.Address, obsoleteAddr.VrfId, obsoleteAddr.TwiceNat); err != nil {
+			err = errors.Errorf("failed to remove address %s from the NAT pool: %v", obsoleteAddr.Address, err)
+			d.log.Error(err)
+			return nil, err
 		}
 	}
-
-	// add new addresses into the pool
-	for _, newAddr := range newGlobalCfg.AddressPool {
-		found := false
-		for _, oldAddr := range oldGlobalCfg.AddressPool {
-			if proto.Equal(oldAddr, newAddr) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if err = d.natHandler.AddNat44Address(newAddr.Address, newAddr.VrfId, newAddr.TwiceNat); err != nil {
-				err = errors.Errorf("failed to add address %s into the NAT pool: %v", newAddr.Address, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	for _, newAddr := range newAddrs {
+		if err = d.natHandler.AddNat44Address(newAddr.Address, newAddr.VrfId, newAddr.TwiceNat); err != nil {
+			err = errors.Errorf("failed to add address %s into the NAT pool: %v", newAddr.Address, err)
+			d.log.Error(err)
+			return nil, err
 		}
 	}
 
@@ -262,4 +296,33 @@ func getVirtualReassembly(globalCfg *nat.Nat44Global) *nat.VirtualReassembly {
 		return defaultGlobalCfg.VirtualReassembly
 	}
 	return globalCfg.VirtualReassembly
+}
+
+// diffNat44AddressPools compares two address pools.
+func diffNat44AddressPools(oldAddrPool, newAddrPool []*nat.Nat44Global_Address) (obsoleteAddrs, newAddrs []*nat.Nat44Global_Address) {
+	for _, oldAddr := range oldAddrPool {
+		found := false
+		for _, newAddr := range newAddrPool {
+			if proto.Equal(oldAddr, newAddr) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			obsoleteAddrs = append(obsoleteAddrs, oldAddr)
+		}
+	}
+	for _, newAddr := range newAddrPool {
+		found := false
+		for _, oldAddr := range oldAddrPool {
+			if proto.Equal(oldAddr, newAddr) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			newAddrs = append(newAddrs, newAddr)
+		}
+	}
+	return obsoleteAddrs, newAddrs
 }

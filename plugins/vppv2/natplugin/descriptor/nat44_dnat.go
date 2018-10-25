@@ -61,7 +61,7 @@ func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger
 
 	return &DNAT44Descriptor{
 		natHandler: natHandler,
-		log:        log.NewLogger("nat44-global-descriptor"),
+		log:        log.NewLogger("nat44-dnat-descriptor"),
 	}
 }
 
@@ -71,6 +71,7 @@ func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 	return &adapter.DNAT44Descriptor{
 		Name:               DNAT44DescriptorName,
 		KeySelector:        d.IsDNAT44Key,
+		ValueComparator:    d.EquivalentDNAT44,
 		ValueTypeName:      proto.MessageName(&nat.DNat44{}),
 		NBKeyPrefix:        nat.PrefixNAT44,
 		Add:                d.Add,
@@ -86,6 +87,19 @@ func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 // IsDNAT44Key returns true if the key is identifying VPP destination-NAT44.
 func (d *DNAT44Descriptor) IsDNAT44Key(key string) bool {
 	return strings.HasPrefix(key, nat.DNAT44Prefix)
+}
+
+// EquivalentDNAT44 compares two instances of DNAT44 for equality.
+func (d *DNAT44Descriptor) EquivalentDNAT44(key string, oldDNAT, newDNAT *nat.DNat44) bool {
+	// compare identity mappings
+	obsoleteIdMappings, newIdMappings := diffIdentityMappings(oldDNAT.IdMappings, newDNAT.IdMappings)
+	if len(obsoleteIdMappings) != 0 || len(newIdMappings) != 0 {
+		return false
+	}
+
+	// compare static mappings
+	obsoleteStMappings, newStMappings := diffStaticMappings(oldDNAT.StMappings, newDNAT.StMappings)
+	return len(obsoleteStMappings) == 0 && len(newStMappings) == 0
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
@@ -115,75 +129,42 @@ func (d *DNAT44Descriptor) Modify(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 		return nil, err
 	}
 
+	obsoleteIdMappings, newIdMappings := diffIdentityMappings(oldDNAT.IdMappings, newDNAT.IdMappings)
+	obsoleteStMappings, newStMappings := diffStaticMappings(oldDNAT.StMappings, newDNAT.StMappings)
+
 	// remove obsolete identity mappings
-	for _, oldMapping := range oldDNAT.IdMappings {
-		found := false
-		for _, newMapping := range newDNAT.IdMappings {
-			if proto.Equal(oldMapping, newMapping) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if err = d.natHandler.DelNat44IdentityMapping(oldMapping, oldDNAT.Label); err != nil {
-				err = errors.Errorf("failed to remove identity mapping from DNAT %s: %v", oldDNAT.Label, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	for _, oldMapping := range obsoleteIdMappings {
+		if err = d.natHandler.DelNat44IdentityMapping(oldMapping, oldDNAT.Label); err != nil {
+			err = errors.Errorf("failed to remove identity mapping from DNAT %s: %v", oldDNAT.Label, err)
+			d.log.Error(err)
+			return nil, err
 		}
 	}
 
 	// remove obsolete static mappings
-	for _, oldMapping := range oldDNAT.StMappings {
-		found := false
-		for _, newMapping := range newDNAT.StMappings {
-			if proto.Equal(oldMapping, newMapping) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if err = d.natHandler.DelNat44StaticMapping(oldMapping, oldDNAT.Label); err != nil {
-				err = errors.Errorf("failed to remove static mapping from DNAT %s: %v", oldDNAT.Label, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	for _, oldMapping := range obsoleteStMappings {
+		if err = d.natHandler.DelNat44StaticMapping(oldMapping, oldDNAT.Label); err != nil {
+			err = errors.Errorf("failed to remove static mapping from DNAT %s: %v", oldDNAT.Label, err)
+			d.log.Error(err)
+			return nil, err
 		}
 	}
 
 	// add new identity mappings
-	for _, newMapping := range newDNAT.IdMappings {
-		found := false
-		for _, oldMapping := range oldDNAT.IdMappings {
-			if proto.Equal(oldMapping, newMapping) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if err = d.natHandler.AddNat44IdentityMapping(newMapping, newDNAT.Label); err != nil {
-				err = errors.Errorf("failed to add identity mapping for DNAT %s: %v", newDNAT.Label, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	for _, newMapping := range newIdMappings {
+		if err = d.natHandler.AddNat44IdentityMapping(newMapping, newDNAT.Label); err != nil {
+			err = errors.Errorf("failed to add identity mapping for DNAT %s: %v", newDNAT.Label, err)
+			d.log.Error(err)
+			return nil, err
 		}
 	}
 
 	// add new static mappings
-	for _, newMapping := range newDNAT.StMappings {
-		found := false
-		for _, oldMapping := range oldDNAT.StMappings {
-			if proto.Equal(oldMapping, newMapping) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if err = d.natHandler.AddNat44StaticMapping(newMapping, newDNAT.Label); err != nil {
-				err = errors.Errorf("failed to add static mapping for DNAT %s: %v", newDNAT.Label, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	for _, newMapping := range newStMappings {
+		if err = d.natHandler.AddNat44StaticMapping(newMapping, newDNAT.Label); err != nil {
+			err = errors.Errorf("failed to add static mapping for DNAT %s: %v", newDNAT.Label, err)
+			d.log.Error(err)
+			return nil, err
 		}
 	}
 
@@ -230,8 +211,8 @@ func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (dump 
 		})
 	}
 
-
-	return nil, nil
+	d.log.Debugf("Dumping DNAT-44 configurations: %v", dump)
+	return dump, nil
 }
 
 // validateDNAT44Config validates VPP destination-NAT44 configuration.
@@ -240,4 +221,104 @@ func (d *DNAT44Descriptor) validateDNAT44Config(dnat *nat.DNat44) error {
 		return ErrDNAT44WithEmptyLabel
 	}
 	return nil
+}
+
+// diffIdentityMappings compares two *sets* of identity mappings.
+func diffIdentityMappings(
+	oldIdMappings, newIdMappings []*nat.DNat44_IdentityMapping) (obsoleteMappings, newMappings []*nat.DNat44_IdentityMapping) {
+
+	for _, oldMapping := range oldIdMappings {
+		found := false
+		for _, newMapping := range newIdMappings {
+			if proto.Equal(oldMapping, newMapping) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			obsoleteMappings = append(obsoleteMappings, oldMapping)
+		}
+	}
+	for _, newMapping := range newIdMappings {
+		found := false
+		for _, oldMapping := range oldIdMappings {
+			if proto.Equal(oldMapping, newMapping) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			newMappings = append(newMappings, newMapping)
+		}
+	}
+	return obsoleteMappings, newMappings
+}
+
+// diffStaticMappings compares two *sets* of static mappings.
+func diffStaticMappings(
+	oldStMappings, newStMappings []*nat.DNat44_StaticMapping) (obsoleteMappings, newMappings []*nat.DNat44_StaticMapping) {
+
+	for _, oldMapping := range oldStMappings {
+		found := false
+		for _, newMapping := range newStMappings {
+			if equivalentStaticMappings(oldMapping, newMapping) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			obsoleteMappings = append(obsoleteMappings, oldMapping)
+		}
+	}
+	for _, newMapping := range newStMappings {
+		found := false
+		for _, oldMapping := range oldStMappings {
+			if equivalentStaticMappings(oldMapping, newMapping) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			newMappings = append(newMappings, newMapping)
+		}
+	}
+	return obsoleteMappings, newMappings
+}
+
+// equivalentStaticMappings compares two static mappings for equality.
+func equivalentStaticMappings(stMapping1, stMapping2 *nat.DNat44_StaticMapping) bool {
+	// attributes compared as usually
+	if stMapping1.Protocol != stMapping2.Protocol || stMapping1.ExternalPort != stMapping2.ExternalPort ||
+		stMapping1.ExternalIp != stMapping2.ExternalIp || stMapping1.ExternalInterface != stMapping2.ExternalInterface ||
+		stMapping1.TwiceNat != stMapping2.TwiceNat {
+			return false
+	}
+
+	// compare locals ignoring their order
+	for _, localIP1 := range stMapping1.LocalIps {
+		found := false
+		for _, localIP2 := range stMapping2.LocalIps {
+			if proto.Equal(localIP1, localIP2) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	for _, localIP2 := range stMapping2.LocalIps {
+		found := false
+		for _, localIP1 := range stMapping1.LocalIps {
+			if proto.Equal(localIP1, localIP2) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
 }

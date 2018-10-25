@@ -61,9 +61,9 @@ func (h *NatVppHandler) DNat44Dump() (dnats []*nat.DNat44, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 static mappings: %v", err)
 	}
-	for label, mapping := range natStMappings {
+	for label, mappings := range natStMappings {
 		dnat := getOrCreateDNAT(dnatMap, label)
-		dnat.StMappings = append(dnat.StMappings, mapping)
+		dnat.StMappings = append(dnat.StMappings, mappings...)
 	}
 
 	// Static mappings with load balancer
@@ -71,9 +71,9 @@ func (h *NatVppHandler) DNat44Dump() (dnats []*nat.DNat44, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 static mappings with load balancer: %v", err)
 	}
-	for label, mapping := range natStLbMappings {
+	for label, mappings := range natStLbMappings {
 		dnat := getOrCreateDNAT(dnatMap, label)
-		dnat.StMappings = append(dnat.StMappings, mapping)
+		dnat.StMappings = append(dnat.StMappings, mappings...)
 	}
 
 	// Identity mappings
@@ -81,9 +81,9 @@ func (h *NatVppHandler) DNat44Dump() (dnats []*nat.DNat44, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump NAT44 identity mappings: %v", err)
 	}
-	for label, mapping := range natIDMappings {
+	for label, mappings := range natIDMappings {
 		dnat := getOrCreateDNAT(dnatMap, label)
-		dnat.IdMappings = append(dnat.IdMappings, mapping)
+		dnat.IdMappings = append(dnat.IdMappings, mappings...)
 	}
 
 	// Convert map of DNAT configurations into a list.
@@ -152,9 +152,9 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 	return
 }
 
-// nat44StaticMappingDump returns a map of NAT44 static mapping tag->data pairs
-func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string]*nat.DNat44_StaticMapping, err error) {
-	entries = make(map[string]*nat.DNat44_StaticMapping)
+// nat44StaticMappingDump returns a map of NAT44 static mappings sorted by tags
+func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string][]*nat.DNat44_StaticMapping, err error) {
+	entries = make(map[string][]*nat.DNat44_StaticMapping)
 	req := &bin_api.Nat44StaticMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
@@ -172,9 +172,12 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string]*nat.DNat44
 
 		// Parse tag (DNAT label)
 		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
+		if _, hasTag := entries[tag]; !hasTag {
+			entries[tag] = []*nat.DNat44_StaticMapping{}
+		}
 
 		// Add mapping into the map.
-		entries[tag] = &nat.DNat44_StaticMapping{
+		mapping := &nat.DNat44_StaticMapping{
 			ExternalInterface: func(ifIdx uint32) string {
 				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(ifIdx)
 				if !found && ifIdx != NoInterface {
@@ -182,7 +185,6 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string]*nat.DNat44
 				}
 				return ifName
 			}(msg.ExternalSwIfIndex),
-			ExternalIp:   exIPAddress.To4().String(),
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps: []*nat.DNat44_StaticMapping_LocalIP{ // single-value
 				{
@@ -194,14 +196,18 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string]*nat.DNat44
 			Protocol: h.protocolNumberToNBValue(msg.Protocol),
 			TwiceNat: h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 		}
+		if !exIPAddress.IsUnspecified() {
+			mapping.ExternalIp = exIPAddress.To4().String()
+		}
+		entries[tag] = append(entries[tag], mapping)
 	}
 
 	return entries, nil
 }
 
-// nat44StaticMappingLbDump returns a map of NAT44 static mapping tag->data pairs with load balancing.
-func (h *NatVppHandler) nat44StaticMappingLbDump() (entries map[string]*nat.DNat44_StaticMapping, err error) {
-	entries = make(map[string]*nat.DNat44_StaticMapping)
+// nat44StaticMappingLbDump returns a map of NAT44 static mapping with load balancing sorted by tags.
+func (h *NatVppHandler) nat44StaticMappingLbDump() (entries map[string][]*nat.DNat44_StaticMapping, err error) {
+	entries = make(map[string][]*nat.DNat44_StaticMapping)
 	req := &bin_api.Nat44LbStaticMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
@@ -217,6 +223,9 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries map[string]*nat.DNat
 
 		// Parse tag (DNAT label)
 		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
+		if _, hasTag := entries[tag]; !hasTag {
+			entries[tag] = []*nat.DNat44_StaticMapping{}
+		}
 
 		// Prepare localIPs
 		var locals []*nat.DNat44_StaticMapping_LocalIP
@@ -232,21 +241,24 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries map[string]*nat.DNat
 		exIPAddress := net.IP(msg.ExternalAddr)
 
 		// Add mapping into the map.
-		entries[tag] = &nat.DNat44_StaticMapping{
-			ExternalIp:   exIPAddress.To4().String(),
+		mapping := &nat.DNat44_StaticMapping{
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps:     locals,
 			Protocol:     h.protocolNumberToNBValue(msg.Protocol),
 			TwiceNat:     h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 		}
+		if !exIPAddress.IsUnspecified() {
+			mapping.ExternalIp = exIPAddress.To4().String()
+		}
+		entries[tag] = append(entries[tag], mapping)
 	}
 
 	return entries, nil
 }
 
-// nat44IdentityMappingDump returns a map of NAT44 identity mapping tag->data pairs.
-func (h *NatVppHandler) nat44IdentityMappingDump() (entries map[string]*nat.DNat44_IdentityMapping, err error) {
-	entries = make(map[string]*nat.DNat44_IdentityMapping)
+// nat44IdentityMappingDump returns a map of NAT44 identity mappings sorted by tags.
+func (h *NatVppHandler) nat44IdentityMappingDump() (entries map[string][]*nat.DNat44_IdentityMapping, err error) {
+	entries = make(map[string][]*nat.DNat44_IdentityMapping)
 	req := &bin_api.Nat44IdentityMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
@@ -264,9 +276,12 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries map[string]*nat.DNat
 
 		// Parse tag (DNAT label)
 		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
+		if _, hasTag := entries[tag]; !hasTag {
+			entries[tag] = []*nat.DNat44_IdentityMapping{}
+		}
 
 		// Add mapping into the map.
-		entries[tag] = &nat.DNat44_IdentityMapping{
+		mapping := &nat.DNat44_IdentityMapping{
 			VrfId: msg.VrfID,
 			Interface: func(ifIdx uint32) string {
 				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(ifIdx)
@@ -275,10 +290,13 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries map[string]*nat.DNat
 				}
 				return ifName
 			}(msg.SwIfIndex),
-			IpAddress: ipAddress.To4().String(),
 			Port:      uint32(msg.Port),
 			Protocol:  h.protocolNumberToNBValue(msg.Protocol),
 		}
+		if !ipAddress.IsUnspecified() {
+			mapping.IpAddress = ipAddress.To4().String()
+		}
+		entries[tag] = append(entries[tag], mapping)
 	}
 
 	return entries, nil
