@@ -40,7 +40,7 @@ const (
 	routeOutInterfaceDep = "interface-exists"
 )
 
-// RouteDescriptor teaches KVScheduler how to configure Linux routes.
+// RouteDescriptor teaches KVScheduler how to configure VPP routes.
 type RouteDescriptor struct {
 	log       logging.Logger
 	l3Handler vppcalls.RouteVppAPI
@@ -80,7 +80,7 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	}
 }
 
-// EquivalentRoutes is case-insensitive comparison function for l3.LinuxStaticRoute.
+// EquivalentRoutes is case-insensitive comparison function for l3.StaticRoute.
 func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.StaticRoute) bool {
 	if oldRoute.GetType() != newRoute.GetType() ||
 		oldRoute.GetVrfId() != newRoute.GetVrfId() ||
@@ -109,7 +109,7 @@ func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
 	return false // nothing retriable
 }
 
-// Add adds Linux route.
+// Add adds VPP static route.
 func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata interface{}, err error) {
 	err = d.l3Handler.VppAddRoute(route, route.GetOutgoingInterface())
 	if err != nil {
@@ -119,7 +119,7 @@ func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata inter
 	return nil, nil //fmt.Errorf("not implemented")
 }
 
-// Delete removes Linux route.
+// Delete removes VPP static route.
 func (d *RouteDescriptor) Delete(key string, route *l3.StaticRoute, metadata interface{}) error {
 	return fmt.Errorf("not implemented")
 }
@@ -129,7 +129,7 @@ func (d *RouteDescriptor) Modify(key string, oldRoute, newRoute *l3.StaticRoute,
 	return nil, fmt.Errorf("not implemented")
 }
 
-// Dependencies lists dependencies for a Linux route.
+// Dependencies lists dependencies for a VPP route.
 func (d *RouteDescriptor) Dependencies(key string, route *l3.StaticRoute) []scheduler.Dependency {
 	var dependencies []scheduler.Dependency
 	// the outgoing interface must exist and be UP
