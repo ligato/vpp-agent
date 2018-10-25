@@ -92,8 +92,8 @@ func (d *DNAT44Descriptor) IsDNAT44Key(key string) bool {
 // EquivalentDNAT44 compares two instances of DNAT44 for equality.
 func (d *DNAT44Descriptor) EquivalentDNAT44(key string, oldDNAT, newDNAT *nat.DNat44) bool {
 	// compare identity mappings
-	obsoleteIdMappings, newIdMappings := diffIdentityMappings(oldDNAT.IdMappings, newDNAT.IdMappings)
-	if len(obsoleteIdMappings) != 0 || len(newIdMappings) != 0 {
+	obsoleteIDMappings, newIDMappings := diffIdentityMappings(oldDNAT.IdMappings, newDNAT.IdMappings)
+	if len(obsoleteIDMappings) != 0 || len(newIDMappings) != 0 {
 		return false
 	}
 
@@ -129,11 +129,11 @@ func (d *DNAT44Descriptor) Modify(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 		return nil, err
 	}
 
-	obsoleteIdMappings, newIdMappings := diffIdentityMappings(oldDNAT.IdMappings, newDNAT.IdMappings)
+	obsoleteIDMappings, newIDMappings := diffIdentityMappings(oldDNAT.IdMappings, newDNAT.IdMappings)
 	obsoleteStMappings, newStMappings := diffStaticMappings(oldDNAT.StMappings, newDNAT.StMappings)
 
 	// remove obsolete identity mappings
-	for _, oldMapping := range obsoleteIdMappings {
+	for _, oldMapping := range obsoleteIDMappings {
 		if err = d.natHandler.DelNat44IdentityMapping(oldMapping, oldDNAT.Label); err != nil {
 			err = errors.Errorf("failed to remove identity mapping from DNAT %s: %v", oldDNAT.Label, err)
 			d.log.Error(err)
@@ -151,7 +151,7 @@ func (d *DNAT44Descriptor) Modify(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 	}
 
 	// add new identity mappings
-	for _, newMapping := range newIdMappings {
+	for _, newMapping := range newIDMappings {
 		if err = d.natHandler.AddNat44IdentityMapping(newMapping, newDNAT.Label); err != nil {
 			err = errors.Errorf("failed to add identity mapping for DNAT %s: %v", newDNAT.Label, err)
 			d.log.Error(err)
@@ -225,11 +225,11 @@ func (d *DNAT44Descriptor) validateDNAT44Config(dnat *nat.DNat44) error {
 
 // diffIdentityMappings compares two *sets* of identity mappings.
 func diffIdentityMappings(
-	oldIdMappings, newIdMappings []*nat.DNat44_IdentityMapping) (obsoleteMappings, newMappings []*nat.DNat44_IdentityMapping) {
+	oldIDMappings, newIDMappings []*nat.DNat44_IdentityMapping) (obsoleteMappings, newMappings []*nat.DNat44_IdentityMapping) {
 
-	for _, oldMapping := range oldIdMappings {
+	for _, oldMapping := range oldIDMappings {
 		found := false
-		for _, newMapping := range newIdMappings {
+		for _, newMapping := range newIDMappings {
 			if proto.Equal(oldMapping, newMapping) {
 				found = true
 				break
@@ -239,9 +239,9 @@ func diffIdentityMappings(
 			obsoleteMappings = append(obsoleteMappings, oldMapping)
 		}
 	}
-	for _, newMapping := range newIdMappings {
+	for _, newMapping := range newIDMappings {
 		found := false
-		for _, oldMapping := range oldIdMappings {
+		for _, oldMapping := range oldIDMappings {
 			if proto.Equal(oldMapping, newMapping) {
 				found = true
 				break
