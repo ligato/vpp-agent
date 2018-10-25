@@ -126,19 +126,18 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	// data change
-	/*time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 1)
 	fmt.Println("=== CHANGE 1 ===")
 
-	acl1.Interfaces = nil
-	acl0.Interfaces.Egress = nil
+	route0.OutgoingInterface = ""
 
 	txn2 := localclient.DataChangeRequest("example")
-	err = txn2.Put().
-		ACL(acl0).
-		ACL(acl1).
+	err = txn2.
+		Put().StaticRoute(route0).
+		Delete().StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
-	}*/
+	}
 }

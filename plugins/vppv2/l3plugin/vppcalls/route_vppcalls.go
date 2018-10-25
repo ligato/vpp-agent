@@ -116,21 +116,34 @@ func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute, ifName string) error {
 		}
 	}
 
-	var rtIfIdx uint32
-	if ifName != "" {
-		meta, found := h.ifIndexes.LookupByName(ifName)
-		if !found {
-			return errors.Errorf("interface %s not found", ifName)
-		}
-		rtIfIdx = meta.SwIfIndex
+	swIfIdx, err := h.getRouteSwIfIndex(ifName)
+	if err != nil {
+		return err
 	}
 
-	return h.vppAddDelRoute(route, rtIfIdx, false)
+	return h.vppAddDelRoute(route, swIfIdx, false)
 }
 
 // VppDelRoute implements route handler.
-func (h *RouteHandler) VppDelRoute(route *l3.StaticRoute, rtIfIdx uint32) error {
-	return h.vppAddDelRoute(route, rtIfIdx, true)
+func (h *RouteHandler) VppDelRoute(route *l3.StaticRoute, ifName string) error {
+	swIfIdx, err := h.getRouteSwIfIndex(ifName)
+	if err != nil {
+		return err
+	}
+
+	return h.vppAddDelRoute(route, swIfIdx, true)
+}
+
+func (h *RouteHandler) getRouteSwIfIndex(ifName string) (swIfIdx uint32, err error) {
+	swIfIdx = NextHopOutgoingIfUnset
+	if ifName != "" {
+		meta, found := h.ifIndexes.LookupByName(ifName)
+		if !found {
+			return 0, errors.Errorf("interface %s not found", ifName)
+		}
+		swIfIdx = meta.SwIfIndex
+	}
+	return
 }
 
 // New VRF with provided ID for IPv4 or IPv6 will be created if missing.

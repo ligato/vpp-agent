@@ -66,12 +66,14 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 		KeySelector: func(key string) bool {
 			return strings.HasPrefix(key, l3.RoutePrefix)
 		},
-		ValueTypeName:      proto.MessageName(&l3.StaticRoute{}),
-		ValueComparator:    d.EquivalentRoutes,
-		NBKeyPrefix:        l3.RoutePrefix,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Modify:             d.Modify,
+		ValueTypeName:   proto.MessageName(&l3.StaticRoute{}),
+		ValueComparator: d.EquivalentRoutes,
+		NBKeyPrefix:     l3.RoutePrefix,
+		Add:             d.Add,
+		Delete:          d.Delete,
+		ModifyWithRecreate: func(key string, oldValue, newValue *l3.StaticRoute, metadata interface{}) bool {
+			return true
+		},
 		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		DerivedValues:      d.DerivedValues,
@@ -82,6 +84,7 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 
 // EquivalentRoutes is case-insensitive comparison function for l3.StaticRoute.
 func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.StaticRoute) bool {
+
 	if oldRoute.GetType() != newRoute.GetType() ||
 		oldRoute.GetVrfId() != newRoute.GetVrfId() ||
 		oldRoute.GetViaVrfId() != newRoute.GetViaVrfId() ||
@@ -111,22 +114,24 @@ func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
 
 // Add adds VPP static route.
 func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata interface{}, err error) {
+
 	err = d.l3Handler.VppAddRoute(route, route.GetOutgoingInterface())
 	if err != nil {
-		return nil, errors.Errorf("failed to add VPP route: %v", err)
+		return nil, err
 	}
 
-	return nil, nil //fmt.Errorf("not implemented")
+	return nil, nil
 }
 
 // Delete removes VPP static route.
 func (d *RouteDescriptor) Delete(key string, route *l3.StaticRoute, metadata interface{}) error {
-	return fmt.Errorf("not implemented")
-}
 
-// Modify is able to change route scope, metric and GW address.
-func (d *RouteDescriptor) Modify(key string, oldRoute, newRoute *l3.StaticRoute, oldMetadata interface{}) (newMetadata interface{}, err error) {
-	return nil, fmt.Errorf("not implemented")
+	err := d.l3Handler.VppDelRoute(route, route.GetOutgoingInterface())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Dependencies lists dependencies for a VPP route.
@@ -193,7 +198,11 @@ func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
 		})
 	}
 
-	d.log.Debugf("Dumped %d Static Routes: %v", len(dump), dump)
+	var routes string
+	for _, route := range dump {
+		routes += fmt.Sprintf(" - %+v\n", route)
+	}
+	d.log.Debugf("Dumped %d Static Routes:\n%s", len(dump), routes)
 	return dump, nil
 }
 

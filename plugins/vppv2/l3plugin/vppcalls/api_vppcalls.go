@@ -81,7 +81,7 @@ type RouteVppWrite interface {
 	VppAddRoute(route *l3.StaticRoute, ifName string) error
 	// VppDelRoute removes old route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *l3.StaticRoute, rtIfIdx uint32) error
+	VppDelRoute(route *l3.StaticRoute, ifName string) error
 }
 
 // RouteVppRead provides read methods for routes
