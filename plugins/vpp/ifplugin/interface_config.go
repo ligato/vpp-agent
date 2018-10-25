@@ -201,6 +201,8 @@ func (c *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Int
 	case intf.InterfaceType_IPSEC_TUNNEL:
 		c.log.Warnf("Cannot process new IPSec tunnel interface %s, use definition in IPSec plugin instead", iface.Name)
 		return nil
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		ifIdx, err = c.ifHandler.AddVmxNet3(iface.Name, iface.VmxNet3)
 	default:
 		return errors.Errorf("failed to create interface %s: unsupported type", iface.Name)
 	}
@@ -500,6 +502,11 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 	case intf.InterfaceType_IPSEC_TUNNEL:
 		c.log.Warnf("Cannot process IPSec tunnel interface %s, use definition in IPSec plugin instead", newConfig.Name)
 		return nil
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		if !c.canVmxNet3BeModifWithoutDelete(newConfig.VmxNet3, oldConfig.VmxNet3) ||
+			oldConfig.Vrf != newConfig.Vrf {
+			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
+		}
 	}
 
 	// Rx-mode
@@ -797,6 +804,8 @@ func (c *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_In
 		return nil
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		err = c.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, ifIdx)
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		err = c.ifHandler.DelVmxNet3(oldConfig.Name, ifIdx)
 	}
 	if err != nil {
 		return errors.Errorf("failed to remove interface %s, index %d: %v", oldConfig.Name, ifIdx, err)
@@ -950,6 +959,18 @@ func (c *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *intf.Int
 	}
 	if !proto.Equal(newConfig, oldConfig) {
 		c.log.Debug("Difference between new & old config causing recreation of VxLAN")
+		return false
+	}
+
+	return true
+}
+
+func (c *InterfaceConfigurator) canVmxNet3BeModifWithoutDelete(newConfig, oldConfig *intf.Interfaces_Interface_VmxNet3) bool {
+	if newConfig == nil || oldConfig == nil {
+		return true
+	}
+	if !proto.Equal(newConfig, oldConfig) {
+		c.log.Debug("Difference between new & old config causing recreation of vmxNet3")
 		return false
 	}
 
