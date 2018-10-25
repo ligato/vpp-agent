@@ -259,7 +259,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(l3.VrfPrefix)
+		keys, err = dsl.listKeys(l3.RoutePrefix)
 		if err != nil {
 			break
 		}

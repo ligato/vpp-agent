@@ -15,7 +15,9 @@
 package descriptor
 
 import (
+	"bytes"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -62,11 +64,11 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	return &adapter.StaticRouteDescriptor{
 		Name: StaticRouteDescriptorName,
 		KeySelector: func(key string) bool {
-			return strings.HasPrefix(key, l3.VrfPrefix)
+			return strings.HasPrefix(key, l3.RoutePrefix)
 		},
 		ValueTypeName:      proto.MessageName(&l3.StaticRoute{}),
 		ValueComparator:    d.EquivalentRoutes,
-		NBKeyPrefix:        l3.VrfPrefix,
+		NBKeyPrefix:        l3.RoutePrefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
@@ -80,7 +82,26 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 
 // EquivalentRoutes is case-insensitive comparison function for l3.LinuxStaticRoute.
 func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.StaticRoute) bool {
-	return proto.Equal(oldRoute, newRoute)
+	if oldRoute.GetType() != newRoute.GetType() ||
+		oldRoute.GetVrfId() != newRoute.GetVrfId() ||
+		oldRoute.GetViaVrfId() != newRoute.GetViaVrfId() ||
+		oldRoute.GetOutgoingInterface() != newRoute.GetOutgoingInterface() ||
+		oldRoute.GetWeight() != newRoute.GetWeight() ||
+		oldRoute.GetPreference() != newRoute.GetPreference() {
+		return false
+	}
+
+	// compare dst networks
+	if !equalNetworks(oldRoute.DstNetwork, newRoute.DstNetwork) {
+		return false
+	}
+
+	// compare gw addresses (next hop)
+	if !equalAddrs(getGwAddr(oldRoute), getGwAddr(newRoute)) {
+		return false
+	}
+
+	return true
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
@@ -168,7 +189,7 @@ func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
 		dump = append(dump, adapter.StaticRouteKVWithMetadata{
 			Key:    l3.RouteKey(staticRoute.Route.VrfId, staticRoute.Route.DstNetwork, staticRoute.Route.NextHopAddr),
 			Value:  staticRoute.Route,
-			Origin: scheduler.FromSB,
+			Origin: scheduler.UnknownOrigin,
 		})
 	}
 
@@ -176,15 +197,41 @@ func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
 	return dump, nil
 }
 
+// equalAddrs compares two IP addresses for equality.
+func equalAddrs(addr1, addr2 string) bool {
+	a1 := net.ParseIP(addr1)
+	a2 := net.ParseIP(addr2)
+	if a1 == nil || a2 == nil {
+		// if parsing fails, compare as strings
+		return strings.ToLower(addr1) == strings.ToLower(addr2)
+	}
+	return a1.Equal(a2)
+}
+
 // getGwAddr returns the GW address chosen in the given route, handling the cases
 // when it is left undefined.
-/*func getGwAddr(route *l3.StaticRoute) string {
-	if route.GwAddr == "" {
-		if ipv6, _ := addrs.IsIPv6(route.DstNetwork); ipv6 {
-			return ipv6AddrAny
-		}
-		return ipv4AddrAny
+func getGwAddr(route *l3.StaticRoute) string {
+	if route.GetNextHopAddr() != "" {
+		return route.GetNextHopAddr()
 	}
-	return route.GwAddr
+	// return zero address
+	_, dstIPNet, err := net.ParseCIDR(route.GetDstNetwork())
+	if err != nil {
+		return ""
+	}
+	if dstIPNet.IP.To4() == nil {
+		return net.IPv6zero.String()
+	}
+	return net.IPv4zero.String()
 }
-*/
+
+// equalNetworks compares two IP networks for equality.
+func equalNetworks(net1, net2 string) bool {
+	_, n1, err1 := net.ParseCIDR(net1)
+	_, n2, err2 := net.ParseCIDR(net2)
+	if err1 != nil || err2 != nil {
+		// if parsing fails, compare as strings
+		return strings.ToLower(net1) == strings.ToLower(net2)
+	}
+	return n1.IP.Equal(n2.IP) && bytes.Equal(n1.Mask, n2.Mask)
+}

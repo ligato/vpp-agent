@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	// VrfPrefix is the relative key prefix for VRFs.
-	VrfPrefix = "vpp/config/v1/vrf/"
+	// RoutePrefix is the relative key prefix for VRFs.
+	RoutePrefix = "vpp/config/v2/route/"
 
 	// routeTemplate is the relative key prefix for routes.
-	routeTemplate = VrfPrefix + "{vrf}/fib/{net}/{mask}/{next-hop}"
+	routeTemplate = RoutePrefix + "vrf/{vrf}/dst/{dst-ip}/{dst-mask}/gw/{next-hop}"
 
 	// ArpPrefix is the relative key prefix for ARP.
-	ArpPrefix = "vpp/config/v1/arp/"
+	ArpPrefix = "vpp/config/v2/arp/"
 	// ArpEntryPrefix is the relative key prefix for ARP table entries.
 	ArpKey = ArpPrefix + "{if}/{ip}"
 
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
-	ProxyARPRangePrefix = "vpp/config/v1/proxyarp/range/"
+	ProxyARPRangePrefix = "vpp/config/v2/proxyarp/range/"
 	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
 	ProxyARPInterfacePrefix = "vpp/config/v1/proxyarp/interface/"
 	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
@@ -43,34 +43,58 @@ const (
 	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{label}"
 
 	// IPScanNeighPrefix it the relative key prefix for IP scan neighbor feature
-	IPScanNeighPrefix = "vpp/config/v1/ipneigh/"
+	IPScanNeighPrefix = "vpp/config/v2/ipneigh/"
+)
+
+const (
+	// InvalidKeyPart is used in key for parts which are invalid
+	InvalidKeyPart = "<invalid>"
 )
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
-func RouteKey(vrf uint32, dstAddr string, nextHopAddr string) string {
-	_, dstNet, _ := net.ParseCIDR(dstAddr)
-	dstNetAddr := dstNet.IP.String()
-	dstNetMask, _ := dstNet.Mask.Size()
-	key := routeTemplate
+func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
+	var key = routeTemplate
+
 	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
-	key = strings.Replace(key, "{net}", dstNetAddr, 1)
-	key = strings.Replace(key, "{mask}", strconv.Itoa(dstNetMask), 1)
+
+	var dstIP string
+	var dstMask string
+	_, dstIPNet, err := net.ParseCIDR(dstNet)
+	if err == nil {
+		dstIP = dstIPNet.IP.String()
+		maskSize, _ := dstIPNet.Mask.Size()
+		dstMask = strconv.Itoa(maskSize)
+	} else {
+		dstIP = InvalidKeyPart
+		dstMask = InvalidKeyPart
+	}
+	key = strings.Replace(key, "{dst-ip}", dstIP, 1)
+	key = strings.Replace(key, "{dst-mask}", dstMask, 1)
+
+	if nextHopAddr == "" && dstIPNet != nil {
+		if dstIPNet.IP.To4() == nil {
+			nextHopAddr = net.IPv6zero.String()
+		} else {
+			nextHopAddr = net.IPv4zero.String()
+		}
+	} else if net.ParseIP(nextHopAddr) == nil {
+		nextHopAddr = InvalidKeyPart
+	}
 	key = strings.Replace(key, "{next-hop}", nextHopAddr, 1)
+
 	return key
 }
 
 // ParseRouteKey parses VRF label and route address from a route key.
 func ParseRouteKey(key string) (isRouteKey bool, vrfIndex string, dstNetAddr string, dstNetMask int, nextHopAddr string) {
-	if strings.HasPrefix(key, VrfPrefix) {
-		vrfSuffix := strings.TrimPrefix(key, VrfPrefix)
-		routeComps := strings.Split(vrfSuffix, "/")
-		if len(routeComps) >= 5 && routeComps[1] == "fib" {
-			if mask, err := strconv.Atoi(routeComps[3]); err == nil {
-				return true, routeComps[0], routeComps[2], mask, routeComps[4]
-			}
-		} else if len(routeComps) == 4 && routeComps[1] == "fib" {
-			if mask, err := strconv.Atoi(routeComps[3]); err == nil {
-				return true, routeComps[0], routeComps[2], mask, ""
+	if routeKey := strings.TrimPrefix(key, RoutePrefix); routeKey != key {
+		keyParts := strings.Split(routeKey, "/")
+		if len(keyParts) >= 7 &&
+			keyParts[0] == "vrf" &&
+			keyParts[2] == "dst" &&
+			keyParts[5] == "gw" {
+			if mask, err := strconv.Atoi(keyParts[4]); err == nil {
+				return true, keyParts[1], keyParts[3], mask, keyParts[6]
 			}
 		}
 	}

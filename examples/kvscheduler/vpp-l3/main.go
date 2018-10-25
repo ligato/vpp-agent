@@ -103,6 +103,11 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		OutgoingInterface: "memif0",
 		Weight:            200,
 	}
+	route1 := &l3.StaticRoute{
+		DstNetwork:        "2001:DB8::0001/32",
+		OutgoingInterface: "memif0",
+		Weight:            100,
+	}
 
 	// resync
 
@@ -113,6 +118,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	err := txn.
 		VppInterface(memif0).
 		StaticRoute(route0).
+		StaticRoute(route1).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
