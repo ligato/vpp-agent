@@ -69,7 +69,7 @@ func (p *NATPlugin) Init() error {
 	}
 
 	// init NAT handler
-	p.natHandler = vppcalls.NewNatVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	p.natHandler = vppcalls.NewNatVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.IfPlugin.GetDHCPIndex(), p.Log)
 
 	// init and register descriptors
 	p.nat44GlobalDescriptor = descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)

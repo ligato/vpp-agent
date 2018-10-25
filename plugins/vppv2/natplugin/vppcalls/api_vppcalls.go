@@ -17,6 +17,7 @@ package vppcalls
 import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/idxmap"
 
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
@@ -66,14 +67,18 @@ type NatVppRead interface {
 type NatVppHandler struct {
 	callsChannel api.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
+	dhcpIndex    idxmap.NamedMapping
 	log          logging.Logger
 }
 
 // NewNatVppHandler creates new instance of NAT vppcalls handler.
-func NewNatVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *NatVppHandler {
+func NewNatVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex,
+	dhcpIndex idxmap.NamedMapping, log logging.Logger) *NatVppHandler {
+
 	return &NatVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
+		dhcpIndex:    dhcpIndex,
 		log:          log,
 	}
 }

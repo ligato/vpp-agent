@@ -229,9 +229,13 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		idDNATLabel = "id-dnat"
 		idDNATPort = 7777
 
-		natPoolAddr1 = hostNetPrefix + "110"
-		natPoolAddr2 = hostNetPrefix + "120"
-		natPoolAddr3 = hostNetPrefix + "130"
+		extIfaceDNATLabel = "external-interfaces"
+		extIfaceDNATExternalPort = 3333
+		extIfaceDNATLocalPort = 4444
+
+		natPoolAddr1 = hostNetPrefix + "10"
+		natPoolAddr2 = hostNetPrefix + "20"
+		natPoolAddr3 = hostNetPrefix + "30"
 	)
 
 	/* host <-> VPP */
@@ -369,6 +373,13 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		GwAddr:            vppTapServer1IPAddr,
 	}
 
+	server1RouteToClient := &linux_l3.LinuxStaticRoute{
+		OutgoingInterface: linuxTapServer1LogicalName,
+		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		DstNetwork:        linuxTapClientIPAddr + "/32",
+		GwAddr:            vppTapServer1IPAddr,
+	}
+
 	/* microservice-server2 <-> VPP */
 	server2LinuxTap := &linux_interfaces.LinuxInterface{
 		Name:        linuxTapServer2LogicalName,
@@ -415,6 +426,13 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		OutgoingInterface: linuxTapServer2LogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
+		GwAddr:            vppTapServer2IPAddr,
+	}
+
+	server2RouteToClient := &linux_l3.LinuxStaticRoute{
+		OutgoingInterface: linuxTapServer2LogicalName,
+		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		DstNetwork:        linuxTapClientIPAddr + "/32",
 		GwAddr:            vppTapServer2IPAddr,
 	}
 
@@ -569,6 +587,36 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		},
 	}
 
+	/* DNAT with external interfaces */
+
+	externalIfaceDNAT := &vpp_nat.DNat44{
+		Label: extIfaceDNATLabel,
+		StMappings: []*vpp_nat.DNat44_StaticMapping{
+			{
+				ExternalInterface: vppTapServer1LogicalName,
+				ExternalPort:      extIfaceDNATExternalPort,
+				Protocol:          vpp_nat.DNat44_TCP,
+				LocalIps:          []*vpp_nat.DNat44_StaticMapping_LocalIP{
+					{
+						LocalIp:     linuxTapServer1IPAddr,
+						LocalPort:   extIfaceDNATLocalPort,
+					},
+				},
+			},
+			{
+				ExternalInterface: vppTapServer2LogicalName,
+				ExternalPort:      extIfaceDNATExternalPort,
+				Protocol:          vpp_nat.DNat44_TCP,
+				LocalIps:          []*vpp_nat.DNat44_StaticMapping_LocalIP{
+					{
+						LocalIp:     linuxTapServer2IPAddr,
+						LocalPort:   extIfaceDNATLocalPort,
+					},
+				},
+			},
+		},
+	}
+
 	// resync
 
 	time.Sleep(time.Second * 2)
@@ -585,8 +633,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		LinuxRoute(clientRouteToHost).
 		LinuxRoute(server1RouteToServices).
 		LinuxRoute(server1RouteToHost).
+		LinuxRoute(server1RouteToClient).
 		LinuxRoute(server2RouteToServices).
 		LinuxRoute(server2RouteToHost).
+		LinuxRoute(server2RouteToClient).
 		VppInterface(hostVPPTap).
 		VppInterface(clientVPPTap).
 		VppInterface(server1VPPTap).
@@ -595,6 +645,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		DNat44(tcpServiceDNAT).
 		DNat44(udpServiceDNAT).
 		DNat44(idDNAT).
+		DNat44(externalIfaceDNAT).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

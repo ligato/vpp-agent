@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/idxmap"
+	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"
 
 	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
@@ -30,7 +32,7 @@ import (
 )
 
 func TestNat44GlobalConfigDump(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// forwarding
@@ -121,7 +123,7 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 }
 
 func TestDNATDump(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// non-LB static mappings
@@ -258,10 +260,11 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.IdMappings[0].Interface).To(BeEmpty())
 }
 
-func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW) {
+func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
 	swIfIndexes := ifaceidx.NewIfaceIndex(logrus.DefaultLogger(), "test-sw_if_indexes")
-	natHandler := vppcalls.NewNatVppHandler(ctx.MockChannel, swIfIndexes, log)
-	return ctx, natHandler, swIfIndexes
+	dhcpIndexes := idxmap_mem.NewNamedMapping(logrus.DefaultLogger(), "test-dhcp_indexes", nil)
+	natHandler := vppcalls.NewNatVppHandler(ctx.MockChannel, swIfIndexes, dhcpIndexes, log)
+	return ctx, natHandler, swIfIndexes, dhcpIndexes
 }

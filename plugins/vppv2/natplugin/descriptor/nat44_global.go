@@ -105,46 +105,11 @@ func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, 
 		return false
 	}
 
-	// compare interfaces ignoring the order
-	if !d.equivalentNAT44Interfaces(oldGlobalCfg.NatInterfaces, newGlobalCfg.NatInterfaces) {
-		return false
-	}
+	// Note: interfaces are not compared here as they are represented via derived kv-pairs
 
 	// compare address pools
 	obsoleteAddrs, newAddrs := diffNat44AddressPools(oldGlobalCfg.AddressPool, newGlobalCfg.AddressPool)
 	return len(obsoleteAddrs) == 0 && len(newAddrs) == 0
-}
-
-// equivalentNAT44Interfaces compares two *sets* of NAT44 interfaces.
-func (d *NAT44GlobalDescriptor) equivalentNAT44Interfaces(oldIfaces, newIfaces []*nat.Nat44Global_Interface) bool {
-	if len(oldIfaces) != len(newIfaces) {
-		return false
-	}
-	for _, oldIface := range oldIfaces {
-		var found bool
-		for _, newIface := range newIfaces {
-			if proto.Equal(oldIface, newIface) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	for _, newIface := range newIfaces{
-		var found bool
-		for _, oldIface := range oldIfaces {
-			if proto.Equal(oldIface, newIface) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return false
-		}
-	}
-	return true
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

@@ -195,7 +195,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		return false
 	}
 	if !proto.Equal(oldIntf.Unnumbered, newIntf.Unnumbered) ||
-		!proto.Equal(d.getRxMode(oldIntf), d.getRxMode(newIntf)) ||
 		!proto.Equal(d.getRxPlacement(oldIntf), d.getRxPlacement(newIntf)) {
 		return false
 	}
@@ -203,6 +202,14 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	// type-specific (defaults considered)
 	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
 		return false
+	}
+
+	// TODO: for TAPv2 the RxMode dump is unstable
+	//       (it goes between POLLING and INTERRUPT, maybe it should actually return ADAPTIVE?)
+	if oldIntf.Type != interfaces.Interface_TAP_INTERFACE || oldIntf.GetTap().GetVersion() != 2 {
+		if !proto.Equal(d.getRxMode(oldIntf), d.getRxMode(newIntf)) {
+			return false
+		}
 	}
 
 	// handle default/unspecified MTU

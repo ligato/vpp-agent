@@ -19,10 +19,23 @@ import (
 	"fmt"
 	"net"
 	"sort"
+	"strings"
+	"github.com/gogo/protobuf/proto"
 
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
+
+// DNATs sorted by tags
+type dnatMap map[string]*nat.DNat44
+
+// static mappings sorted by tags
+type stMappingMap map[string][]*nat.DNat44_StaticMapping
+
+// identity mappings sorted by tags
+type idMappingMap map[string][]*nat.DNat44_IdentityMapping
 
 // Nat44GlobalConfigDump dumps global NAT44 config in NB format.
 func (h *NatVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) {
@@ -54,7 +67,7 @@ func (h *NatVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) {
 
 // DNat44Dump dumps all configured DNAT-44 configurations ordered by label.
 func (h *NatVppHandler) DNat44Dump() (dnats []*nat.DNat44, err error) {
-	dnatMap := make(map[string]*nat.DNat44)
+	dnatMap := make(dnatMap)
 
 	// Static mappings
 	natStMappings, err := h.nat44StaticMappingDump()
@@ -153,8 +166,9 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 }
 
 // nat44StaticMappingDump returns a map of NAT44 static mappings sorted by tags
-func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string][]*nat.DNat44_StaticMapping, err error) {
-	entries = make(map[string][]*nat.DNat44_StaticMapping)
+func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err error) {
+	entries = make(stMappingMap)
+	childMappings := make(stMappingMap)
 	req := &bin_api.Nat44StaticMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
@@ -174,17 +188,26 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string][]*nat.DNat
 		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 		if _, hasTag := entries[tag]; !hasTag {
 			entries[tag] = []*nat.DNat44_StaticMapping{}
+			childMappings[tag] = []*nat.DNat44_StaticMapping{}
+		}
+
+		// resolve interface name
+		var (
+			found        bool
+			extIfaceName string
+			extIfaceMeta *ifaceidx.IfaceMetadata
+		)
+		if msg.ExternalSwIfIndex != NoInterface {
+			extIfaceName, extIfaceMeta, found = h.ifIndexes.LookupBySwIfIndex(msg.ExternalSwIfIndex)
+			if !found {
+				h.log.Warnf("Interface with index %v not found in the mapping", msg.ExternalSwIfIndex)
+				continue
+			}
 		}
 
 		// Add mapping into the map.
 		mapping := &nat.DNat44_StaticMapping{
-			ExternalInterface: func(ifIdx uint32) string {
-				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(ifIdx)
-				if !found && ifIdx != NoInterface {
-					h.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
-				}
-				return ifName
-			}(msg.ExternalSwIfIndex),
+			ExternalInterface: extIfaceName,
 			ExternalPort: uint32(msg.ExternalPort),
 			LocalIps: []*nat.DNat44_StaticMapping_LocalIP{ // single-value
 				{
@@ -200,14 +223,41 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries map[string][]*nat.DNat
 			mapping.ExternalIp = exIPAddress.To4().String()
 		}
 		entries[tag] = append(entries[tag], mapping)
+
+		if msg.ExternalSwIfIndex != NoInterface {
+			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
+			for _, ipAddr := range h.getInterfaceIPAddresses(extIfaceName, extIfaceMeta) {
+				childMapping := proto.Clone(mapping).(*nat.DNat44_StaticMapping)
+				childMapping.ExternalIp = ipAddr
+				childMapping.ExternalInterface = ""
+				childMappings[tag] = append(childMappings[tag], childMapping)
+			}
+		}
 	}
 
+	// do not dump auto-generated child mappings
+	for tag, mappings := range entries {
+		var filtered []*nat.DNat44_StaticMapping
+		for _, mapping := range mappings {
+			isChild := false
+			for _, child := range childMappings[tag] {
+				if proto.Equal(mapping, child) {
+					isChild = true
+					break
+				}
+			}
+			if !isChild {
+				filtered = append(filtered, mapping)
+			}
+		}
+		entries[tag] = filtered
+	}
 	return entries, nil
 }
 
 // nat44StaticMappingLbDump returns a map of NAT44 static mapping with load balancing sorted by tags.
-func (h *NatVppHandler) nat44StaticMappingLbDump() (entries map[string][]*nat.DNat44_StaticMapping, err error) {
-	entries = make(map[string][]*nat.DNat44_StaticMapping)
+func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err error) {
+	entries = make(stMappingMap)
 	req := &bin_api.Nat44LbStaticMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
@@ -257,8 +307,9 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries map[string][]*nat.DN
 }
 
 // nat44IdentityMappingDump returns a map of NAT44 identity mappings sorted by tags.
-func (h *NatVppHandler) nat44IdentityMappingDump() (entries map[string][]*nat.DNat44_IdentityMapping, err error) {
-	entries = make(map[string][]*nat.DNat44_IdentityMapping)
+func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err error) {
+	entries = make(idMappingMap)
+	childMappings := make(idMappingMap)
 	req := &bin_api.Nat44IdentityMappingDump{}
 	reqContext := h.callsChannel.SendMultiRequest(req)
 
@@ -278,18 +329,27 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries map[string][]*nat.DN
 		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
 		if _, hasTag := entries[tag]; !hasTag {
 			entries[tag] = []*nat.DNat44_IdentityMapping{}
+			childMappings[tag] = []*nat.DNat44_IdentityMapping{}
+		}
+
+		// resolve interface name
+		var (
+			found     bool
+			ifaceName string
+			ifaceMeta *ifaceidx.IfaceMetadata
+		)
+		if msg.SwIfIndex != NoInterface {
+			ifaceName, ifaceMeta, found = h.ifIndexes.LookupBySwIfIndex(msg.SwIfIndex)
+			if !found {
+				h.log.Warnf("Interface with index %v not found in the mapping", msg.SwIfIndex)
+				continue
+			}
 		}
 
 		// Add mapping into the map.
 		mapping := &nat.DNat44_IdentityMapping{
-			VrfId: msg.VrfID,
-			Interface: func(ifIdx uint32) string {
-				ifName, _, found := h.ifIndexes.LookupBySwIfIndex(ifIdx)
-				if !found && ifIdx != NoInterface {
-					h.log.Warnf("Interface with index %v not found in the mapping", ifIdx)
-				}
-				return ifName
-			}(msg.SwIfIndex),
+			VrfId:     msg.VrfID,
+			Interface: ifaceName,
 			Port:      uint32(msg.Port),
 			Protocol:  h.protocolNumberToNBValue(msg.Protocol),
 		}
@@ -297,6 +357,34 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries map[string][]*nat.DN
 			mapping.IpAddress = ipAddress.To4().String()
 		}
 		entries[tag] = append(entries[tag], mapping)
+
+		if msg.SwIfIndex != NoInterface {
+			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
+			for _, ipAddr := range h.getInterfaceIPAddresses(ifaceName, ifaceMeta) {
+				childMapping := proto.Clone(mapping).(*nat.DNat44_IdentityMapping)
+				childMapping.IpAddress = ipAddr
+				childMapping.Interface = ""
+				childMappings[tag] = append(childMappings[tag], childMapping)
+			}
+		}
+	}
+
+	// do not dump auto-generated child mappings
+	for tag, mappings := range entries {
+		var filtered []*nat.DNat44_IdentityMapping
+		for _, mapping := range mappings {
+			isChild := false
+			for _, child := range childMappings[tag] {
+				if proto.Equal(mapping, child) {
+					isChild = true
+					break
+				}
+			}
+			if !isChild {
+				filtered = append(filtered, mapping)
+			}
+		}
+		entries[tag] = filtered
 	}
 
 	return entries, nil
@@ -384,6 +472,20 @@ func (h *NatVppHandler) isNat44ForwardingEnabled() (isEnabled bool, err error) {
 	return isEnabled, nil
 }
 
+func (h *NatVppHandler) getInterfaceIPAddresses(ifaceName string, ifaceMeta *ifaceidx.IfaceMetadata) (ipAddrs []string) {
+	ipAddrNets := ifaceMeta.IPAddresses
+	dhcpLease, hasDHCPLease := h.dhcpIndex.GetValue(ifaceName)
+	if hasDHCPLease {
+		lease := dhcpLease.(*interfaces.DHCPLease)
+		ipAddrNets = append(ipAddrNets, lease.HostIpAddress)
+	}
+	for _, ipAddrNet := range ipAddrNets {
+		ipAddr := strings.Split(ipAddrNet, "/")[0]
+		ipAddrs = append(ipAddrs, ipAddr)
+	}
+	return ipAddrs
+}
+
 // protocolNumberToNBValue converts protocol numeric representation into the corresponding enum
 // enum value from the NB model.
 func (h *NatVppHandler) protocolNumberToNBValue(protocol uint8) (proto nat.DNat44_Protocol) {
@@ -430,7 +532,7 @@ func (h *NatVppHandler) getTwiceNatMode(twiceNat, selfTwiceNat uint8) nat.DNat44
 	return nat.DNat44_StaticMapping_DISABLED
 }
 
-func getOrCreateDNAT(dnats map[string]*nat.DNat44, label string) *nat.DNat44 {
+func getOrCreateDNAT(dnats dnatMap, label string) *nat.DNat44 {
 	if _, created := dnats[label]; !created {
 		dnats[label] = &nat.DNat44{Label: label}
 	}

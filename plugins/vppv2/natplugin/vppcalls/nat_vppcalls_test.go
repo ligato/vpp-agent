@@ -27,7 +27,7 @@ import (
 )
 
 func TestSetNat44Forwarding(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44ForwardingEnableDisableReply{})
@@ -42,7 +42,7 @@ func TestSetNat44Forwarding(t *testing.T) {
 }
 
 func TestUnsetNat44Forwarding(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44ForwardingEnableDisableReply{})
@@ -57,7 +57,7 @@ func TestUnsetNat44Forwarding(t *testing.T) {
 }
 
 func TestSetNat44ForwardingError(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
@@ -68,7 +68,7 @@ func TestSetNat44ForwardingError(t *testing.T) {
 }
 
 func TestSetNat44ForwardingRetval(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44ForwardingEnableDisableReply{
@@ -80,7 +80,7 @@ func TestSetNat44ForwardingRetval(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceAsInside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -99,7 +99,7 @@ func TestEnableNat44InterfaceAsInside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceAsOutside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -118,7 +118,7 @@ func TestEnableNat44InterfaceAsOutside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceError(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -131,7 +131,7 @@ func TestEnableNat44InterfaceError(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceRetval(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -145,7 +145,7 @@ func TestEnableNat44InterfaceRetval(t *testing.T) {
 }
 
 func TestDisableNat44InterfaceAsInside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -164,7 +164,7 @@ func TestDisableNat44InterfaceAsInside(t *testing.T) {
 }
 
 func TestDisableNat44InterfaceAsOutside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -183,7 +183,7 @@ func TestDisableNat44InterfaceAsOutside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceOutputAsInside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -202,7 +202,7 @@ func TestEnableNat44InterfaceOutputAsInside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceOutputAsOutside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -221,7 +221,7 @@ func TestEnableNat44InterfaceOutputAsOutside(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceOutputError(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -234,7 +234,7 @@ func TestEnableNat44InterfaceOutputError(t *testing.T) {
 }
 
 func TestEnableNat44InterfaceOutputRetval(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -248,7 +248,7 @@ func TestEnableNat44InterfaceOutputRetval(t *testing.T) {
 }
 
 func TestDisableNat44InterfaceOutputAsInside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -267,7 +267,7 @@ func TestDisableNat44InterfaceOutputAsInside(t *testing.T) {
 }
 
 func TestDisableNat44InterfaceOutputAsOutside(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
@@ -286,7 +286,7 @@ func TestDisableNat44InterfaceOutputAsOutside(t *testing.T) {
 }
 
 func TestAddNat44Address(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	addr := net.ParseIP("10.0.0.1").To4()
@@ -306,7 +306,7 @@ func TestAddNat44Address(t *testing.T) {
 }
 
 func TestAddNat44AddressError(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	addr := net.ParseIP("10.0.0.1").To4()
@@ -319,7 +319,7 @@ func TestAddNat44AddressError(t *testing.T) {
 }
 
 func TestAddNat44AddressPoolRetval(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	addr := net.ParseIP("10.0.0.1").To4()
@@ -333,7 +333,7 @@ func TestAddNat44AddressPoolRetval(t *testing.T) {
 }
 
 func TestDelNat44Address(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	addr := net.ParseIP("10.0.0.1").To4()
@@ -353,7 +353,7 @@ func TestDelNat44Address(t *testing.T) {
 }
 
 func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&binapi.NatSetReassReply{})
@@ -375,7 +375,7 @@ func TestSetNat44VirtualReassemblyIPv4(t *testing.T) {
 }
 
 func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&binapi.NatSetReassReply{})
@@ -397,7 +397,7 @@ func TestSetNat44VirtualReassemblyIPv6(t *testing.T) {
 }
 
 func TestAddNat44StaticMapping(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -443,7 +443,7 @@ func TestAddNat44StaticMapping(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	localIP := net.ParseIP("10.0.0.1").To4()
@@ -475,7 +475,7 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingError(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
@@ -486,7 +486,7 @@ func TestAddNat44StaticMappingError(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingRetval(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelStaticMappingReply{
@@ -498,7 +498,7 @@ func TestAddNat44StaticMappingRetval(t *testing.T) {
 }
 
 func TestDelNat44StaticMapping(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -543,7 +543,7 @@ func TestDelNat44StaticMapping(t *testing.T) {
 }
 
 func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	localIP := net.ParseIP("10.0.0.1").To4()
@@ -574,7 +574,7 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 }
 
 func TestAddNat44StaticMappingLb(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	externalIP := net.ParseIP("10.0.0.1").To4()
@@ -620,7 +620,7 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 }
 
 func TestDelNat44StaticMappingLb(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	externalIP := net.ParseIP("10.0.0.1").To4()
@@ -666,7 +666,7 @@ func TestDelNat44StaticMappingLb(t *testing.T) {
 }
 
 func TestAddNat44IdentityMapping(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -699,7 +699,7 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 }
 
 func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -727,7 +727,7 @@ func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 }
 
 func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	address := net.ParseIP("10.0.0.1").To4()
@@ -754,7 +754,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 }
 
 func TestAddNat44IdentityMappingError(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// Incorrect reply object
@@ -765,7 +765,7 @@ func TestAddNat44IdentityMappingError(t *testing.T) {
 }
 
 func TestAddNat44IdentityMappingRetval(t *testing.T) {
-	ctx, natHandler, _ := natTestSetup(t)
+	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelIdentityMappingReply{
@@ -777,7 +777,7 @@ func TestAddNat44IdentityMappingRetval(t *testing.T) {
 }
 
 func TestDelNat44IdentityMapping(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
@@ -808,7 +808,7 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 }
 
 func TestNat44MappingLongTag(t *testing.T) {
-	ctx, natHandler, swIfIndexes := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})

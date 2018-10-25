@@ -80,7 +80,8 @@ func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
-		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
+		// dump interfaces and allocated IP addresses first
+		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName, vpp_ifdescriptor.DHCPDescriptorName},
 	}
 }
 
@@ -173,21 +174,25 @@ func (d *DNAT44Descriptor) Modify(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 
 // Dependencies lists external interfaces from mappings as dependencies.
 func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []scheduler.Dependency) {
+	// collect referenced external interfaces
+	externalIfaces := make(map[string]struct{})
 	for _, mapping := range dnat.StMappings {
 		if mapping.ExternalInterface != "" {
-			dependencies = append(dependencies, scheduler.Dependency{
-				Label: mappingInterfaceDep,
-				Key:   interfaces.InterfaceKey(mapping.ExternalInterface),
-			})
+			externalIfaces[mapping.ExternalInterface] = struct{}{}
 		}
 	}
 	for _, mapping := range dnat.IdMappings {
 		if mapping.Interface != "" {
-			dependencies = append(dependencies, scheduler.Dependency{
-				Label: mappingInterfaceDep,
-				Key:   interfaces.InterfaceKey(mapping.Interface),
-			})
+			externalIfaces[mapping.Interface] = struct{}{}
 		}
+	}
+
+	// for every external interface add one dependency
+	for externalIface := range externalIfaces {
+		dependencies = append(dependencies, scheduler.Dependency{
+			Label: mappingInterfaceDep + "-" + externalIface,
+			Key:   interfaces.InterfaceKey(externalIface),
+		})
 	}
 	return dependencies
 }

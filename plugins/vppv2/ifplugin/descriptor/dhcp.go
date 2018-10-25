@@ -70,6 +70,7 @@ func (d *DHCPDescriptor) GetDescriptor() *scheduler.KVDescriptor {
 	return &scheduler.KVDescriptor{
 		Name:             DHCPDescriptorName,
 		KeySelector:      d.IsDHCPRelatedKey,
+		KeyLabel:         d.InterfaceNameFromKey,
 		WithMetadata:     true,            // DHCP leases
 		Add:              d.Add,           // DHCP client
 		Delete:           d.Delete,        // DHCP client
@@ -107,6 +108,14 @@ func (d *DHCPDescriptor) Close() error {
 func (d *DHCPDescriptor) IsDHCPRelatedKey(key string) bool {
 	return strings.HasPrefix(key, interfaces.DHCPClientKeyPrefix) ||
 		strings.HasPrefix(key, interfaces.DHCPLeaseKeyPrefix)
+}
+
+// InterfaceNameFromKey returns interface name from DHCP-related key.
+func (d *DHCPDescriptor) InterfaceNameFromKey(key string) string {
+	if strings.HasPrefix(key, interfaces.DHCPClientKeyPrefix) {
+		return strings.TrimPrefix(key, interfaces.DHCPClientKeyPrefix)
+	}
+	return strings.TrimPrefix(key, interfaces.DHCPLeaseKeyPrefix)
 }
 
 // Add enables DHCP client.
