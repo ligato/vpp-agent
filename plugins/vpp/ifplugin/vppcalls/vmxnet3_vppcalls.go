@@ -15,7 +15,6 @@
 package vppcalls
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/go-errors/errors"
@@ -67,7 +66,7 @@ func (h *IfVppHandler) DelVmxNet3(ifName string, ifIdx uint32) error {
 }
 
 func derivePCI(ifName string) (uint32, error) {
-	var domain, bus, slot, function, pci uint32
+	var function, slot, bus, domain, pci uint32
 
 	numLen, err := fmt.Sscanf(ifName, "vmxnet3-%x/%x/%x/%x", &domain, &bus, &slot, &function)
 	if err != nil {
@@ -80,15 +79,10 @@ func derivePCI(ifName string) (uint32, error) {
 		return 0, err
 	}
 
-	pci |= domain << 16
-	pci |= bus << 8
-	pci |= slot << 3
-	pci |= function
-
-	// TODO switch endianity (should be fixed in VPP)
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, pci)
-	pci = binary.BigEndian.Uint32(buf)
+	pci |= function << 29
+	pci |= slot << 24
+	pci |= bus << 16
+	pci |= domain
 
 	return pci, nil
 }

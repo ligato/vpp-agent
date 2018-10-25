@@ -32,7 +32,7 @@ func TestAddVmxNet3Interface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddVmxNet3("vmxnet3-a/14/19/1e", &ifModel.Interfaces_Interface_VmxNet3{
+	swIfIdx, err := ifHandler.AddVmxNet3("vmxnet3-face/be/1c/4", &ifModel.Interfaces_Interface_VmxNet3{
 		EnableElog: true,
 		RxqSize:    2048,
 		TxqSize:    512,
@@ -43,7 +43,7 @@ func TestAddVmxNet3Interface(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vmxnet3.Vmxnet3Create)
 		if ok {
-			Expect(vppMsg.PciAddr).To(BeEquivalentTo(3725855232))
+			Expect(vppMsg.PciAddr).To(BeEquivalentTo(2629761742))
 			Expect(vppMsg.EnableElog).To(BeEquivalentTo(1))
 			Expect(vppMsg.RxqSize).To(BeEquivalentTo(2048))
 			Expect(vppMsg.TxqSize).To(BeEquivalentTo(512))

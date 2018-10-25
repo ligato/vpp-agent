@@ -99,8 +99,8 @@ message Interfaces {
         Tap tap = 104;
 
         /* PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
-        name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (values 0-f), 'b' is bus (10-17),
-        's' is slot (18-1c) and 'f is function' (1d-1f). All values are base 16 */
+        name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
+        's' is slot (max 1f) and 'f is function' (max 7). All values are base 16 */
         message VmxNet3 {
             bool enable_elog = 2;   /* turn on elog */
             uint32 rxq_size = 3;    /* receive queue size (default is 1024) */

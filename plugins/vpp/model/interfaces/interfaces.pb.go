@@ -56,7 +56,7 @@ func (x InterfaceType) String() string {
 	return proto.EnumName(InterfaceType_name, int32(x))
 }
 func (InterfaceType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0}
 }
 
 // from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
@@ -89,7 +89,7 @@ func (x RxModeType) String() string {
 	return proto.EnumName(RxModeType_name, int32(x))
 }
 func (RxModeType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{1}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{1}
 }
 
 type Interfaces_Interface_Memif_MemifMode int32
@@ -115,7 +115,7 @@ func (x Interfaces_Interface_Memif_MemifMode) String() string {
 	return proto.EnumName(Interfaces_Interface_Memif_MemifMode_name, int32(x))
 }
 func (Interfaces_Interface_Memif_MemifMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 3, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 3, 0}
 }
 
 type InterfacesState_Interface_Status int32
@@ -144,7 +144,7 @@ func (x InterfacesState_Interface_Status) String() string {
 	return proto.EnumName(InterfacesState_Interface_Status_name, int32(x))
 }
 func (InterfacesState_Interface_Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{1, 0, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{1, 0, 0}
 }
 
 type InterfacesState_Interface_Duplex int32
@@ -170,7 +170,7 @@ func (x InterfacesState_Interface_Duplex) String() string {
 	return proto.EnumName(InterfacesState_Interface_Duplex_name, int32(x))
 }
 func (InterfacesState_Interface_Duplex) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{1, 0, 1}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{1, 0, 1}
 }
 
 type InterfaceNotification_NotifType int32
@@ -196,7 +196,7 @@ func (x InterfaceNotification_NotifType) String() string {
 	return proto.EnumName(InterfaceNotification_NotifType_name, int32(x))
 }
 func (InterfaceNotification_NotifType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{2, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{2, 0}
 }
 
 type Interfaces struct {
@@ -210,7 +210,7 @@ func (m *Interfaces) Reset()         { *m = Interfaces{} }
 func (m *Interfaces) String() string { return proto.CompactTextString(m) }
 func (*Interfaces) ProtoMessage()    {}
 func (*Interfaces) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0}
 }
 func (m *Interfaces) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces.Unmarshal(m, b)
@@ -266,7 +266,7 @@ func (m *Interfaces_Interface) Reset()         { *m = Interfaces_Interface{} }
 func (m *Interfaces_Interface) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface) ProtoMessage()    {}
 func (*Interfaces_Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0}
 }
 func (m *Interfaces_Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface.Unmarshal(m, b)
@@ -424,7 +424,7 @@ func (m *Interfaces_Interface_Unnumbered) Reset()         { *m = Interfaces_Inte
 func (m *Interfaces_Interface_Unnumbered) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_Unnumbered) ProtoMessage()    {}
 func (*Interfaces_Interface_Unnumbered) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 0}
 }
 func (m *Interfaces_Interface_Unnumbered) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_Unnumbered.Unmarshal(m, b)
@@ -471,7 +471,7 @@ func (m *Interfaces_Interface_RxModeSettings) Reset()         { *m = Interfaces_
 func (m *Interfaces_Interface_RxModeSettings) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_RxModeSettings) ProtoMessage()    {}
 func (*Interfaces_Interface_RxModeSettings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 1}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 1}
 }
 func (m *Interfaces_Interface_RxModeSettings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_RxModeSettings.Unmarshal(m, b)
@@ -527,7 +527,7 @@ func (m *Interfaces_Interface_RxPlacementSettings) Reset() {
 func (m *Interfaces_Interface_RxPlacementSettings) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_RxPlacementSettings) ProtoMessage()    {}
 func (*Interfaces_Interface_RxPlacementSettings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 2}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 2}
 }
 func (m *Interfaces_Interface_RxPlacementSettings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_RxPlacementSettings.Unmarshal(m, b)
@@ -587,7 +587,7 @@ func (m *Interfaces_Interface_Memif) Reset()         { *m = Interfaces_Interface
 func (m *Interfaces_Interface_Memif) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_Memif) ProtoMessage()    {}
 func (*Interfaces_Interface_Memif) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 3}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 3}
 }
 func (m *Interfaces_Interface_Memif) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_Memif.Unmarshal(m, b)
@@ -684,7 +684,7 @@ func (m *Interfaces_Interface_Vxlan) Reset()         { *m = Interfaces_Interface
 func (m *Interfaces_Interface_Vxlan) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_Vxlan) ProtoMessage()    {}
 func (*Interfaces_Interface_Vxlan) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 4}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 4}
 }
 func (m *Interfaces_Interface_Vxlan) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_Vxlan.Unmarshal(m, b)
@@ -743,7 +743,7 @@ func (m *Interfaces_Interface_Afpacket) Reset()         { *m = Interfaces_Interf
 func (m *Interfaces_Interface_Afpacket) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_Afpacket) ProtoMessage()    {}
 func (*Interfaces_Interface_Afpacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 5}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 5}
 }
 func (m *Interfaces_Interface_Afpacket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_Afpacket.Unmarshal(m, b)
@@ -785,7 +785,7 @@ func (m *Interfaces_Interface_Tap) Reset()         { *m = Interfaces_Interface_T
 func (m *Interfaces_Interface_Tap) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_Tap) ProtoMessage()    {}
 func (*Interfaces_Interface_Tap) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 6}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 6}
 }
 func (m *Interfaces_Interface_Tap) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_Tap.Unmarshal(m, b)
@@ -841,8 +841,8 @@ func (m *Interfaces_Interface_Tap) GetTxRingSize() uint32 {
 }
 
 // PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
-// name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (values 0-f), 'b' is bus (10-17),
-// 's' is slot (18-1c) and 'f is function' (1d-1f). All values are base 16
+// name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
+// 's' is slot (max 1f) and 'f is function' (max 7). All values are base 16
 type Interfaces_Interface_VmxNet3 struct {
 	EnableElog           bool     `protobuf:"varint,2,opt,name=enable_elog,json=enableElog,proto3" json:"enable_elog,omitempty"`
 	RxqSize              uint32   `protobuf:"varint,3,opt,name=rxq_size,json=rxqSize,proto3" json:"rxq_size,omitempty"`
@@ -856,7 +856,7 @@ func (m *Interfaces_Interface_VmxNet3) Reset()         { *m = Interfaces_Interfa
 func (m *Interfaces_Interface_VmxNet3) String() string { return proto.CompactTextString(m) }
 func (*Interfaces_Interface_VmxNet3) ProtoMessage()    {}
 func (*Interfaces_Interface_VmxNet3) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{0, 0, 7}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{0, 0, 7}
 }
 func (m *Interfaces_Interface_VmxNet3) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interfaces_Interface_VmxNet3.Unmarshal(m, b)
@@ -908,7 +908,7 @@ func (m *InterfacesState) Reset()         { *m = InterfacesState{} }
 func (m *InterfacesState) String() string { return proto.CompactTextString(m) }
 func (*InterfacesState) ProtoMessage()    {}
 func (*InterfacesState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{1}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{1}
 }
 func (m *InterfacesState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InterfacesState.Unmarshal(m, b)
@@ -957,7 +957,7 @@ func (m *InterfacesState_Interface) Reset()         { *m = InterfacesState_Inter
 func (m *InterfacesState_Interface) String() string { return proto.CompactTextString(m) }
 func (*InterfacesState_Interface) ProtoMessage()    {}
 func (*InterfacesState_Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{1, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{1, 0}
 }
 func (m *InterfacesState_Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InterfacesState_Interface.Unmarshal(m, b)
@@ -1083,7 +1083,7 @@ func (m *InterfacesState_Interface_Statistics) Reset()         { *m = Interfaces
 func (m *InterfacesState_Interface_Statistics) String() string { return proto.CompactTextString(m) }
 func (*InterfacesState_Interface_Statistics) ProtoMessage()    {}
 func (*InterfacesState_Interface_Statistics) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{1, 0, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{1, 0, 0}
 }
 func (m *InterfacesState_Interface_Statistics) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InterfacesState_Interface_Statistics.Unmarshal(m, b)
@@ -1199,7 +1199,7 @@ func (m *InterfaceNotification) Reset()         { *m = InterfaceNotification{} }
 func (m *InterfaceNotification) String() string { return proto.CompactTextString(m) }
 func (*InterfaceNotification) ProtoMessage()    {}
 func (*InterfaceNotification) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{2}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{2}
 }
 func (m *InterfaceNotification) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InterfaceNotification.Unmarshal(m, b)
@@ -1244,7 +1244,7 @@ func (m *InterfaceErrors) Reset()         { *m = InterfaceErrors{} }
 func (m *InterfaceErrors) String() string { return proto.CompactTextString(m) }
 func (*InterfaceErrors) ProtoMessage()    {}
 func (*InterfaceErrors) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{3}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{3}
 }
 func (m *InterfaceErrors) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InterfaceErrors.Unmarshal(m, b)
@@ -1283,7 +1283,7 @@ func (m *InterfaceErrors_Interface) Reset()         { *m = InterfaceErrors_Inter
 func (m *InterfaceErrors_Interface) String() string { return proto.CompactTextString(m) }
 func (*InterfaceErrors_Interface) ProtoMessage()    {}
 func (*InterfaceErrors_Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{3, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{3, 0}
 }
 func (m *InterfaceErrors_Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InterfaceErrors_Interface.Unmarshal(m, b)
@@ -1330,7 +1330,7 @@ func (m *InterfaceErrors_Interface_ErrorData) Reset()         { *m = InterfaceEr
 func (m *InterfaceErrors_Interface_ErrorData) String() string { return proto.CompactTextString(m) }
 func (*InterfaceErrors_Interface_ErrorData) ProtoMessage()    {}
 func (*InterfaceErrors_Interface_ErrorData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interfaces_f37dc398691122b7, []int{3, 0, 0}
+	return fileDescriptor_interfaces_f8147d9420cf92c3, []int{3, 0, 0}
 }
 func (m *InterfaceErrors_Interface_ErrorData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InterfaceErrors_Interface_ErrorData.Unmarshal(m, b)
@@ -1397,9 +1397,9 @@ func init() {
 	proto.RegisterEnum("interfaces.InterfaceNotification_NotifType", InterfaceNotification_NotifType_name, InterfaceNotification_NotifType_value)
 }
 
-func init() { proto.RegisterFile("interfaces.proto", fileDescriptor_interfaces_f37dc398691122b7) }
+func init() { proto.RegisterFile("interfaces.proto", fileDescriptor_interfaces_f8147d9420cf92c3) }
 
-var fileDescriptor_interfaces_f37dc398691122b7 = []byte{
+var fileDescriptor_interfaces_f8147d9420cf92c3 = []byte{
 	// 1757 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x58, 0xdd, 0x72, 0xdb, 0xc6,
 	0x15, 0x36, 0xff, 0xc9, 0xc3, 0x1f, 0xc1, 0x6b, 0x3b, 0x81, 0x99, 0x76, 0xcc, 0x28, 0x89, 0xab,
