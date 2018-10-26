@@ -15,7 +15,6 @@
 package interfaces
 
 import (
-	"fmt"
 	"net"
 	"strings"
 )
@@ -23,17 +22,17 @@ import (
 const (
 	/* Interface Config */
 
-	// Prefix is a key prefix used in ETCD to store configuration for VPP interfaces.
+	// Prefix is a key prefix used in NB DB to store configuration for VPP interfaces.
 	Prefix = "vpp/config/v2/interface/"
 
 	/* Interface State */
 
-	// StatePrefix is a key prefix used in ETCD to store interface states.
+	// StatePrefix is a key prefix used in NB DB to store interface states.
 	StatePrefix = "vpp/status/v2/interface/"
 
 	/* Interface Error */
 
-	// ErrorPrefix is a key prefix used in ETCD to store interface errors.
+	// ErrorPrefix is a key prefix used in NB DB to store interface errors.
 	ErrorPrefix = "vpp/status/v2/interface/error/"
 
 	/* Interface Address (derived) */
@@ -44,7 +43,7 @@ const (
 
 	// addressKeyTemplate is a template for (derived) key representing IP address
 	// (incl. mask) assigned to a VPP interface.
-	addressKeyTemplate = AddressKeyPrefix + "{ifName}/{addr}/{mask}"
+	addressKeyTemplate = AddressKeyPrefix + "{iface}/{addr}/{mask}"
 
 	/* Unnumbered interface (derived) */
 
@@ -63,100 +62,140 @@ const (
 	DHCPLeaseKeyPrefix = "vpp/interface/dhcp-lease/"
 )
 
+const (
+	// InvalidKeyPart is used in key for parts which are invalid
+	InvalidKeyPart = "<invalid>"
+)
+
 /* Interface Config */
 
-// ParseNameFromKey returns suffix of the key.
-func ParseNameFromKey(key string) (name string, err error) {
-	if strings.HasPrefix(key, Prefix) {
-		name = strings.TrimPrefix(key, Prefix)
-		return
+// InterfaceKey returns the key used in NB DB to store the configuration of the
+// given vpp interface.
+func InterfaceKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
 	}
-	return key, fmt.Errorf("wrong format of the key %s", key)
+	return Prefix + iface
 }
 
-// InterfaceKey returns the key used in ETCD to store the configuration of the
-// given vpp interface.
-func InterfaceKey(ifName string) string {
-	return Prefix + ifName
+// ParseNameFromKey returns suffix of the key.
+func ParseNameFromKey(key string) (name string, isInterfaceKey bool) {
+	if strings.HasPrefix(key, Prefix) {
+		name = strings.TrimPrefix(key, Prefix)
+		if name == "" {
+			return "", false
+		}
+		return name, true
+	}
+	return "", false
 }
 
 /* Interface Error */
 
-// InterfaceErrorKey returns the key used in ETCD to store the interface errors.
-func InterfaceErrorKey(ifName string) string {
-	return ErrorPrefix + ifName
+// InterfaceErrorKey returns the key used in NB DB to store the interface errors.
+func InterfaceErrorKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return ErrorPrefix + iface
 }
 
 /* Interface State */
 
-// InterfaceStateKey returns the key used in ETCD to store the state data of the
+// InterfaceStateKey returns the key used in NB DB to store the state data of the
 // given vpp interface.
-func InterfaceStateKey(ifName string) string {
-	return StatePrefix + ifName
+func InterfaceStateKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return StatePrefix + iface
 }
 
 /* Interface Address (derived) */
 
 // InterfaceAddressKey returns key representing IP address assigned to VPP interface.
-func InterfaceAddressKey(ifName string, address string) string {
-	var mask string
-	addrComps := strings.Split(address, "/")
-	addr := addrComps[0]
-	if len(addrComps) > 0 {
-		mask = addrComps[1]
+func InterfaceAddressKey(iface string, address string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
 	}
-	key := strings.Replace(addressKeyTemplate, "{ifName}", ifName, 1)
-	key = strings.Replace(key, "{addr}", addr, 1)
-	key = strings.Replace(key, "{mask}", mask, 1)
+
+	// parse address
+	ipAddr, addrNet, err := net.ParseCIDR(address)
+	if err != nil {
+		address = InvalidKeyPart + "/" + InvalidKeyPart
+	} else {
+		addrNet.IP = ipAddr
+		address = addrNet.String()
+	}
+
+	key := strings.Replace(addressKeyTemplate, "{iface}", iface, 1)
+	key = strings.Replace(key, "{addr}/{mask}", address, 1)
 	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, err error) {
-	errPrefix := "invalid VPP interface address key: "
+func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNet *net.IPNet, isAddrKey bool) {
+	var err error
 	if strings.HasPrefix(key, AddressKeyPrefix) {
 		keySuffix := strings.TrimPrefix(key, AddressKeyPrefix)
 		keyComps := strings.Split(keySuffix, "/")
 		// beware: interface name may contain forward slashes (e.g. ETHERNET_CSMACD)
 		if len(keyComps) < 3 {
-			return "", nil, fmt.Errorf(errPrefix + "invalid suffix")
+			return "", nil, nil, false
 		}
+		// parse IP address
 		lastIdx := len(keyComps) - 1
-		_, ifAddr, err = net.ParseCIDR(keyComps[lastIdx-1] + "/" + keyComps[lastIdx])
+		ipAddr, ipAddrNet, err = net.ParseCIDR(keyComps[lastIdx-1] + "/" + keyComps[lastIdx])
 		if err != nil {
-			return "", nil, fmt.Errorf(errPrefix + "invalid address")
+			return "", nil, nil, false
 		}
-		ifName = strings.Join(keyComps[:lastIdx-1], "/")
-		return
+		// parse interface name
+		iface = strings.Join(keyComps[:lastIdx-1], "/")
+		if iface == "" {
+			return "", nil, nil, false
+		}
+		return iface, ipAddr, ipAddrNet, true
 	}
-	return "", nil, fmt.Errorf(errPrefix + "invalid prefix")
+	return "", nil, nil, false
 }
 
 /* Unnumbered interface (derived) */
 
 // UnnumberedKey returns key representing unnumbered interface.
-func UnnumberedKey(ifName string) string {
-	return UnnumberedKeyPrefix + ifName
+func UnnumberedKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return UnnumberedKeyPrefix + iface
 }
 
 /* DHCP (client - derived, lease - notification) */
 
-// ParseNameFromDHCPClientKey returns suffix of the key.
-func ParseNameFromDHCPClientKey(key string) (name string, err error) {
-	if strings.HasPrefix(key, DHCPClientKeyPrefix) {
-		name = strings.TrimPrefix(key, DHCPClientKeyPrefix)
-		return
+// DHCPClientKey returns a (derived) key used to represent enabled DHCP lease.
+func DHCPClientKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
 	}
-	return key, fmt.Errorf("wrong format of the key %s", key)
+	return DHCPClientKeyPrefix + iface
 }
 
-// DHCPClientKey returns a (derived) key used to represent enabled DHCP lease.
-func DHCPClientKey(ifName string) string {
-	return DHCPClientKeyPrefix + ifName
+// ParseNameFromDHCPClientKey returns suffix of the key.
+func ParseNameFromDHCPClientKey(key string) (iface string, isDHCPClientKey bool) {
+	if strings.HasPrefix(key, DHCPClientKeyPrefix) {
+		iface = strings.TrimPrefix(key, DHCPClientKeyPrefix)
+		if iface == "" {
+			return "", false
+		}
+		return iface, true
+	}
+	return "", false
 }
 
 // DHCPLeaseKey returns a key used to represent DHCP lease for the given interface.
-func DHCPLeaseKey(ifName string) string {
-	return DHCPLeaseKeyPrefix + ifName
+func DHCPLeaseKey(iface string) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	return DHCPLeaseKeyPrefix + iface
 }

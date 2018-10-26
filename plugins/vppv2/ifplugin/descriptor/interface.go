@@ -351,8 +351,8 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: vxlanMulticastDep,
 			AnyOf: func(key string) bool {
-				ifName, ifAddr, err := interfaces.ParseInterfaceAddressKey(key)
-				return err == nil && ifName == intf.GetVxlan().GetMulticast() && ifAddr.IP.IsMulticast()
+				ifName, ifaceAddr, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
+				return isIfaceAddrKey && ifName == intf.GetVxlan().GetMulticast() && ifaceAddr.IsMulticast()
 			},
 		})
 	}

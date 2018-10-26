@@ -43,11 +43,19 @@ const (
 	outFeature = "out"
 )
 
+const (
+	// InvalidKeyPart is used in key for parts which are invalid
+	InvalidKeyPart = "<invalid>"
+)
+
 /* NAT44 */
 
 // DNAT44Key returns the key used in NB DB to store the configuration of the
 // given DNAT-44 configuration.
 func DNAT44Key(label string) string {
+	if label == "" {
+		label = InvalidKeyPart
+	}
 	return DNAT44Prefix + label
 }
 
@@ -56,6 +64,9 @@ func DNAT44Key(label string) string {
 // InterfaceNAT44Key returns (derived) key representing NAT44 configuration
 // for a given interface.
 func InterfaceNAT44Key(iface string, isInside bool) string {
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
 	key := strings.Replace(interfaceNAT44KeyTemplate, "{iface}", iface, 1)
 	feature := inFeature
 	if !isInside {
@@ -67,7 +78,7 @@ func InterfaceNAT44Key(iface string, isInside bool) string {
 
 // ParseInterfaceNAT44Key parses interface name and the assigned NAT44 feature
 // from Interface-NAT44 key.
-func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isNATInterfaceKey bool) {
+func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfaceNAT44Key bool) {
 	if strings.HasPrefix(key, interfaceNAT44KeyPrefix) {
 		keySuffix := strings.TrimPrefix(key, interfaceNAT44KeyPrefix)
 		fibComps := strings.Split(keySuffix, "/")

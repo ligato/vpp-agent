@@ -120,12 +120,7 @@ func (d *DHCPDescriptor) InterfaceNameFromKey(key string) string {
 
 // Add enables DHCP client.
 func (d *DHCPDescriptor) Add(key string, emptyVal proto.Message) (metadata scheduler.Metadata, err error) {
-	ifName, err := interfaces.ParseNameFromDHCPClientKey(key)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
+	ifName, _ := interfaces.ParseNameFromDHCPClientKey(key)
 	ifMeta, found := d.intfIndex.LookupByName(ifName)
 	if !found {
 		err = errors.Errorf("failed to find DHCP-enabled interface %s", ifName)
@@ -144,15 +139,10 @@ func (d *DHCPDescriptor) Add(key string, emptyVal proto.Message) (metadata sched
 
 // Delete disables DHCP client.
 func (d *DHCPDescriptor) Delete(key string, emptyVal proto.Message, metadata scheduler.Metadata) error {
-	ifName, err := interfaces.ParseNameFromDHCPClientKey(key)
-	if err != nil {
-		d.log.Error(err)
-		return err
-	}
-
+	ifName, _ := interfaces.ParseNameFromDHCPClientKey(key)
 	ifMeta, found := d.intfIndex.LookupByName(ifName)
 	if !found {
-		err = errors.Errorf("failed to find DHCP-enabled interface %s", ifName)
+		err := errors.Errorf("failed to find DHCP-enabled interface %s", ifName)
 		d.log.Error(err)
 		return err
 	}
@@ -169,7 +159,7 @@ func (d *DHCPDescriptor) Delete(key string, emptyVal proto.Message, metadata sch
 		nil,
 		nil)
 
-	return err
+	return nil
 }
 
 // DerivedValues derives empty value for leased IP address.

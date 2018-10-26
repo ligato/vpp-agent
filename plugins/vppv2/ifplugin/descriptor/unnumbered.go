@@ -136,8 +136,8 @@ func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Int
 		{
 			Label: unnumberedInterfaceWithIPDep,
 			AnyOf: func(key string) bool {
-				ifName, _, err := interfaces.ParseInterfaceAddressKey(key)
-				return err == nil && ifName == unIntf.InterfaceWithIp
+				ifName, _, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
+				return isIfaceAddrKey && ifName == unIntf.InterfaceWithIp
 			},
 		},
 	}
