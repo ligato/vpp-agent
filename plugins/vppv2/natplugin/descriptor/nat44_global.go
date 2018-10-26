@@ -165,6 +165,7 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 			return nil, err
 		}
 	}
+	// add new addresses into the pool
 	for _, newAddr := range newAddrs {
 		if err = d.natHandler.AddNat44Address(newAddr.Address, newAddr.VrfId, newAddr.TwiceNat); err != nil {
 			err = errors.Errorf("failed to add address %s into the NAT pool: %v", newAddr.Address, err)

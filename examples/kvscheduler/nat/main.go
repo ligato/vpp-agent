@@ -44,7 +44,7 @@ import (
 	Deploy microservices with servers:
 
 	host-term1$ docker run -it --rm  -e MICROSERVICE_LABEL=microservice-server1 lencomilan/ubuntu /bin/bash
-    host-term1$ nc -l -p 8080 &
+	host-term1$ nc -l -p 8080 &
 	host-term1$ nc -u -l -p 9090 &
 
 	host-term2$ docker run -it --rm  -e MICROSERVICE_LABEL=microservice-server2 lencomilan/ubuntu /bin/bash
