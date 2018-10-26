@@ -329,6 +329,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 	Expect(intfs).To(HaveLen(1))
 
 	intface := intfs[0].Interface
+	intMeta := intfs[0].Meta
 
 	// This is last checked type, so it will be equal to that
 	Expect(intface.Type).To(Equal(interfaces2.InterfaceType_VXLAN_TUNNEL))
@@ -338,6 +339,8 @@ func TestDumpInterfacesFull(t *testing.T) {
 	Expect(intface.Enabled).To(BeTrue())
 	Expect(intface.Vrf).To(Equal(uint32(42)))
 	Expect(intface.SetDhcpClient).To(BeTrue())
+	Expect(intMeta.VrfIPv4).To(Equal(uint32(42)))
+	Expect(intMeta.VrfIPv4).To(Equal(uint32(0)))
 
 	// Check memif
 	Expect(intface.Memif.SocketFilename).To(Equal("test"))
