@@ -59,22 +59,17 @@ import (
 	host-term3$ nc 10.36.10.2 80
 	host-term3$ nc 10.36.10.3 80
 	# UDP Service:
-	host-term3$ nc 10.36.10.10 90
-	host-term3$ nc 10.36.10.11 90
-	host-term3$ nc 10.36.10.12 90
+	host-term3$ nc -u 10.36.10.10 90
+	host-term3$ nc -u 10.36.10.11 90
+	host-term3$ nc -u 10.36.10.12 90
 
-	Run servers in the host:
+	Run server in the host:
 
 	host-term4$ nc -l -p 8080 &
-	host-term4$ nc -l -p 9090 &
 
 	# Accessing server 192.168.13.10:8080 running in the host should trigger
-    # source-NAT in the post-routing (host-term3 = microservice-client):
-	host-term3$ nc 192.168.13.10 8080
-
-	# Accessing server 192.168.13.10:9090 running in the host should trigger
-    # identity NAT that prevents source-NAT from happening (host-term3 = microservice-client):
-	host-term3$ nc 192.168.13.10 9090
+    # source-NAT in the post-routing, i.e. no need to route microservices from the host:
+	host-term3$ nc 192.168.13.10 8080  # host-term3 = microservice-client
 */
 
 func main() {
@@ -233,9 +228,8 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		extIfaceDNATExternalPort = 3333
 		extIfaceDNATLocalPort = 4444
 
-		natPoolAddr1 = hostNetPrefix + "10"
-		natPoolAddr2 = hostNetPrefix + "20"
-		natPoolAddr3 = hostNetPrefix + "30"
+		natPoolAddr1 = hostNetPrefix + "100"
+		natPoolAddr2 = hostNetPrefix + "200"
 	)
 
 	/* host <-> VPP */
@@ -440,6 +434,12 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	natGlobal := &vpp_nat.Nat44Global{
 		Forwarding:    true,
+		VirtualReassembly: &vpp_nat.VirtualReassembly{
+			Timeout:         4,
+			MaxReassemblies: 2048,
+			MaxFragments:    10,
+			DropFragments:   true,
+		},
 		NatInterfaces: []*vpp_nat.Nat44Global_Interface{
 			{
 				Name:          vppTapHostLogicalName,
@@ -472,10 +472,8 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				Address: natPoolAddr1,
 			},
 			{
-				Address: natPoolAddr2,
-			},
-			{
-				Address: natPoolAddr3,
+				Address:  natPoolAddr2,
+				TwiceNat: true,
 			},
 		},
 	}
@@ -580,7 +578,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		Label: idDNATLabel,
 		IdMappings: []*vpp_nat.DNat44_IdentityMapping{
 			{
-				Interface: vppTapHostLogicalName,
+				Interface: vppTapClientLogicalName,
 				Port:      idDNATPort,
 				Protocol:  vpp_nat.DNat44_TCP,
 			},
@@ -652,16 +650,18 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 
-	/*
+
 	// data change
 
+	/*
 	time.Sleep(time.Second * 10)
 	fmt.Println("=== CHANGE 1 ===")
 
-	veth1.Enabled = false
 	txn2 := localclient.DataChangeRequest("example")
-	err = txn2.Delete().
-		DNat44(tcpServiceDNAT.Label)
+	err = txn2.Put().
+		Delete().
+		NAT44Global().
+		DNat44(udpServiceDNAT.Label).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
