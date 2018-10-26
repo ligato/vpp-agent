@@ -23,7 +23,7 @@ const (
 	PrefixNAT44 = "vpp/config/v2/nat44/"
 
 	// GlobalNAT44Key is the key used in NB DB to store global NAT44 configuration.
-	GlobalNAT44Key = PrefixNAT44 + "global/"
+	GlobalNAT44Key = PrefixNAT44 + "global"
 
 	// DNAT44Prefix is a key prefix used in NB DB to store DNAT-44 configuration.
 	DNAT44Prefix = PrefixNAT44 + "dnat/"
@@ -71,12 +71,13 @@ func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isNATInter
 	if strings.HasPrefix(key, interfaceNAT44KeyPrefix) {
 		keySuffix := strings.TrimPrefix(key, interfaceNAT44KeyPrefix)
 		fibComps := strings.Split(keySuffix, "/")
-		if len(fibComps) == 3 && fibComps[1] == "feature" {
+		if len(fibComps) >= 3 && fibComps[len(fibComps)-2] == "feature" {
 			isInside := true
-			if fibComps[2] == outFeature {
+			if fibComps[len(fibComps)-1] == outFeature {
 				isInside = false
 			}
-			return fibComps[0], isInside, true
+			iface := strings.Join(fibComps[:len(fibComps)-2], "/")
+			return iface, isInside, true
 		}
 	}
 	return "", false, false
