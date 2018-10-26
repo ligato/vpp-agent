@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 )
@@ -123,7 +124,7 @@ func TestNat44GlobalConfigDump(t *testing.T) {
 }
 
 func TestDNATDump(t *testing.T) {
-	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
+	ctx, natHandler, swIfIndexes, dhcpIndexes := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	// non-LB static mappings
@@ -131,6 +132,17 @@ func TestDNATDump(t *testing.T) {
 		&bin_api.Nat44StaticMappingDetails{
 			LocalIPAddress:    net.ParseIP("10.10.11.120").To4(),
 			ExternalIPAddress: net.ParseIP("10.36.20.20").To4(),
+			Protocol:          6,
+			LocalPort:         8080,
+			ExternalPort:      80,
+			ExternalSwIfIndex: vppcalls.NoInterface,
+			VrfID:             1,
+			TwiceNat:          1,
+			SelfTwiceNat:      0,
+			Tag:               []byte("DNAT 1"),
+		},
+		&bin_api.Nat44StaticMappingDetails{
+			LocalIPAddress:    net.ParseIP("10.10.11.120").To4(),
 			Protocol:          6,
 			LocalPort:         8080,
 			ExternalPort:      80,
@@ -142,7 +154,6 @@ func TestDNATDump(t *testing.T) {
 		},
 		&bin_api.Nat44StaticMappingDetails{
 			LocalIPAddress:    net.ParseIP("10.10.11.140").To4(),
-			// ExternalIPAddress is all zeroes
 			Protocol:          6,
 			LocalPort:         8081,
 			ExternalPort:      80,
@@ -151,7 +162,57 @@ func TestDNATDump(t *testing.T) {
 			TwiceNat:          0,
 			SelfTwiceNat:      1,
 			Tag:               []byte("DNAT 2"),
-		})
+		},
+		// auto-generated mappings with interface replaced by all assigned IP addresses
+		&bin_api.Nat44StaticMappingDetails{
+			LocalIPAddress:    net.ParseIP("10.10.11.120").To4(),
+			ExternalIPAddress: net.ParseIP("10.36.20.30").To4(),
+			Protocol:          6,
+			LocalPort:         8080,
+			ExternalPort:      80,
+			ExternalSwIfIndex: vppcalls.NoInterface,
+			VrfID:             1,
+			TwiceNat:          1,
+			SelfTwiceNat:      0,
+			Tag:               []byte("DNAT 1"),
+		},
+		&bin_api.Nat44StaticMappingDetails{
+			LocalIPAddress:    net.ParseIP("10.10.11.120").To4(),
+			ExternalIPAddress: net.ParseIP("10.36.20.31").To4(),
+			Protocol:          6,
+			LocalPort:         8080,
+			ExternalPort:      80,
+			ExternalSwIfIndex: vppcalls.NoInterface,
+			VrfID:             1,
+			TwiceNat:          1,
+			SelfTwiceNat:      0,
+			Tag:               []byte("DNAT 1"),
+		},
+		&bin_api.Nat44StaticMappingDetails{
+			LocalIPAddress:    net.ParseIP("10.10.11.140").To4(),
+			ExternalIPAddress: net.ParseIP("10.36.40.10").To4(),
+			Protocol:          6,
+			LocalPort:         8081,
+			ExternalPort:      80,
+			ExternalSwIfIndex: vppcalls.NoInterface,
+			VrfID:             1,
+			TwiceNat:          0,
+			SelfTwiceNat:      1,
+			Tag:               []byte("DNAT 2"),
+		},
+		&bin_api.Nat44StaticMappingDetails{
+			LocalIPAddress:    net.ParseIP("10.10.11.140").To4(),
+			ExternalIPAddress: net.ParseIP("10.36.40.20").To4(),
+			Protocol:          6,
+			LocalPort:         8081,
+			ExternalPort:      80,
+			ExternalSwIfIndex: vppcalls.NoInterface,
+			VrfID:             1,
+			TwiceNat:          0,
+			SelfTwiceNat:      1,
+			Tag:               []byte("DNAT 2"),
+		},
+	)
 
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
@@ -184,19 +245,47 @@ func TestDNATDump(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
 	// identity mappings
-	ctx.MockVpp.MockReply(&bin_api.Nat44IdentityMappingDetails{
-		AddrOnly:  1,
-		Protocol:  17,
-		IPAddress: net.ParseIP("10.10.11.200").To4(),
-		SwIfIndex: vppcalls.NoInterface,
-		VrfID:     1,
-		Tag:       []byte("DNAT 3"),
-	})
+	ctx.MockVpp.MockReply(
+		&bin_api.Nat44IdentityMappingDetails{
+			AddrOnly:  1,
+			Protocol:  17,
+			IPAddress: net.ParseIP("10.10.11.200").To4(),
+			SwIfIndex: vppcalls.NoInterface,
+			VrfID:     1,
+			Tag:       []byte("DNAT 3"),
+		},
+		&bin_api.Nat44IdentityMappingDetails{
+			AddrOnly:  1,
+			Protocol:  17,
+			SwIfIndex: 2,
+			VrfID:     1,
+			Tag:       []byte("DNAT 3"),
+		},
+		// auto-generated mappings with interface replaced by all assigned IP addresses
+		&bin_api.Nat44IdentityMappingDetails{
+			AddrOnly:  1,
+			Protocol:  17,
+			IPAddress: net.ParseIP("10.36.40.10").To4(),
+			SwIfIndex: vppcalls.NoInterface,
+			VrfID:     1,
+			Tag:       []byte("DNAT 3"),
+		},
+		&bin_api.Nat44IdentityMappingDetails{
+			AddrOnly:  1,
+			Protocol:  17,
+			IPAddress: net.ParseIP("10.36.40.20").To4(),
+			SwIfIndex: vppcalls.NoInterface,
+			VrfID:     1,
+			Tag:       []byte("DNAT 3"),
+		},
+	)
 
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
-	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+	// interfaces and their IP addresses
+	swIfIndexes.Put("if0", &ifaceidx.IfaceMetadata{SwIfIndex: 1, IPAddresses: []string{"10.36.20.30", "10.36.20.31"}})
+	swIfIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 2, IPAddresses: []string{"10.36.40.10"}})
+	dhcpIndexes.Put("if1", &interfaces.DHCPLease{InterfaceName: "if0", HostIpAddress: "10.36.40.20"})
 
 	dnats, err := natHandler.DNat44Dump()
 	Expect(err).To(Succeed())
@@ -206,10 +295,11 @@ func TestDNATDump(t *testing.T) {
 	dnat := dnats[0]
 	Expect(dnat.Label).To(Equal("DNAT 1"))
 	Expect(dnat.IdMappings).To(HaveLen(0))
-	Expect(dnat.StMappings).To(HaveLen(1))
+	Expect(dnat.StMappings).To(HaveLen(2))
+	// 1st mapping
 	Expect(dnat.StMappings[0].TwiceNat).To(Equal(nat.DNat44_StaticMapping_ENABLED))
 	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.DNat44_TCP))
-	Expect(dnat.StMappings[0].ExternalInterface).To(Equal("if0"))
+	Expect(dnat.StMappings[0].ExternalInterface).To(BeEmpty())
 	Expect(dnat.StMappings[0].ExternalIp).To(Equal("10.36.20.20"))
 	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
 	Expect(dnat.StMappings[0].LocalIps).To(HaveLen(1))
@@ -217,6 +307,17 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings[0].LocalIps[0].LocalIp).To(Equal("10.10.11.120"))
 	Expect(dnat.StMappings[0].LocalIps[0].LocalPort).To(BeEquivalentTo(8080))
 	Expect(dnat.StMappings[0].LocalIps[0].Probability).To(BeEquivalentTo(0))
+	// 2nd mapping
+	Expect(dnat.StMappings[1].TwiceNat).To(Equal(nat.DNat44_StaticMapping_ENABLED))
+	Expect(dnat.StMappings[1].Protocol).To(Equal(nat.DNat44_TCP))
+	Expect(dnat.StMappings[1].ExternalInterface).To(BeEquivalentTo("if0"))
+	Expect(dnat.StMappings[1].ExternalIp).To(BeEmpty())
+	Expect(dnat.StMappings[1].ExternalPort).To(BeEquivalentTo(80))
+	Expect(dnat.StMappings[1].LocalIps).To(HaveLen(1))
+	Expect(dnat.StMappings[1].LocalIps[0].VrfId).To(BeEquivalentTo(1))
+	Expect(dnat.StMappings[1].LocalIps[0].LocalIp).To(Equal("10.10.11.120"))
+	Expect(dnat.StMappings[1].LocalIps[0].LocalPort).To(BeEquivalentTo(8080))
+	Expect(dnat.StMappings[1].LocalIps[0].Probability).To(BeEquivalentTo(0))
 
 	dnat = dnats[1]
 	// -> non-LB mapping
@@ -252,12 +353,19 @@ func TestDNATDump(t *testing.T) {
 	dnat = dnats[2]
 	Expect(dnat.Label).To(Equal("DNAT 3"))
 	Expect(dnat.StMappings).To(HaveLen(0))
-	Expect(dnat.IdMappings).To(HaveLen(1))
+	Expect(dnat.IdMappings).To(HaveLen(2))
+	// 1st mapping
 	Expect(dnat.IdMappings[0].VrfId).To(BeEquivalentTo(1))
 	Expect(dnat.IdMappings[0].Protocol).To(Equal(nat.DNat44_UDP))
 	Expect(dnat.IdMappings[0].Port).To(BeEquivalentTo(0))
 	Expect(dnat.IdMappings[0].IpAddress).To(Equal("10.10.11.200"))
 	Expect(dnat.IdMappings[0].Interface).To(BeEmpty())
+	// 2nd mapping
+	Expect(dnat.IdMappings[1].VrfId).To(BeEquivalentTo(1))
+	Expect(dnat.IdMappings[1].Protocol).To(Equal(nat.DNat44_UDP))
+	Expect(dnat.IdMappings[1].Port).To(BeEquivalentTo(0))
+	Expect(dnat.IdMappings[1].IpAddress).To(BeEmpty())
+	Expect(dnat.IdMappings[1].Interface).To(BeEquivalentTo("if1"))
 }
 
 func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.NatVppAPI, ifaceidx.IfaceMetadataIndexRW, idxmap.NamedMappingRW) {
