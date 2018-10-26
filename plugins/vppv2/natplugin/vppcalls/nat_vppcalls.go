@@ -279,8 +279,6 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 		req.ExternalPort = uint16(mapping.ExternalPort)
 	}
 
-	fmt.Printf("handleNat44StaticMapping req = %+v\n", req)
-
 	reply := &binapi.Nat44AddDelStaticMappingReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
@@ -345,7 +343,6 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 		Out2inOnly:   1,
 		IsAdd:        boolToUint(isAdd),
 	}
-	fmt.Printf("handleNat44StaticMappingLb req = %+v\n", req)
 
 	reply := &binapi.Nat44AddDelLbStaticMappingReply{}
 
@@ -402,8 +399,6 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 		VrfID:     mapping.VrfId,
 		IsAdd:     boolToUint(isAdd),
 	}
-
-	fmt.Printf("handleNat44IdentityMapping req = %+v\n", req)
 
 	reply := &binapi.Nat44AddDelIdentityMappingReply{}
 
