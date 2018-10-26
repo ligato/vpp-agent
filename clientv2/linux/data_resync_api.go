@@ -79,8 +79,8 @@ type DataResyncDSL interface {
 	StnRule(stn *vpp_stn.STN_Rule) DataResyncDSL
 	// NAT44Global adds global NAT44 configuration to the RESYNC request.
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
-	// DNat44 adds DNAT44 configuration to the RESYNC request
-	DNat44(dnat *nat.DNat44) DataResyncDSL
+	// DNAT44 adds DNAT44 configuration to the RESYNC request
+	DNAT44(dnat *nat.DNat44) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv2.Reply

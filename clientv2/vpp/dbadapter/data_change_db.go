@@ -170,8 +170,8 @@ func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.PutDSL {
 	return dsl
 }
 
-// DNat44 adds a request to create or update DNAT44 configuration
-func (dsl *PutDSL) DNat44(nat44 *nat.DNat44) vppclient.PutDSL {
+// DNAT44 adds a request to create or update DNAT44 configuration
+func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) vppclient.PutDSL {
 	dsl.parent.txn.Put(nat.DNAT44Key(nat44.Label), nat44)
 	return dsl
 }
@@ -298,8 +298,8 @@ func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
 	return dsl
 }
 
-// DNat44 adds a request to delete an existing DNAT44 configuration
-func (dsl *DeleteDSL) DNat44(label string) vppclient.DeleteDSL {
+// DNAT44 adds a request to delete an existing DNAT44 configuration
+func (dsl *DeleteDSL) DNAT44(label string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(nat.DNAT44Key(label))
 	return dsl
 }

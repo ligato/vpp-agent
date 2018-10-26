@@ -194,9 +194,9 @@ func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.PutDSL {
 	return dsl
 }
 
-// DNat44 adds a request to create or update DNAT44 configuration
-func (dsl *PutDSL) DNat44(nat44 *nat.DNat44) linuxclient.PutDSL {
-	dsl.vppPut.DNat44(nat44)
+// DNAT44 adds a request to create or update DNAT44 configuration
+func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) linuxclient.PutDSL {
+	dsl.vppPut.DNAT44(nat44)
 	return dsl
 }
 
@@ -329,9 +329,9 @@ func (dsl *DeleteDSL) NAT44Global() linuxclient.DeleteDSL {
 	return dsl
 }
 
-// DNat44 adds a request to delete an existing DNAT44 configuration
-func (dsl *DeleteDSL) DNat44(label string) linuxclient.DeleteDSL {
-	dsl.vppDelete.DNat44(label)
+// DNAT44 adds a request to delete an existing DNAT44 configuration
+func (dsl *DeleteDSL) DNAT44(label string) linuxclient.DeleteDSL {
+	dsl.vppDelete.DNAT44(label)
 	return dsl
 }
 

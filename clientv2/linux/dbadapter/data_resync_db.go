@@ -179,9 +179,9 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.DataRe
 	return dsl
 }
 
-// DNat44 adds DNAT44 configuration to the RESYNC request
-func (dsl *DataResyncDSL) DNat44(nat44 *nat.DNat44) linuxclient.DataResyncDSL {
-	dsl.vppDataResync.DNat44(nat44)
+// DNAT44 adds DNAT44 configuration to the RESYNC request
+func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.DNAT44(nat44)
 
 	return dsl
 }

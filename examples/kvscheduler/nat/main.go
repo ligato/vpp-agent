@@ -48,7 +48,7 @@ import (
 	host-term1$ nc -u -l -p 9090 &
 
 	host-term2$ docker run -it --rm  -e MICROSERVICE_LABEL=microservice-server2 lencomilan/ubuntu /bin/bash
-    host-term2$ nc -l -p 8081 &
+	host-term2$ nc -l -p 8081 &
 	host-term2$ nc -u -l -p 9091 &
 
 	Test DNATs from microservice-client:
@@ -68,7 +68,7 @@ import (
 	host-term4$ nc -l -p 8080 &
 
 	# Accessing server 192.168.13.10:8080 running in the host should trigger
-    # source-NAT in the post-routing, i.e. no need to route microservices from the host:
+	# source-NAT in the post-routing, i.e. no need to route microservices from the host:
 	host-term3$ nc 192.168.13.10 8080  # host-term3 = microservice-client
 */
 
@@ -640,10 +640,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		VppInterface(server1VPPTap).
 		VppInterface(server2VPPTap).
 		NAT44Global(natGlobal).
-		DNat44(tcpServiceDNAT).
-		DNat44(udpServiceDNAT).
-		DNat44(idDNAT).
-		DNat44(externalIfaceDNAT).
+		DNAT44(tcpServiceDNAT).
+		DNAT44(udpServiceDNAT).
+		DNAT44(idDNAT).
+		DNAT44(externalIfaceDNAT).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -661,7 +661,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	err = txn2.Put().
 		Delete().
 		NAT44Global().
-		DNat44(udpServiceDNAT.Label).
+		DNAT44(udpServiceDNAT.Label).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

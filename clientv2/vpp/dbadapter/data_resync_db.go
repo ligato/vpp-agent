@@ -191,8 +191,8 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResy
 	return dsl
 }
 
-// DNat44 adds DNAT44 configuration to the RESYNC request
-func (dsl *DataResyncDSL) DNat44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
+// DNAT44 adds DNAT44 configuration to the RESYNC request
+func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
 	key := nat.DNAT44Key(nat44.Label)
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
