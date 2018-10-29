@@ -47,7 +47,7 @@ func NewProxyArpDescriptor(scheduler scheduler.KVScheduler,
 	return &ProxyArpDescriptor{
 		scheduler:       scheduler,
 		proxyArpHandler: proxyArpHandler,
-		log:             log,
+		log:             log.NewLogger("proxy-arp-descriptor"),
 	}
 }
 

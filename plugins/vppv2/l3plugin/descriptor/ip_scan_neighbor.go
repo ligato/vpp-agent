@@ -46,7 +46,7 @@ func NewIPScanNeighborDescriptor(scheduler scheduler.KVScheduler,
 	return &IPScanNeighborDescriptor{
 		scheduler: scheduler,
 		ipNeigh:   proxyArpHandler,
-		log:       log,
+		log:       log.NewLogger("ip-scan-neigh-descriptor"),
 	}
 }
 

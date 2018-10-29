@@ -54,7 +54,7 @@ func NewRouteDescriptor(scheduler scheduler.KVScheduler,
 	return &RouteDescriptor{
 		scheduler:    scheduler,
 		routeHandler: routeHandler,
-		log:          log.NewLogger("route-descriptor"),
+		log:          log.NewLogger("static-route-descriptor"),
 	}
 }
 
