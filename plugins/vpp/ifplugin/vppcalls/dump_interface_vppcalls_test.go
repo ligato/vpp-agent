@@ -340,7 +340,7 @@ func TestDumpInterfacesFull(t *testing.T) {
 	Expect(intface.Vrf).To(Equal(uint32(42)))
 	Expect(intface.SetDhcpClient).To(BeTrue())
 	Expect(intMeta.VrfIPv4).To(Equal(uint32(42)))
-	Expect(intMeta.VrfIPv4).To(Equal(uint32(0)))
+	Expect(intMeta.VrfIPv6).To(Equal(uint32(42)))
 
 	// Check memif
 	Expect(intface.Memif.SocketFilename).To(Equal("test"))
