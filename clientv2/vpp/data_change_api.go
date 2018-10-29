@@ -77,9 +77,7 @@ type PutDSL interface {
 	// Arp adds a request to create or update VPP L3 ARP.
 	Arp(arp *l3.ARPEntry) PutDSL
 	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
-	ProxyArpInterfaces(pArpIfs *l3.ProxyARPInterfaceList) PutDSL
-	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
-	ProxyArpRanges(pArpRng *l3.ProxyARPRangeList) PutDSL
+	ProxyArp(proxyArp *l3.ProxyARP) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
@@ -136,9 +134,7 @@ type DeleteDSL interface {
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
-	ProxyArpInterfaces(label string) DeleteDSL
-	// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
-	ProxyArpRanges(label string) DeleteDSL
+	ProxyArp() DeleteDSL
 	// StnRule adds a request to delete an existing Stn rule.
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44

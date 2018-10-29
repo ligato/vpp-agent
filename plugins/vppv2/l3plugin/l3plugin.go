@@ -14,6 +14,8 @@
 
 //go:generate descriptor-adapter --descriptor-name StaticRoute --value-type *l3.StaticRoute --import "../model/l3" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *l3.ARPEntry --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *l3.ProxyARP --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *l3.ProxyARP_Interface --import "../model/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -44,12 +46,15 @@ type L3Plugin struct {
 	vppCh govppapi.Channel
 
 	// VPP handlers
-	routeHandler vppcalls.RouteVppAPI
-	arpandler    vppcalls.ArpVppAPI
+	routeHandler    vppcalls.RouteVppAPI
+	arpandler       vppcalls.ArpVppAPI
+	proxyArpHandler vppcalls.ProxyArpVppAPI
 
 	// descriptors
-	routeDescriptor *descriptor.RouteDescriptor
-	arpDescriptor   *descriptor.ArpDescriptor
+	routeDescriptor         *descriptor.RouteDescriptor
+	arpDescriptor           *descriptor.ArpDescriptor
+	proxyArpDescriptor      *descriptor.ProxyArpDescriptor
+	proxyArpIfaceDescriptor *descriptor.ProxyArpInterfaceDescriptor
 
 	// go routine management
 	ctx    context.Context
@@ -93,15 +98,22 @@ func (p *L3Plugin) Init() error {
 	// init handlers
 	p.routeHandler = vppcalls.NewRouteVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
 	p.arpandler = vppcalls.NewArpVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
+	p.proxyArpHandler = vppcalls.NewProxyArpVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), nil)
 
 	// init & register descriptors
 	routeDescriptor := adapter.NewStaticRouteDescriptor(descriptor.NewRouteDescriptor(
 		p.Scheduler, p.routeHandler, p.Log).GetDescriptor())
 	arpDescriptor := adapter.NewARPEntryDescriptor(descriptor.NewArpDescriptor(
 		p.Scheduler, p.arpandler, p.Log).GetDescriptor())
+	proxyArpDescriptor := adapter.NewProxyARPDescriptor(descriptor.NewProxyArpDescriptor(
+		p.Scheduler, p.proxyArpHandler, p.Log).GetDescriptor())
+	proxyArpIfaceDescriptor := adapter.NewProxyARPInterfaceDescriptor(descriptor.NewProxyArpInterfaceDescriptor(
+		p.Scheduler, p.proxyArpHandler, p.Log).GetDescriptor())
 
 	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
 	p.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(proxyArpDescriptor)
+	p.Deps.Scheduler.RegisterKVDescriptor(proxyArpIfaceDescriptor)
 
 	return nil
 }

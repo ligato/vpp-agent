@@ -38,15 +38,14 @@ const (
 )
 
 const (
-	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
-	ProxyARPRangePrefix = "vpp/config/v2/proxyarp/range/"
-	// ProxyARPPrefix is the relative key prefix for proxy ARP configuration.
-	ProxyARPInterfacePrefix = "vpp/config/v1/proxyarp/interface/"
-	// ProxyARPRangePrefix is the relative key prefix for proxy ARP ranges.
-	ProxyARPRangeKey = ProxyARPRangePrefix + "{label}"
-	// ProxyARPInterfacePrefix is the relative key prefix for proxy ARP-enabled interfaces.
-	ProxyARPInterfaceKey = ProxyARPInterfacePrefix + "{label}"
+	// ProxyARPKey is the key for proxy ARP configuration.
+	ProxyARPKey = "vpp/config/v2/proxyarp"
 
+	proxyARPInterfacePrefix   = "vpp/proxyarp/interface/"
+	proxyARPInterfaceTemplate = proxyARPInterfacePrefix + "{iface}"
+)
+
+const (
 	// IPScanNeighPrefix it the relative key prefix for IP scan neighbor feature
 	IPScanNeighPrefix = "vpp/config/v2/ipneigh/"
 )
@@ -111,7 +110,6 @@ func ArpEntryKey(iface, ipAddr string) string {
 	key := arpKeyTemplate
 	key = strings.Replace(key, "{if}", iface, 1)
 	key = strings.Replace(key, "{ip}", ipAddr, 1)
-	//key = strings.Replace(key, "{mac}", macAddr, 1)
 	return key
 }
 
@@ -126,16 +124,18 @@ func ParseArpKey(key string) (iface string, ipAddr string, err error) {
 	return "", "", fmt.Errorf("invalid ARP key")
 }
 
-// ProxyArpRangeKey returns the key to store Proxy ARP range config
-func ProxyArpRangeKey(label string) string {
-	key := ProxyARPRangeKey
-	key = strings.Replace(key, "{label}", label, 1)
+// ProxyARPInterfaceKey returns the key used to represent binding for interface with enabled proxy ARP.
+func ProxyARPInterfaceKey(iface string) string {
+	key := proxyARPInterfaceTemplate
+	key = strings.Replace(key, "{iface}", iface, 1)
 	return key
 }
 
-// ProxyArpInterfaceKey returns the key to store Proxy ARP interface config
-func ProxyArpInterfaceKey(label string) string {
-	key := ProxyARPInterfaceKey
-	key = strings.Replace(key, "{label}", label, 1)
-	return key
+// ParseProxyARPInterfaceKey parses key representing binding for interface with enabled proxy ARP.
+func ParseProxyARPInterfaceKey(key string) (iface string, isProxyARPInterfaceKey bool) {
+	suffix := strings.TrimPrefix(key, proxyARPInterfacePrefix)
+	if suffix != key && suffix != "" {
+		return suffix, true
+	}
+	return "", false
 }

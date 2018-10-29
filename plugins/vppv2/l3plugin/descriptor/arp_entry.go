@@ -38,7 +38,7 @@ const (
 	arpEntryInterfaceDep = "interface-exists"
 )
 
-// ArpDescriptor teaches KVScheduler how to configure VPP arps.
+// ArpDescriptor teaches KVScheduler how to configure VPP ARPs.
 type ArpDescriptor struct {
 	log        logging.Logger
 	arpHandler vppcalls.ArpVppAPI

@@ -129,18 +129,9 @@ func (dsl *DataResyncDSL) StaticRoute(val *l3.StaticRoute) vppclient.DataResyncD
 }
 
 // ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpInterfaces(val *l3.ProxyARPInterfaceList) vppclient.DataResyncDSL {
-	key := l3.ProxyArpInterfaceKey(val.Label)
-	dsl.txn.Put(key, val)
-	dsl.txnKeys = append(dsl.txnKeys, key)
-
-	return dsl
-}
-
-// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
-func (dsl *DataResyncDSL) ProxyArpRanges(val *l3.ProxyARPRangeList) vppclient.DataResyncDSL {
-	key := l3.ProxyArpRangeKey(val.Label)
-	dsl.txn.Put(key, val)
+func (dsl *DataResyncDSL) ProxyArp(proxyArp *l3.ProxyARP) vppclient.DataResyncDSL {
+	key := l3.ProxyARPKey
+	dsl.txn.Put(key, proxyArp)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl

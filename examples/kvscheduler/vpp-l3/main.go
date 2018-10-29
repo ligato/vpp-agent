@@ -66,7 +66,7 @@ type ExamplePlugin struct {
 
 // String returns plugin name
 func (p *ExamplePlugin) String() string {
-	return "acls-example"
+	return "l3-example"
 }
 
 // Init handles initialization phase.
@@ -115,6 +115,14 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		IpAddress:   "3.3.3.3",
 		Static:      true,
 	}
+	proxyArp := &l3.ProxyARP{
+		Ranges: []*l3.ProxyARP_Range{
+			{FirstIpAddr: "10.10.1.1", LastIpAddr: "10.10.1.255"},
+		},
+		Interfaces: []*l3.ProxyARP_Interface{
+			{Name: "memif0"},
+		},
+	}
 
 	// resync
 
@@ -127,6 +135,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		StaticRoute(route0).
 		StaticRoute(route1).
 		Arp(arp0).
+		ProxyArp(proxyArp).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -139,12 +148,19 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 
 	route0.OutgoingInterface = ""
 	arp0.PhysAddress = "22:22:22:22:22:22"
+	proxyArp.Ranges = append(proxyArp.Ranges, &l3.ProxyARP_Range{
+		FirstIpAddr: "10.10.2.1", LastIpAddr: "10.10.2.255",
+	})
+	proxyArp.Interfaces = nil
 
 	txn2 := localclient.DataChangeRequest("example")
 	err = txn2.
-		Put().StaticRoute(route0).
-		Delete().StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
-		Put().Arp(arp0).
+		Put().
+		StaticRoute(route0).
+		Delete().
+		StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
+		Put().
+		Arp(arp0).ProxyArp(proxyArp).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

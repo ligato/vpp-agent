@@ -67,10 +67,8 @@ type DataResyncDSL interface {
 	StaticRoute(staticRoute *vpp_l3.StaticRoute) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
 	Arp(arp *vpp_l3.ARPEntry) DataResyncDSL
-	// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
-	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyARPInterfaceList) DataResyncDSL
-	// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
-	ProxyArpRanges(pArpRng *vpp_l3.ProxyARPRangeList) DataResyncDSL
+	// ProxyArp adds L3 proxy ARP interfaces to the RESYNC request.
+	ProxyArp(proxyArp *vpp_l3.ProxyARP) DataResyncDSL
 	// L4Features adds L4 features to the RESYNC request
 	L4Features(val *vpp_l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request

@@ -14,18 +14,17 @@
 
 package vppcalls
 
-/*
 import (
 	"fmt"
 	"net"
 
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // ProxyArpRangesDetails holds info about proxy ARP range as a proto modeled data
 type ProxyArpRangesDetails struct {
-	Range *l3.ProxyArpRanges_RangeList_Range
+	Range *l3.ProxyARP_Range
 }
 
 // DumpProxyArpRanges implements proxy arp handler.
@@ -44,9 +43,9 @@ func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDet
 		}
 
 		pArpRngs = append(pArpRngs, &ProxyArpRangesDetails{
-			Range: &l3.ProxyArpRanges_RangeList_Range{
-				FirstIp: fmt.Sprintf("%s", net.IP(proxyArpDetails.Proxy.LowAddress[:4]).To4().String()),
-				LastIp:  fmt.Sprintf("%s", net.IP(proxyArpDetails.Proxy.HiAddress[:4]).To4().String()),
+			Range: &l3.ProxyARP_Range{
+				FirstIpAddr: fmt.Sprintf("%s", net.IP(proxyArpDetails.Proxy.LowAddress[:4]).To4().String()),
+				LastIpAddr:  fmt.Sprintf("%s", net.IP(proxyArpDetails.Proxy.HiAddress[:4]).To4().String()),
 			},
 		})
 	}
@@ -56,7 +55,7 @@ func (h *ProxyArpVppHandler) DumpProxyArpRanges() (pArpRngs []*ProxyArpRangesDet
 
 // ProxyArpInterfaceDetails holds info about proxy ARP interfaces as a proto modeled data
 type ProxyArpInterfaceDetails struct {
-	Interface *l3.ProxyArpInterfaces_InterfaceList_Interface
+	Interface *l3.ProxyARP_Interface
 	Meta      *ProxyArpInterfaceMeta
 }
 
@@ -81,14 +80,14 @@ func (h *ProxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*ProxyArpInterf
 		}
 
 		// Interface
-		ifName, _, exists := h.ifIndexes.LookupName(proxyArpDetails.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(proxyArpDetails.SwIfIndex)
 		if !exists {
 			h.log.Warnf("Proxy ARP interface dump: missing name for interface index %d", proxyArpDetails.SwIfIndex)
 		}
 
 		// Create entry
 		pArpIfs = append(pArpIfs, &ProxyArpInterfaceDetails{
-			Interface: &l3.ProxyArpInterfaces_InterfaceList_Interface{
+			Interface: &l3.ProxyARP_Interface{
 				Name: ifName,
 			},
 			Meta: &ProxyArpInterfaceMeta{
@@ -100,4 +99,3 @@ func (h *ProxyArpVppHandler) DumpProxyArpInterfaces() (pArpIfs []*ProxyArpInterf
 
 	return pArpIfs, nil
 }
-*/

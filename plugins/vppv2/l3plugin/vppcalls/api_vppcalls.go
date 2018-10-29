@@ -42,7 +42,6 @@ type ArpVppRead interface {
 	DumpArpEntries() ([]*ArpDetails, error)
 }
 
-/*
 // ProxyArpVppAPI provides methods for managing proxy ARP entries
 type ProxyArpVppAPI interface {
 	ProxyArpVppWrite
@@ -52,9 +51,9 @@ type ProxyArpVppAPI interface {
 // ProxyArpVppWrite provides write methods for proxy ARPs
 type ProxyArpVppWrite interface {
 	// EnableProxyArpInterface enables interface for proxy ARP
-	EnableProxyArpInterface(swIfIdx uint32) error
+	EnableProxyArpInterface(ifName string) error
 	// DisableProxyArpInterface disables interface for proxy ARP
-	DisableProxyArpInterface(swIfIdx uint32) error
+	DisableProxyArpInterface(ifName string) error
 	// AddProxyArpRange adds new IP range for proxy ARP
 	AddProxyArpRange(firstIP, lastIP []byte) error
 	// DeleteProxyArpRange removes proxy ARP IP range
@@ -67,7 +66,7 @@ type ProxyArpVppRead interface {
 	DumpProxyArpRanges() ([]*ProxyArpRangesDetails, error)
 	// DumpProxyArpRanges returns configured proxy ARP interfaces
 	DumpProxyArpInterfaces() ([]*ProxyArpInterfaceDetails, error)
-}*/
+}
 
 // RouteVppAPI provides methods for managing routes
 type RouteVppAPI interface {
@@ -106,12 +105,12 @@ type ArpVppHandler struct {
 }
 
 // ProxyArpVppHandler is accessor for proxy ARP-related vppcalls methods
-/*type ProxyArpVppHandler struct {
+type ProxyArpVppHandler struct {
 	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.SwIfIndex
+	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
 }
-*/
+
 // RouteHandler is accessor for route-related vppcalls methods
 type RouteHandler struct {
 	callsChannel govppapi.Channel
@@ -138,14 +137,17 @@ func NewArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetada
 }
 
 // NewProxyArpVppHandler creates new instance of proxy ARP vppcalls handler
-/*func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, log logging.Logger) *ProxyArpVppHandler {
+func NewProxyArpVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *ProxyArpVppHandler {
+	if log == nil {
+		log = logrus.NewLogger("proxy-arp-handler")
+	}
 	return &ProxyArpVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 }
-*/
+
 // NewRouteVppHandler creates new instance of route vppcalls handler
 func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *RouteHandler {
 	if log == nil {
