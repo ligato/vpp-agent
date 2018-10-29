@@ -40,7 +40,7 @@ const (
 	ARPDescriptorName = "linux-arp"
 
 	// dependency labels
-	arpInterfaceDep = "interface"
+	arpInterfaceDep = "interface-exists"
 )
 
 // A list of non-retriable errors:

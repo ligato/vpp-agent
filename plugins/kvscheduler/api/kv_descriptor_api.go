@@ -166,7 +166,6 @@ type KVDescriptor struct {
 
 	// Modify value handler.
 	// <newMetadata> can re-use the <oldMetadata>.
-	// If Add is defined, Modify handler must be provided as well.
 	Modify func(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error)
 
 	// ModifyWithRecreate can be defined to tell the scheduler if going from

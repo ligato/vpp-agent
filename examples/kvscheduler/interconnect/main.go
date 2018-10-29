@@ -194,11 +194,11 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	veth2 := &linux_interfaces.LinuxInterface{
-		Name:        veth2LogicalName,
-		Type:        linux_interfaces.LinuxInterface_VETH,
-		Enabled:     true,
-		Mtu:         mycroservice1Mtu,
-		HostIfName:  veth2HostName,
+		Name:       veth2LogicalName,
+		Type:       linux_interfaces.LinuxInterface_VETH,
+		Enabled:    true,
+		Mtu:        mycroservice1Mtu,
+		HostIfName: veth2HostName,
 		Link: &linux_interfaces.LinuxInterface_Veth{
 			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
 		},

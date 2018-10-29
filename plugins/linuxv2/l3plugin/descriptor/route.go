@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	"bytes"
 	"net"
 	"strings"
 
@@ -24,11 +25,8 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-
-	"bytes"
-
 	"github.com/ligato/cn-infra/utils/addrs"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor/adapter"
@@ -141,17 +139,18 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.Li
 	return equalAddrs(getGwAddr(oldRoute), getGwAddr(newRoute))
 }
 
+var nonRetriableErrs = []error{
+	ErrRouteWithoutInterface,
+	ErrRouteWithoutDestination,
+	ErrRouteWithUndefinedScope,
+	ErrRouteWithInvalidDst,
+	ErrRouteWithInvalidGw,
+	ErrRouteLinkWithGw,
+}
+
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
 func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrRouteWithoutInterface,
-		ErrRouteWithoutDestination,
-		ErrRouteWithUndefinedScope,
-		ErrRouteWithInvalidDst,
-		ErrRouteWithInvalidGw,
-		ErrRouteLinkWithGw,
-	}
-	for _, nonRetriableErr := range nonRetriable {
+	for _, nonRetriableErr := range nonRetriableErrs {
 		if err == nonRetriableErr {
 			return false
 		}

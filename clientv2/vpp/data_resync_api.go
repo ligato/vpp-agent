@@ -17,12 +17,12 @@ package vppclient
 import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
@@ -35,6 +35,8 @@ import (
 type DataResyncDSL interface {
 	// Interface adds interface to the RESYNC request.
 	Interface(intf *interfaces.Interface) DataResyncDSL
+	// ACL adds Access Control List to the RESYNC request.
+	ACL(acl *acl.Acl) DataResyncDSL
 	// BfdSession adds bidirectional forwarding detection session to the RESYNC
 	// request.
 	BfdSession(val *bfd.SingleHopBFD_Session) DataResyncDSL
@@ -51,15 +53,13 @@ type DataResyncDSL interface {
 	// XConnect adds Cross Connect to the RESYNC request.
 	XConnect(xcon *l2.XConnectPair) DataResyncDSL
 	// StaticRoute adds L3 Static Route to the RESYNC request.
-	StaticRoute(staticRoute *l3.StaticRoutes_Route) DataResyncDSL
-	// ACL adds Access Control List to the RESYNC request.
-	ACL(acl *acl.Acl) DataResyncDSL
+	StaticRoute(staticRoute *l3.StaticRoute) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
-	Arp(arp *l3.ArpTable_ArpEntry) DataResyncDSL
-	// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
-	ProxyArpInterfaces(pArpIfs *l3.ProxyArpInterfaces_InterfaceList) DataResyncDSL
-	// ProxyArpRanges adds L3 proxy ARP ranges to the RESYNC request.
-	ProxyArpRanges(pArpRng *l3.ProxyArpRanges_RangeList) DataResyncDSL
+	Arp(arp *l3.ARPEntry) DataResyncDSL
+	// ProxyArp adds L3 proxy ARP interfaces to the RESYNC request.
+	ProxyArp(proxyArp *l3.ProxyARP) DataResyncDSL
+	// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
+	IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) DataResyncDSL
 	// L4Features adds L4 features to the RESYNC request
 	L4Features(val *l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request

@@ -19,12 +19,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
@@ -64,6 +64,8 @@ type PutDSL interface {
 
 	// VppInterface adds a request to create or update VPP network interface.
 	VppInterface(val *vpp_intf.Interface) PutDSL
+	// ACL adds a request to create or update VPP Access Control List.
+	ACL(acl *vpp_acl.Acl) PutDSL
 	// BfdSession adds a request to create or update VPP bidirectional
 	// forwarding detection session.
 	BfdSession(val *vpp_bfd.SingleHopBFD_Session) PutDSL
@@ -80,15 +82,13 @@ type PutDSL interface {
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *vpp_l2.XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
-	StaticRoute(val *vpp_l3.StaticRoutes_Route) PutDSL
-	// ACL adds a request to create or update VPP Access Control List.
-	ACL(acl *vpp_acl.Acl) PutDSL
+	StaticRoute(val *vpp_l3.StaticRoute) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
-	Arp(arp *vpp_l3.ArpTable_ArpEntry) PutDSL
-	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
-	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) PutDSL
-	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
-	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) PutDSL
+	Arp(arp *vpp_l3.ARPEntry) PutDSL
+	// ProxyArp adds a request to create or update VPP L3 proxy ARP.
+	ProxyArp(proxyArp *vpp_l3.ProxyARP) PutDSL
+	// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
+	IPScanNeighbor(ipScanNeigh *vpp_l3.IPScanNeighbor) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *vpp_l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
@@ -121,6 +121,8 @@ type DeleteDSL interface {
 
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL
+	// ACL adds a request to delete an existing VPP Access Control List.
+	ACL(aclName string) DeleteDSL
 	// BfdSession adds a request to delete an existing VPP bidirectional
 	// forwarding detection session.
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
@@ -139,8 +141,6 @@ type DeleteDSL interface {
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
-	// ACL adds a request to delete an existing VPP Access Control List.
-	ACL(aclName string) DeleteDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features() DeleteDSL
 	// AppNamespace adds a request to delete VPP Application namespace
@@ -148,10 +148,10 @@ type DeleteDSL interface {
 	AppNamespace(id string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
-	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
-	ProxyArpInterfaces(label string) DeleteDSL
-	// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
-	ProxyArpRanges(label string) DeleteDSL
+	// ProxyArp adds a request to delete an existing VPP L3 proxy ARP
+	ProxyArp() DeleteDSL
+	// IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
+	IPScanNeighbor() DeleteDSL
 	// StnRule adds a request to delete an existing VPP Stn rule.
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44

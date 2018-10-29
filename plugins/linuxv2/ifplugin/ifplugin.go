@@ -35,7 +35,7 @@ type IfPlugin struct {
 	Deps
 
 	// From configuration file
-	disabled  bool
+	disabled bool
 
 	// system handlers
 	ifHandler linuxcalls.NetlinkAPI
@@ -59,7 +59,7 @@ type Deps struct {
 
 // Config holds the ifplugin configuration.
 type Config struct {
-	Disabled  bool `json:"disabled"`
+	Disabled bool `json:"disabled"`
 }
 
 // Init registers interface-related descriptors and starts watching of the default

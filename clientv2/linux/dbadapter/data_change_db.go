@@ -23,12 +23,12 @@ import (
 	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
@@ -101,6 +101,12 @@ func (dsl *PutDSL) VppInterface(val *interfaces.Interface) linuxclient.PutDSL {
 	return dsl
 }
 
+// ACL adds a request to create or update VPP Access Control List.
+func (dsl *PutDSL) ACL(acl *acl.Acl) linuxclient.PutDSL {
+	dsl.vppPut.ACL(acl)
+	return dsl
+}
+
 // BfdSession adds a request to create or update VPP bidirectional forwarding
 // detection session.
 func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.PutDSL {
@@ -141,32 +147,26 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPair) linuxclient.PutDSL {
 }
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
-func (dsl *PutDSL) StaticRoute(val *l3.StaticRoutes_Route) linuxclient.PutDSL {
+func (dsl *PutDSL) StaticRoute(val *l3.StaticRoute) linuxclient.PutDSL {
 	dsl.vppPut.StaticRoute(val)
 	return dsl
 }
 
-// ACL adds a request to create or update VPP Access Control List.
-func (dsl *PutDSL) ACL(acl *acl.Acl) linuxclient.PutDSL {
-	dsl.vppPut.ACL(acl)
-	return dsl
-}
-
 // Arp adds a request to create or update VPP L3 ARP.
-func (dsl *PutDSL) Arp(arp *l3.ArpTable_ArpEntry) linuxclient.PutDSL {
+func (dsl *PutDSL) Arp(arp *l3.ARPEntry) linuxclient.PutDSL {
 	dsl.vppPut.Arp(arp)
 	return dsl
 }
 
-// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
-func (dsl *PutDSL) ProxyArpInterfaces(arp *l3.ProxyArpInterfaces_InterfaceList) linuxclient.PutDSL {
-	dsl.vppPut.ProxyArpInterfaces(arp)
+// ProxyArp adds a request to create or update VPP L3 proxy ARP.
+func (dsl *PutDSL) ProxyArp(proxyArp *l3.ProxyARP) linuxclient.PutDSL {
+	dsl.vppPut.ProxyArp(proxyArp)
 	return dsl
 }
 
-// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
-func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) linuxclient.PutDSL {
-	dsl.vppPut.ProxyArpRanges(arp)
+// IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
+func (dsl *PutDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) linuxclient.PutDSL {
+	dsl.vppPut.IPScanNeighbor(ipScanNeigh)
 	return dsl
 }
 
@@ -235,6 +235,12 @@ func (dsl *DeleteDSL) VppInterface(ifaceName string) linuxclient.DeleteDSL {
 	return dsl
 }
 
+// ACL adds a request to delete an existing VPP Access Control List.
+func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.ACL(aclName)
+	return dsl
+}
+
 // BfdSession adds a request to delete an existing VPP bidirectional forwarding
 // detection session.
 func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) linuxclient.DeleteDSL {
@@ -280,9 +286,21 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string
 	return dsl
 }
 
-// ACL adds a request to delete an existing VPP Access Control List.
-func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
-	dsl.vppDelete.ACL(aclName)
+// IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
+func (dsl *DeleteDSL) IPScanNeighbor() linuxclient.DeleteDSL {
+	dsl.vppDelete.IPScanNeighbor()
+	return dsl
+}
+
+// Arp adds a request to delete an existing VPP L3 ARP.
+func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) linuxclient.DeleteDSL {
+	dsl.vppDelete.Arp(ifaceName, ipAddr)
+	return dsl
+}
+
+// ProxyArp adds a request to delete an existing VPP L3 proxy ARP.
+func (dsl *DeleteDSL) ProxyArp() linuxclient.DeleteDSL {
+	dsl.vppDelete.ProxyArp()
 	return dsl
 }
 
@@ -296,24 +314,6 @@ func (dsl *DeleteDSL) L4Features() linuxclient.DeleteDSL {
 // Note: current version does not support application namespace deletion
 func (dsl *DeleteDSL) AppNamespace(id string) linuxclient.DeleteDSL {
 	dsl.vppDelete.AppNamespace(id)
-	return dsl
-}
-
-// Arp adds a request to delete an existing VPP L3 ARP.
-func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) linuxclient.DeleteDSL {
-	dsl.vppDelete.Arp(ifaceName, ipAddr)
-	return dsl
-}
-
-// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
-func (dsl *DeleteDSL) ProxyArpInterfaces(label string) linuxclient.DeleteDSL {
-	dsl.vppDelete.ProxyArpInterfaces(label)
-	return dsl
-}
-
-// ProxyArpRanges adds a request to delete an existing VPP L3 proxy ARP ranges
-func (dsl *DeleteDSL) ProxyArpRanges(label string) linuxclient.DeleteDSL {
-	dsl.vppDelete.ProxyArpRanges(label)
 	return dsl
 }
 

@@ -137,9 +137,10 @@ generate-desc-adapters: get-desc-adapter-generator
 	@echo "=> generating descriptor adapters"
 	cd plugins/linuxv2/ifplugin && go generate
 	cd plugins/linuxv2/l3plugin && go generate
-	cd plugins/vppv2/ifplugin && go generate
 	cd plugins/vppv2/aclplugin && go generate
+	cd plugins/vppv2/ifplugin && go generate
 	cd plugins/vppv2/l2plugin && go generate
+	cd plugins/vppv2/l3plugin && go generate
 	cd plugins/vppv2/natplugin && go generate
 
 verify-binapi:
