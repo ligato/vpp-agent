@@ -31,7 +31,7 @@ import (
 )
 
 /*
-	This example demonstrates example using KVScheduler.
+	This example demonstrates KVScheduler-based aclplugin.
 */
 
 func main() {

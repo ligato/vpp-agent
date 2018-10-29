@@ -42,7 +42,7 @@ type ACLPlugin struct {
 	dumpVppCh govppapi.Channel
 
 	aclHandler             vppcalls.ACLVppAPI
-	aclDesriptor           *descriptor.ACLDescriptor
+	aclDescriptor          *descriptor.ACLDescriptor
 	aclInterfaceDescriptor *descriptor.ACLToInterfaceDescriptor
 
 	aclIndex aclidx.ACLMetadataIndex
@@ -78,8 +78,8 @@ func (p *ACLPlugin) Init() (err error) {
 	p.aclHandler = vppcalls.NewACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex())
 
 	// init descriptors
-	p.aclDesriptor = descriptor.NewACLDescriptor(p.aclHandler, p.IfPlugin, p.Log)
-	aclDescriptor := adapter.NewACLDescriptor(p.aclDesriptor.GetDescriptor())
+	p.aclDescriptor = descriptor.NewACLDescriptor(p.aclHandler, p.IfPlugin, p.Log)
+	aclDescriptor := adapter.NewACLDescriptor(p.aclDescriptor.GetDescriptor())
 
 	// register descriptors
 	p.Scheduler.RegisterKVDescriptor(aclDescriptor)

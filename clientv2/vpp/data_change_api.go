@@ -19,11 +19,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DataChangeDSL defines Domain Specific Language (DSL) for data change.
@@ -88,8 +88,8 @@ type PutDSL interface {
 	StnRule(stn *stn.STN_Rule) PutDSL
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
-	// NAT44DNat adds a request to create a new DNAT configuration
-	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
+	// DNAT44 adds a request to create or update DNAT44 configuration
+	DNAT44(dnat *nat.DNat44) PutDSL
 	// IPSecSA adds request to create a new Security Association
 	IPSecSA(sa *ipsec.SecurityAssociations_SA) PutDSL
 	// IPSecSPD adds request to create a new Security Policy Database
@@ -143,8 +143,8 @@ type DeleteDSL interface {
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44
 	NAT44Global() DeleteDSL
-	// NAT44DNat adds a request to delete a new DNAT configuration
-	NAT44DNat(label string) DeleteDSL
+	// DNAT44 adds a request to delete an existing DNAT44 configuration
+	DNAT44(label string) DeleteDSL
 	// IPSecSA adds request to delete a Security Association
 	IPSecSA(saName string) DeleteDSL
 	// IPSecSPD adds request to delete a Security Policy Database

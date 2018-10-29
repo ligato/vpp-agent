@@ -24,10 +24,10 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -77,10 +77,10 @@ type DataResyncDSL interface {
 	AppNamespace(appNs *vpp_l4.AppNamespaces_AppNamespace) DataResyncDSL
 	// StnRule adds Stn rule to the RESYNC request.
 	StnRule(stn *vpp_stn.STN_Rule) DataResyncDSL
-	// NAT44Global adds a request to RESYNC global configuration for NAT44
+	// NAT44Global adds global NAT44 configuration to the RESYNC request.
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
-	// NAT44DNat adds a request to RESYNC a new DNAT configuration
-	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) DataResyncDSL
+	// DNAT44 adds DNAT44 configuration to the RESYNC request
+	DNAT44(dnat *nat.DNat44) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv2.Reply

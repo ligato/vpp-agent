@@ -25,11 +25,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -172,16 +172,16 @@ func (dsl *DataResyncDSL) StnRule(stn *stn.STN_Rule) linuxclient.DataResyncDSL {
 	return dsl
 }
 
-// NAT44Global adds a request to RESYNC global configuration for NAT44
+// NAT44Global adds global NAT44 configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.NAT44Global(nat44)
 
 	return dsl
 }
 
-// NAT44DNat adds a request to RESYNC a new DNAT configuration
-func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linuxclient.DataResyncDSL {
-	dsl.vppDataResync.NAT44DNat(nat44)
+// DNAT44 adds DNAT44 configuration to the RESYNC request
+func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.DNAT44(nat44)
 
 	return dsl
 }

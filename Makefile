@@ -52,18 +52,22 @@ clean-cmd:
 # Build examples
 examples:
 	@echo "=> building examples"
-	cd examples/govpp_call 		    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_bd_cache 	    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_iface_cache     	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_mapping_lookup  	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_mapping_watcher     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_veth_cache			&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_linux/tap 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_linux/veth 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_vpp/nat     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_vpp/plugins && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/grpc_vpp/remote_client  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/grpc_vpp/notifications  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/govpp_call 		    	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_bd_cache 	    	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_iface_cache     	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_mapping_lookup  	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_mapping_watcher      && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/idx_veth_cache			 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/tap 	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/veth 	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/nat      && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/plugins  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/remote_client   && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/notifications   && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/interconnect && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/l2           && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/acls         && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/nat          && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean examples
 clean-examples:
@@ -135,6 +139,8 @@ generate-desc-adapters: get-desc-adapter-generator
 	cd plugins/linuxv2/l3plugin && go generate
 	cd plugins/vppv2/ifplugin && go generate
 	cd plugins/vppv2/aclplugin && go generate
+	cd plugins/vppv2/l2plugin && go generate
+	cd plugins/vppv2/natplugin && go generate
 
 verify-binapi:
 	@echo "=> verifying binary api"
