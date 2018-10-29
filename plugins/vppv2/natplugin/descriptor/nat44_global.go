@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"net"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/go-errors/errors"
 
@@ -44,6 +46,14 @@ var (
 	// ErrNATInterfaceFeatureCollision is returned when VPP NAT features assigned
 	// to a single interface collide.
 	ErrNATInterfaceFeatureCollision = errors.New("VPP NAT interface feature collision")
+
+	// ErrDuplicateNATAddress is returned when VPP NAT address pool contains duplicate
+	// IP addresses.
+	ErrDuplicateNATAddress = errors.New("Duplicate VPP NAT address")
+
+	// ErrInvalidNATAddress is returned when IP address from VPP NAT address pool
+	// cannot be parsed.
+	ErrInvalidNATAddress = errors.New("Invalid VPP NAT address")
 )
 
 // defaultGlobalCfg is the default NAT44 global configuration.
@@ -114,7 +124,17 @@ func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, 
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.
 func (d *NAT44GlobalDescriptor) IsRetriableFailure(err error) bool {
-	return err != ErrNATInterfaceFeatureCollision
+	nonRetriable := []error{
+		ErrNATInterfaceFeatureCollision,
+		ErrDuplicateNATAddress,
+		ErrInvalidNATAddress,
+	}
+	for _, nonRetriableErr := range nonRetriable {
+		if err == nonRetriableErr {
+			return false
+		}
+	}
+	return true
 }
 
 // Add applies NAT44 global options.
@@ -177,13 +197,21 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 	return nil, nil
 }
 
-// DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration.
+// DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration
+// and nat.Nat44Global_Address for every address in the pool.
 func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []scheduler.KeyValuePair) {
 	// NAT interfaces
 	for _, natIface := range globalCfg.NatInterfaces {
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   nat.InterfaceNAT44Key(natIface.Name, natIface.IsInside),
 			Value: natIface,
+		})
+	}
+	// NAT address pool
+	for _, address := range globalCfg.AddressPool {
+		derValues = append(derValues, scheduler.KeyValuePair{
+			Key:   nat.AddressNAT44Key(address.Address),
+			Value: address,
 		})
 	}
 	return derValues
@@ -253,6 +281,21 @@ func (d *NAT44GlobalDescriptor) validateNAT44GlobalConfig(globalCfg *nat.Nat44Gl
 			// OUTPUT interface cannot be both IN and OUT
 			return ErrNATInterfaceFeatureCollision
 		}
+	}
+
+	// check NAT address pool for invalid addresses and duplicities
+	var ipAddrs []net.IP
+	for _, addr := range globalCfg.AddressPool {
+		ipAddr := net.ParseIP(addr.Address)
+		if ipAddr == nil {
+			return ErrInvalidNATAddress
+		}
+		for _, ipAddr2 := range ipAddrs {
+			if ipAddr.Equal(ipAddr2) {
+				return ErrDuplicateNATAddress
+			}
+		}
+		ipAddrs = append(ipAddrs, ipAddr)
 	}
 	return nil
 }

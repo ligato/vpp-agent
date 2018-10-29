@@ -14,7 +14,10 @@
 
 package nat
 
-import "strings"
+import (
+	"strings"
+	"net"
+)
 
 const (
 	/* NAT44 */
@@ -41,6 +44,12 @@ const (
 	// NAT interface features
 	inFeature = "in"
 	outFeature = "out"
+
+	/* NAT44 address pool */
+
+	// addressNAT44KeyPrefix is a common prefix for (derived) keys representing
+	// addresses from NAT44 address pool.
+	addressNAT44KeyPrefix = "vpp/nat44/address/"
 )
 
 const (
@@ -92,4 +101,18 @@ func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfac
 		}
 	}
 	return "", false, false
+}
+
+/* NAT44 address pool */
+
+// AddressNAT44Key returns (derived) key representing address from NAT44 address
+// pool.
+func AddressNAT44Key(address string) string {
+	ipAddr := net.ParseIP(address)
+	if ipAddr == nil {
+		address = InvalidKeyPart
+	} else {
+		address = ipAddr.String()
+	}
+	return addressNAT44KeyPrefix + address
 }

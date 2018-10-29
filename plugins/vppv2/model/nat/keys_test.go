@@ -176,3 +176,42 @@ func TestParseInterfaceNAT44Key(t *testing.T) {
 		})
 	}
 }
+
+func TestAddressNAT44Key(t *testing.T) {
+	tests := []struct {
+		name        string
+		address     string
+		expectedKey string
+	}{
+		{
+			name:        "IPv4 address",
+			address:     "10.10.12.12",
+			expectedKey: "vpp/nat44/address/10.10.12.12",
+		},
+		{
+			name:        "IPv6 address",
+			address:     "FE80::0202:B3FF:FE1E:8329",
+			expectedKey: "vpp/nat44/address/fe80::202:b3ff:fe1e:8329",
+		},
+		{
+			name:        "empty address",
+			address:     "",
+			expectedKey: "vpp/nat44/address/<invalid>",
+		},
+		{
+			name:        "invalid address",
+			address:     "invalid-address",
+			expectedKey: "vpp/nat44/address/<invalid>",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := AddressNAT44Key(test.address)
+			if key != test.expectedKey {
+				t.Errorf("failed for: address=%s\n"+
+					"expected key:\n\t%q\ngot key:\n\t%q",
+					test.address, test.expectedKey, key)
+			}
+		})
+	}
+}

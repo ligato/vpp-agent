@@ -582,6 +582,12 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				Port:      idDNATPort,
 				Protocol:  vpp_nat.DNat44_TCP,
 			},
+			{
+				IpAddress:         natPoolAddr2,
+				IpAddressFromPool: true,
+				Port:              idDNATPort,
+				Protocol:          vpp_nat.DNat44_TCP,
+			},
 		},
 	}
 
