@@ -16,6 +16,7 @@ package grpcadapter
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
@@ -31,15 +32,16 @@ import (
 )
 
 // NewDataResyncDSL is a constructor.
-func NewDataResyncDSL(client rpc.DataResyncServiceClient) *DataResyncDSL {
-	return &DataResyncDSL{client, make([]proto.Message, 0)}
+func NewDataResyncDSL(client rpc.DataResyncServiceClient, brokers []keyval.ProtoBroker) *DataResyncDSL {
+	return &DataResyncDSL{client, brokers, make([]proto.Message, 0)}
 }
 
 // DataResyncDSL is used to conveniently assign all the data that are needed for the RESYNC.
 // This is implementation of Domain Specific Language (DSL) for data RESYNC of the VPP configuration.
 type DataResyncDSL struct {
-	client rpc.DataResyncServiceClient
-	put    []proto.Message
+	client  rpc.DataResyncServiceClient
+	brokers []keyval.ProtoBroker
+	put     []proto.Message
 }
 
 // Interface adds Bridge Domain to the RESYNC request.
@@ -168,13 +170,15 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 	var wasErr error
 
 	// Prepare requests with data todo can be scalable
-	resyncRequest := getRequestFromData(dsl.put)
+	resyncRequest, dataSet := getRequestFromData(dsl.put)
 
 	ctx := context.Background()
 
 	if _, err := dsl.client.Resync(ctx, resyncRequest); err != nil {
 		wasErr = err
 	}
+
+	wasErr = persist(dsl.brokers, dataSet, nil)
 
 	return &Reply{err: wasErr}
 }

@@ -15,7 +15,9 @@
 package grpcadapter
 
 import (
+	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/clientv1/vpp"
 	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
@@ -34,16 +36,17 @@ import (
 )
 
 // NewDataChangeDSL is a constructor
-func NewDataChangeDSL(client rpc.DataChangeServiceClient) *DataChangeDSL {
-	return &DataChangeDSL{client, make([]proto.Message, 0), make([]proto.Message, 0)}
+func NewDataChangeDSL(client rpc.DataChangeServiceClient, brokers []keyval.ProtoBroker) *DataChangeDSL {
+	return &DataChangeDSL{client, brokers, make([]proto.Message, 0), make([]proto.Message, 0)}
 }
 
 // DataChangeDSL is used to conveniently assign all the data that are needed for the DataChange.
 // This is an implementation of Domain Specific Language (DSL) for a change of the VPP configuration.
 type DataChangeDSL struct {
-	client rpc.DataChangeServiceClient
-	put    []proto.Message
-	del    []proto.Message
+	client  rpc.DataChangeServiceClient
+	brokers []keyval.ProtoBroker
+	put     []proto.Message
+	del     []proto.Message
 }
 
 // PutDSL allows to add or edit the configuration of delault plugins based on grpc requests.
@@ -374,8 +377,8 @@ func (dsl *DataChangeDSL) Send() vppclient.Reply {
 	var wasErr error
 
 	// Prepare requests with data todo can be scalable
-	delRequest := getRequestFromData(dsl.del)
-	putRequest := getRequestFromData(dsl.put)
+	delRequest, delData := getRequestFromData(dsl.del)
+	putRequest, putData := getRequestFromData(dsl.put)
 
 	ctx := context.Background()
 
@@ -386,65 +389,92 @@ func (dsl *DataChangeDSL) Send() vppclient.Reply {
 		wasErr = err
 	}
 
+	wasErr = persist(dsl.brokers, putData, delData)
+
 	return &Reply{wasErr}
 }
 
-func getRequestFromData(data []proto.Message) *rpc.DataRequest {
+func getRequestFromData(data []proto.Message) (*rpc.DataRequest, map[string]proto.Message) {
 	request := &rpc.DataRequest{}
+	dataSet := make(map[string]proto.Message)
+
 	for _, item := range data {
 		switch typedItem := item.(type) {
 		case *acl.AccessLists_Acl:
 			request.AccessLists = append(request.AccessLists, typedItem)
+			dataSet[acl.Key(typedItem.AclName)] = item
 		case *interfaces.Interfaces_Interface:
 			request.Interfaces = append(request.Interfaces, typedItem)
+			dataSet[interfaces.InterfaceKey(typedItem.Name)] = item
 		case *ipsec.SecurityPolicyDatabases_SPD:
 			request.SPDs = append(request.SPDs, typedItem)
+			todo
 		case *ipsec.SecurityAssociations_SA:
 			request.SAs = append(request.SAs, typedItem)
+			todo
 		case *ipsec.TunnelInterfaces_Tunnel:
 			request.Tunnels = append(request.Tunnels, typedItem)
+			todo
 		case *bfd.SingleHopBFD_Session:
 			request.BfdSessions = append(request.BfdSessions, typedItem)
+			dataSet[bfd.SessionKey(typedItem.Interface)] = item
 		case *bfd.SingleHopBFD_Key:
 			request.BfdAuthKeys = append(request.BfdAuthKeys, typedItem)
+			dataSet[bfd.AuthKeysKey(typedItem.Name)] = item
 		case *bfd.SingleHopBFD_EchoFunction:
 			request.BfdEchoFunction = typedItem
+			dataSet[bfd.EchoFunctionKey(typedItem.Name)] = item
 		case *l2.BridgeDomains_BridgeDomain:
 			request.BridgeDomains = append(request.BridgeDomains, typedItem)
+			dataSet[l2.BridgeDomainKey(typedItem.Name)] = item
 		case *l2.FibTable_FibEntry:
 			request.FIBs = append(request.FIBs, typedItem)
+			dataSet[l2.FibKey(typedItem.BridgeDomain, typedItem.PhysAddress)] = item
 		case *l2.XConnectPairs_XConnectPair:
 			request.XCons = append(request.XCons, typedItem)
+			dataSet[l2.XConnectKey(typedItem.ReceiveInterface)] = item
 		case *l3.StaticRoutes_Route:
 			request.StaticRoutes = append(request.StaticRoutes, typedItem)
+			dataSet[l3.RouteKey(typedItem.VrfId, typedItem.DstIpAddr, typedItem.NextHopAddr)] = item
 		case *l3.ArpTable_ArpEntry:
 			request.ArpEntries = append(request.ArpEntries, typedItem)
+			dataSet[l3.ArpEntryKey(typedItem.Interface, typedItem.IpAddress)] = item
 		case *l3.ProxyArpInterfaces_InterfaceList:
 			request.ProxyArpInterfaces = append(request.ProxyArpInterfaces, typedItem)
+			dataSet[l3.ProxyArpInterfaceKey(typedItem.Label)] = item
 		case *l3.ProxyArpRanges_RangeList:
 			request.ProxyArpRanges = append(request.ProxyArpRanges, typedItem)
+			dataSet[l3.ProxyArpRangeKey(typedItem.Label)] = item
 		case *l4.L4Features:
 			request.L4Feature = typedItem
+			dataSet[l4.FeatureKey()] = item
 		case *l4.AppNamespaces_AppNamespace:
 			request.ApplicationNamespaces = append(request.ApplicationNamespaces, typedItem)
+			dataSet[l4.AppNamespacesKey(typedItem.NamespaceId)] = item
 		case *stn.STN_Rule:
 			request.StnRules = append(request.StnRules, typedItem)
+			dataSet[stn.Key(typedItem.RuleName)] = item
 		case *nat.Nat44Global:
 			request.NatGlobal = typedItem
+			dataSet[nat.Prefix+nat.GlobalPrefix] = item
 		case *nat.Nat44DNat_DNatConfig:
 			request.DNATs = append(request.DNATs, typedItem)
+			dataSet[nat.DNatKey(typedItem.Label)] = item
 		case *linuxIf.LinuxInterfaces_Interface:
 			request.LinuxInterfaces = append(request.LinuxInterfaces, typedItem)
+			dataSet[linuxIf.InterfaceKey(typedItem.Name)] = item
 		case *linuxL3.LinuxStaticArpEntries_ArpEntry:
 			request.LinuxArpEntries = append(request.LinuxArpEntries, typedItem)
+			dataSet[linuxL3.StaticRouteKey(typedItem.Name)] = item
 		case *linuxL3.LinuxStaticRoutes_Route:
 			request.LinuxRoutes = append(request.LinuxRoutes, typedItem)
+			dataSet[linuxL3.StaticArpKey(typedItem.Name)] = item
 		default:
 			logrus.DefaultLogger().Warnf("Unsupported data for GRPC request: %v", typedItem)
 		}
 	}
 
-	return request
+	return request, dataSet
 }
 
 // Reply enables waiting for the reply and getting result (success/error).
@@ -455,4 +485,24 @@ type Reply struct {
 // ReceiveReply returns error or nil.
 func (dsl Reply) ReceiveReply() error {
 	return dsl.err
+}
+
+// Persist puts/deletes data to provided data stores represented by brokers
+func persist(brokers []keyval.ProtoBroker, put, del map[string]proto.Message) error {
+	for _, broker := range brokers {
+		if broker == nil {
+			continue
+		}
+		for key := range del {
+			if err := broker.Put(key, nil); err != nil {
+				return errors.Errorf("failed to persist (put) GRPC data: %v", err)
+			}
+		}
+		for key, value := range put {
+			if err := broker.Put(key, value); err != nil {
+				return errors.Errorf("failed to persist (delete) GRPC data: %v", err)
+			}
+		}
+	}
+	return nil
 }

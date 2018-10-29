@@ -22,6 +22,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/bolt"
+
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -66,10 +69,13 @@ func main() {
 	exampleFinished := make(chan struct{}, 1)
 
 	// Inject dependencies to example plugin
-	ep := &ExamplePlugin{}
+	db := &bolt.DefaultPlugin
+	ep := &ExamplePlugin{
+		db: db,
+	}
 	// Start Agent
 	a := agent.NewAgent(
-		agent.AllPlugins(ep),
+		agent.AllPlugins(db, ep),
 		agent.QuitOnClose(exampleFinished),
 	)
 	if err := a.Run(); err != nil {
@@ -97,9 +103,13 @@ const PluginName = "grpc-config-example"
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
-	wg     sync.WaitGroup
-	cancel context.CancelFunc
-	conn   *grpc.ClientConn
+	wg          sync.WaitGroup
+	cancel      context.CancelFunc
+	conn        *grpc.ClientConn
+	dataRequest remoteclient.DataRequest
+
+	// database where the configuration is stored
+	db keyval.KvProtoPlugin
 }
 
 // Init initializes example plugin.
@@ -111,6 +121,16 @@ func (plugin *ExamplePlugin) Init() (err error) {
 			grpc.WithDialer(dialer(socketType, address, 2*time.Second)))
 	default:
 		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
+	}
+
+	// Init data request and database (optional)
+	if plugin.db.Disabled() {
+		plugin.dataRequest = remoteclient.NewDataRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn),
+			rpc.NewDataChangeServiceClient(plugin.conn))
+	} else {
+		broker := plugin.db.NewBroker(keyval.Root)
+		plugin.dataRequest = remoteclient.NewDataRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn),
+			rpc.NewDataChangeServiceClient(plugin.conn), broker)
 	}
 
 	// Apply initial VPP configuration.
@@ -158,7 +178,7 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (plugin *ExamplePlugin) resyncVPP() {
-	err := remoteclient.DataResyncRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn)).
+	err := plugin.dataRequest.Resync().
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).
 		Interface(&loopback1).
@@ -182,7 +202,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	select {
 	case <-time.After(3 * time.Second):
 		// Simulate configuration change several seconds after resync.
-		err := remoteclient.DataChangeRequestGRPC(rpc.NewDataChangeServiceClient(plugin.conn)).
+		err := plugin.dataRequest.Change().
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
 			Interface(&memif2).            /* newly added memif interface */

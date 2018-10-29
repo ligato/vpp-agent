@@ -22,33 +22,64 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 )
 
-// DataResyncRequestDB allows creating a RESYNC request using convenient RESYNC
-// DSL and sending it through the provided <broker>.
-// User of the API does not need to be aware of keys.
-// User of the API does not need to delete the obsolete objects/keys
-// prior to RESYNC - it is handled by DataResyncDSL.
-func DataResyncRequestDB(broker keyval.ProtoBroker) vppclient.DataResyncDSL {
-	return dbadapter.NewDataResyncDSL(broker.NewTxn(), broker.ListKeys)
+// DataRequest is reusable helper object which allows to create data resync/change structures. Returned objects are
+// of DSL (domain specific language) type, and can be chained with configuration-type calls (Interface, BD, etc.)
+// and sent at once
+type DataRequest interface {
+	// Resync creates a data resync call. All the configuration put to the call will be send to the target broker/service
+	Resync() vppclient.DataResyncDSL
+	// Change creates a data change call. The call defines 'put' and 'delete' followed by respective configuration
+	// type calls
+	Change() vppclient.DataChangeDSL
 }
 
-// DataChangeRequestDB allows createing Data Change requests using convenient
-// Data Change DSL and sending it through the provided <broker>.
-// User of the API does not need to be aware of keys.
-func DataChangeRequestDB(broker keyval.ProtoBroker) vppclient.DataChangeDSL {
-	return dbadapter.NewDataChangeDSL(broker.NewTxn())
+// dataRequestDB holds proto broker for remote database requests
+type dataRequestDB struct {
+	broker keyval.ProtoBroker
 }
 
-// DataResyncRequestGRPC allows sending RESYNC requests conveniently.
-// User of the API does not need to be aware of keys.
-// User of the API does not need to delete the obsolete objects/keys during RESYNC.
-func DataResyncRequestGRPC(client rpc.DataResyncServiceClient) vppclient.DataResyncDSL {
-	return grpcadapter.NewDataResyncDSL(client)
+// dataRequestGRPC holds resync/change client objects and proto brokers (if used). Services manage GRPC calls and
+// brokers can be used to store GRPC configuration
+type dataRequestGRPC struct {
+	clientResync rpc.DataResyncServiceClient
+	clientChange rpc.DataChangeServiceClient
+	brokers      []keyval.ProtoBroker
 }
 
-// DataChangeRequestGRPC allows sending Data Change requests conveniently (even without directly using Broker).
-// User of the API does not need to be aware of keys.
-func DataChangeRequestGRPC(client rpc.DataChangeServiceClient) vppclient.DataChangeDSL {
-	return grpcadapter.NewDataChangeDSL(client)
+// NewDataRequestDB returns new data request broker for database
+func NewDataRequestDB(broker keyval.ProtoBroker) DataRequest {
+	return &dataRequestDB{
+		broker: broker,
+	}
+}
+
+// Resync for DB request
+func (dr *dataRequestDB) Resync() vppclient.DataResyncDSL {
+	return dbadapter.NewDataResyncDSL(dr.broker.NewTxn(), dr.broker.ListKeys)
+}
+
+// Change for DB request
+func (dr *dataRequestDB) Change() vppclient.DataChangeDSL {
+	return dbadapter.NewDataChangeDSL(dr.broker.NewTxn())
+}
+
+// NewDataRequestGRPC returns new data request broker for GRPC
+func NewDataRequestGRPC(rsClient rpc.DataResyncServiceClient, chClient rpc.DataChangeServiceClient, brokers ...keyval.ProtoBroker) DataRequest {
+	return &dataRequestGRPC{
+		clientResync: rsClient,
+		clientChange: chClient,
+		brokers:      brokers,
+	}
+}
+
+// Resync for GRPC request
+func (dr *dataRequestGRPC) Resync() vppclient.DataResyncDSL {
+	return grpcadapter.NewDataResyncDSL(dr.clientResync, dr.brokers)
+}
+
+// Change for GRPC request
+func (dr *dataRequestGRPC) Change() vppclient.DataChangeDSL {
+	return grpcadapter.NewDataChangeDSL(dr.clientChange, dr.brokers)
 }
 
 // DataDumpRequestGRPC allows sending 'Dump' data requests conveniently (even without directly using Broker).
