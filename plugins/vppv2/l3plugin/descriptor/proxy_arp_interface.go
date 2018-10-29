@@ -40,7 +40,7 @@ type ProxyArpInterfaceDescriptor struct {
 	scheduler       scheduler.KVScheduler
 }
 
-// NewProxyArpDescriptor creates a new instance of the ProxyArpDescriptor.
+// NewProxyArpInterfaceDescriptor creates a new instance of the ProxyArpInterfaceDescriptor.
 func NewProxyArpInterfaceDescriptor(scheduler scheduler.KVScheduler,
 	proxyArpHandler vppcalls.ProxyArpVppAPI, log logging.PluginLogger) *ProxyArpInterfaceDescriptor {
 
@@ -70,6 +70,7 @@ func (d *ProxyArpInterfaceDescriptor) GetDescriptor() *adapter.ProxyARPInterface
 	}
 }
 
+// Add enables VPP Proxy ARP for interface.
 func (d *ProxyArpInterfaceDescriptor) Add(key string, value *l3.ProxyARP_Interface) (metadata interface{}, err error) {
 	if err := d.proxyArpHandler.EnableProxyArpInterface(value.Name); err != nil {
 		return nil, errors.Errorf("failed to enable proxy ARP for interface %s: %v", value.Name, err)
@@ -77,6 +78,7 @@ func (d *ProxyArpInterfaceDescriptor) Add(key string, value *l3.ProxyARP_Interfa
 	return nil, nil
 }
 
+// Delete disables VPP Proxy ARP for interface.
 func (d *ProxyArpInterfaceDescriptor) Delete(key string, value *l3.ProxyARP_Interface, metadata interface{}) error {
 	if err := d.proxyArpHandler.DisableProxyArpInterface(value.Name); err != nil {
 		return errors.Errorf("failed to disable proxy ARP for interface %s: %v", value.Name, err)
@@ -84,6 +86,7 @@ func (d *ProxyArpInterfaceDescriptor) Delete(key string, value *l3.ProxyARP_Inte
 	return nil
 }
 
+// Dependencies returns list of dependencies for VPP Proxy ARP interface.
 func (d *ProxyArpInterfaceDescriptor) Dependencies(key string, value *l3.ProxyARP_Interface) (deps []scheduler.Dependency) {
 	return []scheduler.Dependency{
 		{

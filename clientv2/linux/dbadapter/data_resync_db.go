@@ -142,7 +142,7 @@ func (dsl *DataResyncDSL) Arp(arp *l3.ARPEntry) linuxclient.DataResyncDSL {
 	return dsl
 }
 
-// ProxyArpInterfaces adds L3 proxy ARP interfaces to the RESYNC request.
+// ProxyArp adds L3 proxy ARP to the RESYNC request.
 func (dsl *DataResyncDSL) ProxyArp(proxyArp *l3.ProxyARP) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.ProxyArp(proxyArp)
 	return dsl

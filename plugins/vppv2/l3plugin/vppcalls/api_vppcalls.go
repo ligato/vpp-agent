@@ -78,10 +78,10 @@ type RouteVppAPI interface {
 type RouteVppWrite interface {
 	// VppAddRoute adds new route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppAddRoute(route *l3.StaticRoute, ifName string) error
+	VppAddRoute(route *l3.StaticRoute) error
 	// VppDelRoute removes old route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *l3.StaticRoute, ifName string) error
+	VppDelRoute(route *l3.StaticRoute) error
 }
 
 // RouteVppRead provides read methods for routes

@@ -158,7 +158,7 @@ func (dsl *PutDSL) Arp(arp *l3.ARPEntry) linuxclient.PutDSL {
 	return dsl
 }
 
-// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces.
+// ProxyArp adds a request to create or update VPP L3 proxy ARP.
 func (dsl *PutDSL) ProxyArp(proxyArp *l3.ProxyARP) linuxclient.PutDSL {
 	dsl.vppPut.ProxyArp(proxyArp)
 	return dsl
@@ -298,7 +298,7 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) linuxclient.DeleteDSL
 	return dsl
 }
 
-// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
+// ProxyArp adds a request to delete an existing VPP L3 proxy ARP.
 func (dsl *DeleteDSL) ProxyArp() linuxclient.DeleteDSL {
 	dsl.vppDelete.ProxyArp()
 	return dsl

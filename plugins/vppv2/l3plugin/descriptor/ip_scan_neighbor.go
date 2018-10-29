@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	// IPScanNeighbor is the name of the descriptor.
+	// IPScanNeighborDescriptorName is the name of the descriptor.
 	IPScanNeighborDescriptorName = "vpp-ip-scan-neighbor"
 )
 
@@ -69,19 +69,23 @@ func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescri
 	}
 }
 
+// EquivalentIPScanNeighbors compares the IP Scan Neighbor values.
 func (d *IPScanNeighborDescriptor) EquivalentIPScanNeighbors(key string, oldValue, newValue *l3.IPScanNeighbor) bool {
 	return proto.Equal(oldValue, newValue)
 }
 
+// Add adds VPP IP Scan Neighbor.
 func (d *IPScanNeighborDescriptor) Add(key string, value *l3.IPScanNeighbor) (metadata interface{}, err error) {
 	return d.Modify(key, defaultIPScanNeighbor, value, nil)
 }
 
+// Delete deletes VPP IP Scan Neighbor.
 func (d *IPScanNeighborDescriptor) Delete(key string, value *l3.IPScanNeighbor, metadata interface{}) error {
 	_, err := d.Modify(key, value, defaultIPScanNeighbor, metadata)
 	return err
 }
 
+// Modify modifies VPP IP Scan Neighbor.
 func (d *IPScanNeighborDescriptor) Modify(key string, oldValue, newValue *l3.IPScanNeighbor, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	if err := d.ipNeigh.SetIPScanNeighbor(newValue); err != nil {
 		return nil, err
@@ -89,10 +93,12 @@ func (d *IPScanNeighborDescriptor) Modify(key string, oldValue, newValue *l3.IPS
 	return nil, nil
 }
 
+// IsRetriableFailure returns true for retriable errors.
 func (d *IPScanNeighborDescriptor) IsRetriableFailure(err error) bool {
 	return false
 }
 
+// Dump dumps VPP IP Scan Neighbor.
 func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWithMetadata) (dumps []adapter.IPScanNeighborKVWithMetadata, err error) {
 
 	// TODO: implement dump

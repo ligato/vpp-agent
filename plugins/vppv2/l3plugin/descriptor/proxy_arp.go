@@ -84,6 +84,7 @@ func (d *ProxyArpDescriptor) DerivedValues(key string, proxyArp *l3.ProxyARP) (d
 	return derValues
 }
 
+// EquivalentProxyArps compares VPP Proxy ARPs.
 func (d *ProxyArpDescriptor) EquivalentProxyArps(key string, oldValue, newValue *l3.ProxyARP) bool {
 	if len(newValue.Ranges) != len(oldValue.Ranges) {
 		return false
@@ -92,6 +93,7 @@ func (d *ProxyArpDescriptor) EquivalentProxyArps(key string, oldValue, newValue 
 	return len(toAdd) == 0 && len(toDelete) == 0
 }
 
+// Add adds VPP Proxy ARP.
 func (d *ProxyArpDescriptor) Add(key string, value *l3.ProxyARP) (metadata interface{}, err error) {
 	for _, proxyArpRange := range value.Ranges {
 		// Prune addresses
@@ -108,6 +110,7 @@ func (d *ProxyArpDescriptor) Add(key string, value *l3.ProxyARP) (metadata inter
 	return nil, nil
 }
 
+// Modify modifies VPP Proxy ARP.
 func (d *ProxyArpDescriptor) Modify(key string, oldValue, newValue *l3.ProxyARP, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	toAdd, toDelete := calculateRngDiff(newValue.Ranges, oldValue.Ranges)
 	// Remove old ranges
@@ -140,6 +143,7 @@ func (d *ProxyArpDescriptor) Modify(key string, oldValue, newValue *l3.ProxyARP,
 	return nil, nil
 }
 
+// Delete deletes VPP Proxy ARP.
 func (d *ProxyArpDescriptor) Delete(key string, value *l3.ProxyARP, metadata interface{}) error {
 	for _, proxyArpRange := range value.Ranges {
 		// Prune addresses
@@ -156,10 +160,12 @@ func (d *ProxyArpDescriptor) Delete(key string, value *l3.ProxyARP, metadata int
 	return nil
 }
 
+// IsRetriableFailure returns true for retriable errors.
 func (d *ProxyArpDescriptor) IsRetriableFailure(err error) bool {
 	return false
 }
 
+// Dump dumps VPP Proxy ARP.
 func (d *ProxyArpDescriptor) Dump(correlate []adapter.ProxyARPKVWithMetadata) (dumps []adapter.ProxyARPKVWithMetadata, err error) {
 	rangesDetails, err := d.proxyArpHandler.DumpProxyArpRanges()
 	if err != nil {

@@ -115,7 +115,7 @@ func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
 // Add adds VPP static route.
 func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata interface{}, err error) {
 
-	err = d.routeHandler.VppAddRoute(route, route.GetOutgoingInterface())
+	err = d.routeHandler.VppAddRoute(route)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata inter
 // Delete removes VPP static route.
 func (d *RouteDescriptor) Delete(key string, route *l3.StaticRoute, metadata interface{}) error {
 
-	err := d.routeHandler.VppDelRoute(route, route.GetOutgoingInterface())
+	err := d.routeHandler.VppDelRoute(route)
 	if err != nil {
 		return err
 	}

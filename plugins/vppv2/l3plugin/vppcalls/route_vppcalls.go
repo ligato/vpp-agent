@@ -99,7 +99,7 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoute, rtIfIdx uint32, del
 }
 
 // VppAddRoute implements route handler.
-func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute, ifName string) error {
+func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute) error {
 	// Evaluate route IP version
 	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstNetwork)
 	if err != nil {
@@ -116,7 +116,7 @@ func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute, ifName string) error {
 		}
 	}
 
-	swIfIdx, err := h.getRouteSwIfIndex(ifName)
+	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err
 	}
@@ -125,8 +125,8 @@ func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute, ifName string) error {
 }
 
 // VppDelRoute implements route handler.
-func (h *RouteHandler) VppDelRoute(route *l3.StaticRoute, ifName string) error {
-	swIfIdx, err := h.getRouteSwIfIndex(ifName)
+func (h *RouteHandler) VppDelRoute(route *l3.StaticRoute) error {
+	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err
 	}
