@@ -78,7 +78,6 @@ Check ACL2 is created and ACL1 still Configured
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL2_NAME}   ${REPLY_DATA_FOLDER}/reply_acl2IPv6_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl2IPv6_tcp_term.txt
 
 
-
 Update ACL1
     Put ACL TCP   agent_vpp_1   ${ACL1_NAME}    ${E_INTF1}     ${I_INTF1}      ${ACTION_PERMIT}     ${DEST_NTW}    ${SRC_NTW}   ${1DEST_PORT_L}   ${1DEST_PORT_U}    ${1SRC_PORT_L}     ${1SRC_PORT_U}
 

@@ -20,12 +20,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change
@@ -95,8 +95,8 @@ type PutDSL interface {
 	StnRule(stn *vpp_stn.STN_Rule) PutDSL
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
-	// NAT44DNat adds a request to create a new DNAT configuration
-	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) PutDSL
+	// DNAT44 adds a request to create or update DNAT44 configuration
+	DNAT44(dnat *nat.DNat44) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -152,8 +152,8 @@ type DeleteDSL interface {
 	StnRule(ruleName string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44
 	NAT44Global() DeleteDSL
-	// NAT44DNat adds a request to delete a new DNAT configuration
-	NAT44DNat(label string) DeleteDSL
+	// DNAT44 adds a request to delete an existing DNAT-44 configuration
+	DNAT44(label string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

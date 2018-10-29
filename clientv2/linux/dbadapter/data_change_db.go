@@ -24,12 +24,12 @@ import (
 	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -188,9 +188,9 @@ func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.PutDSL {
 	return dsl
 }
 
-// NAT44DNat adds a request to create a new DNAT configuration
-func (dsl *PutDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linuxclient.PutDSL {
-	dsl.vppPut.NAT44DNat(nat44)
+// DNAT44 adds a request to create or update DNAT44 configuration
+func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) linuxclient.PutDSL {
+	dsl.vppPut.DNAT44(nat44)
 	return dsl
 }
 
@@ -317,9 +317,9 @@ func (dsl *DeleteDSL) NAT44Global() linuxclient.DeleteDSL {
 	return dsl
 }
 
-// NAT44DNat adds a request to delete a new DNAT configuration
-func (dsl *DeleteDSL) NAT44DNat(label string) linuxclient.DeleteDSL {
-	dsl.vppDelete.NAT44DNat(label)
+// DNAT44 adds a request to delete an existing DNAT44 configuration
+func (dsl *DeleteDSL) DNAT44(label string) linuxclient.DeleteDSL {
+	dsl.vppDelete.DNAT44(label)
 	return dsl
 }
 

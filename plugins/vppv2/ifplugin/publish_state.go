@@ -54,9 +54,9 @@ func (p *IfPlugin) resyncIfStateEvents(keys []string) error {
 	defer p.publishLock.Unlock()
 
 	for _, key := range keys {
-		ifaceName, err := interfaces.ParseNameFromKey(key)
-		if err != nil {
-			return err
+		ifaceName, isIntfKey := interfaces.ParseNameFromKey(key)
+		if !isIntfKey {
+			continue
 		}
 
 		_, found := p.intfIndex.LookupByName(ifaceName)

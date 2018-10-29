@@ -37,7 +37,7 @@ import (
 )
 
 /*
-	This example demonstrates example using KVScheduler.
+	This example demonstrates KVScheduler-based VPP ifplugin, Linux ifplugin and Linux l3plugin.
 */
 
 func main() {

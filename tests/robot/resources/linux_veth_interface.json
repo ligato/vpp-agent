@@ -6,12 +6,12 @@
   ],
   "namespace": {
       "name": "${namespace}",
-      "type": 2
+      "type": 1
   },
   "name": "${name}",
   "host_if_name": "${host_if_name}",
   "phys_address": "${mac}",
-  "type": 0,
+  "type": 1,
   "veth": {
     "peer_if_name": "${peer}"
   }

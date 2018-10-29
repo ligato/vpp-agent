@@ -456,16 +456,20 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		var tapHostIfName string
 		if intf.Interface.Type == interfaces.Interface_TAP_INTERFACE {
 			tapHostIfName = intf.Interface.GetTap().GetHostIfName()
+			if generateTAPHostName(intf.Interface.Name) == tapHostIfName {
+				// interface host name was unset
+				intf.Interface.GetTap().HostIfName = ""
+			}
 		}
 
 		// correlate attributes that cannot be dumped
 		if expCfg, hasExpCfg := ifCfg[intf.Interface.Name]; hasExpCfg {
-			if expCfg.Type == interfaces.Interface_TAP_INTERFACE {
+			if expCfg.Type == interfaces.Interface_TAP_INTERFACE && intf.Interface.GetTap() != nil {
 				intf.Interface.GetTap().ToMicroservice = expCfg.GetTap().GetToMicroservice()
 				intf.Interface.GetTap().RxRingSize = expCfg.GetTap().GetRxRingSize()
 				intf.Interface.GetTap().TxRingSize = expCfg.GetTap().GetTxRingSize()
 			}
-			if expCfg.Type == interfaces.Interface_MEMORY_INTERFACE {
+			if expCfg.Type == interfaces.Interface_MEMORY_INTERFACE && intf.Interface.GetMemif() != nil {
 				intf.Interface.GetMemif().Secret = expCfg.GetMemif().GetSecret()
 				intf.Interface.GetMemif().RxQueues = expCfg.GetMemif().GetRxQueues()
 				intf.Interface.GetMemif().TxQueues = expCfg.GetMemif().GetTxQueues()
@@ -492,8 +496,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				}
 			}
 			if intf.Interface.Type == interfaces.Interface_TAP_INTERFACE {
-				hostIfName := intf.Interface.GetTap().GetHostIfName()
-				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
+				exists, _ := d.linuxIfHandler.InterfaceExists(tapHostIfName)
 				if !exists {
 					// check if it was "stolen" by the Linux plugin
 					_, _, exists = d.linuxIfPlugin.GetInterfaceIndex().LookupByVPPTap(

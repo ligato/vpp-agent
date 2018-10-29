@@ -20,12 +20,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -173,18 +173,18 @@ func (dsl *DataResyncDSL) StnRule(val *stn.STN_Rule) vppclient.DataResyncDSL {
 	return dsl
 }
 
-// NAT44Global adds a request to RESYNC global configuration for NAT44
+// NAT44Global adds global NAT44 configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResyncDSL {
-	key := nat.GlobalPrefix
+	key := nat.GlobalNAT44Key
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl
 }
 
-// NAT44DNat adds a request to RESYNC a new DNAT configuration
-func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) vppclient.DataResyncDSL {
-	key := nat.DNatKey(nat44.Label)
+// DNAT44 adds DNAT44 configuration to the RESYNC request
+func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
+	key := nat.DNAT44Key(nat44.Label)
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

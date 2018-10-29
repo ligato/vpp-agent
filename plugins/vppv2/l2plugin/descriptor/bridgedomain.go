@@ -223,7 +223,7 @@ func (d *BridgeDomainDescriptor) Modify(key string, oldBD, newBD *l2.BridgeDomai
 // DerivedValues derives l2.BridgeDomain_Interface for every interface assigned
 // to the bridge domain.
 func (d *BridgeDomainDescriptor) DerivedValues(key string, bd *l2.BridgeDomain) (derValues []scheduler.KeyValuePair) {
-	// IP addresses
+	// BD interfaces
 	for _, bdIface := range bd.Interfaces {
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   l2.BDInterfaceKey(bd.Name, bdIface.Name),

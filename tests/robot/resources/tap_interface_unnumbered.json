@@ -1,12 +1,12 @@
 {
   "name": "${name}",
-  "type": 3,
+  "type": 4,
   "enabled": ${enabled},
   "phys_address": "${mac}",
   "mtu": ${mtu},
   "unnumbered": {
-    "IsUnnumbered": ${unnumbered},
-    "InterfaceWithIp": "${interface_with_ip_name}"
+    "is_unnumbered": ${unnumbered},
+    "interface_with_ip": "${interface_with_ip_name}"
   },
   "tap": {
     "host_if_name": "${host_if_name}"

@@ -34,7 +34,7 @@ const (
 	BDInterfaceDescriptorName = "vpp-bd-interface"
 
 	// dependency labels
-	interfaceDep = "interface"
+	interfaceDep = "interface-exists"
 )
 
 // BDInterfaceDescriptor teaches KVScheduler how to put interface into VPP bridge

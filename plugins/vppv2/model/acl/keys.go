@@ -15,7 +15,6 @@
 package acl
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -31,22 +30,39 @@ const (
 	EgressFlow = "egress"
 )
 
+const (
+	// InvalidKeyPart is used in key for parts which are invalid
+	InvalidKeyPart = "<invalid>"
+)
+
 // Key returns the prefix used in ETCD to store vpp ACL config
 // of a particular ACL in selected vpp instance.
 func Key(aclName string) string {
+	if aclName == "" {
+		aclName = InvalidKeyPart
+	}
 	return Prefix + aclName
 }
 
 // ParseNameFromKey returns suffix of the key.
-func ParseNameFromKey(key string) (name string, err error) {
-	if name = strings.TrimPrefix(key, Prefix); name == key {
-		return name, fmt.Errorf("missing ACL prefix in key: %s", key)
+func ParseNameFromKey(key string) (name string, isACLKey bool) {
+	if name = strings.TrimPrefix(key, Prefix); name == key || name == "" {
+		return "", false
 	}
-	return name, nil
+	return name, true
 }
 
 // ToInterfaceKey returns key for ACL to interface
 func ToInterfaceKey(acl, iface, flow string) string {
+	if acl == "" {
+		acl = InvalidKeyPart
+	}
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	if flow != IngressFlow && flow != EgressFlow {
+		flow = InvalidKeyPart
+	}
 	key := aclToInterfaceTemplate
 	key = strings.Replace(key, "{acl}", acl, 1)
 	key = strings.Replace(key, "{flow}", flow, 1)
@@ -57,10 +73,14 @@ func ToInterfaceKey(acl, iface, flow string) string {
 // ParseACLToInterfaceKey parses ACL to interface key
 func ParseACLToInterfaceKey(key string) (acl, iface, flow string, isACLToInterface bool) {
 	parts := strings.Split(key, "/")
-	if len(parts) == 6 &&
+	if len(parts) >= 6 &&
 		parts[0] == "vpp" && parts[1] == "acl" && parts[3] == "interface" &&
-		(parts[4] == IngressFlow || parts[4] == EgressFlow) {
-		return parts[2], parts[5], parts[4], true
+		(parts[4] == IngressFlow || parts[4] == EgressFlow || parts[4] == InvalidKeyPart) {
+		acl = parts[2]
+		iface = strings.Join(parts[5:], "/")
+		if iface != "" && acl != "" {
+			return acl, iface, parts[4], true
+		}
 	}
 	return "", "", "", false
 }
