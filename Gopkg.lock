@@ -73,6 +73,14 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
+  branch = "master"
+  digest = "1:965fa961ce7d2a2b0586ff1510c7268d9a8db78c0f08e15c3510ce7cceb963a9"
+  name = "github.com/boltdb/bolt"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "fd01fc79c553a8e99d512a07e8e0c63d4a3ccfc5"
+
+[[projects]]
   digest = "1:7b81d2ed76bf960333a8020c4b8c22abd6072f0b54ad31c66e90e6a17a19315a"
   name = "github.com/bshuster-repo/logrus-logstash-hook"
   packages = ["."]
@@ -480,6 +488,7 @@
     "datasync/resync",
     "datasync/syncbase",
     "db/keyval",
+    "db/keyval/bolt",
     "db/keyval/consul",
     "db/keyval/etcd",
     "db/keyval/kvproto",
@@ -983,6 +992,7 @@
     "github.com/ligato/cn-infra/datasync/msgsync",
     "github.com/ligato/cn-infra/datasync/resync",
     "github.com/ligato/cn-infra/db/keyval",
+    "github.com/ligato/cn-infra/db/keyval/bolt",
     "github.com/ligato/cn-infra/db/keyval/consul",
     "github.com/ligato/cn-infra/db/keyval/etcd",
     "github.com/ligato/cn-infra/db/keyval/kvproto",
