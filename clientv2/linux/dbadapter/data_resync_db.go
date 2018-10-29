@@ -148,6 +148,13 @@ func (dsl *DataResyncDSL) ProxyArp(proxyArp *l3.ProxyARP) linuxclient.DataResync
 	return dsl
 }
 
+// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
+func (dsl *DataResyncDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPScanNeighbor(ipScanNeigh)
+
+	return dsl
+}
+
 // L4Features adds L4 features to the RESYNC request
 func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.L4Features(val)

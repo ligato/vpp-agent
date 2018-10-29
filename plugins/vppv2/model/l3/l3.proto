@@ -49,12 +49,6 @@ message ProxyARP {
     repeated Range ranges = 2;
 }
 
-/* STN (Steal The NIC) feature table */
-message STNEntry {
-    string ip_address = 1;              /* destination IP address of a packet that will be punted to specified interface in case it hasn't bee processed by VPP */
-    string interface = 2;               /* interface where the packets will be punted */
-}
-
 /* Enables/disables IP neighbor scanning */
 message IPScanNeighbor {
     enum Mode {                         /* IP scan neighbor mode. Disabled by default, it can be enabled

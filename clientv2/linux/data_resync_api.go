@@ -69,6 +69,8 @@ type DataResyncDSL interface {
 	Arp(arp *vpp_l3.ARPEntry) DataResyncDSL
 	// ProxyArp adds L3 proxy ARP interfaces to the RESYNC request.
 	ProxyArp(proxyArp *vpp_l3.ProxyARP) DataResyncDSL
+	// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
+	IPScanNeighbor(ipScanNeigh *vpp_l3.IPScanNeighbor) DataResyncDSL
 	// L4Features adds L4 features to the RESYNC request
 	L4Features(val *vpp_l4.L4Features) DataResyncDSL
 	// AppNamespace adds VPP Application namespaces to the RESYNC request

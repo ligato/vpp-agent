@@ -90,24 +90,18 @@ func (d *ArpDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Add adds VPP ARP entry.
-func (d *ArpDescriptor) Add(key string, arp *l3.ARPEntry) (metadata interface{}, err error) {
-
-	err = d.arpHandler.VppAddArp(arp)
-	if err != nil {
+func (d *ArpDescriptor) Add(key string, arp *l3.ARPEntry) (interface{}, error) {
+	if err := d.arpHandler.VppAddArp(arp); err != nil {
 		return nil, err
 	}
-
 	return nil, nil
 }
 
 // Delete removes VPP ARP entry.
 func (d *ArpDescriptor) Delete(key string, arp *l3.ARPEntry, metadata interface{}) error {
-
-	err := d.arpHandler.VppDelArp(arp)
-	if err != nil {
+	if err := d.arpHandler.VppDelArp(arp); err != nil {
 		return err
 	}
-
 	return nil
 }
 

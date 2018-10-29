@@ -46,8 +46,8 @@ const (
 )
 
 const (
-	// IPScanNeighPrefix it the relative key prefix for IP scan neighbor feature
-	IPScanNeighPrefix = "vpp/config/v2/ipneigh/"
+	// IPScanNeighborKey it the relative key prefix for IP scan neighbor feature
+	IPScanNeighborKey = "vpp/config/v2/ipneigh"
 )
 
 const (

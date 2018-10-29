@@ -162,6 +162,9 @@ func NewRouteVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMeta
 
 // NewIPNeighVppHandler creates new instance of ip neighbor vppcalls handler
 func NewIPNeighVppHandler(callsChan govppapi.Channel, log logging.Logger) *IPNeighHandler {
+	if log == nil {
+		log = logrus.NewLogger("ip-neigh")
+	}
 	return &IPNeighHandler{
 		callsChannel: callsChan,
 		log:          log,

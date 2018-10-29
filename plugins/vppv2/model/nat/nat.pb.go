@@ -41,7 +41,7 @@ func (x DNat44_Protocol) String() string {
 	return proto.EnumName(DNat44_Protocol_name, int32(x))
 }
 func (DNat44_Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{1, 0}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{1, 0}
 }
 
 type DNat44_StaticMapping_TwiceNatMode int32
@@ -67,7 +67,7 @@ func (x DNat44_StaticMapping_TwiceNatMode) String() string {
 	return proto.EnumName(DNat44_StaticMapping_TwiceNatMode_name, int32(x))
 }
 func (DNat44_StaticMapping_TwiceNatMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{1, 0, 0}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{1, 0, 0}
 }
 
 // NAT44 global config
@@ -85,7 +85,7 @@ func (m *Nat44Global) Reset()         { *m = Nat44Global{} }
 func (m *Nat44Global) String() string { return proto.CompactTextString(m) }
 func (*Nat44Global) ProtoMessage()    {}
 func (*Nat44Global) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{0}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{0}
 }
 func (m *Nat44Global) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Nat44Global.Unmarshal(m, b)
@@ -146,7 +146,7 @@ func (m *Nat44Global_Interface) Reset()         { *m = Nat44Global_Interface{} }
 func (m *Nat44Global_Interface) String() string { return proto.CompactTextString(m) }
 func (*Nat44Global_Interface) ProtoMessage()    {}
 func (*Nat44Global_Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{0, 0}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{0, 0}
 }
 func (m *Nat44Global_Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Nat44Global_Interface.Unmarshal(m, b)
@@ -200,7 +200,7 @@ func (m *Nat44Global_Address) Reset()         { *m = Nat44Global_Address{} }
 func (m *Nat44Global_Address) String() string { return proto.CompactTextString(m) }
 func (*Nat44Global_Address) ProtoMessage()    {}
 func (*Nat44Global_Address) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{0, 1}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{0, 1}
 }
 func (m *Nat44Global_Address) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Nat44Global_Address.Unmarshal(m, b)
@@ -255,7 +255,7 @@ func (m *DNat44) Reset()         { *m = DNat44{} }
 func (m *DNat44) String() string { return proto.CompactTextString(m) }
 func (*DNat44) ProtoMessage()    {}
 func (*DNat44) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{1}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{1}
 }
 func (m *DNat44) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DNat44.Unmarshal(m, b)
@@ -313,7 +313,7 @@ func (m *DNat44_StaticMapping) Reset()         { *m = DNat44_StaticMapping{} }
 func (m *DNat44_StaticMapping) String() string { return proto.CompactTextString(m) }
 func (*DNat44_StaticMapping) ProtoMessage()    {}
 func (*DNat44_StaticMapping) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{1, 0}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{1, 0}
 }
 func (m *DNat44_StaticMapping) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DNat44_StaticMapping.Unmarshal(m, b)
@@ -396,7 +396,7 @@ func (m *DNat44_StaticMapping_LocalIP) Reset()         { *m = DNat44_StaticMappi
 func (m *DNat44_StaticMapping_LocalIP) String() string { return proto.CompactTextString(m) }
 func (*DNat44_StaticMapping_LocalIP) ProtoMessage()    {}
 func (*DNat44_StaticMapping_LocalIP) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{1, 0, 0}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{1, 0, 0}
 }
 func (m *DNat44_StaticMapping_LocalIP) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DNat44_StaticMapping_LocalIP.Unmarshal(m, b)
@@ -460,7 +460,7 @@ func (m *DNat44_IdentityMapping) Reset()         { *m = DNat44_IdentityMapping{}
 func (m *DNat44_IdentityMapping) String() string { return proto.CompactTextString(m) }
 func (*DNat44_IdentityMapping) ProtoMessage()    {}
 func (*DNat44_IdentityMapping) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{1, 1}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{1, 1}
 }
 func (m *DNat44_IdentityMapping) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DNat44_IdentityMapping.Unmarshal(m, b)
@@ -537,7 +537,7 @@ func (m *VirtualReassembly) Reset()         { *m = VirtualReassembly{} }
 func (m *VirtualReassembly) String() string { return proto.CompactTextString(m) }
 func (*VirtualReassembly) ProtoMessage()    {}
 func (*VirtualReassembly) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nat_b40b8455bc395d45, []int{2}
+	return fileDescriptor_nat_5263286c8ab2e0f4, []int{2}
 }
 func (m *VirtualReassembly) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VirtualReassembly.Unmarshal(m, b)
@@ -598,9 +598,9 @@ func init() {
 	proto.RegisterEnum("nat.DNat44_StaticMapping_TwiceNatMode", DNat44_StaticMapping_TwiceNatMode_name, DNat44_StaticMapping_TwiceNatMode_value)
 }
 
-func init() { proto.RegisterFile("nat.proto", fileDescriptor_nat_b40b8455bc395d45) }
+func init() { proto.RegisterFile("nat.proto", fileDescriptor_nat_5263286c8ab2e0f4) }
 
-var fileDescriptor_nat_b40b8455bc395d45 = []byte{
+var fileDescriptor_nat_5263286c8ab2e0f4 = []byte{
 	// 767 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xdb, 0x6e, 0xdb, 0x38,
 	0x10, 0x8d, 0x2c, 0xdb, 0x92, 0x47, 0x76, 0x62, 0x13, 0xc9, 0x42, 0x71, 0xf6, 0xe2, 0xf5, 0x62,

@@ -146,6 +146,15 @@ func (dsl *DataResyncDSL) Arp(val *l3.ARPEntry) vppclient.DataResyncDSL {
 	return dsl
 }
 
+// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
+func (dsl *DataResyncDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) vppclient.DataResyncDSL {
+	key := l3.IPScanNeighborKey
+	dsl.txn.Put(key, ipScanNeigh)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // L4Features adds L4Features to the RESYNC request
 func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) vppclient.DataResyncDSL {
 	key := l4.FeatureKey()

@@ -123,6 +123,14 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			{Name: "memif0"},
 		},
 	}
+	ipScanNeighbor := &l3.IPScanNeighbor{
+		Mode:           l3.IPScanNeighbor_IPv4,
+		ScanInterval:   1,
+		ScanIntDelay:   1,
+		MaxProcTime:    20,
+		MaxUpdate:      10,
+		StaleThreshold: 4,
+	}
 
 	// resync
 
@@ -136,6 +144,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		StaticRoute(route1).
 		Arp(arp0).
 		ProxyArp(proxyArp).
+		IPScanNeighbor(ipScanNeighbor).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

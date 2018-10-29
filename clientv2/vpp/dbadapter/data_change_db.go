@@ -138,6 +138,12 @@ func (dsl *PutDSL) ProxyArp(proxyArp *l3.ProxyARP) vppclient.PutDSL {
 	return dsl
 }
 
+// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
+func (dsl *PutDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) vppclient.PutDSL {
+	dsl.parent.txn.Put(l3.IPScanNeighborKey, ipScanNeigh)
+	return dsl
+}
+
 // L4Features create or update request for the L4Features
 func (dsl *PutDSL) L4Features(val *l4.L4Features) vppclient.PutDSL {
 	dsl.parent.txn.Put(l4.FeatureKey(), val)
@@ -198,6 +204,12 @@ func (dsl *DeleteDSL) Interface(interfaceName string) vppclient.DeleteDSL {
 	return dsl
 }
 
+// ACL adds a request to delete an existing VPP Access Control List.
+func (dsl *DeleteDSL) ACL(aclName string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(acl.Key(aclName))
+	return dsl
+}
+
 // BfdSession adds a request to delete an existing bidirectional forwarding
 // detection session.
 func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) vppclient.DeleteDSL {
@@ -244,18 +256,6 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string
 	return dsl
 }
 
-// ACL adds a request to delete an existing VPP Access Control List.
-func (dsl *DeleteDSL) ACL(aclName string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(acl.Key(aclName))
-	return dsl
-}
-
-// L4Features delete request for the L4Features
-func (dsl *DeleteDSL) L4Features() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l4.FeatureKey())
-	return dsl
-}
-
 // Arp adds a request to delete an existing VPP L3 ARP entry.
 func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(l3.ArpEntryKey(ifaceName, ipAddr))
@@ -265,6 +265,18 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) vppclient.DeleteDSL {
 // ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
 func (dsl *DeleteDSL) ProxyArp() vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(l3.ProxyARPKey)
+	return dsl
+}
+
+// IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
+func (dsl *DeleteDSL) IPScanNeighbor() vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(l3.IPScanNeighborKey)
+	return dsl
+}
+
+// L4Features delete request for the L4Features
+func (dsl *DeleteDSL) L4Features() vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(l4.FeatureKey())
 	return dsl
 }
 

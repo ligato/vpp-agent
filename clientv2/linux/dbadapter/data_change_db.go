@@ -164,6 +164,12 @@ func (dsl *PutDSL) ProxyArp(proxyArp *l3.ProxyARP) linuxclient.PutDSL {
 	return dsl
 }
 
+// IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
+func (dsl *PutDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) linuxclient.PutDSL {
+	dsl.vppPut.IPScanNeighbor(ipScanNeigh)
+	return dsl
+}
+
 // L4Features adds a request to enable or disable L4 features
 func (dsl *PutDSL) L4Features(val *l4.L4Features) linuxclient.PutDSL {
 	dsl.vppPut.L4Features(val)
@@ -280,16 +286,9 @@ func (dsl *DeleteDSL) StaticRoute(vrf uint32, dstAddr string, nextHopAddr string
 	return dsl
 }
 
-// L4Features adds a request to enable or disable L4 features
-func (dsl *DeleteDSL) L4Features() linuxclient.DeleteDSL {
-	dsl.vppDelete.L4Features()
-	return dsl
-}
-
-// AppNamespace adds a request to delete VPP Application namespace
-// Note: current version does not support application namespace deletion
-func (dsl *DeleteDSL) AppNamespace(id string) linuxclient.DeleteDSL {
-	dsl.vppDelete.AppNamespace(id)
+// IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
+func (dsl *DeleteDSL) IPScanNeighbor() linuxclient.DeleteDSL {
+	dsl.vppDelete.IPScanNeighbor()
 	return dsl
 }
 
@@ -302,6 +301,19 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) linuxclient.DeleteDSL
 // ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
 func (dsl *DeleteDSL) ProxyArp() linuxclient.DeleteDSL {
 	dsl.vppDelete.ProxyArp()
+	return dsl
+}
+
+// L4Features adds a request to enable or disable L4 features
+func (dsl *DeleteDSL) L4Features() linuxclient.DeleteDSL {
+	dsl.vppDelete.L4Features()
+	return dsl
+}
+
+// AppNamespace adds a request to delete VPP Application namespace
+// Note: current version does not support application namespace deletion
+func (dsl *DeleteDSL) AppNamespace(id string) linuxclient.DeleteDSL {
+	dsl.vppDelete.AppNamespace(id)
 	return dsl
 }
 
