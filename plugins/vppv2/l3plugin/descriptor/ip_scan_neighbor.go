@@ -99,9 +99,24 @@ func (d *IPScanNeighborDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Dump dumps VPP IP Scan Neighbor.
-func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWithMetadata) (dumps []adapter.IPScanNeighborKVWithMetadata, err error) {
+func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWithMetadata) (dump []adapter.IPScanNeighborKVWithMetadata, err error) {
+	ipNeigh, err := d.ipNeigh.GetIPScanNeighbor()
+	if err != nil {
+		return nil, err
+	}
 
-	// TODO: implement dump
+	origin := scheduler.FromNB
+	if proto.Equal(ipNeigh, defaultIPScanNeighbor) {
+		origin = scheduler.FromSB
+	}
 
-	return dumps, nil
+	dump = []adapter.IPScanNeighborKVWithMetadata{
+		{
+			Key:    l3.IPScanNeighborKey,
+			Value:  ipNeigh,
+			Origin: origin,
+		},
+	}
+	d.log.Debugf("Dumping IP Scan Neighbor configuration: %v", ipNeigh)
+	return dump, nil
 }

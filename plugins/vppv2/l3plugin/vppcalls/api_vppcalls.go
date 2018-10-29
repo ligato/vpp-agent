@@ -95,6 +95,8 @@ type RouteVppRead interface {
 type IPNeighVppAPI interface {
 	// SetIPScanNeighbor configures IP scan neighbor to the VPP
 	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
+	// GetIPScanNeighbor returns IP scan neighbor configuration from the VPP
+	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
 }
 
 // ArpVppHandler is accessor for ARP-related vppcalls methods
