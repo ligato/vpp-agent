@@ -71,22 +71,16 @@ func (d *ProxyArpInterfaceDescriptor) GetDescriptor() *adapter.ProxyARPInterface
 }
 
 func (d *ProxyArpInterfaceDescriptor) Add(key string, value *l3.ProxyARP_Interface) (metadata interface{}, err error) {
-	d.log.Warnf("proxy iface add: %q\n%+v", key, value)
-
 	if err := d.proxyArpHandler.EnableProxyArpInterface(value.Name); err != nil {
 		return nil, errors.Errorf("failed to enable proxy ARP for interface %s: %v", value.Name, err)
 	}
-
 	return nil, nil
 }
 
 func (d *ProxyArpInterfaceDescriptor) Delete(key string, value *l3.ProxyARP_Interface, metadata interface{}) error {
-	d.log.Warnf("proxy iface del: %q\n%+v", key, value)
-
 	if err := d.proxyArpHandler.DisableProxyArpInterface(value.Name); err != nil {
 		return errors.Errorf("failed to disable proxy ARP for interface %s: %v", value.Name, err)
 	}
-
 	return nil
 }
 

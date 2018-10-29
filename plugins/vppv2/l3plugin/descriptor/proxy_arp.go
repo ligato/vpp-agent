@@ -59,15 +59,12 @@ func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
 		KeySelector: func(key string) bool {
 			return key == l3.ProxyARPKey
 		},
-		ValueTypeName:   proto.MessageName(&l3.ProxyARP{}),
-		ValueComparator: d.EquivalentProxyArps,
-		NBKeyPrefix:     l3.ProxyARPKey,
-		Add:             d.Add,
-		Modify:          d.Modify,
-		Delete:          d.Delete,
-		/*ModifyWithRecreate: func(key string, oldValue, newValue *l3.ProxyARP, metadata interface{}) bool {
-			return true
-		},*/
+		ValueTypeName:      proto.MessageName(&l3.ProxyARP{}),
+		ValueComparator:    d.EquivalentProxyArps,
+		NBKeyPrefix:        l3.ProxyARPKey,
+		Add:                d.Add,
+		Modify:             d.Modify,
+		Delete:             d.Delete,
 		IsRetriableFailure: d.IsRetriableFailure,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
@@ -96,7 +93,6 @@ func (d *ProxyArpDescriptor) EquivalentProxyArps(key string, oldValue, newValue 
 }
 
 func (d *ProxyArpDescriptor) Add(key string, value *l3.ProxyARP) (metadata interface{}, err error) {
-	d.log.Warnf("proxy add: %q\n%+v", key, value)
 	for _, proxyArpRange := range value.Ranges {
 		// Prune addresses
 		firstIP := pruneIP(proxyArpRange.FirstIpAddr)
@@ -113,8 +109,6 @@ func (d *ProxyArpDescriptor) Add(key string, value *l3.ProxyARP) (metadata inter
 }
 
 func (d *ProxyArpDescriptor) Modify(key string, oldValue, newValue *l3.ProxyARP, oldMetadata interface{}) (newMetadata interface{}, err error) {
-	d.log.Warnf("proxy modify: %q\nOLD: %+v\nNEW: %+v", key, oldValue, newValue)
-
 	toAdd, toDelete := calculateRngDiff(newValue.Ranges, oldValue.Ranges)
 	// Remove old ranges
 	for _, proxyArpRange := range toDelete {
@@ -147,7 +141,6 @@ func (d *ProxyArpDescriptor) Modify(key string, oldValue, newValue *l3.ProxyARP,
 }
 
 func (d *ProxyArpDescriptor) Delete(key string, value *l3.ProxyARP, metadata interface{}) error {
-	d.log.Warnf("proxy del: %q\n%+v", key, value)
 	for _, proxyArpRange := range value.Ranges {
 		// Prune addresses
 		firstIP := pruneIP(proxyArpRange.FirstIpAddr)
@@ -203,37 +196,6 @@ func pruneIP(ip string) string {
 		return ipParts[0]
 	}
 	return ip
-}
-
-// Calculate difference between old and new interfaces
-func calculateIfDiff(newIfs, oldIfs []*l3.ProxyARP_Interface) (toEnable, toDisable []string) {
-	// Find missing new interfaces
-	for _, newIf := range newIfs {
-		var found bool
-		for _, oldIf := range oldIfs {
-			if newIf.Name == oldIf.Name {
-				found = true
-				break
-			}
-		}
-		if !found {
-			toEnable = append(toEnable, newIf.Name)
-		}
-	}
-	// Find obsolete interfaces
-	for _, oldIf := range oldIfs {
-		var found bool
-		for _, newIf := range newIfs {
-			if oldIf.Name == newIf.Name {
-				found = true
-				break
-			}
-		}
-		if !found {
-			toDisable = append(toDisable, oldIf.Name)
-		}
-	}
-	return
 }
 
 // Calculate difference between old and new ranges
