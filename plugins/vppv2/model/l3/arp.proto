@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package l3;
+
+message ARPEntry {
+    string interface = 1;               /* interface to which this APR entry applies */
+    string ip_address = 2;              /* IP address */
+    string phys_address = 3;            /* MAC address matching to the IP */
+    bool static = 4;                    /* TRUE if this is a static ARP entry */
+}
+
+message ProxyARP {
+    message Interface {
+        string name = 1;                /* name of the interface proxy arp is enabled for */
+    }
+    repeated Interface interfaces = 1;
+
+    message Range {
+        string first_ip_addr = 1;       /* first (starting) IP address of the proxy ARP range */
+        string last_ip_addr = 2;        /* last (ending) IP address of the proxy ARP range  */
+    }
+    repeated Range ranges = 2;
+}
+
+/* Enables/disables IP neighbor scanning */
+message IPScanNeighbor {
+    enum Mode {                         /* IP scan neighbor mode. Disabled by default, it can be enabled
+                                           for IPv4 or IPv6 separately, or for both of them*/
+                                        DISABLED = 0;
+                                        IPv4 = 1;
+                                        IPv6 = 2;
+                                        BOTH = 3;
+    }
+    Mode mode = 1;
+
+    uint32 scan_interval = 2;
+    uint32 max_proc_time = 3;
+    uint32 max_update = 4;
+    uint32 scan_int_delay = 5;
+    uint32 stale_threshold = 6;
+}
