@@ -47,6 +47,8 @@ type InterfaceMeta struct {
 	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
 	Dhcp         *Dhcp  `json:"dhcp"`
+	VrfIPv4      uint32 `json:"vrf_ipv4"`
+	VrfIPv6      uint32 `json:"vrf_ipv6"`
 }
 
 // Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
@@ -143,6 +145,16 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 		}
 	}
 
+	// Get IP addresses before VRF
+	err := h.dumpIPAddressDetails(ifs, 0)
+	if err != nil {
+		return nil, err
+	}
+	err = h.dumpIPAddressDetails(ifs, 1)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get DHCP clients
 	dhcpClients, err := h.dumpDhcpClients()
 	if err != nil {
@@ -153,14 +165,28 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump unnumbered interfaces: %v", err)
 	}
-	// Get vrf for every interface and fill DHCP if set
+	// Get interface VRF for every IP family, fill DHCP if set and resolve unnumbered interface setup
 	for _, ifData := range ifs {
-		// VRF
-		vrf, err := h.GetInterfaceVrf(ifData.Meta.SwIfIndex)
+		// VRF is stored in metadata for both, IPv4 and IPv6. If the interface is an IPv6 interface (it contains at least
+		// one IPv6 address), appropriate VRF is stored also in modelled data
+		ipv4Vrf, err := h.GetInterfaceVrf(ifData.Meta.SwIfIndex)
 		if err != nil {
 			return nil, fmt.Errorf("interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 		}
-		ifData.Interface.Vrf = vrf
+		ifData.Meta.VrfIPv4 = ipv4Vrf
+		ipv6Vrf, err := h.GetInterfaceVrfIPv6(ifData.Meta.SwIfIndex)
+		if err != nil {
+			return nil, fmt.Errorf("interface dump: failed to get IPv6 VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
+		}
+		ifData.Meta.VrfIPv6 = ipv6Vrf
+		if isIPv6If, err := h.isIpv6Interface(ifData.Interface); err != nil {
+			return ifs, err
+		} else if isIPv6If {
+			ifData.Interface.Vrf = ipv6Vrf
+		} else {
+			ifData.Interface.Vrf = ipv4Vrf
+		}
+
 		// DHCP
 		dhcpData, ok := dhcpClients[ifData.Meta.SwIfIndex]
 		if ok {
@@ -184,15 +210,6 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 				InterfaceWithIp: ifWithIPName,
 			}
 		}
-	}
-
-	err = h.dumpIPAddressDetails(ifs, 0)
-	if err != nil {
-		return nil, err
-	}
-	err = h.dumpIPAddressDetails(ifs, 1)
-	if err != nil {
-		return nil, err
 	}
 
 	err = h.dumpMemifDetails(ifs)
@@ -498,6 +515,27 @@ func (h *IfVppHandler) dumpIPSecDetails(ifs map[uint32]*InterfaceDetails) error 
 	}
 
 	return nil
+}
+
+// Returns true if given interface contains at least one IPv6 address. FOr VxLAN, source and destination
+// addresses are also checked
+func (h *IfVppHandler) isIpv6Interface(iface *ifnb.Interfaces_Interface) (bool, error) {
+	if iface.Type == ifnb.InterfaceType_VXLAN_TUNNEL && iface.Vxlan != nil {
+		if ipAddress := net.ParseIP(iface.Vxlan.SrcAddress); ipAddress.To4() == nil {
+			return true, nil
+		}
+		if ipAddress := net.ParseIP(iface.Vxlan.DstAddress); ipAddress.To4() == nil {
+			return true, nil
+		}
+	}
+	for _, ifAddress := range iface.IpAddresses {
+		if ipAddress, _, err := net.ParseCIDR(ifAddress); err != nil {
+			return false, err
+		} else if ipAddress.To4() == nil {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
