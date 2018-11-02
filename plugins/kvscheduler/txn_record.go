@@ -107,7 +107,14 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			str += indent2 + fmt.Sprintf("- type: %s\n", txn.txnType.String())
 		}
 		if txn.description != "" {
-			str += indent2 + fmt.Sprintf("- description: %s\n", txn.description)
+			descriptionLines := strings.Split(txn.description, "\n")
+			for idx, line := range descriptionLines {
+				if idx == 0 {
+					str += indent2 + fmt.Sprintf("- description: %s\n", line)
+				} else {
+					str += indent3 + fmt.Sprintf("%s\n", line)
+				}
+			}
 		}
 		if txn.isDownstreamResync {
 			goto printOps
