@@ -81,8 +81,8 @@ func ParseStaticArpKey(key string) (iface string, ipAddr net.IP, err error) {
 /* Route Config */
 
 // StaticRouteKey returns the key used in ETCD to store configuration of a particular Linux route.
-func StaticRouteKey(dstAddr, outgoingInterface string) string {
-	return staticRouteKeyFromTemplate(staticRouteKeyTemplate, dstAddr, outgoingInterface)
+func StaticRouteKey(dstNetwork, outgoingInterface string) string {
+	return staticRouteKeyFromTemplate(staticRouteKeyTemplate, dstNetwork, outgoingInterface)
 }
 
 // ParseStaticRouteKey parses Linux route attributes from a key.

@@ -72,13 +72,13 @@ func TestRegisterAndUnregisterName(t *testing.T) {
 
 	// Register iface
 	index.Put(ifName0, iface)
-	names := index.ListAllNames()
+	names := index.ListAllInterfaces()
 	Expect(names).To(HaveLen(1))
 	Expect(names).To(ContainElement(ifName0))
 
 	// Unregister iface
 	index.Delete(ifName0)
-	names = index.ListAllNames()
+	names = index.ListAllInterfaces()
 	Expect(names).To(BeEmpty())
 }
 
@@ -90,12 +90,12 @@ func TestClearInterfaces(t *testing.T) {
 	index.Put("if1", &IfaceMetadata{SwIfIndex: 0})
 	index.Put("if2", &IfaceMetadata{SwIfIndex: 1})
 	index.Put("if3", &IfaceMetadata{SwIfIndex: 2})
-	names := index.ListAllNames()
+	names := index.ListAllInterfaces()
 	Expect(names).To(HaveLen(3))
 
 	// Clear
 	index.Clear()
-	names = index.ListAllNames()
+	names = index.ListAllInterfaces()
 	Expect(names).To(BeEmpty())
 }
 
@@ -122,7 +122,7 @@ func TestUpdateMetadata(t *testing.T) {
 
 	// Add interface
 	index.Put(ifName0, iface)
-	names := index.ListAllNames()
+	names := index.ListAllInterfaces()
 	Expect(names).To(HaveLen(1))
 	Expect(names).To(ContainElement(ifName0))
 
@@ -166,7 +166,7 @@ func TestUpdateMetadata(t *testing.T) {
 	index.Delete(ifName0)
 
 	// Check removal
-	names = index.ListAllNames()
+	names = index.ListAllInterfaces()
 	Expect(names).To(BeEmpty())
 }
 
