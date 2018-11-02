@@ -42,6 +42,9 @@ type IfaceMetadataIndex interface {
 	// assigned.
 	LookupByIP(ip string) []string /* name */
 
+	// ListAllInterfaces returns slice of names of all interfaces in the mapping.
+	ListAllInterfaces() (names []string)
+
 	// WatchInterfaces allows to subscribe to watch for changes in the mapping
 	// if interface metadata.
 	WatchInterfaces(subscriber string, channel chan<- IfaceMetadataDto)
@@ -132,6 +135,11 @@ func (ifmx *ifaceMetadataIndex) LookupBySwIfIndex(swIfIndex uint32) (name string
 // assigned.
 func (ifmx *ifaceMetadataIndex) LookupByIP(ip string) []string {
 	return ifmx.ListNames(ipAddressIndexKey, ip)
+}
+
+// ListAllInterfaces returns slice of names of all interfaces in the mapping.
+func (ifmx *ifaceMetadataIndex) ListAllInterfaces() (names []string) {
+	return ifmx.ListAllNames()
 }
 
 // WatchInterfaces allows to subscribe to watch for changes in the mapping
