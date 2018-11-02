@@ -477,15 +477,15 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 
 	switch ifaceType {
 	case intf.InterfaceType_TAP_INTERFACE:
-		if !c.canTapBeModifWithoutDelete(newConfig.Tap, oldConfig.Tap) {
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Tap, oldConfig.Tap) {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		if !c.canMemifBeModifWithoutDelete(newConfig.Memif, oldConfig.Memif) {
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Memif, oldConfig.Memif) {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		if !c.canVxlanBeModifWithoutDelete(newConfig.Vxlan, oldConfig.Vxlan) ||
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Vxlan, oldConfig.Vxlan) ||
 			oldConfig.Vrf != newConfig.Vrf {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
@@ -503,7 +503,7 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 		c.log.Warnf("Cannot process IPSec tunnel interface %s, use definition in IPSec plugin instead", newConfig.Name)
 		return nil
 	case intf.InterfaceType_VMXNET3_INTERFACE:
-		if !c.canVmxNet3BeModifWithoutDelete(newConfig.VmxNet3, oldConfig.VmxNet3) ||
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.VmxNet3, oldConfig.VmxNet3) ||
 			oldConfig.Vrf != newConfig.Vrf {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
@@ -940,49 +940,9 @@ func (c *InterfaceConfigurator) resolveCachedVxLANMulticasts(createdIfName strin
 	return nil
 }
 
-func (c *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-
+func (c *InterfaceConfigurator) canInterfaceBeModifiedWithoutDelete(ifName string, newConfig, oldConfig proto.Message) bool {
 	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of memif")
-		return false
-	}
-
-	return true
-}
-
-func (c *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Vxlan, oldConfig *intf.Interfaces_Interface_Vxlan) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of VxLAN")
-		return false
-	}
-
-	return true
-}
-
-func (c *InterfaceConfigurator) canVmxNet3BeModifWithoutDelete(newConfig, oldConfig *intf.Interfaces_Interface_VmxNet3) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of vmxNet3")
-		return false
-	}
-
-	return true
-}
-
-func (c *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Tap, oldConfig *intf.Interfaces_Interface_Tap) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of tap")
+		c.log.Debug("Difference between new & old config causing recreation of %s", ifName)
 		return false
 	}
 
