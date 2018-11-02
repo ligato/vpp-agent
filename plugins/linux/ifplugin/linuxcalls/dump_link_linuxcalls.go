@@ -176,7 +176,9 @@ func (h *NetLinkHandler) dumpInterfaceData(ifName string, ns *nsplugin.Namespace
 	defer revert()
 
 	if err != nil {
-		return nil, nil, errors.Errorf("failed to switch to namespace %s: %v", ns.Name, err)
+		// Do not return error here, since the interface namespace could be removed in the meantime
+		h.log.Debugf("interface %s cannot be read, namespace is not accessible (err: %s)", ifName, err)
+		return nil, nil, nil
 	}
 	link, err := h.GetLinkByName(ifName)
 	if err != nil {
