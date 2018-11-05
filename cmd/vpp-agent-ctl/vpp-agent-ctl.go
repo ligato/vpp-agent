@@ -124,6 +124,10 @@ func do(ctl *VppAgentCtl) {
 			ctl.createVxlan()
 		case "-vxland":
 			ctl.deleteVxlan()
+		case "-vmxnt":
+			ctl.createVmxNet3()
+		case "-vmxntd":
+			ctl.deleteVmxNet3()
 		case "-afpkt":
 			ctl.createAfPacket()
 		case "-afpktd":
@@ -263,6 +267,7 @@ func usage() {
 		-loop,	-loopd	- Loop type interface
 		-memif,	-memifd	- Memif type interface
 		-vxlan,	-vxland	- VxLAN type interface
+		-vmxnt,	-vmxntd	- VmxNet3 type interface
 		-afpkt,	-afpktd	- af_packet type interface
 		-veth,	-vethd	- Linux VETH interface pair
 		-ltap,	-ltapd	- Linux TAP interface

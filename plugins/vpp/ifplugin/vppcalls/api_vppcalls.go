@@ -89,6 +89,10 @@ type IfVppWrite interface {
 	SetRxMode(ifIdx uint32, rxModeSettings *interfaces.Interfaces_Interface_RxModeSettings) error
 	// SetRxPlacement configures rx-placement for interface
 	SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interfaces_Interface_RxPlacementSettings) error
+	// AddVmxNet3 configures vmxNet3 interface. Second parameter is optional in this case.
+	AddVmxNet3(ifName string, vmxNet3 *interfaces.Interfaces_Interface_VmxNet3) (uint32, error)
+	// DelVmxNet3 removes vmxNet3 interface
+	DelVmxNet3(ifName string, ifIdx uint32) error
 	// CreateVrf checks if VRF exists and creates it if not
 	CreateVrf(vrfID uint32) error
 	// CreateVrfIPv6 checks if IPv6 VRF exists and creates it if not

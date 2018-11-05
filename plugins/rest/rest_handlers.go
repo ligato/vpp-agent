@@ -72,6 +72,10 @@ func (plugin *Plugin) registerInterfaceHandlers() {
 	plugin.registerHTTPHandler(resturl.VxLan, GET, func() (interface{}, error) {
 		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_VXLAN_TUNNEL)
 	})
+	// GET Vmxnet3 interfaces
+	plugin.registerHTTPHandler(resturl.VmxNet3, GET, func() (interface{}, error) {
+		return plugin.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_VMXNET3_INTERFACE)
+	})
 }
 
 // Registers BFD REST handlers

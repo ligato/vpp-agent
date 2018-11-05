@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
@@ -49,6 +51,7 @@ type InterfaceMeta struct {
 	Dhcp         *Dhcp  `json:"dhcp"`
 	VrfIPv4      uint32 `json:"vrf_ipv4"`
 	VrfIPv6      uint32 `json:"vrf_ipv6"`
+	Pci          uint32 `json:"pci"`
 }
 
 // Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
@@ -228,6 +231,11 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	}
 
 	err = h.dumpIPSecDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpVmxNet3Details(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -486,6 +494,33 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 	return nil
 }
 
+// dumpVmxNet3Details dumps VmxNet3 interface details from VPP and fills them into the provided interface map.
+func (h *IfVppHandler) dumpVmxNet3Details(ifs map[uint32]*InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&vmxnet3.Vmxnet3Dump{})
+	for {
+		vmxnet3Details := &vmxnet3.Vmxnet3Details{}
+		stop, err := reqCtx.ReceiveReply(vmxnet3Details)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump VmxNet3 tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := ifs[vmxnet3Details.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		ifs[vmxnet3Details.SwIfIndex].Interface.VmxNet3 = &ifnb.Interfaces_Interface_VmxNet3{
+			RxqSize: uint32(vmxnet3Details.RxQsize),
+			TxqSize: uint32(vmxnet3Details.TxQsize),
+		}
+		ifs[vmxnet3Details.SwIfIndex].Interface.Type = ifnb.InterfaceType_VMXNET3_INTERFACE
+		ifs[vmxnet3Details.SwIfIndex].Meta.Pci = vmxnet3Details.PciAddr
+	}
+
+	return nil
+}
+
 // dumpIPSecDetails reads IPSec interfaces and fills the type in the interface map.
 // Note: no other interface info is stored, since ipsec interfaces are defined in different model and have its own
 // resync procedure.
@@ -639,7 +674,10 @@ func guessInterfaceType(ifName string) ifnb.InterfaceType {
 		return ifnb.InterfaceType_VXLAN_TUNNEL
 	case strings.HasPrefix(ifName, "ipsec"):
 		return ifnb.InterfaceType_IPSEC_TUNNEL
+	case strings.HasPrefix(ifName, "vmxnet3"):
+		return ifnb.InterfaceType_VMXNET3_INTERFACE
 	}
+
 	return ifnb.InterfaceType_ETHERNET_CSMACD
 }
 
