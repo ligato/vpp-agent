@@ -15,8 +15,10 @@
 package vppcalls
 
 import (
+	"bytes"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/go-errors/errors"
 
@@ -36,6 +38,10 @@ const (
 	NoInterface = ^uint32(0)
 	// Maximal length of tag
 	maxTagLen = 64
+	// label added to tags of DNAT mappings with external IP from the pool.
+	extIPFromPoolLabel = "EP" // keep it short, there is a limit on the maximum tag length
+	// separator between labels forming a tag for DNAT mapping
+	labelSep = "|"
 )
 
 // SetNat44Forwarding configures NAT44 forwarding.
@@ -221,8 +227,9 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 	var ifIdx = NoInterface
 	var exIPAddr net.IP
 
-	// check tag length limit
-	if err := checkTagLength(dnatLabel); err != nil {
+	// construct tag for the mapping
+	tag, err := generateTag(dnatLabel, mapping.ExternalIpFromPool)
+	if err != nil {
 		return err
 	}
 
@@ -260,7 +267,7 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 	}
 
 	req := &binapi.Nat44AddDelStaticMapping{
-		Tag:               []byte(dnatLabel),
+		Tag:               []byte(tag),
 		LocalIPAddress:    lcIPAddr,
 		ExternalIPAddress: exIPAddr,
 		Protocol:          h.protocolNBValueToNumber(mapping.Protocol),
@@ -292,8 +299,9 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 
 // Calls VPP binary API to add/remove NAT44 static mapping with load balancing.
 func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMapping, dnatLabel string, isAdd bool) error {
-	// check tag length limit
-	if err := checkTagLength(dnatLabel); err != nil {
+	// construct tag for the mapping
+	tag, err := generateTag(dnatLabel, mapping.ExternalIpFromPool)
+	if err != nil {
 		return err
 	}
 
@@ -332,7 +340,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	req := &binapi.Nat44AddDelLbStaticMapping{
-		Tag:          []byte(dnatLabel),
+		Tag:          []byte(tag),
 		Locals:       locals,
 		LocalNum:     uint8(len(locals)),
 		ExternalAddr: exIPAddrByte,
@@ -360,8 +368,9 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 	var ifIdx = NoInterface
 	var ipAddr net.IP
 
-	// check tag length limit
-	if err := checkTagLength(dnatLabel); err != nil {
+	// construct tag for the mapping
+	tag, err := generateTag(dnatLabel, mapping.IpAddressFromPool)
+	if err != nil {
 		return err
 	}
 
@@ -390,7 +399,7 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 	}
 
 	req := &binapi.Nat44AddDelIdentityMapping{
-		Tag:       []byte(dnatLabel),
+		Tag:       []byte(tag),
 		AddrOnly:  boolToUint(addrOnly),
 		IPAddress: ipAddr,
 		Port:      uint16(mapping.Port),
@@ -409,6 +418,30 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 	}
 
 	return nil
+}
+
+// generateTag generates tag for DNAT mapping.
+func generateTag(dnatLabel string, extIPFromPool bool) (tag string, err error) {
+	if !extIPFromPool {
+		tag = dnatLabel
+	} else {
+		tag = dnatLabel + labelSep + extIPFromPoolLabel
+	}
+	if err := checkTagLength(tag); err != nil {
+		return tag, err
+	}
+	return tag, nil
+}
+
+// parseTag parses labels from DNAT mapping tag.
+func parseTag(tag []byte) (dnatLabel string, extIPFromPool bool) {
+	tagStr := string(bytes.SplitN(tag, []byte{0x00}, 2)[0])
+	labels := strings.Split(tagStr, labelSep)
+	dnatLabel = labels[0]
+	if len(labels) > 1 && labels[1] == extIPFromPoolLabel {
+		extIPFromPool = true
+	}
+	return
 }
 
 // checkTagLength serves as a validator for static/identity mapping tag length

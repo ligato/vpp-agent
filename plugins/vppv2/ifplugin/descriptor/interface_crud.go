@@ -94,6 +94,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		ifIdx, found = d.ethernetIfs[intf.Name]
 		if !found {
 			err = errors.Errorf("failed to find physical interface %s", intf.Name)
+			d.log.Error(err)
 			return nil, err
 		}
 

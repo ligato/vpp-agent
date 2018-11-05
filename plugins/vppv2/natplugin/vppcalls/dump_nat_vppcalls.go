@@ -15,7 +15,6 @@
 package vppcalls
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"sort"
@@ -28,13 +27,13 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
-// DNATs sorted by tags
+// DNATs sorted by labels
 type dnatMap map[string]*nat.DNat44
 
-// static mappings sorted by tags
+// static mappings sorted by labels
 type stMappingMap map[string][]*nat.DNat44_StaticMapping
 
-// identity mappings sorted by tags
+// identity mappings sorted by labels
 type idMappingMap map[string][]*nat.DNat44_IdentityMapping
 
 // Nat44GlobalConfigDump dumps global NAT44 config in NB format.
@@ -165,7 +164,7 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 	return
 }
 
-// nat44StaticMappingDump returns a map of NAT44 static mappings sorted by tags
+// nat44StaticMappingDump returns a map of NAT44 static mappings sorted by DNAT labels
 func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err error) {
 	entries = make(stMappingMap)
 	childMappings := make(stMappingMap)
@@ -185,10 +184,10 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 		exIPAddress := net.IP(msg.ExternalIPAddress)
 
 		// Parse tag (DNAT label)
-		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
-		if _, hasTag := entries[tag]; !hasTag {
-			entries[tag] = []*nat.DNat44_StaticMapping{}
-			childMappings[tag] = []*nat.DNat44_StaticMapping{}
+		dnatLabel, extIPFromPool := parseTag(msg.Tag)
+		if _, hasDNAT := entries[dnatLabel]; !hasDNAT {
+			entries[dnatLabel] = []*nat.DNat44_StaticMapping{}
+			childMappings[dnatLabel] = []*nat.DNat44_StaticMapping{}
 		}
 
 		// resolve interface name
@@ -207,8 +206,9 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 
 		// Add mapping into the map.
 		mapping := &nat.DNat44_StaticMapping{
-			ExternalInterface: extIfaceName,
-			ExternalPort: uint32(msg.ExternalPort),
+			ExternalInterface:  extIfaceName,
+			ExternalPort:       uint32(msg.ExternalPort),
+			ExternalIpFromPool: extIPFromPool,
 			LocalIps: []*nat.DNat44_StaticMapping_LocalIP{ // single-value
 				{
 					VrfId:     msg.VrfID,
@@ -222,7 +222,7 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 		if !exIPAddress.IsUnspecified() {
 			mapping.ExternalIp = exIPAddress.To4().String()
 		}
-		entries[tag] = append(entries[tag], mapping)
+		entries[dnatLabel] = append(entries[dnatLabel], mapping)
 
 		if msg.ExternalSwIfIndex != NoInterface {
 			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
@@ -230,7 +230,7 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 				childMapping := proto.Clone(mapping).(*nat.DNat44_StaticMapping)
 				childMapping.ExternalIp = ipAddr
 				childMapping.ExternalInterface = ""
-				childMappings[tag] = append(childMappings[tag], childMapping)
+				childMappings[dnatLabel] = append(childMappings[dnatLabel], childMapping)
 			}
 		}
 	}
@@ -255,7 +255,7 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 	return entries, nil
 }
 
-// nat44StaticMappingLbDump returns a map of NAT44 static mapping with load balancing sorted by tags.
+// nat44StaticMappingLbDump returns a map of NAT44 static mapping with load balancing sorted by DNAT labels.
 func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err error) {
 	entries = make(stMappingMap)
 	req := &bin_api.Nat44LbStaticMappingDump{}
@@ -272,9 +272,9 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 		}
 
 		// Parse tag (DNAT label)
-		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
-		if _, hasTag := entries[tag]; !hasTag {
-			entries[tag] = []*nat.DNat44_StaticMapping{}
+		dnatLabel, extIPFromPool := parseTag(msg.Tag)
+		if _, hasDNAT := entries[dnatLabel]; !hasDNAT {
+			entries[dnatLabel] = []*nat.DNat44_StaticMapping{}
 		}
 
 		// Prepare localIPs
@@ -292,21 +292,22 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 
 		// Add mapping into the map.
 		mapping := &nat.DNat44_StaticMapping{
-			ExternalPort: uint32(msg.ExternalPort),
-			LocalIps:     locals,
-			Protocol:     h.protocolNumberToNBValue(msg.Protocol),
-			TwiceNat:     h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
+			ExternalPort:       uint32(msg.ExternalPort),
+			ExternalIpFromPool: extIPFromPool,
+			LocalIps:           locals,
+			Protocol:           h.protocolNumberToNBValue(msg.Protocol),
+			TwiceNat:           h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 		}
 		if !exIPAddress.IsUnspecified() {
 			mapping.ExternalIp = exIPAddress.To4().String()
 		}
-		entries[tag] = append(entries[tag], mapping)
+		entries[dnatLabel] = append(entries[dnatLabel], mapping)
 	}
 
 	return entries, nil
 }
 
-// nat44IdentityMappingDump returns a map of NAT44 identity mappings sorted by tags.
+// nat44IdentityMappingDump returns a map of NAT44 identity mappings sorted by DNAT labels.
 func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err error) {
 	entries = make(idMappingMap)
 	childMappings := make(idMappingMap)
@@ -326,10 +327,10 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 		ipAddress := net.IP(msg.IPAddress)
 
 		// Parse tag (DNAT label)
-		tag := string(bytes.SplitN(msg.Tag, []byte{0x00}, 2)[0])
-		if _, hasTag := entries[tag]; !hasTag {
-			entries[tag] = []*nat.DNat44_IdentityMapping{}
-			childMappings[tag] = []*nat.DNat44_IdentityMapping{}
+		dnatLabel, ipFromPool := parseTag(msg.Tag)
+		if _, hasDNAT := entries[dnatLabel]; !hasDNAT {
+			entries[dnatLabel] = []*nat.DNat44_IdentityMapping{}
+			childMappings[dnatLabel] = []*nat.DNat44_IdentityMapping{}
 		}
 
 		// resolve interface name
@@ -348,15 +349,16 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 
 		// Add mapping into the map.
 		mapping := &nat.DNat44_IdentityMapping{
-			VrfId:     msg.VrfID,
-			Interface: ifaceName,
-			Port:      uint32(msg.Port),
-			Protocol:  h.protocolNumberToNBValue(msg.Protocol),
+			VrfId:             msg.VrfID,
+			Interface:         ifaceName,
+			IpAddressFromPool: ipFromPool,
+			Port:              uint32(msg.Port),
+			Protocol:          h.protocolNumberToNBValue(msg.Protocol),
 		}
 		if !ipAddress.IsUnspecified() {
 			mapping.IpAddress = ipAddress.To4().String()
 		}
-		entries[tag] = append(entries[tag], mapping)
+		entries[dnatLabel] = append(entries[dnatLabel], mapping)
 
 		if msg.SwIfIndex != NoInterface {
 			// collect auto-generated "child" mappings (interface replaced with every assigned IP address)
@@ -364,7 +366,7 @@ func (h *NatVppHandler) nat44IdentityMappingDump() (entries idMappingMap, err er
 				childMapping := proto.Clone(mapping).(*nat.DNat44_IdentityMapping)
 				childMapping.IpAddress = ipAddr
 				childMapping.Interface = ""
-				childMappings[tag] = append(childMappings[tag], childMapping)
+				childMappings[dnatLabel] = append(childMappings[dnatLabel], childMapping)
 			}
 		}
 	}
