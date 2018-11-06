@@ -197,6 +197,7 @@ func getIndexMap() map[string][]indexItem {
 			{Name: "Memifs", Path: resturl.Memif},
 			{Name: "Taps", Path: resturl.Tap},
 			{Name: "VxLANs", Path: resturl.VxLan},
+			{Name: "VmxNet3", Path: resturl.VmxNet3},
 			{Name: "Af-packets", Path: resturl.AfPacket},
 		},
 		"IPSec plugin": {
@@ -264,6 +265,7 @@ func getPermissionsGroups() []*access.PermissionGroup {
 			newPermission(resturl.Memif, http.MethodGet),
 			newPermission(resturl.Tap, http.MethodGet),
 			newPermission(resturl.VxLan, http.MethodGet),
+			newPermission(resturl.VmxNet3, http.MethodGet),
 			newPermission(resturl.AfPacket, http.MethodGet),
 			newPermission(resturl.IPSecSpd, http.MethodGet),
 			newPermission(resturl.IPSecSa, http.MethodGet),

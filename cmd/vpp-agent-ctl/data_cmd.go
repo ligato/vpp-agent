@@ -444,6 +444,37 @@ func (ctl *VppAgentCtl) deleteVxlan() {
 	ctl.broker.Delete(vxlanKey)
 }
 
+// CreateVmxNet3 puts vmxNet3 type interface config to the ETCD
+func (ctl *VppAgentCtl) createVmxNet3() {
+	vxlan := &interfaces.Interfaces{
+		Interfaces: []*interfaces.Interfaces_Interface{
+			{
+				Name:    "vmxnet3-a/14/19/1e",
+				Type:    interfaces.InterfaceType_VMXNET3_INTERFACE,
+				Enabled: true,
+				Mtu:     1478,
+				IpAddresses: []string{
+					"172.125.40.1/24",
+				},
+				VmxNet3: &interfaces.Interfaces_Interface_VmxNet3{
+					EnableElog: true,
+					RxqSize:    2048,
+					TxqSize:    512,
+				},
+			},
+		},
+	}
+	ctl.Log.Println(vxlan)
+	ctl.broker.Put(interfaces.InterfaceKey(vxlan.Interfaces[0].Name), vxlan.Interfaces[0])
+}
+
+// DeleteVxlan removes VxLAN type interface config from the ETCD
+func (ctl *VppAgentCtl) deleteVmxNet3() {
+	vmxnet3Key := interfaces.InterfaceKey("vmxnet3-a/14/19")
+	ctl.Log.Println("Deleting", vmxnet3Key)
+	ctl.broker.Delete(vmxnet3Key)
+}
+
 // CreateAfPacket puts Af-packet type interface config to the ETCD
 func (ctl *VppAgentCtl) createAfPacket() {
 	ifs := interfaces.Interfaces{
