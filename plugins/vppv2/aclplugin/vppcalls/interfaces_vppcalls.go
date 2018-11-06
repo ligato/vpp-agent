@@ -76,9 +76,6 @@ func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName strin
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
 	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	return nil
 }
@@ -103,9 +100,6 @@ func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
 	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	return nil
 }
@@ -128,9 +122,6 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsIngress(aclIndex uint32, ifName 
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
-	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -155,9 +146,6 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsEgress(aclIndex uint32, ifName s
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
 	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	return nil
 }
@@ -180,9 +168,6 @@ func (h *ACLVppHandler) AddMACIPACLToInterface(aclIndex uint32, ifName string) e
 	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to MACIP ACL (L2) %d: %v", ifIdx, aclIndex, err)
-	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -207,9 +192,6 @@ func (h *ACLVppHandler) DeleteMACIPACLFromInterface(aclIndex uint32, ifName stri
 	if err != nil {
 		return fmt.Errorf("failed to delete interface %d from MACIP ACL (L2) %d: %v", ifIdx, aclIndex, err)
 	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	return nil
 }
@@ -228,9 +210,6 @@ func (h *ACLVppHandler) SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uin
 		if err != nil {
 			return fmt.Errorf("failed to set interface %d to L2 ACL %d: %v", ingressIfIdx, aclIndex, err)
 		}
-		if reply.Retval != 0 {
-			return fmt.Errorf("set interface %d to L2 ACL %d returned %d", ingressIfIdx, aclIndex, reply.Retval)
-		}
 	}
 
 	return nil
@@ -248,10 +227,6 @@ func (h *ACLVppHandler) RemoveMACIPACLFromInterfaces(removedACLIndex uint32, ifI
 
 		if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 			return fmt.Errorf("failed to remove L2 ACL %d from interface %d: %v", removedACLIndex, ifIdx, err)
-		}
-		if reply.Retval != 0 {
-			return fmt.Errorf("remove L2 ACL %d from interface %d returned error %d", removedACLIndex,
-				removedACLIndex, reply.Retval)
 		}
 	}
 	return nil
