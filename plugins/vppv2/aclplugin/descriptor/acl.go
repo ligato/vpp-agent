@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"bytes"
+	"net"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -99,12 +101,68 @@ func (d *ACLDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool
 		return false
 	}
 	for i := 0; i < len(oldACL.Rules); i++ {
-		if !proto.Equal(oldACL.Rules[i], newACL.Rules[i]) {
+		if !d.equivalentACLRules(oldACL.Rules[i], newACL.Rules[i]) {
 			return false
 		}
 	}
 
 	return true
+}
+
+// equivalentACLRules compares two ACL rules, handling the cases of unspecified
+// source/destination networks.
+func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.Acl_Rule) bool {
+	// Action
+	if rule1.Action != rule2.Action {
+		return false
+	}
+
+	// MAC IP Rule
+	if !proto.Equal(rule1.MacipRule, rule2.MacipRule) {
+		return false
+	}
+
+	// IP Rule
+	ipRule1 := rule1.GetIpRule()
+	ipRule2 := rule2.GetIpRule()
+	if !proto.Equal(ipRule1.GetIcmp(), ipRule2.GetIcmp()) ||
+		!proto.Equal(ipRule1.GetTcp(), ipRule2.GetTcp()) ||
+		!proto.Equal(ipRule1.GetUdp(), ipRule2.GetUdp()) {
+		return false
+	}
+	if !d.equivalentIPRuleNetworks(ipRule1.GetIp().GetSourceNetwork(), ipRule2.GetIp().GetSourceNetwork()) {
+		return false
+	}
+	if !d.equivalentIPRuleNetworks(ipRule1.GetIp().GetDestinationNetwork(), ipRule2.GetIp().GetDestinationNetwork()) {
+		return false
+	}
+	return true
+}
+
+// equivalentIPRuleNetworks compares two IP networks, taking into account the fact
+// that empty string is equivalent to address with all zeroes.
+func (d *ACLDescriptor) equivalentIPRuleNetworks(net1, net2 string) bool {
+	var (
+		ip1, ip2 net.IP
+		ipNet1, ipNet2 *net.IPNet
+		err1, err2 error
+	)
+	if net1 != "" {
+		ip1, ipNet1, err1 = net.ParseCIDR(net1)
+	}
+	if net2 != "" {
+		ip2, ipNet2, err2 = net.ParseCIDR(net2)
+	}
+	if err1 != nil || err2 != nil {
+		return net1 == net2
+	}
+	if ipNet1 == nil {
+		return ipNet2 == nil || ip2.IsUnspecified()
+	}
+	if ipNet2 == nil {
+		return ipNet1 == nil || ip1.IsUnspecified()
+	}
+	return ip1.Equal(ip2) && bytes.Equal(ipNet1.Mask, ipNet2.Mask)
 }
 
 var nonRetriableErrs []error
@@ -280,5 +338,6 @@ func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (dump []adap
 			Origin: api.FromNB,
 		})
 	}
+	d.log.Debugf("Dumping VPP ACLs: %v", dump)
 	return
 }

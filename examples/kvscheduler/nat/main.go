@@ -228,6 +228,8 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		extIfaceDNATExternalPort = 3333
 		extIfaceDNATLocalPort = 4444
 
+		emptyDNATLabel = "empty-dnat"
+
 		natPoolAddr1 = hostNetPrefix + "100"
 		natPoolAddr2 = hostNetPrefix + "200"
 	)
@@ -621,6 +623,11 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		},
 	}
 
+	/* empty DNAT */
+	emptyDNAT := &vpp_nat.DNat44{
+		Label: emptyDNATLabel,
+	}
+
 	// resync
 
 	time.Sleep(time.Second * 2)
@@ -650,6 +657,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		DNAT44(udpServiceDNAT).
 		DNAT44(idDNAT).
 		DNAT44(externalIfaceDNAT).
+		DNAT44(emptyDNAT).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

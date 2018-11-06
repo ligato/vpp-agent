@@ -210,9 +210,6 @@ func (h *ACLVppHandler) SetMACIPACLToInterfaces(aclIndex uint32, ifIndices []uin
 		if err != nil {
 			return fmt.Errorf("failed to set interface %d to L2 ACL %d: %v", ingressIfIdx, aclIndex, err)
 		}
-		if reply.Retval != 0 {
-			return fmt.Errorf("set interface %d to L2 ACL %d returned %d", ingressIfIdx, aclIndex, reply.Retval)
-		}
 	}
 
 	return nil
@@ -230,10 +227,6 @@ func (h *ACLVppHandler) RemoveMACIPACLFromInterfaces(removedACLIndex uint32, ifI
 
 		if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 			return fmt.Errorf("failed to remove L2 ACL %d from interface %d: %v", removedACLIndex, ifIdx, err)
-		}
-		if reply.Retval != 0 {
-			return fmt.Errorf("remove L2 ACL %d from interface %d returned error %d", removedACLIndex,
-				removedACLIndex, reply.Retval)
 		}
 	}
 	return nil

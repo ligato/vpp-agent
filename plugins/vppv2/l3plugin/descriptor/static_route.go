@@ -38,6 +38,9 @@ const (
 
 	// dependency labels
 	routeOutInterfaceDep = "interface-exists"
+
+	// static route weight by default
+	defaultWeight = 1
 )
 
 // RouteDescriptor teaches KVScheduler how to configure VPP routes.
@@ -89,7 +92,7 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.St
 		oldRoute.GetVrfId() != newRoute.GetVrfId() ||
 		oldRoute.GetViaVrfId() != newRoute.GetViaVrfId() ||
 		oldRoute.GetOutgoingInterface() != newRoute.GetOutgoingInterface() ||
-		oldRoute.GetWeight() != newRoute.GetWeight() ||
+		getWeight(oldRoute) != getWeight(newRoute) ||
 		oldRoute.GetPreference() != newRoute.GetPreference() {
 		return false
 	}
@@ -232,6 +235,14 @@ func getGwAddr(route *l3.StaticRoute) string {
 		return net.IPv6zero.String()
 	}
 	return net.IPv4zero.String()
+}
+
+// getWeight returns static route weight, handling the cases when it is left undefined.
+func getWeight(route *l3.StaticRoute) uint32 {
+	if route.Weight == 0 {
+		return defaultWeight
+	}
+	return route.Weight
 }
 
 // equalNetworks compares two IP networks for equality.

@@ -54,7 +54,7 @@ func (d *ACLToInterfaceDescriptor) IsACLInterfaceKey(key string) bool {
 	return isACLToInterfaceKey
 }
 
-// Add enables DHCP client.
+// Add binds interface to ACL.
 func (d *ACLToInterfaceDescriptor) Add(key string, emptyVal proto.Message) (metadata scheduler.Metadata, err error) {
 	aclName, ifName, flow, _ := acl.ParseACLToInterfaceKey(key)
 
@@ -68,16 +68,19 @@ func (d *ACLToInterfaceDescriptor) Add(key string, emptyVal proto.Message) (meta
 	if aclMeta.L2 {
 		// MACIP ACL (L2)
 		if err := d.aclHandler.AddMACIPACLToInterface(aclMeta.Index, ifName); err != nil {
+			d.log.Error(err)
 			return nil, err
 		}
 	} else {
 		// ACL (L3/L4)
 		if flow == acl.IngressFlow {
 			if err := d.aclHandler.AddACLToInterfaceAsIngress(aclMeta.Index, ifName); err != nil {
+				d.log.Error(err)
 				return nil, err
 			}
 		} else if flow == acl.EgressFlow {
 			if err := d.aclHandler.AddACLToInterfaceAsEgress(aclMeta.Index, ifName); err != nil {
+				d.log.Error(err)
 				return nil, err
 			}
 		}
@@ -86,7 +89,7 @@ func (d *ACLToInterfaceDescriptor) Add(key string, emptyVal proto.Message) (meta
 	return nil, nil
 }
 
-// Delete disables DHCP client.
+// Delete unbinds interface from ACL.
 func (d *ACLToInterfaceDescriptor) Delete(key string, emptyVal proto.Message, metadata scheduler.Metadata) error {
 	aclName, ifName, flow, _ := acl.ParseACLToInterfaceKey(key)
 
@@ -100,16 +103,19 @@ func (d *ACLToInterfaceDescriptor) Delete(key string, emptyVal proto.Message, me
 	if aclMeta.L2 {
 		// MACIP ACL (L2)
 		if err := d.aclHandler.DeleteMACIPACLFromInterface(aclMeta.Index, ifName); err != nil {
+			d.log.Error(err)
 			return err
 		}
 	} else {
 		// ACL (L3/L4)
 		if flow == acl.IngressFlow {
 			if err := d.aclHandler.DeleteACLFromInterfaceAsIngress(aclMeta.Index, ifName); err != nil {
+				d.log.Error(err)
 				return err
 			}
 		} else if flow == acl.EgressFlow {
 			if err := d.aclHandler.DeleteACLFromInterfaceAsEgress(aclMeta.Index, ifName); err != nil {
+				d.log.Error(err)
 				return err
 			}
 		}

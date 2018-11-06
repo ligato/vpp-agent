@@ -216,18 +216,43 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 
 // Dump returns the current NAT44 global configuration.
 func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (dump []adapter.DNAT44KVWithMetadata, err error) {
+	// collect DNATs which are expected to be empty
+	corrEmptyDNATs := make(map[string]*nat.DNat44)
+	for _, kv := range correlate {
+		if len(kv.Value.IdMappings) == 0 && len(kv.Value.StMappings) == 0 {
+			corrEmptyDNATs[kv.Value.Label] = kv.Value
+		}
+	}
+
+	// dump (non-empty) DNATs
 	dnatDump, err := d.natHandler.DNat44Dump()
 	if err != nil {
 		d.log.Error(err)
 		return dump, err
 	}
 
+	// process DNAT dump
 	for _, dnat := range dnatDump {
 		if dnat.Label == "" {
+			// all untagged mappings are grouped under one DNAT with label <untaggedDNAT>
+			// - they will get removed by resync (not configured by agent, or tagging has failed)
 			dnat.Label = untaggedDNAT
+		}
+		if _, expectedToBeEmpty := corrEmptyDNATs[dnat.Label]; expectedToBeEmpty {
+			// a DNAT mapping which is expected to be empty, but actually is not
+			delete(corrEmptyDNATs, dnat.Label)
 		}
 		dump = append(dump, adapter.DNAT44KVWithMetadata{
 			Key:    nat.DNAT44Key(dnat.Label),
+			Value:  dnat,
+			Origin: scheduler.FromNB,
+		})
+	}
+
+	// add empty DNATs (nothing from them is dumped)
+	for dnatLabel, dnat := range corrEmptyDNATs {
+		dump = append(dump, adapter.DNAT44KVWithMetadata{
+			Key:    nat.DNAT44Key(dnatLabel),
 			Value:  dnat,
 			Origin: scheduler.FromNB,
 		})
