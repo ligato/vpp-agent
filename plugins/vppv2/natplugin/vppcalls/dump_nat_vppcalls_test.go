@@ -139,7 +139,7 @@ func TestDNATDump(t *testing.T) {
 			VrfID:             1,
 			TwiceNat:          1,
 			SelfTwiceNat:      0,
-			Tag:               []byte("DNAT 1|EP"),
+			Tag:               []byte("DNAT 1|POOL"),
 		},
 		&bin_api.Nat44StaticMappingDetails{
 			LocalIPAddress:    net.ParseIP("10.10.11.120").To4(),
@@ -252,7 +252,7 @@ func TestDNATDump(t *testing.T) {
 			IPAddress: net.ParseIP("10.10.11.200").To4(),
 			SwIfIndex: vppcalls.NoInterface,
 			VrfID:     1,
-			Tag:       []byte("DNAT 3|EP"),
+			Tag:       []byte("DNAT 3|POOL"),
 		},
 		&bin_api.Nat44IdentityMappingDetails{
 			AddrOnly:  1,
