@@ -49,6 +49,10 @@ const (
 	vxlanMulticastDep        = "vxlan-multicast-interface"
 	microserviceDep          = "microservice"
 
+	// how many characters a logical interface name is allowed to have
+	//  - determined by much fits into the VPP interface tag (64 null-terminated character string)
+	logicalNameLengthLimit = 63
+
 	// prefix prepended to internal names of untagged interfaces to construct unique
 	// logical names
 	untaggedIfPreffix = "UNTAGGED-"
@@ -75,6 +79,9 @@ var (
 	// ErrInterfaceWithoutName is returned when VPP interface configuration has undefined
 	// Name attribute.
 	ErrInterfaceWithoutName = errors.New("VPP interface defined without logical name")
+
+	// ErrInterfaceNameTooLong is returned when VPP interface logical name exceeds the length limit.
+	ErrInterfaceNameTooLong = errors.New("VPP interface logical name exceeds the length limit (63 characters)")
 
 	// ErrInterfaceWithoutType is returned when VPP interface configuration has undefined
 	// Type attribute.
@@ -284,6 +291,7 @@ func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 	nonRetriable := []error{
 		ErrUnsupportedVPPInterfaceType,
 		ErrInterfaceWithoutName,
+		ErrInterfaceNameTooLong,
 		ErrInterfaceWithoutType,
 		ErrUnnumberedWithIP,
 		ErrAfPacketWithoutHostName,
@@ -395,6 +403,9 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface) error {
 	if intf.Name == "" {
 		return ErrInterfaceWithoutName
+	}
+	if len(intf.Name) > logicalNameLengthLimit {
+		return ErrInterfaceNameTooLong
 	}
 	if intf.Type == interfaces.Interface_UNDEFINED {
 		return ErrInterfaceWithoutType
