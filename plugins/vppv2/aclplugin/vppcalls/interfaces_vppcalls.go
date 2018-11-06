@@ -76,6 +76,9 @@ func (h *ACLVppHandler) AddACLToInterfaceAsIngress(aclIndex uint32, ifName strin
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
 	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
 
 	return nil
 }
@@ -100,6 +103,9 @@ func (h *ACLVppHandler) AddACLToInterfaceAsEgress(aclIndex uint32, ifName string
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
 	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
 
 	return nil
 }
@@ -122,6 +128,9 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsIngress(aclIndex uint32, ifName 
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as ingress: %v", ifIdx, aclIndex, err)
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -146,6 +155,9 @@ func (h *ACLVppHandler) DeleteACLFromInterfaceAsEgress(aclIndex uint32, ifName s
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to delete interface %d from ACL (L3/L4) %d as egress: %v", ifIdx, aclIndex, err)
 	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
 
 	return nil
 }
@@ -169,6 +181,9 @@ func (h *ACLVppHandler) AddMACIPACLToInterface(aclIndex uint32, ifName string) e
 	if err != nil {
 		return fmt.Errorf("failed to add interface %d to MACIP ACL (L2) %d: %v", ifIdx, aclIndex, err)
 	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+	}
 
 	return nil
 }
@@ -191,6 +206,9 @@ func (h *ACLVppHandler) DeleteMACIPACLFromInterface(aclIndex uint32, ifName stri
 	err := h.callsChannel.SendRequest(req).ReceiveReply(reply)
 	if err != nil {
 		return fmt.Errorf("failed to delete interface %d from MACIP ACL (L2) %d: %v", ifIdx, aclIndex, err)
+	}
+	if reply.Retval != 0 {
+		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
