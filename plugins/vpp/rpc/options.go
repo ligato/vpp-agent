@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 )
 
@@ -27,6 +28,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
 	p.PluginName = "vpp-grpc"
+	p.ServiceLabel = &servicelabel.DefaultPlugin
 	p.GRPCServer = &grpc.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 

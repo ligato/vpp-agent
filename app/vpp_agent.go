@@ -17,6 +17,9 @@ package app
 import (
 	"sync"
 
+	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/db/keyval/bolt"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
@@ -45,6 +48,7 @@ type VPPAgent struct {
 	ETCDDataSync   *kvdbsync.Plugin
 	ConsulDataSync *kvdbsync.Plugin
 	RedisDataSync  *kvdbsync.Plugin
+	BoltDataSync   *kvdbsync.Plugin
 
 	VPP   *vpp.Plugin
 	Linux *linux.Plugin
@@ -60,6 +64,7 @@ func New() *VPPAgent {
 	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
 	consulDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&consul.DefaultPlugin))
 	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&redis.DefaultPlugin))
+	boltDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&bolt.DefaultPlugin))
 
 	watchers := datasync.KVProtoWatchers{
 		local.Get(),
@@ -78,6 +83,8 @@ func New() *VPPAgent {
 			Topic: "if_state",
 		}),
 	)
+
+
 
 	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
 		deps.Publish = writers
@@ -103,16 +110,22 @@ func New() *VPPAgent {
 		deps.Linux = linuxPlugin
 	}))
 
-	grpcPlugin := rpc.NewPlugin(rpc.UseDeps(func(deps *rpc.Deps) {
-		deps.VPP = vppPlugin
-		deps.Linux = linuxPlugin
-	}))
+	grpcPlugin := rpc.NewPlugin(
+		rpc.UseDeps(func(deps *rpc.Deps) {
+			deps.Brokers = map[string]keyval.KvProtoPlugin{
+				"bolt": boltDataSync.KvPlugin,
+			}
+			deps.VPP = vppPlugin
+			deps.Linux = linuxPlugin
+		},
+		))
 
 	return &VPPAgent{
 		LogManager:     &logmanager.DefaultPlugin,
 		ETCDDataSync:   etcdDataSync,
 		ConsulDataSync: consulDataSync,
 		RedisDataSync:  redisDataSync,
+		BoltDataSync:   boltDataSync,
 		VPP:            vppPlugin,
 		Linux:          linuxPlugin,
 		GRPCService:    grpcPlugin,

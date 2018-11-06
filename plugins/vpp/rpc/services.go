@@ -15,6 +15,9 @@
 package rpc
 
 import (
+	"github.com/go-errors/errors"
+	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/db/keyval"
 	"fmt"
 
 	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
@@ -32,6 +35,7 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
@@ -42,8 +46,17 @@ import (
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	l4vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
+	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"golang.org/x/net/context"
 )
 
@@ -65,20 +78,29 @@ type Plugin struct {
 // Deps - dependencies of Plugin
 type Deps struct {
 	infra.PluginDeps
-	GRPCServer grpc.Server
+	GRPCServer   grpc.Server
+	Brokers      map[string]keyval.KvProtoPlugin
+	ServiceLabel servicelabel.ReaderAPI
 	GoVppmux   govppmux.TraceAPI
 	VPP        vpp.API
 	Linux      linux.API
 }
 
+// Config groups configurations fields.
+type Config struct {
+	Broker string `json:"persistence-db"`
+}
+
 // ChangeVppSvc forwards GRPC request to the localclient.
 type ChangeVppSvc struct {
 	log logging.Logger
+	pb  keyval.ProtoBroker
 }
 
 // ResyncVppSvc forwards GRPC request to the localclient.
 type ResyncVppSvc struct {
 	log logging.Logger
+	pb  keyval.ProtoBroker
 }
 
 // GetVppSvc uses VPP/Linux plugin handlers to read VPP configuration
@@ -140,6 +162,14 @@ func (p *Plugin) Init() (err error) {
 	// Set grpc interface notification function for VPP plugin
 	p.VPP.SetGRPCNotificationService(p.notifSvc.updateNotifications)
 
+	// Get DB broker to persis files
+	if broker, err := plugin.getBrokerFromConfig(); err != nil {
+		return err
+	} else {
+		protoBroker := broker.NewBroker(plugin.ServiceLabel.GetAgentPrefix())
+		plugin.resyncVppSvc.pb, plugin.changeVppSvc.pb = protoBroker, protoBroker
+	}
+
 	return nil
 }
 
@@ -151,31 +181,286 @@ func (p *Plugin) Close() error {
 // Put adds configuration data present in data request to the VPP/Linux
 func (svc *ChangeVppSvc) Put(ctx context.Context, data *rpc.DataRequest) (*rpc.PutResponse, error) {
 	request := localclient.DataChangeRequest("rpc").Put()
-	if err := processRequest(ctx, data, request); err != nil {
-		return nil, err
+	dataSet := make(map[string]proto.Message)
+	processPutRequest(data, request, dataSet)
+	if svc.pb != nil {
+		for key, value := range dataSet {
+			if err := svc.pb.Put(key, value); err != nil {
+				return &rpc.PutResponse{}, errors.Errorf("failed to persist (put) GRPC data: %v", err)
+			}
+		}
 	}
-	err := request.Send().ReceiveReply()
-	return &rpc.PutResponse{}, err
+	return &rpc.PutResponse{}, request.Send().ReceiveReply()
 }
 
 // Del removes configuration data present in data request from the VPP/linux
 func (svc *ChangeVppSvc) Del(ctx context.Context, data *rpc.DataRequest) (*rpc.DelResponse, error) {
 	request := localclient.DataChangeRequest("rpc").Delete()
-	if err := processRequest(ctx, data, request); err != nil {
-		return nil, err
+	dataSet := make(map[string]proto.Message)
+	processDelRequest(data, request, dataSet)
+	if svc.pb != nil {
+		for key := range dataSet {
+			if _, err := svc.pb.Delete(key); err != nil {
+				return &rpc.DelResponse{}, errors.Errorf("failed to persist (delete) GRPC data: %v", err)
+			}
+		}
 	}
-	err := request.Send().ReceiveReply()
-	return &rpc.DelResponse{}, err
+	return &rpc.DelResponse{}, request.Send().ReceiveReply()
 }
 
 // Resync creates a resync request which adds data tp the VPP/linux
 func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rpc.ResyncResponse, error) {
 	request := localclient.DataResyncRequest("rpc")
-	if err := processRequest(ctx, data, request); err != nil {
-		return nil, err
+	processResyncRequest(data, request)
+	return &rpc.ResyncResponse{}, request.Send().ReceiveReply()
+}
+
+func processPutRequest(reqData *rpc.DataRequest, req linuxclient.PutDSL, dataSet map[string]proto.Message) {
+	for _, aclItem := range reqData.AccessLists {
+		req.ACL(aclItem)
+		dataSet[acl.Key(aclItem.AclName)] = aclItem
 	}
-	err := request.Send().ReceiveReply()
-	return &rpc.ResyncResponse{}, err
+	for _, ifItem := range reqData.Interfaces {
+		req.VppInterface(ifItem)
+		dataSet[interfaces.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, sessionItem := range reqData.BfdSessions {
+		req.BfdSession(sessionItem)
+		dataSet[bfd.SessionKey(sessionItem.Interface)] = sessionItem
+	}
+	for _, keyItem := range reqData.BfdAuthKeys {
+		req.BfdAuthKeys(keyItem)
+		dataSet[bfd.AuthKeysKey(keyItem.Name)] = keyItem
+	}
+	if reqData.BfdEchoFunction != nil {
+		req.BfdEchoFunction(reqData.BfdEchoFunction)
+		dataSet[bfd.EchoFunctionKey(reqData.BfdEchoFunction.Name)] = reqData.BfdEchoFunction
+	}
+	for _, bdItem := range reqData.BridgeDomains {
+		req.BD(bdItem)
+		dataSet[l2.BridgeDomainKey(bdItem.Name)] = bdItem
+	}
+	for _, fibItem := range reqData.FIBs {
+		req.BDFIB(fibItem)
+		dataSet[l2.FibKey(fibItem.BridgeDomain, fibItem.PhysAddress)] = fibItem
+	}
+	for _, xcItem := range reqData.XCons {
+		req.XConnect(xcItem)
+		dataSet[l2.XConnectKey(xcItem.ReceiveInterface)] = xcItem
+	}
+	for _, rtItem := range reqData.StaticRoutes {
+		req.StaticRoute(rtItem)
+		dataSet[l3.RouteKey(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)] = rtItem
+	}
+	for _, arpItem := range reqData.ArpEntries {
+		req.Arp(arpItem)
+		dataSet[l3.ArpEntryKey(arpItem.Interface, arpItem.IpAddress)] = arpItem
+	}
+	for _, paiItem := range reqData.ProxyArpInterfaces {
+		req.ProxyArpInterfaces(paiItem)
+		dataSet[l3.ProxyArpInterfaceKey(paiItem.Label)] = paiItem
+	}
+	for _, parItem := range reqData.ProxyArpRanges {
+		req.ProxyArpRanges(parItem)
+		dataSet[l3.ProxyArpRangeKey(parItem.Label)] = parItem
+	}
+	if reqData.L4Feature != nil {
+		req.L4Features(reqData.L4Feature)
+		dataSet[l4.FeatureKey()] = reqData.L4Feature
+	}
+	for _, anItem := range reqData.ApplicationNamespaces {
+		req.AppNamespace(anItem)
+		dataSet[l4.AppNamespacesKey(anItem.NamespaceId)] = anItem
+	}
+	for _, stnItem := range reqData.StnRules {
+		req.StnRule(stnItem)
+		dataSet[stn.Key(stnItem.RuleName)] = stnItem
+	}
+	if reqData.NatGlobal != nil {
+		req.NAT44Global(reqData.NatGlobal)
+		dataSet[nat.Prefix+nat.GlobalPrefix] = reqData.NatGlobal
+	}
+	for _, natItem := range reqData.DNATs {
+		req.NAT44DNat(natItem)
+		dataSet[nat.DNatKey(natItem.Label)] = natItem
+	}
+	for _, ifItem := range reqData.LinuxInterfaces {
+		req.LinuxInterface(ifItem)
+		dataSet[linuxIf.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, arpItem := range reqData.LinuxArpEntries {
+		req.LinuxArpEntry(arpItem)
+		dataSet[linuxL3.StaticRouteKey(arpItem.Name)] = arpItem
+	}
+	for _, rtItem := range reqData.LinuxRoutes {
+		req.LinuxRoute(rtItem)
+		dataSet[linuxL3.StaticArpKey(rtItem.Name)] = rtItem
+	}
+}
+
+func processDelRequest(reqData *rpc.DataRequest, req linuxclient.DeleteDSL, dataSet map[string]proto.Message) {
+	for _, aclItem := range reqData.AccessLists {
+		req.ACL(aclItem.AclName)
+		dataSet[acl.Key(aclItem.AclName)] = aclItem
+	}
+	for _, ifItem := range reqData.Interfaces {
+		req.VppInterface(ifItem.Name)
+		dataSet[interfaces.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, sessionItem := range reqData.BfdSessions {
+		req.BfdSession(sessionItem.Interface)
+		dataSet[bfd.SessionKey(sessionItem.Interface)] = sessionItem
+	}
+	for _, keyItem := range reqData.BfdAuthKeys {
+		req.BfdAuthKeys(keyItem.Name)
+		dataSet[bfd.AuthKeysKey(keyItem.Name)] = keyItem
+	}
+	if reqData.BfdEchoFunction != nil {
+		req.BfdEchoFunction(reqData.BfdEchoFunction.Name)
+		dataSet[bfd.EchoFunctionKey(reqData.BfdEchoFunction.Name)] = reqData.BfdEchoFunction
+	}
+	for _, bdItem := range reqData.BridgeDomains {
+		req.BD(bdItem.Name)
+		dataSet[l2.BridgeDomainKey(bdItem.Name)] = bdItem
+	}
+	for _, fibItem := range reqData.FIBs {
+		req.BDFIB(fibItem.BridgeDomain, fibItem.PhysAddress)
+		dataSet[l2.FibKey(fibItem.BridgeDomain, fibItem.PhysAddress)] = fibItem
+	}
+	for _, xcItem := range reqData.XCons {
+		req.XConnect(xcItem.ReceiveInterface)
+		dataSet[l2.XConnectKey(xcItem.ReceiveInterface)] = xcItem
+	}
+	for _, rtItem := range reqData.StaticRoutes {
+		req.StaticRoute(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)
+		dataSet[l3.RouteKey(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)] = rtItem
+	}
+	for _, arpItem := range reqData.ArpEntries {
+		req.Arp(arpItem.Interface, arpItem.IpAddress)
+		dataSet[l3.ArpEntryKey(arpItem.Interface, arpItem.IpAddress)] = arpItem
+	}
+	for _, paiItem := range reqData.ProxyArpInterfaces {
+		req.ProxyArpInterfaces(paiItem.Label)
+		dataSet[l3.ProxyArpInterfaceKey(paiItem.Label)] = paiItem
+	}
+	for _, parItem := range reqData.ProxyArpRanges {
+		req.ProxyArpRanges(parItem.Label)
+		dataSet[l3.ProxyArpRangeKey(parItem.Label)] = parItem
+	}
+	if reqData.L4Feature != nil {
+		req.L4Features()
+		dataSet[l4.FeatureKey()] = reqData.L4Feature
+	}
+	for _, anItem := range reqData.ApplicationNamespaces {
+		req.AppNamespace(anItem.NamespaceId)
+		dataSet[l4.AppNamespacesKey(anItem.NamespaceId)] = anItem
+	}
+	for _, stnItem := range reqData.StnRules {
+		req.StnRule(stnItem.RuleName)
+		dataSet[stn.Key(stnItem.RuleName)] = stnItem
+	}
+	if reqData.NatGlobal != nil {
+		req.NAT44Global()
+		dataSet[nat.Prefix+nat.GlobalPrefix] = reqData.NatGlobal
+	}
+	for _, natItem := range reqData.DNATs {
+		req.NAT44DNat(natItem.Label)
+		dataSet[nat.DNatKey(natItem.Label)] = natItem
+	}
+	for _, ifItem := range reqData.LinuxInterfaces {
+		req.LinuxInterface(ifItem.Name)
+		dataSet[linuxIf.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, arpItem := range reqData.LinuxArpEntries {
+		req.LinuxArpEntry(arpItem.Name)
+		dataSet[linuxL3.StaticRouteKey(arpItem.Name)] = arpItem
+	}
+	for _, rtItem := range reqData.LinuxRoutes {
+		req.LinuxRoute(rtItem.Name)
+		dataSet[linuxL3.StaticArpKey(rtItem.Name)] = rtItem
+	}
+}
+
+func processResyncRequest(reqData *rpc.DataRequest, req linuxclient.DataResyncDSL) {
+	for _, aclItem := range reqData.AccessLists {
+		req.ACL(aclItem)
+	}
+	for _, ifItem := range reqData.Interfaces {
+		req.VppInterface(ifItem)
+	}
+	for _, sessionItem := range reqData.BfdSessions {
+		req.BfdSession(sessionItem)
+	}
+	for _, keyItem := range reqData.BfdAuthKeys {
+		req.BfdAuthKeys(keyItem)
+	}
+	if reqData.BfdEchoFunction != nil {
+		req.BfdEchoFunction(reqData.BfdEchoFunction)
+	}
+	for _, bdItem := range reqData.BridgeDomains {
+		req.BD(bdItem)
+	}
+	for _, fibItem := range reqData.FIBs {
+		req.BDFIB(fibItem)
+	}
+	for _, xcItem := range reqData.XCons {
+		req.XConnect(xcItem)
+	}
+	for _, rtItem := range reqData.StaticRoutes {
+		req.StaticRoute(rtItem)
+	}
+	for _, arpItem := range reqData.ArpEntries {
+		req.Arp(arpItem)
+	}
+	for _, paiItem := range reqData.ProxyArpInterfaces {
+		req.ProxyArpInterfaces(paiItem)
+	}
+	for _, parItem := range reqData.ProxyArpRanges {
+		req.ProxyArpRanges(parItem)
+	}
+	if reqData.L4Feature != nil {
+		req.L4Features(reqData.L4Feature)
+	}
+	for _, anItem := range reqData.ApplicationNamespaces {
+		req.AppNamespace(anItem)
+	}
+	for _, stnItem := range reqData.StnRules {
+		req.StnRule(stnItem)
+	}
+	if reqData.NatGlobal != nil {
+		req.NAT44Global(reqData.NatGlobal)
+	}
+	for _, natItem := range reqData.DNATs {
+		req.NAT44DNat(natItem)
+	}
+	for _, ifItem := range reqData.LinuxInterfaces {
+		req.LinuxInterface(ifItem)
+	}
+	for _, arpItem := range reqData.LinuxArpEntries {
+		req.LinuxArpEntry(arpItem)
+	}
+	for _, rtItem := range reqData.LinuxRoutes {
+		req.LinuxRoute(rtItem)
+	}
+}
+
+// Returns database broker defined in config file. The broker also has to be available in map of proto writers
+func (plugin *Plugin) getBrokerFromConfig() (keyval.KvProtoPlugin, error) {
+	config := &Config{}
+
+	found, err := plugin.Cfg.LoadValue(config)
+	if err != nil {
+		return nil, err
+	} else if !found {
+		plugin.Log.Debug("rpc-plugin config not found")
+		return nil, nil
+	}
+	plugin.Log.Debugf("rpc-plugin config found: %+v", config)
+
+	if config != nil {
+		return plugin.Brokers[config.Broker], nil
+	}
+	return nil, err
 }
 
 // DumpAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,
