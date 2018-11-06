@@ -126,18 +126,18 @@ func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.Acl_Rule) bool {
 	if rule1.IpRule.Ip == nil || rule2.IpRule.Ip == nil {
 		return rule1.IpRule.Ip == rule2.IpRule.Ip
 	}
-	if !d.equivalentIpRuleNetworks(rule1.IpRule.Ip.SourceNetwork, rule2.IpRule.Ip.SourceNetwork) {
+	if !d.equivalentIPRuleNetworks(rule1.IpRule.Ip.SourceNetwork, rule2.IpRule.Ip.SourceNetwork) {
 		return false
 	}
-	if !d.equivalentIpRuleNetworks(rule1.IpRule.Ip.DestinationNetwork, rule2.IpRule.Ip.DestinationNetwork) {
+	if !d.equivalentIPRuleNetworks(rule1.IpRule.Ip.DestinationNetwork, rule2.IpRule.Ip.DestinationNetwork) {
 		return false
 	}
 	return true
 }
 
-// equivalentIpRuleNetworks compares two IP networks, taking into account the fact
+// equivalentIPRuleNetworks compares two IP networks, taking into account the fact
 // that empty string is equivalent to address with all zeroes.
-func (d *ACLDescriptor) equivalentIpRuleNetworks(net1, net2 string) bool {
+func (d *ACLDescriptor) equivalentIPRuleNetworks(net1, net2 string) bool {
 	var (
 		ip1, ip2 net.IP
 		ipNet1, ipNet2 *net.IPNet
