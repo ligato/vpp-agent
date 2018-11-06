@@ -9,11 +9,7 @@ The `restplugin` is a core Agent Plugin used to expose REST API for the followin
 
 ## Index page
 
-REST to get index page. Configuration items are sorted by type (ifplugin, telemetry, etc.)
-
-```
-curl GET http://0.0.0.0:9191/
-```
+Open `http://0.0.0.0:9191/` in the browser to see index page containing list of all exposed data. Configuration items are sorted by type (ifplugin, telemetry, etc.)
 
 ## Execute VPP CLI commands
 ```
