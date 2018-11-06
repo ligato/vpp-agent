@@ -214,7 +214,7 @@ func (dsl *PutDSL) Send() vppclient.Reply {
 // LinuxInterface adds a request to delete an existing Linux network
 // interface.
 func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(interfaces.InterfaceKey(interfaceName))
+	dsl.parent.txn.Delete(linuxIf.InterfaceKey(interfaceName))
 	return dsl
 }
 
