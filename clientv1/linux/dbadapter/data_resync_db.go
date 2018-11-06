@@ -213,7 +213,17 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		toBeDeleted := keySet{}
 
 		// fill all known keys associated with the Linux network configuration:
-		keys, err := dsl.listKeys(interfaces.Prefix)
+		keys, err := dsl.listKeys(linuxIf.InterfacePrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(linuxL3.StaticArpPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(linuxL3.StaticRoutePrefix)
 		if err != nil {
 			break
 		}
