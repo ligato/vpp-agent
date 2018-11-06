@@ -133,6 +133,23 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			Ingress: []string{"memif0"},
 		},
 	}
+	acl3 := &acl.Acl{
+		Name: "acl3",
+		Rules: []*acl.Acl_Rule{
+			{
+				Action: acl.Acl_Rule_DENY,
+				IpRule: &acl.Acl_Rule_IpRule{
+					Ip: &acl.Acl_Rule_IpRule_Ip{
+						// SourceNetwork is unspecified (ANY)
+						DestinationNetwork: "30.0.0.0/8",
+					},
+				},
+			},
+		},
+		Interfaces: &acl.Acl_Interfaces{
+			Egress:  []string{"memif0"},
+		},
+	}
 
 	// resync
 
@@ -144,6 +161,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		VppInterface(memif0).
 		ACL(acl0).
 		ACL(acl1).
+		ACL(acl3).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -156,11 +174,13 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 
 	acl1.Interfaces = nil
 	acl0.Interfaces.Egress = nil
+	acl3.Rules[0].IpRule.Ip.SourceNetwork = "0.0.0.0/0" // this is actually equivalent to uspecified field
 
 	txn2 := localclient.DataChangeRequest("example")
 	err = txn2.Put().
 		ACL(acl0).
 		ACL(acl1).
+		ACL(acl3).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
