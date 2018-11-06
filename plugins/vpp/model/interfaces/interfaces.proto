@@ -9,6 +9,8 @@ enum InterfaceType {
     TAP_INTERFACE = 3;
     AF_PACKET_INTERFACE = 4;
     VXLAN_TUNNEL = 5;
+    IPSEC_TUNNEL = 6;           // Serves only as an identifier, IPSec tunnel interfaces are processed in IPSec plugin
+    VMXNET3_INTERFACE = 7;
 };
 
 // from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
@@ -95,10 +97,19 @@ message Interfaces {
             uint32 tx_ring_size = 5; /* Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
         }
         Tap tap = 104;
+
+        /* PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
+        name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
+        's' is slot (max 1f) and 'f is function' (max 7). All values are base 16 */
+        message VmxNet3 {
+            bool enable_elog = 2;   /* turn on elog */
+            uint32 rxq_size = 3;    /* receive queue size (default is 1024) */
+            uint32 txq_size = 4;    /* transmit queue size (default is 1024) */
+        }
+        VmxNet3 vmx_net3 = 105;
     };
     repeated Interface interfaces = 1;
 };
-
 
 message InterfacesState {
     message Interface {

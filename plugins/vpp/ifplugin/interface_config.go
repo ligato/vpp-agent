@@ -198,6 +198,8 @@ func (c *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Int
 			c.log.Debugf("Af-packet interface %s cannot be created yet and will be configured later", iface)
 			return nil
 		}
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		ifIdx, err = c.ifHandler.AddVmxNet3(iface.Name, iface.VmxNet3)
 	}
 	if err != nil {
 		return err
@@ -473,15 +475,15 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 
 	switch ifaceType {
 	case intf.InterfaceType_TAP_INTERFACE:
-		if !c.canTapBeModifWithoutDelete(newConfig.Tap, oldConfig.Tap) {
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Tap, oldConfig.Tap) {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		if !c.canMemifBeModifWithoutDelete(newConfig.Memif, oldConfig.Memif) {
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Memif, oldConfig.Memif) {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		if !c.canVxlanBeModifWithoutDelete(newConfig.Vxlan, oldConfig.Vxlan) ||
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Vxlan, oldConfig.Vxlan) ||
 			oldConfig.Vrf != newConfig.Vrf {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
@@ -495,6 +497,11 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 		}
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 	case intf.InterfaceType_ETHERNET_CSMACD:
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.VmxNet3, oldConfig.VmxNet3) ||
+			oldConfig.Vrf != newConfig.Vrf {
+			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
+		}
 	}
 
 	// Rx-mode
@@ -790,6 +797,8 @@ func (c *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_In
 		return nil
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		err = c.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, ifIdx)
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		err = c.ifHandler.DelVmxNet3(oldConfig.Name, ifIdx)
 	}
 	if err != nil {
 		return errors.Errorf("failed to remove interface %s, index %d: %v", oldConfig.Name, ifIdx, err)
@@ -924,40 +933,11 @@ func (c *InterfaceConfigurator) resolveCachedVxLANMulticasts(createdIfName strin
 	return nil
 }
 
-func (c *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-
+func (c *InterfaceConfigurator) canInterfaceBeModifiedWithoutDelete(ifName string, newConfig, oldConfig proto.Message) bool {
 	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of memif")
+		c.log.Debug("Difference between new & old config causing recreation of %s", ifName)
 		return false
 	}
-
-	return true
-}
-
-func (c *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Vxlan, oldConfig *intf.Interfaces_Interface_Vxlan) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of VxLAN")
-		return false
-	}
-
-	return true
-}
-
-func (c *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Tap, oldConfig *intf.Interfaces_Interface_Tap) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of tap")
-		return false
-	}
-
 	return true
 }
 
