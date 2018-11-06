@@ -67,8 +67,8 @@ func (h *NetLinkHandler) DumpInterfaces() ([]*LinuxInterfaceDetails, error) {
 		// Copy base configuration from mapping metadata. Linux specific fields are stored in LinuxInterfaceMeta.
 		ifDetails.Interface = meta.Data
 
-		// Check the interface namespace
-		link, linkAddrs, err := h.dumpInterfaceData(ifName, h.nsHandler.IfNsToGeneric(meta.Data.Namespace), ctx)
+		// Use host name to dump interfaces via netlink
+		link, linkAddrs, err := h.dumpInterfaceData(meta.Data.HostIfName, h.nsHandler.IfNsToGeneric(meta.Data.Namespace), ctx)
 		if err != nil {
 			// Do not return error, read what is possible
 			h.log.Errorf("failed to get interface %s data: %v", ifName, err)
@@ -139,8 +139,8 @@ func (h *NetLinkHandler) DumpInterfaceStatistics() ([]*LinuxInterfaceStatistics,
 			continue
 		}
 
-		// Check the interface namespace
-		link, _, err := h.dumpInterfaceData(ifName, h.nsHandler.IfNsToGeneric(meta.Data.Namespace), ctx)
+		// Use host name to dump interfaces via netlink
+		link, _, err := h.dumpInterfaceData(meta.Data.HostIfName, h.nsHandler.IfNsToGeneric(meta.Data.Namespace), ctx)
 		if err != nil {
 			// Do not return error, read what is possible
 			h.log.Errorf("failed to get interface %s data: %v", ifName, err)
