@@ -28,8 +28,21 @@ const (
 	IPScanNeighborDescriptorName = "vpp-ip-scan-neighbor"
 )
 
+const (
+	defaultScanInterval   = 1
+	defaultMaxProcTime    = 20
+	defaultMaxUpdate      = 10
+	defaultScanIntDelay   = 1
+	defaultStaleThreshold = 4
+)
+
 var defaultIPScanNeighbor = &l3.IPScanNeighbor{
-	Mode: l3.IPScanNeighbor_DISABLED,
+	Mode:           l3.IPScanNeighbor_DISABLED,
+	ScanInterval:   defaultScanInterval,
+	MaxProcTime:    defaultMaxProcTime,
+	MaxUpdate:      defaultMaxUpdate,
+	ScanIntDelay:   defaultScanIntDelay,
+	StaleThreshold: defaultStaleThreshold,
 }
 
 // IPScanNeighborDescriptor teaches KVScheduler how to configure VPP proxy ARPs.
@@ -71,7 +84,7 @@ func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescri
 
 // EquivalentIPScanNeighbors compares the IP Scan Neighbor values.
 func (d *IPScanNeighborDescriptor) EquivalentIPScanNeighbors(key string, oldValue, newValue *l3.IPScanNeighbor) bool {
-	return proto.Equal(oldValue, newValue)
+	return proto.Equal(getWithDefaults(oldValue), getWithDefaults(newValue))
 }
 
 // Add adds VPP IP Scan Neighbor.
@@ -105,7 +118,7 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 		return nil, err
 	}
 
-	origin := scheduler.FromNB
+	var origin = scheduler.FromNB
 	if proto.Equal(ipNeigh, defaultIPScanNeighbor) {
 		origin = scheduler.FromSB
 	}
@@ -117,6 +130,27 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 			Origin: origin,
 		},
 	}
-	d.log.Debugf("Dumping IP Scan Neighbor configuration: %v", ipNeigh)
+
+	d.log.Debugf("Dumping IP Scan Neighbor configuration: %+v", dump)
 	return dump, nil
+}
+
+func getWithDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
+	var val = *orig
+	if val.ScanInterval == 0 {
+		val.ScanInterval = defaultScanInterval
+	}
+	if val.MaxProcTime == 0 {
+		val.MaxProcTime = defaultMaxProcTime
+	}
+	if val.MaxUpdate == 0 {
+		val.MaxUpdate = defaultMaxUpdate
+	}
+	if val.ScanIntDelay == 0 {
+		val.ScanIntDelay = defaultScanIntDelay
+	}
+	if val.StaleThreshold == 0 {
+		val.StaleThreshold = defaultStaleThreshold
+	}
+	return &val
 }

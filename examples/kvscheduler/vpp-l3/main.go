@@ -21,13 +21,13 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	vpp_l3plugin "github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 /*
@@ -128,7 +128,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		ScanInterval:   1,
 		ScanIntDelay:   1,
 		MaxProcTime:    20,
-		MaxUpdate:      10,
+		MaxUpdate:      0,
 		StaleThreshold: 4,
 	}
 
