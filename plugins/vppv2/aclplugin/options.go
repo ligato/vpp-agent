@@ -16,9 +16,11 @@ package aclplugin
 
 import (
 	"github.com/ligato/cn-infra/config"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 )
 
 // DefaultPlugin is a default instance of IfPlugin.
@@ -29,9 +31,10 @@ func NewPlugin(opts ...Option) *ACLPlugin {
 	p := &ACLPlugin{}
 
 	p.PluginName = "vpp-aclplugin"
-	//p.StatusCheck = &statuscheck.DefaultPlugin
+	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Scheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
+	p.IfPlugin = &ifplugin.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)
@@ -41,9 +44,7 @@ func NewPlugin(opts ...Option) *ACLPlugin {
 		p.Log = logging.ForPlugin(p.String())
 	}
 	if p.Cfg == nil {
-		p.Cfg = config.ForPlugin(p.String(),
-			config.WithCustomizedFlag(config.FlagName(p.String()), "vpp-aclplugin.conf"),
-		)
+		p.Cfg = config.ForPlugin(p.String())
 	}
 
 	return p

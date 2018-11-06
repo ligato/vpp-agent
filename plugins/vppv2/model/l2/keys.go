@@ -15,30 +15,31 @@
 package l2
 
 import (
-	"strings"
 	"net"
+	"strings"
 )
 
-// Prefixes
+/* Bridge Domain */
 const (
-	/* Bridge Domain */
-
 	// BDPrefix is a key prefix used in NB DB to store configuration for bridge domains.
 	BDPrefix = "vpp/config/v2/bd/"
+)
 
-	/* BD <-> interface binding (derived) */
-
+/* BD <-> interface binding (derived) */
+const (
 	// bdInterfaceKeyTemplate is a template for (derived) key representing binding
 	// between interface and a bridge domain.
 	bdInterfaceKeyTemplate = "vpp/bd/{bd}/interface/{iface}"
+)
 
-	/* L2 FIB */
-
+/* L2 FIB */
+const (
 	// fibKeyTemplate is a template for key representing configuration for a L2 FIB.
 	fibKeyTemplate = BDPrefix + "{bd}/fib/{hwAddr}"
+)
 
-	/* xConnect */
-
+/* xConnect */
+const (
 	// XConnectPrefix is a key prefix used in NB DB to store configuration for
 	// xConnects.
 	XConnectPrefix = "vpp/config/v2/xconnect/"

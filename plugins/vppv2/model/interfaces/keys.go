@@ -19,24 +19,26 @@ import (
 	"strings"
 )
 
+/* Interface Config */
 const (
-	/* Interface Config */
-
 	// Prefix is a key prefix used in NB DB to store configuration for VPP interfaces.
 	Prefix = "vpp/config/v2/interface/"
+)
 
-	/* Interface State */
-
+/* Interface State */
+const (
 	// StatePrefix is a key prefix used in NB DB to store interface states.
 	StatePrefix = "vpp/status/v2/interface/"
+)
 
-	/* Interface Error */
-
+/* Interface Error */
+const (
 	// ErrorPrefix is a key prefix used in NB DB to store interface errors.
 	ErrorPrefix = "vpp/status/v2/interface/error/"
+)
 
-	/* Interface Address (derived) */
-
+/* Interface Address (derived) */
+const (
 	// AddressKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent assigned IP addresses.
 	AddressKeyPrefix = "vpp/interface/address/"
@@ -44,15 +46,17 @@ const (
 	// addressKeyTemplate is a template for (derived) key representing IP address
 	// (incl. mask) assigned to a VPP interface.
 	addressKeyTemplate = AddressKeyPrefix + "{iface}/{addr}/{mask}"
+)
 
-	/* Unnumbered interface (derived) */
-
+/* Unnumbered interface (derived) */
+const (
 	// UnnumberedKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent unnumbered interfaces.
 	UnnumberedKeyPrefix = "vpp/interface/unnumbered/"
+)
 
-	/* DHCP (client - derived, lease - notification) */
-
+/* DHCP (client - derived, lease - notification) */
+const (
 	// DHCPClientKeyPrefix is used as a common prefix for keys derived from
 	// interfaces to represent enabled DHCP clients.
 	DHCPClientKeyPrefix = "vpp/interface/dhcp-client/"

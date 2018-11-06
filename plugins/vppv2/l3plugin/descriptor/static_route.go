@@ -67,7 +67,8 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	return &adapter.StaticRouteDescriptor{
 		Name: StaticRouteDescriptorName,
 		KeySelector: func(key string) bool {
-			return strings.HasPrefix(key, l3.RoutePrefix)
+			_, _, _, _, isRouteKey := l3.ParseRouteKey(key)
+			return isRouteKey
 		},
 		ValueTypeName:   proto.MessageName(&l3.StaticRoute{}),
 		ValueComparator: d.EquivalentRoutes,

@@ -80,7 +80,7 @@ type IfPlugin struct {
 	dhcpIndex idxmap.NamedMapping
 
 	// from config file
-	defaultMtu      uint32
+	defaultMtu uint32
 
 	// state data
 	publishStats     bool
@@ -103,7 +103,8 @@ type Deps struct {
 	Scheduler scheduler.KVScheduler
 	GoVppmux  govppmux.API
 
-	/* optional, provide if AFPacket or TAP+TAP_TO_VPP interfaces are used */
+	/*	LinuxIfPlugin dep is optional,
+		but it is required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
 	LinuxIfPlugin descriptor.LinuxPluginAPI
 
 	// state publishing
@@ -118,7 +119,7 @@ type Deps struct {
 
 // Config holds the vpp-plugin configuration.
 type Config struct {
-	Mtu              uint32   `json:"mtu"`
+	MTU              uint32   `json:"mtu"`
 	StatusPublishers []string `json:"status-publishers"`
 }
 
@@ -147,18 +148,18 @@ func (p *IfPlugin) Init() error {
 		p.linuxIfHandler = linux_ifcalls.NewNetLinkHandler()
 	}
 
-	// init descriptors
+	// init & register descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu,
 		p.linuxIfHandler, p.LinuxIfPlugin, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
+	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
+
 	p.unIfDescriptor = descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.Log)
 	unIfDescriptor := adapter.NewUnnumberedDescriptor(p.unIfDescriptor.GetDescriptor())
+	p.Deps.Scheduler.RegisterKVDescriptor(unIfDescriptor)
+
 	p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.Scheduler, p.ifHandler, p.Log)
 	dhcpDescriptor := p.dhcpDescriptor.GetDescriptor()
-
-	// register descriptors
-	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
-	p.Deps.Scheduler.RegisterKVDescriptor(unIfDescriptor)
 	p.Deps.Scheduler.RegisterKVDescriptor(dhcpDescriptor)
 
 	// obtain read-only references to index maps
@@ -189,9 +190,8 @@ func (p *IfPlugin) Init() error {
 	if p.publishStats {
 		// subscribe & watch for resync of interface state data
 		p.resyncStatusChan = make(chan datasync.ResyncEvent)
-		p.watchStatusReg, err = p.Watcher.
-			Watch("VPP interface state data", nil, p.resyncStatusChan,
-				interfaces.StatePrefix)
+		p.watchStatusReg, err = p.Watcher.Watch("VPP-interface-state",
+			nil, p.resyncStatusChan, interfaces.StatePrefix)
 		if err != nil {
 			return err
 		}
@@ -251,7 +251,7 @@ func (p *IfPlugin) Close() error {
 	p.wg.Wait()
 
 	// close all resources
-	safeclose.Close(
+	return safeclose.Close(
 		// DHCP descriptor (DHCP notification watcher)
 		p.dhcpDescriptor,
 		// state updater
@@ -260,7 +260,6 @@ func (p *IfPlugin) Close() error {
 		p.watchStatusReg,
 		// channels
 		p.dhcpChan, p.resyncStatusChan, p.ifStateChan)
-	return nil
 }
 
 // GetInterfaceIndex gives read-only access to map with metadata of all configured
@@ -294,8 +293,8 @@ func (p *IfPlugin) fromConfigFile() {
 			p.Log.Infof("Added status publisher %q from config", pub)
 		}
 		p.Deps.PublishStatistics = publishers
-		if config.Mtu != 0 {
-			p.defaultMtu = config.Mtu
+		if config.MTU != 0 {
+			p.defaultMtu = config.MTU
 			p.Log.Infof("Default MTU set to %v", p.defaultMtu)
 		}
 	}

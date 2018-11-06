@@ -17,10 +17,8 @@
 package aclplugin
 
 import (
-	"context"
-	"sync"
-
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
@@ -45,26 +43,22 @@ type ACLPlugin struct {
 	aclDescriptor          *descriptor.ACLDescriptor
 	aclInterfaceDescriptor *descriptor.ACLToInterfaceDescriptor
 
+	// index maps
 	aclIndex aclidx.ACLMetadataIndex
-
-	// go routine management
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
 }
 
 // Deps represents dependencies for the plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler scheduler.KVScheduler
-	GoVppmux  govppmux.API
-	IfPlugin  ifplugin.API
+	Scheduler   scheduler.KVScheduler
+	GoVppmux    govppmux.API
+	IfPlugin    ifplugin.API
+	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init initializes ACL plugin.
-func (p *ACLPlugin) Init() (err error) {
-	// Create plugin context, save cancel function into the plugin handle.
-	p.ctx, p.cancel = context.WithCancel(context.Background())
+func (p *ACLPlugin) Init() error {
+	var err error
 
 	// GoVPP channels
 	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
@@ -77,11 +71,9 @@ func (p *ACLPlugin) Init() (err error) {
 	// init handlers
 	p.aclHandler = vppcalls.NewACLVppHandler(p.vppCh, p.dumpVppCh, p.IfPlugin.GetInterfaceIndex())
 
-	// init descriptors
+	// init & register descriptors
 	p.aclDescriptor = descriptor.NewACLDescriptor(p.aclHandler, p.IfPlugin, p.Log)
 	aclDescriptor := adapter.NewACLDescriptor(p.aclDescriptor.GetDescriptor())
-
-	// register descriptors
 	p.Scheduler.RegisterKVDescriptor(aclDescriptor)
 
 	// obtain read-only references to index maps
@@ -89,30 +81,20 @@ func (p *ACLPlugin) Init() (err error) {
 	metadataMap := p.Scheduler.GetMetadataMap(aclDescriptor.Name)
 	p.aclIndex, withIndex = metadataMap.(aclidx.ACLMetadataIndex)
 	if !withIndex {
-		return errors.New("missing index with acl metadata")
+		return errors.New("missing index with ACL metadata")
 	}
 
 	p.aclInterfaceDescriptor = descriptor.NewACLToInterfaceDescriptor(p.aclIndex, p.aclHandler, p.Log)
 	aclInterfaceDescriptor := p.aclInterfaceDescriptor.GetDescriptor()
-
 	p.Scheduler.RegisterKVDescriptor(aclInterfaceDescriptor)
 
 	return nil
 }
 
-// AfterInit initializes extra things.
+// AfterInit registers plugin with StatusCheck.
 func (p *ACLPlugin) AfterInit() error {
-	// TODO: statucheck
-
-	return nil
-}
-
-// Close stops all go routines and frees resources.
-func (p *ACLPlugin) Close() error {
-	// stop publishing of state data
-	p.cancel()
-	p.wg.Wait()
-
-	// TODO: close all resources
+	if p.StatusCheck != nil {
+		p.StatusCheck.Register(p.PluginName, nil)
+	}
 	return nil
 }

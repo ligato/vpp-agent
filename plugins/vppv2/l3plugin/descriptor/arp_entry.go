@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -62,7 +61,8 @@ func (d *ArpDescriptor) GetDescriptor() *adapter.ARPEntryDescriptor {
 	return &adapter.ARPEntryDescriptor{
 		Name: ArpDescriptorName,
 		KeySelector: func(key string) bool {
-			return strings.HasPrefix(key, l3.ArpPrefix)
+			_, _, ok := l3.ParseArpKey(key)
+			return ok
 		},
 		ValueTypeName:   proto.MessageName(&l3.ARPEntry{}),
 		ValueComparator: d.EquivalentArps,

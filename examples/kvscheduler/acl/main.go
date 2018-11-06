@@ -36,7 +36,7 @@ import (
 
 func main() {
 	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.Get()
+	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
 	vppIfPlugin := vpp_ifplugin.NewPlugin()
 	vppACLPlugin := vpp_aclplugin.NewPlugin()
@@ -147,7 +147,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 		},
 		Interfaces: &acl.Acl_Interfaces{
-			Egress:  []string{"memif0"},
+			Egress: []string{"memif0"},
 		},
 	}
 

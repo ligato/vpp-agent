@@ -131,7 +131,7 @@ func TestParseRouteKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			isRouteKey, vrfIndex, dstNetAddr, dstNetMask, nextHopAddr := ParseRouteKey(test.routeKey)
+			vrfIndex, dstNetAddr, dstNetMask, nextHopAddr, isRouteKey := ParseRouteKey(test.routeKey)
 			if isRouteKey != test.expectedIsRouteKey {
 				t.Errorf("expected isRouteKey: %v\tgot: %v", test.expectedIsRouteKey, isRouteKey)
 			}
