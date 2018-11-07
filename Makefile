@@ -66,7 +66,7 @@ examples:
 	cd examples/grpc_vpp/notifications   && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/kvscheduler/interconnect && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/kvscheduler/l2           && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/kvscheduler/acls         && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/acl          && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/kvscheduler/nat          && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean examples
