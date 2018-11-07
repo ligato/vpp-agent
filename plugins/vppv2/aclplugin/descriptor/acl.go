@@ -109,8 +109,6 @@ func (d *ACLDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool
 	return true
 }
 
-// equivalentACLRules compares two ACL rules, handling the cases of unspecified
-// source/destination networks.
 func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.Acl_Rule) bool {
 	// Action
 	if rule1.Action != rule2.Action {

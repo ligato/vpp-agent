@@ -468,7 +468,7 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|POOL"))
+	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|EP"))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(externalIP))
@@ -568,7 +568,7 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|POOL"))
+	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|EP"))
 	Expect(msg.IsAdd).To(BeEquivalentTo(0))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(externalIP))
@@ -646,7 +646,7 @@ func TestAddNat44StaticMappingLbWithExtIPFromPool(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelLbStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|POOL"))
+	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|EP"))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
 	Expect(msg.ExternalAddr).To(BeEquivalentTo(externalIP))
@@ -796,7 +796,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 2|POOL"))
+	Expect(msg.Tag).To(BeEquivalentTo("DNAT 2|EP"))
 	Expect(msg.IPAddress).To(BeEquivalentTo(address))
 	Expect(msg.Port).To(BeEquivalentTo(8989))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(0))
