@@ -15,19 +15,19 @@
 package descriptor
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
-
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 const (
@@ -150,15 +150,21 @@ func (d *XConnectDescriptor) Dump(correlate []adapter.XConnectKVWithMetadata) (d
 		d.log.Error(err)
 		return dump, err
 	}
+
 	for _, xc := range xConnectPairs {
 		dump = append(dump, adapter.XConnectKVWithMetadata{
-			Key:      l2.XConnectKey(xc.Xc.ReceiveInterface),
-			Value:    xc.Xc,
-			Origin:   scheduler.FromNB,
+			Key:    l2.XConnectKey(xc.Xc.ReceiveInterface),
+			Value:  xc.Xc,
+			Origin: scheduler.FromNB,
 		})
 	}
 
-	d.log.Debugf("Dumping xConnect pairs: %v", dump)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d xConnect pairs: %v", len(dump), dumpList)
+
 	return dump, nil
 }
 

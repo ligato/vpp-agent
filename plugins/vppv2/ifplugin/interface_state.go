@@ -26,12 +26,13 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 // counterType is the basic counter type - contains only packet statistics.

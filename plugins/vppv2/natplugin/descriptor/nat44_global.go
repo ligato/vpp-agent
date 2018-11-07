@@ -17,16 +17,15 @@ package descriptor
 import (
 	"net"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/go-errors/errors"
-
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
 
 const (
@@ -36,9 +35,9 @@ const (
 
 	// default virtual reassembly configuration
 	natReassTimeoutDefault = 2 // seconds
-	natMaxReassDefault = 1024
-	natMaxFragDefault = 5
-	natDropFragDefault = false
+	natMaxReassDefault     = 1024
+	natMaxFragDefault      = 5
+	natDropFragDefault     = false
 )
 
 // A list of non-retriable errors:
@@ -230,15 +229,14 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 		origin = scheduler.FromSB
 	}
 
-	dump := []adapter.NAT44GlobalKVWithMetadata{
-		{
-			Key:    nat.GlobalNAT44Key,
-			Value:  globalCfg,
-			Origin: origin,
-		},
-	}
+	dump := []adapter.NAT44GlobalKVWithMetadata{{
+		Key:    nat.GlobalNAT44Key,
+		Value:  globalCfg,
+		Origin: origin,
+	}}
 
-	d.log.Debugf("Dumping NAT44 global configuration: %v", globalCfg)
+	d.log.Debugf("Dumping NAT44 global configuration: %+v", globalCfg)
+
 	return dump, nil
 }
 
@@ -277,7 +275,7 @@ func (d *NAT44GlobalDescriptor) validateNAT44GlobalConfig(globalCfg *nat.Nat44Gl
 			// duplicate OUT
 			return ErrNATInterfaceFeatureCollision
 		}
-		if ifaceCfg.output == 1 && (ifaceCfg.in + ifaceCfg.out > 1) {
+		if ifaceCfg.output == 1 && (ifaceCfg.in+ifaceCfg.out > 1) {
 			// OUTPUT interface cannot be both IN and OUT
 			return ErrNATInterfaceFeatureCollision
 		}

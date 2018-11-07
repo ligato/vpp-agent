@@ -16,14 +16,13 @@ package descriptor
 
 import (
 	"github.com/gogo/protobuf/proto"
-
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (

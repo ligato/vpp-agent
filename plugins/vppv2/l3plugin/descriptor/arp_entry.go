@@ -119,8 +119,8 @@ func (d *ArpDescriptor) Dependencies(key string, arp *l3.ARPEntry) (deps []sched
 
 // Dump returns all ARP entries associated with interfaces managed by this agent.
 func (d *ArpDescriptor) Dump(correlate []adapter.ARPEntryKVWithMetadata) (
-	dump []adapter.ARPEntryKVWithMetadata, err error) {
-
+	dump []adapter.ARPEntryKVWithMetadata, err error,
+) {
 	// Retrieve VPP ARP entries.
 	arpEntries, err := d.arpHandler.DumpArpEntries()
 	if err != nil {
@@ -135,11 +135,11 @@ func (d *ArpDescriptor) Dump(correlate []adapter.ARPEntryKVWithMetadata) (
 		})
 	}
 
-	var arps string
-	for _, arp := range dump {
-		arps += fmt.Sprintf(" - %+v\n", arp)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
 	}
-	d.log.Debugf("Dumped %d ARP Entries:\n%s", len(dump), arps)
+	d.log.Debugf("Dumping %d ARPEntry: %s", len(dump), dumpList)
 
 	return dump, nil
 }

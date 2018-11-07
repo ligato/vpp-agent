@@ -15,19 +15,19 @@
 package descriptor
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/go-errors/errors"
-
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
 
 const (
@@ -41,7 +41,7 @@ const (
 
 	// dependency labels
 	mappingInterfaceDep = "interface-exists"
-	mappingAddressDep = "address-in-the-pool"
+	mappingAddressDep   = "address-in-the-pool"
 )
 
 // A list of non-retriable errors:
@@ -82,7 +82,7 @@ func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		// dump interfaces and allocated IP addresses first
-		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName, vpp_ifdescriptor.DHCPDescriptorName},
+		DumpDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName, vpp_ifdescriptor.DHCPDescriptorName},
 	}
 }
 
@@ -118,7 +118,7 @@ func (d *DNAT44Descriptor) Add(key string, dnat *nat.DNat44) (metadata interface
 // Delete removes existing destination-NAT44 configuration.
 func (d *DNAT44Descriptor) Delete(key string, dnat *nat.DNat44, metadata interface{}) error {
 	// Delete = Modify into empty DNAT
-	_, err := d.Modify(key, dnat,  &nat.DNat44{Label: dnat.Label}, metadata)
+	_, err := d.Modify(key, dnat, &nat.DNat44{Label: dnat.Label}, metadata)
 	return err
 }
 
@@ -215,7 +215,9 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 }
 
 // Dump returns the current NAT44 global configuration.
-func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (dump []adapter.DNAT44KVWithMetadata, err error) {
+func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (
+	dump []adapter.DNAT44KVWithMetadata, err error,
+) {
 	// collect DNATs which are expected to be empty
 	corrEmptyDNATs := make(map[string]*nat.DNat44)
 	for _, kv := range correlate {
@@ -258,7 +260,12 @@ func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (dump 
 		})
 	}
 
-	d.log.Debugf("Dumping DNAT-44 configurations: %v", dump)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d DNAT-44 configurations: %v", len(dump), dumpList)
+
 	return dump, nil
 }
 
@@ -338,7 +345,7 @@ func equivalentStaticMappings(stMapping1, stMapping2 *nat.DNat44_StaticMapping) 
 	if stMapping1.Protocol != stMapping2.Protocol || stMapping1.ExternalPort != stMapping2.ExternalPort ||
 		stMapping1.ExternalIp != stMapping2.ExternalIp || stMapping1.ExternalInterface != stMapping2.ExternalInterface ||
 		stMapping1.TwiceNat != stMapping2.TwiceNat {
-			return false
+		return false
 	}
 
 	// compare locals ignoring their order

@@ -15,13 +15,11 @@
 package descriptor
 
 import (
-	"strings"
-
+	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	"github.com/go-errors/errors"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
@@ -42,7 +40,7 @@ const (
 type UnnumberedIfDescriptor struct {
 	log       logging.Logger
 	ifHandler vppcalls.IfVppAPI
-	intfIndex ifaceidx.IfaceMetadataIndex
+	ifIndex   ifaceidx.IfaceMetadataIndex
 }
 
 // NewUnnumberedIfDescriptor creates a new instance of UnnumberedIfDescriptor.
@@ -69,27 +67,29 @@ func (d *UnnumberedIfDescriptor) GetDescriptor() *adapter.UnnumberedDescriptor {
 
 // SetInterfaceIndex should be used to provide interface index immediately after
 // the descriptor registration.
-func (d *UnnumberedIfDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadataIndex) {
-	d.intfIndex = intfIndex
+func (d *UnnumberedIfDescriptor) SetInterfaceIndex(ifIndex ifaceidx.IfaceMetadataIndex) {
+	d.ifIndex = ifIndex
 }
 
 // IsUnnumberedInterfaceKey returns true if the key is identifying unnumbered
 // VPP interface.
 func (d *UnnumberedIfDescriptor) IsUnnumberedInterfaceKey(key string) bool {
-	return strings.HasPrefix(key, interfaces.UnnumberedKeyPrefix)
+	_, isValid := interfaces.ParseNameFromUnnumberedKey(key)
+	return isValid
 }
 
 // Add sets interface as unnumbered.
 func (d *UnnumberedIfDescriptor) Add(key string, unIntf *interfaces.Interface_Unnumbered) (metadata interface{}, err error) {
-	ifName := strings.TrimPrefix(key, interfaces.UnnumberedKeyPrefix)
-	ifMeta, found := d.intfIndex.LookupByName(ifName)
+	ifName, _ := interfaces.ParseNameFromUnnumberedKey(key)
+
+	ifMeta, found := d.ifIndex.LookupByName(ifName)
 	if !found {
 		err = errors.Errorf("failed to find unnumbered interface %s", ifName)
 		d.log.Error(err)
 		return nil, err
 	}
 
-	ifWithIPMeta, found := d.intfIndex.LookupByName(unIntf.InterfaceWithIp)
+	ifWithIPMeta, found := d.ifIndex.LookupByName(unIntf.InterfaceWithIp)
 	if !found {
 		err = errors.Errorf("failed to find interface %s referenced by unnumbered interface %s",
 			unIntf.InterfaceWithIp, ifName)
@@ -106,8 +106,9 @@ func (d *UnnumberedIfDescriptor) Add(key string, unIntf *interfaces.Interface_Un
 
 // Delete un-sets interface as unnumbered.
 func (d *UnnumberedIfDescriptor) Delete(key string, unIntf *interfaces.Interface_Unnumbered, metadata interface{}) error {
-	ifName := strings.TrimPrefix(key, interfaces.UnnumberedKeyPrefix)
-	ifMeta, found := d.intfIndex.LookupByName(ifName)
+	ifName, _ := interfaces.ParseNameFromUnnumberedKey(key)
+
+	ifMeta, found := d.ifIndex.LookupByName(ifName)
 	if !found {
 		err := errors.Errorf("failed to find unnumbered interface %s", ifName)
 		d.log.Error(err)
@@ -118,6 +119,7 @@ func (d *UnnumberedIfDescriptor) Delete(key string, unIntf *interfaces.Interface
 	if err != nil {
 		d.log.Error(err)
 	}
+
 	return err
 }
 
@@ -132,13 +134,11 @@ func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Int
 	// link between unnumbered interface and the referenced interface with IP address
 	// - satisfied as along as the referenced interface is configured and has at least
 	//   one IP address assigned
-	return []scheduler.Dependency{
-		{
-			Label: unnumberedInterfaceWithIPDep,
-			AnyOf: func(key string) bool {
-				ifName, _, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
-				return isIfaceAddrKey && ifName == unIntf.InterfaceWithIp
-			},
+	return []scheduler.Dependency{{
+		Label: unnumberedInterfaceWithIPDep,
+		AnyOf: func(key string) bool {
+			ifName, _, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
+			return isIfaceAddrKey && ifName == unIntf.InterfaceWithIp
 		},
-	}
+	}}
 }

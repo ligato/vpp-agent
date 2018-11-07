@@ -16,6 +16,7 @@ package descriptor
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -23,11 +24,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/vishvananda/netlink"
 
-	"github.com/ligato/cn-infra/logging"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	ifmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 )
@@ -56,8 +56,8 @@ type InterfaceWatcher struct {
 	wg     sync.WaitGroup
 
 	// a set of interfaces present in the default namespace
-	intfsLock sync.Mutex
-	intfs     map[string]struct{}
+	ifacesMu sync.Mutex
+	ifaces   map[string]struct{}
 
 	// interface changes delayed to give Linux time to "finalize" them
 	pendingIntfs map[string]bool // interface name -> exists?
@@ -78,12 +78,12 @@ func NewInterfaceWatcher(scheduler scheduler.KVScheduler, ifHandler linuxcalls.N
 		log:          log.NewLogger("if-watcher"),
 		scheduler:    scheduler,
 		ifHandler:    ifHandler,
-		intfs:        make(map[string]struct{}),
+		ifaces:       make(map[string]struct{}),
 		pendingIntfs: make(map[string]bool),
 		notifCh:      make(chan netlink.LinkUpdate),
 		doneCh:       make(chan struct{}),
 	}
-	descriptor.intfsInSyncCond = sync.NewCond(&descriptor.intfsLock)
+	descriptor.intfsInSyncCond = sync.NewCond(&descriptor.ifacesMu)
 	descriptor.ctx, descriptor.cancel = context.WithCancel(context.Background())
 
 	return descriptor
@@ -108,20 +108,26 @@ func (w *InterfaceWatcher) IsLinuxInterfaceNotification(key string) bool {
 // in the default network namespace.
 func (w *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump []scheduler.KVWithMetadata, err error) {
 	// wait until the set of interfaces is in-sync with the Linux network stack
-	w.intfsLock.Lock()
+	w.ifacesMu.Lock()
 	if !w.intfsInSync {
 		w.intfsInSyncCond.Wait()
 	}
-	defer w.intfsLock.Unlock()
+	defer w.ifacesMu.Unlock()
 
-	for ifName := range w.intfs {
+	for ifName := range w.ifaces {
 		dump = append(dump, scheduler.KVWithMetadata{
 			Key:    ifmodel.InterfaceHostNameKey(ifName),
 			Value:  &prototypes.Empty{},
 			Origin: scheduler.FromSB,
 		})
 	}
-	w.log.Debugf("Dumping Linux interface host names in the default namespace: %v", dump)
+
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	w.log.Debugf("Dumping %d Linux interface host names (from default namespace): %v", len(dump), dumpList)
+
 	return dump, nil
 }
 
@@ -155,7 +161,7 @@ func (w *InterfaceWatcher) watchDefaultNamespace() {
 	if err == nil {
 		for _, link := range links {
 			if enabled, err := w.ifHandler.IsInterfaceEnabled(link.Attrs().Name); enabled && err == nil {
-				w.intfs[link.Attrs().Name] = struct{}{}
+				w.ifaces[link.Attrs().Name] = struct{}{}
 			}
 		}
 	} else {
@@ -163,9 +169,9 @@ func (w *InterfaceWatcher) watchDefaultNamespace() {
 	}
 
 	// mark the state in-sync with the Linux network stack
-	w.intfsLock.Lock()
+	w.ifacesMu.Lock()
 	w.intfsInSync = true
-	w.intfsLock.Unlock()
+	w.ifacesMu.Unlock()
 	w.intfsInSyncCond.Broadcast()
 
 	for {
@@ -182,8 +188,8 @@ func (w *InterfaceWatcher) watchDefaultNamespace() {
 
 // processLinkNotification processes link notification received from Linux.
 func (w *InterfaceWatcher) processLinkNotification(linkUpdate netlink.LinkUpdate) {
-	w.intfsLock.Lock()
-	defer w.intfsLock.Unlock()
+	w.ifacesMu.Lock()
+	defer w.ifacesMu.Unlock()
 
 	ifName := linkUpdate.Attrs().Name
 	isEnabled := linkUpdate.Attrs().OperState != netlink.OperDown &&
@@ -229,8 +235,8 @@ func (w *InterfaceWatcher) delayNotification(ifName string) {
 
 // applyDelayedNotification applies delayed interface notification.
 func (w *InterfaceWatcher) applyDelayedNotification(ifName string) {
-	w.intfsLock.Lock()
-	defer w.intfsLock.Unlock()
+	w.ifacesMu.Lock()
+	defer w.ifacesMu.Unlock()
 
 	// in the meantime the status may have changed and may not require update anymore
 	isEnabled := w.pendingIntfs[ifName]
@@ -246,10 +252,10 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 	var value proto.Message
 
 	if enabled {
-		w.intfs[ifName] = struct{}{}
+		w.ifaces[ifName] = struct{}{}
 		value = &prototypes.Empty{}
 	} else {
-		delete(w.intfs, ifName)
+		delete(w.ifaces, ifName)
 	}
 
 	w.scheduler.PushSBNotification(
@@ -259,6 +265,6 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 }
 
 func (w *InterfaceWatcher) needsUpdate(ifName string, isEnabled bool) bool {
-	_, wasEnabled := w.intfs[ifName]
+	_, wasEnabled := w.ifaces[ifName]
 	return isEnabled != wasEnabled
 }

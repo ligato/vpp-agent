@@ -84,14 +84,10 @@ func InterfaceKey(iface string) string {
 
 // ParseNameFromKey returns suffix of the key.
 func ParseNameFromKey(key string) (name string, isInterfaceKey bool) {
-	if strings.HasPrefix(key, Prefix) {
-		name = strings.TrimPrefix(key, Prefix)
-		if name == "" {
-			return "", false
-		}
-		return name, true
+	if suffix := strings.TrimPrefix(key, Prefix); name != key && name != "" {
+		return suffix, true
 	}
-	return "", false
+	return
 }
 
 /* Interface Error */
@@ -134,34 +130,37 @@ func InterfaceAddressKey(iface string, address string) string {
 
 	key := strings.Replace(addressKeyTemplate, "{iface}", iface, 1)
 	key = strings.Replace(key, "{addr}/{mask}", address, 1)
+
 	return key
 }
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
 func ParseInterfaceAddressKey(key string) (iface string, ipAddr net.IP, ipAddrNet *net.IPNet, isAddrKey bool) {
-	var err error
-	if strings.HasPrefix(key, AddressKeyPrefix) {
-		keySuffix := strings.TrimPrefix(key, AddressKeyPrefix)
-		keyComps := strings.Split(keySuffix, "/")
+	if suffix := strings.TrimPrefix(key, AddressKeyPrefix); suffix != key {
+		parts := strings.Split(suffix, "/")
+
 		// beware: interface name may contain forward slashes (e.g. ETHERNET_CSMACD)
-		if len(keyComps) < 3 {
+		if len(parts) < 3 {
 			return "", nil, nil, false
 		}
+
 		// parse IP address
-		lastIdx := len(keyComps) - 1
-		ipAddr, ipAddrNet, err = net.ParseCIDR(keyComps[lastIdx-1] + "/" + keyComps[lastIdx])
+		lastIdx := len(parts) - 1
+		var err error
+		ipAddr, ipAddrNet, err = net.ParseCIDR(parts[lastIdx-1] + "/" + parts[lastIdx])
 		if err != nil {
 			return "", nil, nil, false
 		}
+
 		// parse interface name
-		iface = strings.Join(keyComps[:lastIdx-1], "/")
+		iface = strings.Join(parts[:lastIdx-1], "/")
 		if iface == "" {
 			return "", nil, nil, false
 		}
 		return iface, ipAddr, ipAddrNet, true
 	}
-	return "", nil, nil, false
+	return
 }
 
 /* Unnumbered interface (derived) */
@@ -172,6 +171,14 @@ func UnnumberedKey(iface string) string {
 		iface = InvalidKeyPart
 	}
 	return UnnumberedKeyPrefix + iface
+}
+
+// ParseNameFromUnnumberedKey returns suffix of the key.
+func ParseNameFromUnnumberedKey(key string) (iface string, isUnnumberedKey bool) {
+	if suffix := strings.TrimPrefix(key, UnnumberedKeyPrefix); suffix != key && suffix != "" {
+		return suffix, true
+	}
+	return
 }
 
 /* DHCP (client - derived, lease - notification) */
@@ -186,14 +193,10 @@ func DHCPClientKey(iface string) string {
 
 // ParseNameFromDHCPClientKey returns suffix of the key.
 func ParseNameFromDHCPClientKey(key string) (iface string, isDHCPClientKey bool) {
-	if strings.HasPrefix(key, DHCPClientKeyPrefix) {
-		iface = strings.TrimPrefix(key, DHCPClientKeyPrefix)
-		if iface == "" {
-			return "", false
-		}
-		return iface, true
+	if suffix := strings.TrimPrefix(key, DHCPClientKeyPrefix); suffix != key && suffix != "" {
+		return suffix, true
 	}
-	return "", false
+	return
 }
 
 // DHCPLeaseKey returns a key used to represent DHCP lease for the given interface.
@@ -202,4 +205,12 @@ func DHCPLeaseKey(iface string) string {
 		iface = InvalidKeyPart
 	}
 	return DHCPLeaseKeyPrefix + iface
+}
+
+// ParseNameFromDHCPLeaseKey returns suffix of the key.
+func ParseNameFromDHCPLeaseKey(key string) (iface string, isDHCPLeaseKey bool) {
+	if suffix := strings.TrimPrefix(key, DHCPLeaseKeyPrefix); suffix != key && suffix != "" {
+		return suffix, true
+	}
+	return
 }
