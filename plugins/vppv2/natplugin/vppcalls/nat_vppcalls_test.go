@@ -451,9 +451,8 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 
 	// DataContext
 	mapping := &nat.DNat44_StaticMapping{
-		ExternalIp:         externalIP.String(),
-		ExternalIpFromPool: true,
-		Protocol:           nat.DNat44_TCP,
+		ExternalIp: externalIP.String(),
+		Protocol:   nat.DNat44_TCP,
 		LocalIps: []*nat.DNat44_StaticMapping_LocalIP{
 			{
 				LocalIp: localIP.String(),
@@ -468,7 +467,7 @@ func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|EP"))
+	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1"))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(externalIP))
@@ -551,9 +550,8 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 	externalIP := net.ParseIP("10.0.0.2").To4()
 
 	mapping := &nat.DNat44_StaticMapping{
-		ExternalIp:         externalIP.String(),
-		ExternalIpFromPool: true,
-		Protocol:           nat.DNat44_TCP,
+		ExternalIp: externalIP.String(),
+		Protocol:   nat.DNat44_TCP,
 		LocalIps: []*nat.DNat44_StaticMapping_LocalIP{
 			{
 				LocalIp: localIP.String(),
@@ -568,7 +566,7 @@ func TestDelNat44StaticMappingAddrOnly(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelStaticMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|EP"))
+	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1"))
 	Expect(msg.IsAdd).To(BeEquivalentTo(0))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(1))
 	Expect(msg.ExternalIPAddress).To(BeEquivalentTo(externalIP))
@@ -600,53 +598,6 @@ func TestAddNat44StaticMappingLb(t *testing.T) {
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelLbStaticMapping)
 	Expect(ok).To(BeTrue())
 	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1"))
-	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
-	Expect(msg.IsAdd).To(BeEquivalentTo(1))
-	Expect(msg.ExternalAddr).To(BeEquivalentTo(externalIP))
-	Expect(msg.ExternalPort).To(BeEquivalentTo(8080))
-	Expect(msg.Protocol).To(BeEquivalentTo(6))
-	Expect(msg.Out2inOnly).To(BeEquivalentTo(1))
-
-	// Local IPs
-	Expect(msg.Locals).To(HaveLen(2))
-	expectedCount := 0
-	for _, local := range msg.Locals {
-		if bytes.Compare(local.Addr, localIP1) == 0 && local.Port == 8080 && local.Probability == 35 {
-			expectedCount++
-		}
-		if bytes.Compare(local.Addr, localIP2) == 0 && local.Port == 8181 && local.Probability == 65 {
-			expectedCount++
-		}
-	}
-	Expect(expectedCount).To(BeEquivalentTo(2))
-}
-
-func TestAddNat44StaticMappingLbWithExtIPFromPool(t *testing.T) {
-	ctx, natHandler, _, _ := natTestSetup(t)
-	defer ctx.TeardownTestCtx()
-
-	externalIP := net.ParseIP("10.0.0.1").To4()
-	localIP1 := net.ParseIP("10.0.0.2").To4()
-	localIP2 := net.ParseIP("10.0.0.3").To4()
-
-	mapping := &nat.DNat44_StaticMapping{
-		ExternalIp:         externalIP.String(),
-		ExternalIpFromPool: true,
-		ExternalPort:       8080,
-		ExternalInterface:  "if0",
-		Protocol:           nat.DNat44_TCP,
-		TwiceNat:           nat.DNat44_StaticMapping_ENABLED,
-		LocalIps:           localIPs(localIP1, localIP2),
-	}
-
-	ctx.MockVpp.MockReply(&binapi.Nat44AddDelLbStaticMappingReply{})
-	err := natHandler.AddNat44StaticMapping(mapping, "DNAT 1")
-
-	Expect(err).ShouldNot(HaveOccurred())
-
-	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelLbStaticMapping)
-	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 1|EP"))
 	Expect(msg.TwiceNat).To(BeEquivalentTo(1))
 	Expect(msg.IsAdd).To(BeEquivalentTo(1))
 	Expect(msg.ExternalAddr).To(BeEquivalentTo(externalIP))
@@ -747,7 +698,7 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 	Expect(msg.AddrOnly).To(BeEquivalentTo(0))
 }
 
-func TestAddNat44IdentityMappingWithInterface(t *testing.T) {
+func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 	ctx, natHandler, swIfIndexes, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
@@ -782,11 +733,10 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 	address := net.ParseIP("10.0.0.1").To4()
 
 	mapping := &nat.DNat44_IdentityMapping{
-		VrfId:             1,
-		Protocol:          nat.DNat44_UDP,
-		IpAddress:         address.String(),
-		IpAddressFromPool: true,
-		Port:              8989,
+		VrfId:     1,
+		Protocol:  nat.DNat44_UDP,
+		IpAddress: address.String(),
+		Port:      8989,
 	}
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelIdentityMappingReply{})
@@ -796,7 +746,7 @@ func TestAddNat44IdentityMappingNoInterface(t *testing.T) {
 
 	msg, ok := ctx.MockChannel.Msg.(*binapi.Nat44AddDelIdentityMapping)
 	Expect(ok).To(BeTrue())
-	Expect(msg.Tag).To(BeEquivalentTo("DNAT 2|EP"))
+	Expect(msg.Tag).To(BeEquivalentTo("DNAT 2"))
 	Expect(msg.IPAddress).To(BeEquivalentTo(address))
 	Expect(msg.Port).To(BeEquivalentTo(8989))
 	Expect(msg.AddrOnly).To(BeEquivalentTo(0))
