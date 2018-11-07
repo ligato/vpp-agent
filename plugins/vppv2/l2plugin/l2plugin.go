@@ -115,3 +115,8 @@ func (p *L2Plugin) AfterInit() error {
 	}
 	return nil
 }
+
+// GetBDIndex return bridge domain index.
+func (p *L2Plugin) GetBDIndex() idxvpp2.NameToIndex {
+	return p.bdIndex
+}

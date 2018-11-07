@@ -1,21 +1,20 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+//  Copyright (c) 2018 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package rest
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -24,19 +23,18 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/linux"
-	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
-	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/rest/resturl"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
-	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
-	l4vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
+	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
+	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/restv2/resturl"
+	aclvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	l2vppcalls "github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
+	l3vppcalls "github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
+	natvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
 
 // REST api methods
@@ -57,22 +55,18 @@ type Plugin struct {
 	dumpChan api.Channel
 
 	// VPP Handlers
-	aclHandler   aclvppcalls.ACLVppRead
-	ifHandler    ifvppcalls.IfVppRead
-	bfdHandler   ifvppcalls.BfdVppRead
-	natHandler   ifvppcalls.NatVppRead
-	stnHandler   ifvppcalls.StnVppRead
-	ipSecHandler ipsecvppcalls.IPSecVPPRead
-	bdHandler    l2vppcalls.BridgeDomainVppRead
-	fibHandler   l2vppcalls.FibVppRead
-	xcHandler    l2vppcalls.XConnectVppRead
-	arpHandler   l3vppcalls.ArpVppRead
-	pArpHandler  l3vppcalls.ProxyArpVppRead
-	rtHandler    l3vppcalls.RouteVppRead
-	l4Handler    l4vppcalls.L4VppRead
+	aclHandler  aclvppcalls.ACLVppRead
+	ifHandler   ifvppcalls.IfVppRead
+	natHandler  natvppcalls.NatVppRead
+	bdHandler   l2vppcalls.BridgeDomainVppRead
+	fibHandler  l2vppcalls.FIBVppRead
+	xcHandler   l2vppcalls.XConnectVppRead
+	arpHandler  l3vppcalls.ArpVppRead
+	pArpHandler l3vppcalls.ProxyArpVppRead
+	rtHandler   l3vppcalls.RouteVppRead
 	// Linux handlers
-	linuxIfHandler iflinuxcalls.NetlinkAPI
-	linuxL3Handler l3linuxcalls.NetlinkAPI
+	linuxIfHandler iflinuxcalls.NetlinkAPIRead
+	linuxL3Handler l3linuxcalls.NetlinkAPIRead
 
 	govppmux sync.Mutex
 }
@@ -82,8 +76,8 @@ type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
 	GoVppmux     govppmux.TraceAPI
-	VPP          vpp.API
-	Linux        linux.API
+	VPPIfPlugin  ifplugin.API
+	VPPL2Plugin  *l2plugin.L2Plugin
 }
 
 // index defines map of main index page entries
@@ -100,9 +94,9 @@ type indexItem struct {
 // Init initializes the Rest Plugin
 func (p *Plugin) Init() (err error) {
 	// Check VPP dependency
-	if p.VPP == nil {
+	/*if p.VPP == nil {
 		return fmt.Errorf("REST plugin requires VPP plugin API")
-	}
+	}*/
 
 	// VPP channels
 	if p.vppChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
@@ -113,38 +107,29 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// VPP Indexes
-	ifIndexes := p.VPP.GetSwIfIndexes()
-	bdIndexes := p.VPP.GetBDIndexes()
-	spdIndexes := p.VPP.GetIPSecSPDIndexes()
+	ifIndexes := p.VPPIfPlugin.GetInterfaceIndex()
+	bdIndexes := p.VPPL2Plugin.GetBDIndex()
+	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
 	// Initialize VPP handlers
-	p.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan)
+	p.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
 	p.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
-	p.bfdHandler = ifvppcalls.NewBfdVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.natHandler = ifvppcalls.NewNatVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
-	p.stnHandler = ifvppcalls.NewStnVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, spdIndexes, p.Log)
+	p.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
 	p.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.fibHandler = l2vppcalls.NewFibVppHandler(p.vppChan, p.dumpChan, ifIndexes, bdIndexes, p.Log)
+	p.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
 	p.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.l4Handler = l4vppcalls.NewL4VppHandler(p.vppChan, p.Log)
 
 	// Linux indexes and handlers
-	if p.Linux != nil {
-		linuxIfIndexes := p.Linux.GetLinuxIfIndexes()
-		linuxArpIndexes := p.Linux.GetLinuxARPIndexes()
-		linuxRtIndexes := p.Linux.GetLinuxRouteIndexes()
-		// Initialize Linux handlers
-		linuxNsHandler := p.Linux.GetNamespaceHandler()
-		p.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, p.Log)
-		p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRtIndexes, p.Log)
-	}
+	//if p.Linux != nil {
+	p.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
+	p.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	//}
 
 	p.index = &index{
-		ItemMap: getIndexMap(),
+		ItemMap: getIndexPageItems(),
 	}
 
 	// Register permission groups, used if REST security is enabled
@@ -160,19 +145,15 @@ func (p *Plugin) AfterInit() (err error) {
 	// VPP handlers
 	p.registerAccessListHandlers()
 	p.registerInterfaceHandlers()
-	p.registerBfdHandlers()
 	p.registerNatHandlers()
-	p.registerStnHandlers()
-	p.registerIPSecHandlers()
 	p.registerL2Handlers()
 	p.registerL3Handlers()
-	p.registerL4Handlers()
 
 	// Linux handlers
-	if p.Linux != nil {
-		p.registerLinuxInterfaceHandlers()
-		p.registerLinuxL3Handlers()
-	}
+	//if p.Linux != nil {
+	p.registerLinuxInterfaceHandlers()
+	p.registerLinuxL3Handlers()
+	//}
 
 	// Telemetry, command, index, tracer
 	p.registerTracerHandler()
@@ -189,7 +170,7 @@ func (p *Plugin) Close() (err error) {
 }
 
 // Fill index item lists
-func getIndexMap() map[string][]indexItem {
+func getIndexPageItems() map[string][]indexItem {
 	idxMap := map[string][]indexItem{
 		"ACL plugin": {
 			{Name: "IP-type access lists", Path: resturl.ACLIP},
@@ -204,11 +185,6 @@ func getIndexMap() map[string][]indexItem {
 			{Name: "VxLANs", Path: resturl.VxLan},
 			{Name: "Af-packets", Path: resturl.AfPacket},
 		},
-		"IPSec plugin": {
-			{Name: "Security policy databases", Path: resturl.IPSecSpd},
-			{Name: "Security associations", Path: resturl.IPSecSa},
-			{Name: "Tunnel interfaces", Path: resturl.IPSecTnIf},
-		},
 		"L2 plugin": {
 			{Name: "Bridge domains", Path: resturl.Bd},
 			{Name: "Bridge domain IDs", Path: resturl.BdID},
@@ -221,9 +197,6 @@ func getIndexMap() map[string][]indexItem {
 			{Name: "Proxy ARP interfaces", Path: resturl.PArpIfs},
 			{Name: "Proxy ARP ranges", Path: resturl.PArpRngs},
 		},
-		"L4 plugin": {
-			{Name: "L4 sessions", Path: resturl.Sessions},
-		},
 		"Telemetry": {
 			{Name: "All data", Path: resturl.Telemetry},
 			{Name: "Memory", Path: resturl.TMemory},
@@ -231,7 +204,7 @@ func getIndexMap() map[string][]indexItem {
 			{Name: "Node count", Path: resturl.TNodeCount},
 		},
 		"Tracer": {
-			{Name: "Binary API", Path: resturl.Tracer},
+			{Name: "VPP Binary API", Path: resturl.Tracer},
 		},
 	}
 	return idxMap
@@ -270,9 +243,6 @@ func getPermissionsGroups() []*access.PermissionGroup {
 			newPermission(resturl.Tap, GET),
 			newPermission(resturl.VxLan, GET),
 			newPermission(resturl.AfPacket, GET),
-			newPermission(resturl.IPSecSpd, GET),
-			newPermission(resturl.IPSecSa, GET),
-			newPermission(resturl.IPSecTnIf, GET),
 			newPermission(resturl.Bd, GET),
 			newPermission(resturl.BdID, GET),
 			newPermission(resturl.Fib, GET),
@@ -281,7 +251,6 @@ func getPermissionsGroups() []*access.PermissionGroup {
 			newPermission(resturl.Routes, GET),
 			newPermission(resturl.PArpIfs, GET),
 			newPermission(resturl.PArpRngs, GET),
-			newPermission(resturl.Sessions, GET),
 		},
 	}
 

@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+//  Copyright (c) 2018 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 //go:generate go-bindata-assetfs -pkg rest -o bindata.go ./templates/...
 
@@ -24,9 +24,9 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/rest/resturl"
+	"github.com/ligato/vpp-agent/plugins/restv2/resturl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/unrolled/render"
 )
 
@@ -34,11 +34,11 @@ import (
 func (p *Plugin) registerAccessListHandlers() {
 	// GET IP ACLs
 	p.registerHTTPHandler(resturl.ACLIP, GET, func() (interface{}, error) {
-		return p.aclHandler.DumpIPACL(nil)
+		return p.aclHandler.DumpACL()
 	})
 	// GET MACIP ACLs
 	p.registerHTTPHandler(resturl.ACLMACIP, GET, func() (interface{}, error) {
-		return p.aclHandler.DumpMACIPACL(nil)
+		return p.aclHandler.DumpMACIPACL()
 	})
 }
 
@@ -50,99 +50,59 @@ func (p *Plugin) registerInterfaceHandlers() {
 	})
 	// GET loopback interfaces
 	p.registerHTTPHandler(resturl.Loopback, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_SOFTWARE_LOOPBACK)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_SOFTWARE_LOOPBACK)
 	})
 	// GET ethernet interfaces
 	p.registerHTTPHandler(resturl.Ethernet, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_ETHERNET_CSMACD)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_ETHERNET_CSMACD)
 	})
 	// GET memif interfaces
 	p.registerHTTPHandler(resturl.Memif, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_MEMORY_INTERFACE)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_MEMORY_INTERFACE)
 	})
 	// GET tap interfaces
 	p.registerHTTPHandler(resturl.Tap, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_TAP_INTERFACE)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_TAP_INTERFACE)
 	})
 	// GET af-packet interfaces
 	p.registerHTTPHandler(resturl.AfPacket, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_AF_PACKET_INTERFACE)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_AF_PACKET_INTERFACE)
 	})
 	// GET VxLAN interfaces
 	p.registerHTTPHandler(resturl.VxLan, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.InterfaceType_VXLAN_TUNNEL)
-	})
-}
-
-// Registers BFD REST handlers
-func (p *Plugin) registerBfdHandlers() {
-	// GET BFD configuration
-	p.registerHTTPHandler(resturl.BfdURL, GET, func() (interface{}, error) {
-		return p.bfdHandler.DumpBfdSingleHop()
-	})
-	// GET BFD sessions
-	p.registerHTTPHandler(resturl.BfdSession, GET, func() (interface{}, error) {
-		return p.bfdHandler.DumpBfdSessions()
-	})
-	// GET BFD authentication keys
-	p.registerHTTPHandler(resturl.BfdAuthKey, GET, func() (interface{}, error) {
-		return p.bfdHandler.DumpBfdAuthKeys()
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_VXLAN_TUNNEL)
 	})
 }
 
 // Registers NAT REST handlers
 func (p *Plugin) registerNatHandlers() {
 	// GET NAT configuration
-	p.registerHTTPHandler(resturl.NatURL, GET, func() (interface{}, error) {
+	/*p.registerHTTPHandler(resturl.NatURL, GET, func() (interface{}, error) {
 		return p.natHandler.Nat44Dump()
-	})
+	})*/
 	// GET NAT global config
 	p.registerHTTPHandler(resturl.NatGlobal, GET, func() (interface{}, error) {
 		return p.natHandler.Nat44GlobalConfigDump()
 	})
 	// GET DNAT config
 	p.registerHTTPHandler(resturl.NatDNat, GET, func() (interface{}, error) {
-		return p.natHandler.Nat44DNatDump()
-	})
-}
-
-// Registers STN REST handlers
-func (p *Plugin) registerStnHandlers() {
-	// GET STN configuration
-	p.registerHTTPHandler(resturl.StnURL, GET, func() (interface{}, error) {
-		return p.stnHandler.DumpStnRules()
-	})
-}
-
-// Registers IPSec REST handlers
-func (p *Plugin) registerIPSecHandlers() {
-	// GET IPSec SPD configuration
-	p.registerHTTPHandler(resturl.IPSecSpd, GET, func() (interface{}, error) {
-		return p.ipSecHandler.DumpIPSecSPD()
-	})
-	// GET IPSec SA configuration
-	p.registerHTTPHandler(resturl.IPSecSa, GET, func() (interface{}, error) {
-		return p.ipSecHandler.DumpIPSecSA()
-	})
-	// GET IPSec Tunnel configuration
-	p.registerHTTPHandler(resturl.IPSecTnIf, GET, func() (interface{}, error) {
-		return p.ipSecHandler.DumpIPSecTunnelInterfaces()
+		return p.natHandler.DNat44Dump()
 	})
 }
 
 // Registers L2 plugin REST handlers
 func (p *Plugin) registerL2Handlers() {
 	// GET bridge domain IDs
-	p.registerHTTPHandler(resturl.BdID, GET, func() (interface{}, error) {
+	/*p.registerHTTPHandler(resturl.BdID, GET, func() (interface{}, error) {
 		return p.bdHandler.DumpBridgeDomainIDs()
-	})
+	})*/
 	// GET bridge domains
 	p.registerHTTPHandler(resturl.Bd, GET, func() (interface{}, error) {
 		return p.bdHandler.DumpBridgeDomains()
 	})
 	// GET FIB entries
 	p.registerHTTPHandler(resturl.Fib, GET, func() (interface{}, error) {
-		return p.fibHandler.DumpFIBTableEntries()
+		return p.fibHandler.DumpL2FIBs()
 	})
 	// GET cross connects
 	p.registerHTTPHandler(resturl.Xc, GET, func() (interface{}, error) {
@@ -170,35 +130,31 @@ func (p *Plugin) registerL3Handlers() {
 	})
 }
 
-// Registers L4 plugin REST handlers
-func (p *Plugin) registerL4Handlers() {
-	// GET static routes
-	p.registerHTTPHandler(resturl.Sessions, GET, func() (interface{}, error) {
-		return p.l4Handler.DumpL4Config()
-	})
-}
-
 // Registers linux interface plugin REST handlers
 func (p *Plugin) registerLinuxInterfaceHandlers() {
 	// GET linux interfaces
 	p.registerHTTPHandler(resturl.LinuxInterface, GET, func() (interface{}, error) {
-		return p.linuxIfHandler.DumpInterfaces()
+		return p.linuxIfHandler.GetLinkList()
 	})
 	// GET linux interface stats
-	p.registerHTTPHandler(resturl.LinuxInterfaceStats, GET, func() (interface{}, error) {
+	/*p.registerHTTPHandler(resturl.LinuxInterfaceStats, GET, func() (interface{}, error) {
 		return p.linuxIfHandler.DumpInterfaceStatistics()
-	})
+	})*/
 }
 
 // Registers linux L3 plugin REST handlers
 func (p *Plugin) registerLinuxL3Handlers() {
 	// GET linux routes
 	p.registerHTTPHandler(resturl.LinuxRoutes, GET, func() (interface{}, error) {
-		return p.linuxL3Handler.DumpRoutes()
+		routes4, routes6, err := p.linuxL3Handler.GetStaticRoutes(0)
+		if err != nil {
+			return nil, err
+		}
+		return append(routes4, routes6...), nil
 	})
 	// GET linux ARPs
 	p.registerHTTPHandler(resturl.LinuxArps, GET, func() (interface{}, error) {
-		return p.linuxL3Handler.DumpArpEntries()
+		return p.linuxL3Handler.GetARPEntries(0)
 	})
 }
 
