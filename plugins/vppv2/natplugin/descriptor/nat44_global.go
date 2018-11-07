@@ -15,8 +15,6 @@
 package descriptor
 
 import (
-	"net"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/go-errors/errors"
 
@@ -197,21 +195,13 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 	return nil, nil
 }
 
-// DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration
-// and nat.Nat44Global_Address for every address in the pool.
+// DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration.
 func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []scheduler.KeyValuePair) {
 	// NAT interfaces
 	for _, natIface := range globalCfg.NatInterfaces {
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   nat.InterfaceNAT44Key(natIface.Name, natIface.IsInside),
 			Value: natIface,
-		})
-	}
-	// NAT address pool
-	for _, address := range globalCfg.AddressPool {
-		derValues = append(derValues, scheduler.KeyValuePair{
-			Key:   nat.AddressNAT44Key(address.Address),
-			Value: address,
 		})
 	}
 	return derValues
