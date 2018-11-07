@@ -15,6 +15,8 @@
 package descriptor
 
 import (
+	"net"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/go-errors/errors"
 
