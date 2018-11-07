@@ -65,11 +65,6 @@ type ConnectionEvent struct {
 	Error error
 }
 
-var (
-	connLock sync.RWMutex // lock for the global connection
-	conn     *Connection  // global handle to the Connection (used in the message receive callback)
-)
-
 // Connection represents a shared memory connection to VPP via vppAdapter.
 type Connection struct {
 	vppClient adapter.VppAPI // VPP binary API client adapter
@@ -111,10 +106,7 @@ func newConnection(binapi adapter.VppAPI) *Connection {
 // This call blocks until VPP is connected, or an error occurs. Only one connection attempt will be performed.
 func Connect(binapi adapter.VppAPI) (*Connection, error) {
 	// create new connection handle
-	c, err := createConnection(binapi)
-	if err != nil {
-		return nil, err
-	}
+	c := newConnection(binapi)
 
 	// blocking attempt to connect to VPP
 	if err := c.connectVPP(); err != nil {
@@ -130,45 +122,13 @@ func Connect(binapi adapter.VppAPI) (*Connection, error) {
 // Connected/Disconnected events. In case of disconnect, the library will asynchronously try to reconnect.
 func AsyncConnect(binapi adapter.VppAPI) (*Connection, chan ConnectionEvent, error) {
 	// create new connection handle
-	c, err := createConnection(binapi)
-	if err != nil {
-		return nil, nil, err
-	}
+	c := newConnection(binapi)
 
 	// asynchronously attempt to connect to VPP
 	connChan := make(chan ConnectionEvent, NotificationChanBufSize)
 	go c.connectLoop(connChan)
 
 	return c, connChan, nil
-}
-
-// Disconnect disconnects from VPP and releases all connection-related resources.
-func (c *Connection) Disconnect() {
-	if c == nil {
-		return
-	}
-
-	connLock.Lock()
-	defer connLock.Unlock()
-
-	if c.vppClient != nil {
-		c.disconnectVPP()
-	}
-	conn = nil
-}
-
-// newConnection returns new connection handle.
-func createConnection(binapi adapter.VppAPI) (*Connection, error) {
-	connLock.Lock()
-	defer connLock.Unlock()
-
-	if conn != nil {
-		return nil, errors.New("only one connection per process is supported")
-	}
-
-	conn = newConnection(binapi)
-
-	return conn, nil
 }
 
 // connectVPP performs blocking attempt to connect to VPP.
@@ -191,6 +151,24 @@ func (c *Connection) connectVPP() error {
 	atomic.StoreUint32(&c.vppConnected, 1)
 
 	return nil
+}
+
+// Disconnect disconnects from VPP and releases all connection-related resources.
+func (c *Connection) Disconnect() {
+	if c == nil {
+		return
+	}
+
+	if c.vppClient != nil {
+		c.disconnectVPP()
+	}
+}
+
+// disconnectVPP disconnects from VPP in case it is connected.
+func (c *Connection) disconnectVPP() {
+	if atomic.CompareAndSwapUint32(&c.vppConnected, 1, 0) {
+		c.vppClient.Disconnect()
+	}
 }
 
 func (c *Connection) NewAPIChannel() (api.Channel, error) {
@@ -312,13 +290,6 @@ func (c *Connection) retrieveMessageIDs() (err error) {
 	}
 
 	return nil
-}
-
-// disconnectVPP disconnects from VPP in case it is connected.
-func (c *Connection) disconnectVPP() {
-	if atomic.CompareAndSwapUint32(&c.vppConnected, 1, 0) {
-		c.vppClient.Disconnect()
-	}
 }
 
 // connectLoop attempts to connect to VPP until it succeeds.

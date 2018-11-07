@@ -132,9 +132,6 @@ func (c *Connection) processRequest(ch *Channel, req *vppRequest) error {
 
 // msgCallback is called whenever any binary API message comes from VPP.
 func (c *Connection) msgCallback(msgID uint16, data []byte) {
-	connLock.RLock()
-	defer connLock.RUnlock()
-
 	if c == nil {
 		log.Warn("Already disconnected, ignoring the message.")
 		return
