@@ -27,12 +27,11 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
-
 
 // NATPlugin configures VPP NAT.
 type NATPlugin struct {
@@ -56,14 +55,14 @@ type Deps struct {
 	Scheduler   scheduler.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
-	StatusCheck statuscheck.PluginStatusWriter /* optional */
+	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers NAT-related descriptors.
 func (p *NATPlugin) Init() error {
 	var err error
 
-	// VPP channel
+	// GoVPP channels
 	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
 		return errors.Errorf("failed to create GoVPP API channel: %v", err)
 	}

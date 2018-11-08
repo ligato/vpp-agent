@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 	"reflect"
 	"strconv"
@@ -766,7 +767,12 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		dump = append(dump, kv)
 	}
 
-	d.log.Debugf("Dumping Linux interfaces: %v", dump)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d Linux interfaces: %v", len(dump), dumpList)
+
 	return dump, nil
 }
 

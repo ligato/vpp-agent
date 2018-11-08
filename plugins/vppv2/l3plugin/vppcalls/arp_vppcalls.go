@@ -15,7 +15,6 @@
 package vppcalls
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/go-errors/errors"
@@ -58,8 +57,6 @@ func (h *ArpVppHandler) vppAddDelArp(entry *l3.ARPEntry, delete bool) error {
 	reply := &ip.IPNeighborAddDelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

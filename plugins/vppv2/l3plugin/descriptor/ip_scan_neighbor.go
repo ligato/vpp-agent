@@ -17,6 +17,7 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
@@ -84,7 +85,7 @@ func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescri
 
 // EquivalentIPScanNeighbors compares the IP Scan Neighbor values.
 func (d *IPScanNeighborDescriptor) EquivalentIPScanNeighbors(key string, oldValue, newValue *l3.IPScanNeighbor) bool {
-	return proto.Equal(getWithDefaults(oldValue), getWithDefaults(newValue))
+	return proto.Equal(withDefaults(oldValue), withDefaults(newValue))
 }
 
 // Add adds VPP IP Scan Neighbor.
@@ -112,30 +113,32 @@ func (d *IPScanNeighborDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Dump dumps VPP IP Scan Neighbor.
-func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWithMetadata) (dump []adapter.IPScanNeighborKVWithMetadata, err error) {
+func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWithMetadata) (
+	dump []adapter.IPScanNeighborKVWithMetadata, err error,
+) {
+	// Retrieve VPP configuration
 	ipNeigh, err := d.ipNeigh.GetIPScanNeighbor()
 	if err != nil {
 		return nil, err
 	}
 
 	var origin = scheduler.FromNB
-	if proto.Equal(ipNeigh, defaultIPScanNeighbor) {
+	if proto.Equal(withDefaults(ipNeigh), defaultIPScanNeighbor) {
 		origin = scheduler.FromSB
 	}
 
-	dump = []adapter.IPScanNeighborKVWithMetadata{
-		{
-			Key:    l3.IPScanNeighborKey,
-			Value:  ipNeigh,
-			Origin: origin,
-		},
-	}
+	dump = append(dump, adapter.IPScanNeighborKVWithMetadata{
+		Key:    l3.IPScanNeighborKey,
+		Value:  ipNeigh,
+		Origin: origin,
+	})
 
-	d.log.Debugf("Dumping IP Scan Neighbor configuration: %+v", dump)
+	d.log.Debugf("Dumping IPScanNeigh config: %+v", dump)
+
 	return dump, nil
 }
 
-func getWithDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
+func withDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
 	var val = *orig
 	if val.ScanInterval == 0 {
 		val.ScanInterval = defaultScanInterval

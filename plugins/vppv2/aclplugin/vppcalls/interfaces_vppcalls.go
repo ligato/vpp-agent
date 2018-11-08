@@ -285,9 +285,6 @@ func (h *ACLVppHandler) requestSetACLToInterfaces(logicalReq *aclInterfaceLogica
 		if err != nil {
 			return err
 		}
-		if reply.Retval != 0 {
-			return fmt.Errorf("setting up interface ACL list returned %v", reply.Retval)
-		}
 	}
 
 	return nil
@@ -334,9 +331,6 @@ func (h *ACLVppHandler) requestRemoveInterfacesFromACL(logicalReq *aclInterfaceL
 		err = h.callsChannel.SendRequest(msg).ReceiveReply(reply)
 		if err != nil {
 			wasErr = err
-		}
-		if reply.Retval != 0 {
-			wasErr = fmt.Errorf("setting up interface ACL list returned %v", reply.Retval)
 		}
 	}
 

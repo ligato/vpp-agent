@@ -21,11 +21,9 @@
 package l3plugin
 
 import (
-	"context"
-	"sync"
-
 	govppapi "git.fd.io/govpp.git/api"
 
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -39,9 +37,6 @@ import (
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
 type L3Plugin struct {
 	Deps
-
-	// From configuration file
-	disabled bool
 
 	// GoVPP channels
 	vppCh govppapi.Channel
@@ -58,40 +53,20 @@ type L3Plugin struct {
 	proxyArpDescriptor       *descriptor.ProxyArpDescriptor
 	proxyArpIfaceDescriptor  *descriptor.ProxyArpInterfaceDescriptor
 	ipScanNeighborDescriptor *descriptor.IPScanNeighborDescriptor
-
-	// go routine management
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
 }
 
 // Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler scheduler.KVScheduler
-	GoVppmux  govppmux.API
-	IfPlugin  ifplugin.API
-}
-
-// Config holds the l3plugin configuration.
-type Config struct {
-	Disabled bool `json:"disabled"`
+	Scheduler   scheduler.KVScheduler
+	GoVppmux    govppmux.API
+	IfPlugin    ifplugin.API
+	StatusCheck statuscheck.PluginStatusWriter // optional
 }
 
 // Init initializes and registers descriptors for Linux ARPs and Routes.
 func (p *L3Plugin) Init() error {
-	// parse configuration file
-	config, err := p.retrieveConfig()
-	if err != nil {
-		return err
-	}
-	if config != nil {
-		if config.Disabled {
-			p.disabled = true
-			p.Log.Infof("Disabling Linux L3 plugin")
-			return nil
-		}
-	}
+	var err error
 
 	// GoVPP channels
 	if p.vppCh, err = p.GoVppmux.NewAPIChannel(); err != nil {
@@ -105,42 +80,33 @@ func (p *L3Plugin) Init() error {
 	p.ipNeigh = vppcalls.NewIPNeighVppHandler(p.vppCh, nil)
 
 	// init & register descriptors
-	routeDescriptor := adapter.NewStaticRouteDescriptor(descriptor.NewRouteDescriptor(
-		p.Scheduler, p.routeHandler, p.Log).GetDescriptor())
-	arpDescriptor := adapter.NewARPEntryDescriptor(descriptor.NewArpDescriptor(
-		p.Scheduler, p.arpandler, p.Log).GetDescriptor())
-	proxyArpDescriptor := adapter.NewProxyARPDescriptor(descriptor.NewProxyArpDescriptor(
-		p.Scheduler, p.proxyArpHandler, p.Log).GetDescriptor())
-	proxyArpIfaceDescriptor := adapter.NewProxyARPInterfaceDescriptor(descriptor.NewProxyArpInterfaceDescriptor(
-		p.Scheduler, p.proxyArpHandler, p.Log).GetDescriptor())
-	ipScanNeighborDescriptor := adapter.NewIPScanNeighborDescriptor(descriptor.NewIPScanNeighborDescriptor(
-		p.Scheduler, p.ipNeigh, p.Log).GetDescriptor())
-
+	p.routeDescriptor = descriptor.NewRouteDescriptor(p.Scheduler, p.routeHandler, p.Log)
+	routeDescriptor := adapter.NewStaticRouteDescriptor(p.routeDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
+
+	p.arpDescriptor = descriptor.NewArpDescriptor(p.Scheduler, p.arpandler, p.Log)
+	arpDescriptor := adapter.NewARPEntryDescriptor(p.arpDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
+
+	p.proxyArpDescriptor = descriptor.NewProxyArpDescriptor(p.Scheduler, p.proxyArpHandler, p.Log)
+	proxyArpDescriptor := adapter.NewProxyARPDescriptor(p.proxyArpDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(proxyArpDescriptor)
+
+	p.proxyArpIfaceDescriptor = descriptor.NewProxyArpInterfaceDescriptor(p.Scheduler, p.proxyArpHandler, p.Log)
+	proxyArpIfaceDescriptor := adapter.NewProxyARPInterfaceDescriptor(p.proxyArpIfaceDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(proxyArpIfaceDescriptor)
+
+	p.ipScanNeighborDescriptor = descriptor.NewIPScanNeighborDescriptor(p.Scheduler, p.ipNeigh, p.Log)
+	ipScanNeighborDescriptor := adapter.NewIPScanNeighborDescriptor(p.ipScanNeighborDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(ipScanNeighborDescriptor)
 
 	return nil
 }
 
-// Close does nothing here.
-func (p *L3Plugin) Close() error {
+// AfterInit registers plugin with StatusCheck.
+func (p *L3Plugin) AfterInit() error {
+	if p.StatusCheck != nil {
+		p.StatusCheck.Register(p.PluginName, nil)
+	}
 	return nil
-}
-
-// retrieveConfig loads L3Plugin configuration file.
-func (p *L3Plugin) retrieveConfig() (*Config, error) {
-	config := &Config{}
-	found, err := p.Cfg.LoadValue(config)
-	if !found {
-		p.Log.Debug("Linux L3Plugin config not found")
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	p.Log.Debug("Linux L3Plugin config found")
-	return config, err
 }

@@ -21,14 +21,13 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
-
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/idxvpp2"
-	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
@@ -36,7 +35,6 @@ import (
 const (
 	// BridgeDomainDescriptorName is the name of the descriptor for VPP bridge domains.
 	BridgeDomainDescriptorName = "vpp-bridge-domain"
-
 
 	// prefix prepended to internal names of untagged bridge domains to construct
 	// unique logical names
@@ -271,7 +269,12 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 	// update d.bdIDSeq
 	d.bdIDSeq = bdIDSeq
 
-	d.log.Debugf("Dumping bridge domains: %v", dump)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d bridge domains: %v", len(dump), dumpList)
+
 	return dump, nil
 }
 

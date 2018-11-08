@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 	"strings"
 
@@ -311,6 +312,12 @@ func (d *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapter.A
 			})
 		}
 	}
-	d.log.Debugf("Dumping Linux ARPs: %v", dump)
+
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d Linux ARPs: %v", len(dump), dumpList)
+
 	return dump, nil
 }

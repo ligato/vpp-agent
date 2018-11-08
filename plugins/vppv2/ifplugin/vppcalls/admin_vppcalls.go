@@ -15,8 +15,6 @@
 package vppcalls
 
 import (
-	"fmt"
-
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
@@ -49,8 +47,6 @@ func (h *IfVppHandler) interfaceSetFlags(ifIdx uint32, adminUp bool) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -70,8 +66,6 @@ func (h *IfVppHandler) handleInterfaceTag(tag string, ifIdx uint32, isAdd bool) 
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s %v (index %v) add/del returned %v", reply.GetMessageName(), tag, ifIdx, reply.Retval)
 	}
 
 	return nil

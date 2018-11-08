@@ -15,8 +15,6 @@
 package vppcalls
 
 import (
-	"fmt"
-
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 )
@@ -50,8 +48,6 @@ func (h *IfVppHandler) sendAndLogMessageForVpp(ifIdx uint32, addr string, isAdd 
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

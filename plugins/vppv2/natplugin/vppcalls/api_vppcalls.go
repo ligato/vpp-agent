@@ -16,8 +16,8 @@ package vppcalls
 
 import (
 	"git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/cn-infra/logging"
 
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"

@@ -62,7 +62,7 @@ func New() *VPPAgent {
 	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&redis.DefaultPlugin))
 
 	watchers := datasync.KVProtoWatchers{
-		local.Get(),
+		local.DefaultRegistry,
 		etcdDataSync,
 		consulDataSync,
 	}
