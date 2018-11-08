@@ -56,8 +56,6 @@ func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.Interface_VxlanLink, vrf, m
 	reply := &vxlan.VxlanAddDelTunnelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, nil

@@ -16,7 +16,6 @@ package vppcalls
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"strings"
 
@@ -53,8 +52,6 @@ func (h *NatVppHandler) SetNat44Forwarding(enableFwd bool) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -145,8 +142,6 @@ func (h *NatVppHandler) handleNat44Interface(iface string, isInside, isAdd bool)
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -169,8 +164,6 @@ func (h *NatVppHandler) handleNat44InterfaceOutputFeature(iface string, isInside
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -195,8 +188,6 @@ func (h *NatVppHandler) handleNat44AddressPool(address string, vrf uint32, twice
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -215,8 +206,6 @@ func (h *NatVppHandler) handleNatVirtualReassembly(vrCfg *nat.VirtualReassembly,
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -290,8 +279,6 @@ func (h *NatVppHandler) handleNat44StaticMapping(mapping *nat.DNat44_StaticMappi
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -356,8 +343,6 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
@@ -413,8 +398,6 @@ func (h *NatVppHandler) handleNat44IdentityMapping(mapping *nat.DNat44_IdentityM
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

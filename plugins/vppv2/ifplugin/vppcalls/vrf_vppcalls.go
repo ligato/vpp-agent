@@ -97,8 +97,6 @@ func (h *IfVppHandler) setInterfaceVrf(ifIdx, vrfID uint32, isIPv6 bool) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	h.log.Debugf("Interface %d set to VRF %d", ifIdx, vrfID)
@@ -116,8 +114,6 @@ func (h *IfVppHandler) getInterfaceVrf(ifIdx uint32, isIPv6 bool) (vrfID uint32,
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.VrfID, nil
@@ -176,8 +172,6 @@ func (h *IfVppHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

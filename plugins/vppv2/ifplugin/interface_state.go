@@ -160,9 +160,6 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	if err != nil {
 		return errors.Errorf("failed to get interface events: %v", err)
 	}
-	if wantIfEventsReply.Retval != 0 {
-		return errors.Errorf("%s returned %d", wantIfEventsReply.GetMessageName(), wantIfEventsReply.Retval)
-	}
 
 	wantSimpleStatsReply := &stats.WantInterfaceSimpleStatsReply{}
 	// enable interface counters notifications from VPP
@@ -173,9 +170,6 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	if err != nil {
 		return errors.Errorf("failed to subscribe for interface simple stats: %v", err)
 	}
-	if wantSimpleStatsReply.Retval != 0 {
-		return errors.Errorf("%s returned %d", wantSimpleStatsReply.GetMessageName(), wantSimpleStatsReply.Retval)
-	}
 
 	wantCombinedStatsReply := &stats.WantInterfaceCombinedStatsReply{}
 	// enable interface counters notifications from VPP
@@ -185,9 +179,6 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	}).ReceiveReply(wantCombinedStatsReply)
 	if err != nil {
 		return errors.Errorf("failed to subscribe for interface combined stats: %v", err)
-	}
-	if wantCombinedStatsReply.Retval != 0 {
-		return errors.Errorf("%s returned %d", wantCombinedStatsReply.GetMessageName(), wantCombinedStatsReply.Retval)
 	}
 
 	return nil

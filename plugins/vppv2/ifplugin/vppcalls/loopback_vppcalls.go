@@ -15,8 +15,6 @@
 package vppcalls
 
 import (
-	"fmt"
-
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
@@ -27,8 +25,6 @@ func (h *IfVppHandler) AddLoopbackInterface(ifName string) (swIndex uint32, err 
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
@@ -44,8 +40,6 @@ func (h *IfVppHandler) DeleteLoopbackInterface(ifName string, idx uint32) error 
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return h.RemoveInterfaceTag(ifName, idx)

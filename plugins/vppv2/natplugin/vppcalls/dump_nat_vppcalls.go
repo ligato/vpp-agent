@@ -145,9 +145,6 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, nil, fmt.Errorf("failed to get NAT virtual reassembly configuration: %v", err)
 	}
-	if reply.Retval != 0 {
-		return nil, nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	vrIPv4 = &nat.VirtualReassembly{
 		Timeout:         reply.IP4Timeout,
