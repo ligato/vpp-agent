@@ -73,230 +73,27 @@ type ExamplePlugin struct {
 }
 
 // String returns plugin name
-func (plugin *ExamplePlugin) String() string {
+func (p *ExamplePlugin) String() string {
 	return "l2-example"
 }
 
 // Init handles initialization phase.
-func (plugin *ExamplePlugin) Init() error {
+func (p *ExamplePlugin) Init() error {
 	return nil
 }
 
 // AfterInit handles phase after initialization.
-func (plugin *ExamplePlugin) AfterInit() error {
-	go plugin.testLocalClientWithScheduler()
+func (p *ExamplePlugin) AfterInit() error {
+	go testLocalClientWithScheduler()
 	return nil
 }
 
 // Close cleans up the resources.
-func (plugin *ExamplePlugin) Close() error {
+func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
-func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
-	const (
-		bdNetPrefix = "10.11.1."
-		bdNetMask   = "/24"
-
-		veth1LogicalName = "myVETH1"
-		veth1HostName    = "veth1"
-		veth1IPAddr      = bdNetPrefix + "1"
-		veth1HwAddr      = "66:66:66:66:66:66"
-
-		veth2LogicalName = "myVETH2"
-		veth2HostName    = "veth2"
-
-		afPacketLogicalName = "myAFPacket"
-		afPacketHwAddr      = "a7:35:45:55:65:75"
-
-		vppTapLogicalName = "myVPPTap"
-		vppTapHwAddr      = "b3:12:12:45:A7:B7"
-		vppTapVersion     = 2
-
-		linuxTapLogicalName = "myLinuxTAP"
-		linuxTapHostName    = "tap_to_vpp"
-		linuxTapIPAddr      = bdNetPrefix + "2"
-		linuxTapHwAddr      = "88:88:88:88:88:88"
-
-		mycroservice1 = "microservice1"
-		mycroservice2 = "microservice2"
-
-		bviLoopName   = "myLoopback1"
-		bviLoopIP     = bdNetPrefix + "3"
-		bviLoopHwAddr = "cd:cd:cd:cd:cd:cd"
-
-		loop2Name   = "myLoopback2"
-		loop2HwAddr = "ef:ef:ef:ef:ef:ef"
-
-		bdName                = "myBridgeDomain"
-		bdFlood               = true
-		bdUnknownUnicastFlood = true
-		bdForward             = true
-		bdLearn               = false /* Learning turned off, FIBs are needed for connectivity */
-		bdArpTermination      = true
-		bdMacAge              = 0
-	)
-
-	/* microservice1 <-> VPP */
-	veth1 := &linux_interfaces.LinuxInterface{
-		Name:        veth1LogicalName,
-		Type:        linux_interfaces.LinuxInterface_VETH,
-		Enabled:     true,
-		PhysAddress: veth1HwAddr,
-		IpAddresses: []string{
-			veth1IPAddr + bdNetMask,
-		},
-		HostIfName: veth1HostName,
-		Link: &linux_interfaces.LinuxInterface_Veth{
-			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth2LogicalName},
-		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
-			Reference: mycroservice1,
-		},
-	}
-
-	veth2 := &linux_interfaces.LinuxInterface{
-		Name:       veth2LogicalName,
-		Type:       linux_interfaces.LinuxInterface_VETH,
-		Enabled:    true,
-		HostIfName: veth2HostName,
-		Link: &linux_interfaces.LinuxInterface_Veth{
-			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
-		},
-	}
-
-	afpacket := &vpp_interfaces.Interface{
-		Name:        afPacketLogicalName,
-		Type:        vpp_interfaces.Interface_AF_PACKET_INTERFACE,
-		Enabled:     true,
-		PhysAddress: afPacketHwAddr,
-		Link: &vpp_interfaces.Interface_Afpacket{
-			Afpacket: &vpp_interfaces.Interface_AfpacketLink{
-				HostIfName: veth2HostName,
-			},
-		},
-	}
-
-	/* microservice2 <-> VPP */
-
-	linuxTap := &linux_interfaces.LinuxInterface{
-		Name:        linuxTapLogicalName,
-		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
-		Enabled:     true,
-		PhysAddress: linuxTapHwAddr,
-		IpAddresses: []string{
-			linuxTapIPAddr + bdNetMask,
-		},
-		HostIfName: linuxTapHostName,
-		Link: &linux_interfaces.LinuxInterface_Tap{
-			Tap: &linux_interfaces.LinuxInterface_TapLink{
-				VppTapIfName: vppTapLogicalName,
-			},
-		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
-			Reference: mycroservice2,
-		},
-	}
-
-	vppTap := &vpp_interfaces.Interface{
-		Name:        vppTapLogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
-		Enabled:     true,
-		PhysAddress: vppTapHwAddr,
-		Link: &vpp_interfaces.Interface_Tap{
-			Tap: &vpp_interfaces.Interface_TapLink{
-				Version:        vppTapVersion,
-				ToMicroservice: mycroservice2,
-			},
-		},
-	}
-
-	/* Bridge domain */
-
-	bd := &vpp_l2.BridgeDomain{
-		Name:                bdName,
-		Flood:               bdFlood,
-		UnknownUnicastFlood: bdUnknownUnicastFlood,
-		Forward:             bdForward,
-		Learn:               bdLearn,
-		ArpTermination:      bdArpTermination,
-		MacAge:              bdMacAge,
-		Interfaces: []*vpp_l2.BridgeDomain_Interface{
-			{
-				Name: vppTapLogicalName,
-			},
-			{
-				Name: afPacketLogicalName,
-			},
-			{
-				Name: bviLoopName,
-				BridgedVirtualInterface: true,
-			},
-		},
-	}
-
-	bviLoop := &vpp_interfaces.Interface{
-		Name:        bviLoopName,
-		Type:        vpp_interfaces.Interface_SOFTWARE_LOOPBACK,
-		Enabled:     true,
-		PhysAddress: bviLoopHwAddr,
-		IpAddresses: []string{
-			bviLoopIP + bdNetMask,
-		},
-	}
-
-	loop2 := &vpp_interfaces.Interface{
-		Name:        loop2Name,
-		Type:        vpp_interfaces.Interface_SOFTWARE_LOOPBACK,
-		Enabled:     true,
-		PhysAddress: loop2HwAddr,
-	}
-
-	/* FIB entries */
-
-	fibForLoop := &vpp_l2.FIBEntry{
-		PhysAddress:             bviLoopHwAddr,
-		BridgeDomain:            bdName,
-		Action:                  vpp_l2.FIBEntry_FORWARD,
-		OutgoingInterface:       bviLoopName,
-		BridgedVirtualInterface: true,
-		StaticConfig:            true,
-	}
-
-	fibForVETH := &vpp_l2.FIBEntry{
-		PhysAddress:       veth1HwAddr,
-		BridgeDomain:      bdName,
-		Action:            vpp_l2.FIBEntry_FORWARD,
-		OutgoingInterface: afPacketLogicalName,
-	}
-
-	fibForTAP := &vpp_l2.FIBEntry{
-		PhysAddress:       linuxTapHwAddr,
-		BridgeDomain:      bdName,
-		Action:            vpp_l2.FIBEntry_FORWARD,
-		OutgoingInterface: vppTapLogicalName,
-	}
-
-	dropFIB := &vpp_l2.FIBEntry{
-		PhysAddress:  loop2HwAddr,
-		BridgeDomain: bdName,
-		Action:       vpp_l2.FIBEntry_DROP,
-	}
-
-	/* XConnect */
-
-	xConnectMs1ToMs2 := &vpp_l2.XConnectPair{
-		ReceiveInterface:  afPacketLogicalName,
-		TransmitInterface: vppTapLogicalName,
-	}
-
-	xConnectMs2ToMs1 := &vpp_l2.XConnectPair{
-		ReceiveInterface:  vppTapLogicalName,
-		TransmitInterface: afPacketLogicalName,
-	}
-
+func testLocalClientWithScheduler() {
 	// initial resync
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC (using bridge domain) ===")
@@ -338,3 +135,200 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 }
+
+const (
+	bdNetPrefix = "10.11.1."
+	bdNetMask   = "/24"
+
+	veth1LogicalName = "myVETH1"
+	veth1HostName    = "veth1"
+	veth1IPAddr      = bdNetPrefix + "1"
+	veth1HwAddr      = "66:66:66:66:66:66"
+
+	veth2LogicalName = "myVETH2"
+	veth2HostName    = "veth2"
+
+	afPacketLogicalName = "myAFPacket"
+	afPacketHwAddr      = "a7:35:45:55:65:75"
+
+	vppTapLogicalName = "myVPPTap"
+	vppTapHwAddr      = "b3:12:12:45:A7:B7"
+	vppTapVersion     = 2
+
+	linuxTapLogicalName = "myLinuxTAP"
+	linuxTapHostName    = "tap_to_vpp"
+	linuxTapIPAddr      = bdNetPrefix + "2"
+	linuxTapHwAddr      = "88:88:88:88:88:88"
+
+	mycroservice1 = "microservice1"
+	mycroservice2 = "microservice2"
+
+	bviLoopName   = "myLoopback1"
+	bviLoopIP     = bdNetPrefix + "3"
+	bviLoopHwAddr = "cd:cd:cd:cd:cd:cd"
+
+	loop2Name   = "myLoopback2"
+	loop2HwAddr = "ef:ef:ef:ef:ef:ef"
+
+	bdName                = "myBridgeDomain"
+	bdFlood               = true
+	bdUnknownUnicastFlood = true
+	bdForward             = true
+	bdLearn               = false /* Learning turned off, FIBs are needed for connectivity */
+	bdArpTermination      = true
+	bdMacAge              = 0
+)
+
+var (
+	/* microservice1 <-> VPP */
+
+	veth1 = &linux_interfaces.LinuxInterface{
+		Name:        veth1LogicalName,
+		Type:        linux_interfaces.LinuxInterface_VETH,
+		Enabled:     true,
+		PhysAddress: veth1HwAddr,
+		IpAddresses: []string{
+			veth1IPAddr + bdNetMask,
+		},
+		HostIfName: veth1HostName,
+		Link: &linux_interfaces.LinuxInterface_Veth{
+			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth2LogicalName},
+		},
+		Namespace: &linux_ns.LinuxNetNamespace{
+			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+			Reference: mycroservice1,
+		},
+	}
+	veth2 = &linux_interfaces.LinuxInterface{
+		Name:       veth2LogicalName,
+		Type:       linux_interfaces.LinuxInterface_VETH,
+		Enabled:    true,
+		HostIfName: veth2HostName,
+		Link: &linux_interfaces.LinuxInterface_Veth{
+			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
+		},
+	}
+	afpacket = &vpp_interfaces.Interface{
+		Name:        afPacketLogicalName,
+		Type:        vpp_interfaces.Interface_AF_PACKET_INTERFACE,
+		Enabled:     true,
+		PhysAddress: afPacketHwAddr,
+		Link: &vpp_interfaces.Interface_Afpacket{
+			Afpacket: &vpp_interfaces.Interface_AfpacketLink{
+				HostIfName: veth2HostName,
+			},
+		},
+	}
+
+	/* microservice2 <-> VPP */
+
+	linuxTap = &linux_interfaces.LinuxInterface{
+		Name:        linuxTapLogicalName,
+		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Enabled:     true,
+		PhysAddress: linuxTapHwAddr,
+		IpAddresses: []string{
+			linuxTapIPAddr + bdNetMask,
+		},
+		HostIfName: linuxTapHostName,
+		Link: &linux_interfaces.LinuxInterface_Tap{
+			Tap: &linux_interfaces.LinuxInterface_TapLink{
+				VppTapIfName: vppTapLogicalName,
+			},
+		},
+		Namespace: &linux_ns.LinuxNetNamespace{
+			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+			Reference: mycroservice2,
+		},
+	}
+	vppTap = &vpp_interfaces.Interface{
+		Name:        vppTapLogicalName,
+		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
+		Enabled:     true,
+		PhysAddress: vppTapHwAddr,
+		Link: &vpp_interfaces.Interface_Tap{
+			Tap: &vpp_interfaces.Interface_TapLink{
+				Version:        vppTapVersion,
+				ToMicroservice: mycroservice2,
+			},
+		},
+	}
+
+	/* Bridge domain */
+
+	bd = &vpp_l2.BridgeDomain{
+		Name:                bdName,
+		Flood:               bdFlood,
+		UnknownUnicastFlood: bdUnknownUnicastFlood,
+		Forward:             bdForward,
+		Learn:               bdLearn,
+		ArpTermination:      bdArpTermination,
+		MacAge:              bdMacAge,
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
+			{
+				Name: vppTapLogicalName,
+			},
+			{
+				Name: afPacketLogicalName,
+			},
+			{
+				Name: bviLoopName,
+				BridgedVirtualInterface: true,
+			},
+		},
+	}
+	bviLoop = &vpp_interfaces.Interface{
+		Name:        bviLoopName,
+		Type:        vpp_interfaces.Interface_SOFTWARE_LOOPBACK,
+		Enabled:     true,
+		PhysAddress: bviLoopHwAddr,
+		IpAddresses: []string{
+			bviLoopIP + bdNetMask,
+		},
+	}
+	loop2 = &vpp_interfaces.Interface{
+		Name:        loop2Name,
+		Type:        vpp_interfaces.Interface_SOFTWARE_LOOPBACK,
+		Enabled:     true,
+		PhysAddress: loop2HwAddr,
+	}
+
+	/* FIB entries */
+
+	fibForLoop = &vpp_l2.FIBEntry{
+		PhysAddress:             bviLoopHwAddr,
+		BridgeDomain:            bdName,
+		Action:                  vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface:       bviLoopName,
+		BridgedVirtualInterface: true,
+		StaticConfig:            true,
+	}
+	fibForVETH = &vpp_l2.FIBEntry{
+		PhysAddress:       veth1HwAddr,
+		BridgeDomain:      bdName,
+		Action:            vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface: afPacketLogicalName,
+	}
+	fibForTAP = &vpp_l2.FIBEntry{
+		PhysAddress:       linuxTapHwAddr,
+		BridgeDomain:      bdName,
+		Action:            vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface: vppTapLogicalName,
+	}
+	dropFIB = &vpp_l2.FIBEntry{
+		PhysAddress:  loop2HwAddr,
+		BridgeDomain: bdName,
+		Action:       vpp_l2.FIBEntry_DROP,
+	}
+
+	/* XConnect */
+
+	xConnectMs1ToMs2 = &vpp_l2.XConnectPair{
+		ReceiveInterface:  afPacketLogicalName,
+		TransmitInterface: vppTapLogicalName,
+	}
+	xConnectMs2ToMs1 = &vpp_l2.XConnectPair{
+		ReceiveInterface:  vppTapLogicalName,
+		TransmitInterface: afPacketLogicalName,
+	}
+)

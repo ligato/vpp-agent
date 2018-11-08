@@ -72,7 +72,7 @@ func (p *ExamplePlugin) Init() error {
 
 // AfterInit handles phase after initialization.
 func (p *ExamplePlugin) AfterInit() error {
-	go p.testLocalClientWithScheduler()
+	go testLocalClientWithScheduler()
 	return nil
 }
 
@@ -81,54 +81,7 @@ func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
-func (p *ExamplePlugin) testLocalClientWithScheduler() {
-	memif0 := &interfaces.Interface{
-		Name:        "memif0",
-		Enabled:     true,
-		Type:        interfaces.Interface_MEMORY_INTERFACE,
-		IpAddresses: []string{"3.3.0.1/16"},
-		Link: &interfaces.Interface_Memif{
-			Memif: &interfaces.Interface_MemifLink{
-				Id:             1,
-				Master:         true,
-				Secret:         "secret",
-				SocketFilename: "/tmp/memif1.sock",
-			},
-		},
-	}
-	route0 := &l3.StaticRoute{
-		DstNetwork:        "10.10.1.0/24",
-		OutgoingInterface: "memif0",
-		Weight:            200,
-	}
-	route1 := &l3.StaticRoute{
-		DstNetwork:        "2001:DB8::0001/32",
-		OutgoingInterface: "memif0",
-		Weight:            100,
-	}
-	arp0 := &l3.ARPEntry{
-		Interface:   "memif0",
-		PhysAddress: "33:33:33:33:33:33",
-		IpAddress:   "3.3.3.3",
-		Static:      true,
-	}
-	proxyArp := &l3.ProxyARP{
-		Ranges: []*l3.ProxyARP_Range{
-			{FirstIpAddr: "10.10.1.1", LastIpAddr: "10.10.1.255"},
-		},
-		Interfaces: []*l3.ProxyARP_Interface{
-			{Name: "memif0"},
-		},
-	}
-	ipScanNeighbor := &l3.IPScanNeighbor{
-		Mode:           l3.IPScanNeighbor_IPv4,
-		ScanInterval:   1,
-		ScanIntDelay:   1,
-		MaxProcTime:    20,
-		MaxUpdate:      0,
-		StaleThreshold: 4,
-	}
-
+func testLocalClientWithScheduler() {
 	// initial resync
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC ===")
@@ -172,3 +125,52 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 }
+
+var (
+	memif0 = &interfaces.Interface{
+		Name:        "memif0",
+		Enabled:     true,
+		Type:        interfaces.Interface_MEMORY_INTERFACE,
+		IpAddresses: []string{"3.3.0.1/16"},
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.Interface_MemifLink{
+				Id:             1,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
+	}
+	route0 = &l3.StaticRoute{
+		DstNetwork:        "10.10.1.0/24",
+		OutgoingInterface: "memif0",
+		Weight:            200,
+	}
+	route1 = &l3.StaticRoute{
+		DstNetwork:        "2001:DB8::0001/32",
+		OutgoingInterface: "memif0",
+		Weight:            100,
+	}
+	arp0 = &l3.ARPEntry{
+		Interface:   "memif0",
+		PhysAddress: "33:33:33:33:33:33",
+		IpAddress:   "3.3.3.3",
+		Static:      true,
+	}
+	proxyArp = &l3.ProxyARP{
+		Ranges: []*l3.ProxyARP_Range{
+			{FirstIpAddr: "10.10.1.1", LastIpAddr: "10.10.1.255"},
+		},
+		Interfaces: []*l3.ProxyARP_Interface{
+			{Name: "memif0"},
+		},
+	}
+	ipScanNeighbor = &l3.IPScanNeighbor{
+		Mode:           l3.IPScanNeighbor_IPv4,
+		ScanInterval:   1,
+		ScanIntDelay:   1,
+		MaxProcTime:    20,
+		MaxUpdate:      0,
+		StaleThreshold: 4,
+	}
+)

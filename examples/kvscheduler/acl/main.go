@@ -72,7 +72,7 @@ func (p *ExamplePlugin) Init() error {
 
 // AfterInit handles phase after initialization.
 func (p *ExamplePlugin) AfterInit() error {
-	go p.testLocalClientWithScheduler()
+	go testLocalClientWithScheduler()
 	return nil
 }
 
@@ -81,73 +81,7 @@ func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
-func (p *ExamplePlugin) testLocalClientWithScheduler() {
-	memif0 := &interfaces.Interface{
-		Name:    "memif0",
-		Enabled: true,
-		Type:    interfaces.Interface_MEMORY_INTERFACE,
-		Link: &interfaces.Interface_Memif{
-			Memif: &interfaces.Interface_MemifLink{
-				Id:             1,
-				Master:         true,
-				Secret:         "secret",
-				SocketFilename: "/tmp/memif1.sock",
-			},
-		},
-	}
-	acl0 := &acl.Acl{
-		Name: "acl0",
-		Rules: []*acl.Acl_Rule{
-			{
-				Action: acl.Acl_Rule_PERMIT,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Ip: &acl.Acl_Rule_IpRule_Ip{
-						SourceNetwork:      "10.0.0.0/24",
-						DestinationNetwork: "20.0.0.0/24",
-					},
-				},
-			},
-		},
-		Interfaces: &acl.Acl_Interfaces{
-			Ingress: []string{"memif0"},
-			Egress:  []string{"memif0"},
-		},
-	}
-	acl1 := &acl.Acl{
-		Name: "acl1",
-		Rules: []*acl.Acl_Rule{
-			{
-				Action: acl.Acl_Rule_PERMIT,
-				MacipRule: &acl.Acl_Rule_MacIpRule{
-					SourceAddress:        "192.168.0.1",
-					SourceAddressPrefix:  16,
-					SourceMacAddress:     "b2:74:8c:12:67:d2",
-					SourceMacAddressMask: "ff:ff:ff:ff:00:00",
-				},
-			},
-		},
-		Interfaces: &acl.Acl_Interfaces{
-			Ingress: []string{"memif0"},
-		},
-	}
-	acl3 := &acl.Acl{
-		Name: "acl3",
-		Rules: []*acl.Acl_Rule{
-			{
-				Action: acl.Acl_Rule_DENY,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Ip: &acl.Acl_Rule_IpRule_Ip{
-						// SourceNetwork is unspecified (ANY)
-						DestinationNetwork: "30.0.0.0/8",
-					},
-				},
-			},
-		},
-		Interfaces: &acl.Acl_Interfaces{
-			Egress: []string{"memif0"},
-		},
-	}
-
+func testLocalClientWithScheduler() {
 	// initial resync
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC ===")
@@ -183,3 +117,71 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 }
+
+var (
+	memif0 = &interfaces.Interface{
+		Name:    "memif0",
+		Enabled: true,
+		Type:    interfaces.Interface_MEMORY_INTERFACE,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.Interface_MemifLink{
+				Id:             1,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
+	}
+	acl0 = &acl.Acl{
+		Name: "acl0",
+		Rules: []*acl.Acl_Rule{
+			{
+				Action: acl.Acl_Rule_PERMIT,
+				IpRule: &acl.Acl_Rule_IpRule{
+					Ip: &acl.Acl_Rule_IpRule_Ip{
+						SourceNetwork:      "10.0.0.0/24",
+						DestinationNetwork: "20.0.0.0/24",
+					},
+				},
+			},
+		},
+		Interfaces: &acl.Acl_Interfaces{
+			Ingress: []string{"memif0"},
+			Egress:  []string{"memif0"},
+		},
+	}
+	acl1 = &acl.Acl{
+		Name: "acl1",
+		Rules: []*acl.Acl_Rule{
+			{
+				Action: acl.Acl_Rule_PERMIT,
+				MacipRule: &acl.Acl_Rule_MacIpRule{
+					SourceAddress:        "192.168.0.1",
+					SourceAddressPrefix:  16,
+					SourceMacAddress:     "b2:74:8c:12:67:d2",
+					SourceMacAddressMask: "ff:ff:ff:ff:00:00",
+				},
+			},
+		},
+		Interfaces: &acl.Acl_Interfaces{
+			Ingress: []string{"memif0"},
+		},
+	}
+	acl3 = &acl.Acl{
+		Name: "acl3",
+		Rules: []*acl.Acl_Rule{
+			{
+				Action: acl.Acl_Rule_DENY,
+				IpRule: &acl.Acl_Rule_IpRule{
+					Ip: &acl.Acl_Rule_IpRule_Ip{
+						// SourceNetwork is unspecified (ANY)
+						DestinationNetwork: "30.0.0.0/8",
+					},
+				},
+			},
+		},
+		Interfaces: &acl.Acl_Interfaces{
+			Egress: []string{"memif0"},
+		},
+	}
+)
