@@ -20,10 +20,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/db/keyval/etcd"
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
@@ -42,51 +39,19 @@ import (
 */
 
 func main() {
-	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
-		deps.KvPlugin = &etcd.DefaultPlugin
-	}))
-
-	watchers := datasync.KVProtoWatchers{
-		local.Get(),
-		etcdDataSync,
-	}
-
 	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = watchers
+	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
-	vppIfPlugin := vpp_ifplugin.NewPlugin(
-		vpp_ifplugin.UseDeps(func(deps *vpp_ifplugin.Deps) {
-			deps.PublishStatistics = etcdDataSync
-		}),
-	)
-
-	linuxIfPlugin := linux_ifplugin.NewPlugin(
-		linux_ifplugin.UseDeps(func(deps *linux_ifplugin.Deps) {
-			deps.VppIfPlugin = vppIfPlugin
-		}),
-	)
-
-	vppIfPlugin.LinuxIfPlugin = linuxIfPlugin
-
-	vppL2Plugin := vpp_l2plugin.NewPlugin(
-		vpp_l2plugin.UseDeps(func(deps *vpp_l2plugin.Deps) {
-			deps.IfPlugin = vppIfPlugin
-		}),
-	)
-
-	linuxL3Plugin := linux_l3plugin.NewPlugin(
-		linux_l3plugin.UseDeps(func(deps *linux_l3plugin.Deps) {
-			deps.IfPlugin = linuxIfPlugin
-		}),
-	)
+	// Set inter-dependency between VPP & Linux plugins
+	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
 	ep := &ExamplePlugin{
 		Scheduler:     &kvscheduler.DefaultPlugin,
-		LinuxIfPlugin: linuxIfPlugin,
-		LinuxL3Plugin: linuxL3Plugin,
-		VPPIfPlugin:   vppIfPlugin,
-		VPPL2Plugin:   vppL2Plugin,
-		Datasync:      etcdDataSync,
+		LinuxIfPlugin: &linux_ifplugin.DefaultPlugin,
+		LinuxL3Plugin: &linux_l3plugin.DefaultPlugin,
+		VPPIfPlugin:   &vpp_ifplugin.DefaultPlugin,
+		VPPL2Plugin:   &vpp_l2plugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -97,9 +62,6 @@ func main() {
 	}
 }
 
-// PluginName is a constant with name of main plugin.
-const PluginName = "example"
-
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
@@ -108,12 +70,11 @@ type ExamplePlugin struct {
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
 	VPPL2Plugin   *vpp_l2plugin.L2Plugin
-	Datasync      *kvdbsync.Plugin
 }
 
 // String returns plugin name
 func (plugin *ExamplePlugin) String() string {
-	return PluginName
+	return "l2-example"
 }
 
 // Init handles initialization phase.
@@ -135,7 +96,7 @@ func (plugin *ExamplePlugin) Close() error {
 func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	const (
 		bdNetPrefix = "10.11.1."
-		bdNetMask = "/24"
+		bdNetMask   = "/24"
 
 		veth1LogicalName = "myVETH1"
 		veth1HostName    = "veth1"
@@ -157,23 +118,23 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		linuxTapIPAddr      = bdNetPrefix + "2"
 		linuxTapHwAddr      = "88:88:88:88:88:88"
 
-		mycroservice1       = "microservice1"
-		mycroservice2       = "microservice2"
+		mycroservice1 = "microservice1"
+		mycroservice2 = "microservice2"
 
-		bviLoopName = "myLoopback1"
-		bviLoopIP = bdNetPrefix + "3"
+		bviLoopName   = "myLoopback1"
+		bviLoopIP     = bdNetPrefix + "3"
 		bviLoopHwAddr = "cd:cd:cd:cd:cd:cd"
 
-		loop2Name = "myLoopback2"
+		loop2Name   = "myLoopback2"
 		loop2HwAddr = "ef:ef:ef:ef:ef:ef"
 
-		bdName = "myBridgeDomain"
-		bdFlood = true
+		bdName                = "myBridgeDomain"
+		bdFlood               = true
 		bdUnknownUnicastFlood = true
-		bdForward = true
-		bdLearn = false /* Learning turned off, FIBs are needed for connectivity */
-		bdArpTermination = true
-		bdMacAge = 0
+		bdForward             = true
+		bdLearn               = false /* Learning turned off, FIBs are needed for connectivity */
+		bdArpTermination      = true
+		bdMacAge              = 0
 	)
 
 	/* microservice1 <-> VPP */
@@ -196,10 +157,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	veth2 := &linux_interfaces.LinuxInterface{
-		Name:        veth2LogicalName,
-		Type:        linux_interfaces.LinuxInterface_VETH,
-		Enabled:     true,
-		HostIfName:  veth2HostName,
+		Name:       veth2LogicalName,
+		Type:       linux_interfaces.LinuxInterface_VETH,
+		Enabled:    true,
+		HostIfName: veth2HostName,
 		Link: &linux_interfaces.LinuxInterface_Veth{
 			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
 		},
@@ -262,7 +223,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		Learn:               bdLearn,
 		ArpTermination:      bdArpTermination,
 		MacAge:              bdMacAge,
-		Interfaces:          []*vpp_l2.BridgeDomain_Interface{
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
 			{
 				Name: vppTapLogicalName,
 			},
@@ -305,23 +266,23 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	fibForVETH := &vpp_l2.FIBEntry{
-		PhysAddress:             veth1HwAddr,
-		BridgeDomain:            bdName,
-		Action:                  vpp_l2.FIBEntry_FORWARD,
-		OutgoingInterface:       afPacketLogicalName,
+		PhysAddress:       veth1HwAddr,
+		BridgeDomain:      bdName,
+		Action:            vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface: afPacketLogicalName,
 	}
 
 	fibForTAP := &vpp_l2.FIBEntry{
-		PhysAddress:             linuxTapHwAddr,
-		BridgeDomain:            bdName,
-		Action:                  vpp_l2.FIBEntry_FORWARD,
-		OutgoingInterface:       vppTapLogicalName,
+		PhysAddress:       linuxTapHwAddr,
+		BridgeDomain:      bdName,
+		Action:            vpp_l2.FIBEntry_FORWARD,
+		OutgoingInterface: vppTapLogicalName,
 	}
 
 	dropFIB := &vpp_l2.FIBEntry{
-		PhysAddress:             loop2HwAddr,
-		BridgeDomain:            bdName,
-		Action:                  vpp_l2.FIBEntry_DROP,
+		PhysAddress:  loop2HwAddr,
+		BridgeDomain: bdName,
+		Action:       vpp_l2.FIBEntry_DROP,
 	}
 
 	/* XConnect */
@@ -336,10 +297,9 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		TransmitInterface: afPacketLogicalName,
 	}
 
-	// resync
-
+	// initial resync
 	time.Sleep(time.Second * 2)
-	fmt.Println("=== RESYNC 0 (using bridge domain) ===")
+	fmt.Println("=== RESYNC (using bridge domain) ===")
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
@@ -363,8 +323,8 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	// data changes
 
-	time.Sleep(time.Second * 60)
-	fmt.Printf("=== CHANGE 1 (switching to XConnect) ===\n")
+	time.Sleep(time.Second * 10)
+	fmt.Printf("=== CHANGE (switching to XConnect) ===\n")
 
 	txn3 := localclient.DataChangeRequest("example")
 	err = txn3.Delete().

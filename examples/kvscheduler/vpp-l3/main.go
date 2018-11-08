@@ -31,21 +31,17 @@ import (
 )
 
 /*
-	This example demonstrates example using KVScheduler.
+	This example demonstrates example with VPP L3Plugin using KVScheduler.
 */
 
 func main() {
 	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.Get()
-
-	vppIfPlugin := vpp_ifplugin.NewPlugin()
-	vppL3Plugin := vpp_l3plugin.NewPlugin()
-	vppL3Plugin.IfPlugin = vppIfPlugin
+	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
 	ep := &ExamplePlugin{
 		Scheduler:   &kvscheduler.DefaultPlugin,
-		VPPIfPlugin: vppIfPlugin,
-		VPPL3Plugin: vppL3Plugin,
+		VPPIfPlugin: &vpp_ifplugin.DefaultPlugin,
+		VPPL3Plugin: &vpp_l3plugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -66,7 +62,7 @@ type ExamplePlugin struct {
 
 // String returns plugin name
 func (p *ExamplePlugin) String() string {
-	return "l3-example"
+	return "vpp-l3-example"
 }
 
 // Init handles initialization phase.
@@ -84,6 +80,7 @@ func (p *ExamplePlugin) AfterInit() error {
 func (p *ExamplePlugin) Close() error {
 	return nil
 }
+
 func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	memif0 := &interfaces.Interface{
 		Name:        "memif0",
@@ -132,10 +129,9 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		StaleThreshold: 4,
 	}
 
-	// resync
-
-	time.Sleep(time.Second / 2)
-	fmt.Println("=== RESYNC 0 ===")
+	// initial resync
+	time.Sleep(time.Second * 2)
+	fmt.Println("=== RESYNC ===")
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
@@ -152,8 +148,8 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	// data change
-	time.Sleep(time.Second * 1)
-	fmt.Println("=== CHANGE 1 ===")
+	time.Sleep(time.Second * 10)
+	fmt.Println("=== CHANGE ===")
 
 	route0.OutgoingInterface = ""
 	arp0.PhysAddress = "22:22:22:22:22:22"

@@ -21,31 +21,27 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 /*
-	This example demonstrates KVScheduler-based aclplugin.
+	This example demonstrates KVScheduler-based ACLPlugin.
 */
 
 func main() {
 	// Set watcher for KVScheduler.
 	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
-	vppIfPlugin := vpp_ifplugin.NewPlugin()
-	vppACLPlugin := vpp_aclplugin.NewPlugin()
-	vppACLPlugin.IfPlugin = vppIfPlugin
-
 	ep := &ExamplePlugin{
 		Scheduler:    &kvscheduler.DefaultPlugin,
-		VPPIfPlugin:  vppIfPlugin,
-		VPPACLPlugin: vppACLPlugin,
+		VPPIfPlugin:  &vpp_ifplugin.DefaultPlugin,
+		VPPACLPlugin: &vpp_aclplugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -66,7 +62,7 @@ type ExamplePlugin struct {
 
 // String returns plugin name
 func (p *ExamplePlugin) String() string {
-	return "acls-example"
+	return "acl-example"
 }
 
 // Init handles initialization phase.
@@ -84,6 +80,7 @@ func (p *ExamplePlugin) AfterInit() error {
 func (p *ExamplePlugin) Close() error {
 	return nil
 }
+
 func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	memif0 := &interfaces.Interface{
 		Name:    "memif0",
@@ -151,10 +148,9 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		},
 	}
 
-	// resync
-
-	time.Sleep(time.Second / 2)
-	fmt.Println("=== RESYNC 0 ===")
+	// initial resync
+	time.Sleep(time.Second * 2)
+	fmt.Println("=== RESYNC ===")
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
@@ -169,8 +165,8 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	// data change
-	time.Sleep(time.Second * 1)
-	fmt.Println("=== CHANGE 1 ===")
+	time.Sleep(time.Second * 10)
+	fmt.Println("=== CHANGE ===")
 
 	acl1.Interfaces = nil
 	acl0.Interfaces.Egress = nil

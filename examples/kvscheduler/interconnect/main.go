@@ -20,10 +20,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/db/keyval/etcd"
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
@@ -41,40 +38,18 @@ import (
 */
 
 func main() {
-	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
-		deps.KvPlugin = &etcd.DefaultPlugin
-	}))
-
-	watchers := datasync.KVProtoWatchers{
-		local.Get(),
-		etcdDataSync,
-	}
-
 	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = watchers
+	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
-	vppIfPlugin := vpp_ifplugin.NewPlugin()
-
-	linuxIfPlugin := linux_ifplugin.NewPlugin(
-		linux_ifplugin.UseDeps(func(deps *linux_ifplugin.Deps) {
-			deps.VppIfPlugin = vppIfPlugin
-		}),
-	)
-
-	vppIfPlugin.LinuxIfPlugin = linuxIfPlugin
-
-	linuxL3Plugin := linux_l3plugin.NewPlugin(
-		linux_l3plugin.UseDeps(func(deps *linux_l3plugin.Deps) {
-			deps.IfPlugin = linuxIfPlugin
-		}),
-	)
+	// Set inter-dependency between VPP & Linux plugins
+	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
 	ep := &ExamplePlugin{
 		Scheduler:     &kvscheduler.DefaultPlugin,
-		LinuxIfPlugin: linuxIfPlugin,
-		LinuxL3Plugin: linuxL3Plugin,
-		VPPIfPlugin:   vppIfPlugin,
-		Datasync:      etcdDataSync,
+		LinuxIfPlugin: &linux_ifplugin.DefaultPlugin,
+		LinuxL3Plugin: &linux_l3plugin.DefaultPlugin,
+		VPPIfPlugin:   &vpp_ifplugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -85,9 +60,6 @@ func main() {
 	}
 }
 
-// PluginName is a constant with name of main plugin.
-const PluginName = "example"
-
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
@@ -95,12 +67,11 @@ type ExamplePlugin struct {
 	LinuxIfPlugin *linux_ifplugin.IfPlugin
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
-	Datasync      *kvdbsync.Plugin
 }
 
 // String returns plugin name
 func (plugin *ExamplePlugin) String() string {
-	return PluginName
+	return "vpp-linux-example"
 }
 
 // Init handles initialization phase.
@@ -114,10 +85,11 @@ func (plugin *ExamplePlugin) AfterInit() error {
 	return nil
 }
 
-// Close cleans up the resources.
+// Init handles initialization phase.
 func (plugin *ExamplePlugin) Close() error {
 	return nil
 }
+
 func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	const (
 		veth1LogicalName = "myVETH1"
@@ -280,10 +252,9 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		Metric:            routeMetric,
 	}
 
-	// resync
-
+	// initial resync
 	time.Sleep(time.Second * 2)
-	fmt.Println("=== RESYNC 0 ===")
+	fmt.Println("=== RESYNC ===")
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
@@ -304,22 +275,19 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 
-	/*
-		// data change
+	// data change
+	time.Sleep(time.Second * 10)
+	fmt.Println("=== CHANGE ===")
 
-		time.Sleep(time.Second * 2)
-		fmt.Println("=== CHANGE 1 ===")
-
-		veth1.Enabled = false
-		txn2 := localclient.DataChangeRequest("example")
-		err = txn2.Put().
-			LinuxInterface(veth1).
-			Send().ReceiveReply()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	*/
+	veth1.Enabled = false
+	txn2 := localclient.DataChangeRequest("example")
+	err = txn2.Put().
+		LinuxInterface(veth1).
+		Send().ReceiveReply()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	// test Linux interface metadata map
 	linuxIfIndex := plugin.LinuxIfPlugin.GetInterfaceIndex()
