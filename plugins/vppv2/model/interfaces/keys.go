@@ -84,7 +84,7 @@ func InterfaceKey(iface string) string {
 
 // ParseNameFromKey returns suffix of the key.
 func ParseNameFromKey(key string) (name string, isInterfaceKey bool) {
-	if suffix := strings.TrimPrefix(key, Prefix); name != key && name != "" {
+	if suffix := strings.TrimPrefix(key, Prefix); suffix != key && suffix != "" {
 		return suffix, true
 	}
 	return
@@ -175,7 +175,8 @@ func UnnumberedKey(iface string) string {
 
 // ParseNameFromUnnumberedKey returns suffix of the key.
 func ParseNameFromUnnumberedKey(key string) (iface string, isUnnumberedKey bool) {
-	if suffix := strings.TrimPrefix(key, UnnumberedKeyPrefix); suffix != key && suffix != "" {
+	suffix := strings.TrimPrefix(key, UnnumberedKeyPrefix)
+	if suffix != key && suffix != "" {
 		return suffix, true
 	}
 	return
