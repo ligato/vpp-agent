@@ -228,10 +228,14 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		extIfaceDNATExternalPort = 3333
 		extIfaceDNATLocalPort = 4444
 
+		addrFromPoolDNATLabel = "external-address-from-pool"
+		addrFromPoolDNATPort = 6000
+
 		emptyDNATLabel = "empty-dnat"
 
 		natPoolAddr1 = hostNetPrefix + "100"
 		natPoolAddr2 = hostNetPrefix + "200"
+		natPoolAddr3 = hostNetPrefix + "250"
 	)
 
 	/* host <-> VPP */
@@ -475,6 +479,9 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 			{
 				Address:  natPoolAddr2,
+			},
+			{
+				Address:  natPoolAddr3,
 				TwiceNat: true,
 			},
 		},
@@ -585,10 +592,9 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				Protocol:  vpp_nat.DNat44_TCP,
 			},
 			{
-				IpAddress:         natPoolAddr2,
-				IpAddressFromPool: true,
-				Port:              idDNATPort,
-				Protocol:          vpp_nat.DNat44_TCP,
+				IpAddress: natPoolAddr2,
+				Port:      idDNATPort,
+				Protocol:  vpp_nat.DNat44_TCP,
 			},
 		},
 	}
@@ -628,6 +634,42 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		Label: emptyDNATLabel,
 	}
 
+	/* DNAT with address from the pool */
+
+	addrFromPoolDNAT := &vpp_nat.DNat44{
+		Label: addrFromPoolDNATLabel,
+		StMappings: []*vpp_nat.DNat44_StaticMapping{
+			// Without LB
+			{
+				ExternalIp:   natPoolAddr1,
+				ExternalPort: addrFromPoolDNATPort,
+				Protocol:     vpp_nat.DNat44_TCP,
+				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+					{
+						LocalIp:     linuxTapServer1IPAddr,
+						LocalPort:   addrFromPoolDNATPort,
+					},
+				},
+			},
+			// With LB
+			{
+				ExternalIp:   natPoolAddr2,
+				ExternalPort: addrFromPoolDNATPort,
+				Protocol:     vpp_nat.DNat44_TCP,
+				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+					{
+						LocalIp:     linuxTapServer1IPAddr,
+						LocalPort:   addrFromPoolDNATPort,
+					},
+					{
+						LocalIp:     linuxTapServer2IPAddr,
+						LocalPort:   addrFromPoolDNATPort,
+					},
+				},
+			},
+		},
+	}
+
 	// resync
 
 	time.Sleep(time.Second * 2)
@@ -658,6 +700,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 		DNAT44(idDNAT).
 		DNAT44(externalIfaceDNAT).
 		DNAT44(emptyDNAT).
+		DNAT44(addrFromPoolDNAT).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)

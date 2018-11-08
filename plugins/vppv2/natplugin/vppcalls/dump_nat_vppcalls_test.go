@@ -139,7 +139,7 @@ func TestDNATDump(t *testing.T) {
 			VrfID:             1,
 			TwiceNat:          1,
 			SelfTwiceNat:      0,
-			Tag:               []byte("DNAT 1|POOL"),
+			Tag:               []byte("DNAT 1"),
 		},
 		&bin_api.Nat44StaticMappingDetails{
 			LocalIPAddress:    net.ParseIP("10.10.11.120").To4(),
@@ -252,7 +252,7 @@ func TestDNATDump(t *testing.T) {
 			IPAddress: net.ParseIP("10.10.11.200").To4(),
 			SwIfIndex: vppcalls.NoInterface,
 			VrfID:     1,
-			Tag:       []byte("DNAT 3|POOL"),
+			Tag:       []byte("DNAT 3"),
 		},
 		&bin_api.Nat44IdentityMappingDetails{
 			AddrOnly:  1,
@@ -301,7 +301,6 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.DNat44_TCP))
 	Expect(dnat.StMappings[0].ExternalInterface).To(BeEmpty())
 	Expect(dnat.StMappings[0].ExternalIp).To(Equal("10.36.20.20"))
-	Expect(dnat.StMappings[0].ExternalIpFromPool).To(BeTrue())
 	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
 	Expect(dnat.StMappings[0].LocalIps).To(HaveLen(1))
 	Expect(dnat.StMappings[0].LocalIps[0].VrfId).To(BeEquivalentTo(1))
@@ -313,7 +312,6 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings[1].Protocol).To(Equal(nat.DNat44_TCP))
 	Expect(dnat.StMappings[1].ExternalInterface).To(BeEquivalentTo("if0"))
 	Expect(dnat.StMappings[1].ExternalIp).To(BeEmpty())
-	Expect(dnat.StMappings[1].ExternalIpFromPool).To(BeFalse())
 	Expect(dnat.StMappings[1].ExternalPort).To(BeEquivalentTo(80))
 	Expect(dnat.StMappings[1].LocalIps).To(HaveLen(1))
 	Expect(dnat.StMappings[1].LocalIps[0].VrfId).To(BeEquivalentTo(1))
@@ -330,7 +328,6 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings[0].Protocol).To(Equal(nat.DNat44_TCP))
 	Expect(dnat.StMappings[0].ExternalInterface).To(Equal("if1"))
 	Expect(dnat.StMappings[0].ExternalIp).To(BeEmpty())
-	Expect(dnat.StMappings[0].ExternalIpFromPool).To(BeFalse())
 	Expect(dnat.StMappings[0].ExternalPort).To(BeEquivalentTo(80))
 	Expect(dnat.StMappings[0].LocalIps).To(HaveLen(1))
 	Expect(dnat.StMappings[0].LocalIps[0].VrfId).To(BeEquivalentTo(1))
@@ -342,7 +339,6 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.StMappings[1].Protocol).To(Equal(nat.DNat44_UDP))
 	Expect(dnat.StMappings[1].ExternalInterface).To(BeEmpty())
 	Expect(dnat.StMappings[1].ExternalIp).To(Equal("10.36.20.60"))
-	Expect(dnat.StMappings[1].ExternalIpFromPool).To(BeFalse())
 	Expect(dnat.StMappings[1].ExternalPort).To(BeEquivalentTo(53))
 	Expect(dnat.StMappings[1].LocalIps).To(HaveLen(2))
 	Expect(dnat.StMappings[1].LocalIps[0].VrfId).To(BeEquivalentTo(0))
@@ -363,14 +359,12 @@ func TestDNATDump(t *testing.T) {
 	Expect(dnat.IdMappings[0].Protocol).To(Equal(nat.DNat44_UDP))
 	Expect(dnat.IdMappings[0].Port).To(BeEquivalentTo(0))
 	Expect(dnat.IdMappings[0].IpAddress).To(Equal("10.10.11.200"))
-	Expect(dnat.IdMappings[0].IpAddressFromPool).To(BeTrue())
 	Expect(dnat.IdMappings[0].Interface).To(BeEmpty())
 	// 2nd mapping
 	Expect(dnat.IdMappings[1].VrfId).To(BeEquivalentTo(1))
 	Expect(dnat.IdMappings[1].Protocol).To(Equal(nat.DNat44_UDP))
 	Expect(dnat.IdMappings[1].Port).To(BeEquivalentTo(0))
 	Expect(dnat.IdMappings[1].IpAddress).To(BeEmpty())
-	Expect(dnat.IdMappings[1].IpAddressFromPool).To(BeFalse())
 	Expect(dnat.IdMappings[1].Interface).To(BeEquivalentTo("if1"))
 }
 

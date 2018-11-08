@@ -41,7 +41,6 @@ const (
 
 	// dependency labels
 	mappingInterfaceDep = "interface-exists"
-	mappingAddressDep   = "address-in-the-pool"
 )
 
 // A list of non-retriable errors:
@@ -173,27 +172,19 @@ func (d *DNAT44Descriptor) Modify(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 	return nil, nil
 }
 
-// Dependencies lists referenced external interfaces and addresses from the pool as dependencies.
+// Dependencies lists external interfaces from mappings as dependencies.
 func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []scheduler.Dependency) {
-	// collect referenced external interfaces and addresses
+	// collect referenced external interfaces
 	externalIfaces := make(map[string]struct{})
-	addressesFromPool := make(map[string]struct{})
 	for _, mapping := range dnat.StMappings {
 		if mapping.ExternalInterface != "" {
 			externalIfaces[mapping.ExternalInterface] = struct{}{}
-		}
-		if mapping.ExternalIp != "" && mapping.ExternalIpFromPool {
-			addressesFromPool[mapping.ExternalIp] = struct{}{}
 		}
 	}
 	for _, mapping := range dnat.IdMappings {
 		if mapping.Interface != "" {
 			externalIfaces[mapping.Interface] = struct{}{}
 		}
-		if mapping.IpAddressFromPool {
-			addressesFromPool[mapping.IpAddress] = struct{}{}
-		}
-
 	}
 
 	// for every external interface add one dependency
@@ -203,14 +194,6 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 			Key:   interfaces.InterfaceKey(externalIface),
 		})
 	}
-	// for every address from the pool add one dependency
-	for address := range addressesFromPool {
-		dependencies = append(dependencies, scheduler.Dependency{
-			Label: mappingAddressDep + "-" + address,
-			Key:   nat.AddressNAT44Key(address),
-		})
-	}
-
 	return dependencies
 }
 
