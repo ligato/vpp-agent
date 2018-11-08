@@ -17,16 +17,18 @@ package descriptor
 import (
 	"context"
 	"fmt"
-	prototypes "github.com/gogo/protobuf/types"
 	"net"
 	"strings"
 	"sync"
+
+	prototypes "github.com/gogo/protobuf/types"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"bytes"
+
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
@@ -48,7 +50,7 @@ type DHCPDescriptor struct {
 	log       logging.Logger
 	ifHandler vppcalls.IfVppAPI
 	scheduler scheduler.KVScheduler
-	intfIndex ifaceidx.IfaceMetadataIndex
+	ifIndex   ifaceidx.IfaceMetadataIndex
 
 	// DHCP notification watching
 	cancel context.CancelFunc
@@ -82,8 +84,8 @@ func (d *DHCPDescriptor) GetDescriptor() *scheduler.KVDescriptor {
 
 // SetInterfaceIndex should be used to provide interface index immediately after
 // the descriptor registration.
-func (d *DHCPDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadataIndex) {
-	d.intfIndex = intfIndex
+func (d *DHCPDescriptor) SetInterfaceIndex(ifIndex ifaceidx.IfaceMetadataIndex) {
+	d.ifIndex = ifIndex
 }
 
 // WatchDHCPNotifications starts watching for DHCP notifications.
@@ -106,22 +108,30 @@ func (d *DHCPDescriptor) Close() error {
 // IsDHCPRelatedKey returns true if the key is identifying DHCP client (derived value)
 // or DHCP lease (notification).
 func (d *DHCPDescriptor) IsDHCPRelatedKey(key string) bool {
-	return strings.HasPrefix(key, interfaces.DHCPClientKeyPrefix) ||
-		strings.HasPrefix(key, interfaces.DHCPLeaseKeyPrefix)
+	if _, isValid := interfaces.ParseNameFromDHCPClientKey(key); isValid {
+		return true
+	}
+	if _, isValid := interfaces.ParseNameFromDHCPLeaseKey(key); isValid {
+		return true
+	}
+	return false
 }
 
 // InterfaceNameFromKey returns interface name from DHCP-related key.
 func (d *DHCPDescriptor) InterfaceNameFromKey(key string) string {
-	if strings.HasPrefix(key, interfaces.DHCPClientKeyPrefix) {
-		return strings.TrimPrefix(key, interfaces.DHCPClientKeyPrefix)
+	if iface, isValid := interfaces.ParseNameFromDHCPClientKey(key); isValid {
+		return iface
 	}
-	return strings.TrimPrefix(key, interfaces.DHCPLeaseKeyPrefix)
+	if iface, isValid := interfaces.ParseNameFromDHCPLeaseKey(key); isValid {
+		return iface
+	}
+	return key
 }
 
 // Add enables DHCP client.
 func (d *DHCPDescriptor) Add(key string, emptyVal proto.Message) (metadata scheduler.Metadata, err error) {
 	ifName, _ := interfaces.ParseNameFromDHCPClientKey(key)
-	ifMeta, found := d.intfIndex.LookupByName(ifName)
+	ifMeta, found := d.ifIndex.LookupByName(ifName)
 	if !found {
 		err = errors.Errorf("failed to find DHCP-enabled interface %s", ifName)
 		d.log.Error(err)
@@ -140,7 +150,7 @@ func (d *DHCPDescriptor) Add(key string, emptyVal proto.Message) (metadata sched
 // Delete disables DHCP client.
 func (d *DHCPDescriptor) Delete(key string, emptyVal proto.Message, metadata scheduler.Metadata) error {
 	ifName, _ := interfaces.ParseNameFromDHCPClientKey(key)
-	ifMeta, found := d.intfIndex.LookupByName(ifName)
+	ifMeta, found := d.ifIndex.LookupByName(ifName)
 	if !found {
 		err := errors.Errorf("failed to find DHCP-enabled interface %s", ifName)
 		d.log.Error(err)
@@ -155,9 +165,7 @@ func (d *DHCPDescriptor) Delete(key string, emptyVal proto.Message, metadata sch
 
 	// notify about the unconfigured client by removing the lease notification
 	d.scheduler.PushSBNotification(
-		interfaces.DHCPLeaseKey(ifName),
-		nil,
-		nil)
+		interfaces.DHCPLeaseKey(ifName), nil, nil)
 
 	return nil
 }
@@ -179,9 +187,10 @@ func (d *DHCPDescriptor) DerivedValues(key string, dhcpData proto.Message) (derV
 }
 
 // Dump returns all existing DHCP leases.
-func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler.KVWithMetadata, error) {
-	var dump []scheduler.KVWithMetadata
-
+func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) (
+	dump []scheduler.KVWithMetadata, err error,
+) {
+	// Retrieve VPP configuration.
 	dhcpDump, err := d.ifHandler.DumpDhcpClients()
 	if err != nil {
 		d.log.Error(err)
@@ -189,7 +198,7 @@ func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler
 	}
 
 	for ifIdx, dhcpData := range dhcpDump {
-		ifName, _, found := d.intfIndex.LookupBySwIfIndex(ifIdx)
+		ifName, _, found := d.ifIndex.LookupBySwIfIndex(ifIdx)
 		if !found {
 			d.log.Warnf("failed to find interface sw_if_index=%d with DHCP lease", ifIdx)
 			return dump, err
@@ -211,7 +220,13 @@ func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) ([]scheduler
 			Origin:   scheduler.FromSB,
 		})
 	}
-	d.log.Debugf("Dumping DHCP leases: %v", dump)
+
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d DHCP leases: %v", len(dump), dumpList)
+
 	return dump, nil
 }
 
@@ -244,7 +259,7 @@ func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context, dhcpChan ch
 				}
 
 				// interface logical name
-				ifName, _, found := d.intfIndex.LookupBySwIfIndex(lease.SwIfIndex)
+				ifName, _, found := d.ifIndex.LookupBySwIfIndex(lease.SwIfIndex)
 				if !found {
 					d.log.Warnf("Interface sw_if_index=%d with DHCP lease was not found in the mapping", lease.SwIfIndex)
 					continue

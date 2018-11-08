@@ -19,12 +19,13 @@ import (
 	"net"
 	"sort"
 	"strings"
+
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // DNATs sorted by labels
@@ -57,10 +58,10 @@ func (h *NatVppHandler) Nat44GlobalConfigDump() (*nat.Nat44Global, error) {
 
 	// combine into the global NAT configuration
 	return &nat.Nat44Global{
-		Forwarding:            isEnabled,
-		NatInterfaces:         natInterfaces,
-		AddressPool:           natAddressPool,
-		VirtualReassembly:     vrIPv4,
+		Forwarding:        isEnabled,
+		NatInterfaces:     natInterfaces,
+		AddressPool:       natAddressPool,
+		VirtualReassembly: vrIPv4,
 	}, nil
 }
 
@@ -143,9 +144,6 @@ func (h *NatVppHandler) virtualReassemblyDump() (vrIPv4 *nat.VirtualReassembly, 
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return nil, nil, fmt.Errorf("failed to get NAT virtual reassembly configuration: %v", err)
-	}
-	if reply.Retval != 0 {
-		return nil, nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	vrIPv4 = &nat.VirtualReassembly{

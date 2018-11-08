@@ -15,16 +15,16 @@
 package descriptor
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
-
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
@@ -35,7 +35,7 @@ const (
 
 	// dependency labels
 	bridgedInterfaceDep = "bridged-interface"
-	bridgeDomainDep = "bridge-domain"
+	bridgeDomainDep     = "bridge-domain"
 )
 
 // A list of non-retriable errors:
@@ -49,7 +49,6 @@ var (
 
 	// ErrForwardFIBWithoutInterface is returned when VPP L2 FORWARD FIB has undefined outgoing interface.
 	ErrForwardFIBWithoutInterface = errors.New("VPP L2 FORWARD FIB defined without outgoing interface")
-
 )
 
 // FIBDescriptor teaches KVScheduler how to configure VPP L2 FIBs.
@@ -72,10 +71,10 @@ func NewFIBDescriptor(fibHandler vppcalls.FIBVppAPI, log logging.PluginLogger) *
 // the KVScheduler.
 func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 	return &adapter.FIBDescriptor{
-		Name:               FIBDescriptorName,
-		KeySelector:        d.IsFIBKey,
-		ValueTypeName:      proto.MessageName(&l2.FIBEntry{}),
-		ValueComparator:    d.EquivalentFIBs,
+		Name:            FIBDescriptorName,
+		KeySelector:     d.IsFIBKey,
+		ValueTypeName:   proto.MessageName(&l2.FIBEntry{}),
+		ValueComparator: d.EquivalentFIBs,
 		// NB keys already covered by the prefix for bridge domains
 		Add:                d.Add,
 		Delete:             d.Delete,
@@ -186,13 +185,18 @@ func (d *FIBDescriptor) Dump(correlate []adapter.FIBKVWithMetadata) (dump []adap
 	}
 	for _, fib := range fibs {
 		dump = append(dump, adapter.FIBKVWithMetadata{
-			Key:      l2.FIBKey(fib.Fib.BridgeDomain, fib.Fib.PhysAddress),
-			Value:    fib.Fib,
-			Origin:   scheduler.UnknownOrigin, // there can be automatically created FIBs
+			Key:    l2.FIBKey(fib.Fib.BridgeDomain, fib.Fib.PhysAddress),
+			Value:  fib.Fib,
+			Origin: scheduler.UnknownOrigin, // there can be automatically created FIBs
 		})
 	}
 
-	d.log.Debugf("Dumping L2 FIBs: %v", dump)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d L2 FIBs: %v", len(dump), dumpList)
+
 	return dump, nil
 }
 

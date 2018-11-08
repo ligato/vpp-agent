@@ -44,8 +44,6 @@ func (h *ACLVppHandler) AddACL(rules []*acl.Acl_Rule, aclName string) (uint32, e
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
 	return reply.ACLIndex, nil
@@ -71,8 +69,6 @@ func (h *ACLVppHandler) AddMACIPACL(rules []*acl.Acl_Rule, aclName string) (uint
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, fmt.Errorf("failed to write ACL %v: %v", aclName, err)
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
 	return reply.ACLIndex, nil
@@ -99,8 +95,6 @@ func (h *ACLVppHandler) ModifyACL(aclIndex uint32, rules []*acl.Acl_Rule, aclNam
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
 	return nil
@@ -127,8 +121,6 @@ func (h *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.Acl_Rule, a
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to write ACL %v: %v", aclName, err)
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %v while writing ACL %v to VPP", reply.GetMessageName(), reply.Retval, aclName)
 	}
 
 	return nil
@@ -143,8 +135,6 @@ func (h *ACLVppHandler) DeleteACL(aclIndex uint32) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L3/L4 ACL %v: %v", aclIndex, err)
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %v while removing L3/L4 ACL %v", reply.GetMessageName(), reply.Retval, aclIndex)
 	}
 
 	return nil
@@ -159,8 +149,6 @@ func (h *ACLVppHandler) DeleteMACIPACL(aclIndex uint32) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("failed to remove L2 ACL %v: %v", aclIndex, err)
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %v while removing L2 ACL %v", reply.GetMessageName(), reply.Retval, aclIndex)
 	}
 
 	return nil

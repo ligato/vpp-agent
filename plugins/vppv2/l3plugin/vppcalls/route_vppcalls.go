@@ -91,9 +91,6 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoute, rtIfIdx uint32, del
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	return nil
 }
@@ -230,8 +227,6 @@ func (h *RouteHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

@@ -15,7 +15,7 @@
 package l3plugin
 
 import (
-	"github.com/ligato/cn-infra/config"
+	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
@@ -30,6 +30,7 @@ func NewPlugin(opts ...Option) *L3Plugin {
 	p := &L3Plugin{}
 
 	p.PluginName = "vpp-l3plugin"
+	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.Scheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
@@ -40,11 +41,6 @@ func NewPlugin(opts ...Option) *L3Plugin {
 
 	if p.Log == nil {
 		p.Log = logging.ForPlugin(p.String())
-	}
-	if p.Cfg == nil {
-		p.Cfg = config.ForPlugin(p.String(),
-			config.WithCustomizedFlag(config.FlagName(p.String()), "linux-l3plugin.conf"),
-		)
 	}
 
 	return p

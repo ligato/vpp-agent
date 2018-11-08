@@ -17,6 +17,7 @@ package graph
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/ligato/cn-infra/idxmap"
@@ -159,18 +160,30 @@ func (graph *graphR) Dump() string {
 		return keys[i] < keys[j]
 	})
 
-	var str string
-	for _, key := range keys {
+	var buf strings.Builder
+	for i, key := range keys {
 		node := graph.nodes[key]
-		str += fmt.Sprintf("- key: %s\n", key)
-		str += fmt.Sprintf("  label: %s\n", node.GetLabel())
-		str += fmt.Sprintf("  value: %s\n", utils.ProtoToString(node.GetValue()))
-		str += fmt.Sprintf("  flags: %v\n", prettyPrintFlags(node.flags))
-		str += fmt.Sprintf("  targets: %v\n", prettyPrintTargets(node.targets))
-		str += fmt.Sprintf("  sources: %v\n", prettyPrintSources(node.sources))
-		str += fmt.Sprintf("  metadata-fields: %v\n", graph.getMetadataFields(node))
+		if i == 0 {
+			buf.WriteString("+----------------------------------------------------------------------------------------------------------------------+\n")
+		}
+		buf.WriteString(fmt.Sprintf("| Key: %111q |\n", key))
+		if label := node.GetLabel(); label != key {
+			buf.WriteString(fmt.Sprintf("| Label: %109s |\n", label))
+		}
+		buf.WriteString(fmt.Sprintf("| Value: %109s |\n", utils.ProtoToString(node.GetValue())))
+		buf.WriteString(fmt.Sprintf("| Flags: %109v |\n", prettyPrintFlags(node.flags)))
+		if len(node.targets) > 0 {
+			buf.WriteString(fmt.Sprintf("| Targets: %107v |\n", prettyPrintTargets(node.targets)))
+		}
+		if len(node.sources) > 0 {
+			buf.WriteString(fmt.Sprintf("| Sources: %107v |\n", prettyPrintSources(node.sources)))
+		}
+		if metadata := graph.getMetadataFields(node); len(metadata) > 0 {
+			buf.WriteString(fmt.Sprintf("| Metadata: %106v |\n", metadata))
+		}
+		buf.WriteString("+----------------------------------------------------------------------------------------------------------------------+\n")
 	}
-	return str
+	return buf.String()
 }
 
 // Release releases the graph handle (both Read() & Write() should end with

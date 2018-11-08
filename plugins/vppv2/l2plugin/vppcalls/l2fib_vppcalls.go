@@ -15,14 +15,12 @@
 package vppcalls
 
 import (
-	"fmt"
-	"net"
 	"errors"
+	"net"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
-
 
 // AddL2FIB creates L2 FIB table entry.
 func (h *FIBVppHandler) AddL2FIB(fib *l2nb.FIBEntry) error {
@@ -74,8 +72,6 @@ func (h *FIBVppHandler) l2fibAddDel(fib *l2nb.FIBEntry, isAdd bool) (err error) 
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned: %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

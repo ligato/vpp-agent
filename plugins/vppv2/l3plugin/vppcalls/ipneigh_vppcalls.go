@@ -15,7 +15,6 @@
 package vppcalls
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 
@@ -39,8 +38,6 @@ func (h *IPNeighHandler) SetIPScanNeighbor(data *l3.IPScanNeighbor) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

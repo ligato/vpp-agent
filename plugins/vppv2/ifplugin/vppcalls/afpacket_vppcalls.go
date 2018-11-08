@@ -15,7 +15,6 @@
 package vppcalls
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
@@ -40,8 +39,6 @@ func (h *IfVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPack
 
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
@@ -56,8 +53,6 @@ func (h *IfVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPack
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return h.RemoveInterfaceTag(ifName, idx)

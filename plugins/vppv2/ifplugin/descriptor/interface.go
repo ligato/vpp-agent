@@ -24,12 +24,11 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
-
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
+	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
@@ -120,7 +119,7 @@ type InterfaceDescriptor struct {
 	memifSocketToID        map[string]uint32 // memif socket filename to ID map (all known sockets)
 	defaultMemifSocketPath string
 	ethernetIfs            map[string]uint32 // name-to-index map of ethernet interfaces
-	                                         // (entry is not removed even if interface is un-configured)
+	// (entry is not removed even if interface is un-configured)
 }
 
 // LinuxPluginAPI is defined here to avoid import cycles.

@@ -67,7 +67,8 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	return &adapter.StaticRouteDescriptor{
 		Name: StaticRouteDescriptorName,
 		KeySelector: func(key string) bool {
-			return strings.HasPrefix(key, l3.RoutePrefix)
+			_, _, _, _, isRouteKey := l3.ParseRouteKey(key)
+			return isRouteKey
 		},
 		ValueTypeName:   proto.MessageName(&l3.StaticRoute{}),
 		ValueComparator: d.EquivalentRoutes,
@@ -185,8 +186,8 @@ func (d *RouteDescriptor) DerivedValues(key string, route *l3.StaticRoute) (derV
 
 // Dump returns all routes associated with interfaces managed by this agent.
 func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
-	dump []adapter.StaticRouteKVWithMetadata, err error) {
-
+	dump []adapter.StaticRouteKVWithMetadata, err error,
+) {
 	// Retrieve VPP route configuration
 	staticRoutes, err := d.routeHandler.DumpStaticRoutes()
 	if err != nil {
@@ -201,11 +202,12 @@ func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
 		})
 	}
 
-	var routes string
-	for _, route := range dump {
-		routes += fmt.Sprintf(" - %+v\n", route)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
 	}
-	d.log.Debugf("Dumped %d Static Routes:\n%s", len(dump), routes)
+	d.log.Debugf("Dumping %d Static Routes: %s", len(dump), dumpList)
+
 	return dump, nil
 }
 

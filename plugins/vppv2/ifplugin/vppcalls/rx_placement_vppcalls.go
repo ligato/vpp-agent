@@ -15,8 +15,6 @@
 package vppcalls
 
 import (
-	"fmt"
-
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
@@ -33,8 +31,6 @@ func (h *IfVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *intf.Interface_
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

@@ -336,10 +336,11 @@
   version = "v4.1.0"
 
 [[projects]]
-  digest = "1:ef5e64f7163631a51e38fdbc27a57175c2f84665d4065c735a37049999f09b8f"
+  digest = "1:c30185d83c2a351bf3b21e7784d3c9b84281d56d0958959c2a6cd8a47f422c49"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
+    "jsonpb",
     "plugin/compare",
     "plugin/defaultcheck",
     "plugin/description",
@@ -460,7 +461,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:643b3ff7de537c04076b309b99f36ed047d4309c4ecc564ee583dc8b360115a9"
+  digest = "1:56f069dab4b57ffe3a5e0db0dc75b21f2a7dc63a45d097e8be9033198749c6ef"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -503,7 +504,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "4a07b7a01a85295340629b59947523ee4293ddaa"
+  revision = "318fc9c282d95cec6902cc131e9a956615727f29"
 
 [[projects]]
   branch = "master"

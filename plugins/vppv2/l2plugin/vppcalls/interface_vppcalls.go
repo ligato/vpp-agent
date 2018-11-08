@@ -29,7 +29,7 @@ func (h *BridgeDomainVppHandler) AddInterfaceToBridgeDomain(bdIdx uint32, ifaceC
 	if !found {
 		return errors.New("failed to get interface metadata")
 	}
-	if err := h.addDelInterfaceToBridgeDomain(bdIdx, ifaceCfg, ifaceMeta.GetIndex(),true); err != nil {
+	if err := h.addDelInterfaceToBridgeDomain(bdIdx, ifaceCfg, ifaceMeta.GetIndex(), true); err != nil {
 		return err
 	}
 	return nil
@@ -41,7 +41,7 @@ func (h *BridgeDomainVppHandler) DeleteInterfaceFromBridgeDomain(bdIdx uint32, i
 	if !found {
 		return errors.New("failed to get interface metadata")
 	}
-	if err := h.addDelInterfaceToBridgeDomain(bdIdx, ifaceCfg, ifaceMeta.GetIndex(),false); err != nil {
+	if err := h.addDelInterfaceToBridgeDomain(bdIdx, ifaceCfg, ifaceMeta.GetIndex(), false); err != nil {
 		return err
 	}
 	return nil
@@ -63,8 +63,6 @@ func (h *BridgeDomainVppHandler) addDelInterfaceToBridgeDomain(bdIdx uint32, ifa
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return fmt.Errorf("%s returned error: %v", reply.GetMessageName(), err)
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned: %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

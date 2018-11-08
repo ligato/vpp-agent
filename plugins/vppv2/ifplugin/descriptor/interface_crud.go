@@ -1,6 +1,7 @@
 package descriptor
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-errors/errors"
@@ -107,20 +108,20 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 	}
 
 	/*
-	Rx-mode
+		Rx-mode
 
-	Legend:
-	P - polling
-	I - interrupt
-	A - adaptive
+		Legend:
+		P - polling
+		I - interrupt
+		A - adaptive
 
-	Interfaces - supported modes:
-		* tap interface - PIA
-		* memory interface - PIA
-		* vxlan tunnel - PIA
-		* software loopback - PIA
-		* ethernet csmad - P
-		* af packet - PIA
+		Interfaces - supported modes:
+			* tap interface - PIA
+			* memory interface - PIA
+			* vxlan tunnel - PIA
+			* software loopback - PIA
+			* ethernet csmad - P
+			* af packet - PIA
 	*/
 	if intf.RxModeSettings != nil {
 		rxMode := d.getRxMode(intf)
@@ -525,7 +526,11 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		})
 
 	}
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d VPP interfaces: %v", len(dump), dumpList)
 
-	d.log.Debugf("Dumping VPP interfaces: %v", dump)
 	return dump, nil
 }

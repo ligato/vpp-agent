@@ -383,7 +383,7 @@ func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error 
 				Master: memifDetails.Role == 0,
 				Mode:   memifModetoNB(memifDetails.Mode),
 				Id:     memifDetails.ID,
-				// TODO: Secret - not available in the binary API
+				//Secret: // TODO: Secret - not available in the binary API
 				SocketFilename: func(socketMap map[string]uint32) (filename string) {
 					for filename, id := range socketMap {
 						if memifDetails.SocketID == id {
@@ -397,6 +397,8 @@ func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error 
 				RingSize:   memifDetails.RingSize,
 				BufferSize: uint32(memifDetails.BufferSize),
 				// TODO: RxQueues, TxQueues - not available in the binary API
+				//RxQueues:
+				//TxQueues:
 			},
 		}
 		ifs[memifDetails.SwIfIndex].Interface.Type = ifnb.Interface_MEMORY_INTERFACE

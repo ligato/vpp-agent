@@ -22,11 +22,11 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/app"
+	"github.com/ligato/vpp-agent/app/v2"
 )
 
 func main() {
-	vppAgent := app.New()
+	vppAgent := appv2.New()
 
 	a := agent.NewAgent(agent.AllPlugins(vppAgent))
 

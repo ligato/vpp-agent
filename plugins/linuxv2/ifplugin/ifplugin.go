@@ -45,7 +45,7 @@ type IfPlugin struct {
 	ifWatcher    *descriptor.InterfaceWatcher
 
 	// index map
-	intfIndex ifaceidx.LinuxIfMetadataIndex
+	ifIndex ifaceidx.LinuxIfMetadataIndex
 }
 
 // Deps lists dependencies of the interface plugin.
@@ -82,24 +82,24 @@ func (p *IfPlugin) Init() error {
 	p.ifHandler = linuxcalls.NewNetLinkHandler()
 
 	// init & register descriptors
-	p.ifDescriptor = descriptor.NewInterfaceDescriptor(
-		p.Scheduler, p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log)
+	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.Scheduler,
+		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
-	p.ifWatcher = descriptor.NewInterfaceWatcher(p.Scheduler, p.ifHandler, p.Log)
 	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
+
+	p.ifWatcher = descriptor.NewInterfaceWatcher(p.Scheduler, p.ifHandler, p.Log)
 	p.Deps.Scheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
 
 	// obtain read-only reference to index map
 	var withIndex bool
 	metadataMap := p.Deps.Scheduler.GetMetadataMap(ifDescriptor.Name)
-	p.intfIndex, withIndex = metadataMap.(ifaceidx.LinuxIfMetadataIndex)
+	p.ifIndex, withIndex = metadataMap.(ifaceidx.LinuxIfMetadataIndex)
 	if !withIndex {
 		return errors.New("missing index with interface metadata")
 	}
 
 	// start interface watching
-	err = p.ifWatcher.StartWatching()
-	if err != nil {
+	if err = p.ifWatcher.StartWatching(); err != nil {
 		return err
 	}
 
@@ -118,7 +118,7 @@ func (p *IfPlugin) Close() error {
 // GetInterfaceIndex gives read-only access to map with metadata of all configured
 // linux interfaces.
 func (p *IfPlugin) GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex {
-	return p.intfIndex
+	return p.ifIndex
 }
 
 // retrieveConfig loads IfPlugin configuration file.

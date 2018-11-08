@@ -16,6 +16,7 @@ package descriptor
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"strings"
 
@@ -143,9 +144,9 @@ func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.Acl_Rule) bool {
 // that empty string is equivalent to address with all zeroes.
 func (d *ACLDescriptor) equivalentIPRuleNetworks(net1, net2 string) bool {
 	var (
-		ip1, ip2 net.IP
+		ip1, ip2       net.IP
 		ipNet1, ipNet2 *net.IPNet
-		err1, err2 error
+		err1, err2     error
 	)
 	if net1 != "" {
 		ip1, ipNet1, err1 = net.ParseCIDR(net1)
@@ -307,7 +308,10 @@ func (d *ACLDescriptor) DerivedValues(key string, value *acl.Acl) (derived []api
 }
 
 // Dump returns list of dumped ACLs with metadata
-func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (dump []adapter.ACLKVWithMetadata, err error) {
+func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (
+	dump []adapter.ACLKVWithMetadata, err error,
+) {
+	// Retrieve VPP configuration.
 	ipACLs, err := d.aclHandler.DumpACL()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump IP ACLs: %v", err)
@@ -338,6 +342,12 @@ func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (dump []adap
 			Origin: api.FromNB,
 		})
 	}
-	d.log.Debugf("Dumping VPP ACLs: %v", dump)
+
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d VPP ACLs: %v", len(dump), dumpList)
+
 	return
 }
