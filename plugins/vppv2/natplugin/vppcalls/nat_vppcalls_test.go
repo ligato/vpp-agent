@@ -442,7 +442,7 @@ func TestAddNat44StaticMapping(t *testing.T) {
 	Expect(msg.Out2inOnly).To(BeEquivalentTo(1))
 }
 
-func TestAddNat44StaticMappingAddrOnly(t *testing.T) {
+func TestAddNat44IdentityMappingWithInterface(t *testing.T) {
 	ctx, natHandler, _, _ := natTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
