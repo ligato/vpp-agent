@@ -146,7 +146,7 @@ func (VPPAgent) String() string {
 	return "VPPAgent"
 }
 
-// VPP
+// VPP contains all VPP plugins.
 type VPP struct {
 	IfPlugin  *ifplugin.IfPlugin
 	L2Plugin  *l2plugin.L2Plugin
@@ -165,7 +165,7 @@ func defaultVPP() VPP {
 	}
 }
 
-// Linux
+// Linux contains all Linux plugins.
 type Linux struct {
 	IfPlugin *linuxifplugin.IfPlugin
 	L3Plugin *linuxl3plugin.L3Plugin
