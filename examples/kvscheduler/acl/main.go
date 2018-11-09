@@ -21,31 +21,27 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 /*
-	This example demonstrates KVScheduler-based aclplugin.
+	This example demonstrates KVScheduler-based ACLPlugin.
 */
 
 func main() {
 	// Set watcher for KVScheduler.
 	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
-	vppIfPlugin := vpp_ifplugin.NewPlugin()
-	vppACLPlugin := vpp_aclplugin.NewPlugin()
-	vppACLPlugin.IfPlugin = vppIfPlugin
-
 	ep := &ExamplePlugin{
 		Scheduler:    &kvscheduler.DefaultPlugin,
-		VPPIfPlugin:  vppIfPlugin,
-		VPPACLPlugin: vppACLPlugin,
+		VPPIfPlugin:  &vpp_ifplugin.DefaultPlugin,
+		VPPACLPlugin: &vpp_aclplugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -66,7 +62,7 @@ type ExamplePlugin struct {
 
 // String returns plugin name
 func (p *ExamplePlugin) String() string {
-	return "acls-example"
+	return "acl-example"
 }
 
 // Init handles initialization phase.
@@ -76,7 +72,7 @@ func (p *ExamplePlugin) Init() error {
 
 // AfterInit handles phase after initialization.
 func (p *ExamplePlugin) AfterInit() error {
-	go p.testLocalClientWithScheduler()
+	go testLocalClientWithScheduler()
 	return nil
 }
 
@@ -84,8 +80,46 @@ func (p *ExamplePlugin) AfterInit() error {
 func (p *ExamplePlugin) Close() error {
 	return nil
 }
-func (p *ExamplePlugin) testLocalClientWithScheduler() {
-	memif0 := &interfaces.Interface{
+
+func testLocalClientWithScheduler() {
+	// initial resync
+	time.Sleep(time.Second * 2)
+	fmt.Println("=== RESYNC ===")
+
+	txn := localclient.DataResyncRequest("example")
+	err := txn.
+		VppInterface(memif0).
+		ACL(acl0).
+		ACL(acl1).
+		ACL(acl3).
+		Send().ReceiveReply()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// data change
+	time.Sleep(time.Second * 10)
+	fmt.Println("=== CHANGE ===")
+
+	acl1.Interfaces = nil
+	acl0.Interfaces.Egress = nil
+	acl3.Rules[0].IpRule.Ip.SourceNetwork = "0.0.0.0/0" // this is actually equivalent to unspecified field
+
+	txn2 := localclient.DataChangeRequest("example")
+	err = txn2.Put().
+		ACL(acl0).
+		ACL(acl1).
+		ACL(acl3).
+		Send().ReceiveReply()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
+var (
+	memif0 = &interfaces.Interface{
 		Name:    "memif0",
 		Enabled: true,
 		Type:    interfaces.Interface_MEMORY_INTERFACE,
@@ -98,7 +132,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 		},
 	}
-	acl0 := &acl.Acl{
+	acl0 = &acl.Acl{
 		Name: "acl0",
 		Rules: []*acl.Acl_Rule{
 			{
@@ -116,7 +150,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			Egress:  []string{"memif0"},
 		},
 	}
-	acl1 := &acl.Acl{
+	acl1 = &acl.Acl{
 		Name: "acl1",
 		Rules: []*acl.Acl_Rule{
 			{
@@ -133,7 +167,7 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			Ingress: []string{"memif0"},
 		},
 	}
-	acl3 := &acl.Acl{
+	acl3 = &acl.Acl{
 		Name: "acl3",
 		Rules: []*acl.Acl_Rule{
 			{
@@ -150,40 +184,4 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 			Egress: []string{"memif0"},
 		},
 	}
-
-	// resync
-
-	time.Sleep(time.Second / 2)
-	fmt.Println("=== RESYNC 0 ===")
-
-	txn := localclient.DataResyncRequest("example")
-	err := txn.
-		VppInterface(memif0).
-		ACL(acl0).
-		ACL(acl1).
-		ACL(acl3).
-		Send().ReceiveReply()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// data change
-	time.Sleep(time.Second * 1)
-	fmt.Println("=== CHANGE 1 ===")
-
-	acl1.Interfaces = nil
-	acl0.Interfaces.Egress = nil
-	acl3.Rules[0].IpRule.Ip.SourceNetwork = "0.0.0.0/0" // this is actually equivalent to unspecified field
-
-	txn2 := localclient.DataChangeRequest("example")
-	err = txn2.Put().
-		ACL(acl0).
-		ACL(acl1).
-		ACL(acl3).
-		Send().ReceiveReply()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-}
+)

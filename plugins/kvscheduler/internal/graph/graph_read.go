@@ -161,28 +161,35 @@ func (graph *graphR) Dump() string {
 	})
 
 	var buf strings.Builder
+	graphInfo := fmt.Sprintf("%d nodes", len(keys))
+	buf.WriteString("┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n")
+	buf.WriteString(fmt.Sprintf("│ GRAPH DUMP %105s │\n", graphInfo))
+	buf.WriteString("╞══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╡\n")
+
 	for i, key := range keys {
 		node := graph.nodes[key]
-		if i == 0 {
-			buf.WriteString("+----------------------------------------------------------------------------------------------------------------------+\n")
-		}
-		buf.WriteString(fmt.Sprintf("| Key: %111q |\n", key))
+
+		buf.WriteString(fmt.Sprintf("│ Key: %111q │\n", key))
 		if label := node.GetLabel(); label != key {
-			buf.WriteString(fmt.Sprintf("| Label: %109s |\n", label))
+			buf.WriteString(fmt.Sprintf("│ Label: %109s │\n", label))
 		}
-		buf.WriteString(fmt.Sprintf("| Value: %109s |\n", utils.ProtoToString(node.GetValue())))
-		buf.WriteString(fmt.Sprintf("| Flags: %109v |\n", prettyPrintFlags(node.flags)))
+		buf.WriteString(fmt.Sprintf("│ Value: %109s │\n", utils.ProtoToString(node.GetValue())))
+		buf.WriteString(fmt.Sprintf("│ Flags: %109v │\n", prettyPrintFlags(node.flags)))
 		if len(node.targets) > 0 {
-			buf.WriteString(fmt.Sprintf("| Targets: %107v |\n", prettyPrintTargets(node.targets)))
+			buf.WriteString(fmt.Sprintf("│ Targets: %107v │\n", prettyPrintTargets(node.targets)))
 		}
 		if len(node.sources) > 0 {
-			buf.WriteString(fmt.Sprintf("| Sources: %107v |\n", prettyPrintSources(node.sources)))
+			buf.WriteString(fmt.Sprintf("│ Sources: %107v │\n", prettyPrintSources(node.sources)))
 		}
 		if metadata := graph.getMetadataFields(node); len(metadata) > 0 {
-			buf.WriteString(fmt.Sprintf("| Metadata: %106v |\n", metadata))
+			buf.WriteString(fmt.Sprintf("│ Metadata: %106v │\n", metadata))
 		}
-		buf.WriteString("+----------------------------------------------------------------------------------------------------------------------+\n")
+		if i+1 != len(keys) {
+			buf.WriteString("├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤\n")
+		}
 	}
+	buf.WriteString("└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n")
+
 	return buf.String()
 }
 

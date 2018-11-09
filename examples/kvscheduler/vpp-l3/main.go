@@ -31,21 +31,17 @@ import (
 )
 
 /*
-	This example demonstrates example using KVScheduler.
+	This example demonstrates example with VPP L3Plugin using KVScheduler.
 */
 
 func main() {
 	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.Get()
-
-	vppIfPlugin := vpp_ifplugin.NewPlugin()
-	vppL3Plugin := vpp_l3plugin.NewPlugin()
-	vppL3Plugin.IfPlugin = vppIfPlugin
+	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
 	ep := &ExamplePlugin{
 		Scheduler:   &kvscheduler.DefaultPlugin,
-		VPPIfPlugin: vppIfPlugin,
-		VPPL3Plugin: vppL3Plugin,
+		VPPIfPlugin: &vpp_ifplugin.DefaultPlugin,
+		VPPL3Plugin: &vpp_l3plugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -66,7 +62,7 @@ type ExamplePlugin struct {
 
 // String returns plugin name
 func (p *ExamplePlugin) String() string {
-	return "l3-example"
+	return "vpp-l3-example"
 }
 
 // Init handles initialization phase.
@@ -76,7 +72,7 @@ func (p *ExamplePlugin) Init() error {
 
 // AfterInit handles phase after initialization.
 func (p *ExamplePlugin) AfterInit() error {
-	go p.testLocalClientWithScheduler()
+	go testLocalClientWithScheduler()
 	return nil
 }
 
@@ -84,58 +80,11 @@ func (p *ExamplePlugin) AfterInit() error {
 func (p *ExamplePlugin) Close() error {
 	return nil
 }
-func (p *ExamplePlugin) testLocalClientWithScheduler() {
-	memif0 := &interfaces.Interface{
-		Name:        "memif0",
-		Enabled:     true,
-		Type:        interfaces.Interface_MEMORY_INTERFACE,
-		IpAddresses: []string{"3.3.0.1/16"},
-		Link: &interfaces.Interface_Memif{
-			Memif: &interfaces.Interface_MemifLink{
-				Id:             1,
-				Master:         true,
-				Secret:         "secret",
-				SocketFilename: "/tmp/memif1.sock",
-			},
-		},
-	}
-	route0 := &l3.StaticRoute{
-		DstNetwork:        "10.10.1.0/24",
-		OutgoingInterface: "memif0",
-		Weight:            200,
-	}
-	route1 := &l3.StaticRoute{
-		DstNetwork:        "2001:DB8::0001/32",
-		OutgoingInterface: "memif0",
-		Weight:            100,
-	}
-	arp0 := &l3.ARPEntry{
-		Interface:   "memif0",
-		PhysAddress: "33:33:33:33:33:33",
-		IpAddress:   "3.3.3.3",
-		Static:      true,
-	}
-	proxyArp := &l3.ProxyARP{
-		Ranges: []*l3.ProxyARP_Range{
-			{FirstIpAddr: "10.10.1.1", LastIpAddr: "10.10.1.255"},
-		},
-		Interfaces: []*l3.ProxyARP_Interface{
-			{Name: "memif0"},
-		},
-	}
-	ipScanNeighbor := &l3.IPScanNeighbor{
-		Mode:           l3.IPScanNeighbor_IPv4,
-		ScanInterval:   1,
-		ScanIntDelay:   1,
-		MaxProcTime:    20,
-		MaxUpdate:      0,
-		StaleThreshold: 4,
-	}
 
-	// resync
-
-	time.Sleep(time.Second / 2)
-	fmt.Println("=== RESYNC 0 ===")
+func testLocalClientWithScheduler() {
+	// initial resync
+	time.Sleep(time.Second * 2)
+	fmt.Println("=== RESYNC ===")
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
@@ -152,8 +101,8 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	// data change
-	time.Sleep(time.Second * 1)
-	fmt.Println("=== CHANGE 1 ===")
+	time.Sleep(time.Second * 10)
+	fmt.Println("=== CHANGE ===")
 
 	route0.OutgoingInterface = ""
 	arp0.PhysAddress = "22:22:22:22:22:22"
@@ -176,3 +125,52 @@ func (p *ExamplePlugin) testLocalClientWithScheduler() {
 		return
 	}
 }
+
+var (
+	memif0 = &interfaces.Interface{
+		Name:        "memif0",
+		Enabled:     true,
+		Type:        interfaces.Interface_MEMORY_INTERFACE,
+		IpAddresses: []string{"3.3.0.1/16"},
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.Interface_MemifLink{
+				Id:             1,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
+	}
+	route0 = &l3.StaticRoute{
+		DstNetwork:        "10.10.1.0/24",
+		OutgoingInterface: "memif0",
+		Weight:            200,
+	}
+	route1 = &l3.StaticRoute{
+		DstNetwork:        "2001:DB8::0001/32",
+		OutgoingInterface: "memif0",
+		Weight:            100,
+	}
+	arp0 = &l3.ARPEntry{
+		Interface:   "memif0",
+		PhysAddress: "33:33:33:33:33:33",
+		IpAddress:   "3.3.3.3",
+		Static:      true,
+	}
+	proxyArp = &l3.ProxyARP{
+		Ranges: []*l3.ProxyARP_Range{
+			{FirstIpAddr: "10.10.1.1", LastIpAddr: "10.10.1.255"},
+		},
+		Interfaces: []*l3.ProxyARP_Interface{
+			{Name: "memif0"},
+		},
+	}
+	ipScanNeighbor = &l3.IPScanNeighbor{
+		Mode:           l3.IPScanNeighbor_IPv4,
+		ScanInterval:   1,
+		ScanIntDelay:   1,
+		MaxProcTime:    20,
+		MaxUpdate:      0,
+		StaleThreshold: 4,
+	}
+)

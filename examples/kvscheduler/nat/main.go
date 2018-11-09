@@ -20,10 +20,7 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/db/keyval/etcd"
 
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
@@ -33,9 +30,9 @@ import (
 	linux_l3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	vpp_natplugin "github.com/ligato/vpp-agent/plugins/vppv2/natplugin"
 	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	vpp_nat "github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	vpp_natplugin "github.com/ligato/vpp-agent/plugins/vppv2/natplugin"
 )
 
 /*
@@ -73,47 +70,19 @@ import (
 */
 
 func main() {
-	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseDeps(func(deps *kvdbsync.Deps) {
-		deps.KvPlugin = &etcd.DefaultPlugin
-	}))
-
-	watchers := datasync.KVProtoWatchers{
-		local.Get(),
-		etcdDataSync,
-	}
-
 	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = watchers
+	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
 
-	vppIfPlugin := vpp_ifplugin.NewPlugin()
-
-	linuxIfPlugin := linux_ifplugin.NewPlugin(
-		linux_ifplugin.UseDeps(func(deps *linux_ifplugin.Deps) {
-			deps.VppIfPlugin = vppIfPlugin
-		}),
-	)
-
-	vppIfPlugin.LinuxIfPlugin = linuxIfPlugin
-
-	linuxL3Plugin := linux_l3plugin.NewPlugin(
-		linux_l3plugin.UseDeps(func(deps *linux_l3plugin.Deps) {
-			deps.IfPlugin = linuxIfPlugin
-		}),
-	)
-
-	vppNATPlugin := vpp_natplugin.NewPlugin(
-		vpp_natplugin.UseDeps(func(deps *vpp_natplugin.Deps) {
-			deps.IfPlugin = vppIfPlugin
-		}),
-	)
+	// Set inter-dependency between VPP & Linux plugins
+	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
 	ep := &ExamplePlugin{
 		Scheduler:     &kvscheduler.DefaultPlugin,
-		LinuxIfPlugin: linuxIfPlugin,
-		LinuxL3Plugin: linuxL3Plugin,
-		VPPIfPlugin:   vppIfPlugin,
-		VPPNATPlugin:  vppNATPlugin,
-		Datasync:      etcdDataSync,
+		LinuxIfPlugin: &linux_ifplugin.DefaultPlugin,
+		LinuxL3Plugin: &linux_l3plugin.DefaultPlugin,
+		VPPIfPlugin:   &vpp_ifplugin.DefaultPlugin,
+		VPPNATPlugin:  &vpp_natplugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -124,9 +93,6 @@ func main() {
 	}
 }
 
-// PluginName is a constant with name of main plugin.
-const PluginName = "example"
-
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
@@ -135,114 +101,168 @@ type ExamplePlugin struct {
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
 	VPPNATPlugin  *vpp_natplugin.NATPlugin
-	Datasync      *kvdbsync.Plugin
 }
 
 // String returns plugin name
-func (plugin *ExamplePlugin) String() string {
-	return PluginName
+func (p *ExamplePlugin) String() string {
+	return "vpp-nat-example"
 }
 
 // Init handles initialization phase.
-func (plugin *ExamplePlugin) Init() error {
+func (p *ExamplePlugin) Init() error {
 	return nil
 }
 
 // AfterInit handles phase after initialization.
-func (plugin *ExamplePlugin) AfterInit() error {
-	go plugin.testLocalClientWithScheduler()
+func (p *ExamplePlugin) AfterInit() error {
+	go testLocalClientWithScheduler()
 	return nil
 }
 
 // Close cleans up the resources.
-func (plugin *ExamplePlugin) Close() error {
+func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
-func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
-	const (
-		mycroserviceClient           = "microservice-client"
-		microserviceClientNetPrefix  = "10.11.1."
-		mycroserviceServer1          = "microservice-server1"
-		microserviceServer1NetPrefix = "10.11.2."
-		mycroserviceServer2          = "microservice-server2"
-		microserviceServer2NetPrefix = "10.11.3."
-		microserviceNetMask = "/30"
+func testLocalClientWithScheduler() {
+	// initial resync
+	time.Sleep(time.Second * 2)
+	fmt.Println("=== RESYNC ===")
 
-		hostNetPrefix = "192.168.13."
-		hostNetMask = "/24"
+	txn := localclient.DataResyncRequest("example")
+	err := txn.
+		LinuxInterface(hostLinuxTap).
+		LinuxInterface(clientLinuxTap).
+		LinuxInterface(server1LinuxTap).
+		LinuxInterface(server2LinuxTap).
+		LinuxRoute(hostRouteToServices).
+		LinuxRoute(clientRouteToServices).
+		LinuxRoute(clientRouteToHost).
+		LinuxRoute(server1RouteToServices).
+		LinuxRoute(server1RouteToHost).
+		LinuxRoute(server1RouteToClient).
+		LinuxRoute(server2RouteToServices).
+		LinuxRoute(server2RouteToHost).
+		LinuxRoute(server2RouteToClient).
+		VppInterface(hostVPPTap).
+		VppInterface(clientVPPTap).
+		VppInterface(server1VPPTap).
+		VppInterface(server2VPPTap).
+		NAT44Global(natGlobal).
+		DNAT44(tcpServiceDNAT).
+		DNAT44(udpServiceDNAT).
+		DNAT44(idDNAT).
+		DNAT44(externalIfaceDNAT).
+		DNAT44(emptyDNAT).
+		DNAT44(addrFromPoolDNAT).
+		Send().ReceiveReply()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-		vppTapHostLogicalName = "vpp-tap-host"
-		vppTapHostIPAddr      = hostNetPrefix + "10"
-		vppTapHostVersion     = 2
+	// data change
+	time.Sleep(time.Second * 10)
+	fmt.Println("=== CHANGE ===")
 
-		vppTapClientLogicalName = "vpp-tap-client"
-		vppTapClientIPAddr      = microserviceClientNetPrefix + "1"
-		vppTapClientVersion     = 2
+	txn2 := localclient.DataChangeRequest("example")
+	err = txn2.Put().
+		Delete().
+		NAT44Global().
+		DNAT44(udpServiceDNAT.Label).
+		Send().ReceiveReply()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-		vppTapServer1LogicalName = "vpp-tap-server1"
-		vppTapServer1IPAddr      = microserviceServer1NetPrefix + "1"
-		vppTapServer1Version     = 1
+}
 
-		vppTapServer2LogicalName = "vpp-tap-server2"
-		vppTapServer2IPAddr      = microserviceServer2NetPrefix + "1"
-		vppTapServer2Version     = 1
+const (
+	mycroserviceClient           = "microservice-client"
+	microserviceClientNetPrefix  = "10.11.1."
+	mycroserviceServer1          = "microservice-server1"
+	microserviceServer1NetPrefix = "10.11.2."
+	mycroserviceServer2          = "microservice-server2"
+	microserviceServer2NetPrefix = "10.11.3."
+	microserviceNetMask          = "/30"
 
-		linuxTapHostLogicalName = "linux-tap-host"
-		linuxTapHostIPAddr      = hostNetPrefix + "20"
+	hostNetPrefix = "192.168.13."
+	hostNetMask   = "/24"
 
-		linuxTapClientLogicalName = "linux-tap-client"
-		linuxTapClientIPAddr      = microserviceClientNetPrefix + "2"
+	vppTapHostLogicalName = "vpp-tap-host"
+	vppTapHostIPAddr      = hostNetPrefix + "10"
+	vppTapHostVersion     = 2
 
-		linuxTapServer1LogicalName = "linux-tap-server1"
-		linuxTapServer1IPAddr      = microserviceServer1NetPrefix + "2"
+	vppTapClientLogicalName = "vpp-tap-client"
+	vppTapClientIPAddr      = microserviceClientNetPrefix + "1"
+	vppTapClientVersion     = 2
 
-		linuxTapServer2LogicalName = "linux-tap-server2"
-		linuxTapServer2IPAddr      = microserviceServer2NetPrefix + "2"
+	vppTapServer1LogicalName = "vpp-tap-server1"
+	vppTapServer1IPAddr      = microserviceServer1NetPrefix + "1"
+	vppTapServer1Version     = 1
 
-		linuxTapHostName    = "tap_to_vpp"
+	vppTapServer2LogicalName = "vpp-tap-server2"
+	vppTapServer2IPAddr      = microserviceServer2NetPrefix + "1"
+	vppTapServer2Version     = 1
 
-		serviceNetPrefix = "10.36.10."
-		serviceNetMask = "/24"
+	linuxTapHostLogicalName = "linux-tap-host"
+	linuxTapHostIPAddr      = hostNetPrefix + "20"
 
-		tcpServiceLabel = "tcp-service"
-		tcpServiceExternalIP1 = serviceNetPrefix + "1"
-		tcpServiceExternalIP2 = serviceNetPrefix + "2"
-		tcpServiceExternalIP3 = serviceNetPrefix + "3"
-		tcpServiceExternalPort = 80
-		tcpServiceLocalPortServer1 = 8080
-		tcpServiceLocalPortServer2 = 8081
+	linuxTapClientLogicalName = "linux-tap-client"
+	linuxTapClientIPAddr      = microserviceClientNetPrefix + "2"
 
-		udpServiceLabel = "udp-service"
-		udpServiceExternalIP1 = serviceNetPrefix + "10"
-		udpServiceExternalIP2 = serviceNetPrefix + "11"
-		udpServiceExternalIP3 = serviceNetPrefix + "12"
-		udpServiceExternalPort = 90
-		udpServiceLocalPortServer1 = 9090
-		udpServiceLocalPortServer2 = 9091
+	linuxTapServer1LogicalName = "linux-tap-server1"
+	linuxTapServer1IPAddr      = microserviceServer1NetPrefix + "2"
 
-		idDNATLabel = "id-dnat"
-		idDNATPort = 7777
+	linuxTapServer2LogicalName = "linux-tap-server2"
+	linuxTapServer2IPAddr      = microserviceServer2NetPrefix + "2"
 
-		extIfaceDNATLabel = "external-interfaces"
-		extIfaceDNATExternalPort = 3333
-		extIfaceDNATLocalPort = 4444
+	linuxTapHostName = "tap_to_vpp"
 
-		addrFromPoolDNATLabel = "external-address-from-pool"
-		addrFromPoolDNATPort = 6000
+	serviceNetPrefix = "10.36.10."
+	serviceNetMask   = "/24"
 
-		emptyDNATLabel = "empty-dnat"
+	tcpServiceLabel            = "tcp-service"
+	tcpServiceExternalIP1      = serviceNetPrefix + "1"
+	tcpServiceExternalIP2      = serviceNetPrefix + "2"
+	tcpServiceExternalIP3      = serviceNetPrefix + "3"
+	tcpServiceExternalPort     = 80
+	tcpServiceLocalPortServer1 = 8080
+	tcpServiceLocalPortServer2 = 8081
 
-		natPoolAddr1 = hostNetPrefix + "100"
-		natPoolAddr2 = hostNetPrefix + "200"
-		natPoolAddr3 = hostNetPrefix + "250"
-	)
+	udpServiceLabel            = "udp-service"
+	udpServiceExternalIP1      = serviceNetPrefix + "10"
+	udpServiceExternalIP2      = serviceNetPrefix + "11"
+	udpServiceExternalIP3      = serviceNetPrefix + "12"
+	udpServiceExternalPort     = 90
+	udpServiceLocalPortServer1 = 9090
+	udpServiceLocalPortServer2 = 9091
 
+	idDNATLabel = "id-dnat"
+	idDNATPort  = 7777
+
+	extIfaceDNATLabel        = "external-interfaces"
+	extIfaceDNATExternalPort = 3333
+	extIfaceDNATLocalPort    = 4444
+
+	addrFromPoolDNATLabel = "external-address-from-pool"
+	addrFromPoolDNATPort  = 6000
+
+	emptyDNATLabel = "empty-dnat"
+
+	natPoolAddr1 = hostNetPrefix + "100"
+	natPoolAddr2 = hostNetPrefix + "200"
+	natPoolAddr3 = hostNetPrefix + "250"
+)
+
+var (
 	/* host <-> VPP */
-	hostLinuxTap := &linux_interfaces.LinuxInterface{
-		Name:        linuxTapHostLogicalName,
-		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
-		Enabled:     true,
+
+	hostLinuxTap = &linux_interfaces.LinuxInterface{
+		Name:    linuxTapHostLogicalName,
+		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Enabled: true,
 		IpAddresses: []string{
 			linuxTapHostIPAddr + hostNetMask,
 		},
@@ -253,22 +273,20 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 		},
 	}
-
-	hostVPPTap := &vpp_interfaces.Interface{
-		Name:        vppTapHostLogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
-		Enabled:     true,
+	hostVPPTap = &vpp_interfaces.Interface{
+		Name:    vppTapHostLogicalName,
+		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Enabled: true,
 		IpAddresses: []string{
 			vppTapHostIPAddr + hostNetMask,
 		},
 		Link: &vpp_interfaces.Interface_Tap{
 			Tap: &vpp_interfaces.Interface_TapLink{
-				Version:        vppTapHostVersion,
+				Version: vppTapHostVersion,
 			},
 		},
 	}
-
-	hostRouteToServices := &linux_l3.LinuxStaticRoute{
+	hostRouteToServices = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapHostLogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
@@ -276,10 +294,11 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	/* microservice-client <-> VPP */
-	clientLinuxTap := &linux_interfaces.LinuxInterface{
-		Name:        linuxTapClientLogicalName,
-		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
-		Enabled:     true,
+
+	clientLinuxTap = &linux_interfaces.LinuxInterface{
+		Name:    linuxTapClientLogicalName,
+		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Enabled: true,
 		IpAddresses: []string{
 			linuxTapClientIPAddr + microserviceNetMask,
 		},
@@ -294,11 +313,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			Reference: mycroserviceClient,
 		},
 	}
-
-	clientVPPTap := &vpp_interfaces.Interface{
-		Name:        vppTapClientLogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
-		Enabled:     true,
+	clientVPPTap = &vpp_interfaces.Interface{
+		Name:    vppTapClientLogicalName,
+		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Enabled: true,
 		IpAddresses: []string{
 			vppTapClientIPAddr + microserviceNetMask,
 		},
@@ -309,15 +327,13 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 		},
 	}
-
-	clientRouteToServices := &linux_l3.LinuxStaticRoute{
+	clientRouteToServices = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapClientLogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapClientIPAddr,
 	}
-
-	clientRouteToHost := &linux_l3.LinuxStaticRoute{
+	clientRouteToHost = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapClientLogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
@@ -325,10 +341,11 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	/* microservice-server1 <-> VPP */
-	server1LinuxTap := &linux_interfaces.LinuxInterface{
-		Name:        linuxTapServer1LogicalName,
-		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
-		Enabled:     true,
+
+	server1LinuxTap = &linux_interfaces.LinuxInterface{
+		Name:    linuxTapServer1LogicalName,
+		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Enabled: true,
 		IpAddresses: []string{
 			linuxTapServer1IPAddr + microserviceNetMask,
 		},
@@ -343,11 +360,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			Reference: mycroserviceServer1,
 		},
 	}
-
-	server1VPPTap := &vpp_interfaces.Interface{
-		Name:        vppTapServer1LogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
-		Enabled:     true,
+	server1VPPTap = &vpp_interfaces.Interface{
+		Name:    vppTapServer1LogicalName,
+		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Enabled: true,
 		IpAddresses: []string{
 			vppTapServer1IPAddr + microserviceNetMask,
 		},
@@ -358,22 +374,19 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 		},
 	}
-
-	server1RouteToServices := &linux_l3.LinuxStaticRoute{
+	server1RouteToServices = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapServer1LogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapServer1IPAddr,
 	}
-
-	server1RouteToHost := &linux_l3.LinuxStaticRoute{
+	server1RouteToHost = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapServer1LogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapServer1IPAddr,
 	}
-
-	server1RouteToClient := &linux_l3.LinuxStaticRoute{
+	server1RouteToClient = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapServer1LogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        linuxTapClientIPAddr + "/32",
@@ -381,10 +394,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	/* microservice-server2 <-> VPP */
-	server2LinuxTap := &linux_interfaces.LinuxInterface{
-		Name:        linuxTapServer2LogicalName,
-		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
-		Enabled:     true,
+	server2LinuxTap = &linux_interfaces.LinuxInterface{
+		Name:    linuxTapServer2LogicalName,
+		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Enabled: true,
 		IpAddresses: []string{
 			linuxTapServer2IPAddr + microserviceNetMask,
 		},
@@ -399,11 +412,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			Reference: mycroserviceServer2,
 		},
 	}
-
-	server2VPPTap := &vpp_interfaces.Interface{
-		Name:        vppTapServer2LogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
-		Enabled:     true,
+	server2VPPTap = &vpp_interfaces.Interface{
+		Name:    vppTapServer2LogicalName,
+		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Enabled: true,
 		IpAddresses: []string{
 			vppTapServer2IPAddr + microserviceNetMask,
 		},
@@ -414,22 +426,19 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 			},
 		},
 	}
-
-	server2RouteToServices := &linux_l3.LinuxStaticRoute{
+	server2RouteToServices = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapServer2LogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapServer2IPAddr,
 	}
-
-	server2RouteToHost := &linux_l3.LinuxStaticRoute{
+	server2RouteToHost = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapServer2LogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapServer2IPAddr,
 	}
-
-	server2RouteToClient := &linux_l3.LinuxStaticRoute{
+	server2RouteToClient = &linux_l3.LinuxStaticRoute{
 		OutgoingInterface: linuxTapServer2LogicalName,
 		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
 		DstNetwork:        linuxTapClientIPAddr + "/32",
@@ -438,8 +447,8 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	/* NAT44 global config */
 
-	natGlobal := &vpp_nat.Nat44Global{
-		Forwarding:    true,
+	natGlobal = &vpp_nat.Nat44Global{
+		Forwarding: true,
 		VirtualReassembly: &vpp_nat.VirtualReassembly{
 			Timeout:         4,
 			MaxReassemblies: 2048,
@@ -478,7 +487,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				Address: natPoolAddr1,
 			},
 			{
-				Address:  natPoolAddr2,
+				Address: natPoolAddr2,
 			},
 			{
 				Address:  natPoolAddr3,
@@ -489,14 +498,14 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	/* TCP service */
 
-	tcpServiceDNAT := &vpp_nat.DNat44{
+	tcpServiceDNAT = &vpp_nat.DNat44{
 		Label: tcpServiceLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
 			{
 				ExternalIp:   tcpServiceExternalIP1, // with LB
 				ExternalPort: tcpServiceExternalPort,
 				Protocol:     vpp_nat.DNat44_TCP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
 						LocalIp:     linuxTapServer1IPAddr,
 						LocalPort:   tcpServiceLocalPortServer1,
@@ -513,10 +522,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				ExternalIp:   tcpServiceExternalIP2, // server 1 only
 				ExternalPort: tcpServiceExternalPort,
 				Protocol:     vpp_nat.DNat44_TCP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer1IPAddr,
-						LocalPort:   tcpServiceLocalPortServer1,
+						LocalIp:   linuxTapServer1IPAddr,
+						LocalPort: tcpServiceLocalPortServer1,
 					},
 				},
 			},
@@ -524,10 +533,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				ExternalIp:   tcpServiceExternalIP3, // server 2 only
 				ExternalPort: tcpServiceExternalPort,
 				Protocol:     vpp_nat.DNat44_TCP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer2IPAddr,
-						LocalPort:   tcpServiceLocalPortServer2,
+						LocalIp:   linuxTapServer2IPAddr,
+						LocalPort: tcpServiceLocalPortServer2,
 					},
 				},
 			},
@@ -536,14 +545,14 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	/* UDP service */
 
-	udpServiceDNAT := &vpp_nat.DNat44{
+	udpServiceDNAT = &vpp_nat.DNat44{
 		Label: udpServiceLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
 			{
 				ExternalIp:   udpServiceExternalIP1, // with LB
 				ExternalPort: udpServiceExternalPort,
 				Protocol:     vpp_nat.DNat44_UDP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
 						LocalIp:     linuxTapServer1IPAddr,
 						LocalPort:   udpServiceLocalPortServer1,
@@ -560,10 +569,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				ExternalIp:   udpServiceExternalIP2, // server 1 only
 				ExternalPort: udpServiceExternalPort,
 				Protocol:     vpp_nat.DNat44_UDP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer1IPAddr,
-						LocalPort:   udpServiceLocalPortServer1,
+						LocalIp:   linuxTapServer1IPAddr,
+						LocalPort: udpServiceLocalPortServer1,
 					},
 				},
 			},
@@ -571,10 +580,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				ExternalIp:   udpServiceExternalIP3, // server 2 only
 				ExternalPort: udpServiceExternalPort,
 				Protocol:     vpp_nat.DNat44_UDP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer2IPAddr,
-						LocalPort:   udpServiceLocalPortServer2,
+						LocalIp:   linuxTapServer2IPAddr,
+						LocalPort: udpServiceLocalPortServer2,
 					},
 				},
 			},
@@ -583,7 +592,7 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	/* identity mapping */
 
-	idDNAT := &vpp_nat.DNat44{
+	idDNAT = &vpp_nat.DNat44{
 		Label: idDNATLabel,
 		IdMappings: []*vpp_nat.DNat44_IdentityMapping{
 			{
@@ -601,17 +610,17 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 
 	/* DNAT with external interfaces */
 
-	externalIfaceDNAT := &vpp_nat.DNat44{
+	externalIfaceDNAT = &vpp_nat.DNat44{
 		Label: extIfaceDNATLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
 			{
 				ExternalInterface: vppTapServer1LogicalName,
 				ExternalPort:      extIfaceDNATExternalPort,
 				Protocol:          vpp_nat.DNat44_TCP,
-				LocalIps:          []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer1IPAddr,
-						LocalPort:   extIfaceDNATLocalPort,
+						LocalIp:   linuxTapServer1IPAddr,
+						LocalPort: extIfaceDNATLocalPort,
 					},
 				},
 			},
@@ -619,10 +628,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				ExternalInterface: vppTapServer2LogicalName,
 				ExternalPort:      extIfaceDNATExternalPort,
 				Protocol:          vpp_nat.DNat44_TCP,
-				LocalIps:          []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer2IPAddr,
-						LocalPort:   extIfaceDNATLocalPort,
+						LocalIp:   linuxTapServer2IPAddr,
+						LocalPort: extIfaceDNATLocalPort,
 					},
 				},
 			},
@@ -630,13 +639,13 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 	}
 
 	/* empty DNAT */
-	emptyDNAT := &vpp_nat.DNat44{
+	emptyDNAT = &vpp_nat.DNat44{
 		Label: emptyDNATLabel,
 	}
 
 	/* DNAT with address from the pool */
 
-	addrFromPoolDNAT := &vpp_nat.DNat44{
+	addrFromPoolDNAT = &vpp_nat.DNat44{
 		Label: addrFromPoolDNATLabel,
 		StMappings: []*vpp_nat.DNat44_StaticMapping{
 			// Without LB
@@ -644,10 +653,10 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				ExternalIp:   natPoolAddr1,
 				ExternalPort: addrFromPoolDNATPort,
 				Protocol:     vpp_nat.DNat44_TCP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer1IPAddr,
-						LocalPort:   addrFromPoolDNATPort,
+						LocalIp:   linuxTapServer1IPAddr,
+						LocalPort: addrFromPoolDNATPort,
 					},
 				},
 			},
@@ -656,73 +665,17 @@ func (plugin *ExamplePlugin) testLocalClientWithScheduler() {
 				ExternalIp:   natPoolAddr2,
 				ExternalPort: addrFromPoolDNATPort,
 				Protocol:     vpp_nat.DNat44_TCP,
-				LocalIps:     []*vpp_nat.DNat44_StaticMapping_LocalIP{
+				LocalIps: []*vpp_nat.DNat44_StaticMapping_LocalIP{
 					{
-						LocalIp:     linuxTapServer1IPAddr,
-						LocalPort:   addrFromPoolDNATPort,
+						LocalIp:   linuxTapServer1IPAddr,
+						LocalPort: addrFromPoolDNATPort,
 					},
 					{
-						LocalIp:     linuxTapServer2IPAddr,
-						LocalPort:   addrFromPoolDNATPort,
+						LocalIp:   linuxTapServer2IPAddr,
+						LocalPort: addrFromPoolDNATPort,
 					},
 				},
 			},
 		},
 	}
-
-	// resync
-
-	time.Sleep(time.Second * 2)
-	fmt.Println("=== RESYNC 0 ===")
-
-	txn := localclient.DataResyncRequest("example")
-	err := txn.
-		LinuxInterface(hostLinuxTap).
-		LinuxInterface(clientLinuxTap).
-		LinuxInterface(server1LinuxTap).
-		LinuxInterface(server2LinuxTap).
-		LinuxRoute(hostRouteToServices).
-		LinuxRoute(clientRouteToServices).
-		LinuxRoute(clientRouteToHost).
-		LinuxRoute(server1RouteToServices).
-		LinuxRoute(server1RouteToHost).
-		LinuxRoute(server1RouteToClient).
-		LinuxRoute(server2RouteToServices).
-		LinuxRoute(server2RouteToHost).
-		LinuxRoute(server2RouteToClient).
-		VppInterface(hostVPPTap).
-		VppInterface(clientVPPTap).
-		VppInterface(server1VPPTap).
-		VppInterface(server2VPPTap).
-		NAT44Global(natGlobal).
-		DNAT44(tcpServiceDNAT).
-		DNAT44(udpServiceDNAT).
-		DNAT44(idDNAT).
-		DNAT44(externalIfaceDNAT).
-		DNAT44(emptyDNAT).
-		DNAT44(addrFromPoolDNAT).
-		Send().ReceiveReply()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-
-	// data change
-
-	/*
-	time.Sleep(time.Second * 10)
-	fmt.Println("=== CHANGE 1 ===")
-
-	txn2 := localclient.DataChangeRequest("example")
-	err = txn2.Put().
-		Delete().
-		NAT44Global().
-		DNAT44(udpServiceDNAT.Label).
-		Send().ReceiveReply()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	*/
-}
+)
