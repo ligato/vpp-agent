@@ -90,7 +90,7 @@ func (p *ExamplePlugin) AfterInit() error {
 	return nil
 }
 
-// Init handles initialization phase.
+// Close cleans up the resources.
 func (p *ExamplePlugin) Close() error {
 	return nil
 }
