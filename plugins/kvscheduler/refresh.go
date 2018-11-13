@@ -295,6 +295,9 @@ func dumpGraph(g graph.RWAccess) string {
 		if f := node.GetMetadata(); f != nil {
 			writeLine(fmt.Sprintf("Metadata: %+v", f), "")
 		}
+		if f := node.GetFlag(ErrorFlagName); f != nil {
+			writeLine(fmt.Sprintf("Errors: %+v", f.GetValue()), "")
+		}
 
 		if i+1 != len(keys) {
 			buf.WriteString("+======================================================================================================================+\n")
