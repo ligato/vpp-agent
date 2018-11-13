@@ -13,7 +13,7 @@ import (
 
 type InterfaceKVWithMetadata struct {
 	Key      string
-	Value    *interfaces.LinuxInterface
+	Value    *linux_interfaces.Interface
 	Metadata *ifaceidx.LinuxIfMetadata
 	Origin   ValueOrigin
 }
@@ -25,18 +25,18 @@ type InterfaceDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *interfaces.LinuxInterface) bool
+	ValueComparator    func(key string, oldValue, newValue *linux_interfaces.Interface) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error)
-	Delete             func(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error
-	Modify             func(key string, oldValue, newValue *interfaces.LinuxInterface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) bool
-	Update             func(key string, value *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error
+	Add                func(key string, value *linux_interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error)
+	Delete             func(key string, value *linux_interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) error
+	Modify             func(key string, oldValue, newValue *linux_interfaces.Interface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *linux_interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) bool
+	Update             func(key string, value *linux_interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *interfaces.LinuxInterface) []Dependency
-	DerivedValues      func(key string, value *interfaces.LinuxInterface) []KeyValuePair
+	Dependencies       func(key string, value *linux_interfaces.Interface) []Dependency
+	DerivedValues      func(key string, value *linux_interfaces.Interface) []KeyValuePair
 	Dump               func(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -218,8 +218,8 @@ func (da *InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 
 ////////// Helper methods //////////
 
-func castInterfaceValue(key string, value proto.Message) (*interfaces.LinuxInterface, error) {
-	typedValue, ok := value.(*interfaces.LinuxInterface)
+func castInterfaceValue(key string, value proto.Message) (*linux_interfaces.Interface, error) {
+	typedValue, ok := value.(*linux_interfaces.Interface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

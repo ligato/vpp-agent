@@ -20,7 +20,7 @@ import (
 )
 
 // AddMemifInterface implements interface handler.
-func (h *IfVppHandler) AddMemifInterface(ifName string, memIface *intf.Interface_MemifLink, socketID uint32) (swIdx uint32, err error) {
+func (h *IfVppHandler) AddMemifInterface(ifName string, memIface *intf.MemifLink, socketID uint32) (swIdx uint32, err error) {
 	req := &memif.MemifCreate{
 		ID:         memIface.Id,
 		Mode:       uint8(memIface.Mode),

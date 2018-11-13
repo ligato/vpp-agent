@@ -20,8 +20,8 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
@@ -78,20 +78,20 @@ func (dsl *DataChangeDSL) Send() vppclient.Reply {
 }
 
 // LinuxInterface adds a request to create or update Linux network interface.
-func (dsl *PutDSL) LinuxInterface(val *linuxIf.LinuxInterface) linuxclient.PutDSL {
-	dsl.parent.txn.Put(linuxIf.InterfaceKey(val.Name), val)
+func (dsl *PutDSL) LinuxInterface(val *linux_interfaces.Interface) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linux_interfaces.InterfaceKey(val.Name), val)
 	return dsl
 }
 
 // LinuxArpEntry adds a request to create or update Linux ARP entry.
-func (dsl *PutDSL) LinuxArpEntry(val *linuxL3.LinuxStaticARPEntry) linuxclient.PutDSL {
-	dsl.parent.txn.Put(linuxL3.StaticArpKey(val.Interface, val.IpAddress), val)
+func (dsl *PutDSL) LinuxArpEntry(val *linux_l3.StaticARPEntry) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linux_l3.StaticArpKey(val.Interface, val.IpAddress), val)
 	return dsl
 }
 
 // LinuxRoute adds a request to create or update Linux route.
-func (dsl *PutDSL) LinuxRoute(val *linuxL3.LinuxStaticRoute) linuxclient.PutDSL {
-	dsl.parent.txn.Put(linuxL3.StaticRouteKey(val.DstNetwork, val.OutgoingInterface), val)
+func (dsl *PutDSL) LinuxRoute(val *linux_l3.StaticRoute) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linux_l3.StaticRouteKey(val.DstNetwork, val.OutgoingInterface), val)
 	return dsl
 }
 
@@ -213,19 +213,19 @@ func (dsl *PutDSL) Send() vppclient.Reply {
 // LinuxInterface adds a request to delete an existing Linux network
 // interface.
 func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(linuxIf.InterfaceKey(interfaceName))
+	dsl.parent.txn.Delete(linux_interfaces.InterfaceKey(interfaceName))
 	return dsl
 }
 
 // LinuxArpEntry adds a request to delete Linux ARP entry.
 func (dsl *DeleteDSL) LinuxArpEntry(ifaceName string, ipAddr string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(linuxL3.StaticArpKey(ifaceName, ipAddr))
+	dsl.parent.txn.Delete(linux_l3.StaticArpKey(ifaceName, ipAddr))
 	return dsl
 }
 
 // LinuxRoute adds a request to delete Linux route.
 func (dsl *DeleteDSL) LinuxRoute(dstAddr, outIfaceName string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(linuxL3.StaticRouteKey(dstAddr, outIfaceName))
+	dsl.parent.txn.Delete(linux_l3.StaticRouteKey(dstAddr, outIfaceName))
 	return dsl
 }
 

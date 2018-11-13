@@ -22,7 +22,7 @@ import (
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
@@ -56,14 +56,14 @@ type DataChangeDSL interface {
 // Linux or VPP configuration or change existing one.
 type PutDSL interface {
 	// LinuxInterface adds a request to create or update Linux network interface.
-	LinuxInterface(val *interfaces.LinuxInterface) PutDSL
+	LinuxInterface(val *linux_interfaces.Interface) PutDSL
 	// LinuxArpEntry adds a request to crete or update Linux ARP entry
-	LinuxArpEntry(val *l3.LinuxStaticARPEntry) PutDSL
+	LinuxArpEntry(val *linux_l3.StaticARPEntry) PutDSL
 	// LinuxRoute adds a request to crete or update Linux route
-	LinuxRoute(val *l3.LinuxStaticRoute) PutDSL
+	LinuxRoute(val *linux_l3.StaticRoute) PutDSL
 
 	// VppInterface adds a request to create or update VPP network interface.
-	VppInterface(val *vpp_intf.Interface) PutDSL
+	VppInterface(val *vpp_interfaces.Interface) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
 	ACL(acl *vpp_acl.Acl) PutDSL
 	// BfdSession adds a request to create or update VPP bidirectional

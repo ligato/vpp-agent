@@ -182,30 +182,30 @@ const (
 var (
 	/* microservice1 <-> VPP */
 
-	veth1 = &linux_interfaces.LinuxInterface{
+	veth1 = &linux_interfaces.Interface{
 		Name:        veth1LogicalName,
-		Type:        linux_interfaces.LinuxInterface_VETH,
+		Type:        linux_interfaces.Interface_VETH,
 		Enabled:     true,
 		PhysAddress: veth1HwAddr,
 		IpAddresses: []string{
 			veth1IPAddr + bdNetMask,
 		},
 		HostIfName: veth1HostName,
-		Link: &linux_interfaces.LinuxInterface_Veth{
-			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth2LogicalName},
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{PeerIfName: veth2LogicalName},
 		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+		Namespace: &linux_ns.NetNamespace{
+			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
 			Reference: mycroservice1,
 		},
 	}
-	veth2 = &linux_interfaces.LinuxInterface{
+	veth2 = &linux_interfaces.Interface{
 		Name:       veth2LogicalName,
-		Type:       linux_interfaces.LinuxInterface_VETH,
+		Type:       linux_interfaces.Interface_VETH,
 		Enabled:    true,
 		HostIfName: veth2HostName,
-		Link: &linux_interfaces.LinuxInterface_Veth{
-			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{PeerIfName: veth1LogicalName},
 		},
 	}
 	afpacket = &vpp_interfaces.Interface{
@@ -214,7 +214,7 @@ var (
 		Enabled:     true,
 		PhysAddress: afPacketHwAddr,
 		Link: &vpp_interfaces.Interface_Afpacket{
-			Afpacket: &vpp_interfaces.Interface_AfpacketLink{
+			Afpacket: &vpp_interfaces.AfpacketLink{
 				HostIfName: veth2HostName,
 			},
 		},
@@ -222,22 +222,22 @@ var (
 
 	/* microservice2 <-> VPP */
 
-	linuxTap = &linux_interfaces.LinuxInterface{
+	linuxTap = &linux_interfaces.Interface{
 		Name:        linuxTapLogicalName,
-		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Type:        linux_interfaces.Interface_TAP_TO_VPP,
 		Enabled:     true,
 		PhysAddress: linuxTapHwAddr,
 		IpAddresses: []string{
 			linuxTapIPAddr + bdNetMask,
 		},
 		HostIfName: linuxTapHostName,
-		Link: &linux_interfaces.LinuxInterface_Tap{
-			Tap: &linux_interfaces.LinuxInterface_TapLink{
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
 				VppTapIfName: vppTapLogicalName,
 			},
 		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+		Namespace: &linux_ns.NetNamespace{
+			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
 			Reference: mycroservice2,
 		},
 	}
@@ -247,7 +247,7 @@ var (
 		Enabled:     true,
 		PhysAddress: vppTapHwAddr,
 		Link: &vpp_interfaces.Interface_Tap{
-			Tap: &vpp_interfaces.Interface_TapLink{
+			Tap: &vpp_interfaces.TapLink{
 				Version:        vppTapVersion,
 				ToMicroservice: mycroservice2,
 			},

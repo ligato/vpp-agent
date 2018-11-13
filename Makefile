@@ -64,10 +64,12 @@ examples:
 	cd examples/localclient_vpp/plugins  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/grpc_vpp/remote_client   && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/grpc_vpp/notifications   && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/acl			 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/kvscheduler/interconnect && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/kvscheduler/l2           && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/kvscheduler/acl          && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd examples/kvscheduler/nat          && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/vpp-l3       && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean examples
 clean-examples:

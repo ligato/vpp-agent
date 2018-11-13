@@ -259,16 +259,16 @@ const (
 var (
 	/* host <-> VPP */
 
-	hostLinuxTap = &linux_interfaces.LinuxInterface{
+	hostLinuxTap = &linux_interfaces.Interface{
 		Name:    linuxTapHostLogicalName,
-		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Type:    linux_interfaces.Interface_TAP_TO_VPP,
 		Enabled: true,
 		IpAddresses: []string{
 			linuxTapHostIPAddr + hostNetMask,
 		},
 		HostIfName: linuxTapHostName,
-		Link: &linux_interfaces.LinuxInterface_Tap{
-			Tap: &linux_interfaces.LinuxInterface_TapLink{
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
 				VppTapIfName: vppTapHostLogicalName,
 			},
 		},
@@ -281,35 +281,35 @@ var (
 			vppTapHostIPAddr + hostNetMask,
 		},
 		Link: &vpp_interfaces.Interface_Tap{
-			Tap: &vpp_interfaces.Interface_TapLink{
+			Tap: &vpp_interfaces.TapLink{
 				Version: vppTapHostVersion,
 			},
 		},
 	}
-	hostRouteToServices = &linux_l3.LinuxStaticRoute{
+	hostRouteToServices = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapHostLogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapHostIPAddr,
 	}
 
 	/* microservice-client <-> VPP */
 
-	clientLinuxTap = &linux_interfaces.LinuxInterface{
+	clientLinuxTap = &linux_interfaces.Interface{
 		Name:    linuxTapClientLogicalName,
-		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Type:    linux_interfaces.Interface_TAP_TO_VPP,
 		Enabled: true,
 		IpAddresses: []string{
 			linuxTapClientIPAddr + microserviceNetMask,
 		},
 		HostIfName: linuxTapHostName,
-		Link: &linux_interfaces.LinuxInterface_Tap{
-			Tap: &linux_interfaces.LinuxInterface_TapLink{
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
 				VppTapIfName: vppTapClientLogicalName,
 			},
 		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+		Namespace: &linux_ns.NetNamespace{
+			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
 			Reference: mycroserviceClient,
 		},
 	}
@@ -321,42 +321,42 @@ var (
 			vppTapClientIPAddr + microserviceNetMask,
 		},
 		Link: &vpp_interfaces.Interface_Tap{
-			Tap: &vpp_interfaces.Interface_TapLink{
+			Tap: &vpp_interfaces.TapLink{
 				Version:        vppTapClientVersion,
 				ToMicroservice: mycroserviceClient,
 			},
 		},
 	}
-	clientRouteToServices = &linux_l3.LinuxStaticRoute{
+	clientRouteToServices = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapClientLogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapClientIPAddr,
 	}
-	clientRouteToHost = &linux_l3.LinuxStaticRoute{
+	clientRouteToHost = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapClientLogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapClientIPAddr,
 	}
 
 	/* microservice-server1 <-> VPP */
 
-	server1LinuxTap = &linux_interfaces.LinuxInterface{
+	server1LinuxTap = &linux_interfaces.Interface{
 		Name:    linuxTapServer1LogicalName,
-		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Type:    linux_interfaces.Interface_TAP_TO_VPP,
 		Enabled: true,
 		IpAddresses: []string{
 			linuxTapServer1IPAddr + microserviceNetMask,
 		},
 		HostIfName: linuxTapHostName,
-		Link: &linux_interfaces.LinuxInterface_Tap{
-			Tap: &linux_interfaces.LinuxInterface_TapLink{
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
 				VppTapIfName: vppTapServer1LogicalName,
 			},
 		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+		Namespace: &linux_ns.NetNamespace{
+			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
 			Reference: mycroserviceServer1,
 		},
 	}
@@ -368,47 +368,47 @@ var (
 			vppTapServer1IPAddr + microserviceNetMask,
 		},
 		Link: &vpp_interfaces.Interface_Tap{
-			Tap: &vpp_interfaces.Interface_TapLink{
+			Tap: &vpp_interfaces.TapLink{
 				Version:        vppTapServer1Version,
 				ToMicroservice: mycroserviceServer1,
 			},
 		},
 	}
-	server1RouteToServices = &linux_l3.LinuxStaticRoute{
+	server1RouteToServices = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapServer1LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapServer1IPAddr,
 	}
-	server1RouteToHost = &linux_l3.LinuxStaticRoute{
+	server1RouteToHost = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapServer1LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapServer1IPAddr,
 	}
-	server1RouteToClient = &linux_l3.LinuxStaticRoute{
+	server1RouteToClient = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapServer1LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        linuxTapClientIPAddr + "/32",
 		GwAddr:            vppTapServer1IPAddr,
 	}
 
 	/* microservice-server2 <-> VPP */
-	server2LinuxTap = &linux_interfaces.LinuxInterface{
+	server2LinuxTap = &linux_interfaces.Interface{
 		Name:    linuxTapServer2LogicalName,
-		Type:    linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Type:    linux_interfaces.Interface_TAP_TO_VPP,
 		Enabled: true,
 		IpAddresses: []string{
 			linuxTapServer2IPAddr + microserviceNetMask,
 		},
 		HostIfName: linuxTapHostName,
-		Link: &linux_interfaces.LinuxInterface_Tap{
-			Tap: &linux_interfaces.LinuxInterface_TapLink{
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
 				VppTapIfName: vppTapServer2LogicalName,
 			},
 		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+		Namespace: &linux_ns.NetNamespace{
+			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
 			Reference: mycroserviceServer2,
 		},
 	}
@@ -420,27 +420,27 @@ var (
 			vppTapServer2IPAddr + microserviceNetMask,
 		},
 		Link: &vpp_interfaces.Interface_Tap{
-			Tap: &vpp_interfaces.Interface_TapLink{
+			Tap: &vpp_interfaces.TapLink{
 				Version:        vppTapServer2Version,
 				ToMicroservice: mycroserviceServer2,
 			},
 		},
 	}
-	server2RouteToServices = &linux_l3.LinuxStaticRoute{
+	server2RouteToServices = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapServer2LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapServer2IPAddr,
 	}
-	server2RouteToHost = &linux_l3.LinuxStaticRoute{
+	server2RouteToHost = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapServer2LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapServer2IPAddr,
 	}
-	server2RouteToClient = &linux_l3.LinuxStaticRoute{
+	server2RouteToClient = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapServer2LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        linuxTapClientIPAddr + "/32",
 		GwAddr:            vppTapServer2IPAddr,
 	}

@@ -20,13 +20,13 @@ import (
 	"strings"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
 // addVETH creates a new VETH pair if neither of VETH-ends are configured, or just
 // applies configuration to the unfinished VETH-end with a temporary host name.
-func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
 	peerName := linuxIf.GetVeth().GetPeerIfName()
@@ -103,7 +103,7 @@ func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.LinuxInter
 
 // deleteVETH either un-configures one VETH-end if the other end is still configured, or
 // removes the entire VETH pair.
-func (d *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
+func (d *InterfaceDescriptor) deleteVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) error {
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
 	peerName := linuxIf.GetVeth().GetPeerIfName()

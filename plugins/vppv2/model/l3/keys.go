@@ -38,7 +38,7 @@ const (
 
 const (
 	// ProxyARPKey is the key for proxy ARP configuration.
-	ProxyARPKey = "vpp/config/v2/proxyarp"
+	ProxyARPKey = "vpp/config/v2/proxyarp/global"
 
 	proxyARPInterfacePrefix   = "vpp/proxyarp/interface/"
 	proxyARPInterfaceTemplate = proxyARPInterfacePrefix + "{iface}"
@@ -107,6 +107,12 @@ func ParseRouteKey(key string) (vrfIndex string, dstNetAddr string, dstNetMask i
 // ArpEntryKey returns the key to store ARP entry
 func ArpEntryKey(iface, ipAddr string) string {
 	key := arpKeyTemplate
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	if net.ParseIP(ipAddr) == nil {
+		ipAddr = InvalidKeyPart
+	}
 	key = strings.Replace(key, "{if}", iface, 1)
 	key = strings.Replace(key, "{ip}", ipAddr, 1)
 	return key

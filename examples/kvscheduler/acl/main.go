@@ -124,7 +124,7 @@ var (
 		Enabled: true,
 		Type:    interfaces.Interface_MEMORY_INTERFACE,
 		Link: &interfaces.Interface_Memif{
-			Memif: &interfaces.Interface_MemifLink{
+			Memif: &interfaces.MemifLink{
 				Id:             1,
 				Master:         true,
 				Secret:         "secret",

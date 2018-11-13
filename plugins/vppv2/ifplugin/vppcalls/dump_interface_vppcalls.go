@@ -33,6 +33,14 @@ import (
 // Default VPP MTU value
 const defaultVPPMtu = 9216
 
+func getMtu(vppMtu uint16) uint32 {
+	// If default VPP MTU value is set, return 0 (it means MTU was not set in the NB config)
+	if vppMtu == defaultVPPMtu {
+		return 0
+	}
+	return uint32(vppMtu)
+}
+
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
 type InterfaceDetails struct {
 	Interface *ifnb.Interface `json:"interface"`
@@ -45,6 +53,7 @@ type InterfaceMeta struct {
 	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
 	Dhcp         *Dhcp  `json:"dhcp"`
+	SubID        uint32
 }
 
 // Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
@@ -98,7 +107,6 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 
 	// First, dump all interfaces to create initial data.
 	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceDump{})
-
 	for {
 		ifDetails := &interfaces.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)
@@ -109,35 +117,34 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 			return nil, fmt.Errorf("failed to dump interface: %v", err)
 		}
 
+		ifaceName := cleanString(ifDetails.InterfaceName)
 		details := &InterfaceDetails{
 			Interface: &ifnb.Interface{
-				Name:        string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0]),
-				Type:        guessInterfaceType(string(ifDetails.InterfaceName)), // the type may be amended later by further dumps
+				Name:        cleanString(ifDetails.Tag),
+				Type:        guessInterfaceType(ifaceName), // the type may be amended later by further dumps
 				Enabled:     ifDetails.AdminUpDown > 0,
 				PhysAddress: net.HardwareAddr(ifDetails.L2Address[:ifDetails.L2AddressLength]).String(),
-				Mtu: func(vppMtu uint16) uint32 {
-					// If default VPP MTU value is set, return 0 (it means MTU was not set in the NB config)
-					if vppMtu == defaultVPPMtu {
-						return 0
-					}
-					return uint32(vppMtu)
-				}(ifDetails.LinkMtu),
+				Mtu:         getMtu(ifDetails.LinkMtu),
 			},
 			Meta: &InterfaceMeta{
 				SwIfIndex:    ifDetails.SwIfIndex,
-				Tag:          string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0]),
-				InternalName: string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0]),
+				Tag:          cleanString(ifDetails.Tag),
+				InternalName: ifaceName,
+				SubID:        ifDetails.SubID,
 			},
 		}
 		// Fill name for physical interfaces (they are mostly without tag)
-		if details.Interface.Type == ifnb.Interface_ETHERNET_CSMACD {
-			details.Interface.Name = details.Meta.InternalName
+		switch details.Interface.Type {
+		case ifnb.Interface_ETHERNET_CSMACD:
+			details.Interface.Name = ifaceName
+		case ifnb.Interface_AF_PACKET_INTERFACE:
+			details.Interface.Link = &ifnb.Interface_Afpacket{
+				Afpacket: &ifnb.AfpacketLink{
+					HostIfName: strings.TrimPrefix(ifaceName, "host-"),
+				},
+			}
 		}
 		ifs[ifDetails.SwIfIndex] = details
-
-		if details.Interface.Type == ifnb.Interface_AF_PACKET_INTERFACE {
-			fillAFPacketDetails(ifs, ifDetails.SwIfIndex, details.Meta.InternalName)
-		}
 	}
 
 	// Get DHCP clients
@@ -145,11 +152,13 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump interface DHCP clients: %v", err)
 	}
+
 	// Get unnumbered interfaces
 	unnumbered, err := h.dumpUnnumberedDetails()
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump unnumbered interfaces: %v", err)
 	}
+
 	// Get vrf for every interface and fill DHCP if set
 	for _, ifData := range ifs {
 		// VRF
@@ -158,12 +167,14 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 			return nil, fmt.Errorf("interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 		}
 		ifData.Interface.Vrf = vrf
+
 		// DHCP
 		dhcpData, ok := dhcpClients[ifData.Meta.SwIfIndex]
 		if ok {
 			ifData.Interface.SetDhcpClient = true
 			ifData.Meta.Dhcp = dhcpData
 		}
+
 		// Unnumbered
 		ifWithIPIdx, ok := unnumbered[ifData.Meta.SwIfIndex]
 		if ok {
@@ -177,7 +188,6 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 				ifWithIPName = "<unknown>"
 			}
 			ifData.Interface.Unnumbered = &ifnb.Interface_Unnumbered{
-				IsUnnumbered:    true,
 				InterfaceWithIp: ifWithIPName,
 			}
 		}
@@ -348,12 +358,7 @@ func (h *IfVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, ipDeta
 
 // fillAFPacketDetails fills af_packet interface details into the provided interface map.
 func fillAFPacketDetails(ifs map[uint32]*InterfaceDetails, swIfIndex uint32, ifName string) {
-	ifs[swIfIndex].Interface.Link = &ifnb.Interface_Afpacket{
-		Afpacket: &ifnb.Interface_AfpacketLink{
-			HostIfName: strings.TrimPrefix(ifName, "host-"),
-		},
-	}
-	ifs[swIfIndex].Interface.Type = ifnb.Interface_AF_PACKET_INTERFACE
+
 }
 
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
@@ -379,7 +384,7 @@ func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error 
 			continue
 		}
 		ifs[memifDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Memif{
-			Memif: &ifnb.Interface_MemifLink{
+			Memif: &ifnb.MemifLink{
 				Master: memifDetails.Role == 0,
 				Mode:   memifModetoNB(memifDetails.Mode),
 				Id:     memifDetails.ID,
@@ -425,7 +430,7 @@ func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 			continue
 		}
 		ifs[tapDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Tap{
-			Tap: &ifnb.Interface_TapLink{
+			Tap: &ifnb.TapLink{
 				Version:    1,
 				HostIfName: string(bytes.SplitN(tapDetails.DevName, []byte{0x00}, 2)[0]),
 			},
@@ -449,7 +454,7 @@ func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 			continue
 		}
 		ifs[tapDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Tap{
-			Tap: &ifnb.Interface_TapLink{
+			Tap: &ifnb.TapLink{
 				Version:    2,
 				HostIfName: string(bytes.SplitN(tapDetails.HostIfName, []byte{0x00}, 2)[0]),
 				// Other parameters are not not yet part of the dump.
@@ -486,7 +491,7 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 
 		if vxlanDetails.IsIPv6 == 1 {
 			ifs[vxlanDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Vxlan{
-				Vxlan: &ifnb.Interface_VxlanLink{
+				Vxlan: &ifnb.VxlanLink{
 					Multicast:  multicastIfName,
 					SrcAddress: net.IP(vxlanDetails.SrcAddress).To16().String(),
 					DstAddress: net.IP(vxlanDetails.DstAddress).To16().String(),
@@ -495,7 +500,7 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 			}
 		} else {
 			ifs[vxlanDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Vxlan{
-				Vxlan: &ifnb.Interface_VxlanLink{
+				Vxlan: &ifnb.VxlanLink{
 					Multicast:  multicastIfName,
 					SrcAddress: net.IP(vxlanDetails.SrcAddress[:4]).To4().String(),
 					DstAddress: net.IP(vxlanDetails.DstAddress[:4]).To4().String(),
@@ -584,23 +589,16 @@ func guessInterfaceType(ifName string) ifnb.Interface_Type {
 }
 
 // memifModetoNB converts binary API type of memif mode to the northbound API type memif mode.
-func memifModetoNB(mode uint8) ifnb.Interface_MemifLink_MemifMode {
+func memifModetoNB(mode uint8) ifnb.MemifLink_MemifMode {
 	switch mode {
 	case 0:
-		return ifnb.Interface_MemifLink_ETHERNET
+		return ifnb.MemifLink_ETHERNET
 	case 1:
-		return ifnb.Interface_MemifLink_IP
+		return ifnb.MemifLink_IP
 	case 2:
-		return ifnb.Interface_MemifLink_PUNT_INJECT
+		return ifnb.MemifLink_PUNT_INJECT
 	}
-	return ifnb.Interface_MemifLink_ETHERNET
-}
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
+	return ifnb.MemifLink_ETHERNET
 }
 
 // Convert binary API rx-mode to northbound representation
@@ -617,4 +615,15 @@ func getRxModeType(mode uint8) ifnb.Interface_RxModeSettings_RxModeType {
 	default:
 		return ifnb.Interface_RxModeSettings_UNKNOWN
 	}
+}
+
+func uintToBool(value uint8) bool {
+	if value == 0 {
+		return false
+	}
+	return true
+}
+
+func cleanString(b []byte) string {
+	return string(bytes.SplitN(b, []byte{0x00}, 2)[0])
 }

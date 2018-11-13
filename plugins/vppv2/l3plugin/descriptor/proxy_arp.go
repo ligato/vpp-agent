@@ -60,6 +60,9 @@ func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
 		KeySelector: func(key string) bool {
 			return key == l3.ProxyARPKey
 		},
+		KeyLabel: func(key string) string {
+			return "Global ProxyARP"
+		},
 		ValueTypeName:      proto.MessageName(&l3.ProxyARP{}),
 		ValueComparator:    d.EquivalentProxyArps,
 		NBKeyPrefix:        l3.ProxyARPKey,

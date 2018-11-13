@@ -44,9 +44,9 @@ const (
 	InterfaceDescriptorName = "vpp-interface"
 
 	// dependency labels
-	afPacketHostInterfaceDep = "afpacket-host-interface"
-	vxlanMulticastDep        = "vxlan-multicast-interface"
-	microserviceDep          = "microservice"
+	afPacketHostInterfaceDep = "afpacket-host-interface-exists"
+	vxlanMulticastDep        = "vxlan-multicast-interface-exists"
+	microserviceDep          = "microservice-available"
 
 	// how many characters a logical interface name is allowed to have
 	//  - determined by much fits into the VPP interface tag (64 null-terminated character string)
@@ -237,7 +237,11 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		return reflect.DeepEqual(oldIntf.IpAddresses, newIntf.IpAddresses)
 	}
 	obsolete, new := addrs.DiffAddr(oldIntfAddrs, newIntfAddrs)
-	return len(obsolete) == 0 && len(new) == 0
+	if len(obsolete) != 0 || len(new) != 0 {
+		return false
+	}
+
+	return true
 }
 
 // equivalentTypeSpecificConfig compares type-specific sections of two interface configurations.
@@ -264,7 +268,7 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 }
 
 // equivalentMemifs compares two memifs for equivalence.
-func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.Interface_MemifLink) bool {
+func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.MemifLink) bool {
 	if oldMemif.GetMaster() != newMemif.GetMaster() || oldMemif.GetMode() != newMemif.GetMode() ||
 		oldMemif.GetId() != newMemif.GetId() || oldMemif.GetSecret() != newMemif.GetSecret() {
 		return false
@@ -373,7 +377,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 //  - one empty value for every IP address assigned to the interface.
 func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []scheduler.KeyValuePair) {
 	// unnumbered interface
-	if intf.GetUnnumbered().GetIsUnnumbered() {
+	if intf.GetUnnumbered() != nil {
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   interfaces.UnnumberedKey(intf.Name),
 			Value: intf.GetUnnumbered(),
@@ -395,6 +399,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 			Value: &prototypes.Empty{},
 		})
 	}
+
 	return derValues
 }
 
@@ -409,7 +414,7 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 	if intf.Type == interfaces.Interface_UNDEFINED {
 		return ErrInterfaceWithoutType
 	}
-	if intf.GetUnnumbered() != nil && intf.GetUnnumbered().GetIsUnnumbered() {
+	if intf.GetUnnumbered() != nil {
 		if len(intf.GetIpAddresses()) > 0 {
 			return ErrUnnumberedWithIP
 		}
@@ -454,7 +459,7 @@ func (d *InterfaceDescriptor) getInterfaceMTU(intf *interfaces.Interface) uint32
 
 // resolveMemifSocketFilename returns memif socket filename ID.
 // Registers it if does not exists yet.
-func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Interface_MemifLink) (uint32, error) {
+func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.MemifLink) (uint32, error) {
 	socketFileName := d.getMemifSocketFilename(memifIf)
 	registeredID, registered := d.memifSocketToID[socketFileName]
 	if !registered {
@@ -513,7 +518,7 @@ func (d *InterfaceDescriptor) getRxPlacement(intf *interfaces.Interface) *interf
 }
 
 // getMemifSocketFilename returns the memif socket filename.
-func (d *InterfaceDescriptor) getMemifSocketFilename(memif *interfaces.Interface_MemifLink) string {
+func (d *InterfaceDescriptor) getMemifSocketFilename(memif *interfaces.MemifLink) string {
 	if memif.GetSocketFilename() == "" {
 		return d.defaultMemifSocketPath
 	}
@@ -521,7 +526,7 @@ func (d *InterfaceDescriptor) getMemifSocketFilename(memif *interfaces.Interface
 }
 
 // getMemifNumOfRxQueues returns the number of memif RX queues.
-func (d *InterfaceDescriptor) getMemifNumOfRxQueues(memif *interfaces.Interface_MemifLink) uint32 {
+func (d *InterfaceDescriptor) getMemifNumOfRxQueues(memif *interfaces.MemifLink) uint32 {
 	if memif.GetRxQueues() == 0 {
 		return defaultMemifNumOfQueues
 	}
@@ -529,7 +534,7 @@ func (d *InterfaceDescriptor) getMemifNumOfRxQueues(memif *interfaces.Interface_
 }
 
 // getMemifNumOfTxQueues returns the number of memif TX queues.
-func (d *InterfaceDescriptor) getMemifNumOfTxQueues(memif *interfaces.Interface_MemifLink) uint32 {
+func (d *InterfaceDescriptor) getMemifNumOfTxQueues(memif *interfaces.MemifLink) uint32 {
 	if memif.GetTxQueues() == 0 {
 		return defaultMemifNumOfQueues
 	}
@@ -537,7 +542,7 @@ func (d *InterfaceDescriptor) getMemifNumOfTxQueues(memif *interfaces.Interface_
 }
 
 // getMemifBufferSize returns the memif buffer size.
-func (d *InterfaceDescriptor) getMemifBufferSize(memif *interfaces.Interface_MemifLink) uint32 {
+func (d *InterfaceDescriptor) getMemifBufferSize(memif *interfaces.MemifLink) uint32 {
 	if memif.GetBufferSize() == 0 {
 		return defaultMemifBufferSize
 	}
@@ -545,7 +550,7 @@ func (d *InterfaceDescriptor) getMemifBufferSize(memif *interfaces.Interface_Mem
 }
 
 // getMemifRingSize returns the memif ring size.
-func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.Interface_MemifLink) uint32 {
+func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.MemifLink) uint32 {
 	if memif.GetRingSize() == 0 {
 		return defaultMemifRingSize
 	}
@@ -553,11 +558,11 @@ func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.Interface_Memif
 }
 
 // getTapConfig returns the TAP-specific configuration section (handling undefined attributes).
-func (d *InterfaceDescriptor) getTapConfig(intf *interfaces.Interface) *interfaces.Interface_TapLink {
+func (d *InterfaceDescriptor) getTapConfig(intf *interfaces.Interface) *interfaces.TapLink {
 	tapCfg := intf.GetTap()
 	if tapCfg == nil || intf.GetTap().GetHostIfName() == "" {
 		// build TAP config with auto-generated host interface name and copied/default attributes
-		tapCfg = &interfaces.Interface_TapLink{
+		tapCfg = &interfaces.TapLink{
 			Version:        intf.GetTap().GetVersion(),
 			HostIfName:     generateTAPHostName(intf.Name),
 			ToMicroservice: intf.GetTap().GetToMicroservice(),

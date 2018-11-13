@@ -38,7 +38,7 @@ type NsPlugin struct {
 	Deps
 
 	// From configuration file
-	disabled  bool
+	disabled bool
 
 	// Default namespace
 	defaultNs netns.NsHandle
@@ -59,7 +59,7 @@ type Deps struct {
 
 // Config holds the nsplugin configuration.
 type Config struct {
-	Disabled  bool `json:"disabled"`
+	Disabled bool `json:"disabled"`
 }
 
 // unavailableMicroserviceErr is error implementation used when a given microservice is not deployed.
@@ -122,12 +122,12 @@ func (p *NsPlugin) Close() error {
 // GetNamespaceHandle returns low-level run-time handle for the given namespace
 // to be used with Netlink API. Do not forget to eventually close the handle using
 // the netns.NsHandle.Close() method.
-func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespace *nsmodel.LinuxNetNamespace) (handle netns.NsHandle, err error) {
+func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespace *nsmodel.NetNamespace) (handle netns.NsHandle, err error) {
 	if p.disabled {
 		return 0, errors.New("NsPlugin is disabled")
 	}
 	// Convert microservice namespace
-	if namespace != nil && namespace.Type == nsmodel.LinuxNetNamespace_NETNS_REF_MICROSERVICE {
+	if namespace != nil && namespace.Type == nsmodel.NetNamespace_NETNS_REF_MICROSERVICE {
 		// Convert namespace
 		reference := namespace.Reference
 		namespace = p.convertMicroserviceNsToPidNs(reference)
@@ -148,7 +148,7 @@ func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespa
 // SwitchToNamespace switches the network namespace of the current thread.
 // Caller should eventually call the returned "revert" function in order to get back to the original
 // network namespace (for example using "defer revert()").
-func (p *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.LinuxNetNamespace) (revert func(), err error) {
+func (p *NsPlugin) SwitchToNamespace(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.NetNamespace) (revert func(), err error) {
 	if p.disabled {
 		return func() {}, errors.New("NsPlugin is disabled")
 	}
@@ -207,7 +207,7 @@ func (p *NsPlugin) retrieveConfig() (*Config, error) {
 // getOrCreateNs returns an existing Linux network namespace or creates a new one if it doesn't exist yet.
 // It is, however, only possible to create "named" namespaces. For PID-based namespaces, process with
 // the given PID must exists, otherwise the function returns an error.
-func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.LinuxNetNamespace) (netns.NsHandle, error) {
+func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.NetNamespace) (netns.NsHandle, error) {
 	var nsHandle netns.NsHandle
 	var err error
 
@@ -216,7 +216,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 	}
 
 	switch ns.Type {
-	case nsmodel.LinuxNetNamespace_NETNS_REF_PID:
+	case nsmodel.NetNamespace_NETNS_REF_PID:
 		pid, err := strconv.Atoi(ns.Reference)
 		if err != nil {
 			return netns.None(), errors.Errorf("failed to parse network namespace PID reference: %v", err)
@@ -226,7 +226,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 			return netns.None(), errors.Errorf("failed to get namespace handle from PID: %v", err)
 		}
 
-	case nsmodel.LinuxNetNamespace_NETNS_REF_NSID:
+	case nsmodel.NetNamespace_NETNS_REF_NSID:
 		nsHandle, err = p.sysHandler.GetNamespaceFromName(ns.Reference)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
@@ -240,7 +240,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 			}
 		}
 
-	case nsmodel.LinuxNetNamespace_NETNS_REF_FD:
+	case nsmodel.NetNamespace_NETNS_REF_FD:
 		if ns.Reference == "" {
 			return p.sysHandler.DuplicateNamespaceHandle(p.defaultNs)
 		}
@@ -249,7 +249,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 			return netns.None(), errors.Errorf("failed to get file %s from path: %v", ns.Reference, err)
 		}
 
-	case nsmodel.LinuxNetNamespace_NETNS_REF_MICROSERVICE:
+	case nsmodel.NetNamespace_NETNS_REF_MICROSERVICE:
 		return netns.None(), errors.Errorf("unable to convert microservice label to PID at this level")
 
 	default:
@@ -260,10 +260,10 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 }
 
 // convertMicroserviceNsToPidNs converts microservice-referenced namespace into the PID-referenced namespace.
-func (p *NsPlugin) convertMicroserviceNsToPidNs(microserviceLabel string) (pidNs *nsmodel.LinuxNetNamespace) {
+func (p *NsPlugin) convertMicroserviceNsToPidNs(microserviceLabel string) (pidNs *nsmodel.NetNamespace) {
 	if microservice, found := p.msDescriptor.GetMicroserviceStateData(microserviceLabel); found {
-		pidNamespace := &nsmodel.LinuxNetNamespace{}
-		pidNamespace.Type = nsmodel.LinuxNetNamespace_NETNS_REF_PID
+		pidNamespace := &nsmodel.NetNamespace{}
+		pidNamespace.Type = nsmodel.NetNamespace_NETNS_REF_PID
 		pidNamespace.Reference = strconv.Itoa(microservice.PID)
 		return pidNamespace
 	}

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package namespace;
+package linux.namespace;
 
-message LinuxNetNamespace {
+message NetNamespace {
     enum ReferenceType {
         NETNS_REF_UNDEFINED = 0;
         NETNS_REF_NSID = 1;         /* named namespace */
