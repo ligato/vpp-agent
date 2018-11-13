@@ -238,7 +238,7 @@ Delete Route
 
 Delete Routes
     [Arguments]    ${node}    ${id}
-    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/vrf/${id}/fib
+    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/route/vrf/${id}/dst
     ${command}=         Set Variable    ${DOCKER_COMMAND} exec etcd etcdctl del --prefix="true" ${uri}
     ${out}=             Execute On Machine    docker    ${command}    log=false
     [Return]       ${out}
