@@ -196,8 +196,11 @@ func (d *InterfaceDescriptor) InterfaceNameFromKey(key string) string {
 // interfaces.Interface, also ignoring the order of assigned IP addresses.
 func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf *interfaces.Interface) bool {
 	// attributes compared as usually:
-	if oldIntf.Name != newIntf.Name || oldIntf.Type != newIntf.Type || oldIntf.Enabled != newIntf.Enabled ||
-		oldIntf.Vrf != newIntf.Vrf || oldIntf.SetDhcpClient != newIntf.SetDhcpClient {
+	if oldIntf.Name != newIntf.Name ||
+		oldIntf.Type != newIntf.Type ||
+		oldIntf.Enabled != newIntf.Enabled ||
+		oldIntf.Vrf != newIntf.Vrf ||
+		oldIntf.SetDhcpClient != newIntf.SetDhcpClient {
 		return false
 	}
 	if !proto.Equal(oldIntf.Unnumbered, newIntf.Unnumbered) ||

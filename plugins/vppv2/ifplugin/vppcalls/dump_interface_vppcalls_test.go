@@ -215,7 +215,7 @@ func TestDumpInterfacesMemif(t *testing.T) {
 	// Check memif
 	Expect(intface.GetMemif().SocketFilename).To(Equal("test"))
 	Expect(intface.GetMemif().Id).To(Equal(uint32(2)))
-	Expect(intface.GetMemif().Mode).To(Equal(interfaces2.Interface_MemifLink_IP))
+	Expect(intface.GetMemif().Mode).To(Equal(interfaces2.MemifLink_IP))
 	Expect(intface.GetMemif().Master).To(BeFalse())
 }
 

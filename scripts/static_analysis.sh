@@ -21,4 +21,5 @@ gometalinter \
 	--enable-gc \
 	--disable-all $enabledLinters \
 	--exclude="should not use dot imports" \
+	--exclude="don't use an underscore in package name" \
 	./...

@@ -33,7 +33,7 @@ func TestAddTapInterface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interface_TapLink{
+	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    1,
 		HostIfName: "hostIf",
 		RxRingSize: 1,
@@ -62,7 +62,7 @@ func TestAddTapInterfaceV2(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interface_TapLink{
+	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    2,
 		HostIfName: "hostIf",
 		RxRingSize: 1,
@@ -102,7 +102,7 @@ func TestAddTapInterfaceError(t *testing.T) {
 	ctx.MockVpp.MockReply(&tap.TapConnect{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interface_TapLink{
+	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    1,
 		HostIfName: "hostIf",
 		RxRingSize: 1,
@@ -120,7 +120,7 @@ func TestAddTapInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interface_TapLink{
+	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    1,
 		HostIfName: "hostIf",
 		RxRingSize: 1,

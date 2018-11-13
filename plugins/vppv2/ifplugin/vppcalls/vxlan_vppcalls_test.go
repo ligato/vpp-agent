@@ -35,7 +35,7 @@ func TestAddVxlanTunnel(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddVxLanTunnel("ifName", 0, 2, &ifModel.Interface_VxlanLink{
+	swIfIdx, err := ifHandler.AddVxLanTunnel("ifName", 0, 2, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
@@ -73,7 +73,7 @@ func TestAddVxlanTunnelWithVrf(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddVxLanTunnel("ifName", 1, 1, &ifModel.Interface_VxlanLink{
+	swIfIdx, err := ifHandler.AddVxLanTunnel("ifName", 1, 1, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
@@ -106,7 +106,7 @@ func TestAddVxlanTunnelIPv6(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.Interface_VxlanLink{
+	swIfIdx, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.VxlanLink{
 		SrcAddress: "2001:db8:0:1:1:1:1:1",
 		DstAddress: "2002:db8:0:1:1:1:1:1",
 		Vni:        1,
@@ -135,7 +135,7 @@ func TestAddVxlanTunnelIPMismatch(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.Interface_VxlanLink{
+	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "2001:db8:0:1:1:1:1:1",
 		Vni:        1,
@@ -152,7 +152,7 @@ func TestAddVxlanTunnelInvalidIP(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.Interface_VxlanLink{
+	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.VxlanLink{
 		SrcAddress: "invalid-ip",
 		DstAddress: "2001:db8:0:1:1:1:1:1",
 		Vni:        1,
@@ -167,7 +167,7 @@ func TestAddVxlanTunnelError(t *testing.T) {
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnel{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.Interface_VxlanLink{
+	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.2",
 		Vni:        1,
@@ -189,7 +189,7 @@ func TestAddVxlanTunnelWithVrfError(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddVxLanTunnel("ifName", 1, 0, &ifModel.Interface_VxlanLink{
+	_, err := ifHandler.AddVxLanTunnel("ifName", 1, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
@@ -206,7 +206,7 @@ func TestAddVxlanTunnelRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.Interface_VxlanLink{
+	_, err := ifHandler.AddVxLanTunnel("ifName", 0, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.2",
 		Vni:        1,
@@ -223,7 +223,7 @@ func TestDeleteVxlanTunnel(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteVxLanTunnel("ifName", 1, 0, &ifModel.Interface_VxlanLink{
+	err := ifHandler.DeleteVxLanTunnel("ifName", 1, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
@@ -238,7 +238,7 @@ func TestDeleteVxlanTunnelError(t *testing.T) {
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnel{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteVxLanTunnel("ifName", 1, 0, &ifModel.Interface_VxlanLink{
+	err := ifHandler.DeleteVxLanTunnel("ifName", 1, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,
@@ -255,7 +255,7 @@ func TestDeleteVxlanTunnelRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DeleteVxLanTunnel("ifName", 1, 0, &ifModel.Interface_VxlanLink{
+	err := ifHandler.DeleteVxLanTunnel("ifName", 1, 0, &ifModel.VxlanLink{
 		SrcAddress: "10.0.0.1",
 		DstAddress: "20.0.0.1",
 		Vni:        1,

@@ -170,7 +170,7 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 		graphW.Save()
 	}
 
-	fmt.Println(DumpGraph(graphW))
+	fmt.Println(dumpGraph(graphW))
 
 	// remove nodes that do not actually exist
 	for _, node := range graphW.GetNodes(nil) {
@@ -189,7 +189,7 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 	fmt.Print(graphDump)*/
 }
 
-func DumpGraph(g graph.RWAccess) string {
+func dumpGraph(g graph.RWAccess) string {
 	keys := g.GetKeys()
 
 	var buf strings.Builder
