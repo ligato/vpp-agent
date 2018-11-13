@@ -148,6 +148,18 @@ func (graph *graphR) GetSnapshot(time time.Time) (nodes []*RecordedNode) {
 	return nodes
 }
 
+// GetKeys returns sorted keys.
+func (graph *graphR) GetKeys() []string {
+	var keys []string
+	for key := range graph.nodes {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	return keys
+}
+
 // Dump returns a human-readable string representation of the current graph
 // content for debugging purposes.
 func (graph *graphR) Dump() string {
