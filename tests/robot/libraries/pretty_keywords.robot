@@ -90,11 +90,13 @@ IP Fib Table ${id} On ${node} Should Not Be Empty
 
 IP Fib Table ${id} On ${node} Should Contain Route With IP ${ip}/${prefix}
     ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
-    Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+    Should Match Regexp        ${out}    ${ip}\/${prefix}\r\r\n\ \ \unicast\-ip4-chain\r\r\n\ \ \
+    #Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
 IP Fib Table ${id} On ${node} Should Not Contain Route With IP ${ip}/${prefix}
     ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
-    Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+    Should Not Match Regexp    ${out}  ${ip}\/${prefix}\r\r\n\ \ \unicast\-ip4-chain\r\r\n\ \ \
+    #Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
 IP6 Fib Table ${id} On ${node} Should Contain Route With IP ${ip}/${prefix}
     ${out}=    vpp_term: Show IP6 Fib Table    ${node}   ${id}
