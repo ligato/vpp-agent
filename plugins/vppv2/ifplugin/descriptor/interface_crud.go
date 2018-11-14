@@ -27,10 +27,89 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		return nil, err
 	}
 
-	if sub := intf.GetSub(); sub != nil {
+	// create interface of the given type
+	switch intf.Type {
+	case interfaces.Interface_TAP:
+		tapCfg := getTapConfig(intf)
+		tapHostIfName = tapCfg.HostIfName
+		ifIdx, err = d.ifHandler.AddTapInterface(intf.Name, tapCfg)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+
+		// TAP hardening: verify that the Linux side was created
+		if d.linuxIfHandler != nil {
+			exists, err := d.linuxIfHandler.InterfaceExists(tapHostIfName)
+			if err != nil {
+				d.log.Error(err)
+				return nil, err
+			}
+			if !exists {
+				err = errors.Errorf("failed to create the Linux side (%s) of the TAP interface %s", tapHostIfName, intf.Name)
+				d.log.Error(err)
+				return nil, err
+			}
+		}
+
+	case interfaces.Interface_MEMIF:
+		var socketID uint32
+		if socketID, err = d.resolveMemifSocketFilename(intf.GetMemif()); err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+		ifIdx, err = d.ifHandler.AddMemifInterface(intf.Name, intf.GetMemif(), socketID)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+
+	case interfaces.Interface_VXLAN_TUNNEL:
+		var multicastIfIdx uint32
+		multicastIf := intf.GetVxlan().GetMulticast()
+		if multicastIf != "" {
+			multicastMeta, found := d.intfIndex.LookupByName(multicastIf)
+			if !found {
+				err = errors.Errorf("failed to find multicast interface %s referenced by VXLAN %s",
+					multicastIf, intf.Name)
+				d.log.Error(err)
+				return nil, err
+			}
+			multicastIfIdx = multicastMeta.SwIfIndex
+		}
+		ifIdx, err = d.ifHandler.AddVxLanTunnel(intf.Name, intf.GetVrf(), multicastIfIdx, intf.GetVxlan())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+
+	case interfaces.Interface_SOFTWARE_LOOPBACK:
+		ifIdx, err = d.ifHandler.AddLoopbackInterface(intf.Name)
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+
+	case interfaces.Interface_DPDK:
+		var found bool
+		ifIdx, found = d.ethernetIfs[intf.Name]
+		if !found {
+			err = errors.Errorf("failed to find physical interface %s", intf.Name)
+			d.log.Error(err)
+			return nil, err
+		}
+
+	case interfaces.Interface_AF_PACKET:
+		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+	case interfaces.Interface_SUB_INTERFACE:
+		sub := intf.GetSub()
 		parentMeta, found := d.intfIndex.LookupByName(sub.GetParentName())
 		if !found {
-			err = errors.Errorf("failed to find parent interface %s referenced by sub interface %s",
+			err = errors.Errorf("unable to find parent interface %s referenced by sub interface %s",
 				sub.GetParentName(), intf.Name)
 			d.log.Error(err)
 			return nil, err
@@ -44,86 +123,6 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
-		}
-	} else {
-		// create interface of the given type
-		switch intf.Type {
-		case interfaces.Interface_TAP:
-			tapCfg := getTapConfig(intf)
-			tapHostIfName = tapCfg.HostIfName
-			ifIdx, err = d.ifHandler.AddTapInterface(intf.Name, tapCfg)
-			if err != nil {
-				d.log.Error(err)
-				return nil, err
-			}
-
-			// TAP hardening: verify that the Linux side was created
-			if d.linuxIfHandler != nil {
-				exists, err := d.linuxIfHandler.InterfaceExists(tapHostIfName)
-				if err != nil {
-					d.log.Error(err)
-					return nil, err
-				}
-				if !exists {
-					err = errors.Errorf("failed to create the Linux side (%s) of the TAP interface %s", tapHostIfName, intf.Name)
-					d.log.Error(err)
-					return nil, err
-				}
-			}
-
-		case interfaces.Interface_MEMIF:
-			var socketID uint32
-			if socketID, err = d.resolveMemifSocketFilename(intf.GetMemif()); err != nil {
-				d.log.Error(err)
-				return nil, err
-			}
-			ifIdx, err = d.ifHandler.AddMemifInterface(intf.Name, intf.GetMemif(), socketID)
-			if err != nil {
-				d.log.Error(err)
-				return nil, err
-			}
-
-		case interfaces.Interface_VXLAN_TUNNEL:
-			var multicastIfIdx uint32
-			multicastIf := intf.GetVxlan().GetMulticast()
-			if multicastIf != "" {
-				multicastMeta, found := d.intfIndex.LookupByName(multicastIf)
-				if !found {
-					err = errors.Errorf("failed to find multicast interface %s referenced by VXLAN %s",
-						multicastIf, intf.Name)
-					d.log.Error(err)
-					return nil, err
-				}
-				multicastIfIdx = multicastMeta.SwIfIndex
-			}
-			ifIdx, err = d.ifHandler.AddVxLanTunnel(intf.Name, intf.GetVrf(), multicastIfIdx, intf.GetVxlan())
-			if err != nil {
-				d.log.Error(err)
-				return nil, err
-			}
-
-		case interfaces.Interface_SOFTWARE_LOOPBACK:
-			ifIdx, err = d.ifHandler.AddLoopbackInterface(intf.Name)
-			if err != nil {
-				d.log.Error(err)
-				return nil, err
-			}
-
-		case interfaces.Interface_DPDK:
-			var found bool
-			ifIdx, found = d.ethernetIfs[intf.Name]
-			if !found {
-				err = errors.Errorf("failed to find physical interface %s", intf.Name)
-				d.log.Error(err)
-				return nil, err
-			}
-
-		case interfaces.Interface_AF_PACKET:
-			ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
-			if err != nil {
-				d.log.Error(err)
-				return nil, err
-			}
 		}
 	}
 
@@ -281,36 +280,30 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		}
 	}
 
-	// sub interface
-	if sub := intf.GetSub(); sub != nil {
+	// remove the interface
+	switch intf.Type {
+	case interfaces.Interface_TAP:
+		err = d.ifHandler.DeleteTapInterface(intf.Name, ifIdx, intf.GetTap().GetVersion())
+	case interfaces.Interface_MEMIF:
+		err = d.ifHandler.DeleteMemifInterface(intf.Name, ifIdx)
+	case interfaces.Interface_VXLAN_TUNNEL:
+		err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())
+	case interfaces.Interface_SOFTWARE_LOOPBACK:
+		err = d.ifHandler.DeleteLoopbackInterface(intf.Name, ifIdx)
+	case interfaces.Interface_DPDK:
+		d.log.Debugf("Interface %s removal skipped: cannot remove (blacklist) physical interface", intf.Name) // Not an error
+		return nil
+	case interfaces.Interface_AF_PACKET:
+		err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, intf.GetAfpacket())
+	case interfaces.Interface_SUB_INTERFACE:
 		err = d.ifHandler.DeleteSubif(ifIdx)
-		if err != nil {
-			d.log.Error(err)
-			return err
-		}
-	} else {
-		// remove the interface
-		switch intf.Type {
-		case interfaces.Interface_TAP:
-			err = d.ifHandler.DeleteTapInterface(intf.Name, ifIdx, intf.GetTap().GetVersion())
-		case interfaces.Interface_MEMIF:
-			err = d.ifHandler.DeleteMemifInterface(intf.Name, ifIdx)
-		case interfaces.Interface_VXLAN_TUNNEL:
-			err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())
-		case interfaces.Interface_SOFTWARE_LOOPBACK:
-			err = d.ifHandler.DeleteLoopbackInterface(intf.Name, ifIdx)
-		case interfaces.Interface_DPDK:
-			d.log.Debugf("Interface %s removal skipped: cannot remove (blacklist) physical interface", intf.Name) // Not an error
-			return nil
-		case interfaces.Interface_AF_PACKET:
-			err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, intf.GetAfpacket())
-		}
-		if err != nil {
-			err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
-			d.log.Error(err)
-			return err
-		}
 	}
+	if err != nil {
+		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
+		d.log.Error(err)
+		return err
+	}
+
 	return nil
 }
 
