@@ -93,6 +93,10 @@ type IfVppWrite interface {
 	SetInterfaceVrf(ifaceIndex, vrfID uint32) error
 	// SetInterfaceVrfIPv6 retrieves IPV6 VRF table from interface
 	SetInterfaceVrfIPv6(ifaceIndex, vrfID uint32) error
+	// CreateSubif creates sub interface.
+	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)
+	// DeleteSubif deletes sub interface.
+	DeleteSubif(ifIdx uint32) error
 }
 
 // IfVppRead provides read methods for interface plugin

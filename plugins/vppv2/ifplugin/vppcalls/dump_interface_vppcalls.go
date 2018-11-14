@@ -50,6 +50,7 @@ type InterfaceDetails struct {
 // InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
 type InterfaceMeta struct {
 	SwIfIndex    uint32 `json:"sw_if_index"`
+	SupSwIfIndex uint32 `json:"sub_sw_if_index"`
 	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
 	Dhcp         *Dhcp  `json:"dhcp"`
@@ -131,7 +132,18 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 				Tag:          cleanString(ifDetails.Tag),
 				InternalName: ifaceName,
 				SubID:        ifDetails.SubID,
+				SupSwIfIndex: ifDetails.SupSwIfIndex,
 			},
+		}
+		// sub interface
+		if ifDetails.SupSwIfIndex != ifDetails.SwIfIndex {
+			details.Interface.Type = ifnb.Interface_UNDEFINED
+			details.Interface.Link = &ifnb.Interface_Sub{
+				Sub: &ifnb.Interface_SubInterface{
+					ParentName: ifs[ifDetails.SupSwIfIndex].Interface.Name,
+					SubId:      ifDetails.SubID,
+				},
+			}
 		}
 		// Fill name for physical interfaces (they are mostly without tag)
 		switch details.Interface.Type {

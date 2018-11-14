@@ -47,6 +47,7 @@ const (
 	afPacketHostInterfaceDep = "afpacket-host-interface-exists"
 	vxlanMulticastDep        = "vxlan-multicast-interface-exists"
 	microserviceDep          = "microservice-available"
+	parentInterfaceDep       = "parent-interface-exists"
 
 	// how many characters a logical interface name is allowed to have
 	//  - determined by much fits into the VPP interface tag (64 null-terminated character string)
@@ -266,6 +267,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !d.equivalentMemifs(oldIntf.GetMemif(), newIntf.GetMemif()) {
 			return false
 		}
+	case interfaces.Interface_UNDEFINED:
+		if !proto.Equal(oldIntf.GetSub(), newIntf.GetSub()) {
+			return false
+		}
 	}
 	return true
 }
@@ -315,7 +320,8 @@ func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
 // ModifyWithRecreate returns true if Type, VRF (or VRF IP version) or Type-specific
 // attributes are different.
 func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool {
-	if oldIntf.Type != newIntf.Type || oldIntf.Vrf != newIntf.Vrf {
+	if oldIntf.Type != newIntf.Type ||
+		oldIntf.Vrf != newIntf.Vrf {
 		return true
 	}
 
@@ -371,6 +377,13 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 		})
 	}
 
+	if sub := intf.GetSub(); sub != nil {
+		dependencies = append(dependencies, scheduler.Dependency{
+			Label: parentInterfaceDep,
+			Key:   interfaces.InterfaceKey(sub.GetParentName()),
+		})
+	}
+
 	return dependencies
 }
 
@@ -414,7 +427,7 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 	if len(intf.Name) > logicalNameLengthLimit {
 		return ErrInterfaceNameTooLong
 	}
-	if intf.Type == interfaces.Interface_UNDEFINED {
+	if intf.Type == interfaces.Interface_UNDEFINED && intf.GetSub() == nil {
 		return ErrInterfaceWithoutType
 	}
 	if intf.GetUnnumbered() != nil {
@@ -446,6 +459,10 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 	case *interfaces.Interface_Tap:
 		if intf.Type != interfaces.Interface_TAP_INTERFACE {
 			return ErrInterfaceLinkMismatch
+		}
+	case *interfaces.Interface_Sub:
+		if parentName := intf.GetSub().GetParentName(); parentName == "" {
+			return errors.Errorf("subinterface with no parent interface defined")
 		}
 	}
 	return nil

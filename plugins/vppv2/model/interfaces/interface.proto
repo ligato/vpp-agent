@@ -14,11 +14,11 @@ message Interface {
     };
 
     string name = 1;                   /* Logical interface name unique across all configured interfaces (mandatory) */
-    uint32 vrf = 2;
-    Type type = 3;
-    bool enabled = 4;
-    string phys_address = 5;
-    repeated string ip_addresses = 6;  /* IP addresses in the format <ipAddress>/<ipPrefix> */
+    Type type = 2;
+    bool enabled = 3;
+    string phys_address = 4;
+    repeated string ip_addresses = 5;  /* IP addresses in the format <ipAddress>/<ipPrefix> */
+    uint32 vrf = 6;
     bool set_dhcp_client = 7;
     uint32 mtu = 8;
 
@@ -49,7 +49,13 @@ message Interface {
     }
     RxPlacementSettings rx_placement_settings = 11;
 
+    message SubInterface {
+        string parent_name = 1;     /* Name of the parent (super) interface */
+        uint32 sub_id = 2;          /* SubInterface ID, used as VLAN */
+    }
+
     oneof link {
+        SubInterface sub = 100;
         MemifLink memif = 101;       /* memif-specific configuration */
         VxlanLink vxlan = 102;       /* VXLAN-specific configuration */
         AfpacketLink afpacket = 103; /* AF-packet-specific configuration */
@@ -79,7 +85,6 @@ message VxlanLink {
     string dst_address = 2;  /* destination VTEP address */
     uint32 vni = 3;          /* VXLAN Network Identifier */
     string multicast = 4;    /* multicast interface */
-
 }
 
 message AfpacketLink {
