@@ -26,10 +26,10 @@ type API interface {
 	// SwitchToNamespace switches the network namespace of the current thread.
 	// Caller should eventually call the returned "revert" function in order to get back to the original
 	// network namespace (for example using "defer revert()").
-	SwitchToNamespace(ctx linuxcalls.NamespaceMgmtCtx, ns *namespace.LinuxNetNamespace) (revert func(), err error)
+	SwitchToNamespace(ctx linuxcalls.NamespaceMgmtCtx, ns *linux_namespace.NetNamespace) (revert func(), err error)
 
 	// GetNamespaceHandle returns low-level run-time handle for the given namespace
 	// to be used with Netlink API. Do not forget to eventually close the handle using
 	// the netns.NsHandle.Close() method.
-	GetNamespaceHandle(ctx linuxcalls.NamespaceMgmtCtx, ns *namespace.LinuxNetNamespace) (handle netns.NsHandle, err error)
+	GetNamespaceHandle(ctx linuxcalls.NamespaceMgmtCtx, ns *linux_namespace.NetNamespace) (handle netns.NsHandle, err error)
 }

@@ -151,101 +151,97 @@ func testLocalClientWithScheduler(
 
 const (
 	veth1LogicalName = "myVETH1"
-	veth1HostName    = "veth1"
-	veth1IPAddr      = "10.11.1.1"
-	veth1HwAddr      = "66:66:66:66:66:66"
 
 	veth2LogicalName = "myVETH2"
 	veth2HostName    = "veth2"
 
 	afPacketLogicalName = "myAFPacket"
-	afPacketHwAddr      = "a7:35:45:55:65:75"
-	afPacketIPAddr      = "10.11.1.2"
+
+	afPacketIPAddr = "10.11.1.2"
 
 	vppTapLogicalName = "myVPPTap"
 	vppTapIPAddr      = "10.11.2.2"
 	vppTapHwAddr      = "b3:12:12:45:A7:B7"
-	vppTapVersion     = 2
 
 	linuxTapLogicalName = "myLinuxTAP"
-	linuxTapHostName    = "tap_to_vpp"
-	linuxTapIPAddr      = "10.11.2.1"
-	linuxTapHwAddr      = "88:88:88:88:88:88"
+
+	linuxTapIPAddr = "10.11.2.1"
+	linuxTapHwAddr = "88:88:88:88:88:88"
 
 	microserviceNetMask = "/30"
 	mycroservice1       = "microservice1"
 	mycroservice2       = "microservice2"
 	microservice1Net    = "10.11.1.0" + microserviceNetMask
 	microservice2Net    = "10.11.2.0" + microserviceNetMask
-	mycroservice1Mtu    = 1800
-	mycroservice2Mtu    = 1700
+
+	mycroservice2Mtu = 1700
 
 	routeMetric = 50
 )
 
 var (
 	/* microservice1 <-> VPP */
-	veth1 = &linux_interfaces.LinuxInterface{
+	veth1 = &linux_interfaces.Interface{
 		Name:        veth1LogicalName,
-		Type:        linux_interfaces.LinuxInterface_VETH,
+		Type:        linux_interfaces.Interface_VETH,
 		Enabled:     true,
-		PhysAddress: veth1HwAddr,
+		PhysAddress: "66:66:66:66:66:66",
 		IpAddresses: []string{
-			veth1IPAddr + microserviceNetMask,
+			("10.11.1.1") + microserviceNetMask,
 		},
-		Mtu:        mycroservice1Mtu,
-		HostIfName: veth1HostName,
-		Link: &linux_interfaces.LinuxInterface_Veth{
-			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth2LogicalName},
+		Mtu:        1800,
+		HostIfName: "veth1",
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{PeerIfName: veth2LogicalName},
 		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+		Namespace: &linux_ns.NetNamespace{
+			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
 			Reference: mycroservice1,
 		},
 	}
 
-	arpForVeth1 = &linux_l3.LinuxStaticARPEntry{
+	arpForVeth1 = &linux_l3.StaticARPEntry{
 		Interface: veth1LogicalName,
 		IpAddress: vppTapIPAddr,
 		HwAddress: vppTapHwAddr,
 	}
 
-	linkRouteToMs2 = &linux_l3.LinuxStaticRoute{
+	linkRouteToMs2 = &linux_l3.StaticRoute{
 		OutgoingInterface: veth1LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_LINK,
+		Scope:             linux_l3.StaticRoute_LINK,
 		DstNetwork:        vppTapIPAddr + "/32",
 	}
 
-	routeToMs2 = &linux_l3.LinuxStaticRoute{
+	routeToMs2 = &linux_l3.StaticRoute{
 		OutgoingInterface: veth1LogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        microservice2Net,
 		GwAddr:            vppTapIPAddr,
 		Metric:            routeMetric,
 	}
 
-	veth2 = &linux_interfaces.LinuxInterface{
+	veth2 = &linux_interfaces.Interface{
 		Name:       veth2LogicalName,
-		Type:       linux_interfaces.LinuxInterface_VETH,
+		Type:       linux_interfaces.Interface_VETH,
 		Enabled:    true,
-		Mtu:        mycroservice1Mtu,
+		Mtu:        1800,
 		HostIfName: veth2HostName,
-		Link: &linux_interfaces.LinuxInterface_Veth{
-			Veth: &linux_interfaces.LinuxInterface_VethLink{PeerIfName: veth1LogicalName},
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{PeerIfName: veth1LogicalName},
 		},
 	}
 
 	afpacket = &vpp_interfaces.Interface{
 		Name:        afPacketLogicalName,
-		Type:        vpp_interfaces.Interface_AF_PACKET_INTERFACE,
+		Type:        vpp_interfaces.Interface_AF_PACKET,
 		Enabled:     true,
-		PhysAddress: afPacketHwAddr,
+		PhysAddress: "a7:35:45:55:65:75",
 		IpAddresses: []string{
 			afPacketIPAddr + microserviceNetMask,
 		},
-		Mtu: mycroservice1Mtu,
+		Mtu: 1800,
 		Link: &vpp_interfaces.Interface_Afpacket{
-			Afpacket: &vpp_interfaces.Interface_AfpacketLink{
+			Afpacket: &vpp_interfaces.AfpacketLink{
 				HostIfName: veth2HostName,
 			},
 		},
@@ -253,30 +249,30 @@ var (
 
 	/* microservice2 <-> VPP */
 
-	linuxTap = &linux_interfaces.LinuxInterface{
+	linuxTap = &linux_interfaces.Interface{
 		Name:        linuxTapLogicalName,
-		Type:        linux_interfaces.LinuxInterface_TAP_TO_VPP,
+		Type:        linux_interfaces.Interface_TAP_TO_VPP,
 		Enabled:     true,
 		PhysAddress: linuxTapHwAddr,
 		IpAddresses: []string{
 			linuxTapIPAddr + microserviceNetMask,
 		},
 		Mtu:        mycroservice2Mtu,
-		HostIfName: linuxTapHostName,
-		Link: &linux_interfaces.LinuxInterface_Tap{
-			Tap: &linux_interfaces.LinuxInterface_TapLink{
+		HostIfName: "tap_to_vpp",
+		Link: &linux_interfaces.Interface_Tap{
+			Tap: &linux_interfaces.TapLink{
 				VppTapIfName: vppTapLogicalName,
 			},
 		},
-		Namespace: &linux_ns.LinuxNetNamespace{
-			Type:      linux_ns.LinuxNetNamespace_NETNS_REF_MICROSERVICE,
+		Namespace: &linux_ns.NetNamespace{
+			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
 			Reference: mycroservice2,
 		},
 	}
 
 	vppTap = &vpp_interfaces.Interface{
 		Name:        vppTapLogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
+		Type:        vpp_interfaces.Interface_TAP,
 		Enabled:     true,
 		PhysAddress: vppTapHwAddr,
 		IpAddresses: []string{
@@ -284,28 +280,28 @@ var (
 		},
 		Mtu: mycroservice2Mtu,
 		Link: &vpp_interfaces.Interface_Tap{
-			Tap: &vpp_interfaces.Interface_TapLink{
-				Version:        vppTapVersion,
+			Tap: &vpp_interfaces.TapLink{
+				Version:        2,
 				ToMicroservice: mycroservice2,
 			},
 		},
 	}
 
-	arpForLinuxTap = &linux_l3.LinuxStaticARPEntry{
+	arpForLinuxTap = &linux_l3.StaticARPEntry{
 		Interface: linuxTapLogicalName,
 		IpAddress: afPacketIPAddr,
-		HwAddress: afPacketHwAddr,
+		HwAddress: "a7:35:45:55:65:75",
 	}
 
-	linkRouteToMs1 = &linux_l3.LinuxStaticRoute{
+	linkRouteToMs1 = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapLogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_LINK,
+		Scope:             linux_l3.StaticRoute_LINK,
 		DstNetwork:        afPacketIPAddr + "/32",
 	}
 
-	routeToMs1 = &linux_l3.LinuxStaticRoute{
+	routeToMs1 = &linux_l3.StaticRoute{
 		OutgoingInterface: linuxTapLogicalName,
-		Scope:             linux_l3.LinuxStaticRoute_GLOBAL,
+		Scope:             linux_l3.StaticRoute_GLOBAL,
 		DstNetwork:        microservice1Net,
 		GwAddr:            afPacketIPAddr,
 		Metric:            routeMetric,

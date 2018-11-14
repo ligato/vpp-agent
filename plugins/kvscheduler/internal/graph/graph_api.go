@@ -65,6 +65,9 @@ type ReadAccess interface {
 	// GetMetadataMap returns registered metadata map.
 	GetMetadataMap(mapName string) idxmap.NamedMapping
 
+	// GetKeys returns sorted keys.
+	GetKeys() []string
+
 	// GetNode returns node with the given key or nil if the key is unused.
 	GetNode(key string) Node
 

@@ -16,7 +16,9 @@ package kvscheduler
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
@@ -168,6 +170,8 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 		graphW.Save()
 	}
 
+	fmt.Println(dumpGraph(graphW))
+
 	// remove nodes that do not actually exist
 	for _, node := range graphW.GetNodes(nil) {
 		if !isNodeDerived(node) && isNodePending(node) {
@@ -175,13 +179,133 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			continue
 		}
 		if _, refreshed := refreshedKeys[node.GetKey()]; !refreshed {
+
 			graphW.DeleteNode(node.GetKey())
 		}
 	}
 
-	graphDump := graphW.Dump()
+	/*graphDump := graphW.Dump()
 	fmt.Println("Graph state after re-fresh:")
-	fmt.Print(graphDump)
+	fmt.Print(graphDump)*/
+}
+
+func dumpGraph(g graph.RWAccess) string {
+	keys := g.GetKeys()
+
+	var buf strings.Builder
+	graphInfo := fmt.Sprintf("%d nodes", len(keys))
+	buf.WriteString("+======================================================================================================================+\n")
+	buf.WriteString(fmt.Sprintf("| GRAPH DUMP %105s |\n", graphInfo))
+	buf.WriteString("+======================================================================================================================+\n")
+	writeLine := func(left, right string) {
+		n := 115 - len(left)
+		buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(n)+"s |\n", left, right))
+
+	}
+	writeLines := func(linesStr string, prefix string) {
+		lines := strings.Split(linesStr, "\n")
+		for _, line := range lines {
+			if line == "" {
+				continue
+			}
+			writeLine(fmt.Sprintf("%s%s", prefix, line), "")
+		}
+	}
+	for i, key := range keys {
+		node := g.GetNode(key)
+		keyLabel := key
+		if label := node.GetLabel(); label != key && label != "" {
+			keyLabel = fmt.Sprintf("%s (%s)", key, label)
+		}
+		descriptor := ""
+		if f := node.GetFlag(DescriptorFlagName); f != nil {
+			descriptor = fmt.Sprintf("[%s] ", f.GetValue())
+		}
+		lastChange := "-"
+		if f := node.GetFlag(LastChangeFlagName); f != nil {
+			lastChange = f.GetValue()
+		}
+		lastUpdate := "-"
+		if f := node.GetFlag(LastUpdateFlagName); f != nil {
+			lastUpdate = f.GetValue()
+		}
+		pending := ""
+		if f := node.GetFlag(PendingFlagName); f != nil {
+			pending = "<PENDING> "
+		}
+		writeLine(fmt.Sprintf("%s%s", descriptor, keyLabel), fmt.Sprintf("%s%s/%s %s",
+			pending,
+			lastChange, lastUpdate,
+			node.GetFlag(OriginFlagName).GetValue(),
+		))
+		writeLines(proto.MarshalTextString(node.GetValue()), "  ")
+
+		if f := node.GetTargets(DependencyRelation); f != nil && len(f) > 0 {
+			writeLine("Depends on:", "")
+			for dep, nodes := range f {
+				var nodeDeps []string
+				for _, node := range nodes {
+					nodeDeps = append(nodeDeps, fmt.Sprintf("%s", node.GetKey()))
+				}
+				if len(nodeDeps) > 1 {
+					writeLine(fmt.Sprintf(" - %s", dep), "")
+					writeLines(strings.Join(nodeDeps, "\n"), "  -> ")
+				} else {
+					writeLine(fmt.Sprintf(" - %s -> %v", dep, strings.Join(nodeDeps, " ")), "")
+				}
+			}
+		}
+		if f := node.GetTargets(DerivesRelation); f != nil && len(f) > 0 {
+			writeLine("Derives:", "")
+			var nodeDers []string
+			for der, nodes := range f {
+				if len(nodes) == 0 {
+					nodeDers = append(nodeDers, fmt.Sprintf("%s", der))
+				} else {
+					for _, node := range nodes {
+						desc := ""
+						if d := node.GetFlag(DescriptorFlagName); d != nil {
+							desc = fmt.Sprintf("[%s] ", d.GetValue())
+						}
+						nodeDers = append(nodeDers, fmt.Sprintf("%s%s", desc, node.GetKey()))
+					}
+				}
+			}
+			writeLines(strings.Join(nodeDers, "\n"), " - ")
+		}
+		if f := node.GetSources(DependencyRelation); f != nil && len(f) > 0 {
+			writeLine("Dependency for:", "")
+			var nodeDeps []string
+			for _, node := range f {
+				desc := ""
+				if d := node.GetFlag(DescriptorFlagName); d != nil {
+					desc = fmt.Sprintf("[%s] ", d.GetValue())
+				}
+				nodeDeps = append(nodeDeps, fmt.Sprintf("%s%s", desc, node.GetKey()))
+			}
+			writeLines(strings.Join(nodeDeps, "\n"), " - ")
+		}
+		if f := node.GetSources(DerivesRelation); f != nil && len(f) > 0 {
+			var nodeDers []string
+			for _, der := range f {
+				nodeDers = append(nodeDers, fmt.Sprintf("%s", der.GetKey()))
+			}
+			writeLine(fmt.Sprintf("Derived from: %s", strings.Join(nodeDers, " ")), "")
+		}
+		if f := node.GetMetadata(); f != nil {
+			writeLine(fmt.Sprintf("Metadata: %+v", f), "")
+		}
+		if f := node.GetFlag(ErrorFlagName); f != nil {
+			writeLine(fmt.Sprintf("Errors: %+v", f.GetValue()), "")
+		}
+
+		if i+1 != len(keys) {
+			buf.WriteString("+======================================================================================================================+\n")
+		}
+	}
+	buf.WriteString("+======================================================================================================================+\n")
+
+	return buf.String()
 }
 
 // skipRefresh is used to mark nodes as refreshed without actual refreshing

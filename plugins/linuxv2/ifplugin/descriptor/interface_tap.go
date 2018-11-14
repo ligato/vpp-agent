@@ -15,18 +15,19 @@
 package descriptor
 
 import (
-	"github.com/go-errors/errors"
 	"strings"
 
+	"github.com/go-errors/errors"
+
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
 // addTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace
 // and sets the requested host name, IP addresses, etc.
-func (d *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.LinuxInterface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 	// determine TAP interface name as set by VPP ifplugin
 	vppTapName := linuxIf.GetTap().GetVppTapIfName()
 	vppTapMeta, found := d.vppIfPlugin.GetInterfaceIndex().LookupByName(vppTapName)
@@ -88,7 +89,7 @@ func (d *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.LinuxI
 
 // deleteAutoTAP returns TAP interface back to the default namespace and renames
 // the interface back to original name.
-func (d *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.LinuxInterface, metadata *ifaceidx.LinuxIfMetadata) error {
+func (d *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string, linuxIf *interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) error {
 	hostName := getHostIfName(linuxIf)
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
@@ -143,7 +144,7 @@ func (d *InterfaceDescriptor) deleteAutoTAP(nsCtx nslinuxcalls.NamespaceMgmtCtx,
 // getTapAlias returns alias for Linux TAP interface managed by the agent.
 // The alias stores the TAP_TO_VPP logical name together with VPP-TAP logical name
 // and the host interface name as originally set by VPP side.
-func getTapAlias(linuxIf *interfaces.LinuxInterface, origHostIfName string) string {
+func getTapAlias(linuxIf *interfaces.Interface, origHostIfName string) string {
 	return linuxIf.Name + "/" + linuxIf.GetTap().GetVppTapIfName() + "/" + origHostIfName
 }
 

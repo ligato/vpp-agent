@@ -121,9 +121,10 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 	if err != nil {
 		return nil, err
 	}
+	fillDefaults(ipNeigh)
 
 	var origin = scheduler.FromNB
-	if proto.Equal(withDefaults(ipNeigh), defaultIPScanNeighbor) {
+	if proto.Equal(ipNeigh, defaultIPScanNeighbor) {
 		origin = scheduler.FromSB
 	}
 
@@ -137,7 +138,6 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 
 	return dump, nil
 }
-
 func withDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
 	var val = *orig
 	if val.ScanInterval == 0 {
@@ -156,4 +156,23 @@ func withDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {
 		val.StaleThreshold = defaultStaleThreshold
 	}
 	return &val
+}
+
+func fillDefaults(orig *l3.IPScanNeighbor) {
+	var val = orig
+	if val.ScanInterval == 0 {
+		val.ScanInterval = defaultScanInterval
+	}
+	if val.MaxProcTime == 0 {
+		val.MaxProcTime = defaultMaxProcTime
+	}
+	if val.MaxUpdate == 0 {
+		val.MaxUpdate = defaultMaxUpdate
+	}
+	if val.ScanIntDelay == 0 {
+		val.ScanIntDelay = defaultScanIntDelay
+	}
+	if val.StaleThreshold == 0 {
+		val.StaleThreshold = defaultStaleThreshold
+	}
 }

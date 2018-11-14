@@ -20,8 +20,8 @@ import (
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
@@ -53,8 +53,8 @@ type DataResyncDSL struct {
 }
 
 // LinuxInterface adds Linux interface to the RESYNC request.
-func (dsl *DataResyncDSL) LinuxInterface(val *linuxIf.LinuxInterface) linuxclient.DataResyncDSL {
-	key := linuxIf.InterfaceKey(val.Name)
+func (dsl *DataResyncDSL) LinuxInterface(val *linux_interfaces.Interface) linuxclient.DataResyncDSL {
+	key := linux_interfaces.InterfaceKey(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -62,8 +62,8 @@ func (dsl *DataResyncDSL) LinuxInterface(val *linuxIf.LinuxInterface) linuxclien
 }
 
 // LinuxArpEntry adds Linux ARP entry to the RESYNC request.
-func (dsl *DataResyncDSL) LinuxArpEntry(val *linuxL3.LinuxStaticARPEntry) linuxclient.DataResyncDSL {
-	key := linuxL3.StaticArpKey(val.Interface, val.IpAddress)
+func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.StaticARPEntry) linuxclient.DataResyncDSL {
+	key := linux_l3.StaticArpKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -71,8 +71,8 @@ func (dsl *DataResyncDSL) LinuxArpEntry(val *linuxL3.LinuxStaticARPEntry) linuxc
 }
 
 // LinuxRoute adds Linux route to the RESYNC request.
-func (dsl *DataResyncDSL) LinuxRoute(val *linuxL3.LinuxStaticRoute) linuxclient.DataResyncDSL {
-	key := linuxL3.StaticRouteKey(val.DstNetwork, val.OutgoingInterface)
+func (dsl *DataResyncDSL) LinuxRoute(val *linux_l3.StaticRoute) linuxclient.DataResyncDSL {
+	key := linux_l3.StaticRouteKey(val.DstNetwork, val.OutgoingInterface)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 

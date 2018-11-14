@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package l3;
+package linux.l3;
 
-message LinuxStaticRoute {
+message StaticRoute {
     string outgoing_interface = 1; /* outgoing interface logical name (mandatory) */
 
     enum Scope {
@@ -19,7 +19,7 @@ message LinuxStaticRoute {
     uint32 metric = 5;             /* routing metric (weight) */
 }
 
-message LinuxStaticARPEntry {
+message StaticARPEntry {
     string interface = 1;          /* logical name of the interface to which this neighbour is attached (mandatory) */
     string ip_address = 2;         /* ip address (mandatory) */
     string hw_address = 3;         /* mac address (mandatory) */

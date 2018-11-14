@@ -22,7 +22,7 @@ import (
 )
 
 // AddAfPacketInterface implements AfPacket handler.
-func (h *IfVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.Interface_AfpacketLink) (swIndex uint32, err error) {
+func (h *IfVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *intf.AfpacketLink) (swIndex uint32, err error) {
 	req := &af_packet.AfPacketCreate{
 		HostIfName: []byte(afPacketIntf.HostIfName),
 	}
@@ -45,7 +45,7 @@ func (h *IfVppHandler) AddAfPacketInterface(ifName string, hwAddr string, afPack
 }
 
 // DeleteAfPacketInterface implements AfPacket handler.
-func (h *IfVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.Interface_AfpacketLink) error {
+func (h *IfVppHandler) DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *intf.AfpacketLink) error {
 	req := &af_packet.AfPacketDelete{
 		HostIfName: []byte(afPacketIntf.HostIfName),
 	}

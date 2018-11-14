@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ARP --value-type *l3.LinuxStaticARPEntry --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Route --value-type *l3.LinuxStaticRoute --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARP --value-type *linux_l3.StaticARPEntry --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *linux_l3.StaticRoute --import "../model/l3" --output-dir "descriptor"
 
 package l3plugin
 
@@ -33,7 +33,7 @@ type L3Plugin struct {
 	Deps
 
 	// From configuration file
-	disabled  bool
+	disabled bool
 
 	// system handlers
 	l3Handler linuxcalls.NetlinkAPI
@@ -53,7 +53,7 @@ type Deps struct {
 
 // Config holds the l3plugin configuration.
 type Config struct {
-	Disabled  bool `json:"disabled"`
+	Disabled bool `json:"disabled"`
 }
 
 // Init initializes and registers descriptors for Linux ARPs and Routes.

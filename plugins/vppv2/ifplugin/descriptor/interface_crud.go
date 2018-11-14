@@ -2,7 +2,7 @@ package descriptor
 
 import (
 	"fmt"
-	"strings"
+	"net"
 
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
@@ -29,8 +29,8 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 	// create interface of the given type
 	switch intf.Type {
-	case interfaces.Interface_TAP_INTERFACE:
-		tapCfg := d.getTapConfig(intf)
+	case interfaces.Interface_TAP:
+		tapCfg := getTapConfig(intf)
 		tapHostIfName = tapCfg.HostIfName
 		ifIdx, err = d.ifHandler.AddTapInterface(intf.Name, tapCfg)
 		if err != nil {
@@ -52,7 +52,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			}
 		}
 
-	case interfaces.Interface_MEMORY_INTERFACE:
+	case interfaces.Interface_MEMIF:
 		var socketID uint32
 		if socketID, err = d.resolveMemifSocketFilename(intf.GetMemif()); err != nil {
 			d.log.Error(err)
@@ -90,7 +90,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			return nil, err
 		}
 
-	case interfaces.Interface_ETHERNET_CSMACD:
+	case interfaces.Interface_DPDK:
 		var found bool
 		ifIdx, found = d.ethernetIfs[intf.Name]
 		if !found {
@@ -99,8 +99,27 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			return nil, err
 		}
 
-	case interfaces.Interface_AF_PACKET_INTERFACE:
+	case interfaces.Interface_AF_PACKET:
 		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+	case interfaces.Interface_SUB_INTERFACE:
+		sub := intf.GetSub()
+		parentMeta, found := d.intfIndex.LookupByName(sub.GetParentName())
+		if !found {
+			err = errors.Errorf("unable to find parent interface %s referenced by sub interface %s",
+				sub.GetParentName(), intf.Name)
+			d.log.Error(err)
+			return nil, err
+		}
+		ifIdx, err = d.ifHandler.CreateSubif(parentMeta.SwIfIndex, sub.GetSubId())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
+		err = d.ifHandler.SetInterfaceTag(intf.Name, ifIdx)
 		if err != nil {
 			d.log.Error(err)
 			return nil, err
@@ -124,7 +143,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			* af packet - PIA
 	*/
 	if intf.RxModeSettings != nil {
-		rxMode := d.getRxMode(intf)
+		rxMode := getRxMode(intf)
 		err = d.ifHandler.SetRxMode(ifIdx, rxMode)
 		if err != nil {
 			err = errors.Errorf("failed to set Rx-mode for interface %s: %v", intf.Name, err)
@@ -144,8 +163,8 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 	// MAC address (optional; af-packet uses HwAddr from the host; physical interfaces cannot have MAC changed)
 	if intf.GetPhysAddress() != "" &&
-		intf.GetType() != interfaces.Interface_AF_PACKET_INTERFACE &&
-		intf.GetType() != interfaces.Interface_ETHERNET_CSMACD {
+		intf.GetType() != interfaces.Interface_AF_PACKET &&
+		intf.GetType() != interfaces.Interface_DPDK {
 		if err = d.ifHandler.SetInterfaceMac(ifIdx, intf.GetPhysAddress()); err != nil {
 			err = errors.Errorf("failed to set MAC address %s to interface %s: %v",
 				intf.GetPhysAddress(), intf.Name, err)
@@ -230,7 +249,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	ifIdx := metadata.SwIfIndex
 
 	// Set interface to ADMIN_DOWN unless the type is AF_PACKET_INTERFACE
-	if intf.Type != interfaces.Interface_AF_PACKET_INTERFACE {
+	if intf.Type != interfaces.Interface_AF_PACKET {
 		if err := d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s down: %v", intf.Name, err)
 			d.log.Error(err)
@@ -241,7 +260,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 	// unconfigure IP addresses
 	var nonLocalIPs []string
 	for _, ipAddr := range intf.IpAddresses {
-		if !strings.HasPrefix(ipAddr, "fe80") {
+		ip := net.ParseIP(ipAddr)
+		if !ip.IsLinkLocalUnicast() {
 			nonLocalIPs = append(nonLocalIPs, ipAddr)
 		}
 	}
@@ -262,25 +282,28 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 
 	// remove the interface
 	switch intf.Type {
-	case interfaces.Interface_TAP_INTERFACE:
+	case interfaces.Interface_TAP:
 		err = d.ifHandler.DeleteTapInterface(intf.Name, ifIdx, intf.GetTap().GetVersion())
-	case interfaces.Interface_MEMORY_INTERFACE:
+	case interfaces.Interface_MEMIF:
 		err = d.ifHandler.DeleteMemifInterface(intf.Name, ifIdx)
 	case interfaces.Interface_VXLAN_TUNNEL:
 		err = d.ifHandler.DeleteVxLanTunnel(intf.Name, ifIdx, intf.Vrf, intf.GetVxlan())
 	case interfaces.Interface_SOFTWARE_LOOPBACK:
 		err = d.ifHandler.DeleteLoopbackInterface(intf.Name, ifIdx)
-	case interfaces.Interface_ETHERNET_CSMACD:
+	case interfaces.Interface_DPDK:
 		d.log.Debugf("Interface %s removal skipped: cannot remove (blacklist) physical interface", intf.Name) // Not an error
 		return nil
-	case interfaces.Interface_AF_PACKET_INTERFACE:
+	case interfaces.Interface_AF_PACKET:
 		err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, intf.GetAfpacket())
+	case interfaces.Interface_SUB_INTERFACE:
+		err = d.ifHandler.DeleteSubif(ifIdx)
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
 		d.log.Error(err)
 		return err
 	}
+
 	return nil
 }
 
@@ -296,8 +319,8 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 	ifIdx := oldMetadata.SwIfIndex
 
 	// Rx-mode
-	oldRx := d.getRxMode(oldIntf)
-	newRx := d.getRxMode(newIntf)
+	oldRx := getRxMode(oldIntf)
+	newRx := getRxMode(newIntf)
 	if !proto.Equal(oldRx, newRx) {
 		err = d.ifHandler.SetRxMode(ifIdx, newRx)
 		if err != nil {
@@ -308,7 +331,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 	}
 
 	// Rx-placement
-	if !proto.Equal(d.getRxPlacement(oldIntf), d.getRxPlacement(newIntf)) {
+	if !proto.Equal(getRxPlacement(oldIntf), getRxPlacement(newIntf)) {
 		if err = d.ifHandler.SetRxPlacement(ifIdx, newIntf.GetRxPlacementSettings()); err != nil {
 			err = errors.Errorf("failed to modify rx-placement for interface %s: %v", newIntf.Name, err)
 			d.log.Error(err)
@@ -334,9 +357,10 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 	}
 
 	// Configure new mac address if set (and only if it was changed and for supported interface type)
-	if newIntf.PhysAddress != "" && newIntf.PhysAddress != oldIntf.PhysAddress &&
-		oldIntf.Type != interfaces.Interface_AF_PACKET_INTERFACE &&
-		oldIntf.Type != interfaces.Interface_ETHERNET_CSMACD {
+	if newIntf.PhysAddress != "" &&
+		newIntf.PhysAddress != oldIntf.PhysAddress &&
+		oldIntf.Type != interfaces.Interface_AF_PACKET &&
+		oldIntf.Type != interfaces.Interface_DPDK {
 		if err := d.ifHandler.SetInterfaceMac(ifIdx, newIntf.PhysAddress); err != nil {
 			err = errors.Errorf("setting interface %s MAC address %s failed: %v",
 				newIntf.Name, newIntf.PhysAddress, err)
@@ -441,7 +465,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			// local0 is created automatically
 			origin = scheduler.FromSB
 		}
-		if intf.Interface.Type == interfaces.Interface_ETHERNET_CSMACD {
+		if intf.Interface.Type == interfaces.Interface_DPDK {
 			d.ethernetIfs[intf.Interface.Name] = ifIdx
 			if !intf.Interface.Enabled && len(intf.Interface.IpAddresses) == 0 {
 				// unconfigured physical interface => skip (but add entry to d.ethernetIfs)
@@ -456,7 +480,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 
 		// get TAP host interface name
 		var tapHostIfName string
-		if intf.Interface.Type == interfaces.Interface_TAP_INTERFACE {
+		if intf.Interface.Type == interfaces.Interface_TAP {
 			tapHostIfName = intf.Interface.GetTap().GetHostIfName()
 			if generateTAPHostName(intf.Interface.Name) == tapHostIfName {
 				// interface host name was unset
@@ -466,12 +490,12 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 
 		// correlate attributes that cannot be dumped
 		if expCfg, hasExpCfg := ifCfg[intf.Interface.Name]; hasExpCfg {
-			if expCfg.Type == interfaces.Interface_TAP_INTERFACE && intf.Interface.GetTap() != nil {
+			if expCfg.Type == interfaces.Interface_TAP && intf.Interface.GetTap() != nil {
 				intf.Interface.GetTap().ToMicroservice = expCfg.GetTap().GetToMicroservice()
 				intf.Interface.GetTap().RxRingSize = expCfg.GetTap().GetRxRingSize()
 				intf.Interface.GetTap().TxRingSize = expCfg.GetTap().GetTxRingSize()
 			}
-			if expCfg.Type == interfaces.Interface_MEMORY_INTERFACE && intf.Interface.GetMemif() != nil {
+			if expCfg.Type == interfaces.Interface_MEMIF && intf.Interface.GetMemif() != nil {
 				intf.Interface.GetMemif().Secret = expCfg.GetMemif().GetSecret()
 				intf.Interface.GetMemif().RxQueues = expCfg.GetMemif().GetRxQueues()
 				intf.Interface.GetMemif().TxQueues = expCfg.GetMemif().GetTxQueues()
@@ -488,7 +512,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 
 		// verify links between VPP and Linux side
 		if d.linuxIfPlugin != nil && d.linuxIfHandler != nil {
-			if intf.Interface.Type == interfaces.Interface_AF_PACKET_INTERFACE {
+			if intf.Interface.Type == interfaces.Interface_AF_PACKET {
 				hostIfName := intf.Interface.GetAfpacket().HostIfName
 				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)
 				if !exists {
@@ -497,7 +521,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 					intf.Interface.Name += afPacketMissingAttachedIfSuffix
 				}
 			}
-			if intf.Interface.Type == interfaces.Interface_TAP_INTERFACE {
+			if intf.Interface.Type == interfaces.Interface_TAP {
 				exists, _ := d.linuxIfHandler.InterfaceExists(tapHostIfName)
 				if !exists {
 					// check if it was "stolen" by the Linux plugin

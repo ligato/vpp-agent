@@ -122,9 +122,9 @@ var (
 	memif0 = &interfaces.Interface{
 		Name:    "memif0",
 		Enabled: true,
-		Type:    interfaces.Interface_MEMORY_INTERFACE,
+		Type:    interfaces.Interface_MEMIF,
 		Link: &interfaces.Interface_Memif{
-			Memif: &interfaces.Interface_MemifLink{
+			Memif: &interfaces.MemifLink{
 				Id:             1,
 				Master:         true,
 				Secret:         "secret",

@@ -159,7 +159,7 @@ func (m *InterfaceState) GetType() Interface_Type {
 	if m != nil {
 		return m.Type
 	}
-	return Interface_UNDEFINED
+	return Interface_UNDEFINED_TYPE
 }
 
 func (m *InterfaceState) GetIfIndex() uint32 {

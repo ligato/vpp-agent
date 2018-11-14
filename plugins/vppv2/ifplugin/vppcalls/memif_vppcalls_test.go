@@ -32,9 +32,9 @@ func TestAddMasterMemifInterface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.Interface_MemifLink{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interface_MemifLink_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: true,
 	}, 5)
@@ -66,9 +66,9 @@ func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.Interface_MemifLink{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interface_MemifLink_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)
@@ -93,9 +93,9 @@ func TestAddMasterMemifInterfaceError(t *testing.T) {
 	ctx.MockVpp.MockReply(&memif.MemifCreate{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifModel.Interface_MemifLink{
+	_, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interface_MemifLink_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)
@@ -112,9 +112,9 @@ func TestAddMasterMemifInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifModel.Interface_MemifLink{
+	_, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interface_MemifLink_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)

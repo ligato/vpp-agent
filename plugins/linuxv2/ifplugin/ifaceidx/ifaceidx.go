@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 
-	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 )
 
 // LinuxIfMetadataIndex provides read-only access to mapping with Linux interface
@@ -58,7 +58,7 @@ type LinuxIfMetadataIndexRW interface {
 type LinuxIfMetadata struct {
 	LinuxIfIndex int
 	VPPTapName   string // empty for VETHs
-	Namespace    *nsmodel.LinuxNetNamespace
+	Namespace    *linux_namespace.NetNamespace
 }
 
 // LinuxIfMetadataIndexDto represents an item sent through watch channel in LinuxIfMetadataIndex.

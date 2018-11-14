@@ -24,7 +24,7 @@ import (
 )
 
 // AddTapInterface implements interface handler.
-func (h *IfVppHandler) AddTapInterface(ifName string, tapIf *interfaces.Interface_TapLink) (swIfIdx uint32, err error) {
+func (h *IfVppHandler) AddTapInterface(ifName string, tapIf *interfaces.TapLink) (swIfIdx uint32, err error) {
 	if tapIf == nil || tapIf.HostIfName == "" {
 		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}

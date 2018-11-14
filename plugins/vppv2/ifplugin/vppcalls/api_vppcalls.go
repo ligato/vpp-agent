@@ -32,25 +32,25 @@ type IfVppAPI interface {
 // IfVppWrite provides write methods for interface plugin
 type IfVppWrite interface {
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
-	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.Interface_AfpacketLink) (swIndex uint32, err error)
+	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.AfpacketLink) (swIndex uint32, err error)
 	// DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-	DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *interfaces.Interface_AfpacketLink) error
+	DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *interfaces.AfpacketLink) error
 	// AddLoopbackInterface calls CreateLoopback bin API.
 	AddLoopbackInterface(ifName string) (swIndex uint32, err error)
 	// DeleteLoopbackInterface calls DeleteLoopback bin API.
 	DeleteLoopbackInterface(ifName string, idx uint32) error
 	// AddMemifInterface calls MemifCreate bin API.
-	AddMemifInterface(ifName string, memIface *interfaces.Interface_MemifLink, socketID uint32) (swIdx uint32, err error)
+	AddMemifInterface(ifName string, memIface *interfaces.MemifLink, socketID uint32) (swIdx uint32, err error)
 	// DeleteMemifInterface calls MemifDelete bin API.
 	DeleteMemifInterface(ifName string, idx uint32) error
 	// AddTapInterface calls TapConnect bin API.
-	AddTapInterface(ifName string, tapIf *interfaces.Interface_TapLink) (swIfIdx uint32, err error)
+	AddTapInterface(ifName string, tapIf *interfaces.TapLink) (swIfIdx uint32, err error)
 	// DeleteTapInterface calls TapDelete bin API.
 	DeleteTapInterface(ifName string, idx uint32, version uint32) error
 	// AddVxLanTunnel calls AddDelVxLanTunnelReq with flag add=1.
-	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.Interface_VxlanLink) (swIndex uint32, err error)
+	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error)
 	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
-	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.Interface_VxlanLink) error
+	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
 	InterfaceAdminDown(ifIdx uint32) error
 	// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
@@ -93,6 +93,10 @@ type IfVppWrite interface {
 	SetInterfaceVrf(ifaceIndex, vrfID uint32) error
 	// SetInterfaceVrfIPv6 retrieves IPV6 VRF table from interface
 	SetInterfaceVrfIPv6(ifaceIndex, vrfID uint32) error
+	// CreateSubif creates sub interface.
+	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)
+	// DeleteSubif deletes sub interface.
+	DeleteSubif(ifIdx uint32) error
 }
 
 // IfVppRead provides read methods for interface plugin

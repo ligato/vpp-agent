@@ -12,7 +12,7 @@ import (
 
 type RouteKVWithMetadata struct {
 	Key      string
-	Value    *l3.LinuxStaticRoute
+	Value    *linux_l3.StaticRoute
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type RouteDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *l3.LinuxStaticRoute) bool
+	ValueComparator    func(key string, oldValue, newValue *linux_l3.StaticRoute) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *l3.LinuxStaticRoute) (metadata interface{}, err error)
-	Delete             func(key string, value *l3.LinuxStaticRoute, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *l3.LinuxStaticRoute, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *l3.LinuxStaticRoute, metadata interface{}) bool
-	Update             func(key string, value *l3.LinuxStaticRoute, metadata interface{}) error
+	Add                func(key string, value *linux_l3.StaticRoute) (metadata interface{}, err error)
+	Delete             func(key string, value *linux_l3.StaticRoute, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *linux_l3.StaticRoute, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.StaticRoute, metadata interface{}) bool
+	Update             func(key string, value *linux_l3.StaticRoute, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *l3.LinuxStaticRoute) []Dependency
-	DerivedValues      func(key string, value *l3.LinuxStaticRoute) []KeyValuePair
+	Dependencies       func(key string, value *linux_l3.StaticRoute) []Dependency
+	DerivedValues      func(key string, value *linux_l3.StaticRoute) []KeyValuePair
 	Dump               func(correlate []RouteKVWithMetadata) ([]RouteKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *RouteDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMeta
 
 ////////// Helper methods //////////
 
-func castRouteValue(key string, value proto.Message) (*l3.LinuxStaticRoute, error) {
-	typedValue, ok := value.(*l3.LinuxStaticRoute)
+func castRouteValue(key string, value proto.Message) (*linux_l3.StaticRoute, error) {
+	typedValue, ok := value.(*linux_l3.StaticRoute)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

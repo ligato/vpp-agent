@@ -118,7 +118,8 @@ func testLocalClientWithScheduler() {
 		Delete().
 		StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
 		Put().
-		Arp(arp0).ProxyArp(proxyArp).
+		Arp(arp0).
+		ProxyArp(proxyArp).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -130,10 +131,10 @@ var (
 	memif0 = &interfaces.Interface{
 		Name:        "memif0",
 		Enabled:     true,
-		Type:        interfaces.Interface_MEMORY_INTERFACE,
+		Type:        interfaces.Interface_MEMIF,
 		IpAddresses: []string{"3.3.0.1/16"},
 		Link: &interfaces.Interface_Memif{
-			Memif: &interfaces.Interface_MemifLink{
+			Memif: &interfaces.MemifLink{
 				Id:             1,
 				Master:         true,
 				Secret:         "secret",

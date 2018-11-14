@@ -17,6 +17,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/ligato/cn-infra/agent"
@@ -25,8 +26,18 @@ import (
 	"github.com/ligato/vpp-agent/app/v2"
 )
 
+const logo = `                                      __
+ _  _____  ___ _______ ____ ____ ___ / /_
+| |/ / _ \/ _ /___/ _ '/ _ '/ -_/ _ / __/
+|___/ .__/ .__/   \_'_/\_' /\__/_//_\__/  %s
+   /_/  /_/           /___/
+
+`
+
+var vppAgent = appv2.New()
+
 func main() {
-	vppAgent := appv2.New()
+	fmt.Fprintf(os.Stdout, logo, agent.BuildVersion)
 
 	a := agent.NewAgent(agent.AllPlugins(vppAgent))
 

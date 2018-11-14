@@ -16,15 +16,13 @@ package linuxclient
 
 import (
 	vpp_clientv2 "github.com/ligato/vpp-agent/clientv2/vpp"
-
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
@@ -38,14 +36,14 @@ import (
 // to be chained together conveniently in a single statement.
 type DataResyncDSL interface {
 	// LinuxInterface adds Linux interface to the RESYNC request.
-	LinuxInterface(intf *interfaces.LinuxInterface) DataResyncDSL
+	LinuxInterface(intf *linux_interfaces.Interface) DataResyncDSL
 	// LinuxInterface adds Linux ARP entry to the RESYNC request.
-	LinuxArpEntry(arp *l3.LinuxStaticARPEntry) DataResyncDSL
+	LinuxArpEntry(arp *linux_l3.StaticARPEntry) DataResyncDSL
 	// LinuxInterface adds Linux route to the RESYNC request.
-	LinuxRoute(route *l3.LinuxStaticRoute) DataResyncDSL
+	LinuxRoute(route *linux_l3.StaticRoute) DataResyncDSL
 
 	// VppInterface adds VPP interface to the RESYNC request.
-	VppInterface(intf *vpp_intf.Interface) DataResyncDSL
+	VppInterface(intf *vpp_interfaces.Interface) DataResyncDSL
 	// ACL adds VPP Access Control List to the RESYNC request.
 	ACL(acl *vpp_acl.Acl) DataResyncDSL
 	// BfdSession adds VPP bidirectional forwarding detection session

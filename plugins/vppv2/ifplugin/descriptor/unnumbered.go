@@ -32,7 +32,7 @@ const (
 	UnnumberedIfDescriptorName = "vpp-unnumbered-interface"
 
 	// dependency labels
-	unnumberedInterfaceWithIPDep = "unnumbered-interface-with-IP"
+	unnumberedInterfaceHasIPDep = "unnumbered-interface-has-IP"
 )
 
 // UnnumberedIfDescriptor sets/unsets VPP interfaces as unnumbered.
@@ -135,7 +135,7 @@ func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Int
 	// - satisfied as along as the referenced interface is configured and has at least
 	//   one IP address assigned
 	return []scheduler.Dependency{{
-		Label: unnumberedInterfaceWithIPDep,
+		Label: unnumberedInterfaceHasIPDep,
 		AnyOf: func(key string) bool {
 			ifName, _, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
 			return isIfaceAddrKey && ifName == unIntf.InterfaceWithIp
