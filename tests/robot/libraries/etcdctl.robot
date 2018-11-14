@@ -232,7 +232,7 @@ Delete Linux Interface
 
 Delete Route
     [Arguments]    ${node}    ${id}    ${ip}    ${prefix}
-    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}
+    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
     ${out}=         Delete key  ${uri}
     [Return]       ${out}
 
