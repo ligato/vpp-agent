@@ -1,6 +1,6 @@
 {
   "name": "${name}",
-  "type": 3,
+  "type": "MEMIF",
   "enabled": ${enabled},
   "phys_address": "${mac}",
   "memif": {

@@ -11,7 +11,7 @@
   "name": "${name}",
   "host_if_name": "${host_if_name}",
   "phys_address": "${mac}",
-  "type": 1,
+  "type": "VETH",
   "veth": {
     "peer_if_name": "${peer}"
   }
