@@ -286,7 +286,7 @@ func TestDumpInterfacesTap1(t *testing.T) {
 
 	intface := intfs[0].Interface
 
-	Expect(intface.Type).To(Equal(interfaces2.Interface_TAP_INTERFACE))
+	Expect(intface.Type).To(Equal(interfaces2.Interface_TAP))
 	Expect(intface.PhysAddress).To(Equal("01:23:45:67:89:ab"))
 	Expect(intface.Name).To(Equal("mytap1"))
 	Expect(intface.Mtu).To(Equal(uint32(0))) // default mtu
@@ -365,7 +365,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 	intface := intfs[0].Interface
 
 	// This is last checked type, so it will be equal to that
-	Expect(intface.Type).To(Equal(interfaces2.Interface_TAP_INTERFACE))
+	Expect(intface.Type).To(Equal(interfaces2.Interface_TAP))
 	Expect(intface.PhysAddress).To(Equal("01:23:45:67:89:ab"))
 	Expect(intface.Name).To(Equal("mytap2"))
 	Expect(intface.Mtu).To(Equal(uint32(0))) // default mtu

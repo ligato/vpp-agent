@@ -233,7 +233,7 @@ var (
 
 	afpacket = &vpp_interfaces.Interface{
 		Name:        afPacketLogicalName,
-		Type:        vpp_interfaces.Interface_AF_PACKET_INTERFACE,
+		Type:        vpp_interfaces.Interface_AF_PACKET,
 		Enabled:     true,
 		PhysAddress: "a7:35:45:55:65:75",
 		IpAddresses: []string{
@@ -272,7 +272,7 @@ var (
 
 	vppTap = &vpp_interfaces.Interface{
 		Name:        vppTapLogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
+		Type:        vpp_interfaces.Interface_TAP,
 		Enabled:     true,
 		PhysAddress: vppTapHwAddr,
 		IpAddresses: []string{

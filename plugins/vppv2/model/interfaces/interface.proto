@@ -4,13 +4,15 @@ package interfaces;
 
 message Interface {
     enum Type {
-        UNDEFINED = 0;
-        SOFTWARE_LOOPBACK = 1;
-        ETHERNET_CSMACD = 2;
-        MEMORY_INTERFACE = 3;
-        TAP_INTERFACE = 4;
-        AF_PACKET_INTERFACE = 5;
-        VXLAN_TUNNEL = 6;
+        UNDEFINED_TYPE = 0;
+        SUB_INTERFACE = 1;
+        SOFTWARE_LOOPBACK = 2;
+        DPDK = 3;
+        MEMIF = 4;
+        TAP = 5;
+        AF_PACKET = 6;
+        VXLAN_TUNNEL = 7;
+        IPSEC_TUNNEL = 8;
     };
 
     string name = 1;                   /* Logical interface name unique across all configured interfaces (mandatory) */
@@ -49,28 +51,28 @@ message Interface {
     }
     RxPlacementSettings rx_placement_settings = 11;
 
-    message SubInterface {
-        string parent_name = 1;     /* Name of the parent (super) interface */
-        uint32 sub_id = 2;          /* SubInterface ID, used as VLAN */
-    }
-
     oneof link {
-        SubInterface sub = 100;
-        MemifLink memif = 101;       /* memif-specific configuration */
-        VxlanLink vxlan = 102;       /* VXLAN-specific configuration */
-        AfpacketLink afpacket = 103; /* AF-packet-specific configuration */
-        TapLink tap = 104;           /* TAP-specific configuration */
+        SubInterface sub = 100;         /* sub-interface configuration */
+        MemifLink memif = 101;          /* memif-specific configuration */
+        AfpacketLink afpacket = 102;    /* AF-packet-specific configuration */
+        TapLink tap = 103;              /* TAP-specific configuration */
+        VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
     };
 };
 
+message SubInterface {
+    string parent_name = 1;     /* Name of the parent (super) interface */
+    uint32 sub_id = 2;          /* SubInterface ID, used as VLAN */
+}
+
 message MemifLink {
-    bool master = 1;
     enum MemifMode {
         ETHERNET = 0;
         IP = 1;
         PUNT_INJECT = 2;
     }
-    MemifMode mode = 2;
+    MemifMode mode = 1;
+    bool master = 2;
     uint32 id = 3;              /* 32bit integer used to authenticate and match opposite sides of the connection */
     string socket_filename = 4; /* filename of the socket used for connection establishment */
     string secret = 5;

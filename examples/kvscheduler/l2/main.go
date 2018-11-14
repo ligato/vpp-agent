@@ -210,7 +210,7 @@ var (
 	}
 	afpacket = &vpp_interfaces.Interface{
 		Name:        afPacketLogicalName,
-		Type:        vpp_interfaces.Interface_AF_PACKET_INTERFACE,
+		Type:        vpp_interfaces.Interface_AF_PACKET,
 		Enabled:     true,
 		PhysAddress: afPacketHwAddr,
 		Link: &vpp_interfaces.Interface_Afpacket{
@@ -243,7 +243,7 @@ var (
 	}
 	vppTap = &vpp_interfaces.Interface{
 		Name:        vppTapLogicalName,
-		Type:        vpp_interfaces.Interface_TAP_INTERFACE,
+		Type:        vpp_interfaces.Interface_TAP,
 		Enabled:     true,
 		PhysAddress: vppTapHwAddr,
 		Link: &vpp_interfaces.Interface_Tap{

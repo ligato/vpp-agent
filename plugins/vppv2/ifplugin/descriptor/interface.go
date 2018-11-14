@@ -100,6 +100,9 @@ var (
 	// ErrUnsupportedRxMode is returned when the given interface type does not support the chosen
 	// RX mode.
 	ErrUnsupportedRxMode = errors.New("unsupported RX Mode")
+
+	// ErrSubInterfaceWithoutParent is returned when interface of type sub-interface is defined without parent.
+	ErrSubInterfaceWithoutParent = errors.Errorf("subinterface with no parent interface defined")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -205,7 +208,7 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		return false
 	}
 	if !proto.Equal(oldIntf.Unnumbered, newIntf.Unnumbered) ||
-		!proto.Equal(d.getRxPlacement(oldIntf), d.getRxPlacement(newIntf)) {
+		!proto.Equal(getRxPlacement(oldIntf), getRxPlacement(newIntf)) {
 		return false
 	}
 
@@ -216,8 +219,8 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 
 	// TODO: for TAPv2 the RxMode dump is unstable
 	//       (it goes between POLLING and INTERRUPT, maybe it should actually return ADAPTIVE?)
-	if oldIntf.Type != interfaces.Interface_TAP_INTERFACE || oldIntf.GetTap().GetVersion() != 2 {
-		if !proto.Equal(d.getRxMode(oldIntf), d.getRxMode(newIntf)) {
+	if oldIntf.Type != interfaces.Interface_TAP || oldIntf.GetTap().GetVersion() != 2 {
+		if !proto.Equal(getRxMode(oldIntf), getRxMode(newIntf)) {
 			return false
 		}
 	}
@@ -251,23 +254,23 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 // equivalentTypeSpecificConfig compares type-specific sections of two interface configurations.
 func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *interfaces.Interface) bool {
 	switch oldIntf.Type {
-	case interfaces.Interface_TAP_INTERFACE:
-		if !proto.Equal(d.getTapConfig(oldIntf), d.getTapConfig(newIntf)) {
+	case interfaces.Interface_TAP:
+		if !proto.Equal(getTapConfig(oldIntf), getTapConfig(newIntf)) {
 			return false
 		}
 	case interfaces.Interface_VXLAN_TUNNEL:
 		if !proto.Equal(oldIntf.GetVxlan(), newIntf.GetVxlan()) {
 			return false
 		}
-	case interfaces.Interface_AF_PACKET_INTERFACE:
+	case interfaces.Interface_AF_PACKET:
 		if oldIntf.GetAfpacket().GetHostIfName() != newIntf.GetAfpacket().GetHostIfName() {
 			return false
 		}
-	case interfaces.Interface_MEMORY_INTERFACE:
+	case interfaces.Interface_MEMIF:
 		if !d.equivalentMemifs(oldIntf.GetMemif(), newIntf.GetMemif()) {
 			return false
 		}
-	case interfaces.Interface_UNDEFINED:
+	case interfaces.Interface_SUB_INTERFACE:
 		if !proto.Equal(oldIntf.GetSub(), newIntf.GetSub()) {
 			return false
 		}
@@ -277,8 +280,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 
 // equivalentMemifs compares two memifs for equivalence.
 func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.MemifLink) bool {
-	if oldMemif.GetMaster() != newMemif.GetMaster() || oldMemif.GetMode() != newMemif.GetMode() ||
-		oldMemif.GetId() != newMemif.GetId() || oldMemif.GetSecret() != newMemif.GetSecret() {
+	if oldMemif.GetMode() != newMemif.GetMode() ||
+		oldMemif.GetMaster() != newMemif.GetMaster() ||
+		oldMemif.GetId() != newMemif.GetId() ||
+		oldMemif.GetSecret() != newMemif.GetSecret() {
 		return false
 	}
 	// default values considered:
@@ -346,42 +351,42 @@ func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *i
 }
 
 // Dependencies lists dependencies for a VPP interface.
-func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interface) []scheduler.Dependency {
-	var dependencies []scheduler.Dependency
+func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interface) (dependencies []scheduler.Dependency) {
 
-	if intf.Type == interfaces.Interface_AF_PACKET_INTERFACE {
+	switch intf.Type {
+	case interfaces.Interface_AF_PACKET:
 		// AF-PACKET depends on a referenced Linux interface in the default namespace
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: afPacketHostInterfaceDep,
 			Key:   linux_intf.InterfaceHostNameKey(intf.GetAfpacket().GetHostIfName()),
 		})
-	}
-
-	if intf.Type == interfaces.Interface_TAP_INTERFACE && intf.GetTap().GetToMicroservice() != "" {
+	case interfaces.Interface_TAP:
 		// TAP connects VPP with microservice
-		toMicroservice := intf.GetTap().GetToMicroservice()
-		dependencies = append(dependencies, scheduler.Dependency{
-			Label: microserviceDep,
-			Key:   linux_ns.MicroserviceKey(toMicroservice),
-		})
-	}
-
-	if intf.Type == interfaces.Interface_VXLAN_TUNNEL && intf.GetVxlan().GetMulticast() != "" {
+		if toMicroservice := intf.GetTap().GetToMicroservice(); toMicroservice != "" {
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: microserviceDep,
+				Key:   linux_ns.MicroserviceKey(toMicroservice),
+			})
+		}
+	case interfaces.Interface_VXLAN_TUNNEL:
 		// VXLAN referencing an interface with Multicast IP address
-		dependencies = append(dependencies, scheduler.Dependency{
-			Label: vxlanMulticastDep,
-			AnyOf: func(key string) bool {
-				ifName, ifaceAddr, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
-				return isIfaceAddrKey && ifName == intf.GetVxlan().GetMulticast() && ifaceAddr.IsMulticast()
-			},
-		})
-	}
-
-	if sub := intf.GetSub(); sub != nil {
-		dependencies = append(dependencies, scheduler.Dependency{
-			Label: parentInterfaceDep,
-			Key:   interfaces.InterfaceKey(sub.GetParentName()),
-		})
+		if vxlanMulticast := intf.GetVxlan().GetMulticast(); vxlanMulticast != "" {
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: vxlanMulticastDep,
+				AnyOf: func(key string) bool {
+					ifName, ifaceAddr, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
+					return isIfaceAddrKey && ifName == vxlanMulticast && ifaceAddr.IsMulticast()
+				},
+			})
+		}
+	case interfaces.Interface_SUB_INTERFACE:
+		// SUB_INTERFACE requires parent interface
+		if parentName := intf.GetSub().GetParentName(); parentName != "" {
+			dependencies = append(dependencies, scheduler.Dependency{
+				Label: parentInterfaceDep,
+				Key:   interfaces.InterfaceKey(parentName),
+			})
+		}
 	}
 
 	return dependencies
@@ -421,35 +426,25 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 
 // validateInterfaceConfig validates VPP interface configuration.
 func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface) error {
-	if intf.Name == "" {
+	// validate name
+	if name := intf.GetName(); name == "" {
 		return ErrInterfaceWithoutName
-	}
-	if len(intf.Name) > logicalNameLengthLimit {
+	} else if len(name) > logicalNameLengthLimit {
 		return ErrInterfaceNameTooLong
 	}
-	if intf.Type == interfaces.Interface_UNDEFINED && intf.GetSub() == nil {
-		return ErrInterfaceWithoutType
-	}
-	if intf.GetUnnumbered() != nil {
-		if len(intf.GetIpAddresses()) > 0 {
-			return ErrUnnumberedWithIP
-		}
-	}
-	if intf.Type == interfaces.Interface_AF_PACKET_INTERFACE && intf.GetAfpacket().GetHostIfName() == "" {
-		return ErrAfPacketWithoutHostName
-	}
-	if intf.Type == interfaces.Interface_ETHERNET_CSMACD {
-		if d.getRxMode(intf).RxMode != interfaces.Interface_RxModeSettings_POLLING {
-			return ErrUnsupportedRxMode
-		}
-	}
+
+	// validate link with type
 	switch intf.Link.(type) {
+	case *interfaces.Interface_Sub:
+		if intf.Type != interfaces.Interface_SUB_INTERFACE {
+			return ErrInterfaceLinkMismatch
+		}
 	case *interfaces.Interface_Memif:
-		if intf.Type != interfaces.Interface_MEMORY_INTERFACE {
+		if intf.Type != interfaces.Interface_MEMIF {
 			return ErrInterfaceLinkMismatch
 		}
 	case *interfaces.Interface_Afpacket:
-		if intf.Type != interfaces.Interface_AF_PACKET_INTERFACE {
+		if intf.Type != interfaces.Interface_AF_PACKET {
 			return ErrInterfaceLinkMismatch
 		}
 	case *interfaces.Interface_Vxlan:
@@ -457,24 +452,45 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 			return ErrInterfaceLinkMismatch
 		}
 	case *interfaces.Interface_Tap:
-		if intf.Type != interfaces.Interface_TAP_INTERFACE {
+		if intf.Type != interfaces.Interface_TAP {
 			return ErrInterfaceLinkMismatch
 		}
-	case *interfaces.Interface_Sub:
+	}
+
+	// validate type specific
+	switch intf.GetType() {
+	case interfaces.Interface_SUB_INTERFACE:
 		if parentName := intf.GetSub().GetParentName(); parentName == "" {
-			return errors.Errorf("subinterface with no parent interface defined")
+			return ErrSubInterfaceWithoutParent
+		}
+	case interfaces.Interface_DPDK:
+		if getRxMode(intf).GetRxMode() != interfaces.Interface_RxModeSettings_POLLING {
+			return ErrUnsupportedRxMode
+		}
+	case interfaces.Interface_AF_PACKET:
+		if intf.GetAfpacket().GetHostIfName() == "" {
+			return ErrAfPacketWithoutHostName
+		}
+	case interfaces.Interface_UNDEFINED_TYPE:
+		return ErrInterfaceWithoutType
+	}
+
+	// validate unnumbered
+	if intf.GetUnnumbered() != nil {
+		if len(intf.GetIpAddresses()) > 0 {
+			return ErrUnnumberedWithIP
 		}
 	}
+
 	return nil
 }
 
 // getInterfaceMTU returns the interface MTU.
 func (d *InterfaceDescriptor) getInterfaceMTU(intf *interfaces.Interface) uint32 {
-	mtu := intf.Mtu
-	if mtu == 0 {
-		return d.defaultMtu /* still can be 0, i.e. undefined */
+	if mtu := intf.GetMtu(); mtu != 0 {
+		return mtu
 	}
-	return mtu
+	return d.defaultMtu /* still can be 0, i.e. undefined */
 }
 
 // resolveMemifSocketFilename returns memif socket filename ID.
@@ -498,51 +514,43 @@ func (d *InterfaceDescriptor) resolveMemifSocketFilename(memifIf *interfaces.Mem
 // getRxMode returns the RX mode of the given interface.
 // If the mode is not defined, it returns the default settings for the given
 // interface type.
-func (d *InterfaceDescriptor) getRxMode(intf *interfaces.Interface) *interfaces.Interface_RxModeSettings {
-	if intf.RxModeSettings == nil {
-		// return default mode for the given interface type
-		switch intf.Type {
-		case interfaces.Interface_ETHERNET_CSMACD:
-			return &interfaces.Interface_RxModeSettings{
-				RxMode: interfaces.Interface_RxModeSettings_POLLING,
-			}
-		case interfaces.Interface_AF_PACKET_INTERFACE:
-			return &interfaces.Interface_RxModeSettings{
-				RxMode: interfaces.Interface_RxModeSettings_INTERRUPT,
-			}
-		case interfaces.Interface_TAP_INTERFACE:
-			if intf.GetTap().GetVersion() == 2 {
-				return &interfaces.Interface_RxModeSettings{
-					RxMode: interfaces.Interface_RxModeSettings_INTERRUPT,
-				}
-			}
-			// TAP v1
-			return &interfaces.Interface_RxModeSettings{
-				RxMode: interfaces.Interface_RxModeSettings_DEFAULT,
-			}
-		default:
-			return &interfaces.Interface_RxModeSettings{
-				RxMode: interfaces.Interface_RxModeSettings_DEFAULT,
-			}
+func getRxMode(intf *interfaces.Interface) *interfaces.Interface_RxModeSettings {
+	if rxModeSettings := intf.RxModeSettings; rxModeSettings != nil {
+		return rxModeSettings
+	}
+
+	rxModeSettings := &interfaces.Interface_RxModeSettings{
+		RxMode: interfaces.Interface_RxModeSettings_DEFAULT,
+	}
+	// return default mode for the given interface type
+	switch intf.GetType() {
+	case interfaces.Interface_DPDK:
+		rxModeSettings.RxMode = interfaces.Interface_RxModeSettings_POLLING
+	case interfaces.Interface_AF_PACKET:
+		rxModeSettings.RxMode = interfaces.Interface_RxModeSettings_INTERRUPT
+	case interfaces.Interface_TAP:
+		if intf.GetTap().GetVersion() == 2 {
+			// TAP v2
+			rxModeSettings.RxMode = interfaces.Interface_RxModeSettings_INTERRUPT
 		}
 	}
-	return intf.RxModeSettings
+	return rxModeSettings
 }
 
 // getRxPlacement returns the RX placement of the given interface.
-func (d *InterfaceDescriptor) getRxPlacement(intf *interfaces.Interface) *interfaces.Interface_RxPlacementSettings {
-	if intf.RxPlacementSettings == nil {
-		return &interfaces.Interface_RxPlacementSettings{}
+func getRxPlacement(intf *interfaces.Interface) *interfaces.Interface_RxPlacementSettings {
+	if rxPlacementSettings := intf.GetRxPlacementSettings(); rxPlacementSettings != nil {
+		return rxPlacementSettings
 	}
-	return intf.RxPlacementSettings
+	return &interfaces.Interface_RxPlacementSettings{}
 }
 
 // getMemifSocketFilename returns the memif socket filename.
 func (d *InterfaceDescriptor) getMemifSocketFilename(memif *interfaces.MemifLink) string {
-	if memif.GetSocketFilename() == "" {
-		return d.defaultMemifSocketPath
+	if socketFilename := memif.GetSocketFilename(); socketFilename != "" {
+		return socketFilename
 	}
-	return memif.GetSocketFilename()
+	return d.defaultMemifSocketPath
 }
 
 // getMemifNumOfRxQueues returns the number of memif RX queues.
@@ -578,7 +586,7 @@ func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.MemifLink) uint
 }
 
 // getTapConfig returns the TAP-specific configuration section (handling undefined attributes).
-func (d *InterfaceDescriptor) getTapConfig(intf *interfaces.Interface) *interfaces.TapLink {
+func getTapConfig(intf *interfaces.Interface) *interfaces.TapLink {
 	tapCfg := intf.GetTap()
 	if tapCfg == nil || intf.GetTap().GetHostIfName() == "" {
 		// build TAP config with auto-generated host interface name and copied/default attributes
@@ -618,6 +626,5 @@ func getIPAddressVersions(ipAddrs []*net.IPNet) (isIPv4, isIPv6 bool) {
 			isIPv6 = true
 		}
 	}
-
 	return
 }

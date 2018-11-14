@@ -275,7 +275,7 @@ var (
 	}
 	hostVPPTap = &vpp_interfaces.Interface{
 		Name:    vppTapHostLogicalName,
-		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Type:    vpp_interfaces.Interface_TAP,
 		Enabled: true,
 		IpAddresses: []string{
 			vppTapHostIPAddr + hostNetMask,
@@ -315,7 +315,7 @@ var (
 	}
 	clientVPPTap = &vpp_interfaces.Interface{
 		Name:    vppTapClientLogicalName,
-		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Type:    vpp_interfaces.Interface_TAP,
 		Enabled: true,
 		IpAddresses: []string{
 			vppTapClientIPAddr + microserviceNetMask,
@@ -362,7 +362,7 @@ var (
 	}
 	server1VPPTap = &vpp_interfaces.Interface{
 		Name:    vppTapServer1LogicalName,
-		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Type:    vpp_interfaces.Interface_TAP,
 		Enabled: true,
 		IpAddresses: []string{
 			vppTapServer1IPAddr + microserviceNetMask,
@@ -414,7 +414,7 @@ var (
 	}
 	server2VPPTap = &vpp_interfaces.Interface{
 		Name:    vppTapServer2LogicalName,
-		Type:    vpp_interfaces.Interface_TAP_INTERFACE,
+		Type:    vpp_interfaces.Interface_TAP,
 		Enabled: true,
 		IpAddresses: []string{
 			vppTapServer2IPAddr + microserviceNetMask,

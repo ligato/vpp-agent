@@ -118,6 +118,8 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 			return nil, fmt.Errorf("failed to dump interface: %v", err)
 		}
 
+		fmt.Printf("DUMPED INTERFACE: %+v\n", ifDetails)
+
 		ifaceName := cleanString(ifDetails.InterfaceName)
 		details := &InterfaceDetails{
 			Interface: &ifnb.Interface{
@@ -135,11 +137,12 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 				SupSwIfIndex: ifDetails.SupSwIfIndex,
 			},
 		}
+
 		// sub interface
 		if ifDetails.SupSwIfIndex != ifDetails.SwIfIndex {
-			details.Interface.Type = ifnb.Interface_UNDEFINED
+			details.Interface.Type = ifnb.Interface_SUB_INTERFACE
 			details.Interface.Link = &ifnb.Interface_Sub{
-				Sub: &ifnb.Interface_SubInterface{
+				Sub: &ifnb.SubInterface{
 					ParentName: ifs[ifDetails.SupSwIfIndex].Interface.Name,
 					SubId:      ifDetails.SubID,
 				},
@@ -147,9 +150,9 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 		}
 		// Fill name for physical interfaces (they are mostly without tag)
 		switch details.Interface.Type {
-		case ifnb.Interface_ETHERNET_CSMACD:
+		case ifnb.Interface_DPDK:
 			details.Interface.Name = ifaceName
-		case ifnb.Interface_AF_PACKET_INTERFACE:
+		case ifnb.Interface_AF_PACKET:
 			details.Interface.Link = &ifnb.Interface_Afpacket{
 				Afpacket: &ifnb.AfpacketLink{
 					HostIfName: strings.TrimPrefix(ifaceName, "host-"),
@@ -418,7 +421,7 @@ func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error 
 				//TxQueues:
 			},
 		}
-		ifs[memifDetails.SwIfIndex].Interface.Type = ifnb.Interface_MEMORY_INTERFACE
+		ifs[memifDetails.SwIfIndex].Interface.Type = ifnb.Interface_MEMIF
 	}
 
 	return nil
@@ -447,7 +450,7 @@ func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 				HostIfName: string(bytes.SplitN(tapDetails.DevName, []byte{0x00}, 2)[0]),
 			},
 		}
-		ifs[tapDetails.SwIfIndex].Interface.Type = ifnb.Interface_TAP_INTERFACE
+		ifs[tapDetails.SwIfIndex].Interface.Type = ifnb.Interface_TAP
 	}
 
 	// TAP v.2
@@ -472,7 +475,7 @@ func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 				// Other parameters are not not yet part of the dump.
 			},
 		}
-		ifs[tapDetails.SwIfIndex].Interface.Type = ifnb.Interface_TAP_INTERFACE
+		ifs[tapDetails.SwIfIndex].Interface.Type = ifnb.Interface_TAP
 	}
 
 	return nil
@@ -584,20 +587,28 @@ func (h *IfVppHandler) dumpRxPlacement(ifs map[uint32]*InterfaceDetails) error {
 // such as loopback of af_packet.
 func guessInterfaceType(ifName string) ifnb.Interface_Type {
 	switch {
-	case strings.HasPrefix(ifName, "loop"):
+	case strings.HasPrefix(ifName, "loop"),
+		strings.HasPrefix(ifName, "local"):
 		return ifnb.Interface_SOFTWARE_LOOPBACK
-	case strings.HasPrefix(ifName, "local"):
-		return ifnb.Interface_SOFTWARE_LOOPBACK
+
 	case strings.HasPrefix(ifName, "memif"):
-		return ifnb.Interface_MEMORY_INTERFACE
+		return ifnb.Interface_MEMIF
+
 	case strings.HasPrefix(ifName, "tap"):
-		return ifnb.Interface_TAP_INTERFACE
+		return ifnb.Interface_TAP
+
 	case strings.HasPrefix(ifName, "host"):
-		return ifnb.Interface_AF_PACKET_INTERFACE
+		return ifnb.Interface_AF_PACKET
+
 	case strings.HasPrefix(ifName, "vxlan"):
 		return ifnb.Interface_VXLAN_TUNNEL
+
+	case strings.HasPrefix(ifName, "ipsec"):
+		return ifnb.Interface_IPSEC_TUNNEL
+
+	default:
+		return ifnb.Interface_DPDK
 	}
-	return ifnb.Interface_ETHERNET_CSMACD
 }
 
 // memifModetoNB converts binary API type of memif mode to the northbound API type memif mode.
@@ -609,8 +620,9 @@ func memifModetoNB(mode uint8) ifnb.MemifLink_MemifMode {
 		return ifnb.MemifLink_IP
 	case 2:
 		return ifnb.MemifLink_PUNT_INJECT
+	default:
+		return ifnb.MemifLink_ETHERNET
 	}
-	return ifnb.MemifLink_ETHERNET
 }
 
 // Convert binary API rx-mode to northbound representation

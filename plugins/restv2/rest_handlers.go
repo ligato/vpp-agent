@@ -54,19 +54,19 @@ func (p *Plugin) registerInterfaceHandlers() {
 	})
 	// GET ethernet interfaces
 	p.registerHTTPHandler(resturl.Ethernet, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_ETHERNET_CSMACD)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_DPDK)
 	})
 	// GET memif interfaces
 	p.registerHTTPHandler(resturl.Memif, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_MEMORY_INTERFACE)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_MEMIF)
 	})
 	// GET tap interfaces
 	p.registerHTTPHandler(resturl.Tap, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_TAP_INTERFACE)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_TAP)
 	})
 	// GET af-packet interfaces
 	p.registerHTTPHandler(resturl.AfPacket, GET, func() (interface{}, error) {
-		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_AF_PACKET_INTERFACE)
+		return p.ifHandler.DumpInterfacesByType(interfaces.Interface_AF_PACKET)
 	})
 	// GET VxLAN interfaces
 	p.registerHTTPHandler(resturl.VxLan, GET, func() (interface{}, error) {
