@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package stn;
+
+/* Steal the NIC rule definition */
+message Rule {
+    string ip_address = 1;  /* IP address */
+    string interface = 2;   /* Interface name the rule will be attached to */
+}
