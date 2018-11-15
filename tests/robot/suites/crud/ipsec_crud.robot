@@ -6,6 +6,8 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 Resource    ../../libraries/all_libs.robot
 Resource    ../../libraries/pretty_keywords.robot
 
+# not implemented in v2
+Force Tags        crud     IPv4     ExpectedFailure
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 
