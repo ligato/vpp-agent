@@ -94,6 +94,8 @@ type PutDSL interface {
 	IPSecSA(sa *ipsec.SecurityAssociations_SA) PutDSL
 	// IPSecSPD adds request to create a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) PutDSL
+	// IPSecTunnel adds request to create a new IPSec tunnel
+	IPSecTunnel(spd *ipsec.TunnelInterfaces_Tunnel) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -149,6 +151,8 @@ type DeleteDSL interface {
 	IPSecSA(saName string) DeleteDSL
 	// IPSecSPD adds request to delete a Security Policy Database
 	IPSecSPD(spdName string) DeleteDSL
+	// IPSecTunnel adds request to delete an IPSec tunnel
+	IPSecTunnel(tunName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

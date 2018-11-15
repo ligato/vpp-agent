@@ -16,6 +16,7 @@ package dbadapter
 
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
@@ -84,6 +85,24 @@ func (dsl *DataResyncDSL) LinuxRoute(val *linuxL3.LinuxStaticRoutes_Route) linux
 // VppInterface adds VPP interface to the RESYNC request.
 func (dsl *DataResyncDSL) VppInterface(intf *interfaces.Interfaces_Interface) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.Interface(intf)
+	return dsl
+}
+
+// VppIPSecSPD adds VPP security policy database to the RESYNC request.
+func (dsl *DataResyncDSL) VppIPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecSPD(spd)
+	return dsl
+}
+
+// VppIPSecSA adds VPP security association to the RESYNC request.
+func (dsl *DataResyncDSL) VppIPSecSA(sa *ipsec.SecurityAssociations_SA) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecSA(sa)
+	return dsl
+}
+
+// VppIPSecTunnel adds VPP IPSec tunnel to the RESYNC request.
+func (dsl *DataResyncDSL) VppIPSecTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecTunnel(tunnel)
 	return dsl
 }
 

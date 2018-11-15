@@ -17,6 +17,7 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/linux"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
 	"github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
@@ -99,6 +100,24 @@ func (dsl *PutDSL) LinuxRoute(val *linuxL3.LinuxStaticRoutes_Route) linuxclient.
 // VppInterface adds a request to create or update VPP network interface.
 func (dsl *PutDSL) VppInterface(val *interfaces.Interfaces_Interface) linuxclient.PutDSL {
 	dsl.vppPut.Interface(val)
+	return dsl
+}
+
+// VppIPSecSPD adds a request to create or update VPP IPSec security policy database.
+func (dsl *PutDSL) VppIPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) linuxclient.PutDSL {
+	dsl.vppPut.IPSecSPD(val)
+	return dsl
+}
+
+// VppIPSecSA adds a request to create or update VPP IPSec security associations.
+func (dsl *PutDSL) VppIPSecSA(val *ipsec.SecurityAssociations_SA) linuxclient.PutDSL {
+	dsl.vppPut.IPSecSA(val)
+	return dsl
+}
+
+// VppIPSecTunnel adds a request to create or update VPP IPSec tunnel.
+func (dsl *PutDSL) VppIPSecTunnel(val *ipsec.TunnelInterfaces_Tunnel) linuxclient.PutDSL {
+	dsl.vppPut.IPSecTunnel(val)
 	return dsl
 }
 
@@ -233,6 +252,24 @@ func (dsl *DeleteDSL) LinuxRoute(routeName string) linuxclient.DeleteDSL {
 // VppInterface adds a request to delete an existing VPP network interface.
 func (dsl *DeleteDSL) VppInterface(ifaceName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.Interface(ifaceName)
+	return dsl
+}
+
+// VppIPSecSPD adds a request to delete an existing VPP IPSec security policy database.
+func (dsl *DeleteDSL) VppIPSecSPD(spdName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecSPD(spdName)
+	return dsl
+}
+
+// VppIPSecSA adds a request to delete an existing VPP IPSec security associations.
+func (dsl *DeleteDSL) VppIPSecSA(saName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecSA(saName)
+	return dsl
+}
+
+// VppIPSecTunnel adds a request to delete an existing VPP IPSec tunnel.
+func (dsl *DeleteDSL) VppIPSecTunnel(tunName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecTunnel(tunName)
 	return dsl
 }
 

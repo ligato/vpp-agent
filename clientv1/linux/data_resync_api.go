@@ -16,6 +16,7 @@ package linuxclient
 
 import (
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
@@ -45,6 +46,12 @@ type DataResyncDSL interface {
 
 	// VppInterface adds VPP interface to the RESYNC request.
 	VppInterface(intf *vpp_intf.Interfaces_Interface) DataResyncDSL
+	// VppIPSecSPD adds VPP security policy database to the RESYNC request.
+	VppIPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) DataResyncDSL
+	// VppIPSecSA adds VPP security association to the RESYNC request.
+	VppIPSecSA(sa *ipsec.SecurityAssociations_SA) DataResyncDSL
+	// VppIPSecTunnel adds VPP IPSec tunnel to the RESYNC request.
+	VppIPSecTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) DataResyncDSL
 	// BfdSession adds VPP bidirectional forwarding detection session
 	// to the RESYNC request.
 	BfdSession(val *vpp_bfd.SingleHopBFD_Session) DataResyncDSL
