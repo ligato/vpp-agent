@@ -5,6 +5,7 @@ package rpc;
 import "github.com/ligato/vpp-agent/plugins/vpp/model/acl/acl.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/bfd/bfd.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces/interfaces.proto";
+import "github.com/ligato/vpp-agent/plugins/vpp/model/ipsec/ipsec.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/l2/l2.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/l3/l3.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/l4/l4.proto";
@@ -41,6 +42,9 @@ message DataRequest {
     // vppplugin
     repeated acl.AccessLists.Acl AccessLists = 10;
     repeated interfaces.Interfaces.Interface Interfaces = 20;
+    repeated ipsec.SecurityPolicyDatabases.SPD SPDs = 21;
+    repeated ipsec.SecurityAssociations.SA SAs = 22;
+    repeated ipsec.TunnelInterfaces.Tunnel Tunnels = 23;
     repeated bfd.SingleHopBFD.Session BfdSessions = 30;
     repeated bfd.SingleHopBFD.Key BfdAuthKeys = 31;
     bfd.SingleHopBFD.EchoFunction BfdEchoFunction = 32;

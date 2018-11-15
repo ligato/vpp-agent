@@ -219,6 +219,15 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) vppcl
 	return dsl
 }
 
+// IPSecTunnel adds request to create a new IPSec tunnel
+func (dsl *DataResyncDSL) IPSecTunnel(tun *ipsec.TunnelInterfaces_Tunnel) vppclient.DataResyncDSL {
+	key := ipsec.TunnelKey(tun.Name)
+	dsl.txn.Put(key, tun)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet <keys> with values
 // pointed to by the iterator <it>.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {

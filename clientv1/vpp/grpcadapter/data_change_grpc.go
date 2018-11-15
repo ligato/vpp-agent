@@ -170,6 +170,12 @@ func (dsl *PutDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppclient.Pu
 	return dsl
 }
 
+// IPSecTunnel adds request to create a new IPSec tunnel
+func (dsl *PutDSL) IPSecTunnel(val *ipsec.TunnelInterfaces_Tunnel) vppclient.PutDSL {
+	dsl.parent.put = append(dsl.parent.put, val)
+	return dsl
+}
+
 // Put enables creating Interface/BD...
 func (dsl *DataChangeDSL) Put() vppclient.PutDSL {
 	return &PutDSL{dsl}
@@ -345,6 +351,14 @@ func (dsl *DeleteDSL) IPSecSPD(name string) vppclient.DeleteDSL {
 	return dsl
 }
 
+// IPSecTunnel adds request to delete a IPSec tunnel
+func (dsl *DeleteDSL) IPSecTunnel(name string) vppclient.DeleteDSL {
+	dsl.parent.del = append(dsl.parent.del, &ipsec.TunnelInterfaces_Tunnel{
+		Name: name,
+	})
+	return dsl
+}
+
 // Put enables creating Interface/BD...
 func (dsl *DeleteDSL) Put() vppclient.PutDSL {
 	return &PutDSL{dsl.parent}
@@ -383,6 +397,12 @@ func getRequestFromData(data []proto.Message) *rpc.DataRequest {
 			request.AccessLists = append(request.AccessLists, typedItem)
 		case *interfaces.Interfaces_Interface:
 			request.Interfaces = append(request.Interfaces, typedItem)
+		case *ipsec.SecurityPolicyDatabases_SPD:
+			request.SPDs = append(request.SPDs, typedItem)
+		case *ipsec.SecurityAssociations_SA:
+			request.SAs = append(request.SAs, typedItem)
+		case *ipsec.TunnelInterfaces_Tunnel:
+			request.Tunnels = append(request.Tunnels, typedItem)
 		case *bfd.SingleHopBFD_Session:
 			request.BfdSessions = append(request.BfdSessions, typedItem)
 		case *bfd.SingleHopBFD_Key:

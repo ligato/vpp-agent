@@ -74,6 +74,8 @@ type DataResyncDSL interface {
 	IPSecSA(sa *ipsec.SecurityAssociations_SA) DataResyncDSL
 	// IPSecSPD adds request to RESYNC a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) DataResyncDSL
+	// IPSecTunnel adds request to RESYNC a new IPSec tunnel
+	IPSecTunnel(tun *ipsec.TunnelInterfaces_Tunnel) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() Reply

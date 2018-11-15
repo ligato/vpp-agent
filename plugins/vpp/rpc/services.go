@@ -127,6 +127,15 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		for _, ifItem := range data.Interfaces {
 			r.VppInterface(ifItem)
 		}
+		for _, spdItem := range data.SPDs {
+			r.VppIPSecSPD(spdItem)
+		}
+		for _, saItem := range data.SAs {
+			r.VppIPSecSA(saItem)
+		}
+		for _, tunItem := range data.Tunnels {
+			r.VppIPSecTunnel(tunItem)
+		}
 		for _, sessionItem := range data.BfdSessions {
 			r.BfdSession(sessionItem)
 		}
@@ -188,6 +197,15 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		for _, ifItem := range data.Interfaces {
 			r.VppInterface(ifItem.Name)
 		}
+		for _, spdItem := range data.SPDs {
+			r.VppIPSecSPD(spdItem.Name)
+		}
+		for _, saItem := range data.SAs {
+			r.VppIPSecSA(saItem.Name)
+		}
+		for _, tunItem := range data.Tunnels {
+			r.VppIPSecTunnel(tunItem.Name)
+		}
 		for _, sessionItem := range data.BfdSessions {
 			r.BfdSession(sessionItem.Interface)
 		}
@@ -248,6 +266,15 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		}
 		for _, ifItem := range data.Interfaces {
 			r.VppInterface(ifItem)
+		}
+		for _, spdItem := range data.SPDs {
+			r.VppIPSecSPD(spdItem)
+		}
+		for _, saItem := range data.SAs {
+			r.VppIPSecSA(saItem)
+		}
+		for _, tunItem := range data.Tunnels {
+			r.VppIPSecTunnel(tunItem)
 		}
 		for _, sessionItem := range data.BfdSessions {
 			r.BfdSession(sessionItem)

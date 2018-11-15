@@ -156,6 +156,12 @@ func (dsl *DataResyncDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppcl
 	return dsl
 }
 
+// IPSecTunnel adds request to create a new IPSec tunnel
+func (dsl *DataResyncDSL) IPSecTunnel(val *ipsec.TunnelInterfaces_Tunnel) vppclient.DataResyncDSL {
+	dsl.put = append(dsl.put, val)
+	return dsl
+}
+
 // Send propagates the request to the plugins. It deletes obsolete keys if listKeys() function is not null.
 // The listkeys() function is used to list all current keys.
 func (dsl *DataResyncDSL) Send() vppclient.Reply {
