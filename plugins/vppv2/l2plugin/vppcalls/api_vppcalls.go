@@ -48,11 +48,7 @@ type BridgeDomainVppWrite interface {
 type BridgeDomainVppRead interface {
 	// DumpBridgeDomains dumps VPP bridge domain data into the northbound API data structure
 	// map indexed by bridge domain ID.
-	//
-	// LIMITATIONS:
-	// - not able to dump ArpTerminationTable - missing binary API
-	//
-	DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error)
+	DumpBridgeDomains() ([]*BridgeDomainDetails, error)
 }
 
 // FIBVppAPI provides methods for managing FIBs.
@@ -106,10 +102,10 @@ type BridgeDomainVppHandler struct {
 
 // FIBVppHandler is accessor for FIB-related vppcalls methods.
 type FIBVppHandler struct {
-	callsChannel  govppapi.Channel
-	ifIndexes     ifaceidx.IfaceMetadataIndex
-	bdIndexes     idxvpp2.NameToIndex
-	log           logging.Logger
+	callsChannel govppapi.Channel
+	ifIndexes    ifaceidx.IfaceMetadataIndex
+	bdIndexes    idxvpp2.NameToIndex
+	log          logging.Logger
 }
 
 // XConnectVppHandler is accessor for cross-connect-related vppcalls methods.
