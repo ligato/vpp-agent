@@ -171,10 +171,15 @@ Get Interface Sw If Index
     [Return]    ${sw_if_index}
 
 Get Bridge Domain ID
-    [Arguments]    ${node}    ${bd}
-    ${state}=    Get Bridge Domain State As Json    ${node}    ${bd}
-    ${bd_id}=    Set Variable    ${state["index"]}
-    [Return]    ${bd_id}
+    [Arguments]    ${node}    ${bd_name}
+    ${bds_dump}=   rest_api: Get    ${node}  /vpp/dump/v2/bd
+    ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
+    ${index}=   Set Variable    0
+    :FOR    ${bd}   IN  @{bds_json}
+    \   ${data}=    Set Variable    ${bd['bridge_domain']}
+    \   ${meta}=    Set Variable    ${bd['bridge_domain_meta']}
+    \   ${index}=   Run Keyword If  "${data["name"]}" == "${bd_name}"     Set Variable  ${meta['bridge_domain_id']}
+    [Return]   ${index}
 
 Put TAP Interface With IP
     [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}=24    ${mtu}=1500    ${enabled}=true    ${vrf}=0
