@@ -5,29 +5,13 @@
 
 .idea/*
 
-# command binaries
-/cmd/agentctl/agentctl
-/cmd/vpp-agent/vpp-agent
-/cmd/vpp-agent-ctl/vpp-agent-ctl
-
-# example binaries
-/examples/govpp_call/govpp_call
-/examples/grpc_vpp/notifications/notifications
-/examples/grpc_vpp/remote_client/remote_client
-/examples/idx_bd_cache/idx_bd_cache
-/examples/idx_iface_cache/idx_iface_cache
-/examples/idx_mapping_lookup/idx_mapping_lookup
-/examples/idx_mapping_watcher/idx_mapping_watcher
-/examples/idx_veth_cache/idx_veth_cache
-/examples/localclient_linux/tap/tap
-/examples/localclient_linux/veth/veth
-/examples/localclient_vpp/nat/nat
-/examples/localclient_vpp/plugins/plugins
-/examples/kvscheduler/acl/acl
-/examples/kvscheduler/interconnect/interconnect
-/examples/kvscheduler/l2/l2
-/examples/kvscheduler/nat/nat
-/examples/kvscheduler/vpp-l3/vpp-l3
+# ignore executables (extensionless files)
+/cmd/**/*
+!/cmd/**/
+!/cmd/**/*.*
+/examples/**/*
+!/examples/**/
+!/examples/**/*.*
 
 # test results
 /tests/perf/log
