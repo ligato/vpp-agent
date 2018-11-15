@@ -25,7 +25,7 @@ ${RESYNC_SLEEP}=     20s
 
 ${AGENT1_VETH_MAC}=    02:00:00:00:00:01
 ${AGENT2_VETH_MAC}=    02:00:00:00:00:02
-${REPLY_DATA_FOLDER}            replyACL
+${REPLY_DATA_FOLDER}            ${CURDIR}/replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
 ${ACL1_NAME}=       acl1_tcp

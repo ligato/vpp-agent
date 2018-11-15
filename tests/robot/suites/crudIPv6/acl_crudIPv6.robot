@@ -16,7 +16,7 @@ Test Setup        TestSetup
 Test Teardown     TestTeardown
 
 *** Variables ***
-${REPLY_DATA_FOLDER}            replyACL
+${REPLY_DATA_FOLDER}            ${CURDIR}/replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
 ${api_handler}=     215
