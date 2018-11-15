@@ -33,19 +33,19 @@ type BridgeDomainDetails struct {
 
 // BridgeDomainMeta contains bridge domain interface name/index map
 type BridgeDomainMeta struct {
-	BdID          uint32            `json:"bridge_domain_id"`
+	BdID uint32 `json:"bridge_domain_id"`
 }
 
 // DumpBridgeDomains implements bridge domain handler.
-func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDetails, error) {
+func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*BridgeDomainDetails, error) {
 	// At first prepare bridge domain ARP termination table which needs to be dumped separately.
 	bdArpTab, err := h.dumpBridgeDomainMacTable()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump arp termination table: %v", err)
 	}
 
-	// map for the resulting BDs
-	bds := make(map[uint32]*BridgeDomainDetails)
+	// list of resulting BDs
+	var bds []*BridgeDomainDetails
 
 	// dump bridge domains
 	reqCtx := h.callsChannel.SendMultiRequest(&l2ba.BridgeDomainDump{BdID: ^uint32(0)})
@@ -61,7 +61,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 		}
 
 		// bridge domain metadata
-		bds[bdDetails.BdID] = &BridgeDomainDetails{
+		bdData := &BridgeDomainDetails{
 			Bd: &l2nb.BridgeDomain{
 				Name:                string(bytes.Replace(bdDetails.BdTag, []byte{0x00}, []byte{}, -1)),
 				Flood:               bdDetails.Flood > 0,
@@ -89,7 +89,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 				bvi = true
 			}
 			// add interface entry
-			bds[bdDetails.BdID].Bd.Interfaces = append(bds[bdDetails.BdID].Bd.Interfaces, &l2nb.BridgeDomain_Interface{
+			bdData.Bd.Interfaces = append(bdData.Bd.Interfaces, &l2nb.BridgeDomain_Interface{
 				Name:                    ifaceName,
 				BridgedVirtualInterface: bvi,
 				SplitHorizonGroup:       uint32(iface.Shg),
@@ -99,8 +99,10 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() (map[uint32]*BridgeDomainDe
 		// Add ARP termination entries.
 		arpTable, ok := bdArpTab[bdDetails.BdID]
 		if ok {
-			bds[bdDetails.BdID].Bd.ArpTerminationTable = arpTable
+			bdData.Bd.ArpTerminationTable = arpTable
 		}
+
+		bds = append(bds, bdData)
 	}
 
 	return bds, nil

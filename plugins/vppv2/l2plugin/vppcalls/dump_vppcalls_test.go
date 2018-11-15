@@ -18,14 +18,14 @@ import (
 	"testing"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/vpp-agent/idxvpp2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	"github.com/ligato/vpp-agent/idxvpp2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 )
 
 var testDataInMessagesBDs = []govppapi.Message{
@@ -122,7 +122,7 @@ func TestDumpBridgeDomains(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(bridgeDomains).To(HaveLen(1))
-	Expect(bridgeDomains[4]).To(Equal(testDataOutMessage[0]))
+	Expect(bridgeDomains[0]).To(Equal(testDataOutMessage[0]))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 	_, err = bdHandler.DumpBridgeDomains()
@@ -159,7 +159,7 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(bridgeDomains).To(HaveLen(1))
-	Expect(bridgeDomains[5]).To(Equal(testDataOutMessage[1]))
+	Expect(bridgeDomains[0]).To(Equal(testDataOutMessage[1]))
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 	_, err = bdHandler.DumpBridgeDomains()
@@ -217,9 +217,9 @@ func TestDumpFIBTableEntries(t *testing.T) {
 	ctx, fibHandler, ifIndexes, bdIndexes := fibTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex:1})
-	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{Index:10})
-	bdIndexes.Put("bd2", &idxvpp2.OnlyIndex{Index:20})
+	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	bdIndexes.Put("bd1", &idxvpp2.OnlyIndex{Index: 10})
+	bdIndexes.Put("bd2", &idxvpp2.OnlyIndex{Index: 20})
 
 	ctx.MockVpp.MockReply(testDataInMessagesFIBs...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -276,10 +276,10 @@ func TestDumpXConnectPairs(t *testing.T) {
 	ctx, xcHandler, ifIndex := xcTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
-	ifIndex.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex:1})
-	ifIndex.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex:2})
-	ifIndex.Put("if3", &ifaceidx.IfaceMetadata{SwIfIndex:3})
-	ifIndex.Put("if4", &ifaceidx.IfaceMetadata{SwIfIndex:4})
+	ifIndex.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	ifIndex.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
+	ifIndex.Put("if3", &ifaceidx.IfaceMetadata{SwIfIndex: 3})
+	ifIndex.Put("if4", &ifaceidx.IfaceMetadata{SwIfIndex: 4})
 
 	ctx.MockVpp.MockReply(testDataInXConnect...)
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})

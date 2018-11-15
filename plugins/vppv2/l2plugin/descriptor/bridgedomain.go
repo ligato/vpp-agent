@@ -245,10 +245,10 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 		d.log.Error(err)
 		return dump, err
 	}
-	for bdIdx, bd := range bridgeDomains {
+	for _, bd := range bridgeDomains {
 		// make sure that bdIDSeq is larger than any of the existing indexes
-		if bdIdx >= bdIDSeq {
-			bdIDSeq = bdIdx + 1
+		if bd.Meta.BdID >= bdIDSeq {
+			bdIDSeq = bd.Meta.BdID + 1
 		}
 
 		// handle untagged bridge domain - construct name that is unlikely to
@@ -261,7 +261,7 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 		dump = append(dump, adapter.BridgeDomainKVWithMetadata{
 			Key:      l2.BridgeDomainKey(bd.Bd.Name),
 			Value:    bd.Bd,
-			Metadata: &idxvpp2.OnlyIndex{Index: bdIdx},
+			Metadata: &idxvpp2.OnlyIndex{Index: bd.Meta.BdID},
 			Origin:   scheduler.FromNB,
 		})
 	}
