@@ -26,7 +26,7 @@
                     "source_port_range": {
                         "lower_port": ${src_port_low},
                         "upper_port": ${src_port_up}
-                    },
+                    }
                 }
             }
         }
