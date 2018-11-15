@@ -7,7 +7,6 @@
     "peer_if_name": "${peer}"
   },
   "mtu": ${mtu},
-  "vrf": ${vrf},
   "ip_addresses": [
     "${ip}/${prefix}"
   ]
