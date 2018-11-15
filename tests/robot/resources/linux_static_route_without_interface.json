@@ -1,5 +1,5 @@
 {
-  "scope": 2,
+  "scope": "GLOBAL",
   "dst_network": "${ip}/${prefix}",
   "gw_addr": "${next_hop}",
   "metric": ${metric}
