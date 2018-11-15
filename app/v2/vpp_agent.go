@@ -94,6 +94,7 @@ func New() *VPPAgent {
 	ifplugin.DefaultPlugin.LinuxIfPlugin = &linuxifplugin.DefaultPlugin
 
 	ifplugin.DefaultPlugin.NotifyStatistics = ifStatePub
+	ifplugin.DefaultPlugin.PublishStatistics = writers
 
 	/*vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
 		deps.Publish = writers
