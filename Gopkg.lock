@@ -461,7 +461,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:56f069dab4b57ffe3a5e0db0dc75b21f2a7dc63a45d097e8be9033198749c6ef"
+  digest = "1:8a7d43b93d527b0fbcfcd0b297e3ae49014cc34864755d5a25124622906a4e2b"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -504,7 +504,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "318fc9c282d95cec6902cc131e9a956615727f29"
+  revision = "2658e5271868c73c21c820705595a2e99e2c6626"
 
 [[projects]]
   branch = "master"
@@ -965,9 +965,11 @@
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
+    "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/protoc-gen-gogo",
     "github.com/gogo/protobuf/types",
+    "github.com/golang/protobuf/ptypes/any",
     "github.com/ligato/cn-infra/agent",
     "github.com/ligato/cn-infra/config",
     "github.com/ligato/cn-infra/datasync",
@@ -975,6 +977,7 @@
     "github.com/ligato/cn-infra/datasync/kvdbsync/local",
     "github.com/ligato/cn-infra/datasync/msgsync",
     "github.com/ligato/cn-infra/datasync/resync",
+    "github.com/ligato/cn-infra/datasync/syncbase",
     "github.com/ligato/cn-infra/db/keyval",
     "github.com/ligato/cn-infra/db/keyval/consul",
     "github.com/ligato/cn-infra/db/keyval/etcd",

@@ -21,6 +21,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+// DefaultMarshaler is the marshaler used for JSON encoding.
+// It uses original names (from .proto by default).
+var DefaultMarshaler = &jsonpb.Marshaler{
+	OrigName: true,
+}
+
 // Serializer is used to make conversions between raw and formatted data.
 // Currently supported formats are JSON and protobuf.
 type Serializer interface {
@@ -56,7 +62,7 @@ func (sj *SerializerJSON) Unmarshal(data []byte, protoData proto.Message) error 
 // jsonpb marshaller to correctly marshal protobuf data.
 func (sj *SerializerJSON) Marshal(message proto.Message) ([]byte, error) {
 	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, message); err != nil {
+	if err := DefaultMarshaler.Marshal(&buf, message); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
