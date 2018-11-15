@@ -7,7 +7,7 @@
     "peer_if_name": "${peer}"
   },
   "namespace": {
-      "microservice": "${namespace}",
+      "reference": "${namespace}",
       "type": 4
   },
   "mtu": ${mtu},
