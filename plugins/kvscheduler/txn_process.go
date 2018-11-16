@@ -46,9 +46,7 @@ type kvForTxn struct {
 
 // consumeTransactions pulls the oldest queued transaction and starts the processing.
 func (scheduler *Scheduler) consumeTransactions() {
-	scheduler.wg.Add(1)
 	defer scheduler.wg.Done()
-
 	for {
 		txn, canceled := scheduler.dequeueTxn()
 		if canceled {

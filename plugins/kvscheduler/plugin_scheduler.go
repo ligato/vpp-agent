@@ -120,6 +120,7 @@ func (scheduler *Scheduler) Init() error {
 	// register REST API handlers
 	scheduler.registerHandlers(scheduler.HTTPHandlers)
 	// go routine processing serialized transactions
+	scheduler.wg.Add(1)
 	go scheduler.consumeTransactions()
 	// temporary until datasync and scheduler are properly integrated
 	scheduler.isInitialized = true

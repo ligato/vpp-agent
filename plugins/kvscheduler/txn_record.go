@@ -98,9 +98,9 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 		str += indent1 + "* transaction arguments:\n"
 		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.seqNum)
 		if txn.txnType == nbTransaction && (txn.isFullResync || txn.isDownstreamResync) {
-			resyncType := "Full-Resync"
+			resyncType := "Full Resync"
 			if txn.isDownstreamResync {
-				resyncType = "Downstream-Resync"
+				resyncType = "SB Sync"
 			}
 			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.txnType.String(), resyncType)
 		} else {
@@ -329,10 +329,24 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 		})
 	}
 
+	txnInfo := fmt.Sprintf("%s", txn.args.txnType.String())
+	if txn.args.txnType == nbTransaction && (txn.args.nb.isFullResync || txn.args.nb.isDownstreamResync) {
+		resyncType := "Full Resync"
+		if txn.args.nb.isDownstreamResync {
+			resyncType = "SB Sync"
+		}
+		txnInfo = fmt.Sprintf("%s (%s)", txn.args.txnType.String(), resyncType)
+	}
+
 	// send to the log
-	logMsg := "Processing new transaction:\n" + record.StringWithOpts(false, 2)
-	//scheduler.Log.Info(logMsg)
-	fmt.Println(logMsg)
+	var buf strings.Builder
+	buf.WriteString("++====================================================================================================================++\n")
+	msg := fmt.Sprintf("Transaction #%d", record.seqNum)
+	n := 113 - len(msg) //+ len(txnInfo)
+	buf.WriteString(fmt.Sprintf("|| %s %"+fmt.Sprint(n)+"s ||\n", msg, txnInfo))
+	buf.WriteString("++====================================================================================================================++\n")
+	buf.WriteString(record.StringWithOpts(false, 2))
+	fmt.Println(buf.String())
 
 	return record
 }
@@ -345,10 +359,19 @@ func (scheduler *Scheduler) recordTransaction(txnRecord *recordedTxn, executed r
 	txnRecord.executed = executed
 
 	// log txn result
-	logMsg := fmt.Sprintf("Finalized transaction (seq-num=%d):\n%s",
-		txnRecord.seqNum, txnRecord.StringWithOpts(true, 2))
+	//logMsg := fmt.Sprintf("Finalized transaction (seq-num=%d):\n%s",
+	//	txnRecord.seqNum, txnRecord.StringWithOpts(true, 2))
 	//scheduler.Log.Info(logMsg)
-	fmt.Println(logMsg)
+
+	var buf strings.Builder
+	buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
+	buf.WriteString(txnRecord.StringWithOpts(true, 2))
+	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
+	msg := fmt.Sprintf("#%d", txnRecord.seqNum)
+	msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Millisecond))
+	buf.WriteString(fmt.Sprintf("x %s %"+fmt.Sprint(115-len(msg))+"s x\n", msg, msg2))
+	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
+	fmt.Println(buf.String())
 
 	// add transaction record into the history
 	scheduler.historyLock.Lock()
