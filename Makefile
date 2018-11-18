@@ -29,6 +29,11 @@ build: cmd examples
 clean: clean-cmd clean-examples
 
 # Install commands
+agent:
+	@echo "=> installing agent ${VERSION}"
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
+
+# Install commands
 install:
 	@echo "=> installing commands ${VERSION}"
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
@@ -44,7 +49,7 @@ cmd:
 
 # Clean commands
 clean-cmd:
-	@echo "=> cleaning binaries"
+	@echo "=> cleaning command binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
@@ -111,7 +116,7 @@ generate: generate-proto generate-binapi generate-desc-adapters
 
 # Get generator tools
 get-proto-generators:
-	go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+	@go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
 
 # Generate proto models
 generate-proto: get-proto-generators
@@ -120,10 +125,11 @@ generate-proto: get-proto-generators
 	cd plugins/vpp/model && go generate
 	cd plugins/linuxv2/model && go generate
 	cd plugins/vppv2/model && go generate
+	@echo
 
 # Get generator tools
 get-binapi-generators:
-	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	@go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 
 # Generate binary api
 generate-binapi: get-binapi-generators
@@ -131,9 +137,10 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi && go generate
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
+	@echo
 
 get-desc-adapter-generator:
-	go install ./plugins/kvscheduler/descriptor-adapter
+	@go install ./plugins/kvscheduler/descriptor-adapter
 
 generate-desc-adapters: get-desc-adapter-generator
 	@echo "=> generating descriptor adapters"
@@ -144,6 +151,7 @@ generate-desc-adapters: get-desc-adapter-generator
 	cd plugins/vppv2/l2plugin && go generate
 	cd plugins/vppv2/l3plugin && go generate
 	cd plugins/vppv2/natplugin && go generate
+	@echo
 
 verify-binapi:
 	@echo "=> verifying binary api"
