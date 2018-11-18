@@ -82,9 +82,9 @@ type recordedTxnOps []*recordedTxnOp
 type recordedTxns []*recordedTxn
 
 // String returns a *multi-line* human-readable string representation of recorded transaction.
-func (txn *recordedTxn) String() string {
+/*func (txn *recordedTxn) String() string {
 	return txn.StringWithOpts(false, 0)
-}
+}*/
 
 // StringWithOpts allows to format string representation of recorded transaction.
 func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
@@ -340,11 +340,11 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 
 	// send to the log
 	var buf strings.Builder
-	buf.WriteString("++====================================================================================================================++\n")
+	buf.WriteString("+======================================================================================================================+\n")
 	msg := fmt.Sprintf("Transaction #%d", record.seqNum)
-	n := 113 - len(msg) //+ len(txnInfo)
-	buf.WriteString(fmt.Sprintf("|| %s %"+fmt.Sprint(n)+"s ||\n", msg, txnInfo))
-	buf.WriteString("++====================================================================================================================++\n")
+	n := 115 - len(msg)
+	buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(n)+"s |\n", msg, txnInfo))
+	buf.WriteString("+======================================================================================================================+\n")
 	buf.WriteString(record.StringWithOpts(false, 2))
 	fmt.Println(buf.String())
 
