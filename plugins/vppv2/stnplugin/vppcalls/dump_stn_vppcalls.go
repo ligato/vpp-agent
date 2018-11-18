@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"net"
 
-	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/stn"
+	"github.com/pkg/errors"
 
 	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 )

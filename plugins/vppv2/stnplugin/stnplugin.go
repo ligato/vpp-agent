@@ -18,7 +18,6 @@ package stnplugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -27,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/vppcalls"
+	"github.com/pkg/errors"
 )
 
 // STNPlugin configures VPP STN rules using GoVPP.

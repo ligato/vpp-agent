@@ -29,12 +29,12 @@ import (
 
 	"bytes"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/pkg/errors"
 )
 
 const (

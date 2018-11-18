@@ -15,9 +15,9 @@
 package descriptor
 
 import (
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"

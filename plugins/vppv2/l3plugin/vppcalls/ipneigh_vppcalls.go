@@ -18,10 +18,10 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	"github.com/pkg/errors"
 )
 
 // SetIPScanNeighbor implements ip neigh  handler.

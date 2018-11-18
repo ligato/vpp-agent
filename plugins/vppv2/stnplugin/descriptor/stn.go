@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -29,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/vppcalls"
+	"github.com/pkg/errors"
 )
 
 const (

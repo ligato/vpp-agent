@@ -674,11 +674,11 @@ func TestAddNat44IdentityMapping(t *testing.T) {
 	address := net.ParseIP("10.0.0.1").To4()
 
 	mapping := &nat.DNat44_IdentityMapping{
-		VrfId:              1,
-		Interface:          "if0", // overrides IP address
-		IpAddress:          address.String(),
-		Port:               9000,
-		Protocol:           nat.DNat44_UDP,
+		VrfId:     1,
+		Interface: "if0", // overrides IP address
+		IpAddress: address.String(),
+		Port:      9000,
+		Protocol:  nat.DNat44_UDP,
 	}
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelIdentityMappingReply{})
@@ -706,9 +706,9 @@ func TestAddNat44IdentityMappingAddrOnly(t *testing.T) {
 
 	// IPAddress == nil and Port == 0 means it's address only
 	mapping := &nat.DNat44_IdentityMapping{
-		VrfId:              1,
-		Interface:          "if0", // overrides IP address
-		Protocol:           nat.DNat44_UDP,
+		VrfId:     1,
+		Interface: "if0", // overrides IP address
+		Protocol:  nat.DNat44_UDP,
 	}
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelIdentityMappingReply{})
@@ -786,9 +786,9 @@ func TestDelNat44IdentityMapping(t *testing.T) {
 
 	mapping := &nat.DNat44_IdentityMapping{
 		Interface: "if0",
-		IpAddress:          address.String(),
-		Protocol:           nat.DNat44_TCP,
-		VrfId:              1,
+		IpAddress: address.String(),
+		Protocol:  nat.DNat44_TCP,
+		VrfId:     1,
 	}
 
 	ctx.MockVpp.MockReply(&binapi.Nat44AddDelIdentityMappingReply{})
@@ -836,9 +836,9 @@ func TestNat44MappingLongTag(t *testing.T) {
 		TwiceNat:     nat.DNat44_StaticMapping_ENABLED,
 	}
 	idMapping := &nat.DNat44_IdentityMapping{
-		IpAddress:          localIP1.String(),
-		Protocol:           nat.DNat44_UDP,
-		VrfId:              1,
+		IpAddress: localIP1.String(),
+		Protocol:  nat.DNat44_UDP,
+		VrfId:     1,
 		Interface: "if0",
 	}
 

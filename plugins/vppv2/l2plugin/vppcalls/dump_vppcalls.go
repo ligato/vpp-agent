@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"net"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"

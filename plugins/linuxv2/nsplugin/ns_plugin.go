@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"github.com/vishvananda/netns"
 
 	"github.com/ligato/cn-infra/infra"

@@ -21,9 +21,9 @@ package l2plugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/idxvpp2"
 	"github.com/ligato/vpp-agent/plugins/govppmux"

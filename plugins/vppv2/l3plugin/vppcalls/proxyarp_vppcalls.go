@@ -15,8 +15,8 @@
 package vppcalls
 
 import (
-	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/pkg/errors"
 )
 
 // EnableProxyArpInterface implements proxy arp handler.

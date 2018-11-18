@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	"github.com/pkg/errors"
 )
 
 const (

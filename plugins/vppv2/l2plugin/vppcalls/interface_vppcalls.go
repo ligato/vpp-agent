@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"fmt"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"

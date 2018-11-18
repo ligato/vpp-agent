@@ -20,7 +20,7 @@ package natplugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"

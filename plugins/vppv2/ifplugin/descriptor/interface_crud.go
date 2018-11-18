@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/utils/addrs"
 

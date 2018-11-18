@@ -21,12 +21,12 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/pkg/errors"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"

@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"net"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"

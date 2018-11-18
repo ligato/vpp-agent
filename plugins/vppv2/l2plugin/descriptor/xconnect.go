@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"

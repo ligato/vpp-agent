@@ -19,16 +19,16 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
+	"github.com/ligato/vpp-agent/idxvpp2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/idxvpp2"
+	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
-var testDataInFib = []*l2nb.FIBEntry {
+var testDataInFib = []*l2nb.FIBEntry{
 	{PhysAddress: "FF:FF:FF:FF:FF:FF", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD, StaticConfig: true, BridgedVirtualInterface: true},
 	{PhysAddress: "AA:AA:AA:AA:AA:AA", BridgeDomain: "bd1", OutgoingInterface: "if1", Action: l2nb.FIBEntry_FORWARD, StaticConfig: true},
 	{PhysAddress: "BB:BB:BB:BB:BB:BB", BridgeDomain: "bd1", Action: l2nb.FIBEntry_DROP},
@@ -41,7 +41,6 @@ var testDatasOutFib = []*l2ba.L2fibAddDel{
 	{BdID: 5, SwIfIndex: ^uint32(0), BviMac: 0, Mac: []byte{0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB}, StaticMac: 0, FilterMac: 1},
 	{BdID: 5, SwIfIndex: 55, BviMac: 0, Mac: []byte{0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC}, StaticMac: 0, FilterMac: 0},
 }
-
 
 func TestL2FibAdd(t *testing.T) {
 	ctx, fibHandler, ifaceIdx, bdIndexes := fibTestSetup(t)

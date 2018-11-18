@@ -18,7 +18,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 	"github.com/vishvananda/netns"
 )
 

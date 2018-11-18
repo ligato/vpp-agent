@@ -19,10 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-errors/errors"
-	"github.com/ligato/cn-infra/logging/measure"
-	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
-
 	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
@@ -31,6 +27,10 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/cn-infra/logging/measure"
+	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
+	"github.com/pkg/errors"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 

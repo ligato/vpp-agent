@@ -23,9 +23,9 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -191,22 +191,22 @@ func (c *InterfaceStateUpdater) Close() error {
 
 	if c.vppNotifSubs != nil {
 		if err := c.vppNotifSubs.Unsubscribe(); err != nil {
-			return c.LogError(errors.Errorf("failed to unsubscribe interface state notification on close: %v", err))
+			return errors.Errorf("failed to unsubscribe interface state notification on close: %v", err)
 		}
 	}
 	if c.vppCountersSubs != nil {
 		if err := c.vppCountersSubs.Unsubscribe(); err != nil {
-			return c.LogError(errors.Errorf("failed to unsubscribe interface state counters on close: %v", err))
+			return errors.Errorf("failed to unsubscribe interface state counters on close: %v", err)
 		}
 	}
 	if c.vppCombinedCountersSubs != nil {
 		if err := c.vppCombinedCountersSubs.Unsubscribe(); err != nil {
-			return c.LogError(errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err))
+			return errors.Errorf("failed to unsubscribe interface state combined counters on close: %v", err)
 		}
 	}
 
 	if err := safeclose.Close(c.vppCh, c.notifChan); err != nil {
-		return c.LogError(errors.Errorf("failed to safe close interface state: %v", err))
+		return errors.Errorf("failed to safe close interface state: %v", err)
 	}
 
 	return nil
@@ -503,18 +503,4 @@ func (c *InterfaceStateUpdater) setIfStateDeleted(swIfIndex uint32, ifName strin
 	// this can be post-processed by multiple plugins
 	c.publishIfState(&intf.InterfaceNotification{
 		Type: intf.InterfaceNotification_UNKNOWN, State: ifState})
-}
-
-// LogError prints error if not nil, including stack trace. The same value is also returned, so it can be easily propagated further
-func (c *InterfaceStateUpdater) LogError(err error) error {
-	if err == nil {
-		return nil
-	}
-	switch err.(type) {
-	case *errors.Error:
-		c.log.WithField("logger", c.log).Errorf(string(err.Error() + "\n" + string(err.(*errors.Error).Stack())))
-	default:
-		c.log.Error(err)
-	}
-	return err
 }

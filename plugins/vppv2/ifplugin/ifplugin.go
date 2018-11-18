@@ -23,7 +23,7 @@ import (
 	"sync"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -215,7 +215,7 @@ func (p *IfPlugin) Init() error {
 					p.Log.Debug("Unable to send to the ifStateChan channel - channel buffer full.")
 				}
 			}); err != nil {
-			return p.ifStateUpdater.LogError(err)
+			return err
 		}
 		p.Log.Debug("ifStateUpdater Initialized")
 	}

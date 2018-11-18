@@ -4,8 +4,8 @@ package adapter
 
 import (
 	"github.com/gogo/protobuf/proto"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/idxvpp2"
+	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 

@@ -19,10 +19,10 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/idxvpp2"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"

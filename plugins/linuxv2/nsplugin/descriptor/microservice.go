@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
-	"github.com/go-errors/errors"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/servicelabel"

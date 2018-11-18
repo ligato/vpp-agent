@@ -19,8 +19,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/logging"
