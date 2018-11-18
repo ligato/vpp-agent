@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"

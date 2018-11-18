@@ -17,7 +17,7 @@ package descriptor
 import (
 	"strings"
 
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"

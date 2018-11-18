@@ -17,7 +17,7 @@
 package ifplugin
 
 import (
-	"github.com/go-errors/errors"
+	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/servicelabel"
