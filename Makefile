@@ -31,7 +31,7 @@ clean: clean-cmd clean-examples
 # Install commands
 agent:
 	@echo "=> installing agent ${VERSION}"
-	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
+	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
 
 # Install commands
 install:
@@ -151,6 +151,7 @@ generate-desc-adapters: get-desc-adapter-generator
 	cd plugins/vppv2/l2plugin && go generate
 	cd plugins/vppv2/l3plugin && go generate
 	cd plugins/vppv2/natplugin && go generate
+	cd plugins/vppv2/stnplugin && go generate
 	@echo
 
 verify-binapi:

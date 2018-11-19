@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name STN  --value-type *stn.Rule --import "../model/stn" --output-dir "descriptor"
-
 package descriptor
 
 import (
