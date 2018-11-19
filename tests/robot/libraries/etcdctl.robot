@@ -139,6 +139,20 @@ Get VPP Interface State As Json
     ${output}=            Evaluate             json.loads('''${data}''')    json
     [Return]              ${output}
 
+Get VPP Interface State As Json Rest
+    [Arguments]    ${node}    ${interface}
+    @{types}=             Set Variable    loop  eth  memif  tap  afpacket  vxlan
+    :FOR    ${int_type}    IN    @{types}
+    \    ${status}=        Run Keyword And Return Status    Should Contain     ${interface}  ${int_type}
+    \    ${type}=          Set Variable If   ${status}==True    ${int_type}
+    \    Run Keyword If    ${status}==True    Exit For Loop
+
+    ${key}=               Set Variable    /vpp/dump/${AGENT_VER}/interfaces    #/${type}/${interface}
+    ${data}=              Execute On Machine    ${node}    curl GET http://localhost:9191${key}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
+
 Get VPP Interface Config As Json
     [Arguments]    ${node}    ${interface}
     ${key}=               Set Variable    /vnf-agent/${node}/vpp/config/${AGENT_VER}/interface/${interface}
@@ -166,13 +180,15 @@ Get Interface Internal Name
 
 Get Interface Sw If Index
     [Arguments]    ${node}    ${interface}
-    ${state}=    Get VPP Interface State As Json    ${node}    ${interface}
+    ${state}=    Get VPP Interface State As Json Rest    ${node}    ${interface}
     ${sw_if_index}=    Set Variable    ${state["if_index"]}
     [Return]    ${sw_if_index}
 
 Get Bridge Domain ID
     [Arguments]    ${node}    ${bd_name}
-    ${bds_dump}=   rest_api: Get    ${node}  /vpp/dump/v2/bd
+    #${bds_dump}=   rest_api: Get    ${node}  /vpp/dump/v2/bd
+    #${bds_dump}=    Execute In Container    agent_vpp_1    curl GET http://localhost:9191/vpp/dump/v2/bd        #wget /vpp/dump/v2/bd
+    ${bds_dump}=    Execute On Machine    docker    curl GET http://0.0.0.0:9191/vpp/dump/v2/bd        #wget /vpp/dump/v2/bd
     ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
     ${index}=   Set Variable    0
     :FOR    ${bd}   IN  @{bds_json}
