@@ -123,7 +123,7 @@ func (d *IPSecSADescriptor) Add(key string, sa *ipsec.SecurityAssociation) (meta
 	}
 
 	// add security association
-	err = d.ipSecHandler.AddSAEntry(sa)
+	err = d.ipSecHandler.AddSA(sa)
 	if err != nil {
 		d.log.Error(err)
 	}
@@ -133,7 +133,7 @@ func (d *IPSecSADescriptor) Add(key string, sa *ipsec.SecurityAssociation) (meta
 
 // Delete removes VPP security association.
 func (d *IPSecSADescriptor) Delete(key string, sa *ipsec.SecurityAssociation, metadata interface{}) error {
-	err := d.ipSecHandler.DeleteSAEntry(sa)
+	err := d.ipSecHandler.DeleteSA(sa)
 	if err != nil {
 		d.log.Error(err)
 	}

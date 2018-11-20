@@ -47,8 +47,8 @@ func (h *IPSecVppHandler) DeleteSPDEntry(spdID, saID uint32, spd *ipsec.Security
 	return h.spdAddDelEntry(spdID, saID, spd, false)
 }
 
-// InterfaceAddSPD implements IPSec handler.
-func (h *IPSecVppHandler) InterfaceAddSPD(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
+// AddSPDInterface implements IPSec handler.
+func (h *IPSecVppHandler) AddSPDInterface(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
 	ifaceMeta, found := h.ifIndexes.LookupByName(ifaceCfg.Name)
 	if !found {
 		return errors.New("failed to get interface metadata")
@@ -56,8 +56,8 @@ func (h *IPSecVppHandler) InterfaceAddSPD(spdID uint32, ifaceCfg *ipsec.Security
 	return h.interfaceAddDelSpd(spdID, ifaceMeta.SwIfIndex, true)
 }
 
-// InterfaceDelSPD implements IPSec handler.
-func (h *IPSecVppHandler) InterfaceDelSPD(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
+// DeleteSPDInterface implements IPSec handler.
+func (h *IPSecVppHandler) DeleteSPDInterface(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
 	ifaceMeta, found := h.ifIndexes.LookupByName(ifaceCfg.Name)
 	if !found {
 		return errors.New("failed to get interface metadata")
@@ -65,13 +65,13 @@ func (h *IPSecVppHandler) InterfaceDelSPD(spdID uint32, ifaceCfg *ipsec.Security
 	return h.interfaceAddDelSpd(spdID, ifaceMeta.SwIfIndex, false)
 }
 
-// AddSAEntry implements IPSec handler.
-func (h *IPSecVppHandler) AddSAEntry(sa *ipsec.SecurityAssociation) error {
+// AddSA implements IPSec handler.
+func (h *IPSecVppHandler) AddSA(sa *ipsec.SecurityAssociation) error {
 	return h.sadAddDelEntry(sa, true)
 }
 
-// DeleteSAEntry implements IPSec handler.
-func (h *IPSecVppHandler) DeleteSAEntry(sa *ipsec.SecurityAssociation) error {
+// DeleteSA implements IPSec handler.
+func (h *IPSecVppHandler) DeleteSA(sa *ipsec.SecurityAssociation) error {
 	return h.sadAddDelEntry(sa, false)
 }
 

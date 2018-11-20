@@ -93,7 +93,7 @@ func (d *SPDInterfaceDescriptor) Add(key string, spdIf *ipsec.SecurityPolicyData
 	}
 
 	// put interface into the security policy database
-	err = d.ipSecHandler.InterfaceAddSPD(uint32(spdID), spdIf)
+	err = d.ipSecHandler.AddSPDInterface(uint32(spdID), spdIf)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
@@ -120,7 +120,7 @@ func (d *SPDInterfaceDescriptor) Delete(key string, spdIf *ipsec.SecurityPolicyD
 		return err
 	}
 
-	err = d.ipSecHandler.InterfaceDelSPD(uint32(spdID), spdIf)
+	err = d.ipSecHandler.DeleteSPDInterface(uint32(spdID), spdIf)
 	if err != nil {
 		d.log.Error(err)
 		return err

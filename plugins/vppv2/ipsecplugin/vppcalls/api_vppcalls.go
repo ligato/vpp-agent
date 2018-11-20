@@ -34,17 +34,17 @@ type IPSecVppWrite interface {
 	// DelSPD deletes SPD from VPP via binary API
 	DeleteSPD(spdID uint32) error
 	// InterfaceAddSPD adds SPD interface assignment to VPP via binary API
-	InterfaceAddSPD(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
+	AddSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
 	// InterfaceDelSPD deletes SPD interface assignment from VPP via binary API
-	InterfaceDelSPD(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
+	DeleteSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
 	// AddSPDEntry adds SPD policy entry to VPP via binary API
 	AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
 	// DelSPDEntry deletes SPD policy entry from VPP via binary API
 	DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
 	// AddSAEntry adds SA to VPP via binary API
-	AddSAEntry(sa *ipsec.SecurityAssociation) error
+	AddSA(sa *ipsec.SecurityAssociation) error
 	// DelSAEntry deletes SA from VPP via binary API
-	DeleteSAEntry(sa *ipsec.SecurityAssociation) error
+	DeleteSA(sa *ipsec.SecurityAssociation) error
 }
 
 // IPSecVPPRead provides read methods for IPSec
