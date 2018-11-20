@@ -23,10 +23,10 @@ import (
 	"net/http"
 
 	govppapi "git.fd.io/govpp.git/api"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/restv2/resturl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/unrolled/render"
 )
 

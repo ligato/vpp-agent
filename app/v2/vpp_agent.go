@@ -27,9 +27,9 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin"
+	"github.com/ligato/cn-infra/rpc/grpc"
 
+	"github.com/ligato/vpp-agent/plugins/grpcservice"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linuxifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linuxl3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
@@ -38,9 +38,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/telemetry"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin"
 )
 
 // VPPAgent defines plugins which will be loaded and their order.
@@ -58,10 +60,10 @@ type VPPAgent struct {
 	VPP
 	Linux
 
-	//GRPCService *rpc.Plugin
-	RESTAPI   *rest.Plugin
-	Probe     *probe.Plugin
-	Telemetry *telemetry.Plugin
+	GRPCService *grpcservice.Plugin
+	RESTAPI     *rest.Plugin
+	Probe       *probe.Plugin
+	Telemetry   *telemetry.Plugin
 }
 
 // New creates new VPPAgent instance.
@@ -112,18 +114,22 @@ func New() *VPPAgent {
 	vpp := defaultVPP()
 	linux := defaultLinux()
 
+	grpc.DefaultPlugin.Config = &grpc.Config{
+		Endpoint: "0.0.0.0:9111",
+	}
+
 	return &VPPAgent{
 		LogManager:     &logmanager.DefaultPlugin,
 		Scheduler:      &kvscheduler.DefaultPlugin,
 		ETCDDataSync:   etcdDataSync,
 		ConsulDataSync: consulDataSync,
 		RedisDataSync:  redisDataSync,
-		//GRPCService: &rpc.DefaultPlugin,
-		RESTAPI:   &rest.DefaultPlugin,
-		VPP:       vpp,
-		Linux:     linux,
-		Probe:     &probe.DefaultPlugin,
-		Telemetry: &telemetry.DefaultPlugin,
+		GRPCService:    &grpcservice.DefaultPlugin,
+		RESTAPI:        &rest.DefaultPlugin,
+		VPP:            vpp,
+		Linux:          linux,
+		Probe:          &probe.DefaultPlugin,
+		Telemetry:      &telemetry.DefaultPlugin,
 	}
 }
 

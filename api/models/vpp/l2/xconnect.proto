@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "github.com/ligato/vpp-agent/api/models/vpp/l2;vpp_l2";
+
+package vpp.l2;
+
+message XConnectPair {
+    string receive_interface = 1;
+    string transmit_interface = 2;
+}

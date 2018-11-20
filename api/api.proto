@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "github.com/ligato/vpp-agent/api";
+
+import "models/model.proto";
+
+service SyncService {
+    rpc Change (SyncRequest) returns (SyncResponse) {};
+    rpc Resync (SyncRequest) returns (SyncResponse) {};
+}
+
+message SyncRequest {
+    repeated models.Model models = 1;
+}
+
+message SyncResponse {}

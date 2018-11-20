@@ -22,12 +22,12 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	vpp_l3plugin "github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 /*
@@ -86,16 +86,24 @@ func testLocalClientWithScheduler() {
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC ===")
 
-	txn := localclient.DataResyncRequest("example")
+	/*txn := localclient.DataResyncRequest("example")
 	err := txn.
 		VppInterface(memif0).
-		StaticRoute(route0).
-		StaticRoute(route1).
-		Arp(arp0).
-		ProxyArp(proxyArp).
-		IPScanNeighbor(ipScanNeighbor).
+		VppInterface(memif0_10).
+		//StaticRoute(route0).
+		//StaticRoute(route1).
+		//Arp(arp0).
+		//ProxyArp(proxyArp).
+		//IPScanNeighbor(ipScanNeighbor).
 		Send().ReceiveReply()
 	if err != nil {
+		fmt.Println(err)
+		return
+	}*/
+
+	req := client.Local.ResyncRequest()
+	req.Update(memif0, memif0_10)
+	if err := req.Send(); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -111,17 +119,26 @@ func testLocalClientWithScheduler() {
 	})
 	proxyArp.Interfaces = nil
 
-	txn2 := localclient.DataChangeRequest("example")
+	/*txn2 := localclient.DataChangeRequest("example")
 	err = txn2.
-		Put().
-		StaticRoute(route0).
+		//Put().
+		//VppInterface(memif0_10).
+		//StaticRoute(route0).
 		Delete().
-		StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
-		Put().
-		Arp(arp0).
-		ProxyArp(proxyArp).
+		VppInterface(memif0.Name).
+		//StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
+		//Put().
+		//Arp(arp0).
+		//ProxyArp(proxyArp).
 		Send().ReceiveReply()
 	if err != nil {
+		fmt.Println(err)
+		return
+	}*/
+
+	req2 := client.Local.ChangeRequest()
+	req2.Delete(memif0.ModelKey())
+	if err := req2.Send(); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -139,6 +156,18 @@ var (
 				Master:         true,
 				Secret:         "secret",
 				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
+	}
+	memif0_10 = &interfaces.Interface{
+		Name:        "memif0/10",
+		Enabled:     true,
+		Type:        interfaces.Interface_SUB_INTERFACE,
+		IpAddresses: []string{"3.10.0.10/32"},
+		Link: &interfaces.Interface_Sub{
+			Sub: &interfaces.SubInterface{
+				ParentName: "memif0",
+				SubId:      10,
 			},
 		},
 	}

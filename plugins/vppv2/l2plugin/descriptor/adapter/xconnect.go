@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type XConnectKVWithMetadata struct {
 	Key      string
-	Value    *l2.XConnectPair
+	Value    *vpp_l2.XConnectPair
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type XConnectDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *l2.XConnectPair) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_l2.XConnectPair) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *l2.XConnectPair) (metadata interface{}, err error)
-	Delete             func(key string, value *l2.XConnectPair, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *l2.XConnectPair, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *l2.XConnectPair, metadata interface{}) bool
-	Update             func(key string, value *l2.XConnectPair, metadata interface{}) error
+	Add                func(key string, value *vpp_l2.XConnectPair) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_l2.XConnectPair, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_l2.XConnectPair, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_l2.XConnectPair, metadata interface{}) bool
+	Update             func(key string, value *vpp_l2.XConnectPair, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *l2.XConnectPair) []Dependency
-	DerivedValues      func(key string, value *l2.XConnectPair) []KeyValuePair
+	Dependencies       func(key string, value *vpp_l2.XConnectPair) []Dependency
+	DerivedValues      func(key string, value *vpp_l2.XConnectPair) []KeyValuePair
 	Dump               func(correlate []XConnectKVWithMetadata) ([]XConnectKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *XConnectDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithM
 
 ////////// Helper methods //////////
 
-func castXConnectValue(key string, value proto.Message) (*l2.XConnectPair, error) {
-	typedValue, ok := value.(*l2.XConnectPair)
+func castXConnectValue(key string, value proto.Message) (*vpp_l2.XConnectPair, error) {
+	typedValue, ok := value.(*vpp_l2.XConnectPair)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

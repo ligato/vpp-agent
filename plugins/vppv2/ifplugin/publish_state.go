@@ -5,7 +5,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 // watchStatusEvents watches for resync event of interface state data.

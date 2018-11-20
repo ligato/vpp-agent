@@ -16,57 +16,37 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
-	"os"
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/clientv1/vpp/remoteclient"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
-
-	"fmt"
-
 	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
+
+	"github.com/ligato/vpp-agent/api"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/client/remoteclient"
 )
 
-const (
-	defaultAddress = "localhost:9111"
-	defaultSocket  = "tcp"
+var (
+	address    = flag.String("address", "172.17.0.2:9111", "address of GRPC server")
+	socketType = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
+
+	dialTimeout = time.Second * 2
 )
 
-var address = defaultAddress
-var socketType string
+var exampleFinished = make(chan struct{})
 
-// init sets the default logging level
-func init() {
-	logrus.DefaultLogger().SetOutput(os.Stdout)
-	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
-}
-
-/********
- * Main *
- ********/
-
-// Start Agent plugins selected for this example.
 func main() {
-	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
-	flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-
-	//Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
+	// Init close channel to stop the example.
 
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{}
+
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
@@ -77,72 +57,177 @@ func main() {
 	}
 
 	// End when the localhost example is finished.
-	go closeExample("localhost example finished", exampleFinished)
+	//go closeExample("localhost example finished", exampleFinished)
 
 }
 
 // Stop the agent with desired info message.
-func closeExample(message string, exampleFinished chan struct{}) {
+/*func closeExample(message string, exampleFinished chan struct{}) {
 	time.Sleep(25 * time.Second)
 	logrus.DefaultLogger().Info(message)
 	close(exampleFinished)
-}
+}*/
 
 /******************
  * Example plugin *
  ******************/
 
-// PluginName represents name of plugin.
-const PluginName = "grpc-config-example"
-
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
+	conn *grpc.ClientConn
+
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
-	conn   *grpc.ClientConn
+}
+
+// String returns plugin name
+func (plugin *ExamplePlugin) String() string {
+	return "grpc-config-example"
 }
 
 // Init initializes example plugin.
 func (plugin *ExamplePlugin) Init() (err error) {
-	// Set up connection to the server.
-	switch socketType {
+	switch *socketType {
 	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
-		plugin.conn, err = grpc.Dial("unix", grpc.WithInsecure(),
-			grpc.WithDialer(dialer(socketType, address, 2*time.Second)))
 	default:
 		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
 	}
 
+	// Set up connection to the server.
+	plugin.conn, err = grpc.Dial("unix",
+		grpc.WithInsecure(),
+		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
+	)
+	if err != nil {
+		return err
+	}
+
+	go my(plugin.conn)
+
 	// Apply initial VPP configuration.
-	plugin.resyncVPP()
+	//plugin.resyncVPP()
 
 	// Schedule reconfiguration.
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
-	plugin.wg.Add(1)
-	go plugin.reconfigureVPP(ctx)
+	_ = ctx
+	/*plugin.wg.Add(1)
+	go plugin.reconfigureVPP(ctx)*/
 
 	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return nil
 }
 
+var memif1 = &interfaces.Interface{
+	Name:        "memif1",
+	Enabled:     true,
+	IpAddresses: []string{"3.3.0.1/16"},
+	Type:        interfaces.Interface_MEMIF,
+	Link: &interfaces.Interface_Memif{
+		Memif: &interfaces.MemifLink{
+			Id:             1,
+			Master:         true,
+			Secret:         "secret",
+			SocketFilename: "/tmp/memif1.sock",
+		},
+	},
+}
+var memif2 = &interfaces.Interface{
+	Name:        "memif0/10",
+	Enabled:     true,
+	Type:        interfaces.Interface_SUB_INTERFACE,
+	IpAddresses: []string{"3.10.0.10/32"},
+	Link: &interfaces.Interface_Sub{
+		Sub: &interfaces.SubInterface{
+			ParentName: "memif0",
+			SubId:      10,
+		},
+	},
+}
+
+func my(conn *grpc.ClientConn) {
+	time.Sleep(time.Second)
+
+	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
+
+	req := c.ResyncRequest()
+	req.Update(
+		memif1, memif2,
+	)
+	if err := req.Send(); err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second)
+	close(exampleFinished)
+}
+
+/*
+func my(conn *grpc.ClientConn) {
+	time.Sleep(time.Second)
+
+	anyMemif1, err := types.MarshalAny(memif1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	anyMemif2, err := types.MarshalAny(memif2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req := &api.ResyncRequest{}
+
+	req.Models = append(req.Models, &api.Model{
+		Key:   interfaces.InterfaceKey(memif1.Name),
+		Value: anyMemif1,
+	})
+	req.Models = append(req.Models, &api.Model{
+		Key:   interfaces.InterfaceKey(memif2.Name),
+		Value: anyMemif2,
+	})
+
+	c := api.NewModelServiceClient(conn)
+
+	t0 := time.Now()
+
+	resp, err := c.Resync(context.Background(), req)
+	if err != nil {
+		//s := status.Convert(err)
+		s, ok := status.FromError(err)
+		if !ok {
+			log.Fatal("not ok!!!!")
+		}
+		var details []string
+		for _, d := range s.Details() {
+			switch dd := d.(type) {
+			case *rpc.DebugInfo:
+				details = append(details, dd.Detail)
+			default:
+				details = append(details, fmt.Sprint(dd))
+			}
+		}
+		log.Printf("gRPC status: CODE: %v MSG: %v DETAILS: %v (%#v)",
+			s.Code(), s.Message(), details, s.Details())
+
+		log.Fatalf("RESYNC FAILED: %v", err)
+	}
+
+	log.Printf("Resync took %s, response:\n%+v",
+		time.Since(t0).Round(time.Millisecond), *resp)
+}
+*/
 // Close cleans up the resources.
 func (plugin *ExamplePlugin) Close() error {
+	logrus.DefaultLogger().Info("Closing example plugin")
+
 	plugin.cancel()
 	plugin.wg.Wait()
 
-	err := safeclose.Close(plugin.conn)
-	if err != nil {
+	if err := plugin.conn.Close(); err != nil {
 		return err
 	}
 
-	logrus.DefaultLogger().Info("Closed example plugin")
 	return nil
-}
-
-// String returns plugin name
-func (plugin *ExamplePlugin) String() string {
-	return PluginName
 }
 
 // Dialer for unix domain socket
@@ -155,6 +240,7 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 	}
 }
 
+/*
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (plugin *ExamplePlugin) resyncVPP() {
 	err := remoteclient.DataResyncRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn)).
@@ -172,6 +258,7 @@ func (plugin *ExamplePlugin) resyncVPP() {
 
 // reconfigureVPP simulates a set of changes in the configuration related to VPP plugins.
 func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
+	return
 	_, dstNetAddr, err := net.ParseCIDR("192.168.2.1/32")
 	if err != nil {
 		return
@@ -183,15 +270,15 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 		// Simulate configuration change exactly 15seconds after resync.
 		err := remoteclient.DataChangeRequestGRPC(rpc.NewDataChangeServiceClient(plugin.conn)).
 			Put().
-			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
-			Interface(&memif2).            /* newly added memif interface */
-			Interface(&tap1Enabled).       /* enable tap1 interface */
-			Interface(&loopback1WithAddr). /* assign IP address to loopback1 interface */
-			ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
-			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
-			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
+			Interface(&memif1AsSlave).
+			Interface(&memif2).
+			Interface(&tap1Enabled).
+			Interface(&loopback1WithAddr).
+			ACL(&acl1).
+			XConnect(&XConMemif1ToMemif2).
+			BD(&BDLoopback1ToTap1).
 			Delete().
-			StaticRoute(0, dstNetAddr.String(), nextHopAddr.String()). /* remove the route going through memif1 */
+			StaticRoute(0, dstNetAddr.String(), nextHopAddr.String()).
 			Send().ReceiveReply()
 		if err != nil {
 			logrus.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
@@ -204,7 +291,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	}
 	plugin.wg.Done()
 }
-
+*/
 /*************************
  * Example plugin config *
  *************************/
@@ -246,7 +333,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
  *  +------------------------------------------------+  *
  *                                                      *
  ********************************************************/
-
+/*
 var (
 	// memif1AsMaster is an example of a memory interface configuration. (Master=true, with IPv4 address).
 	memif1AsMaster = interfaces.Interfaces_Interface{
@@ -372,7 +459,7 @@ var (
 		Forward:             true,
 		Learn:               true,
 		ArpTermination:      false,
-		MacAge:              0, /* means disable aging */
+		MacAge:              0,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
 				Name: "loopback1",
@@ -393,3 +480,4 @@ var (
 		Weight:      5,
 	}
 )
+*/

@@ -27,12 +27,12 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/pkg/errors"
 
+	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 // counterType is the basic counter type - contains only packet statistics.

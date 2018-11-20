@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "github.com/ligato/vpp-agent/api/models/vpp/rpc;vpp_rpc";
+
+package vpp.rpc;
+
+import "vpp/acl/acl.proto";
+import "vpp/interfaces/interface.proto";
+import "vpp/l2/bd.proto";
+import "vpp/l2/fib.proto";
+import "vpp/l2/xconnect.proto";
+import "vpp/l3/arp.proto";
+import "vpp/l3/l3.proto";
+import "vpp/l3/static_route.proto";
+import "vpp/nat/nat.proto";
+
+message DataModels {
+    repeated vpp.interfaces.Interface interfaces = 10;
+
+    repeated vpp.acl.Acl acls = 20;
+
+    repeated vpp.l2.BridgeDomain bridge_domains = 30;
+    repeated vpp.l2.FIBEntry fib_entries = 31;
+    repeated vpp.l2.XConnectPair xconnect_pairs = 32;
+
+    repeated vpp.l3.StaticRoute static_routes = 40;
+    repeated vpp.l3.ARPEntry arp_entries = 41;
+    vpp.l3.ProxyARP proxy_arp = 42;
+    vpp.l3.IPScanNeighbor ipscan_neighbor = 43;
+
+    vpp.nat.Nat44Global nat44_global = 50;
+    repeated vpp.nat.DNat44 dnats = 51;
+}

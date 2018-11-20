@@ -19,8 +19,8 @@ import (
 	"hash/fnv"
 	"strings"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
-	interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 

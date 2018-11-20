@@ -20,16 +20,15 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
-
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
-	ifnb "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 // Default VPP MTU value
@@ -45,8 +44,8 @@ func getMtu(vppMtu uint16) uint32 {
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
 type InterfaceDetails struct {
-	Interface *ifnb.Interface `json:"interface"`
-	Meta      *InterfaceMeta  `json:"interface_meta"`
+	Interface *interfaces.Interface `json:"interface"`
+	Meta      *InterfaceMeta        `json:"interface_meta"`
 }
 
 // InterfaceMeta is combination of proto-modelled Interface data and VPP provided metadata
@@ -87,7 +86,7 @@ type Lease struct {
 }
 
 // DumpInterfacesByType implements interface handler.
-func (h *IfVppHandler) DumpInterfacesByType(reqType ifnb.Interface_Type) (map[uint32]*InterfaceDetails, error) {
+func (h *IfVppHandler) DumpInterfacesByType(reqType interfaces.Interface_Type) (map[uint32]*InterfaceDetails, error) {
 	// Dump all
 	ifs, err := h.DumpInterfaces()
 	if err != nil {
@@ -109,9 +108,9 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	ifs := make(map[uint32]*InterfaceDetails)
 
 	// First, dump all interfaces to create initial data.
-	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceDump{})
+	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceDump{})
 	for {
-		ifDetails := &interfaces.SwInterfaceDetails{}
+		ifDetails := &binapi_interface.SwInterfaceDetails{}
 		stop, err := reqCtx.ReceiveReply(ifDetails)
 		if stop {
 			break // Break from the loop.
@@ -124,7 +123,7 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 
 		ifaceName := cleanString(ifDetails.InterfaceName)
 		details := &InterfaceDetails{
-			Interface: &ifnb.Interface{
+			Interface: &interfaces.Interface{
 				Name:        cleanString(ifDetails.Tag),
 				Type:        guessInterfaceType(ifaceName), // the type may be amended later by further dumps
 				Enabled:     ifDetails.AdminUpDown > 0,
@@ -142,9 +141,9 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 
 		// sub interface
 		if ifDetails.SupSwIfIndex != ifDetails.SwIfIndex {
-			details.Interface.Type = ifnb.Interface_SUB_INTERFACE
-			details.Interface.Link = &ifnb.Interface_Sub{
-				Sub: &ifnb.SubInterface{
+			details.Interface.Type = interfaces.Interface_SUB_INTERFACE
+			details.Interface.Link = &interfaces.Interface_Sub{
+				Sub: &interfaces.SubInterface{
 					ParentName: ifs[ifDetails.SupSwIfIndex].Interface.Name,
 					SubId:      ifDetails.SubID,
 				},
@@ -152,11 +151,11 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 		}
 		// Fill name for physical interfaces (they are mostly without tag)
 		switch details.Interface.Type {
-		case ifnb.Interface_DPDK:
+		case interfaces.Interface_DPDK:
 			details.Interface.Name = ifaceName
-		case ifnb.Interface_AF_PACKET:
-			details.Interface.Link = &ifnb.Interface_Afpacket{
-				Afpacket: &ifnb.AfpacketLink{
+		case interfaces.Interface_AF_PACKET:
+			details.Interface.Link = &interfaces.Interface_Afpacket{
+				Afpacket: &interfaces.AfpacketLink{
 					HostIfName: strings.TrimPrefix(ifaceName, "host-"),
 				},
 			}
@@ -204,7 +203,7 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 				h.log.Debugf("cannot find name of the ip-interface for unnumbered %s", ifData.Interface.Name)
 				ifWithIPName = "<unknown>"
 			}
-			ifData.Interface.Unnumbered = &ifnb.Interface_Unnumbered{
+			ifData.Interface.Unnumbered = &interfaces.Interface_Unnumbered{
 				InterfaceWithIp: ifWithIPName,
 			}
 		}
@@ -400,8 +399,8 @@ func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error 
 		if !ifIdxExists {
 			continue
 		}
-		ifs[memifDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Memif{
-			Memif: &ifnb.MemifLink{
+		ifs[memifDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
 				Master: memifDetails.Role == 0,
 				Mode:   memifModetoNB(memifDetails.Mode),
 				Id:     memifDetails.ID,
@@ -423,7 +422,7 @@ func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error 
 				//TxQueues:
 			},
 		}
-		ifs[memifDetails.SwIfIndex].Interface.Type = ifnb.Interface_MEMIF
+		ifs[memifDetails.SwIfIndex].Interface.Type = interfaces.Interface_MEMIF
 	}
 
 	return nil
@@ -446,13 +445,13 @@ func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 		if !ifIdxExists {
 			continue
 		}
-		ifs[tapDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Tap{
-			Tap: &ifnb.TapLink{
+		ifs[tapDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Tap{
+			Tap: &interfaces.TapLink{
 				Version:    1,
 				HostIfName: string(bytes.SplitN(tapDetails.DevName, []byte{0x00}, 2)[0]),
 			},
 		}
-		ifs[tapDetails.SwIfIndex].Interface.Type = ifnb.Interface_TAP
+		ifs[tapDetails.SwIfIndex].Interface.Type = interfaces.Interface_TAP
 	}
 
 	// TAP v.2
@@ -470,14 +469,14 @@ func (h *IfVppHandler) dumpTapDetails(ifs map[uint32]*InterfaceDetails) error {
 		if !ifIdxExists {
 			continue
 		}
-		ifs[tapDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Tap{
-			Tap: &ifnb.TapLink{
+		ifs[tapDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Tap{
+			Tap: &interfaces.TapLink{
 				Version:    2,
 				HostIfName: string(bytes.SplitN(tapDetails.HostIfName, []byte{0x00}, 2)[0]),
 				// Other parameters are not not yet part of the dump.
 			},
 		}
-		ifs[tapDetails.SwIfIndex].Interface.Type = ifnb.Interface_TAP
+		ifs[tapDetails.SwIfIndex].Interface.Type = interfaces.Interface_TAP
 	}
 
 	return nil
@@ -507,8 +506,8 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 		}
 
 		if vxlanDetails.IsIPv6 == 1 {
-			ifs[vxlanDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Vxlan{
-				Vxlan: &ifnb.VxlanLink{
+			ifs[vxlanDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Vxlan{
+				Vxlan: &interfaces.VxlanLink{
 					Multicast:  multicastIfName,
 					SrcAddress: net.IP(vxlanDetails.SrcAddress).To16().String(),
 					DstAddress: net.IP(vxlanDetails.DstAddress).To16().String(),
@@ -516,8 +515,8 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 				},
 			}
 		} else {
-			ifs[vxlanDetails.SwIfIndex].Interface.Link = &ifnb.Interface_Vxlan{
-				Vxlan: &ifnb.VxlanLink{
+			ifs[vxlanDetails.SwIfIndex].Interface.Link = &interfaces.Interface_Vxlan{
+				Vxlan: &interfaces.VxlanLink{
 					Multicast:  multicastIfName,
 					SrcAddress: net.IP(vxlanDetails.SrcAddress[:4]).To4().String(),
 					DstAddress: net.IP(vxlanDetails.DstAddress[:4]).To4().String(),
@@ -525,7 +524,7 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 				},
 			}
 		}
-		ifs[vxlanDetails.SwIfIndex].Interface.Type = ifnb.Interface_VXLAN_TUNNEL
+		ifs[vxlanDetails.SwIfIndex].Interface.Type = interfaces.Interface_VXLAN_TUNNEL
 	}
 
 	return nil
@@ -619,11 +618,11 @@ func (h *IfVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error) {
 }
 
 func (h *IfVppHandler) dumpRxPlacement(ifs map[uint32]*InterfaceDetails) error {
-	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceRxPlacementDump{
+	reqCtx := h.callsChannel.SendMultiRequest(&binapi_interface.SwInterfaceRxPlacementDump{
 		SwIfIndex: ^uint32(0),
 	})
 	for {
-		rxDetails := &interfaces.SwInterfaceRxPlacementDetails{}
+		rxDetails := &binapi_interface.SwInterfaceRxPlacementDetails{}
 		stop, err := reqCtx.ReceiveReply(rxDetails)
 		if err != nil {
 			return fmt.Errorf("failed to dump rx-placement details: %v", err)
@@ -636,11 +635,11 @@ func (h *IfVppHandler) dumpRxPlacement(ifs map[uint32]*InterfaceDetails) error {
 			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
 			continue
 		}
-		ifData.Interface.RxModeSettings = &ifnb.Interface_RxModeSettings{
+		ifData.Interface.RxModeSettings = &interfaces.Interface_RxModeSettings{
 			RxMode:  getRxModeType(rxDetails.Mode),
 			QueueId: rxDetails.QueueID,
 		}
-		ifData.Interface.RxPlacementSettings = &ifnb.Interface_RxPlacementSettings{
+		ifData.Interface.RxPlacementSettings = &interfaces.Interface_RxPlacementSettings{
 			Queue:  rxDetails.QueueID,
 			Worker: rxDetails.WorkerID,
 		}
@@ -651,59 +650,59 @@ func (h *IfVppHandler) dumpRxPlacement(ifs map[uint32]*InterfaceDetails) error {
 // guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
 // This is required mainly for those interface types, that do not provide dump binary API,
 // such as loopback of af_packet.
-func guessInterfaceType(ifName string) ifnb.Interface_Type {
+func guessInterfaceType(ifName string) interfaces.Interface_Type {
 	switch {
 	case strings.HasPrefix(ifName, "loop"),
 		strings.HasPrefix(ifName, "local"):
-		return ifnb.Interface_SOFTWARE_LOOPBACK
+		return interfaces.Interface_SOFTWARE_LOOPBACK
 
 	case strings.HasPrefix(ifName, "memif"):
-		return ifnb.Interface_MEMIF
+		return interfaces.Interface_MEMIF
 
 	case strings.HasPrefix(ifName, "tap"):
-		return ifnb.Interface_TAP
+		return interfaces.Interface_TAP
 
 	case strings.HasPrefix(ifName, "host"):
-		return ifnb.Interface_AF_PACKET
+		return interfaces.Interface_AF_PACKET
 
 	case strings.HasPrefix(ifName, "vxlan"):
-		return ifnb.Interface_VXLAN_TUNNEL
+		return interfaces.Interface_VXLAN_TUNNEL
 
 	case strings.HasPrefix(ifName, "ipsec"):
-		return ifnb.Interface_IPSEC_TUNNEL
+		return interfaces.Interface_IPSEC_TUNNEL
 
 	default:
-		return ifnb.Interface_DPDK
+		return interfaces.Interface_DPDK
 	}
 }
 
 // memifModetoNB converts binary API type of memif mode to the northbound API type memif mode.
-func memifModetoNB(mode uint8) ifnb.MemifLink_MemifMode {
+func memifModetoNB(mode uint8) interfaces.MemifLink_MemifMode {
 	switch mode {
 	case 0:
-		return ifnb.MemifLink_ETHERNET
+		return interfaces.MemifLink_ETHERNET
 	case 1:
-		return ifnb.MemifLink_IP
+		return interfaces.MemifLink_IP
 	case 2:
-		return ifnb.MemifLink_PUNT_INJECT
+		return interfaces.MemifLink_PUNT_INJECT
 	default:
-		return ifnb.MemifLink_ETHERNET
+		return interfaces.MemifLink_ETHERNET
 	}
 }
 
 // Convert binary API rx-mode to northbound representation
-func getRxModeType(mode uint8) ifnb.Interface_RxModeSettings_RxModeType {
+func getRxModeType(mode uint8) interfaces.Interface_RxModeSettings_RxModeType {
 	switch mode {
 	case 1:
-		return ifnb.Interface_RxModeSettings_POLLING
+		return interfaces.Interface_RxModeSettings_POLLING
 	case 2:
-		return ifnb.Interface_RxModeSettings_INTERRUPT
+		return interfaces.Interface_RxModeSettings_INTERRUPT
 	case 3:
-		return ifnb.Interface_RxModeSettings_ADAPTIVE
+		return interfaces.Interface_RxModeSettings_ADAPTIVE
 	case 4:
-		return ifnb.Interface_RxModeSettings_DEFAULT
+		return interfaces.Interface_RxModeSettings_DEFAULT
 	default:
-		return ifnb.Interface_RxModeSettings_UNKNOWN
+		return interfaces.Interface_RxModeSettings_UNKNOWN
 	}
 }
 

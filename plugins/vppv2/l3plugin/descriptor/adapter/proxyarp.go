@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type ProxyARPKVWithMetadata struct {
 	Key      string
-	Value    *l3.ProxyARP
+	Value    *vpp_l3.ProxyARP
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type ProxyARPDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *l3.ProxyARP) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_l3.ProxyARP) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *l3.ProxyARP) (metadata interface{}, err error)
-	Delete             func(key string, value *l3.ProxyARP, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *l3.ProxyARP, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *l3.ProxyARP, metadata interface{}) bool
-	Update             func(key string, value *l3.ProxyARP, metadata interface{}) error
+	Add                func(key string, value *vpp_l3.ProxyARP) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_l3.ProxyARP, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_l3.ProxyARP, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_l3.ProxyARP, metadata interface{}) bool
+	Update             func(key string, value *vpp_l3.ProxyARP, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *l3.ProxyARP) []Dependency
-	DerivedValues      func(key string, value *l3.ProxyARP) []KeyValuePair
+	Dependencies       func(key string, value *vpp_l3.ProxyARP) []Dependency
+	DerivedValues      func(key string, value *vpp_l3.ProxyARP) []KeyValuePair
 	Dump               func(correlate []ProxyARPKVWithMetadata) ([]ProxyARPKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *ProxyARPDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithM
 
 ////////// Helper methods //////////
 
-func castProxyARPValue(key string, value proto.Message) (*l3.ProxyARP, error) {
-	typedValue, ok := value.(*l3.ProxyARP)
+func castProxyARPValue(key string, value proto.Message) (*vpp_l3.ProxyARP, error) {
+	typedValue, ok := value.(*vpp_l3.ProxyARP)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

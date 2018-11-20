@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "github.com/ligato/vpp-agent/api/models/vpp/stn;vpp_stn";
+
+package vpp.stn;
+
+message Rule {
+    string ip_address = 1;
+    string interface = 2;
+}

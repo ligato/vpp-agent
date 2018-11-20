@@ -6,14 +6,14 @@ import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type InterfaceKVWithMetadata struct {
 	Key      string
-	Value    *interfaces.Interface
+	Value    *vpp_interfaces.Interface
 	Metadata *ifaceidx.IfaceMetadata
 	Origin   ValueOrigin
 }
@@ -25,18 +25,18 @@ type InterfaceDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *interfaces.Interface) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_interfaces.Interface) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error)
-	Delete             func(key string, value *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
-	Modify             func(key string, oldValue, newValue *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool
-	Update             func(key string, value *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
+	Add                func(key string, value *vpp_interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error)
+	Delete             func(key string, value *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
+	Modify             func(key string, oldValue, newValue *vpp_interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool
+	Update             func(key string, value *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *interfaces.Interface) []Dependency
-	DerivedValues      func(key string, value *interfaces.Interface) []KeyValuePair
+	Dependencies       func(key string, value *vpp_interfaces.Interface) []Dependency
+	DerivedValues      func(key string, value *vpp_interfaces.Interface) []KeyValuePair
 	Dump               func(correlate []InterfaceKVWithMetadata) ([]InterfaceKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -218,8 +218,8 @@ func (da *InterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 
 ////////// Helper methods //////////
 
-func castInterfaceValue(key string, value proto.Message) (*interfaces.Interface, error) {
-	typedValue, ok := value.(*interfaces.Interface)
+func castInterfaceValue(key string, value proto.Message) (*vpp_interfaces.Interface, error) {
+	typedValue, ok := value.(*vpp_interfaces.Interface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package linux.namespace;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/linux/namespace;linux_namespace";
+
+message NetNamespace {
+    enum ReferenceType {
+        NETNS_REF_UNDEFINED = 0;
+        NETNS_REF_NSID = 1;         /* named namespace */
+        NETNS_REF_PID = 2;          /* namespace of a given process */
+        NETNS_REF_FD = 3;           /* namespace referenced by a file handle */
+        NETNS_REF_MICROSERVICE = 4; /* namespace of a docker container running given microservice */
+    }
+    ReferenceType type = 1;
+
+    // Reference defines reference specific
+    // to the namespace type:
+    //  * namespace ID (NSID)
+    //  * PID number (PID)
+    //  * file path (FD)
+    //  * microservice label (MICROSERVICE)
+    string reference = 2;
+};

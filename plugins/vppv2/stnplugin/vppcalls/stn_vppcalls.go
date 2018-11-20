@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/stn"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/pkg/errors"
 
 	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"

@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 )
 
 // LinuxIfMetadataIndex provides read-only access to mapping with Linux interface

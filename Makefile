@@ -123,9 +123,7 @@ generate-proto: get-proto-generators
 	@echo "=> generating proto"
 	cd plugins/linux/model && go generate
 	cd plugins/vpp/model && go generate
-	cd plugins/linuxv2/model && go generate
-	cd plugins/vppv2/model && go generate
-	@echo
+	./scripts/genprotos.sh
 
 # Get generator tools
 get-binapi-generators:

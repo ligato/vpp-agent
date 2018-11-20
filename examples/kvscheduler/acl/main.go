@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
+	"github.com/ligato/vpp-agent/clientv2"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
@@ -86,13 +86,14 @@ func testLocalClientWithScheduler() {
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC ===")
 
-	txn := localclient.DataResyncRequest("example")
-	err := txn.
-		VppInterface(memif0).
+	//txn := localclient.DataResyncRequest("example")
+	txn := clientv2.LocalClient.Resync()
+	err := txn.VPP().
+		Interface(memif0).
 		ACL(acl0).
 		ACL(acl1).
 		ACL(acl3).
-		Send().ReceiveReply()
+		Commit()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -106,12 +107,13 @@ func testLocalClientWithScheduler() {
 	acl0.Interfaces.Egress = nil
 	acl3.Rules[0].IpRule.Ip.SourceNetwork = "0.0.0.0/0" // this is actually equivalent to unspecified field
 
-	txn2 := localclient.DataChangeRequest("example")
-	err = txn2.Put().
+	//txn2 := localclient.DataChangeRequest("example")
+	txn2 := clientv2.LocalClient.Change()
+	err = txn2.VPP().Put().
 		ACL(acl0).
 		ACL(acl1).
 		ACL(acl3).
-		Send().ReceiveReply()
+		Commit()
 	if err != nil {
 		fmt.Println(err)
 		return

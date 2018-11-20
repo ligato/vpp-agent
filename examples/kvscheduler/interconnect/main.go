@@ -21,15 +21,14 @@ import (
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/vpp-agent/clientv2"
 
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linuxifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
-	linux_interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	vppifaceidx "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
@@ -103,7 +102,7 @@ func testLocalClientWithScheduler(
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC ===")
 
-	txn := localclient.DataResyncRequest("example")
+	/*txn := localclient.DataResyncRequest("example")
 	err := txn.
 		LinuxInterface(veth2).
 		LinuxInterface(veth1).
@@ -116,8 +115,26 @@ func testLocalClientWithScheduler(
 		LinuxRoute(routeToMs2).
 		VppInterface(afpacket).
 		VppInterface(vppTap).
-		Send().ReceiveReply()
-	if err != nil {
+		Send().ReceiveReply()*/
+
+	txn := clientv2.LocalClient.Resync()
+
+	txn.Linux().
+		Interface(veth2).
+		Interface(veth1).
+		Interface(linuxTap).
+		ArpEntry(arpForVeth1).
+		ArpEntry(arpForLinuxTap).
+		Route(linkRouteToMs1).
+		Route(routeToMs1).
+		Route(linkRouteToMs2).
+		Route(routeToMs2)
+
+	txn.VPP().
+		Interface(afpacket).
+		Interface(vppTap)
+
+	if err := txn.Commit(); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -127,11 +144,18 @@ func testLocalClientWithScheduler(
 	fmt.Println("=== CHANGE ===")
 
 	veth1.Enabled = false
-	txn2 := localclient.DataChangeRequest("example")
+
+	/*txn2 := localclient.DataChangeRequest("example")
 	err = txn2.Put().
 		LinuxInterface(veth1).
-		Send().ReceiveReply()
-	if err != nil {
+		Send().ReceiveReply()*/
+
+	txn2 := clientv2.LocalClient.Change()
+	txn2.Linux().Put().
+		Interface(veth1)
+	txn2.VPP().Delete().
+		Interface(vppTap.Name)
+	if err := txn2.Commit(); err != nil {
 		fmt.Println(err)
 		return
 	}

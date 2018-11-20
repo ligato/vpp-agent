@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"net"
 
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // RouteDetails is object returned as a VPP dump. It contains static route data in proto format, and VPP-specific

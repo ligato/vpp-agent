@@ -34,16 +34,16 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
-	interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	namespace "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	nsdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 	vpp_ifaceidx "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (

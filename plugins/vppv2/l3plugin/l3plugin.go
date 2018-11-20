@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name StaticRoute --value-type *l3.StaticRoute --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *l3.ARPEntry --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *l3.ProxyARP --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *l3.ProxyARP_Interface --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *l3.IPScanNeighbor --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name StaticRoute --value-type *vpp_l3.StaticRoute --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 

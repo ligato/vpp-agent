@@ -26,6 +26,6 @@ type API interface {
 	GetInterfaceIndex() ifaceidx.IfaceMetadataIndex
 
 	// GetDHCPIndex gives read-only access to (untyped) map with DHCP leases.
-	// Cast metadata to "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces".DHCPLease
+	// Cast metadata to "github.com/ligato/vpp-agent/api/models/vpp/interfaces".DHCPLease
 	GetDHCPIndex() idxmap.NamedMapping
 }

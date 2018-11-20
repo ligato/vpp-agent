@@ -17,7 +17,7 @@ package nsplugin
 import (
 	"github.com/vishvananda/netns"
 
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	"github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
