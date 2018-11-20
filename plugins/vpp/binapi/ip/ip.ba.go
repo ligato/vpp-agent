@@ -5,11 +5,11 @@
  Package ip is a generated from VPP binary API module 'ip'.
 
  It contains following objects:
-	 89 messages
+	 87 messages
 	 10 types
 	  1 enum
 	  1 union
-	 43 services
+	 42 services
 
 */
 package ip
@@ -1668,82 +1668,6 @@ func (*SwInterfaceIP6EnableDisableReply) GetCrcString() string {
 	return "e8d4e804"
 }
 func (*SwInterfaceIP6EnableDisableReply) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
-// SwInterfaceIP6SetLinkLocalAddress represents the VPP binary API message 'sw_interface_ip6_set_link_local_address'.
-//
-//            "sw_interface_ip6_set_link_local_address",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "address",
-//                16
-//            ],
-//            {
-//                "crc": "0xd73bf1ab"
-//            }
-//
-type SwInterfaceIP6SetLinkLocalAddress struct {
-	SwIfIndex uint32
-	Address   []byte `struc:"[16]byte"`
-}
-
-func (*SwInterfaceIP6SetLinkLocalAddress) GetMessageName() string {
-	return "sw_interface_ip6_set_link_local_address"
-}
-func (*SwInterfaceIP6SetLinkLocalAddress) GetCrcString() string {
-	return "d73bf1ab"
-}
-func (*SwInterfaceIP6SetLinkLocalAddress) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// SwInterfaceIP6SetLinkLocalAddressReply represents the VPP binary API message 'sw_interface_ip6_set_link_local_address_reply'.
-//
-//            "sw_interface_ip6_set_link_local_address_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
-//
-type SwInterfaceIP6SetLinkLocalAddressReply struct {
-	Retval int32
-}
-
-func (*SwInterfaceIP6SetLinkLocalAddressReply) GetMessageName() string {
-	return "sw_interface_ip6_set_link_local_address_reply"
-}
-func (*SwInterfaceIP6SetLinkLocalAddressReply) GetCrcString() string {
-	return "e8d4e804"
-}
-func (*SwInterfaceIP6SetLinkLocalAddressReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
@@ -4662,7 +4586,6 @@ type Services interface {
 	SetArpNeighborLimit(*SetArpNeighborLimit) (*SetArpNeighborLimitReply, error)
 	SetIPFlowHash(*SetIPFlowHash) (*SetIPFlowHashReply, error)
 	SwInterfaceIP6EnableDisable(*SwInterfaceIP6EnableDisable) (*SwInterfaceIP6EnableDisableReply, error)
-	SwInterfaceIP6SetLinkLocalAddress(*SwInterfaceIP6SetLinkLocalAddress) (*SwInterfaceIP6SetLinkLocalAddressReply, error)
 	SwInterfaceIP6ndRaConfig(*SwInterfaceIP6ndRaConfig) (*SwInterfaceIP6ndRaConfigReply, error)
 	SwInterfaceIP6ndRaPrefix(*SwInterfaceIP6ndRaPrefix) (*SwInterfaceIP6ndRaPrefixReply, error)
 	WantIP4ArpEvents(*WantIP4ArpEvents) (*WantIP4ArpEventsReply, error)
@@ -4695,8 +4618,6 @@ func init() {
 	api.RegisterMessage((*IP6ndSendRouterSolicitationReply)(nil), "ip.IP6ndSendRouterSolicitationReply")
 	api.RegisterMessage((*SwInterfaceIP6EnableDisable)(nil), "ip.SwInterfaceIP6EnableDisable")
 	api.RegisterMessage((*SwInterfaceIP6EnableDisableReply)(nil), "ip.SwInterfaceIP6EnableDisableReply")
-	api.RegisterMessage((*SwInterfaceIP6SetLinkLocalAddress)(nil), "ip.SwInterfaceIP6SetLinkLocalAddress")
-	api.RegisterMessage((*SwInterfaceIP6SetLinkLocalAddressReply)(nil), "ip.SwInterfaceIP6SetLinkLocalAddressReply")
 	api.RegisterMessage((*IPAddDelRoute)(nil), "ip.IPAddDelRoute")
 	api.RegisterMessage((*IPAddDelRouteReply)(nil), "ip.IPAddDelRouteReply")
 	api.RegisterMessage((*IPMrouteAddDel)(nil), "ip.IPMrouteAddDel")

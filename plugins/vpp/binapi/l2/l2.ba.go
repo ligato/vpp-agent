@@ -6,8 +6,9 @@
 
  It contains following objects:
 	 45 messages
-	  2 types
-	  2 enums
+	  8 types
+	  3 enums
+	  1 union
 	 22 services
 
 */
@@ -23,6 +24,28 @@ var _ = struc.Pack
 var _ = bytes.NewBuffer
 
 /* Enums */
+
+// AddressFamily represents the VPP binary API enum 'address_family'.
+//
+//            "address_family",
+//            [
+//                "ADDRESS_IP4",
+//                0
+//            ],
+//            [
+//                "ADDRESS_IP6",
+//                1
+//            ],
+//            {
+//                "enumtype": "u32"
+//            }
+//
+type AddressFamily uint32
+
+const (
+	ADDRESS_IP4 AddressFamily = 0
+	ADDRESS_IP6 AddressFamily = 1
+)
 
 // BdFlags represents the VPP binary API enum 'bd_flags'.
 //
@@ -89,6 +112,166 @@ const (
 )
 
 /* Types */
+
+// IP4Address represents the VPP binary API type 'ip4_address'.
+//
+//            "ip4_address",
+//            [
+//                "u8",
+//                "address",
+//                4
+//            ],
+//            {
+//                "crc": "0xfc4baa28"
+//            }
+//
+type IP4Address struct {
+	Address []byte `struc:"[4]byte"`
+}
+
+func (*IP4Address) GetTypeName() string {
+	return "ip4_address"
+}
+func (*IP4Address) GetCrcString() string {
+	return "fc4baa28"
+}
+
+// IP6Address represents the VPP binary API type 'ip6_address'.
+//
+//            "ip6_address",
+//            [
+//                "u8",
+//                "address",
+//                16
+//            ],
+//            {
+//                "crc": "0xad99ccc2"
+//            }
+//
+type IP6Address struct {
+	Address []byte `struc:"[16]byte"`
+}
+
+func (*IP6Address) GetTypeName() string {
+	return "ip6_address"
+}
+func (*IP6Address) GetCrcString() string {
+	return "ad99ccc2"
+}
+
+// Address represents the VPP binary API type 'address'.
+//
+//            "address",
+//            [
+//                "vl_api_address_family_t",
+//                "af"
+//            ],
+//            [
+//                "vl_api_address_union_t",
+//                "un"
+//            ],
+//            {
+//                "crc": "0x09f11671"
+//            }
+//
+type Address struct {
+	Af AddressFamily
+	Un AddressUnion
+}
+
+func (*Address) GetTypeName() string {
+	return "address"
+}
+func (*Address) GetCrcString() string {
+	return "09f11671"
+}
+
+// Prefix represents the VPP binary API type 'prefix'.
+//
+//            "prefix",
+//            [
+//                "vl_api_address_t",
+//                "address"
+//            ],
+//            [
+//                "u8",
+//                "address_length"
+//            ],
+//            {
+//                "crc": "0x0403aebc"
+//            }
+//
+type Prefix struct {
+	Address       Address
+	AddressLength uint8
+}
+
+func (*Prefix) GetTypeName() string {
+	return "prefix"
+}
+func (*Prefix) GetCrcString() string {
+	return "0403aebc"
+}
+
+// Mprefix represents the VPP binary API type 'mprefix'.
+//
+//            "mprefix",
+//            [
+//                "vl_api_address_family_t",
+//                "af"
+//            ],
+//            [
+//                "u16",
+//                "grp_address_length"
+//            ],
+//            [
+//                "vl_api_address_union_t",
+//                "grp_address"
+//            ],
+//            [
+//                "vl_api_address_union_t",
+//                "src_address"
+//            ],
+//            {
+//                "crc": "0x1c4cba05"
+//            }
+//
+type Mprefix struct {
+	Af               AddressFamily
+	GrpAddressLength uint16
+	GrpAddress       AddressUnion
+	SrcAddress       AddressUnion
+}
+
+func (*Mprefix) GetTypeName() string {
+	return "mprefix"
+}
+func (*Mprefix) GetCrcString() string {
+	return "1c4cba05"
+}
+
+// MacAddress represents the VPP binary API type 'mac_address'.
+//
+//            "mac_address",
+//            [
+//                "u8",
+//                "bytes",
+//                6
+//            ],
+//            {
+//                "crc": "0xefdbdddc"
+//            }
+//
+type MacAddress struct {
+	Bytes []byte `struc:"[6]byte"`
+}
+
+func (*MacAddress) GetTypeName() string {
+	return "mac_address"
+}
+func (*MacAddress) GetCrcString() string {
+	return "efdbdddc"
+}
 
 // MacEntry represents the VPP binary API type 'mac_entry'.
 //
@@ -158,6 +341,60 @@ func (*BridgeDomainSwIf) GetTypeName() string {
 }
 func (*BridgeDomainSwIf) GetCrcString() string {
 	return "a06dd426"
+}
+
+/* Unions */
+
+// AddressUnion represents the VPP binary API union 'address_union'.
+//
+//            "address_union",
+//            [
+//                "vl_api_ip4_address_t",
+//                "ip4"
+//            ],
+//            [
+//                "vl_api_ip6_address_t",
+//                "ip6"
+//            ],
+//            {
+//                "crc": "0xd68a2fb4"
+//            }
+//
+type AddressUnion struct {
+	Union_data [16]byte
+}
+
+func (*AddressUnion) GetTypeName() string {
+	return "address_union"
+}
+func (*AddressUnion) GetCrcString() string {
+	return "d68a2fb4"
+}
+
+func (u *AddressUnion) SetIP4(a IP4Address) {
+	var b = new(bytes.Buffer)
+	if err := struc.Pack(b, &a); err != nil {
+		return
+	}
+	copy(u.Union_data[:], b.Bytes())
+}
+func (u *AddressUnion) GetIP4() (a IP4Address) {
+	var b = bytes.NewReader(u.Union_data[:])
+	struc.Unpack(b, &a)
+	return
+}
+
+func (u *AddressUnion) SetIP6(a IP6Address) {
+	var b = new(bytes.Buffer)
+	if err := struc.Pack(b, &a); err != nil {
+		return
+	}
+	copy(u.Union_data[:], b.Bytes())
+}
+func (u *AddressUnion) GetIP6() (a IP6Address) {
+	var b = bytes.NewReader(u.Union_data[:])
+	struc.Unpack(b, &a)
+	return
 }
 
 /* Messages */
@@ -1781,36 +2018,29 @@ func (*SwInterfaceSetL2BridgeReply) GetMessageType() api.MessageType {
 //                "is_add"
 //            ],
 //            [
-//                "u8",
-//                "is_ipv6"
+//                "vl_api_address_t",
+//                "ip"
 //            ],
 //            [
-//                "u8",
-//                "ip_address",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "mac_address",
-//                6
+//                "vl_api_mac_address_t",
+//                "mac"
 //            ],
 //            {
-//                "crc": "0x79f42817"
+//                "crc": "0xfb873902"
 //            }
 //
 type BdIPMacAddDel struct {
-	BdID       uint32
-	IsAdd      uint8
-	IsIPv6     uint8
-	IPAddress  []byte `struc:"[16]byte"`
-	MacAddress []byte `struc:"[6]byte"`
+	BdID  uint32
+	IsAdd uint8
+	IP    Address
+	Mac   MacAddress
 }
 
 func (*BdIPMacAddDel) GetMessageName() string {
 	return "bd_ip_mac_add_del"
 }
 func (*BdIPMacAddDel) GetCrcString() string {
-	return "79f42817"
+	return "fb873902"
 }
 func (*BdIPMacAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
