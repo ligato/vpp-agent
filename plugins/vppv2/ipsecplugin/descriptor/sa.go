@@ -77,7 +77,7 @@ func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 	}
 }
 
-// IsSAKey returns true if the key is identifying VPP security association configuration.
+// IsIPSecSAKey returns true if the key is identifying VPP security association configuration.
 func (d *IPSecSADescriptor) IsIPSecSAKey(key string) bool {
 	return strings.HasPrefix(key, ipsec.PrefixIPSecSA)
 }

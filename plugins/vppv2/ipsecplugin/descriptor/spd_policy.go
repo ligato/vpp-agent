@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	// SPDPolicyDbDescriptorName is the name of the descriptor for bindings between
+	// SPDPolicyDescriptorName is the name of the descriptor for bindings between
 	// VPP IPSec security policy database and policy database (security association).
 	SPDPolicyDescriptorName = "vpp-spd-policy"
 
@@ -135,7 +135,7 @@ func (d *SPDPolicyDescriptor) Delete(key string, policy *ipsec.SecurityPolicyDat
 	}
 
 
-	err = d.ipSecHandler.DelSPDEntry(uint32(spdID), uint32(saID), policy)
+	err = d.ipSecHandler.DeleteSPDEntry(uint32(spdID), uint32(saID), policy)
 	if err != nil {
 		d.log.Error(err)
 		return err

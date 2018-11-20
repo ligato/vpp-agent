@@ -50,6 +50,10 @@ var (
 	// ErrIPSecSPDInvalidIndex is returned when VPP security policy database
 	// configuration was defined with non-numerical index.
 	ErrIPSecSPDInvalidIndex = errors.New("VPP IPSec security policy database defined with invalid index")
+
+	// ErrSPDWithoutSA is returned when VPP security policy entry has undefined
+	// security association attribute.
+	ErrSPDWithoutSA = errors.New("VPP SPD policy entry defined without security association name")
 )
 
 // IPSecSPDDescriptor teaches KVScheduler how to configure IPSec SPD in VPP.
@@ -94,7 +98,7 @@ func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 	}
 }
 
-// IsIPSecSPDDomainKey returns true if the key is identifying VPP security
+// IsIPSecSPDKey returns true if the key is identifying VPP security
 // policy database.
 func (d *IPSecSPDDescriptor) IsIPSecSPDKey(key string) bool {
 	_, isSPDKey := ipsec.ParseSPDIndexFromKey(key)
@@ -132,6 +136,7 @@ func (d *IPSecSPDDescriptor) IsRetriableFailure(err error) bool {
 	nonRetriable := []error{
 		ErrIPSecSPDWithoutIndex,
 		ErrIPSecSPDInvalidIndex,
+		ErrSPDWithoutSA,
 	}
 	for _, nonRetriableErr := range nonRetriable {
 		if err == nonRetriableErr {
@@ -227,10 +232,15 @@ func (d *IPSecSPDDescriptor) Dump(correlate []adapter.SPDKVWithMetadata) (dump [
 		return dump, err
 	}
 	for _, spd := range spds {
+		spdIdx, err := strconv.Atoi(spd.Spd.Index)
+		if err != nil {
+			return dump, err
+		}
 		dump = append(dump, adapter.SPDKVWithMetadata{
-			Key:    ipsec.SPDKey(spd.SpdID),
-			Value:  spd.Spd,
-			Origin: scheduler.FromNB,
+			Key:      ipsec.SPDKey(spd.Spd.Index),
+			Value:    spd.Spd,
+			Metadata: &idxvpp2.OnlyIndex{Index: uint32(spdIdx)},
+			Origin:   scheduler.FromNB,
 		})
 	}
 
@@ -250,6 +260,13 @@ func (d *IPSecSPDDescriptor) validateSPDConfig(spd *ipsec.SecurityPolicyDatabase
 	}
 	if _, err := strconv.Atoi(spd.Index); err != nil {
 		return ErrIPSecSPDInvalidIndex
+	}
+
+	// check list of policies for security associations
+	for _, policy := range spd.PolicyEntries {
+		if policy.SaIndex == "" {
+			return ErrSPDWithoutSA
+		}
 	}
 
 	return nil

@@ -37,7 +37,7 @@ const (
 	interfaceDep = "interface-exists"
 )
 
-// BDInterfaceDescriptor teaches KVScheduler how to put interface into VPP
+// SPDInterfaceDescriptor teaches KVScheduler how to put interface into VPP
 // security policy database
 type SPDInterfaceDescriptor struct {
 	// dependencies

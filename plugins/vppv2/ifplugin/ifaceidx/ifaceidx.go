@@ -60,9 +60,7 @@ type IfaceMetadataIndexRW interface {
 // IfaceMetadata collects metadata for VPP interface used in secondary lookups.
 type IfaceMetadata struct {
 	SwIfIndex     uint32
-	Enabled       bool
 	IPAddresses   []string
-	Vrf           uint32
 	TAPHostIfName string /* host interface name set for the Linux-side of the TAP interface; empty for non-TAPs */
 }
 

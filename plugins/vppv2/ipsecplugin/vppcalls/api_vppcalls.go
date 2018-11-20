@@ -29,10 +29,6 @@ type IPSecVppAPI interface {
 
 // IPSecVppWrite provides write methods for IPsec
 type IPSecVppWrite interface {
-	// AddTunnelInterface adds tunnel interface
-	AddTunnelInterface(tunnel *ipsec.TunnelInterface) (uint32, error)
-	// DelTunnelInterface removes tunnel interface
-	DelTunnelInterface(ifIdx uint32, tunnel *ipsec.TunnelInterface) error
 	// AddSPD adds SPD to VPP via binary API
 	AddSPD(spdID uint32) error
 	// DelSPD deletes SPD from VPP via binary API
@@ -44,7 +40,7 @@ type IPSecVppWrite interface {
 	// AddSPDEntry adds SPD policy entry to VPP via binary API
 	AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
 	// DelSPDEntry deletes SPD policy entry from VPP via binary API
-	DelSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
+	DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
 	// AddSAEntry adds SA to VPP via binary API
 	AddSAEntry(sa *ipsec.SecurityAssociation) error
 	// DelSAEntry deletes SA from VPP via binary API
@@ -59,18 +55,16 @@ type IPSecVPPRead interface {
 	DumpIPSecSA() (saList []*IPSecSaDetails, err error)
 	// DumpIPSecSAWithIndex returns a security association with provided index
 	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
-	// DumpIPSecTunnelInterfaces returns a list of configured IPSec tunnel interfaces
-	DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error)
 }
 
-// IPSecVppHandler is accessor for IPsec-related vppcalls methods
+// IPSecVppHandler is accessor for IPSec-related vppcalls methods
 type IPSecVppHandler struct {
 	callsChannel govppapi.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
 }
 
-// NewIPsecVppHandler creates new instance of IPsec vppcalls handler
+// NewIPsecVppHandler creates new instance of IPSec vppcalls handler
 func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *IPSecVppHandler {
 	return &IPSecVppHandler{
 		callsChannel: callsChan,

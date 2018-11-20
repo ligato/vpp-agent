@@ -29,9 +29,6 @@ const (
 
 	// PrefixIPSecSA is a key prefix used in NB DB to store security association configuration.
 	PrefixIPSecSA = PrefixIPSec + "sa/"
-
-	// PrefixIPSecTunnel is a key prefix used in NB DB to store IPSec tunnel configuration.
-	PrefixIPSecTunnel = PrefixIPSec + "tunnel/"
 )
 
 /* SPD <-> interface binding (derived) */
@@ -176,29 +173,6 @@ func ParseSAIndexFromKey(key string) (index string, isSAKey bool) {
 		_, err := strconv.Atoi(suffix)
 		if err != nil {
 			return "", true
-		}
-		return suffix, true
-	}
-	return "", false
-}
-
-/* IPSec tunnel */
-
-// TunnelKey returns the key used in NB DB to store the configuration of the
-// given IPSec tunnel configuration.
-func TunnelKey(name string) string {
-	if name == "" {
-		name = InvalidKeyPart
-	}
-	return PrefixIPSecTunnel + name
-}
-
-// ParseTunnelNameFromKey returns IPSec tunnel name from the key.
-func ParseTunnelNameFromKey(key string) (name string, isTunnelKey bool) {
-	if strings.HasPrefix(key, PrefixIPSecTunnel) {
-		suffix := strings.TrimPrefix(key, PrefixIPSecTunnel)
-		if strings.ContainsAny(suffix, "/") {
-			return "", false
 		}
 		return suffix, true
 	}
