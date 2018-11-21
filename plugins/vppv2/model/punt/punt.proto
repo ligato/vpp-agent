@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package punt;
+
+/* IpRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
+to redirect to the defined next hop address via the TX interface */
+message IpRedirect {
+    // TODO rx interface available in newer VPP api
+    string rx_interface = 1;    /* Receive interface name. Optional, only redirect traffic incoming from this interface */
+    string tx_interface = 2;    /* Transmit interface name */
+    string next_hop = 3;        /* Next hop IP where the traffic is redirected */
+}
+
+/* allows otherwise dropped packet which destination IP address matching some of the VPP addresses, provided protocols
+and port to be punted to the host */
+message Punt {
+    bool is_ipv4 = 1;           /* L3 destination protocol a packet has to match in order to be punted */
+    enum Protocol {
+        UDP = 0;
+    }
+    Protocol protocol = 2;      /* L4 destination protocol a packet has to match */
+    uint32 port = 3;            /* Destination port */
+
+    string socket_path = 4;     /* Optional, use unix domain socket to punt packets to the host  */
+}

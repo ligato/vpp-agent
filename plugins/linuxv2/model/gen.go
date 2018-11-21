@@ -15,5 +15,6 @@
 //go:generate protoc --proto_path=namespace --gogo_out=namespace namespace.proto
 //go:generate protoc --proto_path=interfaces --proto_path=${GOPATH}/src --gogo_out=interfaces interfaces.proto
 //go:generate protoc --proto_path=l3 --proto_path=${GOPATH}/src --gogo_out=l3 l3.proto
+//go:generate protoc --proto_path=punt --proto_path=${GOPATH}/src --gogo_out=punt punt/punt.proto
 
 package model

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package punt;
+
+/* Proxy allows to listen on network socket or unix domain socket, and resend to another network/unix domain socket */
+message Proxy {
+    oneof rx {                          /* Socket to listen */
+        ProtocolBased rx_protocol= 1;
+        SocketBased rx_socket = 2;
+    }
+    oneof tx {                          /* Socket to redirect */
+        ProtocolBased tx_protocol= 3;
+        SocketBased tx_socket = 4;
+    }
+}
+
+/* Define network socket type */
+message ProtocolBased {
+    enum Protocol {
+        TCP = 0;
+        UDP = 1;
+    }
+    Protocol protocol = 1;      /* L4 protocol */
+    bool is_ipv6 = 2;           /* L3 protocol */
+    uint32 port = 3;
+}
+
+/* Define unix domain socket type for IPC */
+message SocketBased {
+    string path = 1;
+}
