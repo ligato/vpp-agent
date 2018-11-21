@@ -188,7 +188,7 @@ Get Bridge Domain ID
     [Arguments]    ${node}    ${bd_name}
     #${bds_dump}=   rest_api: Get    ${node}  /vpp/dump/v2/bd
     #${bds_dump}=    Execute In Container    agent_vpp_1    curl GET http://localhost:9191/vpp/dump/v2/bd        #wget /vpp/dump/v2/bd
-    ${bds_dump}=    Execute On Machine    docker    curl GET http://127.0.0.1:9191/vpp/dump/v2/bd        #wget /vpp/dump/v2/bd
+    ${bds_dump}=    Execute On Machine    docker    curl -X GET http://localhost:9191/vpp/dump/v2/bd        #wget /vpp/dump/v2/bd
     ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
     ${index}=   Set Variable    0
     :FOR    ${bd}   IN  @{bds_json}
