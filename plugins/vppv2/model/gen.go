@@ -23,6 +23,7 @@
 //go:generate protoc --proto_path=l3 --gogo_out=l3 l3/arp.proto
 //go:generate protoc --proto_path=l3 --gogo_out=l3 l3/static_route.proto
 //go:generate protoc --proto_path=nat --gogo_out=nat nat/nat.proto
+//go:generate protoc --proto_path=punt --gogo_out=punt punt/punt.proto
 //go:generate protoc --proto_path=stn --gogo_out=stn stn/stn.proto
 
 package model
