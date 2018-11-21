@@ -20,14 +20,14 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 	var ifIdx uint32
 	var tapHostIfName string
 
-	// validate configuration first
+	// validate the configuration first
 	err = d.validateInterfaceConfig(intf)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
 
-	// create interface of the given type
+	// create the interface of the given type
 	switch intf.Type {
 	case interfaces.Interface_TAP:
 		tapCfg := getTapConfig(intf)
@@ -152,7 +152,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// Rx-placement
+	// rx-placement
 	if intf.GetRxPlacementSettings() != nil {
 		if err = d.ifHandler.SetRxPlacement(ifIdx, intf.GetRxPlacementSettings()); err != nil {
 			err = errors.Errorf("failed to set rx-placement for interface %s: %v", intf.Name, err)
@@ -161,7 +161,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// MAC address (optional; af-packet uses HwAddr from the host; physical interfaces cannot have MAC changed)
+	// MAC address. Note: af-packet uses HwAddr from the host and physical interfaces cannot have the MAC address changed
 	if intf.GetPhysAddress() != "" &&
 		intf.GetType() != interfaces.Interface_AF_PACKET &&
 		intf.GetType() != interfaces.Interface_DPDK {
@@ -173,18 +173,18 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// Get IP addresses
-	ipAddrs, err := addrs.StrAddrsToStruct(intf.IpAddresses)
+	// convert IP addresses to net.IPNet
+	ipAddresses, err := addrs.StrAddrsToStruct(intf.IpAddresses)
 	if err != nil {
 		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", intf.Name, err)
 		d.log.Error(err)
 		return nil, err
 	}
 
-	// VRF (optional, unavailable for VXLAN interfaces), has to be done before IP addresses are configured
+	// VRF (optional, unavailable for VxLAN interfaces), should be done before IP addresses are configured
 	if intf.GetType() != interfaces.Interface_VXLAN_TUNNEL {
 		// Configured separately for IPv4/IPv6
-		isIPv4, isIPv6 := getIPAddressVersions(ipAddrs)
+		isIPv4, isIPv6 := getIPAddressVersions(ipAddresses)
 		if isIPv4 {
 			if err = d.ifHandler.SetInterfaceVrf(ifIdx, intf.Vrf); err != nil {
 				err = errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", intf.Name, intf.Vrf, err)
@@ -201,8 +201,8 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// Configure IP addresses
-	for _, address := range ipAddrs {
+	// configure IP addresses
+	for _, address := range ipAddresses {
 		if err := d.ifHandler.AddInterfaceIP(ifIdx, address); err != nil {
 			err = errors.Errorf("adding IP address %v to interface %v failed: %v", address, intf.Name, err)
 			d.log.Error(err)
@@ -210,7 +210,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 	}
 
-	// Configure mtu. Prefer value in the interface config, otherwise set the plugin-wide
+	// configure MTU. Prefer value in the interface config, otherwise set the plugin-wide
 	// default value if provided.
 	if intf.Type != interfaces.Interface_VXLAN_TUNNEL {
 		mtuToConfigure := intf.Mtu
@@ -248,7 +248,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error {
 	ifIdx := metadata.SwIfIndex
 
-	// Set interface to ADMIN_DOWN unless the type is AF_PACKET_INTERFACE
+	// set interface to ADMIN_DOWN unless the type is AF_PACKET_INTERFACE
 	if intf.Type != interfaces.Interface_AF_PACKET {
 		if err := d.ifHandler.InterfaceAdminDown(ifIdx); err != nil {
 			err = errors.Errorf("failed to set interface %s down: %v", intf.Name, err)
@@ -257,7 +257,7 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		}
 	}
 
-	// unconfigure IP addresses
+	// remove IP addresses from the interface
 	var nonLocalIPs []string
 	for _, ipAddr := range intf.IpAddresses {
 		ip := net.ParseIP(ipAddr)
@@ -318,7 +318,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 
 	ifIdx := oldMetadata.SwIfIndex
 
-	// Rx-mode
+	// rx-mode
 	oldRx := getRxMode(oldIntf)
 	newRx := getRxMode(newIntf)
 	if !proto.Equal(oldRx, newRx) {
@@ -330,7 +330,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// Rx-placement
+	// rx-placement
 	if !proto.Equal(getRxPlacement(oldIntf), getRxPlacement(newIntf)) {
 		if err = d.ifHandler.SetRxPlacement(ifIdx, newIntf.GetRxPlacementSettings()); err != nil {
 			err = errors.Errorf("failed to modify rx-placement for interface %s: %v", newIntf.Name, err)
@@ -339,7 +339,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// Admin status
+	// admin status
 	if newIntf.Enabled != oldIntf.Enabled {
 		if newIntf.Enabled {
 			if err = d.ifHandler.InterfaceAdminUp(ifIdx); err != nil {
@@ -356,7 +356,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// Configure new mac address if set (and only if it was changed and for supported interface type)
+	// configure new MAC address if set (and only if it was changed and only for supported interface type)
 	if newIntf.PhysAddress != "" &&
 		newIntf.PhysAddress != oldIntf.PhysAddress &&
 		oldIntf.Type != interfaces.Interface_AF_PACKET &&
@@ -369,22 +369,22 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// Calculate diff of IP addresses
-	newIPAddrs, err := addrs.StrAddrsToStruct(newIntf.IpAddresses)
+	// calculate diff of IP addresses
+	newIPAddresses, err := addrs.StrAddrsToStruct(newIntf.IpAddresses)
 	if err != nil {
 		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", newIntf.Name, err)
 		d.log.Error(err)
 		return oldMetadata, err
 	}
-	oldIPAddrs, err := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
+	oldIPAddresses, err := addrs.StrAddrsToStruct(oldIntf.IpAddresses)
 	if err != nil {
 		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", oldIntf.Name, err)
 		d.log.Error(err)
 		return oldMetadata, err
 	}
-	del, add := addrs.DiffAddr(newIPAddrs, oldIPAddrs)
+	del, add := addrs.DiffAddr(newIPAddresses, oldIPAddresses)
 
-	// Delete obsolete IP addresses
+	// delete obsolete IP addresses
 	for _, address := range del {
 		err := d.ifHandler.DelInterfaceIP(ifIdx, address)
 		if nil != err {
@@ -395,7 +395,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
-	// Add new IP addresses
+	// add new IP addresses
 	for _, address := range add {
 		err := d.ifHandler.AddInterfaceIP(ifIdx, address)
 		if nil != err {
