@@ -17,11 +17,22 @@ package vpp_interfaces
 import (
 	"net"
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
 
+func init() {
+	models.Register(&Interface{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "interface",
+	})
+}
+
 // ModelKey provides implementation for ProtoModel
-func (i *Interface) ModelKey() string {
-	return InterfaceKey(i.Name)
+func (i *Interface) ModelID() string {
+	return i.GetName()
 }
 
 /* Interface Config */

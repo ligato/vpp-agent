@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -26,8 +27,11 @@ import (
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	vpp_l3plugin "github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
+
+	_ "github.com/ligato/vpp-agent/api/models/linux"
+	_ "github.com/ligato/vpp-agent/api/models/vpp"
 )
 
 /*
@@ -40,8 +44,8 @@ func main() {
 
 	ep := &ExamplePlugin{
 		Scheduler:   &kvscheduler.DefaultPlugin,
-		VPPIfPlugin: &vpp_ifplugin.DefaultPlugin,
-		VPPL3Plugin: &vpp_l3plugin.DefaultPlugin,
+		VPPIfPlugin: &ifplugin.DefaultPlugin,
+		VPPL3Plugin: &l3plugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -56,8 +60,8 @@ func main() {
 // handles resync and changes in this example.
 type ExamplePlugin struct {
 	Scheduler   *kvscheduler.Scheduler
-	VPPIfPlugin *vpp_ifplugin.IfPlugin
-	VPPL3Plugin *vpp_l3plugin.L3Plugin
+	VPPIfPlugin *ifplugin.IfPlugin
+	VPPL3Plugin *l3plugin.L3Plugin
 }
 
 // String returns plugin name
@@ -103,7 +107,7 @@ func testLocalClientWithScheduler() {
 
 	req := client.Local.ResyncRequest()
 	req.Update(memif0, memif0_10)
-	if err := req.Send(); err != nil {
+	if err := req.Send(context.Background()); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -137,8 +141,8 @@ func testLocalClientWithScheduler() {
 	}*/
 
 	req2 := client.Local.ChangeRequest()
-	req2.Delete(memif0.ModelKey())
-	if err := req2.Send(); err != nil {
+	req2.Delete(memif0)
+	if err := req2.Send(context.Background()); err != nil {
 		fmt.Println(err)
 		return
 	}

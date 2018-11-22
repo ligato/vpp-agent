@@ -1,8 +1,11 @@
 syntax = "proto3";
 
+package vpp.rpc;
+
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp/rpc;vpp_rpc";
 
-package vpp.rpc;
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
 
 import "vpp/acl/acl.proto";
 import "vpp/interfaces/interface.proto";

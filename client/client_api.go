@@ -1,22 +1,41 @@
 package client
 
-import "github.com/ligato/vpp-agent/api/models"
+import (
+	"context"
+
+	"github.com/ligato/vpp-agent/api/models"
+)
 
 // SyncClient
 type SyncClient interface {
-	ResyncRequest() ResyncRequest
-	ChangeRequest() ChangeRequest
+	//SyncRequest(ctx context.Context) SyncRequest
+	ResyncRequest() SyncRequest
+	ChangeRequest() SyncRequest
 }
 
+type SyncRequest interface {
+	Send(ctx context.Context) error
+
+	Update(models ...models.ProtoModel)
+	Delete(models ...models.ProtoModel)
+}
+
+/*
 // ResyncRequest
 type ResyncRequest interface {
-	Update(models ...models.ProtoModel)
-	Send() error
+	Request
+	Put(models ...models.ProtoModel)
 }
 
 // ChangeRequest
 type ChangeRequest interface {
+	TxnRequest
 	Update(models ...models.ProtoModel)
-	Delete(keys ...string)
-	Send() error
+	Delete(models ...models.ProtoModel)
 }
+*/
+/*
+// ChangeRequest
+type ChangeRequest interface {
+}
+*/

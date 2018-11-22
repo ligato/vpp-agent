@@ -4,6 +4,9 @@ package linux.interfaces;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/linux/interfaces;linux_interfaces";
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
 import "linux/namespace/namespace.proto";
 
 message Interface {

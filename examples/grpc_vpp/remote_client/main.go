@@ -151,10 +151,8 @@ func my(conn *grpc.ClientConn) {
 	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
 
 	req := c.ResyncRequest()
-	req.Update(
-		memif1, memif2,
-	)
-	if err := req.Send(); err != nil {
+	req.Update(memif1, memif2)
+	if err := req.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
 

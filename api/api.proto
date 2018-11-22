@@ -4,15 +4,111 @@ package api;
 
 option go_package = "github.com/ligato/vpp-agent/api";
 
-import "models/model.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+import "google/protobuf/any.proto";
+
+message ModelSpec {
+    string module = 1;
+    string class = 2;
+    string version = 3;
+    string kind = 4;
+}
+
+message Model {
+    google.protobuf.Any any = 1;
+    map<string,string> metadata = 2;
+}
 
 service SyncService {
-    rpc Change (SyncRequest) returns (SyncResponse) {};
-    rpc Resync (SyncRequest) returns (SyncResponse) {};
+    rpc Sync (SyncRequest) returns (SyncResponse) {};
+    rpc Obtain (ObtainRequest) returns (ObtainResponse) {};
+    //rpc Resync (ReyncRequest) returns (ResyncResponse) {};
+    //rpc Change (ChangeRequest) returns (ChangeResponse) {};
+}
+
+message SyncOptions {
+    bool resync = 1;
+    uint32 retry_count = 2;
 }
 
 message SyncRequest {
-    repeated models.Model models = 1;
+    repeated SyncItem items = 1;
+    SyncOptions options = 2;
 }
 
-message SyncResponse {}
+message SyncResponse {
+    repeated SyncItemResult results = 1;
+}
+
+message SyncItem {
+    Model model = 1;
+    bool delete = 2;
+}
+
+message SyncItemResult {
+    string id = 1;
+    string status = 2;
+    string error = 3;
+}
+
+message ObtainOptions {
+    bool obtain_all = 1;
+}
+
+message ObtainRequest {
+    repeated string ids = 1;
+    repeated string specs = 2;
+    ObtainOptions options = 3;
+}
+
+message ObtainResponse {
+    repeated ModelInfo models = 1;
+}
+
+message ModelInfo {
+    ModelSpec spec = 1;
+    Model model = 2;
+    string status = 3;
+    string error = 4;
+}
+
+/*message ResyncOptions {
+    bool full_resync = 1;
+    uint32 retry_count = 2;
+}
+
+message ReyncRequest {
+    repeated ModelItem items = 1;
+    ResyncOptions options = 2;
+}
+
+message ResyncResponse {
+    repeated ItemResult item_results = 1;
+}
+
+message ChangeOptions {
+    uint32 retry_count = 1;
+}
+
+message ChangeItem {
+    ModelItem item = 1;
+    bool delete = 2;
+}
+
+message ChangeRequest {
+    repeated ChangeItem change_items = 1;
+    ChangeOptions = 2;
+}
+
+message ChangeResponse {
+    repeated ItemResult item_results = 1;
+}
+
+message ItemResult {
+    string item_id = 1;
+    string status = 2;
+    string error = 3;
+    map<string,string> meta = 4;
+}*/

@@ -18,11 +18,26 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
 
-// ModelKey provides implementation for ProtoModel
-func (i *Interface) ModelKey() string {
-	return InterfaceKey(i.Name)
+func init() {
+	models.Register(&Interface{}, models.Spec{
+		Module:  "linux",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "interface",
+		//IDfunc:  InterfaceID,
+	})
+}
+
+/*func InterfaceID(x *Interface) string {
+	return x.Name
+}*/
+
+func (x *Interface) ModelID() string {
+	return x.GetName()
 }
 
 const (

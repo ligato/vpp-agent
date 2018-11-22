@@ -514,7 +514,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 		}
 	}
 
-	if linuxIf.Namespace != nil && linuxIf.Namespace.Type == namespace.NetNamespace_NETNS_REF_MICROSERVICE {
+	if linuxIf.GetNamespace().GetType() == namespace.NetNamespace_MICROSERVICE {
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: microserviceDep,
 			Key:   namespace.MicroserviceKey(linuxIf.Namespace.Reference),
@@ -880,9 +880,8 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(linuxIf *interfaces.Interf
 	if linuxIf.Type == interfaces.Interface_TAP_TO_VPP && d.vppIfPlugin == nil {
 		return ErrTAPRequiresVPPIfPlugin
 	}
-	if linuxIf.Namespace != nil &&
-		(linuxIf.Namespace.Type == namespace.NetNamespace_NETNS_REF_UNDEFINED ||
-			linuxIf.Namespace.Reference == "") {
+	if linuxIf.GetNamespace().GetType() == namespace.NetNamespace_UNDEFINED ||
+		linuxIf.Namespace.Reference == "" {
 		return ErrNamespaceWithoutReference
 	}
 	switch linuxIf.Link.(type) {

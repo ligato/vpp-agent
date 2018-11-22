@@ -18,16 +18,72 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
 
-// ModelKey provides implementation for ProtoModel
-func (i *StaticRoute) ModelKey() string {
-	return RouteKey(i.VrfId, i.DstNetwork, i.OutgoingInterface)
+func init() {
+	models.Register(&ARPEntry{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "arp",
+	})
+	models.Register(&StaticRoute{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "route",
+	})
 }
 
 // ModelKey provides implementation for ProtoModel
-func (i *ARPEntry) ModelKey() string {
-	return ArpEntryKey(i.Interface, i.IpAddress)
+func (i *StaticRoute) ModelID() string {
+	key := "vrf/{vrf}/dst/{dst-ip}/{dst-mask}/gw/{next-hop}"
+	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(i.GetVrfId())), 1)
+
+	var dstIP string
+	var dstMask string
+	_, dstIPNet, err := net.ParseCIDR(i.GetDstNetwork())
+	if err == nil {
+		dstIP = dstIPNet.IP.String()
+		maskSize, _ := dstIPNet.Mask.Size()
+		dstMask = strconv.Itoa(maskSize)
+	} else {
+		dstIP = InvalidKeyPart
+		dstMask = InvalidKeyPart
+	}
+	key = strings.Replace(key, "{dst-ip}", dstIP, 1)
+	key = strings.Replace(key, "{dst-mask}", dstMask, 1)
+
+	nextHopAddr := i.GetNextHopAddr()
+	if nextHopAddr == "" && dstIPNet != nil {
+		if dstIPNet.IP.To4() == nil {
+			nextHopAddr = net.IPv6zero.String()
+		} else {
+			nextHopAddr = net.IPv4zero.String()
+		}
+	} else if net.ParseIP(nextHopAddr) == nil {
+		nextHopAddr = InvalidKeyPart
+	}
+	key = strings.Replace(key, "{next-hop}", nextHopAddr, 1)
+	return key
+}
+
+// ModelKey provides implementation for ProtoModel
+func (i *ARPEntry) ModelID() string {
+	key := "{if}/{ip}"
+	iface := i.GetInterface()
+	ipAddr := i.GetIpAddress()
+	if iface == "" {
+		iface = InvalidKeyPart
+	}
+	if net.ParseIP(ipAddr) == nil {
+		ipAddr = InvalidKeyPart
+	}
+	key = strings.Replace(key, "{if}", iface, 1)
+	key = strings.Replace(key, "{ip}", ipAddr, 1)
+	return key
 }
 
 const (

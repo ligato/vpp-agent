@@ -19,16 +19,43 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
 
-// ModelKey provides implementation for ProtoModel
-func (i *StaticRoute) ModelKey() string {
-	return StaticRouteKey(i.DstNetwork, i.OutgoingInterface)
+func init() {
+	models.Register(&StaticARPEntry{}, models.Spec{
+		Module:  "linux",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "arp",
+	})
+	models.Register(&StaticRoute{}, models.Spec{
+		Module:  "linux",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "route",
+	})
 }
 
-// ModelKey provides implementation for ProtoModel
-func (i *StaticARPEntry) ModelKey() string {
-	return StaticArpKey(i.Interface, i.IpAddress)
+// ModelID provides implementation for ProtoModel
+func (i *StaticRoute) ModelID() string {
+	id := "{dest-net}/{dest-mask}/{out-intf}"
+	_, dstNet, _ := net.ParseCIDR(i.GetDstNetwork())
+	dstNetAddr := dstNet.IP.String()
+	dstNetMask, _ := dstNet.Mask.Size()
+	id = strings.Replace(id, "{dest-net}", dstNetAddr, 1)
+	id = strings.Replace(id, "{dest-mask}", strconv.Itoa(dstNetMask), 1)
+	id = strings.Replace(id, "{out-intf}", i.GetOutgoingInterface(), 1)
+	return id
+}
+
+// ModelID provides implementation for ProtoModel
+func (i *StaticARPEntry) ModelID() string {
+	id := "{if}/{ip}"
+	id = strings.Replace(id, "{if}", i.GetInterface(), 1)
+	id = strings.Replace(id, "{ip}", i.GetIpAddress(), 1)
+	return id
 }
 
 const (
@@ -64,7 +91,8 @@ const (
 
 // StaticArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
 func StaticArpKey(iface, ipAddr string) string {
-	key := strings.Replace(staticArpKeyTemplate, "{if}", iface, 1)
+	key := staticArpKeyTemplate
+	key = strings.Replace(key, "{if}", iface, 1)
 	key = strings.Replace(key, "{ip}", ipAddr, 1)
 	return key
 }

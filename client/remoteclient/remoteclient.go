@@ -18,51 +18,94 @@ func NewClientGRPC(syncSvc api.SyncServiceClient) client.SyncClient {
 }
 
 // ResyncRequest returns new resync request.
-func (c *remoteClient) ResyncRequest() client.ResyncRequest {
-	return &request{c.serviceClient, &api.SyncRequest{}, true}
+func (c *remoteClient) ResyncRequest() client.SyncRequest {
+	return &request{
+		serviceClient: c.serviceClient,
+		req: &api.SyncRequest{
+			Options: &api.SyncOptions{Resync: true},
+		},
+	}
 }
 
 // ChangeRequest return new change request.
-func (c *remoteClient) ChangeRequest() client.ChangeRequest {
-	return &request{c.serviceClient, &api.SyncRequest{}, false}
+func (c *remoteClient) ChangeRequest() client.SyncRequest {
+	return &request{
+		serviceClient: c.serviceClient,
+		req: &api.SyncRequest{
+			Options: &api.SyncOptions{Resync: false},
+		},
+	}
 }
 
-type request struct {
+/*type resyncRequest struct {
 	serviceClient api.SyncServiceClient
 	req           *api.SyncRequest
-	isResync      bool
 }
 
-// Update adds update for the given model data to the transaction.
-func (r *request) Update(protoModels ...models.ProtoModel) {
+// Put adds the given model data to the transaction.
+func (r *resyncRequest) Put(protoModels ...models.ProtoModel) {
 	for _, protoModel := range protoModels {
 		model, err := models.Marshal(protoModel)
 		if err != nil {
 			continue
 		}
-		r.req.Models = append(r.req.Models, model)
+		r.req.Items = append(r.req.Items, &api.SyncItem{Model: model})
+	}
+}
+
+// Send commits the transaction with all data.
+func (r *resyncRequest) Send() (err error) {
+	ctx := context.Background()
+	_, err = r.serviceClient.Sync(ctx, r.req)
+	return err
+}*/
+
+type request struct {
+	serviceClient api.SyncServiceClient
+	req           *api.SyncRequest
+	err           error
+}
+
+// Update adds update for the given model data to the transaction.
+func (r *request) Update(protoModels ...models.ProtoModel) {
+	if r.err != nil {
+		return
+	}
+	for _, protoModel := range protoModels {
+		model, err := models.Marshal(protoModel)
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.req.Items = append(r.req.Items, &api.SyncItem{Model: model})
 	}
 }
 
 // Delete adds delete for the given model keys to the transaction.
-func (r *request) Delete(keys ...string) {
-	for _, key := range keys {
-		r.req.Models = append(r.req.Models, &models.Model{
-			Key:   key,
-			Value: nil, // nil value represents delete
+func (r *request) Delete(protoModels ...models.ProtoModel) {
+	if r.err != nil {
+		return
+	}
+	for _, protoModel := range protoModels {
+		model, err := models.Marshal(protoModel)
+		if err != nil {
+			if err != nil {
+				r.err = err
+				return
+			}
+		}
+		r.req.Items = append(r.req.Items, &api.SyncItem{
+			Model:  model,
+			Delete: true,
 		})
 	}
 }
 
 // Send commits the transaction with all data.
-func (r *request) Send() (err error) {
-	ctx := context.Background()
-
-	if r.isResync {
-		_, err = r.serviceClient.Resync(ctx, r.req)
-	} else {
-		_, err = r.serviceClient.Change(ctx, r.req)
+func (r *request) Send(ctx context.Context) (err error) {
+	if r.err != nil {
+		return r.err
 	}
-
+	_, err = r.serviceClient.Sync(ctx, r.req)
 	return err
 }
