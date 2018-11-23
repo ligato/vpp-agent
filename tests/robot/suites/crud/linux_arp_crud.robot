@@ -62,7 +62,6 @@ Check AFpacket Interface Created
 Add ARPs
     Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  155.155.155.155    32:51:51:51:51:51
     Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  155.155.155.156    32:51:51:51:51:52
-    Put Linux ARP    agent_vpp_1    lo          loopback_arp  155.155.155.156    32:51:51:51:51:52    #some change in Ubuntu, 'lo' have always ip: 0.0.0.0, test isn't affected
     #Put Linux ARP    agent_vpp_1    eth0        eth_arp  155.155.155.156    32:51:51:51:51:52
 
 Check ARPSs
@@ -70,14 +69,10 @@ Check ARPSs
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.155.155.156 dev vpp1_veth2 lladdr 32:51:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.155.155.155 dev vpp1_veth1 lladdr 32:51:51:51:51:51 PERMANENT
     #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.155.155.156 dev eth0 lladdr 32:51:51:51:51:52 PERMANENT
-    #some change in Ubuntu, 'lo' have always ip: 0.0.0.0, test isn't affected
-    #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.155.155.156 dev lo lladdr 32:51:51:51:51:52 PERMANENT
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain Any     ${out}    0.0.0.0 dev lo lladdr 32:51:51:51:51:52 PERMANENT      155.155.155.156 dev lo lladdr 32:51:51:51:51:52 PERMANENT
 
 Change ARPs
     Put Linux ARP    agent_vpp_1    vpp1_veth1  veth1_arp  155.255.155.155    32:61:51:51:51:51
     Put Linux ARP    agent_vpp_1    vpp1_veth2  veth2_arp  155.255.155.156    32:61:51:51:51:52
-    Put Linux ARP    agent_vpp_1    lo          loopback_arp  155.255.155.156    32:61:51:51:51:52    #some change in Ubuntu, 'lo' have always ip: 0.0.0.0, test isn't affected
     #Put Linux ARP    agent_vpp_1    eth0        eth_arp  155.255.155.156    32:61:51:51:51:52
 
 Check ARPSs Again
@@ -85,14 +80,10 @@ Check ARPSs Again
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.255.155.156 dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.255.155.155 dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
     #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.255.155.156 dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
-    #some change in Ubuntu, 'lo' have always ip: 0.0.0.0, test isn't affected
-    #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain     ${out}    155.255.155.156 dev lo lladdr 32:61:51:51:51:52 PERMANENT
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Contain Any     ${out}    0.0.0.0 dev lo lladdr 32:61:51:51:51:52 PERMANENT      155.255.155.156 dev lo lladdr 32:61:51:51:51:52 PERMANENT
 
 Delete ARPs
     Delete Linux ARP    agent_vpp_1    veth1_arp
     Delete Linux ARP    agent_vpp_1    veth2_arp
-    Delete Linux ARP    agent_vpp_1    loopback_arp      #some change in Ubuntu, 'lo' can't be deleted, test isn't affected
     #Delete Linux ARP    agent_vpp_1    eth_arp
 
 Check ARPSs After Delete
@@ -100,8 +91,6 @@ Check ARPSs After Delete
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    155.255.155.156 dev vpp1_veth2 lladdr 32:61:51:51:51:52 PERMANENT
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    155.255.155.155 dev vpp1_veth1 lladdr 32:61:51:51:51:51 PERMANENT
     #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    155.255.155.156 dev eth0 lladdr 32:61:51:51:51:52 PERMANENT
-    #some change in Ubuntu, 'lo' can't be deleted, test isn't affected
-    #Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Should Not Contain     ${out}    0.0.0.0 dev lo lladdr 32:61:51:51:51:52 PERMANENT
 
 
 *** Keywords ***
