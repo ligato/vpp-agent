@@ -160,7 +160,9 @@ func (ifmx *ifaceMetadataIndex) WatchInterfaces(subscriber string, channel chan<
 			ifmx.log.Warn("Unable to deliver notification")
 		}
 	}
-	ifmx.Watch(subscriber, watcher)
+	if err := ifmx.Watch(subscriber, watcher); err != nil {
+		ifmx.log.Error(err)
+	}
 }
 
 // indexMetadata is an index function used for interface metadata.

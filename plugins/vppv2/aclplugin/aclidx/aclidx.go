@@ -118,7 +118,9 @@ func (aclIdx *aclMetadataIndex) WatchAcls(subscriber string, channel chan<- ACLM
 			aclIdx.log.Warn("Unable to deliver notification")
 		}
 	}
-	aclIdx.Watch(subscriber, watcher)
+	if err := aclIdx.Watch(subscriber, watcher); err != nil {
+		aclIdx.log.Error(err)
+	}
 }
 
 // indexMetadata is an index function used for ACL metadata.

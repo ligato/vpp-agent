@@ -371,11 +371,6 @@ func (h *IfVppHandler) processIPDetails(ifs map[uint32]*InterfaceDetails, ipDeta
 	ifDetails.Interface.IpAddresses = append(ifDetails.Interface.IpAddresses, ipAddr)
 }
 
-// fillAFPacketDetails fills af_packet interface details into the provided interface map.
-func fillAFPacketDetails(ifs map[uint32]*InterfaceDetails, swIfIndex uint32, ifName string) {
-
-}
-
 // dumpMemifDetails dumps memif interface details from VPP and fills them into the provided interface map.
 func (h *IfVppHandler) dumpMemifDetails(ifs map[uint32]*InterfaceDetails) error {
 	// Dump all memif sockets

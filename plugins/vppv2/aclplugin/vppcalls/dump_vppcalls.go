@@ -499,7 +499,10 @@ func (h *ACLVppHandler) getIPACLDetails(idx uint32) (aclRule *acl.Acl, err error
 	for _, r := range reply.R {
 		rule := &acl.Acl_Rule{}
 
-		ipRule, _ := h.getIPRuleDetails(r)
+		ipRule, err := h.getIPRuleDetails(r)
+		if err != nil {
+			return nil, err
+		}
 
 		aclAction, err := h.resolveRuleAction(r.IsPermit)
 		if err != nil {
@@ -543,7 +546,10 @@ func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.Acl, err er
 	for _, r := range reply.R {
 		rule := &acl.Acl_Rule{}
 
-		ipRule, _ := h.getMACIPRuleDetails(r)
+		ipRule, err := h.getMACIPRuleDetails(r)
+		if err != nil {
+			return nil, err
+		}
 
 		aclAction, err := h.resolveRuleAction(r.IsPermit)
 		if err != nil {

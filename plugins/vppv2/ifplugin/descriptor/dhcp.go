@@ -164,10 +164,8 @@ func (d *DHCPDescriptor) Delete(key string, emptyVal proto.Message, metadata sch
 	}
 
 	// notify about the unconfigured client by removing the lease notification
-	d.scheduler.PushSBNotification(
+	return d.scheduler.PushSBNotification(
 		interfaces.DHCPLeaseKey(ifName), nil, nil)
-
-	return nil
 }
 
 // DerivedValues derives empty value for leased IP address.
@@ -276,10 +274,12 @@ func (d *DHCPDescriptor) watchDHCPNotifications(ctx context.Context, dhcpChan ch
 					HostIpAddress:   hostIPAddr,
 					RouterIpAddress: routerIPAddr,
 				}
-				d.scheduler.PushSBNotification(
+				if err := d.scheduler.PushSBNotification(
 					interfaces.DHCPLeaseKey(ifName),
 					dhcpLease,
-					dhcpLease)
+					dhcpLease); err != nil {
+					d.log.Error(err)
+				}
 			}
 		case <-ctx.Done():
 			return
