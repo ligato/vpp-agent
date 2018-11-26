@@ -303,10 +303,15 @@ func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.Me
 
 // equivalentIPSecTunnels compares two IPSec tunnels for equivalence.
 func (d *InterfaceDescriptor) equivalentIPSecTunnels(oldTun, newTun *interfaces.IPSecLink) bool {
-	return oldTun.Esn == newTun.Esn && oldTun.AntiReplay == newTun.AntiReplay && oldTun.LocalSpi == newTun.LocalSpi &&
-		oldTun.RemoteSpi == newTun.RemoteSpi && oldTun.CryptoAlg == newTun.CryptoAlg &&
-		oldTun.LocalCryptoKey == newTun.LocalCryptoKey && oldTun.RemoteCryptoKey == newTun.RemoteCryptoKey &&
-		oldTun.IntegAlg == newTun.IntegAlg && oldTun.LocalIntegKey == newTun.LocalIntegKey &&
+	return oldTun.Esn == newTun.Esn &&
+		oldTun.AntiReplay == newTun.AntiReplay &&
+		oldTun.LocalSpi == newTun.LocalSpi &&
+		oldTun.RemoteSpi == newTun.RemoteSpi &&
+		oldTun.CryptoAlg == newTun.CryptoAlg &&
+		oldTun.LocalCryptoKey == newTun.LocalCryptoKey &&
+		oldTun.RemoteCryptoKey == newTun.RemoteCryptoKey &&
+		oldTun.IntegAlg == newTun.IntegAlg &&
+		oldTun.LocalIntegKey == newTun.LocalIntegKey &&
 		oldTun.RemoteIntegKey == newTun.RemoteIntegKey
 }
 

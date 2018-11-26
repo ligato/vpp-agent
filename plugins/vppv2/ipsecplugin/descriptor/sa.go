@@ -92,10 +92,16 @@ func (d *IPSecSADescriptor) IPSecSAIndexFromKey(key string) string {
 // ipsec.SecurityAssociation
 func (d *IPSecSADescriptor) EquivalentIPSecSAs(key string, oldSA, newSA *ipsec.SecurityAssociation) bool {
 	// compare base fields
-	return oldSA.Spi == newSA.Spi && oldSA.Protocol == newSA.Protocol && oldSA.CryptoAlg == newSA.CryptoAlg &&
-		oldSA.CryptoKey == newSA.CryptoKey && oldSA.IntegAlg == newSA.IntegAlg && oldSA.IntegKey == newSA.IntegKey &&
-		oldSA.UseEsn == newSA.UseEsn && oldSA.UseAntiReplay == newSA.UseAntiReplay &&
-		oldSA.TunnelSrcAddr == newSA.TunnelSrcAddr && oldSA.TunnelDstAddr == newSA.TunnelDstAddr &&
+	return oldSA.Spi == newSA.Spi &&
+		oldSA.Protocol == newSA.Protocol &&
+		oldSA.CryptoAlg == newSA.CryptoAlg &&
+		oldSA.CryptoKey == newSA.CryptoKey &&
+		oldSA.IntegAlg == newSA.IntegAlg &&
+		oldSA.IntegKey == newSA.IntegKey &&
+		oldSA.UseEsn == newSA.UseEsn &&
+		oldSA.UseAntiReplay == newSA.UseAntiReplay &&
+		oldSA.TunnelSrcAddr == newSA.TunnelSrcAddr &&
+		oldSA.TunnelDstAddr == newSA.TunnelDstAddr &&
 		oldSA.EnableUdpEncap == newSA.EnableUdpEncap
 }
 

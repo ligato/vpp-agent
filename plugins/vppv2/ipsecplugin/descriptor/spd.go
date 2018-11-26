@@ -367,9 +367,13 @@ func equalPolicyEntries(pe1, pe2 *ipsec.SecurityPolicyDatabase_PolicyEntry) bool
 
 // equalPolicyEntriesBase compares base parameters of two policy entries (except IP addresses)
 func equalPolicyEntriesBase(pe1, pe2 *ipsec.SecurityPolicyDatabase_PolicyEntry) bool {
-	return pe1.Priority == pe2.Priority && pe1.IsOutbound == pe2.IsOutbound && pe1.Protocol == pe2.Protocol &&
-		pe1.RemotePortStart == pe2.RemotePortStart && pe1.RemotePortStop == pe2.RemotePortStop &&
-		pe1.LocalPortStart == pe2.LocalPortStop && pe1.Action == pe2.Action
+	return pe1.Priority == pe2.Priority &&
+		pe1.IsOutbound == pe2.IsOutbound &&
+		pe1.Protocol == pe2.Protocol &&
+		pe1.RemotePortStart == pe2.RemotePortStart &&
+		pe1.RemotePortStop == pe2.RemotePortStop &&
+		pe1.LocalPortStart == pe2.LocalPortStop &&
+		pe1.Action == pe2.Action
 }
 
 // equalPolicyEntriesIPAddress compare two policy entries IP addresses
