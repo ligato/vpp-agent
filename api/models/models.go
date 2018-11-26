@@ -29,11 +29,10 @@ type ProtoModel interface {
 
 // Spec represents model specification for registering models.
 type Spec struct {
-	Version   string
-	Module    string
-	Class     string
-	Kind      string
-	protoName string
+	Module  string
+	Class   string
+	Version string
+	Kind    string
 }
 
 // KeyPrefix returns key prefix used for storing model in KV stores.
@@ -61,13 +60,13 @@ func GetKey(m ProtoModel) (string, error) {
 }
 
 // GetModelSpec returns registered model specification for given model.
-func GetModelSpec(m ProtoModel) (*Spec, error) {
+func GetModelSpec(m ProtoModel) (Spec, error) {
 	protoName := proto.MessageName(m)
 	spec := registeredModels[protoName]
 	if spec == nil {
-		return nil, fmt.Errorf("model %s is not registered", protoName)
+		return Spec{}, fmt.Errorf("model %s is not registered", protoName)
 	}
-	return spec, nil
+	return *spec, nil
 }
 
 var registeredModels = make(map[string]*Spec)
