@@ -26,6 +26,7 @@ import (
 // Local is global client for direct local access.
 var Local = NewClient(&txnFactory{local.DefaultRegistry})
 
+// ProtoTxnFactory defines interface for keyval transaction provider.
 type ProtoTxnFactory interface {
 	NewTxn(resync bool) keyval.ProtoTxn
 }
@@ -39,18 +40,13 @@ func NewClient(factory ProtoTxnFactory) SyncClient {
 	return &client{factory}
 }
 
-/*func (c *client) SyncRequest(ctx context.Context) SyncRequest {
-
-	return &request{txn: c.txnFactory.NewTxn(true)}
-}*/
-
 // ResyncRequest returns new resync request.
-func (c *client) ResyncRequest() SyncRequest {
+func (c *client) ResyncRequest() ResyncRequest {
 	return &request{txn: c.txnFactory.NewTxn(true)}
 }
 
 // ChangeRequest return new change request.
-func (c *client) ChangeRequest() SyncRequest {
+func (c *client) ChangeRequest() ChangeRequest {
 	return &request{txn: c.txnFactory.NewTxn(false)}
 }
 
@@ -59,10 +55,10 @@ type request struct {
 	err error
 }
 
-/*// Put adds the given model data to the transaction.
+// Put adds the given model data to the transaction.
 func (r *request) Put(items ...models.ProtoModel) {
 	r.Update(items...)
-}*/
+}
 
 // Update adds update for the given model data to the transaction.
 func (r *request) Update(items ...models.ProtoModel) {

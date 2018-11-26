@@ -139,7 +139,7 @@ var memif2 = &interfaces.Interface{
 	IpAddresses: []string{"3.10.0.10/32"},
 	Link: &interfaces.Interface_Sub{
 		Sub: &interfaces.SubInterface{
-			ParentName: "memif0",
+			ParentName: "memif1",
 			SubId:      10,
 		},
 	},
@@ -151,8 +151,16 @@ func my(conn *grpc.ClientConn) {
 	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
 
 	req := c.ResyncRequest()
-	req.Update(memif1, memif2)
+	req.Put(memif1, memif2)
 	if err := req.Send(context.Background()); err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second * 5)
+
+	req2 := c.ChangeRequest()
+	req2.Delete(memif1)
+	if err := req2.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
 

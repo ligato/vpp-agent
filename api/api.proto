@@ -24,8 +24,6 @@ message Model {
 service SyncService {
     rpc Sync (SyncRequest) returns (SyncResponse) {};
     rpc Obtain (ObtainRequest) returns (ObtainResponse) {};
-    //rpc Resync (ReyncRequest) returns (ResyncResponse) {};
-    //rpc Change (ChangeRequest) returns (ChangeResponse) {};
 }
 
 message SyncOptions {
@@ -73,42 +71,3 @@ message ModelInfo {
     string status = 3;
     string error = 4;
 }
-
-/*message ResyncOptions {
-    bool full_resync = 1;
-    uint32 retry_count = 2;
-}
-
-message ReyncRequest {
-    repeated ModelItem items = 1;
-    ResyncOptions options = 2;
-}
-
-message ResyncResponse {
-    repeated ItemResult item_results = 1;
-}
-
-message ChangeOptions {
-    uint32 retry_count = 1;
-}
-
-message ChangeItem {
-    ModelItem item = 1;
-    bool delete = 2;
-}
-
-message ChangeRequest {
-    repeated ChangeItem change_items = 1;
-    ChangeOptions = 2;
-}
-
-message ChangeResponse {
-    repeated ItemResult item_results = 1;
-}
-
-message ItemResult {
-    string item_id = 1;
-    string status = 2;
-    string error = 3;
-    map<string,string> meta = 4;
-}*/

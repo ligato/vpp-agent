@@ -29,9 +29,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
-
-	_ "github.com/ligato/vpp-agent/api/models/linux"
-	_ "github.com/ligato/vpp-agent/api/models/vpp"
 )
 
 /*
@@ -106,7 +103,7 @@ func testLocalClientWithScheduler() {
 	}*/
 
 	req := client.Local.ResyncRequest()
-	req.Update(memif0, memif0_10)
+	req.Put(memif0, memif0_10)
 	if err := req.Send(context.Background()); err != nil {
 		fmt.Println(err)
 		return

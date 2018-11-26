@@ -37,7 +37,7 @@ func (m *ModelSpec) Reset()         { *m = ModelSpec{} }
 func (m *ModelSpec) String() string { return proto.CompactTextString(m) }
 func (*ModelSpec) ProtoMessage()    {}
 func (*ModelSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{0}
+	return fileDescriptor_api_311cf73f329d29fe, []int{0}
 }
 func (m *ModelSpec) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ModelSpec.Unmarshal(m, b)
@@ -101,7 +101,7 @@ func (m *Model) Reset()         { *m = Model{} }
 func (m *Model) String() string { return proto.CompactTextString(m) }
 func (*Model) ProtoMessage()    {}
 func (*Model) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{1}
+	return fileDescriptor_api_311cf73f329d29fe, []int{1}
 }
 func (m *Model) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Model.Unmarshal(m, b)
@@ -151,7 +151,7 @@ func (m *SyncOptions) Reset()         { *m = SyncOptions{} }
 func (m *SyncOptions) String() string { return proto.CompactTextString(m) }
 func (*SyncOptions) ProtoMessage()    {}
 func (*SyncOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{2}
+	return fileDescriptor_api_311cf73f329d29fe, []int{2}
 }
 func (m *SyncOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SyncOptions.Unmarshal(m, b)
@@ -201,7 +201,7 @@ func (m *SyncRequest) Reset()         { *m = SyncRequest{} }
 func (m *SyncRequest) String() string { return proto.CompactTextString(m) }
 func (*SyncRequest) ProtoMessage()    {}
 func (*SyncRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{3}
+	return fileDescriptor_api_311cf73f329d29fe, []int{3}
 }
 func (m *SyncRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SyncRequest.Unmarshal(m, b)
@@ -250,7 +250,7 @@ func (m *SyncResponse) Reset()         { *m = SyncResponse{} }
 func (m *SyncResponse) String() string { return proto.CompactTextString(m) }
 func (*SyncResponse) ProtoMessage()    {}
 func (*SyncResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{4}
+	return fileDescriptor_api_311cf73f329d29fe, []int{4}
 }
 func (m *SyncResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SyncResponse.Unmarshal(m, b)
@@ -293,7 +293,7 @@ func (m *SyncItem) Reset()         { *m = SyncItem{} }
 func (m *SyncItem) String() string { return proto.CompactTextString(m) }
 func (*SyncItem) ProtoMessage()    {}
 func (*SyncItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{5}
+	return fileDescriptor_api_311cf73f329d29fe, []int{5}
 }
 func (m *SyncItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SyncItem.Unmarshal(m, b)
@@ -344,7 +344,7 @@ func (m *SyncItemResult) Reset()         { *m = SyncItemResult{} }
 func (m *SyncItemResult) String() string { return proto.CompactTextString(m) }
 func (*SyncItemResult) ProtoMessage()    {}
 func (*SyncItemResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{6}
+	return fileDescriptor_api_311cf73f329d29fe, []int{6}
 }
 func (m *SyncItemResult) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SyncItemResult.Unmarshal(m, b)
@@ -400,7 +400,7 @@ func (m *ObtainOptions) Reset()         { *m = ObtainOptions{} }
 func (m *ObtainOptions) String() string { return proto.CompactTextString(m) }
 func (*ObtainOptions) ProtoMessage()    {}
 func (*ObtainOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{7}
+	return fileDescriptor_api_311cf73f329d29fe, []int{7}
 }
 func (m *ObtainOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ObtainOptions.Unmarshal(m, b)
@@ -444,7 +444,7 @@ func (m *ObtainRequest) Reset()         { *m = ObtainRequest{} }
 func (m *ObtainRequest) String() string { return proto.CompactTextString(m) }
 func (*ObtainRequest) ProtoMessage()    {}
 func (*ObtainRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{8}
+	return fileDescriptor_api_311cf73f329d29fe, []int{8}
 }
 func (m *ObtainRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ObtainRequest.Unmarshal(m, b)
@@ -500,7 +500,7 @@ func (m *ObtainResponse) Reset()         { *m = ObtainResponse{} }
 func (m *ObtainResponse) String() string { return proto.CompactTextString(m) }
 func (*ObtainResponse) ProtoMessage()    {}
 func (*ObtainResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{9}
+	return fileDescriptor_api_311cf73f329d29fe, []int{9}
 }
 func (m *ObtainResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ObtainResponse.Unmarshal(m, b)
@@ -545,7 +545,7 @@ func (m *ModelInfo) Reset()         { *m = ModelInfo{} }
 func (m *ModelInfo) String() string { return proto.CompactTextString(m) }
 func (*ModelInfo) ProtoMessage()    {}
 func (*ModelInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_afbe53362edc248f, []int{10}
+	return fileDescriptor_api_311cf73f329d29fe, []int{10}
 }
 func (m *ModelInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ModelInfo.Unmarshal(m, b)
@@ -716,9 +716,9 @@ var _SyncService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api.proto",
 }
 
-func init() { proto.RegisterFile("api.proto", fileDescriptor_api_afbe53362edc248f) }
+func init() { proto.RegisterFile("api.proto", fileDescriptor_api_311cf73f329d29fe) }
 
-var fileDescriptor_api_afbe53362edc248f = []byte{
+var fileDescriptor_api_311cf73f329d29fe = []byte{
 	// 631 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x94, 0xdf, 0x6a, 0xdb, 0x3e,
 	0x14, 0xc7, 0x7f, 0x89, 0x93, 0x36, 0x39, 0xf9, 0x25, 0x74, 0x6a, 0x19, 0x5e, 0x60, 0x6b, 0xf1,

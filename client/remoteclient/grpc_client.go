@@ -8,17 +8,17 @@ import (
 	"github.com/ligato/vpp-agent/client"
 )
 
-type remoteClient struct {
+type grpcClient struct {
 	serviceClient api.SyncServiceClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
 func NewClientGRPC(syncSvc api.SyncServiceClient) client.SyncClient {
-	return &remoteClient{syncSvc}
+	return &grpcClient{syncSvc}
 }
 
 // ResyncRequest returns new resync request.
-func (c *remoteClient) ResyncRequest() client.SyncRequest {
+func (c *grpcClient) ResyncRequest() client.ResyncRequest {
 	return &request{
 		serviceClient: c.serviceClient,
 		req: &api.SyncRequest{
@@ -28,7 +28,7 @@ func (c *remoteClient) ResyncRequest() client.SyncRequest {
 }
 
 // ChangeRequest return new change request.
-func (c *remoteClient) ChangeRequest() client.SyncRequest {
+func (c *grpcClient) ChangeRequest() client.ChangeRequest {
 	return &request{
 		serviceClient: c.serviceClient,
 		req: &api.SyncRequest{
@@ -37,33 +37,15 @@ func (c *remoteClient) ChangeRequest() client.SyncRequest {
 	}
 }
 
-/*type resyncRequest struct {
-	serviceClient api.SyncServiceClient
-	req           *api.SyncRequest
-}
-
-// Put adds the given model data to the transaction.
-func (r *resyncRequest) Put(protoModels ...models.ProtoModel) {
-	for _, protoModel := range protoModels {
-		model, err := models.Marshal(protoModel)
-		if err != nil {
-			continue
-		}
-		r.req.Items = append(r.req.Items, &api.SyncItem{Model: model})
-	}
-}
-
-// Send commits the transaction with all data.
-func (r *resyncRequest) Send() (err error) {
-	ctx := context.Background()
-	_, err = r.serviceClient.Sync(ctx, r.req)
-	return err
-}*/
-
 type request struct {
 	serviceClient api.SyncServiceClient
 	req           *api.SyncRequest
 	err           error
+}
+
+// Put puts the given model data to the transaction.
+func (r *request) Put(protoModels ...models.ProtoModel) {
+	r.Update(protoModels...)
 }
 
 // Update adds update for the given model data to the transaction.

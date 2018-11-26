@@ -8,34 +8,23 @@ import (
 
 // SyncClient
 type SyncClient interface {
-	//SyncRequest(ctx context.Context) SyncRequest
-	ResyncRequest() SyncRequest
-	ChangeRequest() SyncRequest
+	ResyncRequest() ResyncRequest
+	ChangeRequest() ChangeRequest
 }
 
 type SyncRequest interface {
 	Send(ctx context.Context) error
-
-	Update(models ...models.ProtoModel)
-	Delete(models ...models.ProtoModel)
 }
 
-/*
 // ResyncRequest
 type ResyncRequest interface {
-	Request
+	SyncRequest
 	Put(models ...models.ProtoModel)
 }
 
 // ChangeRequest
 type ChangeRequest interface {
-	TxnRequest
+	SyncRequest
 	Update(models ...models.ProtoModel)
 	Delete(models ...models.ProtoModel)
 }
-*/
-/*
-// ChangeRequest
-type ChangeRequest interface {
-}
-*/
