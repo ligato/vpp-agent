@@ -16,7 +16,23 @@ package vpp_acl
 
 import (
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
+
+func init() {
+	models.Register(&Acl{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "acl",
+	})
+}
+
+// ModelID provides implementation for ProtoModel
+func (i *Acl) ModelID() string {
+	return i.GetName()
+}
 
 const (
 	// Prefix is ACL key prefix

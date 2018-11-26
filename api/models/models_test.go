@@ -18,34 +18,59 @@ import (
 	"testing"
 
 	"github.com/ligato/vpp-agent/api/models"
-	_ "github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 )
 
-func TestKey(t *testing.T) {
-	testIf := &linux_interfaces.Interface{
-		Name: "testName",
-		Type: linux_interfaces.Interface_VETH,
+func TestKeys(t *testing.T) {
+	tests := []struct {
+		name        string
+		model       models.ProtoModel
+		expectedKey string
+	}{
+		{
+			name: "linux iface",
+			model: &linux_interfaces.Interface{
+				Name: "testName",
+				Type: linux_interfaces.Interface_VETH,
+			},
+			expectedKey: "linux/config/v2/interface/testName",
+		},
+		{
+			name: "linux route",
+			model: &linux_l3.StaticRoute{
+				DstNetwork:        "1.1.1.1/24",
+				OutgoingInterface: "eth0",
+				GwAddr:            "9.9.9.9",
+			},
+			expectedKey: "linux/config/v2/route/1.1.1.0/24/eth0",
+		},
+		{
+			name: "linux arp",
+			model: &linux_l3.StaticARPEntry{
+				Interface: "if1",
+				IpAddress: "1.2.3.4",
+				HwAddress: "11:22:33:44:55:66",
+			},
+			expectedKey: "linux/config/v2/arp/if1/1.2.3.4",
+		},
+		{
+			name: "vpp dnat",
+			model: &vpp_nat.DNat44{
+				Label: "mynat1",
+			},
+			expectedKey: "vpp/config/v2/nat44/dnat/mynat1",
+		},
 	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := models.Key(test.model)
+			t.Logf("key: %q", key)
 
-	key := models.Key(testIf)
-	t.Logf("key=%q", key)
-	if key != "linux/config/v2/interface/testName" {
-		t.Fatalf("key is: %q", key)
-	}
-}
-
-func TestKey2(t *testing.T) {
-	testIf := &linux_l3.StaticRoute{
-		DstNetwork:        "1.1.1.1/24",
-		OutgoingInterface: "eth0",
-		GwAddr:            "9.9.9.9",
-	}
-
-	key := models.Key(testIf)
-	t.Logf("key=%q", key)
-	if key != "linux/config/v2/route/1.1.1.0/24/eth0" {
-		t.Fatalf("key is: %q", key)
+			if key != test.expectedKey {
+				t.Fatalf("expected key: %q, got: %q", test.expectedKey, key)
+			}
+		})
 	}
 }

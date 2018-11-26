@@ -17,7 +17,34 @@ package vpp_l2
 import (
 	"net"
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
+
+func init() {
+	models.Register(&BridgeDomain{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "bd",
+	})
+	models.Register(&XConnectPair{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "xconnect",
+	})
+}
+
+// ModelID provides implementation for ProtoModel
+func (i *BridgeDomain) ModelID() string {
+	return i.GetName()
+}
+
+// ModelID provides implementation for ProtoModel
+func (i *XConnectPair) ModelID() string {
+	return i.GetReceiveInterface()
+}
 
 /* Bridge Domain */
 const (

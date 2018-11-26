@@ -16,7 +16,26 @@ package vpp_stn
 
 import (
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
+
+func init() {
+	models.Register(&Rule{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "stn/rule",
+	})
+}
+
+// ModelID provides implementation for ProtoModel
+func (i *Rule) ModelID() string {
+	id := "{iface}/ip/{ip}"
+	id = strings.Replace(id, "{iface}", i.GetInterface(), 1)
+	id = strings.Replace(id, "{ip}", i.GetIpAddress(), 1)
+	return id
+}
 
 const (
 	// Prefix is STN key prefix

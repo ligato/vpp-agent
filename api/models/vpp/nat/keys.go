@@ -16,7 +16,34 @@ package vpp_nat
 
 import (
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
+
+func init() {
+	models.Register(&Nat44Global{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "nat44",
+	})
+	models.Register(&DNat44{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "nat44/dnat",
+	})
+}
+
+// ModelID provides implementation for ProtoModel
+func (i *Nat44Global) ModelID() string {
+	return "global"
+}
+
+// ModelID provides implementation for ProtoModel
+func (i *DNat44) ModelID() string {
+	return i.Label
+}
 
 /* NAT44 */
 const (
