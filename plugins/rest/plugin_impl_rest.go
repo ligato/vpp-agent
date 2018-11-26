@@ -130,7 +130,7 @@ func (plugin *Plugin) Init() (err error) {
 	plugin.rtHandler = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
 	plugin.l4Handler = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log)
 	// Linux indexes and handlers
-	if plugin.Linux != nil {
+	if plugin.Linux != nil && !plugin.Linux.IsDisabled() {
 		linuxIfIndexes := plugin.Linux.GetLinuxIfIndexes()
 		linuxArpIndexes := plugin.Linux.GetLinuxARPIndexes()
 		linuxRtIndexes := plugin.Linux.GetLinuxRouteIndexes()

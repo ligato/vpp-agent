@@ -888,7 +888,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 	plugin.Log.Debug("swIfIndexes watch registration finished")
 	plugin.bdIndexes.WatchNameToIdx(plugin.String(), plugin.bdIdxWatchCh)
 	plugin.Log.Debug("bdIndexes watch registration finished")
-	if plugin.Linux != nil {
+	if plugin.Linux != nil && !plugin.Linux.IsDisabled() {
 		// Get pointer to the map with Linux interface indexes.
 		linuxIfIndexes := plugin.Linux.GetLinuxIfIndexes()
 		if linuxIfIndexes == nil {

@@ -22,6 +22,9 @@ import (
 
 // API of Linux Plugin
 type API interface {
+	// IsDisabled returns true if the plugin is disabled.
+	IsDisabled() bool
+
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration)
 	// to corresponding Linux interface indexes. This mapping is especially helpful
 	// for plugins that need to watch for newly added or deleted Linux interfaces.

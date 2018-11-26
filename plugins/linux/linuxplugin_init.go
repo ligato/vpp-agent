@@ -92,6 +92,11 @@ type Config struct {
 	Disabled  bool `json:"disabled"`
 }
 
+// IsDisabled returns true if the plugin is disabled.
+func (plugin *Plugin) IsDisabled() bool {
+	return plugin.disabled
+}
+
 // GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration)
 // interface indexes.
 func (plugin *Plugin) GetLinuxIfIndexes() ifaceidx.LinuxIfIndex {

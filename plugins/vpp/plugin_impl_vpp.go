@@ -166,6 +166,9 @@ type Config struct {
 
 // LinuxPluginAPI is interface for Linux plugin.
 type LinuxPluginAPI interface {
+	// IsDisabled returns true if the plugin is disabled.
+	IsDisabled() bool
+
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
@@ -421,7 +424,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// Injects VPP interface index mapping into Linux plugin
 	plugin.swIfIndexes = plugin.ifConfigurator.GetSwIfIndexes()
-	if plugin.Linux != nil {
+	if plugin.Linux != nil && !plugin.Linux.IsDisabled() {
 		plugin.Linux.InjectVppIfIndexes(plugin.swIfIndexes)
 	}
 	// Interface state updater
