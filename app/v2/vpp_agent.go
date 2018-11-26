@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin"
 
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
@@ -151,24 +152,24 @@ func (VPPAgent) String() string {
 
 // VPP contains all VPP plugins.
 type VPP struct {
-	IfPlugin    *ifplugin.IfPlugin
-	IPSecPlugin *ipsecplugin.IPSecPlugin
-	L2Plugin    *l2plugin.L2Plugin
-	L3Plugin    *l3plugin.L3Plugin
-	ACLPlugin   *aclplugin.ACLPlugin
-	NATPlugin   *natplugin.NATPlugin
-	STNPlugin   *stnplugin.STNPlugin
+	IfPlugin   *ifplugin.IfPlugin
+	IPSecPlugin *ipsecplugin.IPSecPluginL2Plugin   *l2plugin.L2Plugin
+	L3Plugin   *l3plugin.L3Plugin
+	ACLPlugin  *aclplugin.ACLPlugin
+	NATPlugin  *natplugin.NATPlugin
+	PuntPlugin *puntplugin.PuntPlugin
+	STNPlugin  *stnplugin.STNPlugin
 }
 
 func defaultVPP() VPP {
 	return VPP{
-		IfPlugin:    &ifplugin.DefaultPlugin,
-		IPSecPlugin: &ipsecplugin.DefaultPlugin,
-		L2Plugin:    &l2plugin.DefaultPlugin,
-		L3Plugin:    &l3plugin.DefaultPlugin,
-		ACLPlugin:   &aclplugin.DefaultPlugin,
-		NATPlugin:   &natplugin.DefaultPlugin,
-		STNPlugin:   &stnplugin.DefaultPlugin,
+		IfPlugin:   &ifplugin.DefaultPlugin,
+		IPSecPlugin: &ipsecplugin.DefaultPlugin,L2Plugin:   &l2plugin.DefaultPlugin,
+		L3Plugin:   &l3plugin.DefaultPlugin,
+		ACLPlugin:  &aclplugin.DefaultPlugin,
+		NATPlugin:  &natplugin.DefaultPlugin,
+		PuntPlugin: &puntplugin.DefaultPlugin,
+		STNPlugin:  &stnplugin.DefaultPlugin,
 	}
 }
 
