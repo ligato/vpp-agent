@@ -19,12 +19,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
-	"github.com/ligato/vpp-agent/api"
 )
-
-// This constant is used to replace the constant from types.MarshalAny.
-const LigatoApis = "models.ligato.io/"
 
 // ProtoModel represents proto.Message that returns model key.
 type ProtoModel interface {
@@ -32,6 +27,7 @@ type ProtoModel interface {
 	ModelID() string
 }
 
+// Spec represents model specification for registering models.
 type Spec struct {
 	Version   string
 	Module    string
@@ -40,25 +36,31 @@ type Spec struct {
 	protoName string
 }
 
-func (s Spec) Prefix() string {
+// KeyPrefix returns key prefix used for storing model in KV stores.
+func (s Spec) KeyPrefix() string {
 	return fmt.Sprintf("%s/%s/%s/%s/", s.Module, s.Class, s.Version, s.Kind)
 }
 
+// Key is a shorthand for the GetKey for avoid error checking.
 func Key(m ProtoModel) string {
 	key, _ := GetKey(m)
 	return key
 }
 
+// GetKey returns complete key for gived model,
+// including key prefix defined by model specification.
+// It returns error if given model is not registered.
 func GetKey(m ProtoModel) (string, error) {
 	protoName := proto.MessageName(m)
 	spec := registeredModels[protoName]
 	if spec == nil {
 		return "", fmt.Errorf("model %s is not registered", protoName)
 	}
-	key := spec.Prefix() + m.ModelID()
+	key := spec.KeyPrefix() + m.ModelID()
 	return key, nil
 }
 
+// GetModelSpec returns registered model specification for given model.
 func GetModelSpec(m ProtoModel) (*Spec, error) {
 	protoName := proto.MessageName(m)
 	spec := registeredModels[protoName]
@@ -68,50 +70,9 @@ func GetModelSpec(m ProtoModel) (*Spec, error) {
 	return spec, nil
 }
 
-// Unmarshal is helper function for unmarshalling model data.
-func Unmarshal(m *api.Model) (ProtoModel, error) {
-	protoName, err := types.AnyMessageName(m.Any)
-	if err != nil {
-		return nil, err
-	}
-	spec := registeredModels[protoName]
-	if spec == nil {
-		return nil, fmt.Errorf("model %s is not registered", protoName)
-	} /*else if spec.Version != m.Version {
-		return nil, fmt.Errorf("model %s (%s) is registered with different version: %q",
-			protoName, m.Version, spec.Version)
-	}*/
-
-	var any types.DynamicAny
-	if err := types.UnmarshalAny(m.Any, &any); err != nil {
-		return nil, err
-	}
-	return any.Message.(ProtoModel), nil
-}
-
-// Marshal is helper function for marshalling into model data.
-func Marshal(pb ProtoModel) (*api.Model, error) {
-	protoName := proto.MessageName(pb)
-	spec := registeredModels[protoName]
-	if spec == nil {
-		return nil, fmt.Errorf("model %s is not registered", protoName)
-	}
-
-	any, err := types.MarshalAny(pb)
-	if err != nil {
-		return nil, err
-	}
-	any.TypeUrl = LigatoApis + proto.MessageName(pb)
-
-	model := &api.Model{
-		//Version: spec.Version,
-		Any: any,
-	}
-	return model, nil
-}
-
 var registeredModels = make(map[string]*Spec)
 
+// Register registers given protobuf with model specification.
 func Register(pb proto.Message, spec Spec, fn ...interface{}) {
 	protoName := proto.MessageName(pb)
 	if _, ok := registeredModels[protoName]; ok {
