@@ -18,70 +18,74 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
-type Punt_L3Protocol int32
+// L3 protocol definition
+type L3Protocol int32
 
 const (
-	Punt_IPv4 Punt_L3Protocol = 0
-	Punt_IPv6 Punt_L3Protocol = 1
-	Punt_ALL  Punt_L3Protocol = 2
+	L3Protocol_IPv4 L3Protocol = 0
+	L3Protocol_IPv6 L3Protocol = 1
+	L3Protocol_ALL  L3Protocol = 2
 )
 
-var Punt_L3Protocol_name = map[int32]string{
+var L3Protocol_name = map[int32]string{
 	0: "IPv4",
 	1: "IPv6",
 	2: "ALL",
 }
-var Punt_L3Protocol_value = map[string]int32{
+var L3Protocol_value = map[string]int32{
 	"IPv4": 0,
 	"IPv6": 1,
 	"ALL":  2,
 }
 
-func (x Punt_L3Protocol) String() string {
-	return proto.EnumName(Punt_L3Protocol_name, int32(x))
+func (x L3Protocol) String() string {
+	return proto.EnumName(L3Protocol_name, int32(x))
 }
-func (Punt_L3Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_punt_4f7f022f1bf4d08c, []int{1, 0}
+func (L3Protocol) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_punt_93a5044415b1d3d5, []int{0}
 }
 
-type Punt_L4Protocol int32
+type ToHost_L4Protocol int32
 
 const (
-	Punt_UDP Punt_L4Protocol = 0
+	ToHost_TCP ToHost_L4Protocol = 0
+	ToHost_UDP ToHost_L4Protocol = 1
 )
 
-var Punt_L4Protocol_name = map[int32]string{
-	0: "UDP",
+var ToHost_L4Protocol_name = map[int32]string{
+	0: "TCP",
+	1: "UDP",
 }
-var Punt_L4Protocol_value = map[string]int32{
-	"UDP": 0,
+var ToHost_L4Protocol_value = map[string]int32{
+	"TCP": 0,
+	"UDP": 1,
 }
 
-func (x Punt_L4Protocol) String() string {
-	return proto.EnumName(Punt_L4Protocol_name, int32(x))
+func (x ToHost_L4Protocol) String() string {
+	return proto.EnumName(ToHost_L4Protocol_name, int32(x))
 }
-func (Punt_L4Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_punt_4f7f022f1bf4d08c, []int{1, 1}
+func (ToHost_L4Protocol) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_punt_93a5044415b1d3d5, []int{1, 0}
 }
 
 // IpRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
 // to redirect to the defined next hop address via the TX interface
 type IpRedirect struct {
 	// TODO rx interface available in newer VPP api
-	IsIpv6               bool     `protobuf:"varint,1,opt,name=is_ipv6,json=isIpv6,proto3" json:"is_ipv6,omitempty"`
-	RxInterface          string   `protobuf:"bytes,2,opt,name=rx_interface,json=rxInterface,proto3" json:"rx_interface,omitempty"`
-	TxInterface          string   `protobuf:"bytes,3,opt,name=tx_interface,json=txInterface,proto3" json:"tx_interface,omitempty"`
-	NextHop              string   `protobuf:"bytes,4,opt,name=next_hop,json=nextHop,proto3" json:"next_hop,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	L3Protocol           L3Protocol `protobuf:"varint,1,opt,name=l3_protocol,json=l3Protocol,proto3,enum=punt.L3Protocol" json:"l3_protocol,omitempty"`
+	RxInterface          string     `protobuf:"bytes,2,opt,name=rx_interface,json=rxInterface,proto3" json:"rx_interface,omitempty"`
+	TxInterface          string     `protobuf:"bytes,3,opt,name=tx_interface,json=txInterface,proto3" json:"tx_interface,omitempty"`
+	NextHop              string     `protobuf:"bytes,4,opt,name=next_hop,json=nextHop,proto3" json:"next_hop,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
 func (m *IpRedirect) Reset()         { *m = IpRedirect{} }
 func (m *IpRedirect) String() string { return proto.CompactTextString(m) }
 func (*IpRedirect) ProtoMessage()    {}
 func (*IpRedirect) Descriptor() ([]byte, []int) {
-	return fileDescriptor_punt_4f7f022f1bf4d08c, []int{0}
+	return fileDescriptor_punt_93a5044415b1d3d5, []int{0}
 }
 func (m *IpRedirect) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IpRedirect.Unmarshal(m, b)
@@ -101,11 +105,11 @@ func (m *IpRedirect) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_IpRedirect proto.InternalMessageInfo
 
-func (m *IpRedirect) GetIsIpv6() bool {
+func (m *IpRedirect) GetL3Protocol() L3Protocol {
 	if m != nil {
-		return m.IsIpv6
+		return m.L3Protocol
 	}
-	return false
+	return L3Protocol_IPv4
 }
 
 func (m *IpRedirect) GetRxInterface() string {
@@ -131,62 +135,62 @@ func (m *IpRedirect) GetNextHop() string {
 
 // allows otherwise dropped packet which destination IP address matching some of the VPP addresses, provided protocols
 // and port to be punted to the host
-type Punt struct {
-	L3Protocol           Punt_L3Protocol `protobuf:"varint,2,opt,name=l3_protocol,json=l3Protocol,proto3,enum=punt.Punt_L3Protocol" json:"l3_protocol,omitempty"`
-	L4Protocol           Punt_L4Protocol `protobuf:"varint,3,opt,name=l4_protocol,json=l4Protocol,proto3,enum=punt.Punt_L4Protocol" json:"l4_protocol,omitempty"`
-	Port                 uint32          `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
-	SocketPath           string          `protobuf:"bytes,5,opt,name=socket_path,json=socketPath,proto3" json:"socket_path,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+type ToHost struct {
+	L3Protocol           L3Protocol        `protobuf:"varint,2,opt,name=l3_protocol,json=l3Protocol,proto3,enum=punt.L3Protocol" json:"l3_protocol,omitempty"`
+	L4Protocol           ToHost_L4Protocol `protobuf:"varint,3,opt,name=l4_protocol,json=l4Protocol,proto3,enum=punt.ToHost_L4Protocol" json:"l4_protocol,omitempty"`
+	Port                 uint32            `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
+	SocketPath           string            `protobuf:"bytes,5,opt,name=socket_path,json=socketPath,proto3" json:"socket_path,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Punt) Reset()         { *m = Punt{} }
-func (m *Punt) String() string { return proto.CompactTextString(m) }
-func (*Punt) ProtoMessage()    {}
-func (*Punt) Descriptor() ([]byte, []int) {
-	return fileDescriptor_punt_4f7f022f1bf4d08c, []int{1}
+func (m *ToHost) Reset()         { *m = ToHost{} }
+func (m *ToHost) String() string { return proto.CompactTextString(m) }
+func (*ToHost) ProtoMessage()    {}
+func (*ToHost) Descriptor() ([]byte, []int) {
+	return fileDescriptor_punt_93a5044415b1d3d5, []int{1}
 }
-func (m *Punt) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Punt.Unmarshal(m, b)
+func (m *ToHost) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ToHost.Unmarshal(m, b)
 }
-func (m *Punt) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Punt.Marshal(b, m, deterministic)
+func (m *ToHost) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ToHost.Marshal(b, m, deterministic)
 }
-func (dst *Punt) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Punt.Merge(dst, src)
+func (dst *ToHost) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ToHost.Merge(dst, src)
 }
-func (m *Punt) XXX_Size() int {
-	return xxx_messageInfo_Punt.Size(m)
+func (m *ToHost) XXX_Size() int {
+	return xxx_messageInfo_ToHost.Size(m)
 }
-func (m *Punt) XXX_DiscardUnknown() {
-	xxx_messageInfo_Punt.DiscardUnknown(m)
+func (m *ToHost) XXX_DiscardUnknown() {
+	xxx_messageInfo_ToHost.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Punt proto.InternalMessageInfo
+var xxx_messageInfo_ToHost proto.InternalMessageInfo
 
-func (m *Punt) GetL3Protocol() Punt_L3Protocol {
+func (m *ToHost) GetL3Protocol() L3Protocol {
 	if m != nil {
 		return m.L3Protocol
 	}
-	return Punt_IPv4
+	return L3Protocol_IPv4
 }
 
-func (m *Punt) GetL4Protocol() Punt_L4Protocol {
+func (m *ToHost) GetL4Protocol() ToHost_L4Protocol {
 	if m != nil {
 		return m.L4Protocol
 	}
-	return Punt_UDP
+	return ToHost_TCP
 }
 
-func (m *Punt) GetPort() uint32 {
+func (m *ToHost) GetPort() uint32 {
 	if m != nil {
 		return m.Port
 	}
 	return 0
 }
 
-func (m *Punt) GetSocketPath() string {
+func (m *ToHost) GetSocketPath() string {
 	if m != nil {
 		return m.SocketPath
 	}
@@ -195,30 +199,31 @@ func (m *Punt) GetSocketPath() string {
 
 func init() {
 	proto.RegisterType((*IpRedirect)(nil), "punt.IpRedirect")
-	proto.RegisterType((*Punt)(nil), "punt.Punt")
-	proto.RegisterEnum("punt.Punt_L3Protocol", Punt_L3Protocol_name, Punt_L3Protocol_value)
-	proto.RegisterEnum("punt.Punt_L4Protocol", Punt_L4Protocol_name, Punt_L4Protocol_value)
+	proto.RegisterType((*ToHost)(nil), "punt.ToHost")
+	proto.RegisterEnum("punt.L3Protocol", L3Protocol_name, L3Protocol_value)
+	proto.RegisterEnum("punt.ToHost_L4Protocol", ToHost_L4Protocol_name, ToHost_L4Protocol_value)
 }
 
-func init() { proto.RegisterFile("punt.proto", fileDescriptor_punt_4f7f022f1bf4d08c) }
+func init() { proto.RegisterFile("punt.proto", fileDescriptor_punt_93a5044415b1d3d5) }
 
-var fileDescriptor_punt_4f7f022f1bf4d08c = []byte{
-	// 271 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x8e, 0x41, 0x4b, 0x84, 0x40,
-	0x18, 0x86, 0x77, 0x56, 0x5b, 0xed, 0xb3, 0x42, 0x06, 0x96, 0xec, 0xd4, 0xe6, 0x69, 0xbb, 0x78,
-	0x48, 0xf1, 0x1e, 0x74, 0x48, 0xf0, 0x20, 0x42, 0x67, 0x31, 0x9b, 0x70, 0x48, 0x9c, 0x61, 0xfc,
-	0x56, 0xfc, 0x05, 0xfd, 0xdb, 0xfe, 0x43, 0xcc, 0xec, 0xb6, 0x0a, 0xdd, 0xde, 0x79, 0xe7, 0x79,
-	0xf9, 0x1e, 0x00, 0x79, 0xe8, 0x31, 0x92, 0x4a, 0xa0, 0xa0, 0xb6, 0xce, 0xe1, 0x37, 0x01, 0xc8,
-	0x64, 0xc9, 0x3e, 0xb8, 0x62, 0x0d, 0xd2, 0x5b, 0x70, 0xf8, 0x50, 0x71, 0x39, 0xa6, 0x01, 0xd9,
-	0x91, 0xbd, 0x5b, 0x6e, 0xf8, 0x90, 0xc9, 0x31, 0xa5, 0x0f, 0x70, 0xa5, 0xa6, 0x8a, 0xf7, 0xc8,
-	0xd4, 0x67, 0xdd, 0xb0, 0x60, 0xbd, 0x23, 0xfb, 0xcb, 0xd2, 0x53, 0x53, 0xf6, 0x57, 0x69, 0x04,
-	0x97, 0x88, 0x75, 0x44, 0x70, 0x81, 0xdc, 0x81, 0xdb, 0xb3, 0x09, 0xab, 0x56, 0xc8, 0xc0, 0x36,
-	0xdf, 0x8e, 0x7e, 0xbf, 0x0a, 0x19, 0xfe, 0x10, 0xb0, 0x8b, 0x43, 0x8f, 0x34, 0x05, 0xaf, 0x8b,
-	0x2b, 0xe3, 0xd8, 0x88, 0xce, 0x1c, 0xba, 0x79, 0xda, 0x46, 0xc6, 0x5c, 0x03, 0x51, 0x1e, 0x17,
-	0xa7, 0xcf, 0x12, 0xba, 0x73, 0x36, 0xbb, 0x64, 0xde, 0x59, 0xff, 0x77, 0xc9, 0x62, 0x77, 0xce,
-	0x94, 0x82, 0x2d, 0x85, 0x42, 0xe3, 0x73, 0x5d, 0x9a, 0x4c, 0xef, 0xc1, 0x1b, 0x44, 0xf3, 0xc5,
-	0xb0, 0x92, 0x35, 0xb6, 0xc1, 0x85, 0x51, 0x85, 0x63, 0x55, 0xd4, 0xd8, 0x86, 0x8f, 0x00, 0xb3,
-	0x06, 0x75, 0xc1, 0xce, 0x8a, 0x31, 0xf1, 0x57, 0xa7, 0x94, 0xfa, 0x84, 0x3a, 0x60, 0x3d, 0xe7,
-	0xb9, 0xbf, 0x0e, 0xb7, 0x00, 0xf3, 0x65, 0x5d, 0xbf, 0xbd, 0x14, 0xfe, 0xea, 0x7d, 0x63, 0x4c,
-	0xe3, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x4a, 0xbf, 0xaa, 0x41, 0x93, 0x01, 0x00, 0x00,
+var fileDescriptor_punt_93a5044415b1d3d5 = []byte{
+	// 273 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x8e, 0x41, 0x4f, 0x83, 0x30,
+	0x18, 0x86, 0x57, 0xc0, 0x6d, 0x7e, 0xa8, 0x69, 0x7a, 0x11, 0x2f, 0x3a, 0x39, 0x4d, 0x0f, 0x24,
+	0x0a, 0x31, 0x5e, 0x8d, 0x1e, 0x46, 0xc2, 0xa1, 0x21, 0xf3, 0x4c, 0x10, 0x6b, 0x58, 0x24, 0xb4,
+	0xe9, 0x3e, 0x0d, 0x3f, 0xc7, 0xdf, 0xe3, 0xaf, 0x32, 0x2d, 0x73, 0x90, 0x78, 0xf1, 0xf6, 0xf6,
+	0xed, 0xf3, 0x7e, 0x79, 0x00, 0xd4, 0x47, 0x8b, 0x91, 0xd2, 0x12, 0x25, 0xf3, 0x4c, 0x0e, 0xbf,
+	0x08, 0x40, 0xaa, 0x72, 0xf1, 0xba, 0xd1, 0xa2, 0x42, 0x76, 0x03, 0x7e, 0x13, 0x17, 0x16, 0xa8,
+	0x64, 0x13, 0x90, 0x05, 0x59, 0x9e, 0xdc, 0xd2, 0xc8, 0xce, 0xb2, 0x98, 0xef, 0xfa, 0x1c, 0x9a,
+	0x7d, 0x66, 0x97, 0x70, 0xa4, 0xbb, 0x62, 0xd3, 0xa2, 0xd0, 0x6f, 0x65, 0x25, 0x02, 0x67, 0x41,
+	0x96, 0x87, 0xb9, 0xaf, 0xbb, 0xf4, 0xb7, 0x32, 0x08, 0x8e, 0x11, 0xb7, 0x47, 0x70, 0x84, 0x9c,
+	0xc1, 0xbc, 0x15, 0x1d, 0x16, 0xb5, 0x54, 0x81, 0x67, 0xbf, 0x67, 0xe6, 0xbd, 0x92, 0x2a, 0xfc,
+	0x26, 0x30, 0x5d, 0xcb, 0x95, 0xdc, 0xfe, 0xd1, 0x73, 0xfe, 0xa1, 0x77, 0x0f, 0x7e, 0x93, 0x0c,
+	0x13, 0xd7, 0x4e, 0x4e, 0xfb, 0x49, 0x7f, 0x35, 0xca, 0x92, 0xd1, 0x72, 0x9f, 0x19, 0x03, 0x4f,
+	0x49, 0x8d, 0x56, 0xe7, 0x38, 0xb7, 0x99, 0x5d, 0x80, 0xbf, 0x95, 0xd5, 0xbb, 0xc0, 0x42, 0x95,
+	0x58, 0x07, 0x07, 0xd6, 0x14, 0xfa, 0x8a, 0x97, 0x58, 0x87, 0xe7, 0x00, 0xc3, 0x39, 0x36, 0x03,
+	0x77, 0xfd, 0xc8, 0xe9, 0xc4, 0x84, 0xe7, 0x27, 0x4e, 0xc9, 0xf5, 0x15, 0xc0, 0x20, 0xca, 0xe6,
+	0xe0, 0xa5, 0xfc, 0x33, 0xa1, 0x93, 0x5d, 0xba, 0xa3, 0xc4, 0xa0, 0x0f, 0x59, 0x46, 0x9d, 0x97,
+	0xa9, 0x95, 0x8e, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x89, 0xbf, 0xe8, 0x96, 0xb5, 0x01, 0x00,
+	0x00,
 }

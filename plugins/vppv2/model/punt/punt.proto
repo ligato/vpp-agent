@@ -2,11 +2,17 @@ syntax = "proto3";
 
 package punt;
 
+/* L3 protocol definition */
+enum L3Protocol {
+    IPv4 = 0;
+    IPv6 = 1;
+    ALL = 2;
+}
+
 /* IpRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
 to redirect to the defined next hop address via the TX interface */
 message IpRedirect {
-    // TODO rx interface available in newer VPP api
-    bool is_ipv6 = 1;           /* L3 protocol */
+    L3Protocol l3_protocol = 1; /* L3 protocol */
     string rx_interface = 2;    /* Receive interface name. Optional, only redirect traffic incoming from this interface */
     string tx_interface = 3;    /* Transmit interface name */
     string next_hop = 4;        /* Next hop IP where the traffic is redirected */
@@ -14,18 +20,14 @@ message IpRedirect {
 
 /* allows otherwise dropped packet which destination IP address matching some of the VPP addresses, provided protocols
 and port to be punted to the host */
-message Punt {
-    enum L3Protocol {               /* L3 destination protocol a packet has to match in order to be punted */
-        IPv4 = 0;
-        IPv6 = 1;
-        ALL = 2;
-    }
-    L3Protocol l3_protocol = 2;
-    enum L4Protocol {
-        UDP = 0;
+message ToHost {
+    L3Protocol l3_protocol = 2;     /* L3 destination protocol a packet has to match in order to be punted */
+    enum L4Protocol {               /* Currently VPP only supports UDP*/
+        TCP = 0;
+        UDP = 1;
     }
     L4Protocol l4_protocol = 3;     /* L4 destination protocol a packet has to match */
     uint32 port = 4;                /* Destination port */
 
-    string socket_path = 5;         /* Optional, use unix domain socket to punt packets to the host  */
+    string socket_path = 5;         /* Optional, use unix domain socket to punt packets to the host. */
 }
