@@ -22,44 +22,44 @@ func TestPuntToHostKey(t *testing.T) {
 	tests := []struct {
 		name        string
 		l3Protocol  L3Protocol
-		l4Protocol  ToHost_L4Protocol
+		l4Protocol  L4Protocol
 		port        uint32
 		expectedKey string
 	}{
 		{
 			name:        "valid Punt case (IPv4/UDP)",
 			l3Protocol:  L3Protocol_IPv4,
-			l4Protocol:  ToHost_UDP,
+			l4Protocol:  L4Protocol_UDP,
 			port:        9000,
-			expectedKey: "vpp/config/v2/punt/tohost/l3/0/l4/1/port/9000",
+			expectedKey: "vpp/config/v2/punt/tohost/l3/IPv4/l4/UDP/port/9000",
 		},
 		{
 			name:        "valid Punt case (IPv4/TCP)",
 			l3Protocol:  L3Protocol_IPv4,
-			l4Protocol:  ToHost_TCP,
+			l4Protocol:  L4Protocol_TCP,
 			port:        9000,
-			expectedKey: "vpp/config/v2/punt/tohost/l3/0/l4/0/port/9000",
+			expectedKey: "vpp/config/v2/punt/tohost/l3/IPv4/l4/TCP/port/9000",
 		},
 		{
 			name:        "valid Punt case (IPv6/UDP)",
 			l3Protocol:  L3Protocol_IPv6,
-			l4Protocol:  ToHost_UDP,
+			l4Protocol:  L4Protocol_UDP,
 			port:        9000,
-			expectedKey: "vpp/config/v2/punt/tohost/l3/1/l4/1/port/9000",
+			expectedKey: "vpp/config/v2/punt/tohost/l3/IPv6/l4/UDP/port/9000",
 		},
 		{
 			name:        "valid Punt case (IPv6/TCP)",
 			l3Protocol:  L3Protocol_IPv6,
-			l4Protocol:  ToHost_TCP,
+			l4Protocol:  L4Protocol_TCP,
 			port:        0,
-			expectedKey: "vpp/config/v2/punt/tohost/l3/1/l4/0/port/<invalid>",
+			expectedKey: "vpp/config/v2/punt/tohost/l3/IPv6/l4/TCP/port/<invalid>",
 		},
 		{
 			name:        "invalid Punt case (zero port)",
 			l3Protocol:  L3Protocol_IPv4,
-			l4Protocol:  ToHost_UDP,
+			l4Protocol:  L4Protocol_UDP,
 			port:        0,
-			expectedKey: "vpp/config/v2/punt/tohost/l3/0/l4/1/port/<invalid>",
+			expectedKey: "vpp/config/v2/punt/tohost/l3/IPv4/l4/UDP/port/<invalid>",
 		},
 	}
 	for _, test := range tests {
@@ -78,57 +78,57 @@ func TestParsePuntToHostKey(t *testing.T) {
 	tests := []struct {
 		name            string
 		key             string
-		expectedL3      string
-		expectedL4      string
-		expectedPort    string
+		expectedL3      L3Protocol
+		expectedL4      L4Protocol
+		expectedPort    uint32
 		isPuntToHostKey bool
 	}{
 		{
 			name:            "valid Punt key",
-			key:             "vpp/config/v2/punt/tohost/l3/0/l4/1/port/9000",
-			expectedL3:      "0",
-			expectedL4:      "1",
-			expectedPort:    "9000",
+			key:             "vpp/config/v2/punt/tohost/l3/IPv4/l4/TCP/port/9000",
+			expectedL3:      L3Protocol(4),
+			expectedL4:      L4Protocol(6),
+			expectedPort:    9000,
 			isPuntToHostKey: true,
 		},
 		{
 			name:            "invalid Punt L3",
-			key:             "vpp/config/v2/punt/tohost/l3/ipv4/l4/1/port/9000",
-			expectedL3:      "<invalid>",
-			expectedL4:      "1",
-			expectedPort:    "9000",
+			key:             "vpp/config/v2/punt/tohost/l3/4/l4/TCP/port/9000",
+			expectedL3:      L3Protocol(0),
+			expectedL4:      L4Protocol(6),
+			expectedPort:    9000,
 			isPuntToHostKey: true,
 		},
 		{
 			name:            "invalid Punt L3 and L4",
-			key:             "vpp/config/v2/punt/tohost/l3/ipv4/l4/tcp/port/9000",
-			expectedL3:      "<invalid>",
-			expectedL4:      "<invalid>",
-			expectedPort:    "9000",
+			key:             "vpp/config/v2/punt/tohost/l3/4/l4/6/port/9000",
+			expectedL3:      L3Protocol(0),
+			expectedL4:      L4Protocol(0),
+			expectedPort:    9000,
 			isPuntToHostKey: true,
 		},
 		{
 			name:            "invalid Punt L4 and port",
-			key:             "vpp/config/v2/punt/tohost/l3/1/l4/udp/port/port1",
-			expectedL3:      "1",
-			expectedL4:      "<invalid>",
-			expectedPort:    "<invalid>",
+			key:             "vpp/config/v2/punt/tohost/l3/IPv6/l4/17/port/port1",
+			expectedL3:      L3Protocol(6),
+			expectedL4:      L4Protocol(0),
+			expectedPort:    0,
 			isPuntToHostKey: true,
 		},
 		{
 			name:            "invalid all",
-			key:             "vpp/config/v2/punt/tohost/l3/ipv4/l4/udp/port/port1",
-			expectedL3:      "<invalid>",
-			expectedL4:      "<invalid>",
-			expectedPort:    "<invalid>",
+			key:             "vpp/config/v2/punt/tohost/l3/4/l4/17/port/port1",
+			expectedL3:      L3Protocol(0),
+			expectedL4:      L4Protocol(0),
+			expectedPort:    0,
 			isPuntToHostKey: true,
 		},
 		{
 			name:            "not a Punt to host key",
-			key:             "vpp/config/v2/punt/ipredirect/l3/6/tx/if1",
-			expectedL3:      "",
-			expectedL4:      "",
-			expectedPort:    "",
+			key:             "vpp/config/v2/punt/ipredirect/l3/IPv6/tx/if1",
+			expectedL3:      L3Protocol(0),
+			expectedL4:      L4Protocol(0),
+			expectedPort:    0,
 			isPuntToHostKey: false,
 		},
 	}
@@ -162,19 +162,19 @@ func TestIPredirectKey(t *testing.T) {
 			name:        "valid IP redirect case (IPv4)",
 			l3Protocol:  L3Protocol_IPv4,
 			txInterface: "if1",
-			expectedKey: "vpp/config/v2/punt/ipredirect/l3/0/tx/if1",
+			expectedKey: "vpp/config/v2/punt/ipredirect/l3/IPv4/tx/if1",
 		},
 		{
 			name:        "valid IP redirect case (IPv6)",
 			l3Protocol:  L3Protocol_IPv6,
 			txInterface: "if1",
-			expectedKey: "vpp/config/v2/punt/ipredirect/l3/1/tx/if1",
+			expectedKey: "vpp/config/v2/punt/ipredirect/l3/IPv6/tx/if1",
 		},
 		{
 			name:        "invalid IP redirect case (undefined interface)",
 			l3Protocol:  L3Protocol_IPv4,
 			txInterface: "",
-			expectedKey: "vpp/config/v2/punt/ipredirect/l3/0/tx/<invalid>",
+			expectedKey: "vpp/config/v2/punt/ipredirect/l3/IPv4/tx/<invalid>",
 		},
 	}
 	for _, test := range tests {
@@ -193,28 +193,28 @@ func TestParseIPRedirectKey(t *testing.T) {
 	tests := []struct {
 		name            string
 		key             string
-		expectedL3      string
+		expectedL3      L3Protocol
 		expectedIf      string
 		isIPRedirectKey bool
 	}{
 		{
 			name:            "valid IP redirect key (IPv4)",
-			key:             "vpp/config/v2/punt/ipredirect/l3/0/tx/if1",
-			expectedL3:      "0",
+			key:             "vpp/config/v2/punt/ipredirect/l3/IPv4/tx/if1",
+			expectedL3:      L3Protocol(4),
 			expectedIf:      "if1",
 			isIPRedirectKey: true,
 		},
 		{
 			name:            "valid IP redirect key (IPv6)",
-			key:             "vpp/config/v2/punt/ipredirect/l3/1/tx/if1",
-			expectedL3:      "1",
+			key:             "vpp/config/v2/punt/ipredirect/l3/IPv6/tx/if1",
+			expectedL3:      L3Protocol(6),
 			expectedIf:      "if1",
 			isIPRedirectKey: true,
 		},
 		{
 			name:            "invalid IP redirect key (invalid interface)",
-			key:             "vpp/config/v2/punt/ipredirect/l3/0/tx/<invalid>",
-			expectedL3:      "0",
+			key:             "vpp/config/v2/punt/ipredirect/l3/IPv4/tx/<invalid>",
+			expectedL3:      L3Protocol(4),
 			expectedIf:      "<invalid>",
 			isIPRedirectKey: true,
 		},

@@ -37,7 +37,7 @@ func TestAddPunt(t *testing.T) {
 
 	err := puntHandler.AddPunt(&punt.ToHost{
 		L3Protocol: punt.L3Protocol_IPv4,
-		L4Protocol: punt.ToHost_UDP,
+		L4Protocol: punt.L4Protocol_UDP,
 		Port:       9000,
 	})
 
@@ -58,7 +58,7 @@ func TestDeletePunt(t *testing.T) {
 
 	err := puntHandler.DeletePunt(&punt.ToHost{
 		L3Protocol: punt.L3Protocol_IPv4,
-		L4Protocol: punt.ToHost_UDP,
+		L4Protocol: punt.L4Protocol_UDP,
 		Port:       9000,
 	})
 
@@ -79,7 +79,7 @@ func TestRegisterPuntSocket(t *testing.T) {
 
 	err := puntHandler.RegisterPuntSocket(&punt.ToHost{
 		L3Protocol: punt.L3Protocol_IPv4,
-		L4Protocol: punt.ToHost_UDP,
+		L4Protocol: punt.L4Protocol_UDP,
 		Port:       9000,
 		SocketPath: "/test/path/socket",
 	})
@@ -103,7 +103,7 @@ func TestRegisterPuntSocketAllIPv4(t *testing.T) {
 
 	err := puntHandler.RegisterPuntSocket(&punt.ToHost{
 		L3Protocol: punt.L3Protocol_ALL,
-		L4Protocol: punt.ToHost_UDP,
+		L4Protocol: punt.L4Protocol_UDP,
 		Port:       9000,
 		SocketPath: "/test/path/socket",
 	})

@@ -9,8 +9,8 @@ interface - redirect applies only to traffic received via RX.
 2. **Punt to host:** packet matching one of the VPP IP address and also defined L3 protocol, L4 protocol and also port
 is punted to host
 
-3. **Punt to socket** packet has to match all the criteria as in previous case, but packet is punted to unix domain
-socket
+3. **Punt to host via socket** packet has to match all the criteria as in previous case, but packet is punted to 
+unix domain socket
 
 In order to use punt to socket, VPP has to be started with configuration:
 
@@ -22,8 +22,8 @@ punt {
 
 Otherwise VPP-agent returns error during setup.
 
-Other limitations:
+### Limitations:
 - only one socket path can be defined for the VPP
 - the path has to match with the configuration in proto file
 - punt to host entries cannot be removed with current VPP version 
- 
+- punt configuration cannot be dumped in current VPP version

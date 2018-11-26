@@ -51,8 +51,16 @@ const (
 /* Punt to host */
 
 // ToHostKey returns key representing punt to host/socket configuration.
-func ToHostKey(l3Proto L3Protocol, l4Proto ToHost_L4Protocol, port uint32) string {
-	strL3, strL4, strPort := strconv.Itoa(int(l3Proto)), strconv.Itoa(int(l4Proto)), strconv.Itoa(int(port))
+func ToHostKey(l3Proto L3Protocol, l4Proto L4Protocol, port uint32) string {
+	strL3, ok := L3Protocol_name[int32(l3Proto)]
+	if !ok {
+		strL3 = InvalidKeyPart
+	}
+	strL4, ok := L4Protocol_name[int32(l4Proto)]
+	if !ok {
+		strL3 = InvalidKeyPart
+	}
+	strPort := strconv.Itoa(int(port))
 	if port == 0 {
 		strPort = InvalidKeyPart
 	}
@@ -64,31 +72,31 @@ func ToHostKey(l3Proto L3Protocol, l4Proto ToHost_L4Protocol, port uint32) strin
 }
 
 // ParsePuntToHostKey parses L3 and L4 protocol and port from Punt-to-Host key.
-func ParsePuntToHostKey(key string) (l3ProtoIndex, l4ProtoIndex, port string, isPuntToHostKey bool) {
+func ParsePuntToHostKey(key string) (l3Proto L3Protocol, l4Proto L4Protocol, port uint32, isPuntToHostKey bool) {
 	if strings.HasPrefix(key, PrefixToHost) {
 		keySuffix := strings.TrimPrefix(key, PrefixToHost)
 		puntComps := strings.Split(keySuffix, "/")
 		if len(puntComps) == 6 {
-			if _, err := strconv.Atoi(puntComps[1]); err != nil {
-				puntComps[1] = InvalidKeyPart
+			l3Proto := L3Protocol_value[puntComps[1]]
+			l4Proto := L4Protocol_value[puntComps[3]]
+			keyPort, err := strconv.Atoi(puntComps[5])
+			if err != nil {
+				// Keep port at zero value
 			}
-			if _, err := strconv.Atoi(puntComps[3]); err != nil {
-				puntComps[3] = InvalidKeyPart
-			}
-			if _, err := strconv.Atoi(puntComps[5]); err != nil {
-				puntComps[5] = InvalidKeyPart
-			}
-			return puntComps[1], puntComps[3], puntComps[5], true
+			return L3Protocol(l3Proto), L4Protocol(l4Proto), uint32(keyPort), true
 		}
 	}
-	return "", "", "", false
+	return L3Protocol_UNDEFINED_L3, L4Protocol_UNDEFINED_L4, 0, false
 }
 
 /* IP punt redirect */
 
 // IPRedirectKey returns key representing IP punt redirect configuration.
 func IPRedirectKey(l3Proto L3Protocol, txIf string) string {
-	strL3 := strconv.Itoa(int(l3Proto))
+	strL3, ok := L3Protocol_name[int32(l3Proto)]
+	if !ok {
+		strL3 = InvalidKeyPart
+	}
 	if txIf == "" {
 		txIf = InvalidKeyPart
 	}
@@ -99,13 +107,14 @@ func IPRedirectKey(l3Proto L3Protocol, txIf string) string {
 }
 
 // ParseIPRedirectKey parses L3 and L4 protocol and port from Punt-to-Host key.
-func ParseIPRedirectKey(key string) (l3Proto, txIf string, isIPRedirectKey bool) {
+func ParseIPRedirectKey(key string) (l3Proto L3Protocol, txIf string, isIPRedirectKey bool) {
 	if strings.HasPrefix(key, PrefixIPRedirect) {
 		keySuffix := strings.TrimPrefix(key, PrefixIPRedirect)
 		puntComps := strings.Split(keySuffix, "/")
 		if len(puntComps) == 4 {
-			return puntComps[1], puntComps[3], true
+			l3Proto := L3Protocol_value[puntComps[1]]
+			return L3Protocol(l3Proto), puntComps[3], true
 		}
 	}
-	return "", "", false
+	return L3Protocol_UNDEFINED_L3, "", false
 }

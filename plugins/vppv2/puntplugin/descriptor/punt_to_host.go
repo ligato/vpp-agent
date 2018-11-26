@@ -166,8 +166,8 @@ func (d *PuntToHostDescriptor) validatePuntConfig(puntCfg *punt.ToHost) error {
 
 	// validate L4 protocol
 	switch puntCfg.L4Protocol {
-	case punt.ToHost_TCP:
-	case punt.ToHost_UDP:
+	case punt.L4Protocol_TCP:
+	case punt.L4Protocol_UDP:
 	default:
 		return ErrPuntWithoutL4Protocol
 	}

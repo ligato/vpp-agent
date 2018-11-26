@@ -18,8 +18,8 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
-	ipApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
+	api_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	api_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
@@ -94,13 +94,13 @@ func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IpRedirect) error {
 }
 
 func (h *PuntVppHandler) handlePuntToHost(punt *punt.ToHost, isAdd bool) error {
-	req := &api.Punt{
+	req := &api_punt.Punt{
 		IsAdd:      boolToUint(isAdd),
 		IPv:        resolveL3Proto(punt.L3Protocol),
 		L4Protocol: resolveL4Proto(punt.L4Protocol),
 		L4Port:     uint16(punt.Port),
 	}
-	reply := &api.PuntReply{}
+	reply := &api_punt.PuntReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -124,14 +124,14 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 		pathByte[i] = c
 	}
 
-	req := &api.PuntSocketRegister{
+	req := &api_punt.PuntSocketRegister{
 		HeaderVersion: 1,
 		IsIP4:         boolToUint(isIPv4),
 		L4Protocol:    resolveL4Proto(punt.L4Protocol),
 		L4Port:        uint16(punt.Port),
 		Pathname:      pathByte,
 	}
-	reply := &api.PuntSocketRegisterReply{}
+	reply := &api_punt.PuntSocketRegisterReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -149,12 +149,12 @@ func (h *PuntVppHandler) unregisterPuntWithSocketIPv6(punt *punt.ToHost) error {
 }
 
 func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool) error {
-	req := &api.PuntSocketDeregister{
+	req := &api_punt.PuntSocketDeregister{
 		IsIP4:      boolToUint(isIPv4),
 		L4Protocol: resolveL4Proto(punt.L4Protocol),
 		L4Port:     uint16(punt.Port),
 	}
-	reply := &api.PuntSocketDeregisterReply{}
+	reply := &api_punt.PuntSocketDeregisterReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -198,14 +198,14 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IpRedirect, isIPv4, isAdd
 		nextHop = net.ParseIP(punt.NextHop).To16()
 	}
 
-	req := &ipApi.IPPuntRedirect{
+	req := &api_ip.IPPuntRedirect{
 		IsAdd:       boolToUint(isAdd),
 		IsIP6:       boolToUint(!isIPv4),
 		RxSwIfIndex: rxIfIdx,
 		TxSwIfIndex: txMetadata.SwIfIndex,
 		Nh:          nextHop,
 	}
-	reply := &ipApi.IPPuntRedirectReply{}
+	reply := &api_ip.IPPuntRedirectReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -216,21 +216,23 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IpRedirect, isIPv4, isAdd
 func resolveL3Proto(protocol punt.L3Protocol) uint8 {
 	switch protocol {
 	case punt.L3Protocol_IPv4:
-		return 4 // binary API IPv4 representation
+		return uint8(punt.L3Protocol_IPv4)
 	case punt.L3Protocol_IPv6:
-		return 6 // binary API IPv6 representation
-	default:
+		return uint8(punt.L3Protocol_IPv6)
+	case punt.L3Protocol_ALL:
 		return ^uint8(0) // binary API representation for both protocols
 	}
+	return uint8(punt.L3Protocol_UNDEFINED_L3)
 }
 
-func resolveL4Proto(protocol punt.ToHost_L4Protocol) uint8 {
+func resolveL4Proto(protocol punt.L4Protocol) uint8 {
 	switch protocol {
-	case punt.ToHost_TCP:
-		return 6 // TCP (IANA)
-	default:
-		return 0x11 // UDP in hex (IANA)
+	case punt.L4Protocol_TCP:
+		return uint8(punt.L4Protocol_TCP)
+	case punt.L4Protocol_UDP:
+		return uint8(punt.L4Protocol_UDP)
 	}
+	return uint8(punt.L4Protocol_UNDEFINED_L4)
 }
 
 func boolToUint(input bool) uint8 {
