@@ -26,6 +26,11 @@ service SyncService {
     rpc Obtain (ObtainRequest) returns (ObtainResponse) {};
 }
 
+message SyncItem {
+    Model model = 1;
+    bool delete = 2;
+}
+
 message SyncOptions {
     bool resync = 1;
     uint32 retry_count = 2;
@@ -38,11 +43,6 @@ message SyncRequest {
 
 message SyncResponse {
     repeated SyncItemResult results = 1;
-}
-
-message SyncItem {
-    Model model = 1;
-    bool delete = 2;
 }
 
 message SyncItemResult {

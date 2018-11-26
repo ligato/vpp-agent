@@ -118,6 +118,29 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	return nil
 }
 
+func my(conn *grpc.ClientConn) {
+	time.Sleep(time.Second)
+
+	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
+
+	req := c.ResyncRequest()
+	req.Put(memif1, memif2)
+	if err := req.Send(context.Background()); err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second * 5)
+
+	req2 := c.ChangeRequest()
+	req2.Delete(memif1)
+	if err := req2.Send(context.Background()); err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second)
+	close(exampleFinished)
+}
+
 var memif1 = &interfaces.Interface{
 	Name:        "memif1",
 	Enabled:     true,
@@ -143,29 +166,6 @@ var memif2 = &interfaces.Interface{
 			SubId:      10,
 		},
 	},
-}
-
-func my(conn *grpc.ClientConn) {
-	time.Sleep(time.Second)
-
-	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
-
-	req := c.ResyncRequest()
-	req.Put(memif1, memif2)
-	if err := req.Send(context.Background()); err != nil {
-		log.Fatalln(err)
-	}
-
-	time.Sleep(time.Second * 5)
-
-	req2 := c.ChangeRequest()
-	req2.Delete(memif1)
-	if err := req2.Send(context.Background()); err != nil {
-		log.Fatalln(err)
-	}
-
-	time.Sleep(time.Second)
-	close(exampleFinished)
 }
 
 /*
