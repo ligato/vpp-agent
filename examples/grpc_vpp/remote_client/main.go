@@ -121,6 +121,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	plugin.wg.Add(1)
 	go plugin.reconfigureVPP(ctx)
+	go plugin.getConfiguration(ctx)
 
 	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return nil
@@ -180,7 +181,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 
 	select {
 	case <-time.After(3 * time.Second):
-		// Simulate configuration change exactly 15seconds after resync.
+		// Simulate configuration change several seconds after resync.
 		err := remoteclient.DataChangeRequestGRPC(rpc.NewDataChangeServiceClient(plugin.conn)).
 			Put().
 			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
@@ -203,6 +204,27 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 		logrus.DefaultLogger().Info("Planned VPP re-configuration was canceled")
 	}
 	plugin.wg.Done()
+}
+
+func (plugin *ExamplePlugin) getConfiguration(ctx context.Context) {
+	select {
+	case <-time.After(6 * time.Second):
+		// Simulate get (dump)
+		reply, err := remoteclient.DataGetRequestGRPC(rpc.NewDataGetServiceClient(plugin.conn)).
+			Get().
+			ACLs().
+			Interfaces().
+			BDs().
+			XConnects().
+			Send().
+			ReceiveReply()
+		if err != nil {
+			logrus.DefaultLogger().Errorf("Failed to read data from the VPP: %v", err)
+		} else {
+			logrus.DefaultLogger().Infof("Data read from the VPP: ACLs: %d, interfaces: %d, bd: %d, xc: %d",
+				len(reply.GetACLs()), len(reply.GetInterfaces()), len(reply.GetBDs()), len(reply.GetXConnects()))
+		}
+	}
 }
 
 /*************************
