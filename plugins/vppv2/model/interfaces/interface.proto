@@ -57,6 +57,7 @@ message Interface {
         AfpacketLink afpacket = 102;    /* AF-packet-specific configuration */
         TapLink tap = 103;              /* TAP-specific configuration */
         VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
+        IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
     };
 };
 
@@ -105,4 +106,36 @@ message TapLink {
                                        VPP-ifplugin needs to be aware of this dependency) */
     uint32 rx_ring_size = 4;    /* Rx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
     uint32 tx_ring_size = 5;    /* Tx ring buffer size; must be power of 2; default is 256; only for TAP v.2 */
+}
+
+message IPSecLink {
+    bool esn = 2;                       /* Extended sequence number */
+    bool anti_replay = 3;               /* Anti replay option */
+    string local_ip = 4;                /* Local IP address */
+    string remote_ip = 5;               /* Remote IP address */
+    uint32 local_spi = 6;               /* Local security parameter index */
+    uint32 remote_spi = 7;              /* Remote security parameter index */
+
+    enum CryptoAlg {
+        NONE_CRYPTO = 0;
+        AES_CBC_128 = 1;
+        AES_CBC_192 = 2;
+        AES_CBC_256 = 3;
+    }
+    CryptoAlg crypto_alg = 8;           /* Cryptographic algorithm for encryption */
+    string local_crypto_key = 9;
+    string remote_crypto_key = 10;
+
+    enum IntegAlg {
+        NONE_INTEG = 0;
+        MD5_96 = 1;
+        SHA1_96 = 2;
+        SHA_256_96 = 3;
+        SHA_256_128 = 4;
+        SHA_384_192 = 5;
+        SHA_512_256 = 6;
+    }
+    IntegAlg integ_alg = 11;            /* Cryptographic algorithm for authentication */
+    string local_integ_key = 12;
+    string remote_integ_key = 13;
 }

@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -228,6 +230,11 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	}
 
 	err = h.dumpVxlanDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpIPSecTunnelDetails(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -519,6 +526,70 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 			}
 		}
 		ifs[vxlanDetails.SwIfIndex].Interface.Type = ifnb.Interface_VXLAN_TUNNEL
+	}
+
+	return nil
+}
+
+// dumpIPSecTunnelDetails dumps IPSec tunnel interfaces from the VPP and fills them into the provided interface map.
+func (h *IfVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDetails) error {
+	// tunnel interfaces are a part of security association dump
+	var tunnels []*ipsec.IpsecSaDetails
+	req := &ipsec.IpsecSaDump{
+		SaID: ^uint32(0),
+	}
+	requestCtx := h.callsChannel.SendMultiRequest(req)
+
+	for {
+		saDetails := &ipsec.IpsecSaDetails{}
+		stop, err := requestCtx.ReceiveReply(saDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		// skip non-tunnel security associations
+		if saDetails.SwIfIndex != ^uint32(0) {
+			tunnels = append(tunnels, saDetails)
+		}
+	}
+
+	// every tunnel interface is returned in two API calls. To reconstruct the correct proto-modelled data,
+	// first appearance is cached, and when the second part arrives, data are completed and stored.
+	tunnelParts := make(map[uint32]*ipsec.IpsecSaDetails)
+
+	for _, tunnel := range tunnels {
+		// first appearance is stored in the map, the second one is used in configuration.
+		firstSaData, ok := tunnelParts[tunnel.SwIfIndex]
+		if !ok {
+			tunnelParts[tunnel.SwIfIndex] = tunnel
+			continue
+		}
+
+		var tunnelSrcAddrStr, tunnelDstAddrStr string
+		if uintToBool(tunnel.IsTunnelIP6) {
+			var tunnelSrcAddr, tunnelDstAddr net.IP = tunnel.TunnelSrcAddr, tunnel.TunnelDstAddr
+			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
+		} else {
+			var tunnelSrcAddr, tunnelDstAddr net.IP = tunnel.TunnelSrcAddr[:4], tunnel.TunnelDstAddr[:4]
+			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
+		}
+
+		ifs[tunnel.SwIfIndex].Interface.Link = &ifnb.Interface_Ipsec{
+			Ipsec: &ifnb.IPSecLink{
+				Esn:        uintToBool(tunnel.UseEsn),
+				AntiReplay: uintToBool(tunnel.UseAntiReplay),
+				LocalIp:    tunnelSrcAddrStr,
+				RemoteIp:   tunnelDstAddrStr,
+				LocalSpi:   tunnel.Spi,
+				// fll remote SPI from stored SA data
+				RemoteSpi: firstSaData.Spi,
+				CryptoAlg: ifnb.IPSecLink_CryptoAlg(tunnel.CryptoAlg),
+				IntegAlg:  ifnb.IPSecLink_IntegAlg(tunnel.IntegAlg),
+			},
+		}
+		ifs[tunnel.SwIfIndex].Interface.Type = ifnb.Interface_IPSEC_TUNNEL
 	}
 
 	return nil

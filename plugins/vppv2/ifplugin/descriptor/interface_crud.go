@@ -105,6 +105,12 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			d.log.Error(err)
 			return nil, err
 		}
+	case interfaces.Interface_IPSEC_TUNNEL:
+		ifIdx, err = d.ifHandler.AddIPSecTunnelInterface(intf.Name, intf.GetIpsec())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	case interfaces.Interface_SUB_INTERFACE:
 		sub := intf.GetSub()
 		parentMeta, found := d.intfIndex.LookupByName(sub.GetParentName())
@@ -212,7 +218,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 	// configure MTU. Prefer value in the interface config, otherwise set the plugin-wide
 	// default value if provided.
-	if intf.Type != interfaces.Interface_VXLAN_TUNNEL {
+	if intf.Type != interfaces.Interface_VXLAN_TUNNEL && intf.Type != interfaces.Interface_IPSEC_TUNNEL {
 		mtuToConfigure := intf.Mtu
 		if mtuToConfigure == 0 && d.defaultMtu != 0 {
 			mtuToConfigure = d.defaultMtu
@@ -295,6 +301,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		return nil
 	case interfaces.Interface_AF_PACKET:
 		err = d.ifHandler.DeleteAfPacketInterface(intf.Name, ifIdx, intf.GetAfpacket())
+	case interfaces.Interface_IPSEC_TUNNEL:
+		err = d.ifHandler.DeleteIPSecTunnelInterface(intf.Name, intf.GetIpsec())
 	case interfaces.Interface_SUB_INTERFACE:
 		err = d.ifHandler.DeleteSubif(ifIdx)
 	}

@@ -243,8 +243,8 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		// one or both of the configurations are invalid, compare lazily
 		return reflect.DeepEqual(oldIntf.IpAddresses, newIntf.IpAddresses)
 	}
-	obsolete, new := addrs.DiffAddr(oldIntfAddrs, newIntfAddrs)
-	if len(obsolete) != 0 || len(new) != 0 {
+	obsoleteAddr, newAddr := addrs.DiffAddr(oldIntfAddrs, newIntfAddrs)
+	if len(obsoleteAddr) != 0 || len(newAddr) != 0 {
 		return false
 	}
 
@@ -268,6 +268,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		}
 	case interfaces.Interface_MEMIF:
 		if !d.equivalentMemifs(oldIntf.GetMemif(), newIntf.GetMemif()) {
+			return false
+		}
+	case interfaces.Interface_IPSEC_TUNNEL:
+		if !d.equivalentIPSecTunnels(oldIntf.GetIpsec(), newIntf.GetIpsec()) {
 			return false
 		}
 	case interfaces.Interface_SUB_INTERFACE:
@@ -295,6 +299,20 @@ func (d *InterfaceDescriptor) equivalentMemifs(oldMemif, newMemif *interfaces.Me
 		return false
 	}
 	return true
+}
+
+// equivalentIPSecTunnels compares two IPSec tunnels for equivalence.
+func (d *InterfaceDescriptor) equivalentIPSecTunnels(oldTun, newTun *interfaces.IPSecLink) bool {
+	return oldTun.Esn == newTun.Esn &&
+		oldTun.AntiReplay == newTun.AntiReplay &&
+		oldTun.LocalSpi == newTun.LocalSpi &&
+		oldTun.RemoteSpi == newTun.RemoteSpi &&
+		oldTun.CryptoAlg == newTun.CryptoAlg &&
+		oldTun.LocalCryptoKey == newTun.LocalCryptoKey &&
+		oldTun.RemoteCryptoKey == newTun.RemoteCryptoKey &&
+		oldTun.IntegAlg == newTun.IntegAlg &&
+		oldTun.LocalIntegKey == newTun.LocalIntegKey &&
+		oldTun.RemoteIntegKey == newTun.RemoteIntegKey
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
@@ -352,7 +370,6 @@ func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *i
 
 // Dependencies lists dependencies for a VPP interface.
 func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interface) (dependencies []scheduler.Dependency) {
-
 	switch intf.Type {
 	case interfaces.Interface_AF_PACKET:
 		// AF-PACKET depends on a referenced Linux interface in the default namespace
