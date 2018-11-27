@@ -17,12 +17,15 @@
 package vpp
 
 import (
+	"context"
+
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
@@ -101,4 +104,7 @@ type API interface {
 
 	// GetIPSecSPDIndexes
 	GetIPSecSPDIndexes() ipsecidx.SPDIndex
+
+	// SetGRPCNotificationService allows to pass function for updating interface notifications
+	SetGRPCNotificationService(notify func(ctx context.Context, notification *interfaces.InterfaceNotification))
 }

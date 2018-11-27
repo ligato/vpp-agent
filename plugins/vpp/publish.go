@@ -93,10 +93,9 @@ func (plugin *Plugin) publishIfStateEvents(ctx context.Context) {
 			}
 
 			// Update interface notification data enabled for external GRPC endpoints
-			if plugin.GRPCSvc != nil {
-				plugin.GRPCSvc.UpdateNotifications(context.Background(), ifState)
+			if plugin.grpcNotification != nil {
+				plugin.grpcNotification(context.Background(), ifState)
 			}
-
 		case <-ctx.Done():
 			// Stop watching for state data updates.
 			return
