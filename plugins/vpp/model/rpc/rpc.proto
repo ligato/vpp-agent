@@ -30,6 +30,22 @@ service DataResyncService {
     rpc Resync (DataRequest) returns (ResyncResponse);
 }
 
+service DataGetService {
+    rpc GetAcls  (GetRequest) returns (AclResponse);
+    rpc GetInterfaces  (GetRequest) returns (InterfaceResponse);
+    rpc GetIPSecSPDs  (GetRequest) returns (IPSecSPDResponse);
+    rpc GetIPSecSAs  (GetRequest) returns (IPSecSAResponse);
+    rpc GetIPSecTunnels  (GetRequest) returns (IPSecTunnelResponse);
+    rpc GetBDs  (GetRequest) returns (BDResponse);
+    rpc GetFIBs  (GetRequest) returns (FibResponse);
+    rpc GetXConnects  (GetRequest) returns (XcResponse);
+    rpc GetRoutes  (GetRequest) returns (RoutesResponse);
+    rpc GetARPs  (GetRequest) returns (ARPsResponse);
+    rpc GetLinuxInterfaces  (GetRequest) returns (LinuxInterfaceResponse);
+    rpc GetLinuxARPs  (GetRequest) returns (LinuxARPsResponse);
+    rpc GetLinuxRoutes  (GetRequest) returns (LinuxRoutesResponse);
+}
+
 // Notification service streams VPP notifications to connected servers
 service NotificationService {
     // Get notification stack
@@ -72,6 +88,10 @@ message NotificationRequest {
     uint32 idx = 1;
 }
 
+// GetRequest represents a request to read data from the VPP
+message GetRequest {
+}
+
 // Response to data change 'put'
 message PutResponse {
 }
@@ -82,6 +102,71 @@ message DelResponse {
 
 // Response to data resync
 message ResyncResponse {
+}
+
+// AclResponse is response to 'get' all the access lists
+message AclResponse {
+    repeated acl.AccessLists.Acl AccessLists = 1;
+}
+
+// InterfaceResponse is response to 'get' all the interfaces
+message InterfaceResponse {
+    repeated interfaces.Interfaces.Interface Interfaces = 1;
+}
+
+// IPSecSPDResponse is response to 'get' all the IPSec SPDs
+message IPSecSPDResponse {
+    repeated ipsec.SecurityPolicyDatabases.SPD SPDs = 1;
+}
+
+// IPSecSAResponse is response to 'get' all the IPSec SPDs
+message IPSecSAResponse {
+    repeated ipsec.SecurityAssociations.SA SAa = 1;
+}
+
+// IPSecTunnelResponse is response to 'get' all the IPSec tunnels
+message IPSecTunnelResponse {
+    repeated ipsec.TunnelInterfaces.Tunnel Tunnels = 1;
+}
+
+// BDResponse is response to 'get' the bridge domains
+message BDResponse {
+    repeated l2.BridgeDomains.BridgeDomain BridgeDomains = 1;
+}
+
+// FibResponse is response to 'get' the l2 FIBs
+message FibResponse {
+    repeated l2.FibTable.FibEntry FIBs = 1;
+}
+
+// XcResponse is response to 'get' the l2 cross connects
+message XcResponse {
+    repeated l2.XConnectPairs.XConnectPair XCons = 1;
+}
+
+// RoutesResponse is response to 'get' the l3 routes
+message RoutesResponse {
+    repeated l3.StaticRoutes.Route StaticRoutes = 1;
+}
+
+// ARPsResponse is response to 'get' the l3 ARPs
+message ARPsResponse {
+    repeated l3.ArpTable.ArpEntry ArpEntries = 1;
+}
+
+// LinuxInterfaceResponse is response to 'get' all the linux interfaces
+message LinuxInterfaceResponse {
+    repeated interfaces.LinuxInterfaces.Interface LinuxInterfaces = 1;
+}
+
+// LinuxARPsResponse is response to 'get' the linux ARPs
+message LinuxARPsResponse {
+    repeated l3.LinuxStaticArpEntries.ArpEntry LinuxArpEntries = 1;
+}
+
+// LinuxRoutesResponse is response to 'get' the linux routes
+message LinuxRoutesResponse {
+    repeated l3.LinuxStaticRoutes.Route LinuxRoutes = 1;
 }
 
 // Response to notification request 'get'. Returns indexed notification.
