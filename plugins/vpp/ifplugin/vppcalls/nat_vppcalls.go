@@ -21,6 +21,7 @@ import (
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	nat2 "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"math"
 )
 
 // Num protocol representation
@@ -219,7 +220,13 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbContext, 
 
 	// Transform local IP/Ports
 	var localAddrPorts []nat.Nat44LbAddrPort
+	cnt := 0
 	for _, ctxLocal := range ctx.LocalIPs {
+		cnt++
+		if cnt > math.MaxUint8 {
+			h.log.Warnf("Only the first %v local addrs programmed", math.MaxUint8)
+			break
+		}
 		localAddrPort := nat.Nat44LbAddrPort{
 			Addr:        ctxLocal.LocalIP,
 			Port:        ctxLocal.LocalPort,
