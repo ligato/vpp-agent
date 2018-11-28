@@ -19,9 +19,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
@@ -77,11 +77,11 @@ func NewBridgeDomainDescriptor(bdHandler vppcalls.BridgeDomainVppAPI, log loggin
 func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor {
 	return &adapter.BridgeDomainDescriptor{
 		Name:               BridgeDomainDescriptorName,
-		KeySelector:        d.IsBridgeDomainKey,
-		ValueTypeName:      proto.MessageName(&l2.BridgeDomain{}),
-		KeyLabel:           d.BridgeDomainNameFromKey,
+		NBKeyPrefix:        vpp.BridgeDomain.KeyPrefix(),
+		ValueTypeName:      vpp.BridgeDomain.ProtoName(),
+		KeySelector:        vpp.BridgeDomain.IsKeyValid,
+		KeyLabel:           vpp.BridgeDomain.StripKeyPrefix,
 		ValueComparator:    d.EquivalentBridgeDomains,
-		NBKeyPrefix:        l2.BDPrefix,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Add:                d.Add,
@@ -93,19 +93,6 @@ func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsBridgeDomainKey returns true if the key is identifying VPP bridge domain
-// configuration.
-func (d *BridgeDomainDescriptor) IsBridgeDomainKey(key string) bool {
-	_, isBDKey := l2.ParseBDNameFromKey(key)
-	return isBDKey
-}
-
-// BridgeDomainNameFromKey returns VPP bridge domain name from the key.
-func (d *BridgeDomainDescriptor) BridgeDomainNameFromKey(key string) string {
-	name, _ := l2.ParseBDNameFromKey(key)
-	return name
 }
 
 // EquivalentBridgeDomains is case-insensitive comparison function for

@@ -20,7 +20,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
@@ -65,14 +65,12 @@ func NewRouteDescriptor(scheduler scheduler.KVScheduler,
 // the KVScheduler.
 func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	return &adapter.StaticRouteDescriptor{
-		Name: StaticRouteDescriptorName,
-		KeySelector: func(key string) bool {
-			_, _, _, _, isRouteKey := l3.ParseRouteKey(key)
-			return isRouteKey
-		},
-		ValueTypeName:   proto.MessageName(&l3.StaticRoute{}),
+		Name:            StaticRouteDescriptorName,
+		NBKeyPrefix:     vpp.L3Route.KeyPrefix(),
+		ValueTypeName:   vpp.L3Route.ProtoName(),
+		KeySelector:     vpp.L3Route.IsKeyValid,
+		KeyLabel:        vpp.L3Route.StripKeyPrefix,
 		ValueComparator: d.EquivalentRoutes,
-		NBKeyPrefix:     l3.RoutePrefix,
 		Add:             d.Add,
 		Delete:          d.Delete,
 		ModifyWithRecreate: func(key string, oldValue, newValue *l3.StaticRoute, metadata interface{}) bool {

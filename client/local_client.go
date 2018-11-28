@@ -40,6 +40,14 @@ func NewClient(factory ProtoTxnFactory) SyncClient {
 	return &client{factory}
 }
 
+func (c *client) ListSpecs() ([]models.Spec, error) {
+	var specs []models.Spec
+	for _, spec := range models.GetRegistered() {
+		specs = append(specs, spec)
+	}
+	return specs, nil
+}
+
 // ResyncRequest returns new resync request.
 func (c *client) ResyncRequest() ResyncRequest {
 	return &request{txn: c.txnFactory.NewTxn(true)}

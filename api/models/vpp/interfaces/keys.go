@@ -27,19 +27,17 @@ func init() {
 		Class:   "config",
 		Version: "v2",
 		Kind:    "interface",
+		TmplID:  "{{.Name}}",
 	})
 }
 
-// ModelKey provides implementation for ProtoModel
-func (i *Interface) ModelID() string {
-	return i.GetName()
+// InterfaceKey returns the key used in NB DB to store the configuration of the
+// given vpp interface.
+func InterfaceKey(name string) string {
+	return models.Key(&Interface{
+		Name: name,
+	})
 }
-
-/* Interface Config */
-const (
-	// InterfaceKeyPrefix is a key prefix used in NB DB to store configuration for VPP interfaces.
-	InterfaceKeyPrefix = "vpp/config/v2/interface/"
-)
 
 /* Interface State */
 const (
@@ -86,25 +84,6 @@ const (
 	// InvalidKeyPart is used in key for parts which are invalid
 	InvalidKeyPart = "<invalid>"
 )
-
-/* Interface Config */
-
-// InterfaceKey returns the key used in NB DB to store the configuration of the
-// given vpp interface.
-func InterfaceKey(iface string) string {
-	if iface == "" {
-		iface = InvalidKeyPart
-	}
-	return InterfaceKeyPrefix + iface
-}
-
-// ParseNameFromKey returns suffix of the key.
-func ParseNameFromKey(key string) (name string, isInterfaceKey bool) {
-	if suffix := strings.TrimPrefix(key, InterfaceKeyPrefix); suffix != key && suffix != "" {
-		return suffix, true
-	}
-	return
-}
 
 /* Interface Error */
 

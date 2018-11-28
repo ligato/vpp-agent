@@ -26,18 +26,19 @@ func init() {
 		Class:   "config",
 		Version: "v2",
 		Kind:    "acl",
+		TmplID:  "{{.Name}}",
 	})
 }
 
-// ModelID provides implementation for ProtoModel
-func (i *Acl) ModelID() string {
-	return i.GetName()
+// Key returns the prefix used in ETCD to store vpp ACL config
+// of a particular ACL in selected vpp instance.
+func Key(aclName string) string {
+	return models.Key(&Acl{
+		Name: aclName,
+	})
 }
 
 const (
-	// Prefix is ACL key prefix
-	Prefix = "vpp/config/v2/acl/"
-
 	aclToInterfaceTemplate = "vpp/acl/{acl}/interface/{flow}/{iface}"
 
 	// IngressFlow represents ingress packet flow
@@ -50,23 +51,6 @@ const (
 	// InvalidKeyPart is used in key for parts which are invalid
 	InvalidKeyPart = "<invalid>"
 )
-
-// Key returns the prefix used in ETCD to store vpp ACL config
-// of a particular ACL in selected vpp instance.
-func Key(aclName string) string {
-	if aclName == "" {
-		aclName = InvalidKeyPart
-	}
-	return Prefix + aclName
-}
-
-// ParseNameFromKey returns suffix of the key.
-func ParseNameFromKey(key string) (name string, isACLKey bool) {
-	if name = strings.TrimPrefix(key, Prefix); name == key || name == "" {
-		return "", false
-	}
-	return name, true
-}
 
 // ToInterfaceKey returns key for ACL to interface
 func ToInterfaceKey(acl, iface, flow string) string {

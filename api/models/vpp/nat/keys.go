@@ -20,42 +20,32 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+const NAT44_GlobalID = "GLOBAL"
+
 func init() {
 	models.Register(&Nat44Global{}, models.Spec{
 		Module:  "vpp",
 		Class:   "config",
 		Version: "v2",
 		Kind:    "nat44",
+		TmplID:  NAT44_GlobalID,
 	})
 	models.Register(&DNat44{}, models.Spec{
 		Module:  "vpp",
 		Class:   "config",
 		Version: "v2",
 		Kind:    "nat44/dnat",
+		TmplID:  "{{.Label}}",
 	})
 }
 
-// ModelID provides implementation for ProtoModel
-func (i *Nat44Global) ModelID() string {
-	return "global"
+// DNAT44Key returns the key used in NB DB to store the configuration of the
+// given DNAT-44 configuration.
+func DNAT44Key(label string) string {
+	return models.Key(&DNat44{
+		Label: label,
+	})
 }
-
-// ModelID provides implementation for ProtoModel
-func (i *DNat44) ModelID() string {
-	return i.Label
-}
-
-/* NAT44 */
-const (
-	// PrefixNAT44 is a key prefix used in NB DB to store configuration for NAT44.
-	PrefixNAT44 = "vpp/config/v2/nat44/"
-
-	// GlobalNAT44Key is the key used in NB DB to store global NAT44 configuration.
-	GlobalNAT44Key = PrefixNAT44 + "global"
-
-	// DNAT44Prefix is a key prefix used in NB DB to store DNAT-44 configuration.
-	DNAT44Prefix = PrefixNAT44 + "dnat/"
-)
 
 /* NAT44 interface */
 const (
@@ -77,17 +67,6 @@ const (
 	InvalidKeyPart = "<invalid>"
 )
 
-/* NAT44 */
-
-// DNAT44Key returns the key used in NB DB to store the configuration of the
-// given DNAT-44 configuration.
-func DNAT44Key(label string) string {
-	if label == "" {
-		label = InvalidKeyPart
-	}
-	return DNAT44Prefix + label
-}
-
 /* NAT44 interface */
 
 // InterfaceNAT44Key returns (derived) key representing NAT44 configuration
@@ -108,9 +87,9 @@ func InterfaceNAT44Key(iface string, isInside bool) string {
 // ParseInterfaceNAT44Key parses interface name and the assigned NAT44 feature
 // from Interface-NAT44 key.
 func ParseInterfaceNAT44Key(key string) (iface string, isInside bool, isInterfaceNAT44Key bool) {
-	if strings.HasPrefix(key, interfaceNAT44KeyPrefix) {
-		keySuffix := strings.TrimPrefix(key, interfaceNAT44KeyPrefix)
-		fibComps := strings.Split(keySuffix, "/")
+	trim := strings.TrimPrefix(key, interfaceNAT44KeyPrefix)
+	if trim != key && trim != "" {
+		fibComps := strings.Split(trim, "/")
 		if len(fibComps) >= 3 && fibComps[len(fibComps)-2] == "feature" {
 			isInside := true
 			if fibComps[len(fibComps)-1] == outFeature {

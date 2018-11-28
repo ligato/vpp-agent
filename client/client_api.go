@@ -8,6 +8,8 @@ import (
 
 // SyncClient defines the client-side interface for sync service.
 type SyncClient interface {
+	ListSpecs() ([]models.Spec, error)
+
 	// ResyncRequest returns new request used for resync.
 	ResyncRequest() ResyncRequest
 

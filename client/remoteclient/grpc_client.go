@@ -17,6 +17,27 @@ func NewClientGRPC(syncSvc api.SyncServiceClient) client.SyncClient {
 	return &grpcClient{syncSvc}
 }
 
+func (c *grpcClient) ListSpecs() ([]models.Spec, error) {
+	ctx := context.Background()
+
+	resp, err := c.serviceClient.ListSpecs(ctx, &api.ListSpecsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	var specs []models.Spec
+	for _, spec := range resp.Specs {
+		specs = append(specs, models.Spec{
+			Version: spec.Version,
+			Class:   spec.Class,
+			Module:  spec.Module,
+			Kind:    spec.Kind,
+		})
+	}
+
+	return specs, nil
+}
+
 // ResyncRequest returns new resync request.
 func (c *grpcClient) ResyncRequest() client.ResyncRequest {
 	return &request{

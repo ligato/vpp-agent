@@ -15,9 +15,12 @@
 package descriptor
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
@@ -68,13 +71,12 @@ func NewIPScanNeighborDescriptor(scheduler scheduler.KVScheduler,
 // the KVScheduler.
 func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescriptor {
 	return &adapter.IPScanNeighborDescriptor{
-		Name: IPScanNeighborDescriptorName,
-		KeySelector: func(key string) bool {
-			return key == l3.IPScanNeighborKey
-		},
-		ValueTypeName:      proto.MessageName(&l3.IPScanNeighbor{}),
+		Name:               IPScanNeighborDescriptorName,
+		NBKeyPrefix:        vpp.IPScanNeigh.KeyPrefix(),
+		ValueTypeName:      vpp.IPScanNeigh.ProtoName(),
+		KeySelector:        vpp.IPScanNeigh.IsKeyValid,
+		KeyLabel:           vpp.IPScanNeigh.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPScanNeighbors,
-		NBKeyPrefix:        l3.IPScanNeighborKey,
 		Add:                d.Add,
 		Modify:             d.Modify,
 		Delete:             d.Delete,
@@ -129,12 +131,16 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 	}
 
 	dump = append(dump, adapter.IPScanNeighborKVWithMetadata{
-		Key:    l3.IPScanNeighborKey,
+		Key:    vpp.IPScanNeigh.KeyPrefix() + l3.IPScanNeigh_GlobalID,
 		Value:  ipNeigh,
 		Origin: origin,
 	})
 
-	d.log.Debugf("Dumping IPScanNeigh config: %+v", dump)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d IPScanNeigh config %v", len(dump), dumpList)
 
 	return dump, nil
 }

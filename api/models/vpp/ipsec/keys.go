@@ -1,16 +1,16 @@
-// Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2018 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package vpp_ipsec
 
@@ -38,17 +38,21 @@ func init() {
 	})
 }
 
-/* IPSec */
-const (
-	// PrefixIPSec is a key prefix used in NB DB to store configuration for IPSec.
-	PrefixIPSec = "vpp/config/v2/ipsec/"
+// SPDKey returns the key used in NB DB to store the configuration of the
+// given security policy database configuration.
+func SPDKey(index string) string {
+	return models.Key(&SecurityPolicyDatabase{
+		Index: index,
+	})
+}
 
-	// PrefixIPSecSPD is the key used in NB DB to store security policy database configuration.
-	PrefixIPSecSPD = PrefixIPSec + "spd/"
-
-	// PrefixIPSecSA is a key prefix used in NB DB to store security association configuration.
-	PrefixIPSecSA = PrefixIPSec + "sa/"
-)
+// SAKey returns the key used in NB DB to store the configuration of the
+// given security association configuration.
+func SAKey(index string) string {
+	return models.Key(&SecurityAssociation{
+		Index: index,
+	})
+}
 
 /* SPD <-> interface binding (derived) */
 const (
@@ -68,39 +72,6 @@ const (
 	// InvalidKeyPart is used in key for parts which are invalid
 	InvalidKeyPart = "<invalid>"
 )
-
-/* SPD */
-
-// SPDKey returns the key used in NB DB to store the configuration of the
-// given security policy database configuration.
-func SPDKey(index string) string {
-	if index == "" {
-		index = InvalidKeyPart
-	}
-	if _, err := strconv.Atoi(index); err != nil {
-		index = InvalidKeyPart
-	}
-	return PrefixIPSecSPD + index
-}
-
-// ParseSPDIndexFromKey returns SPD name from the key.
-func ParseSPDIndexFromKey(key string) (index string, isSPDKey bool) {
-	if strings.HasPrefix(key, PrefixIPSecSPD) {
-		suffix := strings.TrimPrefix(key, PrefixIPSecSPD)
-		if strings.ContainsAny(suffix, "/") {
-			return "", false
-		}
-		if suffix == InvalidKeyPart {
-			return suffix, true
-		}
-		_, err := strconv.Atoi(suffix)
-		if err != nil {
-			return "", true
-		}
-		return suffix, true
-	}
-	return "", false
-}
 
 /* SPD <-> interface binding (derived) */
 
@@ -163,37 +134,4 @@ func ParseSPDPolicyKey(key string) (spdIndex string, saIndex string, isSPDIfaceK
 		return keyComps[2], saIndex, true
 	}
 	return "", "", false
-}
-
-/* SA */
-
-// SAKey returns the key used in NB DB to store the configuration of the
-// given security association configuration.
-func SAKey(index string) string {
-	if index == "" {
-		index = InvalidKeyPart
-	}
-	if _, err := strconv.Atoi(index); err != nil {
-		index = InvalidKeyPart
-	}
-	return PrefixIPSecSA + index
-}
-
-// ParseSAIndexFromKey returns SA name from the key.
-func ParseSAIndexFromKey(key string) (index string, isSAKey bool) {
-	if strings.HasPrefix(key, PrefixIPSecSA) {
-		suffix := strings.TrimPrefix(key, PrefixIPSecSA)
-		if strings.ContainsAny(suffix, "/") {
-			return "", false
-		}
-		if suffix == InvalidKeyPart {
-			return suffix, true
-		}
-		_, err := strconv.Atoi(suffix)
-		if err != nil {
-			return "", true
-		}
-		return suffix, true
-	}
-	return "", false
 }

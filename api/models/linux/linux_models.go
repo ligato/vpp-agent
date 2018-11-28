@@ -12,30 +12,19 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package linux_interfaces
+package linux
 
 import (
-	"fmt"
-	"testing"
-
 	"github.com/ligato/vpp-agent/api/models"
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
 )
 
-func TestInterfaceModel(t *testing.T) {
-	if1 := &Interface{
-		Name: "if0",
-	}
+var (
+	// Interfaces
+	Interface = models.MustSpec(&linux_interfaces.Interface{})
 
-	key, err := if1.ModelKey()
-	if err != nil {
-		t.Fatalf("GetKey failed: %v", err)
-	}
-	fmt.Printf("data: %+v\n - %q\n", if1, key)
-
-	key, err = models.GetKey(if1)
-	if err != nil {
-		t.Fatalf("models.GetKey failed: %v", err)
-	}
-
-	fmt.Printf("got:\n - %q\n", key)
-}
+	// L3
+	L3Route = models.MustSpec(&linux_l3.StaticRoute{})
+	L3ARP   = models.MustSpec(&linux_l3.StaticARPEntry{})
+)

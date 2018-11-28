@@ -9,6 +9,7 @@ import (
 
 	"github.com/ligato/cn-infra/utils/addrs"
 
+	"github.com/ligato/vpp-agent/api/models"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
@@ -551,7 +552,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			TAPHostIfName: tapHostIfName,
 		}
 		dump = append(dump, adapter.InterfaceKVWithMetadata{
-			Key:      interfaces.InterfaceKey(intf.Interface.Name),
+			Key:      models.Key(intf.Interface),
 			Value:    intf.Interface,
 			Metadata: metadata,
 			Origin:   origin,

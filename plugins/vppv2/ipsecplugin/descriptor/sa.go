@@ -17,11 +17,10 @@ package descriptor
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/go-errors/errors"
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
@@ -64,28 +63,17 @@ func NewIPSecSADescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.PluginL
 func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 	return &adapter.SADescriptor{
 		Name:               SADescriptorName,
-		KeySelector:        d.IsIPSecSAKey,
-		ValueTypeName:      proto.MessageName(&ipsec.SecurityAssociation{}),
-		KeyLabel:           d.IPSecSAIndexFromKey,
+		NBKeyPrefix:        vpp.IPSecSA.KeyPrefix(),
+		ValueTypeName:      vpp.IPSecSA.ProtoName(),
+		KeySelector:        vpp.IPSecSA.IsKeyValid,
+		KeyLabel:           vpp.IPSecSA.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSAs,
-		NBKeyPrefix:        ipsec.PrefixIPSecSA,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
 		IsRetriableFailure: d.IsRetriableFailure,
 		Dump:               d.Dump,
 	}
-}
-
-// IsIPSecSAKey returns true if the key is identifying VPP security association configuration.
-func (d *IPSecSADescriptor) IsIPSecSAKey(key string) bool {
-	return strings.HasPrefix(key, ipsec.PrefixIPSecSA)
-}
-
-// IPSecSAIndexFromKey returns VPP security association name from the key.
-func (d *IPSecSADescriptor) IPSecSAIndexFromKey(key string) string {
-	index, _ := ipsec.ParseSAIndexFromKey(key)
-	return index
 }
 
 // EquivalentIPSecSAs is case-insensitive comparison function for

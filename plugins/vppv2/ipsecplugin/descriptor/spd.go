@@ -21,13 +21,13 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 
 	"github.com/ligato/vpp-agent/idxvpp2"
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -80,11 +80,11 @@ func NewIPSecSPDDescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.Plugin
 func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 	return &adapter.SPDDescriptor{
 		Name:               IPSecSPDDescriptorName,
-		KeySelector:        d.IsIPSecSPDKey,
-		ValueTypeName:      proto.MessageName(&ipsec.SecurityPolicyDatabase{}),
-		KeyLabel:           d.IPSecSPDIndexFromKey,
+		NBKeyPrefix:        vpp.IPSecSPD.KeyPrefix(),
+		ValueTypeName:      vpp.IPSecSPD.ProtoName(),
+		KeySelector:        vpp.IPSecSPD.IsKeyValid,
+		KeyLabel:           vpp.IPSecSPD.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSPDs,
-		NBKeyPrefix:        ipsec.PrefixIPSecSPD,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Add:                d.Add,
@@ -96,19 +96,6 @@ func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vppIfDescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsIPSecSPDKey returns true if the key is identifying VPP security
-// policy database.
-func (d *IPSecSPDDescriptor) IsIPSecSPDKey(key string) bool {
-	_, isSPDKey := ipsec.ParseSPDIndexFromKey(key)
-	return isSPDKey
-}
-
-// IPSecSPDIndexFromKey returns VPP security policy database name from the key.
-func (d *IPSecSPDDescriptor) IPSecSPDIndexFromKey(key string) string {
-	index, _ := ipsec.ParseSPDIndexFromKey(key)
-	return index
 }
 
 // EquivalentIPSecSPDs is case-insensitive comparison function for

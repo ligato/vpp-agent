@@ -20,8 +20,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
@@ -47,8 +47,8 @@ const (
 	ipv6AddrAny = "::"
 
 	// dependency labels
-	routeOutInterfaceDep   = "interface"
-	routeGwReachabilityDep = "gw-reachability"
+	routeOutInterfaceDep   = "outgoing-interface-exists"
+	routeGwReachabilityDep = "gw-reachable"
 )
 
 // A list of non-retriable errors:
@@ -104,10 +104,11 @@ func NewRouteDescriptor(
 func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 	return &adapter.RouteDescriptor{
 		Name:               RouteDescriptorName,
-		KeySelector:        d.IsRouteKey,
-		ValueTypeName:      proto.MessageName(&l3.StaticRoute{}),
+		NBKeyPrefix:        linux.L3Route.KeyPrefix(),
+		ValueTypeName:      linux.L3Route.ProtoName(),
+		KeySelector:        linux.L3Route.IsKeyValid,
+		KeyLabel:           linux.L3Route.StripKeyPrefix,
 		ValueComparator:    d.EquivalentRoutes,
-		NBKeyPrefix:        l3.StaticRouteKeyPrefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
@@ -117,11 +118,6 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsRouteKey returns <true> if the key identifies a Linux Route configuration.
-func (d *RouteDescriptor) IsRouteKey(key string) bool {
-	return strings.HasPrefix(key, l3.StaticRouteKeyPrefix)
 }
 
 // EquivalentRoutes is case-insensitive comparison function for l3.LinuxStaticRoute.

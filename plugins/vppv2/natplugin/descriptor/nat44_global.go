@@ -15,12 +15,14 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
@@ -86,10 +88,11 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 	return &adapter.NAT44GlobalDescriptor{
 		Name:               NAT44GlobalDescriptorName,
-		KeySelector:        d.IsNAT44GlobalKey,
+		NBKeyPrefix:        vpp.NAT44Global.KeyPrefix(),
+		ValueTypeName:      vpp.NAT44Global.ProtoName(),
+		KeySelector:        vpp.NAT44Global.IsKeyValid,
+		KeyLabel:           vpp.NAT44Global.StripKeyPrefix,
 		ValueComparator:    d.EquivalentNAT44Global,
-		ValueTypeName:      proto.MessageName(&nat.Nat44Global{}),
-		NBKeyPrefix:        nat.PrefixNAT44,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
@@ -98,11 +101,6 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsNAT44GlobalKey returns true if the key is identifying global VPP NAT44 options.
-func (d *NAT44GlobalDescriptor) IsNAT44GlobalKey(key string) bool {
-	return key == nat.GlobalNAT44Key
 }
 
 // EquivalentNAT44Global compares two NAT44 global configs for equality.
@@ -222,12 +220,16 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 	}
 
 	dump := []adapter.NAT44GlobalKVWithMetadata{{
-		Key:    nat.GlobalNAT44Key,
+		Key:    vpp.NAT44Global.KeyPrefix() + nat.NAT44_GlobalID,
 		Value:  globalCfg,
 		Origin: origin,
 	}}
 
-	d.log.Debugf("Dumping NAT44 global configuration: %+v", globalCfg)
+	var dumpList string
+	for _, d := range dump {
+		dumpList += fmt.Sprintf("\n - %+v", d)
+	}
+	d.log.Debugf("Dumping %d NAT44 global: %s", len(dump), dumpList)
 
 	return dump, nil
 }

@@ -20,7 +20,11 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	"github.com/ligato/vpp-agent/api/models/vpp/acl"
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/api/models/vpp/nat"
+	"github.com/ligato/vpp-agent/api/models/vpp/stn"
 )
 
 func TestKeys(t *testing.T) {
@@ -56,21 +60,97 @@ func TestKeys(t *testing.T) {
 			expectedKey: "linux/config/v2/arp/if1/1.2.3.4",
 		},
 		{
+			name: "vpp acl",
+			model: &vpp_acl.Acl{
+				Name: "myacl5",
+			},
+			expectedKey: "vpp/config/v2/acl/myacl5",
+		},
+		{
+			name: "vpp bd",
+			model: &vpp_l2.BridgeDomain{
+				Name: "bd3",
+			},
+			expectedKey: "vpp/config/v2/bd/bd3",
+		},
+		{
+			name: "vpp nat global",
+			model: &vpp_nat.Nat44Global{
+				Forwarding: true,
+			},
+			expectedKey: "vpp/config/v2/nat44/global",
+		},
+		{
 			name: "vpp dnat",
 			model: &vpp_nat.DNat44{
 				Label: "mynat1",
 			},
 			expectedKey: "vpp/config/v2/nat44/dnat/mynat1",
 		},
+		{
+			name: "vpp arp",
+			model: &vpp_l3.ARPEntry{
+				Interface:   "if1",
+				IpAddress:   "1.2.3.4",
+				PhysAddress: "11:22:33:44:55:66",
+			},
+			expectedKey: "vpp/config/v2/arp/if1/1.2.3.4",
+		},
+		{
+			name: "vpp route",
+			model: &vpp_l3.StaticRoute{
+				VrfId:       0,
+				DstNetwork:  "10.10.0.10/24",
+				NextHopAddr: "0.0.0.0",
+			},
+			expectedKey: "vpp/config/v2/route/vrf/0/dst/10.10.0.0/24/gw/0.0.0.0",
+		},
+		{
+			name: "vpp stn",
+			model: &vpp_stn.Rule{
+				Interface: "eth0",
+				IpAddress: "1.1.1.1",
+			},
+			expectedKey: "vpp/config/v2/stn/rule/eth0/ip/1.1.1.1",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			key := models.Key(test.model)
-			t.Logf("key: %q", key)
 
 			if key != test.expectedKey {
-				t.Fatalf("expected key: %q, got: %q", test.expectedKey, key)
+				t.Errorf("expected key: \n%q\ngot: \n%q", test.expectedKey, key)
+			} else {
+				t.Logf("key: %q", key)
 			}
 		})
 	}
 }
+
+/*func TestParseKeys(t *testing.T) {
+	tests := []struct {
+		name          string
+		key           string
+		expectedParts map[string]string
+	}{
+		{
+			name: "vpp arp",
+			key:  "vpp/config/v2/arp/if1/1.2.3.4",
+			expectedParts: map[string]string{
+				"Interface": "if1",
+				"IpAddress": "1.2.3.4",
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			parts := models.ParseKey(test.key)
+			t.Logf("parts: %q", parts)
+
+			if len(parts) != len(test.expectedParts) {
+				t.Errorf("expected parts: %v, got: %v", test.expectedParts, parts)
+			}
+		})
+	}
+}*/

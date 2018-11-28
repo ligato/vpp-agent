@@ -19,7 +19,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
@@ -92,10 +92,11 @@ func NewARPDescriptor(
 func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 	return &adapter.ARPDescriptor{
 		Name:               ARPDescriptorName,
-		KeySelector:        d.IsARPKey,
-		ValueTypeName:      proto.MessageName(&l3.StaticARPEntry{}),
+		NBKeyPrefix:        linux.L3ARP.KeyPrefix(),
+		ValueTypeName:      linux.L3ARP.ProtoName(),
+		KeySelector:        linux.L3ARP.IsKeyValid,
+		KeyLabel:           linux.L3ARP.StripKeyPrefix,
 		ValueComparator:    d.EquivalentARPs,
-		NBKeyPrefix:        l3.StaticArpKeyPrefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
@@ -104,11 +105,6 @@ func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsARPKey returns <true> if the key identifies a Linux ARP configuration.
-func (d *ARPDescriptor) IsARPKey(key string) bool {
-	return strings.HasPrefix(key, l3.StaticArpKeyPrefix)
 }
 
 // EquivalentARPs is case-insensitive comparison function for l3.LinuxStaticARPEntry.

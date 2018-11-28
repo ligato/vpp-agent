@@ -16,10 +16,9 @@ package descriptor
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -67,9 +66,10 @@ func NewXConnectDescriptor(xcHandler vppcalls.XConnectVppAPI, log logging.Plugin
 func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 	return &adapter.XConnectDescriptor{
 		Name:               XConnectDescriptorName,
-		KeySelector:        d.IsXConnectKey,
-		ValueTypeName:      proto.MessageName(&l2.XConnectPair{}),
-		NBKeyPrefix:        l2.XConnectPrefix,
+		NBKeyPrefix:        vpp.XConnect.KeyPrefix(),
+		ValueTypeName:      vpp.XConnect.ProtoName(),
+		KeySelector:        vpp.XConnect.IsKeyValid,
+		KeyLabel:           vpp.XConnect.StripKeyPrefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
@@ -78,11 +78,6 @@ func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsXConnectKey returns true if the key is identifying VPP xConnect configuration.
-func (d *XConnectDescriptor) IsXConnectKey(key string) bool {
-	return strings.HasPrefix(key, l2.XConnectPrefix)
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

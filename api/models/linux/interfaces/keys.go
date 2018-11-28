@@ -28,24 +28,18 @@ func init() {
 		Class:   "config",
 		Version: "v2",
 		Kind:    "interface",
-		//IDfunc:  InterfaceID,
+		TmplID:  "{{.Name}}",
 	})
 }
 
-/*func InterfaceID(x *Interface) string {
-	return x.Name
-}*/
-
-func (x *Interface) ModelID() string {
-	return x.GetName()
+// InterfaceKey returns the key used in ETCD to store configuration of a particular Linux interface.
+func InterfaceKey(name string) string {
+	return models.Key(&Interface{
+		Name: name,
+	})
 }
 
 const (
-	/* Interface Config */
-
-	// InterfaceKeyPrefix is a prefix used in ETCD to store configuration for Linux interfaces.
-	InterfaceKeyPrefix = "linux/config/v2/interface/"
-
 	/* Interface host-name (default ns only, notifications) */
 
 	// InterfaceHostNameKeyPrefix is the common prefix of all keys representing
@@ -76,13 +70,6 @@ const (
 	// (incl. mask) assigned to a Linux interface (referenced by the logical name).
 	interfaceAddressKeyTemplate = InterfaceAddressKeyPrefix + "{ifName}/{addr}/{mask}"
 )
-
-/* Interface Config */
-
-// InterfaceKey returns the key used in ETCD to store configuration of a particular Linux interface.
-func InterfaceKey(ifaceLabel string) string {
-	return InterfaceKeyPrefix + ifaceLabel
-}
 
 /* Interface host-name (default ns only, notifications) */
 

@@ -22,9 +22,18 @@ message Model {
 }
 
 service SyncService {
+    rpc ListSpecs (ListSpecsRequest) returns (ListSpecsResponse) {};
     rpc Sync (SyncRequest) returns (SyncResponse) {};
     rpc Obtain (ObtainRequest) returns (ObtainResponse) {};
 }
+
+message ListSpecsRequest {
+}
+
+message ListSpecsResponse {
+    repeated ModelSpec specs = 1;
+}
+
 
 message SyncItem {
     Model model = 1;

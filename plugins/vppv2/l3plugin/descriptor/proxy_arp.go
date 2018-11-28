@@ -19,8 +19,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
@@ -56,16 +56,12 @@ func NewProxyArpDescriptor(scheduler scheduler.KVScheduler,
 // the KVScheduler.
 func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
 	return &adapter.ProxyARPDescriptor{
-		Name: ProxyArpDescriptorName,
-		KeySelector: func(key string) bool {
-			return key == l3.ProxyARPKey
-		},
-		KeyLabel: func(key string) string {
-			return "Global ProxyARP"
-		},
-		ValueTypeName:      proto.MessageName(&l3.ProxyARP{}),
+		Name:               ProxyArpDescriptorName,
+		NBKeyPrefix:        vpp.ProxyARP.KeyPrefix(),
+		ValueTypeName:      vpp.ProxyARP.ProtoName(),
+		KeySelector:        vpp.ProxyARP.IsKeyValid,
+		KeyLabel:           vpp.ProxyARP.StripKeyPrefix,
 		ValueComparator:    d.EquivalentProxyArps,
-		NBKeyPrefix:        l3.ProxyARPKey,
 		Add:                d.Add,
 		Modify:             d.Modify,
 		Delete:             d.Delete,
@@ -192,7 +188,7 @@ func (d *ProxyArpDescriptor) Dump(correlate []adapter.ProxyARPKVWithMetadata) (
 	}
 
 	dump = append(dump, adapter.ProxyARPKVWithMetadata{
-		Key:    l3.ProxyARPKey,
+		Key:    vpp.ProxyARP.KeyPrefix() + l3.ProxyARP_GlobalID,
 		Value:  proxyArp,
 		Origin: scheduler.UnknownOrigin,
 	})

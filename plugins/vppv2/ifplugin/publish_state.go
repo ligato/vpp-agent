@@ -5,6 +5,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
@@ -54,7 +55,7 @@ func (p *IfPlugin) resyncIfStateEvents(keys []string) error {
 	defer p.publishLock.Unlock()
 
 	for _, key := range keys {
-		ifaceName, isIntfKey := interfaces.ParseNameFromKey(key)
+		ifaceName, isIntfKey := vpp.Interface.ParseKey(key)
 		if !isIntfKey {
 			continue
 		}

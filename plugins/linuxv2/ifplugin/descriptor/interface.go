@@ -23,6 +23,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -54,9 +55,9 @@ const (
 	defaultEthernetMTU = 1500
 
 	// dependency labels
-	tapInterfaceDep = "vpp-tap-interface"
-	vethPeerDep     = "veth-peer"
-	microserviceDep = "microservice"
+	tapInterfaceDep = "vpp-tap-interface-exists"
+	vethPeerDep     = "veth-peer-exists"
+	microserviceDep = "microservice-available"
 
 	// suffix attached to logical names of duplicate VETH interfaces
 	vethDuplicateSuffix = "-DUPLICATE"
@@ -133,11 +134,11 @@ func NewInterfaceDescriptor(
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		KeySelector:        d.IsInterfaceKey,
-		ValueTypeName:      proto.MessageName(&interfaces.Interface{}),
-		KeyLabel:           d.InterfaceNameFromKey,
+		NBKeyPrefix:        linux.Interface.KeyPrefix(),
+		ValueTypeName:      linux.Interface.ProtoName(),
+		KeySelector:        linux.Interface.IsKeyValid,
+		KeyLabel:           linux.Interface.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
-		NBKeyPrefix:        interfaces.InterfaceKeyPrefix,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Add:                d.Add,
@@ -150,16 +151,6 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{nsdescriptor.MicroserviceDescriptorName},
 	}
-}
-
-// IsInterfaceKey returns true if the key is identifying Linux interface configuration.
-func (d *InterfaceDescriptor) IsInterfaceKey(key string) bool {
-	return strings.HasPrefix(key, interfaces.InterfaceKeyPrefix)
-}
-
-// InterfaceNameFromKey returns Linux interface name from the key.
-func (d *InterfaceDescriptor) InterfaceNameFromKey(key string) string {
-	return strings.TrimPrefix(key, interfaces.InterfaceKeyPrefix)
 }
 
 // EquivalentInterfaces is case-insensitive comparison function for

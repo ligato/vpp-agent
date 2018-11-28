@@ -20,6 +20,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -66,10 +68,11 @@ func NewSTNDescriptor(stnHandler vppcalls.StnVppAPI, log logging.PluginLogger) *
 func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 	return &adapter.STNDescriptor{
 		Name:               STNDescriptorName,
-		KeySelector:        d.IsSTNKey,
-		ValueTypeName:      proto.MessageName(&stn.Rule{}),
+		NBKeyPrefix:        vpp.STNRule.KeyPrefix(),
+		ValueTypeName:      vpp.STNRule.ProtoName(),
+		KeySelector:        vpp.STNRule.IsKeyValid,
+		KeyLabel:           vpp.STNRule.StripKeyPrefix,
 		ValueComparator:    d.EquivalentSTNs,
-		NBKeyPrefix:        stn.Prefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
@@ -78,12 +81,6 @@ func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifDescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsSTNKey returns true if the key is identifying VPP STN rule configuration.
-func (d *STNDescriptor) IsSTNKey(key string) bool {
-	_, _, isSTNKey := stn.ParseKey(key)
-	return isSTNKey
 }
 
 // EquivalentSTNs is case-insensitive comparison function for stn.Rule.
@@ -165,7 +162,7 @@ func (d *STNDescriptor) Dump(correlate []adapter.STNKVWithMetadata) (dump []adap
 	}
 	for _, stnRule := range stnRules {
 		dump = append(dump, adapter.STNKVWithMetadata{
-			Key:    stn.Key(stnRule.Rule.Interface, stnRule.Rule.IpAddress),
+			Key:    models.Key(stnRule.Rule), //stn.Key(stnRule.Rule.Interface, stnRule.Rule.IpAddress),
 			Value:  stnRule.Rule,
 			Origin: scheduler.FromNB, // all STN rules are configured from NB
 		})

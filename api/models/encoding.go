@@ -31,7 +31,7 @@ func Unmarshal(m *api.Model) (ProtoModel, error) {
 	if err != nil {
 		return nil, err
 	}
-	spec := registeredModels[protoName]
+	spec := registeredSpecs[protoName]
 	if spec == nil {
 		return nil, fmt.Errorf("model %s is not registered", protoName)
 	} /*else if spec.Version != m.Version {
@@ -49,7 +49,7 @@ func Unmarshal(m *api.Model) (ProtoModel, error) {
 // Marshal is helper function for marshalling into model data.
 func Marshal(pb ProtoModel) (*api.Model, error) {
 	protoName := proto.MessageName(pb)
-	spec := registeredModels[protoName]
+	spec := registeredSpecs[protoName]
 	if spec == nil {
 		return nil, fmt.Errorf("model %s is not registered", protoName)
 	}

@@ -30,6 +30,7 @@ import (
 
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
@@ -159,11 +160,11 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		KeySelector:        d.IsInterfaceKey,
-		ValueTypeName:      proto.MessageName(&interfaces.Interface{}),
-		KeyLabel:           d.InterfaceNameFromKey,
+		NBKeyPrefix:        vpp.Interface.KeyPrefix(),
+		ValueTypeName:      vpp.Interface.ProtoName(),
+		KeySelector:        vpp.Interface.IsKeyValid,
+		KeyLabel:           vpp.Interface.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
-		NBKeyPrefix:        interfaces.InterfaceKeyPrefix,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Add:                d.Add,
@@ -183,17 +184,6 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 // the descriptor registration.
 func (d *InterfaceDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadataIndex) {
 	d.intfIndex = intfIndex
-}
-
-// IsInterfaceKey returns true if the key is identifying VPP interface configuration.
-func (d *InterfaceDescriptor) IsInterfaceKey(key string) bool {
-	return strings.HasPrefix(key, interfaces.InterfaceKeyPrefix)
-}
-
-// InterfaceNameFromKey returns VPP interface name from the key.
-func (d *InterfaceDescriptor) InterfaceNameFromKey(key string) string {
-	name, _ := interfaces.ParseNameFromKey(key)
-	return name
 }
 
 // EquivalentInterfaces is case-insensitive comparison function for

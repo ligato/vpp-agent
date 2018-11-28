@@ -15,11 +15,14 @@
 package vpp_l3
 
 import (
-	"net"
-	"strconv"
 	"strings"
 
 	"github.com/ligato/vpp-agent/api/models"
+)
+
+const (
+	ProxyARP_GlobalID    = "GLOBAL"
+	IPScanNeigh_GlobalID = "GLOBAL"
 )
 
 func init() {
@@ -28,91 +31,51 @@ func init() {
 		Class:   "config",
 		Version: "v2",
 		Kind:    "arp",
+		TmplID:  "{{.Interface}}/{{.IpAddress}}",
 	})
 	models.Register(&StaticRoute{}, models.Spec{
 		Module:  "vpp",
 		Class:   "config",
 		Version: "v2",
 		Kind:    "route",
+		TmplID:  `vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
+	})
+	models.Register(&ProxyARP{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "proxyarp",
+		TmplID:  ProxyARP_GlobalID,
+	})
+	models.Register(&IPScanNeighbor{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "ipneigh",
+		TmplID:  IPScanNeigh_GlobalID,
 	})
 }
 
-// ModelKey provides implementation for ProtoModel
-func (i *StaticRoute) ModelID() string {
-	key := "vrf/{vrf}/dst/{dst-ip}/{dst-mask}/gw/{next-hop}"
-	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(i.GetVrfId())), 1)
-
-	var dstIP string
-	var dstMask string
-	_, dstIPNet, err := net.ParseCIDR(i.GetDstNetwork())
-	if err == nil {
-		dstIP = dstIPNet.IP.String()
-		maskSize, _ := dstIPNet.Mask.Size()
-		dstMask = strconv.Itoa(maskSize)
-	} else {
-		dstIP = InvalidKeyPart
-		dstMask = InvalidKeyPart
-	}
-	key = strings.Replace(key, "{dst-ip}", dstIP, 1)
-	key = strings.Replace(key, "{dst-mask}", dstMask, 1)
-
-	nextHopAddr := i.GetNextHopAddr()
-	if nextHopAddr == "" && dstIPNet != nil {
-		if dstIPNet.IP.To4() == nil {
-			nextHopAddr = net.IPv6zero.String()
-		} else {
-			nextHopAddr = net.IPv4zero.String()
-		}
-	} else if net.ParseIP(nextHopAddr) == nil {
-		nextHopAddr = InvalidKeyPart
-	}
-	key = strings.Replace(key, "{next-hop}", nextHopAddr, 1)
-	return key
+// RouteKey returns the key used in ETCD to store vpp route for vpp instance.
+func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
+	return models.Key(&StaticRoute{
+		VrfId:       vrf,
+		DstNetwork:  dstNet,
+		NextHopAddr: nextHopAddr,
+	})
 }
 
-// ModelKey provides implementation for ProtoModel
-func (i *ARPEntry) ModelID() string {
-	key := "{if}/{ip}"
-	iface := i.GetInterface()
-	ipAddr := i.GetIpAddress()
-	if iface == "" {
-		iface = InvalidKeyPart
-	}
-	if net.ParseIP(ipAddr) == nil {
-		ipAddr = InvalidKeyPart
-	}
-	key = strings.Replace(key, "{if}", iface, 1)
-	key = strings.Replace(key, "{ip}", ipAddr, 1)
-	return key
+// ArpEntryKey returns the key to store ARP entry
+func ArpEntryKey(iface, ipAddr string) string {
+	return models.Key(&ARPEntry{
+		Interface: iface,
+		IpAddress: ipAddr,
+	})
 }
 
 const (
-	// RoutePrefix is the relative key prefix for VRFs.
-	RoutePrefix = "vpp/config/v2/route/"
-
-	// routeKeyTemplate is the relative key prefix for routes.
-	routeKeyTemplate = RoutePrefix + "vrf/{vrf}/dst/{dst-ip}/{dst-mask}/gw/{next-hop}"
-)
-
-const (
-	// ArpPrefix is the relative key prefix for ARP.
-	ArpPrefix = "vpp/config/v2/arp/"
-
-	// arpKeyTemplate is the relative key prefix for ARP table entries.
-	arpKeyTemplate = ArpPrefix + "{if}/{ip}"
-)
-
-const (
-	// ProxyARPKey is the key for proxy ARP configuration.
-	ProxyARPKey = "vpp/config/v2/proxyarp/global"
-
 	proxyARPInterfacePrefix   = "vpp/proxyarp/interface/"
 	proxyARPInterfaceTemplate = proxyARPInterfacePrefix + "{iface}"
-)
-
-const (
-	// IPScanNeighborKey it the relative key prefix for IP scan neighbor feature
-	IPScanNeighborKey = "vpp/config/v2/ipneigh"
 )
 
 const (
@@ -121,7 +84,7 @@ const (
 )
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
-func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
+/*func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
 	var key = routeKeyTemplate
 
 	key = strings.Replace(key, "{vrf}", strconv.Itoa(int(vrf)), 1)
@@ -168,10 +131,10 @@ func ParseRouteKey(key string) (vrfIndex string, dstNetAddr string, dstNetMask i
 		}
 	}
 	return "", "", 0, "", false
-}
+}*/
 
 // ArpEntryKey returns the key to store ARP entry
-func ArpEntryKey(iface, ipAddr string) string {
+/*func ArpEntryKey(iface, ipAddr string) string {
 	key := arpKeyTemplate
 	if iface == "" {
 		iface = InvalidKeyPart
@@ -193,7 +156,7 @@ func ParseArpKey(key string) (iface string, ipAddr string, isArpKey bool) {
 		}
 	}
 	return "", "", false
-}
+}*/
 
 // ProxyARPInterfaceKey returns the key used to represent binding for interface with enabled proxy ARP.
 func ProxyARPInterfaceKey(iface string) string {

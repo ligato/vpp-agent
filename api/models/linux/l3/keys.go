@@ -25,108 +25,47 @@ import (
 
 func init() {
 	models.Register(&StaticARPEntry{}, models.Spec{
-		Module:  "linux",
-		Class:   "config",
 		Version: "v2",
+		Module:  "linux",
 		Kind:    "arp",
+		TmplID:  "{{.Interface}}/{{.IpAddress}}",
 	})
 	models.Register(&StaticRoute{}, models.Spec{
-		Module:  "linux",
-		Class:   "config",
 		Version: "v2",
+		Module:  "linux",
 		Kind:    "route",
+		TmplID:  `{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
 	})
 }
 
-// ModelID provides implementation for ProtoModel
-func (i *StaticRoute) ModelID() string {
-	id := "{dest-net}/{dest-mask}/{out-intf}"
-	_, dstNet, _ := net.ParseCIDR(i.GetDstNetwork())
-	dstNetAddr := dstNet.IP.String()
-	dstNetMask, _ := dstNet.Mask.Size()
-	id = strings.Replace(id, "{dest-net}", dstNetAddr, 1)
-	id = strings.Replace(id, "{dest-mask}", strconv.Itoa(dstNetMask), 1)
-	id = strings.Replace(id, "{out-intf}", i.GetOutgoingInterface(), 1)
-	return id
+// StaticArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
+func StaticArpKey(iface, ipAddr string) string {
+	return models.Key(&StaticARPEntry{
+		Interface: iface,
+		IpAddress: ipAddr,
+	})
 }
 
-// ModelID provides implementation for ProtoModel
-func (i *StaticARPEntry) ModelID() string {
-	id := "{if}/{ip}"
-	id = strings.Replace(id, "{if}", i.GetInterface(), 1)
-	id = strings.Replace(id, "{ip}", i.GetIpAddress(), 1)
-	return id
+// StaticRouteKey returns the key used in ETCD to store configuration of a particular Linux route.
+func StaticRouteKey(dstNetwork, outgoingInterface string) string {
+	return models.Key(&StaticRoute{
+		DstNetwork:        dstNetwork,
+		OutgoingInterface: outgoingInterface,
+	})
 }
 
 const (
-	/* ARP */
-
-	// StaticArpKeyPrefix is a prefix used in ETCD to store configuration for Linux static ARPs.
-	StaticArpKeyPrefix = "linux/config/v2/arp/"
-
-	// staticArpKeyTemplate is a template for key representing Linux ARP entry configuration.
-	staticArpKeyTemplate = StaticArpKeyPrefix + "{if}/{ip}"
-
-	/* Route Config */
-
-	// StaticRouteKeyPrefix is a prefix used in ETCD to store configuration for Linux static routes.
-	StaticRouteKeyPrefix = "linux/config/v2/route/"
-
-	// staticRouteKeySuffix is a suffix common to all keys representing routes.
-	staticRouteKeySuffix = "{dest-net}/{dest-mask}/{out-intf}"
-
-	// staticRouteKeyTemplate is a template for key representing Linux Route configuration.
-	staticRouteKeyTemplate = StaticRouteKeyPrefix + staticRouteKeySuffix
-
 	/* Link-local route (derived) */
 
 	// StaticLinkLocalRouteKeyPrefix is a prefix for keys derived from link-local routes.
 	StaticLinkLocalRouteKeyPrefix = "linux/link-local-route/"
 
+	// staticRouteKeySuffix is a suffix common to all keys representing routes.
+	staticRouteKeySuffix = "{dest-net}/{dest-mask}/{out-intf}"
+
 	// staticLinkLocalRouteKeyTemplate is a template for key derived from link-local route.
 	staticLinkLocalRouteKeyTemplate = StaticLinkLocalRouteKeyPrefix + staticRouteKeySuffix
 )
-
-/* ARP */
-
-// StaticArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
-func StaticArpKey(iface, ipAddr string) string {
-	key := staticArpKeyTemplate
-	key = strings.Replace(key, "{if}", iface, 1)
-	key = strings.Replace(key, "{ip}", ipAddr, 1)
-	return key
-}
-
-// ParseStaticArpKey parses ARP entry from a key.
-func ParseStaticArpKey(key string) (iface string, ipAddr net.IP, err error) {
-	errPrefix := "invalid Linux ARP key: "
-	if strings.HasPrefix(key, StaticArpKeyPrefix) {
-		arpSuffix := strings.TrimPrefix(key, StaticArpKeyPrefix)
-		arpComps := strings.Split(arpSuffix, "/")
-		if len(arpComps) != 2 {
-			return "", nil, fmt.Errorf(errPrefix + "invalid suffix")
-		}
-		ipAddr = net.ParseIP(arpComps[1])
-		if ipAddr == nil {
-			return "", nil, fmt.Errorf(errPrefix + "invalid IP address")
-		}
-		iface = arpComps[0]
-		return
-	}
-	return "", nil, fmt.Errorf(errPrefix + "invalid prefix")
-}
-
-/* Route Config */
-
-// StaticRouteKey returns the key used in ETCD to store configuration of a particular Linux route.
-func StaticRouteKey(dstNetwork, outgoingInterface string) string {
-	return staticRouteKeyFromTemplate(staticRouteKeyTemplate, dstNetwork, outgoingInterface)
-}
-
-// ParseStaticRouteKey parses Linux route attributes from a key.
-func ParseStaticRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, err error) {
-	return parseStaticRouteFromKeySuffix(key, StaticRouteKeyPrefix, "invalid Linux Route key: ")
-}
 
 /* Link-local Route (derived) */
 

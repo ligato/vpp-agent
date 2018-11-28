@@ -18,12 +18,12 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
@@ -64,16 +64,11 @@ func NewACLDescriptor(aclHandler vppcalls.ACLVppAPI, ifPlugin ifplugin.API,
 // the KVScheduler.
 func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
 	return &adapter.ACLDescriptor{
-		Name:        ACLDescriptorName,
-		NBKeyPrefix: acl.Prefix,
-		KeySelector: func(key string) bool {
-			return strings.HasPrefix(key, acl.Prefix)
-		},
-		ValueTypeName: proto.MessageName((*acl.Acl)(nil)),
-		KeyLabel: func(key string) string {
-			name, _ := acl.ParseNameFromKey(key)
-			return name
-		},
+		Name:            ACLDescriptorName,
+		NBKeyPrefix:     vpp.ACL.KeyPrefix(),
+		ValueTypeName:   vpp.ACL.ProtoName(),
+		KeySelector:     vpp.ACL.IsKeyValid,
+		KeyLabel:        vpp.ACL.StripKeyPrefix,
 		ValueComparator: d.EquivalentACLs,
 		WithMetadata:    true,
 		MetadataMapFactory: func() idxmap.NamedMappingRW {
@@ -110,60 +105,30 @@ func (d *ACLDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool
 	return true
 }
 
-// equivalentACLRules compares two ACL rules, handling the cases of unspecified
-// source/destination networks.
-func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.Acl_Rule) bool {
-	// Action
-	if rule1.Action != rule2.Action {
-		return false
-	}
+// validateRules provided in ACL. Every rule has to contain actions and matches.
+// Current limitation: L2 and L3/4 have to be split to different ACLs and
+// there cannot be L2 rules and L3/4 rules in the same ACL.
+func (d *ACLDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]*acl.Acl_Rule, bool) {
+	var validL3L4Rules []*acl.Acl_Rule
+	var validL2Rules []*acl.Acl_Rule
 
-	// MAC IP Rule
-	if !proto.Equal(rule1.MacipRule, rule2.MacipRule) {
-		return false
+	for _, rule := range rules {
+		if rule.GetIpRule() != nil {
+			validL3L4Rules = append(validL3L4Rules, rule)
+		}
+		if rule.GetMacipRule() != nil {
+			validL2Rules = append(validL2Rules, rule)
+		}
 	}
-
-	// IP Rule
-	ipRule1 := rule1.GetIpRule()
-	ipRule2 := rule2.GetIpRule()
-	if !proto.Equal(ipRule1.GetIcmp(), ipRule2.GetIcmp()) ||
-		!proto.Equal(ipRule1.GetTcp(), ipRule2.GetTcp()) ||
-		!proto.Equal(ipRule1.GetUdp(), ipRule2.GetUdp()) {
-		return false
+	if len(validL3L4Rules) > 0 && len(validL2Rules) > 0 {
+		d.log.Warnf("ACL %s contains L2 rules and L3/L4 rules as well. This case is not supported, only L3/L4 rules will be resolved",
+			aclName)
+		return validL3L4Rules, false
+	} else if len(validL3L4Rules) > 0 {
+		return validL3L4Rules, false
+	} else {
+		return validL2Rules, true
 	}
-	if !d.equivalentIPRuleNetworks(ipRule1.GetIp().GetSourceNetwork(), ipRule2.GetIp().GetSourceNetwork()) {
-		return false
-	}
-	if !d.equivalentIPRuleNetworks(ipRule1.GetIp().GetDestinationNetwork(), ipRule2.GetIp().GetDestinationNetwork()) {
-		return false
-	}
-	return true
-}
-
-// equivalentIPRuleNetworks compares two IP networks, taking into account the fact
-// that empty string is equivalent to address with all zeroes.
-func (d *ACLDescriptor) equivalentIPRuleNetworks(net1, net2 string) bool {
-	var (
-		ip1, ip2       net.IP
-		ipNet1, ipNet2 *net.IPNet
-		err1, err2     error
-	)
-	if net1 != "" {
-		ip1, ipNet1, err1 = net.ParseCIDR(net1)
-	}
-	if net2 != "" {
-		ip2, ipNet2, err2 = net.ParseCIDR(net2)
-	}
-	if err1 != nil || err2 != nil {
-		return net1 == net2
-	}
-	if ipNet1 == nil {
-		return ipNet2 == nil || ip2.IsUnspecified()
-	}
-	if ipNet2 == nil {
-		return ipNet1 == nil || ip1.IsUnspecified()
-	}
-	return ip1.Equal(ip2) && bytes.Equal(ipNet1.Mask, ipNet2.Mask)
 }
 
 var nonRetriableErrs []error
@@ -205,32 +170,6 @@ func (d *ACLDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.ACLMetad
 		L2:    isL2MacIP,
 	}
 	return metadata, nil
-}
-
-// validateRules provided in ACL. Every rule has to contain actions and matches.
-// Current limitation: L2 and L3/4 have to be split to different ACLs and
-// there cannot be L2 rules and L3/4 rules in the same ACL.
-func (d *ACLDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]*acl.Acl_Rule, bool) {
-	var validL3L4Rules []*acl.Acl_Rule
-	var validL2Rules []*acl.Acl_Rule
-
-	for _, rule := range rules {
-		if rule.GetIpRule() != nil {
-			validL3L4Rules = append(validL3L4Rules, rule)
-		}
-		if rule.GetMacipRule() != nil {
-			validL2Rules = append(validL2Rules, rule)
-		}
-	}
-	if len(validL3L4Rules) > 0 && len(validL2Rules) > 0 {
-		d.log.Warnf("ACL %s contains L2 rules and L3/L4 rules as well. This case is not supported, only L3/L4 rules will be resolved",
-			aclName)
-		return validL3L4Rules, false
-	} else if len(validL3L4Rules) > 0 {
-		return validL3L4Rules, false
-	} else {
-		return validL2Rules, true
-	}
 }
 
 // Delete deletes ACL
@@ -350,4 +289,60 @@ func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (
 	d.log.Debugf("Dumping %d VPP ACLs: %v", len(dump), dumpList)
 
 	return
+}
+
+// equivalentACLRules compares two ACL rules, handling the cases of unspecified
+// source/destination networks.
+func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.Acl_Rule) bool {
+	// Action
+	if rule1.Action != rule2.Action {
+		return false
+	}
+
+	// MAC IP Rule
+	if !proto.Equal(rule1.MacipRule, rule2.MacipRule) {
+		return false
+	}
+
+	// IP Rule
+	ipRule1 := rule1.GetIpRule()
+	ipRule2 := rule2.GetIpRule()
+	if !proto.Equal(ipRule1.GetIcmp(), ipRule2.GetIcmp()) ||
+		!proto.Equal(ipRule1.GetTcp(), ipRule2.GetTcp()) ||
+		!proto.Equal(ipRule1.GetUdp(), ipRule2.GetUdp()) {
+		return false
+	}
+	if !d.equivalentIPRuleNetworks(ipRule1.GetIp().GetSourceNetwork(), ipRule2.GetIp().GetSourceNetwork()) {
+		return false
+	}
+	if !d.equivalentIPRuleNetworks(ipRule1.GetIp().GetDestinationNetwork(), ipRule2.GetIp().GetDestinationNetwork()) {
+		return false
+	}
+	return true
+}
+
+// equivalentIPRuleNetworks compares two IP networks, taking into account the fact
+// that empty string is equivalent to address with all zeroes.
+func (d *ACLDescriptor) equivalentIPRuleNetworks(net1, net2 string) bool {
+	var (
+		ip1, ip2       net.IP
+		ipNet1, ipNet2 *net.IPNet
+		err1, err2     error
+	)
+	if net1 != "" {
+		ip1, ipNet1, err1 = net.ParseCIDR(net1)
+	}
+	if net2 != "" {
+		ip2, ipNet2, err2 = net.ParseCIDR(net2)
+	}
+	if err1 != nil || err2 != nil {
+		return net1 == net2
+	}
+	if ipNet1 == nil {
+		return ipNet2 == nil || ip2.IsUnspecified()
+	}
+	if ipNet2 == nil {
+		return ipNet1 == nil || ip1.IsUnspecified()
+	}
+	return ip1.Equal(ip2) && bytes.Equal(ipNet1.Mask, ipNet2.Mask)
 }
