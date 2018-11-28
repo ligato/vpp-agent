@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
 	"github.com/vishvananda/netlink"
+	"reflect"
 )
 
 // LinuxInterfaceStateNotification aggregates operational status derived from netlink with
@@ -124,7 +125,7 @@ func (c *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
 
 // Prepare notification and send it to the state channel
 func (c *LinuxInterfaceStateUpdater) processLinkNotification(link netlink.Link) {
-	if link == nil || link.Attrs() == nil {
+	if link == nil || reflect.ValueOf(link).IsNil()||  link.Attrs() == nil {
 		return
 	}
 
