@@ -160,7 +160,7 @@ func (w *InterfaceWatcher) watchDefaultNamespace() {
 	links, err := w.ifHandler.GetLinkList()
 	if err == nil {
 		for _, link := range links {
-			if enabled, err := w.ifHandler.IsInterfaceEnabled(link.Attrs().Name); enabled && err == nil {
+			if enabled, err := w.ifHandler.IsInterfaceUp(link.Attrs().Name); enabled && err == nil {
 				w.ifaces[link.Attrs().Name] = struct{}{}
 			}
 		}

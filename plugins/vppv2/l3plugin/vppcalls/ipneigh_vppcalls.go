@@ -97,6 +97,9 @@ func (h *IPNeighHandler) GetIPScanNeighbor() (*l3.IPScanNeighbor, error) {
 }
 
 func (h *IPNeighHandler) strToUint32(s string) uint32 {
+	if s == "" {
+		return 0
+	}
 	n, err := strconv.ParseUint(s, 10, 32)
 	if err != nil {
 		h.log.Error(err)
