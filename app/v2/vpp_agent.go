@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin"
 
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
@@ -157,6 +158,7 @@ type VPP struct {
 	L3Plugin    *l3plugin.L3Plugin
 	ACLPlugin   *aclplugin.ACLPlugin
 	NATPlugin   *natplugin.NATPlugin
+	PuntPlugin  *puntplugin.PuntPlugin
 	STNPlugin   *stnplugin.STNPlugin
 }
 
@@ -168,6 +170,7 @@ func defaultVPP() VPP {
 		L3Plugin:    &l3plugin.DefaultPlugin,
 		ACLPlugin:   &aclplugin.DefaultPlugin,
 		NATPlugin:   &natplugin.DefaultPlugin,
+		PuntPlugin:  &puntplugin.DefaultPlugin,
 		STNPlugin:   &stnplugin.DefaultPlugin,
 	}
 }
