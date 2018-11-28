@@ -25,9 +25,9 @@ ${NAME_TAP2}=        vpp1_tap2
 ${MAC_TAP1}=         12:21:21:11:11:11
 ${MAC_TAP2}=         22:21:21:22:22:22
 ${IP_TAP1}=          20.20.1.1
+${IP_TAP2}=          30.20.1.1
 ${IP_STN_RULE_1}=    21.20.1.1
 ${IP_STN_RULE_2}=    22.20.1.1
-${IP_TAP2}=          30.20.1.1
 ${PREFIX}=           24
 ${MTU}=              4800
 ${UP_STATE}=         up
@@ -91,7 +91,6 @@ Delete STN Rule Again
 
 Check Deleted STN Rule Again
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule Deleted    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE_2}
-
 
 Remove VPP And Two Nodes
     Remove Node     agent_vpp_1
