@@ -17,21 +17,25 @@
 package linuxcalls
 
 import (
+	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 )
 
 // AddVethInterfacePair calls LinkAdd Netlink API for the Netlink.Veth interface type.
 func (h *NetLinkHandler) AddVethInterfacePair(ifName, peerIfName string) error {
-	// Veth pair params
+	attrs := netlink.NewLinkAttrs()
+	attrs.Name = ifName
+
+	// Veth params
 	veth := &netlink.Veth{
-		LinkAttrs: netlink.LinkAttrs{
-			Name:   ifName,
-			TxQLen: 0,
-		},
-		PeerName: peerIfName,
+		LinkAttrs: attrs,
+		PeerName:  peerIfName,
 	}
 
-	// Create the veth pair.
-	err := netlink.LinkAdd(veth)
-	return err
+	// Add the link
+	if err := netlink.LinkAdd(veth); err != nil {
+		return errors.Wrapf(err, "add link failed")
+	}
+
+	return nil
 }
