@@ -222,6 +222,9 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbContext, 
 	var localAddrPorts []nat.Nat44LbAddrPort
 	cnt := 0
 	for _, ctxLocal := range ctx.LocalIPs {
+		// TODO: this is a temporary solution
+		// once LocalNum uses bigger range than uint8 this check should be removed
+		// as well as the cast below uint8(len...
 		cnt++
 		if cnt > math.MaxUint8 {
 			h.log.Warnf("Only the first %v local addrs programmed", math.MaxUint8)
