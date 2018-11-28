@@ -58,7 +58,7 @@ type Plugin struct {
 	// Services
 	changeVppSvc ChangeVppSvc
 	resyncVppSvc ResyncVppSvc
-	getVppSvc    GetVppSvc
+	dumpVppSvc   GetVppSvc
 	notifSvc     NotificationSvc
 }
 
@@ -118,8 +118,8 @@ func (p *Plugin) Init() (err error) {
 	// Data resync
 	p.resyncVppSvc.log = p.Log.NewLogger("resyncVppSvc")
 	// Data get
-	p.getVppSvc = GetVppSvc{
-		log: p.Log.NewLogger("getVppSvc"),
+	p.dumpVppSvc = GetVppSvc{
+		log: p.Log.NewLogger("dumpVppSvc"),
 	}
 	p.initHandlers()
 	// Notification service (represents GRPC client)
@@ -133,7 +133,7 @@ func (p *Plugin) Init() (err error) {
 		rpc.RegisterDataResyncServiceServer(grpcServer, &p.resyncVppSvc)
 		rpc.RegisterNotificationServiceServer(grpcServer, &p.notifSvc)
 		if p.VPP != nil && p.Linux != nil {
-			rpc.RegisterDataGetServiceServer(grpcServer, &p.getVppSvc)
+			rpc.RegisterDataDumpServiceServer(grpcServer, &p.dumpVppSvc)
 		}
 	}
 
@@ -178,9 +178,9 @@ func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rp
 	return &rpc.ResyncResponse{}, err
 }
 
-// GetAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,
+// DumpAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetAcls(ctx context.Context, request *rpc.GetRequest) (*rpc.AclResponse, error) {
+func (svc *GetVppSvc) DumpAcls(ctx context.Context, request *rpc.DumpRequest) (*rpc.AclResponse, error) {
 	var acls []*acl.AccessLists_Acl
 	ipACLs, err := svc.aclHandler.DumpIPACL(nil)
 	if err != nil {
@@ -200,9 +200,9 @@ func (svc *GetVppSvc) GetAcls(ctx context.Context, request *rpc.GetRequest) (*rp
 	return &rpc.AclResponse{AccessLists: acls}, nil
 }
 
-// GetInterfaces reads interfaces and returns them as an *InterfaceResponse. If reading ends up with error,
+// DumpInterfaces reads interfaces and returns them as an *InterfaceResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetInterfaces(ctx context.Context, request *rpc.GetRequest) (*rpc.InterfaceResponse, error) {
+func (svc *GetVppSvc) DumpInterfaces(ctx context.Context, request *rpc.DumpRequest) (*rpc.InterfaceResponse, error) {
 	var ifs []*interfaces.Interfaces_Interface
 	ifDetails, err := svc.ifHandler.DumpInterfaces()
 	if err != nil {
@@ -215,9 +215,9 @@ func (svc *GetVppSvc) GetInterfaces(ctx context.Context, request *rpc.GetRequest
 	return &rpc.InterfaceResponse{Interfaces: ifs}, nil
 }
 
-// GetIPSecSPDs reads IPSec SPD and returns them as an *IPSecSPDResponse. If reading ends up with error,
+// DumpIPSecSPDs reads IPSec SPD and returns them as an *IPSecSPDResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetIPSecSPDs(ctx context.Context, request *rpc.GetRequest) (*rpc.IPSecSPDResponse, error) {
+func (svc *GetVppSvc) DumpIPSecSPDs(ctx context.Context, request *rpc.DumpRequest) (*rpc.IPSecSPDResponse, error) {
 	var spds []*ipsec.SecurityPolicyDatabases_SPD
 	spdDetails, err := svc.ipSecHandler.DumpIPSecSPD()
 	if err != nil {
@@ -230,9 +230,9 @@ func (svc *GetVppSvc) GetIPSecSPDs(ctx context.Context, request *rpc.GetRequest)
 	return &rpc.IPSecSPDResponse{SPDs: spds}, nil
 }
 
-// GetIPSecSAs reads IPSec SA and returns them as an *IPSecSAResponse. If reading ends up with error,
+// DumpIPSecSAs reads IPSec SA and returns them as an *IPSecSAResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetIPSecSAs(ctx context.Context, request *rpc.GetRequest) (*rpc.IPSecSAResponse, error) {
+func (svc *GetVppSvc) DumpIPSecSAs(ctx context.Context, request *rpc.DumpRequest) (*rpc.IPSecSAResponse, error) {
 	var sas []*ipsec.SecurityAssociations_SA
 	saDetails, err := svc.ipSecHandler.DumpIPSecSA()
 	if err != nil {
@@ -245,9 +245,9 @@ func (svc *GetVppSvc) GetIPSecSAs(ctx context.Context, request *rpc.GetRequest) 
 	return &rpc.IPSecSAResponse{SAa: sas}, nil
 }
 
-// GetIPSecTunnels reads IPSec tunnels and returns them as an *IPSecTunnelResponse. If reading ends up with error,
+// DumpIPSecTunnels reads IPSec tunnels and returns them as an *IPSecTunnelResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetIPSecTunnels(ctx context.Context, request *rpc.GetRequest) (*rpc.IPSecTunnelResponse, error) {
+func (svc *GetVppSvc) DumpIPSecTunnels(ctx context.Context, request *rpc.DumpRequest) (*rpc.IPSecTunnelResponse, error) {
 	var tuns []*ipsec.TunnelInterfaces_Tunnel
 	tunDetails, err := svc.ipSecHandler.DumpIPSecTunnelInterfaces()
 	if err != nil {
@@ -260,9 +260,9 @@ func (svc *GetVppSvc) GetIPSecTunnels(ctx context.Context, request *rpc.GetReque
 	return &rpc.IPSecTunnelResponse{Tunnels: tuns}, nil
 }
 
-// GetBDs reads bridge domains and returns them as an *BDResponse. If reading ends up with error,
+// DumpBDs reads bridge domains and returns them as an *BDResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetBDs(ctx context.Context, request *rpc.GetRequest) (*rpc.BDResponse, error) {
+func (svc *GetVppSvc) DumpBDs(ctx context.Context, request *rpc.DumpRequest) (*rpc.BDResponse, error) {
 	var bds []*l2.BridgeDomains_BridgeDomain
 	bdDetails, err := svc.bdHandler.DumpBridgeDomains()
 	if err != nil {
@@ -275,9 +275,9 @@ func (svc *GetVppSvc) GetBDs(ctx context.Context, request *rpc.GetRequest) (*rpc
 	return &rpc.BDResponse{BridgeDomains: bds}, nil
 }
 
-// GetFIBs reads FIBs and returns them as an *FibResponse. If reading ends up with error,
+// DumpFIBs reads FIBs and returns them as an *FibResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetFIBs(ctx context.Context, request *rpc.GetRequest) (*rpc.FibResponse, error) {
+func (svc *GetVppSvc) DumpFIBs(ctx context.Context, request *rpc.DumpRequest) (*rpc.FibResponse, error) {
 	var fibs []*l2.FibTable_FibEntry
 	fibDetails, err := svc.fibHandler.DumpFIBTableEntries()
 	if err != nil {
@@ -290,9 +290,9 @@ func (svc *GetVppSvc) GetFIBs(ctx context.Context, request *rpc.GetRequest) (*rp
 	return &rpc.FibResponse{FIBs: fibs}, nil
 }
 
-// GetXConnects reads cross connects and returns them as an *XcResponse. If reading ends up with error,
+// DumpXConnects reads cross connects and returns them as an *XcResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetXConnects(ctx context.Context, request *rpc.GetRequest) (*rpc.XcResponse, error) {
+func (svc *GetVppSvc) DumpXConnects(ctx context.Context, request *rpc.DumpRequest) (*rpc.XcResponse, error) {
 	var xcs []*l2.XConnectPairs_XConnectPair
 	xcDetails, err := svc.xcHandler.DumpXConnectPairs()
 	if err != nil {
@@ -305,9 +305,9 @@ func (svc *GetVppSvc) GetXConnects(ctx context.Context, request *rpc.GetRequest)
 	return &rpc.XcResponse{XCons: xcs}, nil
 }
 
-// GetRoutes reads VPP routes and returns them as an *RoutesResponse. If reading ends up with error,
+// DumpRoutes reads VPP routes and returns them as an *RoutesResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetRoutes(ctx context.Context, request *rpc.GetRequest) (*rpc.RoutesResponse, error) {
+func (svc *GetVppSvc) DumpRoutes(ctx context.Context, request *rpc.DumpRequest) (*rpc.RoutesResponse, error) {
 	var routes []*l3.StaticRoutes_Route
 	rtDetails, err := svc.rtHandler.DumpStaticRoutes()
 	if err != nil {
@@ -320,9 +320,9 @@ func (svc *GetVppSvc) GetRoutes(ctx context.Context, request *rpc.GetRequest) (*
 	return &rpc.RoutesResponse{StaticRoutes: routes}, nil
 }
 
-// GetARPs reads VPP ARPs and returns them as an *ARPsResponse. If reading ends up with error,
+// DumpARPs reads VPP ARPs and returns them as an *ARPsResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetARPs(ctx context.Context, request *rpc.GetRequest) (*rpc.ARPsResponse, error) {
+func (svc *GetVppSvc) DumpARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.ARPsResponse, error) {
 	var arps []*l3.ArpTable_ArpEntry
 	arpDetails, err := svc.arpHandler.DumpArpEntries()
 	if err != nil {
@@ -335,9 +335,9 @@ func (svc *GetVppSvc) GetARPs(ctx context.Context, request *rpc.GetRequest) (*rp
 	return &rpc.ARPsResponse{ArpEntries: arps}, nil
 }
 
-// GetLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
+// DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetLinuxInterfaces(ctx context.Context, request *rpc.GetRequest) (*rpc.LinuxInterfaceResponse, error) {
+func (svc *GetVppSvc) DumpLinuxInterfaces(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxInterfaceResponse, error) {
 	var linuxIfs []*linuxIf.LinuxInterfaces_Interface
 	ifDetails, err := svc.linuxIfHandler.DumpInterfaces()
 	if err != nil {
@@ -350,9 +350,9 @@ func (svc *GetVppSvc) GetLinuxInterfaces(ctx context.Context, request *rpc.GetRe
 	return &rpc.LinuxInterfaceResponse{LinuxInterfaces: linuxIfs}, nil
 }
 
-// GetLinuxARPs reads linux ARPs and returns them as an *LinuxARPsResponse. If reading ends up with error,
+// DumpLinuxARPs reads linux ARPs and returns them as an *LinuxARPsResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetLinuxARPs(ctx context.Context, request *rpc.GetRequest) (*rpc.LinuxARPsResponse, error) {
+func (svc *GetVppSvc) DumpLinuxARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxARPsResponse, error) {
 	var linuxArps []*linuxL3.LinuxStaticArpEntries_ArpEntry
 	arpDetails, err := svc.linuxL3Handler.DumpArpEntries()
 	if err != nil {
@@ -365,9 +365,9 @@ func (svc *GetVppSvc) GetLinuxARPs(ctx context.Context, request *rpc.GetRequest)
 	return &rpc.LinuxARPsResponse{LinuxArpEntries: linuxArps}, nil
 }
 
-// GetLinuxRoutes reads linux routes and returns them as an *LinuxRoutesResponse. If reading ends up with error,
+// DumpLinuxRoutes reads linux routes and returns them as an *LinuxRoutesResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *GetVppSvc) GetLinuxRoutes(ctx context.Context, request *rpc.GetRequest) (*rpc.LinuxRoutesResponse, error) {
+func (svc *GetVppSvc) DumpLinuxRoutes(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxRoutesResponse, error) {
 	var linuxRoutes []*linuxL3.LinuxStaticRoutes_Route
 	rtDetails, err := svc.linuxL3Handler.DumpRoutes()
 	if err != nil {
@@ -607,19 +607,19 @@ func (p *Plugin) initHandlers() {
 	bdIndexes := p.VPP.GetBDIndexes()
 	spdIndexes := p.VPP.GetIPSecSPDIndexes()
 	// Initialize VPP handlers
-	p.getVppSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan)
-	p.getVppSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
-	p.getVppSvc.bfdHandler = ifvppcalls.NewBfdVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.getVppSvc.natHandler = ifvppcalls.NewNatVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
-	p.getVppSvc.stnHandler = ifvppcalls.NewStnVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.getVppSvc.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, spdIndexes, p.Log)
-	p.getVppSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.getVppSvc.fibHandler = l2vppcalls.NewFibVppHandler(p.vppChan, p.dumpChan, ifIndexes, bdIndexes, p.Log)
-	p.getVppSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.getVppSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.getVppSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.getVppSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.getVppSvc.l4Handler = l4vppcalls.NewL4VppHandler(p.vppChan, p.Log)
+	p.dumpVppSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan)
+	p.dumpVppSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
+	p.dumpVppSvc.bfdHandler = ifvppcalls.NewBfdVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.natHandler = ifvppcalls.NewNatVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
+	p.dumpVppSvc.stnHandler = ifvppcalls.NewStnVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, spdIndexes, p.Log)
+	p.dumpVppSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.fibHandler = l2vppcalls.NewFibVppHandler(p.vppChan, p.dumpChan, ifIndexes, bdIndexes, p.Log)
+	p.dumpVppSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.l4Handler = l4vppcalls.NewL4VppHandler(p.vppChan, p.Log)
 	// Linux indexes and handlers
 	if p.Linux != nil && !p.Linux.IsDisabled() {
 		linuxIfIndexes := p.Linux.GetLinuxIfIndexes()
@@ -627,7 +627,7 @@ func (p *Plugin) initHandlers() {
 		linuxRtIndexes := p.Linux.GetLinuxRouteIndexes()
 		// Initialize Linux handlers
 		linuxNsHandler := p.Linux.GetNamespaceHandler()
-		p.getVppSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, p.Log)
-		p.getVppSvc.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRtIndexes, p.Log)
+		p.dumpVppSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, p.Log)
+		p.dumpVppSvc.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRtIndexes, p.Log)
 	}
 }

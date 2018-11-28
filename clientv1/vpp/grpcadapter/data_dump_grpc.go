@@ -29,198 +29,198 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 )
 
-// NewDataGetDSL is a constructor
-func NewDataGetDSL(client rpc.DataGetServiceClient) *DataGetDSL {
-	return &DataGetDSL{
+// NewDataDumpDSL is a constructor
+func NewDataDumpDSL(client rpc.DataDumpServiceClient) *DataDumpDSL {
+	return &DataDumpDSL{
 		client: client,
 	}
 }
 
-// DataGetDSL is used to conveniently assign all the data that are needed for the Data read.
+// DataDumpDSL is used to conveniently assign all the data that are needed for the Data read.
 // This is an implementation of Domain Specific Language (DSL) for a change of the VPP configuration.
-type DataGetDSL struct {
-	client rpc.DataGetServiceClient
-	get    []proto.Message
+type DataDumpDSL struct {
+	client rpc.DataDumpServiceClient
+	dump   []proto.Message
 }
 
-// GetDSL allows to read the configuration of default plugins based on grpc requests.
-type GetDSL struct {
-	parent *DataGetDSL
+// DumpDSL allows to read the configuration of default plugins based on grpc requests.
+type DumpDSL struct {
+	parent *DataDumpDSL
 }
 
-// Get enables reading Interface/BD...
-func (dsl *DataGetDSL) Get() vppclient.GetDSL {
-	return &GetDSL{dsl}
+// Dump enables reading Interface/BD...
+func (dsl *DataDumpDSL) Dump() vppclient.DumpDSL {
+	return &DumpDSL{dsl}
 }
 
 // ACLs adds a request to read an existing VPP access lists
-func (dsl *GetDSL) ACLs() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &acl.AccessLists_Acl{})
+func (dsl *DumpDSL) ACLs() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &acl.AccessLists_Acl{})
 	return dsl
 }
 
 // Interfaces adds a request to read an existing VPP interfaces
-func (dsl *GetDSL) Interfaces() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &interfaces.Interfaces_Interface{})
+func (dsl *DumpDSL) Interfaces() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &interfaces.Interfaces_Interface{})
 	return dsl
 }
 
 // IPSecSPDs adds a request to read an existing IPSec SPDs
-func (dsl *GetDSL) IPSecSPDs() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &ipsec.SecurityPolicyDatabases_SPD{})
+func (dsl *DumpDSL) IPSecSPDs() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &ipsec.SecurityPolicyDatabases_SPD{})
 	return dsl
 }
 
 // IPSecSAs adds a request to read an existing IPSec SAs
-func (dsl *GetDSL) IPSecSAs() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &ipsec.SecurityAssociations_SA{})
+func (dsl *DumpDSL) IPSecSAs() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &ipsec.SecurityAssociations_SA{})
 	return dsl
 }
 
 // IPSecTunnels adds a request to read an existing IPSec tunnels
-func (dsl *GetDSL) IPSecTunnels() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &ipsec.TunnelInterfaces_Tunnel{})
+func (dsl *DumpDSL) IPSecTunnels() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &ipsec.TunnelInterfaces_Tunnel{})
 	return dsl
 }
 
 // BDs adds a request to read an existing bridge domains
-func (dsl *GetDSL) BDs() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &l2.BridgeDomains_BridgeDomain{})
+func (dsl *DumpDSL) BDs() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &l2.BridgeDomains_BridgeDomain{})
 	return dsl
 }
 
 // FIBs adds a request to read an existing FIBs
-func (dsl *GetDSL) FIBs() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &l2.FibTable_FibEntry{})
+func (dsl *DumpDSL) FIBs() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &l2.FibTable_FibEntry{})
 	return dsl
 }
 
 // XConnects adds a request to read an existing cross connects
-func (dsl *GetDSL) XConnects() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &l2.XConnectPairs_XConnectPair{})
+func (dsl *DumpDSL) XConnects() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &l2.XConnectPairs_XConnectPair{})
 	return dsl
 }
 
 // Routes adds a request to read an existing VPP routes
-func (dsl *GetDSL) Routes() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &l3.StaticRoutes_Route{})
+func (dsl *DumpDSL) Routes() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &l3.StaticRoutes_Route{})
 	return dsl
 }
 
 // ARPs adds a request to read an existing VPP ARPs
-func (dsl *GetDSL) ARPs() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &l3.ArpTable_ArpEntry{})
+func (dsl *DumpDSL) ARPs() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &l3.ArpTable_ArpEntry{})
 	return dsl
 }
 
 // LinuxInterfaces adds a request to read an existing linux interfaces
-func (dsl *GetDSL) LinuxInterfaces() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &linuxIf.LinuxInterfaces_Interface{})
+func (dsl *DumpDSL) LinuxInterfaces() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &linuxIf.LinuxInterfaces_Interface{})
 	return dsl
 }
 
 // LinuxARPs adds a request to read an existing linux ARPs
-func (dsl *GetDSL) LinuxARPs() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &linuxL3.LinuxStaticArpEntries_ArpEntry{})
+func (dsl *DumpDSL) LinuxARPs() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &linuxL3.LinuxStaticArpEntries_ArpEntry{})
 	return dsl
 }
 
 // LinuxRoutes adds a request to read an existing linux routes
-func (dsl *GetDSL) LinuxRoutes() vppclient.GetDSL {
-	dsl.parent.get = append(dsl.parent.get, &linuxL3.LinuxStaticRoutes_Route{})
+func (dsl *DumpDSL) LinuxRoutes() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &linuxL3.LinuxStaticRoutes_Route{})
 	return dsl
 }
 
 // Send propagates request
-func (dsl *GetDSL) Send() vppclient.GetReply {
+func (dsl *DumpDSL) Send() vppclient.DumpReply {
 	return dsl.parent.Send()
 }
 
 // Send propagates request
-func (dsl *DataGetDSL) Send() vppclient.GetReply {
+func (dsl *DataDumpDSL) Send() vppclient.DumpReply {
 	ctx := context.Background()
 
 	rd := &replyData{}
 
-	for _, dataType := range dsl.get {
-		request := &rpc.GetRequest{}
+	for _, dataType := range dsl.dump {
+		request := &rpc.DumpRequest{}
 
 		switch dataType.(type) {
 		case *acl.AccessLists_Acl:
-			resp, err := dsl.client.GetAcls(ctx, request)
+			resp, err := dsl.client.DumpAcls(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.acl = resp.AccessLists
 
 		case *interfaces.Interfaces_Interface:
-			resp, err := dsl.client.GetInterfaces(ctx, request)
+			resp, err := dsl.client.DumpInterfaces(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.ifs = resp.Interfaces
 		case *ipsec.SecurityPolicyDatabases_SPD:
-			resp, err := dsl.client.GetIPSecSPDs(ctx, request)
+			resp, err := dsl.client.DumpIPSecSPDs(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.spds = resp.SPDs
 		case *ipsec.SecurityAssociations_SA:
-			resp, err := dsl.client.GetIPSecSAs(ctx, request)
+			resp, err := dsl.client.DumpIPSecSAs(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.sas = resp.SAa
 		case *ipsec.TunnelInterfaces_Tunnel:
-			resp, err := dsl.client.GetIPSecTunnels(ctx, request)
+			resp, err := dsl.client.DumpIPSecTunnels(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.tuns = resp.Tunnels
 		case *l2.BridgeDomains_BridgeDomain:
-			resp, err := dsl.client.GetBDs(ctx, request)
+			resp, err := dsl.client.DumpBDs(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.bds = resp.BridgeDomains
 		case *l2.FibTable_FibEntry:
-			resp, err := dsl.client.GetFIBs(ctx, request)
+			resp, err := dsl.client.DumpFIBs(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.fibs = resp.FIBs
 		case *l2.XConnectPairs_XConnectPair:
-			resp, err := dsl.client.GetXConnects(ctx, request)
+			resp, err := dsl.client.DumpXConnects(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.xcs = resp.XCons
 		case *l3.ArpTable_ArpEntry:
-			resp, err := dsl.client.GetARPs(ctx, request)
+			resp, err := dsl.client.DumpARPs(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.arps = resp.ArpEntries
 		case *l3.StaticRoutes_Route:
-			resp, err := dsl.client.GetRoutes(ctx, request)
+			resp, err := dsl.client.DumpRoutes(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.routes = resp.StaticRoutes
 		case *linuxIf.LinuxInterfaces_Interface:
-			resp, err := dsl.client.GetLinuxInterfaces(ctx, request)
+			resp, err := dsl.client.DumpLinuxInterfaces(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.linuxIfs = resp.LinuxInterfaces
 		case *linuxL3.LinuxStaticArpEntries:
-			resp, err := dsl.client.GetLinuxARPs(ctx, request)
+			resp, err := dsl.client.DumpLinuxARPs(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.linuxArps = resp.LinuxArpEntries
 		case *linuxL3.LinuxStaticRoutes_Route:
-			resp, err := dsl.client.GetLinuxRoutes(ctx, request)
+			resp, err := dsl.client.DumpLinuxRoutes(ctx, request)
 			if err != nil {
 				return &GetReply{&replyData{err: err}}
 			}

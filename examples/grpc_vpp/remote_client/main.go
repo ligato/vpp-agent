@@ -210,8 +210,8 @@ func (plugin *ExamplePlugin) getConfiguration(ctx context.Context) {
 	select {
 	case <-time.After(6 * time.Second):
 		// Simulate get (dump)
-		reply, err := remoteclient.DataGetRequestGRPC(rpc.NewDataGetServiceClient(plugin.conn)).
-			Get().
+		reply, err := remoteclient.DataDumpRequestGRPC(rpc.NewDataDumpServiceClient(plugin.conn)).
+			Dump().
 			ACLs().
 			Interfaces().
 			BDs().
@@ -219,9 +219,9 @@ func (plugin *ExamplePlugin) getConfiguration(ctx context.Context) {
 			Send().
 			ReceiveReply()
 		if err != nil {
-			logrus.DefaultLogger().Errorf("Failed to read data from the VPP: %v", err)
+			logrus.DefaultLogger().Errorf("Failed to dump data from the VPP: %v", err)
 		} else {
-			logrus.DefaultLogger().Infof("Data read from the VPP: ACLs: %d, interfaces: %d, bd: %d, xc: %d",
+			logrus.DefaultLogger().Infof("Data dumped from the VPP: ACLs: %d, interfaces: %d, bd: %d, xc: %d",
 				len(reply.GetACLs()), len(reply.GetInterfaces()), len(reply.GetBDs()), len(reply.GetXConnects()))
 		}
 	}

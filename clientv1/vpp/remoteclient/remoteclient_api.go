@@ -51,8 +51,8 @@ func DataChangeRequestGRPC(client rpc.DataChangeServiceClient) vppclient.DataCha
 	return grpcadapter.NewDataChangeDSL(client)
 }
 
-// DataGetRequestGRPC allows sending 'Get' data requests conveniently (even without directly using Broker).
+// DataDumpRequestGRPC allows sending 'Dump' data requests conveniently (even without directly using Broker).
 // User of the API does not need to be aware of keys.
-func DataGetRequestGRPC(client rpc.DataGetServiceClient) vppclient.DataGetDSL {
-	return grpcadapter.NewDataGetDSL(client)
+func DataDumpRequestGRPC(client rpc.DataDumpServiceClient) vppclient.DataDumpDSL {
+	return grpcadapter.NewDataDumpDSL(client)
 }

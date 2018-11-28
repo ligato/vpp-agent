@@ -24,58 +24,58 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
-// DataGetDSL defines Domain Specific Language (DSL) for data read.
+// DataDumpDSL defines Domain Specific Language (DSL) for data read.
 // of the VPP configuration.
 // Use this interface to make your implementation independent of the local
 // and any remote client.
 // Every DSL statement (apart from Send) returns the receiver (possibly wrapped
 // to change the scope of DSL), allowing the calls to be chained together
 // conveniently in a single statement.
-type DataGetDSL interface {
-	// Get initiates a chained sequence of data read DSL statements, reading
+type DataDumpDSL interface {
+	// Dump initiates a chained sequence of data read DSL statements, reading
 	// existing configurable objects, e.g.:
-	//     Get().Interfaces().BD() ... Send()
+	//     Dump().Interfaces().BD() ... Send()
 	// The set of available objects to be created or changed is defined by GetDSL.
-	Get() GetDSL
+	Dump() DumpDSL
 }
 
-// GetDSL is a subset of data read DSL statements, used to read existing
+// DumpDSL is a subset of data read DSL statements, used to read existing
 // VPP configuration.
-type GetDSL interface {
+type DumpDSL interface {
 	// ACLs adds a request to read VPP access lists.
-	ACLs() GetDSL
+	ACLs() DumpDSL
 	// Interfaces adds a request to read VPP interfaces.
-	Interfaces() GetDSL
+	Interfaces() DumpDSL
 	// IPSecSPDs adds a request to read IPSec SPDs.
-	IPSecSPDs() GetDSL
+	IPSecSPDs() DumpDSL
 	// IPSecSAs adds a request to read IPSec SAs.
-	IPSecSAs() GetDSL
+	IPSecSAs() DumpDSL
 	// IPSecTunnels adds a request to read IPSec tunnels.
-	IPSecTunnels() GetDSL
+	IPSecTunnels() DumpDSL
 	// BDs adds a request to read bridge domains.
-	BDs() GetDSL
+	BDs() DumpDSL
 	// FIBs adds a request to read FIBs.
-	FIBs() GetDSL
+	FIBs() DumpDSL
 	// XConnects adds a request to read cross connects.
-	XConnects() GetDSL
+	XConnects() DumpDSL
 	// Routes adds a request to read routes.
-	Routes() GetDSL
+	Routes() DumpDSL
 	// ARPs adds a request to read ARPs.
-	ARPs() GetDSL
+	ARPs() DumpDSL
 	// LinuxInterfaces adds a request to read linux interfaces.
-	LinuxInterfaces() GetDSL
+	LinuxInterfaces() DumpDSL
 	// LinuxARPs adds a request to read linux ARPs.
-	LinuxARPs() GetDSL
+	LinuxARPs() DumpDSL
 	// LinuxRoutes adds a request to read linux routes.
-	LinuxRoutes() GetDSL
+	LinuxRoutes() DumpDSL
 
 	// Send propagates requested changes to the plugins.
-	Send() GetReply
+	Send() DumpReply
 }
 
-// GetReply interface allows to wait for a reply to previously called Send() and
+// DumpReply interface allows to wait for a reply to previously called Send() and
 // extract the result from it (success/error).
-type GetReply interface {
+type DumpReply interface {
 	// ReceiveReply waits for a reply to previously called Send() and returns
 	// the result (data set or error).
 	ReceiveReply() (ReplyData, error)
