@@ -18,9 +18,9 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/cn-infra/logging"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"

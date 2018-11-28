@@ -575,8 +575,8 @@ func (h *IfVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDetails) 
 			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
 		}
 
-		ifs[tunnel.SwIfIndex].Interface.Link = &ifnb.Interface_Ipsec{
-			Ipsec: &ifnb.IPSecLink{
+		ifs[tunnel.SwIfIndex].Interface.Link = &interfaces.Interface_Ipsec{
+			Ipsec: &interfaces.IPSecLink{
 				Esn:        uintToBool(tunnel.UseEsn),
 				AntiReplay: uintToBool(tunnel.UseAntiReplay),
 				LocalIp:    tunnelSrcAddrStr,
@@ -584,11 +584,11 @@ func (h *IfVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDetails) 
 				LocalSpi:   tunnel.Spi,
 				// fll remote SPI from stored SA data
 				RemoteSpi: firstSaData.Spi,
-				CryptoAlg: ifnb.IPSecLink_CryptoAlg(tunnel.CryptoAlg),
-				IntegAlg:  ifnb.IPSecLink_IntegAlg(tunnel.IntegAlg),
+				CryptoAlg: interfaces.IPSecLink_CryptoAlg(tunnel.CryptoAlg),
+				IntegAlg:  interfaces.IPSecLink_IntegAlg(tunnel.IntegAlg),
 			},
 		}
-		ifs[tunnel.SwIfIndex].Interface.Type = ifnb.Interface_IPSEC_TUNNEL
+		ifs[tunnel.SwIfIndex].Interface.Type = interfaces.Interface_IPSEC_TUNNEL
 	}
 
 	return nil

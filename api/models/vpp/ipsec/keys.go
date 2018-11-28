@@ -12,12 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ipsec
+package vpp_ipsec
 
 import (
 	"strconv"
 	"strings"
+
+	"github.com/ligato/vpp-agent/api/models"
 )
+
+func init() {
+	models.Register(&SecurityPolicyDatabase{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "ipsec/spd",
+		TmplID:  "{{.Index}}",
+	})
+	models.Register(&SecurityAssociation{}, models.Spec{
+		Module:  "vpp",
+		Class:   "config",
+		Version: "v2",
+		Kind:    "ipsec/sa",
+		TmplID:  "{{.Index}}",
+	})
+}
 
 /* IPSec */
 const (

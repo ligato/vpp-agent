@@ -1,6 +1,11 @@
 syntax = "proto3";
 
-package ipsec;
+package vpp.ipsec;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/vpp/ipsec;vpp_ipsec";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
 
 /* Security Policy Database (SPD) */
 message SecurityPolicyDatabase {

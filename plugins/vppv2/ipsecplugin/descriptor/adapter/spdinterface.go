@@ -4,15 +4,15 @@ package adapter
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type SPDInterfaceKVWithMetadata struct {
 	Key      string
-	Value    *ipsec.SecurityPolicyDatabase_Interface
+	Value    *vpp_ipsec.SecurityPolicyDatabase_Interface
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type SPDInterfaceDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_Interface) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_Interface) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *ipsec.SecurityPolicyDatabase_Interface) (metadata interface{}, err error)
-	Delete             func(key string, value *ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_Interface, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) bool
-	Update             func(key string, value *ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) error
+	Add                func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_Interface, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) bool
+	Update             func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *ipsec.SecurityPolicyDatabase_Interface) []Dependency
-	DerivedValues      func(key string, value *ipsec.SecurityPolicyDatabase_Interface) []KeyValuePair
+	Dependencies       func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface) []Dependency
+	DerivedValues      func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface) []KeyValuePair
 	Dump               func(correlate []SPDInterfaceKVWithMetadata) ([]SPDInterfaceKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *SPDInterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVW
 
 ////////// Helper methods //////////
 
-func castSPDInterfaceValue(key string, value proto.Message) (*ipsec.SecurityPolicyDatabase_Interface, error) {
-	typedValue, ok := value.(*ipsec.SecurityPolicyDatabase_Interface)
+func castSPDInterfaceValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicyDatabase_Interface, error) {
+	typedValue, ok := value.(*vpp_ipsec.SecurityPolicyDatabase_Interface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

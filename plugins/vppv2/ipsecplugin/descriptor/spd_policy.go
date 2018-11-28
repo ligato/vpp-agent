@@ -20,10 +20,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
 )
 
 const (
@@ -133,7 +133,6 @@ func (d *SPDPolicyDescriptor) Delete(key string, policy *ipsec.SecurityPolicyDat
 		d.log.Error(err)
 		return err
 	}
-
 
 	err = d.ipSecHandler.DeleteSPDEntry(uint32(spdID), uint32(saID), policy)
 	if err != nil {

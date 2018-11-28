@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ipsec_test
+package vpp_ipsec_test
 
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 )
 
 func TestIPSecSPDKey(t *testing.T) {
