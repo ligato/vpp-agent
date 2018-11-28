@@ -130,6 +130,7 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 // Dump returns all configured VPP punt to host entries.
 func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata) (dump []adapter.PuntToHostKVWithMetadata, err error) {
 	// TODO dump for punt and punt socket register missing in api
+	d.log.Warn("Dump punt/socket register is not supported by the VPP")
 	return []adapter.PuntToHostKVWithMetadata{}, nil
 }
 
