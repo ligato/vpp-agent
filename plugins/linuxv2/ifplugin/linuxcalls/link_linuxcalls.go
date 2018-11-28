@@ -79,13 +79,14 @@ func (h *NetLinkHandler) InterfaceExists(ifName string) (bool, error) {
 	return false, err
 }
 
-// IsInterfaceEnabled checks if the interface is UP.
-func (h *NetLinkHandler) IsInterfaceEnabled(ifName string) (bool, error) {
+// IsInterfaceUp checks if the interface is UP.
+func (h *NetLinkHandler) IsInterfaceUp(ifName string) (bool, error) {
 	intf, err := net.InterfaceByName(ifName)
 	if err != nil {
 		return false, err
 	}
-	return (intf.Flags & net.FlagUp) != 0, nil
+	isUp := (intf.Flags & net.FlagUp) == net.FlagUp
+	return isUp, nil
 }
 
 // DeleteInterface removes the given interface.
@@ -104,17 +105,19 @@ func (h *NetLinkHandler) RenameInterface(ifName string, newName string) error {
 	if err != nil {
 		return err
 	}
-	err = h.SetInterfaceDown(ifName)
-	if err != nil {
+	wasUp := (link.Attrs().Flags & net.FlagUp) == net.FlagUp
+	if wasUp {
+		if err = netlink.LinkSetDown(link); err != nil {
+			return err
+		}
+	}
+	if err = netlink.LinkSetName(link, newName); err != nil {
 		return err
 	}
-	err = netlink.LinkSetName(link, newName)
-	if err != nil {
-		return err
-	}
-	err = h.SetInterfaceUp(newName)
-	if err != nil {
-		return err
+	if wasUp {
+		if err = netlink.LinkSetUp(link); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -128,4 +131,22 @@ func (h *NetLinkHandler) SetInterfaceAlias(ifName, alias string) error {
 	}
 
 	return netlink.LinkSetAlias(link, alias)
+}
+
+// SetInterfaceDown calls Netlink API LinkSetDown.
+func (h *NetLinkHandler) SetInterfaceDown(ifName string) error {
+	link, err := h.GetLinkByName(ifName)
+	if err != nil {
+		return err
+	}
+	return netlink.LinkSetDown(link)
+}
+
+// SetInterfaceUp calls Netlink API LinkSetUp.
+func (h *NetLinkHandler) SetInterfaceUp(ifName string) error {
+	link, err := h.GetLinkByName(ifName)
+	if err != nil {
+		return err
+	}
+	return netlink.LinkSetUp(link)
 }

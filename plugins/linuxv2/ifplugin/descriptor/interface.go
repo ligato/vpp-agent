@@ -166,14 +166,18 @@ func (d *InterfaceDescriptor) InterfaceNameFromKey(key string) string {
 // interfaces.LinuxInterface, also ignoring the order of assigned IP addresses.
 func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf *interfaces.Interface) bool {
 	// attributes compared as usually:
-	if oldIntf.Name != newIntf.Name || oldIntf.Type != newIntf.Type || oldIntf.Enabled != newIntf.Enabled ||
+	if oldIntf.Name != newIntf.Name ||
+		oldIntf.Type != newIntf.Type ||
+		oldIntf.Enabled != newIntf.Enabled ||
 		getHostIfName(oldIntf) != getHostIfName(newIntf) {
 		return false
 	}
-	if oldIntf.Type == interfaces.Interface_VETH && oldIntf.GetVeth().GetPeerIfName() != newIntf.GetVeth().GetPeerIfName() {
+	if oldIntf.Type == interfaces.Interface_VETH &&
+		oldIntf.GetVeth().GetPeerIfName() != newIntf.GetVeth().GetPeerIfName() {
 		return false
 	}
-	if oldIntf.Type == interfaces.Interface_TAP_TO_VPP && oldIntf.GetTap().GetVppTapIfName() != newIntf.GetTap().GetVppTapIfName() {
+	if oldIntf.Type == interfaces.Interface_TAP_TO_VPP &&
+		oldIntf.GetTap().GetVppTapIfName() != newIntf.GetTap().GetVppTapIfName() {
 		return false
 	}
 	if !proto.Equal(oldIntf.Namespace, newIntf.Namespace) {
@@ -199,7 +203,11 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		return reflect.DeepEqual(oldIntf.IpAddresses, newIntf.IpAddresses)
 	}
 	obsolete, new := addrs.DiffAddr(oldIntfAddrs, newIntfAddrs)
-	return len(obsolete) == 0 && len(new) == 0
+	if len(obsolete) != 0 || len(new) != 0 {
+		return false
+	}
+
+	return true
 }
 
 // MetadataFactory is a factory for index-map customized for Linux interfaces.
@@ -514,7 +522,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 		}
 	}
 
-	if linuxIf.Namespace != nil && linuxIf.Namespace.Type == namespace.NetNamespace_NETNS_REF_MICROSERVICE {
+	if linuxIf.GetNamespace().GetType() == namespace.NetNamespace_NETNS_REF_MICROSERVICE {
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: microserviceDep,
 			Key:   namespace.MicroserviceKey(linuxIf.Namespace.Reference),
@@ -675,7 +683,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			}
 
 			// dump interface status
-			intf.Enabled, err = d.ifHandler.IsInterfaceEnabled(link.Attrs().Name)
+			intf.Enabled, err = d.ifHandler.IsInterfaceUp(link.Attrs().Name)
 			if err != nil {
 				d.log.WithFields(logging.Fields{
 					"if-host-name": link.Attrs().Name,
@@ -799,7 +807,7 @@ func (d *InterfaceDescriptor) setInterfaceNamespace(ctx nslinuxcalls.NamespaceMg
 	if err != nil {
 		return errors.Errorf("failed to get IP address list from interface %s: %v", link.Attrs().Name, err)
 	}
-	enabled, err := d.ifHandler.IsInterfaceEnabled(ifName)
+	enabled, err := d.ifHandler.IsInterfaceUp(ifName)
 	if err != nil {
 		return errors.Errorf("failed to get admin status of the interface %s: %v", link.Attrs().Name, err)
 	}
@@ -871,30 +879,30 @@ func (d *InterfaceDescriptor) getInterfaceAddresses(ifName string) (addresses []
 
 // validateInterfaceConfig validates Linux interface configuration.
 func (d *InterfaceDescriptor) validateInterfaceConfig(linuxIf *interfaces.Interface) error {
-	if linuxIf.Name == "" {
+	if linuxIf.GetName() == "" {
 		return ErrInterfaceWithoutName
 	}
-	if linuxIf.Type == interfaces.Interface_UNDEFINED {
+	if linuxIf.GetType() == interfaces.Interface_UNDEFINED {
 		return ErrInterfaceWithoutType
 	}
-	if linuxIf.Type == interfaces.Interface_TAP_TO_VPP && d.vppIfPlugin == nil {
+	if linuxIf.GetType() == interfaces.Interface_TAP_TO_VPP && d.vppIfPlugin == nil {
 		return ErrTAPRequiresVPPIfPlugin
 	}
-	if linuxIf.Namespace != nil &&
-		(linuxIf.Namespace.Type == namespace.NetNamespace_NETNS_REF_UNDEFINED ||
-			linuxIf.Namespace.Reference == "") {
+	if linuxIf.GetNamespace() != nil &&
+		(linuxIf.GetNamespace().GetType() == namespace.NetNamespace_NETNS_REF_UNDEFINED ||
+			linuxIf.GetNamespace().GetReference() == "") {
 		return ErrNamespaceWithoutReference
 	}
 	switch linuxIf.Link.(type) {
 	case *interfaces.Interface_Tap:
-		if linuxIf.Type != interfaces.Interface_TAP_TO_VPP {
+		if linuxIf.GetType() != interfaces.Interface_TAP_TO_VPP {
 			return ErrInterfaceReferenceMismatch
 		}
 		if linuxIf.GetTap().GetVppTapIfName() == "" {
 			return ErrTAPWithoutVPPReference
 		}
 	case *interfaces.Interface_Veth:
-		if linuxIf.Type != interfaces.Interface_VETH {
+		if linuxIf.GetType() != interfaces.Interface_VETH {
 			return ErrInterfaceReferenceMismatch
 		}
 		if linuxIf.GetVeth().GetPeerIfName() == "" {

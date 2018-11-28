@@ -30,7 +30,7 @@ func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.Interface)
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
 	peerName := linuxIf.GetVeth().GetPeerIfName()
-	tempHostName := getVethTemporaryHostName(linuxIf.Name)
+	tempHostName := getVethTemporaryHostName(linuxIf.GetName())
 	tempPeerHostName := getVethTemporaryHostName(peerName)
 
 	// context
@@ -81,8 +81,7 @@ func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.Interface)
 	defer revert()
 
 	// rename from the temporary host name to the requested host name
-	d.ifHandler.RenameInterface(tempHostName, hostName)
-	if err != nil {
+	if err = d.ifHandler.RenameInterface(tempHostName, hostName); err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
