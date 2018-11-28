@@ -503,15 +503,15 @@ Put TAPv2 Interface With IP
     Put Json     ${uri}    ${data}
 
 Put STN Rule
-    [Arguments]    ${node}    ${interface}    ${ip}    ${rule_name}
+    [Arguments]    ${node}    ${interface}    ${ip}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/stn_rule.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rules/${rule_name}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rule/${interface}/ip/${ip}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Delete STN Rule
-    [Arguments]    ${node}    ${rule_name}
-    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rules/${rule_name}
+    [Arguments]    ${node}    ${interface}    ${ip}
+    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rule/${interface}/ip/${ip}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 
