@@ -17,11 +17,31 @@ package rpc
 import (
 	"fmt"
 
+	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
+	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+
+	"git.fd.io/govpp.git/api"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/linux"
+	"github.com/ligato/vpp-agent/plugins/vpp"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
+	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linux/ifplugin/linuxcalls"
+	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
+	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
+	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
+	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/vppcalls"
+	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
+	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
+	l4vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 	"golang.org/x/net/context"
@@ -31,9 +51,14 @@ import (
 type Plugin struct {
 	Deps
 
+	// Channels
+	vppChan  api.Channel
+	dumpChan api.Channel
+
 	// Services
 	changeVppSvc ChangeVppSvc
 	resyncVppSvc ResyncVppSvc
+	dumpVppSvc   GetVppSvc
 	notifSvc     NotificationSvc
 }
 
@@ -41,6 +66,9 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	GRPCServer grpc.Server
+	GoVppmux   govppmux.TraceAPI
+	VPP        vpp.API
+	Linux      linux.API
 }
 
 // ChangeVppSvc forwards GRPC request to the localclient.
@@ -53,38 +81,71 @@ type ResyncVppSvc struct {
 	log logging.Logger
 }
 
+// GetVppSvc uses VPP/Linux plugin handlers to read VPP configuration
+type GetVppSvc struct {
+	log logging.Logger
+	// VPP Handlers
+	aclHandler   aclvppcalls.ACLVppRead
+	ifHandler    ifvppcalls.IfVppRead
+	bfdHandler   ifvppcalls.BfdVppRead
+	natHandler   ifvppcalls.NatVppRead
+	stnHandler   ifvppcalls.StnVppRead
+	ipSecHandler ipsecvppcalls.IPSecVPPRead
+	bdHandler    l2vppcalls.BridgeDomainVppRead
+	fibHandler   l2vppcalls.FibVppRead
+	xcHandler    l2vppcalls.XConnectVppRead
+	arpHandler   l3vppcalls.ArpVppRead
+	pArpHandler  l3vppcalls.ProxyArpVppRead
+	rtHandler    l3vppcalls.RouteVppRead
+	l4Handler    l4vppcalls.L4VppRead
+	// Linux handlers
+	linuxIfHandler iflinuxcalls.NetlinkAPI
+	linuxL3Handler l3linuxcalls.NetlinkAPI
+}
+
 // Init sets plugin child loggers for changeVppSvc & resyncVppSvc.
-func (plugin *Plugin) Init() error {
+func (p *Plugin) Init() (err error) {
+	// VPP channels
+	if p.vppChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
+		return err
+	}
+	if p.dumpChan, err = p.GoVppmux.NewAPIChannel(); err != nil {
+		return err
+	}
+
 	// Data change
-	plugin.changeVppSvc.log = plugin.Log.NewLogger("changeVppSvc")
+	p.changeVppSvc.log = p.Log.NewLogger("changeVppSvc")
 	// Data resync
-	plugin.resyncVppSvc.log = plugin.Log.NewLogger("resyncVppSvc")
+	p.resyncVppSvc.log = p.Log.NewLogger("resyncVppSvc")
+	// Data get
+	p.dumpVppSvc = GetVppSvc{
+		log: p.Log.NewLogger("dumpVppSvc"),
+	}
+	p.initHandlers()
 	// Notification service (represents GRPC client)
-	plugin.notifSvc.log = plugin.Log.NewLogger("notifSvc")
+	p.notifSvc.log = p.Log.NewLogger("notifSvc")
 
 	// Register all GRPC services if server is available. Register needs to be done
 	// before 'ListenAndServe' is called in GRPC plugin
-	grpcServer := plugin.GRPCServer.GetServer()
+	grpcServer := p.GRPCServer.GetServer()
 	if grpcServer != nil {
-		rpc.RegisterDataChangeServiceServer(grpcServer, &plugin.changeVppSvc)
-		rpc.RegisterDataResyncServiceServer(grpcServer, &plugin.resyncVppSvc)
-		rpc.RegisterNotificationServiceServer(grpcServer, &plugin.notifSvc)
+		rpc.RegisterDataChangeServiceServer(grpcServer, &p.changeVppSvc)
+		rpc.RegisterDataResyncServiceServer(grpcServer, &p.resyncVppSvc)
+		rpc.RegisterNotificationServiceServer(grpcServer, &p.notifSvc)
+		if p.VPP != nil && p.Linux != nil {
+			rpc.RegisterDataDumpServiceServer(grpcServer, &p.dumpVppSvc)
+		}
 	}
+
+	// Set grpc interface notification function for VPP plugin
+	p.VPP.SetGRPCNotificationService(p.notifSvc.updateNotifications)
 
 	return nil
 }
 
 // Close does nothing.
-func (plugin *Plugin) Close() error {
+func (p *Plugin) Close() error {
 	return nil
-}
-
-// UpdateNotifications stores new notification data
-func (plugin *Plugin) UpdateNotifications(ctx context.Context, notification *interfaces.InterfaceNotification) {
-	if notification == nil {
-		return
-	}
-	plugin.notifSvc.updateNotifications(ctx, notification)
 }
 
 // Put adds configuration data present in data request to the VPP/Linux
@@ -115,6 +176,208 @@ func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rp
 	}
 	err := request.Send().ReceiveReply()
 	return &rpc.ResyncResponse{}, err
+}
+
+// DumpAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpAcls(ctx context.Context, request *rpc.DumpRequest) (*rpc.AclResponse, error) {
+	var acls []*acl.AccessLists_Acl
+	ipACLs, err := svc.aclHandler.DumpIPACL(nil)
+	if err != nil {
+		return nil, err
+	}
+	macIPACLs, err := svc.aclHandler.DumpMACIPACL(nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, aclDetails := range ipACLs {
+		acls = append(acls, aclDetails.ACL)
+	}
+	for _, aclDetails := range macIPACLs {
+		acls = append(acls, aclDetails.ACL)
+	}
+
+	return &rpc.AclResponse{AccessLists: acls}, nil
+}
+
+// DumpInterfaces reads interfaces and returns them as an *InterfaceResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpInterfaces(ctx context.Context, request *rpc.DumpRequest) (*rpc.InterfaceResponse, error) {
+	var ifs []*interfaces.Interfaces_Interface
+	ifDetails, err := svc.ifHandler.DumpInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	for _, iface := range ifDetails {
+		ifs = append(ifs, iface.Interface)
+	}
+
+	return &rpc.InterfaceResponse{Interfaces: ifs}, nil
+}
+
+// DumpIPSecSPDs reads IPSec SPD and returns them as an *IPSecSPDResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpIPSecSPDs(ctx context.Context, request *rpc.DumpRequest) (*rpc.IPSecSPDResponse, error) {
+	var spds []*ipsec.SecurityPolicyDatabases_SPD
+	spdDetails, err := svc.ipSecHandler.DumpIPSecSPD()
+	if err != nil {
+		return nil, err
+	}
+	for _, spd := range spdDetails {
+		spds = append(spds, spd.Spd)
+	}
+
+	return &rpc.IPSecSPDResponse{SPDs: spds}, nil
+}
+
+// DumpIPSecSAs reads IPSec SA and returns them as an *IPSecSAResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpIPSecSAs(ctx context.Context, request *rpc.DumpRequest) (*rpc.IPSecSAResponse, error) {
+	var sas []*ipsec.SecurityAssociations_SA
+	saDetails, err := svc.ipSecHandler.DumpIPSecSA()
+	if err != nil {
+		return nil, err
+	}
+	for _, sa := range saDetails {
+		sas = append(sas, sa.Sa)
+	}
+
+	return &rpc.IPSecSAResponse{SAa: sas}, nil
+}
+
+// DumpIPSecTunnels reads IPSec tunnels and returns them as an *IPSecTunnelResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpIPSecTunnels(ctx context.Context, request *rpc.DumpRequest) (*rpc.IPSecTunnelResponse, error) {
+	var tuns []*ipsec.TunnelInterfaces_Tunnel
+	tunDetails, err := svc.ipSecHandler.DumpIPSecTunnelInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	for _, tun := range tunDetails {
+		tuns = append(tuns, tun.Tunnel)
+	}
+
+	return &rpc.IPSecTunnelResponse{Tunnels: tuns}, nil
+}
+
+// DumpBDs reads bridge domains and returns them as an *BDResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpBDs(ctx context.Context, request *rpc.DumpRequest) (*rpc.BDResponse, error) {
+	var bds []*l2.BridgeDomains_BridgeDomain
+	bdDetails, err := svc.bdHandler.DumpBridgeDomains()
+	if err != nil {
+		return nil, err
+	}
+	for _, bd := range bdDetails {
+		bds = append(bds, bd.Bd)
+	}
+
+	return &rpc.BDResponse{BridgeDomains: bds}, nil
+}
+
+// DumpFIBs reads FIBs and returns them as an *FibResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpFIBs(ctx context.Context, request *rpc.DumpRequest) (*rpc.FibResponse, error) {
+	var fibs []*l2.FibTable_FibEntry
+	fibDetails, err := svc.fibHandler.DumpFIBTableEntries()
+	if err != nil {
+		return nil, err
+	}
+	for _, fib := range fibDetails {
+		fibs = append(fibs, fib.Fib)
+	}
+
+	return &rpc.FibResponse{FIBs: fibs}, nil
+}
+
+// DumpXConnects reads cross connects and returns them as an *XcResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpXConnects(ctx context.Context, request *rpc.DumpRequest) (*rpc.XcResponse, error) {
+	var xcs []*l2.XConnectPairs_XConnectPair
+	xcDetails, err := svc.xcHandler.DumpXConnectPairs()
+	if err != nil {
+		return nil, err
+	}
+	for _, xc := range xcDetails {
+		xcs = append(xcs, xc.Xc)
+	}
+
+	return &rpc.XcResponse{XCons: xcs}, nil
+}
+
+// DumpRoutes reads VPP routes and returns them as an *RoutesResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpRoutes(ctx context.Context, request *rpc.DumpRequest) (*rpc.RoutesResponse, error) {
+	var routes []*l3.StaticRoutes_Route
+	rtDetails, err := svc.rtHandler.DumpStaticRoutes()
+	if err != nil {
+		return nil, err
+	}
+	for _, rt := range rtDetails {
+		routes = append(routes, rt.Route)
+	}
+
+	return &rpc.RoutesResponse{StaticRoutes: routes}, nil
+}
+
+// DumpARPs reads VPP ARPs and returns them as an *ARPsResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.ARPsResponse, error) {
+	var arps []*l3.ArpTable_ArpEntry
+	arpDetails, err := svc.arpHandler.DumpArpEntries()
+	if err != nil {
+		return nil, err
+	}
+	for _, arp := range arpDetails {
+		arps = append(arps, arp.Arp)
+	}
+
+	return &rpc.ARPsResponse{ArpEntries: arps}, nil
+}
+
+// DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpLinuxInterfaces(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxInterfaceResponse, error) {
+	var linuxIfs []*linuxIf.LinuxInterfaces_Interface
+	ifDetails, err := svc.linuxIfHandler.DumpInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	for _, iface := range ifDetails {
+		linuxIfs = append(linuxIfs, iface.Interface)
+	}
+
+	return &rpc.LinuxInterfaceResponse{LinuxInterfaces: linuxIfs}, nil
+}
+
+// DumpLinuxARPs reads linux ARPs and returns them as an *LinuxARPsResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpLinuxARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxARPsResponse, error) {
+	var linuxArps []*linuxL3.LinuxStaticArpEntries_ArpEntry
+	arpDetails, err := svc.linuxL3Handler.DumpArpEntries()
+	if err != nil {
+		return nil, err
+	}
+	for _, arp := range arpDetails {
+		linuxArps = append(linuxArps, arp.Arp)
+	}
+
+	return &rpc.LinuxARPsResponse{LinuxArpEntries: linuxArps}, nil
+}
+
+// DumpLinuxRoutes reads linux routes and returns them as an *LinuxRoutesResponse. If reading ends up with error,
+// only error is send back in response
+func (svc *GetVppSvc) DumpLinuxRoutes(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxRoutesResponse, error) {
+	var linuxRoutes []*linuxL3.LinuxStaticRoutes_Route
+	rtDetails, err := svc.linuxL3Handler.DumpRoutes()
+	if err != nil {
+		return nil, err
+	}
+	for _, rt := range rtDetails {
+		linuxRoutes = append(linuxRoutes, rt.Route)
+	}
+
+	return &rpc.LinuxRoutesResponse{LinuxRoutes: linuxRoutes}, nil
 }
 
 // Common method which puts or deletes data of every configuration type separately
@@ -335,4 +598,36 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 	}
 
 	return nil
+}
+
+// helper method initializes all VPP/Linux plugin handlers
+func (p *Plugin) initHandlers() {
+	// VPP Indexes
+	ifIndexes := p.VPP.GetSwIfIndexes()
+	bdIndexes := p.VPP.GetBDIndexes()
+	spdIndexes := p.VPP.GetIPSecSPDIndexes()
+	// Initialize VPP handlers
+	p.dumpVppSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan)
+	p.dumpVppSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
+	p.dumpVppSvc.bfdHandler = ifvppcalls.NewBfdVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.natHandler = ifvppcalls.NewNatVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
+	p.dumpVppSvc.stnHandler = ifvppcalls.NewStnVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, spdIndexes, p.Log)
+	p.dumpVppSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.fibHandler = l2vppcalls.NewFibVppHandler(p.vppChan, p.dumpChan, ifIndexes, bdIndexes, p.Log)
+	p.dumpVppSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.l4Handler = l4vppcalls.NewL4VppHandler(p.vppChan, p.Log)
+	// Linux indexes and handlers
+	if p.Linux != nil && !p.Linux.IsDisabled() {
+		linuxIfIndexes := p.Linux.GetLinuxIfIndexes()
+		linuxArpIndexes := p.Linux.GetLinuxARPIndexes()
+		linuxRtIndexes := p.Linux.GetLinuxRouteIndexes()
+		// Initialize Linux handlers
+		linuxNsHandler := p.Linux.GetNamespaceHandler()
+		p.dumpVppSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, p.Log)
+		p.dumpVppSvc.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRtIndexes, p.Log)
+	}
 }

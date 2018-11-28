@@ -43,7 +43,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/rpc"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 	"github.com/namsral/flag"
 )
@@ -134,8 +133,10 @@ type Plugin struct {
 
 	// Common
 	statusCheckReg bool
-	cancel         context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg             sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	// function to update interfaces notifications available through GRPC
+	grpcNotification func(ctx context.Context, notification *intf.InterfaceNotification)
+	cancel           context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
+	wg               sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
 // Deps groups injected dependencies of plugin so that they do not mix with
@@ -151,7 +152,6 @@ type Deps struct {
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
 	Linux             LinuxPluginAPI
-	GRPCSvc           rpc.GRPCService
 
 	DataSyncs        map[string]datasync.KeyProtoValWriter
 	WatchEventsMutex *sync.Mutex
@@ -261,6 +261,11 @@ func (plugin *Plugin) GetIPSecSAIndexes() idxvpp.NameToIdx {
 // GetIPSecSPDIndexes returns SPD indexes.
 func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
 	return plugin.ipSecConfigurator.GetSpdIndexes()
+}
+
+// SetGRPCNotificationService sets GRPC notification function
+func (plugin *Plugin) SetGRPCNotificationService(notify func(ctx context.Context, notification *intf.InterfaceNotification)) {
+	plugin.grpcNotification = notify
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.

@@ -87,7 +87,6 @@ func New() *VPPAgent {
 			"etcd":  etcdDataSync,
 			"redis": redisDataSync,
 		}
-		deps.GRPCSvc = &rpc.DefaultPlugin
 	}))
 	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
 		deps.VPP = vppPlugin
@@ -104,6 +103,11 @@ func New() *VPPAgent {
 		deps.Linux = linuxPlugin
 	}))
 
+	grpcPlugin := rpc.NewPlugin(rpc.UseDeps(func(deps *rpc.Deps) {
+		deps.VPP = vppPlugin
+		deps.Linux = linuxPlugin
+	}))
+
 	return &VPPAgent{
 		LogManager:     &logmanager.DefaultPlugin,
 		ETCDDataSync:   etcdDataSync,
@@ -111,7 +115,7 @@ func New() *VPPAgent {
 		RedisDataSync:  redisDataSync,
 		VPP:            vppPlugin,
 		Linux:          linuxPlugin,
-		GRPCService:    &rpc.DefaultPlugin,
+		GRPCService:    grpcPlugin,
 		RESTAPI:        restPlugin,
 		Probe:          &probe.DefaultPlugin,
 		Telemetry:      &telemetry.DefaultPlugin,

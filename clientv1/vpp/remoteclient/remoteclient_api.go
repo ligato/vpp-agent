@@ -50,3 +50,9 @@ func DataResyncRequestGRPC(client rpc.DataResyncServiceClient) vppclient.DataRes
 func DataChangeRequestGRPC(client rpc.DataChangeServiceClient) vppclient.DataChangeDSL {
 	return grpcadapter.NewDataChangeDSL(client)
 }
+
+// DataDumpRequestGRPC allows sending 'Dump' data requests conveniently (even without directly using Broker).
+// User of the API does not need to be aware of keys.
+func DataDumpRequestGRPC(client rpc.DataDumpServiceClient) vppclient.DataDumpDSL {
+	return grpcadapter.NewDataDumpDSL(client)
+}
