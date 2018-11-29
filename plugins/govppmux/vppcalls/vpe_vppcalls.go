@@ -25,6 +25,29 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
+// VpeInfo contains information about VPP connection and process.
+type VpeInfo struct {
+	PID       uint32
+	ClientIdx uint32
+}
+
+// GetVpeInfo retrieves vpe information.
+func GetVpeInfo(vppChan govppapi.Channel) (*VpeInfo, error) {
+	req := &vpe.ControlPing{}
+	reply := &vpe.ControlPingReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, err
+	}
+
+	info := &VpeInfo{
+		PID:       reply.VpePID,
+		ClientIdx: reply.ClientIndex,
+	}
+
+	return info, nil
+}
+
 // VersionInfo contains values returned from ShowVersion
 type VersionInfo struct {
 	Program        string

@@ -137,7 +137,13 @@ func (plugin *Plugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 	vppConnectTime := time.Since(startTime)
-	plugin.Log.Info("Connecting to VPP took ", vppConnectTime)
+	info, err := plugin.retrieveVpeInfo()
+	if err != nil {
+		plugin.Log.Errorf("retrieving vpe info failed: %v", err)
+		return err
+	}
+	plugin.Log.Infof("Connected to VPP [PID:%d] (took %s)",
+		info.PID, info.ClientIdx, vppConnectTime.Truncate(time.Millisecond))
 	plugin.retrieveVersion()
 
 	// Register providing status reports (push mode)
@@ -225,6 +231,7 @@ func (plugin *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-plugin.vppConChan:
 			if status.State == govpp.Connected {
+				plugin.retrieveVpeInfo()
 				plugin.retrieveVersion()
 				if plugin.config.ReconnectResync && plugin.lastConnErr != nil {
 					plugin.Log.Info("Starting resync after VPP reconnect")
@@ -247,6 +254,24 @@ func (plugin *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	}
 }
 
+func (plugin *Plugin) retrieveVpeInfo() (*vppcalls.VpeInfo, error) {
+	vppAPIChan, err := plugin.vppConn.NewAPIChannel()
+	if err != nil {
+		plugin.Log.Error("getting new api channel failed:", err)
+		return nil, err
+	}
+	defer vppAPIChan.Close()
+
+	info, err := vppcalls.GetVpeInfo(vppAPIChan)
+	if err != nil {
+		plugin.Log.Warn("getting version info failed:", err)
+		return nil, err
+	}
+	plugin.Log.Debugf("connection info: %+v", info)
+
+	return info, nil
+}
+
 func (plugin *Plugin) retrieveVersion() {
 	vppAPIChan, err := plugin.vppConn.NewAPIChannel()
 	if err != nil {
@@ -255,14 +280,14 @@ func (plugin *Plugin) retrieveVersion() {
 	}
 	defer vppAPIChan.Close()
 
-	info, err := vppcalls.GetVersionInfo(vppAPIChan)
+	version, err := vppcalls.GetVersionInfo(vppAPIChan)
 	if err != nil {
 		plugin.Log.Warn("getting version info failed:", err)
 		return
 	}
 
-	plugin.Log.Debugf("version info: %+v", info)
-	plugin.Log.Infof("VPP version: %q (%v)", info.Version, info.BuildDate)
+	plugin.Log.Debugf("version info: %+v", version)
+	plugin.Log.Infof("VPP version: %q (%v)", version.Version, version.BuildDate)
 
 	// Get VPP ACL plugin version
 	var aclVersion string
