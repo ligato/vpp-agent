@@ -50,12 +50,18 @@ const (
 )
 
 // combinedCounterType is the extended counter type - contains both packet and byte statistics.
-type combinedCounterType int
+type combinedCounterType uint8
 
 // constants as defined in the vnet_interface_counter_type_t enum in 'vnet/interface.h'
 const (
-	Rx combinedCounterType = 0
-	Tx                     = 1
+	Rx          combinedCounterType = 0
+	RxUnicast                       = 1
+	RxMulticast                     = 2
+	RxBroadcast                     = 3
+	Tx                              = 4
+	TxUnicast                       = 5
+	TxMulticast                     = 6
+	TxBroadcast                     = 7
 )
 
 const (
@@ -367,7 +373,9 @@ func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *st
 	c.access.Lock()
 	defer c.access.Unlock()
 
-	if counter.VnetCounterType > Tx {
+	counterType := combinedCounterType(counter.VnetCounterType)
+
+	if counterType != Rx && counterType != Tx {
 		// TODO: process other types of combined counters (RX/TX for unicast/multicast/broadcast)
 		return
 	}
@@ -380,10 +388,11 @@ func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *st
 			continue
 		}
 		ifStats := ifState.Statistics
-		if combinedCounterType(counter.VnetCounterType) == Rx {
+		switch counterType {
+		case Rx:
 			ifStats.InPackets = counter.Data[i].Packets
 			ifStats.InBytes = counter.Data[i].Bytes
-		} else if combinedCounterType(counter.VnetCounterType) == Tx {
+		case Tx:
 			ifStats.OutPackets = counter.Data[i].Packets
 			ifStats.OutBytes = counter.Data[i].Bytes
 			save = true
