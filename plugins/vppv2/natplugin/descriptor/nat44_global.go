@@ -88,10 +88,10 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 	return &adapter.NAT44GlobalDescriptor{
 		Name:               NAT44GlobalDescriptorName,
-		NBKeyPrefix:        vpp.NAT44Global.KeyPrefix(),
-		ValueTypeName:      vpp.NAT44Global.ProtoName(),
-		KeySelector:        vpp.NAT44Global.IsKeyValid,
-		KeyLabel:           vpp.NAT44Global.StripKeyPrefix,
+		NBKeyPrefix:        vpp.NAT44GlobalSpec.KeyPrefix(),
+		ValueTypeName:      vpp.NAT44GlobalSpec.ProtoName(),
+		KeySelector:        vpp.NAT44GlobalSpec.IsKeyValid,
+		KeyLabel:           vpp.NAT44GlobalSpec.StripKeyPrefix,
 		ValueComparator:    d.EquivalentNAT44Global,
 		Add:                d.Add,
 		Delete:             d.Delete,
@@ -220,7 +220,7 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 	}
 
 	dump := []adapter.NAT44GlobalKVWithMetadata{{
-		Key:    vpp.NAT44Global.KeyPrefix() + nat.NAT44_GlobalID,
+		Key:    vpp.NAT44GlobalSpec.KeyPrefix() + nat.NAT44_GlobalID,
 		Value:  globalCfg,
 		Origin: origin,
 	}}

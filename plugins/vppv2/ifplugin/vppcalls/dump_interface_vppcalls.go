@@ -119,8 +119,6 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 			return nil, fmt.Errorf("failed to dump interface: %v", err)
 		}
 
-		fmt.Printf("DUMPED INTERFACE: %+v\n", ifDetails)
-
 		ifaceName := cleanString(ifDetails.InterfaceName)
 		details := &InterfaceDetails{
 			Interface: &interfaces.Interface{

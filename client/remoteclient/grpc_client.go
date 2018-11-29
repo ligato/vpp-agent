@@ -3,47 +3,46 @@ package remoteclient
 import (
 	"context"
 
-	"github.com/ligato/vpp-agent/api"
+	pb "github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/client"
 )
 
 type grpcClient struct {
-	serviceClient api.SyncServiceClient
+	remote pb.SyncServiceClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(syncSvc api.SyncServiceClient) client.SyncClient {
+func NewClientGRPC(syncSvc pb.SyncServiceClient) client.SyncClient {
 	return &grpcClient{syncSvc}
 }
 
-func (c *grpcClient) ListSpecs() ([]models.Spec, error) {
+// ListModules lists all available modules and their model specs.
+func (c *grpcClient) ListModules() (modules map[string]models.Module, err error) {
 	ctx := context.Background()
 
-	resp, err := c.serviceClient.ListSpecs(ctx, &api.ListSpecsRequest{})
+	resp, err := c.remote.ListModules(ctx, &pb.ListModulesRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	var specs []models.Spec
-	for _, spec := range resp.Specs {
-		specs = append(specs, models.Spec{
-			Version: spec.Version,
-			Class:   spec.Class,
-			Module:  spec.Module,
-			Kind:    spec.Kind,
-		})
+	modules = make(map[string]models.Module)
+	for _, module := range resp.Modules {
+		modules[module.Name] = models.Module{
+			Name:  module.Name,
+			Specs: module.Specs,
+		}
 	}
 
-	return specs, nil
+	return modules, nil
 }
 
 // ResyncRequest returns new resync request.
 func (c *grpcClient) ResyncRequest() client.ResyncRequest {
 	return &request{
-		serviceClient: c.serviceClient,
-		req: &api.SyncRequest{
-			Options: &api.SyncOptions{Resync: true},
+		serviceClient: c.remote,
+		req: &pb.SyncRequest{
+			Options: &pb.SyncOptions{Resync: true},
 		},
 	}
 }
@@ -51,16 +50,16 @@ func (c *grpcClient) ResyncRequest() client.ResyncRequest {
 // ChangeRequest return new change request.
 func (c *grpcClient) ChangeRequest() client.ChangeRequest {
 	return &request{
-		serviceClient: c.serviceClient,
-		req: &api.SyncRequest{
-			Options: &api.SyncOptions{Resync: false},
+		serviceClient: c.remote,
+		req: &pb.SyncRequest{
+			Options: &pb.SyncOptions{Resync: false},
 		},
 	}
 }
 
 type request struct {
-	serviceClient api.SyncServiceClient
-	req           *api.SyncRequest
+	serviceClient pb.SyncServiceClient
+	req           *pb.SyncRequest
 	err           error
 }
 
@@ -80,7 +79,7 @@ func (r *request) Update(protoModels ...models.ProtoModel) {
 			r.err = err
 			return
 		}
-		r.req.Items = append(r.req.Items, &api.SyncItem{Model: model})
+		r.req.Items = append(r.req.Items, &pb.SyncItem{Model: model})
 	}
 }
 
@@ -97,7 +96,7 @@ func (r *request) Delete(protoModels ...models.ProtoModel) {
 				return
 			}
 		}
-		r.req.Items = append(r.req.Items, &api.SyncItem{
+		r.req.Items = append(r.req.Items, &pb.SyncItem{
 			Model:  model,
 			Delete: true,
 		})

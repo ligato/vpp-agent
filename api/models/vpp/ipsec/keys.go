@@ -23,18 +23,18 @@ import (
 
 func init() {
 	models.Register(&SecurityPolicyDatabase{}, models.Spec{
-		Module:  "vpp",
-		Class:   "config",
-		Version: "v2",
-		Kind:    "ipsec/spd",
-		TmplID:  "{{.Index}}",
+		Module:     "vpp",
+		Class:      "config",
+		Version:    "v2",
+		Type:       "ipsec/spd",
+		IdTemplate: "{{.Index}}",
 	})
 	models.Register(&SecurityAssociation{}, models.Spec{
-		Module:  "vpp",
-		Class:   "config",
-		Version: "v2",
-		Kind:    "ipsec/sa",
-		TmplID:  "{{.Index}}",
+		Module:     "vpp",
+		Class:      "config",
+		Version:    "v2",
+		Type:       "ipsec/sa",
+		IdTemplate: "{{.Index}}",
 	})
 }
 

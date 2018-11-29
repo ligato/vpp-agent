@@ -55,7 +55,7 @@ func (p *IfPlugin) resyncIfStateEvents(keys []string) error {
 	defer p.publishLock.Unlock()
 
 	for _, key := range keys {
-		ifaceName, isIntfKey := vpp.Interface.ParseKey(key)
+		ifaceName, isIntfKey := vpp.InterfaceSpec.ParseKey(key)
 		if !isIntfKey {
 			continue
 		}

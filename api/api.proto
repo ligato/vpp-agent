@@ -9,11 +9,17 @@ option (gogoproto.messagename_all) = true;
 
 import "google/protobuf/any.proto";
 
+message Module {
+    string name = 1;
+    repeated ModelSpec specs = 2;
+}
+
 message ModelSpec {
-    string module = 1;
+    string version = 1;
     string class = 2;
-    string version = 3;
-    string kind = 4;
+    string module = 3;
+    string type = 4;
+    map<string,string> meta = 5;
 }
 
 message Model {
@@ -22,18 +28,17 @@ message Model {
 }
 
 service SyncService {
-    rpc ListSpecs (ListSpecsRequest) returns (ListSpecsResponse) {};
+    rpc ListModules (ListModulesRequest) returns (ListModulesResponse) {};
     rpc Sync (SyncRequest) returns (SyncResponse) {};
     rpc Obtain (ObtainRequest) returns (ObtainResponse) {};
 }
 
-message ListSpecsRequest {
+message ListModulesRequest {
 }
 
-message ListSpecsResponse {
-    repeated ModelSpec specs = 1;
+message ListModulesResponse {
+    repeated Module modules = 1;
 }
-
 
 message SyncItem {
     Model model = 1;

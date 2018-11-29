@@ -92,10 +92,10 @@ func NewARPDescriptor(
 func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 	return &adapter.ARPDescriptor{
 		Name:               ARPDescriptorName,
-		NBKeyPrefix:        linux.L3ARP.KeyPrefix(),
-		ValueTypeName:      linux.L3ARP.ProtoName(),
-		KeySelector:        linux.L3ARP.IsKeyValid,
-		KeyLabel:           linux.L3ARP.StripKeyPrefix,
+		NBKeyPrefix:        linux.ARPEntrySpec.KeyPrefix(),
+		ValueTypeName:      linux.ARPEntrySpec.ProtoName(),
+		KeySelector:        linux.ARPEntrySpec.IsKeyValid,
+		KeyLabel:           linux.ARPEntrySpec.StripKeyPrefix,
 		ValueComparator:    d.EquivalentARPs,
 		Add:                d.Add,
 		Delete:             d.Delete,

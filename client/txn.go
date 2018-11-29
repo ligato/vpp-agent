@@ -16,7 +16,8 @@ package client
 
 import "github.com/ligato/vpp-agent/api/models"
 
-type RequestTxn interface {
+// Transaction prepares request data.
+type Transaction interface {
 	// Item returns model with given ID from the request items.
 	// If the found is true the model with such ID is found
 	// and if the model is nil the item represents delete.

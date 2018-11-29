@@ -66,10 +66,10 @@ func NewXConnectDescriptor(xcHandler vppcalls.XConnectVppAPI, log logging.Plugin
 func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 	return &adapter.XConnectDescriptor{
 		Name:               XConnectDescriptorName,
-		NBKeyPrefix:        vpp.XConnect.KeyPrefix(),
-		ValueTypeName:      vpp.XConnect.ProtoName(),
-		KeySelector:        vpp.XConnect.IsKeyValid,
-		KeyLabel:           vpp.XConnect.StripKeyPrefix,
+		NBKeyPrefix:        vpp.XConnectPairSpec.KeyPrefix(),
+		ValueTypeName:      vpp.XConnectPairSpec.ProtoName(),
+		KeySelector:        vpp.XConnectPairSpec.IsKeyValid,
+		KeyLabel:           vpp.XConnectPairSpec.StripKeyPrefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,

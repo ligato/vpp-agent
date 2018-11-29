@@ -1,6 +1,11 @@
 syntax = "proto3";
 
-package punt;
+package linux.punt;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/linux/punt;linux_punt";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
 
 /* Proxy allows to listen on network socket or unix domain socket, and resend to another network/unix domain socket */
 message Proxy {

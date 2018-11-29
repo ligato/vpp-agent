@@ -289,7 +289,8 @@ func (c *InterfaceStateUpdater) processIfStateNotification(notif *interfaces.SwI
 	if !found {
 		return
 	}
-	c.log.Debugf("Interface state notification for %s (Idx %d)", ifState.Name, ifState.IfIndex)
+	c.log.Debugf("Interface state notification for %s (idx: %d): %+v",
+		ifState.Name, ifState.IfIndex, notif)
 
 	// store data in ETCD
 	c.publishIfState(&intf.InterfaceNotification{
@@ -432,7 +433,7 @@ func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *st
 		// store counters of all interfaces into ETCD
 		for _, counter := range c.ifState {
 			c.publishIfState(&intf.InterfaceNotification{
-				Type: intf.InterfaceNotification_UPDOWN, State: counter})
+				Type: intf.InterfaceNotification_COUNTERS, State: counter})
 		}
 	}
 }

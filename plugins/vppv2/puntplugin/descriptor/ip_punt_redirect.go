@@ -20,9 +20,10 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 )
@@ -67,10 +68,11 @@ func NewIPRedirectDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor {
 	return &adapter.IPPuntRedirectDescriptor{
 		Name:               IPRedirectDescriptorName,
-		KeySelector:        d.IsIPRedirectKey,
-		ValueTypeName:      proto.MessageName(&punt.IpRedirect{}),
+		NBKeyPrefix:        vpp.PuntIpRedirect.KeyPrefix(),
+		ValueTypeName:      vpp.PuntIpRedirect.ProtoName(),
+		KeySelector:        vpp.PuntIpRedirect.IsKeyValid,
+		KeyLabel:           vpp.PuntIpRedirect.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPRedirect,
-		NBKeyPrefix:        punt.PrefixIPRedirect,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
@@ -78,12 +80,6 @@ func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 	}
-}
-
-// IsIPRedirectKey returns true if the key is identifying VPP IP punt redirect configuration.
-func (d *IPRedirectDescriptor) IsIPRedirectKey(key string) bool {
-	_, _, isIPRedirectKey := punt.ParseIPRedirectKey(key)
-	return isIPRedirectKey
 }
 
 // EquivalentIPRedirect is case-insensitive comparison function for punt.IpRedirect.

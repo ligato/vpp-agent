@@ -78,7 +78,7 @@ func TestKeys(t *testing.T) {
 			model: &vpp_nat.Nat44Global{
 				Forwarding: true,
 			},
-			expectedKey: "vpp/config/v2/nat44/global",
+			expectedKey: "vpp/config/v2/nat44/GLOBAL",
 		},
 		{
 			name: "vpp dnat",
@@ -121,7 +121,8 @@ func TestKeys(t *testing.T) {
 			if key != test.expectedKey {
 				t.Errorf("expected key: \n%q\ngot: \n%q", test.expectedKey, key)
 			} else {
-				t.Logf("key: %q", key)
+				spec := models.MustSpec(test.model)
+				t.Logf("key: %q (%s)\n\tspec: %v", key, spec, spec.ToModelSpec())
 			}
 		})
 	}

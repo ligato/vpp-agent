@@ -8,7 +8,8 @@ import (
 
 // SyncClient defines the client-side interface for sync service.
 type SyncClient interface {
-	ListSpecs() ([]models.Spec, error)
+	// ListModules lists all available modules and their model specs.
+	ListModules() (map[string]models.Module, error)
 
 	// ResyncRequest returns new request used for resync.
 	ResyncRequest() ResyncRequest

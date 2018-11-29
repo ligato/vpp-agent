@@ -1,8 +1,12 @@
 syntax = "proto3";
 
-package punt;
+package vpp.punt;
 
-/* L3 protocol definition */
+option go_package = "github.com/ligato/vpp-agent/api/models/vpp/punt;vpp_punt";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
 enum L3Protocol {
     UNDEFINED_L3 = 0;
     IPv4 = 4;
@@ -10,7 +14,6 @@ enum L3Protocol {
     ALL = 10;
 }
 
-/* L4 protocol definition */
 enum L4Protocol {
     UNDEFINED_L4 = 0;
     TCP = 6;

@@ -25,16 +25,18 @@ import (
 
 func init() {
 	models.Register(&StaticARPEntry{}, models.Spec{
-		Version: "v2",
-		Module:  "linux",
-		Kind:    "arp",
-		TmplID:  "{{.Interface}}/{{.IpAddress}}",
+		Version:    "v2",
+		Class:      "config",
+		Module:     "linux",
+		Type:       "arp",
+		IdTemplate: "{{.Interface}}/{{.IpAddress}}",
 	})
 	models.Register(&StaticRoute{}, models.Spec{
-		Version: "v2",
-		Module:  "linux",
-		Kind:    "route",
-		TmplID:  `{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
+		Version:    "v2",
+		Class:      "config",
+		Module:     "linux",
+		Type:       "route",
+		IdTemplate: `{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
 	})
 }
 

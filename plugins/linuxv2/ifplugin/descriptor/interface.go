@@ -134,10 +134,10 @@ func NewInterfaceDescriptor(
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		NBKeyPrefix:        linux.Interface.KeyPrefix(),
-		ValueTypeName:      linux.Interface.ProtoName(),
-		KeySelector:        linux.Interface.IsKeyValid,
-		KeyLabel:           linux.Interface.StripKeyPrefix,
+		NBKeyPrefix:        linux.InterfaceSpec.KeyPrefix(),
+		ValueTypeName:      linux.InterfaceSpec.ProtoName(),
+		KeySelector:        linux.InterfaceSpec.IsKeyValid,
+		KeyLabel:           linux.InterfaceSpec.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

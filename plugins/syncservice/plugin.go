@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package grpcservice
+package syncservice
 
 import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
@@ -29,7 +29,7 @@ var Registry = local.DefaultRegistry
 type Plugin struct {
 	Deps
 
-	syncSvc *syncService
+	grpcSvc *grpcService
 }
 
 // Deps represents dependencies for the plugin.
@@ -40,9 +40,9 @@ type Deps struct {
 
 // Init registers the service to GRPC server.
 func (p *Plugin) Init() error {
-	p.syncSvc = &syncService{p.Log}
+	p.grpcSvc = &grpcService{p.Log}
 
-	api.RegisterSyncServiceServer(p.GRPC.GetServer(), p.syncSvc)
+	api.RegisterSyncServiceServer(p.GRPC.GetServer(), p.grpcSvc)
 
 	return nil
 }

@@ -65,10 +65,10 @@ func NewACLDescriptor(aclHandler vppcalls.ACLVppAPI, ifPlugin ifplugin.API,
 func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
 	return &adapter.ACLDescriptor{
 		Name:            ACLDescriptorName,
-		NBKeyPrefix:     vpp.ACL.KeyPrefix(),
-		ValueTypeName:   vpp.ACL.ProtoName(),
-		KeySelector:     vpp.ACL.IsKeyValid,
-		KeyLabel:        vpp.ACL.StripKeyPrefix,
+		NBKeyPrefix:     vpp.ACLSpec.KeyPrefix(),
+		ValueTypeName:   vpp.ACLSpec.ProtoName(),
+		KeySelector:     vpp.ACLSpec.IsKeyValid,
+		KeyLabel:        vpp.ACLSpec.StripKeyPrefix,
 		ValueComparator: d.EquivalentACLs,
 		WithMetadata:    true,
 		MetadataMapFactory: func() idxmap.NamedMappingRW {

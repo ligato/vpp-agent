@@ -22,25 +22,25 @@ import (
 
 func init() {
 	models.Register(&BridgeDomain{}, models.Spec{
-		Module:  "vpp",
-		Class:   "config",
-		Version: "v2",
-		Kind:    "bd",
-		TmplID:  "{{.Name}}",
+		Module:     "vpp",
+		Class:      "config",
+		Version:    "v2",
+		Type:       "bd",
+		IdTemplate: "{{.Name}}",
 	})
 	models.Register(&FIBEntry{}, models.Spec{
-		Module:  "vpp",
-		Class:   "config",
-		Version: "v2",
-		Kind:    "bdfib",
-		TmplID:  "{{.BridgeDomain}}/mac/{{.PhysAddress}}",
+		Module:     "vpp",
+		Class:      "config",
+		Version:    "v2",
+		Type:       "bdfib",
+		IdTemplate: "{{.BridgeDomain}}/mac/{{.PhysAddress}}",
 	})
 	models.Register(&XConnectPair{}, models.Spec{
-		Module:  "vpp",
-		Class:   "config",
-		Version: "v2",
-		Kind:    "xconnect",
-		TmplID:  "{{.ReceiveInterface}}",
+		Module:     "vpp",
+		Class:      "config",
+		Version:    "v2",
+		Type:       "xconnect",
+		IdTemplate: "{{.ReceiveInterface}}",
 	})
 }
 

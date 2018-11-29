@@ -40,12 +40,16 @@ func NewClient(factory ProtoTxnFactory) SyncClient {
 	return &client{factory}
 }
 
-func (c *client) ListSpecs() ([]models.Spec, error) {
-	var specs []models.Spec
-	for _, spec := range models.GetRegistered() {
-		specs = append(specs, spec)
+// ListModules lists all available modules and their model specs.
+func (c *client) ListModules() (modules map[string]models.Module, err error) {
+	modules = make(map[string]models.Module)
+	for _, module := range models.GetRegisteredModules() {
+		modules[module.Name] = models.Module{
+			Name:  module.Name,
+			Specs: module.Specs,
+		}
 	}
-	return specs, nil
+	return modules, nil
 }
 
 // ResyncRequest returns new resync request.

@@ -34,9 +34,9 @@ func Unmarshal(m *api.Model) (ProtoModel, error) {
 	spec := registeredSpecs[protoName]
 	if spec == nil {
 		return nil, fmt.Errorf("model %s is not registered", protoName)
-	} /*else if spec.Version != m.Version {
+	} /*else if Spec.Version != m.Version {
 		return nil, fmt.Errorf("model %s (%s) is registered with different version: %q",
-			protoName, m.Version, spec.Version)
+			protoName, m.Version, Spec.Version)
 	}*/
 
 	var any types.DynamicAny
@@ -61,7 +61,7 @@ func Marshal(pb ProtoModel) (*api.Model, error) {
 	any.TypeUrl = LigatoApis + proto.MessageName(pb)
 
 	model := &api.Model{
-		//Version: spec.Version,
+		//Version: Spec.Version,
 		Any: any,
 	}
 	return model, nil

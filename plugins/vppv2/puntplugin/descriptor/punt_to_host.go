@@ -19,7 +19,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
+	"github.com/ligato/vpp-agent/api/models/vpp"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 )
@@ -61,22 +62,17 @@ func NewPuntToHostDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 	return &adapter.PuntToHostDescriptor{
 		Name:               PuntToHostDescriptorName,
-		KeySelector:        d.IsPuntToHostKey,
-		ValueTypeName:      proto.MessageName(&punt.ToHost{}),
+		NBKeyPrefix:        vpp.PuntIToHost.KeyPrefix(),
+		ValueTypeName:      vpp.PuntIToHost.ProtoName(),
+		KeySelector:        vpp.PuntIToHost.IsKeyValid,
+		KeyLabel:           vpp.PuntIToHost.StripKeyPrefix,
 		ValueComparator:    d.EquivalentPuntToHost,
-		NBKeyPrefix:        punt.PrefixToHost,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
 		IsRetriableFailure: d.IsRetriableFailure,
 		Dump:               d.Dump,
 	}
-}
-
-// IsPuntToHostKey returns true if the key is identifying VPP punt to host/socket configuration.
-func (d *PuntToHostDescriptor) IsPuntToHostKey(key string) bool {
-	_, _, _, isPuntToHostKey := punt.ParsePuntToHostKey(key)
-	return isPuntToHostKey
 }
 
 // EquivalentPuntToHost is case-insensitive comparison function for punt.ToHost.

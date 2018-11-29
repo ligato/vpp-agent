@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // PuntVppAPI provides methods for managing VPP punt configuration.

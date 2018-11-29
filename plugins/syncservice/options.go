@@ -1,4 +1,4 @@
-package grpcservice
+package syncservice
 
 import "github.com/ligato/cn-infra/rpc/grpc"
 
@@ -9,7 +9,7 @@ var DefaultPlugin = *NewPlugin()
 func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
-	p.PluginName = "grpc-sync-service"
+	p.PluginName = "sync-service"
 	p.GRPC = &grpc.DefaultPlugin
 
 	for _, o := range opts {

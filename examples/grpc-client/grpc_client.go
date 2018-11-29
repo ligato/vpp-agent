@@ -25,12 +25,14 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
 	"github.com/ligato/vpp-agent/api"
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/client/remoteclient"
 )
@@ -135,16 +137,23 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
 
 	// List supported model specs
-	specs, err := c.ListSpecs()
+	modules, err := c.ListModules()
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Printf("Listing %d specs\n", len(specs))
-	for _, spec := range specs {
-		fmt.Printf(" - %q:\t%v\n", spec.KeyPrefix(), spec)
+
+	fmt.Printf("Listing %d modules\n", len(modules))
+	for _, module := range modules {
+		specs := module.Specs
+		fmt.Printf("* module %s (%d models)\n", module.Name, len(specs))
+		for _, spec := range specs {
+			fmt.Printf(" - %v\n", spec.String())
+		}
 	}
 
 	ctx := context.Background()
+
+	fmt.Printf("Requesting resync\n")
 
 	// Resync
 	req := c.ResyncRequest()
@@ -158,8 +167,12 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	}
 
 	time.Sleep(time.Second * 5)
+	fmt.Printf("Requesting change\n")
+
+	memif1.Enabled = false
 
 	req2 := c.ChangeRequest()
+	req2.Update(afp1, memif1)
 	req2.Delete(memif2)
 	if err := req2.Send(context.Background()); err != nil {
 		log.Fatalln(err)
@@ -168,7 +181,7 @@ func demonstrateClient(conn *grpc.ClientConn) {
 }
 
 var (
-	memif1 = &interfaces.Interface{
+	memif1 = &vpp.Interface{
 		Name:        "memif1",
 		Enabled:     true,
 		IpAddresses: []string{"3.3.0.1/16"},
@@ -182,7 +195,7 @@ var (
 			},
 		},
 	}
-	memif2 = &interfaces.Interface{
+	memif2 = &vpp.Interface{
 		Name:        "memif0/10",
 		Enabled:     true,
 		Type:        interfaces.Interface_SUB_INTERFACE,
@@ -194,19 +207,30 @@ var (
 			},
 		},
 	}
-	veth1 = &linux_interfaces.Interface{
+	afp1 = &vpp.Interface{
+		Name:        "afp1",
+		Enabled:     true,
+		Type:        interfaces.Interface_AF_PACKET,
+		IpAddresses: []string{"10.10.3.5/24"},
+		Link: &interfaces.Interface_Afpacket{
+			Afpacket: &interfaces.AfpacketLink{
+				HostIfName: "veth1",
+			},
+		},
+	}
+	veth1 = &linux.Interface{
 		Name:        "myVETH1",
 		Type:        linux_interfaces.Interface_VETH,
 		Enabled:     true,
 		HostIfName:  "veth1",
-		IpAddresses: []string{"10.10.3.0/24"},
+		IpAddresses: []string{"10.10.3.1/24"},
 		Link: &linux_interfaces.Interface_Veth{
 			Veth: &linux_interfaces.VethLink{
 				PeerIfName: "myVETH2",
 			},
 		},
 	}
-	veth2 = &linux_interfaces.Interface{
+	veth2 = &linux.Interface{
 		Name:       "myVETH2",
 		Type:       linux_interfaces.Interface_VETH,
 		Enabled:    true,
@@ -217,7 +241,7 @@ var (
 			},
 		},
 	}
-	routeX = &linux_l3.StaticRoute{
+	routeX = &linux.StaticRoute{
 		DstNetwork:        "192.168.5.0/24",
 		OutgoingInterface: "myVETH1",
 		GwAddr:            "10.10.3.254",

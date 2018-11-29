@@ -27,14 +27,13 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
-	"github.com/ligato/cn-infra/rpc/grpc"
 
-	"github.com/ligato/vpp-agent/plugins/grpcservice"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linuxifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linuxl3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/restv2"
+	"github.com/ligato/vpp-agent/plugins/syncservice"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
@@ -61,7 +60,7 @@ type VPPAgent struct {
 	VPP
 	Linux
 
-	GRPCService *grpcservice.Plugin
+	GRPCService *syncservice.Plugin
 	RESTAPI     *rest.Plugin
 	Probe       *probe.Plugin
 	Telemetry   *telemetry.Plugin
@@ -101,23 +100,8 @@ func New() *VPPAgent {
 	ifplugin.DefaultPlugin.NotifyStatistics = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers
 
-	/*vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Publish = writers
-		deps.Watcher = watchers
-		deps.IfStatePub = ifStatePub
-		deps.DataSyncs = map[string]datasync.KeyProtoValWriter{
-			"etcd":  etcdDataSync,
-			"redis": redisDataSync,
-		}
-		deps.GRPCSvc = &rpc.DefaultPlugin
-	}))*/
-
 	vpp := defaultVPP()
 	linux := defaultLinux()
-
-	grpc.DefaultPlugin.Config = &grpc.Config{
-		Endpoint: "0.0.0.0:9111",
-	}
 
 	return &VPPAgent{
 		LogManager:     &logmanager.DefaultPlugin,
@@ -125,7 +109,7 @@ func New() *VPPAgent {
 		ETCDDataSync:   etcdDataSync,
 		ConsulDataSync: consulDataSync,
 		RedisDataSync:  redisDataSync,
-		GRPCService:    &grpcservice.DefaultPlugin,
+		GRPCService:    &syncservice.DefaultPlugin,
 		RESTAPI:        &rest.DefaultPlugin,
 		VPP:            vpp,
 		Linux:          linux,

@@ -104,10 +104,10 @@ func NewRouteDescriptor(
 func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 	return &adapter.RouteDescriptor{
 		Name:               RouteDescriptorName,
-		NBKeyPrefix:        linux.L3Route.KeyPrefix(),
-		ValueTypeName:      linux.L3Route.ProtoName(),
-		KeySelector:        linux.L3Route.IsKeyValid,
-		KeyLabel:           linux.L3Route.StripKeyPrefix,
+		NBKeyPrefix:        linux.StaticRouteSpec.KeyPrefix(),
+		ValueTypeName:      linux.StaticRouteSpec.ProtoName(),
+		KeySelector:        linux.StaticRouteSpec.IsKeyValid,
+		KeyLabel:           linux.StaticRouteSpec.StripKeyPrefix,
 		ValueComparator:    d.EquivalentRoutes,
 		Add:                d.Add,
 		Delete:             d.Delete,

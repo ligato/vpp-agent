@@ -159,11 +159,12 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 // the KVScheduler.
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
-		Name:               InterfaceDescriptorName,
-		NBKeyPrefix:        vpp.Interface.KeyPrefix(),
-		ValueTypeName:      vpp.Interface.ProtoName(),
-		KeySelector:        vpp.Interface.IsKeyValid,
-		KeyLabel:           vpp.Interface.StripKeyPrefix,
+		Name:        InterfaceDescriptorName,
+		NBKeyPrefix: vpp.InterfaceSpec.KeyPrefix(),
+		//NBKeyPrefix:        models.KeyPrefix(vpp.InterfaceModel),
+		ValueTypeName:      vpp.InterfaceSpec.ProtoName(),
+		KeySelector:        vpp.InterfaceSpec.IsKeyValid,
+		KeyLabel:           vpp.InterfaceSpec.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

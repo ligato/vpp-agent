@@ -18,9 +18,9 @@ import (
 	"net"
 
 	"github.com/go-errors/errors"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	api_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	api_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // AddPunt configures new punt entry

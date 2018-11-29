@@ -22,35 +22,86 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/api/models/vpp/nat"
+	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/api/models/vpp/stn"
 )
 
-var (
+type (
 	// ACL
-	ACL = models.MustSpec(&vpp_acl.Acl{})
+	ACL = vpp_acl.Acl
 
 	// Interfaces
-	Interface = models.MustSpec(&vpp_interfaces.Interface{})
+	Interface = vpp_interfaces.Interface
 
 	// L2
-	BridgeDomain = models.MustSpec(&vpp_l2.BridgeDomain{})
-	L2FIB        = models.MustSpec(&vpp_l2.FIBEntry{})
-	XConnect     = models.MustSpec(&vpp_l2.XConnectPair{})
+	BridgeDomain = vpp_l2.BridgeDomain
+	L2FIB        = vpp_l2.FIBEntry
+	XConnect     = vpp_l2.XConnectPair
 
 	// L3
-	L3Route     = models.MustSpec(&vpp_l3.StaticRoute{})
-	L3ARP       = models.MustSpec(&vpp_l3.ARPEntry{})
-	IPScanNeigh = models.MustSpec(&vpp_l3.IPScanNeighbor{})
-	ProxyARP    = models.MustSpec(&vpp_l3.ProxyARP{})
+	L3Route     = vpp_l3.StaticRoute
+	L3ARP       = vpp_l3.ARPEntry
+	IPScanNeigh = vpp_l3.IPScanNeighbor
+	ProxyARP    = vpp_l3.ProxyARP
 
 	// IPSec
-	IPSecSPD = models.MustSpec(&vpp_ipsec.SecurityPolicyDatabase{})
-	IPSecSA  = models.MustSpec(&vpp_ipsec.SecurityAssociation{})
+	IPSecSPD = vpp_ipsec.SecurityPolicyDatabase
+	IPSecSA  = vpp_ipsec.SecurityAssociation
 
 	// NAT
-	NAT44Global = models.MustSpec(&vpp_nat.Nat44Global{})
-	DNAT44      = models.MustSpec(&vpp_nat.DNat44{})
+	NAT44Global = vpp_nat.Nat44Global
+	DNAT44      = vpp_nat.DNat44
 
 	// STN
-	STNRule = models.MustSpec(&vpp_stn.Rule{})
+	STNRule = vpp_stn.Rule
+)
+
+var (
+	ACLModel *ACL
+
+	InterfaceModel *Interface
+
+	BridgeDomainModel *BridgeDomain
+	FIBEntryModel     *L2FIB
+	XConnectPairModel *XConnect
+
+	StaticRouteModel *L3Route
+	ARPEntryModel    *L3ARP
+	IPScanNeighModel *IPScanNeigh
+	ProxyARPModel    *ProxyARP
+
+	IPSecSPDModel *IPSecSPD
+	IPSecSAModel  *IPSecSA
+
+	NAT44GlobalModel *NAT44Global
+	DNAT44Model      *DNAT44
+
+	STNRuleModel *STNRule
+)
+
+var (
+	ACLSpec = models.MustSpec(&ACL{})
+
+	InterfaceSpec = models.MustSpec(&Interface{})
+
+	BridgeDomainSpec = models.MustSpec(&BridgeDomain{})
+	FIBEntrySpec     = models.MustSpec(&L2FIB{})
+	XConnectPairSpec = models.MustSpec(&XConnect{})
+
+	StaticRouteSpec = models.MustSpec(&L3Route{})
+	ARPEntrySpec    = models.MustSpec(&L3ARP{})
+	IPScanNeighSpec = models.MustSpec(&IPScanNeigh{})
+	ProxyARPSpec    = models.MustSpec(&ProxyARP{})
+
+	IPSecSPDSpec = models.MustSpec(&IPSecSPD{})
+	IPSecSASpec  = models.MustSpec(&IPSecSA{})
+
+	NAT44GlobalSpec = models.MustSpec(&NAT44Global{})
+	DNAT44Spec      = models.MustSpec(&DNAT44{})
+
+	STNRuleSpec = models.MustSpec(&STNRule{})
+
+	// Punt
+	PuntIpRedirect = models.MustSpec(&vpp_punt.IpRedirect{})
+	PuntIToHost    = models.MustSpec(&vpp_punt.ToHost{})
 )

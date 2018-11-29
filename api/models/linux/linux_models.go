@@ -20,11 +20,22 @@ import (
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
 )
 
-var (
+type (
 	// Interfaces
-	Interface = models.MustSpec(&linux_interfaces.Interface{})
-
+	Interface = linux_interfaces.Interface
 	// L3
-	L3Route = models.MustSpec(&linux_l3.StaticRoute{})
-	L3ARP   = models.MustSpec(&linux_l3.StaticARPEntry{})
+	StaticRoute = linux_l3.StaticRoute
+	ARPEntry    = linux_l3.StaticARPEntry
+)
+
+var (
+	InterfaceModel   *Interface
+	StaticRouteModel *StaticRoute
+	ARPEntryModel    *ARPEntry
+)
+
+var (
+	InterfaceSpec   = models.MustSpec(InterfaceModel)
+	StaticRouteSpec = models.MustSpec(StaticRouteModel)
+	ARPEntrySpec    = models.MustSpec(ARPEntryModel)
 )

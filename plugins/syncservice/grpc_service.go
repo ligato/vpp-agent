@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package grpcservice
+package syncservice
 
 import (
 	"github.com/gogo/status"
@@ -25,24 +25,24 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-type syncService struct {
+type grpcService struct {
 	log logging.Logger
 }
 
-func (s *syncService) ListSpecs(context.Context, *api.ListSpecsRequest) (*api.ListSpecsResponse, error) {
-	resp := &api.ListSpecsResponse{}
-	for _, spec := range models.GetRegistered() {
-		resp.Specs = append(resp.Specs, &api.ModelSpec{
-			Version: spec.Version,
-			Class:   spec.Class,
-			Module:  spec.Module,
-			Kind:    spec.Kind,
+func (s *grpcService) ListModules(ctx context.Context, req *api.ListModulesRequest) (*api.ListModulesResponse, error) {
+	resp := &api.ListModulesResponse{}
+
+	for _, module := range models.GetRegisteredModules() {
+		resp.Modules = append(resp.Modules, &models.Module{
+			Name:  module.Name,
+			Specs: module.Specs,
 		})
 	}
+
 	return resp, nil
 }
 
-func (s *syncService) Sync(ctx context.Context, req *api.SyncRequest) (*api.SyncResponse, error) {
+func (s *grpcService) Sync(ctx context.Context, req *api.SyncRequest) (*api.SyncResponse, error) {
 	s.log.Debug("------------------------------")
 	s.log.Debugf("=> GRPC SYNC: %d items", len(req.Items))
 	s.log.Debug("------------------------------")
@@ -95,7 +95,7 @@ func (s *syncService) Sync(ctx context.Context, req *api.SyncRequest) (*api.Sync
 }
 
 /*
-func (s *syncService) Resync(ctx context.Context, req *api.ReyncRequest) (*api.ResyncResponse, error) {
+func (s *grpcService) Resync(ctx context.Context, req *api.ReyncRequest) (*api.ResyncResponse, error) {
 	s.log.Debug("------------------------------")
 	s.log.Debugf("=> GRPC RESYNC: %d items", len(req.Items))
 	s.log.Debug("------------------------------")
@@ -126,7 +126,7 @@ func (s *syncService) Resync(ctx context.Context, req *api.ReyncRequest) (*api.R
 	return &api.ResyncResponse{}, nil
 }
 
-func (s *syncService) Change(ctx context.Context, req *api.ChangeRequest) (*api.ChangeResponse, error) {
+func (s *grpcService) Change(ctx context.Context, req *api.ChangeRequest) (*api.ChangeResponse, error) {
 	s.log.Debug("------------------------------")
 	s.log.Debugf("=> GRPC CHANGE: %d items", len(req.ChangeItems))
 	s.log.Debug("------------------------------")
@@ -169,7 +169,7 @@ func (s *syncService) Change(ctx context.Context, req *api.ChangeRequest) (*api.
 	return &api.ChangeResponse{}, nil
 }
 */
-func (*syncService) Obtain(context.Context, *api.ObtainRequest) (*api.ObtainResponse, error) {
+func (*grpcService) Obtain(context.Context, *api.ObtainRequest) (*api.ObtainResponse, error) {
 	st := status.New(codes.Unimplemented, "obtain not implemented")
 	return nil, st.Err()
 }

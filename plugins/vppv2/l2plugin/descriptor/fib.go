@@ -72,10 +72,10 @@ func NewFIBDescriptor(fibHandler vppcalls.FIBVppAPI, log logging.PluginLogger) *
 func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 	return &adapter.FIBDescriptor{
 		Name:            FIBDescriptorName,
-		NBKeyPrefix:     vpp.L2FIB.KeyPrefix(),
-		ValueTypeName:   vpp.L2FIB.ProtoName(),
-		KeySelector:     vpp.L2FIB.IsKeyValid,
-		KeyLabel:        vpp.L2FIB.StripKeyPrefix,
+		NBKeyPrefix:     vpp.FIBEntrySpec.KeyPrefix(),
+		ValueTypeName:   vpp.FIBEntrySpec.ProtoName(),
+		KeySelector:     vpp.FIBEntrySpec.IsKeyValid,
+		KeyLabel:        vpp.FIBEntrySpec.StripKeyPrefix,
 		ValueComparator: d.EquivalentFIBs,
 		// NB keys already covered by the prefix for bridge domains
 		Add:                d.Add,
