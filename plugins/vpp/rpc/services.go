@@ -159,7 +159,7 @@ func (p *Plugin) Init() (err error) {
 	// Get DB broker to persis files
 	var wasErr error
 	defer func() {
-		// TODO workaround prevents crash if persistent db is defined but the required plugin is disabled because
+		// TODO workaround prevents crash if persistent db is defined but the required DB plugin is disabled because
 		// of the missing config file (attempt to create a new broker from nil proto wrapper object, fix in cn-infra)
 		if r := recover(); r != nil {
 			if broker, err := p.getBrokerFromConfig(); err != nil {
@@ -169,7 +169,7 @@ func (p *Plugin) Init() (err error) {
 				p.resyncVppSvc.pb, p.changeVppSvc.pb = protoBroker, protoBroker
 			}
 		} else {
-			p.Log.Warnf("grpc plugin recovered from panic, make sure plugins for persistence are already loaded: %v",
+			p.Log.Warnf("grpc plugin recovered from panic, make sure plugins for persistence are loaded: %s",
 				p.Brokers)
 		}
 	}()

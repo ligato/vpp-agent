@@ -84,8 +84,6 @@ func New() *VPPAgent {
 		}),
 	)
 
-
-
 	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
 		deps.Publish = writers
 		deps.Watcher = watchers
@@ -117,8 +115,7 @@ func New() *VPPAgent {
 			}
 			deps.VPP = vppPlugin
 			deps.Linux = linuxPlugin
-		},
-		))
+		}))
 
 	return &VPPAgent{
 		LogManager:     &logmanager.DefaultPlugin,
