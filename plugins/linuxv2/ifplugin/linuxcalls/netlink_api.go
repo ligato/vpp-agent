@@ -54,6 +54,9 @@ type NetlinkAPIWrite interface {
 	SetInterfaceAlias(ifName, alias string) error
 	// SetLinkNamespace puts link into a network namespace.
 	SetLinkNamespace(link netlink.Link, ns netns.NsHandle) error
+	// SetChecksumOffloading enables/disables Rx/Tx checksum offloading
+	// for the given interface.
+	SetChecksumOffloading(ifName string, rxOn, txOn bool) error
 }
 
 // NetlinkAPIRead interface covers read methods inside linux calls package
@@ -74,6 +77,9 @@ type NetlinkAPIRead interface {
 	IsInterfaceUp(ifName string) (bool, error)
 	// GetInterfaceType returns linux interface type
 	GetInterfaceType(ifName string) (string, error)
+	// GetChecksumOffloading returns the state of Rx/Tx checksum offloading
+	// for the given interface.
+	GetChecksumOffloading(ifName string) (rxOn, txOn bool, err error)
 }
 
 // NetLinkHandler is accessor for Netlink methods.

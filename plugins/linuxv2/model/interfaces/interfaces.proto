@@ -22,9 +22,17 @@ message Interface {
     string phys_address = 7;            /* MAC address */
     uint32 mtu = 8;                     /* Maximum transmission unit value */
 
+    enum ChecksumOffloading {
+        CHKSM_OFFLOAD_DEFAULT = 0;
+        CHKSM_OFFLOAD_ENABLED = 1;
+        CHKSM_OFFLOAD_DISABLED = 2;
+    }
+    ChecksumOffloading rx_checksum_offloading = 9;  /* checksum offloading - Rx side (enabled by default) */
+    ChecksumOffloading tx_checksum_offloading = 10; /* checksum offloading - Tx side (enabled by default) */
+
     oneof link {
-        VethLink veth = 9;              /* VETH-specific configuration */
-        TapLink tap = 10;               /* TAP_TO_VPP-specific configuration */
+        VethLink veth = 20;             /* VETH-specific configuration */
+        TapLink tap = 21;               /* TAP_TO_VPP-specific configuration */
     };
 };
 

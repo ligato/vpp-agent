@@ -122,8 +122,10 @@ func ArpEntryKey(iface, ipAddr string) string {
 func ParseArpKey(key string) (iface string, ipAddr string, isArpKey bool) {
 	if arpSuffix := strings.TrimPrefix(key, ArpPrefix); arpSuffix != key {
 		arpComps := strings.Split(arpSuffix, "/")
-		if len(arpComps) == 2 {
-			return arpComps[0], arpComps[1], true
+		if len(arpComps) >= 2 {
+			lastIdx := len(arpComps) - 1
+			iface = strings.Join(arpComps[:lastIdx], "/")
+			return iface, arpComps[lastIdx], true
 		}
 	}
 	return "", "", false
