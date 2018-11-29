@@ -18,7 +18,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/db/keyval"
-	"fmt"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 
 	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
@@ -46,17 +49,8 @@ import (
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
 	l4vppcalls "github.com/ligato/vpp-agent/plugins/vpp/l4plugin/vppcalls"
-	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"golang.org/x/net/context"
 )
 
@@ -81,9 +75,9 @@ type Deps struct {
 	GRPCServer   grpc.Server
 	Brokers      map[string]keyval.KvProtoPlugin
 	ServiceLabel servicelabel.ReaderAPI
-	GoVppmux   govppmux.TraceAPI
-	VPP        vpp.API
-	Linux      linux.API
+	GoVppmux     govppmux.TraceAPI
+	VPP          vpp.API
+	Linux        linux.API
 }
 
 // Config groups configurations fields.
@@ -163,14 +157,24 @@ func (p *Plugin) Init() (err error) {
 	p.VPP.SetGRPCNotificationService(p.notifSvc.updateNotifications)
 
 	// Get DB broker to persis files
-	if broker, err := plugin.getBrokerFromConfig(); err != nil {
-		return err
-	} else {
-		protoBroker := broker.NewBroker(plugin.ServiceLabel.GetAgentPrefix())
-		plugin.resyncVppSvc.pb, plugin.changeVppSvc.pb = protoBroker, protoBroker
-	}
+	var wasErr error
+	defer func() {
+		// TODO workaround prevents crash if persistent db is defined but the required plugin is disabled because
+		// of the missing config file (attempt to create a new broker from nil proto wrapper object, fix in cn-infra)
+		if r := recover(); r != nil {
+			if broker, err := p.getBrokerFromConfig(); err != nil {
+				wasErr = err
+			} else if broker != nil {
+				protoBroker := broker.NewBroker(p.ServiceLabel.GetAgentPrefix())
+				p.resyncVppSvc.pb, p.changeVppSvc.pb = protoBroker, protoBroker
+			}
+		} else {
+			p.Log.Warnf("grpc plugin recovered from panic, make sure plugins for persistence are already loaded: %v",
+				p.Brokers)
+		}
+	}()
 
-	return nil
+	return wasErr
 }
 
 // Close does nothing.
@@ -211,256 +215,16 @@ func (svc *ChangeVppSvc) Del(ctx context.Context, data *rpc.DataRequest) (*rpc.D
 // Resync creates a resync request which adds data tp the VPP/linux
 func (svc *ResyncVppSvc) Resync(ctx context.Context, data *rpc.DataRequest) (*rpc.ResyncResponse, error) {
 	request := localclient.DataResyncRequest("rpc")
-	processResyncRequest(data, request)
+	dataSet := make(map[string]proto.Message)
+	processResyncRequest(data, request, dataSet)
+	if svc.pb != nil {
+		for key, value := range dataSet {
+			if err := svc.pb.Put(key, value); err != nil {
+				return &rpc.ResyncResponse{}, errors.Errorf("failed to persist (resync) GRPC data: %v", err)
+			}
+		}
+	}
 	return &rpc.ResyncResponse{}, request.Send().ReceiveReply()
-}
-
-func processPutRequest(reqData *rpc.DataRequest, req linuxclient.PutDSL, dataSet map[string]proto.Message) {
-	for _, aclItem := range reqData.AccessLists {
-		req.ACL(aclItem)
-		dataSet[acl.Key(aclItem.AclName)] = aclItem
-	}
-	for _, ifItem := range reqData.Interfaces {
-		req.VppInterface(ifItem)
-		dataSet[interfaces.InterfaceKey(ifItem.Name)] = ifItem
-	}
-	for _, sessionItem := range reqData.BfdSessions {
-		req.BfdSession(sessionItem)
-		dataSet[bfd.SessionKey(sessionItem.Interface)] = sessionItem
-	}
-	for _, keyItem := range reqData.BfdAuthKeys {
-		req.BfdAuthKeys(keyItem)
-		dataSet[bfd.AuthKeysKey(keyItem.Name)] = keyItem
-	}
-	if reqData.BfdEchoFunction != nil {
-		req.BfdEchoFunction(reqData.BfdEchoFunction)
-		dataSet[bfd.EchoFunctionKey(reqData.BfdEchoFunction.Name)] = reqData.BfdEchoFunction
-	}
-	for _, bdItem := range reqData.BridgeDomains {
-		req.BD(bdItem)
-		dataSet[l2.BridgeDomainKey(bdItem.Name)] = bdItem
-	}
-	for _, fibItem := range reqData.FIBs {
-		req.BDFIB(fibItem)
-		dataSet[l2.FibKey(fibItem.BridgeDomain, fibItem.PhysAddress)] = fibItem
-	}
-	for _, xcItem := range reqData.XCons {
-		req.XConnect(xcItem)
-		dataSet[l2.XConnectKey(xcItem.ReceiveInterface)] = xcItem
-	}
-	for _, rtItem := range reqData.StaticRoutes {
-		req.StaticRoute(rtItem)
-		dataSet[l3.RouteKey(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)] = rtItem
-	}
-	for _, arpItem := range reqData.ArpEntries {
-		req.Arp(arpItem)
-		dataSet[l3.ArpEntryKey(arpItem.Interface, arpItem.IpAddress)] = arpItem
-	}
-	for _, paiItem := range reqData.ProxyArpInterfaces {
-		req.ProxyArpInterfaces(paiItem)
-		dataSet[l3.ProxyArpInterfaceKey(paiItem.Label)] = paiItem
-	}
-	for _, parItem := range reqData.ProxyArpRanges {
-		req.ProxyArpRanges(parItem)
-		dataSet[l3.ProxyArpRangeKey(parItem.Label)] = parItem
-	}
-	if reqData.L4Feature != nil {
-		req.L4Features(reqData.L4Feature)
-		dataSet[l4.FeatureKey()] = reqData.L4Feature
-	}
-	for _, anItem := range reqData.ApplicationNamespaces {
-		req.AppNamespace(anItem)
-		dataSet[l4.AppNamespacesKey(anItem.NamespaceId)] = anItem
-	}
-	for _, stnItem := range reqData.StnRules {
-		req.StnRule(stnItem)
-		dataSet[stn.Key(stnItem.RuleName)] = stnItem
-	}
-	if reqData.NatGlobal != nil {
-		req.NAT44Global(reqData.NatGlobal)
-		dataSet[nat.Prefix+nat.GlobalPrefix] = reqData.NatGlobal
-	}
-	for _, natItem := range reqData.DNATs {
-		req.NAT44DNat(natItem)
-		dataSet[nat.DNatKey(natItem.Label)] = natItem
-	}
-	for _, ifItem := range reqData.LinuxInterfaces {
-		req.LinuxInterface(ifItem)
-		dataSet[linuxIf.InterfaceKey(ifItem.Name)] = ifItem
-	}
-	for _, arpItem := range reqData.LinuxArpEntries {
-		req.LinuxArpEntry(arpItem)
-		dataSet[linuxL3.StaticRouteKey(arpItem.Name)] = arpItem
-	}
-	for _, rtItem := range reqData.LinuxRoutes {
-		req.LinuxRoute(rtItem)
-		dataSet[linuxL3.StaticArpKey(rtItem.Name)] = rtItem
-	}
-}
-
-func processDelRequest(reqData *rpc.DataRequest, req linuxclient.DeleteDSL, dataSet map[string]proto.Message) {
-	for _, aclItem := range reqData.AccessLists {
-		req.ACL(aclItem.AclName)
-		dataSet[acl.Key(aclItem.AclName)] = aclItem
-	}
-	for _, ifItem := range reqData.Interfaces {
-		req.VppInterface(ifItem.Name)
-		dataSet[interfaces.InterfaceKey(ifItem.Name)] = ifItem
-	}
-	for _, sessionItem := range reqData.BfdSessions {
-		req.BfdSession(sessionItem.Interface)
-		dataSet[bfd.SessionKey(sessionItem.Interface)] = sessionItem
-	}
-	for _, keyItem := range reqData.BfdAuthKeys {
-		req.BfdAuthKeys(keyItem.Name)
-		dataSet[bfd.AuthKeysKey(keyItem.Name)] = keyItem
-	}
-	if reqData.BfdEchoFunction != nil {
-		req.BfdEchoFunction(reqData.BfdEchoFunction.Name)
-		dataSet[bfd.EchoFunctionKey(reqData.BfdEchoFunction.Name)] = reqData.BfdEchoFunction
-	}
-	for _, bdItem := range reqData.BridgeDomains {
-		req.BD(bdItem.Name)
-		dataSet[l2.BridgeDomainKey(bdItem.Name)] = bdItem
-	}
-	for _, fibItem := range reqData.FIBs {
-		req.BDFIB(fibItem.BridgeDomain, fibItem.PhysAddress)
-		dataSet[l2.FibKey(fibItem.BridgeDomain, fibItem.PhysAddress)] = fibItem
-	}
-	for _, xcItem := range reqData.XCons {
-		req.XConnect(xcItem.ReceiveInterface)
-		dataSet[l2.XConnectKey(xcItem.ReceiveInterface)] = xcItem
-	}
-	for _, rtItem := range reqData.StaticRoutes {
-		req.StaticRoute(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)
-		dataSet[l3.RouteKey(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)] = rtItem
-	}
-	for _, arpItem := range reqData.ArpEntries {
-		req.Arp(arpItem.Interface, arpItem.IpAddress)
-		dataSet[l3.ArpEntryKey(arpItem.Interface, arpItem.IpAddress)] = arpItem
-	}
-	for _, paiItem := range reqData.ProxyArpInterfaces {
-		req.ProxyArpInterfaces(paiItem.Label)
-		dataSet[l3.ProxyArpInterfaceKey(paiItem.Label)] = paiItem
-	}
-	for _, parItem := range reqData.ProxyArpRanges {
-		req.ProxyArpRanges(parItem.Label)
-		dataSet[l3.ProxyArpRangeKey(parItem.Label)] = parItem
-	}
-	if reqData.L4Feature != nil {
-		req.L4Features()
-		dataSet[l4.FeatureKey()] = reqData.L4Feature
-	}
-	for _, anItem := range reqData.ApplicationNamespaces {
-		req.AppNamespace(anItem.NamespaceId)
-		dataSet[l4.AppNamespacesKey(anItem.NamespaceId)] = anItem
-	}
-	for _, stnItem := range reqData.StnRules {
-		req.StnRule(stnItem.RuleName)
-		dataSet[stn.Key(stnItem.RuleName)] = stnItem
-	}
-	if reqData.NatGlobal != nil {
-		req.NAT44Global()
-		dataSet[nat.Prefix+nat.GlobalPrefix] = reqData.NatGlobal
-	}
-	for _, natItem := range reqData.DNATs {
-		req.NAT44DNat(natItem.Label)
-		dataSet[nat.DNatKey(natItem.Label)] = natItem
-	}
-	for _, ifItem := range reqData.LinuxInterfaces {
-		req.LinuxInterface(ifItem.Name)
-		dataSet[linuxIf.InterfaceKey(ifItem.Name)] = ifItem
-	}
-	for _, arpItem := range reqData.LinuxArpEntries {
-		req.LinuxArpEntry(arpItem.Name)
-		dataSet[linuxL3.StaticRouteKey(arpItem.Name)] = arpItem
-	}
-	for _, rtItem := range reqData.LinuxRoutes {
-		req.LinuxRoute(rtItem.Name)
-		dataSet[linuxL3.StaticArpKey(rtItem.Name)] = rtItem
-	}
-}
-
-func processResyncRequest(reqData *rpc.DataRequest, req linuxclient.DataResyncDSL) {
-	for _, aclItem := range reqData.AccessLists {
-		req.ACL(aclItem)
-	}
-	for _, ifItem := range reqData.Interfaces {
-		req.VppInterface(ifItem)
-	}
-	for _, sessionItem := range reqData.BfdSessions {
-		req.BfdSession(sessionItem)
-	}
-	for _, keyItem := range reqData.BfdAuthKeys {
-		req.BfdAuthKeys(keyItem)
-	}
-	if reqData.BfdEchoFunction != nil {
-		req.BfdEchoFunction(reqData.BfdEchoFunction)
-	}
-	for _, bdItem := range reqData.BridgeDomains {
-		req.BD(bdItem)
-	}
-	for _, fibItem := range reqData.FIBs {
-		req.BDFIB(fibItem)
-	}
-	for _, xcItem := range reqData.XCons {
-		req.XConnect(xcItem)
-	}
-	for _, rtItem := range reqData.StaticRoutes {
-		req.StaticRoute(rtItem)
-	}
-	for _, arpItem := range reqData.ArpEntries {
-		req.Arp(arpItem)
-	}
-	for _, paiItem := range reqData.ProxyArpInterfaces {
-		req.ProxyArpInterfaces(paiItem)
-	}
-	for _, parItem := range reqData.ProxyArpRanges {
-		req.ProxyArpRanges(parItem)
-	}
-	if reqData.L4Feature != nil {
-		req.L4Features(reqData.L4Feature)
-	}
-	for _, anItem := range reqData.ApplicationNamespaces {
-		req.AppNamespace(anItem)
-	}
-	for _, stnItem := range reqData.StnRules {
-		req.StnRule(stnItem)
-	}
-	if reqData.NatGlobal != nil {
-		req.NAT44Global(reqData.NatGlobal)
-	}
-	for _, natItem := range reqData.DNATs {
-		req.NAT44DNat(natItem)
-	}
-	for _, ifItem := range reqData.LinuxInterfaces {
-		req.LinuxInterface(ifItem)
-	}
-	for _, arpItem := range reqData.LinuxArpEntries {
-		req.LinuxArpEntry(arpItem)
-	}
-	for _, rtItem := range reqData.LinuxRoutes {
-		req.LinuxRoute(rtItem)
-	}
-}
-
-// Returns database broker defined in config file. The broker also has to be available in map of proto writers
-func (plugin *Plugin) getBrokerFromConfig() (keyval.KvProtoPlugin, error) {
-	config := &Config{}
-
-	found, err := plugin.Cfg.LoadValue(config)
-	if err != nil {
-		return nil, err
-	} else if !found {
-		plugin.Log.Debug("rpc-plugin config not found")
-		return nil, nil
-	}
-	plugin.Log.Debugf("rpc-plugin config found: %+v", config)
-
-	if config != nil {
-		return plugin.Brokers[config.Broker], nil
-	}
-	return nil, err
 }
 
 // DumpAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,
@@ -665,224 +429,289 @@ func (svc *GetVppSvc) DumpLinuxRoutes(ctx context.Context, request *rpc.DumpRequ
 	return &rpc.LinuxRoutesResponse{LinuxRoutes: linuxRoutes}, nil
 }
 
-// Common method which puts or deletes data of every configuration type separately
-func processRequest(ctx context.Context, data *rpc.DataRequest, request interface{}) error {
-	switch r := request.(type) {
-	case linuxclient.PutDSL:
-		for _, aclItem := range data.AccessLists {
-			r.ACL(aclItem)
-		}
-		for _, ifItem := range data.Interfaces {
-			r.VppInterface(ifItem)
-		}
-		for _, spdItem := range data.SPDs {
-			r.VppIPSecSPD(spdItem)
-		}
-		for _, saItem := range data.SAs {
-			r.VppIPSecSA(saItem)
-		}
-		for _, tunItem := range data.Tunnels {
-			r.VppIPSecTunnel(tunItem)
-		}
-		for _, sessionItem := range data.BfdSessions {
-			r.BfdSession(sessionItem)
-		}
-		for _, keyItem := range data.BfdAuthKeys {
-			r.BfdAuthKeys(keyItem)
-		}
-		if data.BfdEchoFunction != nil {
-			r.BfdEchoFunction(data.BfdEchoFunction)
-		}
-		for _, bdItem := range data.BridgeDomains {
-			r.BD(bdItem)
-		}
-		for _, fibItem := range data.FIBs {
-			r.BDFIB(fibItem)
-		}
-		for _, xcItem := range data.XCons {
-			r.XConnect(xcItem)
-		}
-		for _, rtItem := range data.StaticRoutes {
-			r.StaticRoute(rtItem)
-		}
-		for _, arpItem := range data.ArpEntries {
-			r.Arp(arpItem)
-		}
-		for _, paiItem := range data.ProxyArpInterfaces {
-			r.ProxyArpInterfaces(paiItem)
-		}
-		for _, parItem := range data.ProxyArpRanges {
-			r.ProxyArpRanges(parItem)
-		}
-		if data.L4Feature != nil {
-			r.L4Features(data.L4Feature)
-		}
-		for _, anItem := range data.ApplicationNamespaces {
-			r.AppNamespace(anItem)
-		}
-		for _, stnItem := range data.StnRules {
-			r.StnRule(stnItem)
-		}
-		if data.NatGlobal != nil {
-			r.NAT44Global(data.NatGlobal)
-		}
-		for _, natItem := range data.DNATs {
-			r.NAT44DNat(natItem)
-		}
-		for _, ifItem := range data.LinuxInterfaces {
-			r.LinuxInterface(ifItem)
-		}
-		for _, arpItem := range data.LinuxArpEntries {
-			r.LinuxArpEntry(arpItem)
-		}
-		for _, rtItem := range data.LinuxRoutes {
-			r.LinuxRoute(rtItem)
-		}
-	case linuxclient.DeleteDSL:
-		for _, aclItem := range data.AccessLists {
-			r.ACL(aclItem.AclName)
-		}
-		for _, ifItem := range data.Interfaces {
-			r.VppInterface(ifItem.Name)
-		}
-		for _, spdItem := range data.SPDs {
-			r.VppIPSecSPD(spdItem.Name)
-		}
-		for _, saItem := range data.SAs {
-			r.VppIPSecSA(saItem.Name)
-		}
-		for _, tunItem := range data.Tunnels {
-			r.VppIPSecTunnel(tunItem.Name)
-		}
-		for _, sessionItem := range data.BfdSessions {
-			r.BfdSession(sessionItem.Interface)
-		}
-		for _, keyItem := range data.BfdAuthKeys {
-			r.BfdAuthKeys(keyItem.Name)
-		}
-		if data.BfdEchoFunction != nil {
-			r.BfdEchoFunction(data.BfdEchoFunction.Name)
-		}
-		for _, bdItem := range data.BridgeDomains {
-			r.BD(bdItem.Name)
-		}
-		for _, fibItem := range data.FIBs {
-			r.BDFIB(fibItem.BridgeDomain, fibItem.PhysAddress)
-		}
-		for _, xcItem := range data.XCons {
-			r.XConnect(xcItem.ReceiveInterface)
-		}
-		for _, rtItem := range data.StaticRoutes {
-			r.StaticRoute(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)
-		}
-		for _, arpItem := range data.ArpEntries {
-			r.Arp(arpItem.Interface, arpItem.IpAddress)
-		}
-		for _, paiItem := range data.ProxyArpInterfaces {
-			r.ProxyArpInterfaces(paiItem.Label)
-		}
-		for _, parItem := range data.ProxyArpRanges {
-			r.ProxyArpRanges(parItem.Label)
-		}
-		if data.L4Feature != nil {
-			r.L4Features()
-		}
-		for _, anItem := range data.ApplicationNamespaces {
-			r.AppNamespace(anItem.NamespaceId)
-		}
-		for _, stnItem := range data.StnRules {
-			r.StnRule(stnItem.RuleName)
-		}
-		if data.NatGlobal != nil {
-			r.NAT44Global()
-		}
-		for _, natItem := range data.DNATs {
-			r.NAT44DNat(natItem.Label)
-		}
-		for _, ifItem := range data.LinuxInterfaces {
-			r.LinuxInterface(ifItem.Name)
-		}
-		for _, arpItem := range data.LinuxArpEntries {
-			r.LinuxArpEntry(arpItem.Name)
-		}
-		for _, rtItem := range data.LinuxRoutes {
-			r.LinuxRoute(rtItem.Name)
-		}
-	case linuxclient.DataResyncDSL:
-		for _, aclItem := range data.AccessLists {
-			r.ACL(aclItem)
-		}
-		for _, ifItem := range data.Interfaces {
-			r.VppInterface(ifItem)
-		}
-		for _, spdItem := range data.SPDs {
-			r.VppIPSecSPD(spdItem)
-		}
-		for _, saItem := range data.SAs {
-			r.VppIPSecSA(saItem)
-		}
-		for _, tunItem := range data.Tunnels {
-			r.VppIPSecTunnel(tunItem)
-		}
-		for _, sessionItem := range data.BfdSessions {
-			r.BfdSession(sessionItem)
-		}
-		for _, keyItem := range data.BfdAuthKeys {
-			r.BfdAuthKeys(keyItem)
-		}
-		if data.BfdEchoFunction != nil {
-			r.BfdEchoFunction(data.BfdEchoFunction)
-		}
-		for _, bdItem := range data.BridgeDomains {
-			r.BD(bdItem)
-		}
-		for _, fibItem := range data.FIBs {
-			r.BDFIB(fibItem)
-		}
-		for _, xcItem := range data.XCons {
-			r.XConnect(xcItem)
-		}
-		for _, rtItem := range data.StaticRoutes {
-			r.StaticRoute(rtItem)
-		}
-		for _, arpItem := range data.ArpEntries {
-			r.Arp(arpItem)
-		}
-		for _, paiItem := range data.ProxyArpInterfaces {
-			r.ProxyArpInterfaces(paiItem)
-		}
-		for _, parItem := range data.ProxyArpRanges {
-			r.ProxyArpRanges(parItem)
-		}
-		if data.L4Feature != nil {
-			r.L4Features(data.L4Feature)
-		}
-		for _, anItem := range data.ApplicationNamespaces {
-			r.AppNamespace(anItem)
-		}
-		for _, stnItem := range data.StnRules {
-			r.StnRule(stnItem)
-		}
-		if data.NatGlobal != nil {
-			r.NAT44Global(data.NatGlobal)
-		}
-		for _, natItem := range data.DNATs {
-			r.NAT44DNat(natItem)
-		}
-		for _, ifItem := range data.LinuxInterfaces {
-			r.LinuxInterface(ifItem)
-		}
-		for _, arpItem := range data.LinuxArpEntries {
-			r.LinuxArpEntry(arpItem)
-		}
-		for _, rtItem := range data.LinuxRoutes {
-			r.LinuxRoute(rtItem)
-		}
-	default:
-		return fmt.Errorf("unknown type of request: %v", r)
+func processPutRequest(reqData *rpc.DataRequest, req linuxclient.PutDSL, dataSet map[string]proto.Message) {
+	for _, aclItem := range reqData.AccessLists {
+		req.ACL(aclItem)
+		dataSet[acl.Key(aclItem.AclName)] = aclItem
 	}
+	for _, ifItem := range reqData.Interfaces {
+		req.VppInterface(ifItem)
+		dataSet[interfaces.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, spdItem := range reqData.SPDs {
+		req.VppIPSecSPD(spdItem)
+		dataSet[ipsec.SPDKey(spdItem.Name)] = spdItem
+	}
+	for _, saItem := range reqData.SAs {
+		req.VppIPSecSA(saItem)
+		dataSet[ipsec.SAKey(saItem.Name)] = saItem
+	}
+	for _, tunItem := range reqData.Tunnels {
+		req.VppIPSecTunnel(tunItem)
+		dataSet[ipsec.TunnelKey(tunItem.Name)] = tunItem
+	}
+	for _, sessionItem := range reqData.BfdSessions {
+		req.BfdSession(sessionItem)
+		dataSet[bfd.SessionKey(sessionItem.Interface)] = sessionItem
+	}
+	for _, keyItem := range reqData.BfdAuthKeys {
+		req.BfdAuthKeys(keyItem)
+		dataSet[bfd.AuthKeysKey(keyItem.Name)] = keyItem
+	}
+	if reqData.BfdEchoFunction != nil {
+		req.BfdEchoFunction(reqData.BfdEchoFunction)
+		dataSet[bfd.EchoFunctionKey(reqData.BfdEchoFunction.Name)] = reqData.BfdEchoFunction
+	}
+	for _, bdItem := range reqData.BridgeDomains {
+		req.BD(bdItem)
+		dataSet[l2.BridgeDomainKey(bdItem.Name)] = bdItem
+	}
+	for _, fibItem := range reqData.FIBs {
+		req.BDFIB(fibItem)
+		dataSet[l2.FibKey(fibItem.BridgeDomain, fibItem.PhysAddress)] = fibItem
+	}
+	for _, xcItem := range reqData.XCons {
+		req.XConnect(xcItem)
+		dataSet[l2.XConnectKey(xcItem.ReceiveInterface)] = xcItem
+	}
+	for _, rtItem := range reqData.StaticRoutes {
+		req.StaticRoute(rtItem)
+		dataSet[l3.RouteKey(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)] = rtItem
+	}
+	for _, arpItem := range reqData.ArpEntries {
+		req.Arp(arpItem)
+		dataSet[l3.ArpEntryKey(arpItem.Interface, arpItem.IpAddress)] = arpItem
+	}
+	for _, paiItem := range reqData.ProxyArpInterfaces {
+		req.ProxyArpInterfaces(paiItem)
+		dataSet[l3.ProxyArpInterfaceKey(paiItem.Label)] = paiItem
+	}
+	for _, parItem := range reqData.ProxyArpRanges {
+		req.ProxyArpRanges(parItem)
+		dataSet[l3.ProxyArpRangeKey(parItem.Label)] = parItem
+	}
+	if reqData.L4Feature != nil {
+		req.L4Features(reqData.L4Feature)
+		dataSet[l4.FeatureKey()] = reqData.L4Feature
+	}
+	for _, anItem := range reqData.ApplicationNamespaces {
+		req.AppNamespace(anItem)
+		dataSet[l4.AppNamespacesKey(anItem.NamespaceId)] = anItem
+	}
+	for _, stnItem := range reqData.StnRules {
+		req.StnRule(stnItem)
+		dataSet[stn.Key(stnItem.RuleName)] = stnItem
+	}
+	if reqData.NatGlobal != nil {
+		req.NAT44Global(reqData.NatGlobal)
+		dataSet[nat.Prefix+nat.GlobalPrefix] = reqData.NatGlobal
+	}
+	for _, natItem := range reqData.DNATs {
+		req.NAT44DNat(natItem)
+		dataSet[nat.DNatKey(natItem.Label)] = natItem
+	}
+	for _, ifItem := range reqData.LinuxInterfaces {
+		req.LinuxInterface(ifItem)
+		dataSet[linuxIf.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, arpItem := range reqData.LinuxArpEntries {
+		req.LinuxArpEntry(arpItem)
+		dataSet[linuxL3.StaticRouteKey(arpItem.Name)] = arpItem
+	}
+	for _, rtItem := range reqData.LinuxRoutes {
+		req.LinuxRoute(rtItem)
+		dataSet[linuxL3.StaticArpKey(rtItem.Name)] = rtItem
+	}
+}
 
-	return nil
+func processDelRequest(reqData *rpc.DataRequest, req linuxclient.DeleteDSL, dataSet map[string]proto.Message) {
+	for _, aclItem := range reqData.AccessLists {
+		req.ACL(aclItem.AclName)
+		dataSet[acl.Key(aclItem.AclName)] = aclItem
+	}
+	for _, ifItem := range reqData.Interfaces {
+		req.VppInterface(ifItem.Name)
+		dataSet[interfaces.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, spdItem := range reqData.SPDs {
+		req.VppIPSecSPD(spdItem.Name)
+		dataSet[ipsec.SPDKey(spdItem.Name)] = spdItem
+	}
+	for _, saItem := range reqData.SAs {
+		req.VppIPSecSA(saItem.Name)
+		dataSet[ipsec.SAKey(saItem.Name)] = saItem
+	}
+	for _, tunItem := range reqData.Tunnels {
+		req.VppIPSecTunnel(tunItem.Name)
+		dataSet[ipsec.TunnelKey(tunItem.Name)] = tunItem
+	}
+	for _, sessionItem := range reqData.BfdSessions {
+		req.BfdSession(sessionItem.Interface)
+		dataSet[bfd.SessionKey(sessionItem.Interface)] = sessionItem
+	}
+	for _, keyItem := range reqData.BfdAuthKeys {
+		req.BfdAuthKeys(keyItem.Name)
+		dataSet[bfd.AuthKeysKey(keyItem.Name)] = keyItem
+	}
+	if reqData.BfdEchoFunction != nil {
+		req.BfdEchoFunction(reqData.BfdEchoFunction.Name)
+		dataSet[bfd.EchoFunctionKey(reqData.BfdEchoFunction.Name)] = reqData.BfdEchoFunction
+	}
+	for _, bdItem := range reqData.BridgeDomains {
+		req.BD(bdItem.Name)
+		dataSet[l2.BridgeDomainKey(bdItem.Name)] = bdItem
+	}
+	for _, fibItem := range reqData.FIBs {
+		req.BDFIB(fibItem.BridgeDomain, fibItem.PhysAddress)
+		dataSet[l2.FibKey(fibItem.BridgeDomain, fibItem.PhysAddress)] = fibItem
+	}
+	for _, xcItem := range reqData.XCons {
+		req.XConnect(xcItem.ReceiveInterface)
+		dataSet[l2.XConnectKey(xcItem.ReceiveInterface)] = xcItem
+	}
+	for _, rtItem := range reqData.StaticRoutes {
+		req.StaticRoute(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)
+		dataSet[l3.RouteKey(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)] = rtItem
+	}
+	for _, arpItem := range reqData.ArpEntries {
+		req.Arp(arpItem.Interface, arpItem.IpAddress)
+		dataSet[l3.ArpEntryKey(arpItem.Interface, arpItem.IpAddress)] = arpItem
+	}
+	for _, paiItem := range reqData.ProxyArpInterfaces {
+		req.ProxyArpInterfaces(paiItem.Label)
+		dataSet[l3.ProxyArpInterfaceKey(paiItem.Label)] = paiItem
+	}
+	for _, parItem := range reqData.ProxyArpRanges {
+		req.ProxyArpRanges(parItem.Label)
+		dataSet[l3.ProxyArpRangeKey(parItem.Label)] = parItem
+	}
+	if reqData.L4Feature != nil {
+		req.L4Features()
+		dataSet[l4.FeatureKey()] = reqData.L4Feature
+	}
+	for _, anItem := range reqData.ApplicationNamespaces {
+		req.AppNamespace(anItem.NamespaceId)
+		dataSet[l4.AppNamespacesKey(anItem.NamespaceId)] = anItem
+	}
+	for _, stnItem := range reqData.StnRules {
+		req.StnRule(stnItem.RuleName)
+		dataSet[stn.Key(stnItem.RuleName)] = stnItem
+	}
+	if reqData.NatGlobal != nil {
+		req.NAT44Global()
+		dataSet[nat.Prefix+nat.GlobalPrefix] = reqData.NatGlobal
+	}
+	for _, natItem := range reqData.DNATs {
+		req.NAT44DNat(natItem.Label)
+		dataSet[nat.DNatKey(natItem.Label)] = natItem
+	}
+	for _, ifItem := range reqData.LinuxInterfaces {
+		req.LinuxInterface(ifItem.Name)
+		dataSet[linuxIf.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, arpItem := range reqData.LinuxArpEntries {
+		req.LinuxArpEntry(arpItem.Name)
+		dataSet[linuxL3.StaticRouteKey(arpItem.Name)] = arpItem
+	}
+	for _, rtItem := range reqData.LinuxRoutes {
+		req.LinuxRoute(rtItem.Name)
+		dataSet[linuxL3.StaticArpKey(rtItem.Name)] = rtItem
+	}
+}
+
+func processResyncRequest(reqData *rpc.DataRequest, req linuxclient.DataResyncDSL, dataSet map[string]proto.Message) {
+	for _, aclItem := range reqData.AccessLists {
+		req.ACL(aclItem)
+		dataSet[acl.Key(aclItem.AclName)] = aclItem
+	}
+	for _, ifItem := range reqData.Interfaces {
+		req.VppInterface(ifItem)
+		dataSet[interfaces.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, spdItem := range reqData.SPDs {
+		req.VppIPSecSPD(spdItem)
+		dataSet[ipsec.SPDKey(spdItem.Name)] = spdItem
+	}
+	for _, saItem := range reqData.SAs {
+		req.VppIPSecSA(saItem)
+		dataSet[ipsec.SAKey(saItem.Name)] = saItem
+	}
+	for _, tunItem := range reqData.Tunnels {
+		req.VppIPSecTunnel(tunItem)
+		dataSet[ipsec.TunnelKey(tunItem.Name)] = tunItem
+	}
+	for _, sessionItem := range reqData.BfdSessions {
+		req.BfdSession(sessionItem)
+		dataSet[bfd.SessionKey(sessionItem.Interface)] = sessionItem
+	}
+	for _, keyItem := range reqData.BfdAuthKeys {
+		req.BfdAuthKeys(keyItem)
+		dataSet[bfd.AuthKeysKey(keyItem.Name)] = keyItem
+	}
+	if reqData.BfdEchoFunction != nil {
+		req.BfdEchoFunction(reqData.BfdEchoFunction)
+		dataSet[bfd.EchoFunctionKey(reqData.BfdEchoFunction.Name)] = reqData.BfdEchoFunction
+	}
+	for _, bdItem := range reqData.BridgeDomains {
+		req.BD(bdItem)
+		dataSet[l2.BridgeDomainKey(bdItem.Name)] = bdItem
+	}
+	for _, fibItem := range reqData.FIBs {
+		req.BDFIB(fibItem)
+		dataSet[l2.FibKey(fibItem.BridgeDomain, fibItem.PhysAddress)] = fibItem
+	}
+	for _, xcItem := range reqData.XCons {
+		req.XConnect(xcItem)
+		dataSet[l2.XConnectKey(xcItem.ReceiveInterface)] = xcItem
+	}
+	for _, rtItem := range reqData.StaticRoutes {
+		req.StaticRoute(rtItem)
+		dataSet[l3.RouteKey(rtItem.VrfId, rtItem.DstIpAddr, rtItem.NextHopAddr)] = rtItem
+	}
+	for _, arpItem := range reqData.ArpEntries {
+		req.Arp(arpItem)
+		dataSet[l3.ArpEntryKey(arpItem.Interface, arpItem.IpAddress)] = arpItem
+	}
+	for _, paiItem := range reqData.ProxyArpInterfaces {
+		req.ProxyArpInterfaces(paiItem)
+		dataSet[l3.ProxyArpInterfaceKey(paiItem.Label)] = paiItem
+	}
+	for _, parItem := range reqData.ProxyArpRanges {
+		req.ProxyArpRanges(parItem)
+		dataSet[l3.ProxyArpRangeKey(parItem.Label)] = parItem
+	}
+	if reqData.L4Feature != nil {
+		req.L4Features(reqData.L4Feature)
+		dataSet[l4.FeatureKey()] = reqData.L4Feature
+	}
+	for _, anItem := range reqData.ApplicationNamespaces {
+		req.AppNamespace(anItem)
+		dataSet[l4.AppNamespacesKey(anItem.NamespaceId)] = anItem
+	}
+	for _, stnItem := range reqData.StnRules {
+		req.StnRule(stnItem)
+		dataSet[stn.Key(stnItem.RuleName)] = stnItem
+	}
+	if reqData.NatGlobal != nil {
+		req.NAT44Global(reqData.NatGlobal)
+		dataSet[nat.Prefix+nat.GlobalPrefix] = reqData.NatGlobal
+	}
+	for _, natItem := range reqData.DNATs {
+		req.NAT44DNat(natItem)
+		dataSet[nat.DNatKey(natItem.Label)] = natItem
+	}
+	for _, ifItem := range reqData.LinuxInterfaces {
+		req.LinuxInterface(ifItem)
+		dataSet[linuxIf.InterfaceKey(ifItem.Name)] = ifItem
+	}
+	for _, arpItem := range reqData.LinuxArpEntries {
+		req.LinuxArpEntry(arpItem)
+		dataSet[linuxL3.StaticRouteKey(arpItem.Name)] = arpItem
+	}
+	for _, rtItem := range reqData.LinuxRoutes {
+		req.LinuxRoute(rtItem)
+		dataSet[linuxL3.StaticArpKey(rtItem.Name)] = rtItem
+	}
 }
 
 // helper method initializes all VPP/Linux plugin handlers
@@ -915,4 +744,23 @@ func (p *Plugin) initHandlers() {
 		p.dumpVppSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, p.Log)
 		p.dumpVppSvc.linuxL3Handler = l3linuxcalls.NewNetLinkHandler(linuxNsHandler, linuxIfIndexes, linuxArpIndexes, linuxRtIndexes, p.Log)
 	}
+}
+
+// Returns database broker defined in config file. The broker also has to be available in map of proto writers
+func (p *Plugin) getBrokerFromConfig() (keyval.KvProtoPlugin, error) {
+	config := &Config{}
+
+	found, err := p.Cfg.LoadValue(config)
+	if err != nil {
+		return nil, err
+	} else if !found {
+		p.Log.Debug("rpc-plugin config not found")
+		return nil, nil
+	}
+	p.Log.Debugf("rpc-plugin config found: %+v", config)
+
+	if config != nil && config.Broker != "" {
+		return p.Brokers[config.Broker], nil
+	}
+	return nil, err
 }
