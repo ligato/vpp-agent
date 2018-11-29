@@ -53,8 +53,8 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop VRF ${next_hop_vrf
     ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
     ${out}=         Put Json    ${uri}   ${data}
 
-Delete IPsec On ${node} With Prefix ${prefix} And Name ${name}
-    Delete IPsec    ${node}    ${prefix}    ${name}
+Delete IPsec On ${node} With Prefix ${prefix} And Index ${index}
+    Delete IPsec    ${node}    ${prefix}    ${index}
 
 Create VXLan ${name} From ${src_ip} To ${dst_ip} With Vni ${vni} On ${node}
     Put VXLan Interface    ${node}    ${name}    ${src_ip}    ${dst_ip}    ${vni}

@@ -42,6 +42,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin"
 )
 
@@ -163,6 +164,7 @@ type VPP struct {
 	L3Plugin    *l3plugin.L3Plugin
 	ACLPlugin   *aclplugin.ACLPlugin
 	NATPlugin   *natplugin.NATPlugin
+	PuntPlugin  *puntplugin.PuntPlugin
 	STNPlugin   *stnplugin.STNPlugin
 }
 
@@ -174,6 +176,7 @@ func defaultVPP() VPP {
 		L3Plugin:    &l3plugin.DefaultPlugin,
 		ACLPlugin:   &aclplugin.DefaultPlugin,
 		NATPlugin:   &natplugin.DefaultPlugin,
+		PuntPlugin:  &puntplugin.DefaultPlugin,
 		STNPlugin:   &stnplugin.DefaultPlugin,
 	}
 }

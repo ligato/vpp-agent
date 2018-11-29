@@ -204,17 +204,17 @@ Put Static Fib Entry
     Put Json     ${uri}    ${data}
 
 Create IPsec With SA And Json
-    [Arguments]     ${node}    ${interface}    ${file_name}    ${name}    ${spi}    ${crypto_key}    ${integ_key}
+    [Arguments]     ${node}    ${interface}    ${file_name}    ${sa_index}    ${spi}    ${crypto_key}    ${integ_key}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/ipsec/sa/${interface}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/ipsec/sa/${sa_index}
     ${out}=         Put Json    ${uri}   ${data}
 
 Create IPsec With SPD And Json
-    [Arguments]     ${node}    ${spd_name}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_name_1}  ${sa_name_2}
+    [Arguments]     ${node}    ${spd_index}    ${file_name}    ${interface_name}    ${remote_addr}    ${local_addr}    ${sa_index_1}  ${sa_index_2}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../resources/${file_name}
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/ipsec/spd/${spd_name}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/ipsec/spd/${spd_index}
     ${out}=         Put Json    ${uri}   ${data}
 
 Delete Bridge Domain
@@ -503,15 +503,15 @@ Put TAPv2 Interface With IP
     Put Json     ${uri}    ${data}
 
 Put STN Rule
-    [Arguments]    ${node}    ${interface}    ${ip}    ${rule_name}
+    [Arguments]    ${node}    ${interface}    ${ip}
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/stn_rule.json
-    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rules/${rule_name}
+    ${uri}=               Set Variable                  /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rule/${interface}/ip/${ip}
     ${data}=              Replace Variables             ${data}
     Put Json     ${uri}    ${data}
 
 Delete STN Rule
-    [Arguments]    ${node}    ${rule_name}
-    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rules/${rule_name}
+    [Arguments]    ${node}    ${interface}    ${ip}
+    ${uri}=      Set Variable    /vnf-agent/${node}/vpp/config/${AGENT_VER}/stn/rule/${interface}/ip/${ip}
     ${out}=      Delete key    ${uri}
     [Return]    ${out}
 
