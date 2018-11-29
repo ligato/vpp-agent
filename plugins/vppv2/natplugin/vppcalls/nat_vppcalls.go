@@ -15,6 +15,7 @@
 package vppcalls
 
 import (
+	"math"
 	"net"
 
 	"github.com/pkg/errors"
@@ -297,8 +298,19 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	// Transform local IP/Ports
-	var locals []binapi.Nat44LbAddrPort
+	var (
+		locals  []binapi.Nat44LbAddrPort
+		localNum int
+	)
 	for _, local := range mapping.LocalIps {
+		// TODO: this is a temporary solution
+		// once LocalNum uses bigger range than uint8 this check should be removed
+		// as well as the cast below uint8(len...
+		localNum++
+		if localNum > math.MaxUint8 {
+			h.log.Warnf("Only the first %v local addresses will be programmed", math.MaxUint8)
+			break
+		}
 		if local.LocalPort == 0 {
 			return errors.Errorf("cannot set local IP/Port for DNAT mapping %s: port is missing",
 				dnatLabel)
