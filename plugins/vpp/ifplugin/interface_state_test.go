@@ -236,7 +236,7 @@ func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
 
 	// Test notifications
 	notifChan <- &stats.VnetInterfaceCombinedCounters{
-		VnetCounterType: 1, // TX
+		VnetCounterType: 4, // TX
 		FirstSwIfIndex:  0,
 		Count:           2,
 		Data: []stats.VlibCounter{
