@@ -15,6 +15,7 @@
 package vpp
 
 import (
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -281,6 +282,19 @@ func (plugin *Plugin) changePropagateRequest(dataChng datasync.ChangeEvent, call
 		}
 		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
 			if err := plugin.dataChangeDNat(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
+				return false, err
+			}
+		} else {
+			return false, err
+		}
+	} else if strings.HasPrefix(key, punt.Prefix) {
+		// Punt config
+		var value, prevValue punt.Punt
+		if err := dataChng.GetValue(&value); err != nil {
+			return false, err
+		}
+		if diff, err := dataChng.GetPrevValue(&prevValue); err == nil {
+			if err := plugin.dataChangePunt(diff, &value, &prevValue, dataChng.GetChangeType()); err != nil {
 				return false, err
 			}
 		} else {
@@ -672,6 +686,21 @@ func (plugin *Plugin) dataChangeDNat(diff bool, value, prevValue *nat.Nat44DNat_
 		err = plugin.natConfigurator.ConfigureDNat(value)
 	}
 	return plugin.natConfigurator.LogError(err)
+}
+
+// dataChangePunt propagates data change to the punt configurator
+func (plugin *Plugin) dataChangePunt(diff bool, value, prevValue *punt.Punt, changeType datasync.Op) error {
+	plugin.Log.Debug("puntChange diff->", diff, " changeType->", changeType, " value->", value, " prevValue->", prevValue)
+
+	var err error
+	if datasync.Delete == changeType {
+		err = plugin.puntConfigurator.Delete(prevValue)
+	} else if diff {
+		err = plugin.puntConfigurator.Modify(prevValue, value)
+	} else {
+		err = plugin.puntConfigurator.Add(value)
+	}
+	return plugin.puntConfigurator.LogError(err)
 }
 
 // dataChangeIPSecSPD propagates data change to the IPSec configurator
