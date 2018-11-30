@@ -729,6 +729,7 @@ func (ctl *VppAgentCtl) createIPSecTunnelInterface() {
 		RemoteIntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
 		Enabled:         true,
 		IpAddresses:     []string{"20.0.0.0/24"},
+		//UnnumberedName:  "tap1",
 		Vrf:             0,
 	}
 
