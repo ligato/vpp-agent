@@ -73,13 +73,14 @@ func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 		simulatedOps recordedTxnOps
 		executedOps  recordedTxnOps
 		failed       map[string]bool
-		execStart    time.Time
-		execStop     time.Time
+		startTime    time.Time
+		stopTime     time.Time
 	)
 	scheduler.txnLock.Lock()
 	defer scheduler.txnLock.Unlock()
 
 	// 1. Pre-processing:
+	startTime = time.Now()
 	txn, preErrors := scheduler.preProcessTransaction(qTxn)
 	eligibleForExec := len(txn.values) > 0 && len(preErrors) == 0
 
@@ -92,14 +93,13 @@ func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 	preTxnRecord := scheduler.preRecordTransaction(txn, simulatedOps, preErrors)
 
 	// 4. Execution:
-	execStart = time.Now()
 	if eligibleForExec {
 		executedOps, failed = scheduler.executeTransaction(txn, false)
 	}
-	execStop = time.Now()
+	stopTime = time.Now()
 
 	// 5. Recording:
-	scheduler.recordTransaction(preTxnRecord, executedOps, execStart, execStop)
+	scheduler.recordTransaction(preTxnRecord, executedOps, startTime, stopTime)
 
 	// 6. Post-processing:
 	scheduler.postProcessTransaction(txn, executedOps, failed, preErrors)
