@@ -1,0 +1,7 @@
+{
+  "name": "punt1",
+  "l3_protocol": 4,
+  "l4_protocol": 17,
+  "port": 9000,
+  "socket_path": "/tmp/socket/punt"
+}
