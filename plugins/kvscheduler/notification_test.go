@@ -100,7 +100,7 @@ func TestNotifications(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithFullResync(context.Background()))
+	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())

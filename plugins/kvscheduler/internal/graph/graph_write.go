@@ -15,8 +15,10 @@
 package graph
 
 import (
-	"github.com/ligato/cn-infra/idxmap"
+	"reflect"
 	"time"
+
+	"github.com/ligato/cn-infra/idxmap"
 )
 
 // graphRW implements RWAccess.
@@ -133,8 +135,12 @@ func (graph *graphRW) Save() {
 					if node.metadata == nil {
 						mapping.Delete(node.label)
 						node.metadataAdded = false
+					} else {
+						prevMeta, _ := mapping.GetValue(node.label)
+						if !reflect.DeepEqual(prevMeta, node.metadata) {
+							mapping.Update(node.label, node.metadata)
+						}
 					}
-					mapping.Update(node.label, node.metadata)
 				} else if node.metadata != nil {
 					mapping.Put(node.label, node.metadata)
 					node.metadataAdded = true

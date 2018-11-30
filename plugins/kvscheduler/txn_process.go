@@ -181,13 +181,13 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 	graphR.Release()
 
 	// for resync refresh the graph + collect deletes
-	if len(errors) == 0 && (qTxn.nb.isFullResync || qTxn.nb.isDownstreamResync) {
+	if len(errors) == 0 && qTxn.nb.resyncType != NotResync {
 		graphW := scheduler.graph.Write(false)
 		defer graphW.Release()
 		defer graphW.Save()
 		scheduler.resyncCount++
 
-		if qTxn.nb.isDownstreamResync {
+		if qTxn.nb.resyncType == DownstreamResync {
 			// for downstream resync it is assumed that scheduler is in-sync with NB
 			currentNodes := graphW.GetNodes(nil,
 				graph.WithFlags(&OriginFlag{FromNB}),
@@ -210,14 +210,19 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 			nbKeys.Add(kv.key)
 		}
 
-		// refresh the graph with the current state of SB
-		scheduler.refreshGraph(graphW, nil,
-			&resyncData{first: scheduler.resyncCount == 1, values: preTxn.values})
+		// unless this is only UpstreamResync, refresh the graph with the current
+		// state of SB
+		if qTxn.nb.resyncType != UpstreamResync {
+			scheduler.refreshGraph(graphW, nil, &resyncData{
+				first:   scheduler.resyncCount == 1,
+				values:  preTxn.values,
+				verbose: qTxn.nb.verboseRefresh})
+		}
+
+		// collect deletes for obsolete values
 		currentNodes := graphW.GetNodes(nil,
 			graph.WithFlags(&OriginFlag{FromNB}),
 			graph.WithoutFlags(&DerivedFlag{}))
-
-		// collect deletes for obsolete values
 		for _, node := range currentNodes {
 			if _, nbKey := nbKeys[node.GetKey()]; nbKey {
 				continue

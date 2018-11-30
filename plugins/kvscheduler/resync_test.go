@@ -63,7 +63,7 @@ func TestEmptyResync(t *testing.T) {
 
 	// run transaction with empty resync
 	startTime := time.Now()
-	ctx := WithFullResync(context.Background())
+	ctx := WithResync(context.Background(), FullResync, true)
 	description := "testing empty resync"
 	ctx = WithDescription(ctx, description)
 	kvErrors, txnError := scheduler.StartNBTransaction().Commit(ctx)
@@ -175,7 +175,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyArrayValue("item1"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item1", "item2"))
-	ctx := WithFullResync(context.Background())
+	ctx := WithResync(context.Background(), FullResync, true)
 	description := "testing resync against empty SB"
 	ctx = WithDescription(ctx, description)
 	kvErrors, txnError := schedulerTxn.Commit(ctx)
@@ -362,7 +362,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 
 	// now remove everything using resync with empty data
 	startTime = time.Now()
-	kvErrors, txnError = scheduler.StartNBTransaction().Commit(WithFullResync(context.Background()))
+	kvErrors, txnError = scheduler.StartNBTransaction().Commit(WithResync(context.Background(), FullResync, true))
 	stopTime = time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -589,7 +589,7 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item2"))
 	schedulerTxn.SetValue(prefixA+baseValue3, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithFullResync(context.Background()))
+	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -925,7 +925,7 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyArrayValue("item1"))
-	kvErrors, txnError := schedulerTxn.Commit(WithFullResync(context.Background()))
+	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -1156,7 +1156,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item2"))
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithFullResync(context.Background()))
+	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -1510,7 +1510,7 @@ func TestResyncWithRetry(t *testing.T) {
 	description := "testing resync with retry"
 	ctx := context.Background()
 	ctx = WithRetry(ctx, 3*time.Second, false)
-	ctx = WithFullResync(ctx)
+	ctx = WithResync(ctx, FullResync, true)
 	ctx = WithDescription(ctx, description)
 	kvErrors, txnError := resyncTxn.Commit(ctx)
 	stopTime := time.Now()

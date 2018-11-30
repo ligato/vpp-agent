@@ -33,12 +33,11 @@ type recordedTxn struct {
 	stop  time.Time
 
 	// arguments
-	seqNum             uint
-	txnType            txnType
-	isFullResync       bool
-	isDownstreamResync bool
-	description        string
-	values             []recordedKVPair
+	seqNum      uint
+	txnType     txnType
+	resyncType  ResyncType
+	description string
+	values      []recordedKVPair
 
 	// result
 	preErrors []KeyWithError // pre-processing errors
@@ -97,10 +96,13 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 		// transaction arguments
 		str += indent1 + "* transaction arguments:\n"
 		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.seqNum)
-		if txn.txnType == nbTransaction && (txn.isFullResync || txn.isDownstreamResync) {
+		if txn.txnType == nbTransaction && txn.resyncType != NotResync {
 			resyncType := "Full Resync"
-			if txn.isDownstreamResync {
+			if txn.resyncType == DownstreamResync {
 				resyncType = "SB Sync"
+			}
+			if txn.resyncType == UpstreamResync {
+				resyncType = "NB Sync"
 			}
 			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.txnType.String(), resyncType)
 		} else {
@@ -116,7 +118,7 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 				}
 			}
 		}
-		if txn.isDownstreamResync {
+		if txn.resyncType == DownstreamResync {
 			goto printOps
 		}
 		if len(txn.values) == 0 {
@@ -125,8 +127,7 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			str += indent2 + fmt.Sprintf("- values:\n")
 		}
 		for _, kv := range txn.values {
-			resync := txn.isFullResync || txn.isDownstreamResync
-			if resync && kv.origin == FromSB {
+			if txn.resyncType != NotResync && kv.origin == FromSB {
 				// do not print SB values updated during resync
 				continue
 			}
@@ -311,12 +312,11 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 		preRecord:          true,
 		seqNum:             txn.seqNum,
 		txnType:            txn.args.txnType,
-		isFullResync:       txn.args.txnType == nbTransaction && txn.args.nb.isFullResync,
-		isDownstreamResync: txn.args.txnType == nbTransaction && txn.args.nb.isDownstreamResync,
 		preErrors:          preErrors,
 		planned:            planned,
 	}
 	if txn.args.txnType == nbTransaction {
+		record.resyncType = txn.args.nb.resyncType
 		record.description = txn.args.nb.description
 	}
 
@@ -330,10 +330,13 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 	}
 
 	txnInfo := fmt.Sprintf("%s", txn.args.txnType.String())
-	if txn.args.txnType == nbTransaction && (txn.args.nb.isFullResync || txn.args.nb.isDownstreamResync) {
+	if txn.args.txnType == nbTransaction && txn.args.nb.resyncType != NotResync {
 		resyncType := "Full Resync"
-		if txn.args.nb.isDownstreamResync {
+		if txn.args.nb.resyncType == DownstreamResync {
 			resyncType = "SB Sync"
+		}
+		if txn.args.nb.resyncType == UpstreamResync {
+			resyncType = "NB Sync"
 		}
 		txnInfo = fmt.Sprintf("%s (%s)", txn.args.txnType.String(), resyncType)
 	}
