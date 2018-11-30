@@ -228,6 +228,11 @@ func do(ctl *VppAgentCtl) {
 			ctl.createAppNamespace()
 		case "-appnsd":
 			ctl.deleteAppNamespace()
+			// Punt
+		case "-puntr":
+			ctl.registerPunt()
+		case "-puntd":
+			ctl.deregisterPunt()
 			// TXN (transaction)
 		case "-txn":
 			ctl.createTxn()
@@ -290,6 +295,7 @@ func usage() {
 		-ipscn  -ipscnd - VPP IP scan neighbor
 		-el4,	-dl4	- L4 features
 		-appns,	-appnsd	- Application namespace
+		-puntr,	-puntd	- Register/Deregister punt
 
 	Other:
 		-txn,	-txnd	- Transaction
