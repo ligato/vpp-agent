@@ -311,31 +311,46 @@ func icmpACL(icmpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Icmp, aclRule *acla
 		aclRule.Proto = ICMPv6Proto // IANA ICMPv6
 		aclRule.IsIPv6 = 1
 		// ICMPv6 type range
-		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
-		aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)
+		if icmpRule.IcmpTypeRange != nil {
+			aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
+			aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)
+		}
 		// ICMPv6 code range
-		aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
-		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.First)
+		if icmpRule.IcmpCodeRange != nil {
+			aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
+			aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.First)
+		}
 	} else {
 		aclRule.Proto = ICMPv4Proto // IANA ICMPv4
 		aclRule.IsIPv6 = 0
 		// ICMPv4 type range
-		aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
-		aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)
+		if icmpRule.IcmpTypeRange != nil {
+			aclRule.SrcportOrIcmptypeFirst = uint16(icmpRule.IcmpTypeRange.First)
+			aclRule.SrcportOrIcmptypeLast = uint16(icmpRule.IcmpTypeRange.Last)
+		}
 		// ICMPv4 code range
-		aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
-		aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.Last)
+		if icmpRule.IcmpCodeRange != nil {
+			aclRule.DstportOrIcmpcodeFirst = uint16(icmpRule.IcmpCodeRange.First)
+			aclRule.DstportOrIcmpcodeLast = uint16(icmpRule.IcmpCodeRange.Last)
+		}
 	}
 	return aclRule
 }
 
 // Sets an TCP ACL rule fields into provided ACL Rule object.
 func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Tcp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+	if tcpRule == nil {
+		return aclRule
+	}
 	aclRule.Proto = TCPProto // IANA TCP
-	aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
-	aclRule.SrcportOrIcmptypeLast = uint16(tcpRule.SourcePortRange.UpperPort)
-	aclRule.DstportOrIcmpcodeFirst = uint16(tcpRule.DestinationPortRange.LowerPort)
-	aclRule.DstportOrIcmpcodeLast = uint16(tcpRule.DestinationPortRange.UpperPort)
+	if tcpRule.SourcePortRange != nil {
+		aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
+		aclRule.SrcportOrIcmptypeLast = uint16(tcpRule.SourcePortRange.UpperPort)
+	}
+	if tcpRule.DestinationPortRange != nil {
+		aclRule.DstportOrIcmpcodeFirst = uint16(tcpRule.DestinationPortRange.LowerPort)
+		aclRule.DstportOrIcmpcodeLast = uint16(tcpRule.DestinationPortRange.UpperPort)
+	}
 	aclRule.TCPFlagsValue = uint8(tcpRule.TcpFlagsValue)
 	aclRule.TCPFlagsMask = uint8(tcpRule.TcpFlagsMask)
 	return aclRule
@@ -343,10 +358,17 @@ func tcpACL(tcpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Tcp, aclRule *aclapi.
 
 // Sets an UDP ACL rule fields into provided ACL Rule object.
 func udpACL(udpRule *acl.AccessLists_Acl_Rule_Match_IpRule_Udp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+	if udpRule == nil {
+		return aclRule
+	}
 	aclRule.Proto = UDPProto // IANA UDP
-	aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
-	aclRule.SrcportOrIcmptypeLast = uint16(udpRule.SourcePortRange.UpperPort)
-	aclRule.DstportOrIcmpcodeFirst = uint16(udpRule.DestinationPortRange.LowerPort)
-	aclRule.DstportOrIcmpcodeLast = uint16(udpRule.DestinationPortRange.UpperPort)
+	if udpRule.SourcePortRange != nil {
+		aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
+		aclRule.SrcportOrIcmptypeLast = uint16(udpRule.SourcePortRange.UpperPort)
+	}
+	if udpRule.DestinationPortRange != nil {
+		aclRule.DstportOrIcmpcodeFirst = uint16(udpRule.DestinationPortRange.LowerPort)
+		aclRule.DstportOrIcmpcodeLast = uint16(udpRule.DestinationPortRange.UpperPort)
+	}
 	return aclRule
 }
