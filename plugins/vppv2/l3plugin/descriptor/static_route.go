@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"strings"
 
@@ -201,12 +200,6 @@ func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
 			Origin: scheduler.UnknownOrigin,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d Static Routes: %s", len(dump), dumpList)
 
 	return dump, nil
 }

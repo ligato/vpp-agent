@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
 	"strings"
 
@@ -196,12 +195,6 @@ func (d *ProxyArpDescriptor) Dump(correlate []adapter.ProxyARPKVWithMetadata) (
 		Value:  proxyArp,
 		Origin: scheduler.UnknownOrigin,
 	})
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d ProxyARP: %s", len(dump), dumpList)
 
 	return dump, nil
 }

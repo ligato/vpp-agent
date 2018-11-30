@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"strings"
 
@@ -349,12 +348,6 @@ func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adapt
 		}
 		dump = append(dump, routeDump.routes...)
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d Linux Routes: %v", len(dump), dumpList)
 
 	return dump, nil
 }

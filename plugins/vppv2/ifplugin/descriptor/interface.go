@@ -604,16 +604,18 @@ func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.MemifLink) uint
 
 // getTapConfig returns the TAP-specific configuration section (handling undefined attributes).
 func getTapConfig(intf *interfaces.Interface) *interfaces.TapLink {
-	tapCfg := intf.GetTap()
-	if tapCfg == nil || intf.GetTap().GetHostIfName() == "" {
-		// build TAP config with auto-generated host interface name and copied/default attributes
-		tapCfg = &interfaces.TapLink{
-			Version:        intf.GetTap().GetVersion(),
-			HostIfName:     generateTAPHostName(intf.Name),
-			ToMicroservice: intf.GetTap().GetToMicroservice(),
-			RxRingSize:     intf.GetTap().GetRxRingSize(),
-			TxRingSize:     intf.GetTap().GetTxRingSize(),
-		}
+	tapCfg := &interfaces.TapLink{
+		Version:        intf.GetTap().GetVersion(),
+		HostIfName:     intf.GetTap().GetHostIfName(),
+		ToMicroservice: intf.GetTap().GetToMicroservice(),
+		RxRingSize:     intf.GetTap().GetRxRingSize(),
+		TxRingSize:     intf.GetTap().GetTxRingSize(),
+	}
+	if tapCfg.Version == 0 {
+		tapCfg.Version = 1
+	}
+	if tapCfg.HostIfName == "" {
+		tapCfg.HostIfName = generateTAPHostName(intf.Name)
 	}
 	return tapCfg
 }

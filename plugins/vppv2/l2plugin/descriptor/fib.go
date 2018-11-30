@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -190,12 +189,6 @@ func (d *FIBDescriptor) Dump(correlate []adapter.FIBKVWithMetadata) (dump []adap
 			Origin: scheduler.UnknownOrigin, // there can be automatically created FIBs
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d L2 FIBs: %v", len(dump), dumpList)
 
 	return dump, nil
 }

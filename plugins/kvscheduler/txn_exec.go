@@ -279,6 +279,8 @@ func (scheduler *Scheduler) applyDelete(node graph.NodeRW, txnOp *recordedTxnOp,
 		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
 			node.SetMetadata(nil)
 		}
+	} else {
+		scheduler.lastError[node.GetKey()] = nil // for dry-run assume success
 	}
 
 	// cleanup the error flag if removal was successful
@@ -358,6 +360,8 @@ func (scheduler *Scheduler) applyAdd(node graph.NodeRW, txnOp *recordedTxnOp, ar
 			node.SetMetadataMap(descriptor.Name)
 			node.SetMetadata(metadata)
 		}
+	} else {
+		scheduler.lastError[node.GetKey()] = nil // for dry-run assume success
 	}
 
 	// finalize node and save before going to derived values + dependencies
@@ -485,6 +489,8 @@ func (scheduler *Scheduler) applyModify(node graph.NodeRW, txnOp *recordedTxnOp,
 		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
 			node.SetMetadata(newMetadata)
 		}
+	} else {
+		scheduler.lastError[node.GetKey()] = nil // for dry-run assume success
 	}
 
 	// if new value is equivalent, but the value is in failed state from previous txn => run update
@@ -580,6 +586,8 @@ func (scheduler *Scheduler) applyUpdate(node graph.NodeRW, txnOp *recordedTxnOp,
 					scheduler.propagateError(args.graphW, node, err, Update)
 					args.addFailed(getNodeBase(node).GetKey(), handler.isRetriableFailure(err))
 				}
+			} else {
+				scheduler.lastError[node.GetKey()] = nil // for dry-run assume success
 			}
 			executed = append(executed, txnOp)
 		}

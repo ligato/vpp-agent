@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
 	"reflect"
 	"strconv"
@@ -180,9 +179,15 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		getHostIfName(oldIntf) != getHostIfName(newIntf) {
 		return false
 	}
-	if oldIntf.Type == interfaces.Interface_VETH &&
-		oldIntf.GetVeth().GetPeerIfName() != newIntf.GetVeth().GetPeerIfName() {
-		return false
+	if oldIntf.Type == interfaces.Interface_VETH {
+		if oldIntf.GetVeth().GetPeerIfName() != newIntf.GetVeth().GetPeerIfName() {
+			return false
+		}
+		// handle default config for checksum offloading
+		if getRxChksmOffloading(oldIntf) != getRxChksmOffloading(newIntf) ||
+			getTxChksmOffloading(oldIntf) != getTxChksmOffloading(newIntf) {
+			return false
+		}
 	}
 	if oldIntf.Type == interfaces.Interface_TAP_TO_VPP &&
 		oldIntf.GetTap().GetVppTapIfName() != newIntf.GetTap().GetVppTapIfName() {
@@ -200,12 +205,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
 	if newIntf.PhysAddress != "" &&
 		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
-		return false
-	}
-
-	// handle default config for checksum offloading
-	if getRxChksmOffloading(oldIntf) != getRxChksmOffloading(newIntf) ||
-		getTxChksmOffloading(oldIntf) != getTxChksmOffloading(newIntf) {
 		return false
 	}
 
@@ -334,14 +333,16 @@ func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (me
 	}
 
 	// set checksum offloading
-	rxOn := getRxChksmOffloading(linuxIf)
-	txOn := getTxChksmOffloading(linuxIf)
-	err = d.ifHandler.SetChecksumOffloading(hostName, rxOn, txOn)
-	if err != nil {
-		err = errors.Errorf("failed to configure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
-			rxOn, txOn, linuxIf.Name, err)
-		d.log.Error(err)
-		return nil, err
+	if linuxIf.Type == interfaces.Interface_VETH {
+		rxOn := getRxChksmOffloading(linuxIf)
+		txOn := getTxChksmOffloading(linuxIf)
+		err = d.ifHandler.SetChecksumOffloading(hostName, rxOn, txOn)
+		if err != nil {
+			err = errors.Errorf("failed to configure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
+				rxOn, txOn, linuxIf.Name, err)
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	return metadata, nil
@@ -497,15 +498,17 @@ func (d *InterfaceDescriptor) Modify(key string, oldLinuxIf, newLinuxIf *interfa
 	}
 
 	// update checksum offloading
-	rxOn := getRxChksmOffloading(newLinuxIf)
-	txOn := getTxChksmOffloading(newLinuxIf)
-	if rxOn != getRxChksmOffloading(oldLinuxIf) || txOn != getTxChksmOffloading(oldLinuxIf) {
-		err = d.ifHandler.SetChecksumOffloading(newHostName, rxOn, txOn)
-		if err != nil {
-			err = errors.Errorf("failed to reconfigure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
-				rxOn, txOn, newLinuxIf.Name, err)
-			d.log.Error(err)
-			return nil, err
+	if newLinuxIf.Type == interfaces.Interface_VETH {
+		rxOn := getRxChksmOffloading(newLinuxIf)
+		txOn := getTxChksmOffloading(newLinuxIf)
+		if rxOn != getRxChksmOffloading(oldLinuxIf) || txOn != getTxChksmOffloading(oldLinuxIf) {
+			err = d.ifHandler.SetChecksumOffloading(newHostName, rxOn, txOn)
+			if err != nil {
+				err = errors.Errorf("failed to reconfigure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
+					rxOn, txOn, newLinuxIf.Name, err)
+				d.log.Error(err)
+				return nil, err
+			}
 		}
 	}
 
@@ -726,12 +729,6 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		dump = append(dump, kv)
 	}
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d Linux interfaces: %v", len(dump), dumpList)
-
 	return dump, nil
 }
 
@@ -846,19 +843,21 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 			}
 
 			// dump checksum offloading
-			rxOn, txOn, err := d.ifHandler.GetChecksumOffloading(link.Attrs().Name)
-			if err != nil {
-				d.log.WithFields(logging.Fields{
-					"if-host-name": link.Attrs().Name,
-					"namespace":    nsRef,
-					"err":          err,
-				}).Warn("Failed to read checksum offloading")
-			} else {
-				if !rxOn {
-					intf.RxChecksumOffloading = interfaces.Interface_CHKSM_OFFLOAD_DISABLED
-				}
-				if !txOn {
-					intf.TxChecksumOffloading = interfaces.Interface_CHKSM_OFFLOAD_DISABLED
+			if intf.Type == interfaces.Interface_VETH {
+				rxOn, txOn, err := d.ifHandler.GetChecksumOffloading(link.Attrs().Name)
+				if err != nil {
+					d.log.WithFields(logging.Fields{
+						"if-host-name": link.Attrs().Name,
+						"namespace":    nsRef,
+						"err":          err,
+					}).Warn("Failed to read checksum offloading")
+				} else {
+					if !rxOn {
+						intf.GetVeth().RxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
+					}
+					if !txOn {
+						intf.GetVeth().TxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
+					}
 				}
 			}
 
@@ -1031,20 +1030,20 @@ func getInterfaceMTU(linuxIntf *interfaces.Interface) int {
 }
 
 func getRxChksmOffloading(linuxIntf *interfaces.Interface) (rxOn bool) {
-	return isChksmOffloadingOn(linuxIntf.RxChecksumOffloading)
+	return isChksmOffloadingOn(linuxIntf.GetVeth().GetRxChecksumOffloading())
 }
 
 func getTxChksmOffloading(linuxIntf *interfaces.Interface) (txOn bool) {
-	return isChksmOffloadingOn(linuxIntf.TxChecksumOffloading)
+	return isChksmOffloadingOn(linuxIntf.GetVeth().GetTxChecksumOffloading())
 }
 
-func isChksmOffloadingOn(offloading interfaces.Interface_ChecksumOffloading) bool {
+func isChksmOffloadingOn(offloading interfaces.VethLink_ChecksumOffloading) bool {
 	switch offloading {
-	case interfaces.Interface_CHKSM_OFFLOAD_DEFAULT:
+	case interfaces.VethLink_CHKSM_OFFLOAD_DEFAULT:
 		return true // enabled by default
-	case interfaces.Interface_CHKSM_OFFLOAD_ENABLED:
+	case interfaces.VethLink_CHKSM_OFFLOAD_ENABLED:
 		return true
-	case interfaces.Interface_CHKSM_OFFLOAD_DISABLED:
+	case interfaces.VethLink_CHKSM_OFFLOAD_DISABLED:
 		return false
 	}
 	return true

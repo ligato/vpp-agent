@@ -240,8 +240,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(0))
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item2")), origin: FromNB},
@@ -485,8 +484,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(1))
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -901,8 +899,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(1))
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
@@ -1252,8 +1249,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(0))
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(Equal(description))
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewStringValue("base-value1-data")), origin: FromNB},
@@ -1388,8 +1384,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(1))
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue4, value: utils.ProtoToString(test.NewStringValue("base-value4-data")), origin: FromNB},
@@ -1530,8 +1525,7 @@ func TestDependencyCycles(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(2))
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue2, value: utils.ProtoToString(nil), origin: FromNB},

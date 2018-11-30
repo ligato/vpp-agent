@@ -23,7 +23,6 @@ import (
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
-	"encoding/json"
 )
 
 // resyncData stores data to be used for resync after refresh.
@@ -94,20 +93,12 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			scheduler.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
 			continue
 		} else if resyncData == nil || resyncData.verbose {
-			// print the dumbed values
-			var dumpList string
-			for _, kv := range dump {
-				kvAsJson, err := json.Marshal(kv)
-				if err == nil {
-					dumpList += fmt.Sprintf("\n - %s", string(kvAsJson))
-					dumpList += fmt.Sprintf("\n - %+v", kv) // FIXME: remove
-				} else {
-					fmt.Printf("JSON marshall failed: %v\n", err) // FIXME: remove
-					dumpList += fmt.Sprintf("\n - %+v", kv)
-				}
+			plural := "s"
+			if len(dump) == 1 {
+				plural = ""
 			}
-			scheduler.Log.Debugf("Descriptor %s dumped %d values: %v",
-				descriptor.Name, len(dump), dumpList)
+			scheduler.Log.Debugf("Descriptor %s dumped %d value%s: %v",
+				descriptor.Name, len(dump), plural, dump)
 		}
 
 		if len(keys) > 0 {

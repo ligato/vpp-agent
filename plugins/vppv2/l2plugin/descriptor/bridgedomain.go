@@ -269,12 +269,6 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 	// update d.bdIDSeq
 	d.bdIDSeq = bdIDSeq
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d bridge domains: %v", len(dump), dumpList)
-
 	return dump, nil
 }
 

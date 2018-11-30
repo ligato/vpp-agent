@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -242,12 +241,6 @@ func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (
 			Origin: scheduler.FromNB,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d DNAT-44 configurations: %v", len(dump), dumpList)
 
 	return dump, nil
 }
