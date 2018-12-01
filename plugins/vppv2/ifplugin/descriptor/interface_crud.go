@@ -501,6 +501,12 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				intf.Interface.GetTap().ToMicroservice = expCfg.GetTap().GetToMicroservice()
 				intf.Interface.GetTap().RxRingSize = expCfg.GetTap().GetRxRingSize()
 				intf.Interface.GetTap().TxRingSize = expCfg.GetTap().GetTxRingSize()
+				// FIXME: VPP BUG - TAPv2 host name is sometimes not properly dumped
+				// (seemingly uninitialized section of memory is returned)
+				if intf.Interface.GetTap().GetVersion() == 2 {
+					intf.Interface.GetTap().HostIfName = expCfg.GetTap().GetHostIfName()
+				}
+
 			}
 			if expCfg.Type == interfaces.Interface_MEMIF && intf.Interface.GetMemif() != nil {
 				intf.Interface.GetMemif().Secret = expCfg.GetMemif().GetSecret()
