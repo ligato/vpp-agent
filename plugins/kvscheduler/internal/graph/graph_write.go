@@ -62,7 +62,7 @@ func (graph *graphRW) SetNode(key string) NodeRW {
 	node.graph = graph.graphR
 	node.key = key
 	for _, otherNode := range graph.nodes {
-		otherNode.checkPotentialTarget(node)
+		otherNode.checkPotentialTarget(node, false)
 	}
 	graph.nodes[key] = node
 
