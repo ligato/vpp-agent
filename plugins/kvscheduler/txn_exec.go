@@ -53,7 +53,8 @@ func (args *applyValueArgs) addFailed(key string, retriable bool) {
 // If <dry-run> is enabled, Add/Delete/Update/Modify operations will not be executed
 // and the graph will be returned to its original state at the end.
 func (scheduler *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (executed recordedTxnOps, failed map[string]bool) {
-	graphW := scheduler.graph.Write(true)
+	downstreamResync := txn.args.txnType == nbTransaction && txn.args.nb.resyncType == DownstreamResync
+	graphW := scheduler.graph.Write(!downstreamResync)
 	failed = make(map[string]bool) // non-derived values in a failed state
 	branch := utils.NewKeySet()    // branch of current recursive calls to applyValue used to handle cycles
 

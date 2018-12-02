@@ -320,25 +320,30 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 		record.description = txn.args.nb.description
 	}
 
-	// record values
-	for _, kv := range txn.values {
-		record.values = append(record.values, recordedKVPair{
-			key:    kv.key,
-			value:  utils.ProtoToString(kv.value),
-			origin: kv.origin,
-		})
-	}
-
+	// build header for the log
+	var downstreamResync bool
 	txnInfo := fmt.Sprintf("%s", txn.args.txnType.String())
 	if txn.args.txnType == nbTransaction && txn.args.nb.resyncType != NotResync {
 		resyncType := "Full Resync"
 		if txn.args.nb.resyncType == DownstreamResync {
 			resyncType = "SB Sync"
+			downstreamResync = true
 		}
 		if txn.args.nb.resyncType == UpstreamResync {
 			resyncType = "NB Sync"
 		}
 		txnInfo = fmt.Sprintf("%s (%s)", txn.args.txnType.String(), resyncType)
+	}
+
+	// record values
+	if !downstreamResync {
+		for _, kv := range txn.values {
+			record.values = append(record.values, recordedKVPair{
+				key:    kv.key,
+				value:  utils.ProtoToString(kv.value),
+				origin: kv.origin,
+			})
+		}
 	}
 
 	// send to the log
