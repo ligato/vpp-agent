@@ -58,7 +58,7 @@ type IfVppWrite interface {
 	DeleteIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) error
 	// AddVmxNet3 configures vmxNet3 interface. Second parameter is optional in this case.
 	AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (uint32, error)
-	// DelVmxNet3 removes vmxNet3 interface
+	// DeleteVmxNet3 removes vmxNet3 interface
 	DeleteVmxNet3(ifName string, ifIdx uint32) error
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
 	InterfaceAdminDown(ifIdx uint32) error

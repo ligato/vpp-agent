@@ -50,7 +50,7 @@ func (h *IfVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DelVmxNet3 implements interface handler
+// DeleteVmxNet3 implements interface handler
 func (h *IfVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
 	req := &vmxnet3.Vmxnet3Delete{
 		SwIfIndex: ifIdx,
