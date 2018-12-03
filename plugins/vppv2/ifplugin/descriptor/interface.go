@@ -225,9 +225,11 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		}
 	}
 
-	// handle default/unspecified MTU
-	if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
-		return false
+	// handle default/unspecified MTU (except VxLAN and IPSec tunnel)
+	if newIntf.Type != interfaces.Interface_VXLAN_TUNNEL && newIntf.Type != interfaces.Interface_IPSEC_TUNNEL {
+		if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
+			return false
+		}
 	}
 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
