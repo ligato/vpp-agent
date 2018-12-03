@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
@@ -59,6 +61,7 @@ type InterfaceMeta struct {
 	SubID        uint32 `json:"sub_id"`
 	VrfIPv4      uint32 `json:"vrf_ipv4"`
 	VrfIPv6      uint32 `json:"vrf_ipv6"`
+	Pci          uint32 `json:"pci"`
 }
 
 // Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
@@ -249,6 +252,11 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	}
 
 	err = h.dumpIPSecTunnelDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpVmxNet3Details(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -630,6 +638,34 @@ func (h *IfVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDetails) 
 	return nil
 }
 
+// dumpVmxNet3Details dumps VmxNet3 interface details from VPP and fills them into the provided interface map.
+func (h *IfVppHandler) dumpVmxNet3Details(ifs map[uint32]*InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&vmxnet3.Vmxnet3Dump{})
+	for {
+		vmxnet3Details := &vmxnet3.Vmxnet3Details{}
+		stop, err := reqCtx.ReceiveReply(vmxnet3Details)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump VmxNet3 tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := ifs[vmxnet3Details.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		ifs[vmxnet3Details.SwIfIndex].Interface.Link = &ifnb.Interface_VmxNet3{
+			VmxNet3: &ifnb.VmxNet3Link{
+				RxqSize: uint32(vmxnet3Details.RxQsize),
+				TxqSize: uint32(vmxnet3Details.TxQsize),
+			},
+		}
+		ifs[vmxnet3Details.SwIfIndex].Interface.Type = ifnb.Interface_VMXNET3_INTERFACE
+		ifs[vmxnet3Details.SwIfIndex].Meta.Pci = vmxnet3Details.PciAddr
+	}
+	return nil
+}
+
 // dumpUnnumberedDetails returns a map of unnumbered interface indexes, every with interface index of element with IP
 func (h *IfVppHandler) dumpUnnumberedDetails() (map[uint32]uint32, error) {
 	unIfMap := make(map[uint32]uint32) // unnumbered/ip-interface
@@ -706,6 +742,8 @@ func guessInterfaceType(ifName string) ifnb.Interface_Type {
 
 	case strings.HasPrefix(ifName, "ipsec"):
 		return ifnb.Interface_IPSEC_TUNNEL
+	case strings.HasPrefix(ifName, "vmxnet3"):
+		return ifnb.Interface_VMXNET3_INTERFACE
 
 	default:
 		return ifnb.Interface_DPDK
