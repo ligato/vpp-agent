@@ -20,8 +20,8 @@ import (
 
 // PuntDetails includes proto-modelled punt object and its socket path
 type PuntDetails struct {
-	puntData *punt.Punt
-	socketPath []byte
+	PuntData   *punt.Punt
+	SocketPath []byte
 }
 
 // DumpPuntRegisteredSockets returns punt to host via registered socket entries
@@ -33,8 +33,8 @@ func (h *PuntVppHandler) DumpPuntRegisteredSockets() (punts []*PuntDetails) {
 			continue
 		}
 		punts = append(punts, &PuntDetails{
-			puntData: puntMeta.Punt,
-			socketPath: puntMeta.SocketPath,
+			PuntData:   puntMeta.Punt,
+			SocketPath: puntMeta.SocketPath,
 		})
 	}
 

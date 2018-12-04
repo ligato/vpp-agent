@@ -65,6 +65,11 @@ func (c *PuntConfigurator) Close() error {
 	return safeclose.Close(c.vppChan)
 }
 
+// GetPuntIndexes exposes punt name-to-index mapping
+func (c *PuntConfigurator) GetPuntIndexes() puntidx.PuntIndexRW {
+	return c.mapping
+}
+
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
 func (c *PuntConfigurator) clearMapping() {
 	if c.mapping != nil {

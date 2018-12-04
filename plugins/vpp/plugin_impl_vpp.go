@@ -19,6 +19,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/puntidx"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -228,6 +230,11 @@ func (plugin *Plugin) GetFIBIndexes() l2idx.FIBIndexRW {
 // GetXConnectIndexes gives access to mapping of logical names (used in ETCD configuration) as xc_indexes.
 func (plugin *Plugin) GetXConnectIndexes() l2idx.XcIndexRW {
 	return plugin.xcConfigurator.GetXcIndexes()
+}
+
+// GetPuntIndexes gives access to mapping of logical names (used in ETCD configuration) as punt_indexes.
+func (plugin *Plugin) GetPuntIndexes() puntidx.PuntIndexRW {
+	return plugin.puntConfigurator.GetPuntIndexes()
 }
 
 // GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
