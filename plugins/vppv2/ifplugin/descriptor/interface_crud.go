@@ -9,6 +9,7 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
@@ -38,8 +39,16 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		}
 
 		// TAP hardening: verify that the Linux side was created
-		if d.linuxIfHandler != nil {
+		if d.linuxIfHandler != nil && d.nsPlugin != nil {
+			// first, move to the default namespace and lock the thread
+			nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
+			revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
+			if err != nil {
+				d.log.Error(err)
+				return nil, err
+			}
 			exists, err := d.linuxIfHandler.InterfaceExists(tapHostIfName)
+			revert()
 			if err != nil {
 				d.log.Error(err)
 				return nil, err
@@ -436,6 +445,15 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 
 // Dump returns all configured VPP interfaces.
 func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) (dump []adapter.InterfaceKVWithMetadata, err error) {
+	// make sure that any checks on the Linux side are done in the default namespace with locked thread
+	if d.nsPlugin != nil {
+		nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
+		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
+		if err == nil {
+			defer revert()
+		}
+	}
+
 	// convert interfaces for correlation into a map
 	ifCfg := make(map[string]*interfaces.Interface) // interface logical name -> interface config (as expected by correlate)
 	for _, kv := range correlate {
@@ -524,7 +542,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		}
 
 		// verify links between VPP and Linux side
-		if d.linuxIfPlugin != nil && d.linuxIfHandler != nil {
+		if d.linuxIfPlugin != nil && d.linuxIfHandler != nil && d.nsPlugin != nil {
 			if intf.Interface.Type == interfaces.Interface_AF_PACKET {
 				hostIfName := intf.Interface.GetAfpacket().HostIfName
 				exists, _ := d.linuxIfHandler.InterfaceExists(hostIfName)

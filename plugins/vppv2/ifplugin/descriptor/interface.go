@@ -37,6 +37,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
 const (
@@ -117,6 +118,7 @@ type InterfaceDescriptor struct {
 	// optional dependencies, provide if AFPacket and/or TAP+TAP_TO_VPP interfaces are used
 	linuxIfPlugin  LinuxPluginAPI
 	linuxIfHandler NetlinkAPI
+	nsPlugin       nsplugin.API
 
 	// runtime
 	intfIndex              ifaceidx.IfaceMetadataIndex
@@ -141,13 +143,14 @@ type NetlinkAPI interface {
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
-	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, log logging.PluginLogger) *InterfaceDescriptor {
+	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API, log logging.PluginLogger) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
 		ifHandler:       ifHandler,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
 		linuxIfHandler:  linuxIfHandler,
+		nsPlugin:        nsPlugin,
 		log:             log.NewLogger("if-descriptor"),
 		memifSocketToID: make(map[string]uint32),
 		ethernetIfs:     make(map[string]uint32),

@@ -26,7 +26,9 @@ import (
 
 // addVETH creates a new VETH pair if neither of VETH-ends are configured, or just
 // applies configuration to the unfinished VETH-end with a temporary host name.
-func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) addVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
+	linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+
 	// determine host/logical/temporary interface names
 	hostName := getHostIfName(linuxIf)
 	peerName := linuxIf.GetVeth().GetPeerIfName()
@@ -34,7 +36,6 @@ func (d *InterfaceDescriptor) addVETH(key string, linuxIf *interfaces.Interface)
 	tempPeerHostName := getVethTemporaryHostName(peerName)
 
 	// context
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	ifIndex := d.scheduler.GetMetadataMap(InterfaceDescriptorName)
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 

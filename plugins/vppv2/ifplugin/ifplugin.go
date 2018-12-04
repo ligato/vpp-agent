@@ -40,6 +40,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
 const (
@@ -103,9 +104,10 @@ type Deps struct {
 	Scheduler scheduler.KVScheduler
 	GoVppmux  govppmux.API
 
-	/*	LinuxIfPlugin dep is optional,
-		but it is required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
+	/*	LinuxIfPlugin and NsPlugin deps are optional,
+		but they are required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
 	LinuxIfPlugin descriptor.LinuxPluginAPI
+	NsPlugin      nsplugin.API
 
 	// state publishing
 	StatusCheck       statuscheck.PluginStatusWriter
@@ -150,7 +152,7 @@ func (p *IfPlugin) Init() error {
 
 	// init & register descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu,
-		p.linuxIfHandler, p.LinuxIfPlugin, p.Log)
+		p.linuxIfHandler, p.LinuxIfPlugin, p.NsPlugin, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
 

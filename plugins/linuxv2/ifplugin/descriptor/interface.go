@@ -257,12 +257,21 @@ func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (me
 		return nil, err
 	}
 
+	// move to the default namespace
+	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
+	revert1, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
+	if err != nil {
+		d.log.Error(err)
+		return nil, err
+	}
+	defer revert1()
+
 	// create interface based on its type
 	switch linuxIf.Type {
 	case interfaces.Interface_VETH:
-		metadata, err = d.addVETH(key, linuxIf)
+		metadata, err = d.addVETH(nsCtx, key, linuxIf)
 	case interfaces.Interface_TAP_TO_VPP:
-		metadata, err = d.addTAPToVPP(key, linuxIf)
+		metadata, err = d.addTAPToVPP(nsCtx, key, linuxIf)
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
@@ -272,13 +281,12 @@ func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (me
 	}
 
 	// move to the namespace with the interface
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+	revert2, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
-	defer revert()
+	defer revert2()
 
 	// set interface up
 	hostName := getHostIfName(linuxIf)
@@ -735,35 +743,27 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 // dumpInterfaces is run by a separate go routine to dump all interfaces present
 // in every <goRoutineIdx>-th network namespace from the list.
 func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, goRoutineIdx, goRoutinesCnt int, dumpCh chan<- ifaceDump) {
-	var (
-		err    error
-		dump   ifaceDump
-		revert func()
-	)
+	var dump ifaceDump
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 
 	for i := goRoutineIdx; i < len(nsList); i += goRoutinesCnt {
 		nsRef := nsList[i]
 		// switch to the namespace
-		if nsRef != nil {
-			revert, err = d.nsPlugin.SwitchToNamespace(nsCtx, nsRef)
-			if err != nil {
-				d.log.WithFields(logging.Fields{
-					"err":       err,
-					"namespace": nsRef,
-				}).Debug("Failed to dump namespace")
-				continue // continue with the next namespace
-			}
+		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nsRef)
+		if err != nil {
+			d.log.WithFields(logging.Fields{
+				"err":       err,
+				"namespace": nsRef,
+			}).Warn("Failed to dump namespace")
+			continue // continue with the next namespace
 		}
 
 		// get all links in the namespace
 		links, err := d.ifHandler.GetLinkList()
 		if err != nil {
 			// switch back to the default namespace before returning error
-			if nsRef != nil {
-				revert()
-			}
+			revert()
 			dump.err = err
 			d.log.Error(dump.err)
 			break
@@ -875,9 +875,7 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 		}
 
 		// switch back to the default namespace
-		if nsRef != nil {
-			revert()
-		}
+		revert()
 	}
 
 	dumpCh <- dump
