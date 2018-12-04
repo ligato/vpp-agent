@@ -20,44 +20,26 @@ import (
 )
 
 // RegisterPuntSocket registers new punt to socket
-func (h *PuntVppHandler) RegisterPuntSocket(puntCfg *punt.Punt) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
-		return h.registerPuntWithSocketIPv4(puntCfg)
-	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
-		return h.registerPuntWithSocketIPv6(puntCfg)
-	}
-	// if L3 is set to all, register both, IPv4 and IPv6
-	err := h.registerPuntWithSocketIPv4(puntCfg)
-	if err != nil {
-		return err
-	}
-	return h.registerPuntWithSocketIPv6(puntCfg)
+func (h *PuntVppHandler) RegisterPuntSocket(puntCfg *punt.Punt) ([]byte, error) {
+	return h.registerPuntWithSocket(puntCfg, true)
 }
 
 // DeregisterPuntSocket removes existing punt to socket registration
 func (h *PuntVppHandler) DeregisterPuntSocket(puntCfg *punt.Punt) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
-		return h.registerPuntWithSocketIPv4(puntCfg)
-	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
-		return h.registerPuntWithSocketIPv6(puntCfg)
-	}
-	// if L3 is set to all, deregister both, IPv4 and IPv6
-	err := h.registerPuntWithSocketIPv4(puntCfg)
-	if err != nil {
-		return err
-	}
-	return h.registerPuntWithSocketIPv6(puntCfg)
+	return h.unregisterPuntWithSocket(puntCfg, true)
 }
 
-func (h *PuntVppHandler) registerPuntWithSocketIPv4(punt *punt.Punt) error {
-	return h.registerPuntWithSocket(punt, true)
+// RegisterPuntSocketIPv6 registers new IPv6 punt to socket
+func (h *PuntVppHandler) RegisterPuntSocketIPv6(puntCfg *punt.Punt) ([]byte, error) {
+	return h.registerPuntWithSocket(puntCfg, false)
 }
 
-func (h *PuntVppHandler) registerPuntWithSocketIPv6(punt *punt.Punt) error {
-	return h.registerPuntWithSocket(punt, false)
+// DeregisterPuntSocketIPv6 removes existing IPv6 punt to socket registration
+func (h *PuntVppHandler) DeregisterPuntSocketIPv6(puntCfg *punt.Punt) error {
+	return h.unregisterPuntWithSocket(puntCfg, false)
 }
 
-func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.Punt, isIPv4 bool) error {
+func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.Punt, isIPv4 bool) ([]byte, error) {
 	pathName := []byte(punt.SocketPath)
 	pathByte := make([]byte, 108) // linux sun_path defined to 108 bytes as by unix(7)
 	for i, c := range pathName {
@@ -74,18 +56,10 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.Punt, isIPv4 bool) er
 	reply := &api_punt.PuntSocketRegisterReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
-}
-
-func (h *PuntVppHandler) unregisterPuntWithSocketIPv4(punt *punt.Punt) error {
-	return h.unregisterPuntWithSocket(punt, true)
-}
-
-func (h *PuntVppHandler) unregisterPuntWithSocketIPv6(punt *punt.Punt) error {
-	return h.unregisterPuntWithSocket(punt, false)
+	return reply.Pathname, nil
 }
 
 func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.Punt, isIPv4 bool) error {

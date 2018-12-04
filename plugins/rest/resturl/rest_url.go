@@ -70,6 +70,12 @@ const (
 	NatDNat = "/vpp/dump/v1/nat/dnat"
 )
 
+// PUNT REST url
+const (
+	// PuntURL is a REST path of a punt
+	PuntURL = "/vpp/dump/v1/punt"
+)
+
 // STN REST url
 const (
 	// StnURL is a REST path of a STN

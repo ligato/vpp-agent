@@ -19,6 +19,8 @@ package vpp
 import (
 	"context"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/puntidx"
+
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/ipsecidx"
@@ -82,6 +84,10 @@ type API interface {
 	// uses the name and the index of receive interface (the one all packets are received on). XConnectMeta is a container
 	// for the transmit interface name.
 	GetXConnectIndexes() l2idx.XcIndexRW
+
+	// GetPuntIndexes gives access to mapping of the punt socket register logical names (used in ETCD configuration)
+	// to their respective indexes.
+	GetPuntIndexes() puntidx.PuntIndexRW
 
 	// GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
 	// to their respective indices as assigned by VPP.

@@ -17,6 +17,8 @@ package rpc
 import (
 	"fmt"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+
 	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	linuxL3 "github.com/ligato/vpp-agent/plugins/linux/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
@@ -97,6 +99,7 @@ type GetVppSvc struct {
 	arpHandler   l3vppcalls.ArpVppRead
 	pArpHandler  l3vppcalls.ProxyArpVppRead
 	rtHandler    l3vppcalls.RouteVppRead
+	puntHandler  vppcalls.PuntVPPRead
 	l4Handler    l4vppcalls.L4VppRead
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPI
@@ -335,6 +338,20 @@ func (svc *GetVppSvc) DumpARPs(ctx context.Context, request *rpc.DumpRequest) (*
 	return &rpc.ARPsResponse{ArpEntries: arps}, nil
 }
 
+// DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
+func (svc *GetVppSvc) DumpPunt(ctx context.Context, request *rpc.DumpRequest) (*rpc.PuntResponse, error) {
+	var punts []*rpc.PuntResponse_PuntEntry
+	puntDetailsList := svc.puntHandler.DumpPuntRegisteredSockets()
+	for _, puntDetails := range puntDetailsList {
+		punts = append(punts, &rpc.PuntResponse_PuntEntry{
+			PuntData: puntDetails.PuntData,
+			PathName: puntDetails.SocketPath,
+		})
+	}
+
+	return &rpc.PuntResponse{PuntEntries: punts}, nil
+}
+
 // DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
 // only error is send back in response
 func (svc *GetVppSvc) DumpLinuxInterfaces(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxInterfaceResponse, error) {
@@ -429,6 +446,9 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		for _, parItem := range data.ProxyArpRanges {
 			r.ProxyArpRanges(parItem)
 		}
+		for _, parItem := range data.Punts {
+			r.PuntSocketRegister(parItem)
+		}
 		if data.L4Feature != nil {
 			r.L4Features(data.L4Feature)
 		}
@@ -498,6 +518,9 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		}
 		for _, parItem := range data.ProxyArpRanges {
 			r.ProxyArpRanges(parItem.Label)
+		}
+		for _, parItem := range data.Punts {
+			r.PuntSocketDeregister(parItem.Name)
 		}
 		if data.L4Feature != nil {
 			r.L4Features()
@@ -569,6 +592,9 @@ func processRequest(ctx context.Context, data *rpc.DataRequest, request interfac
 		for _, parItem := range data.ProxyArpRanges {
 			r.ProxyArpRanges(parItem)
 		}
+		for _, parItem := range data.Punts {
+			r.PuntSocketRegister(parItem)
+		}
 		if data.L4Feature != nil {
 			r.L4Features(data.L4Feature)
 		}
@@ -605,6 +631,7 @@ func (p *Plugin) initHandlers() {
 	// VPP Indexes
 	ifIndexes := p.VPP.GetSwIfIndexes()
 	bdIndexes := p.VPP.GetBDIndexes()
+	puntIndexes := p.VPP.GetPuntIndexes()
 	spdIndexes := p.VPP.GetIPSecSPDIndexes()
 	// Initialize VPP handlers
 	p.dumpVppSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan)
@@ -617,6 +644,7 @@ func (p *Plugin) initHandlers() {
 	p.dumpVppSvc.fibHandler = l2vppcalls.NewFibVppHandler(p.vppChan, p.dumpChan, ifIndexes, bdIndexes, p.Log)
 	p.dumpVppSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.dumpVppSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.dumpVppSvc.puntHandler = vppcalls.NewPuntVppHandler(p.vppChan, puntIndexes, p.Log)
 	p.dumpVppSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.dumpVppSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.dumpVppSvc.l4Handler = l4vppcalls.NewL4VppHandler(p.vppChan, p.Log)

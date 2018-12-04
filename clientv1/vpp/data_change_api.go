@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -96,6 +97,8 @@ type PutDSL interface {
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) PutDSL
 	// IPSecTunnel adds request to create a new IPSec tunnel
 	IPSecTunnel(spd *ipsec.TunnelInterfaces_Tunnel) PutDSL
+	// PuntSocketRegister adds request to register a new punt to host entry
+	PuntSocketRegister(puntCfg *punt.Punt) PutDSL
 
 	// Delete changes the DSL mode to allow removal of an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -153,6 +156,8 @@ type DeleteDSL interface {
 	IPSecSPD(spdName string) DeleteDSL
 	// IPSecTunnel adds request to delete an IPSec tunnel
 	IPSecTunnel(tunName string) DeleteDSL
+	// PuntSocketDeregister adds request to de-register an existing punt to host entry
+	PuntSocketDeregister(puntName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

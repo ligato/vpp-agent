@@ -51,9 +51,9 @@ func (c *PuntConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.A
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
 
-	c.puntHandler = vppcalls.NewPuntVppHandler(c.vppChan, c.log)
 	c.mapping = puntidx.NewPuntIndex(nametoidx.NewNameToIdx(c.log, "punt-indexes", nil))
 	c.idxSeq = 1
+	c.puntHandler = vppcalls.NewPuntVppHandler(c.vppChan, c.mapping, c.log)
 
 	c.log.Info("Punt configurator initialized")
 
@@ -65,6 +65,11 @@ func (c *PuntConfigurator) Close() error {
 	return safeclose.Close(c.vppChan)
 }
 
+// GetPuntIndexes exposes punt name-to-index mapping
+func (c *PuntConfigurator) GetPuntIndexes() puntidx.PuntIndexRW {
+	return c.mapping
+}
+
 // clearMapping prepares all in-memory-mappings and other cache fields. All previous cached entries are removed.
 func (c *PuntConfigurator) clearMapping() {
 	if c.mapping != nil {
@@ -73,13 +78,15 @@ func (c *PuntConfigurator) clearMapping() {
 	c.log.Debugf("punt configurator mapping cleared")
 }
 
-// Add configures new punt key and stores it in the local mapping
+// Add configures new punt to host via socket and stores it in the local mapping. Depending on L3 protocol
+// setup, IPv4, IPv6 or both punts are registered
 func (c *PuntConfigurator) Add(puntVal *punt.Punt) error {
-	if err := c.addPunt(puntVal); err != nil {
+	path, err := c.addPunt(puntVal)
+	if err != nil {
 		return err
 	}
 
-	c.mapping.RegisterName(puntVal.Name, c.idxSeq, puntVal)
+	c.mapping.RegisterName(puntVal.Name, c.idxSeq, &puntidx.PuntMetadata{Punt: puntVal, SocketPath: path})
 	c.log.Debugf("Punt %s registered to local mapping", puntVal.Name)
 
 	c.log.Infof("Punt %s configured", puntVal.Name)
@@ -90,14 +97,15 @@ func (c *PuntConfigurator) Add(puntVal *punt.Punt) error {
 // Modify removes old entry, configures a new one and updates metadata
 func (c *PuntConfigurator) Modify(oldPunt, newPunt *punt.Punt) error {
 	// since punt cannot be modified via binary API, remove the odl value and add a new one
-	if err := c.addPunt(oldPunt); err != nil {
-		return errors.Errorf("punt modify: %v", err)
-	}
 	if err := c.delPunt(oldPunt); err != nil {
-		return errors.Errorf("punt modify: %v", err)
+		return errors.Errorf("punt modify (remove): %v", err)
+	}
+	path, err := c.addPunt(oldPunt)
+	if err != nil {
+		return errors.Errorf("punt modify (add): %v", err)
 	}
 
-	if !c.mapping.UpdateMetadata(newPunt.Name, newPunt) {
+	if !c.mapping.UpdateMetadata(newPunt.Name, &puntidx.PuntMetadata{Punt: newPunt, SocketPath: path}) {
 		return errors.Errorf("failed to update metadata for %s", newPunt.Name)
 	}
 	c.log.Debugf("Punt %s metadata updated in local mapping", newPunt.Name)
@@ -107,7 +115,7 @@ func (c *PuntConfigurator) Modify(oldPunt, newPunt *punt.Punt) error {
 	return nil
 }
 
-// Delete the configuration of punt
+// Delete the configuration of a punt
 func (c *PuntConfigurator) Delete(puntVal *punt.Punt) error {
 	if err := c.delPunt(puntVal); err != nil {
 		return err
@@ -121,16 +129,26 @@ func (c *PuntConfigurator) Delete(puntVal *punt.Punt) error {
 	return nil
 }
 
-func (c *PuntConfigurator) addPunt(puntVal *punt.Punt) error {
-	if err := c.validate(puntVal); err != nil {
-		return err
+func (c *PuntConfigurator) addPunt(puntVal *punt.Punt) (path []byte, err error) {
+	if err = c.validate(puntVal); err != nil {
+		return nil, err
 	}
 
-	if err := c.puntHandler.RegisterPuntSocket(puntVal); err != nil {
-		return errors.Errorf("failed to configure %s: %v", puntVal.Name, err)
+	// in L3Protocol_ALL case, both IPv4 and IPv6 punt is configured but the returned path is the same for both
+	if puntVal.L3Protocol != punt.L3Protocol_IPv6 {
+		path, err = c.puntHandler.RegisterPuntSocket(puntVal)
+		if err != nil {
+			return nil, errors.Errorf("failed to configure %s: %v", puntVal.Name, err)
+		}
+	}
+	if puntVal.L3Protocol != punt.L3Protocol_IPv4 {
+		path, err = c.puntHandler.RegisterPuntSocketIPv6(puntVal)
+		if err != nil {
+			return nil, errors.Errorf("failed to configure %s: %v", puntVal.Name, err)
+		}
 	}
 
-	return nil
+	return path, nil
 }
 
 func (c *PuntConfigurator) delPunt(puntVal *punt.Punt) error {
@@ -138,8 +156,15 @@ func (c *PuntConfigurator) delPunt(puntVal *punt.Punt) error {
 		return err
 	}
 
-	if err := c.puntHandler.DeregisterPuntSocket(puntVal); err != nil {
-		return errors.Errorf("failed to remove %s: %v", puntVal.Name, err)
+	if puntVal.L3Protocol != punt.L3Protocol_IPv6 {
+		if err := c.puntHandler.DeregisterPuntSocket(puntVal); err != nil {
+			return errors.Errorf("failed to remove %s: %v", puntVal.Name, err)
+		}
+	}
+	if puntVal.L3Protocol != punt.L3Protocol_IPv4 {
+		if err := c.puntHandler.DeregisterPuntSocketIPv6(puntVal); err != nil {
+			return errors.Errorf("failed to remove %s: %v", puntVal.Name, err)
+		}
 	}
 
 	return nil
