@@ -5,8 +5,8 @@
  Package ipsec is a generated from VPP binary API module 'ipsec'.
 
  It contains following objects:
-	 50 messages
-	 25 services
+	 48 messages
+	 24 services
 
 */
 package ipsec
@@ -1875,86 +1875,6 @@ func (*IpsecSpdDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// IpsecSpdInterfaceDump represents the VPP binary API message 'ipsec_spd_interface_dump'.
-//
-//            "ipsec_spd_interface_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "spd_index"
-//            ],
-//            [
-//                "u8",
-//                "spd_index_valid"
-//            ],
-//            {
-//                "crc": "0x8971de19"
-//            }
-//
-type IpsecSpdInterfaceDump struct {
-	SpdIndex      uint32
-	SpdIndexValid uint8
-}
-
-func (*IpsecSpdInterfaceDump) GetMessageName() string {
-	return "ipsec_spd_interface_dump"
-}
-func (*IpsecSpdInterfaceDump) GetCrcString() string {
-	return "8971de19"
-}
-func (*IpsecSpdInterfaceDump) GetMessageType() api.MessageType {
-	return api.RequestMessage
-}
-
-// IpsecSpdInterfaceDetails represents the VPP binary API message 'ipsec_spd_interface_details'.
-//
-//            "ipsec_spd_interface_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "spd_index"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x2c54296d"
-//            }
-//
-type IpsecSpdInterfaceDetails struct {
-	SpdIndex  uint32
-	SwIfIndex uint32
-}
-
-func (*IpsecSpdInterfaceDetails) GetMessageName() string {
-	return "ipsec_spd_interface_details"
-}
-func (*IpsecSpdInterfaceDetails) GetCrcString() string {
-	return "2c54296d"
-}
-func (*IpsecSpdInterfaceDetails) GetMessageType() api.MessageType {
-	return api.ReplyMessage
-}
-
 // IpsecTunnelIfAddDel represents the VPP binary API message 'ipsec_tunnel_if_add_del'.
 //
 //            "ipsec_tunnel_if_add_del",
@@ -2481,7 +2401,6 @@ func (*IpsecTunnelIfSetSaReply) GetMessageType() api.MessageType {
 type Services interface {
 	DumpIpsecSa(*IpsecSaDump) (*IpsecSaDetails, error)
 	DumpIpsecSpd(*IpsecSpdDump) (*IpsecSpdDetails, error)
-	DumpIpsecSpdInterface(*IpsecSpdInterfaceDump) (*IpsecSpdInterfaceDetails, error)
 	DumpIpsecSpds(*IpsecSpdsDump) (*IpsecSpdsDetails, error)
 	Ikev2InitiateDelChildSa(*Ikev2InitiateDelChildSa) (*Ikev2InitiateDelChildSaReply, error)
 	Ikev2InitiateDelIkeSa(*Ikev2InitiateDelIkeSa) (*Ikev2InitiateDelIkeSaReply, error)
@@ -2547,8 +2466,6 @@ func init() {
 	api.RegisterMessage((*IpsecSpdsDetails)(nil), "ipsec.IpsecSpdsDetails")
 	api.RegisterMessage((*IpsecSpdDump)(nil), "ipsec.IpsecSpdDump")
 	api.RegisterMessage((*IpsecSpdDetails)(nil), "ipsec.IpsecSpdDetails")
-	api.RegisterMessage((*IpsecSpdInterfaceDump)(nil), "ipsec.IpsecSpdInterfaceDump")
-	api.RegisterMessage((*IpsecSpdInterfaceDetails)(nil), "ipsec.IpsecSpdInterfaceDetails")
 	api.RegisterMessage((*IpsecTunnelIfAddDel)(nil), "ipsec.IpsecTunnelIfAddDel")
 	api.RegisterMessage((*IpsecTunnelIfAddDelReply)(nil), "ipsec.IpsecTunnelIfAddDelReply")
 	api.RegisterMessage((*IpsecSaDump)(nil), "ipsec.IpsecSaDump")

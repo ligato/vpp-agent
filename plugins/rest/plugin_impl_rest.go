@@ -19,6 +19,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/vppcalls"
+
 	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
 
 	"github.com/ligato/vpp-agent/plugins/linux"
@@ -71,6 +73,7 @@ type Plugin struct {
 	pArpHandler  l3vppcalls.ProxyArpVppRead
 	rtHandler    l3vppcalls.RouteVppRead
 	l4Handler    l4vppcalls.L4VppRead
+	puntHandler  vppcalls.PuntVPPRead
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPI
 	linuxL3Handler l3linuxcalls.NetlinkAPI
@@ -114,6 +117,7 @@ func (plugin *Plugin) Init() (err error) {
 	// VPP Indexes
 	ifIndexes := plugin.VPP.GetSwIfIndexes()
 	bdIndexes := plugin.VPP.GetBDIndexes()
+	puntIndexes := plugin.VPP.GetPuntIndexes()
 	spdIndexes := plugin.VPP.GetIPSecSPDIndexes()
 	// Initialize VPP handlers
 	plugin.aclHandler = aclvppcalls.NewACLVppHandler(plugin.vppChan, plugin.dumpChan)
@@ -129,6 +133,7 @@ func (plugin *Plugin) Init() (err error) {
 	plugin.pArpHandler = l3vppcalls.NewProxyArpVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
 	plugin.rtHandler = l3vppcalls.NewRouteVppHandler(plugin.vppChan, ifIndexes, plugin.Log)
 	plugin.l4Handler = l4vppcalls.NewL4VppHandler(plugin.vppChan, plugin.Log)
+	plugin.puntHandler = vppcalls.NewPuntVppHandler(plugin.vppChan, puntIndexes, plugin.Log)
 	// Linux indexes and handlers
 	if plugin.Linux != nil && !plugin.Linux.IsDisabled() {
 		linuxIfIndexes := plugin.Linux.GetLinuxIfIndexes()
@@ -164,6 +169,7 @@ func (plugin *Plugin) AfterInit() (err error) {
 	plugin.registerL2Handlers()
 	plugin.registerL3Handlers()
 	plugin.registerL4Handlers()
+	plugin.registerPuntHandlers()
 	// Linux handlers
 	if plugin.Linux != nil {
 		plugin.registerLinuxInterfaceHandlers()
@@ -219,6 +225,9 @@ func getIndexMap() map[string][]indexItem {
 		},
 		"L4 plugin": {
 			{Name: "L4 sessions", Path: resturl.Sessions},
+		},
+		"Punt plugin": {
+			{Name: "Punt socket registrations", Path: resturl.PuntURL},
 		},
 		"Telemetry": {
 			{Name: "All data", Path: resturl.Telemetry},
@@ -279,6 +288,7 @@ func getPermissionsGroups() []*access.PermissionGroup {
 			newPermission(resturl.PArpIfs, http.MethodGet),
 			newPermission(resturl.PArpRngs, http.MethodGet),
 			newPermission(resturl.Sessions, http.MethodGet),
+			newPermission(resturl.PuntURL, http.MethodGet),
 		},
 	}
 
