@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 
 	"github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
@@ -190,6 +191,12 @@ func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) linuxclient.
 	return dsl
 }
 
+// PuntSocketRegister adds a request to create or update VPP punt unix domain socket registration
+func (dsl *PutDSL) PuntSocketRegister(puntCfg *punt.Punt) linuxclient.PutDSL {
+	dsl.vppPut.PuntSocketRegister(puntCfg)
+	return dsl
+}
+
 // L4Features adds a request to enable or disable L4 features
 func (dsl *PutDSL) L4Features(val *l4.L4Features) linuxclient.PutDSL {
 	dsl.vppPut.L4Features(val)
@@ -327,6 +334,12 @@ func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
 // L4Features adds a request to enable or disable L4 features
 func (dsl *DeleteDSL) L4Features() linuxclient.DeleteDSL {
 	dsl.vppDelete.L4Features()
+	return dsl
+}
+
+// PuntSocketDeregister adds request to de-register an existing punt to host entry
+func (dsl *DeleteDSL) PuntSocketDeregister(puntName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.PuntSocketDeregister(puntName)
 	return dsl
 }
 
