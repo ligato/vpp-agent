@@ -29,6 +29,7 @@ Testsuite Setup
     Start ETCD Server
     #Run Keyword If     "${CTL_TOOL}"== "vppctl"     Start VPP Ctl Container
     Start VPP Ctl Container
+    Get Env And SW Version      docker
     Make Datastore Snapshots    startup
 
 
@@ -99,6 +100,13 @@ Get Machine Status
     Execute On Machine       ${machine}                ifconfig -a
     Execute On Machine       ${machine}                ps aux
     Execute On Machine       ${machine}                echo $PATH
+
+Get Env And SW Version
+    [Arguments]              ${machine}
+    [Documentation]          *Get Machine Status ${machine}*
+    ...                      Executing df, free, ifconfig -a, ps -aux... on ${machine}
+    Execute On Machine       ${machine}                env
+    Execute On Machine       ${machine}                curl -V
 
 Open Connection To Docker Host
     Open SSH Connection    docker    ${DOCKER_HOST_IP}    ${DOCKER_HOST_USER}    ${DOCKER_HOST_PSWD}

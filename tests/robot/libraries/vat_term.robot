@@ -193,6 +193,24 @@ vat_term: Check Bridge Domain State
     List Should Contain Sub List    ${actual_state}    ${desired_state}
     [Return]             ${actual_state}
 
+vat_term: Check Bridge Domain State IPv6
+    [Arguments]          ${node}    ${bd}    @{desired_state}
+    ${bd_id}=            Get Bridge Domain ID IPv6    ${node}    ${bd}
+    ${bd_dump}=          vat_term: Bridge Domain Dump    ${node}    ${bd_id}
+    ${bd_json}=          Evaluate    json.loads('''${bd_dump}''')    json
+    ${flood}=            Set Variable    ${bd_json[0]["flood"]}
+    ${forward}=          Set Variable    ${bd_json[0]["forward"]}
+    ${learn}=            Set Variable    ${bd_json[0]["learn"]}
+    ${bd_details}=       vpp_term: Show Bridge-Domain Detail    ${node}    ${bd_id}
+    ${bd_state}=         Parse BD Details    ${bd_details}
+    ${etcd_dump}=        Get ETCD Dump
+    ${etcd_json}=        Convert_ETCD_Dump_To_JSON    ${etcd_dump}
+    ${interfaces}=       Parse BD Interfaces    ${node}    ${bd}    ${etcd_json}    ${bd_dump}
+    ${actual_state}=     Create List    flood=${flood}    forward=${forward}    learn=${learn}
+    Append To List       ${actual_state}    @{bd_state}    @{interfaces}
+    List Should Contain Sub List    ${actual_state}    ${desired_state}
+    [Return]             ${actual_state}
+
 vat_term: BD Is Created
     [Arguments]    ${node}    @{interfaces}
     Wait Until Keyword Succeeds    ${bd_timeout}   3s    vat_term: Check BD Presence    ${node}    ${interfaces}
