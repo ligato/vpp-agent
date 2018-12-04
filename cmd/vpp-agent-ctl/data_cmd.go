@@ -22,6 +22,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
@@ -919,17 +921,17 @@ func (ctl *VppAgentCtl) createBridgeDomain() {
 				MacAge:              0,
 				Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 					{
-						Name: "loop1",
+						Name:                    "loop1",
 						BridgedVirtualInterface: true,
 						SplitHorizonGroup:       0,
 					},
 					{
-						Name: "tap1",
+						Name:                    "tap1",
 						BridgedVirtualInterface: false,
 						SplitHorizonGroup:       1,
 					},
 					{
-						Name: "memif1",
+						Name:                    "memif1",
 						BridgedVirtualInterface: false,
 						SplitHorizonGroup:       2,
 					},
@@ -1294,6 +1296,30 @@ func (ctl *VppAgentCtl) deleteAppNamespace() {
 	ctl.Log.Println("App namespace delete not supported")
 }
 
+// RegisterPunt puts punt configuration to the ETCD
+func (ctl *VppAgentCtl) registerPunt() {
+	puntVal := &punt.Punt{
+		Name:       "punt1",
+		L3Protocol: punt.L3Protocol_IPv4,
+		L4Protocol: punt.L4Protocol_UDP,
+		Port:       8990,
+		SocketPath: "/tmp/socket/punt",
+	}
+
+	ctl.Log.Println(puntVal)
+	ctl.broker.Put(punt.Key(puntVal.Name), puntVal)
+}
+
+// DeleteAppNamespace removes application namespace configuration from the ETCD
+func (ctl *VppAgentCtl) deregisterPunt() {
+	puntVal := &punt.Punt{
+		Name: "punt1",
+	}
+
+	ctl.Log.Println(puntVal)
+	ctl.broker.Delete(punt.Key(puntVal.Name))
+}
+
 // TXN transactions
 
 // CreateTxn demonstrates transaction - two interfaces and bridge domain put to the ETCD using txn
@@ -1339,12 +1365,12 @@ func (ctl *VppAgentCtl) createTxn() {
 				MacAge:              0,
 				Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 					{
-						Name: "tap1",
+						Name:                    "tap1",
 						BridgedVirtualInterface: true,
 						SplitHorizonGroup:       0,
 					},
 					{
-						Name: "tap2",
+						Name:                    "tap2",
 						BridgedVirtualInterface: false,
 						SplitHorizonGroup:       0,
 					},
