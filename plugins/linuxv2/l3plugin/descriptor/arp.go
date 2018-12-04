@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
 	"strings"
 
@@ -42,6 +41,10 @@ const (
 
 	// dependency labels
 	arpInterfaceDep = "interface-exists"
+
+	// minimum number of interfaces to be given to a single Go routine for processing
+	// in the Dump operation
+	minWorkForGoRoutine = 3
 )
 
 // A list of non-retriable errors:
@@ -71,19 +74,23 @@ type ARPDescriptor struct {
 	ifPlugin  ifplugin.API
 	nsPlugin  nsplugin.API
 	scheduler scheduler.KVScheduler
+
+	// parallelization of the Dump operation
+	dumpGoRoutinesCnt int
 }
 
 // NewARPDescriptor creates a new instance of the ARP descriptor.
 func NewARPDescriptor(
 	scheduler scheduler.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
-	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger) *ARPDescriptor {
+	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger, dumpGoRoutinesCnt int) *ARPDescriptor {
 
 	return &ARPDescriptor{
-		scheduler: scheduler,
-		l3Handler: l3Handler,
-		ifPlugin:  ifPlugin,
-		nsPlugin:  nsPlugin,
-		log:       log.NewLogger("arp-descriptor"),
+		scheduler:         scheduler,
+		l3Handler:         l3Handler,
+		ifPlugin:          ifPlugin,
+		nsPlugin:          nsPlugin,
+		dumpGoRoutinesCnt: dumpGoRoutinesCnt,
+		log:               log.NewLogger("arp-descriptor"),
 	}
 }
 
@@ -259,37 +266,78 @@ func (d *ARPDescriptor) Dependencies(key string, arp *l3.StaticARPEntry) []sched
 	return nil
 }
 
+// arpDump is used as the return value sent via channel by dumpARPs().
+type arpDump struct {
+	arps []adapter.ARPKVWithMetadata
+	err  error
+}
+
 // Dump returns all ARP entries associated with interfaces managed by this agent.
 func (d *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapter.ARPKVWithMetadata, error) {
-	var err error
 	var dump []adapter.ARPKVWithMetadata
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
+	interfaces := d.ifPlugin.GetInterfaceIndex().ListAllInterfaces()
+	goRoutinesCnt := len(interfaces) / minWorkForGoRoutine
+	if goRoutinesCnt == 0 {
+		goRoutinesCnt = 1
+	}
+	if goRoutinesCnt > d.dumpGoRoutinesCnt {
+		goRoutinesCnt = d.dumpGoRoutinesCnt
+	}
+	dumpCh := make(chan arpDump, goRoutinesCnt)
 
-	// dump only ARP entries which are associated with interfaces managed by this agent.
-	for _, ifName := range ifMetaIdx.ListAllInterfaces() {
+	// invoke multiple go routines for more efficient parallel dumping
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		if goRoutinesCnt > 1 {
+			go d.dumpARPs(interfaces, idx, goRoutinesCnt, dumpCh)
+		} else {
+			d.dumpARPs(interfaces, idx, goRoutinesCnt, dumpCh)
+		}
+	}
+
+	// collect results from the go routines
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		arpDump := <-dumpCh
+		if arpDump.err != nil {
+			return dump, arpDump.err
+		}
+		dump = append(dump, arpDump.arps...)
+	}
+
+	return dump, nil
+}
+
+// dumpARPs is run by a separate go routine to dump all ARP entries associated
+// with every <goRoutineIdx>-th interface.
+func (d *ARPDescriptor) dumpARPs(interfaces []string, goRoutineIdx, goRoutinesCnt int, dumpCh chan<- arpDump) {
+	var dump arpDump
+	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
+	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
+
+	for i := goRoutineIdx; i < len(interfaces); i += goRoutinesCnt {
+		ifName := interfaces[i]
 		// get interface metadata
 		ifMeta, found := ifMetaIdx.LookupByName(ifName)
 		if !found || ifMeta == nil {
-			err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
-			d.log.Error(err)
-			return dump, err
+			dump.err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
+			d.log.Error(dump.err)
+			break
 		}
 
 		// switch to the namespace of the interface
 		revertNs, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
 		if err != nil {
-			err = errors.Errorf("failed to switch namespace: %v", err)
-			d.log.Error(err)
-			return dump, err
+			dump.err = errors.Errorf("failed to switch namespace: %v", err)
+			d.log.Error(dump.err)
+			break
 		}
 
 		// get ARPs assigned to this interface
 		arps, err := d.l3Handler.GetARPEntries(ifMeta.LinuxIfIndex)
 		revertNs()
 		if err != nil {
-			d.log.Error(err)
-			return dump, err
+			dump.err = err
+			d.log.Error(dump.err)
+			break
 		}
 
 		// convert each ARP from Netlink representation to the NB representation
@@ -301,7 +349,7 @@ func (d *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapter.A
 			ipAddr := arp.IP.String()
 			hwAddr := arp.HardwareAddr.String()
 
-			dump = append(dump, adapter.ARPKVWithMetadata{
+			dump.arps = append(dump.arps, adapter.ARPKVWithMetadata{
 				Key: l3.StaticArpKey(ifName, ipAddr),
 				Value: &l3.StaticARPEntry{
 					Interface: ifName,
@@ -313,11 +361,5 @@ func (d *ARPDescriptor) Dump(correlate []adapter.ARPKVWithMetadata) ([]adapter.A
 		}
 	}
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d Linux ARPs: %v", len(dump), dumpList)
-
-	return dump, nil
+	dumpCh <- dump
 }

@@ -78,6 +78,10 @@ const (
 	// to retry failed operations or not.
 	retryArg = "retry"
 
+	// verboseArg is the name of the argument used for "downstream-resync" API
+	// to tell whether the refreshed graph should be printed to stdout or not.
+	verboseArg = "verbose"
+
 	// dumpURL is URL used to dump either SB or scheduler's internal state of kv-pairs
 	// under the given descriptor.
 	dumpURL = urlPrefix + "dump"
@@ -265,8 +269,17 @@ func (scheduler *Scheduler) downstreamResyncPostHandler(formatter *render.Render
 			}
 		}
 
+		// parse optional *verbose* argument
+		verbose := false
+		if verboseStr, withVerbose := args[verboseArg]; withVerbose && len(verboseStr) == 1 {
+			verboseVal := verboseStr[0]
+			if verboseVal == "true" || verboseVal == "1" {
+				verbose = true
+			}
+		}
+
 		ctx := context.Background()
-		ctx = WithDownstreamResync(ctx)
+		ctx = WithResync(ctx, DownstreamResync, verbose)
 		if retry {
 			ctx = WithRetry(ctx, time.Second, true)
 		}

@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"strings"
 
@@ -342,12 +341,6 @@ func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (
 			Origin: api.FromNB,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d VPP ACLs: %v", len(dump), dumpList)
 
 	return
 }

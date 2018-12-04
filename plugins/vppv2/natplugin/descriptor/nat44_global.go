@@ -227,8 +227,6 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 		Origin: origin,
 	}}
 
-	d.log.Debugf("Dumping NAT44 global configuration: %+v", globalCfg)
-
 	return dump, nil
 }
 

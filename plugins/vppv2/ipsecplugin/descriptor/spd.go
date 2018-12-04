@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -243,12 +242,6 @@ func (d *IPSecSPDDescriptor) Dump(correlate []adapter.SPDKVWithMetadata) (dump [
 			Origin:   scheduler.FromNB,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d security policy databases: %v", len(dump), dumpList)
 
 	return dump, nil
 }

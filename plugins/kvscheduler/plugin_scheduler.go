@@ -184,7 +184,7 @@ func (scheduler *Scheduler) watchEvents() {
 			}
 			ctx := context.Background()
 			ctx = WithRetry(ctx, time.Second, true)
-			ctx = WithFullResync(ctx)
+			ctx = WithResync(ctx, FullResync, true)
 			kvErrs, err := txn.Commit(ctx)
 			scheduler.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
 			e.Done(err)
@@ -339,22 +339,16 @@ func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) Txn {
 func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []KeyWithError, txnError error) {
 	// parse transaction options
 	txn.data.nb.isBlocking = !IsNonBlockingTxn(ctx)
+	txn.data.nb.resyncType, txn.data.nb.verboseRefresh = IsResync(ctx)
 	txn.data.nb.retryPeriod, txn.data.nb.expBackoffRetry, txn.data.nb.retryFailed = IsWithRetry(ctx)
 	txn.data.nb.revertOnFailure = IsWithRevert(ctx)
-	txn.data.nb.isFullResync = IsFullResync(ctx)
-	txn.data.nb.isDownstreamResync = IsDownstreamResync(ctx)
 	txn.data.nb.description, _ = IsWithDescription(ctx)
 
 	// validate transaction options
-	if txn.data.nb.isFullResync {
-		// full resync overrides downstream resync
-		txn.data.nb.isDownstreamResync = false
-	}
-	if txn.data.nb.isDownstreamResync && len(txn.data.nb.value) > 0 {
+	if txn.data.nb.resyncType == DownstreamResync && len(txn.data.nb.value) > 0 {
 		return nil, ErrCombinedDownstreamResyncWithChange
 	}
-	if txn.data.nb.revertOnFailure &&
-		(txn.data.nb.isDownstreamResync || txn.data.nb.isFullResync) {
+	if txn.data.nb.revertOnFailure && txn.data.nb.resyncType != NotResync {
 		return nil, ErrRevertNotSupportedWithResync
 	}
 

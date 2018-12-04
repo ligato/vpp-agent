@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -179,12 +178,6 @@ func (d *IPSecSADescriptor) Dump(correlate []adapter.SAKVWithMetadata) (dump []a
 			Origin:   scheduler.FromNB,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d security associations: %v", len(dump), dumpList)
 
 	return dump, nil
 }

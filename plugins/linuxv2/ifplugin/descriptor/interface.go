@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
 	"reflect"
 	"strconv"
@@ -63,6 +62,10 @@ const (
 
 	// suffix attached to logical names of VETH interfaces with peers not found by Dump
 	vethMissingPeerSuffix = "-MISSING_PEER"
+
+	// minimum number of namespaces to be given to a single Go routine for processing
+	// in the Dump operation
+	minWorkForGoRoutine = 3
 )
 
 // A list of non-retriable errors:
@@ -104,6 +107,9 @@ type InterfaceDescriptor struct {
 	nsPlugin     nsplugin.API
 	vppIfPlugin  VPPIfPluginAPI
 	scheduler    scheduler.KVScheduler
+
+	// parallelization of the Dump operation
+	dumpGoRoutinesCnt int
 }
 
 // VPPIfPluginAPI is defined here to avoid import cycles.
@@ -116,15 +122,16 @@ type VPPIfPluginAPI interface {
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(
 	scheduler scheduler.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API,
-	vppIfPlugin VPPIfPluginAPI, ifHandler iflinuxcalls.NetlinkAPI, log logging.PluginLogger) *InterfaceDescriptor {
+	vppIfPlugin VPPIfPluginAPI, ifHandler iflinuxcalls.NetlinkAPI, log logging.PluginLogger, dumpGoRoutinesCnt int) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
-		scheduler:    scheduler,
-		ifHandler:    ifHandler,
-		nsPlugin:     nsPlugin,
-		vppIfPlugin:  vppIfPlugin,
-		serviceLabel: serviceLabel,
-		log:          log.NewLogger("if-descriptor"),
+		scheduler:         scheduler,
+		ifHandler:         ifHandler,
+		nsPlugin:          nsPlugin,
+		vppIfPlugin:       vppIfPlugin,
+		serviceLabel:      serviceLabel,
+		dumpGoRoutinesCnt: dumpGoRoutinesCnt,
+		log:               log.NewLogger("if-descriptor"),
 	}
 }
 
@@ -172,9 +179,15 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		getHostIfName(oldIntf) != getHostIfName(newIntf) {
 		return false
 	}
-	if oldIntf.Type == interfaces.Interface_VETH &&
-		oldIntf.GetVeth().GetPeerIfName() != newIntf.GetVeth().GetPeerIfName() {
-		return false
+	if oldIntf.Type == interfaces.Interface_VETH {
+		if oldIntf.GetVeth().GetPeerIfName() != newIntf.GetVeth().GetPeerIfName() {
+			return false
+		}
+		// handle default config for checksum offloading
+		if getRxChksmOffloading(oldIntf) != getRxChksmOffloading(newIntf) ||
+			getTxChksmOffloading(oldIntf) != getTxChksmOffloading(newIntf) {
+			return false
+		}
 	}
 	if oldIntf.Type == interfaces.Interface_TAP_TO_VPP &&
 		oldIntf.GetTap().GetVppTapIfName() != newIntf.GetTap().GetVppTapIfName() {
@@ -192,12 +205,6 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
 	if newIntf.PhysAddress != "" &&
 		strings.ToLower(oldIntf.PhysAddress) != strings.ToLower(newIntf.PhysAddress) {
-		return false
-	}
-
-	// handle default config for checksum offloading
-	if getRxChksmOffloading(oldIntf) != getRxChksmOffloading(newIntf) ||
-		getTxChksmOffloading(oldIntf) != getTxChksmOffloading(newIntf) {
 		return false
 	}
 
@@ -250,12 +257,21 @@ func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (me
 		return nil, err
 	}
 
+	// move to the default namespace
+	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
+	revert1, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
+	if err != nil {
+		d.log.Error(err)
+		return nil, err
+	}
+	defer revert1()
+
 	// create interface based on its type
 	switch linuxIf.Type {
 	case interfaces.Interface_VETH:
-		metadata, err = d.addVETH(key, linuxIf)
+		metadata, err = d.addVETH(nsCtx, key, linuxIf)
 	case interfaces.Interface_TAP_TO_VPP:
-		metadata, err = d.addTAPToVPP(key, linuxIf)
+		metadata, err = d.addTAPToVPP(nsCtx, key, linuxIf)
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
@@ -265,13 +281,12 @@ func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (me
 	}
 
 	// move to the namespace with the interface
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
+	revert2, err := d.nsPlugin.SwitchToNamespace(nsCtx, linuxIf.Namespace)
 	if err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
-	defer revert()
+	defer revert2()
 
 	// set interface up
 	hostName := getHostIfName(linuxIf)
@@ -326,14 +341,16 @@ func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (me
 	}
 
 	// set checksum offloading
-	rxOn := getRxChksmOffloading(linuxIf)
-	txOn := getTxChksmOffloading(linuxIf)
-	err = d.ifHandler.SetChecksumOffloading(hostName, rxOn, txOn)
-	if err != nil {
-		err = errors.Errorf("failed to configure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
-			rxOn, txOn, linuxIf.Name, err)
-		d.log.Error(err)
-		return nil, err
+	if linuxIf.Type == interfaces.Interface_VETH {
+		rxOn := getRxChksmOffloading(linuxIf)
+		txOn := getTxChksmOffloading(linuxIf)
+		err = d.ifHandler.SetChecksumOffloading(hostName, rxOn, txOn)
+		if err != nil {
+			err = errors.Errorf("failed to configure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
+				rxOn, txOn, linuxIf.Name, err)
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	return metadata, nil
@@ -489,15 +506,17 @@ func (d *InterfaceDescriptor) Modify(key string, oldLinuxIf, newLinuxIf *interfa
 	}
 
 	// update checksum offloading
-	rxOn := getRxChksmOffloading(newLinuxIf)
-	txOn := getTxChksmOffloading(newLinuxIf)
-	if rxOn != getRxChksmOffloading(oldLinuxIf) || txOn != getTxChksmOffloading(oldLinuxIf) {
-		err = d.ifHandler.SetChecksumOffloading(newHostName, rxOn, txOn)
-		if err != nil {
-			err = errors.Errorf("failed to reconfigure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
-				rxOn, txOn, newLinuxIf.Name, err)
-			d.log.Error(err)
-			return nil, err
+	if newLinuxIf.Type == interfaces.Interface_VETH {
+		rxOn := getRxChksmOffloading(newLinuxIf)
+		txOn := getTxChksmOffloading(newLinuxIf)
+		if rxOn != getRxChksmOffloading(oldLinuxIf) || txOn != getTxChksmOffloading(oldLinuxIf) {
+			err = d.ifHandler.SetChecksumOffloading(newHostName, rxOn, txOn)
+			if err != nil {
+				err = errors.Errorf("failed to reconfigure checksum offloading (rx=%t,tx=%t) for linux interface %s: %v",
+					rxOn, txOn, newLinuxIf.Name, err)
+				d.log.Error(err)
+				return nil, err
+			}
 		}
 	}
 
@@ -580,19 +599,21 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 	return derValues
 }
 
+// ifaceDump is used as the return value sent via channel by dumpInterfaces().
+type ifaceDump struct {
+	interfaces []adapter.InterfaceKVWithMetadata
+	err        error
+}
+
 // Dump returns all Linux interfaces managed by this agent, attached to the default namespace
 // or to one of the configured non-default namespaces.
 func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) ([]adapter.InterfaceKVWithMetadata, error) {
-	agentPrefix := d.serviceLabel.GetAgentPrefix()
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	nsList := []*namespace.NetNamespace{nil}                   // nil = default namespace, which always should be dumped
-	ifCfg := make(map[string]*interfaces.Interface)            // interface logical name -> interface config (as expected by correlate)
-	ifDump := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface dump
-	indexes := make(map[int]struct{})                          // already dumped interfaces by their Linux indexes
+	nsList := []*namespace.NetNamespace{nil}        // nil = default namespace, which always should be dumped
+	ifCfg := make(map[string]*interfaces.Interface) // interface logical name -> interface config (as expected by correlate)
 
 	// process interfaces for correlation to get:
 	//  - the set of namespaces to dump
-	//  - mapping between interface and the destination namespace
+	//  - mapping between interface name and the configuration for correlation
 	// beware: the same namespace can have multiple different references (e.g. integration of Contiv with SFC)
 	for _, kv := range correlate {
 		nsListed := false
@@ -608,86 +629,41 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		ifCfg[kv.Value.Name] = kv.Value
 	}
 
-	// dump every namespace mentioned in the correlate
-	var (
-		err    error
-		revert func()
-	)
-	for _, nsRef := range nsList {
-		// switch to the namespace
-		if nsRef != nil {
-			revert, err = d.nsPlugin.SwitchToNamespace(nsCtx, nsRef)
-			if err != nil {
-				d.log.WithFields(logging.Fields{
-					"err":       err,
-					"namespace": nsRef,
-				}).Debug("Failed to dump namespace")
-				continue // continue with the next namespace
-			}
+	// determine the number of go routines to invoke
+	goRoutinesCnt := len(nsList) / minWorkForGoRoutine
+	if goRoutinesCnt == 0 {
+		goRoutinesCnt = 1
+	}
+	if goRoutinesCnt > d.dumpGoRoutinesCnt {
+		goRoutinesCnt = d.dumpGoRoutinesCnt
+	}
+	dumpCh := make(chan ifaceDump, goRoutinesCnt)
+
+	// invoke multiple go routines for more efficient parallel dumping
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		if goRoutinesCnt > 1 {
+			go d.dumpInterfaces(nsList, idx, goRoutinesCnt, dumpCh)
+		} else {
+			d.dumpInterfaces(nsList, idx, goRoutinesCnt, dumpCh)
 		}
+	}
 
-		// get all links in the namespace
-		links, err := d.ifHandler.GetLinkList()
-		if err != nil {
-			// switch back to the default namespace before returning error
-			if nsRef != nil {
-				revert()
-			}
-			d.log.Error(err)
-			return nil, err
+	// receive results from the go routines
+	ifDump := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface dump
+	indexes := make(map[int]struct{})                          // already dumped interfaces by their Linux indexes
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		dump := <-dumpCh
+		if dump.err != nil {
+			return nil, dump.err
 		}
-
-		// dump every interface (at most once!) managed by this agent
-		for _, link := range links {
-			intf := &interfaces.Interface{
-				Namespace:   nsRef,
-				HostIfName:  link.Attrs().Name,
-				PhysAddress: link.Attrs().HardwareAddr.String(),
-				Mtu:         uint32(link.Attrs().MTU),
-			}
-
-			alias := link.Attrs().Alias
-			if !strings.HasPrefix(alias, agentPrefix) {
-				// skip interface not configured by this agent
-				continue
-			}
-			alias = strings.TrimPrefix(alias, agentPrefix)
-
-			// parse alias to obtain logical references
-			var vppTapIfName string
-			if link.Type() == (&netlink.Veth{}).Type() {
-				var vethPeerIfName string
-				intf.Type = interfaces.Interface_VETH
-				intf.Name, vethPeerIfName = parseVethAlias(alias)
-				intf.Link = &interfaces.Interface_Veth{
-					Veth: &interfaces.VethLink{PeerIfName: vethPeerIfName}}
-			} else if link.Type() == (&netlink.Tuntap{}).Type() || link.Type() == "tun" /* not defined in vishvananda */ {
-				intf.Type = interfaces.Interface_TAP_TO_VPP
-				intf.Name, vppTapIfName, _ = parseTapAlias(alias)
-				intf.Link = &interfaces.Interface_Tap{
-					Tap: &interfaces.TapLink{VppTapIfName: vppTapIfName}}
-			} else {
-				// unsupported interface type supposedly configured by agent => print warning
-				d.log.WithFields(logging.Fields{
-					"if-host-name": link.Attrs().Name,
-					"if-type":      link.Type(),
-					"namespace":    nsRef,
-				}).Warn("Managed interface of unsupported type")
-				continue
-			}
-
-			// skip interfaces with invalid aliases
-			if intf.Name == "" {
-				continue
-			}
-
+		for _, kv := range dump.interfaces {
 			// skip if this interface was already dumped and this is not the expected
 			// namespace from correlation - remember, the same namespace may have
 			// multiple different references
 			rewrite := false
-			if _, dumped := indexes[link.Attrs().Index]; dumped {
-				if expCfg, hasExpCfg := ifCfg[intf.Name]; hasExpCfg {
-					if proto.Equal(expCfg.Namespace, nsRef) {
+			if _, dumped := indexes[kv.Metadata.LinuxIfIndex]; dumped {
+				if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
+					if proto.Equal(expCfg.Namespace, kv.Value.Namespace) {
 						rewrite = true
 					}
 				}
@@ -695,85 +671,24 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 					continue
 				}
 			}
-			indexes[link.Attrs().Index] = struct{}{}
+			indexes[kv.Metadata.LinuxIfIndex] = struct{}{}
 
 			// test for duplicity of VETH logical names
-			if intf.Type == interfaces.Interface_VETH {
-				if _, duplicate := ifDump[intf.Name]; duplicate && !rewrite {
+			if kv.Value.Type == interfaces.Interface_VETH {
+				if _, duplicate := ifDump[kv.Value.Name]; duplicate && !rewrite {
 					// add suffix to the duplicate to make its logical name unique
 					// (and not configured by NB so that it will get removed)
 					dupIndex := 1
 					for intf2 := range ifDump {
-						if strings.HasPrefix(intf2, intf.Name+vethDuplicateSuffix) {
+						if strings.HasPrefix(intf2, kv.Value.Name+vethDuplicateSuffix) {
 							dupIndex++
 						}
 					}
-					intf.Name = intf.Name + vethDuplicateSuffix + strconv.Itoa(dupIndex)
+					kv.Value.Name = kv.Value.Name + vethDuplicateSuffix + strconv.Itoa(dupIndex)
+					kv.Key = interfaces.InterfaceKey(kv.Value.Name)
 				}
 			}
-
-			// dump interface status
-			intf.Enabled, err = d.ifHandler.IsInterfaceUp(link.Attrs().Name)
-			if err != nil {
-				d.log.WithFields(logging.Fields{
-					"if-host-name": link.Attrs().Name,
-					"namespace":    nsRef,
-					"err":          err,
-				}).Warn("Failed to read interface status")
-			}
-
-			// dump assigned IP addresses
-			addressList, err := d.ifHandler.GetAddressList(link.Attrs().Name)
-			if err != nil {
-				d.log.WithFields(logging.Fields{
-					"if-host-name": link.Attrs().Name,
-					"namespace":    nsRef,
-					"err":          err,
-				}).Warn("Failed to read IP addresses")
-			}
-			for _, address := range addressList {
-				if address.Scope == unix.RT_SCOPE_LINK {
-					// ignore link-local IPv6 addresses
-					continue
-				}
-				mask, _ := address.Mask.Size()
-				addrStr := address.IP.String() + "/" + strconv.Itoa(mask)
-				intf.IpAddresses = append(intf.IpAddresses, addrStr)
-			}
-
-			// dump checksum offloading
-			rxOn, txOn, err := d.ifHandler.GetChecksumOffloading(link.Attrs().Name)
-			if err != nil {
-				d.log.WithFields(logging.Fields{
-					"if-host-name": link.Attrs().Name,
-					"namespace":    nsRef,
-					"err":          err,
-				}).Warn("Failed to read checksum offloading")
-			} else {
-				if !rxOn {
-					intf.RxChecksumOffloading = interfaces.Interface_CHKSM_OFFLOAD_DISABLED
-				}
-				if !txOn {
-					intf.TxChecksumOffloading = interfaces.Interface_CHKSM_OFFLOAD_DISABLED
-				}
-			}
-
-			// build key-value pair for the dumped interface
-			ifDump[intf.Name] = adapter.InterfaceKVWithMetadata{
-				Key:    interfaces.InterfaceKey(intf.Name),
-				Value:  intf,
-				Origin: scheduler.FromNB,
-				Metadata: &ifaceidx.LinuxIfMetadata{
-					LinuxIfIndex: link.Attrs().Index,
-					VPPTapName:   vppTapIfName,
-					Namespace:    nsRef,
-				},
-			}
-		}
-
-		// switch back to the default namespace
-		if nsRef != nil {
-			revert()
+			ifDump[kv.Value.Name] = kv
 		}
 	}
 
@@ -822,13 +737,148 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		dump = append(dump, kv)
 	}
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d Linux interfaces: %v", len(dump), dumpList)
-
 	return dump, nil
+}
+
+// dumpInterfaces is run by a separate go routine to dump all interfaces present
+// in every <goRoutineIdx>-th network namespace from the list.
+func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, goRoutineIdx, goRoutinesCnt int, dumpCh chan<- ifaceDump) {
+	var dump ifaceDump
+	agentPrefix := d.serviceLabel.GetAgentPrefix()
+	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
+
+	for i := goRoutineIdx; i < len(nsList); i += goRoutinesCnt {
+		nsRef := nsList[i]
+		// switch to the namespace
+		revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, nsRef)
+		if err != nil {
+			d.log.WithFields(logging.Fields{
+				"err":       err,
+				"namespace": nsRef,
+			}).Warn("Failed to dump namespace")
+			continue // continue with the next namespace
+		}
+
+		// get all links in the namespace
+		links, err := d.ifHandler.GetLinkList()
+		if err != nil {
+			// switch back to the default namespace before returning error
+			revert()
+			dump.err = err
+			d.log.Error(dump.err)
+			break
+		}
+
+		// dump every interface managed by this agent
+		for _, link := range links {
+			intf := &interfaces.Interface{
+				Namespace:   nsRef,
+				HostIfName:  link.Attrs().Name,
+				PhysAddress: link.Attrs().HardwareAddr.String(),
+				Mtu:         uint32(link.Attrs().MTU),
+			}
+
+			alias := link.Attrs().Alias
+			if !strings.HasPrefix(alias, agentPrefix) {
+				// skip interface not configured by this agent
+				continue
+			}
+			alias = strings.TrimPrefix(alias, agentPrefix)
+
+			// parse alias to obtain logical references
+			var vppTapIfName string
+			if link.Type() == (&netlink.Veth{}).Type() {
+				var vethPeerIfName string
+				intf.Type = interfaces.Interface_VETH
+				intf.Name, vethPeerIfName = parseVethAlias(alias)
+				intf.Link = &interfaces.Interface_Veth{
+					Veth: &interfaces.VethLink{PeerIfName: vethPeerIfName}}
+			} else if link.Type() == (&netlink.Tuntap{}).Type() || link.Type() == "tun" /* not defined in vishvananda */ {
+				intf.Type = interfaces.Interface_TAP_TO_VPP
+				intf.Name, vppTapIfName, _ = parseTapAlias(alias)
+				intf.Link = &interfaces.Interface_Tap{
+					Tap: &interfaces.TapLink{VppTapIfName: vppTapIfName}}
+			} else {
+				// unsupported interface type supposedly configured by agent => print warning
+				d.log.WithFields(logging.Fields{
+					"if-host-name": link.Attrs().Name,
+					"if-type":      link.Type(),
+					"namespace":    nsRef,
+				}).Warn("Managed interface of unsupported type")
+				continue
+			}
+
+			// skip interfaces with invalid aliases
+			if intf.Name == "" {
+				continue
+			}
+
+			// dump interface status
+			intf.Enabled, err = d.ifHandler.IsInterfaceUp(link.Attrs().Name)
+			if err != nil {
+				d.log.WithFields(logging.Fields{
+					"if-host-name": link.Attrs().Name,
+					"namespace":    nsRef,
+					"err":          err,
+				}).Warn("Failed to read interface status")
+			}
+
+			// dump assigned IP addresses
+			addressList, err := d.ifHandler.GetAddressList(link.Attrs().Name)
+			if err != nil {
+				d.log.WithFields(logging.Fields{
+					"if-host-name": link.Attrs().Name,
+					"namespace":    nsRef,
+					"err":          err,
+				}).Warn("Failed to read IP addresses")
+			}
+			for _, address := range addressList {
+				if address.Scope == unix.RT_SCOPE_LINK {
+					// ignore link-local IPv6 addresses
+					continue
+				}
+				mask, _ := address.Mask.Size()
+				addrStr := address.IP.String() + "/" + strconv.Itoa(mask)
+				intf.IpAddresses = append(intf.IpAddresses, addrStr)
+			}
+
+			// dump checksum offloading
+			if intf.Type == interfaces.Interface_VETH {
+				rxOn, txOn, err := d.ifHandler.GetChecksumOffloading(link.Attrs().Name)
+				if err != nil {
+					d.log.WithFields(logging.Fields{
+						"if-host-name": link.Attrs().Name,
+						"namespace":    nsRef,
+						"err":          err,
+					}).Warn("Failed to read checksum offloading")
+				} else {
+					if !rxOn {
+						intf.GetVeth().RxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
+					}
+					if !txOn {
+						intf.GetVeth().TxChecksumOffloading = interfaces.VethLink_CHKSM_OFFLOAD_DISABLED
+					}
+				}
+			}
+
+			// build key-value pair for the dumped interface
+			dump.interfaces = append(dump.interfaces, adapter.InterfaceKVWithMetadata{
+				Key:    interfaces.InterfaceKey(intf.Name),
+				Value:  intf,
+				Origin: scheduler.FromNB,
+				Metadata: &ifaceidx.LinuxIfMetadata{
+					LinuxIfIndex: link.Attrs().Index,
+					VPPTapName:   vppTapIfName,
+					Namespace:    nsRef,
+				},
+			})
+		}
+
+		// switch back to the default namespace
+		revert()
+	}
+
+	dumpCh <- dump
 }
 
 // setInterfaceNamespace moves linux interface from the current to the desired
@@ -978,20 +1028,20 @@ func getInterfaceMTU(linuxIntf *interfaces.Interface) int {
 }
 
 func getRxChksmOffloading(linuxIntf *interfaces.Interface) (rxOn bool) {
-	return isChksmOffloadingOn(linuxIntf.RxChecksumOffloading)
+	return isChksmOffloadingOn(linuxIntf.GetVeth().GetRxChecksumOffloading())
 }
 
 func getTxChksmOffloading(linuxIntf *interfaces.Interface) (txOn bool) {
-	return isChksmOffloadingOn(linuxIntf.TxChecksumOffloading)
+	return isChksmOffloadingOn(linuxIntf.GetVeth().GetTxChecksumOffloading())
 }
 
-func isChksmOffloadingOn(offloading interfaces.Interface_ChecksumOffloading) bool {
+func isChksmOffloadingOn(offloading interfaces.VethLink_ChecksumOffloading) bool {
 	switch offloading {
-	case interfaces.Interface_CHKSM_OFFLOAD_DEFAULT:
+	case interfaces.VethLink_CHKSM_OFFLOAD_DEFAULT:
 		return true // enabled by default
-	case interfaces.Interface_CHKSM_OFFLOAD_ENABLED:
+	case interfaces.VethLink_CHKSM_OFFLOAD_ENABLED:
 		return true
-	case interfaces.Interface_CHKSM_OFFLOAD_DISABLED:
+	case interfaces.VethLink_CHKSM_OFFLOAD_DISABLED:
 		return false
 	}
 	return true

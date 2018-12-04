@@ -27,8 +27,9 @@ import (
 
 // resyncData stores data to be used for resync after refresh.
 type resyncData struct {
-	first  bool // true if startup-resync
-	values []kvForTxn
+	first   bool // true if startup-resync
+	values  []kvForTxn
+	verbose bool
 }
 
 // refreshGraph updates all/some values in the graph to their *real* state
@@ -91,6 +92,13 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			}
 			scheduler.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
 			continue
+		} else if resyncData == nil || resyncData.verbose {
+			plural := "s"
+			if len(dump) == 1 {
+				plural = ""
+			}
+			scheduler.Log.Debugf("Descriptor %s dumped %d value%s: %v",
+				descriptor.Name, len(dump), plural, dump)
 		}
 
 		if len(keys) > 0 {
@@ -170,7 +178,9 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 		graphW.Save()
 	}
 
-	fmt.Println(dumpGraph(graphW))
+	if resyncData == nil || resyncData.verbose {
+		fmt.Println(dumpGraph(graphW))
+	}
 
 	// remove nodes that do not actually exist
 	for _, node := range graphW.GetNodes(nil) {
@@ -183,10 +193,6 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			graphW.DeleteNode(node.GetKey())
 		}
 	}
-
-	/*graphDump := graphW.Dump()
-	fmt.Println("Graph state after re-fresh:")
-	fmt.Print(graphDump)*/
 }
 
 func dumpGraph(g graph.RWAccess) string {

@@ -219,12 +219,6 @@ func (d *DHCPDescriptor) Dump(correlate []scheduler.KVWithMetadata) (
 		})
 	}
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d DHCP leases: %v", len(dump), dumpList)
-
 	return dump, nil
 }
 

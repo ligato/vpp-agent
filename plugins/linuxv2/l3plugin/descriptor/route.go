@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"strings"
 
@@ -83,19 +82,23 @@ type RouteDescriptor struct {
 	ifPlugin  ifplugin.API
 	nsPlugin  nsplugin.API
 	scheduler scheduler.KVScheduler
+
+	// parallelization of the Dump operation
+	dumpGoRoutinesCnt int
 }
 
 // NewRouteDescriptor creates a new instance of the Route descriptor.
 func NewRouteDescriptor(
 	scheduler scheduler.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
-	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger) *RouteDescriptor {
+	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger, dumpGoRoutinesCnt int) *RouteDescriptor {
 
 	return &RouteDescriptor{
-		scheduler: scheduler,
-		l3Handler: l3Handler,
-		ifPlugin:  ifPlugin,
-		nsPlugin:  nsPlugin,
-		log:       log.NewLogger("route-descriptor"),
+		scheduler:         scheduler,
+		l3Handler:         l3Handler,
+		ifPlugin:          ifPlugin,
+		nsPlugin:          nsPlugin,
+		dumpGoRoutinesCnt: dumpGoRoutinesCnt,
+		log:               log.NewLogger("route-descriptor"),
 	}
 }
 
@@ -309,37 +312,78 @@ func (d *RouteDescriptor) DerivedValues(key string, route *l3.StaticRoute) (derV
 	return derValues
 }
 
+// routeDump is used as the return value sent via channel by dumpRoutes().
+type routeDump struct {
+	routes []adapter.RouteKVWithMetadata
+	err    error
+}
+
 // Dump returns all routes associated with interfaces managed by this agent.
 func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adapter.RouteKVWithMetadata, error) {
-	var err error
 	var dump []adapter.RouteKVWithMetadata
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
-	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
+	interfaces := d.ifPlugin.GetInterfaceIndex().ListAllInterfaces()
+	goRoutinesCnt := len(interfaces) / minWorkForGoRoutine
+	if goRoutinesCnt == 0 {
+		goRoutinesCnt = 1
+	}
+	if goRoutinesCnt > d.dumpGoRoutinesCnt {
+		goRoutinesCnt = d.dumpGoRoutinesCnt
+	}
+	dumpCh := make(chan routeDump, goRoutinesCnt)
 
-	// dump only routes with outgoing interfaces managed by this agent.
-	for _, ifName := range ifMetaIdx.ListAllInterfaces() {
+	// invoke multiple go routines for more efficient parallel dumping
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		if goRoutinesCnt > 1 {
+			go d.dumpRoutes(interfaces, idx, goRoutinesCnt, dumpCh)
+		} else {
+			d.dumpRoutes(interfaces, idx, goRoutinesCnt, dumpCh)
+		}
+	}
+
+	// collect results from the go routines
+	for idx := 0; idx < goRoutinesCnt; idx++ {
+		routeDump := <-dumpCh
+		if routeDump.err != nil {
+			return dump, routeDump.err
+		}
+		dump = append(dump, routeDump.routes...)
+	}
+
+	return dump, nil
+}
+
+// dumpRoutes is run by a separate go routine to dump all routes entries associated
+// with every <goRoutineIdx>-th interface.
+func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutinesCnt int, dumpCh chan<- routeDump) {
+	var dump routeDump
+	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
+	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
+
+	for i := goRoutineIdx; i < len(interfaces); i += goRoutinesCnt {
+		ifName := interfaces[i]
 		// get interface metadata
 		ifMeta, found := ifMetaIdx.LookupByName(ifName)
 		if !found || ifMeta == nil {
-			err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
-			d.log.Error(err)
-			return dump, err
+			dump.err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
+			d.log.Error(dump.err)
+			break
 		}
 
 		// switch to the namespace of the interface
 		revertNs, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
 		if err != nil {
-			err = errors.Errorf("failed to switch namespace: %v", err)
-			d.log.Error(err)
-			return dump, err
+			dump.err = errors.Errorf("failed to switch namespace: %v", err)
+			d.log.Error(dump.err)
+			break
 		}
 
 		// get routes assigned to this interface
 		v4Routes, v6Routes, err := d.l3Handler.GetStaticRoutes(ifMeta.LinuxIfIndex)
 		revertNs()
 		if err != nil {
-			d.log.Error(err)
-			return dump, err
+			dump.err = err
+			d.log.Error(dump.err)
+			break
 		}
 
 		// convert each route from Netlink representation to the NB representation
@@ -366,7 +410,7 @@ func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adapt
 				// route not configured by the agent
 				continue
 			}
-			dump = append(dump, adapter.RouteKVWithMetadata{
+			dump.routes = append(dump.routes, adapter.RouteKVWithMetadata{
 				Key: l3.StaticRouteKey(dstNet, ifName),
 				Value: &l3.StaticRoute{
 					OutgoingInterface: ifName,
@@ -380,13 +424,7 @@ func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adapt
 		}
 	}
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d Linux Routes: %v", len(dump), dumpList)
-
-	return dump, nil
+	dumpCh <- dump
 }
 
 // rtScopeFromNBToNetlink convert Route scope from NB configuration
