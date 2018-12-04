@@ -25,10 +25,10 @@ type PuntIndex interface {
 	GetMapping() idxvpp.NameToIdxRW
 
 	// LookupIdx looks up previously stored item identified by index in mapping.
-	LookupIdx(name string) (idx uint32, metadata *punt.Punt, exists bool)
+	LookupIdx(name string) (idx uint32, metadata *PuntMetadata, exists bool)
 
 	// LookupName looks up previously stored item identified by name in mapping.
-	LookupName(idx uint32) (name string, metadata *punt.Punt, exists bool)
+	LookupName(idx uint32) (name string, metadata *PuntMetadata, exists bool)
 }
 
 // PuntIndexRW is mapping between software punt indexes and names.
@@ -36,13 +36,13 @@ type PuntIndexRW interface {
 	PuntIndex
 
 	// RegisterName adds new item into name-to-index mapping.
-	RegisterName(name string, idx uint32, puntMeta *punt.Punt)
+	RegisterName(name string, idx uint32, puntMeta *PuntMetadata)
 
 	// UnregisterName removes an item identified by name from mapping
-	UnregisterName(name string) (idx uint32, metadata *punt.Punt, exists bool)
+	UnregisterName(name string) (idx uint32, metadata *PuntMetadata, exists bool)
 
 	// UpdateMetadata updates metadata in existing punt entry.
-	UpdateMetadata(name string, metadata *punt.Punt) (success bool)
+	UpdateMetadata(name string, metadata *PuntMetadata) (success bool)
 
 	// Clear removes all punt entries from the mapping.
 	Clear()
@@ -51,6 +51,12 @@ type PuntIndexRW interface {
 // PuntIdx is type-safe implementation of mapping between punt indexes and names.
 type PuntIdx struct {
 	mapping idxvpp.NameToIdxRW
+}
+
+// PuntMetadata are custom metadata of the punt configuration
+type PuntMetadata struct {
+	Punt       *punt.Punt
+	SocketPath []byte
 }
 
 // NewPuntIndex creates new instance of PuntIndexRW.
@@ -64,7 +70,7 @@ func (p *PuntIdx) GetMapping() idxvpp.NameToIdxRW {
 }
 
 // LookupIdx looks up previously stored item identified by index in mapping.
-func (p *PuntIdx) LookupIdx(name string) (idx uint32, metadata *punt.Punt, exists bool) {
+func (p *PuntIdx) LookupIdx(name string) (idx uint32, metadata *PuntMetadata, exists bool) {
 	idx, meta, exists := p.mapping.LookupIdx(name)
 	if exists {
 		metadata = p.castMetadata(meta)
@@ -73,7 +79,7 @@ func (p *PuntIdx) LookupIdx(name string) (idx uint32, metadata *punt.Punt, exist
 }
 
 // LookupName looks up previously stored item identified by name in mapping.
-func (p *PuntIdx) LookupName(idx uint32) (name string, metadata *punt.Punt, exists bool) {
+func (p *PuntIdx) LookupName(idx uint32) (name string, metadata *PuntMetadata, exists bool) {
 	name, meta, exists := p.mapping.LookupName(idx)
 	if exists {
 		metadata = p.castMetadata(meta)
@@ -82,18 +88,18 @@ func (p *PuntIdx) LookupName(idx uint32) (name string, metadata *punt.Punt, exis
 }
 
 // RegisterName adds new item into name-to-index mapping.
-func (p *PuntIdx) RegisterName(name string, idx uint32, ifMeta *punt.Punt) {
+func (p *PuntIdx) RegisterName(name string, idx uint32, ifMeta *PuntMetadata) {
 	p.mapping.RegisterName(name, idx, ifMeta)
 }
 
 // UnregisterName removes an item identified by name from mapping
-func (p *PuntIdx) UnregisterName(name string) (idx uint32, metadata *punt.Punt, exists bool) {
+func (p *PuntIdx) UnregisterName(name string) (idx uint32, metadata *PuntMetadata, exists bool) {
 	idx, meta, exists := p.mapping.UnregisterName(name)
 	return idx, p.castMetadata(meta), exists
 }
 
 // UpdateMetadata updates metadata in existing punt entry.
-func (p *PuntIdx) UpdateMetadata(name string, metadata *punt.Punt) (success bool) {
+func (p *PuntIdx) UpdateMetadata(name string, metadata *PuntMetadata) (success bool) {
 	return p.mapping.UpdateMetadata(name, metadata)
 }
 
@@ -102,8 +108,8 @@ func (p *PuntIdx) Clear() {
 	p.mapping.Clear()
 }
 
-func (p *PuntIdx) castMetadata(meta interface{}) *punt.Punt {
-	if puntMeta, ok := meta.(*punt.Punt); ok {
+func (p *PuntIdx) castMetadata(meta interface{}) *PuntMetadata {
+	if puntMeta, ok := meta.(*PuntMetadata); ok {
 		return puntMeta
 	}
 

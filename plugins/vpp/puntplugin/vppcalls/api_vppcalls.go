@@ -18,26 +18,33 @@ import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/puntidx"
 )
 
 // PuntVppAPI provides methods for managing VPP punt configuration.
 type PuntVppAPI interface {
 	// RegisterPuntSocket registers new punt to unix domain socket entry
-	RegisterPuntSocket(puntCfg *punt.Punt) error
+	RegisterPuntSocket(puntCfg *punt.Punt) ([]byte, error)
 	// DeregisterPuntSocket removes existing punt to socket registration
 	DeregisterPuntSocket(puntCfg *punt.Punt) error
+	// RegisterPuntSocketIPv6 registers new IPv6 punt to unix domain socket entry
+	RegisterPuntSocketIPv6(puntCfg *punt.Punt) ([]byte, error)
+	// DeregisterPuntSocketIPv6 removes existing IPv6 punt to socket registration
+	DeregisterPuntSocketIPv6(puntCfg *punt.Punt) error
 }
 
 // PuntVppHandler is accessor for punt-related vppcalls methods.
 type PuntVppHandler struct {
 	callsChannel api.Channel
+	mapping      puntidx.PuntIndex
 	log          logging.Logger
 }
 
 // NewPuntVppHandler creates new instance of punt vppcalls handler
-func NewPuntVppHandler(callsChan api.Channel, log logging.Logger) *PuntVppHandler {
+func NewPuntVppHandler(callsChan api.Channel, mapping puntidx.PuntIndex, log logging.Logger) *PuntVppHandler {
 	return &PuntVppHandler{
 		callsChannel: callsChan,
+		mapping:      mapping,
 		log:          log,
 	}
 }
