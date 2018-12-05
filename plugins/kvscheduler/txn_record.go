@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
@@ -35,12 +35,12 @@ type recordedTxn struct {
 	// arguments
 	seqNum      uint
 	txnType     txnType
-	resyncType  ResyncType
+	resyncType  kvs.ResyncType
 	description string
 	values      []recordedKVPair
 
 	// result
-	preErrors []KeyWithError // pre-processing errors
+	preErrors []kvs.KeyWithError // pre-processing errors
 	planned   recordedTxnOps
 	executed  recordedTxnOps
 }
@@ -48,15 +48,15 @@ type recordedTxn struct {
 // recorderTxnOp is used to record executed/planned transaction operation.
 type recordedTxnOp struct {
 	// identification
-	operation TxnOperation
+	operation kvs.TxnOperation
 	key       string
 	derived   bool
 
 	// changes
 	prevValue  string
 	newValue   string
-	prevOrigin ValueOrigin
-	newOrigin  ValueOrigin
+	prevOrigin kvs.ValueOrigin
+	newOrigin  kvs.ValueOrigin
 	wasPending bool
 	isPending  bool
 	prevErr    error
@@ -71,7 +71,7 @@ type recordedTxnOp struct {
 type recordedKVPair struct {
 	key    string
 	value  string
-	origin ValueOrigin
+	origin kvs.ValueOrigin
 }
 
 // recordedTxnOps is a list of recorded executed/planned transaction operations.
@@ -96,12 +96,12 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 		// transaction arguments
 		str += indent1 + "* transaction arguments:\n"
 		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.seqNum)
-		if txn.txnType == nbTransaction && txn.resyncType != NotResync {
+		if txn.txnType == nbTransaction && txn.resyncType != kvs.NotResync {
 			resyncType := "Full Resync"
-			if txn.resyncType == DownstreamResync {
+			if txn.resyncType == kvs.DownstreamResync {
 				resyncType = "SB Sync"
 			}
-			if txn.resyncType == UpstreamResync {
+			if txn.resyncType == kvs.UpstreamResync {
 				resyncType = "NB Sync"
 			}
 			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.txnType.String(), resyncType)
@@ -118,7 +118,7 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 				}
 			}
 		}
-		if txn.resyncType == DownstreamResync {
+		if txn.resyncType == kvs.DownstreamResync {
 			goto printOps
 		}
 		if len(txn.values) == 0 {
@@ -127,7 +127,7 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			str += indent2 + fmt.Sprintf("- values:\n")
 		}
 		for _, kv := range txn.values {
-			if txn.resyncType != NotResync && kv.origin == FromSB {
+			if txn.resyncType != kvs.NotResync && kv.origin == kvs.FromSB {
 				// do not print SB values updated during resync
 				continue
 			}
@@ -176,7 +176,7 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 	indent2 := strings.Repeat(" ", indent+4)
 
 	var flags []string
-	if op.newOrigin == FromSB {
+	if op.newOrigin == kvs.FromSB {
 		flags = append(flags, "NOTIFICATION")
 	}
 	if op.derived {
@@ -216,14 +216,14 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.key)
 	showPrevForAdd := op.wasPending && op.prevValue != op.newValue
-	if op.operation == Modify || (op.operation == Add && showPrevForAdd) {
+	if op.operation == kvs.Modify || (op.operation == kvs.Add && showPrevForAdd) {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", op.prevValue)
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", op.newValue)
 	}
-	if op.operation == Delete || op.operation == Update {
+	if op.operation == kvs.Delete || op.operation == kvs.Update {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.prevValue)
 	}
-	if op.operation == Add && !showPrevForAdd {
+	if op.operation == kvs.Add && !showPrevForAdd {
 		str += indent2 + fmt.Sprintf("- value: %s \n", op.newValue)
 	}
 	if op.prevOrigin != op.newOrigin {
@@ -286,7 +286,7 @@ func (txns recordedTxns) StringWithOpts(resultOnly bool, indent int) string {
 // before executing the operation.
 func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *recordedTxnOp {
 	prevOrigin := getNodeOrigin(node)
-	if prevOrigin == UnknownOrigin {
+	if prevOrigin == kvs.UnknownOrigin {
 		// new value
 		prevOrigin = args.kv.origin
 	}
@@ -306,7 +306,7 @@ func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node
 
 // preRecordTransaction logs transaction arguments + plan before execution to
 // persist some information in case there is a crash during execution.
-func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned recordedTxnOps, preErrors []KeyWithError) *recordedTxn {
+func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned recordedTxnOps, preErrors []kvs.KeyWithError) *recordedTxn {
 	// allocate new transaction record
 	record := &recordedTxn{
 		preRecord:          true,
@@ -322,14 +322,14 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 
 	// build header for the log
 	var downstreamResync bool
-	txnInfo := fmt.Sprintf("%s", txn.args.txnType.String())
-	if txn.args.txnType == nbTransaction && txn.args.nb.resyncType != NotResync {
+	txnInfo := txn.args.txnType.String()
+	if txn.args.txnType == nbTransaction && txn.args.nb.resyncType != kvs.NotResync {
 		resyncType := "Full Resync"
-		if txn.args.nb.resyncType == DownstreamResync {
+		if txn.args.nb.resyncType == kvs.DownstreamResync {
 			resyncType = "SB Sync"
 			downstreamResync = true
 		}
-		if txn.args.nb.resyncType == UpstreamResync {
+		if txn.args.nb.resyncType == kvs.UpstreamResync {
 			resyncType = "NB Sync"
 		}
 		txnInfo = fmt.Sprintf("%s (%s)", txn.args.txnType.String(), resyncType)

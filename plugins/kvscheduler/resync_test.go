@@ -564,10 +564,7 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 			return nil
 		},
 		ModifyWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-			if key == prefixA+baseValue3 {
-				return true
-			}
-			return false
+			return key == prefixA+baseValue3
 		},
 		WithMetadata: true,
 	}, mockSB, 3)
@@ -952,6 +949,7 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	// check metadata
 	metadata, exists := nameToInteger.LookupByName(baseValue1)
 	Expect(exists).To(BeFalse())
+	Expect(metadata).To(BeNil())
 	metadata, exists = nameToInteger.LookupByName(baseValue2)
 	Expect(exists).To(BeTrue())
 	Expect(metadata.GetInteger()).To(BeEquivalentTo(0))
@@ -1115,10 +1113,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 		ValueTypeName: proto.MessageName(test.NewArrayValue()),
 		DerivedValues: test.ArrayValueDerBuilder,
 		ModifyWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-			if key == prefixC+baseValue3 {
-				return true
-			}
-			return false
+			return key == prefixC+baseValue3
 		},
 		WithMetadata:     true,
 		DumpDependencies: []string{descriptor2Name},

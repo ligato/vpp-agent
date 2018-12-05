@@ -188,7 +188,7 @@ func (p *Plugin) registerIndexHandlers() {
 		return func(w http.ResponseWriter, req *http.Request) {
 
 			p.Log.Debugf("%v - %s %q", req.RemoteAddr, req.Method, req.URL)
-			r.HTML(w, http.StatusOK, "index", p.index)
+			p.logError(r.HTML(w, http.StatusOK, "index", p.index))
 		}
 	}
 	p.HTTPHandlers.RegisterHTTPHandler(resturl.Index, handlerFunc, GET)
@@ -205,11 +205,11 @@ func (p *Plugin) registerHTTPHandler(key, method string, f func() (interface{}, 
 			if err != nil {
 				errMsg := fmt.Sprintf("500 Internal server error: request failed: %v\n", err)
 				p.Log.Error(errMsg)
-				formatter.JSON(w, http.StatusInternalServerError, errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
 			}
 			p.Deps.Log.Debugf("Rest uri: %s, data: %v", key, res)
-			formatter.JSON(w, http.StatusOK, res)
+			p.logError(formatter.JSON(w, http.StatusOK, res))
 		}
 	}
 	p.HTTPHandlers.RegisterHTTPHandler(key, handlerFunc, method)
@@ -223,7 +223,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 		if err != nil {
 			errMsg := fmt.Sprintf("400 Bad request: failed to parse request body: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			p.logError(formatter.JSON(w, http.StatusBadRequest, errMsg))
 			return
 		}
 
@@ -232,7 +232,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 		if err != nil {
 			errMsg := fmt.Sprintf("400 Bad request: failed to unmarshall request body: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			p.logError(formatter.JSON(w, http.StatusBadRequest, errMsg))
 			return
 		}
 
@@ -240,7 +240,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 		if !ok || command == "" {
 			errMsg := fmt.Sprintf("400 Bad request: vppclicommand parameter missing or empty\n")
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusBadRequest, errMsg)
+			p.logError(formatter.JSON(w, http.StatusBadRequest, errMsg))
 			return
 		}
 
@@ -250,7 +250,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		defer ch.Close()
@@ -264,17 +264,17 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending request failed: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		} else if reply.Retval > 0 {
 			errMsg := fmt.Sprintf("500 Internal server error: request returned error code: %v\n", reply.Retval)
 			p.Log.Error(err)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 
 		p.Log.Debugf("VPPCLI response: %s", reply.Reply)
-		formatter.JSON(w, http.StatusOK, string(reply.Reply))
+		p.logError(formatter.JSON(w, http.StatusOK, string(reply.Reply)))
 	}
 }
 
@@ -302,7 +302,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		defer ch.Close()
@@ -318,7 +318,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 			if err != nil {
 				errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 				p.Log.Error(errMsg)
-				formatter.JSON(w, http.StatusInternalServerError, errMsg)
+				p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 				return
 			}
 			cmdOuts = append(cmdOuts, cmdOut{
@@ -334,7 +334,7 @@ func (p *Plugin) telemetryHandler(formatter *render.Render) http.HandlerFunc {
 		runCmd("show ip fib")
 		runCmd("show ip6 fib")
 
-		formatter.JSON(w, http.StatusOK, cmdOuts)
+		p.logError(formatter.JSON(w, http.StatusOK, cmdOuts))
 	}
 }
 
@@ -346,7 +346,7 @@ func (p *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFu
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		defer ch.Close()
@@ -355,11 +355,11 @@ func (p *Plugin) telemetryMemoryHandler(formatter *render.Render) http.HandlerFu
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 
-		formatter.JSON(w, http.StatusOK, info)
+		p.logError(formatter.JSON(w, http.StatusOK, info))
 	}
 }
 
@@ -371,7 +371,7 @@ func (p *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerF
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		defer ch.Close()
@@ -380,11 +380,11 @@ func (p *Plugin) telemetryRuntimeHandler(formatter *render.Render) http.HandlerF
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 
-		formatter.JSON(w, http.StatusOK, runtimeInfo)
+		p.logError(formatter.JSON(w, http.StatusOK, runtimeInfo))
 	}
 }
 
@@ -396,7 +396,7 @@ func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.Handle
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		defer ch.Close()
@@ -405,11 +405,11 @@ func (p *Plugin) telemetryNodeCountHandler(formatter *render.Render) http.Handle
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 
-		formatter.JSON(w, http.StatusOK, nodeCounters)
+		p.logError(formatter.JSON(w, http.StatusOK, nodeCounters))
 	}
 }
 
@@ -420,7 +420,7 @@ func (p *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: error creating channel: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		defer ch.Close()
@@ -429,14 +429,21 @@ func (p *Plugin) tracerHandler(formatter *render.Render) http.HandlerFunc {
 		if err != nil {
 			errMsg := fmt.Sprintf("500 Internal server error: sending command failed: %v\n", err)
 			p.Log.Error(errMsg)
-			formatter.JSON(w, http.StatusInternalServerError, errMsg)
+			p.logError(formatter.JSON(w, http.StatusInternalServerError, errMsg))
 			return
 		}
 		if entries == nil {
-			formatter.JSON(w, http.StatusOK, "VPP api trace is disabled")
+			p.logError(formatter.JSON(w, http.StatusOK, "VPP api trace is disabled"))
 			return
 		}
 
-		formatter.JSON(w, http.StatusOK, entries)
+		p.logError(formatter.JSON(w, http.StatusOK, entries))
+	}
+}
+
+// logError logs non-nil errors from JSON formatter
+func (p *Plugin) logError(err error) {
+	if err != nil {
+		p.Log.Error(err)
 	}
 }

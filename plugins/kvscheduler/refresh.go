@@ -20,7 +20,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
@@ -62,13 +62,13 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			graph.WithoutFlags(&PendingFlag{}, &DerivedFlag{}))
 
 		// get key-value pairs for correlation
-		var correlate []KVWithMetadata
+		var correlate []kvs.KVWithMetadata
 		if resyncData != nil && resyncData.first {
 			// for startup resync, use data received from NB
 			for _, kv := range resyncData.values {
 				if descriptor.KeySelector(kv.key) {
 					correlate = append(correlate,
-						KVWithMetadata{
+						kvs.KVWithMetadata{
 							Key:    kv.key,
 							Value:  kv.value,
 							Origin: kv.origin,
@@ -119,7 +119,7 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			}
 
 			// 1st attempt to determine value origin
-			if dumpedKV.Origin == UnknownOrigin {
+			if dumpedKV.Origin == kvs.UnknownOrigin {
 				// determine value origin based on the values for correlation
 				for _, kv := range correlate {
 					if kv.Key == dumpedKV.Key {
@@ -130,23 +130,23 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			}
 
 			// 2nd attempt to determine value origin
-			if dumpedKV.Origin == UnknownOrigin {
+			if dumpedKV.Origin == kvs.UnknownOrigin {
 				// determine value origin based on the last revision
 				timeline := graphW.GetNodeTimeline(dumpedKV.Key)
 				if len(timeline) > 0 {
 					lastRev := timeline[len(timeline)-1]
 					originFlag := lastRev.Flags[OriginFlagName]
-					if originFlag == FromNB.String() {
-						dumpedKV.Origin = FromNB
+					if originFlag == kvs.FromNB.String() {
+						dumpedKV.Origin = kvs.FromNB
 					} else {
-						dumpedKV.Origin = FromSB
+						dumpedKV.Origin = kvs.FromSB
 					}
 				}
 			}
 
-			if dumpedKV.Origin == UnknownOrigin {
+			if dumpedKV.Origin == kvs.UnknownOrigin {
 				// will assume this is from SB
-				dumpedKV.Origin = FromSB
+				dumpedKV.Origin = kvs.FromSB
 			}
 
 			// refresh node that represents this kv-pair
@@ -165,7 +165,7 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 		// mark non-pending, non-derived values from NB that do not actually exist as pending
 		for _, node := range prevAddedNodes {
 			if _, refreshed := refreshedKeys[node.GetKey()]; !refreshed {
-				if getNodeOrigin(node) == FromNB && getNodeLastChange(node).value != nil {
+				if getNodeOrigin(node) == kvs.FromNB && getNodeLastChange(node).value != nil {
 					missingNode := graphW.SetNode(node.GetKey())
 					missingNode.SetFlags(&PendingFlag{})
 					missingNode.SetMetadata(nil)
@@ -251,7 +251,7 @@ func dumpGraph(g graph.RWAccess) string {
 			for dep, nodes := range f {
 				var nodeDeps []string
 				for _, node := range nodes {
-					nodeDeps = append(nodeDeps, fmt.Sprintf("%s", node.GetKey()))
+					nodeDeps = append(nodeDeps, node.GetKey())
 				}
 				if len(nodeDeps) > 1 {
 					writeLine(fmt.Sprintf(" - %s", dep), "")
@@ -266,7 +266,7 @@ func dumpGraph(g graph.RWAccess) string {
 			var nodeDers []string
 			for der, nodes := range f {
 				if len(nodes) == 0 {
-					nodeDers = append(nodeDers, fmt.Sprintf("%s", der))
+					nodeDers = append(nodeDers, "%s", der)
 				} else {
 					for _, node := range nodes {
 						desc := ""
@@ -279,7 +279,7 @@ func dumpGraph(g graph.RWAccess) string {
 			}
 			writeLines(strings.Join(nodeDers, "\n"), " - ")
 		}
-		if f := node.GetSources(DependencyRelation); f != nil && len(f) > 0 {
+		if f := node.GetSources(DependencyRelation); len(f) > 0 {
 			writeLine("Dependency for:", "")
 			var nodeDeps []string
 			for _, node := range f {
@@ -291,10 +291,10 @@ func dumpGraph(g graph.RWAccess) string {
 			}
 			writeLines(strings.Join(nodeDeps, "\n"), " - ")
 		}
-		if f := node.GetSources(DerivesRelation); f != nil && len(f) > 0 {
+		if f := node.GetSources(DerivesRelation); len(f) > 0 {
 			var nodeDers []string
 			for _, der := range f {
-				nodeDers = append(nodeDers, fmt.Sprintf("%s", der.GetKey()))
+				nodeDers = append(nodeDers, der.GetKey())
 			}
 			writeLine(fmt.Sprintf("Derived from: %s", strings.Join(nodeDers, " ")), "")
 		}
@@ -341,7 +341,7 @@ func (scheduler *Scheduler) skipRefresh(graphR graph.ReadAccess, descriptor stri
 
 // unwindDumpedRelations builds a tree of derived values based on a dumped <root> kv-pair.
 func (scheduler *Scheduler) unwindDumpedRelations(graphW graph.RWAccess, root graph.NodeRW,
-	origin ValueOrigin, refreshed utils.KeySet) {
+	origin kvs.ValueOrigin, refreshed utils.KeySet) {
 
 	// BFS over derived values
 	nodes := []graph.NodeRW{root}
@@ -387,7 +387,7 @@ func (scheduler *Scheduler) unwindDumpedRelations(graphW graph.RWAccess, root gr
 }
 
 // validDumpedKV verifies validity of a dumped KV-pair.
-func (scheduler *Scheduler) validDumpedKV(kv KVWithMetadata, descriptor *KVDescriptor, refreshed utils.KeySet) bool {
+func (scheduler *Scheduler) validDumpedKV(kv kvs.KVWithMetadata, descriptor *kvs.KVDescriptor, refreshed utils.KeySet) bool {
 	if kv.Key == "" {
 		scheduler.Log.WithFields(logging.Fields{
 			"descriptor": descriptor.Name,
@@ -420,7 +420,7 @@ func (scheduler *Scheduler) validDumpedKV(kv KVWithMetadata, descriptor *KVDescr
 }
 
 // validDumpedKV verifies validity of a KV-pair derived from a dumped value.
-func (scheduler *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor *KVDescriptor, refreshed utils.KeySet) bool {
+func (scheduler *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor *kvs.KVDescriptor, refreshed utils.KeySet) bool {
 	descriptorName := "<NONE>"
 	if descriptor != nil {
 		descriptorName = descriptor.Name

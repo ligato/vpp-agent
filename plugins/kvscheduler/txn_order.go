@@ -15,7 +15,7 @@
 package kvscheduler
 
 import (
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
@@ -41,7 +41,7 @@ func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kv
 		handler := &descriptorHandler{descriptor}
 		node := graphR.GetNode(kv.key)
 
-		var derivedKVs []KeyValuePair
+		var derivedKVs []kvs.KeyValuePair
 		if kv.value != nil {
 			derivedKVs = handler.derivedValues(kv.key, kv.value)
 		} else if node != nil {
@@ -65,7 +65,7 @@ func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kv
 		handler := &descriptorHandler{descriptor}
 		node := graphR.GetNode(kv.key)
 
-		var valDeps []Dependency
+		var valDeps []kvs.Dependency
 		if kv.value != nil {
 			valDeps = handler.dependencies(kv.key, kv.value)
 		} else if node != nil {
