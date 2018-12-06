@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package processmanager
+package process
 
 // DefaultPlugin is a default instance of Plugin.
 var DefaultPlugin = *NewPlugin()

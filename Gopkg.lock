@@ -477,7 +477,7 @@
 
 [[projects]]
   branch = "dev"
-  digest = "1:8a7d43b93d527b0fbcfcd0b297e3ae49014cc34864755d5a25124622906a4e2b"
+  digest = "1:fab0f3166e308fd5874bd6a8912497ab46331e0bf27c3a26eb48282020cc5b3b"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -520,7 +520,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "2658e5271868c73c21c820705595a2e99e2c6626"
+  revision = "21be158066808dc185b30f6a32d1bdb6ea03cd11"
 
 [[projects]]
   branch = "master"
@@ -982,7 +982,6 @@
     "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
     "github.com/gogo/protobuf/gogoproto",
-    "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/protoc-gen-gogo",
     "github.com/gogo/protobuf/types",
