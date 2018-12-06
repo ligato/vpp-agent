@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -195,6 +196,12 @@ func (dsl *PutDSL) IPSecTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) vppclient.
 	return dsl
 }
 
+// PuntSocketRegister adds request to register a new punt to host entry
+func (dsl *PutDSL) PuntSocketRegister(puntCfg *punt.Punt) vppclient.PutDSL {
+	dsl.parent.txn.Put(punt.Key(puntCfg.Name), puntCfg)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() vppclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -328,6 +335,13 @@ func (dsl *DeleteDSL) IPSecTunnel(name string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(ipsec.TunnelKey(name))
 	return dsl
 }
+
+// PuntSocketDeregister adds request to de-register an existing punt to host entry
+func (dsl *DeleteDSL) PuntSocketDeregister(name string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(punt.Key(name))
+	return dsl
+}
+
 
 // Put changes the DSL mode to allow configuration editing.
 func (dsl *DeleteDSL) Put() vppclient.PutDSL {

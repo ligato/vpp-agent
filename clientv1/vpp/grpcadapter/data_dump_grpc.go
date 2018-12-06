@@ -17,6 +17,8 @@ package grpcadapter
 import (
 	"context"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/clientv1/vpp"
 	linuxIf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
@@ -110,6 +112,12 @@ func (dsl *DumpDSL) Routes() vppclient.DumpDSL {
 // ARPs adds a request to read an existing VPP ARPs
 func (dsl *DumpDSL) ARPs() vppclient.DumpDSL {
 	dsl.parent.dump = append(dsl.parent.dump, &l3.ArpTable_ArpEntry{})
+	return dsl
+}
+
+// PuntRegistrations adds a request to read punt socket registrations.
+func (dsl *DumpDSL) PuntRegistrations() vppclient.DumpDSL {
+	dsl.parent.dump = append(dsl.parent.dump, &punt.Punt{})
 	return dsl
 }
 
@@ -207,6 +215,12 @@ func (dsl *DataDumpDSL) Send() vppclient.DumpReply {
 				return &GetReply{&replyData{err: err}}
 			}
 			rd.routes = resp.StaticRoutes
+		case *punt.Punt:
+			resp, err := dsl.client.DumpPunt(ctx, request)
+			if err != nil {
+				return &GetReply{&replyData{err: err}}
+			}
+			rd.punts = resp.PuntEntries
 		case *linuxIf.LinuxInterfaces_Interface:
 			resp, err := dsl.client.DumpLinuxInterfaces(ctx, request)
 			if err != nil {
@@ -250,6 +264,7 @@ type replyData struct {
 	xcs         []*l2.XConnectPairs_XConnectPair
 	routes      []*l3.StaticRoutes_Route
 	arps        []*l3.ArpTable_ArpEntry
+	punts       []*rpc.PuntResponse_PuntEntry
 	linuxIfs    []*linuxIf.LinuxInterfaces_Interface
 	linuxArps   []*linuxL3.LinuxStaticArpEntries_ArpEntry
 	linuxRoutes []*linuxL3.LinuxStaticRoutes_Route
@@ -303,6 +318,11 @@ func (rd *replyData) GetARPs() []*l3.ArpTable_ArpEntry {
 // GetRoutes returns all the routes from the reply
 func (rd *replyData) GetRoutes() []*l3.StaticRoutes_Route {
 	return rd.routes
+}
+
+// GetPunts returns all the punt registrations from the reply
+func (rd *replyData) GetPunts() []*rpc.PuntResponse_PuntEntry {
+	return rd.punts
 }
 
 // GetLinuxInterfaces returns all the linux interfaces from the reply

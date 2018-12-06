@@ -10,6 +10,7 @@ import "github.com/ligato/vpp-agent/plugins/vpp/model/l2/l2.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/l3/l3.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/l4/l4.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/nat/nat.proto";
+import "github.com/ligato/vpp-agent/plugins/vpp/model/punt/punt.proto";
 import "github.com/ligato/vpp-agent/plugins/vpp/model/stn/stn.proto";
 import "github.com/ligato/vpp-agent/plugins/linux/model/interfaces/interfaces.proto";
 import "github.com/ligato/vpp-agent/plugins/linux/model/l3/l3.proto";
@@ -41,6 +42,7 @@ service DataDumpService {
     rpc DumpXConnects  (DumpRequest) returns (XcResponse);
     rpc DumpRoutes  (DumpRequest) returns (RoutesResponse);
     rpc DumpARPs  (DumpRequest) returns (ARPsResponse);
+    rpc DumpPunt  (DumpRequest) returns (PuntResponse);
     rpc DumpLinuxInterfaces  (DumpRequest) returns (LinuxInterfaceResponse);
     rpc DumpLinuxARPs  (DumpRequest) returns (LinuxARPsResponse);
     rpc DumpLinuxRoutes  (DumpRequest) returns (LinuxRoutesResponse);
@@ -76,6 +78,7 @@ message DataRequest {
     repeated stn.STN.Rule StnRules = 70;
     nat.Nat44Global NatGlobal = 71;
     repeated nat.Nat44DNat.DNatConfig DNATs= 72;
+    repeated punt.Punt punts = 73;
     // Linux plugin
     repeated interfaces.LinuxInterfaces.Interface LinuxInterfaces = 80;
     repeated l3.LinuxStaticArpEntries.ArpEntry LinuxArpEntries = 90;
@@ -152,6 +155,15 @@ message RoutesResponse {
 // ARPsResponse is response to 'dump' the l3 ARPs
 message ARPsResponse {
     repeated l3.ArpTable.ArpEntry ArpEntries = 1;
+}
+
+// PuntResponse is response to 'dump' the punt socket register entries
+message PuntResponse {
+    message PuntEntry {
+        punt.Punt puntData = 1;
+        bytes pathName = 2;       /* unix domain socket path name in bytes as returned by the VPP API */
+    }
+    repeated PuntEntry punt_entries = 1;
 }
 
 // LinuxInterfaceResponse is response to 'dump' all the linux interfaces

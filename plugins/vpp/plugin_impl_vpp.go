@@ -19,6 +19,10 @@ import (
 	"os"
 	"sync"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/puntidx"
+
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -94,6 +98,7 @@ type Plugin struct {
 	routeConfigurator    *l3plugin.RouteConfigurator
 	ipNeighConfigurator  *l3plugin.IPNeighConfigurator
 	appNsConfigurator    *l4plugin.AppNsConfigurator
+	puntConfigurator     *puntplugin.PuntConfigurator
 	srv6Configurator     *srplugin.SRv6Configurator
 
 	// State updaters
@@ -227,6 +232,11 @@ func (plugin *Plugin) GetXConnectIndexes() l2idx.XcIndexRW {
 	return plugin.xcConfigurator.GetXcIndexes()
 }
 
+// GetPuntIndexes gives access to mapping of logical names (used in ETCD configuration) as punt_indexes.
+func (plugin *Plugin) GetPuntIndexes() puntidx.PuntIndexRW {
+	return plugin.puntConfigurator.GetPuntIndexes()
+}
+
 // GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
 // to their respective indices as assigned by VPP.
 func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
@@ -323,6 +333,9 @@ func (plugin *Plugin) Init() error {
 	if err = plugin.initL4(ctx); err != nil {
 		return err
 	}
+	if err = plugin.initPunt(ctx); err != nil {
+		return err
+	}
 	if err = plugin.initSR(ctx); err != nil {
 		return err
 	}
@@ -371,6 +384,7 @@ func (plugin *Plugin) Close() error {
 		plugin.aclConfigurator, plugin.ifConfigurator, plugin.bfdConfigurator, plugin.natConfigurator, plugin.stnConfigurator,
 		plugin.ipSecConfigurator, plugin.bdConfigurator, plugin.fibConfigurator, plugin.xcConfigurator, plugin.arpConfigurator,
 		plugin.proxyArpConfigurator, plugin.routeConfigurator, plugin.ipNeighConfigurator, plugin.appNsConfigurator,
+		plugin.puntConfigurator,
 		// State updaters
 		plugin.ifStateUpdater, plugin.bdStateUpdater,
 		// Channels
@@ -588,6 +602,19 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 	}
 	plugin.Log.Debug("l4Configurator Initialized")
 
+	return nil
+}
+
+func (plugin *Plugin) initPunt(ctx context.Context) (err error) {
+	plugin.Log.Infof("Init Punt plugin")
+
+	// Init Punt configurator
+	plugin.puntConfigurator = &puntplugin.PuntConfigurator{}
+	if err := plugin.puntConfigurator.Init(plugin.Log, plugin.GoVppmux); err != nil {
+		return plugin.puntConfigurator.LogError(err)
+	}
+
+	plugin.Log.Debug("SRConfigurator Initialized")
 	return nil
 }
 

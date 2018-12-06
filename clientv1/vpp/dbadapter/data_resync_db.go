@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -223,6 +224,15 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) vppcl
 func (dsl *DataResyncDSL) IPSecTunnel(tun *ipsec.TunnelInterfaces_Tunnel) vppclient.DataResyncDSL {
 	key := ipsec.TunnelKey(tun.Name)
 	dsl.txn.Put(key, tun)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// PuntSocketRegister adds request to RESYNC a new punt to host entry
+func (dsl *DataResyncDSL) PuntSocketRegister(puntCfg *punt.Punt) vppclient.DataResyncDSL {
+	key := punt.Key(puntCfg.Name)
+	dsl.txn.Put(key, puntCfg)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl

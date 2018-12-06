@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
@@ -74,6 +76,8 @@ type DataResyncReq struct {
 	Nat44SNat []*nat.Nat44SNat_SNatConfig
 	// Nat44DNat is a list of all DNAT configurations expected to be in VPP after RESYNC
 	Nat44DNat []*nat.Nat44DNat_DNatConfig
+	// Punt is a list of all punt configurations expected to be in VPP after RESYNC
+	Punt []*punt.Punt
 	// IPSecSPDs is a list of all IPSec Security Policy Databases expected to be in VPP after RESYNC
 	IPSecSPDs []*ipsec.SecurityPolicyDatabases_SPD
 	// IPSecSAs is a list of all IPSec Security Associations expected to be in VPP after RESYNC
@@ -112,6 +116,7 @@ func NewDataResyncReq() *DataResyncReq {
 		Nat44Global:         &nat.Nat44Global{},
 		Nat44SNat:           []*nat.Nat44SNat_SNatConfig{},
 		Nat44DNat:           []*nat.Nat44DNat_DNatConfig{},
+		Punt:                []*punt.Punt{},
 		IPSecSPDs:           []*ipsec.SecurityPolicyDatabases_SPD{},
 		IPSecSAs:            []*ipsec.SecurityAssociations_SA{},
 		IPSecTunnels:        []*ipsec.TunnelInterfaces_Tunnel{},
@@ -317,6 +322,8 @@ func (plugin *Plugin) resyncParseEvent(resyncEv datasync.ResyncEvent) *DataResyn
 			plugin.appendResyncSNat(resyncData, req)
 		} else if strings.HasPrefix(key, nat.DNatPrefix) {
 			plugin.appendResyncDNat(resyncData, req)
+		} else if strings.HasPrefix(key, punt.Prefix) {
+			plugin.appendResyncPunt(resyncData, req)
 		} else if strings.HasPrefix(key, ipsec.KeyPrefix) {
 			plugin.appendResyncIPSec(resyncData, req)
 		} else if strings.HasPrefix(key, srv6.BasePrefix()) {
@@ -786,6 +793,28 @@ func (plugin *Plugin) appendResyncDNat(resyncData datasync.KeyValIterator, req *
 	plugin.Log.Debugf("Received RESYNC DNAT global %d", num)
 }
 
+func (plugin *Plugin) appendResyncPunt(resyncData datasync.KeyValIterator, req *DataResyncReq) {
+	num := 0
+	for {
+		if puntData, stop := resyncData.GetNext(); stop {
+			break
+		} else {
+			value := &punt.Punt{}
+			if err := puntData.GetValue(value); err != nil {
+				plugin.Log.Errorf("error getting value of punt: %v", err)
+				continue
+			}
+			req.Punt = append(req.Punt, value)
+			num++
+
+			plugin.Log.WithField("revision", puntData.GetRevision()).
+				Debugf("Processing resync for key: %q", puntData.GetKey())
+		}
+	}
+
+	plugin.Log.Debugf("Received RESYNC punt %d", num)
+}
+
 func (plugin *Plugin) appendResyncIPSec(resyncData datasync.KeyValIterator, req *DataResyncReq) {
 	num := 0
 	for {
@@ -918,6 +947,7 @@ func (plugin *Plugin) subscribeWatcher() (err error) {
 			nat.GlobalPrefix,
 			nat.SNatPrefix,
 			nat.DNatPrefix,
+			punt.Prefix,
 			ipsec.KeyPrefix,
 			srv6.BasePrefix(),
 		)

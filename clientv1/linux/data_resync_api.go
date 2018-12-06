@@ -18,6 +18,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 
 	vpp_clientv1 "github.com/ligato/vpp-agent/clientv1/vpp"
 	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
@@ -87,6 +88,8 @@ type DataResyncDSL interface {
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
 	// NAT44DNat adds a request to RESYNC a new DNAT configuration
 	NAT44DNat(dnat *nat.Nat44DNat_DNatConfig) DataResyncDSL
+	// PuntSocketRegister adds request to RESYNC a new punt to host entry
+	PuntSocketRegister(puntCfg *punt.Punt) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv1.Reply

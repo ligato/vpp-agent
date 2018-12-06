@@ -26,6 +26,7 @@ import (
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -96,6 +97,8 @@ type PutDSL interface {
 	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) PutDSL
 	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
 	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) PutDSL
+	// PuntSocketRegister adds request to register a new punt to host entry
+	PuntSocketRegister(puntCfg *punt.Punt) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *vpp_l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
@@ -171,6 +174,8 @@ type DeleteDSL interface {
 	NAT44Global() DeleteDSL
 	// NAT44DNat adds a request to delete a new DNAT configuration
 	NAT44DNat(label string) DeleteDSL
+	// PuntSocketDeregister adds request to de-register an existing punt to host entry
+	PuntSocketDeregister(puntName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

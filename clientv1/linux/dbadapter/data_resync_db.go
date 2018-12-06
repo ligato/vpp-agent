@@ -17,6 +17,7 @@ package dbadapter
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
@@ -203,6 +204,13 @@ func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.DataRe
 // NAT44DNat adds a request to RESYNC a new DNAT configuration
 func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.NAT44DNat(nat44)
+
+	return dsl
+}
+
+// PuntSocketRegister adds request to RESYNC a new punt to host entry
+func (dsl *DataResyncDSL) PuntSocketRegister(puntCfg *punt.Punt) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.PuntSocketRegister(puntCfg)
 
 	return dsl
 }

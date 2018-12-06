@@ -182,6 +182,14 @@ func (plugin *Plugin) registerL4Handlers() {
 	})
 }
 
+// Registers Punt plugin REST handlers
+func (plugin *Plugin) registerPuntHandlers() {
+	// GET static routes
+	plugin.registerHTTPHandler(resturl.PuntURL, GET, func() (interface{}, error) {
+		return plugin.puntHandler.DumpPuntRegisteredSockets(), nil
+	})
+}
+
 // Registers linux interface plugin REST handlers
 func (plugin *Plugin) registerLinuxInterfaceHandlers() {
 	// GET linux interfaces

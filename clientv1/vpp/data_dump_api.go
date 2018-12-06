@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 )
 
 // DataDumpDSL defines Domain Specific Language (DSL) for data read.
@@ -62,6 +63,8 @@ type DumpDSL interface {
 	Routes() DumpDSL
 	// ARPs adds a request to read ARPs.
 	ARPs() DumpDSL
+	// PuntRegistrations adds a request to read punt socket registrations.
+	PuntRegistrations() DumpDSL
 	// LinuxInterfaces adds a request to read linux interfaces.
 	LinuxInterfaces() DumpDSL
 	// LinuxARPs adds a request to read linux ARPs.
@@ -101,6 +104,8 @@ type ReplyData interface {
 	GetARPs() []*l3.ArpTable_ArpEntry
 	// GetRoutes returns all the routes from the reply
 	GetRoutes() []*l3.StaticRoutes_Route
+	// GetPunts returns all the punts from the reply
+	GetPunts() []*rpc.PuntResponse_PuntEntry
 	// GetLinuxInterfaces returns all the linux interfaces from the reply
 	GetLinuxInterfaces() []*linuxIf.LinuxInterfaces_Interface
 	// GetLinuxARPs returns all the linux ARPs from the reply

@@ -27,8 +27,15 @@ vpp_term: Open VPP Terminal
 
 vpp_term: Issue Command
     [Arguments]        ${node}     ${command}    ${delay}=${SSH_READ_DELAY}s
-    ${out}=            Write To Machine Until String    ${node}_term    ${command}    ${${node}_VPP_TERM_PROMPT}    delay=${delay}
-#    Should Contain     ${out}             ${${node}_VPP_TERM_PROMPT}
+    ${failed_it}=     Create List
+    :FOR    ${it_num}    IN RANGE    1    6
+    \    ${result}    ${out}=    Run Keyword And Ignore Error    Write To Machine Until String    ${node}_term    ${command}    ${${node}_VPP_TERM_PROMPT}    delay=${delay}
+    \    Run Keyword If      '${result}'=='FAIL'      Append To List    ${failed_it}    ${it_num}
+    \    Run Keyword If      '${result}'=='FAIL'      Log  Warning, no match found #vpp console output!	WARN
+    \    Exit For Loop If    '${result}'=='PASS'
+    Should Be Empty  ${failed_it}  msg='Fail in this checks ${failed_it}'
+#    ${out}=            Write To Machine Until String    ${node}_term    ${command}    ${${node}_VPP_TERM_PROMPT}    delay=${delay}
+##    Should Contain     ${out}             ${${node}_VPP_TERM_PROMPT}
     [Return]           ${out}
 
 vpp_term: Exit VPP Terminal
@@ -42,6 +49,18 @@ vpp_term: Show Interfaces
     [Arguments]        ${node}    ${interface}=${EMPTY}
     [Documentation]    Show interfaces through vpp terminal
     ${out}=            vpp_term: Issue Command  ${node}   sh int ${interface}
+    [Return]           ${out}
+
+vpp_term: Show Vpp Logging
+    [Arguments]        ${node}
+    [Documentation]    Show interfaces through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   sh logging
+    [Return]           ${out}
+
+vpp_term: Show Runtime
+    [Arguments]        ${node}
+    [Documentation]    Show runtime through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   show runtime
     [Return]           ${out}
 
 vpp_term: Show Interfaces Address
