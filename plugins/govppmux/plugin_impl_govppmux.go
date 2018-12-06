@@ -67,14 +67,14 @@ type Deps struct {
 // Config groups the configurable parameter of GoVpp.
 type Config struct {
 	TraceEnabled             bool          `json:"trace-enabled"`
+	ReconnectResync          bool          `json:"resync-after-reconnect"`
 	HealthCheckProbeInterval time.Duration `json:"health-check-probe-interval"`
 	HealthCheckReplyTimeout  time.Duration `json:"health-check-reply-timeout"`
 	HealthCheckThreshold     int           `json:"health-check-threshold"`
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
-	ShmPrefix       string `json:"shm-prefix"`
-	ReconnectResync bool   `json:"resync-after-reconnect"`
+	ShmPrefix string `json:"shm-prefix"`
 	// How many times can be request resent in case vpp is suddenly disconnected.
 	RetryRequestCount int `json:"retry-request-count"`
 	// Time between request resend attempts. Default is 500ms.

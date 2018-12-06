@@ -225,12 +225,6 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 		Origin: origin,
 	}}
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d NAT44 global: %s", len(dump), dumpList)
-
 	return dump, nil
 }
 

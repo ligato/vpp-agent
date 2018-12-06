@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -142,12 +141,6 @@ func (d *MicroserviceDescriptor) Dump(correlate []scheduler.KVWithMetadata) (dum
 			Origin: scheduler.FromSB,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d Microservices: %v", len(dump), dumpList)
 
 	return dump, nil
 }

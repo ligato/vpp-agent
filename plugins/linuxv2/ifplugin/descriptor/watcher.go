@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -121,12 +120,6 @@ func (w *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump []sc
 			Origin: scheduler.FromSB,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	w.log.Debugf("Dumping %d Linux interface host names (from default namespace): %v", len(dump), dumpList)
 
 	return dump, nil
 }

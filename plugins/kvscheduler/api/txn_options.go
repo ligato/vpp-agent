@@ -22,13 +22,9 @@ import (
 type schedulerCtxKey int
 
 const (
-	// fullResyncCtxKey is a key under which *full-resync* txn option is stored
+	// resyncCtxKey is a key under which *resync* txn option is stored
 	// into the context.
-	fullResyncCtxKey schedulerCtxKey = iota
-
-	// downstreamResyncCtxKey is a key under which *downstream-resync* txn option is
-	// stored into the context.
-	downstreamResyncCtxKey
+	resyncCtxKey schedulerCtxKey = iota
 
 	// nonBlockingTxnCtxKey is a key under which *non-blocking* txn option is
 	// stored into the context.
@@ -49,46 +45,59 @@ const (
 
 /* Full-Resync */
 
-// fullResyncOpt represents the *full-resync* transaction option.
-type fullResyncOpt struct {
-	// no attributes
+// resyncOpt represents the *resync* transaction option.
+type resyncOpt struct {
+	resyncType       ResyncType
+	verboseSBRefresh bool
 }
 
-// WithFullResync prepares context for transaction carrying up-to-date *full*
-// snapshot of NB key-value pairs that SB should be reconciled against.
-// Such transaction should only carry non-NIL values - existing NB values
-// not included in the transaction are automatically removed.
-func WithFullResync(ctx context.Context) context.Context {
-	return context.WithValue(ctx, fullResyncCtxKey, &fullResyncOpt{})
+// ResyncType is one of: Upstream, Downstream, Full.
+type ResyncType int
+
+const (
+	// NotResync is the default value for ResyncType, used when resync is actually
+	// not enabled.
+	NotResync ResyncType = iota
+
+	// FullResync resynchronizes the agent with both SB and NB.
+	FullResync
+
+	// UpstreamResync resynchronizes the agent with NB.
+	// It can be used by NB in situations when fully re-calculating the desired
+	// state is far easier or more efficient that to determine the minimal difference
+	// that needs to be applied to reach that state.
+	// The agent's view of SB is not refreshed, instead it is expected to be up-to-date.
+	UpstreamResync
+
+	// DownstreamResync resynchronizes the agent with SB.
+	// In this case it is assumed that the state required by NB is up-to-date
+	// (transaction should be empty) and only the agent's view of SB is refreshed
+	// and any discrepancies are acted upon.
+	DownstreamResync
+)
+
+// WithResync prepares context for transaction that, based on the resync type,
+// will trigger resync between the configuration states of NB, the agent and SB.
+// For DownstreamResync the transaction should be empty, otherwise it should
+// carry non-NIL values - existing NB values not included in the transaction
+// are automatically removed.
+// When <verboseSBRefresh> is enabled, the refreshed state of SB will be printed
+// into stdout. The argument is irrelevant for UpstreamResync, where SB state is
+// not refreshed.
+func WithResync(ctx context.Context, resyncType ResyncType, verboseSBRefresh bool) context.Context {
+	return context.WithValue(ctx, resyncCtxKey, &resyncOpt{
+		resyncType:       resyncType,
+		verboseSBRefresh: verboseSBRefresh,
+	})
 }
 
-// IsFullResync returns true if the transaction context is configured
-// to trigger full-resync.
-func IsFullResync(ctx context.Context) bool {
-	_, isFullResync := ctx.Value(fullResyncCtxKey).(*fullResyncOpt)
-	return isFullResync
-}
-
-/* Downstream-Resync */
-
-// downstreamResyncOpt represents the *downstream-resync* transaction option.
-type downstreamResyncOpt struct {
-	// no attributes
-}
-
-// WithDownstreamResync prepares context for transaction that will trigger resync
-// between scheduler and SB - i.e. without NB providing up-to-date snapshot of
-// key-value pairs, hence "downstream" reconciliation.
-// Transaction is thus expected to carry no key-value pairs.
-func WithDownstreamResync(ctx context.Context) context.Context {
-	return context.WithValue(ctx, downstreamResyncCtxKey, &downstreamResyncOpt{})
-}
-
-// IsDownstreamResync returns true if the transaction context is configured
-// to trigger downstream-resync.
-func IsDownstreamResync(ctx context.Context) bool {
-	_, isDownstreamResync := ctx.Value(downstreamResyncCtxKey).(*downstreamResyncOpt)
-	return isDownstreamResync
+// IsResync returns true if the transaction context is configured to trigger resync.
+func IsResync(ctx context.Context) (resyncType ResyncType, verboseSBRefresh bool) {
+	resyncArgs, isResync := ctx.Value(resyncCtxKey).(*resyncOpt)
+	if !isResync {
+		return NotResync, false
+	}
+	return resyncArgs.resyncType, resyncArgs.verboseSBRefresh
 }
 
 /* Non-blocking Txn */

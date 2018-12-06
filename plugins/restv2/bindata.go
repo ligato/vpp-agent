@@ -29,8 +29,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/elazarl/go-bindata-assetfs"
 )
 
 func bindataRead(data []byte, name string) ([]byte, error) {
@@ -223,11 +221,7 @@ func RestoreAsset(dir, name string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
-	if err != nil {
-		return err
-	}
-	return nil
+	return os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
 }
 
 // RestoreAssets restores an asset under the given directory recursively
@@ -250,14 +244,4 @@ func RestoreAssets(dir, name string) error {
 func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
-}
-
-func assetFS() *assetfs.AssetFS {
-	assetInfo := func(path string) (os.FileInfo, error) {
-		return os.Stat(path)
-	}
-	for k := range _bintree.Children {
-		return &assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: assetInfo, Prefix: k}
-	}
-	panic("unreachable")
 }

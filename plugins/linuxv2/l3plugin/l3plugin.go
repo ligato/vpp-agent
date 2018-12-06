@@ -28,6 +28,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
+const (
+	// by default, at most 10 go routines will split the configured namespaces
+	// to execute the Dump operation in parallel.
+	defaultDumpGoRoutinesCnt = 10
+)
+
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
 type L3Plugin struct {
 	Deps
@@ -53,7 +59,8 @@ type Deps struct {
 
 // Config holds the l3plugin configuration.
 type Config struct {
-	Disabled bool `json:"disabled"`
+	Disabled          bool `json:"disabled"`
+	DumpGoRoutinesCnt int  `json:"dump-go-routines-count"`
 }
 
 // Init initializes and registers descriptors for Linux ARPs and Routes.
@@ -63,12 +70,11 @@ func (p *L3Plugin) Init() error {
 	if err != nil {
 		return err
 	}
-	if config != nil {
-		if config.Disabled {
-			p.disabled = true
-			p.Log.Infof("Disabling Linux L3 plugin")
-			return nil
-		}
+	p.Log.Debugf("Linux L3 plugin config: %+v", config)
+	if config.Disabled {
+		p.disabled = true
+		p.Log.Infof("Disabling Linux L3 plugin")
+		return nil
 	}
 
 	// init handlers
@@ -76,10 +82,10 @@ func (p *L3Plugin) Init() error {
 
 	// init & register descriptors
 	arpDescriptor := adapter.NewARPDescriptor(descriptor.NewARPDescriptor(
-		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log).GetDescriptor())
+		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
 
 	routeDescriptor := adapter.NewRouteDescriptor(descriptor.NewRouteDescriptor(
-		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log).GetDescriptor())
+		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
 
 	p.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
 	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
@@ -94,15 +100,17 @@ func (p *L3Plugin) Close() error {
 
 // retrieveConfig loads L3Plugin configuration file.
 func (p *L3Plugin) retrieveConfig() (*Config, error) {
-	config := &Config{}
+	config := &Config{
+		// default configuration
+		DumpGoRoutinesCnt: defaultDumpGoRoutinesCnt,
+	}
 	found, err := p.Cfg.LoadValue(config)
 	if !found {
 		p.Log.Debug("Linux L3Plugin config not found")
-		return nil, nil
+		return config, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	p.Log.Debug("Linux L3Plugin config found")
 	return config, err
 }

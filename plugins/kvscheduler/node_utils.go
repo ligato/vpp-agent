@@ -15,24 +15,24 @@
 package kvscheduler
 
 import (
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-func nodesToKVPairs(nodes []graph.Node) (kvPairs []KeyValuePair) {
+func nodesToKVPairs(nodes []graph.Node) (kvPairs []kvs.KeyValuePair) {
 	for _, node := range nodes {
-		kvPairs = append(kvPairs, KeyValuePair{
+		kvPairs = append(kvPairs, kvs.KeyValuePair{
 			Key:   node.GetKey(),
 			Value: node.GetValue()})
 	}
 	return kvPairs
 }
 
-func nodesToKeysWithError(nodes []graph.Node) (kvPairs []KeyWithError) {
+func nodesToKeysWithError(nodes []graph.Node) (kvPairs []kvs.KeyWithError) {
 	for _, node := range nodes {
 		txnOp, err := getNodeError(node)
-		kvPairs = append(kvPairs, KeyWithError{
+		kvPairs = append(kvPairs, kvs.KeyWithError{
 			Key:          node.GetKey(),
 			TxnOperation: txnOp,
 			Error:        err,
@@ -41,9 +41,9 @@ func nodesToKeysWithError(nodes []graph.Node) (kvPairs []KeyWithError) {
 	return kvPairs
 }
 
-func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []KVWithMetadata) {
+func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []kvs.KVWithMetadata) {
 	for _, node := range nodes {
-		kvPairs = append(kvPairs, KVWithMetadata{
+		kvPairs = append(kvPairs, kvs.KVWithMetadata{
 			Key:      node.GetKey(),
 			Value:    node.GetValue(),
 			Metadata: node.GetMetadata(),
@@ -54,7 +54,7 @@ func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []KVWithMetadata) {
 }
 
 // constructTargets builds targets for the graph based on derived values and dependencies.
-func constructTargets(deps []Dependency, derives []KeyValuePair) (targets []graph.RelationTarget) {
+func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (targets []graph.RelationTarget) {
 	for _, dep := range deps {
 		target := graph.RelationTarget{
 			Relation: DependencyRelation,
@@ -79,16 +79,16 @@ func constructTargets(deps []Dependency, derives []KeyValuePair) (targets []grap
 }
 
 // getNodeOrigin returns node origin stored in Origin flag.
-func getNodeOrigin(node graph.Node) ValueOrigin {
+func getNodeOrigin(node graph.Node) kvs.ValueOrigin {
 	flag := node.GetFlag(OriginFlagName)
 	if flag != nil {
 		return flag.(*OriginFlag).origin
 	}
-	return UnknownOrigin
+	return kvs.UnknownOrigin
 }
 
 // getNodeError returns node error stored in Error flag.
-func getNodeError(node graph.Node) (operation TxnOperation, err error) {
+func getNodeError(node graph.Node) (operation kvs.TxnOperation, err error) {
 	errorFlag := node.GetFlag(ErrorFlagName)
 	if errorFlag != nil {
 		flag := errorFlag.(*ErrorFlag)
@@ -96,7 +96,7 @@ func getNodeError(node graph.Node) (operation TxnOperation, err error) {
 		operation = flag.txnOp
 		return
 	}
-	return UndefinedTxnOp, nil
+	return kvs.UndefinedTxnOp, nil
 }
 
 // getNodeLastChange returns info about the last change for a given node, stored in LastChange flag.
@@ -129,7 +129,7 @@ func isNodePending(node graph.Node) bool {
 // Recursive calls are needed to handle circular dependencies - nodes of a strongly
 // connected component are treated as if they were squashed into one.
 func isNodeReady(node graph.Node) bool {
-	if getNodeOrigin(node) == FromSB {
+	if getNodeOrigin(node) == kvs.FromSB {
 		// for SB values dependencies are not checked
 		return true
 	}
@@ -218,9 +218,7 @@ func getNodeBase(node graph.Node) graph.Node {
 
 func getDerivedNodes(node graph.Node) (derived []graph.Node) {
 	for _, derivedNodes := range node.GetTargets(DerivesRelation) {
-		for _, derivedNode := range derivedNodes {
-			derived = append(derived, derivedNode)
-		}
+		derived = append(derived, derivedNodes...)
 	}
 	return derived
 }

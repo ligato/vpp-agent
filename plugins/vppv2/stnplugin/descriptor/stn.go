@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -167,12 +166,6 @@ func (d *STNDescriptor) Dump(correlate []adapter.STNKVWithMetadata) (dump []adap
 			Origin: scheduler.FromNB, // all STN rules are configured from NB
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d STN rules %v", len(dump), dumpList)
 
 	return dump, nil
 }

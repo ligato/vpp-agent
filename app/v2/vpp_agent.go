@@ -96,6 +96,7 @@ func New() *VPPAgent {
 	// connect IfPlugins for Linux & VPP
 	linuxifplugin.DefaultPlugin.VppIfPlugin = &ifplugin.DefaultPlugin
 	ifplugin.DefaultPlugin.LinuxIfPlugin = &linuxifplugin.DefaultPlugin
+	ifplugin.DefaultPlugin.NsPlugin = &nsplugin.DefaultPlugin
 
 	ifplugin.DefaultPlugin.NotifyStatistics = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers

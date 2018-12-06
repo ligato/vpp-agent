@@ -38,6 +38,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
 const (
@@ -118,6 +119,7 @@ type InterfaceDescriptor struct {
 	// optional dependencies, provide if AFPacket and/or TAP+TAP_TO_VPP interfaces are used
 	linuxIfPlugin  LinuxPluginAPI
 	linuxIfHandler NetlinkAPI
+	nsPlugin       nsplugin.API
 
 	// runtime
 	intfIndex              ifaceidx.IfaceMetadataIndex
@@ -142,13 +144,14 @@ type NetlinkAPI interface {
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
-	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, log logging.PluginLogger) *InterfaceDescriptor {
+	linuxIfHandler NetlinkAPI, linuxIfPlugin LinuxPluginAPI, nsPlugin nsplugin.API, log logging.PluginLogger) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
 		ifHandler:       ifHandler,
 		defaultMtu:      defaultMtu,
 		linuxIfPlugin:   linuxIfPlugin,
 		linuxIfHandler:  linuxIfHandler,
+		nsPlugin:        nsPlugin,
 		log:             log.NewLogger("if-descriptor"),
 		memifSocketToID: make(map[string]uint32),
 		ethernetIfs:     make(map[string]uint32),
@@ -161,7 +164,6 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:        InterfaceDescriptorName,
 		NBKeyPrefix: vpp.InterfaceSpec.KeyPrefix(),
-		//NBKeyPrefix:        models.KeyPrefix(vpp.InterfaceModel),
 		ValueTypeName:      vpp.InterfaceSpec.ProtoName(),
 		KeySelector:        vpp.InterfaceSpec.IsKeyValid,
 		KeyLabel:           vpp.InterfaceSpec.StripKeyPrefix,
@@ -216,9 +218,11 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		}
 	}
 
-	// handle default/unspecified MTU
-	if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
-		return false
+	// handle default/unspecified MTU (except VxLAN and IPSec tunnel)
+	if newIntf.Type != interfaces.Interface_VXLAN_TUNNEL && newIntf.Type != interfaces.Interface_IPSEC_TUNNEL {
+		if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
+			return false
+		}
 	}
 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
@@ -269,6 +273,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !proto.Equal(oldIntf.GetSub(), newIntf.GetSub()) {
 			return false
 		}
+	case interfaces.Interface_VMXNET3_INTERFACE:
+		if !d.equivalentVmxNet3(oldIntf.GetVmxNet3(), newIntf.GetVmxNet3()) {
+			return false
+		}
 	}
 	return true
 }
@@ -304,6 +312,12 @@ func (d *InterfaceDescriptor) equivalentIPSecTunnels(oldTun, newTun *interfaces.
 		oldTun.IntegAlg == newTun.IntegAlg &&
 		oldTun.LocalIntegKey == newTun.LocalIntegKey &&
 		oldTun.RemoteIntegKey == newTun.RemoteIntegKey
+}
+
+// equivalentVmxNets compares two vmxnet3 interfaces for equivalence.
+func (d *InterfaceDescriptor) equivalentVmxNet3(oldVmxNet3, newVmxNet3 *interfaces.VmxNet3Link) bool {
+	return oldVmxNet3.RxqSize == newVmxNet3.RxqSize &&
+		oldVmxNet3.TxqSize == newVmxNet3.TxqSize
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
@@ -595,16 +609,18 @@ func (d *InterfaceDescriptor) getMemifRingSize(memif *interfaces.MemifLink) uint
 
 // getTapConfig returns the TAP-specific configuration section (handling undefined attributes).
 func getTapConfig(intf *interfaces.Interface) *interfaces.TapLink {
-	tapCfg := intf.GetTap()
-	if tapCfg == nil || intf.GetTap().GetHostIfName() == "" {
-		// build TAP config with auto-generated host interface name and copied/default attributes
-		tapCfg = &interfaces.TapLink{
-			Version:        intf.GetTap().GetVersion(),
-			HostIfName:     generateTAPHostName(intf.Name),
-			ToMicroservice: intf.GetTap().GetToMicroservice(),
-			RxRingSize:     intf.GetTap().GetRxRingSize(),
-			TxRingSize:     intf.GetTap().GetTxRingSize(),
-		}
+	tapCfg := &interfaces.TapLink{
+		Version:        intf.GetTap().GetVersion(),
+		HostIfName:     intf.GetTap().GetHostIfName(),
+		ToMicroservice: intf.GetTap().GetToMicroservice(),
+		RxRingSize:     intf.GetTap().GetRxRingSize(),
+		TxRingSize:     intf.GetTap().GetTxRingSize(),
+	}
+	if tapCfg.Version == 0 {
+		tapCfg.Version = 1
+	}
+	if tapCfg.HostIfName == "" {
+		tapCfg.HostIfName = generateTAPHostName(intf.Name)
 	}
 	return tapCfg
 }

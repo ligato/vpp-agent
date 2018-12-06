@@ -136,12 +136,6 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 		Origin: origin,
 	})
 
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d IPScanNeigh config %v", len(dump), dumpList)
-
 	return dump, nil
 }
 func withDefaults(orig *l3.IPScanNeighbor) *l3.IPScanNeighbor {

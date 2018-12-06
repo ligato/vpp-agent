@@ -100,7 +100,7 @@ func TestNotifications(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithFullResync(context.Background()))
+	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
 	Expect(txnError).ShouldNot(HaveOccurred())
 	Expect(kvErrors).To(BeEmpty())
@@ -137,8 +137,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(0))
 	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.isFullResync).To(BeTrue())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
@@ -252,8 +251,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(1))
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromSB},
@@ -406,8 +404,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(2))
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromSB},
@@ -527,8 +524,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(3))
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(nil), origin: FromSB},
@@ -782,6 +778,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(metadata.GetInteger()).To(BeEquivalentTo(0))
 	metadata, exists = nameToInteger3.LookupByName(baseValue3)
 	Expect(exists).To(BeFalse())
+	Expect(metadata).To(BeNil())
 
 	// check operations executed in SB
 	opHistory := mockSB.PopHistoryOfOps()
@@ -834,8 +831,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(2))
 	Expect(txn.txnType).To(BeEquivalentTo(sbNotification))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromSB},
@@ -1082,8 +1078,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(3))
 	Expect(txn.txnType).To(BeEquivalentTo(retryFailedOps))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
@@ -1154,8 +1149,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.seqNum).To(BeEquivalentTo(4))
 	Expect(txn.txnType).To(BeEquivalentTo(retryFailedOps))
-	Expect(txn.isFullResync).To(BeFalse())
-	Expect(txn.isDownstreamResync).To(BeFalse())
+	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.description).To(BeEmpty())
 	checkRecordedValues(txn.values, []recordedKVPair{
 		{key: prefixC + baseValue3, value: utils.ProtoToString(test.NewStringValue("base-value3-data")), origin: FromNB},

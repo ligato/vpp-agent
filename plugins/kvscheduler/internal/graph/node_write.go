@@ -122,11 +122,25 @@ func (node *node) SetTargets(targets []RelationTarget) {
 	node.initRuntimeTarget()
 
 	// build new targets
-	for _, otherNode := range node.graph.nodes {
-		if otherNode.key == node.key {
-			continue
+	var usesSelector bool
+	for _, targetDef := range node.targetsDef {
+		if targetDef.Key != "" {
+			// without selectors, the lookup procedure has complexity O(m*log(n))
+			// where n = number of nodes; m = number of edges defined for this node
+			if node2, hasTarget := node.graph.nodes[targetDef.Key]; hasTarget {
+				node.addToTargets(node2, targetDef)
+			}
+		} else {
+			usesSelector = true // have to use the less efficient O(mn) lookup
 		}
-		node.checkPotentialTarget(otherNode)
+	}
+	if usesSelector {
+		for _, otherNode := range node.graph.nodes {
+			if otherNode.key == node.key {
+				continue
+			}
+			node.checkPotentialTarget(otherNode, true)
+		}
 	}
 }
 
@@ -145,18 +159,25 @@ func (node *node) initRuntimeTarget() {
 }
 
 // checkPotentialTarget checks if node2 is target of node in any of the relations.
-func (node *node) checkPotentialTarget(node2 *node) {
+func (node *node) checkPotentialTarget(node2 *node, selectorOnly bool) {
 	for _, targetDef := range node.targetsDef {
-		if targetDef.Key == node2.key || (targetDef.Key == "" && targetDef.Selector(node2.key)) {
-			node.targets[targetDef.Relation][targetDef.Label].Add(node2.key)
-			node.targetsUpdated = true
-			if _, hasRelation := node2.sources[targetDef.Relation]; !hasRelation {
-				node2.sources[targetDef.Relation] = utils.NewKeySet()
-			}
-			node2.sources[targetDef.Relation].Add(node.key)
-			node2.targetsUpdated = true
+		if (!selectorOnly && targetDef.Key == node2.key) ||
+			(targetDef.Key == "" && targetDef.Selector(node2.key)) {
+			node.addToTargets(node2, targetDef)
 		}
 	}
+}
+
+// addToTargets adds node2 into the set of targets for this node. Sources of node2
+// are also updated accordingly.
+func (node *node) addToTargets(node2 *node, targetDef RelationTarget) {
+	node.targets[targetDef.Relation][targetDef.Label].Add(node2.key)
+	node.targetsUpdated = true
+	if _, hasRelation := node2.sources[targetDef.Relation]; !hasRelation {
+		node2.sources[targetDef.Relation] = utils.NewKeySet()
+	}
+	node2.sources[targetDef.Relation].Add(node.key)
+	node2.targetsUpdated = true
 }
 
 // removeFromTargets removes given key from the map of targets.

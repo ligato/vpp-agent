@@ -20,7 +20,7 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
@@ -50,22 +50,22 @@ func (txnType txnType) String() string {
 
 // sbNotif encapsulates data for SB notification.
 type sbNotif struct {
-	value    KeyValuePair
-	metadata Metadata
+	value    kvs.KeyValuePair
+	metadata kvs.Metadata
 }
 
 // nbTxn encapsulates data for NB transaction.
 type nbTxn struct {
-	value              map[string]datasync.LazyValue // key -> lazy value
-	isFullResync       bool
-	isDownstreamResync bool
-	isBlocking         bool
-	retryFailed        bool
-	retryPeriod        time.Duration
-	expBackoffRetry    bool
-	revertOnFailure    bool
-	description        string
-	resultChan         chan []KeyWithError
+	value           map[string]datasync.LazyValue // key -> lazy value
+	resyncType      kvs.ResyncType
+	verboseRefresh  bool
+	isBlocking      bool
+	retryFailed     bool
+	retryPeriod     time.Duration
+	expBackoffRetry bool
+	revertOnFailure bool
+	description     string
+	resultChan      chan []kvs.KeyWithError
 }
 
 // retryOps encapsulates data for retry of failed operations.
@@ -89,18 +89,18 @@ func (scheduler *Scheduler) enqueueTxn(txn *queuedTxn) error {
 	if txn.txnType == nbTransaction && txn.nb.isBlocking {
 		select {
 		case <-scheduler.ctx.Done():
-			return ErrClosedScheduler
+			return kvs.ErrClosedScheduler
 		case scheduler.txnQueue <- txn:
 			return nil
 		}
 	}
 	select {
 	case <-scheduler.ctx.Done():
-		return ErrClosedScheduler
+		return kvs.ErrClosedScheduler
 	case scheduler.txnQueue <- txn:
 		return nil
 	default:
-		return ErrTxnQueueFull
+		return kvs.ErrTxnQueueFull
 	}
 }
 

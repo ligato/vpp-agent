@@ -27,7 +27,9 @@ import (
 
 // addTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace
 // and sets the requested host name, IP addresses, etc.
-func (d *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+func (d *InterfaceDescriptor) addTAPToVPP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
+	linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+
 	// determine TAP interface name as set by VPP ifplugin
 	vppTapName := linuxIf.GetTap().GetVppTapIfName()
 	vppTapMeta, found := d.vppIfPlugin.GetInterfaceIndex().LookupByName(vppTapName)
@@ -40,7 +42,6 @@ func (d *InterfaceDescriptor) addTAPToVPP(key string, linuxIf *interfaces.Interf
 	hostName := getHostIfName(linuxIf)
 
 	// context
-	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 
 	// add alias to associate TAP with the logical name and VPP-TAP reference

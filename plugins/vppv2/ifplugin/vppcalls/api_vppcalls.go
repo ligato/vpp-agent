@@ -48,6 +48,7 @@ type IfVppWrite interface {
 	// DeleteTapInterface calls TapDelete bin API.
 	DeleteTapInterface(ifName string, idx uint32, version uint32) error
 	// AddVxLanTunnel calls AddDelVxLanTunnelReq with flag add=1.
+	// Note: VxLAN tunnel also creates a VRF table with proper IP version if needed
 	AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error)
 	// DeleteVxLanTunnel calls AddDelVxLanTunnelReq with flag add=0.
 	DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error
@@ -55,6 +56,10 @@ type IfVppWrite interface {
 	AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
 	// DeleteIPSecTunnelInterface removes existing IPSec tunnel interface
 	DeleteIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) error
+	// AddVmxNet3 configures vmxNet3 interface. Second parameter is optional in this case.
+	AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (uint32, error)
+	// DeleteVmxNet3 removes vmxNet3 interface
+	DeleteVmxNet3(ifName string, ifIdx uint32) error
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
 	InterfaceAdminDown(ifIdx uint32) error
 	// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.

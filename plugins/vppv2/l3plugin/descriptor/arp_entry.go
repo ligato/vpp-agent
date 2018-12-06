@@ -15,8 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/api/models/vpp"
@@ -133,12 +131,6 @@ func (d *ArpDescriptor) Dump(correlate []adapter.ARPEntryKVWithMetadata) (
 			Origin: scheduler.UnknownOrigin,
 		})
 	}
-
-	var dumpList string
-	for _, d := range dump {
-		dumpList += fmt.Sprintf("\n - %+v", d)
-	}
-	d.log.Debugf("Dumping %d ARPEntry: %s", len(dump), dumpList)
 
 	return dump, nil
 }

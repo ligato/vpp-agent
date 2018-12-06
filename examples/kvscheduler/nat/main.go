@@ -29,6 +29,10 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
+	linux_interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
+	linux_l3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	vpp_nat "github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
@@ -75,6 +79,7 @@ func main() {
 
 	// Set inter-dependency between VPP & Linux plugins
 	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	vpp_ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
 	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
 	ep := &ExamplePlugin{

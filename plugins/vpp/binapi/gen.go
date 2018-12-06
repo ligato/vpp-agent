@@ -29,6 +29,7 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/stn.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tap.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/tapv2.api.json --output-dir=.
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/vmxnet3.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vpe.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/vxlan.api.json --output-dir=.
 

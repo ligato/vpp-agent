@@ -30,6 +30,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
+const (
+	// by default, at most 10 go routines will split the configured namespaces
+	// to execute the Dump operation in parallel.
+	defaultDumpGoRoutinesCnt = 10
+)
+
 // IfPlugin configures Linux VETH and TAP interfaces using Netlink API.
 type IfPlugin struct {
 	Deps
@@ -59,7 +65,8 @@ type Deps struct {
 
 // Config holds the ifplugin configuration.
 type Config struct {
-	Disabled bool `json:"disabled"`
+	Disabled          bool `json:"disabled"`
+	DumpGoRoutinesCnt int  `json:"dump-go-routines-count"`
 }
 
 // Init registers interface-related descriptors and starts watching of the default
@@ -70,12 +77,11 @@ func (p *IfPlugin) Init() error {
 	if err != nil {
 		return err
 	}
-	if config != nil {
-		if config.Disabled {
-			p.disabled = true
-			p.Log.Infof("Disabling Linux Interface plugin")
-			return nil
-		}
+	p.Log.Debugf("Linux interface plugin config: %+v", config)
+	if config.Disabled {
+		p.disabled = true
+		p.Log.Infof("Disabling Linux Interface plugin")
+		return nil
 	}
 
 	// init handlers
@@ -83,7 +89,7 @@ func (p *IfPlugin) Init() error {
 
 	// init & register descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.Scheduler,
-		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log)
+		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log, config.DumpGoRoutinesCnt)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
 
@@ -123,11 +129,14 @@ func (p *IfPlugin) GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex {
 
 // retrieveConfig loads IfPlugin configuration file.
 func (p *IfPlugin) retrieveConfig() (*Config, error) {
-	config := &Config{}
+	config := &Config{
+		// default configuration
+		DumpGoRoutinesCnt: defaultDumpGoRoutinesCnt,
+	}
 	found, err := p.Cfg.LoadValue(config)
 	if !found {
 		p.Log.Debug("Linux IfPlugin config not found")
-		return nil, nil
+		return config, nil
 	}
 	if err != nil {
 		return nil, err

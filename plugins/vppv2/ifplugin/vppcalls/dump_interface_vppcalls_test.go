@@ -363,6 +363,7 @@ func TestDumpInterfacesTap2(t *testing.T) {
 	Expect(intfs).To(HaveLen(1))
 
 	intface := intfs[0].Interface
+	intMeta := intfs[0].Meta
 
 	// This is last checked type, so it will be equal to that
 	Expect(intface.Type).To(Equal(interfaces2.Interface_TAP))
@@ -374,6 +375,8 @@ func TestDumpInterfacesTap2(t *testing.T) {
 	Expect(intface.SetDhcpClient).To(BeTrue())
 	Expect(intface.GetTap().HostIfName).To(Equal("taptap2"))
 	Expect(intface.GetTap().Version).To(Equal(uint32(2)))
+	Expect(intMeta.VrfIPv4).To(Equal(uint32(42)))
+	Expect(intMeta.VrfIPv6).To(Equal(uint32(42)))
 }
 
 // Test dump of memif socket details using standard reply mocking

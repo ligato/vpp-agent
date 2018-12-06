@@ -22,7 +22,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
@@ -39,8 +39,8 @@ type preProcessedTxn struct {
 type kvForTxn struct {
 	key      string
 	value    proto.Message
-	metadata Metadata
-	origin   ValueOrigin
+	metadata kvs.Metadata
+	origin   kvs.ValueOrigin
 	isRevert bool
 }
 
@@ -73,13 +73,14 @@ func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 		simulatedOps recordedTxnOps
 		executedOps  recordedTxnOps
 		failed       map[string]bool
-		execStart    time.Time
-		execStop     time.Time
+		startTime    time.Time
+		stopTime     time.Time
 	)
 	scheduler.txnLock.Lock()
 	defer scheduler.txnLock.Unlock()
 
 	// 1. Pre-processing:
+	startTime = time.Now()
 	txn, preErrors := scheduler.preProcessTransaction(qTxn)
 	eligibleForExec := len(txn.values) > 0 && len(preErrors) == 0
 
@@ -92,14 +93,13 @@ func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 	preTxnRecord := scheduler.preRecordTransaction(txn, simulatedOps, preErrors)
 
 	// 4. Execution:
-	execStart = time.Now()
 	if eligibleForExec {
 		executedOps, failed = scheduler.executeTransaction(txn, false)
 	}
-	execStop = time.Now()
+	stopTime = time.Now()
 
 	// 5. Recording:
-	scheduler.recordTransaction(preTxnRecord, executedOps, execStart, execStop)
+	scheduler.recordTransaction(preTxnRecord, executedOps, startTime, stopTime)
 
 	// 6. Post-processing:
 	scheduler.postProcessTransaction(txn, executedOps, failed, preErrors)
@@ -107,7 +107,7 @@ func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 
 // preProcessTransaction initializes transaction parameters, filters obsolete retry
 // operations and refreshes the graph for resync.
-func (scheduler *Scheduler) preProcessTransaction(qTxn *queuedTxn) (txn *preProcessedTxn, errors []KeyWithError) {
+func (scheduler *Scheduler) preProcessTransaction(qTxn *queuedTxn) (txn *preProcessedTxn, errors []kvs.KeyWithError) {
 	// allocate new transaction sequence number
 	preTxn := &preProcessedTxn{seqNum: scheduler.txnSeqNumber, args: qTxn}
 	scheduler.txnSeqNumber++
@@ -129,7 +129,7 @@ func (scheduler *Scheduler) preProcessNotification(qTxn *queuedTxn, preTxn *preP
 	graphR := scheduler.graph.Read()
 	defer graphR.Release()
 
-	if !scheduler.validTxnValue(graphR, qTxn.sb.value.Key, qTxn.sb.value.Value, FromSB, preTxn.seqNum) {
+	if !scheduler.validTxnValue(graphR, qTxn.sb.value.Key, qTxn.sb.value.Value, kvs.FromSB, preTxn.seqNum) {
 		return
 	}
 	preTxn.values = append(preTxn.values,
@@ -137,19 +137,19 @@ func (scheduler *Scheduler) preProcessNotification(qTxn *queuedTxn, preTxn *preP
 			key:      qTxn.sb.value.Key,
 			value:    qTxn.sb.value.Value,
 			metadata: qTxn.sb.metadata,
-			origin:   FromSB,
+			origin:   kvs.FromSB,
 		})
 }
 
 // preProcessNBTransaction unmarshalls transaction values and for resync also refreshes the graph.
-func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *preProcessedTxn) (errors []KeyWithError) {
+func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *preProcessedTxn) (errors []kvs.KeyWithError) {
 	// unmarshall all values
 	graphR := scheduler.graph.Read()
 	for key, lazyValue := range qTxn.nb.value {
 		descriptor := scheduler.registry.GetDescriptorForKey(key)
 		if descriptor == nil {
 			// unimplemented base value
-			errors = append(errors, KeyWithError{Key: key, TxnOperation: PreProcess, Error: ErrUnimplementedKey})
+			errors = append(errors, kvs.KeyWithError{Key: key, TxnOperation: kvs.PreProcess, Error: kvs.ErrUnimplementedKey})
 			continue
 		}
 		var value proto.Message
@@ -157,40 +157,40 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 			// create an instance of the target proto.Message type
 			valueType := proto.MessageType(descriptor.ValueTypeName)
 			if valueType == nil {
-				errors = append(errors, KeyWithError{Key: key, TxnOperation: PreProcess, Error: ErrUnregisteredValueType})
+				errors = append(errors, kvs.KeyWithError{Key: key, TxnOperation: kvs.PreProcess, Error: kvs.ErrUnregisteredValueType})
 				continue
 			}
 			value = reflect.New(valueType.Elem()).Interface().(proto.Message)
 			// try to deserialize the value
 			err := lazyValue.GetValue(value)
 			if err != nil {
-				errors = append(errors, KeyWithError{Key: key, TxnOperation: PreProcess, Error: err})
+				errors = append(errors, kvs.KeyWithError{Key: key, TxnOperation: kvs.PreProcess, Error: err})
 				continue
 			}
 		}
-		if !scheduler.validTxnValue(graphR, key, value, FromNB, preTxn.seqNum) {
+		if !scheduler.validTxnValue(graphR, key, value, kvs.FromNB, preTxn.seqNum) {
 			continue
 		}
 		preTxn.values = append(preTxn.values,
 			kvForTxn{
 				key:    key,
 				value:  value,
-				origin: FromNB,
+				origin: kvs.FromNB,
 			})
 	}
 	graphR.Release()
 
 	// for resync refresh the graph + collect deletes
-	if len(errors) == 0 && (qTxn.nb.isFullResync || qTxn.nb.isDownstreamResync) {
+	if len(errors) == 0 && qTxn.nb.resyncType != kvs.NotResync {
 		graphW := scheduler.graph.Write(false)
 		defer graphW.Release()
 		defer graphW.Save()
 		scheduler.resyncCount++
 
-		if qTxn.nb.isDownstreamResync {
+		if qTxn.nb.resyncType == kvs.DownstreamResync {
 			// for downstream resync it is assumed that scheduler is in-sync with NB
 			currentNodes := graphW.GetNodes(nil,
-				graph.WithFlags(&OriginFlag{FromNB}),
+				graph.WithFlags(&OriginFlag{kvs.FromNB}),
 				graph.WithoutFlags(&DerivedFlag{}))
 			for _, node := range currentNodes {
 				lastChange := getNodeLastChange(node)
@@ -198,7 +198,7 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 					kvForTxn{
 						key:      node.GetKey(),
 						value:    lastChange.value,
-						origin:   FromNB,
+						origin:   kvs.FromNB,
 						isRevert: lastChange.revert,
 					})
 			}
@@ -210,14 +210,19 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 			nbKeys.Add(kv.key)
 		}
 
-		// refresh the graph with the current state of SB
-		scheduler.refreshGraph(graphW, nil,
-			&resyncData{first: scheduler.resyncCount == 1, values: preTxn.values})
-		currentNodes := graphW.GetNodes(nil,
-			graph.WithFlags(&OriginFlag{FromNB}),
-			graph.WithoutFlags(&DerivedFlag{}))
+		// unless this is only UpstreamResync, refresh the graph with the current
+		// state of SB
+		if qTxn.nb.resyncType != kvs.UpstreamResync {
+			scheduler.refreshGraph(graphW, nil, &resyncData{
+				first:   scheduler.resyncCount == 1,
+				values:  preTxn.values,
+				verbose: qTxn.nb.verboseRefresh})
+		}
 
 		// collect deletes for obsolete values
+		currentNodes := graphW.GetNodes(nil,
+			graph.WithFlags(&OriginFlag{kvs.FromNB}),
+			graph.WithoutFlags(&DerivedFlag{}))
 		for _, node := range currentNodes {
 			if _, nbKey := nbKeys[node.GetKey()]; nbKey {
 				continue
@@ -226,13 +231,13 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 				kvForTxn{
 					key:    node.GetKey(),
 					value:  nil, // remove
-					origin: FromNB,
+					origin: kvs.FromNB,
 				})
 		}
 
 		// update (record) SB values
 		sbNodes := graphW.GetNodes(nil,
-			graph.WithFlags(&OriginFlag{FromSB}),
+			graph.WithFlags(&OriginFlag{kvs.FromSB}),
 			graph.WithoutFlags(&DerivedFlag{}))
 		for _, node := range sbNodes {
 			if _, nbKey := nbKeys[node.GetKey()]; nbKey {
@@ -242,7 +247,7 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 				kvForTxn{
 					key:    node.GetKey(),
 					value:  node.GetValue(),
-					origin: FromSB,
+					origin: kvs.FromSB,
 				})
 		}
 	}
@@ -277,7 +282,7 @@ func (scheduler *Scheduler) preProcessRetryTxn(qTxn *queuedTxn, preTxn *preProce
 
 // postProcessTransaction schedules retry for failed operations and propagates
 // errors to the subscribers and to the caller of a blocking commit.
-func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed recordedTxnOps, failed map[string]bool, preErrors []KeyWithError) {
+func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed recordedTxnOps, failed map[string]bool, preErrors []kvs.KeyWithError) {
 	// refresh base values with error or with a derived value that has an error
 	if len(failed) > 0 {
 		graphW := scheduler.graph.Write(false)
@@ -325,16 +330,15 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 	}
 
 	// collect errors
-	var txnErrors []KeyWithError
-	for _, preError := range preErrors {
-		txnErrors = append(txnErrors, preError)
-	}
+	var txnErrors []kvs.KeyWithError
+	txnErrors = append(txnErrors, preErrors...)
+
 	for _, txnOp := range executed {
 		if txnOp.prevErr == nil && txnOp.newErr == nil {
 			continue
 		}
 		txnErrors = append(txnErrors,
-			KeyWithError{
+			kvs.KeyWithError{
 				Key:          txnOp.key,
 				TxnOperation: txnOp.operation,
 				Error:        txnOp.newErr,
@@ -343,7 +347,7 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 
 	// for blocking txn, send non-nil errors to the resultChan
 	if txn.args.txnType == nbTransaction && txn.args.nb.isBlocking {
-		var errors []KeyWithError
+		var errors []kvs.KeyWithError
 		for _, kvWithError := range txnErrors {
 			if kvWithError.Error != nil {
 				errors = append(errors, kvWithError)
@@ -373,14 +377,14 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 }
 
 // validTxnValue checks validity of a kv-pair to be applied in a transaction.
-func (scheduler *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, value proto.Message, origin ValueOrigin, txnSeqNum uint) bool {
+func (scheduler *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, value proto.Message, origin kvs.ValueOrigin, txnSeqNum uint) bool {
 	if key == "" {
 		scheduler.Log.WithFields(logging.Fields{
 			"txnSeqNum": txnSeqNum,
 		}).Warn("Empty key for a value in the transaction")
 		return false
 	}
-	if origin == FromSB {
+	if origin == kvs.FromSB {
 		descriptor := scheduler.registry.GetDescriptorForKey(key)
 		if descriptor == nil {
 			scheduler.Log.WithFields(logging.Fields{
@@ -399,7 +403,7 @@ func (scheduler *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, v
 			}).Warn("Transaction attempting to change a derived value")
 			return false
 		}
-		if origin == FromSB && getNodeOrigin(node) == FromNB {
+		if origin == kvs.FromSB && getNodeOrigin(node) == kvs.FromNB {
 			scheduler.Log.WithFields(logging.Fields{
 				"txnSeqNum": txnSeqNum,
 				"key":       key,
