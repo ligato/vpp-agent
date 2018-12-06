@@ -15,8 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
-
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"

@@ -15,7 +15,6 @@
 package descriptor
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/gogo/protobuf/proto"

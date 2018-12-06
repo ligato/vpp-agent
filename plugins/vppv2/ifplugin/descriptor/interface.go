@@ -35,10 +35,10 @@ import (
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
 const (
@@ -162,8 +162,8 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 // the KVScheduler.
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
-		Name:        InterfaceDescriptorName,
-		NBKeyPrefix: vpp.InterfaceSpec.KeyPrefix(),
+		Name:               InterfaceDescriptorName,
+		NBKeyPrefix:        vpp.InterfaceSpec.KeyPrefix(),
 		ValueTypeName:      vpp.InterfaceSpec.ProtoName(),
 		KeySelector:        vpp.InterfaceSpec.IsKeyValid,
 		KeyLabel:           vpp.InterfaceSpec.StripKeyPrefix,
