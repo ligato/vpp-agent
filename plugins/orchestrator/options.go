@@ -12,37 +12,31 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package syncservice
+package orchestrator
 
 import (
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
-
-	"github.com/ligato/vpp-agent/api"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 )
 
-// Registry is used for propagating transactions.
-var Registry = local.DefaultRegistry
+// DefaultPlugin is default instance of Plugin
+var DefaultPlugin = *NewPlugin()
 
-// Plugin implements sync service for GRPC.
-type Plugin struct {
-	Deps
+// NewPlugin creates a new Plugin with the provides Options
+func NewPlugin(opts ...Option) *Plugin {
+	p := &Plugin{}
 
-	grpcSvc *grpcService
+	p.PluginName = "orchestrator"
+	p.GRPC = &grpc.DefaultPlugin
+	p.KVScheduler = &kvscheduler.DefaultPlugin
+
+	for _, o := range opts {
+		o(p)
+	}
+	p.PluginDeps.Setup()
+
+	return p
 }
 
-// Deps represents dependencies for the plugin.
-type Deps struct {
-	infra.PluginDeps
-	GRPC grpc.Server
-}
-
-// Init registers the service to GRPC server.
-func (p *Plugin) Init() error {
-	p.grpcSvc = &grpcService{p.Log}
-
-	api.RegisterSyncServiceServer(p.GRPC.GetServer(), p.grpcSvc)
-
-	return nil
-}
+// Option is a function that acts on a Plugin to inject Dependencies or configuration
+type Option func(*Plugin)

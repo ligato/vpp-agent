@@ -26,6 +26,7 @@ import (
 
 var debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 
+// ProtoModel represents main model type.
 type ProtoModel = proto.Message
 
 // ID is a shorthand for the GetID for avoid error checking.
@@ -113,10 +114,7 @@ func MustSpec(m ProtoModel) Spec {
 
 // GetSpec returns registered model specification for given model.
 func GetSpec(m ProtoModel) (Spec, error) {
-	return GetProtoSpec(proto.MessageName(m))
-}
-
-func GetProtoSpec(protoName string) (Spec, error) {
+	protoName := proto.MessageName(m)
 	spec := registeredSpecs[protoName]
 	if spec == nil {
 		return Spec{}, fmt.Errorf("model %s is not registered", protoName)
@@ -150,14 +148,14 @@ func GetRegisteredSpecs() map[string]Spec {
 }
 
 // GetRegisteredModules returns all registered modules.
-func GetRegisteredModules() (modules []Module) {
+func GetRegisteredModules() (modules []*Module) {
 	for moduleName, protos := range moduleSpecs {
 		var specs []*ModelSpec
 		for _, protoName := range protos {
 			modelSpec := registeredSpecs[protoName].ToModelSpec()
 			specs = append(specs, &modelSpec)
 		}
-		modules = append(modules, Module{
+		modules = append(modules, &Module{
 			Name:  moduleName,
 			Specs: specs,
 		})
