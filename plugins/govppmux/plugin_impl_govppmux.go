@@ -143,7 +143,7 @@ func (plugin *Plugin) Init() error {
 		return err
 	}
 	plugin.Log.Infof("Connected to VPP [PID:%d] (took %s)",
-		info.PID, info.ClientIdx, vppConnectTime.Truncate(time.Millisecond))
+		info.PID, vppConnectTime.Truncate(time.Millisecond))
 	plugin.retrieveVersion()
 
 	// Register providing status reports (push mode)

@@ -35,14 +35,6 @@ func (s *grpcService) ListModules(ctx context.Context, req *api.ListModulesReque
 	resp := &api.ListModulesResponse{
 		Modules: models.GetRegisteredModules(),
 	}
-
-	/*for _, module := range models.GetRegisteredModules() {
-		resp.Modules = append(resp.Modules, &models.Module{
-			Name:  module.Name,
-			Specs: module.Specs,
-		})
-	}*/
-
 	return resp, nil
 }
 

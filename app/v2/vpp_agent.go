@@ -27,12 +27,12 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
 
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	linuxifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	linuxl3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
+	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/ligato/vpp-agent/plugins/restv2"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
@@ -94,9 +94,9 @@ func New() *VPPAgent {
 	orchestrator.DefaultPlugin.Watcher = watchers
 
 	// connect IfPlugins for Linux & VPP
-	linuxifplugin.DefaultPlugin.VppIfPlugin = &ifplugin.DefaultPlugin
-	ifplugin.DefaultPlugin.LinuxIfPlugin = &linuxifplugin.DefaultPlugin
-	ifplugin.DefaultPlugin.NsPlugin = &nsplugin.DefaultPlugin
+	linux_ifplugin.DefaultPlugin.VppIfPlugin = &ifplugin.DefaultPlugin
+	ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
 
 	ifplugin.DefaultPlugin.NotifyStatistics = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers
@@ -168,15 +168,15 @@ func defaultVPP() VPP {
 
 // Linux contains all Linux plugins.
 type Linux struct {
-	IfPlugin *linuxifplugin.IfPlugin
-	L3Plugin *linuxl3plugin.L3Plugin
-	NSPlugin *nsplugin.NsPlugin
+	IfPlugin *linux_ifplugin.IfPlugin
+	L3Plugin *linux_l3plugin.L3Plugin
+	NSPlugin *linux_nsplugin.NsPlugin
 }
 
 func defaultLinux() Linux {
 	return Linux{
-		IfPlugin: &linuxifplugin.DefaultPlugin,
-		L3Plugin: &linuxl3plugin.DefaultPlugin,
-		NSPlugin: &nsplugin.DefaultPlugin,
+		IfPlugin: &linux_ifplugin.DefaultPlugin,
+		L3Plugin: &linux_l3plugin.DefaultPlugin,
+		NSPlugin: &linux_nsplugin.DefaultPlugin,
 	}
 }

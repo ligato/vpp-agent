@@ -22,13 +22,22 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memclnt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
 
 // VpeInfo contains information about VPP connection and process.
 type VpeInfo struct {
-	PID       uint32
-	ClientIdx uint32
+	PID            uint32
+	ClientIdx      uint32
+	ModuleVersions map[string]ModuleVersion
+}
+
+type ModuleVersion struct {
+	Name  string
+	Major uint32
+	Minor uint32
+	Patch uint32
 }
 
 // GetVpeInfo retrieves vpe information.
@@ -41,8 +50,28 @@ func GetVpeInfo(vppChan govppapi.Channel) (*VpeInfo, error) {
 	}
 
 	info := &VpeInfo{
-		PID:       reply.VpePID,
-		ClientIdx: reply.ClientIndex,
+		PID:            reply.VpePID,
+		ClientIdx:      reply.ClientIndex,
+		ModuleVersions: make(map[string]ModuleVersion),
+	}
+
+	{
+		req := &memclnt.APIVersions{}
+		reply := &memclnt.APIVersionsReply{}
+
+		if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+			return nil, err
+		}
+
+		for _, v := range reply.APIVersions {
+			name := string(cleanBytes(v.Name))
+			info.ModuleVersions[name] = ModuleVersion{
+				Name:  name,
+				Major: v.Major,
+				Minor: v.Minor,
+				Patch: v.Patch,
+			}
+		}
 	}
 
 	return info, nil
