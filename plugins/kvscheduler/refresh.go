@@ -178,10 +178,6 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 		graphW.Save()
 	}
 
-	if resyncData == nil || resyncData.verbose {
-		fmt.Println(dumpGraph(graphW))
-	}
-
 	// remove nodes that do not actually exist
 	for _, node := range graphW.GetNodes(nil) {
 		if !isNodeDerived(node) && isNodePending(node) {
@@ -189,9 +185,12 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			continue
 		}
 		if _, refreshed := refreshedKeys[node.GetKey()]; !refreshed {
-
 			graphW.DeleteNode(node.GetKey())
 		}
+	}
+
+	if resyncData == nil || resyncData.verbose {
+		fmt.Println(dumpGraph(graphW))
 	}
 }
 
