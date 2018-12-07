@@ -37,12 +37,6 @@ def main():
             write_stdout('RESULT 2\nOK')
             continue
 
-        # ignore exits with expected exit codes
-        if parsed_data["expected"] == "1":
-            write_stderr('Exit state from ' + parsed_data["processname"] + ' was expected\n')
-            write_stdout('RESULT 2\nOK')
-            continue
-
         # do not kill supervisor if retained and exit
         if 'RETAIN_SUPERVISOR' in os.environ and os.environ['RETAIN_SUPERVISOR'] != '':
             write_stderr('Supervisord is configured to retain after unexpected exits (unset RETAIN_SUPERVISOR to disable it)\n')

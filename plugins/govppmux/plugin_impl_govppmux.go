@@ -144,7 +144,6 @@ func (plugin *GOVPPPlugin) Init() error {
 	// Register providing status reports (push mode)
 	plugin.StatusCheck.Register(plugin.PluginName, nil)
 	plugin.StatusCheck.ReportStateChange(plugin.PluginName, statuscheck.OK, nil)
-	plugin.Log.Debug("govpp connect success ", plugin.vppConn)
 
 	var ctx context.Context
 	ctx, plugin.cancel = context.WithCancel(context.Background())
