@@ -181,6 +181,17 @@ Get Bridge Domain ID
     \   ${index}=   Run Keyword If  "${data["name"]}" == "${bd_name}"     Set Variable  ${meta['bridge_domain_id']}
     [Return]   ${index}
 
+Get Bridge Domain ID IPv6
+    [Arguments]    ${node}    ${bd_name}
+    ${bds_dump}=    Execute On Machine    docker    curl --noproxy "::" -g -6 -X GET http://[::]:9191/vpp/dump/v2/bd
+    ${bds_json}=    Evaluate    json.loads('''${bds_dump}''')    json
+    ${index}=   Set Variable    0
+    :FOR    ${bd}   IN  @{bds_json}
+    \   ${data}=    Set Variable    ${bd['bridge_domain']}
+    \   ${meta}=    Set Variable    ${bd['bridge_domain_meta']}
+    \   ${index}=   Run Keyword If  "${data["name"]}" == "${bd_name}"     Set Variable  ${meta['bridge_domain_id']}
+    [Return]   ${index}
+
 Put TAP Interface With IP
     [Arguments]    ${node}    ${name}    ${mac}    ${ip}    ${host_if_name}    ${prefix}=24    ${mtu}=1500    ${enabled}=true    ${vrf}=0
     ${data}=              OperatingSystem.Get File      ${CURDIR}/../resources/tap_interface_with_ip.json
