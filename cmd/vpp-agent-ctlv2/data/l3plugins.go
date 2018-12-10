@@ -95,7 +95,7 @@ func (ctl *VppAgentCtlImpl) PutInterVrfRoute() error {
 	return ctl.broker.Put(l3.RouteKey(route.VrfId, route.DstNetwork, route.NextHopAddr), route)
 }
 
-// DeleteRoute removes VPP route configuration from the ETCD
+// DeleteInterVrfRoute removes VPP route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteInterVrfRoute() error {
 	routeKey := l3.RouteKey(0, "1.2.3.4/32", "")
 
@@ -104,7 +104,7 @@ func (ctl *VppAgentCtlImpl) DeleteInterVrfRoute() error {
 	return err
 }
 
-// PutInterVrfRoute puts inter-VRF VPP route configuration with next hop to the ETCD
+// PutNextHopRoute puts inter-VRF VPP route configuration with next hop to the ETCD
 func (ctl *VppAgentCtlImpl) PutNextHopRoute() error {
 	route := &l3.StaticRoute{
 		Type:        l3.StaticRoute_INTER_VRF,
@@ -243,7 +243,7 @@ func (ctl *VppAgentCtlImpl) UnsetIPScanNeigh() error {
 	return err
 }
 
-// CreateLinuxArp puts linux ARP entry configuration to the ETCD
+// PutLinuxArp puts linux ARP entry configuration to the ETCD
 func (ctl *VppAgentCtlImpl) PutLinuxArp() error {
 	linuxArp := &linuxL3.StaticARPEntry{
 		Interface: "veth1",

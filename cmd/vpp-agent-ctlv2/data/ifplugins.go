@@ -167,7 +167,7 @@ func (ctl *VppAgentCtlImpl) PutMemoryInterface() error {
 	return ctl.broker.Put(interfaces.InterfaceKey(memif.Name), memif)
 }
 
-// DeleteMemif removes memif type interface config from the ETCD
+// DeleteMemoryInterface removes memif type interface config from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteMemoryInterface() error {
 	memifKey := interfaces.InterfaceKey("memif1")
 

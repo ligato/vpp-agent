@@ -70,7 +70,7 @@ func (ctl *VppAgentCtlImpl) CreateEtcdClient(configFile string) (*etcd.BytesConn
 
 	cfg := &etcd.Config{}
 	if configFile != "" {
-		err := config.ParseConfigFromYamlFile(configFile, cfg)
+		err = config.ParseConfigFromYamlFile(configFile, cfg)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -170,7 +170,7 @@ func (ctl *VppAgentCtlImpl) readData(file string) ([]byte, error) {
 		// read JSON from STDIN
 		bio := bufio.NewReader(os.Stdin)
 		buf := new(bytes.Buffer)
-		if _, err := buf.ReadFrom(bio); err != nil {
+		if _, err = buf.ReadFrom(bio); err != nil {
 			ctl.Log.Errorf("error reading json: %v", err)
 		}
 		input = buf.Bytes()

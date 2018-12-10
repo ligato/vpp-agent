@@ -240,7 +240,7 @@ func do(ctl data.VppAgentCtl) {
 func usage() {
 	var buffer bytes.Buffer
 	// Crud operation
-	buffer.WriteString(` 
+	_, err := buffer.WriteString(` 
 
 	Example tool for VPP configuration.
 
@@ -304,5 +304,9 @@ func usage() {
 		-stn,		-stnd		- STN rule
 	`)
 
-	logrus.DefaultLogger().Print(buffer.String())
+	if err != nil {
+		logrus.DefaultLogger().Error(err)
+	} else {
+		logrus.DefaultLogger().Print(buffer.String())
+	}
 }

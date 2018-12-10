@@ -42,7 +42,7 @@ type VppAgentCtl interface {
 	StnCtl
 }
 
-// VppAgentCtl is ctl context
+// VppAgentCtlImpl is a ctl context
 type VppAgentCtlImpl struct {
 	Log             logging.Logger
 	commands        []string
@@ -51,7 +51,7 @@ type VppAgentCtlImpl struct {
 	broker          keyval.ProtoBroker
 }
 
-// Init creates new VppAgentCtl object with initialized fields
+// NewVppAgentCtl creates new VppAgentCtl object with initialized fields
 func NewVppAgentCtl(etcdCfg string, cmdSet []string) (*VppAgentCtlImpl, error) {
 	var err error
 	ctl := &VppAgentCtlImpl{
@@ -59,7 +59,7 @@ func NewVppAgentCtl(etcdCfg string, cmdSet []string) (*VppAgentCtlImpl, error) {
 		commands: cmdSet,
 	}
 
-	if err := ctl.serviceLabel.Init(); err != nil {
+	if err = ctl.serviceLabel.Init(); err != nil {
 		return nil, fmt.Errorf("failed to init servicvice label plugin")
 	}
 	// Establish ETCD connection
