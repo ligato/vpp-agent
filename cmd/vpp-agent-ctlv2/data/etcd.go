@@ -38,8 +38,9 @@ type EtcdCtl interface {
 	Put(key string, file string)
 	// Del removes data from etcd
 	Del(key string)
-	// TODO what is the difference?
+	// Get key value from the ETCD
 	Get(key string)
+	// Dump all values for given key prefix
 	Dump(key string)
 }
 
@@ -47,7 +48,7 @@ type EtcdCtl interface {
 func (ctl *VppAgentCtlImpl) ListAllAgentKeys() {
 	ctl.Log.Debug("listAllAgentKeys")
 
-	it, err := ctl.broker.ListKeys(ctl.serviceLabel.GetAllAgentsPrefix())
+	it, err := ctl.bytesConnection.ListKeys(ctl.serviceLabel.GetAllAgentsPrefix())
 	if err != nil {
 		ctl.Log.Error(err)
 	}
@@ -56,7 +57,7 @@ func (ctl *VppAgentCtlImpl) ListAllAgentKeys() {
 		if stop {
 			break
 		}
-		ctl.Log.Println("key: ", key)
+		ctl.Log.Infof("key: %s", key)
 	}
 }
 
