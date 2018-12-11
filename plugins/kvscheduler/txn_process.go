@@ -70,8 +70,8 @@ func (scheduler *Scheduler) consumeTransactions() {
 //     to the subscribers and to the caller of blocking commit
 func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 	var (
-		simulatedOps recordedTxnOps
-		executedOps  recordedTxnOps
+		simulatedOps RecordedTxnOps
+		executedOps  RecordedTxnOps
 		failed       map[string]bool
 		startTime    time.Time
 		stopTime     time.Time
@@ -282,7 +282,7 @@ func (scheduler *Scheduler) preProcessRetryTxn(qTxn *queuedTxn, preTxn *preProce
 
 // postProcessTransaction schedules retry for failed operations and propagates
 // errors to the subscribers and to the caller of a blocking commit.
-func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed recordedTxnOps, failed map[string]bool, preErrors []KeyWithError) {
+func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed RecordedTxnOps, failed map[string]bool, preErrors []KeyWithError) {
 	// refresh base values with error or with a derived value that has an error
 	if len(failed) > 0 {
 		graphW := scheduler.graph.Write(false)
@@ -335,14 +335,14 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 		txnErrors = append(txnErrors, preError)
 	}
 	for _, txnOp := range executed {
-		if txnOp.prevErr == nil && txnOp.newErr == nil {
+		if txnOp.PrevErr == nil && txnOp.NewErr == nil {
 			continue
 		}
 		txnErrors = append(txnErrors,
 			KeyWithError{
-				Key:          txnOp.key,
-				TxnOperation: txnOp.operation,
-				Error:        txnOp.newErr,
+				Key:          txnOp.Key,
+				TxnOperation: txnOp.Operation,
+				Error:        txnOp.NewErr,
 			})
 	}
 

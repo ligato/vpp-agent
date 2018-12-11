@@ -60,56 +60,56 @@ func checkValues(received, expected []KeyValuePair) {
 	}
 }
 
-func checkRecordedValues(recorded, expected []recordedKVPair) {
+func checkRecordedValues(recorded, expected []RecordedKVPair) {
 	Expect(len(recorded)).To(Equal(len(expected)))
 	for _, kv := range expected {
 		found := false
 		for _, kv2 := range recorded {
-			if kv2.key == kv.key {
+			if kv2.Key == kv.Key {
 				found = true
-				Expect(kv2.value).To(Equal(kv.value))
-				Expect(kv2.origin).To(Equal(kv.origin))
+				Expect(kv2.Value).To(Equal(kv.Value))
+				Expect(kv2.Origin).To(Equal(kv.Origin))
 			}
 		}
 		Expect(found).To(BeTrue())
 	}
 }
 
-func checkTxnOperation(recorded, expected *recordedTxnOp) {
-	Expect(recorded.operation).To(Equal(expected.operation))
-	Expect(recorded.key).To(Equal(expected.key))
-	Expect(recorded.derived).To(Equal(expected.derived))
-	if expected.prevValue == "" {
-		Expect(recorded.prevValue).To(Equal(utils.ProtoToString(nil)))
+func checkTxnOperation(recorded, expected *RecordedTxnOp) {
+	Expect(recorded.Operation).To(Equal(expected.Operation))
+	Expect(recorded.Key).To(Equal(expected.Key))
+	Expect(recorded.Derived).To(Equal(expected.Derived))
+	if expected.PrevValue == "" {
+		Expect(recorded.PrevValue).To(Equal(utils.ProtoToString(nil)))
 	} else {
-		Expect(recorded.prevValue).To(Equal(expected.prevValue))
+		Expect(recorded.PrevValue).To(Equal(expected.PrevValue))
 	}
-	if expected.newValue == "" {
-		Expect(recorded.newValue).To(Equal(utils.ProtoToString(nil)))
+	if expected.NewValue == "" {
+		Expect(recorded.NewValue).To(Equal(utils.ProtoToString(nil)))
 	} else {
-		Expect(recorded.newValue).To(Equal(expected.newValue))
+		Expect(recorded.NewValue).To(Equal(expected.NewValue))
 	}
-	Expect(recorded.prevOrigin).To(Equal(expected.prevOrigin))
-	Expect(recorded.newOrigin).To(Equal(expected.newOrigin))
-	Expect(recorded.wasPending).To(Equal(expected.wasPending))
-	Expect(recorded.isPending).To(Equal(expected.isPending))
-	if expected.prevErr == nil {
-		Expect(recorded.prevErr).To(BeNil())
+	Expect(recorded.PrevOrigin).To(Equal(expected.PrevOrigin))
+	Expect(recorded.NewOrigin).To(Equal(expected.NewOrigin))
+	Expect(recorded.WasPending).To(Equal(expected.WasPending))
+	Expect(recorded.IsPending).To(Equal(expected.IsPending))
+	if expected.PrevErr == nil {
+		Expect(recorded.PrevErr).To(BeNil())
 	} else {
-		Expect(recorded.prevErr).ToNot(BeNil())
-		Expect(recorded.prevErr.Error()).To(BeEquivalentTo(expected.prevErr.Error()))
+		Expect(recorded.PrevErr).ToNot(BeNil())
+		Expect(recorded.PrevErr.Error()).To(BeEquivalentTo(expected.PrevErr.Error()))
 	}
-	if expected.newErr == nil {
-		Expect(recorded.newErr).To(BeNil())
+	if expected.NewErr == nil {
+		Expect(recorded.NewErr).To(BeNil())
 	} else {
-		Expect(recorded.newErr).ToNot(BeNil())
-		Expect(recorded.newErr.Error()).To(BeEquivalentTo(expected.newErr.Error()))
+		Expect(recorded.NewErr).ToNot(BeNil())
+		Expect(recorded.NewErr.Error()).To(BeEquivalentTo(expected.NewErr.Error()))
 	}
-	Expect(recorded.isRevert).To(Equal(expected.isRevert))
-	Expect(recorded.isRetry).To(Equal(expected.isRetry))
+	Expect(recorded.IsRevert).To(Equal(expected.IsRevert))
+	Expect(recorded.IsRetry).To(Equal(expected.IsRetry))
 }
 
-func checkTxnOperations(recorded, expected recordedTxnOps) {
+func checkTxnOperations(recorded, expected RecordedTxnOps) {
 	Expect(recorded).To(HaveLen(len(expected)))
 	for idx, recordedOp := range recorded {
 		checkTxnOperation(recordedOp, expected[idx])
