@@ -134,7 +134,6 @@ Pinging
     Ping6 From agent_vpp_1 To ${IP_2}
     Ping6 From agent_vpp_1 To ${IP_4}
     #Ping From agent_vpp_2 To ${IP_4}
-    Ping6 On agent_vpp_3 With IP ${IP_2}, Source ${int}
 
     ${int}=    Get Interface Internal Name    agent_vpp_2    bvi_loop0
     Ping On agent_vpp_2 With IP ${IP_4}, Source ${int}
