@@ -13,6 +13,7 @@ message Interface {
         AF_PACKET = 6;
         VXLAN_TUNNEL = 7;
         IPSEC_TUNNEL = 8;
+        VMXNET3_INTERFACE = 9;
     };
 
     string name = 1;                   /* Logical interface name unique across all configured interfaces (mandatory) */
@@ -58,6 +59,7 @@ message Interface {
         TapLink tap = 103;              /* TAP-specific configuration */
         VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
         IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
+        VmxNet3Link vmx_net3 = 106;     /* VmxNet3-specific configuration */
     };
 };
 
@@ -138,4 +140,13 @@ message IPSecLink {
     IntegAlg integ_alg = 11;            /* Cryptographic algorithm for authentication */
     string local_integ_key = 12;
     string remote_integ_key = 13;
+}
+
+/* PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface
+       name is in format "vmxnet3-<d>/<b>/<s>/<f>", where 'd' stands for domain (max ffff), 'b' is bus (max ff),
+       's' is slot (max 1f) and 'f is function' (max 7). All values are base 16 */
+message VmxNet3Link {
+    bool enable_elog = 2;   /* turn on elog */
+    uint32 rxq_size = 3;    /* receive queue size (default is 1024) */
+    uint32 txq_size = 4;    /* transmit queue size (default is 1024) */
 }

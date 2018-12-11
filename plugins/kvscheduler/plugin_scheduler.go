@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
@@ -96,8 +96,8 @@ type SchedulerTxn struct {
 
 // errorSubscription represents one subscription for error updates.
 type errorSubscription struct {
-	channel  chan<- KeyWithError
-	selector KeySelector
+	channel  chan<- kvs.KeyWithError
+	selector kvs.KeySelector
 }
 
 // Init initializes the scheduler. Single go routine is started that will process
@@ -134,17 +134,12 @@ func (scheduler *Scheduler) IsInitialized() bool {
 }
 
 // AfterInit subscribes to known NB prefixes.
-func (scheduler *Scheduler) AfterInit() error {
+func (scheduler *Scheduler) AfterInit() (err error) {
 	go scheduler.watchEvents()
 
-	var err error
 	scheduler.watchDataReg, err = scheduler.Watcher.Watch("scheduler",
 		scheduler.changeChan, scheduler.resyncChan, scheduler.GetRegisteredNBKeyPrefixes()...)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (scheduler *Scheduler) watchEvents() {
@@ -163,7 +158,7 @@ func (scheduler *Scheduler) watchEvents() {
 					txn.SetValue(x.GetKey(), x)
 				}
 			}
-			kvErrs, err := txn.Commit(WithRetry(context.Background(), time.Second, true))
+			kvErrs, err := txn.Commit(kvs.WithRetry(context.Background(), time.Second, true))
 			scheduler.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
 			e.Done(err)
 
@@ -173,7 +168,7 @@ func (scheduler *Scheduler) watchEvents() {
 			txn := scheduler.StartNBTransaction()
 			for prefix, iter := range e.GetValues() {
 				var keyVals []datasync.KeyVal
-				for x, done := iter.GetNext(); done == false; x, done = iter.GetNext() {
+				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
 					keyVals = append(keyVals, x)
 					txn.SetValue(x.GetKey(), x)
 				}
@@ -183,8 +178,8 @@ func (scheduler *Scheduler) watchEvents() {
 				}
 			}
 			ctx := context.Background()
-			ctx = WithRetry(ctx, time.Second, true)
-			ctx = WithResync(ctx, FullResync, true)
+			ctx = kvs.WithRetry(ctx, time.Second, true)
+			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			kvErrs, err := txn.Commit(ctx)
 			scheduler.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
 			e.Done(err)
@@ -203,7 +198,7 @@ func (scheduler *Scheduler) Close() error {
 // keys. It should be called in the Init phase of agent plugins.
 // Every key-value pair must have at most one descriptor associated with it
 // (none for derived values expressing properties).
-func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *KVDescriptor) {
+func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) {
 	scheduler.registry.RegisterDescriptor(descriptor)
 	if descriptor.NBKeyPrefix != "" {
 		scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefix)
@@ -231,7 +226,7 @@ func (scheduler *Scheduler) GetRegisteredNBKeyPrefixes() []string {
 
 // StartNBTransaction starts a new transaction from NB to SB plane.
 // The enqueued actions are scheduled for execution by Txn.Commit().
-func (scheduler *Scheduler) StartNBTransaction() Txn {
+func (scheduler *Scheduler) StartNBTransaction() kvs.Txn {
 	txn := &SchedulerTxn{
 		scheduler: scheduler,
 		data: &queuedTxn{
@@ -253,11 +248,11 @@ func (scheduler *Scheduler) TransactionBarrier() {
 
 // PushSBNotification notifies about a spontaneous value change in the SB
 // plane (i.e. not triggered by NB transaction).
-func (scheduler *Scheduler) PushSBNotification(key string, value proto.Message, metadata Metadata) error {
+func (scheduler *Scheduler) PushSBNotification(key string, value proto.Message, metadata kvs.Metadata) error {
 	txn := &queuedTxn{
 		txnType: sbNotification,
 		sb: &sbNotif{
-			value:    KeyValuePair{Key: key, Value: value},
+			value:    kvs.KeyValuePair{Key: key, Value: value},
 			metadata: metadata,
 		},
 	}
@@ -280,7 +275,7 @@ func (scheduler *Scheduler) GetValue(key string) proto.Message {
 }
 
 // GetValues returns a set of values matched by the given selector.
-func (scheduler *Scheduler) GetValues(selector KeySelector) []KeyValuePair {
+func (scheduler *Scheduler) GetValues(selector kvs.KeySelector) []kvs.KeyValuePair {
 	graphR := scheduler.graph.Read()
 	defer graphR.Release()
 
@@ -300,7 +295,7 @@ func (scheduler *Scheduler) GetMetadataMap(descriptor string) idxmap.NamedMappin
 
 // GetPendingValues returns list of values (possibly filtered by selector)
 // waiting for their dependencies to be met.
-func (scheduler *Scheduler) GetPendingValues(selector KeySelector) []KeyValuePair {
+func (scheduler *Scheduler) GetPendingValues(selector kvs.KeySelector) []kvs.KeyValuePair {
 	graphR := scheduler.graph.Read()
 	defer graphR.Release()
 
@@ -311,7 +306,7 @@ func (scheduler *Scheduler) GetPendingValues(selector KeySelector) []KeyValuePai
 // GetFailedValues returns a list of keys (possibly filtered by selector)
 // whose (base) values are in a failed state (i.e. possibly not in the state as set
 // by the last transaction).
-func (scheduler *Scheduler) GetFailedValues(selector KeySelector) []KeyWithError {
+func (scheduler *Scheduler) GetFailedValues(selector kvs.KeySelector) []kvs.KeyWithError {
 	graphR := scheduler.graph.Read()
 	defer graphR.Release()
 
@@ -321,14 +316,14 @@ func (scheduler *Scheduler) GetFailedValues(selector KeySelector) []KeyWithError
 
 // SubscribeForErrors allows to get notified about all failed (Error!=nil)
 // and restored (Error==nil) values (possibly filtered using the selector).
-func (scheduler *Scheduler) SubscribeForErrors(channel chan<- KeyWithError, selector KeySelector) {
+func (scheduler *Scheduler) SubscribeForErrors(channel chan<- kvs.KeyWithError, selector kvs.KeySelector) {
 	scheduler.errorSubs = append(scheduler.errorSubs, errorSubscription{channel: channel, selector: selector})
 }
 
 // SetValue changes (non-derived) lazy value - un-marshalled during
 // transaction pre-processing using ValueTypeName given by descriptor.
 // If <value> is nil, the value will get deleted.
-func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) Txn {
+func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) kvs.Txn {
 	txn.data.nb.value[key] = value
 	return txn
 }
@@ -336,25 +331,25 @@ func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) Txn {
 // Commit orders scheduler to execute enqueued operations.
 // Operations with unmet dependencies will get postponed and possibly
 // executed later.
-func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []KeyWithError, txnError error) {
+func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []kvs.KeyWithError, txnError error) {
 	// parse transaction options
-	txn.data.nb.isBlocking = !IsNonBlockingTxn(ctx)
-	txn.data.nb.resyncType, txn.data.nb.verboseRefresh = IsResync(ctx)
-	txn.data.nb.retryPeriod, txn.data.nb.expBackoffRetry, txn.data.nb.retryFailed = IsWithRetry(ctx)
-	txn.data.nb.revertOnFailure = IsWithRevert(ctx)
-	txn.data.nb.description, _ = IsWithDescription(ctx)
+	txn.data.nb.isBlocking = !kvs.IsNonBlockingTxn(ctx)
+	txn.data.nb.resyncType, txn.data.nb.verboseRefresh = kvs.IsResync(ctx)
+	txn.data.nb.retryPeriod, txn.data.nb.expBackoffRetry, txn.data.nb.retryFailed = kvs.IsWithRetry(ctx)
+	txn.data.nb.revertOnFailure = kvs.IsWithRevert(ctx)
+	txn.data.nb.description, _ = kvs.IsWithDescription(ctx)
 
 	// validate transaction options
-	if txn.data.nb.resyncType == DownstreamResync && len(txn.data.nb.value) > 0 {
-		return nil, ErrCombinedDownstreamResyncWithChange
+	if txn.data.nb.resyncType == kvs.DownstreamResync && len(txn.data.nb.value) > 0 {
+		return nil, kvs.ErrCombinedDownstreamResyncWithChange
 	}
-	if txn.data.nb.revertOnFailure && txn.data.nb.resyncType != NotResync {
-		return nil, ErrRevertNotSupportedWithResync
+	if txn.data.nb.revertOnFailure && txn.data.nb.resyncType != kvs.NotResync {
+		return nil, kvs.ErrRevertNotSupportedWithResync
 	}
 
 	// enqueue txn and for blocking Commit wait for the errors
 	if txn.data.nb.isBlocking {
-		txn.data.nb.resultChan = make(chan []KeyWithError, 1)
+		txn.data.nb.resultChan = make(chan []kvs.KeyWithError, 1)
 	}
 	err := txn.scheduler.enqueueTxn(txn.data)
 	if err != nil {
@@ -363,9 +358,9 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []KeyWithError, t
 	if txn.data.nb.isBlocking {
 		select {
 		case <-txn.scheduler.ctx.Done():
-			return nil, ErrClosedScheduler
+			return nil, kvs.ErrClosedScheduler
 		case <-ctx.Done():
-			return nil, ErrTxnWaitCanceled
+			return nil, kvs.ErrTxnWaitCanceled
 		case kvErrors = <-txn.data.nb.resultChan:
 			close(txn.data.nb.resultChan)
 			return kvErrors, nil

@@ -93,7 +93,12 @@ func main() {
 
 	// expand relative import paths
 	gopath := os.Getenv("GOPATH")
-	cwd, _ := os.Getwd()
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "ERROR: ", err)
+		os.Exit(2)
+	}
+
 	for _, importPath := range imports.values {
 		if !PathExists(filepath.Join(gopath, "src", importPath)) {
 			asRelative := filepath.Join(cwd, importPath)
@@ -114,7 +119,7 @@ func main() {
 	// generate adapter source code from the template
 	var buf bytes.Buffer
 	t := template.Must(template.New("").Parse(adapterTemplate))
-	err := t.Execute(&buf, inputData)
+	err = t.Execute(&buf, inputData)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ERROR: ", err)
 		os.Exit(2)

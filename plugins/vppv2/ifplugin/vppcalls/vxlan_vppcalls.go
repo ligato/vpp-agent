@@ -23,11 +23,6 @@ import (
 )
 
 func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.VxlanLink, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
-	// this is temporary fix to solve creation of VRF table for VxLAN
-	if err := h.CreateVrf(vrf); err != nil {
-		return 0, err
-	}
-
 	req := &vxlan.VxlanAddDelTunnel{
 		IsAdd:          boolToUint(isAdd),
 		Vni:            vxLan.Vni,
@@ -53,6 +48,16 @@ func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.VxlanLink, vrf, multicastIf
 	req.SrcAddress = []byte(srcAddr)
 	req.DstAddress = []byte(dstAddr)
 
+	// before the VxLAN is added, create a VRF table if needed
+	if req.IsIPv6 == 1 {
+		if err := h.CreateVrfIPv6(vrf); err != nil {
+			return 0, err
+		}
+	} else {
+		if err := h.CreateVrf(vrf); err != nil {
+			return 0, err
+		}
+	}
 	reply := &vxlan.VxlanAddDelTunnelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err

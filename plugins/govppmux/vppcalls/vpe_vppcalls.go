@@ -267,7 +267,7 @@ func GetRuntimeInfo(vppChan govppapi.Channel) (*RuntimeInfo, error) {
 			VectorRatesPunt:     strToFloat64(fields[10]),
 		}
 
-		itemMatches := runtimeItemsRe.FindAllStringSubmatch(string(fields[11]), -1)
+		itemMatches := runtimeItemsRe.FindAllStringSubmatch(fields[11], -1)
 		for _, matches := range itemMatches {
 			fields := matches[1:]
 			if len(fields) != 7 {

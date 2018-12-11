@@ -59,7 +59,7 @@ Create BD on Agent1
 
 Check1 bd1 on Agent1 Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_1   bvi_loop0     memif0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_1  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State IPv6    agent_vpp_1  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
 Check2 Interfaces on Agent1 for Agent2
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Loopback Interface State    agent_vpp_1    bvi_loop0    enabled=1     mac=${MAC_LOOP1}   ipv6=${IP_1}/${PREFIX}
@@ -76,7 +76,7 @@ Check Interfaces on Agent1 for Agent3
 
 Check bd2 on Agent1 Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_1   bvi_loop1     memif1
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_1  bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif1  interface=bvi_loop1
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State IPv6    agent_vpp_1  bd2  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif1  interface=bvi_loop1
 
 Setup Agent2
     Create loopback interface bvi_loop0 on agent_vpp_2 with ip ${IP_2}/${PREFIX} and mac ${MAC2_LOOP1}
@@ -89,7 +89,7 @@ Check Interfaces on Agent2
 
 Check bd1 on Agent2 Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_2   bvi_loop0     memif0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_2  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State IPv6    agent_vpp_2  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
 Setup Agent3
     Create loopback interface bvi_loop0 on agent_vpp_3 with ip ${IP_4}/${PREFIX} and mac ${MAC3_LOOP1}
@@ -102,7 +102,7 @@ Check Interfaces on Agent3
 
 Check bd1 on Agent3 Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: BD Is Created    agent_vpp_3   bvi_loop0     memif0
-    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State    agent_vpp_3  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}     vat_term: Check Bridge Domain State IPv6    agent_vpp_3  bd1  flood=1  unicast=1  forward=1  learn=1  arp_term=1  interface=memif0  interface=bvi_loop0
 
 Setup route on Agent2
     Create Route On agent_vpp_2 With IP ${NET2}/${PREFIX} With Next Hop ${IP_1} And Vrf Id 0

@@ -778,6 +778,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(metadata.GetInteger()).To(BeEquivalentTo(0))
 	metadata, exists = nameToInteger3.LookupByName(baseValue3)
 	Expect(exists).To(BeFalse())
+	Expect(metadata).To(BeNil())
 
 	// check operations executed in SB
 	opHistory := mockSB.PopHistoryOfOps()

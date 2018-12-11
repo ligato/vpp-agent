@@ -20,7 +20,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 const (
@@ -55,7 +55,7 @@ const (
 type LastChangeFlag struct {
 	txnSeqNum uint
 	value     proto.Message
-	origin    ValueOrigin
+	origin    kvs.ValueOrigin
 	revert    bool
 
 	// NB txn options
@@ -108,7 +108,7 @@ func (flag *PendingFlag) GetValue() string {
 
 // OriginFlag is used to remember the origin of the value.
 type OriginFlag struct {
-	origin ValueOrigin
+	origin kvs.ValueOrigin
 }
 
 // GetName return name of the Origin flag.
@@ -127,7 +127,7 @@ func (flag *OriginFlag) GetValue() string {
 // finally for statistical purposes.
 type ErrorFlag struct {
 	err   error
-	txnOp TxnOperation
+	txnOp kvs.TxnOperation
 }
 
 // GetName return name of the Origin flag.

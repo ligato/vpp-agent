@@ -138,6 +138,12 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			d.log.Error(err)
 			return nil, err
 		}
+	case interfaces.Interface_VMXNET3_INTERFACE:
+		ifIdx, err = d.ifHandler.AddVmxNet3(intf.Name, intf.GetVmxNet3())
+		if err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	}
 
 	/*
@@ -195,23 +201,20 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		return nil, err
 	}
 
-	// VRF (optional, unavailable for VxLAN interfaces), should be done before IP addresses are configured
-	if intf.GetType() != interfaces.Interface_VXLAN_TUNNEL {
-		// Configured separately for IPv4/IPv6
-		isIPv4, isIPv6 := getIPAddressVersions(ipAddresses)
-		if isIPv4 {
-			if err = d.ifHandler.SetInterfaceVrf(ifIdx, intf.Vrf); err != nil {
-				err = errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", intf.Name, intf.Vrf, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	// VRF (optional), should be done before IP addresses, configured separately for IPv4/IPv6
+	isIPv4, isIPv6 := getIPAddressVersions(ipAddresses)
+	if isIPv4 {
+		if err = d.ifHandler.SetInterfaceVrf(ifIdx, intf.Vrf); err != nil {
+			err = errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", intf.Name, intf.Vrf, err)
+			d.log.Error(err)
+			return nil, err
 		}
-		if isIPv6 {
-			if err := d.ifHandler.SetInterfaceVrfIPv6(ifIdx, intf.Vrf); err != nil {
-				err = errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", intf.Name, intf.Vrf, err)
-				d.log.Error(err)
-				return nil, err
-			}
+	}
+	if isIPv6 {
+		if err := d.ifHandler.SetInterfaceVrfIPv6(ifIdx, intf.Vrf); err != nil {
+			err = errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", intf.Name, intf.Vrf, err)
+			d.log.Error(err)
+			return nil, err
 		}
 	}
 
@@ -313,6 +316,8 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 		err = d.ifHandler.DeleteIPSecTunnelInterface(intf.Name, intf.GetIpsec())
 	case interfaces.Interface_SUB_INTERFACE:
 		err = d.ifHandler.DeleteSubif(ifIdx)
+	case interfaces.Interface_VMXNET3_INTERFACE:
+		err = d.ifHandler.DeleteVmxNet3(intf.Name, ifIdx)
 	}
 	if err != nil {
 		err = errors.Errorf("failed to remove interface %s, index %d: %v", intf.Name, ifIdx, err)
@@ -425,18 +430,20 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 	// update IP addresses in the metadata
 	oldMetadata.IPAddresses = newIntf.IpAddresses
 
-	// update MTU
-	if newIntf.Mtu != 0 && newIntf.Mtu != oldIntf.Mtu {
-		if err := d.ifHandler.SetInterfaceMtu(ifIdx, newIntf.Mtu); err != nil {
-			err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
-			d.log.Error(err)
-			return oldMetadata, err
-		}
-	} else if newIntf.Mtu == 0 && d.defaultMtu != 0 {
-		if err := d.ifHandler.SetInterfaceMtu(ifIdx, d.defaultMtu); err != nil {
-			err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
-			d.log.Error(err)
-			return oldMetadata, err
+	// update MTU (except VxLan, IPSec)
+	if newIntf.Type != interfaces.Interface_VXLAN_TUNNEL && newIntf.Type != interfaces.Interface_IPSEC_TUNNEL {
+		if newIntf.Mtu != 0 && newIntf.Mtu != oldIntf.Mtu {
+			if err := d.ifHandler.SetInterfaceMtu(ifIdx, newIntf.Mtu); err != nil {
+				err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
+				d.log.Error(err)
+				return oldMetadata, err
+			}
+		} else if newIntf.Mtu == 0 && d.defaultMtu != 0 {
+			if err := d.ifHandler.SetInterfaceMtu(ifIdx, d.defaultMtu); err != nil {
+				err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
+				d.log.Error(err)
+				return oldMetadata, err
+			}
 		}
 	}
 

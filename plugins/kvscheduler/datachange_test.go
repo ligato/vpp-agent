@@ -82,10 +82,7 @@ func TestDataChangeTransactions(t *testing.T) {
 		ValueTypeName: proto.MessageName(test.NewArrayValue()),
 		DerivedValues: test.ArrayValueDerBuilder,
 		ModifyWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-			if key == prefixC+baseValue3 {
-				return true
-			}
-			return false
+			return key == prefixC+baseValue3
 		},
 		WithMetadata:     true,
 		DumpDependencies: []string{descriptor2Name},
@@ -665,10 +662,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 		ValueTypeName: proto.MessageName(test.NewArrayValue()),
 		DerivedValues: test.ArrayValueDerBuilder,
 		ModifyWithRecreate: func(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-			if key == prefixC+baseValue3 {
-				return true
-			}
-			return false
+			return key == prefixC+baseValue3
 		},
 		WithMetadata:     true,
 		DumpDependencies: []string{descriptor2Name},

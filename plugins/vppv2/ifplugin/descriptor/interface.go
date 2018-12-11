@@ -228,9 +228,11 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 		}
 	}
 
-	// handle default/unspecified MTU
-	if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
-		return false
+	// handle default/unspecified MTU (except VxLAN and IPSec tunnel)
+	if newIntf.Type != interfaces.Interface_VXLAN_TUNNEL && newIntf.Type != interfaces.Interface_IPSEC_TUNNEL {
+		if d.getInterfaceMTU(newIntf) != 0 && d.getInterfaceMTU(oldIntf) != d.getInterfaceMTU(newIntf) {
+			return false
+		}
 	}
 
 	// compare MAC addresses case-insensitively (also handle unspecified MAC address)
@@ -281,6 +283,10 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 		if !proto.Equal(oldIntf.GetSub(), newIntf.GetSub()) {
 			return false
 		}
+	case interfaces.Interface_VMXNET3_INTERFACE:
+		if !d.equivalentVmxNet3(oldIntf.GetVmxNet3(), newIntf.GetVmxNet3()) {
+			return false
+		}
 	}
 	return true
 }
@@ -316,6 +322,12 @@ func (d *InterfaceDescriptor) equivalentIPSecTunnels(oldTun, newTun *interfaces.
 		oldTun.IntegAlg == newTun.IntegAlg &&
 		oldTun.LocalIntegKey == newTun.LocalIntegKey &&
 		oldTun.RemoteIntegKey == newTun.RemoteIntegKey
+}
+
+// equivalentVmxNets compares two vmxnet3 interfaces for equivalence.
+func (d *InterfaceDescriptor) equivalentVmxNet3(oldVmxNet3, newVmxNet3 *interfaces.VmxNet3Link) bool {
+	return oldVmxNet3.RxqSize == newVmxNet3.RxqSize &&
+		oldVmxNet3.TxqSize == newVmxNet3.TxqSize
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.

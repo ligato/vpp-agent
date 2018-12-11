@@ -21,7 +21,7 @@ import (
 
 /* Punt */
 const (
-	// PrefixNAT44 is a key prefix used in NB DB to store configuration for NAT44.
+	// Prefix is a key prefix used in NB DB to store configuration for punt.
 	Prefix = "vpp/config/v2/punt/"
 )
 
