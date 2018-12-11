@@ -5,11 +5,11 @@
  Package ip is a generated from VPP binary API module 'ip'.
 
  It contains following objects:
-	 87 messages
-	 10 types
+	 91 messages
+	 13 types
 	  1 enum
 	  1 union
-	 42 services
+	 44 services
 
 */
 package ip
@@ -184,6 +184,60 @@ func (*Mprefix) GetTypeName() string {
 }
 func (*Mprefix) GetCrcString() string {
 	return "1c4cba05"
+}
+
+// IP6Prefix represents the VPP binary API type 'ip6_prefix'.
+//
+//            "ip6_prefix",
+//            [
+//                "vl_api_ip6_address_t",
+//                "prefix"
+//            ],
+//            [
+//                "u8",
+//                "len"
+//            ],
+//            {
+//                "crc": "0x779fd64f"
+//            }
+//
+type IP6Prefix struct {
+	Prefix IP6Address
+	Len    uint8
+}
+
+func (*IP6Prefix) GetTypeName() string {
+	return "ip6_prefix"
+}
+func (*IP6Prefix) GetCrcString() string {
+	return "779fd64f"
+}
+
+// IP4Prefix represents the VPP binary API type 'ip4_prefix'.
+//
+//            "ip4_prefix",
+//            [
+//                "vl_api_ip4_address_t",
+//                "prefix"
+//            ],
+//            [
+//                "u8",
+//                "len"
+//            ],
+//            {
+//                "crc": "0xea8dc11d"
+//            }
+//
+type IP4Prefix struct {
+	Prefix IP4Address
+	Len    uint8
+}
+
+func (*IP4Prefix) GetTypeName() string {
+	return "ip4_prefix"
+}
+func (*IP4Prefix) GetCrcString() string {
+	return "ea8dc11d"
 }
 
 // FibMplsLabel represents the VPP binary API type 'fib_mpls_label'.
@@ -363,6 +417,38 @@ func (*MacAddress) GetTypeName() string {
 }
 func (*MacAddress) GetCrcString() string {
 	return "efdbdddc"
+}
+
+// PuntRedirect represents the VPP binary API type 'punt_redirect'.
+//
+//            "punt_redirect",
+//            [
+//                "u32",
+//                "rx_sw_if_index"
+//            ],
+//            [
+//                "u32",
+//                "tx_sw_if_index"
+//            ],
+//            [
+//                "vl_api_address_t",
+//                "nh"
+//            ],
+//            {
+//                "crc": "0x3e7a801f"
+//            }
+//
+type PuntRedirect struct {
+	RxSwIfIndex uint32
+	TxSwIfIndex uint32
+	Nh          Address
+}
+
+func (*PuntRedirect) GetTypeName() string {
+	return "punt_redirect"
+}
+func (*PuntRedirect) GetCrcString() string {
+	return "3e7a801f"
 }
 
 // IP6RaPrefixInfo represents the VPP binary API type 'ip6_ra_prefix_info'.
@@ -1036,26 +1122,31 @@ func (*IPNeighborAddDelReply) GetMessageType() api.MessageType {
 //                "u8",
 //                "reverse"
 //            ],
+//            [
+//                "u8",
+//                "symmetric"
+//            ],
 //            {
-//                "crc": "0x32ebf737"
+//                "crc": "0xa9084bfb"
 //            }
 //
 type SetIPFlowHash struct {
-	VrfID   uint32
-	IsIPv6  uint8
-	Src     uint8
-	Dst     uint8
-	Sport   uint8
-	Dport   uint8
-	Proto   uint8
-	Reverse uint8
+	VrfID     uint32
+	IsIPv6    uint8
+	Src       uint8
+	Dst       uint8
+	Sport     uint8
+	Dport     uint8
+	Proto     uint8
+	Reverse   uint8
+	Symmetric uint8
 }
 
 func (*SetIPFlowHash) GetMessageName() string {
 	return "set_ip_flow_hash"
 }
 func (*SetIPFlowHash) GetCrcString() string {
-	return "32ebf737"
+	return "a9084bfb"
 }
 func (*SetIPFlowHash) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2658,43 +2749,27 @@ func (*IPPuntPoliceReply) GetMessageType() api.MessageType {
 //                "context"
 //            ],
 //            [
-//                "u32",
-//                "rx_sw_if_index"
-//            ],
-//            [
-//                "u32",
-//                "tx_sw_if_index"
+//                "vl_api_punt_redirect_t",
+//                "punt"
 //            ],
 //            [
 //                "u8",
 //                "is_add"
 //            ],
-//            [
-//                "u8",
-//                "is_ip6"
-//            ],
-//            [
-//                "u8",
-//                "nh",
-//                16
-//            ],
 //            {
-//                "crc": "0x996b6603"
+//                "crc": "0xa953495b"
 //            }
 //
 type IPPuntRedirect struct {
-	RxSwIfIndex uint32
-	TxSwIfIndex uint32
-	IsAdd       uint8
-	IsIP6       uint8
-	Nh          []byte `struc:"[16]byte"`
+	Punt  PuntRedirect
+	IsAdd uint8
 }
 
 func (*IPPuntRedirect) GetMessageName() string {
 	return "ip_punt_redirect"
 }
 func (*IPPuntRedirect) GetCrcString() string {
-	return "996b6603"
+	return "a953495b"
 }
 func (*IPPuntRedirect) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2730,6 +2805,81 @@ func (*IPPuntRedirectReply) GetCrcString() string {
 	return "e8d4e804"
 }
 func (*IPPuntRedirectReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IPPuntRedirectDump represents the VPP binary API message 'ip_punt_redirect_dump'.
+//
+//            "ip_punt_redirect_dump",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            [
+//                "u8",
+//                "is_ipv6"
+//            ],
+//            {
+//                "crc": "0x6b7bcd0a"
+//            }
+//
+type IPPuntRedirectDump struct {
+	SwIfIndex uint32
+	IsIPv6    uint8
+}
+
+func (*IPPuntRedirectDump) GetMessageName() string {
+	return "ip_punt_redirect_dump"
+}
+func (*IPPuntRedirectDump) GetCrcString() string {
+	return "6b7bcd0a"
+}
+func (*IPPuntRedirectDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IPPuntRedirectDetails represents the VPP binary API message 'ip_punt_redirect_details'.
+//
+//            "ip_punt_redirect_details",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "vl_api_punt_redirect_t",
+//                "punt"
+//            ],
+//            {
+//                "crc": "0xa47f70da"
+//            }
+//
+type IPPuntRedirectDetails struct {
+	Punt PuntRedirect
+}
+
+func (*IPPuntRedirectDetails) GetMessageName() string {
+	return "ip_punt_redirect_details"
+}
+func (*IPPuntRedirectDetails) GetCrcString() string {
+	return "a47f70da"
+}
+func (*IPPuntRedirectDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
@@ -3093,6 +3243,86 @@ func (*IPSourceAndPortRangeCheckInterfaceAddDelReply) GetCrcString() string {
 	return "e8d4e804"
 }
 func (*IPSourceAndPortRangeCheckInterfaceAddDelReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// IPSourceCheckInterfaceAddDel represents the VPP binary API message 'ip_source_check_interface_add_del'.
+//
+//            "ip_source_check_interface_add_del",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "client_index"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "u8",
+//                "is_add"
+//            ],
+//            [
+//                "u8",
+//                "loose"
+//            ],
+//            [
+//                "u32",
+//                "sw_if_index"
+//            ],
+//            {
+//                "crc": "0x0a60152a"
+//            }
+//
+type IPSourceCheckInterfaceAddDel struct {
+	IsAdd     uint8
+	Loose     uint8
+	SwIfIndex uint32
+}
+
+func (*IPSourceCheckInterfaceAddDel) GetMessageName() string {
+	return "ip_source_check_interface_add_del"
+}
+func (*IPSourceCheckInterfaceAddDel) GetCrcString() string {
+	return "0a60152a"
+}
+func (*IPSourceCheckInterfaceAddDel) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// IPSourceCheckInterfaceAddDelReply represents the VPP binary API message 'ip_source_check_interface_add_del_reply'.
+//
+//            "ip_source_check_interface_add_del_reply",
+//            [
+//                "u16",
+//                "_vl_msg_id"
+//            ],
+//            [
+//                "u32",
+//                "context"
+//            ],
+//            [
+//                "i32",
+//                "retval"
+//            ],
+//            {
+//                "crc": "0xe8d4e804"
+//            }
+//
+type IPSourceCheckInterfaceAddDelReply struct {
+	Retval int32
+}
+
+func (*IPSourceCheckInterfaceAddDelReply) GetMessageName() string {
+	return "ip_source_check_interface_add_del_reply"
+}
+func (*IPSourceCheckInterfaceAddDelReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*IPSourceCheckInterfaceAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
@@ -4558,6 +4788,7 @@ type Services interface {
 	DumpIPFib(*IPFibDump) (*IPFibDetails, error)
 	DumpIPMfib(*IPMfibDump) (*IPMfibDetails, error)
 	DumpIPNeighbor(*IPNeighborDump) (*IPNeighborDetails, error)
+	DumpIPPuntRedirect(*IPPuntRedirectDump) (*IPPuntRedirectDetails, error)
 	DumpIPUnnumbered(*IPUnnumberedDump) (*IPUnnumberedDetails, error)
 	DumpMfibSignal(*MfibSignalDump) (*MfibSignalDetails, error)
 	DumpProxyArp(*ProxyArpDump) (*ProxyArpDetails, error)
@@ -4579,6 +4810,7 @@ type Services interface {
 	IPScanNeighborEnableDisable(*IPScanNeighborEnableDisable) (*IPScanNeighborEnableDisableReply, error)
 	IPSourceAndPortRangeCheckAddDel(*IPSourceAndPortRangeCheckAddDel) (*IPSourceAndPortRangeCheckAddDelReply, error)
 	IPSourceAndPortRangeCheckInterfaceAddDel(*IPSourceAndPortRangeCheckInterfaceAddDel) (*IPSourceAndPortRangeCheckInterfaceAddDelReply, error)
+	IPSourceCheckInterfaceAddDel(*IPSourceCheckInterfaceAddDel) (*IPSourceCheckInterfaceAddDelReply, error)
 	IPTableAddDel(*IPTableAddDel) (*IPTableAddDelReply, error)
 	ProxyArpAddDel(*ProxyArpAddDel) (*ProxyArpAddDelReply, error)
 	ProxyArpIntfcEnableDisable(*ProxyArpIntfcEnableDisable) (*ProxyArpIntfcEnableDisableReply, error)
@@ -4638,6 +4870,8 @@ func init() {
 	api.RegisterMessage((*IPPuntPoliceReply)(nil), "ip.IPPuntPoliceReply")
 	api.RegisterMessage((*IPPuntRedirect)(nil), "ip.IPPuntRedirect")
 	api.RegisterMessage((*IPPuntRedirectReply)(nil), "ip.IPPuntRedirectReply")
+	api.RegisterMessage((*IPPuntRedirectDump)(nil), "ip.IPPuntRedirectDump")
+	api.RegisterMessage((*IPPuntRedirectDetails)(nil), "ip.IPPuntRedirectDetails")
 	api.RegisterMessage((*IPContainerProxyAddDel)(nil), "ip.IPContainerProxyAddDel")
 	api.RegisterMessage((*IPContainerProxyAddDelReply)(nil), "ip.IPContainerProxyAddDelReply")
 	api.RegisterMessage((*IPContainerProxyDump)(nil), "ip.IPContainerProxyDump")
@@ -4646,6 +4880,8 @@ func init() {
 	api.RegisterMessage((*IPSourceAndPortRangeCheckAddDelReply)(nil), "ip.IPSourceAndPortRangeCheckAddDelReply")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckInterfaceAddDel)(nil), "ip.IPSourceAndPortRangeCheckInterfaceAddDel")
 	api.RegisterMessage((*IPSourceAndPortRangeCheckInterfaceAddDelReply)(nil), "ip.IPSourceAndPortRangeCheckInterfaceAddDelReply")
+	api.RegisterMessage((*IPSourceCheckInterfaceAddDel)(nil), "ip.IPSourceCheckInterfaceAddDel")
+	api.RegisterMessage((*IPSourceCheckInterfaceAddDelReply)(nil), "ip.IPSourceCheckInterfaceAddDelReply")
 	api.RegisterMessage((*IPScanNeighborEnableDisable)(nil), "ip.IPScanNeighborEnableDisable")
 	api.RegisterMessage((*IPScanNeighborEnableDisableReply)(nil), "ip.IPScanNeighborEnableDisableReply")
 	api.RegisterMessage((*IPProbeNeighbor)(nil), "ip.IPProbeNeighbor")
