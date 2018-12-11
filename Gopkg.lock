@@ -16,7 +16,7 @@
     "core",
   ]
   pruneopts = "UT"
-  revision = "e3a361295d952bb83dd81755677362c392718ccc"
+  revision = "6bfc1a27011d44cbf915607feb276a847148dd30"
 
 [[projects]]
   branch = "master"
@@ -98,11 +98,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c3806bfe3d2c9baa0d4ebd90f0a59c7505969bcaab024b5185d20ccd66c9400c"
+  digest = "1:c307799fe01c92c8049378347b93b658a0f3be2d10a5dab8cc0798f45ee6759a"
   name = "github.com/buger/goterm"
   packages = ["."]
   pruneopts = "UT"
-  revision = "6d19e6a8df12fdfc44a90a24b677a6d04a80b91f"
+  revision = "c206103e1f37c0c6c5c039706305ea2aa6e8ad3b"
 
 [[projects]]
   branch = "master"
@@ -476,7 +476,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1fda0e18a520e1acc943b9f31f3b3a9f21f7c38b522cd4dc7406304aa7673b0f"
+  digest = "1:876bae645784027df71b65df3f74866892c328d242de4f4cac2256462452484e"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -520,7 +520,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "d453c6d110d2df31d507fd980f1b35e10a7824ba"
+  revision = "f969b55e61969a6fcb7c6e363c91c125e8d5c848"
 
 [[projects]]
   branch = "master"
@@ -579,7 +579,7 @@
   version = "v1.7.4-pre"
 
 [[projects]]
-  digest = "1:ab54eea8d482272009e9e4af07d4d9b5236c27b4d8c54a3f2c99d163be883eca"
+  digest = "1:7a137fb7718928e473b7d805434ae563ec41790d3d227cdc64e8b14d1cab8a1f"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
@@ -596,8 +596,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "7615b9433f86a8bdf29709bf288bc4fd0636a369"
-  version = "v1.4.2"
+  revision = "65fb64232476ad9046e57c26cd0bff3d3a8dc6cd"
+  version = "v1.4.3"
 
 [[projects]]
   digest = "1:ee4d4af67d93cc7644157882329023ce9a7bcfce956a079069a9405521c7cc8d"
@@ -821,14 +821,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:84a38c129b1e66a0235f47008b1279100443e3dc4f3c453b2e25832718301706"
+  digest = "1:bbdc3aac716e0d1f799e18b8461e7f5a5e74f9c069b121afd160b8fe2c2ba462"
   name = "github.com/vishvananda/netlink"
   packages = [
     ".",
     "nl",
   ]
   pruneopts = "UT"
-  revision = "aa5b058fc07b88462111aaf4f7c89f1caee9c990"
+  revision = "093e80f9fa21ff7b6d400d4cc54933558fd446a4"
 
 [[projects]]
   branch = "master"
@@ -852,7 +852,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e079952a2887460a817db9c839b5a2be954c9f786ffa5d647be6c5fb2ac388e0"
+  digest = "1:8b5682a2f0d3f944f12b9e87aeb6bbf451b55665ff6b87999c999b2240c390e9"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -867,7 +867,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "c10e9556a7bc0e7c942242b606f0acf024ad5d6a"
+  revision = "610586996380ceef02dd726cc09df7e00a3f8e56"
 
 [[projects]]
   branch = "master"
