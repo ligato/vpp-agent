@@ -6,7 +6,7 @@
 
  It contains following objects:
 	 45 messages
-	  8 types
+	 10 types
 	  3 enums
 	  1 union
 	 22 services
@@ -248,6 +248,60 @@ func (*Mprefix) GetTypeName() string {
 }
 func (*Mprefix) GetCrcString() string {
 	return "1c4cba05"
+}
+
+// IP6Prefix represents the VPP binary API type 'ip6_prefix'.
+//
+//            "ip6_prefix",
+//            [
+//                "vl_api_ip6_address_t",
+//                "prefix"
+//            ],
+//            [
+//                "u8",
+//                "len"
+//            ],
+//            {
+//                "crc": "0x779fd64f"
+//            }
+//
+type IP6Prefix struct {
+	Prefix IP6Address
+	Len    uint8
+}
+
+func (*IP6Prefix) GetTypeName() string {
+	return "ip6_prefix"
+}
+func (*IP6Prefix) GetCrcString() string {
+	return "779fd64f"
+}
+
+// IP4Prefix represents the VPP binary API type 'ip4_prefix'.
+//
+//            "ip4_prefix",
+//            [
+//                "vl_api_ip4_address_t",
+//                "prefix"
+//            ],
+//            [
+//                "u8",
+//                "len"
+//            ],
+//            {
+//                "crc": "0xea8dc11d"
+//            }
+//
+type IP4Prefix struct {
+	Prefix IP4Address
+	Len    uint8
+}
+
+func (*IP4Prefix) GetTypeName() string {
+	return "ip4_prefix"
+}
+func (*IP4Prefix) GetCrcString() string {
+	return "ea8dc11d"
 }
 
 // MacAddress represents the VPP binary API type 'mac_address'.
