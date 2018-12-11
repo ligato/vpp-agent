@@ -965,6 +965,7 @@
     "github.com/fsouza/go-dockerclient",
     "github.com/ghodss/yaml",
     "github.com/go-errors/errors",
+    "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/protoc-gen-gogo",
     "github.com/gogo/protobuf/types",
