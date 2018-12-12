@@ -89,18 +89,18 @@ func TestEmptyResync(t *testing.T) {
 	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(startTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(stopTime)).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(0))
-	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
-	Expect(txn.description).To(Equal(description))
-	Expect(txn.values).To(BeEmpty())
-	Expect(txn.preErrors).To(BeEmpty())
-	Expect(txn.planned).To(BeEmpty())
-	Expect(txn.executed).To(BeEmpty())
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(0))
+	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
+	Expect(txn.Description).To(Equal(description))
+	Expect(txn.Values).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
+	Expect(txn.Planned).To(BeEmpty())
+	Expect(txn.Executed).To(BeEmpty())
 
 	// check flag stats
 	graphR := scheduler.graph.Read()
@@ -290,73 +290,73 @@ func TestResyncWithEmptySB(t *testing.T) {
 	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(startTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(stopTime)).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(0))
-	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
-	Expect(txn.description).To(Equal(description))
-	checkRecordedValues(txn.values, []recordedKVPair{
-		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
-		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(0))
+	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
+	Expect(txn.Description).To(Equal(description))
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
+		{Key: prefixA + baseValue2, Value: utils.ProtoToString(test.NewArrayValue("item1")), Origin: FromNB},
 	})
-	Expect(txn.preErrors).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
 
-	txnOps := recordedTxnOps{
+	txnOps := RecordedTxnOps{
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1,
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue1,
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item1",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item1",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			isPending:  true,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			IsPending:  true,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue2,
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue2,
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue2 + "/item1",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue2 + "/item1",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			wasPending: true,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			WasPending: true,
 		},
 	}
-	checkTxnOperations(txn.planned, txnOps)
-	checkTxnOperations(txn.executed, txnOps)
+	checkTxnOperations(txn.Planned, txnOps)
+	checkTxnOperations(txn.Executed, txnOps)
 
 	// now remove everything using resync with empty data
 	startTime = time.Now()
@@ -422,72 +422,72 @@ func TestResyncWithEmptySB(t *testing.T) {
 	txnHistory = scheduler.getTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(2))
 	txn = txnHistory[1]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(startTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(stopTime)).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(1))
-	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
-	Expect(txn.description).To(BeEmpty())
-	checkRecordedValues(txn.values, []recordedKVPair{
-		{key: prefixA + baseValue1, value: utils.ProtoToString(nil), origin: FromNB},
-		{key: prefixA + baseValue2, value: utils.ProtoToString(nil), origin: FromNB},
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(1))
+	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
+	Expect(txn.Description).To(BeEmpty())
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.ProtoToString(nil), Origin: FromNB},
+		{Key: prefixA + baseValue2, Value: utils.ProtoToString(nil), Origin: FromNB},
 	})
-	Expect(txn.preErrors).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
 
-	txnOps = recordedTxnOps{
+	txnOps = RecordedTxnOps{
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			isPending:  true,
+			Operation:  Delete,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			IsPending:  true,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue2 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixA + baseValue2 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue2,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixA + baseValue2,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue1 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixA + baseValue1 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			wasPending: true,
+			Operation:  Delete,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			WasPending: true,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue1,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixA + baseValue1,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 	}
-	checkTxnOperations(txn.planned, txnOps)
-	checkTxnOperations(txn.executed, txnOps)
+	checkTxnOperations(txn.Planned, txnOps)
+	checkTxnOperations(txn.Executed, txnOps)
 
 	// check flag stats
 	graphR := scheduler.graph.Read()
@@ -735,115 +735,115 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(startTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(stopTime)).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(0))
-	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
-	Expect(txn.description).To(BeEmpty())
-	checkRecordedValues(txn.values, []recordedKVPair{
-		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item2")), origin: FromNB},
-		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
-		{key: prefixA + baseValue3, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(0))
+	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
+	Expect(txn.Description).To(BeEmpty())
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item2")), Origin: FromNB},
+		{Key: prefixA + baseValue2, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
+		{Key: prefixA + baseValue3, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
 	})
-	Expect(txn.preErrors).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
 
-	txnOps := recordedTxnOps{
+	txnOps := RecordedTxnOps{
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue3 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixA + baseValue3 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue3,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			isPending:  true,
+			Operation:  Delete,
+			Key:        prefixA + baseValue3,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			IsPending:  true,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue3,
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			wasPending: true,
+			Operation:  Add,
+			Key:        prefixA + baseValue3,
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			WasPending: true,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue3 + "/item1",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue3 + "/item1",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue3 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue3 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue1 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixA + baseValue1 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Modify,
-			key:        prefixA + baseValue1,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			newValue:   utils.ProtoToString(test.NewArrayValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Modify,
+			Key:        prefixA + baseValue1,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Update,
-			key:        prefixA + baseValue2 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Update,
+			Key:        prefixA + baseValue2 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Modify,
-			key:        prefixA + baseValue2,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Modify,
+			Key:        prefixA + baseValue2,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue2 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			isPending:  true,
+			Operation:  Add,
+			Key:        prefixA + baseValue2 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			IsPending:  true,
 		},
 	}
-	checkTxnOperations(txn.planned, txnOps)
-	checkTxnOperations(txn.executed, txnOps)
+	checkTxnOperations(txn.Planned, txnOps)
+	checkTxnOperations(txn.Executed, txnOps)
 
 	// check flag stats
 	graphR := scheduler.graph.Read()
@@ -983,39 +983,39 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	txnHistory := scheduler.getTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(startTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(stopTime)).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(0))
-	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
-	Expect(txn.description).To(BeEmpty())
-	checkRecordedValues(txn.values, []recordedKVPair{
-		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewStringValue(baseValue1)), origin: FromSB},
-		{key: prefixA + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1")), origin: FromNB},
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(0))
+	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
+	Expect(txn.Description).To(BeEmpty())
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewStringValue(baseValue1)), Origin: FromSB},
+		{Key: prefixA + baseValue2, Value: utils.ProtoToString(test.NewArrayValue("item1")), Origin: FromNB},
 	})
-	Expect(txn.preErrors).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
 
-	txnOps := recordedTxnOps{
+	txnOps := RecordedTxnOps{
 		{
-			operation:  Add,
-			key:        prefixA + baseValue2,
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue2,
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue2 + "/item1",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue2 + "/item1",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 	}
-	checkTxnOperations(txn.planned, txnOps)
-	checkTxnOperations(txn.executed, txnOps)
+	checkTxnOperations(txn.Planned, txnOps)
+	checkTxnOperations(txn.Executed, txnOps)
 
 	// check flag stats
 	graphR := scheduler.graph.Read()
@@ -1308,115 +1308,115 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(startTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(stopTime)).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(0))
-	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
-	Expect(txn.description).To(BeEmpty())
-	checkRecordedValues(txn.values, []recordedKVPair{
-		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item2")), origin: FromNB},
-		{key: prefixB + baseValue2, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
-		{key: prefixC + baseValue3, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(0))
+	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
+	Expect(txn.Description).To(BeEmpty())
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item2")), Origin: FromNB},
+		{Key: prefixB + baseValue2, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
+		{Key: prefixC + baseValue3, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
 	})
-	Expect(txn.preErrors).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
 
-	txnOps := recordedTxnOps{
+	txnOps := RecordedTxnOps{
 		{
-			operation:  Delete,
-			key:        prefixC + baseValue3 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixC + baseValue3 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Delete,
-			key:        prefixC + baseValue3,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			isPending:  true,
+			Operation:  Delete,
+			Key:        prefixC + baseValue3,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			IsPending:  true,
 		},
 		{
-			operation:  Add,
-			key:        prefixC + baseValue3,
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			wasPending: true,
+			Operation:  Add,
+			Key:        prefixC + baseValue3,
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			WasPending: true,
 		},
 		{
-			operation:  Add,
-			key:        prefixC + baseValue3 + "/item1",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixC + baseValue3 + "/item1",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixC + baseValue3 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixC + baseValue3 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Delete,
-			key:        prefixA + baseValue1 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Delete,
+			Key:        prefixA + baseValue1 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Modify,
-			key:        prefixA + baseValue1,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			newValue:   utils.ProtoToString(test.NewArrayValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Modify,
+			Key:        prefixA + baseValue1,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Update,
-			key:        prefixB + baseValue2 + "/item1",
-			derived:    true,
-			prevValue:  utils.ProtoToString(test.NewStringValue("item1")),
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Update,
+			Key:        prefixB + baseValue2 + "/item1",
+			Derived:    true,
+			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Modify,
-			key:        prefixB + baseValue2,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Modify,
+			Key:        prefixB + baseValue2,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixB + baseValue2 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			isPending:  true,
+			Operation:  Add,
+			Key:        prefixB + baseValue2 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			IsPending:  true,
 		},
 	}
-	checkTxnOperations(txn.planned, txnOps)
-	checkTxnOperations(txn.executed, txnOps)
+	checkTxnOperations(txn.Planned, txnOps)
+	checkTxnOperations(txn.Executed, txnOps)
 
 	// check flag stats
 	graphR := scheduler.graph.Read()
@@ -1580,49 +1580,49 @@ func TestResyncWithRetry(t *testing.T) {
 	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(startTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(stopTime)).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(0))
-	Expect(txn.txnType).To(BeEquivalentTo(nbTransaction))
-	Expect(txn.resyncType).To(BeEquivalentTo(FullResync))
-	Expect(txn.description).To(Equal(description))
-	checkRecordedValues(txn.values, []recordedKVPair{
-		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(startTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(0))
+	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
+	Expect(txn.Description).To(Equal(description))
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
 	})
-	Expect(txn.preErrors).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
 
-	txnOps := recordedTxnOps{
+	txnOps := RecordedTxnOps{
 		{
-			operation:  Modify,
-			key:        prefixA + baseValue1,
-			prevValue:  utils.ProtoToString(test.NewArrayValue()),
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Modify,
+			Key:        prefixA + baseValue1,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue()),
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item1",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item1")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item1",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
 		},
 	}
-	checkTxnOperations(txn.planned, txnOps)
-	txnOps[2].isPending = true
-	txnOps[2].newErr = errors.New("failed to add value")
-	checkTxnOperations(txn.executed, txnOps)
+	checkTxnOperations(txn.Planned, txnOps)
+	txnOps[2].IsPending = true
+	txnOps[2].NewErr = errors.New("failed to add value")
+	checkTxnOperations(txn.Executed, txnOps)
 
 	// check flag stats
 	graphR := scheduler.graph.Read()
@@ -1706,42 +1706,42 @@ func TestResyncWithRetry(t *testing.T) {
 	txnHistory = scheduler.getTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(2))
 	txn = txnHistory[1]
-	Expect(txn.preRecord).To(BeFalse())
-	Expect(txn.start.After(stopTime)).To(BeTrue())
-	Expect(txn.start.Before(txn.stop)).To(BeTrue())
-	Expect(txn.stop.Before(time.Now())).To(BeTrue())
-	Expect(txn.seqNum).To(BeEquivalentTo(1))
-	Expect(txn.txnType).To(BeEquivalentTo(retryFailedOps))
-	Expect(txn.resyncType).To(BeEquivalentTo(NotResync))
-	Expect(txn.description).To(BeEmpty())
-	checkRecordedValues(txn.values, []recordedKVPair{
-		{key: prefixA + baseValue1, value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), origin: FromNB},
+	Expect(txn.PreRecord).To(BeFalse())
+	Expect(txn.Start.After(stopTime)).To(BeTrue())
+	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
+	Expect(txn.Stop.Before(time.Now())).To(BeTrue())
+	Expect(txn.SeqNum).To(BeEquivalentTo(1))
+	Expect(txn.TxnType).To(BeEquivalentTo(retryFailedOps))
+	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
+	Expect(txn.Description).To(BeEmpty())
+	checkRecordedValues(txn.Values, []RecordedKVPair{
+		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
 	})
-	Expect(txn.preErrors).To(BeEmpty())
+	Expect(txn.PreErrors).To(BeEmpty())
 
-	txnOps = recordedTxnOps{
+	txnOps = RecordedTxnOps{
 		{
-			operation:  Modify,
-			key:        prefixA + baseValue1,
-			prevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			newValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			isRetry:    true,
+			Operation:  Modify,
+			Key:        prefixA + baseValue1,
+			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
+			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			IsRetry:    true,
 		},
 		{
-			operation:  Add,
-			key:        prefixA + baseValue1 + "/item2",
-			derived:    true,
-			newValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			prevOrigin: FromNB,
-			newOrigin:  FromNB,
-			prevErr:    errors.New("failed to add value"),
-			isRetry:    true,
+			Operation:  Add,
+			Key:        prefixA + baseValue1 + "/item2",
+			Derived:    true,
+			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevOrigin: FromNB,
+			NewOrigin:  FromNB,
+			PrevErr:    errors.New("failed to add value"),
+			IsRetry:    true,
 		},
 	}
-	checkTxnOperations(txn.planned, txnOps)
-	checkTxnOperations(txn.executed, txnOps)
+	checkTxnOperations(txn.Planned, txnOps)
+	checkTxnOperations(txn.Executed, txnOps)
 
 	// check flag stats
 	graphR = scheduler.graph.Read()

@@ -18,75 +18,76 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"sort"
 
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-// recordedTxn is used to record executed transaction.
-type recordedTxn struct {
-	preRecord bool // not yet fully recorded, only args + plan + pre-processing errors
+// RecordedTxn is used to record executed transaction.
+type RecordedTxn struct {
+	PreRecord bool // not yet fully recorded, only args + plan + pre-processing errors
 
-	// timestamps (zero if len(executed) == 0)
-	start time.Time
-	stop  time.Time
+	// timestamps
+	Start time.Time
+	Stop  time.Time
 
 	// arguments
-	seqNum      uint
-	txnType     txnType
-	resyncType  kvs.ResyncType
-	description string
-	values      []recordedKVPair
+	SeqNum      uint
+	TxnType     TxnType
+	ResyncType  kvs.ResyncType
+	Description string
+	Values      []RecordedKVPair
 
 	// result
-	preErrors []kvs.KeyWithError // pre-processing errors
-	planned   recordedTxnOps
-	executed  recordedTxnOps
+	PreErrors []kvs.KeyWithError // pre-processing errors
+	Planned   RecordedTxnOps
+	Executed  RecordedTxnOps
 }
 
-// recorderTxnOp is used to record executed/planned transaction operation.
-type recordedTxnOp struct {
+// RecordedTxnOp is used to record executed/planned transaction operation.
+type RecordedTxnOp struct {
 	// identification
-	operation kvs.TxnOperation
-	key       string
-	derived   bool
+	Operation kvs.TxnOperation
+	Key       string
+	Derived   bool
 
 	// changes
-	prevValue  string
-	newValue   string
-	prevOrigin kvs.ValueOrigin
-	newOrigin  kvs.ValueOrigin
-	wasPending bool
-	isPending  bool
-	prevErr    error
-	newErr     error
+	PrevValue  string
+	NewValue   string
+	PrevOrigin kvs.ValueOrigin
+	NewOrigin  kvs.ValueOrigin
+	WasPending bool
+	IsPending  bool
+	PrevErr    error
+	NewErr     error
 
 	// flags
-	isRevert bool
-	isRetry  bool
+	IsRevert bool
+	IsRetry  bool
 }
 
-// recordedKVPair is used to record key-value pair.
-type recordedKVPair struct {
-	key    string
-	value  string
-	origin kvs.ValueOrigin
+// RecordedKVPair is used to record key-value pair.
+type RecordedKVPair struct {
+	Key    string
+	Value  string
+	Origin kvs.ValueOrigin
 }
 
-// recordedTxnOps is a list of recorded executed/planned transaction operations.
-type recordedTxnOps []*recordedTxnOp
+// RecordedTxnOps is a list of recorded executed/planned transaction operations.
+type RecordedTxnOps []*RecordedTxnOp
 
-// recordedTxns is a list of recorded transactions.
-type recordedTxns []*recordedTxn
+// RecordedTxns is a list of recorded transactions.
+type RecordedTxns []*RecordedTxn
 
 // String returns a *multi-line* human-readable string representation of recorded transaction.
-/*func (txn *recordedTxn) String() string {
+/*func (txn *RecordedTxn) String() string {
 	return txn.StringWithOpts(false, 0)
 }*/
 
 // StringWithOpts allows to format string representation of recorded transaction.
-func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
+func (txn *RecordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 	var str string
 	indent1 := strings.Repeat(" ", indent)
 	indent2 := strings.Repeat(" ", indent+4)
@@ -95,50 +96,50 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 	if !resultOnly {
 		// transaction arguments
 		str += indent1 + "* transaction arguments:\n"
-		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.seqNum)
-		if txn.txnType == nbTransaction && txn.resyncType != kvs.NotResync {
-			resyncType := "Full Resync"
-			if txn.resyncType == kvs.DownstreamResync {
-				resyncType = "SB Sync"
+		str += indent2 + fmt.Sprintf("- seq-num: %d\n", txn.SeqNum)
+		if txn.TxnType == nbTransaction && txn.ResyncType != kvs.NotResync {
+			ResyncType := "Full Resync"
+			if txn.ResyncType == kvs.DownstreamResync {
+				ResyncType = "SB Sync"
 			}
-			if txn.resyncType == kvs.UpstreamResync {
-				resyncType = "NB Sync"
+			if txn.ResyncType == kvs.UpstreamResync {
+				ResyncType = "NB Sync"
 			}
-			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.txnType.String(), resyncType)
+			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.TxnType.String(), ResyncType)
 		} else {
-			str += indent2 + fmt.Sprintf("- type: %s\n", txn.txnType.String())
+			str += indent2 + fmt.Sprintf("- type: %s\n", txn.TxnType.String())
 		}
-		if txn.description != "" {
-			descriptionLines := strings.Split(txn.description, "\n")
+		if txn.Description != "" {
+			descriptionLines := strings.Split(txn.Description, "\n")
 			for idx, line := range descriptionLines {
 				if idx == 0 {
-					str += indent2 + fmt.Sprintf("- description: %s\n", line)
+					str += indent2 + fmt.Sprintf("- Description: %s\n", line)
 				} else {
 					str += indent3 + fmt.Sprintf("%s\n", line)
 				}
 			}
 		}
-		if txn.resyncType == kvs.DownstreamResync {
+		if txn.ResyncType == kvs.DownstreamResync {
 			goto printOps
 		}
-		if len(txn.values) == 0 {
+		if len(txn.Values) == 0 {
 			str += indent2 + fmt.Sprintf("- values: NONE\n")
 		} else {
 			str += indent2 + fmt.Sprintf("- values:\n")
 		}
-		for _, kv := range txn.values {
-			if txn.resyncType != kvs.NotResync && kv.origin == kvs.FromSB {
+		for _, kv := range txn.Values {
+			if txn.ResyncType != kvs.NotResync && kv.Origin == kvs.FromSB {
 				// do not print SB values updated during resync
 				continue
 			}
-			str += indent3 + fmt.Sprintf("- key: %s\n", kv.key)
-			str += indent3 + fmt.Sprintf("  value: %s\n", kv.value)
+			str += indent3 + fmt.Sprintf("- key: %s\n", kv.Key)
+			str += indent3 + fmt.Sprintf("  value: %s\n", kv.Value)
 		}
 
 		// pre-processing errors
-		if len(txn.preErrors) > 0 {
+		if len(txn.PreErrors) > 0 {
 			str += indent1 + "* pre-processing errors:\n"
-			for _, preError := range txn.preErrors {
+			for _, preError := range txn.PreErrors {
 				str += indent2 + fmt.Sprintf("- key: %s\n", preError.Key)
 				str += indent2 + fmt.Sprintf("  error: %s\n", preError.Error.Error())
 			}
@@ -147,17 +148,17 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 	printOps:
 		// planned operations
 		str += indent1 + "* planned operations:\n"
-		str += txn.planned.StringWithOpts(indent + 4)
+		str += txn.Planned.StringWithOpts(indent + 4)
 	}
 
-	if !txn.preRecord {
-		if len(txn.executed) == 0 {
+	if !txn.PreRecord {
+		if len(txn.Executed) == 0 {
 			str += indent1 + "* executed operations:\n"
 		} else {
 			str += indent1 + fmt.Sprintf("* executed operations (%s - %s, duration = %s):\n",
-				txn.start.String(), txn.stop.String(), txn.stop.Sub(txn.start).String())
+				txn.Start.String(), txn.Stop.String(), txn.Stop.Sub(txn.Start).String())
 		}
-		str += txn.executed.StringWithOpts(indent + 4)
+		str += txn.Executed.StringWithOpts(indent + 4)
 	}
 
 	return str
@@ -165,76 +166,76 @@ func (txn *recordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 
 // String returns a *multi-line* human-readable string representation of a recorded
 // transaction operation.
-func (op *recordedTxnOp) String() string {
+func (op *RecordedTxnOp) String() string {
 	return op.StringWithOpts(0, 0)
 }
 
 // StringWithOpts allows to format string representation of a transaction operation.
-func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
+func (op *RecordedTxnOp) StringWithOpts(index int, indent int) string {
 	var str string
 	indent1 := strings.Repeat(" ", indent)
 	indent2 := strings.Repeat(" ", indent+4)
 
 	var flags []string
-	if op.newOrigin == kvs.FromSB {
+	if op.NewOrigin == kvs.FromSB {
 		flags = append(flags, "NOTIFICATION")
 	}
-	if op.derived {
+	if op.Derived {
 		flags = append(flags, "DERIVED")
 	}
-	if op.isRevert {
+	if op.IsRevert {
 		flags = append(flags, "REVERT")
 	}
-	if op.isRetry {
+	if op.IsRetry {
 		flags = append(flags, "RETRY")
 	}
-	if op.wasPending {
-		if op.isPending {
+	if op.WasPending {
+		if op.IsPending {
 			flags = append(flags, "STILL-PENDING")
 		} else {
 			flags = append(flags, "WAS-PENDING")
 		}
 	} else {
-		if op.isPending {
+		if op.IsPending {
 			flags = append(flags, "IS-PENDING")
 		}
 	}
 
 	if index > 0 {
 		if len(flags) == 0 {
-			str += indent1 + fmt.Sprintf("%d. %s:\n", index, op.operation.String())
+			str += indent1 + fmt.Sprintf("%d. %s:\n", index, op.Operation.String())
 		} else {
-			str += indent1 + fmt.Sprintf("%d. %s %v:\n", index, op.operation.String(), flags)
+			str += indent1 + fmt.Sprintf("%d. %s %v:\n", index, op.Operation.String(), flags)
 		}
 	} else {
 		if len(flags) == 0 {
-			str += indent1 + fmt.Sprintf("%s:\n", op.operation.String())
+			str += indent1 + fmt.Sprintf("%s:\n", op.Operation.String())
 		} else {
-			str += indent1 + fmt.Sprintf("%s %v:\n", op.operation.String(), flags)
+			str += indent1 + fmt.Sprintf("%s %v:\n", op.Operation.String(), flags)
 		}
 	}
 
-	str += indent2 + fmt.Sprintf("- key: %s\n", op.key)
-	showPrevForAdd := op.wasPending && op.prevValue != op.newValue
-	if op.operation == kvs.Modify || (op.operation == kvs.Add && showPrevForAdd) {
-		str += indent2 + fmt.Sprintf("- prev-value: %s \n", op.prevValue)
-		str += indent2 + fmt.Sprintf("- new-value: %s \n", op.newValue)
+	str += indent2 + fmt.Sprintf("- key: %s\n", op.Key)
+	showPrevForAdd := op.WasPending && op.PrevValue != op.NewValue
+	if op.Operation == kvs.Modify || (op.Operation == kvs.Add && showPrevForAdd) {
+		str += indent2 + fmt.Sprintf("- prev-value: %s \n", op.PrevValue)
+		str += indent2 + fmt.Sprintf("- new-value: %s \n", op.NewValue)
 	}
-	if op.operation == kvs.Delete || op.operation == kvs.Update {
-		str += indent2 + fmt.Sprintf("- value: %s \n", op.prevValue)
+	if op.Operation == kvs.Delete || op.Operation == kvs.Update {
+		str += indent2 + fmt.Sprintf("- value: %s \n", op.PrevValue)
 	}
-	if op.operation == kvs.Add && !showPrevForAdd {
-		str += indent2 + fmt.Sprintf("- value: %s \n", op.newValue)
+	if op.Operation == kvs.Add && !showPrevForAdd {
+		str += indent2 + fmt.Sprintf("- value: %s \n", op.NewValue)
 	}
-	if op.prevOrigin != op.newOrigin {
-		str += indent2 + fmt.Sprintf("- prev-origin: %s\n", op.prevOrigin.String())
-		str += indent2 + fmt.Sprintf("- new-origin: %s\n", op.newOrigin.String())
+	if op.PrevOrigin != op.NewOrigin {
+		str += indent2 + fmt.Sprintf("- prev-origin: %s\n", op.PrevOrigin.String())
+		str += indent2 + fmt.Sprintf("- new-origin: %s\n", op.NewOrigin.String())
 	}
-	if op.prevErr != nil {
-		str += indent2 + fmt.Sprintf("- prev-error: %s\n", utils.ErrorToString(op.prevErr))
+	if op.PrevErr != nil {
+		str += indent2 + fmt.Sprintf("- prev-error: %s\n", utils.ErrorToString(op.PrevErr))
 	}
-	if op.newErr != nil {
-		str += indent2 + fmt.Sprintf("- error: %s\n", utils.ErrorToString(op.newErr))
+	if op.NewErr != nil {
+		str += indent2 + fmt.Sprintf("- error: %s\n", utils.ErrorToString(op.NewErr))
 	}
 
 	return str
@@ -242,12 +243,12 @@ func (op *recordedTxnOp) StringWithOpts(index int, indent int) string {
 
 // String returns a *multi-line* human-readable string representation of transaction
 // operations.
-func (ops recordedTxnOps) String() string {
+func (ops RecordedTxnOps) String() string {
 	return ops.StringWithOpts(0)
 }
 
 // StringWithOpts allows to format string representation of transaction operations.
-func (ops recordedTxnOps) StringWithOpts(indent int) string {
+func (ops RecordedTxnOps) StringWithOpts(indent int) string {
 	if len(ops) == 0 {
 		return strings.Repeat(" ", indent) + "<NONE>\n"
 	}
@@ -261,19 +262,19 @@ func (ops recordedTxnOps) StringWithOpts(indent int) string {
 
 // String returns a *multi-line* human-readable string representation of a transaction
 // list.
-func (txns recordedTxns) String() string {
+func (txns RecordedTxns) String() string {
 	return txns.StringWithOpts(false, 0)
 }
 
 // StringWithOpts allows to format string representation of a transaction list.
-func (txns recordedTxns) StringWithOpts(resultOnly bool, indent int) string {
+func (txns RecordedTxns) StringWithOpts(resultOnly bool, indent int) string {
 	if len(txns) == 0 {
 		return strings.Repeat(" ", indent) + "<NONE>\n"
 	}
 
 	var str string
 	for idx, txn := range txns {
-		str += strings.Repeat(" ", indent) + fmt.Sprintf("Transaction #%d:\n", txn.seqNum)
+		str += strings.Repeat(" ", indent) + fmt.Sprintf("Transaction #%d:\n", txn.SeqNum)
 		str += txn.StringWithOpts(resultOnly, indent+4)
 		if idx < len(txns)-1 {
 			str += "\n"
@@ -284,72 +285,75 @@ func (txns recordedTxns) StringWithOpts(resultOnly bool, indent int) string {
 
 // preRecordTxnOp prepares txn operation record - fills attributes that we can even
 // before executing the operation.
-func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *recordedTxnOp {
+func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *RecordedTxnOp {
 	prevOrigin := getNodeOrigin(node)
 	if prevOrigin == kvs.UnknownOrigin {
 		// new value
 		prevOrigin = args.kv.origin
 	}
-	return &recordedTxnOp{
-		key:        args.kv.key,
-		derived:    isNodeDerived(node),
-		prevValue:  utils.ProtoToString(node.GetValue()),
-		newValue:   utils.ProtoToString(args.kv.value),
-		prevOrigin: prevOrigin,
-		newOrigin:  args.kv.origin,
-		wasPending: isNodePending(node),
-		prevErr:    scheduler.getNodeLastError(args.kv.key),
-		isRevert:   args.kv.isRevert,
-		isRetry:    args.isRetry,
+	return &RecordedTxnOp{
+		Key:        args.kv.key,
+		Derived:    isNodeDerived(node),
+		PrevValue:  utils.ProtoToString(node.GetValue()),
+		NewValue:   utils.ProtoToString(args.kv.value),
+		PrevOrigin: prevOrigin,
+		NewOrigin:  args.kv.origin,
+		WasPending: isNodePending(node),
+		PrevErr:    scheduler.getNodeLastError(args.kv.key),
+		IsRevert:   args.kv.isRevert,
+		IsRetry:    args.isRetry,
 	}
 }
 
 // preRecordTransaction logs transaction arguments + plan before execution to
 // persist some information in case there is a crash during execution.
-func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned recordedTxnOps, preErrors []kvs.KeyWithError) *recordedTxn {
+func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned RecordedTxnOps, preErrors []kvs.KeyWithError) *RecordedTxn {
 	// allocate new transaction record
-	record := &recordedTxn{
-		preRecord:          true,
-		seqNum:             txn.seqNum,
-		txnType:            txn.args.txnType,
-		preErrors:          preErrors,
-		planned:            planned,
+	record := &RecordedTxn{
+		PreRecord:          true,
+		SeqNum:             txn.seqNum,
+		TxnType:            txn.args.txnType,
+		PreErrors:          preErrors,
+		Planned:            planned,
 	}
 	if txn.args.txnType == nbTransaction {
-		record.resyncType = txn.args.nb.resyncType
-		record.description = txn.args.nb.description
+		record.ResyncType = txn.args.nb.resyncType
+		record.Description = txn.args.nb.description
 	}
 
 	// build header for the log
 	var downstreamResync bool
-	txnInfo := txn.args.txnType.String()
+	txnInfo := fmt.Sprintf("%s", txn.args.txnType.String())
 	if txn.args.txnType == nbTransaction && txn.args.nb.resyncType != kvs.NotResync {
-		resyncType := "Full Resync"
+		ResyncType := "Full Resync"
 		if txn.args.nb.resyncType == kvs.DownstreamResync {
-			resyncType = "SB Sync"
+			ResyncType = "SB Sync"
 			downstreamResync = true
 		}
 		if txn.args.nb.resyncType == kvs.UpstreamResync {
-			resyncType = "NB Sync"
+			ResyncType = "NB Sync"
 		}
-		txnInfo = fmt.Sprintf("%s (%s)", txn.args.txnType.String(), resyncType)
+		txnInfo = fmt.Sprintf("%s (%s)", txn.args.txnType.String(), ResyncType)
 	}
 
-	// record values
+	// record values sorted alphabetically by keys
 	if !downstreamResync {
 		for _, kv := range txn.values {
-			record.values = append(record.values, recordedKVPair{
-				key:    kv.key,
-				value:  utils.ProtoToString(kv.value),
-				origin: kv.origin,
+			record.Values = append(record.Values, RecordedKVPair{
+				Key:    kv.key,
+				Value:  utils.ProtoToString(kv.value),
+				Origin: kv.origin,
 			})
 		}
+		sort.Slice(record.Values, func(i, j int) bool {
+			return record.Values[i].Key < record.Values[j].Key
+		})
 	}
 
 	// send to the log
 	var buf strings.Builder
 	buf.WriteString("+======================================================================================================================+\n")
-	msg := fmt.Sprintf("Transaction #%d", record.seqNum)
+	msg := fmt.Sprintf("Transaction #%d", record.SeqNum)
 	n := 115 - len(msg)
 	buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(n)+"s |\n", msg, txnInfo))
 	buf.WriteString("+======================================================================================================================+\n")
@@ -360,22 +364,17 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned r
 }
 
 // recordTransaction records the finalized transaction (log + in-memory).
-func (scheduler *Scheduler) recordTransaction(txnRecord *recordedTxn, executed recordedTxnOps, start, stop time.Time) {
-	txnRecord.preRecord = false
-	txnRecord.start = start
-	txnRecord.stop = stop
-	txnRecord.executed = executed
-
-	// log txn result
-	//logMsg := fmt.Sprintf("Finalized transaction (seq-num=%d):\n%s",
-	//	txnRecord.seqNum, txnRecord.StringWithOpts(true, 2))
-	//scheduler.Log.Info(logMsg)
+func (scheduler *Scheduler) recordTransaction(txnRecord *RecordedTxn, executed RecordedTxnOps, start, stop time.Time) {
+	txnRecord.PreRecord = false
+	txnRecord.Start = start
+	txnRecord.Stop = stop
+	txnRecord.Executed = executed
 
 	var buf strings.Builder
 	buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
 	buf.WriteString(txnRecord.StringWithOpts(true, 2))
 	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
-	msg := fmt.Sprintf("#%d", txnRecord.seqNum)
+	msg := fmt.Sprintf("#%d", txnRecord.SeqNum)
 	msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Millisecond))
 	buf.WriteString(fmt.Sprintf("x %s %"+fmt.Sprint(115-len(msg))+"s x\n", msg, msg2))
 	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
@@ -389,7 +388,7 @@ func (scheduler *Scheduler) recordTransaction(txnRecord *recordedTxn, executed r
 
 // getTransactionHistory returns history of transactions started within the specified
 // time window, or the full recorded history if the timestamps are zero values.
-func (scheduler *Scheduler) getTransactionHistory(since, until time.Time) (history recordedTxns) {
+func (scheduler *Scheduler) getTransactionHistory(since, until time.Time) (history RecordedTxns) {
 	scheduler.historyLock.Lock()
 	defer scheduler.historyLock.Unlock()
 
@@ -403,7 +402,7 @@ func (scheduler *Scheduler) getTransactionHistory(since, until time.Time) (histo
 
 	if !since.IsZero() {
 		for ; lastBefore+1 < len(scheduler.txnHistory); lastBefore++ {
-			if !scheduler.txnHistory[lastBefore+1].start.Before(since) {
+			if !scheduler.txnHistory[lastBefore+1].Start.Before(since) {
 				break
 			}
 		}
@@ -411,7 +410,7 @@ func (scheduler *Scheduler) getTransactionHistory(since, until time.Time) (histo
 
 	if !until.IsZero() {
 		for ; firstAfter > 0; firstAfter-- {
-			if !scheduler.txnHistory[firstAfter-1].start.After(until) {
+			if !scheduler.txnHistory[firstAfter-1].Start.After(until) {
 				break
 			}
 		}
@@ -421,12 +420,12 @@ func (scheduler *Scheduler) getTransactionHistory(since, until time.Time) (histo
 }
 
 // getRecordedTransaction returns record of a transaction referenced by the sequence number.
-func (scheduler *Scheduler) getRecordedTransaction(seqNum uint) (txn *recordedTxn) {
+func (scheduler *Scheduler) getRecordedTransaction(SeqNum uint) (txn *RecordedTxn) {
 	scheduler.historyLock.Lock()
 	defer scheduler.historyLock.Unlock()
 
 	for _, txn := range scheduler.txnHistory {
-		if txn.seqNum == seqNum {
+		if txn.SeqNum == SeqNum {
 			return txn
 		}
 	}

@@ -72,7 +72,7 @@ type Scheduler struct {
 
 	// TXN history
 	historyLock sync.Mutex
-	txnHistory  []*recordedTxn // ordered from the oldest to the latest
+	txnHistory  []*RecordedTxn // ordered from the oldest to the latest
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
