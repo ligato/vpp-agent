@@ -476,7 +476,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:876bae645784027df71b65df3f74866892c328d242de4f4cac2256462452484e"
+  digest = "1:ff5d9579ce740b0f05978eb4df1e8c177829c29b11a90304257d8e7413a061cf"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -520,7 +520,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "f969b55e61969a6fcb7c6e363c91c125e8d5c848"
+  revision = "f597195a15762fa2bb1ce5bfdd875ec96c63d153"
 
 [[projects]]
   branch = "master"
@@ -805,11 +805,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a79dc80dd3154f4fe8d924d19d48d63c22f25fa9e66da497d9ebb037805d7eb1"
+  digest = "1:2ac7a6137a887542d0775ac7754948d4d34bad1fcbd4a7cbe9013c2211b1b566"
   name = "github.com/unrolled/render"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b9786414de4d903830df7ac38eea68a0e3267a35"
+  revision = "4c664cb3ad2f9856d1debd49977df56221ab45a9"
 
 [[projects]]
   digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
@@ -924,25 +924,30 @@
   revision = "c830210a61dfaa790e1920f8d0470fc27bc2efbe"
 
 [[projects]]
-  digest = "1:bf7e2328a58176b7f29f3b425b0555745e9a18ed803f5fd8f6c2c13913a60bb4"
+  digest = "1:8f56475624fb72854d06ca16c2f7032e3cea14a63074e9c199ba8d46431c1127"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
     "encoding/proto",
     "grpclog",
     "health/grpc_health_v1",
     "internal",
     "internal/backoff",
+    "internal/binarylog",
     "internal/channelz",
     "internal/envconfig",
     "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
     "internal/transport",
     "keepalive",
     "metadata",
@@ -956,8 +961,8 @@
     "tap",
   ]
   pruneopts = "UT"
-  revision = "2e463a05d100327ca47ac218281906921038fd95"
-  version = "v1.16.0"
+  revision = "df014850f6dee74ba2fc94874043a9f3f75fbfd8"
+  version = "v1.17.0"
 
 [[projects]]
   digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
