@@ -120,6 +120,12 @@ type errorString struct {
 	Error string
 }
 
+// dumpIndex defines "index" page for the Dump REST API.
+type dumpIndex struct {
+	Descriptors []string
+	States      []string
+}
+
 // kvWithMetaForJSON is an internal extension to KVWithMetadata, with proto Message
 // customized to implement MarshalJSON using jsonpb Marshaller.
 // The jsonpb package produces a different output than the standard "encoding/json"
@@ -376,11 +382,17 @@ func (scheduler *Scheduler) dumpGetHandler(formatter *render.Render) http.Handle
 	return func(w http.ResponseWriter, req *http.Request) {
 		args := req.URL.Query()
 
-		// parse mandatory *descriptor* argument
+		// parse optional *descriptor* argument
 		descriptors, withDescriptor := args[descriptorArg]
 		if !withDescriptor {
-			err := errors.New("missing descriptor argument")
-			scheduler.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+			// return "index" page
+			scheduler.txnLock.Lock()
+			defer scheduler.txnLock.Unlock()
+			index := dumpIndex{States: []string{SB, internalState, NB}}
+			for _, descriptor := range scheduler.registry.GetAllDescriptors() {
+				index.Descriptors = append(index.Descriptors, descriptor.Name)
+			}
+			scheduler.logError(formatter.JSON(w, http.StatusOK, index))
 			return
 		}
 		if len(descriptors) != 1 {
