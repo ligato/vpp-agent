@@ -23,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -74,6 +75,10 @@ type DataResyncDSL interface {
 	IPSecSA(sa *ipsec.SecurityAssociations_SA) DataResyncDSL
 	// IPSecSPD adds request to RESYNC a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) DataResyncDSL
+	// IPSecTunnel adds request to RESYNC a new IPSec tunnel
+	IPSecTunnel(tun *ipsec.TunnelInterfaces_Tunnel) DataResyncDSL
+	// PuntSocketRegister adds request to RESYNC a new punt to host entry
+	PuntSocketRegister(puntCfg *punt.Punt) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() Reply

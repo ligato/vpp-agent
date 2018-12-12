@@ -48,6 +48,10 @@ required = [
   version = "1.3.0"
 
 [[constraint]]
+  name = "github.com/prometheus/client_golang"
+  version = "0.8.0"
+
+[[constraint]]
   name = "github.com/sirupsen/logrus"
   version = "1.0.4"
 
@@ -83,7 +87,7 @@ required = [
 
 [[override]]
   name = "github.com/Shopify/sarama"
-  version = "~1.15.0"
+  version = "1.17.0"
 
 [[override]]
   name = "github.com/bsm/sarama-cluster"
@@ -91,7 +95,7 @@ required = [
 
 [[override]]
   name = "github.com/coreos/etcd"
-  version = "=3.3.9"
+  version = "=3.3.10"
 
 [[constraint]]
   name = "github.com/opencontainers/runc"

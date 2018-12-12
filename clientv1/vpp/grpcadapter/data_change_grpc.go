@@ -28,6 +28,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"golang.org/x/net/context"
@@ -166,6 +167,18 @@ func (dsl *PutDSL) IPSecSA(val *ipsec.SecurityAssociations_SA) vppclient.PutDSL 
 
 // IPSecSPD adds request to create a new Security Policy Database
 func (dsl *PutDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppclient.PutDSL {
+	dsl.parent.put = append(dsl.parent.put, val)
+	return dsl
+}
+
+// IPSecTunnel adds request to create a new IPSec tunnel
+func (dsl *PutDSL) IPSecTunnel(val *ipsec.TunnelInterfaces_Tunnel) vppclient.PutDSL {
+	dsl.parent.put = append(dsl.parent.put, val)
+	return dsl
+}
+
+// PuntSocketRegister adds request to register a new punt to host entry
+func (dsl *PutDSL) PuntSocketRegister(val *punt.Punt) vppclient.PutDSL {
 	dsl.parent.put = append(dsl.parent.put, val)
 	return dsl
 }
@@ -345,6 +358,22 @@ func (dsl *DeleteDSL) IPSecSPD(name string) vppclient.DeleteDSL {
 	return dsl
 }
 
+// IPSecTunnel adds request to delete a IPSec tunnel
+func (dsl *DeleteDSL) IPSecTunnel(name string) vppclient.DeleteDSL {
+	dsl.parent.del = append(dsl.parent.del, &ipsec.TunnelInterfaces_Tunnel{
+		Name: name,
+	})
+	return dsl
+}
+
+// PuntSocketDeregister adds request to de-register an existing punt to host entry
+func (dsl *DeleteDSL) PuntSocketDeregister(name string) vppclient.DeleteDSL {
+	dsl.parent.del = append(dsl.parent.del, &punt.Punt{
+		Name: name,
+	})
+	return dsl
+}
+
 // Put enables creating Interface/BD...
 func (dsl *DeleteDSL) Put() vppclient.PutDSL {
 	return &PutDSL{dsl.parent}
@@ -383,6 +412,12 @@ func getRequestFromData(data []proto.Message) *rpc.DataRequest {
 			request.AccessLists = append(request.AccessLists, typedItem)
 		case *interfaces.Interfaces_Interface:
 			request.Interfaces = append(request.Interfaces, typedItem)
+		case *ipsec.SecurityPolicyDatabases_SPD:
+			request.SPDs = append(request.SPDs, typedItem)
+		case *ipsec.SecurityAssociations_SA:
+			request.SAs = append(request.SAs, typedItem)
+		case *ipsec.TunnelInterfaces_Tunnel:
+			request.Tunnels = append(request.Tunnels, typedItem)
 		case *bfd.SingleHopBFD_Session:
 			request.BfdSessions = append(request.BfdSessions, typedItem)
 		case *bfd.SingleHopBFD_Key:
@@ -413,6 +448,8 @@ func getRequestFromData(data []proto.Message) *rpc.DataRequest {
 			request.NatGlobal = typedItem
 		case *nat.Nat44DNat_DNatConfig:
 			request.DNATs = append(request.DNATs, typedItem)
+		case *punt.Punt:
+			request.Punts = append(request.Punts, typedItem)
 		case *linuxIf.LinuxInterfaces_Interface:
 			request.LinuxInterfaces = append(request.LinuxInterfaces, typedItem)
 		case *linuxL3.LinuxStaticArpEntries_ArpEntry:

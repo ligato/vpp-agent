@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Cluster and Ring pipelines process commands for each node in its own goroutine.
+
+## 6.14
+
+- Added Options.MinIdleConns.
+- Added Options.MaxConnAge.
+- PoolStats.FreeConns is renamed to PoolStats.IdleConns.
+- Add Client.Do to simplify creating custom commands.
+- Add Cmd.String, Cmd.Int, Cmd.Int64, Cmd.Uint64, Cmd.Float64, and Cmd.Bool helpers.
+- Lower memory usage.
+
 ## v6.13
 
 - Ring got new options called `HashReplicas` and `Hash`. It is recommended to set `HashReplicas = 1000` for better keys distribution between shards.

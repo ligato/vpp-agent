@@ -23,7 +23,7 @@ Change Logger Level
     Change Log Level On agent_vpp_1 From debug To info On vpp-plugin
     Change Log Level On agent_vpp_1 From debug To info On vpp-plugin-if-conf
     ${from_now}=  Get Time     epoch
-    vpp_ctl: Put Loopback Interface With IP    agent_vpp_1    loop0   8a:f1:be:90:00:03    10.1.1.1
+    Put Loopback Interface With IP    agent_vpp_1    loop0   8a:f1:be:90:00:03    10.1.1.1
     Sleep     5
     ${out}=      Write To Machine    docker     docker logs --since ${from_now} agent_vpp_1
     Should Not Contain     ${out}    level=debug msg="Start processing change for key: vpp/config/v1/interface/loop0"

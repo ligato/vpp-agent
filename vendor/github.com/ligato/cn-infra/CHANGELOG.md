@@ -1,3 +1,29 @@
+# Release v1.7 (2018-12-12)
+
+## Major Topics
+
+**FileDB**
+
+  With the new release, the cn-infra introduces a new feature where the filesystem itself can be used as a key-value data store. Defined files or directories can be used to store configuration items the same way as any other database (ETCD, Redis, etc.). The data have to have prescribed format but otherwise, they respect proto models from particular plugins. Configuration files can be of JSON or YAML type. The fileDB plugin supports watcher, configuration status update or resync - features known from other key-value data stores.
+  
+**Process management plugin**
+
+  A new plugin was added to extend cn-infra functionality - a process manager. The plugin can be used to create, start and monitor processes. Begin with creating new process instance like `NewProcess(<cmd>, <options>...)` and start it with `Start()`. 
+  The process manager supports all the common commands like restart, termination, kill, wait for process completion, check process liveness or watch its status. More advanced features or options allow to detach the process from a parent, preserve it when an application is restarted or automatic cleanup of zombie processes.
+  
+## New features
+  * Added new plugin allowing usage of a filesystem as the key-value data store. More details in the [readme](db/keyval/filedb/README.md)
+  * Added new plugin for external process management. More information in the [readme](process/README.md)
+  * StatusCheck plugin has a new option to define non-fatal plugins. A registered plugin marked as non-fatal is not propagated into overall status.
+  * Added watcher for BoltDB database. The BoltDB now supports all the watcher options as other key-value data store plugins.
+  
+## Examples
+  * Redis-lib simple example was updated and changed, now clearly demonstrating Redis plugin options and usage. The Redis "airport" was rewritten, the functionality remained unchanged, but it should be a lot easier to understand the code.
+  
+## Other
+  * Agent start/stop error now prints stack trace  
+
+
 # Release v1.6 (2018-10-04)
 
 ## Major topics
@@ -23,7 +49,7 @@
   
 ## New Features
 - [measure](logging/measure)
-  * New component [tracer](logging/measure/tracer.go) was introduced. It server the similar purpose
+  * New component [tracer](logging/measure/tracer.go) was introduced. It serves the similar purpose
   as the stopwatch. More details in the [readme](logging/measure/README.md)
   * Stopwatch was removed
 - [statuscheck](health/statuscheck)

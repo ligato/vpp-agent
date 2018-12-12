@@ -16,6 +16,8 @@ package dbadapter
 
 import (
 	"github.com/ligato/vpp-agent/clientv1/linux"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 
@@ -84,6 +86,24 @@ func (dsl *DataResyncDSL) LinuxRoute(val *linuxL3.LinuxStaticRoutes_Route) linux
 // VppInterface adds VPP interface to the RESYNC request.
 func (dsl *DataResyncDSL) VppInterface(intf *interfaces.Interfaces_Interface) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.Interface(intf)
+	return dsl
+}
+
+// VppIPSecSPD adds VPP security policy database to the RESYNC request.
+func (dsl *DataResyncDSL) VppIPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecSPD(spd)
+	return dsl
+}
+
+// VppIPSecSA adds VPP security association to the RESYNC request.
+func (dsl *DataResyncDSL) VppIPSecSA(sa *ipsec.SecurityAssociations_SA) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecSA(sa)
+	return dsl
+}
+
+// VppIPSecTunnel adds VPP IPSec tunnel to the RESYNC request.
+func (dsl *DataResyncDSL) VppIPSecTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecTunnel(tunnel)
 	return dsl
 }
 
@@ -188,6 +208,13 @@ func (dsl *DataResyncDSL) NAT44DNat(nat44 *nat.Nat44DNat_DNatConfig) linuxclient
 	return dsl
 }
 
+// PuntSocketRegister adds request to RESYNC a new punt to host entry
+func (dsl *DataResyncDSL) PuntSocketRegister(puntCfg *punt.Punt) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.PuntSocketRegister(puntCfg)
+
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet <keys> with values
 // pointed to by the iterator <it>.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
@@ -213,7 +240,17 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		toBeDeleted := keySet{}
 
 		// fill all known keys associated with the Linux network configuration:
-		keys, err := dsl.listKeys(interfaces.Prefix)
+		keys, err := dsl.listKeys(linuxIf.InterfacePrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(linuxL3.StaticArpPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(linuxL3.StaticRoutePrefix)
 		if err != nil {
 			break
 		}

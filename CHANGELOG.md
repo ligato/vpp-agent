@@ -1,3 +1,39 @@
+# Release v1.8-vpp19.01 (2018-12-12)
+- VPP v19.01-rc0~394-g6b4a32de
+- cn-infra v1.7
+- GO 1.11
+
+## New Features
+- [vpp-ifplugin](plugins/vpp/ifplugin)
+  * Rx-mode and Rx-placement now support dump via the respective binary API call
+- [vpp-rpc-plugin](plugins/vpp/rpc)
+  * GRPC now supports also IPSec configuration.
+  * All currently supported configuration items can be also dumped/read via GRPC (similar to rest) 
+  * GRPC now allows to automatically persist configuration to the data store. The desired DB has to be defined in the new GRPC config file (see [readme](plugins/vpp/rpc/README.md) for additional information).
+- [vpp-punt](plugins/vpp/puntplugin)
+  * Added simple new [punt plugin](plugins/vpp/puntplugin/README.md). The plugin allows to register/unregister punt to host via Unix domain socket. The new [model](plugins/vpp/model/punt/punt.proto) was added for this configuration type. Since the VPP API is incomplete, the configuration does not support dump.  
+  
+## Improvements 
+- [vpp-ifplugin](plugins/vpp/ifplugin)
+  * The VxLAN interface now support IPv4/IPv6 virtual routing and forwarding (VRF tables). 
+  * Support for new interface type: VmxNet3. The VmxNet3 virtual network adapter has no physical counterpart since it is optimized for performance in a virtual machine. Because built-in drivers for this card are not provided by default in the OS, the user must install VMware Tools. The interface model was updated for the VmxNet3 specific configuration.
+- [ipsec-plugin](plugins/vpp/ipsecplugin)
+  * IPSec resync processing for security policy databases (SPD) and security associations (SA) was improved. Data are properly read from northbound and southbound, compared and partially configured/removed, instead of complete cleanup and re-configuration. This does not appeal to IPSec tunnel interfaces.
+  * IPSec tunnel can be now set as an unnumbered interface.
+- [rest-plugin](plugins/rest)
+  * In case of error, the output returns correct error code with cause (parsed from JSON) instead of an empty body  
+    
+## Bugfix
+  * Pre-existing VETH-type interfaces are now read from the default OS namespace during resync if the Linux interfaces were dumped.  
+  * The Linux interface dump method does not return an error if some interface namespace becomes suddenly unavailable at the read-time. Instead, this case is logged and all the other interfaces are returned as usual.
+  * The Linux localclient's delete case for Linux interfaces now works properly.
+  * The Linux interface dump now uses OS link name (instead of vpp-agent specific name) to read the interface attributes. This sometimes caused errors where an incorrect or even none interface was read.
+  * Fixed bug where the unsuccessful namespace switch left the namespace file opened.
+  * Fixed crash if the Linux plugin was disabled.
+  * Fixed occasional crash in vpp-agent interface notifications.
+  * Corrected interface counters for TX packets.
+  * Access list with created TCP/UDP/ICMP rule, which remained as empty struct no longer causes vpp-agent to crash
+
 # Release v1.7-vpp18.10 (2018-10-2)
 
 ## Compatibility

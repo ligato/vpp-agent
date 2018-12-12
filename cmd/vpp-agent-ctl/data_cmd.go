@@ -22,6 +22,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
+
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
@@ -444,6 +446,39 @@ func (ctl *VppAgentCtl) deleteVxlan() {
 	ctl.broker.Delete(vxlanKey)
 }
 
+// CreateVmxNet3 puts vmxNet3 type interface config to the ETCD
+func (ctl *VppAgentCtl) createVmxNet3() {
+	vxlan := &interfaces.Interfaces{
+		Interfaces: []*interfaces.Interfaces_Interface{
+			{
+				Name:    "vmxnet3-a/14/19/1e",
+				Type:    interfaces.InterfaceType_VMXNET3_INTERFACE,
+				Enabled: true,
+				Mtu:     1478,
+				IpAddresses: []string{
+					"172.125.40.1/24",
+				},
+				VmxNet3: &interfaces.Interfaces_Interface_VmxNet3{
+					EnableElog: true,
+					RxqSize:    2048,
+					TxqSize:    512,
+				},
+			},
+		},
+	}
+
+	ctl.Log.Println(vxlan)
+	ctl.broker.Put(interfaces.InterfaceKey(vxlan.Interfaces[0].Name), vxlan.Interfaces[0])
+}
+
+// DeleteVxlan removes VxLAN type interface config from the ETCD
+func (ctl *VppAgentCtl) deleteVmxNet3() {
+	vmxnet3Key := interfaces.InterfaceKey("vmxnet3-a/14/19")
+
+	ctl.Log.Println("Deleting", vmxnet3Key)
+	ctl.broker.Delete(vmxnet3Key)
+}
+
 // CreateAfPacket puts Af-packet type interface config to the ETCD
 func (ctl *VppAgentCtl) createAfPacket() {
 	ifs := interfaces.Interfaces{
@@ -696,6 +731,7 @@ func (ctl *VppAgentCtl) createIPSecTunnelInterface() {
 		RemoteIntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
 		Enabled:         true,
 		IpAddresses:     []string{"20.0.0.0/24"},
+		//UnnumberedName:  "tap1",
 		Vrf:             0,
 	}
 
@@ -886,17 +922,17 @@ func (ctl *VppAgentCtl) createBridgeDomain() {
 				MacAge:              0,
 				Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 					{
-						Name: "loop1",
+						Name:                    "loop1",
 						BridgedVirtualInterface: true,
 						SplitHorizonGroup:       0,
 					},
 					{
-						Name: "tap1",
+						Name:                    "tap1",
 						BridgedVirtualInterface: false,
 						SplitHorizonGroup:       1,
 					},
 					{
-						Name: "memif1",
+						Name:                    "memif1",
 						BridgedVirtualInterface: false,
 						SplitHorizonGroup:       2,
 					},
@@ -1261,6 +1297,30 @@ func (ctl *VppAgentCtl) deleteAppNamespace() {
 	ctl.Log.Println("App namespace delete not supported")
 }
 
+// RegisterPunt puts punt configuration to the ETCD
+func (ctl *VppAgentCtl) registerPunt() {
+	puntVal := &punt.Punt{
+		Name:       "punt1",
+		L3Protocol: punt.L3Protocol_IPv4,
+		L4Protocol: punt.L4Protocol_UDP,
+		Port:       8990,
+		SocketPath: "/tmp/socket/punt",
+	}
+
+	ctl.Log.Println(puntVal)
+	ctl.broker.Put(punt.Key(puntVal.Name), puntVal)
+}
+
+// DeleteAppNamespace removes application namespace configuration from the ETCD
+func (ctl *VppAgentCtl) deregisterPunt() {
+	puntVal := &punt.Punt{
+		Name: "punt1",
+	}
+
+	ctl.Log.Println(puntVal)
+	ctl.broker.Delete(punt.Key(puntVal.Name))
+}
+
 // TXN transactions
 
 // CreateTxn demonstrates transaction - two interfaces and bridge domain put to the ETCD using txn
@@ -1306,12 +1366,12 @@ func (ctl *VppAgentCtl) createTxn() {
 				MacAge:              0,
 				Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 					{
-						Name: "tap1",
+						Name:                    "tap1",
 						BridgedVirtualInterface: true,
 						SplitHorizonGroup:       0,
 					},
 					{
-						Name: "tap2",
+						Name:                    "tap2",
 						BridgedVirtualInterface: false,
 						SplitHorizonGroup:       0,
 					},

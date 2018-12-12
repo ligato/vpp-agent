@@ -21,10 +21,12 @@ import (
 	vpp_acl "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -64,6 +66,12 @@ type PutDSL interface {
 
 	// VppInterface adds a request to create or update VPP network interface.
 	VppInterface(val *vpp_intf.Interfaces_Interface) PutDSL
+	// VppIPSecSPD adds a request to create or update VPP security policy database
+	VppIPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) PutDSL
+	// VppIPSecSA adds a request to create or update VPP security association
+	VppIPSecSA(val *ipsec.SecurityAssociations_SA) PutDSL
+	// VppIPSecTunnel adds a request to create or update VPP IPSec tunnel interface
+	VppIPSecTunnel(val *ipsec.TunnelInterfaces_Tunnel) PutDSL
 	// BfdSession adds a request to create or update VPP bidirectional
 	// forwarding detection session.
 	BfdSession(val *vpp_bfd.SingleHopBFD_Session) PutDSL
@@ -89,6 +97,8 @@ type PutDSL interface {
 	ProxyArpInterfaces(pArpIfs *vpp_l3.ProxyArpInterfaces_InterfaceList) PutDSL
 	// ProxyArpRanges adds a request to create or update VPP L3 proxy ARP ranges
 	ProxyArpRanges(pArpRng *vpp_l3.ProxyArpRanges_RangeList) PutDSL
+	// PuntSocketRegister adds request to register a new punt to host entry
+	PuntSocketRegister(puntCfg *punt.Punt) PutDSL
 	// L4Features adds a request to enable or disable L4 features
 	L4Features(val *vpp_l4.L4Features) PutDSL
 	// AppNamespace adds a request to create or update VPP Application namespace
@@ -121,6 +131,12 @@ type DeleteDSL interface {
 
 	// VppInterface adds a request to delete an existing VPP network interface.
 	VppInterface(ifaceName string) DeleteDSL
+	// VppIPSecSPD adds a request to create or update VPP security policy database
+	VppIPSecSPD(spdName string) DeleteDSL
+	// VppIPSecSA adds a request to create or update VPP security association
+	VppIPSecSA(saName string) DeleteDSL
+	// VppIPSecTunnel adds a request to create or update VPP IPSec tunnel interface
+	VppIPSecTunnel(tunName string) DeleteDSL
 	// BfdSession adds a request to delete an existing VPP bidirectional
 	// forwarding detection session.
 	BfdSession(bfdSessionIfaceName string) DeleteDSL
@@ -158,6 +174,8 @@ type DeleteDSL interface {
 	NAT44Global() DeleteDSL
 	// NAT44DNat adds a request to delete a new DNAT configuration
 	NAT44DNat(label string) DeleteDSL
+	// PuntSocketDeregister adds request to de-register an existing punt to host entry
+	PuntSocketDeregister(puntName string) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

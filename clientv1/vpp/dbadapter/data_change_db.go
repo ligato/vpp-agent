@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -189,6 +190,18 @@ func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) vppclient.Pu
 	return dsl
 }
 
+// IPSecTunnel adds request to create a new IPSec tunnel
+func (dsl *PutDSL) IPSecTunnel(tunnel *ipsec.TunnelInterfaces_Tunnel) vppclient.PutDSL {
+	dsl.parent.txn.Put(ipsec.TunnelKey(tunnel.Name), tunnel)
+	return dsl
+}
+
+// PuntSocketRegister adds request to register a new punt to host entry
+func (dsl *PutDSL) PuntSocketRegister(puntCfg *punt.Punt) vppclient.PutDSL {
+	dsl.parent.txn.Put(punt.Key(puntCfg.Name), puntCfg)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() vppclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent}
@@ -299,23 +312,36 @@ func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
 	return dsl
 }
 
-// NAT44DNat adds a request to delete a new DNAT configuration
+// NAT44DNat adds a request to delete a DNAT configuration
 func (dsl *DeleteDSL) NAT44DNat(label string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(nat.DNatKey(label))
 	return dsl
 }
 
-// IPSecSA adds request to create a new Security Association
+// IPSecSA adds request to delete a Security Association
 func (dsl *DeleteDSL) IPSecSA(saName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(ipsec.SAKey(saName))
 	return dsl
 }
 
-// IPSecSPD adds request to create a new Security Policy Database
+// IPSecSPD adds request to delete a Security Policy Database
 func (dsl *DeleteDSL) IPSecSPD(spdName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(ipsec.SPDKey(spdName))
 	return dsl
 }
+
+// IPSecTunnel adds request to delete an IPSec tunnel
+func (dsl *DeleteDSL) IPSecTunnel(name string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(ipsec.TunnelKey(name))
+	return dsl
+}
+
+// PuntSocketDeregister adds request to de-register an existing punt to host entry
+func (dsl *DeleteDSL) PuntSocketDeregister(name string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(punt.Key(name))
+	return dsl
+}
+
 
 // Put changes the DSL mode to allow configuration editing.
 func (dsl *DeleteDSL) Put() vppclient.PutDSL {

@@ -198,6 +198,13 @@ func (c *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Int
 			c.log.Debugf("Af-packet interface %s cannot be created yet and will be configured later", iface)
 			return nil
 		}
+	case intf.InterfaceType_IPSEC_TUNNEL:
+		c.log.Warnf("Cannot process new IPSec tunnel interface %s, use definition in IPSec plugin instead", iface.Name)
+		return nil
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		ifIdx, err = c.ifHandler.AddVmxNet3(iface.Name, iface.VmxNet3)
+	default:
+		return errors.Errorf("failed to create interface %s: unsupported type", iface.Name)
 	}
 	if err != nil {
 		return err
@@ -246,19 +253,16 @@ func (c *InterfaceConfigurator) ConfigureVPPInterface(iface *intf.Interfaces_Int
 		return errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", iface.Name, err)
 	}
 
-	// VRF (optional, unavailable for VxLAN interfaces), has to be done before IP addresses are configured
-	if iface.Type != intf.InterfaceType_VXLAN_TUNNEL {
-		// Configured separately for IPv4/IPv6
-		isIPv4, isIPv6 := getIPAddressVersions(IPAddrs)
-		if isIPv4 {
-			if err := c.ifHandler.SetInterfaceVrf(ifIdx, iface.Vrf); err != nil {
-				return errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", iface.Name, iface.Vrf, err)
-			}
+	// VRF, has to be done before IP addresses are configured. Done separately for IPv4/IPv6
+	isIPv4, isIPv6 := getIPAddressVersions(IPAddrs)
+	if isIPv4 {
+		if err := c.ifHandler.SetInterfaceVrf(ifIdx, iface.Vrf); err != nil {
+			return errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", iface.Name, iface.Vrf, err)
 		}
-		if isIPv6 {
-			if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, iface.Vrf); err != nil {
-				return errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", iface.Name, iface.Vrf, err)
-			}
+	}
+	if isIPv6 {
+		if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, iface.Vrf); err != nil {
+			return errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", iface.Name, iface.Vrf, err)
 		}
 	}
 
@@ -473,15 +477,15 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 
 	switch ifaceType {
 	case intf.InterfaceType_TAP_INTERFACE:
-		if !c.canTapBeModifWithoutDelete(newConfig.Tap, oldConfig.Tap) {
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Tap, oldConfig.Tap) {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
 	case intf.InterfaceType_MEMORY_INTERFACE:
-		if !c.canMemifBeModifWithoutDelete(newConfig.Memif, oldConfig.Memif) {
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Memif, oldConfig.Memif) {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
 	case intf.InterfaceType_VXLAN_TUNNEL:
-		if !c.canVxlanBeModifWithoutDelete(newConfig.Vxlan, oldConfig.Vxlan) ||
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.Vxlan, oldConfig.Vxlan) ||
 			oldConfig.Vrf != newConfig.Vrf {
 			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
 		}
@@ -495,6 +499,14 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 		}
 	case intf.InterfaceType_SOFTWARE_LOOPBACK:
 	case intf.InterfaceType_ETHERNET_CSMACD:
+	case intf.InterfaceType_IPSEC_TUNNEL:
+		c.log.Warnf("Cannot process IPSec tunnel interface %s, use definition in IPSec plugin instead", newConfig.Name)
+		return nil
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		if !c.canInterfaceBeModifiedWithoutDelete(newConfig.Name, newConfig.VmxNet3, oldConfig.VmxNet3) ||
+			oldConfig.Vrf != newConfig.Vrf {
+			return c.recreateVPPInterface(newConfig, oldConfig, ifIdx)
+		}
 	}
 
 	// Rx-mode
@@ -568,32 +580,29 @@ func (c *InterfaceConfigurator) modifyVPPInterface(newConfig, oldConfig *intf.In
 		return errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", oldConfig.Name, err)
 	}
 
-	// Reconfigure VRF
-	if ifaceType != intf.InterfaceType_VXLAN_TUNNEL {
-		// Interface must not have IP when setting VRF
-		if err := c.removeIPAddresses(ifIdx, oldAddrs, oldConfig.Unnumbered); err != nil {
-			return err
-		}
+	// Reconfigure VRF, interface must not have IP when setting VRF
+	if err := c.removeIPAddresses(ifIdx, oldAddrs, oldConfig.Unnumbered); err != nil {
+		return err
+	}
 
-		// Get VRF IP version using new list of addresses. During modify, interface VRF IP version
-		// should be updated as well.
-		isIPv4, isIPv6 := getIPAddressVersions(newAddrs)
-		if isIPv4 {
-			if err := c.ifHandler.SetInterfaceVrf(ifIdx, newConfig.Vrf); err != nil {
-				return errors.Errorf("failed to set IPv4 VRF %d for interface %s: %v",
-					newConfig.Vrf, newConfig.Name, err)
-			}
+	// Get VRF IP version using new list of addresses. During modify, interface VRF IP version
+	// should be updated as well.
+	isIPv4, isIPv6 := getIPAddressVersions(newAddrs)
+	if isIPv4 {
+		if err := c.ifHandler.SetInterfaceVrf(ifIdx, newConfig.Vrf); err != nil {
+			return errors.Errorf("failed to set IPv4 VRF %d for interface %s: %v",
+				newConfig.Vrf, newConfig.Name, err)
 		}
-		if isIPv6 {
-			if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, newConfig.Vrf); err != nil {
-				return errors.Errorf("failed to set IPv6 VRF %d for interface %s: %v",
-					newConfig.Vrf, newConfig.Name, err)
-			}
+	}
+	if isIPv6 {
+		if err := c.ifHandler.SetInterfaceVrfIPv6(ifIdx, newConfig.Vrf); err != nil {
+			return errors.Errorf("failed to set IPv6 VRF %d for interface %s: %v",
+				newConfig.Vrf, newConfig.Name, err)
 		}
+	}
 
-		if err = c.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered); err != nil {
-			return err
-		}
+	if err = c.configureIPAddresses(newConfig.Name, ifIdx, newAddrs, newConfig.Unnumbered); err != nil {
+		return err
 	}
 
 	// Container ip address
@@ -681,6 +690,11 @@ func (c *InterfaceConfigurator) recreateVPPInterface(newConfig *intf.Interfaces_
 // DeleteVPPInterface reacts to a removed NB configuration of a VPP interface.
 // It results in the interface being removed from VPP.
 func (c *InterfaceConfigurator) DeleteVPPInterface(iface *intf.Interfaces_Interface) error {
+	// Skip IPSec tunnels since they are not processed here
+	if iface.Type == intf.InterfaceType_IPSEC_TUNNEL {
+		c.log.Warnf("Cannot delete IPSec tunnel interface %s, use definition in IPSec plugin instead", iface.Name)
+		return nil
+	}
 	// Remove VxLAN from cache if exists
 	if iface.Type == intf.InterfaceType_VXLAN_TUNNEL {
 		if _, ok := c.vxlanMulticastCache[iface.Name]; ok {
@@ -790,6 +804,8 @@ func (c *InterfaceConfigurator) deleteVPPInterface(oldConfig *intf.Interfaces_In
 		return nil
 	case intf.InterfaceType_AF_PACKET_INTERFACE:
 		err = c.afPacketConfigurator.DeleteAfPacketInterface(oldConfig, ifIdx)
+	case intf.InterfaceType_VMXNET3_INTERFACE:
+		err = c.ifHandler.DelVmxNet3(oldConfig.Name, ifIdx)
 	}
 	if err != nil {
 		return errors.Errorf("failed to remove interface %s, index %d: %v", oldConfig.Name, ifIdx, err)
@@ -924,37 +940,9 @@ func (c *InterfaceConfigurator) resolveCachedVxLANMulticasts(createdIfName strin
 	return nil
 }
 
-func (c *InterfaceConfigurator) canMemifBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Memif, oldConfig *intf.Interfaces_Interface_Memif) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-
+func (c *InterfaceConfigurator) canInterfaceBeModifiedWithoutDelete(ifName string, newConfig, oldConfig proto.Message) bool {
 	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of memif")
-		return false
-	}
-
-	return true
-}
-
-func (c *InterfaceConfigurator) canVxlanBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Vxlan, oldConfig *intf.Interfaces_Interface_Vxlan) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of VxLAN")
-		return false
-	}
-
-	return true
-}
-
-func (c *InterfaceConfigurator) canTapBeModifWithoutDelete(newConfig *intf.Interfaces_Interface_Tap, oldConfig *intf.Interfaces_Interface_Tap) bool {
-	if newConfig == nil || oldConfig == nil {
-		return true
-	}
-	if !proto.Equal(newConfig, oldConfig) {
-		c.log.Debug("Difference between new & old config causing recreation of tap")
+		c.log.Debug("Difference between new & old config causing recreation of %s", ifName)
 		return false
 	}
 

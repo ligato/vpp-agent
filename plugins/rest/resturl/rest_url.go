@@ -48,6 +48,8 @@ const (
 	AfPacket = "/vpp/dump/v1/interfaces/afpacket"
 	// VxLan is path for vxlan interface
 	VxLan = "/vpp/dump/v1/interfaces/vxlan"
+	// VmxNet3 is path for vmxnet3 interface
+	VmxNet3 = "/vpp/dump/v1/interfaces/vmxnet3"
 )
 
 // Linux interface REST urls
@@ -66,6 +68,12 @@ const (
 	NatGlobal = "/vpp/dump/v1/nat/global"
 	// NatDNat is a REST path of a DNAT configurations
 	NatDNat = "/vpp/dump/v1/nat/dnat"
+)
+
+// PUNT REST url
+const (
+	// PuntURL is a REST path of a punt
+	PuntURL = "/vpp/dump/v1/punt"
 )
 
 // STN REST url

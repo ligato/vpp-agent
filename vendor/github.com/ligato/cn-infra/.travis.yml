@@ -1,15 +1,20 @@
 ---
 dist: trusty
 sudo: required
+
 language: go
+go:
+  - 1.10.x
+
+addons:
+  apt:
+    packages:
+      - npm
 
 go_import_path: github.com/ligato/cn-infra
 
 git:
   depth: 1
-
-go:
-  - 1.10.x
 
 before_install:
   - make get-linkcheck

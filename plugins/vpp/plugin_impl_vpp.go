@@ -19,6 +19,10 @@ import (
 	"os"
 	"sync"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/puntidx"
+
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
@@ -43,7 +47,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/rpc"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 	"github.com/namsral/flag"
 )
@@ -95,6 +98,7 @@ type Plugin struct {
 	routeConfigurator    *l3plugin.RouteConfigurator
 	ipNeighConfigurator  *l3plugin.IPNeighConfigurator
 	appNsConfigurator    *l4plugin.AppNsConfigurator
+	puntConfigurator     *puntplugin.PuntConfigurator
 	srv6Configurator     *srplugin.SRv6Configurator
 
 	// State updaters
@@ -134,8 +138,10 @@ type Plugin struct {
 
 	// Common
 	statusCheckReg bool
-	cancel         context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
-	wg             sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
+	// function to update interfaces notifications available through GRPC
+	grpcNotification func(ctx context.Context, notification *intf.InterfaceNotification)
+	cancel           context.CancelFunc // cancel can be used to cancel all goroutines and their jobs inside of the plugin
+	wg               sync.WaitGroup     // wait group that allows to wait until all goroutines of the plugin have finished
 }
 
 // Deps groups injected dependencies of plugin so that they do not mix with
@@ -151,7 +157,6 @@ type Deps struct {
 	IfStatePub        datasync.KeyProtoValWriter
 	GoVppmux          govppmux.API
 	Linux             LinuxPluginAPI
-	GRPCSvc           rpc.GRPCService
 
 	DataSyncs        map[string]datasync.KeyProtoValWriter
 	WatchEventsMutex *sync.Mutex
@@ -166,6 +171,9 @@ type Config struct {
 
 // LinuxPluginAPI is interface for Linux plugin.
 type LinuxPluginAPI interface {
+	// IsDisabled returns true if the plugin is disabled.
+	IsDisabled() bool
+
 	// GetLinuxIfIndexes gives access to mapping of logical names (used in ETCD configuration) to corresponding Linux
 	// interface indexes. This mapping is especially helpful for plugins that need to watch for newly added or deleted
 	// Linux interfaces.
@@ -224,6 +232,11 @@ func (plugin *Plugin) GetXConnectIndexes() l2idx.XcIndexRW {
 	return plugin.xcConfigurator.GetXcIndexes()
 }
 
+// GetPuntIndexes gives access to mapping of logical names (used in ETCD configuration) as punt_indexes.
+func (plugin *Plugin) GetPuntIndexes() puntidx.PuntIndexRW {
+	return plugin.puntConfigurator.GetPuntIndexes()
+}
+
 // GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
 // to their respective indices as assigned by VPP.
 func (plugin *Plugin) GetAppNsIndexes() nsidx.AppNsIndex {
@@ -258,6 +271,11 @@ func (plugin *Plugin) GetIPSecSAIndexes() idxvpp.NameToIdx {
 // GetIPSecSPDIndexes returns SPD indexes.
 func (plugin *Plugin) GetIPSecSPDIndexes() ipsecidx.SPDIndex {
 	return plugin.ipSecConfigurator.GetSpdIndexes()
+}
+
+// SetGRPCNotificationService sets GRPC notification function
+func (plugin *Plugin) SetGRPCNotificationService(notify func(ctx context.Context, notification *intf.InterfaceNotification)) {
+	plugin.grpcNotification = notify
 }
 
 // Init gets handlers for ETCD and Messaging and delegates them to ifConfigurator & ifStateUpdater.
@@ -315,6 +333,9 @@ func (plugin *Plugin) Init() error {
 	if err = plugin.initL4(ctx); err != nil {
 		return err
 	}
+	if err = plugin.initPunt(ctx); err != nil {
+		return err
+	}
 	if err = plugin.initSR(ctx); err != nil {
 		return err
 	}
@@ -363,6 +384,7 @@ func (plugin *Plugin) Close() error {
 		plugin.aclConfigurator, plugin.ifConfigurator, plugin.bfdConfigurator, plugin.natConfigurator, plugin.stnConfigurator,
 		plugin.ipSecConfigurator, plugin.bdConfigurator, plugin.fibConfigurator, plugin.xcConfigurator, plugin.arpConfigurator,
 		plugin.proxyArpConfigurator, plugin.routeConfigurator, plugin.ipNeighConfigurator, plugin.appNsConfigurator,
+		plugin.puntConfigurator,
 		// State updaters
 		plugin.ifStateUpdater, plugin.bdStateUpdater,
 		// Channels
@@ -421,7 +443,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// Injects VPP interface index mapping into Linux plugin
 	plugin.swIfIndexes = plugin.ifConfigurator.GetSwIfIndexes()
-	if plugin.Linux != nil {
+	if plugin.Linux != nil && !plugin.Linux.IsDisabled() {
 		plugin.Linux.InjectVppIfIndexes(plugin.swIfIndexes)
 	}
 	// Interface state updater
@@ -580,6 +602,19 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 	}
 	plugin.Log.Debug("l4Configurator Initialized")
 
+	return nil
+}
+
+func (plugin *Plugin) initPunt(ctx context.Context) (err error) {
+	plugin.Log.Infof("Init Punt plugin")
+
+	// Init Punt configurator
+	plugin.puntConfigurator = &puntplugin.PuntConfigurator{}
+	if err := plugin.puntConfigurator.Init(plugin.Log, plugin.GoVppmux); err != nil {
+		return plugin.puntConfigurator.LogError(err)
+	}
+
+	plugin.Log.Debug("SRConfigurator Initialized")
 	return nil
 }
 

@@ -17,12 +17,17 @@
 package vpp
 
 import (
+	"context"
+
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/puntidx"
+
 	"github.com/ligato/vpp-agent/idxvpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/ipsecidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l4plugin/nsidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 )
 
@@ -80,6 +85,10 @@ type API interface {
 	// for the transmit interface name.
 	GetXConnectIndexes() l2idx.XcIndexRW
 
+	// GetPuntIndexes gives access to mapping of the punt socket register logical names (used in ETCD configuration)
+	// to their respective indexes.
+	GetPuntIndexes() puntidx.PuntIndexRW
+
 	// GetAppNsIndexes gives access to mapping of app-namespace logical names (used in ETCD configuration)
 	// to their respective indices as assigned by VPP.
 	GetAppNsIndexes() nsidx.AppNsIndex
@@ -101,4 +110,7 @@ type API interface {
 
 	// GetIPSecSPDIndexes
 	GetIPSecSPDIndexes() ipsecidx.SPDIndex
+
+	// SetGRPCNotificationService allows to pass function for updating interface notifications
+	SetGRPCNotificationService(notify func(ctx context.Context, notification *interfaces.InterfaceNotification))
 }

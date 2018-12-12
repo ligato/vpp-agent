@@ -17,7 +17,9 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv1/linux"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 
 	"github.com/ligato/vpp-agent/clientv1/vpp/dbadapter"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
@@ -102,6 +104,24 @@ func (dsl *PutDSL) VppInterface(val *interfaces.Interfaces_Interface) linuxclien
 	return dsl
 }
 
+// VppIPSecSPD adds a request to create or update VPP IPSec security policy database.
+func (dsl *PutDSL) VppIPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) linuxclient.PutDSL {
+	dsl.vppPut.IPSecSPD(val)
+	return dsl
+}
+
+// VppIPSecSA adds a request to create or update VPP IPSec security associations.
+func (dsl *PutDSL) VppIPSecSA(val *ipsec.SecurityAssociations_SA) linuxclient.PutDSL {
+	dsl.vppPut.IPSecSA(val)
+	return dsl
+}
+
+// VppIPSecTunnel adds a request to create or update VPP IPSec tunnel.
+func (dsl *PutDSL) VppIPSecTunnel(val *ipsec.TunnelInterfaces_Tunnel) linuxclient.PutDSL {
+	dsl.vppPut.IPSecTunnel(val)
+	return dsl
+}
+
 // BfdSession adds a request to create or update VPP bidirectional forwarding
 // detection session.
 func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.PutDSL {
@@ -171,6 +191,12 @@ func (dsl *PutDSL) ProxyArpRanges(arp *l3.ProxyArpRanges_RangeList) linuxclient.
 	return dsl
 }
 
+// PuntSocketRegister adds a request to create or update VPP punt unix domain socket registration
+func (dsl *PutDSL) PuntSocketRegister(puntCfg *punt.Punt) linuxclient.PutDSL {
+	dsl.vppPut.PuntSocketRegister(puntCfg)
+	return dsl
+}
+
 // L4Features adds a request to enable or disable L4 features
 func (dsl *PutDSL) L4Features(val *l4.L4Features) linuxclient.PutDSL {
 	dsl.vppPut.L4Features(val)
@@ -214,7 +240,7 @@ func (dsl *PutDSL) Send() vppclient.Reply {
 // LinuxInterface adds a request to delete an existing Linux network
 // interface.
 func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(interfaces.InterfaceKey(interfaceName))
+	dsl.parent.txn.Delete(linuxIf.InterfaceKey(interfaceName))
 	return dsl
 }
 
@@ -233,6 +259,24 @@ func (dsl *DeleteDSL) LinuxRoute(routeName string) linuxclient.DeleteDSL {
 // VppInterface adds a request to delete an existing VPP network interface.
 func (dsl *DeleteDSL) VppInterface(ifaceName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.Interface(ifaceName)
+	return dsl
+}
+
+// VppIPSecSPD adds a request to delete an existing VPP IPSec security policy database.
+func (dsl *DeleteDSL) VppIPSecSPD(spdName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecSPD(spdName)
+	return dsl
+}
+
+// VppIPSecSA adds a request to delete an existing VPP IPSec security associations.
+func (dsl *DeleteDSL) VppIPSecSA(saName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecSA(saName)
+	return dsl
+}
+
+// VppIPSecTunnel adds a request to delete an existing VPP IPSec tunnel.
+func (dsl *DeleteDSL) VppIPSecTunnel(tunName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecTunnel(tunName)
 	return dsl
 }
 
@@ -290,6 +334,12 @@ func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
 // L4Features adds a request to enable or disable L4 features
 func (dsl *DeleteDSL) L4Features() linuxclient.DeleteDSL {
 	dsl.vppDelete.L4Features()
+	return dsl
+}
+
+// PuntSocketDeregister adds request to de-register an existing punt to host entry
+func (dsl *DeleteDSL) PuntSocketDeregister(puntName string) linuxclient.DeleteDSL {
+	dsl.vppDelete.PuntSocketDeregister(puntName)
 	return dsl
 }
 

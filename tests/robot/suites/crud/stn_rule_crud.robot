@@ -42,7 +42,7 @@ Show Interfaces Before Setup
 
 Add TAP1 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP1}
-    vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1}    ip=${IP_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
+    Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP1}    mac=${MAC_TAP1}    ip=${IP_TAP1}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP1}
 
 Check TAP1 Interface Is Created
     ${interfaces}=       vat_term: Interfaces Dump    node=agent_vpp_1
@@ -50,7 +50,7 @@ Check TAP1 Interface Is Created
     ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP1}    mac=${MAC_TAP1}    ipv4=${IP_TAP1}/${PREFIX}    state=${UP_STATE}
 
 Add STN Rule
-    vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
+    Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
@@ -60,20 +60,20 @@ Check TAP1 Interface Is Still Configured
 
 Add TAP2 Interface
     vpp_term: Interface Not Exists  node=agent_vpp_1    mac=${MAC_TAP2}
-    vpp_ctl: Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP2}    mac=${MAC_TAP2}    ip=${IP_TAP2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP2}
+    Put TAP Interface With IP    node=agent_vpp_1    name=${NAME_TAP2}    mac=${MAC_TAP2}    ip=${IP_TAP2}    prefix=${PREFIX}    host_if_name=linux_${NAME_TAP2}
 
 Check TAP2 Interface Is Created
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Interface Is Created    node=agent_vpp_1    mac=${MAC_TAP2}
     ${actual_state}=    vpp_term: Check TAP interface State    agent_vpp_1    ${NAME_TAP2}    mac=${MAC_TAP2}    ipv4=${IP_TAP2}/${PREFIX}    state=${UP_STATE}
 
 Update STN Rule
-    vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
+    Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Updated
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
 
 Delete STN Rule
-    vpp_ctl: Delete STN Rule    node=agent_vpp_1    rule_name=${RULE_NAME}
+    Delete STN Rule    node=agent_vpp_1    rule_name=${RULE_NAME}
 
 Check Deleted STN Rule
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule Deleted    node=agent_vpp_1    interface=${NAME_TAP2}    ip=${IP_STN_RULE}
@@ -81,7 +81,7 @@ Check Deleted STN Rule
 
 
 Add STN Rule Again
-    vpp_ctl: Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
+    Put STN Rule    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}    rule_name=${RULE_NAME}
 
 Check STN Rule Is Created Again
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    vpp_term: Check STN Rule State    node=agent_vpp_1    interface=${NAME_TAP1}    ip=${IP_STN_RULE}
@@ -111,7 +111,6 @@ Show Interfaces And Other Objects
     Write To Machine    agent_vpp_1_term    show vxlan tunnel
     Write To Machine    agent_vpp_1_term    show err
     vat_term: Interfaces Dump    agent_vpp_1
-    Write To Machine    vpp_agent_ctl    vpp-agent-ctl ${AGENT_VPP_ETCD_CONF_PATH} -ps
     Execute In Container    agent_vpp_1    ip a
 
 TestSetup

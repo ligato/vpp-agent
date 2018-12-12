@@ -55,7 +55,8 @@ type IPSecConfigurator struct {
 	saIndexSeq       uint32
 
 	// SPC interface cache
-	spdIfCache []SPDIfCacheEntry
+	spdIfCache      []SPDIfCacheEntry
+	unnumberedCache map[uint32]string // tunnel interface index <-> interface with IP name
 
 	// VPP channel
 	vppCh govppapi.Channel
@@ -77,6 +78,9 @@ func (c *IPSecConfigurator) Init(logger logging.PluginLogger, goVppMux govppmux.
 	c.saIndexes = nametoidx.NewNameToIdx(c.log, "ipsec_sa_indexes", ifaceidx.IndexMetadata)
 	c.spdIndexSeq = 1
 	c.saIndexSeq = 1
+
+	// Cache
+	c.unnumberedCache = make(map[uint32]string)
 
 	// VPP channel
 	if c.vppCh, err = goVppMux.NewAPIChannel(); err != nil {
@@ -215,12 +219,15 @@ func (c *IPSecConfigurator) DeleteSPD(oldSpd *ipsec.SecurityPolicyDatabases_SPD)
 	}
 
 	// remove cache entries related to the SPD
-	for i, entry := range c.spdIfCache {
+	var updatedCache []SPDIfCacheEntry
+	for _, entry := range c.spdIfCache {
 		if entry.spdID == spdID {
-			c.spdIfCache = append(c.spdIfCache[:i], c.spdIfCache[i+1:]...)
 			c.log.Debugf("Removed cache entry for assignment of SPD %q to interface %q", entry.spdID, entry.ifaceName)
+			continue
 		}
+		updatedCache = append(updatedCache, entry)
 	}
+	c.spdIfCache = updatedCache
 
 	c.spdIndexes.UnregisterName(oldSpd.Name)
 	c.log.Debugf("SPD %s unregistered", oldSpd.Name)
@@ -319,6 +326,9 @@ func (c *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_Tunne
 		Enabled:     tunnel.Enabled,
 		IpAddresses: tunnel.IpAddresses,
 		Vrf:         tunnel.Vrf,
+		Unnumbered: &interfaces.Interfaces_Interface_Unnumbered{
+			InterfaceWithIp: tunnel.UnnumberedName,
+		},
 	})
 	c.log.Debugf("Registered tunnel %s (%d)", tunnel.Name, ifIdx)
 
@@ -334,6 +344,22 @@ func (c *IPSecConfigurator) ConfigureTunnel(tunnel *ipsec.TunnelInterfaces_Tunne
 		if err := c.ifHandler.AddInterfaceIP(ifIdx, ip); err != nil {
 			return errors.Errorf("failed to add IP addresses %s to tunnel interface %s: %v",
 				tunnel.IpAddresses, tunnel.Name, err)
+		}
+	}
+	if tunnel.UnnumberedName != "" && len(tunnel.IpAddresses) > 0 {
+		c.log.Warnf("Interface %s set as unnumbered (from %s) has its own IP address defined, skipped",
+			tunnel.Name, tunnel.UnnumberedName)
+	} else if tunnel.UnnumberedName != "" {
+		ifWithIPIdx, _, found := c.ifIndexes.LookupIdx(tunnel.UnnumberedName)
+		if !found {
+			c.log.Debugf("Tunnel is set as unnumbered but interface %s is missing, moved to cache",
+				tunnel.Name, tunnel.UnnumberedName)
+			c.unnumberedCache[ifIdx] = tunnel.UnnumberedName
+		} else {
+			if err := c.ifHandler.SetUnnumberedIP(ifIdx, ifWithIPIdx); err != nil {
+				return errors.Errorf("failed to set %s as unnumbered (if with IP: %s): %v",
+					tunnel.Name, tunnel.UnnumberedName, err)
+			}
 		}
 	}
 
@@ -374,6 +400,10 @@ func (c *IPSecConfigurator) DeleteTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunne
 		return errors.Errorf("failed to delete tunnel interface %s: %v", oldTunnel.Name, err)
 	}
 
+	if _, ok := c.unnumberedCache[ifIdx]; ok {
+		delete(c.unnumberedCache, ifIdx)
+	}
+
 	c.ifIndexes.UnregisterName(oldTunnel.Name)
 	c.log.Debugf("tunnel interface %s unregistered", oldTunnel.Name)
 
@@ -382,7 +412,7 @@ func (c *IPSecConfigurator) DeleteTunnel(oldTunnel *ipsec.TunnelInterfaces_Tunne
 	return nil
 }
 
-// ResolveCreatedInterface is responsible for reconfiguring cached assignments
+// ResolveCreatedInterface is responsible for reconfiguring cached assignments and missing unnumbered interfaces
 func (c *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx uint32) error {
 	for i, entry := range c.spdIfCache {
 		if entry.ifaceName == ifName {
@@ -402,10 +432,23 @@ func (c *IPSecConfigurator) ResolveCreatedInterface(ifName string, swIfIdx uint3
 		}
 	}
 
+	for unIfIdx, unIfWithIPName := range c.unnumberedCache {
+		if unIfWithIPName == ifName {
+			if err := c.ifHandler.SetUnnumberedIP(unIfIdx, swIfIdx); err != nil {
+				return errors.Errorf("failed to set %d as unnumbered (created if with IP: %s): %v",
+					unIfIdx, unIfWithIPName, err)
+			}
+			delete(c.unnumberedCache, unIfIdx)
+			c.log.Debugf("Unnumbered IPSec interface %s configured and removed from cache (added required %s)",
+				unIfIdx, ifName)
+		}
+	}
+
 	return nil
 }
 
-// ResolveDeletedInterface is responsible for caching assignments for future reconfiguration
+// ResolveDeletedInterface is responsible for caching assignments for future reconfiguration. Also unset
+// removed unnumbered interfaces
 func (c *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx uint32) error {
 	for _, assign := range c.spdIndexes.LookupByInterface(ifName) {
 		// TODO: just store this for future, because this will fail since swIfIdx no longer exists
@@ -415,6 +458,24 @@ func (c *IPSecConfigurator) ResolveDeletedInterface(ifName string, swIfIdx uint3
 		}
 
 		c.cacheSPDInterfaceAssignment(assign.SpdID, ifName)
+	}
+
+	allIfNames := c.ifIndexes.GetMapping().ListNames()
+	for _, unIfName := range allIfNames {
+		ifIdx, meta, found := c.ifIndexes.LookupIdx(unIfName)
+		if !found || meta == nil {
+			// Should not happen
+			continue
+		}
+		if meta.Unnumbered != nil && meta.Unnumbered.InterfaceWithIp == ifName {
+			if err := c.ifHandler.UnsetUnnumberedIP(ifIdx); err != nil {
+				return errors.Errorf("failed to unset %s as unnumbered (removed if with IP: %s): %v",
+					unIfName, ifName, err)
+			}
+			c.unnumberedCache[ifIdx] = ifName
+			c.log.Debugf("Unnumbered IPSec interface %s unconfigured and moved from cache (removed required %s)",
+				unIfName, ifName)
+		}
 	}
 
 	return nil

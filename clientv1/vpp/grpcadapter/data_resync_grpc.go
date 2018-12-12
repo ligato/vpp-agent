@@ -25,6 +25,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"golang.org/x/net/context"
@@ -152,6 +153,18 @@ func (dsl *DataResyncDSL) IPSecSA(val *ipsec.SecurityAssociations_SA) vppclient.
 
 // IPSecSPD adds request to create a new Security Policy Database
 func (dsl *DataResyncDSL) IPSecSPD(val *ipsec.SecurityPolicyDatabases_SPD) vppclient.DataResyncDSL {
+	dsl.put = append(dsl.put, val)
+	return dsl
+}
+
+// IPSecTunnel adds request to create a new IPSec tunnel
+func (dsl *DataResyncDSL) IPSecTunnel(val *ipsec.TunnelInterfaces_Tunnel) vppclient.DataResyncDSL {
+	dsl.put = append(dsl.put, val)
+	return dsl
+}
+
+// PuntSocketRegister adds request to RESYNC a new punt to host entry
+func (dsl *DataResyncDSL) PuntSocketRegister(val *punt.Punt) vppclient.DataResyncDSL {
 	dsl.put = append(dsl.put, val)
 	return dsl
 }

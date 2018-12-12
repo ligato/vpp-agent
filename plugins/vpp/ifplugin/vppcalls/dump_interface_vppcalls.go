@@ -20,6 +20,10 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
+
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
+
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -45,6 +49,9 @@ type InterfaceMeta struct {
 	Tag          string `json:"tag"`
 	InternalName string `json:"internal_name"`
 	Dhcp         *Dhcp  `json:"dhcp"`
+	VrfIPv4      uint32 `json:"vrf_ipv4"`
+	VrfIPv6      uint32 `json:"vrf_ipv6"`
+	Pci          uint32 `json:"pci"`
 }
 
 // Dhcp is helper struct for DHCP metadata, split to client and lease (similar to VPP binary API)
@@ -141,6 +148,16 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 		}
 	}
 
+	// Get IP addresses before VRF
+	err := h.dumpIPAddressDetails(ifs, 0)
+	if err != nil {
+		return nil, err
+	}
+	err = h.dumpIPAddressDetails(ifs, 1)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get DHCP clients
 	dhcpClients, err := h.dumpDhcpClients()
 	if err != nil {
@@ -151,14 +168,28 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dump unnumbered interfaces: %v", err)
 	}
-	// Get vrf for every interface and fill DHCP if set
+	// Get interface VRF for every IP family, fill DHCP if set and resolve unnumbered interface setup
 	for _, ifData := range ifs {
-		// VRF
-		vrf, err := h.GetInterfaceVrf(ifData.Meta.SwIfIndex)
+		// VRF is stored in metadata for both, IPv4 and IPv6. If the interface is an IPv6 interface (it contains at least
+		// one IPv6 address), appropriate VRF is stored also in modelled data
+		ipv4Vrf, err := h.GetInterfaceVrf(ifData.Meta.SwIfIndex)
 		if err != nil {
 			return nil, fmt.Errorf("interface dump: failed to get VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
 		}
-		ifData.Interface.Vrf = vrf
+		ifData.Meta.VrfIPv4 = ipv4Vrf
+		ipv6Vrf, err := h.GetInterfaceVrfIPv6(ifData.Meta.SwIfIndex)
+		if err != nil {
+			return nil, fmt.Errorf("interface dump: failed to get IPv6 VRF from interface %d: %v", ifData.Meta.SwIfIndex, err)
+		}
+		ifData.Meta.VrfIPv6 = ipv6Vrf
+		if isIPv6If, err := h.isIpv6Interface(ifData.Interface); err != nil {
+			return ifs, err
+		} else if isIPv6If {
+			ifData.Interface.Vrf = ipv6Vrf
+		} else {
+			ifData.Interface.Vrf = ipv4Vrf
+		}
+
 		// DHCP
 		dhcpData, ok := dhcpClients[ifData.Meta.SwIfIndex]
 		if ok {
@@ -184,15 +215,6 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 		}
 	}
 
-	err = h.dumpIPAddressDetails(ifs, 0)
-	if err != nil {
-		return nil, err
-	}
-	err = h.dumpIPAddressDetails(ifs, 1)
-	if err != nil {
-		return nil, err
-	}
-
 	err = h.dumpMemifDetails(ifs)
 	if err != nil {
 		return nil, err
@@ -204,6 +226,22 @@ func (h *IfVppHandler) DumpInterfaces() (map[uint32]*InterfaceDetails, error) {
 	}
 
 	err = h.dumpVxlanDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpIPSecDetails(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.dumpVmxNet3Details(ifs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Rx-placement dump is last since it uses interface type-specific data
+	err = h.dumpRxPlacement(ifs)
 	if err != nil {
 		return nil, err
 	}
@@ -233,6 +271,38 @@ func (h *IfVppHandler) DumpMemifSocketDetails() (map[string]uint32, error) {
 	h.log.Debugf("Memif socket dump completed, found %d entries", len(memifSocketMap))
 
 	return memifSocketMap, nil
+}
+
+func (h *IfVppHandler) dumpRxPlacement(ifs map[uint32]*InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceRxPlacementDump{
+		SwIfIndex: ^uint32(0),
+	})
+	for {
+		rxDetails := &interfaces.SwInterfaceRxPlacementDetails{}
+		stop, err := reqCtx.ReceiveReply(rxDetails)
+		if err != nil {
+			return fmt.Errorf("failed to dump rx-placement details: %v", err)
+		}
+		if stop {
+			break
+		}
+		ifData, ok := ifs[rxDetails.SwIfIndex]
+		if !ok {
+			h.log.Warnf("Received rx-placement data for unknown interface with index %d", rxDetails.SwIfIndex)
+			continue
+		}
+
+		ifData.Interface.RxModeSettings = &ifnb.Interfaces_Interface_RxModeSettings{
+			RxMode:  getRxModeType(rxDetails.Mode),
+			QueueId: rxDetails.QueueID,
+		}
+		ifData.Interface.RxPlacementSettings = &ifnb.Interfaces_Interface_RxPlacementSettings{
+			Queue:  rxDetails.QueueID,
+			Worker: rxDetails.WorkerID,
+		}
+	}
+
+	return nil
 }
 
 // dumpIPAddressDetails dumps IP address details of interfaces from VPP and fills them into the provided interface map.
@@ -424,6 +494,85 @@ func (h *IfVppHandler) dumpVxlanDetails(ifs map[uint32]*InterfaceDetails) error 
 	return nil
 }
 
+// dumpVmxNet3Details dumps VmxNet3 interface details from VPP and fills them into the provided interface map.
+func (h *IfVppHandler) dumpVmxNet3Details(ifs map[uint32]*InterfaceDetails) error {
+	reqCtx := h.callsChannel.SendMultiRequest(&vmxnet3.Vmxnet3Dump{})
+	for {
+		vmxnet3Details := &vmxnet3.Vmxnet3Details{}
+		stop, err := reqCtx.ReceiveReply(vmxnet3Details)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return fmt.Errorf("failed to dump VmxNet3 tunnel interface details: %v", err)
+		}
+		_, ifIdxExists := ifs[vmxnet3Details.SwIfIndex]
+		if !ifIdxExists {
+			continue
+		}
+		ifs[vmxnet3Details.SwIfIndex].Interface.VmxNet3 = &ifnb.Interfaces_Interface_VmxNet3{
+			RxqSize: uint32(vmxnet3Details.RxQsize),
+			TxqSize: uint32(vmxnet3Details.TxQsize),
+		}
+		ifs[vmxnet3Details.SwIfIndex].Interface.Type = ifnb.InterfaceType_VMXNET3_INTERFACE
+		ifs[vmxnet3Details.SwIfIndex].Meta.Pci = vmxnet3Details.PciAddr
+	}
+
+	return nil
+}
+
+// dumpIPSecDetails reads IPSec interfaces and fills the type in the interface map.
+// Note: no other interface info is stored, since ipsec interfaces are defined in different model and have its own
+// resync procedure.
+func (h *IfVppHandler) dumpIPSecDetails(ifs map[uint32]*InterfaceDetails) error {
+	req := &ipsec.IpsecSaDump{
+		SaID: ^uint32(0),
+	}
+	requestCtx := h.callsChannel.SendMultiRequest(req)
+
+	for {
+		ipsecDetails := &ipsec.IpsecSaDetails{}
+		stop, err := requestCtx.ReceiveReply(ipsecDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		if uintToBool(ipsecDetails.IsTunnel) || uintToBool(ipsecDetails.IsTunnelIP6) {
+			_, ifIdxExists := ifs[ipsecDetails.SwIfIndex]
+			if !ifIdxExists {
+				continue
+			}
+			ifs[ipsecDetails.SwIfIndex].Interface.Type = ifnb.InterfaceType_IPSEC_TUNNEL
+		}
+	}
+
+	return nil
+}
+
+// Returns true if given interface contains at least one IPv6 address. FOr VxLAN, source and destination
+// addresses are also checked
+func (h *IfVppHandler) isIpv6Interface(iface *ifnb.Interfaces_Interface) (bool, error) {
+	if iface.Type == ifnb.InterfaceType_VXLAN_TUNNEL && iface.Vxlan != nil {
+		if ipAddress := net.ParseIP(iface.Vxlan.SrcAddress); ipAddress.To4() == nil {
+			return true, nil
+		}
+		if ipAddress := net.ParseIP(iface.Vxlan.DstAddress); ipAddress.To4() == nil {
+			return true, nil
+		}
+	}
+	for _, ifAddress := range iface.IpAddresses {
+		if ipAddress, _, err := net.ParseCIDR(ifAddress); err != nil {
+			return false, err
+		} else if ipAddress.To4() == nil {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // dumpDhcpClients returns a slice of DhcpMeta with all interfaces and other DHCP-related information available
 func (h *IfVppHandler) dumpDhcpClients() (map[uint32]*Dhcp, error) {
 	dhcpData := make(map[uint32]*Dhcp)
@@ -523,7 +672,12 @@ func guessInterfaceType(ifName string) ifnb.InterfaceType {
 		return ifnb.InterfaceType_AF_PACKET_INTERFACE
 	case strings.HasPrefix(ifName, "vxlan"):
 		return ifnb.InterfaceType_VXLAN_TUNNEL
+	case strings.HasPrefix(ifName, "ipsec"):
+		return ifnb.InterfaceType_IPSEC_TUNNEL
+	case strings.HasPrefix(ifName, "vmxnet3"):
+		return ifnb.InterfaceType_VMXNET3_INTERFACE
 	}
+
 	return ifnb.InterfaceType_ETHERNET_CSMACD
 }
 
@@ -538,4 +692,20 @@ func memifModetoNB(mode uint8) ifnb.Interfaces_Interface_Memif_MemifMode {
 		return ifnb.Interfaces_Interface_Memif_PUNT_INJECT
 	}
 	return ifnb.Interfaces_Interface_Memif_ETHERNET
+}
+
+// Convert binary API rx-mode to northbound representation
+func getRxModeType(mode uint8) ifnb.RxModeType {
+	switch mode {
+	case 1:
+		return ifnb.RxModeType_POLLING
+	case 2:
+		return ifnb.RxModeType_INTERRUPT
+	case 3:
+		return ifnb.RxModeType_ADAPTIVE
+	case 4:
+		return ifnb.RxModeType_DEFAULT
+	default:
+		return ifnb.RxModeType_UNKNOWN
+	}
 }

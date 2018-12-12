@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
@@ -219,6 +220,24 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) vppcl
 	return dsl
 }
 
+// IPSecTunnel adds request to create a new IPSec tunnel
+func (dsl *DataResyncDSL) IPSecTunnel(tun *ipsec.TunnelInterfaces_Tunnel) vppclient.DataResyncDSL {
+	key := ipsec.TunnelKey(tun.Name)
+	dsl.txn.Put(key, tun)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// PuntSocketRegister adds request to RESYNC a new punt to host entry
+func (dsl *DataResyncDSL) PuntSocketRegister(puntCfg *punt.Punt) vppclient.DataResyncDSL {
+	key := punt.Key(puntCfg.Name)
+	dsl.txn.Put(key, puntCfg)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
 // AppendKeys is a helper function that fills the keySet <keys> with values
 // pointed to by the iterator <it>.
 func appendKeys(keys *keySet, it keyval.ProtoKeyIterator) {
@@ -244,13 +263,47 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		toBeDeleted := keySet{}
 
 		// fill all known keys of one VPP:
-
-		keys, err := dsl.listKeys(intf.Prefix)
+		keys, err := dsl.listKeys(acl.Prefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(intf.Prefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(nat.Prefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(ipsec.KeyPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(bfd.SessionPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(bfd.AuthKeysPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(bfd.EchoFunctionPrefix)
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
 		keys, err = dsl.listKeys(l2.BdPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(l2.FibPrefix)
 		if err != nil {
 			break
 		}
@@ -266,6 +319,31 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		}
 		appendKeys(&toBeDeleted, keys)
 		keys, err = dsl.listKeys(l3.ArpPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(l3.ProxyARPInterfacePrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(l3.ProxyARPRangePrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(l4.Prefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(l4.FeaturesPrefix)
+		if err != nil {
+			break
+		}
+		appendKeys(&toBeDeleted, keys)
+		keys, err = dsl.listKeys(stn.Prefix)
 		if err != nil {
 			break
 		}

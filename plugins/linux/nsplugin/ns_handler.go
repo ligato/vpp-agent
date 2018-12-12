@@ -182,6 +182,7 @@ func (h *NsHandler) SwitchNamespace(ns *Namespace, ctx *NamespaceMgmtCtx) (rever
 	// Get network namespace file descriptor.
 	nsHandle, err = h.GetOrCreateNamespace(ns)
 	if err != nil {
+		origns.Close()
 		return func() {}, err
 	}
 	defer nsHandle.Close()

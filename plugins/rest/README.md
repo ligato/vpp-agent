@@ -1,16 +1,22 @@
 # REST API Plugin
 
 The `restplugin` is a core Agent Plugin used to expose REST API for the following:
-* Run VPP CLI commands
-* Exposes existing Northbound objects
-* Provides logging mechanism so that the VPPCLI command and response can be searched in elastic search
+* [Index page](#index-page)
+* [Executing VPP CLI commands](#execute-vpp-cli-commands)
+* [Dumping NB objects](#dump-nb-objects)
+* [Telemetry](#telemetry)
 
-## VPP CLI commands
+
+## Index page
+
+Open `http://0.0.0.0:9191/` in the browser to see index page containing list of all exposed data. Configuration items are sorted by type (ifplugin, telemetry, etc.)
+
+## Execute VPP CLI commands
 ```
-curl -H "Content-Type: application/json" -X POST -d '{"vppclicommand":"show interface"}' http://0.0.0.0:9191/
+curl -H "Content-Type: application/json" -X POST -d '{"vppclicommand":"show interface"}' http://0.0.0.0:9191/vpp/command
 ```
 
-## Exposing existing Northbound objects
+## Dump NB objects
 
 Here is the list of supported REST URLs. If configuration dump URL is used, the output is based on proto model
 structure for given data type together with VPP-specific data which are not a part of the model (indexes for
@@ -119,7 +125,7 @@ L4 plugin exposes session configuration:
 curl GET http://0.0.0.0:9191/vpp/dump/v1/sessions
 ```
 
-**Telemetry**
+## Telemetry
 
 REST allows to get all the telemetry data, or selective using specific key:
 
@@ -128,22 +134,6 @@ curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry
 curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry/memory
 curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry/runtime
 curl GET http://0.0.0.0:9191/vpp/dump/v1/telemetry/nodecount
-```
-
-**CLI command**
-
-Allows to use VPP CLI command via REST. Commands are defined as a map as following:
-
-```
-curl POST http://0.0.0.0:9191/vpp/command -d '{"vppclicommand":"<command>"}'
-```
-
-**Index**
-
-REST to get index page. Configuration items are sorted by type (ifplugin, telemetry, etc.)
-
-```
-curl GET http://0.0.0.0:9191/
 ```
 
 ## Logging mechanism

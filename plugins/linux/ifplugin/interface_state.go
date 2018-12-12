@@ -111,8 +111,10 @@ func (c *LinuxInterfaceStateUpdater) watchLinuxInterfaces(ctx context.Context) {
 
 	for {
 		select {
-		case linkNotif := <-c.ifWatcherNotifCh:
-			c.processLinkNotification(linkNotif)
+		case linkNotif, ok := <-c.ifWatcherNotifCh:
+			if ok {
+				c.processLinkNotification(linkNotif)
+			}
 
 		case <-ctx.Done():
 			close(c.ifWatcherDoneCh)
