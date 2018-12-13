@@ -97,8 +97,15 @@ func (scheduler *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySe
 			if len(dump) == 1 {
 				plural = ""
 			}
-			scheduler.Log.Debugf("Descriptor %s dumped %d value%s: %v",
-				descriptor.Name, len(dump), plural, dump)
+
+			var dumpList string
+			for _, d := range dump {
+				dumpList += fmt.Sprintf("\n - %+v", d)
+			}
+
+			scheduler.Log.Debugf("Descriptor %s dumped %d item%s: %v",
+				descriptor.Name, len(dump), plural, dumpList)
+
 		}
 
 		if len(keys) > 0 {
