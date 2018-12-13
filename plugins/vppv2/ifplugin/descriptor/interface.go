@@ -504,6 +504,8 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 		}
 	}
 
+	// TODO: validate ip addresses
+
 	return nil
 }
 

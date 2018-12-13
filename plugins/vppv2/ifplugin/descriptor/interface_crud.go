@@ -230,7 +230,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 	// configure MTU. Prefer value in the interface config, otherwise set the plugin-wide
 	// default value if provided.
-	if intf.Type != interfaces.Interface_VXLAN_TUNNEL && intf.Type != interfaces.Interface_IPSEC_TUNNEL {
+	if ifaceSupportsSetMTU(intf) {
 		mtuToConfigure := intf.Mtu
 		if mtuToConfigure == 0 && d.defaultMtu != 0 {
 			mtuToConfigure = d.defaultMtu
@@ -432,7 +432,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 	oldMetadata.IPAddresses = newIntf.IpAddresses
 
 	// update MTU (except VxLan, IPSec)
-	if newIntf.Type != interfaces.Interface_VXLAN_TUNNEL && newIntf.Type != interfaces.Interface_IPSEC_TUNNEL {
+	if ifaceSupportsSetMTU(newIntf) {
 		if newIntf.Mtu != 0 && newIntf.Mtu != oldIntf.Mtu {
 			if err := d.ifHandler.SetInterfaceMtu(ifIdx, newIntf.Mtu); err != nil {
 				err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
@@ -591,4 +591,15 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 	}
 
 	return dump, nil
+}
+
+func ifaceSupportsSetMTU(intf *interfaces.Interface) bool {
+	switch intf.Type {
+	case interfaces.Interface_VXLAN_TUNNEL,
+		interfaces.Interface_IPSEC_TUNNEL,
+		interfaces.Interface_SUB_INTERFACE:
+		// MTU not supported
+		return false
+	}
+	return true
 }
