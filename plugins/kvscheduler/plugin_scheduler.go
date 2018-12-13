@@ -71,7 +71,7 @@ type Scheduler struct {
 
 	// TXN history
 	historyLock sync.Mutex
-	txnHistory  []*recordedTxn // ordered from the oldest to the latest
+	txnHistory  []*RecordedTxn // ordered from the oldest to the latest
 }
 
 // Deps lists dependencies of the scheduler.
@@ -96,10 +96,6 @@ type errorSubscription struct {
 // Init initializes the scheduler. Single go routine is started that will process
 // all the transactions synchronously.
 func (scheduler *Scheduler) Init() error {
-	/*// initialize datasync channels
-	scheduler.resyncChan = make(chan datasync.ResyncEvent)
-	scheduler.changeChan = make(chan datasync.ChangeEvent)*/
-
 	// prepare context for all go routines
 	scheduler.ctx, scheduler.cancel = context.WithCancel(context.Background())
 	// initialize graph for in-memory storage of added+pending kv pairs

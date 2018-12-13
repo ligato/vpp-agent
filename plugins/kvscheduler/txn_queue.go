@@ -24,20 +24,20 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-// txnType differentiates between NB transaction, retry of failed operations and
+// TxnType differentiates between NB transaction, retry of failed operations and
 // SB notification. Once queued, all three different operations are classified
 // as transactions, only with different parameters.
-type txnType int
+type TxnType int
 
 const (
-	sbNotification txnType = iota
+	sbNotification TxnType = iota
 	nbTransaction
 	retryFailedOps
 )
 
 // String returns human-readable string representation of the transaction type.
-func (txnType txnType) String() string {
-	switch txnType {
+func (t TxnType) String() string {
+	switch t {
 	case sbNotification:
 		return "SB notification"
 	case nbTransaction:
@@ -77,7 +77,7 @@ type retryOps struct {
 
 // queuedTxn represents transaction queued for execution.
 type queuedTxn struct {
-	txnType txnType
+	txnType TxnType
 
 	sb    *sbNotif
 	nb    *nbTxn
