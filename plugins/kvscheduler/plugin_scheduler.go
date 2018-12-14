@@ -72,7 +72,7 @@ type Scheduler struct {
 
 	// TXN history
 	historyLock sync.Mutex
-	txnHistory  []*RecordedTxn // ordered from the oldest to the latest
+	txnHistory  []*kvs.RecordedTxn // ordered from the oldest to the latest
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
@@ -230,7 +230,7 @@ func (scheduler *Scheduler) StartNBTransaction() kvs.Txn {
 	txn := &SchedulerTxn{
 		scheduler: scheduler,
 		data: &queuedTxn{
-			txnType: nbTransaction,
+			txnType: kvs.NBTransaction,
 			nb: &nbTxn{
 				value: make(map[string]datasync.LazyValue),
 			},
@@ -250,7 +250,7 @@ func (scheduler *Scheduler) TransactionBarrier() {
 // plane (i.e. not triggered by NB transaction).
 func (scheduler *Scheduler) PushSBNotification(key string, value proto.Message, metadata kvs.Metadata) error {
 	txn := &queuedTxn{
-		txnType: sbNotification,
+		txnType: kvs.SBNotification,
 		sb: &sbNotif{
 			value:    kvs.KeyValuePair{Key: key, Value: value},
 			metadata: metadata,
@@ -331,7 +331,9 @@ func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) kvs.Txn 
 // Commit orders scheduler to execute enqueued operations.
 // Operations with unmet dependencies will get postponed and possibly
 // executed later.
-func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []kvs.KeyWithError, txnError error) {
+func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum int, err error) {
+	txnSeqNum = -1
+
 	// parse transaction options
 	txn.data.nb.isBlocking = !kvs.IsNonBlockingTxn(ctx)
 	txn.data.nb.resyncType, txn.data.nb.verboseRefresh = kvs.IsResync(ctx)
@@ -341,30 +343,30 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []kvs.KeyWithErro
 
 	// validate transaction options
 	if txn.data.nb.resyncType == kvs.DownstreamResync && len(txn.data.nb.value) > 0 {
-		return nil, kvs.ErrCombinedDownstreamResyncWithChange
+		return txnSeqNum, kvs.NewTransactionError(kvs.ErrCombinedDownstreamResyncWithChange, nil)
 	}
 	if txn.data.nb.revertOnFailure && txn.data.nb.resyncType != kvs.NotResync {
-		return nil, kvs.ErrRevertNotSupportedWithResync
+		return txnSeqNum, kvs.NewTransactionError(kvs.ErrRevertNotSupportedWithResync, nil)
 	}
 
 	// enqueue txn and for blocking Commit wait for the errors
 	if txn.data.nb.isBlocking {
-		txn.data.nb.resultChan = make(chan []kvs.KeyWithError, 1)
+		txn.data.nb.resultChan = make(chan txnResult, 1)
 	}
-	err := txn.scheduler.enqueueTxn(txn.data)
+	err = txn.scheduler.enqueueTxn(txn.data)
 	if err != nil {
-		return nil, err
+		return txnSeqNum, kvs.NewTransactionError(err, nil)
 	}
 	if txn.data.nb.isBlocking {
 		select {
 		case <-txn.scheduler.ctx.Done():
-			return nil, kvs.ErrClosedScheduler
+			return txnSeqNum, kvs.NewTransactionError(kvs.ErrClosedScheduler, nil)
 		case <-ctx.Done():
-			return nil, kvs.ErrTxnWaitCanceled
-		case kvErrors = <-txn.data.nb.resultChan:
+			return txnSeqNum, kvs.NewTransactionError(kvs.ErrTxnWaitCanceled, nil)
+		case txnResult := <-txn.data.nb.resultChan:
 			close(txn.data.nb.resultChan)
-			return kvErrors, nil
+			return int(txnResult.txnSeqNum), txnResult.err
 		}
 	}
-	return nil, nil
+	return txnSeqNum, nil
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/idxmap"
+	"time"
 )
 
 // KeySelector is used to filter keys.
@@ -257,6 +258,14 @@ type KVScheduler interface {
 	// SubscribeForErrors allows to get notified about all failed (Error!=nil)
 	// and restored (Error==nil) values (possibly filtered using the selector).
 	SubscribeForErrors(channel chan<- KeyWithError, keySelector KeySelector)
+
+	// GetTransactionHistory returns history of transactions started within the specified
+	// time window, or the full recorded history if the timestamps are zero values.
+	GetTransactionHistory(since, until time.Time) (history RecordedTxns)
+
+	// GetRecordedTransaction returns record of a transaction referenced
+	// by the sequence number.
+	GetRecordedTransaction(SeqNum uint) (txn *RecordedTxn)
 }
 
 // Txn represent a single transaction.
@@ -272,14 +281,17 @@ type Txn interface {
 	// executed later.
 	// <ctx> allows to pass transaction options (see With* functions from
 	// txn_options.go) or to cancel waiting for the end of a blocking transaction.
-	// <txnError> covers validity of the transaction and the preparedness
-	// of the scheduler to execute it.
-	// <kvErrors> are related to operations from this transaction that
-	// could be immediately executed or from previous transactions that have
-	// got their dependencies satisfied by this txn.
+	//
+	// For blocking transactions, the method returns the sequence number
+	// of the (finalized) transaction or -1 if the transaction failed to even get
+	// initialized. In case of failures during the initialization or transaction
+	// processing, the method will return non-nil error, which is always an instance
+	// of TransactionError (see errors.go), wrapping all errors encountered during
+	// the transaction processing.
+	//
 	// Non-blocking transactions return immediately and always without errors.
 	// Subscribe with KVScheduler.SubscribeForErrors() to get notified about all
 	// errors, including those returned by action triggered later or asynchronously
 	// by a SB notification.
-	Commit(ctx context.Context) (kvErrors []KeyWithError, txnError error)
+	Commit(ctx context.Context) (txnSeqNum int, err error)
 }

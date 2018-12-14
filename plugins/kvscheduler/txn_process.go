@@ -70,8 +70,8 @@ func (scheduler *Scheduler) consumeTransactions() {
 //     to the subscribers and to the caller of blocking commit
 func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
 	var (
-		simulatedOps RecordedTxnOps
-		executedOps  RecordedTxnOps
+		simulatedOps kvs.RecordedTxnOps
+		executedOps  kvs.RecordedTxnOps
 		failed       map[string]bool
 		startTime    time.Time
 		stopTime     time.Time
@@ -113,11 +113,11 @@ func (scheduler *Scheduler) preProcessTransaction(qTxn *queuedTxn) (txn *preProc
 	scheduler.txnSeqNumber++
 
 	switch qTxn.txnType {
-	case sbNotification:
+	case kvs.SBNotification:
 		scheduler.preProcessNotification(qTxn, preTxn)
-	case nbTransaction:
+	case kvs.NBTransaction:
 		errors = scheduler.preProcessNBTransaction(qTxn, preTxn)
-	case retryFailedOps:
+	case kvs.RetryFailedOps:
 		scheduler.preProcessRetryTxn(qTxn, preTxn)
 	}
 
@@ -282,7 +282,7 @@ func (scheduler *Scheduler) preProcessRetryTxn(qTxn *queuedTxn, preTxn *preProce
 
 // postProcessTransaction schedules retry for failed operations and propagates
 // errors to the subscribers and to the caller of a blocking commit.
-func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed RecordedTxnOps, failed map[string]bool, preErrors []kvs.KeyWithError) {
+func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed kvs.RecordedTxnOps, failed map[string]bool, preErrors []kvs.KeyWithError) {
 	// refresh base values with error or with a derived value that has an error
 	if len(failed) > 0 {
 		graphW := scheduler.graph.Write(false)
@@ -309,7 +309,7 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 			if lastChange.retryEnabled {
 				if _, has := retryTxns[seqNum]; !has {
 					period := lastChange.retryPeriod
-					if seqNum == txn.seqNum && txn.args.txnType == retryFailedOps && lastChange.retryExpBackoff {
+					if seqNum == txn.seqNum && txn.args.txnType == kvs.RetryFailedOps && lastChange.retryExpBackoff {
 						period = txn.args.retry.period * 2
 					}
 					retryTxns[seqNum] = &retryOps{
@@ -346,15 +346,22 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 	}
 
 	// for blocking txn, send non-nil errors to the resultChan
-	if txn.args.txnType == nbTransaction && txn.args.nb.isBlocking {
-		var errors []kvs.KeyWithError
+	if txn.args.txnType == kvs.NBTransaction && txn.args.nb.isBlocking {
+		var (
+			errors []kvs.KeyWithError
+			txnErr *kvs.TransactionError
+		)
 		for _, kvWithError := range txnErrors {
 			if kvWithError.Error != nil {
 				errors = append(errors, kvWithError)
 			}
 		}
+		if len(errors) > 0 {
+			txnErr = kvs.NewTransactionError(nil, errors)
+		}
+
 		select {
-		case txn.args.nb.resultChan <- errors:
+		case txn.args.nb.resultChan <- txnResult{txnSeqNum: txn.seqNum, err: txnErr}:
 		default:
 			scheduler.Log.WithField("txnSeq", txn.seqNum).
 				Warn("Failed to deliver transaction result to the caller")

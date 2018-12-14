@@ -24,34 +24,16 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-// TxnType differentiates between NB transaction, retry of failed operations and
-// SB notification. Once queued, all three different operations are classified
-// as transactions, only with different parameters.
-type TxnType int
-
-const (
-	sbNotification TxnType = iota
-	nbTransaction
-	retryFailedOps
-)
-
-// String returns human-readable string representation of the transaction type.
-func (t TxnType) String() string {
-	switch t {
-	case sbNotification:
-		return "SB notification"
-	case nbTransaction:
-		return "NB transaction"
-	case retryFailedOps:
-		return "RETRY"
-	}
-	return "UNKNOWN"
-}
-
 // sbNotif encapsulates data for SB notification.
 type sbNotif struct {
 	value    kvs.KeyValuePair
 	metadata kvs.Metadata
+}
+
+// txnResult represents transaction result.
+type txnResult struct {
+	err       error
+	txnSeqNum uint
 }
 
 // nbTxn encapsulates data for NB transaction.
@@ -65,7 +47,7 @@ type nbTxn struct {
 	expBackoffRetry bool
 	revertOnFailure bool
 	description     string
-	resultChan      chan []kvs.KeyWithError
+	resultChan      chan txnResult
 }
 
 // retryOps encapsulates data for retry of failed operations.
@@ -77,7 +59,7 @@ type retryOps struct {
 
 // queuedTxn represents transaction queued for execution.
 type queuedTxn struct {
-	txnType TxnType
+	txnType kvs.TxnType
 
 	sb    *sbNotif
 	nb    *nbTxn
@@ -86,7 +68,7 @@ type queuedTxn struct {
 
 // enqueueTxn adds transaction into the FIFO queue (channel) for execution.
 func (scheduler *Scheduler) enqueueTxn(txn *queuedTxn) error {
-	if txn.txnType == nbTransaction && txn.nb.isBlocking {
+	if txn.txnType == kvs.NBTransaction && txn.nb.isBlocking {
 		select {
 		case <-scheduler.ctx.Done():
 			return kvs.ErrClosedScheduler
@@ -128,7 +110,7 @@ func (scheduler *Scheduler) delayRetry(args *retryOps) {
 	case <-scheduler.ctx.Done():
 		return
 	case <-time.After(args.period):
-		err := scheduler.enqueueTxn(&queuedTxn{txnType: retryFailedOps, retry: args})
+		err := scheduler.enqueueTxn(&queuedTxn{txnType: kvs.RetryFailedOps, retry: args})
 		if err != nil {
 			scheduler.Log.WithFields(logging.Fields{
 				"txnSeqNum": args.txnSeqNum,
