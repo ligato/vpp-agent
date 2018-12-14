@@ -158,7 +158,9 @@ func (p *Plugin) Init() (err error) {
 	}
 
 	// Set grpc interface notification function for VPP plugin
-	p.VPP.SetGRPCNotificationService(p.notifSvc.updateNotifications)
+	if p.VPP != nil {
+		p.VPP.SetGRPCNotificationService(p.notifSvc.updateNotifications)
+	}
 
 	// Get DB broker to persis files
 	var wasErr error
@@ -747,25 +749,27 @@ func processResyncRequest(reqData *rpc.DataRequest, req linuxclient.DataResyncDS
 // helper method initializes all VPP/Linux plugin handlers
 func (p *Plugin) initHandlers() {
 	// VPP Indexes
-	ifIndexes := p.VPP.GetSwIfIndexes()
-	bdIndexes := p.VPP.GetBDIndexes()
-	puntIndexes := p.VPP.GetPuntIndexes()
-	spdIndexes := p.VPP.GetIPSecSPDIndexes()
-	// Initialize VPP handlers
-	p.dumpVppSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan)
-	p.dumpVppSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
-	p.dumpVppSvc.bfdHandler = ifvppcalls.NewBfdVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.dumpVppSvc.natHandler = ifvppcalls.NewNatVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
-	p.dumpVppSvc.stnHandler = ifvppcalls.NewStnVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.dumpVppSvc.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, spdIndexes, p.Log)
-	p.dumpVppSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.dumpVppSvc.fibHandler = l2vppcalls.NewFibVppHandler(p.vppChan, p.dumpChan, ifIndexes, bdIndexes, p.Log)
-	p.dumpVppSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.dumpVppSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.dumpVppSvc.puntHandler = vppcalls.NewPuntVppHandler(p.vppChan, puntIndexes, p.Log)
-	p.dumpVppSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.dumpVppSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.dumpVppSvc.l4Handler = l4vppcalls.NewL4VppHandler(p.vppChan, p.Log)
+	if p.VPP != nil {
+		ifIndexes := p.VPP.GetSwIfIndexes()
+		bdIndexes := p.VPP.GetBDIndexes()
+		puntIndexes := p.VPP.GetPuntIndexes()
+		spdIndexes := p.VPP.GetIPSecSPDIndexes()
+		// Initialize VPP handlers
+		p.dumpVppSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan)
+		p.dumpVppSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
+		p.dumpVppSvc.bfdHandler = ifvppcalls.NewBfdVppHandler(p.vppChan, ifIndexes, p.Log)
+		p.dumpVppSvc.natHandler = ifvppcalls.NewNatVppHandler(p.vppChan, p.dumpChan, ifIndexes, p.Log)
+		p.dumpVppSvc.stnHandler = ifvppcalls.NewStnVppHandler(p.vppChan, ifIndexes, p.Log)
+		p.dumpVppSvc.ipSecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, spdIndexes, p.Log)
+		p.dumpVppSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
+		p.dumpVppSvc.fibHandler = l2vppcalls.NewFibVppHandler(p.vppChan, p.dumpChan, ifIndexes, bdIndexes, p.Log)
+		p.dumpVppSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
+		p.dumpVppSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
+		p.dumpVppSvc.puntHandler = vppcalls.NewPuntVppHandler(p.vppChan, puntIndexes, p.Log)
+		p.dumpVppSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
+		p.dumpVppSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
+		p.dumpVppSvc.l4Handler = l4vppcalls.NewL4VppHandler(p.vppChan, p.Log)
+	}
 	// Linux indexes and handlers
 	if p.Linux != nil && !p.Linux.IsDisabled() {
 		linuxIfIndexes := p.Linux.GetLinuxIfIndexes()
