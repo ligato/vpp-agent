@@ -680,7 +680,7 @@ func (scheduler *Scheduler) propagateError(graphW graph.RWAccess, node graph.Nod
 }
 
 // validDerivedKV check validity of a derived KV pair.
-func (scheduler *Scheduler) validDerivedKV(graphR graph.ReadAccess, kv kvForTxn, txnSeqNum uint) bool {
+func (scheduler *Scheduler) validDerivedKV(graphR graph.ReadAccess, kv kvForTxn, txnSeqNum uint64) bool {
 	node := graphR.GetNode(kv.key)
 	if kv.value == nil {
 		scheduler.Log.WithFields(logging.Fields{

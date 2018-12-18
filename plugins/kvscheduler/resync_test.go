@@ -68,7 +68,7 @@ func TestEmptyResync(t *testing.T) {
 	ctx = WithDescription(ctx, description)
 	seqNum, err := scheduler.StartNBTransaction().Commit(ctx)
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -179,7 +179,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	ctx = WithDescription(ctx, description)
 	seqNum, err := schedulerTxn.Commit(ctx)
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -362,7 +362,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	startTime = time.Now()
 	seqNum, err = scheduler.StartNBTransaction().Commit(WithResync(context.Background(), FullResync, true))
 	stopTime = time.Now()
-	Expect(seqNum).To(Equal(1))
+	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -585,7 +585,7 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue3, test.NewLazyArrayValue("item1", "item2"))
 	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -920,7 +920,7 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyArrayValue("item1"))
 	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -1148,7 +1148,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewLazyArrayValue("item1", "item2"))
 	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -1503,7 +1503,7 @@ func TestResyncWithRetry(t *testing.T) {
 	ctx = WithDescription(ctx, description)
 	seqNum, err := resyncTxn.Commit(ctx)
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ToNot(BeNil())
 	txnErr := err.(*TransactionError)
 	Expect(txnErr.GetTxnInitError()).ShouldNot(HaveOccurred())

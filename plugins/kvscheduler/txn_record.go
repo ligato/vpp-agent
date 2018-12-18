@@ -162,7 +162,7 @@ func (scheduler *Scheduler) GetTransactionHistory(since, until time.Time) (histo
 }
 
 // GetRecordedTransaction returns record of a transaction referenced by the sequence number.
-func (scheduler *Scheduler) GetRecordedTransaction(SeqNum uint) (txn *kvs.RecordedTxn) {
+func (scheduler *Scheduler) GetRecordedTransaction(SeqNum uint64) (txn *kvs.RecordedTxn) {
 	scheduler.historyLock.Lock()
 	defer scheduler.historyLock.Unlock()
 

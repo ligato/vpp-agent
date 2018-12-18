@@ -30,7 +30,7 @@ import (
 // preProcessedTxn appends un-marshalled (or filtered retry) values to a queued
 // transaction and sets the sequence number.
 type preProcessedTxn struct {
-	seqNum uint
+	seqNum uint64
 	values []kvForTxn
 	args   *queuedTxn
 }
@@ -294,7 +294,7 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 		graphW.Save()
 
 		// split failed values based on transactions that performed the last change
-		retryTxns := make(map[uint]*retryOps)
+		retryTxns := make(map[uint64]*retryOps)
 		for retryKey, retriable := range failed {
 			if !retriable {
 				continue
@@ -349,7 +349,7 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 	if txn.args.txnType == kvs.NBTransaction && txn.args.nb.isBlocking {
 		var (
 			errors []kvs.KeyWithError
-			txnErr *kvs.TransactionError
+			txnErr error
 		)
 		for _, kvWithError := range txnErrors {
 			if kvWithError.Error != nil {
@@ -384,7 +384,7 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 }
 
 // validTxnValue checks validity of a kv-pair to be applied in a transaction.
-func (scheduler *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, value proto.Message, origin kvs.ValueOrigin, txnSeqNum uint) bool {
+func (scheduler *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, value proto.Message, origin kvs.ValueOrigin, txnSeqNum uint64) bool {
 	if key == "" {
 		scheduler.Log.WithFields(logging.Fields{
 			"txnSeqNum": txnSeqNum,

@@ -61,7 +61,7 @@ type RecordedTxn struct {
 	Stop  time.Time
 
 	// arguments
-	SeqNum      uint
+	SeqNum      uint64
 	TxnType     TxnType
 	ResyncType  ResyncType
 	Description string

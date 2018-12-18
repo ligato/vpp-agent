@@ -189,7 +189,7 @@ func (scheduler *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var since, until time.Time
-		var seqNum int
+		var seqNum uint64
 		args := req.URL.Query()
 
 		// parse optional *format* argument (default = JSON)
@@ -206,16 +206,16 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 		// parse optional *seq-num* argument
 		if seqNumStr, withSeqNum := args[seqNumArg]; withSeqNum && len(seqNumStr) == 1 {
 			var err error
-			seqNum, err = strconv.Atoi(seqNumStr[0])
+			seqNum, err = strconv.ParseUint(seqNumStr[0], 10, 64)
 			if err != nil {
 				scheduler.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 				return
 			}
 
 			// sequence number takes precedence over the since-until time window
-			txn := scheduler.GetRecordedTransaction(uint(seqNum))
+			txn := scheduler.GetRecordedTransaction(seqNum)
 			if txn == nil {
-				err := errors.New("transaction with such sequence is not recorded")
+				err := errors.New("transaction with such sequence number is not recorded")
 				scheduler.logError(formatter.JSON(w, http.StatusNotFound, errorString{err.Error()}))
 				return
 			}

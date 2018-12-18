@@ -265,7 +265,7 @@ type KVScheduler interface {
 
 	// GetRecordedTransaction returns record of a transaction referenced
 	// by the sequence number.
-	GetRecordedTransaction(SeqNum uint) (txn *RecordedTxn)
+	GetRecordedTransaction(SeqNum uint64) (txn *RecordedTxn)
 }
 
 // Txn represent a single transaction.
@@ -283,15 +283,15 @@ type Txn interface {
 	// txn_options.go) or to cancel waiting for the end of a blocking transaction.
 	//
 	// For blocking transactions, the method returns the sequence number
-	// of the (finalized) transaction or -1 if the transaction failed to even get
-	// initialized. In case of failures during the initialization or transaction
-	// processing, the method will return non-nil error, which is always an instance
-	// of TransactionError (see errors.go), wrapping all errors encountered during
-	// the transaction processing.
+	// of the (finalized) transaction or ^uint64(0) (max uint64) if the transaction
+	// failed to even get initialized. In case of failures during the initialization
+	// or transaction processing, the method will return non-nil error, which is
+	// always an instance of TransactionError (see errors.go), wrapping all errors
+	// encountered during the transaction processing.
 	//
 	// Non-blocking transactions return immediately and always without errors.
 	// Subscribe with KVScheduler.SubscribeForErrors() to get notified about all
 	// errors, including those returned by action triggered later or asynchronously
 	// by a SB notification.
-	Commit(ctx context.Context) (txnSeqNum int, err error)
+	Commit(ctx context.Context) (txnSeqNum uint64, err error)
 }

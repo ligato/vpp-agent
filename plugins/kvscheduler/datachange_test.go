@@ -113,7 +113,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	description := "testing data change"
 	seqNum, err := schedulerTxn.Commit(WithDescription(context.Background(), description))
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -346,7 +346,7 @@ func TestDataChangeTransactions(t *testing.T) {
 	schedulerTxn2.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item1"))
 	seqNum, err = schedulerTxn2.Commit(context.Background())
 	stopTime = time.Now()
-	Expect(seqNum).To(Equal(1))
+	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -690,7 +690,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item2"))
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewLazyArrayValue("item1", "item2"))
 	seqNum, err := schedulerTxn.Commit(context.Background())
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 	mockSB.PopHistoryOfOps()
 
@@ -712,7 +712,7 @@ func TestDataChangeTransactionWithRevert(t *testing.T) {
 	schedulerTxn2.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item1"))
 	seqNum, err = schedulerTxn2.Commit(WithRevert(context.Background()))
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(1))
+	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ToNot(BeNil())
 	txnErr := err.(*TransactionError)
 	Expect(txnErr.GetTxnInitError()).ShouldNot(HaveOccurred())
@@ -1218,7 +1218,7 @@ func TestDependencyCycles(t *testing.T) {
 	description := "testing dependency cycles"
 	seqNum, err := schedulerTxn.Commit(WithDescription(context.Background(), description))
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -1313,7 +1313,7 @@ func TestDependencyCycles(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue4, test.NewLazyStringValue("base-value4-data"))
 	seqNum, err = schedulerTxn.Commit(context.Background())
 	stopTime = time.Now()
-	Expect(seqNum).To(Equal(1))
+	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -1459,7 +1459,7 @@ func TestDependencyCycles(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue2, nil)
 	seqNum, err = schedulerTxn.Commit(context.Background())
 	stopTime = time.Now()
-	Expect(seqNum).To(Equal(2))
+	Expect(seqNum).To(BeEquivalentTo(2))
 	Expect(err).ToNot(BeNil())
 	txnErr := err.(*TransactionError)
 	Expect(txnErr.GetTxnInitError()).ShouldNot(HaveOccurred())
@@ -1589,7 +1589,7 @@ func TestDependencyCycles(t *testing.T) {
 	schedulerTxn = scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyStringValue("base-value2-data-new"))
 	seqNum, err = schedulerTxn.Commit(context.Background())
-	Expect(seqNum).To(Equal(3))
+	Expect(seqNum).To(BeEquivalentTo(3))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -1652,7 +1652,7 @@ func TestSpecialCase(t *testing.T) {
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item1"))
 	seqNum, err := schedulerTxn.Commit(context.Background())
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -1682,7 +1682,7 @@ func TestSpecialCase(t *testing.T) {
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixA+baseValue1, nil)
 	seqNum, err = schedulerTxn2.Commit(WithRevert(context.Background()))
-	Expect(seqNum).To(Equal(1))
+	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ToNot(BeNil())
 	txnErr := err.(*TransactionError)
 	Expect(txnErr.GetTxnInitError()).ShouldNot(HaveOccurred())

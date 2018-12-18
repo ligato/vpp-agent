@@ -53,7 +53,7 @@ const (
 // LastChangeFlag is set to all base values to remember the last change from
 // a NB transaction or a SB notification for a potential retry.
 type LastChangeFlag struct {
-	txnSeqNum uint
+	txnSeqNum uint64
 	value     proto.Message
 	origin    kvs.ValueOrigin
 	revert    bool
@@ -77,7 +77,7 @@ func (flag *LastChangeFlag) GetValue() string {
 // LastUpdateFlag is set to all values to remember the last transaction which
 // has changed/updated the value.
 type LastUpdateFlag struct {
-	txnSeqNum uint
+	txnSeqNum uint64
 }
 
 // GetName return name of the LastUpdate flag.

@@ -102,7 +102,7 @@ func TestNotifications(t *testing.T) {
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
@@ -697,14 +697,14 @@ func TestNotificationsWithRetry(t *testing.T) {
 	schedulerTxn1 := scheduler.StartNBTransaction()
 	schedulerTxn1.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	seqNum, err := schedulerTxn1.Commit(WithRetry(context.Background(), 3*time.Second, true))
-	Expect(seqNum).To(Equal(0))
+	Expect(seqNum).To(BeEquivalentTo(0))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// run 2nd data-change transaction with retry
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixC+baseValue3, test.NewLazyStringValue("base-value3-data"))
 	seqNum, err = schedulerTxn2.Commit(WithRetry(context.Background(), 6*time.Second, true))
-	Expect(seqNum).To(Equal(1))
+	Expect(seqNum).To(BeEquivalentTo(1))
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB - empty since dependencies are not met

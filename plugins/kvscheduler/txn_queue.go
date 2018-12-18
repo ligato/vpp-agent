@@ -33,7 +33,7 @@ type sbNotif struct {
 // txnResult represents transaction result.
 type txnResult struct {
 	err       error
-	txnSeqNum uint
+	txnSeqNum uint64
 }
 
 // nbTxn encapsulates data for NB transaction.
@@ -52,7 +52,7 @@ type nbTxn struct {
 
 // retryOps encapsulates data for retry of failed operations.
 type retryOps struct {
-	txnSeqNum uint
+	txnSeqNum uint64
 	keys      utils.KeySet
 	period    time.Duration
 }

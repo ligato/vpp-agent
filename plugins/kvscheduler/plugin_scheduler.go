@@ -66,7 +66,7 @@ type Scheduler struct {
 	txnLock      sync.Mutex // can be used to pause transaction processing; always lock before the graph!
 	txnQueue     chan *queuedTxn
 	errorSubs    []errorSubscription
-	txnSeqNumber uint
+	txnSeqNumber uint64
 	resyncCount  uint
 	lastError    map[string]error // key -> error
 
@@ -331,8 +331,8 @@ func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) kvs.Txn 
 // Commit orders scheduler to execute enqueued operations.
 // Operations with unmet dependencies will get postponed and possibly
 // executed later.
-func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum int, err error) {
-	txnSeqNum = -1
+func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err error) {
+	txnSeqNum = ^uint64(0)
 
 	// parse transaction options
 	txn.data.nb.isBlocking = !kvs.IsNonBlockingTxn(ctx)
@@ -365,7 +365,7 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum int, err error) 
 			return txnSeqNum, kvs.NewTransactionError(kvs.ErrTxnWaitCanceled, nil)
 		case txnResult := <-txn.data.nb.resultChan:
 			close(txn.data.nb.resultChan)
-			return int(txnResult.txnSeqNum), txnResult.err
+			return txnResult.txnSeqNum, txnResult.err
 		}
 	}
 	return txnSeqNum, nil
