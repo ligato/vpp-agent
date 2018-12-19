@@ -17,6 +17,8 @@ ${REMOTE_ADDR_1}=      fd30::1:1:0:0:1
 ${LOCAL_ADDR_1}=       fd30::1:1:0:0:2
 ${REMOTE_ADDR_2}=      fd30::1:1:0:0:3
 ${LOCAL_ADDR_2}=       fd30::1:1:0:0:4
+${WAIT_TIMEOUT}=     20s
+${SYNC_SLEEP}=       3s
 
 *** Test Cases ***
 # CRUD tests for IPsec
