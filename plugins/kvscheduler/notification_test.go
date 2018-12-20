@@ -100,10 +100,10 @@ func TestNotifications(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
+	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -128,7 +128,7 @@ func TestNotifications(t *testing.T) {
 	})
 
 	// check transaction operations
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Now())
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -136,7 +136,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -242,7 +242,7 @@ func TestNotifications(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -250,7 +250,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(1))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -395,7 +395,7 @@ func TestNotifications(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -403,7 +403,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(2))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -515,7 +515,7 @@ func TestNotifications(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -523,7 +523,7 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(3))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -696,16 +696,16 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// run 1st data-change transaction with retry against empty SB
 	schedulerTxn1 := scheduler.StartNBTransaction()
 	schedulerTxn1.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn1.Commit(WithRetry(context.Background(), 3*time.Second, true))
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	seqNum, err := schedulerTxn1.Commit(WithRetry(context.Background(), 3*time.Second, true))
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// run 2nd data-change transaction with retry
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixC+baseValue3, test.NewLazyStringValue("base-value3-data"))
-	kvErrors, txnError = schedulerTxn2.Commit(WithRetry(context.Background(), 6*time.Second, true))
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	seqNum, err = schedulerTxn2.Commit(WithRetry(context.Background(), 6*time.Second, true))
+	Expect(seqNum).To(BeEquivalentTo(1))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB - empty since dependencies are not met
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -822,7 +822,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	checkValuesForCorrelation(operation.CorrelateDump, []KVWithMetadata{})
 
 	// check last transaction
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Now())
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(3))
 	txn := txnHistory[2]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -830,7 +830,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(2))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -1069,7 +1069,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check last transaction
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -1077,7 +1077,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(3))
-	Expect(txn.TxnType).To(BeEquivalentTo(retryFailedOps))
+	Expect(txn.TxnType).To(BeEquivalentTo(RetryFailedOps))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -1140,7 +1140,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check last transaction
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Time{})
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -1148,7 +1148,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(4))
-	Expect(txn.TxnType).To(BeEquivalentTo(retryFailedOps))
+	Expect(txn.TxnType).To(BeEquivalentTo(RetryFailedOps))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{

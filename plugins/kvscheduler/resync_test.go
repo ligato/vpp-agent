@@ -59,17 +59,17 @@ func TestEmptyResync(t *testing.T) {
 	Expect(withMetadataMap).To(BeTrue())
 
 	// transaction history should be initially empty
-	Expect(scheduler.getTransactionHistory(time.Time{}, time.Time{})).To(BeEmpty())
+	Expect(scheduler.GetTransactionHistory(time.Time{}, time.Time{})).To(BeEmpty())
 
 	// run transaction with empty resync
 	startTime := time.Now()
 	ctx := WithResync(context.Background(), FullResync, true)
 	description := "testing empty resync"
 	ctx = WithDescription(ctx, description)
-	kvErrors, txnError := scheduler.StartNBTransaction().Commit(ctx)
+	seqNum, err := scheduler.StartNBTransaction().Commit(ctx)
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -86,7 +86,7 @@ func TestEmptyResync(t *testing.T) {
 	Expect(opHistory[0].Descriptor).To(BeEquivalentTo(descriptor1Name))
 
 	// single transaction consisted of zero operations
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -94,7 +94,7 @@ func TestEmptyResync(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(Equal(description))
 	Expect(txn.Values).To(BeEmpty())
@@ -177,10 +177,10 @@ func TestResyncWithEmptySB(t *testing.T) {
 	ctx := WithResync(context.Background(), FullResync, true)
 	description := "testing resync against empty SB"
 	ctx = WithDescription(ctx, description)
-	kvErrors, txnError := schedulerTxn.Commit(ctx)
+	seqNum, err := schedulerTxn.Commit(ctx)
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -287,7 +287,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// single transaction consisted of 6 operations
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Now())
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -295,7 +295,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(Equal(description))
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -360,10 +360,10 @@ func TestResyncWithEmptySB(t *testing.T) {
 
 	// now remove everything using resync with empty data
 	startTime = time.Now()
-	kvErrors, txnError = scheduler.StartNBTransaction().Commit(WithResync(context.Background(), FullResync, true))
+	seqNum, err = scheduler.StartNBTransaction().Commit(WithResync(context.Background(), FullResync, true))
 	stopTime = time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(1))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -419,7 +419,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// this second transaction consisted of 6 operations
-	txnHistory = scheduler.getTransactionHistory(time.Time{}, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(2))
 	txn = txnHistory[1]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -427,7 +427,7 @@ func TestResyncWithEmptySB(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(1))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -583,10 +583,10 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item2"))
 	schedulerTxn.SetValue(prefixA+baseValue3, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
+	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -732,7 +732,7 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -740,7 +740,7 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -918,10 +918,10 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixA+baseValue2, test.NewLazyArrayValue("item1"))
-	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
+	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -980,7 +980,7 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory := scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory := scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -988,7 +988,7 @@ func TestResyncNotRemovingSBValues(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -1146,10 +1146,10 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
 	schedulerTxn.SetValue(prefixA+baseValue1, test.NewLazyArrayValue("item2"))
 	schedulerTxn.SetValue(prefixC+baseValue3, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
+	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -1305,7 +1305,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -1313,7 +1313,7 @@ func TestResyncWithMultipleDescriptors(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -1501,9 +1501,13 @@ func TestResyncWithRetry(t *testing.T) {
 	ctx = WithRetry(ctx, 3*time.Second, false)
 	ctx = WithResync(ctx, FullResync, true)
 	ctx = WithDescription(ctx, description)
-	kvErrors, txnError := resyncTxn.Commit(ctx)
+	seqNum, err := resyncTxn.Commit(ctx)
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ToNot(BeNil())
+	txnErr := err.(*TransactionError)
+	Expect(txnErr.GetTxnInitError()).ShouldNot(HaveOccurred())
+	kvErrors := txnErr.GetKVErrors()
 	Expect(kvErrors).To(HaveLen(1))
 	Expect(kvErrors[0].TxnOperation).To(BeEquivalentTo(Add))
 	Expect(kvErrors[0].Key).To(BeEquivalentTo(prefixA + baseValue1 + "/item2"))
@@ -1577,7 +1581,7 @@ func TestResyncWithRetry(t *testing.T) {
 	})
 
 	// check transaction operations
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Time{})
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -1585,7 +1589,7 @@ func TestResyncWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(Equal(description))
 	checkRecordedValues(txn.Values, []RecordedKVPair{
@@ -1703,7 +1707,7 @@ func TestResyncWithRetry(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check retry transaction operations
-	txnHistory = scheduler.getTransactionHistory(time.Time{}, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(2))
 	txn = txnHistory[1]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -1711,7 +1715,7 @@ func TestResyncWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(time.Now())).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(1))
-	Expect(txn.TxnType).To(BeEquivalentTo(retryFailedOps))
+	Expect(txn.TxnType).To(BeEquivalentTo(RetryFailedOps))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{

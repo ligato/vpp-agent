@@ -189,7 +189,7 @@ func (scheduler *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var since, until time.Time
-		var seqNum int
+		var seqNum uint64
 		args := req.URL.Query()
 
 		// parse optional *format* argument (default = JSON)
@@ -206,16 +206,16 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 		// parse optional *seq-num* argument
 		if seqNumStr, withSeqNum := args[seqNumArg]; withSeqNum && len(seqNumStr) == 1 {
 			var err error
-			seqNum, err = strconv.Atoi(seqNumStr[0])
+			seqNum, err = strconv.ParseUint(seqNumStr[0], 10, 64)
 			if err != nil {
 				scheduler.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 				return
 			}
 
 			// sequence number takes precedence over the since-until time window
-			txn := scheduler.getRecordedTransaction(uint(seqNum))
+			txn := scheduler.GetRecordedTransaction(seqNum)
 			if txn == nil {
-				err := errors.New("transaction with such sequence is not recorded")
+				err := errors.New("transaction with such sequence number is not recorded")
 				scheduler.logError(formatter.JSON(w, http.StatusNotFound, errorString{err.Error()}))
 				return
 			}
@@ -248,7 +248,7 @@ func (scheduler *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.
 			}
 		}
 
-		txnHistory := scheduler.getTransactionHistory(since, until)
+		txnHistory := scheduler.GetTransactionHistory(since, until)
 		if format == formatJSON {
 			scheduler.logError(formatter.JSON(w, http.StatusOK, txnHistory))
 		} else {
@@ -360,17 +360,9 @@ func (scheduler *Scheduler) downstreamResyncPostHandler(formatter *render.Render
 		if retry {
 			ctx = kvs.WithRetry(ctx, time.Second, true)
 		}
-		kvErrors, txnError := scheduler.StartNBTransaction().Commit(ctx)
-		if txnError != nil {
-			scheduler.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{txnError.Error()}))
-			return
-		}
-		if len(kvErrors) > 0 {
-			kvErrorMap := make(map[string]errorString)
-			for _, keyWithError := range kvErrors {
-				kvErrorMap[keyWithError.Key] = errorString{keyWithError.Error.Error()}
-			}
-			scheduler.logError(formatter.JSON(w, http.StatusInternalServerError, kvErrorMap))
+		_, err := scheduler.StartNBTransaction().Commit(ctx)
+		if err != nil {
+			scheduler.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 			return
 		}
 		scheduler.logError(formatter.Text(w, http.StatusOK, "SB was successfully synchronized with KVScheduler\n"))
