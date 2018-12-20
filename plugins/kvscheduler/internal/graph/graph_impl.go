@@ -22,11 +22,21 @@ import (
 type kvgraph struct {
 	rwLock sync.RWMutex
 	graph  *graphR
+
+	recordOldRevs  bool
+	recordAgeLimit uint32
 }
 
 // NewGraph creates and new instance of key-value graph.
-func NewGraph() Graph {
-	kvgraph := &kvgraph{}
+// <recordOldRevs> if enabled, will cause the graph to record the previous
+// revisions of every node that have ever existed. <recordAgeLimit> is in minutes
+// and allows to limit the maximum age of a record to keep, avoiding infinite
+// memory usage growth.
+func NewGraph(recordOldRevs bool, recordAgeLimit uint32) Graph {
+	kvgraph := &kvgraph{
+		recordOldRevs:  recordOldRevs,
+		recordAgeLimit: recordAgeLimit,
+	}
 	kvgraph.graph = newGraphR()
 	kvgraph.graph.parent = kvgraph
 	return kvgraph

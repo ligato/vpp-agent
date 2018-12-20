@@ -30,14 +30,14 @@ import (
 // temporary pending states.
 // Dependencies are calculated only *approximately* - ordering at this stage is just
 // an *optimization*, purpose of which is to decrease the length of the transaction plan.
-func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kvForTxn) []kvForTxn {
+func (s *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kvForTxn) []kvForTxn {
 
 	// consider at least the first-level of derived values
 	derived := make(map[string]utils.KeySet) // base value key -> derived keys
 	valueByKey := make(map[string]kvForTxn)
 	for _, kv := range values {
 		valueByKey[kv.key] = kv
-		descriptor := scheduler.registry.GetDescriptorForKey(kv.key)
+		descriptor := s.registry.GetDescriptorForKey(kv.key)
 		handler := &descriptorHandler{descriptor}
 		node := graphR.GetNode(kv.key)
 
@@ -61,7 +61,7 @@ func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kv
 	delete := utils.NewKeySet()
 	deps := make(map[string]utils.KeySet)
 	for _, kv := range values {
-		descriptor := scheduler.registry.GetDescriptorForKey(kv.key)
+		descriptor := s.registry.GetDescriptorForKey(kv.key)
 		handler := &descriptorHandler{descriptor}
 		node := graphR.GetNode(kv.key)
 

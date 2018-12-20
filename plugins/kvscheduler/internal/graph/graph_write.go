@@ -168,7 +168,7 @@ func (graph *graphRW) Save() {
 
 // Release records changes if requested.
 func (graph *graphRW) Release() {
-	if graph.record {
+	if graph.record && graph.parent.recordOldRevs {
 		destGraph := graph.parent.graph
 		for key, dataUpdated := range graph.newRevs {
 			node, exists := destGraph.nodes[key]

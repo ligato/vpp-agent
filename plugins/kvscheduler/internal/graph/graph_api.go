@@ -43,7 +43,7 @@ import (
 //
 // Last but not least, the graph maintains a history of revisions for all nodes
 // that have ever existed. The history of changes and a graph snapshot from
-// a selected moment in time are exposed via the REST interface.
+// a selected moment in time are exposed via ReadAccess interface.
 type Graph interface {
 	// Read returns a graph handle for read-only access.
 	// The graph supports multiple concurrent readers.
@@ -75,15 +75,14 @@ type ReadAccess interface {
 	// and every provided flag selector.
 	GetNodes(keySelector KeySelector, flagSelectors ...FlagSelector) []Node
 
+	// GetFlagStats returns stats for a given flag.
+	GetFlagStats(flagName string, filter KeySelector) FlagStats
+
 	// GetNodeTimeline returns timeline of all node revisions, ordered from
 	// the oldest to the newest.
 	GetNodeTimeline(key string) []*RecordedNode
 
-	// GetFlagStats returns stats for a given flag.
-	GetFlagStats(flagName string, filter KeySelector) FlagStats
-
 	// GetSnapshot returns the snapshot of the graph at a given time.
-	//
 	GetSnapshot(time time.Time) []*RecordedNode
 
 	// Dump returns a human-readable string representation of the current graph
@@ -225,7 +224,7 @@ type RecordedNode struct {
 	Until            time.Time
 	Key              string
 	Label            string
-	Value            string
+	Value            proto.Message
 	Flags            map[string]string          // flag name -> flag value
 	MetadataFields   map[string][]string        // field name -> values
 	Targets          map[string]RecordedTargets // relation -> target

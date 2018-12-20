@@ -232,7 +232,7 @@ func (graph *graphR) recordNode(node *node, targetUpdateOnly bool) *RecordedNode
 		Since:            time.Now(),
 		Key:              node.key,
 		Label:            node.label,
-		Value:            utils.ProtoToString(node.value),
+		Value:            utils.RecordProtoMessage(node.value),
 		Flags:            make(map[string]string),
 		MetadataFields:   graph.getMetadataFields(node), // returned already copied
 		Targets:          node.targets,                  // no need to copy, never changed in graphR

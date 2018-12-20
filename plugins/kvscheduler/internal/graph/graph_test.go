@@ -19,15 +19,18 @@ import (
 	"time"
 
 	. "github.com/onsi/gomega"
+	"github.com/gogo/protobuf/proto"
 
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
+
+const minutesInOneDay = uint32(1440)
 
 func TestEmptyGraph(t *testing.T) {
 	RegisterTestingT(t)
 
-	graph := NewGraph()
+	graph := NewGraph(true, minutesInOneDay)
 	Expect(graph).ToNot(BeNil())
 
 	graphR := graph.Read()
@@ -49,7 +52,7 @@ func TestSingleNode(t *testing.T) {
 
 	startTime := time.Now()
 
-	graph := NewGraph()
+	graph := NewGraph(true, minutesInOneDay)
 	graphW := graph.Write(true)
 
 	graphW.RegisterMetadataMap(metadataMapA, NewNameToInteger(metadataMapA))
@@ -134,7 +137,7 @@ func TestSingleNode(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(BeEmpty())
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
@@ -281,7 +284,7 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets).To(HaveKey(relation2))
@@ -302,7 +305,7 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value2Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value2)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value2))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets[relation1]).To(HaveLen(1))
@@ -320,7 +323,7 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value3Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value3)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value3))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
 	Expect(record.Targets).To(HaveKey(relation2))
 	Expect(record.Targets[relation2]).To(HaveLen(2))
@@ -339,7 +342,7 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value4Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value4)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value4))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets[relation1]).To(HaveLen(1))
@@ -528,7 +531,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets).To(HaveKey(relation2))
@@ -546,7 +549,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets).To(HaveKey(relation2))
@@ -569,7 +572,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value2Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value2)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value2))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets[relation1]).To(HaveLen(1))
@@ -589,7 +592,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value3Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value3)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value3))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
 	Expect(record.Targets).To(HaveKey(relation2))
 	Expect(record.Targets[relation2]).To(HaveLen(2))
@@ -605,7 +608,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value3Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value3)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value3))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
 	Expect(record.Targets).To(HaveKey(relation2))
 	Expect(record.Targets[relation2]).To(HaveLen(2))
@@ -626,7 +629,7 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value4Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value4)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value4))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets[relation1]).To(HaveLen(1))
@@ -708,7 +711,7 @@ func TestNodeTimeline(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(changeTime1)).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets).To(HaveKey(relation2))
@@ -727,7 +730,7 @@ func TestNodeTimeline(t *testing.T) {
 	Expect(record.Until.After(changeTime2)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets).To(HaveKey(relation2))
@@ -738,14 +741,14 @@ func TestNodeTimeline(t *testing.T) {
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
 	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Blue.String(), AbstractFlagName: ""}))
-	//   -> thirs record
+	//   -> third record
 	record = timeline[2]
 	Expect(record.Key).To(Equal(keyA1))
 	Expect(record.Since.After(changeTime2)).To(BeTrue())
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
 	Expect(record.Targets).To(HaveKey(relation1))
 	Expect(record.Targets).To(HaveKey(relation2))
@@ -840,7 +843,7 @@ func TestNodeMetadata(t *testing.T) {
 func TestReuseNodeAfterSave(t *testing.T) {
 	RegisterTestingT(t)
 
-	graph := NewGraph()
+	graph := NewGraph(true, minutesInOneDay)
 	graphW := graph.Write(true)
 
 	// add new node
