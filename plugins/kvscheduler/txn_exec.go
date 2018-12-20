@@ -55,8 +55,8 @@ func (args *applyValueArgs) addFailed(key string, retriable bool) {
 func (s *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (executed kvs.RecordedTxnOps, failed map[string]bool) {
 	downstreamResync := txn.args.txnType == kvs.NBTransaction && txn.args.nb.resyncType == kvs.DownstreamResync
 	graphW := s.graph.Write(!downstreamResync)
-	failed = make(map[string]bool) // non-derived values in a failed state
-	branch := utils.NewKeySet()    // branch of current recursive calls to applyValue used to handle cycles
+	failed = make(map[string]bool)      // non-derived values in a failed state
+	branch := utils.NewMapBasedKeySet() // branch of current recursive calls to applyValue used to handle cycles
 
 	// for dry-run revert back the original content of the *lastError* map in the end
 	if dryRun {
@@ -67,15 +67,10 @@ func (s *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (execu
 		defer func() { s.lastError = prevLastError }()
 	}
 
-	// order to achieve the shortest sequence of operations in average
-	orderedVals := s.orderValuesByOp(graphW, txn.values)
-
-	var (
-		prevValues []kvs.KeyValuePair
-		revert     bool
-	)
+	var revert bool
+	prevValues := make([]kvs.KeyValuePair, 0, len(txn.values))
 	// execute transaction either in best-effort mode or with revert on the first failure
-	for _, kv := range orderedVals {
+	for _, kv := range txn.values {
 		ops, prevValue, err := s.applyValue(
 			&applyValueArgs{
 				graphW:  graphW,
@@ -87,12 +82,15 @@ func (s *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (execu
 				branch:  branch,
 			})
 		executed = append(executed, ops...)
-		prevValues = append([]kvs.KeyValuePair{prevValue}, prevValues...)
+		prevValues = append(prevValues, kvs.KeyValuePair{})
+		copy(prevValues[1:], prevValues)
+		prevValues[0] = prevValue
 		if err != nil {
 			if txn.args.txnType == kvs.NBTransaction && txn.args.nb.revertOnFailure {
 				// refresh failed value and trigger reverting
 				delete(failed, kv.key) // do not retry unless reverting fails
-				s.refreshGraph(graphW, utils.NewKeySet(kv.key), nil)
+				failedKey := utils.NewSingletonKeySet(kv.key)
+				s.refreshGraph(graphW, failedKey, nil)
 				graphW.Save() // certainly not dry-run
 				revert = true
 				break
@@ -125,6 +123,9 @@ func (s *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (execu
 		}
 	}
 
+	// get rid of uninteresting intermediate pending Add/Delete operations
+	executed = s.compressTxnOps(executed)
+
 	graphW.Release()
 	return executed, failed
 }
@@ -133,11 +134,11 @@ func (s *Scheduler) executeTransaction(txn *preProcessedTxn, dryRun bool) (execu
 // It returns the list of executed operations.
 func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOps, prevValue kvs.KeyValuePair, err error) {
 	// dependency cycle detection
-	if _, cycle := args.branch[args.kv.key]; cycle {
+	if cycle := args.branch.Has(args.kv.key); cycle {
 		return executed, prevValue, err
 	}
 	args.branch.Add(args.kv.key)
-	defer delete(args.branch, args.kv.key)
+	defer args.branch.Del(args.kv.key)
 
 	// create new revision of the node for the given key-value pair
 	node := args.graphW.SetNode(args.kv.key)
@@ -442,7 +443,8 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 
 	// remove obsolete derived values
 	var obsoleteDerVals []kvForTxn
-	for obsolete := range prevDerived.Subtract(getDerivedKeys(node)) {
+	prevDerived.Subtract(getDerivedKeys(node))
+	for _, obsolete := range prevDerived.Iterate() {
 		obsoleteDerVals = append(obsoleteDerVals, kvForTxn{
 			key:      obsolete,
 			value:    nil, // delete
@@ -657,6 +659,61 @@ func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed 
 		executed = append(executed, ops...)
 	}
 	return executed
+}
+
+// compressTxnOps removes uninteresting intermediate pending Add/Delete operations.
+func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnOps {
+	// compress Add operations
+	compressed := make(kvs.RecordedTxnOps, 0, len(executed))
+	for i, op := range executed {
+		compressedOp := false
+		if op.Operation == kvs.Add && op.IsPending && op.NewErr == nil {
+			for j := i + 1; j < len(executed); j++ {
+				if executed[j].Key == op.Key {
+					if executed[j].Operation == kvs.Add {
+						// compress
+						compressedOp = true
+						executed[j].PrevValue = op.PrevValue
+						executed[j].PrevErr = op.PrevErr
+						executed[j].PrevOrigin = op.PrevOrigin
+						executed[j].WasPending = op.WasPending
+					}
+					break
+				}
+			}
+		}
+		if !compressedOp {
+			compressed = append(compressed, op)
+		}
+	}
+
+	// compress Delete operations
+	length := len(compressed)
+	for i := length - 1; i >= 0; i-- {
+		op := compressed[i]
+		compressedOp := false
+		if op.Operation == kvs.Delete && op.WasPending && op.PrevErr == nil {
+			for j := i - 1; j >= 0; j-- {
+				if compressed[j].Key == op.Key {
+					if compressed[j].Operation == kvs.Delete {
+						// compress
+						compressedOp = true
+						compressed[j].NewValue = op.NewValue
+						compressed[j].NewErr = op.NewErr
+						compressed[j].NewOrigin = op.NewOrigin
+						compressed[j].IsPending = op.IsPending
+					}
+					break
+				}
+			}
+		}
+		if compressedOp {
+			copy(compressed[i:], compressed[i+1:])
+			length--
+		}
+	}
+	compressed = compressed[:length]
+	return compressed
 }
 
 // getNodeLastError return errors (or nil) from the last operation executed

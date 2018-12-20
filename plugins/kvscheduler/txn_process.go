@@ -84,24 +84,27 @@ func (s *Scheduler) processTransaction(qTxn *queuedTxn) {
 	txn, preErrors := s.preProcessTransaction(qTxn)
 	eligibleForExec := len(txn.values) > 0 && len(preErrors) == 0
 
-	// 2. Simulation:
+	// 2. Ordering:
+	txn.values = s.orderValuesByOp(txn.values)
+
+	// 3. Simulation:
 	if eligibleForExec {
 		simulatedOps, _ = s.executeTransaction(txn, true)
 	}
 
-	// 3. Pre-recording
+	// 4. Pre-recording
 	preTxnRecord := s.preRecordTransaction(txn, simulatedOps, preErrors)
 
-	// 4. Execution:
+	// 5. Execution:
 	if eligibleForExec {
 		executedOps, failed = s.executeTransaction(txn, false)
 	}
 	stopTime = time.Now()
 
-	// 5. Recording:
+	// 6. Recording:
 	s.recordTransaction(preTxnRecord, executedOps, startTime, stopTime)
 
-	// 6. Post-processing:
+	// 7. Post-processing:
 	s.postProcessTransaction(txn, executedOps, failed, preErrors)
 }
 
@@ -205,7 +208,7 @@ func (s *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *preProcesse
 		}
 
 		// build the set of keys currently in NB
-		nbKeys := utils.NewKeySet()
+		nbKeys := utils.NewMapBasedKeySet()
 		for _, kv := range preTxn.values {
 			nbKeys.Add(kv.key)
 		}
@@ -224,7 +227,7 @@ func (s *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *preProcesse
 			graph.WithFlags(&OriginFlag{kvs.FromNB}),
 			graph.WithoutFlags(&DerivedFlag{}))
 		for _, node := range currentNodes {
-			if _, nbKey := nbKeys[node.GetKey()]; nbKey {
+			if nbKey := nbKeys.Has(node.GetKey()); nbKey {
 				continue
 			}
 			preTxn.values = append(preTxn.values,
@@ -240,7 +243,7 @@ func (s *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *preProcesse
 			graph.WithFlags(&OriginFlag{kvs.FromSB}),
 			graph.WithoutFlags(&DerivedFlag{}))
 		for _, node := range sbNodes {
-			if _, nbKey := nbKeys[node.GetKey()]; nbKey {
+			if nbKey := nbKeys.Has(node.GetKey()); nbKey {
 				continue
 			}
 			preTxn.values = append(preTxn.values,
@@ -260,7 +263,7 @@ func (s *Scheduler) preProcessRetryTxn(qTxn *queuedTxn, preTxn *preProcessedTxn)
 	graphR := s.graph.Read()
 	defer graphR.Release()
 
-	for key := range qTxn.retry.keys {
+	for _, key := range qTxn.retry.keys.Iterate() {
 		node := graphR.GetNode(key)
 		if node == nil {
 			continue
@@ -286,7 +289,7 @@ func (s *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed kvs.Re
 	// refresh base values with error or with a derived value that has an error
 	if len(failed) > 0 {
 		graphW := s.graph.Write(false)
-		toRefresh := utils.NewKeySet()
+		toRefresh := utils.NewMapBasedKeySet()
 		for key := range failed {
 			toRefresh.Add(key)
 		}
@@ -315,7 +318,7 @@ func (s *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed kvs.Re
 					retryTxns[seqNum] = &retryOps{
 						txnSeqNum: seqNum,
 						period:    period,
-						keys:      utils.NewKeySet(),
+						keys:      utils.NewMapBasedKeySet(),
 					}
 				}
 				retryTxns[seqNum].keys.Add(retryKey)

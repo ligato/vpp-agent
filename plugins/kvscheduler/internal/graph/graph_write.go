@@ -62,7 +62,7 @@ func (graph *graphRW) SetNode(key string) NodeRW {
 	node.graph = graph.graphR
 	node.key = key
 	for _, otherNode := range graph.nodes {
-		otherNode.checkPotentialTarget(node, false)
+		otherNode.checkPotentialTarget(node)
 	}
 	graph.nodes[key] = node
 
@@ -148,16 +148,24 @@ func (graph *graphRW) Save() {
 			}
 		}
 
-		// copy changed node to the actual graph
-		nodeCopy := node.copy()
-		nodeCopy.graph = destGraph
-		destGraph.nodes[key] = newNode(nodeCopy)
-
 		// mark node for recording during RW-handle release
 		if _, newRev := graph.newRevs[key]; !newRev {
 			graph.newRevs[key] = false
 		}
 		graph.newRevs[key] = graph.newRevs[key] || node.dataUpdated
+
+		// copy changed node to the actual graph
+		nodeCopy := node.copy()
+		nodeCopy.graph = destGraph
+		destGraph.nodes[key] = newNode(nodeCopy)
+
+		// use copy-on-write targets+sources for the write-handle
+		cowTargets := nodeCopy.targets
+		nodeCopy.targets = node.targets
+		node.targets = cowTargets
+		cowSources := nodeCopy.sources
+		nodeCopy.sources = node.sources
+		node.sources = cowSources
 
 		// working copy is now in-sync
 		node.dataUpdated = false
@@ -169,6 +177,9 @@ func (graph *graphRW) Save() {
 // Release records changes if requested.
 func (graph *graphRW) Release() {
 	if graph.record && graph.parent.recordOldRevs {
+		graph.parent.rwLock.Lock()
+		defer graph.parent.rwLock.Unlock()
+
 		destGraph := graph.parent.graph
 		for key, dataUpdated := range graph.newRevs {
 			node, exists := destGraph.nodes[key]
@@ -190,6 +201,28 @@ func (graph *graphRW) Release() {
 				destGraph.timeline[key] = append(records,
 					destGraph.recordNode(node, !dataUpdated))
 			}
+		}
+
+		// remove past revisions from the log which are too old to keep
+		now := time.Now()
+		sinceLastTrimming := now.Sub(graph.parent.lastRevTrimming)
+		if sinceLastTrimming >= oldRevsTrimmingPeriod {
+			for key, records := range destGraph.timeline {
+				var i int
+				for i = 0; i < len(records); i++ {
+					if records[i].Until.IsZero() {
+						break
+					}
+					elapsed := now.Sub(records[i].Until)
+					if elapsed <= graph.parent.recordAgeLimit {
+						break
+					}
+				}
+				if i > 0 {
+					destGraph.timeline[key] = records[i:]
+				}
+			}
+			graph.parent.lastRevTrimming = now
 		}
 	}
 }

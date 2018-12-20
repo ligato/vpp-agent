@@ -35,18 +35,21 @@ type resyncData struct {
 // refreshGraph updates all/some values in the graph to their *real* state
 // using the Dump methods from descriptors.
 func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyncData *resyncData) {
-	refreshedKeys := utils.NewKeySet()
+	refreshedKeys := utils.NewMapBasedKeySet()
 
 	// iterate over all descriptors, in order given by dump dependencies
 	for _, descriptor := range s.registry.GetAllDescriptors() {
 		handler := &descriptorHandler{descriptor}
 
 		// check if this descriptor's key space should be refreshed as well
-		skip := len(keys) > 0
-		for key := range keys {
-			if descriptor.KeySelector(key) {
-				skip = false
-				break
+		var skip bool
+		if keys != nil {
+			skip = keys.Length() > 0
+			for _, key := range keys.Iterate() {
+				if descriptor.KeySelector(key) {
+					skip = false
+					break
+				}
 			}
 		}
 		if skip {
@@ -101,16 +104,16 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 				descriptor.Name, len(dump), plural, dump)
 		}
 
-		if len(keys) > 0 {
+		if keys != nil && keys.Length() > 0 {
 			// mark keys that should not be touched as refreshed
 			s.skipRefresh(graphW, descriptor.Name, keys, refreshedKeys)
 		}
 
 		// process dumped kv-pairs
 		for _, dumpedKV := range dump {
-			if len(keys) > 0 {
+			if keys != nil && keys.Length() > 0 {
 				// do no touch values that aren't meant to be refreshed
-				if _, toRefresh := keys[dumpedKV.Key]; !toRefresh {
+				if toRefresh := keys.Has(dumpedKV.Key); !toRefresh {
 					continue
 				}
 			}
@@ -135,12 +138,8 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 				timeline := graphW.GetNodeTimeline(dumpedKV.Key)
 				if len(timeline) > 0 {
 					lastRev := timeline[len(timeline)-1]
-					originFlag := lastRev.Flags[OriginFlagName]
-					if originFlag == kvs.FromNB.String() {
-						dumpedKV.Origin = kvs.FromNB
-					} else {
-						dumpedKV.Origin = kvs.FromSB
-					}
+					originFlag := lastRev.Flags.GetFlag(OriginFlagName)
+					dumpedKV.Origin = originFlag.(*OriginFlag).origin
 				}
 			}
 
@@ -164,7 +163,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 
 		// mark non-pending, non-derived values from NB that do not actually exist as pending
 		for _, node := range prevAddedNodes {
-			if _, refreshed := refreshedKeys[node.GetKey()]; !refreshed {
+			if refreshed := refreshedKeys.Has(node.GetKey()); !refreshed {
 				if getNodeOrigin(node) == kvs.FromNB && getNodeLastChange(node).value != nil {
 					missingNode := graphW.SetNode(node.GetKey())
 					missingNode.SetFlags(&PendingFlag{})
@@ -184,7 +183,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 			// keep pending base values
 			continue
 		}
-		if _, refreshed := refreshedKeys[node.GetKey()]; !refreshed {
+		if refreshed := refreshedKeys.Has(node.GetKey()); !refreshed {
 			graphW.DeleteNode(node.GetKey())
 		}
 	}
@@ -201,8 +200,10 @@ func (s *Scheduler) skipRefresh(graphR graph.ReadAccess, descriptor string, exce
 		graph.WithFlags(&DescriptorFlag{descriptor}),
 		graph.WithoutFlags(&DerivedFlag{}))
 	for _, node := range skipped {
-		if _, toRefresh := except[node.GetKey()]; toRefresh {
-			continue
+		if except != nil {
+			if toRefresh := except.Has(node.GetKey()); toRefresh {
+				continue
+			}
 		}
 		refreshed.Add(node.GetKey())
 
@@ -319,27 +320,27 @@ func dumpGraph(g graph.RWAccess) string {
 
 		if f := node.GetTargets(DependencyRelation); f != nil && len(f) > 0 {
 			writeLine("Depends on:", "")
-			for dep, nodes := range f {
+			for _, dep := range f {
 				var nodeDeps []string
-				for _, node := range nodes {
+				for _, node := range dep.Nodes {
 					nodeDeps = append(nodeDeps, node.GetKey())
 				}
 				if len(nodeDeps) > 1 {
-					writeLine(fmt.Sprintf(" - %s", dep), "")
+					writeLine(fmt.Sprintf(" - %s", dep.Label), "")
 					writeLines(strings.Join(nodeDeps, "\n"), "  -> ")
 				} else {
-					writeLine(fmt.Sprintf(" - %s -> %v", dep, strings.Join(nodeDeps, " ")), "")
+					writeLine(fmt.Sprintf(" - %s -> %v", dep.Label, strings.Join(nodeDeps, " ")), "")
 				}
 			}
 		}
 		if f := node.GetTargets(DerivesRelation); f != nil && len(f) > 0 {
 			writeLine("Derives:", "")
 			var nodeDers []string
-			for der, nodes := range f {
-				if len(nodes) == 0 {
-					nodeDers = append(nodeDers, "%s", der)
+			for _, der := range f {
+				if len(der.Nodes) == 0 {
+					nodeDers = append(nodeDers, "%s", der.Label)
 				} else {
-					for _, node := range nodes {
+					for _, node := range der.Nodes {
 						desc := ""
 						if d := node.GetFlag(DescriptorFlagName); d != nil {
 							desc = fmt.Sprintf("[%s] ", d.GetValue())
@@ -393,7 +394,7 @@ func (s *Scheduler) validDumpedKV(kv kvs.KVWithMetadata, descriptor *kvs.KVDescr
 		}).Warn("Descriptor dumped value with empty key")
 		return false
 	}
-	if _, alreadyDumped := refreshed[kv.Key]; alreadyDumped {
+	if alreadyDumped := refreshed.Has(kv.Key); alreadyDumped {
 		s.Log.WithFields(logging.Fields{
 			"descriptor": descriptor.Name,
 			"key":        kv.Key,
@@ -431,7 +432,7 @@ func (s *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor *kvs.KVDesc
 		}).Warn("Derived nil value")
 		return false
 	}
-	if _, alreadyDumped := refreshed[node.GetKey()]; alreadyDumped {
+	if alreadyDumped := refreshed.Has(node.GetKey()); alreadyDumped {
 		s.Log.WithFields(logging.Fields{
 			"descriptor": descriptorName,
 			"key":        node.GetKey(),

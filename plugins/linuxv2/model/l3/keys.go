@@ -15,7 +15,6 @@
 package linux_l3
 
 import (
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -60,22 +59,22 @@ func StaticArpKey(iface, ipAddr string) string {
 }
 
 // ParseStaticArpKey parses ARP entry from a key.
-func ParseStaticArpKey(key string) (iface string, ipAddr net.IP, err error) {
-	errPrefix := "invalid Linux ARP key: "
+func ParseStaticArpKey(key string) (iface string, ipAddr net.IP, isArpKey bool) {
 	if strings.HasPrefix(key, StaticArpKeyPrefix) {
 		arpSuffix := strings.TrimPrefix(key, StaticArpKeyPrefix)
 		arpComps := strings.Split(arpSuffix, "/")
 		if len(arpComps) != 2 {
-			return "", nil, fmt.Errorf(errPrefix + "invalid suffix")
+			return "", nil, false
 		}
 		ipAddr = net.ParseIP(arpComps[1])
 		if ipAddr == nil {
-			return "", nil, fmt.Errorf(errPrefix + "invalid IP address")
+			return "", nil, false
 		}
 		iface = arpComps[0]
+		isArpKey = true
 		return
 	}
-	return "", nil, fmt.Errorf(errPrefix + "invalid prefix")
+	return "", nil, false
 }
 
 /* Route Config */
@@ -86,7 +85,7 @@ func StaticRouteKey(dstNetwork, outgoingInterface string) string {
 }
 
 // ParseStaticRouteKey parses Linux route attributes from a key.
-func ParseStaticRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, err error) {
+func ParseStaticRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
 	return parseStaticRouteFromKeySuffix(key, StaticRouteKeyPrefix, "invalid Linux Route key: ")
 }
 
@@ -98,7 +97,7 @@ func StaticLinkLocalRouteKey(dstAddr, outgoingInterface string) string {
 }
 
 // ParseStaticLinkLocalRouteKey parses route attributes from a key derived from link-local route.
-func ParseStaticLinkLocalRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, err error) {
+func ParseStaticLinkLocalRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
 	return parseStaticRouteFromKeySuffix(key, StaticLinkLocalRouteKeyPrefix, "invalid Linux link-local Route key: ")
 }
 
@@ -116,19 +115,21 @@ func staticRouteKeyFromTemplate(template, dstAddr, outgoingInterface string) str
 }
 
 // parseStaticRouteFromKeySuffix parses destination network and outgoing interface from a route key suffix.
-func parseStaticRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *net.IPNet, outgoingInterface string, err error) {
+func parseStaticRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
+	var err error
 	if strings.HasPrefix(key, prefix) {
 		routeSuffix := strings.TrimPrefix(key, prefix)
 		routeComps := strings.Split(routeSuffix, "/")
 		if len(routeComps) != 3 {
-			return nil, "", fmt.Errorf(errPrefix + "invalid suffix")
+			return nil, "", false
 		}
 		_, dstNetAddr, err = net.ParseCIDR(routeComps[0] + "/" + routeComps[1])
 		if err != nil {
-			return nil, "", fmt.Errorf(errPrefix + "invalid destination address")
+			return nil, "", false
 		}
 		outgoingInterface = routeComps[2]
+		isRouteKey = true
 		return
 	}
-	return nil, "", fmt.Errorf(errPrefix + "invalid prefix")
+	return nil, "", false
 }

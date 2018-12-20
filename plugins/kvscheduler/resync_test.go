@@ -322,15 +322,6 @@ func TestResyncWithEmptySB(t *testing.T) {
 		},
 		{
 			Operation:  Add,
-			Key:        prefixA + baseValue1 + "/item2",
-			Derived:    true,
-			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			IsPending:  true,
-		},
-		{
-			Operation:  Add,
 			Key:        prefixA + baseValue2,
 			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1")),
 			PrevOrigin: FromNB,
@@ -348,11 +339,9 @@ func TestResyncWithEmptySB(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixA + baseValue1 + "/item2",
 			Derived:    true,
-			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
 			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-			WasPending: true,
 		},
 	}
 	checkTxnOperations(txn.Planned, txnOps)
@@ -444,7 +433,6 @@ func TestResyncWithEmptySB(t *testing.T) {
 			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-			IsPending:  true,
 		},
 		{
 			Operation:  Delete,
@@ -468,15 +456,6 @@ func TestResyncWithEmptySB(t *testing.T) {
 			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-		},
-		{
-			Operation:  Delete,
-			Key:        prefixA + baseValue1 + "/item2",
-			Derived:    true,
-			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			WasPending: true,
 		},
 		{
 			Operation:  Delete,

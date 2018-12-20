@@ -282,13 +282,13 @@ func (d *RouteDescriptor) Dependencies(key string, route *l3.StaticRoute) []sche
 		dependencies = append(dependencies, scheduler.Dependency{
 			Label: routeGwReachabilityDep,
 			AnyOf: func(key string) bool {
-				dstAddr, ifName, err := l3.ParseStaticLinkLocalRouteKey(key)
-				if err == nil && ifName == route.OutgoingInterface && dstAddr.Contains(gwAddr) {
+				dstAddr, ifName, isRouteKey := l3.ParseStaticLinkLocalRouteKey(key)
+				if isRouteKey && ifName == route.OutgoingInterface && dstAddr.Contains(gwAddr) {
 					// GW address is neighbour as told by another link-local route
 					return true
 				}
-				ifName, addr, err := ifmodel.ParseInterfaceAddressKey(key)
-				if err == nil && ifName == route.OutgoingInterface && addr.Contains(gwAddr) {
+				ifName, addr, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+				if isAddrKey && ifName == route.OutgoingInterface && addr.Contains(gwAddr) {
 					// GW address is inside the local network of the outgoing interface
 					// as given by the assigned IP address
 					return true

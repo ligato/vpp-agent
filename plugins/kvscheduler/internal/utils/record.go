@@ -15,8 +15,8 @@
 package utils
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/jsonpb"
+	"github.com/gogo/protobuf/proto"
 )
 
 // RecordedProtoMessage is a proto.Message suitable for recording and access via
@@ -47,4 +47,3 @@ func RecordProtoMessage(msg proto.Message) proto.Message {
 	}
 	return &RecordedProtoMessage{Message: msg}
 }
-

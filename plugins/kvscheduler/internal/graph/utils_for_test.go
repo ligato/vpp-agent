@@ -89,81 +89,128 @@ func buildGraph(graph Graph, record, regMaps bool, nodes map[int]struct{}) Graph
 		graphW.RegisterMetadataMap(metadataMapB, NewNameToInteger(metadataMapB))
 	}
 
+	var (
+		node1, node2, node3, node4 NodeRW
+	)
+
 	if _, addNode1 := nodes[1]; addNode1 {
-		node1 := graphW.SetNode(keyA1)
+		node1 = graphW.SetNode(keyA1)
 		node1.SetLabel(value1Label)
 		node1.SetValue(value1)
 		node1.SetMetadata(&OnlyInteger{Integer: 1})
 		node1.SetMetadataMap(metadataMapA)
 		node1.SetFlags(ColorFlag(Red), AbstractFlag())
-		node1.SetTargets([]RelationTarget{
+		node1.SetTargets([]RelationTargetDef{
+			{relation1, "node3", keyA3, nil},
+			{relation2, "node2", keyA2, nil},
+		})
+		// targets changed
+		node1.SetTargets([]RelationTargetDef{
 			{relation1, "node2", keyA2, nil},
 			{relation2, "prefixB", "", prefixBSelector},
 		})
 	}
 
 	if _, addNode2 := nodes[2]; addNode2 {
-		node2 := graphW.SetNode(keyA2)
+		node2 = graphW.SetNode(keyA2)
 		node2.SetLabel(value2Label)
 		node2.SetValue(value2)
 		node2.SetMetadata(&OnlyInteger{Integer: 2})
 		node2.SetMetadataMap(metadataMapA)
 		node2.SetFlags(ColorFlag(Blue))
-		node2.SetTargets([]RelationTarget{
+		node2.SetTargets([]RelationTargetDef{
+			{relation1, "node3", keyA1, nil},
+		})
+		// targets changed
+		node2.SetTargets([]RelationTargetDef{
 			{relation1, "node3", keyA3, nil},
 		})
 	}
 
 	if _, addNode3 := nodes[3]; addNode3 {
-		node3 := graphW.SetNode(keyA3)
+		node3 = graphW.SetNode(keyA3)
 		node3.SetLabel(value3Label)
 		node3.SetValue(value3)
 		node3.SetMetadata(&OnlyInteger{Integer: 3})
 		node3.SetMetadataMap(metadataMapA)
 		node3.SetFlags(ColorFlag(Green), AbstractFlag(), TemporaryFlag())
-		node3.SetTargets([]RelationTarget{
+		node3.SetTargets([]RelationTargetDef{
+			{relation2, "node1+node2", "", keySelector(keyA1, keyA2)},
+			{relation2, "prefixB", keyB1, nil},
+		})
+		// targets changed
+		node3.SetTargets([]RelationTargetDef{
 			{relation2, "node1+node2", "", keySelector(keyA1, keyA2)},
 			{relation2, "prefixB", "", prefixBSelector},
 		})
 	}
 
 	if _, addNode4 := nodes[4]; addNode4 {
-		node4 := graphW.SetNode(keyB1)
+		node4 = graphW.SetNode(keyB1)
 		node4.SetLabel(value4Label)
 		node4.SetValue(value4)
 		node4.SetMetadata(&OnlyInteger{Integer: 1})
 		node4.SetMetadataMap(metadataMapB)
 		node4.SetFlags(TemporaryFlag())
-		node4.SetTargets([]RelationTarget{
+		node4.SetTargets([]RelationTargetDef{
+			{relation1, "prefixA", "", prefixASelector},
+			{relation2, "non-existing-key", "non-existing-key", nil},
+			{relation2, "non-existing-key2", "non-existing-key2", nil},
+		})
+		// targets changed
+		node4.SetTargets([]RelationTargetDef{
 			{relation1, "prefixA", "", prefixASelector},
 			{relation2, "non-existing-key", "non-existing-key", nil},
 		})
 	}
 
 	graphW.Save()
+
+	// make changes that will not be saved and thus should have no effect
+	if node1 != nil {
+		node1.SetTargets([]RelationTargetDef{
+			{relation1, "node3", keyA3, nil},
+			{relation2, "node2", keyA2, nil},
+		})
+	}
+	if node3 != nil {
+		node3.SetTargets([]RelationTargetDef{})
+	}
+	if node4 != nil {
+		node4.SetTargets([]RelationTargetDef{
+			{relation1, "prefixA", "use-key-instead-of-selector", nil},
+			{relation2, "non-existing-key", keyA3, nil},
+		})
+	}
+
 	graphW.Release()
 	return graph
 }
 
 func checkTargets(node Node, relation string, label string, targetKeys ...string) {
 	targets := node.GetTargets(relation)
-	Expect(targets).To(HaveKey(label))
+	forLabel := targets.GetTargetsForLabel(label)
 	targetNodes := make(map[string]struct{})
-	for _, targetNode := range targets[label] {
+	for _, targetNode := range forLabel.Nodes {
 		targetNodes[targetNode.GetKey()] = struct{}{}
 	}
 	for _, targetKey := range targetKeys {
 		Expect(targetNodes).To(HaveKey(targetKey))
 	}
-	Expect(targets[label]).To(HaveLen(len(targetKeys)))
+	Expect(targetNodes).To(HaveLen(len(targetKeys)))
 }
 
-func checkRecordedTargets(targets RecordedTargets, label string, targetKeys ...string) {
-	Expect(targets).To(HaveKey(label))
+func checkRecordedTargets(recordedTargets TargetsByRelation, relation string, labelCnt int, label string, targetKeys ...string) {
+	relTargets := recordedTargets.GetTargetsForRelation(relation)
+	Expect(relTargets).ToNot(BeNil())
+	Expect(relTargets.Targets).To(HaveLen(labelCnt))
+	targets := relTargets.GetTargetsForLabel(label)
+	Expect(targets).ToNot(BeNil())
+	Expect(targets.Label).To(Equal(label))
 	for _, targetKey := range targetKeys {
-		Expect(targets[label]).To(HaveKey(targetKey))
+		Expect(targets.Keys.Has(targetKey)).To(BeTrue())
 	}
-	Expect(targets[label]).To(HaveLen(len(targetKeys)))
+	Expect(targets.Keys.Length()).To(Equal(len(targetKeys)))
 }
 
 func checkNodes(nodes []Node, keys ...string) {
