@@ -195,6 +195,7 @@ func (s *Scheduler) transactionHistoryTrimming() {
 				if elapsed <= ageLimit {
 					break
 				}
+				s.txnHistory[i] = nil
 			}
 			if i > 0 {
 				s.txnHistory = s.txnHistory[i:]

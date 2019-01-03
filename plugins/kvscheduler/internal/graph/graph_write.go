@@ -217,9 +217,13 @@ func (graph *graphRW) Release() {
 					if elapsed <= graph.parent.recordAgeLimit {
 						break
 					}
+					records[i] = nil
 				}
 				if i > 0 {
 					destGraph.timeline[key] = records[i:]
+				}
+				if len(destGraph.timeline[key]) == 0 {
+					delete(destGraph.timeline, key)
 				}
 			}
 			graph.parent.lastRevTrimming = now
