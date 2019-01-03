@@ -162,25 +162,24 @@ func (p *Plugin) Init() (err error) {
 		p.VPP.SetGRPCNotificationService(p.notifSvc.updateNotifications)
 	}
 
-	// Get DB broker to persis files
-	var wasErr error
+	// TODO this workaround prevents crash if persistent db is defined but the required DB plugin is disabled because
+	// of the missing config file (attempt to create a new broker from nil proto wrapper object, required fix in cn-infra)
 	defer func() {
-		// TODO workaround prevents crash if persistent db is defined but the required DB plugin is disabled because
-		// of the missing config file (attempt to create a new broker from nil proto wrapper object, fix in cn-infra)
 		if r := recover(); r != nil {
-			if broker, err := p.getBrokerFromConfig(); err != nil {
-				wasErr = err
-			} else if broker != nil {
-				protoBroker := broker.NewBroker(p.ServiceLabel.GetAgentPrefix())
-				p.resyncVppSvc.pb, p.changeVppSvc.pb = protoBroker, protoBroker
-			}
-		} else {
-			p.Log.Warnf("grpc plugin recovered from panic, make sure plugins for persistence are loaded: %s",
+			p.Log.Warnf("grpc plugin recovered from panic, make sure plugins required for persistence are loaded: %s",
 				p.Brokers)
 		}
 	}()
 
-	return wasErr
+	// Get DB broker to persist files
+	if broker, err := p.getBrokerFromConfig(); err != nil {
+		return err
+	} else if broker != nil {
+		protoBroker := broker.NewBroker(p.ServiceLabel.GetAgentPrefix())
+		p.resyncVppSvc.pb, p.changeVppSvc.pb = protoBroker, protoBroker
+	}
+
+	return nil
 }
 
 // Close does nothing.
