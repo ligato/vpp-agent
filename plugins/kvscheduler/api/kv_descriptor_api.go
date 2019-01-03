@@ -152,6 +152,12 @@ type KVDescriptor struct {
 	// the idxmap package.
 	MetadataMapFactory MetadataMapFactory
 
+	// Validate value handler (optional).
+	// Validate is called for every new value before it is added/modified.
+	// If the validations fails, the scheduler will mark the value as invalid
+	// and will not attempt to apply it.
+	Validate func(key string, value proto.Message) error
+
 	// Add new value handler.
 	// For non-derived values, descriptor may return metadata to associate with
 	// the value.

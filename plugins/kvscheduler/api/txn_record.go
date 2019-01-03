@@ -246,14 +246,14 @@ func (op *RecordedTxnOp) StringWithOpts(index int, indent int) string {
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.Key)
 	showPrevForAdd := op.WasPending && !proto.Equal(op.PrevValue, op.NewValue)
-	if op.Operation == Modify || (op.Operation == Add && showPrevForAdd) {
+	if op.Operation == TxnOperation_MODIFY || (op.Operation == TxnOperation_ADD && showPrevForAdd) {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", utils.ProtoToString(op.PrevValue))
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", utils.ProtoToString(op.NewValue))
 	}
-	if op.Operation == Delete || op.Operation == Update {
+	if op.Operation == TxnOperation_DELETE || op.Operation == TxnOperation_UPDATE {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.PrevValue))
 	}
-	if op.Operation == Add && !showPrevForAdd {
+	if op.Operation == TxnOperation_ADD && !showPrevForAdd {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.NewValue))
 	}
 	if op.PrevOrigin != op.NewOrigin {

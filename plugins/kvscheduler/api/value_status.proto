@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package api;
+
+enum ValueState {
+    // ValueState_NONEXISTENT is assigned to value that was deleted or has never
+    // existed.
+    NONEXISTENT = 0;
+
+    // ValueState_CONFIGURED marks value defined by NB and successfully configured.
+    CONFIGURED = 1;
+
+    // ValueState_RETRIEVED marks value not managed by NB, instead created
+    // automatically or externally in SB.
+    RETRIEVED = 2;
+
+    // ValueState_PENDING represents (NB) value that cannot be configured yet
+    // due to missing dependencies.
+    PENDING = 3;
+
+    // ValueState_INVALID represents (NB) value that will not be configured
+    // because it has invalid definition (as declared by Validate method of the
+    // associated descriptor - the returned error is stored in the <error> field
+    // of the value status).
+    INVALID = 4;
+
+    // ValueState_UNIMPLEMENTED marks value received from NB that cannot
+    // be configured because there is no registered descriptor associated with it.
+    UNIMPLEMENTED = 5;
+
+    // ValueState_FAILED marks (NB) value for which the last executed operation
+    // returned an error. The error is stored in the <error> field of the value
+    // status.
+    FAILED = 6;
+}
+
+message ValueError {
+    string message = 1; // error message returned by the Error() method
+    TxnOperation operation = 2;
+}
+
+enum TxnOperation {
+    UNDEFINED = 0;
+    PRE_PROCESS = 1;
+    VALIDATE = 2;
+    ADD = 3;
+    MODIFY = 4;
+    DELETE = 5;
+    UPDATE = 6;
+}
+
+message ValueStatus {
+    string key = 1;
+    ValueState state = 2;
+    ValueError error = 3;
+
+    map<string, DerivedValueStatus> derived = 4; // key -> status of a derived value
+}
+
+message DerivedValueStatus {
+    ValueState state = 1;
+    ValueError error = 2;
+}

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate protoc --proto_path=. --gogo_out=. value_status.proto
+
 package api
 
 import (
@@ -63,43 +65,6 @@ type KeyValuePair struct {
 // The scheduler exposes the current snapshot of secondary indexes, but otherwise
 // is not familiar with their semantics.
 type Metadata interface{}
-
-// TxnOperation is one of: Pre-process, Add, Modify, Delete and Update.
-type TxnOperation int
-
-const (
-	// UndefinedTxnOp represents undefined transaction operation.
-	UndefinedTxnOp TxnOperation = iota
-	// PreProcess key-value pair.
-	PreProcess
-	// Add new value.
-	Add
-	// Modify existing value.
-	Modify
-	// Delete existing value.
-	Delete
-	// Update (reflect modified dependencies) existing value.
-	Update
-)
-
-// String returns human-readable string representation of transaction operation.
-func (txnOpType TxnOperation) String() string {
-	switch txnOpType {
-	case UndefinedTxnOp:
-		return "UNDEFINED"
-	case PreProcess:
-		return "PRE-PROCESS"
-	case Add:
-		return "ADD"
-	case Modify:
-		return "MODIFY"
-	case Delete:
-		return "DELETE"
-	case Update:
-		return "UPDATE"
-	}
-	return "INVALID"
-}
 
 // KeyWithError stores error for a key whose value failed to get updated.
 type KeyWithError struct {
@@ -246,18 +211,12 @@ type KVScheduler interface {
 	// Returns nil if the descriptor does not expose metadata.
 	GetMetadataMap(descriptor string) idxmap.NamedMapping
 
-	// GetPendingValues returns list of values (possibly filtered by selector)
-	// waiting for their dependencies to be met.
-	GetPendingValues(keySelector KeySelector) []KeyValuePair
+	// GetValueStatus returns the status of the value with the given key.
+	GetValueStatus(key string) *ValueStatus
 
-	// GetFailedValues returns a list of keys (possibly filtered by selector)
-	// whose (base) values are in a failed state (i.e. possibly not in the state as set
-	// by the last transaction).
-	GetFailedValues(keySelector KeySelector) []KeyWithError
-
-	// SubscribeForErrors allows to get notified about all failed (Error!=nil)
-	// and restored (Error==nil) values (possibly filtered using the selector).
-	SubscribeForErrors(channel chan<- KeyWithError, keySelector KeySelector)
+	// WatchValueStatus allows to watch for changes in the status of values
+	// with keys selected by the selector (all if keySelector==nil).
+	WatchValueStatus(channel chan<- *ValueStatus, keySelector KeySelector)
 
 	// GetTransactionHistory returns history of transactions started within the specified
 	// time window, or the full recorded history if the timestamps are zero values.
