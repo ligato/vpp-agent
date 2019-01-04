@@ -25,6 +25,7 @@ type node struct {
 	metaInSync     bool
 	dataUpdated    bool
 	targetsUpdated bool
+	sourcesUpdated bool
 }
 
 // newNode creates a new instance of node, either built from the scratch or
@@ -251,7 +252,7 @@ func (node *node) addToTargets(node2 *node, targetDef RelationTargetDef) {
 		}
 		node2.sources = append(node2.sources, relSources)
 	}
-	node2.targetsUpdated = relSources.sources.Add(node.key) || node2.targetsUpdated
+	node2.sourcesUpdated = relSources.sources.Add(node.key) || node2.sourcesUpdated
 }
 
 // removeFromTargets removes given key from the set of targets.
@@ -278,5 +279,5 @@ func (node *node) removeThisFromSources() {
 // removeFromSources removes given key from the sources for the given relation.
 func (node *node) removeFromSources(relation string, key string) {
 	updated := node.sources.getSourcesForRelation(relation).sources.Del(key)
-	node.targetsUpdated = updated || node.targetsUpdated
+	node.sourcesUpdated = updated || node.sourcesUpdated
 }

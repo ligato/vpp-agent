@@ -123,7 +123,7 @@ func (graph *graphRW) Save() {
 
 	// apply new/changes nodes
 	for key, node := range graph.nodes {
-		if !node.dataUpdated && !node.targetsUpdated {
+		if !node.dataUpdated && !node.targetsUpdated && !node.sourcesUpdated {
 			continue
 		}
 
@@ -149,10 +149,13 @@ func (graph *graphRW) Save() {
 		}
 
 		// mark node for recording during RW-handle release
-		if _, newRev := graph.newRevs[key]; !newRev {
-			graph.newRevs[key] = false
+		// (ignore if only sources have been updated)
+		if node.dataUpdated || node.targetsUpdated {
+			if _, newRev := graph.newRevs[key]; !newRev {
+				graph.newRevs[key] = false
+			}
+			graph.newRevs[key] = graph.newRevs[key] || node.dataUpdated
 		}
-		graph.newRevs[key] = graph.newRevs[key] || node.dataUpdated
 
 		// copy changed node to the actual graph
 		nodeCopy := node.copy()
@@ -170,6 +173,7 @@ func (graph *graphRW) Save() {
 		// working copy is now in-sync
 		node.dataUpdated = false
 		node.targetsUpdated = false
+		node.sourcesUpdated = false
 		node.metaInSync = true
 	}
 }
