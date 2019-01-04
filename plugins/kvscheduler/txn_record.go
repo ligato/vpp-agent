@@ -205,11 +205,11 @@ func (s *Scheduler) transactionHistoryTrimming() {
 			}
 			if j > i {
 				copy(s.txnHistory[i:], s.txnHistory[j:])
-				newTail := len(s.txnHistory) - (j - i)
-				for k := newTail; k < len(s.txnHistory); k++ {
+				newLen := len(s.txnHistory) - (j - i)
+				for k := newLen; k < len(s.txnHistory); k++ {
 					s.txnHistory[k] = nil
 				}
-				s.txnHistory = s.txnHistory[:newTail]
+				s.txnHistory = s.txnHistory[:newLen]
 			}
 			s.historyLock.Unlock()
 		}

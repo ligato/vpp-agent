@@ -230,11 +230,11 @@ func (graph *graphRW) Release() {
 				}
 				if j > i {
 					copy(records[i:], records[j:])
-					newTail := len(records) - (j - i)
-					for k := newTail; k < len(records); k++ {
+					newLen := len(records) - (j - i)
+					for k := newLen; k < len(records); k++ {
 						records[k] = nil
 					}
-					destGraph.timeline[key] = records[i:]
+					destGraph.timeline[key] = records[:newLen]
 				}
 				if len(destGraph.timeline[key]) == 0 {
 					delete(destGraph.timeline, key)
