@@ -208,18 +208,28 @@ func (graph *graphRW) Release() {
 		sinceLastTrimming := now.Sub(graph.parent.lastRevTrimming)
 		if sinceLastTrimming >= oldRevsTrimmingPeriod {
 			for key, records := range destGraph.timeline {
-				var i int
+				var i, j int // i = first after init period, j = first after init period to keep
 				for i = 0; i < len(records); i++ {
-					if records[i].Until.IsZero() {
+					sinceStart := records[i].Since.Sub(graph.parent.startTime)
+					if sinceStart > graph.parent.permanentInitPeriod {
 						break
 					}
-					elapsed := now.Sub(records[i].Until)
+				}
+				for j = i; j < len(records); j++ {
+					if records[j].Until.IsZero() {
+						break
+					}
+					elapsed := now.Sub(records[j].Until)
 					if elapsed <= graph.parent.recordAgeLimit {
 						break
 					}
-					records[i] = nil
 				}
-				if i > 0 {
+				if j > i {
+					copy(records[i:], records[j:])
+					newTail := len(records) - (j - i)
+					for k := newTail; k < len(records); k++ {
+						records[k] = nil
+					}
 					destGraph.timeline[key] = records[i:]
 				}
 				if len(destGraph.timeline[key]) == 0 {

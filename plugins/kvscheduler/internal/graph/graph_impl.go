@@ -30,21 +30,27 @@ type kvgraph struct {
 	rwLock sync.RWMutex
 	graph  *graphR
 
-	lastRevTrimming time.Time // last time the history of revisions was trimmed
-	recordOldRevs   bool
-	recordAgeLimit  time.Duration
+	startTime           time.Time
+	lastRevTrimming     time.Time // last time the history of revisions was trimmed
+	recordOldRevs       bool
+	recordAgeLimit      time.Duration
+	permanentInitPeriod time.Duration
 }
 
 // NewGraph creates and new instance of key-value graph.
 // <recordOldRevs> if enabled, will cause the graph to record the previous
 // revisions of every node that have ever existed. <recordAgeLimit> is in minutes
 // and allows to limit the maximum age of a record to keep, avoiding infinite
-// memory usage growth.
-func NewGraph(recordOldRevs bool, recordAgeLimit uint32) Graph {
+// memory usage growth. The initial phase of the execution is, however, of greater
+// significance and <permanentInitPeriod> allows to keep records from that period
+// permanently in memory.
+func NewGraph(recordOldRevs bool, recordAgeLimit, permanentInitPeriod uint32) Graph {
 	kvgraph := &kvgraph{
-		lastRevTrimming: time.Now(),
-		recordOldRevs:   recordOldRevs,
-		recordAgeLimit:  time.Duration(recordAgeLimit) * time.Minute,
+		startTime:           time.Now(),
+		lastRevTrimming:     time.Now(),
+		recordOldRevs:       recordOldRevs,
+		recordAgeLimit:      time.Duration(recordAgeLimit) * time.Minute,
+		permanentInitPeriod: time.Duration(permanentInitPeriod) * time.Minute,
 	}
 	kvgraph.graph = newGraphR()
 	kvgraph.graph.parent = kvgraph

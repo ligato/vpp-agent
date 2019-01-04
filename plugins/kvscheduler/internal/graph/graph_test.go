@@ -25,12 +25,15 @@ import (
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-const minutesInOneDay = uint32(1440)
+const (
+	minutesInOneDay = uint32(1440)
+	minutesInOneHour = uint32(60)
+)
 
 func TestEmptyGraph(t *testing.T) {
 	RegisterTestingT(t)
 
-	graph := NewGraph(true, minutesInOneDay)
+	graph := NewGraph(true, minutesInOneDay, minutesInOneHour)
 	Expect(graph).ToNot(BeNil())
 
 	graphR := graph.Read()
@@ -52,7 +55,7 @@ func TestSingleNode(t *testing.T) {
 
 	startTime := time.Now()
 
-	graph := NewGraph(true, minutesInOneDay)
+	graph := NewGraph(true, minutesInOneDay, minutesInOneHour)
 	graphW := graph.Write(true)
 
 	graphW.RegisterMetadataMap(metadataMapA, NewNameToInteger(metadataMapA))
@@ -801,7 +804,7 @@ func TestNodeMetadata(t *testing.T) {
 func TestReuseNodeAfterSave(t *testing.T) {
 	RegisterTestingT(t)
 
-	graph := NewGraph(true, minutesInOneDay)
+	graph := NewGraph(true, minutesInOneDay, minutesInOneHour)
 	graphW := graph.Write(true)
 
 	// add new node

@@ -80,7 +80,7 @@ func selectNodesToBuild(ids ...int) map[int]struct{} {
 
 func buildGraph(graph Graph, record, regMaps bool, nodes map[int]struct{}) Graph {
 	if graph == nil {
-		graph = NewGraph(true, 1440)
+		graph = NewGraph(true, minutesInOneDay, minutesInOneHour)
 	}
 	graphW := graph.Write(record)
 
