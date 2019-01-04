@@ -205,7 +205,7 @@ func (p *IfPlugin) Init() error {
 		go p.publishIfStateEvents()
 
 		// start interface state updater
-		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 100)
+		p.ifStateChan = make(chan *interfaces.InterfaceNotification, 1000)
 		// Interface state updater
 		p.ifStateUpdater = &InterfaceStateUpdater{}
 		if err := p.ifStateUpdater.Init(p.ctx, p.Log, p.Scheduler, p.GoVppmux, p.intfIndex,
