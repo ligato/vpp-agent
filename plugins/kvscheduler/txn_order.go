@@ -15,99 +15,51 @@
 package kvscheduler
 
 import (
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"sort"
 )
 
-// Order by operations (in average should yield the shortest sequence of operations):
+// orderValuesByOp orders values by operations (in average should yield the shortest
+// sequence of operations):
 //  1. delete
 //  2. modify with re-create
 //  3. add
 //  4. modify
-//
-// Furthermore, operations of the same type are ordered by dependencies to limit
-// temporary pending states.
-// Dependencies are calculated only *approximately* - ordering at this stage is just
-// an *optimization*, purpose of which is to decrease the length of the transaction plan.
-func (scheduler *Scheduler) orderValuesByOp(graphR graph.ReadAccess, values []kvForTxn) []kvForTxn {
+func (s *Scheduler) orderValuesByOp(values []kvForTxn) []kvForTxn {
+	graphR := s.graph.Read()
+	defer graphR.Release()
 
-	// consider at least the first-level of derived values
-	derived := make(map[string]utils.KeySet) // base value key -> derived keys
-	valueByKey := make(map[string]kvForTxn)
+	// first order values alphabetically by keys to get deterministic behaviour and
+	// output that is easier to read
+	sort.Slice(values, func(i, j int) bool {
+		return values[i].key < values[j].key
+	})
+
+	// sort values by operations
+	var delete, recreate, add, modify []kvForTxn
 	for _, kv := range values {
-		valueByKey[kv.key] = kv
-		descriptor := scheduler.registry.GetDescriptorForKey(kv.key)
+		descriptor := s.registry.GetDescriptorForKey(kv.key)
 		handler := &descriptorHandler{descriptor}
 		node := graphR.GetNode(kv.key)
-
-		var derivedKVs []kvs.KeyValuePair
-		if kv.value != nil {
-			derivedKVs = handler.derivedValues(kv.key, kv.value)
-		} else if node != nil {
-			derivedKVs = handler.derivedValues(kv.key, node.GetValue())
-		}
-
-		derived[kv.key] = utils.NewKeySet(kv.key) // include the base key itself
-		for _, derivedKV := range derivedKVs {
-			derived[kv.key].Add(derivedKV.Key)
-		}
-	}
-
-	// sort values by operations and collect dependencies among changed values
-	recreate := utils.NewKeySet()
-	add := utils.NewKeySet()
-	modify := utils.NewKeySet()
-	delete := utils.NewKeySet()
-	deps := make(map[string]utils.KeySet)
-	for _, kv := range values {
-		descriptor := scheduler.registry.GetDescriptorForKey(kv.key)
-		handler := &descriptorHandler{descriptor}
-		node := graphR.GetNode(kv.key)
-
-		var valDeps []kvs.Dependency
-		if kv.value != nil {
-			valDeps = handler.dependencies(kv.key, kv.value)
-		} else if node != nil {
-			valDeps = handler.dependencies(kv.key, node.GetValue())
-		}
-		deps[kv.key] = utils.NewKeySet()
-		for _, kv2 := range values {
-			for kv2DerKey := range derived[kv2.key] {
-				for _, dep := range valDeps {
-					if kv2DerKey == dep.Key || (dep.AnyOf != nil && dep.AnyOf(kv2DerKey)) {
-						deps[kv.key].Add(kv2.key)
-					}
-				}
-			}
-		}
 
 		if kv.value == nil {
-			delete.Add(kv.key)
+			delete = append(delete, kv)
 			continue
 		}
 		if node == nil || node.GetFlag(PendingFlagName) != nil {
-			add.Add(kv.key)
+			add = append(add, kv)
 			continue
 		}
 		if handler.modifyWithRecreate(kv.key, node.GetValue(), kv.value, node.GetMetadata()) {
-			recreate.Add(kv.key)
+			recreate = append(recreate, kv)
 		} else {
-			modify.Add(kv.key)
+			modify = append(modify, kv)
 		}
 	}
 
-	// order keys by operation + dependencies
-	var orderedKeys []string
-	orderedKeys = append(orderedKeys, utils.TopologicalOrder(delete, deps, false, true)...)
-	orderedKeys = append(orderedKeys, utils.TopologicalOrder(recreate, deps, true, true)...)
-	orderedKeys = append(orderedKeys, utils.TopologicalOrder(add, deps, true, true)...)
-	orderedKeys = append(orderedKeys, utils.TopologicalOrder(modify, deps, true, true)...)
-
-	// return values in the same order as keys are in <orderedKeys>
-	var ordered []kvForTxn
-	for _, key := range orderedKeys {
-		ordered = append(ordered, valueByKey[key])
-	}
+	ordered := make([]kvForTxn, 0, len(values))
+	ordered = append(ordered, delete...)
+	ordered = append(ordered, recreate...)
+	ordered = append(ordered, add...)
+	ordered = append(ordered, modify...)
 	return ordered
 }

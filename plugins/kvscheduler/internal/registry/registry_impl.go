@@ -65,10 +65,10 @@ func (reg *registry) GetAllDescriptors() (descriptors []*KVDescriptor) {
 
 	// collect descriptor dump dependencies
 	deps := make(map[string]utils.KeySet)
-	descNames := utils.NewKeySet()
+	descNames := utils.NewMapBasedKeySet()
 	for _, descriptor := range reg.descriptors {
 		descNames.Add(descriptor.Name)
-		deps[descriptor.Name] = utils.NewKeySet(descriptor.DumpDependencies...)
+		deps[descriptor.Name] = utils.NewMapBasedKeySet(descriptor.DumpDependencies...)
 	}
 
 	// order topologically respecting dependencies.

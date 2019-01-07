@@ -22,7 +22,6 @@ import (
 
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
 const (
@@ -67,7 +66,7 @@ func checkRecordedValues(recorded, expected []RecordedKVPair) {
 		for _, kv2 := range recorded {
 			if kv2.Key == kv.Key {
 				found = true
-				Expect(kv2.Value).To(Equal(kv.Value))
+				Expect(proto.Equal(kv2.Value, kv.Value)).To(BeTrue())
 				Expect(kv2.Origin).To(Equal(kv.Origin))
 			}
 		}
@@ -79,16 +78,8 @@ func checkTxnOperation(recorded, expected *RecordedTxnOp) {
 	Expect(recorded.Operation).To(Equal(expected.Operation))
 	Expect(recorded.Key).To(Equal(expected.Key))
 	Expect(recorded.Derived).To(Equal(expected.Derived))
-	if expected.PrevValue == "" {
-		Expect(recorded.PrevValue).To(Equal(utils.ProtoToString(nil)))
-	} else {
-		Expect(recorded.PrevValue).To(Equal(expected.PrevValue))
-	}
-	if expected.NewValue == "" {
-		Expect(recorded.NewValue).To(Equal(utils.ProtoToString(nil)))
-	} else {
-		Expect(recorded.NewValue).To(Equal(expected.NewValue))
-	}
+	Expect(proto.Equal(recorded.PrevValue, expected.PrevValue)).To(BeTrue())
+	Expect(proto.Equal(recorded.NewValue, expected.NewValue)).To(BeTrue())
 	Expect(recorded.PrevOrigin).To(Equal(expected.PrevOrigin))
 	Expect(recorded.NewOrigin).To(Equal(expected.NewOrigin))
 	Expect(recorded.WasPending).To(Equal(expected.WasPending))

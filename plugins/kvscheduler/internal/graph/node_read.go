@@ -15,6 +15,8 @@
 package graph
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
@@ -31,17 +33,46 @@ type nodeR struct {
 	metadata      interface{}
 	metadataAdded bool
 	metadataMap   string
-	targetsDef    []RelationTarget
-	targets       map[string]RecordedTargets // relation -> (label -> keys))
-	sources       map[string]utils.KeySet    // relation -> nodes
+	targetsDef    []RelationTargetDef
+	targets       TargetsByRelation
+	sources       sourcesByRelation
+}
+
+// relationSources groups all sources for a single relation.
+type relationSources struct {
+	relation string
+	sources  utils.KeySet
+}
+
+// sourcesByRelation is a slice of all sources, grouped by relations.
+type sourcesByRelation []*relationSources
+
+// String returns human-readable string representation of sourcesByRelation.
+func (s sourcesByRelation) String() string {
+	str := "{"
+	for idx, sources := range s {
+		if idx > 0 {
+			str += ", "
+		}
+		str += fmt.Sprintf("%s->%s", sources.relation, sources.sources.String())
+	}
+	str += "}"
+	return str
+}
+
+// getSourcesForRelation returns sources (keys) for the given relation.
+func (s sourcesByRelation) getSourcesForRelation(relation string) *relationSources {
+	for _, relSources := range s {
+		if relSources.relation == relation {
+			return relSources
+		}
+	}
+	return nil
 }
 
 // newNodeR creates a new instance of nodeR.
 func newNodeR() *nodeR {
-	return &nodeR{
-		targets: make(map[string]RecordedTargets),
-		sources: make(map[string]utils.KeySet),
-	}
+	return &nodeR{}
 }
 
 // GetKey returns the key associated with the node.
@@ -77,33 +108,34 @@ func (node *nodeR) GetMetadata() interface{} {
 
 // GetTargets returns a set of nodes, indexed by relation labels, that the
 // edges of the given relation points to.
-func (node *nodeR) GetTargets(relation string) RuntimeRelationTargets {
-	runtimeTargets := make(RuntimeRelationTargets)
-
-	targets, has := node.targets[relation]
-	if !has {
-		return runtimeTargets
+func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargetsByLabel) {
+	relTargets := node.targets.GetTargetsForRelation(relation)
+	if relTargets == nil {
+		return nil
 	}
-
-	for label, keys := range targets {
+	for _, targets := range relTargets.Targets {
 		var nodes []Node
-		for key := range keys {
+		for _, key := range targets.Keys.Iterate() {
 			nodes = append(nodes, node.graph.nodes[key])
 		}
-		runtimeTargets[label] = nodes
+		runtimeTargets = append(runtimeTargets, &RuntimeTargets{
+			Label: targets.Label,
+			Nodes: nodes,
+		})
 	}
 	return runtimeTargets
 }
 
+
 // GetSources returns a set of nodes with edges of the given relation
 // pointing to this node.
-func (node *nodeR) GetSources(relation string) []Node {
-	keys, has := node.sources[relation]
-	if !has {
+func (node *nodeR) GetSources(relation string) (nodes []Node) {
+	relSources := node.sources.getSourcesForRelation(relation)
+	if relSources == nil {
 		return nil
 	}
-	var nodes []Node
-	for key := range keys {
+
+	for _, key := range relSources.sources.Iterate() {
 		nodes = append(nodes, node.graph.nodes[key])
 	}
 	return nodes
@@ -119,27 +151,35 @@ func (node *nodeR) copy() *nodeR {
 	nodeCopy.metadataAdded = node.metadataAdded
 	nodeCopy.metadataMap = node.metadataMap
 
-	// copy flags
-	for _, flag := range node.flags {
-		nodeCopy.flags = append(nodeCopy.flags, flag)
-	}
+	// shallow-copy flags (immutable)
+	nodeCopy.flags = node.flags
 
-	// copy target definitions
-	for _, targetDef := range node.targetsDef {
-		nodeCopy.targetsDef = append(nodeCopy.targetsDef, targetDef)
-	}
+	// shallow-copy target definitions (immutable)
+	nodeCopy.targetsDef = node.targetsDef
 
-	// copy (runtime) targets
-	for relation, targets := range node.targets {
-		nodeCopy.targets[relation] = make(RecordedTargets)
-		for label, keys := range targets {
-			nodeCopy.targets[relation][label] = keys.DeepCopy()
+	// copy targets
+	nodeCopy.targets = make(TargetsByRelation, 0, len(node.targets))
+	for _, relTargets := range node.targets {
+		targets := make(TargetsByLabel, 0, len(relTargets.Targets))
+		for _, target := range relTargets.Targets {
+			targets = append(targets, &Targets{
+				Label: target.Label,
+				Keys:  target.Keys.CopyOnWrite(),
+			})
 		}
+		nodeCopy.targets = append(nodeCopy.targets, &RelationTargets{
+			Relation: relTargets.Relation,
+			Targets:  targets,
+		})
 	}
 
 	// copy sources
-	for relation, keys := range node.sources {
-		nodeCopy.sources[relation] = keys.DeepCopy()
+	nodeCopy.sources = make(sourcesByRelation, 0, len(node.sources))
+	for _, relSources := range node.sources {
+		nodeCopy.sources = append(nodeCopy.sources, &relationSources{
+			relation: relSources.relation,
+			sources:  relSources.sources.CopyOnWrite(),
+		})
 	}
 	return nodeCopy
 }

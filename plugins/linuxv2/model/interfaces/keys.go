@@ -15,7 +15,6 @@
 package linux_interfaces
 
 import (
-	"fmt"
 	"net"
 	"strings"
 )
@@ -86,21 +85,21 @@ func InterfaceStateKey(ifName string, ifIsUp bool) string {
 
 // ParseInterfaceStateKey parses interface name and state from key derived
 // from interface by InterfaceStateKey().
-func ParseInterfaceStateKey(key string) (ifName string, ifIsUp bool, err error) {
-	errPrefix := "invalid Linux interface state key: "
+func ParseInterfaceStateKey(key string) (ifName string, ifIsUp bool, isStateKey bool) {
 	if strings.HasPrefix(key, InterfaceStateKeyPrefix) {
 		keySuffix := strings.TrimPrefix(key, InterfaceStateKeyPrefix)
 		keyComps := strings.Split(keySuffix, "/")
 		if len(keyComps) != 2 {
-			return "", false, fmt.Errorf(errPrefix + "invalid suffix")
+			return "", false, false
 		}
 		ifName = keyComps[0]
+		isStateKey = true
 		if keyComps[1] == interfaceUpState {
 			ifIsUp = true
 		}
 		return
 	}
-	return "", false, fmt.Errorf(errPrefix + "invalid prefix")
+	return "", false, false
 }
 
 /* Interface Address (derived) */
@@ -121,20 +120,21 @@ func InterfaceAddressKey(ifName string, address string) string {
 
 // ParseInterfaceAddressKey parses interface address from key derived
 // from interface by InterfaceAddressKey().
-func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, err error) {
-	errPrefix := "invalid Linux interface address key: "
+func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, isAddrKey bool) {
+	var err error
 	if strings.HasPrefix(key, InterfaceAddressKeyPrefix) {
 		keySuffix := strings.TrimPrefix(key, InterfaceAddressKeyPrefix)
 		keyComps := strings.Split(keySuffix, "/")
 		if len(keyComps) != 3 {
-			return "", nil, fmt.Errorf(errPrefix + "invalid suffix")
+			return "", nil, false
 		}
 		_, ifAddr, err = net.ParseCIDR(keyComps[1] + "/" + keyComps[2])
 		if err != nil {
-			return "", nil, fmt.Errorf(errPrefix + "invalid address")
+			return "", nil, false
 		}
 		ifName = keyComps[0]
+		isAddrKey = true
 		return
 	}
-	return "", nil, fmt.Errorf(errPrefix + "invalid prefix")
+	return "", nil, false
 }

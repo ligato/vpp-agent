@@ -25,9 +25,55 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
+// GetTransactionHistory returns history of transactions started within the specified
+// time window, or the full recorded history if the timestamps are zero values.
+func (s *Scheduler) GetTransactionHistory(since, until time.Time) (history kvs.RecordedTxns) {
+	s.historyLock.Lock()
+	defer s.historyLock.Unlock()
+
+	if !since.IsZero() && !until.IsZero() && until.Before(since) {
+		// invalid time window
+		return
+	}
+
+	lastBefore := -1
+	firstAfter := len(s.txnHistory)
+
+	if !since.IsZero() {
+		for ; lastBefore+1 < len(s.txnHistory); lastBefore++ {
+			if !s.txnHistory[lastBefore+1].Start.Before(since) {
+				break
+			}
+		}
+	}
+
+	if !until.IsZero() {
+		for ; firstAfter > 0; firstAfter-- {
+			if !s.txnHistory[firstAfter-1].Start.After(until) {
+				break
+			}
+		}
+	}
+
+	return s.txnHistory[lastBefore+1 : firstAfter]
+}
+
+// GetRecordedTransaction returns record of a transaction referenced by the sequence number.
+func (s *Scheduler) GetRecordedTransaction(SeqNum uint64) (txn *kvs.RecordedTxn) {
+	s.historyLock.Lock()
+	defer s.historyLock.Unlock()
+
+	for _, txn := range s.txnHistory {
+		if txn.SeqNum == SeqNum {
+			return txn
+		}
+	}
+	return nil
+}
+
 // preRecordTxnOp prepares txn operation record - fills attributes that we can even
 // before executing the operation.
-func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.RecordedTxnOp {
+func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.RecordedTxnOp {
 	prevOrigin := getNodeOrigin(node)
 	if prevOrigin == kvs.UnknownOrigin {
 		// new value
@@ -36,12 +82,12 @@ func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node
 	return &kvs.RecordedTxnOp{
 		Key:        args.kv.key,
 		Derived:    isNodeDerived(node),
-		PrevValue:  utils.ProtoToString(node.GetValue()),
-		NewValue:   utils.ProtoToString(args.kv.value),
+		PrevValue:  utils.RecordProtoMessage(node.GetValue()),
+		NewValue:   utils.RecordProtoMessage(args.kv.value),
 		PrevOrigin: prevOrigin,
 		NewOrigin:  args.kv.origin,
 		WasPending: isNodePending(node),
-		PrevErr:    scheduler.getNodeLastError(args.kv.key),
+		PrevErr:    s.getNodeLastError(args.kv.key),
 		IsRevert:   args.kv.isRevert,
 		IsRetry:    args.isRetry,
 	}
@@ -49,7 +95,7 @@ func (scheduler *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node
 
 // preRecordTransaction logs transaction arguments + plan before execution to
 // persist some information in case there is a crash during execution.
-func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned kvs.RecordedTxnOps, preErrors []kvs.KeyWithError) *kvs.RecordedTxn {
+func (s *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned kvs.RecordedTxnOps, preErrors []kvs.KeyWithError) *kvs.RecordedTxn {
 	// allocate new transaction record
 	record := &kvs.RecordedTxn{
 		PreRecord: true,
@@ -83,7 +129,7 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned k
 		for _, kv := range txn.values {
 			record.Values = append(record.Values, kvs.RecordedKVPair{
 				Key:    kv.key,
-				Value:  utils.ProtoToString(kv.value),
+				Value:  utils.RecordProtoMessage(kv.value),
 				Origin: kv.origin,
 			})
 		}
@@ -106,7 +152,7 @@ func (scheduler *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned k
 }
 
 // recordTransaction records the finalized transaction (log + in-memory).
-func (scheduler *Scheduler) recordTransaction(txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
+func (s *Scheduler) recordTransaction(txnRecord *kvs.RecordedTxn, executed kvs.RecordedTxnOps, start, stop time.Time) {
 	txnRecord.PreRecord = false
 	txnRecord.Start = start
 	txnRecord.Stop = stop
@@ -123,54 +169,49 @@ func (scheduler *Scheduler) recordTransaction(txnRecord *kvs.RecordedTxn, execut
 	fmt.Println(buf.String())
 
 	// add transaction record into the history
-	scheduler.historyLock.Lock()
-	scheduler.txnHistory = append(scheduler.txnHistory, txnRecord)
-	scheduler.historyLock.Unlock()
+	if s.config.RecordTransactionHistory {
+		s.historyLock.Lock()
+		s.txnHistory = append(s.txnHistory, txnRecord)
+		s.historyLock.Unlock()
+	}
 }
 
-// GetTransactionHistory returns history of transactions started within the specified
-// time window, or the full recorded history if the timestamps are zero values.
-func (scheduler *Scheduler) GetTransactionHistory(since, until time.Time) (history kvs.RecordedTxns) {
-	scheduler.historyLock.Lock()
-	defer scheduler.historyLock.Unlock()
+// transactionHistoryTrimming runs in a separate go routine and periodically removes
+// transaction records too old to keep (by the configuration).
+func (s *Scheduler) transactionHistoryTrimming() {
+	defer s.wg.Done()
 
-	if !since.IsZero() && !until.IsZero() && until.Before(since) {
-		// invalid time window
-		return
-	}
-
-	lastBefore := -1
-	firstAfter := len(scheduler.txnHistory)
-
-	if !since.IsZero() {
-		for ; lastBefore+1 < len(scheduler.txnHistory); lastBefore++ {
-			if !scheduler.txnHistory[lastBefore+1].Start.Before(since) {
-				break
+	for {
+		select {
+		case <-s.ctx.Done():
+			return
+		case <-time.After(txnHistoryTrimmingPeriod):
+			s.historyLock.Lock()
+			now := time.Now()
+			ageLimit := time.Duration(s.config.TransactionHistoryAgeLimit) * time.Minute
+			initPeriod := time.Duration(s.config.PermanentlyRecordedInitPeriod) * time.Minute
+			var i, j int // i = first after init period, j = first after init period to keep
+			for i = 0; i < len(s.txnHistory); i++ {
+				sinceStart := s.txnHistory[i].Start.Sub(s.startTime)
+				if sinceStart > initPeriod {
+					break
+				}
 			}
-		}
-	}
-
-	if !until.IsZero() {
-		for ; firstAfter > 0; firstAfter-- {
-			if !scheduler.txnHistory[firstAfter-1].Start.After(until) {
-				break
+			for j = i; j < len(s.txnHistory); j++ {
+				elapsed := now.Sub(s.txnHistory[j].Stop)
+				if elapsed <= ageLimit {
+					break
+				}
 			}
+			if j > i {
+				copy(s.txnHistory[i:], s.txnHistory[j:])
+				newLen := len(s.txnHistory) - (j - i)
+				for k := newLen; k < len(s.txnHistory); k++ {
+					s.txnHistory[k] = nil
+				}
+				s.txnHistory = s.txnHistory[:newLen]
+			}
+			s.historyLock.Unlock()
 		}
 	}
-
-	return scheduler.txnHistory[lastBefore+1 : firstAfter]
-}
-
-// GetRecordedTransaction returns record of a transaction referenced by the sequence number.
-func (scheduler *Scheduler) GetRecordedTransaction(SeqNum uint64) (txn *kvs.RecordedTxn) {
-	scheduler.historyLock.Lock()
-	defer scheduler.historyLock.Unlock()
-
-	for _, txn := range scheduler.txnHistory {
-		if txn.SeqNum == SeqNum {
-			return txn
-		}
-	}
-
-	return nil
 }

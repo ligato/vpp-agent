@@ -15,6 +15,8 @@
 package graph
 
 import (
+	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -43,7 +45,7 @@ import (
 //
 // Last but not least, the graph maintains a history of revisions for all nodes
 // that have ever existed. The history of changes and a graph snapshot from
-// a selected moment in time are exposed via the REST interface.
+// a selected moment in time are exposed via ReadAccess interface.
 type Graph interface {
 	// Read returns a graph handle for read-only access.
 	// The graph supports multiple concurrent readers.
@@ -75,15 +77,14 @@ type ReadAccess interface {
 	// and every provided flag selector.
 	GetNodes(keySelector KeySelector, flagSelectors ...FlagSelector) []Node
 
+	// GetFlagStats returns stats for a given flag.
+	GetFlagStats(flagName string, filter KeySelector) FlagStats
+
 	// GetNodeTimeline returns timeline of all node revisions, ordered from
 	// the oldest to the newest.
 	GetNodeTimeline(key string) []*RecordedNode
 
-	// GetFlagStats returns stats for a given flag.
-	GetFlagStats(flagName string, filter KeySelector) FlagStats
-
 	// GetSnapshot returns the snapshot of the graph at a given time.
-	//
 	GetSnapshot(time time.Time) []*RecordedNode
 
 	// Dump returns a human-readable string representation of the current graph
@@ -135,7 +136,7 @@ type Node interface {
 
 	// GetTargets returns a set of nodes, indexed by relation labels, that the
 	// edges of the given relation points to.
-	GetTargets(relation string) RuntimeRelationTargets
+	GetTargets(relation string) RuntimeTargetsByLabel
 
 	// GetSources returns a set of nodes with edges of the given relation
 	// pointing to this node.
@@ -166,7 +167,7 @@ type NodeRW interface {
 	SetMetadata(metadata interface{})
 
 	// SetTargets provides definition of all edges pointing from this node.
-	SetTargets(targets []RelationTarget)
+	SetTargets(targets []RelationTargetDef)
 }
 
 // Flag is a name:value pair.
@@ -198,9 +199,9 @@ func WithoutFlags(flags ...Flag) FlagSelector {
 	return FlagSelector{flags: flags}
 }
 
-// RelationTarget is a definition of a relation between a source node and a set
+// RelationTargetDef is a definition of a relation between a source node and a set
 // of target nodes.
-type RelationTarget struct {
+type RelationTargetDef struct {
 	// Relation name.
 	Relation string
 
@@ -216,8 +217,93 @@ type RelationTarget struct {
 	Selector KeySelector
 }
 
-// RuntimeRelationTargets is a map label->nodes for a given relation.
-type RuntimeRelationTargets map[string][]Node
+// Targets groups relation targets with the same label.
+// Target nodes are not referenced directly, instead via their keys (suitable
+// for recording).
+type Targets struct {
+	Label string
+	Keys  utils.KeySet
+}
+
+// TargetsByLabel is a slice of single-relation targets, grouped by labels.
+type TargetsByLabel []*Targets
+
+// String returns human-readable string representation of TargetsByLabel.
+func (t TargetsByLabel) String() string {
+	str := "{"
+	for idx, targets := range t {
+		if idx > 0 {
+			str += ", "
+		}
+		str += fmt.Sprintf("%s->%s", targets.Label, targets.Keys.String())
+	}
+	str += "}"
+	return str
+}
+
+// RelationTargets groups targets of the same relation.
+type RelationTargets struct {
+	Relation string
+	Targets  TargetsByLabel
+}
+
+// GetTargetsForLabel returns targets (keys) for the given label.
+func (t *RelationTargets) GetTargetsForLabel(label string) *Targets {
+	for _, targets := range t.Targets {
+		if targets.Label == label {
+			return targets
+		}
+	}
+	return nil
+}
+
+// TargetsByRelation is a slice of all targets, grouped by relations.
+type TargetsByRelation []*RelationTargets
+
+// GetTargetsForRelation returns targets (keys by label) for the given relation.
+func (t TargetsByRelation) GetTargetsForRelation(relation string) *RelationTargets {
+	for _, relTargets := range t {
+		if relTargets.Relation == relation {
+			return relTargets
+		}
+	}
+	return nil
+}
+
+// String returns human-readable string representation of TargetsByRelation.
+func (t TargetsByRelation) String() string {
+	str := "{"
+	for idx, relTargets := range t {
+		if idx > 0 {
+			str += ", "
+		}
+		str += fmt.Sprintf("%s->%s", relTargets.Relation, relTargets.Targets.String())
+	}
+	str += "}"
+	return str
+}
+
+// RuntimeTargets groups relation targets with the same label.
+// Targets are stored as direct runtime references pointing to instances of target
+// nodes.
+type RuntimeTargets struct {
+	Label string
+	Nodes []Node
+}
+
+// RuntimeTargetsByLabel is a slice of single-relation (runtime reference-based)
+// targets, grouped by labels.
+type RuntimeTargetsByLabel []*RuntimeTargets
+
+// GetTargetsForLabel returns targets (nodes) for the given label.
+func (rt RuntimeTargetsByLabel) GetTargetsForLabel(label string) *RuntimeTargets {
+	for _, targets := range rt {
+		if targets.Label == label {
+			return targets
+		}
+	}
+	return nil
+}
 
 // RecordedNode saves all attributes of a single node revision.
 type RecordedNode struct {
@@ -225,15 +311,41 @@ type RecordedNode struct {
 	Until            time.Time
 	Key              string
 	Label            string
-	Value            string
-	Flags            map[string]string          // flag name -> flag value
-	MetadataFields   map[string][]string        // field name -> values
-	Targets          map[string]RecordedTargets // relation -> target
-	TargetUpdateOnly bool                       // true if only runtime Targets have changed since the last rev
+	Value            proto.Message
+	Flags            RecordedFlags
+	MetadataFields   map[string][]string // field name -> values
+	Targets          TargetsByRelation
+	TargetUpdateOnly bool                // true if only runtime Targets have changed since the last rev
 }
 
-// RecordedTargets is a record of target nodes at a given time.
-type RecordedTargets map[string]utils.KeySet // label -> node keys (empty if missing)
+// RecordedFlags is a record of assigned flags at a given time.
+type RecordedFlags struct {
+	Flags []Flag
+}
+
+// MarshalJSON marshalls recorded flags into JSON.
+func (rf RecordedFlags) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString("{")
+	for idx, flag := range rf.Flags {
+		if idx > 0 {
+			buffer.WriteString(",")
+		}
+		buffer.WriteString(fmt.Sprintf("\"%s\":\"%s\"", flag.GetName(), flag.GetValue()))
+	}
+	buffer.WriteString("}")
+	return buffer.Bytes(), nil
+}
+
+// GetFlag returns reference to the given flag or nil if the node hasn't had
+// this flag associated at the given time.
+func (rf RecordedFlags) GetFlag(name string) Flag {
+	for _, flag := range rf.Flags {
+		if flag.GetName() == name {
+			return flag
+		}
+	}
+	return nil
+}
 
 // FlagStats is a summary of the usage for a given flag.
 type FlagStats struct {
