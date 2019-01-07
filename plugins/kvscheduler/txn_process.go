@@ -30,7 +30,7 @@ import (
 // preProcessedTxn appends un-marshalled (or filtered retry) values to a queued
 // transaction and sets the sequence number.
 type preProcessedTxn struct {
-	seqNum uint
+	seqNum uint64
 	values []kvForTxn
 	args   *queuedTxn
 }
@@ -45,14 +45,14 @@ type kvForTxn struct {
 }
 
 // consumeTransactions pulls the oldest queued transaction and starts the processing.
-func (scheduler *Scheduler) consumeTransactions() {
-	defer scheduler.wg.Done()
+func (s *Scheduler) consumeTransactions() {
+	defer s.wg.Done()
 	for {
-		txn, canceled := scheduler.dequeueTxn()
+		txn, canceled := s.dequeueTxn()
 		if canceled {
 			return
 		}
-		scheduler.processTransaction(txn)
+		s.processTransaction(txn)
 	}
 }
 
@@ -68,68 +68,71 @@ func (scheduler *Scheduler) consumeTransactions() {
 //  5. Recording: recording the finalized transaction (log + in-memory)
 //  6. Post-processing: scheduling retry for failed operations, propagating errors
 //     to the subscribers and to the caller of blocking commit
-func (scheduler *Scheduler) processTransaction(qTxn *queuedTxn) {
+func (s *Scheduler) processTransaction(qTxn *queuedTxn) {
 	var (
-		simulatedOps RecordedTxnOps
-		executedOps  RecordedTxnOps
+		simulatedOps kvs.RecordedTxnOps
+		executedOps  kvs.RecordedTxnOps
 		failed       map[string]bool
 		startTime    time.Time
 		stopTime     time.Time
 	)
-	scheduler.txnLock.Lock()
-	defer scheduler.txnLock.Unlock()
+	s.txnLock.Lock()
+	defer s.txnLock.Unlock()
 
 	// 1. Pre-processing:
 	startTime = time.Now()
-	txn, preErrors := scheduler.preProcessTransaction(qTxn)
+	txn, preErrors := s.preProcessTransaction(qTxn)
 	eligibleForExec := len(txn.values) > 0 && len(preErrors) == 0
 
-	// 2. Simulation:
+	// 2. Ordering:
+	txn.values = s.orderValuesByOp(txn.values)
+
+	// 3. Simulation:
 	if eligibleForExec {
-		simulatedOps, _ = scheduler.executeTransaction(txn, true)
+		simulatedOps, _ = s.executeTransaction(txn, true)
 	}
 
-	// 3. Pre-recording
-	preTxnRecord := scheduler.preRecordTransaction(txn, simulatedOps, preErrors)
+	// 4. Pre-recording
+	preTxnRecord := s.preRecordTransaction(txn, simulatedOps, preErrors)
 
-	// 4. Execution:
+	// 5. Execution:
 	if eligibleForExec {
-		executedOps, failed = scheduler.executeTransaction(txn, false)
+		executedOps, failed = s.executeTransaction(txn, false)
 	}
 	stopTime = time.Now()
 
-	// 5. Recording:
-	scheduler.recordTransaction(preTxnRecord, executedOps, startTime, stopTime)
+	// 6. Recording:
+	s.recordTransaction(preTxnRecord, executedOps, startTime, stopTime)
 
-	// 6. Post-processing:
-	scheduler.postProcessTransaction(txn, executedOps, failed, preErrors)
+	// 7. Post-processing:
+	s.postProcessTransaction(txn, executedOps, failed, preErrors)
 }
 
 // preProcessTransaction initializes transaction parameters, filters obsolete retry
 // operations and refreshes the graph for resync.
-func (scheduler *Scheduler) preProcessTransaction(qTxn *queuedTxn) (txn *preProcessedTxn, errors []kvs.KeyWithError) {
+func (s *Scheduler) preProcessTransaction(qTxn *queuedTxn) (txn *preProcessedTxn, errors []kvs.KeyWithError) {
 	// allocate new transaction sequence number
-	preTxn := &preProcessedTxn{seqNum: scheduler.txnSeqNumber, args: qTxn}
-	scheduler.txnSeqNumber++
+	preTxn := &preProcessedTxn{seqNum: s.txnSeqNumber, args: qTxn}
+	s.txnSeqNumber++
 
 	switch qTxn.txnType {
-	case sbNotification:
-		scheduler.preProcessNotification(qTxn, preTxn)
-	case nbTransaction:
-		errors = scheduler.preProcessNBTransaction(qTxn, preTxn)
-	case retryFailedOps:
-		scheduler.preProcessRetryTxn(qTxn, preTxn)
+	case kvs.SBNotification:
+		s.preProcessNotification(qTxn, preTxn)
+	case kvs.NBTransaction:
+		errors = s.preProcessNBTransaction(qTxn, preTxn)
+	case kvs.RetryFailedOps:
+		s.preProcessRetryTxn(qTxn, preTxn)
 	}
 
 	return preTxn, errors
 }
 
 // preProcessNotification filters out non-valid SB notification.
-func (scheduler *Scheduler) preProcessNotification(qTxn *queuedTxn, preTxn *preProcessedTxn) {
-	graphR := scheduler.graph.Read()
+func (s *Scheduler) preProcessNotification(qTxn *queuedTxn, preTxn *preProcessedTxn) {
+	graphR := s.graph.Read()
 	defer graphR.Release()
 
-	if !scheduler.validTxnValue(graphR, qTxn.sb.value.Key, qTxn.sb.value.Value, kvs.FromSB, preTxn.seqNum) {
+	if !s.validTxnValue(graphR, qTxn.sb.value.Key, qTxn.sb.value.Value, kvs.FromSB, preTxn.seqNum) {
 		return
 	}
 	preTxn.values = append(preTxn.values,
@@ -142,11 +145,11 @@ func (scheduler *Scheduler) preProcessNotification(qTxn *queuedTxn, preTxn *preP
 }
 
 // preProcessNBTransaction unmarshalls transaction values and for resync also refreshes the graph.
-func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *preProcessedTxn) (errors []kvs.KeyWithError) {
+func (s *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *preProcessedTxn) (errors []kvs.KeyWithError) {
 	// unmarshall all values
-	graphR := scheduler.graph.Read()
+	graphR := s.graph.Read()
 	for key, lazyValue := range qTxn.nb.value {
-		descriptor := scheduler.registry.GetDescriptorForKey(key)
+		descriptor := s.registry.GetDescriptorForKey(key)
 		if descriptor == nil {
 			// unimplemented base value
 			errors = append(errors, kvs.KeyWithError{Key: key, TxnOperation: kvs.PreProcess, Error: kvs.ErrUnimplementedKey})
@@ -168,7 +171,7 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 				continue
 			}
 		}
-		if !scheduler.validTxnValue(graphR, key, value, kvs.FromNB, preTxn.seqNum) {
+		if !s.validTxnValue(graphR, key, value, kvs.FromNB, preTxn.seqNum) {
 			continue
 		}
 		preTxn.values = append(preTxn.values,
@@ -182,10 +185,10 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 
 	// for resync refresh the graph + collect deletes
 	if len(errors) == 0 && qTxn.nb.resyncType != kvs.NotResync {
-		graphW := scheduler.graph.Write(false)
+		graphW := s.graph.Write(false)
 		defer graphW.Release()
 		defer graphW.Save()
-		scheduler.resyncCount++
+		s.resyncCount++
 
 		if qTxn.nb.resyncType == kvs.DownstreamResync {
 			// for downstream resync it is assumed that scheduler is in-sync with NB
@@ -205,7 +208,7 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 		}
 
 		// build the set of keys currently in NB
-		nbKeys := utils.NewKeySet()
+		nbKeys := utils.NewMapBasedKeySet()
 		for _, kv := range preTxn.values {
 			nbKeys.Add(kv.key)
 		}
@@ -213,8 +216,8 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 		// unless this is only UpstreamResync, refresh the graph with the current
 		// state of SB
 		if qTxn.nb.resyncType != kvs.UpstreamResync {
-			scheduler.refreshGraph(graphW, nil, &resyncData{
-				first:   scheduler.resyncCount == 1,
+			s.refreshGraph(graphW, nil, &resyncData{
+				first:   s.resyncCount == 1,
 				values:  preTxn.values,
 				verbose: qTxn.nb.verboseRefresh})
 		}
@@ -224,7 +227,7 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 			graph.WithFlags(&OriginFlag{kvs.FromNB}),
 			graph.WithoutFlags(&DerivedFlag{}))
 		for _, node := range currentNodes {
-			if _, nbKey := nbKeys[node.GetKey()]; nbKey {
+			if nbKey := nbKeys.Has(node.GetKey()); nbKey {
 				continue
 			}
 			preTxn.values = append(preTxn.values,
@@ -240,7 +243,7 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 			graph.WithFlags(&OriginFlag{kvs.FromSB}),
 			graph.WithoutFlags(&DerivedFlag{}))
 		for _, node := range sbNodes {
-			if _, nbKey := nbKeys[node.GetKey()]; nbKey {
+			if nbKey := nbKeys.Has(node.GetKey()); nbKey {
 				continue
 			}
 			preTxn.values = append(preTxn.values,
@@ -256,11 +259,11 @@ func (scheduler *Scheduler) preProcessNBTransaction(qTxn *queuedTxn, preTxn *pre
 }
 
 // preProcessRetryTxn filters out obsolete retry operations.
-func (scheduler *Scheduler) preProcessRetryTxn(qTxn *queuedTxn, preTxn *preProcessedTxn) {
-	graphR := scheduler.graph.Read()
+func (s *Scheduler) preProcessRetryTxn(qTxn *queuedTxn, preTxn *preProcessedTxn) {
+	graphR := s.graph.Read()
 	defer graphR.Release()
 
-	for key := range qTxn.retry.keys {
+	for _, key := range qTxn.retry.keys.Iterate() {
 		node := graphR.GetNode(key)
 		if node == nil {
 			continue
@@ -282,19 +285,19 @@ func (scheduler *Scheduler) preProcessRetryTxn(qTxn *queuedTxn, preTxn *preProce
 
 // postProcessTransaction schedules retry for failed operations and propagates
 // errors to the subscribers and to the caller of a blocking commit.
-func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed RecordedTxnOps, failed map[string]bool, preErrors []kvs.KeyWithError) {
+func (s *Scheduler) postProcessTransaction(txn *preProcessedTxn, executed kvs.RecordedTxnOps, failed map[string]bool, preErrors []kvs.KeyWithError) {
 	// refresh base values with error or with a derived value that has an error
 	if len(failed) > 0 {
-		graphW := scheduler.graph.Write(false)
-		toRefresh := utils.NewKeySet()
+		graphW := s.graph.Write(false)
+		toRefresh := utils.NewMapBasedKeySet()
 		for key := range failed {
 			toRefresh.Add(key)
 		}
-		scheduler.refreshGraph(graphW, toRefresh, nil)
+		s.refreshGraph(graphW, toRefresh, nil)
 		graphW.Save()
 
 		// split failed values based on transactions that performed the last change
-		retryTxns := make(map[uint]*retryOps)
+		retryTxns := make(map[uint64]*retryOps)
 		for retryKey, retriable := range failed {
 			if !retriable {
 				continue
@@ -309,13 +312,13 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 			if lastChange.retryEnabled {
 				if _, has := retryTxns[seqNum]; !has {
 					period := lastChange.retryPeriod
-					if seqNum == txn.seqNum && txn.args.txnType == retryFailedOps && lastChange.retryExpBackoff {
+					if seqNum == txn.seqNum && txn.args.txnType == kvs.RetryFailedOps && lastChange.retryExpBackoff {
 						period = txn.args.retry.period * 2
 					}
 					retryTxns[seqNum] = &retryOps{
 						txnSeqNum: seqNum,
 						period:    period,
-						keys:      utils.NewKeySet(),
+						keys:      utils.NewMapBasedKeySet(),
 					}
 				}
 				retryTxns[seqNum].keys.Add(retryKey)
@@ -324,7 +327,7 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 
 		// schedule a series of re-try transactions for failed values
 		for _, retryTxn := range retryTxns {
-			scheduler.enqueueRetry(retryTxn)
+			s.enqueueRetry(retryTxn)
 		}
 		graphW.Release()
 	}
@@ -346,29 +349,36 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 	}
 
 	// for blocking txn, send non-nil errors to the resultChan
-	if txn.args.txnType == nbTransaction && txn.args.nb.isBlocking {
-		var errors []kvs.KeyWithError
+	if txn.args.txnType == kvs.NBTransaction && txn.args.nb.isBlocking {
+		var (
+			errors []kvs.KeyWithError
+			txnErr error
+		)
 		for _, kvWithError := range txnErrors {
 			if kvWithError.Error != nil {
 				errors = append(errors, kvWithError)
 			}
 		}
+		if len(errors) > 0 {
+			txnErr = kvs.NewTransactionError(nil, errors)
+		}
+
 		select {
-		case txn.args.nb.resultChan <- errors:
+		case txn.args.nb.resultChan <- txnResult{txnSeqNum: txn.seqNum, err: txnErr}:
 		default:
-			scheduler.Log.WithField("txnSeq", txn.seqNum).
+			s.Log.WithField("txnSeq", txn.seqNum).
 				Warn("Failed to deliver transaction result to the caller")
 		}
 	}
 
 	// send errors to the subscribers
-	for _, errSub := range scheduler.errorSubs {
+	for _, errSub := range s.errorSubs {
 		for _, kvWithError := range txnErrors {
 			if errSub.selector == nil || errSub.selector(kvWithError.Key) {
 				select {
 				case errSub.channel <- kvWithError:
 				default:
-					scheduler.Log.WithField("txnSeq", txn.seqNum).
+					s.Log.WithField("txnSeq", txn.seqNum).
 						Warn("Failed to deliver transaction error to a subscriber")
 				}
 			}
@@ -377,17 +387,17 @@ func (scheduler *Scheduler) postProcessTransaction(txn *preProcessedTxn, execute
 }
 
 // validTxnValue checks validity of a kv-pair to be applied in a transaction.
-func (scheduler *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, value proto.Message, origin kvs.ValueOrigin, txnSeqNum uint) bool {
+func (s *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, value proto.Message, origin kvs.ValueOrigin, txnSeqNum uint64) bool {
 	if key == "" {
-		scheduler.Log.WithFields(logging.Fields{
+		s.Log.WithFields(logging.Fields{
 			"txnSeqNum": txnSeqNum,
 		}).Warn("Empty key for a value in the transaction")
 		return false
 	}
 	if origin == kvs.FromSB {
-		descriptor := scheduler.registry.GetDescriptorForKey(key)
+		descriptor := s.registry.GetDescriptorForKey(key)
 		if descriptor == nil {
-			scheduler.Log.WithFields(logging.Fields{
+			s.Log.WithFields(logging.Fields{
 				"txnSeqNum": txnSeqNum,
 				"key":       key,
 			}).Debug("Ignoring unimplemented notification")
@@ -397,14 +407,14 @@ func (scheduler *Scheduler) validTxnValue(graphR graph.ReadAccess, key string, v
 	node := graphR.GetNode(key)
 	if node != nil {
 		if isNodeDerived(node) {
-			scheduler.Log.WithFields(logging.Fields{
+			s.Log.WithFields(logging.Fields{
 				"txnSeqNum": txnSeqNum,
 				"key":       key,
 			}).Warn("Transaction attempting to change a derived value")
 			return false
 		}
 		if origin == kvs.FromSB && getNodeOrigin(node) == kvs.FromNB {
-			scheduler.Log.WithFields(logging.Fields{
+			s.Log.WithFields(logging.Fields{
 				"txnSeqNum": txnSeqNum,
 				"key":       key,
 			}).Debug("Ignoring notification for a NB-managed value")

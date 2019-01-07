@@ -20,20 +20,16 @@ import (
 
 // DependsOn returns true if k1 depends on k2 based on dependencies from <deps>.
 func DependsOn(k1, k2 string, deps map[string]KeySet, visited KeySet) bool {
-	if visited == nil {
-		visited = NewKeySet()
-	}
-
 	// check direct dependencies
 	k1Deps := deps[k1]
-	if _, depends := k1Deps[k2]; depends {
+	if depends := k1Deps.Has(k2); depends {
 		return true
 	}
 
 	// continue transitively
 	visited.Add(k1)
-	for dep := range k1Deps {
-		if _, wasVisited := visited[dep]; wasVisited {
+	for _, dep := range k1Deps.Iterate() {
+		if wasVisited := visited.Has(dep); wasVisited {
 			continue
 		}
 		if DependsOn(dep, k2, deps, visited) {
@@ -48,22 +44,23 @@ func DependsOn(k1, k2 string, deps map[string]KeySet, visited KeySet) bool {
 // deps = map{ key -> <set of keys the given key depends on> }
 func TopologicalOrder(keys KeySet, deps map[string]KeySet, depFirst bool, handleCycle bool) (sorted []string) {
 	// copy input arguments so that they are not returned to the caller changed
-	remains := keys.DeepCopy()
+	remains := keys.CopyOnWrite()
 	remainsDeps := make(map[string]KeySet)
 	for key, keyDeps := range deps {
 		if !keys.Has(key) {
 			continue
 		}
-		remainsDeps[key] = keyDeps.Intersect(keys)
+		remainsDeps[key] = keyDeps.CopyOnWrite()
+		remainsDeps[key].Intersect(keys)
 	}
 
 	// Kahn's algorithm (except for the cycle handling part):
-	for len(remains) > 0 {
+	for remains.Length() > 0 {
 		// find candidate keys - keys that could follow in the order
 		var candidates []string
-		for key := range remains {
+		for _, key := range remains.Iterate() {
 			// if depFirst, select keys that do not depend on anything in the remaining set
-			candidate := depFirst && len(remainsDeps[key]) == 0
+			candidate := depFirst && remainsDeps[key].Length() == 0
 			if !depFirst {
 				candidate = true
 				// is there any other key depending on this one?
@@ -87,8 +84,8 @@ func TopologicalOrder(keys KeySet, deps map[string]KeySet, depFirst bool, handle
 				panic("Dependency cycle!")
 			}
 			// select keys that depend on themselves
-			for key := range remains {
-				if DependsOn(key, key, deps, nil) {
+			for _, key := range remains.Iterate() {
+				if DependsOn(key, key, deps, NewMapBasedKeySet()) {
 					candidates = append(candidates, key)
 				}
 			}

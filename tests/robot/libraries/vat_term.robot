@@ -32,8 +32,15 @@ vat_term: Exit VAT Terminal
 
 vat_term: Issue Command
     [Arguments]        ${node}     ${command}    ${delay}=${SSH_READ_DELAY}s
-    ${out}=            Write To Machine Until String    ${node}_vat    ${command}    ${${node}_VPP_VAT_PROMPT}    delay=${delay}
-#    Should Contain     ${out}             ${${node}_VPP_VAT_PROMPT}
+    ${failed_it}=     Create List
+    :FOR    ${it_num}    IN RANGE    1    6
+    \    ${result}    ${out}=    Run Keyword And Ignore Error    Write To Machine Until String    ${node}_vat    ${command}    ${${node}_VPP_VAT_PROMPT}    delay=${delay}
+    \    Run Keyword If      '${result}'=='FAIL'      Append To List    ${failed_it}    ${it_num}
+    \    Run Keyword If      '${result}'=='FAIL'      Log  Warning, no match found #vat console output!	WARN
+    \    Exit For Loop If    '${result}'=='PASS'
+    Run Keyword And Ignore Error  Should Be Empty  ${failed_it}  msg='Fail in this checks ${failed_it}'
+#    ${out}=            Write To Machine Until String    ${node}_vat    ${command}    ${${node}_VPP_VAT_PROMPT}    delay=${delay}
+##    Should Contain     ${out}             ${${node}_VPP_VAT_PROMPT}
     [Return]           ${out}
 
 vat_term: Interfaces Dump

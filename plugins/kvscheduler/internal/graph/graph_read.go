@@ -121,7 +121,8 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 			if record.TargetUpdateOnly {
 				continue
 			}
-			if flagValue, hasFlag := record.Flags[flagName]; hasFlag {
+			if flag := record.Flags.GetFlag(flagName); flag != nil {
+				flagValue := flag.GetValue()
 				stats.TotalCount++
 				if _, hasValue := stats.PerValueCount[flagValue]; !hasValue {
 					stats.PerValueCount[flagValue] = 0
@@ -232,14 +233,11 @@ func (graph *graphR) recordNode(node *node, targetUpdateOnly bool) *RecordedNode
 		Since:            time.Now(),
 		Key:              node.key,
 		Label:            node.label,
-		Value:            utils.ProtoToString(node.value),
-		Flags:            make(map[string]string),
+		Value:            utils.RecordProtoMessage(node.value),
+		Flags:            RecordedFlags{Flags: node.flags},
 		MetadataFields:   graph.getMetadataFields(node), // returned already copied
 		Targets:          node.targets,                  // no need to copy, never changed in graphR
 		TargetUpdateOnly: targetUpdateOnly,
-	}
-	for _, flag := range node.flags {
-		record.Flags[flag.GetName()] = flag.GetValue()
 	}
 	return record
 }
@@ -271,14 +269,14 @@ func prettyPrintFlags(flags []Flag) string {
 }
 
 // prettyPrintTargets returns nicely formatted relation targets.
-func prettyPrintTargets(targets map[string]RecordedTargets) string {
+func prettyPrintTargets(targets TargetsByRelation) string {
 	if len(targets) == 0 {
 		return "<NONE>"
 	}
 	var str string
 	idx := 0
-	for relation, edges := range targets {
-		str += fmt.Sprintf("[%s]{%s}", relation, prettyPrintEdges(edges))
+	for _, relation := range targets {
+		str += fmt.Sprintf("[%s]{%s}", relation.Relation, prettyPrintEdges(relation.Targets))
 		if idx < len(targets)-1 {
 			str += printDelimiter
 		}
@@ -288,14 +286,14 @@ func prettyPrintTargets(targets map[string]RecordedTargets) string {
 }
 
 // prettyPrintSources returns nicely formatted relation sources.
-func prettyPrintSources(sources map[string]utils.KeySet) string {
+func prettyPrintSources(sources []*relationSources) string {
 	if len(sources) == 0 {
 		return "<NONE>"
 	}
 	var str string
 	idx := 0
-	for relation, keys := range sources {
-		str += fmt.Sprintf("[%s]%s", relation, keys.String())
+	for _, relSources := range sources {
+		str += fmt.Sprintf("[%s]%s", relSources.relation, relSources.sources.String())
 		if idx < len(sources)-1 {
 			str += printDelimiter
 		}
@@ -305,15 +303,15 @@ func prettyPrintSources(sources map[string]utils.KeySet) string {
 }
 
 // prettyPrintEdges returns nicely formatted node edges.
-func prettyPrintEdges(edges map[string]utils.KeySet) string {
+func prettyPrintEdges(edges TargetsByLabel) string {
 	var str string
 	idx := 0
-	for label, keys := range edges {
-		if len(keys) == 1 && keys.Has(label) {
+	for _, edge := range edges {
+		if edge.Keys.Length() == 1 && edge.Keys.Has(edge.Label) {
 			// special case: there 1:1 between label and the key
-			str += label
+			str += edge.Label
 		} else {
-			str += label + " -> " + keys.String()
+			str += edge.Label + " -> " + edge.Keys.String()
 		}
 		if idx < len(edges)-1 {
 			str += printDelimiter

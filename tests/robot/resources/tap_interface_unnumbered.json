@@ -5,7 +5,6 @@
   "phys_address": "${mac}",
   "mtu": ${mtu},
   "unnumbered": {
-    "is_unnumbered": ${unnumbered},
     "interface_with_ip": "${interface_with_ip_name}"
   },
   "tap": {

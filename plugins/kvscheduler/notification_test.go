@@ -100,10 +100,10 @@ func TestNotifications(t *testing.T) {
 	startTime := time.Now()
 	schedulerTxn := scheduler.StartNBTransaction()
 	schedulerTxn.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
+	seqNum, err := schedulerTxn.Commit(WithResync(context.Background(), FullResync, true))
 	stopTime := time.Now()
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -128,7 +128,7 @@ func TestNotifications(t *testing.T) {
 	})
 
 	// check transaction operations
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Now())
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn := txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -136,11 +136,11 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(0))
-	Expect(txn.TxnType).To(BeEquivalentTo(nbTransaction))
+	Expect(txn.TxnType).To(BeEquivalentTo(NBTransaction))
 	Expect(txn.ResyncType).To(BeEquivalentTo(FullResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
-		{Key: prefixB + baseValue2, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
+		{Key: prefixB + baseValue2, Value: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")), Origin: FromNB},
 	})
 	Expect(txn.PreErrors).To(BeEmpty())
 
@@ -148,7 +148,7 @@ func TestNotifications(t *testing.T) {
 		{
 			Operation:  Add,
 			Key:        prefixB + baseValue2,
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			IsPending:  true,
@@ -242,7 +242,7 @@ func TestNotifications(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -250,11 +250,11 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(1))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
-		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item1")), Origin: FromSB},
+		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(test.NewArrayValue("item1")), Origin: FromSB},
 	})
 	Expect(txn.PreErrors).To(BeEmpty())
 
@@ -262,15 +262,15 @@ func TestNotifications(t *testing.T) {
 		{
 			Operation:  Add,
 			Key:        prefixA + baseValue1,
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
 		{
 			Operation:  Add,
 			Key:        prefixB + baseValue2,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			WasPending: true,
@@ -279,7 +279,7 @@ func TestNotifications(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item1",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 		},
@@ -287,7 +287,7 @@ func TestNotifications(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			IsPending:  true,
@@ -296,7 +296,7 @@ func TestNotifications(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixA + baseValue1 + "/item1",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -395,7 +395,7 @@ func TestNotifications(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -403,11 +403,11 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(2))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
-		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromSB},
+		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")), Origin: FromSB},
 	})
 	Expect(txn.PreErrors).To(BeEmpty())
 
@@ -415,16 +415,16 @@ func TestNotifications(t *testing.T) {
 		{
 			Operation:  Modify,
 			Key:        prefixA + baseValue1,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
 		{
 			Operation:  Update,
 			Key:        prefixB + baseValue2,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 		},
@@ -432,7 +432,7 @@ func TestNotifications(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixA + baseValue1 + "/item2",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -440,8 +440,8 @@ func TestNotifications(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			WasPending: true,
@@ -515,7 +515,7 @@ func TestNotifications(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check transaction operations
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -523,11 +523,11 @@ func TestNotifications(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(3))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
-		{Key: prefixA + baseValue1, Value: utils.ProtoToString(nil), Origin: FromSB},
+		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(nil), Origin: FromSB},
 	})
 	Expect(txn.PreErrors).To(BeEmpty())
 
@@ -536,7 +536,7 @@ func TestNotifications(t *testing.T) {
 			Operation:  Delete,
 			Key:        prefixA + baseValue1 + "/item1",
 			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -544,16 +544,15 @@ func TestNotifications(t *testing.T) {
 			Operation:  Delete,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-			IsPending:  true,
 		},
 		{
 			Operation:  Delete,
 			Key:        prefixA + baseValue1 + "/item2",
 			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -561,23 +560,14 @@ func TestNotifications(t *testing.T) {
 			Operation:  Delete,
 			Key:        prefixB + baseValue2 + "/item1",
 			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item1")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-		},
-		{
-			Operation:  Delete,
-			Key:        prefixB + baseValue2 + "/item2",
-			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			WasPending: true,
 		},
 		{
 			Operation:  Delete,
 			Key:        prefixB + baseValue2,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			IsPending:  true,
@@ -585,7 +575,7 @@ func TestNotifications(t *testing.T) {
 		{
 			Operation:  Delete,
 			Key:        prefixA + baseValue1,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -696,16 +686,16 @@ func TestNotificationsWithRetry(t *testing.T) {
 	// run 1st data-change transaction with retry against empty SB
 	schedulerTxn1 := scheduler.StartNBTransaction()
 	schedulerTxn1.SetValue(prefixB+baseValue2, test.NewLazyArrayValue("item1", "item2"))
-	kvErrors, txnError := schedulerTxn1.Commit(WithRetry(context.Background(), 3*time.Second, true))
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	seqNum, err := schedulerTxn1.Commit(WithRetry(context.Background(), 3*time.Second, true))
+	Expect(seqNum).To(BeEquivalentTo(0))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// run 2nd data-change transaction with retry
 	schedulerTxn2 := scheduler.StartNBTransaction()
 	schedulerTxn2.SetValue(prefixC+baseValue3, test.NewLazyStringValue("base-value3-data"))
-	kvErrors, txnError = schedulerTxn2.Commit(WithRetry(context.Background(), 6*time.Second, true))
-	Expect(txnError).ShouldNot(HaveOccurred())
-	Expect(kvErrors).To(BeEmpty())
+	seqNum, err = schedulerTxn2.Commit(WithRetry(context.Background(), 6*time.Second, true))
+	Expect(seqNum).To(BeEquivalentTo(1))
+	Expect(err).ShouldNot(HaveOccurred())
 
 	// check the state of SB - empty since dependencies are not met
 	Expect(mockSB.GetKeysWithInvalidData()).To(BeEmpty())
@@ -822,7 +812,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	checkValuesForCorrelation(operation.CorrelateDump, []KVWithMetadata{})
 
 	// check last transaction
-	txnHistory := scheduler.getTransactionHistory(time.Time{}, time.Now())
+	txnHistory := scheduler.GetTransactionHistory(time.Time{}, time.Now())
 	Expect(txnHistory).To(HaveLen(3))
 	txn := txnHistory[2]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -830,11 +820,11 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(2))
-	Expect(txn.TxnType).To(BeEquivalentTo(sbNotification))
+	Expect(txn.TxnType).To(BeEquivalentTo(SBNotification))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
-		{Key: prefixA + baseValue1, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromSB},
+		{Key: prefixA + baseValue1, Value: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")), Origin: FromSB},
 	})
 	Expect(txn.PreErrors).To(BeEmpty())
 
@@ -843,15 +833,15 @@ func TestNotificationsWithRetry(t *testing.T) {
 		{
 			Operation:  Add,
 			Key:        prefixA + baseValue1,
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
 		{
 			Operation:  Add,
 			Key:        prefixB + baseValue2,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			WasPending: true,
@@ -860,24 +850,15 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item1",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-		},
-		{
-			Operation:  Add,
-			Key:        prefixB + baseValue2 + "/item2",
-			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			IsPending:  true,
 		},
 		{
 			Operation:  Add,
 			Key:        prefixC + baseValue3,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			WasPending: true,
@@ -886,15 +867,15 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixA + baseValue1 + "/item1",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
 		{
 			Operation:  Update,
 			Key:        prefixC + baseValue3,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 		},
@@ -902,7 +883,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixA + baseValue1 + "/item2",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -910,17 +891,15 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-			WasPending: true,
 		},
 		{
 			Operation:  Update,
 			Key:        prefixC + baseValue3,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 		},
@@ -932,15 +911,15 @@ func TestNotificationsWithRetry(t *testing.T) {
 		{
 			Operation:  Add,
 			Key:        prefixA + baseValue1,
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
 		{
 			Operation:  Add,
 			Key:        prefixB + baseValue2,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1", "item2")),
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			WasPending: true,
@@ -949,24 +928,15 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item1",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-		},
-		{
-			Operation:  Add,
-			Key:        prefixB + baseValue2 + "/item2",
-			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
-			PrevOrigin: FromNB,
-			NewOrigin:  FromNB,
-			IsPending:  true,
 		},
 		{
 			Operation:  Add,
 			Key:        prefixC + baseValue3,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			WasPending: true,
@@ -977,7 +947,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixA + baseValue1 + "/item1",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item1")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -985,7 +955,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixA + baseValue1 + "/item2",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromSB,
 			NewOrigin:  FromSB,
 		},
@@ -993,11 +963,9 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("item2")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
-			WasPending: true,
 			IsPending:  true,
 			NewErr:     errors.New("failed to add derived value"),
 		},
@@ -1069,7 +1037,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check last transaction
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Now())
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Now())
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -1077,19 +1045,19 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(3))
-	Expect(txn.TxnType).To(BeEquivalentTo(retryFailedOps))
+	Expect(txn.TxnType).To(BeEquivalentTo(RetryFailedOps))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
-		{Key: prefixB + baseValue2, Value: utils.ProtoToString(test.NewArrayValue("item1", "item2")), Origin: FromNB},
+		{Key: prefixB + baseValue2, Value: utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")), Origin: FromNB},
 	})
 	Expect(txn.PreErrors).To(BeEmpty())
 	txnOps = RecordedTxnOps{
 		{
 			Operation:  Modify,
 			Key:        prefixB + baseValue2,
-			PrevValue:  utils.ProtoToString(test.NewArrayValue("item1")),
-			NewValue:   utils.ProtoToString(test.NewArrayValue("item1", "item2")),
+			PrevValue:  utils.RecordProtoMessage(test.NewArrayValue("item1")),
+			NewValue:   utils.RecordProtoMessage(test.NewArrayValue("item1", "item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			IsRetry:    true,
@@ -1098,7 +1066,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 			Operation:  Add,
 			Key:        prefixB + baseValue2 + "/item2",
 			Derived:    true,
-			NewValue:   utils.ProtoToString(test.NewStringValue("item2")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("item2")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			PrevErr:    errors.New("failed to add derived value"),
@@ -1140,7 +1108,7 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check last transaction
-	txnHistory = scheduler.getTransactionHistory(startTime, time.Time{})
+	txnHistory = scheduler.GetTransactionHistory(startTime, time.Time{})
 	Expect(txnHistory).To(HaveLen(1))
 	txn = txnHistory[0]
 	Expect(txn.PreRecord).To(BeFalse())
@@ -1148,19 +1116,19 @@ func TestNotificationsWithRetry(t *testing.T) {
 	Expect(txn.Start.Before(txn.Stop)).To(BeTrue())
 	Expect(txn.Stop.Before(stopTime)).To(BeTrue())
 	Expect(txn.SeqNum).To(BeEquivalentTo(4))
-	Expect(txn.TxnType).To(BeEquivalentTo(retryFailedOps))
+	Expect(txn.TxnType).To(BeEquivalentTo(RetryFailedOps))
 	Expect(txn.ResyncType).To(BeEquivalentTo(NotResync))
 	Expect(txn.Description).To(BeEmpty())
 	checkRecordedValues(txn.Values, []RecordedKVPair{
-		{Key: prefixC + baseValue3, Value: utils.ProtoToString(test.NewStringValue("base-value3-data")), Origin: FromNB},
+		{Key: prefixC + baseValue3, Value: utils.RecordProtoMessage(test.NewStringValue("base-value3-data")), Origin: FromNB},
 	})
 	Expect(txn.PreErrors).To(BeEmpty())
 	txnOps = RecordedTxnOps{
 		{
 			Operation:  Add,
 			Key:        prefixC + baseValue3,
-			PrevValue:  utils.ProtoToString(test.NewStringValue("base-value3-data")),
-			NewValue:   utils.ProtoToString(test.NewStringValue("base-value3-data")),
+			PrevValue:  utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
+			NewValue:   utils.RecordProtoMessage(test.NewStringValue("base-value3-data")),
 			PrevOrigin: FromNB,
 			NewOrigin:  FromNB,
 			WasPending: true,

@@ -24,34 +24,16 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
-// TxnType differentiates between NB transaction, retry of failed operations and
-// SB notification. Once queued, all three different operations are classified
-// as transactions, only with different parameters.
-type TxnType int
-
-const (
-	sbNotification TxnType = iota
-	nbTransaction
-	retryFailedOps
-)
-
-// String returns human-readable string representation of the transaction type.
-func (t TxnType) String() string {
-	switch t {
-	case sbNotification:
-		return "SB notification"
-	case nbTransaction:
-		return "NB transaction"
-	case retryFailedOps:
-		return "RETRY"
-	}
-	return "UNKNOWN"
-}
-
 // sbNotif encapsulates data for SB notification.
 type sbNotif struct {
 	value    kvs.KeyValuePair
 	metadata kvs.Metadata
+}
+
+// txnResult represents transaction result.
+type txnResult struct {
+	err       error
+	txnSeqNum uint64
 }
 
 // nbTxn encapsulates data for NB transaction.
@@ -65,19 +47,19 @@ type nbTxn struct {
 	expBackoffRetry bool
 	revertOnFailure bool
 	description     string
-	resultChan      chan []kvs.KeyWithError
+	resultChan      chan txnResult
 }
 
 // retryOps encapsulates data for retry of failed operations.
 type retryOps struct {
-	txnSeqNum uint
+	txnSeqNum uint64
 	keys      utils.KeySet
 	period    time.Duration
 }
 
 // queuedTxn represents transaction queued for execution.
 type queuedTxn struct {
-	txnType TxnType
+	txnType kvs.TxnType
 
 	sb    *sbNotif
 	nb    *nbTxn
@@ -85,19 +67,19 @@ type queuedTxn struct {
 }
 
 // enqueueTxn adds transaction into the FIFO queue (channel) for execution.
-func (scheduler *Scheduler) enqueueTxn(txn *queuedTxn) error {
-	if txn.txnType == nbTransaction && txn.nb.isBlocking {
+func (s *Scheduler) enqueueTxn(txn *queuedTxn) error {
+	if txn.txnType == kvs.NBTransaction && txn.nb.isBlocking {
 		select {
-		case <-scheduler.ctx.Done():
+		case <-s.ctx.Done():
 			return kvs.ErrClosedScheduler
-		case scheduler.txnQueue <- txn:
+		case s.txnQueue <- txn:
 			return nil
 		}
 	}
 	select {
-	case <-scheduler.ctx.Done():
+	case <-s.ctx.Done():
 		return kvs.ErrClosedScheduler
-	case scheduler.txnQueue <- txn:
+	case s.txnQueue <- txn:
 		return nil
 	default:
 		return kvs.ErrTxnQueueFull
@@ -105,36 +87,36 @@ func (scheduler *Scheduler) enqueueTxn(txn *queuedTxn) error {
 }
 
 // dequeueTxn pull the oldest queued transaction.
-func (scheduler *Scheduler) dequeueTxn() (txn *queuedTxn, canceled bool) {
+func (s *Scheduler) dequeueTxn() (txn *queuedTxn, canceled bool) {
 	select {
-	case <-scheduler.ctx.Done():
+	case <-s.ctx.Done():
 		return nil, true
-	case txn = <-scheduler.txnQueue:
+	case txn = <-s.txnQueue:
 		return txn, false
 	}
 }
 
 // enqueueRetry schedules retry for failed operations.
-func (scheduler *Scheduler) enqueueRetry(args *retryOps) {
-	go scheduler.delayRetry(args)
+func (s *Scheduler) enqueueRetry(args *retryOps) {
+	go s.delayRetry(args)
 }
 
 // delayRetry postpones retry until a given time period has elapsed.
-func (scheduler *Scheduler) delayRetry(args *retryOps) {
-	scheduler.wg.Add(1)
-	defer scheduler.wg.Done()
+func (s *Scheduler) delayRetry(args *retryOps) {
+	s.wg.Add(1)
+	defer s.wg.Done()
 
 	select {
-	case <-scheduler.ctx.Done():
+	case <-s.ctx.Done():
 		return
 	case <-time.After(args.period):
-		err := scheduler.enqueueTxn(&queuedTxn{txnType: retryFailedOps, retry: args})
+		err := s.enqueueTxn(&queuedTxn{txnType: kvs.RetryFailedOps, retry: args})
 		if err != nil {
-			scheduler.Log.WithFields(logging.Fields{
+			s.Log.WithFields(logging.Fields{
 				"txnSeqNum": args.txnSeqNum,
 				"err":       err,
 			}).Warn("Failed to enqueue re-try for failed operations")
-			scheduler.enqueueRetry(args) // try again with the same time period
+			s.enqueueRetry(args) // try again with the same time period
 		}
 	}
 }

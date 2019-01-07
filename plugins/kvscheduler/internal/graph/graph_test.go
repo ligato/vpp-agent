@@ -18,16 +18,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/gomega"
 
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+)
+
+const (
+	minutesInOneDay = uint32(1440)
+	minutesInOneHour = uint32(60)
 )
 
 func TestEmptyGraph(t *testing.T) {
 	RegisterTestingT(t)
 
-	graph := NewGraph()
+	graph := NewGraph(true, minutesInOneDay, minutesInOneHour)
 	Expect(graph).ToNot(BeNil())
 
 	graphR := graph.Read()
@@ -49,7 +55,7 @@ func TestSingleNode(t *testing.T) {
 
 	startTime := time.Now()
 
-	graph := NewGraph()
+	graph := NewGraph(true, minutesInOneDay, minutesInOneHour)
 	graphW := graph.Write(true)
 
 	graphW.RegisterMetadataMap(metadataMapA, NewNameToInteger(metadataMapA))
@@ -134,11 +140,11 @@ func TestSingleNode(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(BeEmpty())
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Red.String(), AbstractFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
 }
 
 func TestMultipleNodes(t *testing.T) {
@@ -281,17 +287,13 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node2", keyA2)
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "prefixB", keyB1)
+	checkRecordedTargets(record.Targets, relation1, 1, "node2", keyA2)
+	checkRecordedTargets(record.Targets, relation2, 1, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Red.String(), AbstractFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
 
 	// -> timeline node2:
 	timeline = graphR.GetNodeTimeline(keyA2)
@@ -302,14 +304,12 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value2Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value2)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value2))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node3", keyA3)
+	checkRecordedTargets(record.Targets, relation1, 1, "node3", keyA3)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"2"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Blue.String()}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Blue)}}))
 
 	// -> timeline node3:
 	timeline = graphR.GetNodeTimeline(keyA3)
@@ -320,15 +320,13 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value3Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value3)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value3))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation2]).To(HaveLen(2))
-	checkRecordedTargets(record.Targets[relation2], "node1+node2", keyA1, keyA2)
-	checkRecordedTargets(record.Targets[relation2], "prefixB", keyB1)
+	checkRecordedTargets(record.Targets, relation2, 2, "node1+node2", keyA1, keyA2)
+	checkRecordedTargets(record.Targets, relation2, 2, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"3"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Green.String(), AbstractFlagName: "", TemporaryFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
 
 	// -> timeline node4:
 	timeline = graphR.GetNodeTimeline(keyB1)
@@ -339,17 +337,13 @@ func TestMultipleNodes(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value4Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value4)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value4))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "prefixA", keyA1, keyA2, keyA3)
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "non-existing-key")
+	checkRecordedTargets(record.Targets, relation1, 1, "prefixA", keyA1, keyA2, keyA3)
+	checkRecordedTargets(record.Targets, relation2, 1, "non-existing-key")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{TemporaryFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{TemporaryFlag()}}))
 
 	// check snapshot:
 	// -> before the changes
@@ -528,17 +522,13 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node2", keyA2)
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "prefixB", keyB1)
+	checkRecordedTargets(record.Targets, relation1, 1, "node2", keyA2)
+	checkRecordedTargets(record.Targets, relation2, 1, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Red.String(), AbstractFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
 	//   -> new record
 	record = timeline[1]
 	Expect(record.Key).To(Equal(keyA1))
@@ -546,17 +536,13 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node2")
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "prefixB")
+	checkRecordedTargets(record.Targets, relation1, 1, "node2")
+	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeTrue())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Red.String(), AbstractFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
 
 	// -> timeline node2:
 	timeline = graphR.GetNodeTimeline(keyA2)
@@ -569,14 +555,12 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value2Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value2)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value2))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node3", keyA3)
+	checkRecordedTargets(record.Targets, relation1, 1, "node3", keyA3)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"2"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Blue.String()}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Blue)}}))
 
 	// -> timeline node3:
 	timeline = graphR.GetNodeTimeline(keyA3)
@@ -589,15 +573,13 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value3Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value3)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value3))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation2]).To(HaveLen(2))
-	checkRecordedTargets(record.Targets[relation2], "node1+node2", keyA1, keyA2)
-	checkRecordedTargets(record.Targets[relation2], "prefixB", keyB1)
+	checkRecordedTargets(record.Targets, relation2, 2, "node1+node2", keyA1, keyA2)
+	checkRecordedTargets(record.Targets, relation2, 2, "prefixB", keyB1)
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"3"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Green.String(), AbstractFlagName: "", TemporaryFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
 	//   -> new record
 	record = timeline[1]
 	Expect(record.Key).To(Equal(keyA3))
@@ -605,15 +587,13 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value3Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value3)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value3))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation2]).To(HaveLen(2))
-	checkRecordedTargets(record.Targets[relation2], "node1+node2", keyA1)
-	checkRecordedTargets(record.Targets[relation2], "prefixB")
+	checkRecordedTargets(record.Targets, relation2, 2, "node1+node2", keyA1)
+	checkRecordedTargets(record.Targets, relation2, 2, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeTrue())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"3"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Green.String(), AbstractFlagName: "", TemporaryFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Green), AbstractFlag(), TemporaryFlag()}}))
 
 	// -> timeline node4:
 	//   -> old record
@@ -626,17 +606,13 @@ func TestNodeRemoval(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value4Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value4)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value4))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "prefixA", keyA1, keyA2, keyA3)
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "non-existing-key")
+	checkRecordedTargets(record.Targets, relation1, 1, "prefixA", keyA1, keyA2, keyA3)
+	checkRecordedTargets(record.Targets, relation2, 1, "non-existing-key")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{TemporaryFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{TemporaryFlag()}}))
 
 	// check snapshot:
 	records := graphR.GetSnapshot(time.Now())
@@ -708,17 +684,13 @@ func TestNodeTimeline(t *testing.T) {
 	Expect(record.Until.After(delTime)).To(BeTrue())
 	Expect(record.Until.Before(changeTime1)).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node2")
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "prefixB")
+	checkRecordedTargets(record.Targets, relation1, 1, "node2")
+	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Red.String(), AbstractFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Red), AbstractFlag()}}))
 	//   -> second record
 	record = timeline[1]
 	Expect(record.Key).To(Equal(keyA1))
@@ -727,35 +699,27 @@ func TestNodeTimeline(t *testing.T) {
 	Expect(record.Until.After(changeTime2)).To(BeTrue())
 	Expect(record.Until.Before(time.Now())).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node2")
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "prefixB")
+	checkRecordedTargets(record.Targets, relation1, 1, "node2")
+	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"1"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Blue.String(), AbstractFlagName: ""}))
-	//   -> thirs record
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{AbstractFlag(), ColorFlag(Blue)}}))
+	//   -> third record
 	record = timeline[2]
 	Expect(record.Key).To(Equal(keyA1))
 	Expect(record.Since.After(changeTime2)).To(BeTrue())
 	Expect(record.Since.Before(time.Now())).To(BeTrue())
 	Expect(record.Until.IsZero()).To(BeTrue())
 	Expect(record.Label).To(Equal(value1Label))
-	Expect(record.Value).To(Equal(utils.ProtoToString(value1)))
+	Expect(proto.Equal(record.Value, RecordProtoMessage(value1))).To(BeTrue())
 	Expect(record.Targets).To(HaveLen(2))
-	Expect(record.Targets).To(HaveKey(relation1))
-	Expect(record.Targets).To(HaveKey(relation2))
-	Expect(record.Targets[relation1]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation1], "node2")
-	Expect(record.Targets[relation2]).To(HaveLen(1))
-	checkRecordedTargets(record.Targets[relation2], "prefixB")
+	checkRecordedTargets(record.Targets, relation1, 1, "node2")
+	checkRecordedTargets(record.Targets, relation2, 1, "prefixB")
 	Expect(record.TargetUpdateOnly).To(BeFalse())
 	Expect(record.MetadataFields).To(BeEquivalentTo(map[string][]string{IntegerKey: {"2"}}))
-	Expect(record.Flags).To(BeEquivalentTo(map[string]string{ColorFlagName: Blue.String(), TemporaryFlagName: ""}))
+	Expect(record.Flags).To(BeEquivalentTo(RecordedFlags{[]Flag{ColorFlag(Blue), TemporaryFlag()}}))
 
 	graphR.Release()
 }
@@ -840,7 +804,7 @@ func TestNodeMetadata(t *testing.T) {
 func TestReuseNodeAfterSave(t *testing.T) {
 	RegisterTestingT(t)
 
-	graph := NewGraph()
+	graph := NewGraph(true, minutesInOneDay, minutesInOneHour)
 	graphW := graph.Write(true)
 
 	// add new node
@@ -865,7 +829,7 @@ func TestReuseNodeAfterSave(t *testing.T) {
 	graphW.Save()
 	graphW.Release()
 
-	// check that both flags are applied
+	// check that all 3 flags are applied
 	graphR := graph.Read()
 	checkNodes(graphR.GetNodes(nil, WithFlags(ColorFlag(Red), AbstractFlag(), TemporaryFlag())), keyA1)
 	graphR.Release()

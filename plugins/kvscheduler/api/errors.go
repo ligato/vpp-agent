@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
+	"strings"
 )
 
 var (
@@ -72,4 +73,57 @@ func ErrInvalidMetadataType(key string) error {
 		return errors.New("metadata has invalid type")
 	}
 	return fmt.Errorf("metadata has invalid type for key: %s", key)
+}
+
+/****************************** Transaction Error *****************************/
+
+// TransactionError implements Error interface, wrapping all errors encountered
+// during the processing of a single transaction.
+type TransactionError struct {
+	txnInitError error
+	kvErrors     []KeyWithError
+}
+
+// NewTransactionError is a constructor for transaction error.
+func NewTransactionError(txnInitError error, kvErrors []KeyWithError) *TransactionError {
+	return &TransactionError{txnInitError: txnInitError, kvErrors: kvErrors}
+}
+
+// Error returns a string representation of all errors encountered during
+// the transaction processing.
+func (e *TransactionError) Error() string {
+	if e == nil {
+		return ""
+	}
+	if e.txnInitError != nil {
+		return e.txnInitError.Error()
+	}
+	if len(e.kvErrors) > 0 {
+		var kvErrMsgs []string
+		for _, kvError := range e.kvErrors {
+			kvErrMsgs = append(kvErrMsgs,
+				fmt.Sprintf("%s (%v): %v", kvError.Key, kvError.TxnOperation, kvError.Error))
+			return fmt.Sprintf("failed key-value pairs: [%s]", strings.Join(kvErrMsgs, ", "))
+		}
+	}
+	return ""
+}
+
+// GetKVErrors returns errors for key-value pairs that failed to get applied.
+func (e *TransactionError) GetKVErrors() (kvErrors []KeyWithError) {
+	if e == nil {
+		return kvErrors
+	}
+	return e.kvErrors
+}
+
+// GetTxnInitError returns error thrown during the transaction initialization.
+// If the transaction initialization fails, the other stages of the transaction
+// processing are not even started, therefore either GetTxnInitError or GetKVErrors
+// may return some errors, but not both.
+func (e *TransactionError) GetTxnInitError() error {
+	if e == nil {
+		return nil
+	}
+	return e.txnInitError
 }

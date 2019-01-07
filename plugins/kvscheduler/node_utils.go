@@ -54,9 +54,9 @@ func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []kvs.KVWithMetadat
 }
 
 // constructTargets builds targets for the graph based on derived values and dependencies.
-func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (targets []graph.RelationTarget) {
+func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (targets []graph.RelationTargetDef) {
 	for _, dep := range deps {
-		target := graph.RelationTarget{
+		target := graph.RelationTargetDef{
 			Relation: DependencyRelation,
 			Label:    dep.Label,
 			Key:      dep.Key,
@@ -66,7 +66,7 @@ func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (target
 	}
 
 	for _, derived := range derives {
-		target := graph.RelationTarget{
+		target := graph.RelationTargetDef{
 			Relation: DerivesRelation,
 			Label:    derived.Key,
 			Key:      derived.Key,
@@ -149,7 +149,7 @@ func isNodeReadyRec(node graph.Node, depth int, visited map[string]int) (ready b
 
 	for _, targets := range node.GetTargets(DependencyRelation) {
 		satisfied := false
-		for _, target := range targets {
+		for _, target := range targets.Nodes {
 			if isNodeBeingRemoved(target) {
 				// do not consider values that are about to be removed
 				continue
@@ -218,13 +218,13 @@ func getNodeBase(node graph.Node) graph.Node {
 
 func getDerivedNodes(node graph.Node) (derived []graph.Node) {
 	for _, derivedNodes := range node.GetTargets(DerivesRelation) {
-		derived = append(derived, derivedNodes...)
+		derived = append(derived, derivedNodes.Nodes...)
 	}
 	return derived
 }
 
 func getDerivedKeys(node graph.Node) utils.KeySet {
-	set := utils.NewKeySet()
+	set := utils.NewSliceBasedKeySet()
 	for _, derived := range getDerivedNodes(node) {
 		set.Add(derived.GetKey())
 	}

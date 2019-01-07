@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/rpc/rest"
 
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -37,6 +36,20 @@ const (
 
 	// DerivesRelation identifies relation of value derivation for the graph.
 	DerivesRelation = "derives"
+
+	// how often the transaction history gets trimmed to remove records too old to keep
+	txnHistoryTrimmingPeriod = 1 * time.Minute
+
+	// by default, a history of processed transaction is recorded
+	defaultRecordTransactionHistory = true
+
+	// by default, only transaction processed in the last 24 hours are kept recorded
+	// (with the exception of permanently recorded init period)
+	defaultTransactionHistoryAgeLimit = 24 * 60 // in minutes
+
+	// by default, transactions from the first hour of runtime stay permanently
+	// recorded
+	defaultPermanentlyRecordedInitPeriod = 60 // in minutes
 )
 
 // Scheduler is a CN-infra plugin implementing KVScheduler.
@@ -44,8 +57,8 @@ const (
 type Scheduler struct {
 	Deps
 
-	// temporary until datasync and scheduler are properly integrated
-	isInitialized bool
+	// configuration
+	config *Config
 
 	// management of go routines
 	ctx    context.Context
@@ -65,20 +78,27 @@ type Scheduler struct {
 	txnLock      sync.Mutex // can be used to pause transaction processing; always lock before the graph!
 	txnQueue     chan *queuedTxn
 	errorSubs    []errorSubscription
-	txnSeqNumber uint
+	txnSeqNumber uint64
 	resyncCount  uint
 	lastError    map[string]error // key -> error
 
 	// TXN history
 	historyLock sync.Mutex
-	txnHistory  []*RecordedTxn // ordered from the oldest to the latest
+	txnHistory  []*kvs.RecordedTxn // ordered from the oldest to the latest
+	startTime   time.Time
 }
 
 // Deps lists dependencies of the scheduler.
 type Deps struct {
-	infra.PluginName
-	Log          logging.PluginLogger
+	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
+}
+
+// Config holds the KVScheduler configuration.
+type Config struct {
+	RecordTransactionHistory      bool   `json:"record-transaction-history"`
+	TransactionHistoryAgeLimit    uint32 `json:"transaction-history-age-limit"`    // in minutes
+	PermanentlyRecordedInitPeriod uint32 `json:"permanently-recorded-init-period"` // in minutes
 }
 
 // SchedulerTxn implements transaction for the KV scheduler.
@@ -96,36 +116,121 @@ type errorSubscription struct {
 // Init initializes the scheduler. Single go routine is started that will process
 // all the transactions synchronously.
 func (scheduler *Scheduler) Init() error {
+func (s *Scheduler) Init() error {
+	// default configuration
+	s.config = &Config{
+		RecordTransactionHistory:      defaultRecordTransactionHistory,
+		TransactionHistoryAgeLimit:    defaultTransactionHistoryAgeLimit,
+		PermanentlyRecordedInitPeriod: defaultPermanentlyRecordedInitPeriod,
+	}
+
+	// load configuration
+	err := s.loadConfig(s.config)
+	if err != nil {
+		s.Log.Error(err)
+		return err
+	}
+	s.Log.Infof("KVScheduler configuration: %+v", *s.config)
+
 	// prepare context for all go routines
-	scheduler.ctx, scheduler.cancel = context.WithCancel(context.Background())
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	// initialize graph for in-memory storage of added+pending kv pairs
-	scheduler.graph = graph.NewGraph()
+	s.graph = graph.NewGraph(s.config.RecordTransactionHistory, s.config.TransactionHistoryAgeLimit,
+		s.config.PermanentlyRecordedInitPeriod)
 	// initialize registry for key->descriptor lookups
-	scheduler.registry = registry.NewRegistry()
+	s.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions
-	scheduler.txnQueue = make(chan *queuedTxn, 100)
+	s.txnQueue = make(chan *queuedTxn, 100)
 	// map of last errors (even for nodes not in the graph anymore)
-	scheduler.lastError = make(map[string]error)
+	s.lastError = make(map[string]error)
 	// register REST API handlers
-	scheduler.registerHandlers(scheduler.HTTPHandlers)
+	s.registerHandlers(s.HTTPHandlers)
+	// record startup time
+	s.startTime = time.Now()
+
 	// go routine processing serialized transactions
-	scheduler.wg.Add(1)
-	go scheduler.consumeTransactions()
-	// temporary until datasync and scheduler are properly integrated
-	scheduler.isInitialized = true
+	s.wg.Add(1)
+	go s.consumeTransactions()
+
+	// go routine periodically removing transaction records too old to keep
+	if s.config.RecordTransactionHistory {
+		s.wg.Add(1)
+		go s.transactionHistoryTrimming()
+	}
 	return nil
 }
 
-// IsInitialized is a method temporarily used by PropagateChanges until datasync
-// and scheduler are properly integrated.
-func (scheduler *Scheduler) IsInitialized() bool {
-	return scheduler.isInitialized
+// loadConfig loads configuration file.
+func (s *Scheduler) loadConfig(config *Config) error {
+	found, err := s.Cfg.LoadValue(config)
+	if err != nil {
+		return err
+	} else if !found {
+		s.Log.Debugf("%v config not found", s.PluginName)
+		return nil
+	}
+	s.Log.Debugf("%v config found: %+v", s.PluginName, config)
+	return err
+}
+
+// AfterInit subscribes to known NB prefixes.
+func (scheduler *Scheduler) AfterInit() (err error) {
+	go scheduler.watchEvents()
+
+	scheduler.watchDataReg, err = scheduler.Watcher.Watch("scheduler",
+		scheduler.changeChan, scheduler.resyncChan, scheduler.GetRegisteredNBKeyPrefixes()...)
+	return err
+}
+
+func (scheduler *Scheduler) watchEvents() {
+	for {
+		select {
+		case e := <-scheduler.changeChan:
+			scheduler.Log.Debugf("=> SCHEDULER received CHANGE EVENT: %v changes", len(e.GetChanges()))
+
+			txn := scheduler.StartNBTransaction()
+			for _, x := range e.GetChanges() {
+				scheduler.Log.Debugf("  - Change %v: %q (rev: %v)",
+					x.GetChangeType(), x.GetKey(), x.GetRevision())
+				if x.GetChangeType() == datasync.Delete {
+					txn.SetValue(x.GetKey(), nil)
+				} else {
+					txn.SetValue(x.GetKey(), x)
+				}
+			}
+			kvErrs, err := txn.Commit(kvs.WithRetry(context.Background(), time.Second, true))
+			scheduler.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
+			e.Done(err)
+
+		case e := <-scheduler.resyncChan:
+			scheduler.Log.Debugf("=> SCHEDULER received RESYNC EVENT: %v prefixes", len(e.GetValues()))
+
+			txn := scheduler.StartNBTransaction()
+			for prefix, iter := range e.GetValues() {
+				var keyVals []datasync.KeyVal
+				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
+					keyVals = append(keyVals, x)
+					txn.SetValue(x.GetKey(), x)
+				}
+				scheduler.Log.Debugf(" - Resync: %q (%v key-values)", prefix, len(keyVals))
+				for _, x := range keyVals {
+					scheduler.Log.Debugf("\t%q: (rev: %v)", x.GetKey(), x.GetRevision())
+				}
+			}
+			ctx := context.Background()
+			ctx = kvs.WithRetry(ctx, time.Second, true)
+			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
+			kvErrs, err := txn.Commit(ctx)
+			scheduler.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
+			e.Done(err)
+		}
+	}
 }
 
 // Close stops all the go routines.
-func (scheduler *Scheduler) Close() error {
-	scheduler.cancel()
-	scheduler.wg.Wait()
+func (s *Scheduler) Close() error {
+	s.cancel()
+	s.wg.Wait()
 	return nil
 }
 
@@ -133,10 +238,10 @@ func (scheduler *Scheduler) Close() error {
 // keys. It should be called in the Init phase of agent plugins.
 // Every key-value pair must have at most one descriptor associated with it
 // (none for derived values expressing properties).
-func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) {
-	scheduler.registry.RegisterDescriptor(descriptor)
+func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) {
+	s.registry.RegisterDescriptor(descriptor)
 	if descriptor.NBKeyPrefix != "" {
-		scheduler.keyPrefixes = append(scheduler.keyPrefixes, descriptor.NBKeyPrefix)
+		s.keyPrefixes = append(s.keyPrefixes, descriptor.NBKeyPrefix)
 	}
 
 	if descriptor.WithMetadata {
@@ -144,9 +249,9 @@ func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) {
 		if descriptor.MetadataMapFactory != nil {
 			metadataMap = descriptor.MetadataMapFactory()
 		} else {
-			metadataMap = mem.NewNamedMapping(scheduler.Log, descriptor.Name, nil)
+			metadataMap = mem.NewNamedMapping(s.Log, descriptor.Name, nil)
 		}
-		graphW := scheduler.graph.Write(false)
+		graphW := s.graph.Write(false)
 		graphW.RegisterMetadataMap(descriptor.Name, metadataMap)
 		graphW.Save()
 		graphW.Release()
@@ -155,17 +260,17 @@ func (scheduler *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) {
 
 // GetRegisteredNBKeyPrefixes returns a list of key prefixes from NB with values
 // described by registered descriptors and therefore managed by the scheduler.
-func (scheduler *Scheduler) GetRegisteredNBKeyPrefixes() []string {
-	return scheduler.keyPrefixes
+func (s *Scheduler) GetRegisteredNBKeyPrefixes() []string {
+	return s.keyPrefixes
 }
 
 // StartNBTransaction starts a new transaction from NB to SB plane.
 // The enqueued actions are scheduled for execution by Txn.Commit().
-func (scheduler *Scheduler) StartNBTransaction() kvs.Txn {
+func (s *Scheduler) StartNBTransaction() kvs.Txn {
 	txn := &SchedulerTxn{
-		scheduler: scheduler,
+		scheduler: s,
 		data: &queuedTxn{
-			txnType: nbTransaction,
+			txnType: kvs.NBTransaction,
 			nb: &nbTxn{
 				value: make(map[string]datasync.LazyValue),
 			},
@@ -176,30 +281,30 @@ func (scheduler *Scheduler) StartNBTransaction() kvs.Txn {
 
 // TransactionBarrier ensures that all notifications received prior to the call
 // are associated with transactions that have already finalized.
-func (scheduler *Scheduler) TransactionBarrier() {
-	scheduler.txnLock.Lock()
-	scheduler.txnLock.Unlock()
+func (s *Scheduler) TransactionBarrier() {
+	s.txnLock.Lock()
+	s.txnLock.Unlock()
 }
 
 // PushSBNotification notifies about a spontaneous value change in the SB
 // plane (i.e. not triggered by NB transaction).
-func (scheduler *Scheduler) PushSBNotification(key string, value proto.Message, metadata kvs.Metadata) error {
+func (s *Scheduler) PushSBNotification(key string, value proto.Message, metadata kvs.Metadata) error {
 	txn := &queuedTxn{
-		txnType: sbNotification,
+		txnType: kvs.SBNotification,
 		sb: &sbNotif{
 			value:    kvs.KeyValuePair{Key: key, Value: value},
 			metadata: metadata,
 		},
 	}
-	return scheduler.enqueueTxn(txn)
+	return s.enqueueTxn(txn)
 }
 
 // GetValue currently set for the given key.
 // The function can be used from within a transaction. However, if update
 // of A uses the value of B, then A should be marked as dependent on B
 // so that the scheduler can ensure that B is updated before A is.
-func (scheduler *Scheduler) GetValue(key string) proto.Message {
-	graphR := scheduler.graph.Read()
+func (s *Scheduler) GetValue(key string) proto.Message {
+	graphR := s.graph.Read()
 	defer graphR.Release()
 
 	node := graphR.GetNode(key)
@@ -210,8 +315,8 @@ func (scheduler *Scheduler) GetValue(key string) proto.Message {
 }
 
 // GetValues returns a set of values matched by the given selector.
-func (scheduler *Scheduler) GetValues(selector kvs.KeySelector) []kvs.KeyValuePair {
-	graphR := scheduler.graph.Read()
+func (s *Scheduler) GetValues(selector kvs.KeySelector) []kvs.KeyValuePair {
+	graphR := s.graph.Read()
 	defer graphR.Release()
 
 	nodes := graphR.GetNodes(selector)
@@ -221,8 +326,8 @@ func (scheduler *Scheduler) GetValues(selector kvs.KeySelector) []kvs.KeyValuePa
 // GetMetadataMap returns (read-only) map associating value label with value
 // metadata of a given descriptor.
 // Returns nil if the descriptor does not expose metadata.
-func (scheduler *Scheduler) GetMetadataMap(descriptor string) idxmap.NamedMapping {
-	graphR := scheduler.graph.Read()
+func (s *Scheduler) GetMetadataMap(descriptor string) idxmap.NamedMapping {
+	graphR := s.graph.Read()
 	defer graphR.Release()
 
 	return graphR.GetMetadataMap(descriptor)
@@ -230,8 +335,8 @@ func (scheduler *Scheduler) GetMetadataMap(descriptor string) idxmap.NamedMappin
 
 // GetPendingValues returns list of values (possibly filtered by selector)
 // waiting for their dependencies to be met.
-func (scheduler *Scheduler) GetPendingValues(selector kvs.KeySelector) []kvs.KeyValuePair {
-	graphR := scheduler.graph.Read()
+func (s *Scheduler) GetPendingValues(selector kvs.KeySelector) []kvs.KeyValuePair {
+	graphR := s.graph.Read()
 	defer graphR.Release()
 
 	nodes := graphR.GetNodes(selector, graph.WithFlags(&PendingFlag{}))
@@ -241,8 +346,8 @@ func (scheduler *Scheduler) GetPendingValues(selector kvs.KeySelector) []kvs.Key
 // GetFailedValues returns a list of keys (possibly filtered by selector)
 // whose (base) values are in a failed state (i.e. possibly not in the state as set
 // by the last transaction).
-func (scheduler *Scheduler) GetFailedValues(selector kvs.KeySelector) []kvs.KeyWithError {
-	graphR := scheduler.graph.Read()
+func (s *Scheduler) GetFailedValues(selector kvs.KeySelector) []kvs.KeyWithError {
+	graphR := s.graph.Read()
 	defer graphR.Release()
 
 	nodes := graphR.GetNodes(selector, graph.WithFlags(&ErrorFlag{}))
@@ -251,8 +356,8 @@ func (scheduler *Scheduler) GetFailedValues(selector kvs.KeySelector) []kvs.KeyW
 
 // SubscribeForErrors allows to get notified about all failed (Error!=nil)
 // and restored (Error==nil) values (possibly filtered using the selector).
-func (scheduler *Scheduler) SubscribeForErrors(channel chan<- kvs.KeyWithError, selector kvs.KeySelector) {
-	scheduler.errorSubs = append(scheduler.errorSubs, errorSubscription{channel: channel, selector: selector})
+func (s *Scheduler) SubscribeForErrors(channel chan<- kvs.KeyWithError, selector kvs.KeySelector) {
+	s.errorSubs = append(s.errorSubs, errorSubscription{channel: channel, selector: selector})
 }
 
 // SetValue changes (non-derived) lazy value - un-marshalled during
@@ -266,7 +371,9 @@ func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) kvs.Txn 
 // Commit orders scheduler to execute enqueued operations.
 // Operations with unmet dependencies will get postponed and possibly
 // executed later.
-func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []kvs.KeyWithError, txnError error) {
+func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err error) {
+	txnSeqNum = ^uint64(0)
+
 	// parse transaction options
 	txn.data.nb.isBlocking = !kvs.IsNonBlockingTxn(ctx)
 	txn.data.nb.resyncType, txn.data.nb.verboseRefresh = kvs.IsResync(ctx)
@@ -276,30 +383,30 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (kvErrors []kvs.KeyWithErro
 
 	// validate transaction options
 	if txn.data.nb.resyncType == kvs.DownstreamResync && len(txn.data.nb.value) > 0 {
-		return nil, kvs.ErrCombinedDownstreamResyncWithChange
+		return txnSeqNum, kvs.NewTransactionError(kvs.ErrCombinedDownstreamResyncWithChange, nil)
 	}
 	if txn.data.nb.revertOnFailure && txn.data.nb.resyncType != kvs.NotResync {
-		return nil, kvs.ErrRevertNotSupportedWithResync
+		return txnSeqNum, kvs.NewTransactionError(kvs.ErrRevertNotSupportedWithResync, nil)
 	}
 
 	// enqueue txn and for blocking Commit wait for the errors
 	if txn.data.nb.isBlocking {
-		txn.data.nb.resultChan = make(chan []kvs.KeyWithError, 1)
+		txn.data.nb.resultChan = make(chan txnResult, 1)
 	}
-	err := txn.scheduler.enqueueTxn(txn.data)
+	err = txn.scheduler.enqueueTxn(txn.data)
 	if err != nil {
-		return nil, err
+		return txnSeqNum, kvs.NewTransactionError(err, nil)
 	}
 	if txn.data.nb.isBlocking {
 		select {
 		case <-txn.scheduler.ctx.Done():
-			return nil, kvs.ErrClosedScheduler
+			return txnSeqNum, kvs.NewTransactionError(kvs.ErrClosedScheduler, nil)
 		case <-ctx.Done():
-			return nil, kvs.ErrTxnWaitCanceled
-		case kvErrors = <-txn.data.nb.resultChan:
+			return txnSeqNum, kvs.NewTransactionError(kvs.ErrTxnWaitCanceled, nil)
+		case txnResult := <-txn.data.nb.resultChan:
 			close(txn.data.nb.resultChan)
-			return kvErrors, nil
+			return txnResult.txnSeqNum, txnResult.err
 		}
 	}
-	return nil, nil
+	return txnSeqNum, nil
 }
