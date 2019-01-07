@@ -23,26 +23,6 @@ import (
 	"github.com/bennyscetbun/jsongo"
 )
 
-func getTypeByRef(ctx *context, ref string) *Type {
-	for _, typ := range ctx.packageData.Types {
-		if ref == toApiType(typ.Name) {
-			return &typ
-		}
-	}
-	return nil
-}
-
-func getUnionSize(ctx *context, union *Union) (maxSize int) {
-	for _, field := range union.Fields {
-		if typ := getTypeByRef(ctx, field.Type); typ != nil {
-			if size := getSizeOfType(typ); size > maxSize {
-				maxSize = size
-			}
-		}
-	}
-	return
-}
-
 // toApiType returns name that is used as type reference in VPP binary API
 func toApiType(name string) string {
 	return fmt.Sprintf("vl_api_%s_t", name)
@@ -50,13 +30,14 @@ func toApiType(name string) string {
 
 // parsePackage parses provided JSON data into objects prepared for code generation
 func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
-	logf(" %s contains: %d services, %d messages, %d types, %d enums, %d unions (version: %s)",
+	logf(" %s contains: %d services, %d messages, %d types, %d enums, %d unions, %d aliases (version: %s)",
 		ctx.packageName,
 		jsonRoot.Map("services").Len(),
 		jsonRoot.Map("messages").Len(),
 		jsonRoot.Map("types").Len(),
 		jsonRoot.Map("enums").Len(),
 		jsonRoot.Map("unions").Len(),
+		jsonRoot.Map("aliases").Len(),
 		jsonRoot.Map("vl_api_version").Get(),
 	)
 
@@ -77,6 +58,22 @@ func parsePackage(ctx *context, jsonRoot *jsongo.JSONNode) (*Package, error) {
 		}
 		pkg.Enums[i] = *enum
 		pkg.RefMap[toApiType(enum.Name)] = enum.Name
+	}
+
+	// parse aliases
+	aliases := jsonRoot.Map("aliases")
+	if aliases.GetType() == jsongo.TypeMap {
+		pkg.Aliases = make([]Alias, aliases.Len())
+		for i, key := range aliases.GetKeys() {
+			aliasNode := aliases.At(key)
+
+			alias, err := parseAlias(ctx, key.(string), aliasNode)
+			if err != nil {
+				return nil, err
+			}
+			pkg.Aliases[i] = *alias
+			pkg.RefMap[toApiType(alias.Name)] = alias.Name
+		}
 	}
 
 	// parse types
@@ -308,6 +305,42 @@ func parseType(ctx *context, typeNode *jsongo.JSONNode) (*Type, error) {
 	return &typ, nil
 }
 
+const (
+	aliasesLength = "length"
+	aliasesType   = "type"
+)
+
+// parseAlias parses VPP binary API alias object from JSON node
+func parseAlias(ctx *context, aliasName string, aliasNode *jsongo.JSONNode) (*Alias, error) {
+	if aliasNode.Len() == 0 || aliasNode.At(aliasesType).GetType() != jsongo.TypeValue {
+		return nil, errors.New("invalid JSON for alias specified")
+	}
+
+	alias := Alias{
+		Name: aliasName,
+	}
+
+	if typeNode := aliasNode.At(aliasesType); typeNode.GetType() == jsongo.TypeValue {
+		typ, ok := typeNode.Get().(string)
+		if !ok {
+			return nil, fmt.Errorf("alias type is %T, not a string", typeNode.Get())
+		}
+		if typ != "null" {
+			alias.Type = typ
+		}
+	}
+
+	if lengthNode := aliasNode.At(aliasesLength); lengthNode.GetType() == jsongo.TypeValue {
+		length, ok := lengthNode.Get().(float64)
+		if !ok {
+			return nil, fmt.Errorf("alias length is %T, not a float64", lengthNode.Get())
+		}
+		alias.Length = int(length)
+	}
+
+	return &alias, nil
+}
+
 // parseMessage parses VPP binary API message object from JSON node
 func parseMessage(ctx *context, msgNode *jsongo.JSONNode) (*Message, error) {
 	if msgNode.Len() == 0 || msgNode.At(0).GetType() != jsongo.TypeValue {
@@ -364,7 +397,7 @@ func parseField(ctx *context, field *jsongo.JSONNode) (*Field, error) {
 	if field.Len() >= 3 {
 		fieldLength, ok = field.At(2).Get().(float64)
 		if !ok {
-			return nil, fmt.Errorf("field length is %T, not an int", field.At(2).Get())
+			return nil, fmt.Errorf("field length is %T, not float64", field.At(2).Get())
 		}
 	}
 	var fieldLengthFrom string
@@ -460,4 +493,63 @@ func convertToGoType(ctx *context, binapiType string) (typ string) {
 		typ = "byte"
 	}
 	return typ
+}
+
+func getSizeOfType(typ *Type) (size int) {
+	for _, field := range typ.Fields {
+		size += getSizeOfBinapiTypeLength(field.Type, field.Length)
+	}
+	return size
+}
+
+func getSizeOfBinapiTypeLength(typ string, length int) (size int) {
+	if n := getBinapiTypeSize(typ); n > 0 {
+		if length > 0 {
+			return n * length
+		} else {
+			return n
+		}
+	}
+	return
+}
+
+func getTypeByRef(ctx *context, ref string) *Type {
+	for _, typ := range ctx.packageData.Types {
+		if ref == toApiType(typ.Name) {
+			return &typ
+		}
+	}
+	return nil
+}
+
+func getAliasByRef(ctx *context, ref string) *Alias {
+	for _, alias := range ctx.packageData.Aliases {
+		if ref == toApiType(alias.Name) {
+			return &alias
+		}
+	}
+	return nil
+}
+
+func getUnionSize(ctx *context, union *Union) (maxSize int) {
+	for _, field := range union.Fields {
+		typ := getTypeByRef(ctx, field.Type)
+		if typ != nil {
+			if size := getSizeOfType(typ); size > maxSize {
+				maxSize = size
+			}
+			continue
+		}
+		alias := getAliasByRef(ctx, field.Type)
+		if alias != nil {
+			if size := getSizeOfBinapiTypeLength(alias.Type, alias.Length); size > maxSize {
+				maxSize = size
+			}
+			continue
+		} else {
+			logf("no type or alias found for union %s field type %q", union.Name, field.Type)
+			continue
+		}
+	}
+	return
 }
