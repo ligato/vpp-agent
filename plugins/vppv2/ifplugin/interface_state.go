@@ -402,7 +402,6 @@ func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *st
 		return
 	}
 
-	var save bool
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found := c.getIfStateDataWLookup(swIfIndex)
@@ -416,14 +415,9 @@ func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *st
 		} else if combinedCounterType(counter.VnetCounterType) == Tx {
 			ifStats.OutPackets = counter.Data[i].Packets
 			ifStats.OutBytes = counter.Data[i].Bytes
-			save = true
-		}
-	}
-	if save {
-		// store counters of all interfaces into ETCD
-		for _, counter := range c.ifState {
+			// publish Tx + Rx for this interface (Tx counters are received after RX counters)
 			c.publishIfState(&intf.InterfaceNotification{
-				Type: intf.InterfaceNotification_UPDOWN, State: counter})
+				Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 		}
 	}
 }

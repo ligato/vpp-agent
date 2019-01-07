@@ -45,7 +45,12 @@ const (
 	defaultRecordTransactionHistory = true
 
 	// by default, only transaction processed in the last 24 hours are kept recorded
+	// (with the exception of permanently recorded init period)
 	defaultTransactionHistoryAgeLimit = 24 * 60 // in minutes
+
+	// by default, transactions from the first hour of runtime stay permanently
+	// recorded
+	defaultPermanentlyRecordedInitPeriod = 60 // in minutes
 )
 
 // Scheduler is a CN-infra plugin implementing KVScheduler.
@@ -81,6 +86,7 @@ type Scheduler struct {
 	// TXN history
 	historyLock sync.Mutex
 	txnHistory  []*kvs.RecordedTxn // ordered from the oldest to the latest
+	startTime   time.Time
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
@@ -97,8 +103,9 @@ type Deps struct {
 
 // Config holds the KVScheduler configuration.
 type Config struct {
-	RecordTransactionHistory   bool   `json:"record-transaction-history"`
-	TransactionHistoryAgeLimit uint32 `json:"transaction-history-age-limit"` // in minutes
+	RecordTransactionHistory      bool   `json:"record-transaction-history"`
+	TransactionHistoryAgeLimit    uint32 `json:"transaction-history-age-limit"`    // in minutes
+	PermanentlyRecordedInitPeriod uint32 `json:"permanently-recorded-init-period"` // in minutes
 }
 
 // SchedulerTxn implements transaction for the KV scheduler.
@@ -118,8 +125,9 @@ type errorSubscription struct {
 func (s *Scheduler) Init() error {
 	// default configuration
 	s.config = &Config{
-		RecordTransactionHistory:   defaultRecordTransactionHistory,
-		TransactionHistoryAgeLimit: defaultTransactionHistoryAgeLimit,
+		RecordTransactionHistory:      defaultRecordTransactionHistory,
+		TransactionHistoryAgeLimit:    defaultTransactionHistoryAgeLimit,
+		PermanentlyRecordedInitPeriod: defaultPermanentlyRecordedInitPeriod,
 	}
 
 	// load configuration
@@ -137,7 +145,8 @@ func (s *Scheduler) Init() error {
 	// prepare context for all go routines
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	// initialize graph for in-memory storage of added+pending kv pairs
-	s.graph = graph.NewGraph(s.config.RecordTransactionHistory, s.config.TransactionHistoryAgeLimit)
+	s.graph = graph.NewGraph(s.config.RecordTransactionHistory, s.config.TransactionHistoryAgeLimit,
+		s.config.PermanentlyRecordedInitPeriod)
 	// initialize registry for key->descriptor lookups
 	s.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions
@@ -146,6 +155,8 @@ func (s *Scheduler) Init() error {
 	s.lastError = make(map[string]error)
 	// register REST API handlers
 	s.registerHandlers(s.HTTPHandlers)
+	// record startup time
+	s.startTime = time.Now()
 
 	// go routine processing serialized transactions
 	s.wg.Add(1)

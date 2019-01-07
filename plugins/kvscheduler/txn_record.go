@@ -189,15 +189,27 @@ func (s *Scheduler) transactionHistoryTrimming() {
 			s.historyLock.Lock()
 			now := time.Now()
 			ageLimit := time.Duration(s.config.TransactionHistoryAgeLimit) * time.Minute
-			var i int
+			initPeriod := time.Duration(s.config.PermanentlyRecordedInitPeriod) * time.Minute
+			var i, j int // i = first after init period, j = first after init period to keep
 			for i = 0; i < len(s.txnHistory); i++ {
-				elapsed := now.Sub(s.txnHistory[i].Stop)
+				sinceStart := s.txnHistory[i].Start.Sub(s.startTime)
+				if sinceStart > initPeriod {
+					break
+				}
+			}
+			for j = i; j < len(s.txnHistory); j++ {
+				elapsed := now.Sub(s.txnHistory[j].Stop)
 				if elapsed <= ageLimit {
 					break
 				}
 			}
-			if i > 0 {
-				s.txnHistory = s.txnHistory[i:]
+			if j > i {
+				copy(s.txnHistory[i:], s.txnHistory[j:])
+				newLen := len(s.txnHistory) - (j - i)
+				for k := newLen; k < len(s.txnHistory); k++ {
+					s.txnHistory[k] = nil
+				}
+				s.txnHistory = s.txnHistory[:newLen]
 			}
 			s.historyLock.Unlock()
 		}

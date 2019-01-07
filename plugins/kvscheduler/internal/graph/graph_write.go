@@ -123,7 +123,7 @@ func (graph *graphRW) Save() {
 
 	// apply new/changes nodes
 	for key, node := range graph.nodes {
-		if !node.dataUpdated && !node.targetsUpdated {
+		if !node.dataUpdated && !node.targetsUpdated && !node.sourcesUpdated {
 			continue
 		}
 
@@ -149,10 +149,13 @@ func (graph *graphRW) Save() {
 		}
 
 		// mark node for recording during RW-handle release
-		if _, newRev := graph.newRevs[key]; !newRev {
-			graph.newRevs[key] = false
+		// (ignore if only sources have been updated)
+		if node.dataUpdated || node.targetsUpdated {
+			if _, newRev := graph.newRevs[key]; !newRev {
+				graph.newRevs[key] = false
+			}
+			graph.newRevs[key] = graph.newRevs[key] || node.dataUpdated
 		}
-		graph.newRevs[key] = graph.newRevs[key] || node.dataUpdated
 
 		// copy changed node to the actual graph
 		nodeCopy := node.copy()
@@ -170,6 +173,7 @@ func (graph *graphRW) Save() {
 		// working copy is now in-sync
 		node.dataUpdated = false
 		node.targetsUpdated = false
+		node.sourcesUpdated = false
 		node.metaInSync = true
 	}
 }
@@ -208,18 +212,32 @@ func (graph *graphRW) Release() {
 		sinceLastTrimming := now.Sub(graph.parent.lastRevTrimming)
 		if sinceLastTrimming >= oldRevsTrimmingPeriod {
 			for key, records := range destGraph.timeline {
-				var i int
+				var i, j int // i = first after init period, j = first after init period to keep
 				for i = 0; i < len(records); i++ {
-					if records[i].Until.IsZero() {
+					sinceStart := records[i].Since.Sub(graph.parent.startTime)
+					if sinceStart > graph.parent.permanentInitPeriod {
 						break
 					}
-					elapsed := now.Sub(records[i].Until)
+				}
+				for j = i; j < len(records); j++ {
+					if records[j].Until.IsZero() {
+						break
+					}
+					elapsed := now.Sub(records[j].Until)
 					if elapsed <= graph.parent.recordAgeLimit {
 						break
 					}
 				}
-				if i > 0 {
-					destGraph.timeline[key] = records[i:]
+				if j > i {
+					copy(records[i:], records[j:])
+					newLen := len(records) - (j - i)
+					for k := newLen; k < len(records); k++ {
+						records[k] = nil
+					}
+					destGraph.timeline[key] = records[:newLen]
+				}
+				if len(destGraph.timeline[key]) == 0 {
+					delete(destGraph.timeline, key)
 				}
 			}
 			graph.parent.lastRevTrimming = now
