@@ -411,6 +411,7 @@ func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *st
 		return
 	}
 
+	var save bool
 	for i := uint32(0); i < counter.Count; i++ {
 		swIfIndex := counter.FirstSwIfIndex + i
 		ifState, found := c.getIfStateDataWLookup(swIfIndex)

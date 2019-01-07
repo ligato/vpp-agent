@@ -17,6 +17,7 @@ package kvscheduler
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
@@ -115,7 +116,6 @@ type errorSubscription struct {
 
 // Init initializes the scheduler. Single go routine is started that will process
 // all the transactions synchronously.
-func (scheduler *Scheduler) Init() error {
 func (s *Scheduler) Init() error {
 	// default configuration
 	s.config = &Config{
@@ -171,60 +171,6 @@ func (s *Scheduler) loadConfig(config *Config) error {
 	}
 	s.Log.Debugf("%v config found: %+v", s.PluginName, config)
 	return err
-}
-
-// AfterInit subscribes to known NB prefixes.
-func (scheduler *Scheduler) AfterInit() (err error) {
-	go scheduler.watchEvents()
-
-	scheduler.watchDataReg, err = scheduler.Watcher.Watch("scheduler",
-		scheduler.changeChan, scheduler.resyncChan, scheduler.GetRegisteredNBKeyPrefixes()...)
-	return err
-}
-
-func (scheduler *Scheduler) watchEvents() {
-	for {
-		select {
-		case e := <-scheduler.changeChan:
-			scheduler.Log.Debugf("=> SCHEDULER received CHANGE EVENT: %v changes", len(e.GetChanges()))
-
-			txn := scheduler.StartNBTransaction()
-			for _, x := range e.GetChanges() {
-				scheduler.Log.Debugf("  - Change %v: %q (rev: %v)",
-					x.GetChangeType(), x.GetKey(), x.GetRevision())
-				if x.GetChangeType() == datasync.Delete {
-					txn.SetValue(x.GetKey(), nil)
-				} else {
-					txn.SetValue(x.GetKey(), x)
-				}
-			}
-			kvErrs, err := txn.Commit(kvs.WithRetry(context.Background(), time.Second, true))
-			scheduler.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
-			e.Done(err)
-
-		case e := <-scheduler.resyncChan:
-			scheduler.Log.Debugf("=> SCHEDULER received RESYNC EVENT: %v prefixes", len(e.GetValues()))
-
-			txn := scheduler.StartNBTransaction()
-			for prefix, iter := range e.GetValues() {
-				var keyVals []datasync.KeyVal
-				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
-					keyVals = append(keyVals, x)
-					txn.SetValue(x.GetKey(), x)
-				}
-				scheduler.Log.Debugf(" - Resync: %q (%v key-values)", prefix, len(keyVals))
-				for _, x := range keyVals {
-					scheduler.Log.Debugf("\t%q: (rev: %v)", x.GetKey(), x.GetRevision())
-				}
-			}
-			ctx := context.Background()
-			ctx = kvs.WithRetry(ctx, time.Second, true)
-			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
-			kvErrs, err := txn.Commit(ctx)
-			scheduler.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
-			e.Done(err)
-		}
-	}
 }
 
 // Close stops all the go routines.

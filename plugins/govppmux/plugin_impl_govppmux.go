@@ -293,8 +293,8 @@ func (p *Plugin) retrieveVersion() {
 		return
 	}
 
-	plugin.Log.Debugf("version info: %+v", version)
-	plugin.Log.Infof("VPP version: %q (%v)", version.Version, version.BuildDate)
+	p.Log.Debugf("version info: %+v", version)
+	p.Log.Infof("VPP version: %q (%v)", version.Version, version.BuildDate)
 
 	// Get VPP ACL plugin version
 	var aclVersion string
