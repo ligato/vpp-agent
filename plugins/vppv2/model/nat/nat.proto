@@ -54,6 +54,8 @@ message DNat44 {
             SELF = 2;
         };
         TwiceNatMode twice_nat = 6;          /* Enable/disable (self-)twice NAT. */
+        uint32 session_affinity = 7;         /* Session affinity if 0 disabled, otherwise client
+                                                IP affinity sticky time in seconds */
     }
     repeated StaticMapping st_mappings = 2;
 
