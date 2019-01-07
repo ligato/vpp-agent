@@ -2052,8 +2052,12 @@ func (*IpsecSpdInterfaceDetails) GetMessageType() api.MessageType {
 //                "u32",
 //                "show_instance"
 //            ],
+//            [
+//                "u8",
+//                "udp_encap"
+//            ],
 //            {
-//                "crc": "0x56b8943b"
+//                "crc": "0x2ee1da12"
 //            }
 //
 type IpsecTunnelIfAddDel struct {
@@ -2076,13 +2080,14 @@ type IpsecTunnelIfAddDel struct {
 	RemoteIntegKey     []byte `struc:"[128]byte"`
 	Renumber           uint8
 	ShowInstance       uint32
+	UDPEncap           uint8
 }
 
 func (*IpsecTunnelIfAddDel) GetMessageName() string {
 	return "ipsec_tunnel_if_add_del"
 }
 func (*IpsecTunnelIfAddDel) GetCrcString() string {
-	return "56b8943b"
+	return "2ee1da12"
 }
 func (*IpsecTunnelIfAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
