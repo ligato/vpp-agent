@@ -372,9 +372,12 @@ func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutin
 		// switch to the namespace of the interface
 		revertNs, err := d.nsPlugin.SwitchToNamespace(nsCtx, ifMeta.Namespace)
 		if err != nil {
-			dump.err = errors.Errorf("failed to switch namespace: %v", err)
-			d.log.Error(dump.err)
-			break
+			// namespace and all the routes it had contained no longer exist
+			d.log.WithFields(logging.Fields{
+				"err":       err,
+				"namespace": ifMeta.Namespace,
+			}).Warn("Failed to dump namespace")
+			continue
 		}
 
 		// get routes assigned to this interface
