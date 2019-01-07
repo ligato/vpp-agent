@@ -1,7 +1,7 @@
 {
-  "index":"spd1",
+  "index":"1",
   "interfaces": [
-    { "name": "afp1" }
+    { "name": "tap1" }
   ],
   "policy_entries": [
     {

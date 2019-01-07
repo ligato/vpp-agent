@@ -73,7 +73,7 @@ vpp-agent-ctl -dsocket
 
 **2. Using REST** not yet implemented
 
-**2. Using GRPC:** not yet implemented
+**3. Using GRPC:** not yet implemented
 
 ### <a name="pths-limit">Limitations</a>
 
@@ -137,7 +137,7 @@ In case the interface is not configured, the IP redirect data are cached and mar
 
 **2. Using REST** not yet implemented
 
-**2. Using GRPC:** not yet implemented
+**3. Using GRPC:** not yet implemented
 
 The VPP cli command (for configuration verification) is `show ip punt redirect `.
 
