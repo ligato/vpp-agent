@@ -60,6 +60,7 @@ func (h *IPSecVppHandler) tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, 
 		LocalIntegKeyLen:   uint8(len(localIntegKey)),
 		RemoteIntegKey:     remoteIntegKey,
 		RemoteIntegKeyLen:  uint8(len(remoteIntegKey)),
+		UDPEncap:           boolToUint(tunnel.EnableUdpEncap),
 	}
 	reply := &ipsec_api.IpsecTunnelIfAddDelReply{}
 

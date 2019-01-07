@@ -733,6 +733,7 @@ func (ctl *VppAgentCtl) createIPSecTunnelInterface() {
 		IpAddresses:     []string{"20.0.0.0/24"},
 		//UnnumberedName:  "tap1",
 		Vrf:             0,
+		EnableUdpEncap:  false,
 	}
 
 	ctl.Log.Println(tunnelIf)

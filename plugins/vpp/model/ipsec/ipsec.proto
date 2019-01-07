@@ -45,6 +45,7 @@ message TunnelInterfaces {
         repeated string ip_addresses = 101;
         uint32 vrf = 102;
         string unnumbered_name = 103;   /* set IPSec interface as unnumbered and take IP address from interface defined */
+        bool enable_udp_encap = 104;    /* Enable UDP encapsulation */
     }
     repeated Tunnel tunnels = 1;
 }
