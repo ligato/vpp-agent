@@ -19,9 +19,9 @@ enum ValueState {
     PENDING = 3;
 
     // ValueState_INVALID represents (NB) value that will not be configured
-    // because it has invalid definition (as declared by Validate method of the
-    // associated descriptor - the returned error is stored in the <error> field
-    // of the value status).
+    // because it either cannot be unmarshalled or it has an invalid content
+    // as declared by the Validate method of the associated descriptor.
+    // The corresponding error is stored in the <error> field of the value status.
     INVALID = 4;
 
     // ValueState_UNIMPLEMENTED marks value received from NB that cannot
@@ -41,7 +41,7 @@ message ValueError {
 
 enum TxnOperation {
     UNDEFINED = 0;
-    PRE_PROCESS = 1;
+    UNMARSHAL = 1;
     VALIDATE = 2;
     ADD = 3;
     MODIFY = 4;
