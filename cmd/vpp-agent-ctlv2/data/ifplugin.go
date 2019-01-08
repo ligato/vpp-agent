@@ -262,6 +262,7 @@ func (ctl *VppAgentCtlImpl) PutIPSecTunnelInterface() error {
 				IntegAlg:        2,
 				LocalIntegKey:   "4339314b55523947594d6d3547666b45764e6a58",
 				RemoteIntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+				EnableUdpEncap:  true,
 			},
 		},
 	}
