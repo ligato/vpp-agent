@@ -70,10 +70,12 @@ func New() *VPPAgent {
 		local.Get(),
 		etcdDataSync,
 		consulDataSync,
+		redisDataSync,
 	}
 	writers := datasync.KVProtoWriters{
 		etcdDataSync,
 		consulDataSync,
+		redisDataSync,
 	}
 	statuscheck.DefaultPlugin.Transport = writers
 
