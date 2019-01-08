@@ -121,16 +121,16 @@ type isProxy_Tx interface {
 }
 
 type Proxy_RxPort struct {
-	RxPort *PortBased `protobuf:"bytes,1,opt,name=rx_port,json=rxPort,oneof"`
+	RxPort *PortBased `protobuf:"bytes,1,opt,name=rx_port,json=rxPort,proto3,oneof"`
 }
 type Proxy_RxSocket struct {
-	RxSocket *SocketBased `protobuf:"bytes,2,opt,name=rx_socket,json=rxSocket,oneof"`
+	RxSocket *SocketBased `protobuf:"bytes,2,opt,name=rx_socket,json=rxSocket,proto3,oneof"`
 }
 type Proxy_TxPort struct {
-	TxPort *PortBased `protobuf:"bytes,3,opt,name=tx_port,json=txPort,oneof"`
+	TxPort *PortBased `protobuf:"bytes,3,opt,name=tx_port,json=txPort,proto3,oneof"`
 }
 type Proxy_TxSocket struct {
-	TxSocket *SocketBased `protobuf:"bytes,4,opt,name=tx_socket,json=txSocket,oneof"`
+	TxSocket *SocketBased `protobuf:"bytes,4,opt,name=tx_socket,json=txSocket,proto3,oneof"`
 }
 
 func (*Proxy_RxPort) isProxy_Rx()   {}

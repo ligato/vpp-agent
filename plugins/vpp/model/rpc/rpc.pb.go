@@ -17,8 +17,10 @@ import l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 import nat "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 import stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 
-import context "golang.org/x/net/context"
-import grpc "google.golang.org/grpc"
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,27 +37,27 @@ const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 // items of every type. Universal type for every data change/resync request
 type DataRequest struct {
 	// vppplugin
-	AccessLists           []*acl.AccessLists_Acl                 `protobuf:"bytes,10,rep,name=AccessLists" json:"AccessLists,omitempty"`
-	Interfaces            []*interfaces.Interfaces_Interface     `protobuf:"bytes,20,rep,name=Interfaces" json:"Interfaces,omitempty"`
-	BfdSessions           []*bfd.SingleHopBFD_Session            `protobuf:"bytes,30,rep,name=BfdSessions" json:"BfdSessions,omitempty"`
-	BfdAuthKeys           []*bfd.SingleHopBFD_Key                `protobuf:"bytes,31,rep,name=BfdAuthKeys" json:"BfdAuthKeys,omitempty"`
-	BfdEchoFunction       *bfd.SingleHopBFD_EchoFunction         `protobuf:"bytes,32,opt,name=BfdEchoFunction" json:"BfdEchoFunction,omitempty"`
-	BridgeDomains         []*l2.BridgeDomains_BridgeDomain       `protobuf:"bytes,40,rep,name=BridgeDomains" json:"BridgeDomains,omitempty"`
-	FIBs                  []*l2.FibTable_FibEntry                `protobuf:"bytes,41,rep,name=FIBs" json:"FIBs,omitempty"`
-	XCons                 []*l2.XConnectPairs_XConnectPair       `protobuf:"bytes,42,rep,name=XCons" json:"XCons,omitempty"`
-	StaticRoutes          []*l3.StaticRoutes_Route               `protobuf:"bytes,50,rep,name=StaticRoutes" json:"StaticRoutes,omitempty"`
-	ArpEntries            []*l3.ArpTable_ArpEntry                `protobuf:"bytes,51,rep,name=ArpEntries" json:"ArpEntries,omitempty"`
-	ProxyArpInterfaces    []*l3.ProxyArpInterfaces_InterfaceList `protobuf:"bytes,52,rep,name=ProxyArpInterfaces" json:"ProxyArpInterfaces,omitempty"`
-	ProxyArpRanges        []*l3.ProxyArpRanges_RangeList         `protobuf:"bytes,53,rep,name=ProxyArpRanges" json:"ProxyArpRanges,omitempty"`
-	L4Feature             *l4.L4Features                         `protobuf:"bytes,60,opt,name=L4Feature" json:"L4Feature,omitempty"`
-	ApplicationNamespaces []*l4.AppNamespaces_AppNamespace       `protobuf:"bytes,61,rep,name=ApplicationNamespaces" json:"ApplicationNamespaces,omitempty"`
-	StnRules              []*stn.STN_Rule                        `protobuf:"bytes,70,rep,name=StnRules" json:"StnRules,omitempty"`
-	NatGlobal             *nat.Nat44Global                       `protobuf:"bytes,71,opt,name=NatGlobal" json:"NatGlobal,omitempty"`
-	DNATs                 []*nat.Nat44DNat_DNatConfig            `protobuf:"bytes,72,rep,name=DNATs" json:"DNATs,omitempty"`
+	AccessLists           []*acl.AccessLists_Acl                 `protobuf:"bytes,10,rep,name=AccessLists,proto3" json:"AccessLists,omitempty"`
+	Interfaces            []*interfaces.Interfaces_Interface     `protobuf:"bytes,20,rep,name=Interfaces,proto3" json:"Interfaces,omitempty"`
+	BfdSessions           []*bfd.SingleHopBFD_Session            `protobuf:"bytes,30,rep,name=BfdSessions,proto3" json:"BfdSessions,omitempty"`
+	BfdAuthKeys           []*bfd.SingleHopBFD_Key                `protobuf:"bytes,31,rep,name=BfdAuthKeys,proto3" json:"BfdAuthKeys,omitempty"`
+	BfdEchoFunction       *bfd.SingleHopBFD_EchoFunction         `protobuf:"bytes,32,opt,name=BfdEchoFunction,proto3" json:"BfdEchoFunction,omitempty"`
+	BridgeDomains         []*l2.BridgeDomains_BridgeDomain       `protobuf:"bytes,40,rep,name=BridgeDomains,proto3" json:"BridgeDomains,omitempty"`
+	FIBs                  []*l2.FibTable_FibEntry                `protobuf:"bytes,41,rep,name=FIBs,proto3" json:"FIBs,omitempty"`
+	XCons                 []*l2.XConnectPairs_XConnectPair       `protobuf:"bytes,42,rep,name=XCons,proto3" json:"XCons,omitempty"`
+	StaticRoutes          []*l3.StaticRoutes_Route               `protobuf:"bytes,50,rep,name=StaticRoutes,proto3" json:"StaticRoutes,omitempty"`
+	ArpEntries            []*l3.ArpTable_ArpEntry                `protobuf:"bytes,51,rep,name=ArpEntries,proto3" json:"ArpEntries,omitempty"`
+	ProxyArpInterfaces    []*l3.ProxyArpInterfaces_InterfaceList `protobuf:"bytes,52,rep,name=ProxyArpInterfaces,proto3" json:"ProxyArpInterfaces,omitempty"`
+	ProxyArpRanges        []*l3.ProxyArpRanges_RangeList         `protobuf:"bytes,53,rep,name=ProxyArpRanges,proto3" json:"ProxyArpRanges,omitempty"`
+	L4Feature             *l4.L4Features                         `protobuf:"bytes,60,opt,name=L4Feature,proto3" json:"L4Feature,omitempty"`
+	ApplicationNamespaces []*l4.AppNamespaces_AppNamespace       `protobuf:"bytes,61,rep,name=ApplicationNamespaces,proto3" json:"ApplicationNamespaces,omitempty"`
+	StnRules              []*stn.STN_Rule                        `protobuf:"bytes,70,rep,name=StnRules,proto3" json:"StnRules,omitempty"`
+	NatGlobal             *nat.Nat44Global                       `protobuf:"bytes,71,opt,name=NatGlobal,proto3" json:"NatGlobal,omitempty"`
+	DNATs                 []*nat.Nat44DNat_DNatConfig            `protobuf:"bytes,72,rep,name=DNATs,proto3" json:"DNATs,omitempty"`
 	// Linuxplugin
-	LinuxInterfaces      []*interfaces1.LinuxInterfaces_Interface `protobuf:"bytes,80,rep,name=LinuxInterfaces" json:"LinuxInterfaces,omitempty"`
-	LinuxArpEntries      []*l31.LinuxStaticArpEntries_ArpEntry    `protobuf:"bytes,90,rep,name=LinuxArpEntries" json:"LinuxArpEntries,omitempty"`
-	LinuxRoutes          []*l31.LinuxStaticRoutes_Route           `protobuf:"bytes,91,rep,name=LinuxRoutes" json:"LinuxRoutes,omitempty"`
+	LinuxInterfaces      []*interfaces1.LinuxInterfaces_Interface `protobuf:"bytes,80,rep,name=LinuxInterfaces,proto3" json:"LinuxInterfaces,omitempty"`
+	LinuxArpEntries      []*l31.LinuxStaticArpEntries_ArpEntry    `protobuf:"bytes,90,rep,name=LinuxArpEntries,proto3" json:"LinuxArpEntries,omitempty"`
+	LinuxRoutes          []*l31.LinuxStaticRoutes_Route           `protobuf:"bytes,91,rep,name=LinuxRoutes,proto3" json:"LinuxRoutes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                 `json:"-"`
 	XXX_unrecognized     []byte                                   `json:"-"`
 	XXX_sizecache        int32                                    `json:"-"`
@@ -363,7 +365,7 @@ type NotificationsResponse struct {
 	// Index of following notification
 	NextIdx uint32 `protobuf:"varint,1,opt,name=nextIdx,proto3" json:"nextIdx,omitempty"`
 	// Notification data
-	NIf                  *interfaces.InterfaceNotification `protobuf:"bytes,2,opt,name=nIf" json:"nIf,omitempty"`
+	NIf                  *interfaces.InterfaceNotification `protobuf:"bytes,2,opt,name=nIf,proto3" json:"nIf,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
 	XXX_unrecognized     []byte                            `json:"-"`
 	XXX_sizecache        int32                             `json:"-"`
@@ -424,8 +426,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for DataChangeService service
-
+// DataChangeServiceClient is the client API for DataChangeService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DataChangeServiceClient interface {
 	// Creates or updates one or multiple configuration items
 	Put(ctx context.Context, in *DataRequest, opts ...grpc.CallOption) (*PutResponse, error)
@@ -459,8 +462,7 @@ func (c *dataChangeServiceClient) Del(ctx context.Context, in *DataRequest, opts
 	return out, nil
 }
 
-// Server API for DataChangeService service
-
+// DataChangeServiceServer is the server API for DataChangeService service.
 type DataChangeServiceServer interface {
 	// Creates or updates one or multiple configuration items
 	Put(context.Context, *DataRequest) (*PutResponse, error)
@@ -525,8 +527,9 @@ var _DataChangeService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "rpc.proto",
 }
 
-// Client API for DataResyncService service
-
+// DataResyncServiceClient is the client API for DataResyncService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DataResyncServiceClient interface {
 	// Calls vpp-agent resync
 	Resync(ctx context.Context, in *DataRequest, opts ...grpc.CallOption) (*ResyncResponse, error)
@@ -549,8 +552,7 @@ func (c *dataResyncServiceClient) Resync(ctx context.Context, in *DataRequest, o
 	return out, nil
 }
 
-// Server API for DataResyncService service
-
+// DataResyncServiceServer is the server API for DataResyncService service.
 type DataResyncServiceServer interface {
 	// Calls vpp-agent resync
 	Resync(context.Context, *DataRequest) (*ResyncResponse, error)
@@ -591,8 +593,9 @@ var _DataResyncService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "rpc.proto",
 }
 
-// Client API for NotificationService service
-
+// NotificationServiceClient is the client API for NotificationService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type NotificationServiceClient interface {
 	// Get notification stack
 	Get(ctx context.Context, in *NotificationRequest, opts ...grpc.CallOption) (NotificationService_GetClient, error)
@@ -638,8 +641,7 @@ func (x *notificationServiceGetClient) Recv() (*NotificationsResponse, error) {
 	return m, nil
 }
 
-// Server API for NotificationService service
-
+// NotificationServiceServer is the server API for NotificationService service.
 type NotificationServiceServer interface {
 	// Get notification stack
 	Get(*NotificationRequest, NotificationService_GetServer) error

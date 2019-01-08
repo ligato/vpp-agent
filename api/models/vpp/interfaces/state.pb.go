@@ -112,7 +112,7 @@ type InterfaceState struct {
 	Speed                uint64                     `protobuf:"varint,9,opt,name=speed,proto3" json:"speed,omitempty"`
 	Mtu                  uint32                     `protobuf:"varint,10,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	Duplex               InterfaceState_Duplex      `protobuf:"varint,11,opt,name=duplex,proto3,enum=vpp.interfaces.InterfaceState_Duplex" json:"duplex,omitempty"`
-	Statistics           *InterfaceState_Statistics `protobuf:"bytes,100,opt,name=statistics" json:"statistics,omitempty"`
+	Statistics           *InterfaceState_Statistics `protobuf:"bytes,100,opt,name=statistics,proto3" json:"statistics,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
 	XXX_sizecache        int32                      `json:"-"`
@@ -362,7 +362,7 @@ func (*InterfaceState_Statistics) XXX_MessageName() string {
 
 type InterfaceNotification struct {
 	Type                 InterfaceNotification_NotifType `protobuf:"varint,1,opt,name=Type,proto3,enum=vpp.interfaces.InterfaceNotification_NotifType" json:"Type,omitempty"`
-	State                *InterfaceState                 `protobuf:"bytes,2,opt,name=state" json:"state,omitempty"`
+	State                *InterfaceState                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
 	XXX_unrecognized     []byte                          `json:"-"`
 	XXX_sizecache        int32                           `json:"-"`

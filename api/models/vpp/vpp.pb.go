@@ -25,17 +25,17 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 type DataModels struct {
-	Interfaces           []*interfaces.Interface `protobuf:"bytes,10,rep,name=interfaces" json:"interfaces,omitempty"`
-	Acls                 []*acl.Acl              `protobuf:"bytes,20,rep,name=acls" json:"acls,omitempty"`
-	BridgeDomains        []*l2.BridgeDomain      `protobuf:"bytes,30,rep,name=bridge_domains,json=bridgeDomains" json:"bridge_domains,omitempty"`
-	FibEntries           []*l2.FIBEntry          `protobuf:"bytes,31,rep,name=fib_entries,json=fibEntries" json:"fib_entries,omitempty"`
-	XconnectPairs        []*l2.XConnectPair      `protobuf:"bytes,32,rep,name=xconnect_pairs,json=xconnectPairs" json:"xconnect_pairs,omitempty"`
-	StaticRoutes         []*l3.StaticRoute       `protobuf:"bytes,40,rep,name=static_routes,json=staticRoutes" json:"static_routes,omitempty"`
-	ArpEntries           []*l3.ARPEntry          `protobuf:"bytes,41,rep,name=arp_entries,json=arpEntries" json:"arp_entries,omitempty"`
-	ProxyArp             *l3.ProxyARP            `protobuf:"bytes,42,opt,name=proxy_arp,json=proxyArp" json:"proxy_arp,omitempty"`
-	IpscanNeighbor       *l3.IPScanNeighbor      `protobuf:"bytes,43,opt,name=ipscan_neighbor,json=ipscanNeighbor" json:"ipscan_neighbor,omitempty"`
-	Nat44Global          *nat.Nat44Global        `protobuf:"bytes,50,opt,name=nat44_global,json=nat44Global" json:"nat44_global,omitempty"`
-	Dnats                []*nat.DNat44           `protobuf:"bytes,51,rep,name=dnats" json:"dnats,omitempty"`
+	Interfaces           []*interfaces.Interface `protobuf:"bytes,10,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	Acls                 []*acl.Acl              `protobuf:"bytes,20,rep,name=acls,proto3" json:"acls,omitempty"`
+	BridgeDomains        []*l2.BridgeDomain      `protobuf:"bytes,30,rep,name=bridge_domains,json=bridgeDomains,proto3" json:"bridge_domains,omitempty"`
+	FibEntries           []*l2.FIBEntry          `protobuf:"bytes,31,rep,name=fib_entries,json=fibEntries,proto3" json:"fib_entries,omitempty"`
+	XconnectPairs        []*l2.XConnectPair      `protobuf:"bytes,32,rep,name=xconnect_pairs,json=xconnectPairs,proto3" json:"xconnect_pairs,omitempty"`
+	StaticRoutes         []*l3.StaticRoute       `protobuf:"bytes,40,rep,name=static_routes,json=staticRoutes,proto3" json:"static_routes,omitempty"`
+	ArpEntries           []*l3.ARPEntry          `protobuf:"bytes,41,rep,name=arp_entries,json=arpEntries,proto3" json:"arp_entries,omitempty"`
+	ProxyArp             *l3.ProxyARP            `protobuf:"bytes,42,opt,name=proxy_arp,json=proxyArp,proto3" json:"proxy_arp,omitempty"`
+	IpscanNeighbor       *l3.IPScanNeighbor      `protobuf:"bytes,43,opt,name=ipscan_neighbor,json=ipscanNeighbor,proto3" json:"ipscan_neighbor,omitempty"`
+	Nat44Global          *nat.Nat44Global        `protobuf:"bytes,50,opt,name=nat44_global,json=nat44Global,proto3" json:"nat44_global,omitempty"`
+	Dnats                []*nat.DNat44           `protobuf:"bytes,51,rep,name=dnats,proto3" json:"dnats,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`

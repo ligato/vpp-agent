@@ -9,8 +9,10 @@ import math "math"
 import _ "github.com/gogo/protobuf/gogoproto"
 import types "github.com/gogo/protobuf/types"
 
-import context "golang.org/x/net/context"
-import grpc "google.golang.org/grpc"
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -25,7 +27,7 @@ const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
 type Module struct {
 	Name                 string       `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Specs                []*ModelSpec `protobuf:"bytes,2,rep,name=specs" json:"specs,omitempty"`
+	Specs                []*ModelSpec `protobuf:"bytes,2,rep,name=specs,proto3" json:"specs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -78,7 +80,7 @@ type ModelSpec struct {
 	Class                string            `protobuf:"bytes,2,opt,name=class,proto3" json:"class,omitempty"`
 	Module               string            `protobuf:"bytes,3,opt,name=module,proto3" json:"module,omitempty"`
 	Type                 string            `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Meta                 map[string]string `protobuf:"bytes,5,rep,name=meta" json:"meta,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Meta                 map[string]string `protobuf:"bytes,5,rep,name=meta,proto3" json:"meta,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -148,8 +150,8 @@ func (*ModelSpec) XXX_MessageName() string {
 }
 
 type Model struct {
-	Any                  *types.Any        `protobuf:"bytes,1,opt,name=any" json:"any,omitempty"`
-	Metadata             map[string]string `protobuf:"bytes,2,rep,name=metadata" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Any                  *types.Any        `protobuf:"bytes,1,opt,name=any,proto3" json:"any,omitempty"`
+	Metadata             map[string]string `protobuf:"bytes,2,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -232,7 +234,7 @@ func (*ListModulesRequest) XXX_MessageName() string {
 }
 
 type ListModulesResponse struct {
-	Modules              []*Module `protobuf:"bytes,1,rep,name=modules" json:"modules,omitempty"`
+	Modules              []*Module `protobuf:"bytes,1,rep,name=modules,proto3" json:"modules,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -274,7 +276,7 @@ func (*ListModulesResponse) XXX_MessageName() string {
 }
 
 type SyncItem struct {
-	Model                *Model   `protobuf:"bytes,1,opt,name=model" json:"model,omitempty"`
+	Model                *Model   `protobuf:"bytes,1,opt,name=model,proto3" json:"model,omitempty"`
 	Delete               bool     `protobuf:"varint,2,opt,name=delete,proto3" json:"delete,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -374,8 +376,8 @@ func (*SyncOptions) XXX_MessageName() string {
 }
 
 type SyncRequest struct {
-	Items                []*SyncItem  `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
-	Options              *SyncOptions `protobuf:"bytes,2,opt,name=options" json:"options,omitempty"`
+	Items                []*SyncItem  `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Options              *SyncOptions `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -424,7 +426,7 @@ func (*SyncRequest) XXX_MessageName() string {
 }
 
 type SyncResponse struct {
-	Results              []*SyncItemResult `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
+	Results              []*SyncItemResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -566,9 +568,9 @@ func (*ObtainOptions) XXX_MessageName() string {
 }
 
 type ObtainRequest struct {
-	Ids                  []string       `protobuf:"bytes,1,rep,name=ids" json:"ids,omitempty"`
-	Specs                []string       `protobuf:"bytes,2,rep,name=specs" json:"specs,omitempty"`
-	Options              *ObtainOptions `protobuf:"bytes,3,opt,name=options" json:"options,omitempty"`
+	Ids                  []string       `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	Specs                []string       `protobuf:"bytes,2,rep,name=specs,proto3" json:"specs,omitempty"`
+	Options              *ObtainOptions `protobuf:"bytes,3,opt,name=options,proto3" json:"options,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -624,7 +626,7 @@ func (*ObtainRequest) XXX_MessageName() string {
 }
 
 type ObtainResponse struct {
-	Models               []*ModelInfo `protobuf:"bytes,1,rep,name=models" json:"models,omitempty"`
+	Models               []*ModelInfo `protobuf:"bytes,1,rep,name=models,proto3" json:"models,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -666,8 +668,8 @@ func (*ObtainResponse) XXX_MessageName() string {
 }
 
 type ModelInfo struct {
-	Spec                 *ModelSpec `protobuf:"bytes,1,opt,name=spec" json:"spec,omitempty"`
-	Model                *Model     `protobuf:"bytes,2,opt,name=model" json:"model,omitempty"`
+	Spec                 *ModelSpec `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	Model                *Model     `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
 	Status               string     `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	Error                string     `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
@@ -757,8 +759,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for SyncService service
-
+// SyncServiceClient is the client API for SyncService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type SyncServiceClient interface {
 	ListModules(ctx context.Context, in *ListModulesRequest, opts ...grpc.CallOption) (*ListModulesResponse, error)
 	Sync(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error)
@@ -800,8 +803,7 @@ func (c *syncServiceClient) Obtain(ctx context.Context, in *ObtainRequest, opts 
 	return out, nil
 }
 
-// Server API for SyncService service
-
+// SyncServiceServer is the server API for SyncService service.
 type SyncServiceServer interface {
 	ListModules(context.Context, *ListModulesRequest) (*ListModulesResponse, error)
 	Sync(context.Context, *SyncRequest) (*SyncResponse, error)

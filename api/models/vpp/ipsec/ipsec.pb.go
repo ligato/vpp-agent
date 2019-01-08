@@ -141,8 +141,8 @@ func (SecurityAssociation_IntegAlg) EnumDescriptor() ([]byte, []int) {
 // Security Policy Database (SPD)
 type SecurityPolicyDatabase struct {
 	Index                string                                `protobuf:"bytes,1,opt,name=index,proto3" json:"index,omitempty"`
-	Interfaces           []*SecurityPolicyDatabase_Interface   `protobuf:"bytes,2,rep,name=interfaces" json:"interfaces,omitempty"`
-	PolicyEntries        []*SecurityPolicyDatabase_PolicyEntry `protobuf:"bytes,3,rep,name=policy_entries,json=policyEntries" json:"policy_entries,omitempty"`
+	Interfaces           []*SecurityPolicyDatabase_Interface   `protobuf:"bytes,2,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	PolicyEntries        []*SecurityPolicyDatabase_PolicyEntry `protobuf:"bytes,3,rep,name=policy_entries,json=policyEntries,proto3" json:"policy_entries,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                              `json:"-"`
 	XXX_unrecognized     []byte                                `json:"-"`
 	XXX_sizecache        int32                                 `json:"-"`

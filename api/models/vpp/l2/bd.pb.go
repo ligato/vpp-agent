@@ -27,8 +27,8 @@ type BridgeDomain struct {
 	Learn                bool                                `protobuf:"varint,5,opt,name=learn,proto3" json:"learn,omitempty"`
 	ArpTermination       bool                                `protobuf:"varint,6,opt,name=arp_termination,json=arpTermination,proto3" json:"arp_termination,omitempty"`
 	MacAge               uint32                              `protobuf:"varint,7,opt,name=mac_age,json=macAge,proto3" json:"mac_age,omitempty"`
-	Interfaces           []*BridgeDomain_Interface           `protobuf:"bytes,100,rep,name=interfaces" json:"interfaces,omitempty"`
-	ArpTerminationTable  []*BridgeDomain_ArpTerminationEntry `protobuf:"bytes,102,rep,name=arp_termination_table,json=arpTerminationTable" json:"arp_termination_table,omitempty"`
+	Interfaces           []*BridgeDomain_Interface           `protobuf:"bytes,100,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	ArpTerminationTable  []*BridgeDomain_ArpTerminationEntry `protobuf:"bytes,102,rep,name=arp_termination_table,json=arpTerminationTable,proto3" json:"arp_termination_table,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
 	XXX_unrecognized     []byte                              `json:"-"`
 	XXX_sizecache        int32                               `json:"-"`

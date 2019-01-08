@@ -299,7 +299,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 
 	// Transform local IP/Ports
 	var (
-		locals  []binapi.Nat44LbAddrPort
+		locals   []binapi.Nat44LbAddrPort
 		localNum int
 	)
 	for _, local := range mapping.LocalIps {
@@ -341,6 +341,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 		SelfTwiceNat: boolToUint(mapping.TwiceNat == nat.DNat44_StaticMapping_SELF),
 		Out2inOnly:   1,
 		IsAdd:        boolToUint(isAdd),
+		Affinity:     mapping.SessionAffinity,
 	}
 
 	reply := &binapi.Nat44AddDelLbStaticMappingReply{}

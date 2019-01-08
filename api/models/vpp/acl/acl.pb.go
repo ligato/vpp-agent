@@ -51,8 +51,8 @@ type Acl struct {
 	// and value of this name, possibly spaces and special
 	// characters are not allowed.
 	Name                 string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Rules                []*Acl_Rule     `protobuf:"bytes,2,rep,name=rules" json:"rules,omitempty"`
-	Interfaces           *Acl_Interfaces `protobuf:"bytes,3,opt,name=interfaces" json:"interfaces,omitempty"`
+	Rules                []*Acl_Rule     `protobuf:"bytes,2,rep,name=rules,proto3" json:"rules,omitempty"`
+	Interfaces           *Acl_Interfaces `protobuf:"bytes,3,opt,name=interfaces,proto3" json:"interfaces,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -116,8 +116,8 @@ func (*Acl) XXX_MessageName() string {
 // - can be used only for static ACLs.
 type Acl_Rule struct {
 	Action               Acl_Rule_Action     `protobuf:"varint,1,opt,name=action,proto3,enum=vpp.acl.Acl_Rule_Action" json:"action,omitempty"`
-	IpRule               *Acl_Rule_IpRule    `protobuf:"bytes,2,opt,name=ip_rule,json=ipRule" json:"ip_rule,omitempty"`
-	MacipRule            *Acl_Rule_MacIpRule `protobuf:"bytes,3,opt,name=macip_rule,json=macipRule" json:"macip_rule,omitempty"`
+	IpRule               *Acl_Rule_IpRule    `protobuf:"bytes,2,opt,name=ip_rule,json=ipRule,proto3" json:"ip_rule,omitempty"`
+	MacipRule            *Acl_Rule_MacIpRule `protobuf:"bytes,3,opt,name=macip_rule,json=macipRule,proto3" json:"macip_rule,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`
 	XXX_sizecache        int32               `json:"-"`
@@ -173,10 +173,10 @@ func (*Acl_Rule) XXX_MessageName() string {
 }
 
 type Acl_Rule_IpRule struct {
-	Ip                   *Acl_Rule_IpRule_Ip   `protobuf:"bytes,1,opt,name=ip" json:"ip,omitempty"`
-	Icmp                 *Acl_Rule_IpRule_Icmp `protobuf:"bytes,2,opt,name=icmp" json:"icmp,omitempty"`
-	Tcp                  *Acl_Rule_IpRule_Tcp  `protobuf:"bytes,3,opt,name=tcp" json:"tcp,omitempty"`
-	Udp                  *Acl_Rule_IpRule_Udp  `protobuf:"bytes,4,opt,name=udp" json:"udp,omitempty"`
+	Ip                   *Acl_Rule_IpRule_Ip   `protobuf:"bytes,1,opt,name=ip,proto3" json:"ip,omitempty"`
+	Icmp                 *Acl_Rule_IpRule_Icmp `protobuf:"bytes,2,opt,name=icmp,proto3" json:"icmp,omitempty"`
+	Tcp                  *Acl_Rule_IpRule_Tcp  `protobuf:"bytes,3,opt,name=tcp,proto3" json:"tcp,omitempty"`
+	Udp                  *Acl_Rule_IpRule_Udp  `protobuf:"bytes,4,opt,name=udp,proto3" json:"udp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -295,8 +295,8 @@ type Acl_Rule_IpRule_Icmp struct {
 	// ICMPv6 flag, if false ICMPv4 will be used
 	Icmpv6 bool `protobuf:"varint,1,opt,name=icmpv6,proto3" json:"icmpv6,omitempty"`
 	// Inclusive range representing icmp codes to be used.
-	IcmpCodeRange        *Acl_Rule_IpRule_Icmp_Range `protobuf:"bytes,2,opt,name=icmp_code_range,json=icmpCodeRange" json:"icmp_code_range,omitempty"`
-	IcmpTypeRange        *Acl_Rule_IpRule_Icmp_Range `protobuf:"bytes,3,opt,name=icmp_type_range,json=icmpTypeRange" json:"icmp_type_range,omitempty"`
+	IcmpCodeRange        *Acl_Rule_IpRule_Icmp_Range `protobuf:"bytes,2,opt,name=icmp_code_range,json=icmpCodeRange,proto3" json:"icmp_code_range,omitempty"`
+	IcmpTypeRange        *Acl_Rule_IpRule_Icmp_Range `protobuf:"bytes,3,opt,name=icmp_type_range,json=icmpTypeRange,proto3" json:"icmp_type_range,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`
@@ -456,8 +456,8 @@ func (*Acl_Rule_IpRule_PortRange) XXX_MessageName() string {
 }
 
 type Acl_Rule_IpRule_Tcp struct {
-	DestinationPortRange *Acl_Rule_IpRule_PortRange `protobuf:"bytes,1,opt,name=destination_port_range,json=destinationPortRange" json:"destination_port_range,omitempty"`
-	SourcePortRange      *Acl_Rule_IpRule_PortRange `protobuf:"bytes,2,opt,name=source_port_range,json=sourcePortRange" json:"source_port_range,omitempty"`
+	DestinationPortRange *Acl_Rule_IpRule_PortRange `protobuf:"bytes,1,opt,name=destination_port_range,json=destinationPortRange,proto3" json:"destination_port_range,omitempty"`
+	SourcePortRange      *Acl_Rule_IpRule_PortRange `protobuf:"bytes,2,opt,name=source_port_range,json=sourcePortRange,proto3" json:"source_port_range,omitempty"`
 	// Binary mask for tcp flags to match. MSB order (FIN at position 0).
 	// Applied as logical AND to tcp flags field of the packet being matched,
 	// before it is compared with tcp-flags-value.
@@ -528,8 +528,8 @@ func (*Acl_Rule_IpRule_Tcp) XXX_MessageName() string {
 }
 
 type Acl_Rule_IpRule_Udp struct {
-	DestinationPortRange *Acl_Rule_IpRule_PortRange `protobuf:"bytes,1,opt,name=destination_port_range,json=destinationPortRange" json:"destination_port_range,omitempty"`
-	SourcePortRange      *Acl_Rule_IpRule_PortRange `protobuf:"bytes,2,opt,name=source_port_range,json=sourcePortRange" json:"source_port_range,omitempty"`
+	DestinationPortRange *Acl_Rule_IpRule_PortRange `protobuf:"bytes,1,opt,name=destination_port_range,json=destinationPortRange,proto3" json:"destination_port_range,omitempty"`
+	SourcePortRange      *Acl_Rule_IpRule_PortRange `protobuf:"bytes,2,opt,name=source_port_range,json=sourcePortRange,proto3" json:"source_port_range,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
 	XXX_sizecache        int32                      `json:"-"`
@@ -650,8 +650,8 @@ func (*Acl_Rule_MacIpRule) XXX_MessageName() string {
 
 // The set of interfaces that has assigned this ACL on ingres or egress.
 type Acl_Interfaces struct {
-	Egress               []string `protobuf:"bytes,1,rep,name=egress" json:"egress,omitempty"`
-	Ingress              []string `protobuf:"bytes,2,rep,name=ingress" json:"ingress,omitempty"`
+	Egress               []string `protobuf:"bytes,1,rep,name=egress,proto3" json:"egress,omitempty"`
+	Ingress              []string `protobuf:"bytes,2,rep,name=ingress,proto3" json:"ingress,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

@@ -197,7 +197,7 @@ func (InterfaceNotification_NotifType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Interfaces struct {
-	Interfaces           []*Interfaces_Interface `protobuf:"bytes,1,rep,name=interfaces" json:"interfaces,omitempty"`
+	Interfaces           []*Interfaces_Interface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -245,14 +245,14 @@ type Interfaces_Interface struct {
 	ContainerIpAddress string        `protobuf:"bytes,8,opt,name=container_ip_address,json=containerIpAddress,proto3" json:"container_ip_address,omitempty"`
 	SetDhcpClient      bool          `protobuf:"varint,9,opt,name=set_dhcp_client,json=setDhcpClient,proto3" json:"set_dhcp_client,omitempty"`
 	// Required format is "ipAddress/ipPrefix"
-	IpAddresses          []string                                  `protobuf:"bytes,10,rep,name=ip_addresses,json=ipAddresses" json:"ip_addresses,omitempty"`
-	Unnumbered           *Interfaces_Interface_Unnumbered          `protobuf:"bytes,11,opt,name=unnumbered" json:"unnumbered,omitempty"`
-	RxModeSettings       *Interfaces_Interface_RxModeSettings      `protobuf:"bytes,12,opt,name=rx_mode_settings,json=rxModeSettings" json:"rx_mode_settings,omitempty"`
-	RxPlacementSettings  *Interfaces_Interface_RxPlacementSettings `protobuf:"bytes,13,opt,name=rx_placement_settings,json=rxPlacementSettings" json:"rx_placement_settings,omitempty"`
-	Memif                *Interfaces_Interface_Memif               `protobuf:"bytes,101,opt,name=memif" json:"memif,omitempty"`
-	Vxlan                *Interfaces_Interface_Vxlan               `protobuf:"bytes,102,opt,name=vxlan" json:"vxlan,omitempty"`
-	Afpacket             *Interfaces_Interface_Afpacket            `protobuf:"bytes,103,opt,name=afpacket" json:"afpacket,omitempty"`
-	Tap                  *Interfaces_Interface_Tap                 `protobuf:"bytes,104,opt,name=tap" json:"tap,omitempty"`
+	IpAddresses          []string                                  `protobuf:"bytes,10,rep,name=ip_addresses,json=ipAddresses,proto3" json:"ip_addresses,omitempty"`
+	Unnumbered           *Interfaces_Interface_Unnumbered          `protobuf:"bytes,11,opt,name=unnumbered,proto3" json:"unnumbered,omitempty"`
+	RxModeSettings       *Interfaces_Interface_RxModeSettings      `protobuf:"bytes,12,opt,name=rx_mode_settings,json=rxModeSettings,proto3" json:"rx_mode_settings,omitempty"`
+	RxPlacementSettings  *Interfaces_Interface_RxPlacementSettings `protobuf:"bytes,13,opt,name=rx_placement_settings,json=rxPlacementSettings,proto3" json:"rx_placement_settings,omitempty"`
+	Memif                *Interfaces_Interface_Memif               `protobuf:"bytes,101,opt,name=memif,proto3" json:"memif,omitempty"`
+	Vxlan                *Interfaces_Interface_Vxlan               `protobuf:"bytes,102,opt,name=vxlan,proto3" json:"vxlan,omitempty"`
+	Afpacket             *Interfaces_Interface_Afpacket            `protobuf:"bytes,103,opt,name=afpacket,proto3" json:"afpacket,omitempty"`
+	Tap                  *Interfaces_Interface_Tap                 `protobuf:"bytes,104,opt,name=tap,proto3" json:"tap,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                  `json:"-"`
 	XXX_unrecognized     []byte                                    `json:"-"`
 	XXX_sizecache        int32                                     `json:"-"`
@@ -830,7 +830,7 @@ func (m *Interfaces_Interface_Tap) GetTxRingSize() uint32 {
 }
 
 type InterfacesState struct {
-	Interfaces           []*InterfacesState_Interface `protobuf:"bytes,1,rep,name=interfaces" json:"interfaces,omitempty"`
+	Interfaces           []*InterfacesState_Interface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
 	XXX_unrecognized     []byte                       `json:"-"`
 	XXX_sizecache        int32                        `json:"-"`
@@ -879,7 +879,7 @@ type InterfacesState_Interface struct {
 	Speed                uint64                                `protobuf:"varint,9,opt,name=speed,proto3" json:"speed,omitempty"`
 	Mtu                  uint32                                `protobuf:"varint,10,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	Duplex               InterfacesState_Interface_Duplex      `protobuf:"varint,11,opt,name=duplex,proto3,enum=interfaces.InterfacesState_Interface_Duplex" json:"duplex,omitempty"`
-	Statistics           *InterfacesState_Interface_Statistics `protobuf:"bytes,100,opt,name=statistics" json:"statistics,omitempty"`
+	Statistics           *InterfacesState_Interface_Statistics `protobuf:"bytes,100,opt,name=statistics,proto3" json:"statistics,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                              `json:"-"`
 	XXX_unrecognized     []byte                                `json:"-"`
 	XXX_sizecache        int32                                 `json:"-"`
@@ -1121,7 +1121,7 @@ func (m *InterfacesState_Interface_Statistics) GetOutErrorPackets() uint64 {
 
 type InterfaceNotification struct {
 	Type                 InterfaceNotification_NotifType `protobuf:"varint,1,opt,name=Type,proto3,enum=interfaces.InterfaceNotification_NotifType" json:"Type,omitempty"`
-	State                *InterfacesState_Interface      `protobuf:"bytes,2,opt,name=state" json:"state,omitempty"`
+	State                *InterfacesState_Interface      `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
 	XXX_unrecognized     []byte                          `json:"-"`
 	XXX_sizecache        int32                           `json:"-"`
@@ -1166,7 +1166,7 @@ func (m *InterfaceNotification) GetState() *InterfacesState_Interface {
 }
 
 type InterfaceErrors struct {
-	Interfaces           []*InterfaceErrors_Interface `protobuf:"bytes,1,rep,name=interfaces" json:"interfaces,omitempty"`
+	Interfaces           []*InterfaceErrors_Interface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
 	XXX_unrecognized     []byte                       `json:"-"`
 	XXX_sizecache        int32                        `json:"-"`
@@ -1205,7 +1205,7 @@ func (m *InterfaceErrors) GetInterfaces() []*InterfaceErrors_Interface {
 
 type InterfaceErrors_Interface struct {
 	InterfaceName        string                                 `protobuf:"bytes,1,opt,name=interface_name,json=interfaceName,proto3" json:"interface_name,omitempty"`
-	ErrorData            []*InterfaceErrors_Interface_ErrorData `protobuf:"bytes,2,rep,name=error_data,json=errorData" json:"error_data,omitempty"`
+	ErrorData            []*InterfaceErrors_Interface_ErrorData `protobuf:"bytes,2,rep,name=error_data,json=errorData,proto3" json:"error_data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
 	XXX_unrecognized     []byte                                 `json:"-"`
 	XXX_sizecache        int32                                  `json:"-"`

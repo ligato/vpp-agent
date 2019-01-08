@@ -75,10 +75,10 @@ func (VethLink_ChecksumOffloading) EnumDescriptor() ([]byte, []int) {
 type Interface struct {
 	Name        string                  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Type        Interface_Type          `protobuf:"varint,2,opt,name=type,proto3,enum=linux.interfaces.Interface_Type" json:"type,omitempty"`
-	Namespace   *namespace.NetNamespace `protobuf:"bytes,3,opt,name=namespace" json:"namespace,omitempty"`
+	Namespace   *namespace.NetNamespace `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	HostIfName  string                  `protobuf:"bytes,4,opt,name=host_if_name,json=hostIfName,proto3" json:"host_if_name,omitempty"`
 	Enabled     bool                    `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	IpAddresses []string                `protobuf:"bytes,6,rep,name=ip_addresses,json=ipAddresses" json:"ip_addresses,omitempty"`
+	IpAddresses []string                `protobuf:"bytes,6,rep,name=ip_addresses,json=ipAddresses,proto3" json:"ip_addresses,omitempty"`
 	PhysAddress string                  `protobuf:"bytes,7,opt,name=phys_address,json=physAddress,proto3" json:"phys_address,omitempty"`
 	Mtu         uint32                  `protobuf:"varint,8,opt,name=mtu,proto3" json:"mtu,omitempty"`
 	// Types that are valid to be assigned to Link:
@@ -119,10 +119,10 @@ type isInterface_Link interface {
 }
 
 type Interface_Veth struct {
-	Veth *VethLink `protobuf:"bytes,20,opt,name=veth,oneof"`
+	Veth *VethLink `protobuf:"bytes,20,opt,name=veth,proto3,oneof"`
 }
 type Interface_Tap struct {
-	Tap *TapLink `protobuf:"bytes,21,opt,name=tap,oneof"`
+	Tap *TapLink `protobuf:"bytes,21,opt,name=tap,proto3,oneof"`
 }
 
 func (*Interface_Veth) isInterface_Link() {}

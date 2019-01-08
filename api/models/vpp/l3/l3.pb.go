@@ -49,8 +49,8 @@ func (IPScanNeighbor_Mode) EnumDescriptor() ([]byte, []int) {
 }
 
 type ProxyARP struct {
-	Interfaces           []*ProxyARP_Interface `protobuf:"bytes,1,rep,name=interfaces" json:"interfaces,omitempty"`
-	Ranges               []*ProxyARP_Range     `protobuf:"bytes,2,rep,name=ranges" json:"ranges,omitempty"`
+	Interfaces           []*ProxyARP_Interface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	Ranges               []*ProxyARP_Range     `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
