@@ -627,9 +627,10 @@ func (h *IfVppHandler) dumpIPSecTunnelDetails(ifs map[uint32]*InterfaceDetails) 
 				RemoteIp:   tunnelDstAddrStr,
 				LocalSpi:   tunnel.Spi,
 				// fll remote SPI from stored SA data
-				RemoteSpi: firstSaData.Spi,
-				CryptoAlg: ifnb.IPSecLink_CryptoAlg(tunnel.CryptoAlg),
-				IntegAlg:  ifnb.IPSecLink_IntegAlg(tunnel.IntegAlg),
+				RemoteSpi:      firstSaData.Spi,
+				CryptoAlg:      ifnb.IPSecLink_CryptoAlg(tunnel.CryptoAlg),
+				IntegAlg:       ifnb.IPSecLink_IntegAlg(tunnel.IntegAlg),
+				EnableUdpEncap: uintToBool(tunnel.UDPEncap),
 			},
 		}
 		ifs[tunnel.SwIfIndex].Interface.Type = ifnb.Interface_IPSEC_TUNNEL

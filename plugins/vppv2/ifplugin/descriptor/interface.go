@@ -321,7 +321,8 @@ func (d *InterfaceDescriptor) equivalentIPSecTunnels(oldTun, newTun *interfaces.
 		oldTun.RemoteCryptoKey == newTun.RemoteCryptoKey &&
 		oldTun.IntegAlg == newTun.IntegAlg &&
 		oldTun.LocalIntegKey == newTun.LocalIntegKey &&
-		oldTun.RemoteIntegKey == newTun.RemoteIntegKey
+		oldTun.RemoteIntegKey == newTun.RemoteIntegKey &&
+		oldTun.EnableUdpEncap == newTun.EnableUdpEncap
 }
 
 // equivalentVmxNets compares two vmxnet3 interfaces for equivalence.
