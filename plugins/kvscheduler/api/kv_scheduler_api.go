@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/idxmap"
 	"time"
 )
@@ -158,7 +157,7 @@ type KVWithMetadata struct {
 //     interface
 //   - clearly describing the sequence of actions to be executed and postponed
 //     in the log file
-//   - transaction execution tracing (using "runtime/trace" package)
+//   - TBD: transaction execution tracing (using "runtime/trace" package)
 //   - TBD: consider exposing the current config as a plotted graph (returned via
 //          REST) with values as nodes (colored to distinguish cached from added
 //          ones, derived from base, etc.) and dependencies as edges (unsatisfied
@@ -230,10 +229,9 @@ type KVScheduler interface {
 // Txn represent a single transaction.
 // Scheduler starts to plan and execute actions only after Commit is called.
 type Txn interface {
-	// SetValue changes (non-derived) lazy value - un-marshalled during
-	// transaction pre-processing using ValueTypeName given by descriptor.
+	// SetValue changes (non-derived) value.
 	// If <value> is nil, the value will get deleted.
-	SetValue(key string, value datasync.LazyValue) Txn
+	SetValue(key string, value proto.Message) Txn
 
 	// Commit orders scheduler to execute enqueued operations.
 	// Operations with unmet dependencies will get postponed and possibly
@@ -249,8 +247,8 @@ type Txn interface {
 	// encountered during the transaction processing.
 	//
 	// Non-blocking transactions return immediately and always without errors.
-	// Subscribe with KVScheduler.SubscribeForErrors() to get notified about all
-	// errors, including those returned by action triggered later or asynchronously
-	// by a SB notification.
+	// Subscribe with KVScheduler.WatchValueStatus() to get notified about all
+	// changes/errors, including those related to actions triggered later
+	// or asynchronously by a SB notification.
 	Commit(ctx context.Context) (txnSeqNum uint64, err error)
 }

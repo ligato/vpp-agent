@@ -69,15 +69,13 @@ func (x ValueState) String() string {
 	return proto.EnumName(ValueState_name, int32(x))
 }
 func (ValueState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_value_status_67bc4dac1245dd9b, []int{0}
+	return fileDescriptor_value_status_065c648f49b38e87, []int{0}
 }
 
 type TxnOperation int32
 
 const (
 	TxnOperation_UNDEFINED TxnOperation = 0
-	TxnOperation_UNMARSHAL TxnOperation = 1
-	TxnOperation_VALIDATE  TxnOperation = 2
 	TxnOperation_ADD       TxnOperation = 3
 	TxnOperation_MODIFY    TxnOperation = 4
 	TxnOperation_DELETE    TxnOperation = 5
@@ -86,8 +84,6 @@ const (
 
 var TxnOperation_name = map[int32]string{
 	0: "UNDEFINED",
-	1: "UNMARSHAL",
-	2: "VALIDATE",
 	3: "ADD",
 	4: "MODIFY",
 	5: "DELETE",
@@ -95,8 +91,6 @@ var TxnOperation_name = map[int32]string{
 }
 var TxnOperation_value = map[string]int32{
 	"UNDEFINED": 0,
-	"UNMARSHAL": 1,
-	"VALIDATE":  2,
 	"ADD":       3,
 	"MODIFY":    4,
 	"DELETE":    5,
@@ -107,49 +101,133 @@ func (x TxnOperation) String() string {
 	return proto.EnumName(TxnOperation_name, int32(x))
 }
 func (TxnOperation) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_value_status_67bc4dac1245dd9b, []int{1}
+	return fileDescriptor_value_status_065c648f49b38e87, []int{1}
 }
 
-type ValueError struct {
-	Message              string       `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+type PendingValueDetail struct {
+	MissingDeps          []string `protobuf:"bytes,1,rep,name=missing_deps,json=missingDeps" json:"missing_deps,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PendingValueDetail) Reset()         { *m = PendingValueDetail{} }
+func (m *PendingValueDetail) String() string { return proto.CompactTextString(m) }
+func (*PendingValueDetail) ProtoMessage()    {}
+func (*PendingValueDetail) Descriptor() ([]byte, []int) {
+	return fileDescriptor_value_status_065c648f49b38e87, []int{0}
+}
+func (m *PendingValueDetail) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PendingValueDetail.Unmarshal(m, b)
+}
+func (m *PendingValueDetail) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PendingValueDetail.Marshal(b, m, deterministic)
+}
+func (dst *PendingValueDetail) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PendingValueDetail.Merge(dst, src)
+}
+func (m *PendingValueDetail) XXX_Size() int {
+	return xxx_messageInfo_PendingValueDetail.Size(m)
+}
+func (m *PendingValueDetail) XXX_DiscardUnknown() {
+	xxx_messageInfo_PendingValueDetail.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PendingValueDetail proto.InternalMessageInfo
+
+func (m *PendingValueDetail) GetMissingDeps() []string {
+	if m != nil {
+		return m.MissingDeps
+	}
+	return nil
+}
+
+type InvalidValueDetail struct {
+	Fields               []string `protobuf:"bytes,1,rep,name=fields" json:"fields,omitempty"`
+	Error                string   `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *InvalidValueDetail) Reset()         { *m = InvalidValueDetail{} }
+func (m *InvalidValueDetail) String() string { return proto.CompactTextString(m) }
+func (*InvalidValueDetail) ProtoMessage()    {}
+func (*InvalidValueDetail) Descriptor() ([]byte, []int) {
+	return fileDescriptor_value_status_065c648f49b38e87, []int{1}
+}
+func (m *InvalidValueDetail) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_InvalidValueDetail.Unmarshal(m, b)
+}
+func (m *InvalidValueDetail) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_InvalidValueDetail.Marshal(b, m, deterministic)
+}
+func (dst *InvalidValueDetail) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvalidValueDetail.Merge(dst, src)
+}
+func (m *InvalidValueDetail) XXX_Size() int {
+	return xxx_messageInfo_InvalidValueDetail.Size(m)
+}
+func (m *InvalidValueDetail) XXX_DiscardUnknown() {
+	xxx_messageInfo_InvalidValueDetail.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_InvalidValueDetail proto.InternalMessageInfo
+
+func (m *InvalidValueDetail) GetFields() []string {
+	if m != nil {
+		return m.Fields
+	}
+	return nil
+}
+
+func (m *InvalidValueDetail) GetError() string {
+	if m != nil {
+		return m.Error
+	}
+	return ""
+}
+
+type FailedValueDetail struct {
+	Error                string       `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 	Operation            TxnOperation `protobuf:"varint,2,opt,name=operation,proto3,enum=api.TxnOperation" json:"operation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *ValueError) Reset()         { *m = ValueError{} }
-func (m *ValueError) String() string { return proto.CompactTextString(m) }
-func (*ValueError) ProtoMessage()    {}
-func (*ValueError) Descriptor() ([]byte, []int) {
-	return fileDescriptor_value_status_67bc4dac1245dd9b, []int{0}
+func (m *FailedValueDetail) Reset()         { *m = FailedValueDetail{} }
+func (m *FailedValueDetail) String() string { return proto.CompactTextString(m) }
+func (*FailedValueDetail) ProtoMessage()    {}
+func (*FailedValueDetail) Descriptor() ([]byte, []int) {
+	return fileDescriptor_value_status_065c648f49b38e87, []int{2}
 }
-func (m *ValueError) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ValueError.Unmarshal(m, b)
+func (m *FailedValueDetail) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FailedValueDetail.Unmarshal(m, b)
 }
-func (m *ValueError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ValueError.Marshal(b, m, deterministic)
+func (m *FailedValueDetail) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FailedValueDetail.Marshal(b, m, deterministic)
 }
-func (dst *ValueError) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValueError.Merge(dst, src)
+func (dst *FailedValueDetail) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FailedValueDetail.Merge(dst, src)
 }
-func (m *ValueError) XXX_Size() int {
-	return xxx_messageInfo_ValueError.Size(m)
+func (m *FailedValueDetail) XXX_Size() int {
+	return xxx_messageInfo_FailedValueDetail.Size(m)
 }
-func (m *ValueError) XXX_DiscardUnknown() {
-	xxx_messageInfo_ValueError.DiscardUnknown(m)
+func (m *FailedValueDetail) XXX_DiscardUnknown() {
+	xxx_messageInfo_FailedValueDetail.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ValueError proto.InternalMessageInfo
+var xxx_messageInfo_FailedValueDetail proto.InternalMessageInfo
 
-func (m *ValueError) GetMessage() string {
+func (m *FailedValueDetail) GetError() string {
 	if m != nil {
-		return m.Message
+		return m.Error
 	}
 	return ""
 }
 
-func (m *ValueError) GetOperation() TxnOperation {
+func (m *FailedValueDetail) GetOperation() TxnOperation {
 	if m != nil {
 		return m.Operation
 	}
@@ -157,20 +235,18 @@ func (m *ValueError) GetOperation() TxnOperation {
 }
 
 type ValueStatus struct {
-	Key                  string                         `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	State                ValueState                     `protobuf:"varint,2,opt,name=state,proto3,enum=api.ValueState" json:"state,omitempty"`
-	Error                *ValueError                    `protobuf:"bytes,3,opt,name=error" json:"error,omitempty"`
-	Derived              map[string]*DerivedValueStatus `protobuf:"bytes,4,rep,name=derived" json:"derived,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value"`
-	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
-	XXX_unrecognized     []byte                         `json:"-"`
-	XXX_sizecache        int32                          `json:"-"`
+	Value                *ValueStatus_Value   `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+	DerivedValues        []*ValueStatus_Value `protobuf:"bytes,2,rep,name=derived_values,json=derivedValues" json:"derived_values,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *ValueStatus) Reset()         { *m = ValueStatus{} }
 func (m *ValueStatus) String() string { return proto.CompactTextString(m) }
 func (*ValueStatus) ProtoMessage()    {}
 func (*ValueStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_value_status_67bc4dac1245dd9b, []int{1}
+	return fileDescriptor_value_status_065c648f49b38e87, []int{3}
 }
 func (m *ValueStatus) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValueStatus.Unmarshal(m, b)
@@ -190,117 +266,252 @@ func (m *ValueStatus) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ValueStatus proto.InternalMessageInfo
 
-func (m *ValueStatus) GetKey() string {
+func (m *ValueStatus) GetValue() *ValueStatus_Value {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *ValueStatus) GetDerivedValues() []*ValueStatus_Value {
+	if m != nil {
+		return m.DerivedValues
+	}
+	return nil
+}
+
+type ValueStatus_Value struct {
+	Key   string     `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	State ValueState `protobuf:"varint,2,opt,name=state,proto3,enum=api.ValueState" json:"state,omitempty"`
+	// Types that are valid to be assigned to Detail:
+	//	*ValueStatus_Value_Pending
+	//	*ValueStatus_Value_Invalid
+	//	*ValueStatus_Value_Failed
+	Detail               isValueStatus_Value_Detail `protobuf_oneof:"detail"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
+}
+
+func (m *ValueStatus_Value) Reset()         { *m = ValueStatus_Value{} }
+func (m *ValueStatus_Value) String() string { return proto.CompactTextString(m) }
+func (*ValueStatus_Value) ProtoMessage()    {}
+func (*ValueStatus_Value) Descriptor() ([]byte, []int) {
+	return fileDescriptor_value_status_065c648f49b38e87, []int{3, 0}
+}
+func (m *ValueStatus_Value) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ValueStatus_Value.Unmarshal(m, b)
+}
+func (m *ValueStatus_Value) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ValueStatus_Value.Marshal(b, m, deterministic)
+}
+func (dst *ValueStatus_Value) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValueStatus_Value.Merge(dst, src)
+}
+func (m *ValueStatus_Value) XXX_Size() int {
+	return xxx_messageInfo_ValueStatus_Value.Size(m)
+}
+func (m *ValueStatus_Value) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValueStatus_Value.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ValueStatus_Value proto.InternalMessageInfo
+
+type isValueStatus_Value_Detail interface {
+	isValueStatus_Value_Detail()
+}
+
+type ValueStatus_Value_Pending struct {
+	Pending *PendingValueDetail `protobuf:"bytes,3,opt,name=pending,oneof"`
+}
+type ValueStatus_Value_Invalid struct {
+	Invalid *InvalidValueDetail `protobuf:"bytes,4,opt,name=invalid,oneof"`
+}
+type ValueStatus_Value_Failed struct {
+	Failed *FailedValueDetail `protobuf:"bytes,5,opt,name=failed,oneof"`
+}
+
+func (*ValueStatus_Value_Pending) isValueStatus_Value_Detail() {}
+func (*ValueStatus_Value_Invalid) isValueStatus_Value_Detail() {}
+func (*ValueStatus_Value_Failed) isValueStatus_Value_Detail()  {}
+
+func (m *ValueStatus_Value) GetDetail() isValueStatus_Value_Detail {
+	if m != nil {
+		return m.Detail
+	}
+	return nil
+}
+
+func (m *ValueStatus_Value) GetKey() string {
 	if m != nil {
 		return m.Key
 	}
 	return ""
 }
 
-func (m *ValueStatus) GetState() ValueState {
+func (m *ValueStatus_Value) GetState() ValueState {
 	if m != nil {
 		return m.State
 	}
 	return ValueState_NONEXISTENT
 }
 
-func (m *ValueStatus) GetError() *ValueError {
-	if m != nil {
-		return m.Error
+func (m *ValueStatus_Value) GetPending() *PendingValueDetail {
+	if x, ok := m.GetDetail().(*ValueStatus_Value_Pending); ok {
+		return x.Pending
 	}
 	return nil
 }
 
-func (m *ValueStatus) GetDerived() map[string]*DerivedValueStatus {
-	if m != nil {
-		return m.Derived
+func (m *ValueStatus_Value) GetInvalid() *InvalidValueDetail {
+	if x, ok := m.GetDetail().(*ValueStatus_Value_Invalid); ok {
+		return x.Invalid
 	}
 	return nil
 }
 
-type DerivedValueStatus struct {
-	State                ValueState  `protobuf:"varint,1,opt,name=state,proto3,enum=api.ValueState" json:"state,omitempty"`
-	Error                *ValueError `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
-}
-
-func (m *DerivedValueStatus) Reset()         { *m = DerivedValueStatus{} }
-func (m *DerivedValueStatus) String() string { return proto.CompactTextString(m) }
-func (*DerivedValueStatus) ProtoMessage()    {}
-func (*DerivedValueStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_value_status_67bc4dac1245dd9b, []int{2}
-}
-func (m *DerivedValueStatus) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DerivedValueStatus.Unmarshal(m, b)
-}
-func (m *DerivedValueStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DerivedValueStatus.Marshal(b, m, deterministic)
-}
-func (dst *DerivedValueStatus) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DerivedValueStatus.Merge(dst, src)
-}
-func (m *DerivedValueStatus) XXX_Size() int {
-	return xxx_messageInfo_DerivedValueStatus.Size(m)
-}
-func (m *DerivedValueStatus) XXX_DiscardUnknown() {
-	xxx_messageInfo_DerivedValueStatus.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DerivedValueStatus proto.InternalMessageInfo
-
-func (m *DerivedValueStatus) GetState() ValueState {
-	if m != nil {
-		return m.State
-	}
-	return ValueState_NONEXISTENT
-}
-
-func (m *DerivedValueStatus) GetError() *ValueError {
-	if m != nil {
-		return m.Error
+func (m *ValueStatus_Value) GetFailed() *FailedValueDetail {
+	if x, ok := m.GetDetail().(*ValueStatus_Value_Failed); ok {
+		return x.Failed
 	}
 	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*ValueStatus_Value) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _ValueStatus_Value_OneofMarshaler, _ValueStatus_Value_OneofUnmarshaler, _ValueStatus_Value_OneofSizer, []interface{}{
+		(*ValueStatus_Value_Pending)(nil),
+		(*ValueStatus_Value_Invalid)(nil),
+		(*ValueStatus_Value_Failed)(nil),
+	}
+}
+
+func _ValueStatus_Value_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*ValueStatus_Value)
+	// detail
+	switch x := m.Detail.(type) {
+	case *ValueStatus_Value_Pending:
+		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Pending); err != nil {
+			return err
+		}
+	case *ValueStatus_Value_Invalid:
+		_ = b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Invalid); err != nil {
+			return err
+		}
+	case *ValueStatus_Value_Failed:
+		_ = b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Failed); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("ValueStatus_Value.Detail has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _ValueStatus_Value_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*ValueStatus_Value)
+	switch tag {
+	case 3: // detail.pending
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(PendingValueDetail)
+		err := b.DecodeMessage(msg)
+		m.Detail = &ValueStatus_Value_Pending{msg}
+		return true, err
+	case 4: // detail.invalid
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(InvalidValueDetail)
+		err := b.DecodeMessage(msg)
+		m.Detail = &ValueStatus_Value_Invalid{msg}
+		return true, err
+	case 5: // detail.failed
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(FailedValueDetail)
+		err := b.DecodeMessage(msg)
+		m.Detail = &ValueStatus_Value_Failed{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _ValueStatus_Value_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*ValueStatus_Value)
+	// detail
+	switch x := m.Detail.(type) {
+	case *ValueStatus_Value_Pending:
+		s := proto.Size(x.Pending)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *ValueStatus_Value_Invalid:
+		s := proto.Size(x.Invalid)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *ValueStatus_Value_Failed:
+		s := proto.Size(x.Failed)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 func init() {
-	proto.RegisterType((*ValueError)(nil), "api.ValueError")
+	proto.RegisterType((*PendingValueDetail)(nil), "api.PendingValueDetail")
+	proto.RegisterType((*InvalidValueDetail)(nil), "api.InvalidValueDetail")
+	proto.RegisterType((*FailedValueDetail)(nil), "api.FailedValueDetail")
 	proto.RegisterType((*ValueStatus)(nil), "api.ValueStatus")
-	proto.RegisterMapType((map[string]*DerivedValueStatus)(nil), "api.ValueStatus.DerivedEntry")
-	proto.RegisterType((*DerivedValueStatus)(nil), "api.DerivedValueStatus")
+	proto.RegisterType((*ValueStatus_Value)(nil), "api.ValueStatus.Value")
 	proto.RegisterEnum("api.ValueState", ValueState_name, ValueState_value)
 	proto.RegisterEnum("api.TxnOperation", TxnOperation_name, TxnOperation_value)
 }
 
-func init() { proto.RegisterFile("value_status.proto", fileDescriptor_value_status_67bc4dac1245dd9b) }
+func init() { proto.RegisterFile("value_status.proto", fileDescriptor_value_status_065c648f49b38e87) }
 
-var fileDescriptor_value_status_67bc4dac1245dd9b = []byte{
-	// 415 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xdf, 0x8b, 0xd3, 0x40,
-	0x10, 0xc7, 0x6f, 0x93, 0xfe, 0xb0, 0x93, 0xde, 0xdd, 0xde, 0xbc, 0x18, 0x04, 0xa1, 0x14, 0x84,
-	0x72, 0x60, 0x85, 0xfa, 0xa0, 0xf8, 0x16, 0xdc, 0xe9, 0xb9, 0x90, 0x6e, 0xcb, 0x36, 0xad, 0xfa,
-	0x24, 0x39, 0x6e, 0x39, 0x8a, 0xda, 0x94, 0xfc, 0x38, 0xbc, 0xbf, 0xdd, 0x17, 0xd9, 0x4d, 0xea,
-	0x45, 0x14, 0xb9, 0xb7, 0x1d, 0xbe, 0xdf, 0xf9, 0xcc, 0x77, 0x32, 0x01, 0xbc, 0x4b, 0xbf, 0x55,
-	0xe6, 0x4b, 0x51, 0xa6, 0x65, 0x55, 0x4c, 0x0f, 0x79, 0x56, 0x66, 0xe8, 0xa7, 0x87, 0xdd, 0xf8,
-	0x23, 0xc0, 0xd6, 0x4a, 0x94, 0xe7, 0x59, 0x8e, 0x21, 0xf4, 0xbf, 0x9b, 0xa2, 0x48, 0x6f, 0x4d,
-	0xc8, 0x46, 0x6c, 0x32, 0xd0, 0xc7, 0x12, 0x5f, 0xc1, 0x20, 0x3b, 0x98, 0x3c, 0x2d, 0x77, 0xd9,
-	0x3e, 0xf4, 0x46, 0x6c, 0x72, 0x36, 0xbb, 0x98, 0xa6, 0x87, 0xdd, 0x34, 0xf9, 0xb1, 0x5f, 0x1e,
-	0x05, 0xfd, 0xe0, 0x19, 0xff, 0x64, 0x10, 0x38, 0xf2, 0xda, 0xcd, 0x44, 0x0e, 0xfe, 0x57, 0x73,
-	0xdf, 0x60, 0xed, 0x13, 0x5f, 0x40, 0xd7, 0xe6, 0x31, 0x0d, 0xee, 0xdc, 0xe1, 0x7e, 0xb7, 0x18,
-	0x5d, 0xab, 0xd6, 0x66, 0x6c, 0xb8, 0xd0, 0x1f, 0xb1, 0x49, 0xd0, 0xb6, 0xb9, 0xcc, 0xba, 0x56,
-	0xf1, 0x0d, 0xf4, 0x6f, 0x4c, 0xbe, 0xbb, 0x33, 0x37, 0x61, 0x67, 0xe4, 0x4f, 0x82, 0xd9, 0xf3,
-	0x3f, 0x79, 0x55, 0x31, 0x15, 0xb5, 0x4e, 0xfb, 0x32, 0xbf, 0xd7, 0x47, 0xf7, 0xb3, 0x35, 0x0c,
-	0xdb, 0xc2, 0x3f, 0x82, 0xbe, 0x84, 0xae, 0xfb, 0x7c, 0x2e, 0x68, 0x30, 0x7b, 0xea, 0xc0, 0x4d,
-	0x4f, 0x8b, 0xaf, 0x6b, 0xd7, 0x3b, 0xef, 0x2d, 0x1b, 0x5f, 0x03, 0xfe, 0x6d, 0x78, 0xd8, 0x98,
-	0x3d, 0x6e, 0x63, 0xef, 0x7f, 0x1b, 0x5f, 0x56, 0xcd, 0xe9, 0x5c, 0x2f, 0x9e, 0x43, 0xa0, 0x96,
-	0x8a, 0x3e, 0xc9, 0x75, 0x42, 0x2a, 0xe1, 0x27, 0x78, 0x06, 0xf0, 0x7e, 0xa9, 0xe6, 0xf2, 0x6a,
-	0xa3, 0x49, 0x70, 0x86, 0xa7, 0x30, 0xd0, 0x94, 0x68, 0x49, 0x5b, 0x12, 0xdc, 0xc3, 0x00, 0xfa,
-	0x2b, 0x52, 0x42, 0xaa, 0x2b, 0xee, 0xdb, 0x42, 0xaa, 0x6d, 0x14, 0x4b, 0xc1, 0x3b, 0x78, 0x01,
-	0xa7, 0x1b, 0x25, 0x17, 0xab, 0x98, 0x16, 0xa4, 0x12, 0x12, 0xbc, 0x8b, 0x00, 0xbd, 0x79, 0x24,
-	0x63, 0x12, 0xbc, 0x77, 0x79, 0x0b, 0xc3, 0xf6, 0xcd, 0x2d, 0x77, 0xa3, 0x04, 0xcd, 0xa5, 0x22,
-	0xc1, 0x4f, 0xea, 0x72, 0x11, 0xe9, 0xf5, 0x87, 0x28, 0xe6, 0x0c, 0x87, 0xf0, 0xc4, 0x71, 0xa3,
-	0x84, 0xb8, 0x87, 0x7d, 0xf0, 0x23, 0x21, 0xb8, 0x6f, 0x81, 0x8b, 0xa5, 0x90, 0xf3, 0xcf, 0xbc,
-	0x63, 0xdf, 0x82, 0x62, 0x4a, 0xa8, 0x1e, 0xb4, 0x59, 0x39, 0x73, 0xef, 0xba, 0xe7, 0x7e, 0xd3,
-	0xd7, 0xbf, 0x02, 0x00, 0x00, 0xff, 0xff, 0xb6, 0x89, 0xca, 0x5e, 0xbc, 0x02, 0x00, 0x00,
+var fileDescriptor_value_status_065c648f49b38e87 = []byte{
+	// 474 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x93, 0xc1, 0x6b, 0xdb, 0x30,
+	0x14, 0xc6, 0x93, 0x38, 0x76, 0x96, 0x97, 0x26, 0x55, 0x1e, 0xa3, 0x33, 0x3b, 0x65, 0x81, 0x41,
+	0x29, 0x23, 0x1b, 0xed, 0x61, 0xa7, 0x1d, 0xd2, 0x49, 0x69, 0x35, 0x12, 0x25, 0xa8, 0x4e, 0xd8,
+	0x76, 0x09, 0x1e, 0x56, 0x8b, 0x98, 0x67, 0x1b, 0xdb, 0x09, 0xdb, 0xdf, 0x3b, 0xd8, 0xdf, 0x31,
+	0x2c, 0x3b, 0xab, 0x4b, 0x60, 0xb7, 0xf7, 0x9e, 0x7e, 0xdf, 0x87, 0x9e, 0x3e, 0x04, 0xb8, 0xf7,
+	0xc3, 0x9d, 0xda, 0x66, 0xb9, 0x9f, 0xef, 0xb2, 0x49, 0x92, 0xc6, 0x79, 0x8c, 0x96, 0x9f, 0xe8,
+	0xf1, 0x7b, 0xc0, 0x95, 0x8a, 0x02, 0x1d, 0x3d, 0x6c, 0x0a, 0x82, 0xaa, 0xdc, 0xd7, 0x21, 0xbe,
+	0x82, 0x93, 0x1f, 0x3a, 0xcb, 0x74, 0xf4, 0xb0, 0x0d, 0x54, 0x92, 0xb9, 0xcd, 0x91, 0x75, 0xde,
+	0x95, 0xbd, 0x6a, 0x46, 0x55, 0x92, 0x8d, 0xaf, 0x01, 0x79, 0xb4, 0xf7, 0x43, 0x1d, 0xd4, 0x85,
+	0x67, 0xe0, 0xdc, 0x6b, 0x15, 0x06, 0x07, 0x49, 0xd5, 0xe1, 0x73, 0xb0, 0x55, 0x9a, 0xc6, 0xa9,
+	0xdb, 0x1a, 0x35, 0xcf, 0xbb, 0xb2, 0x6c, 0xc6, 0x5f, 0x61, 0x38, 0xf3, 0x75, 0xa8, 0x9e, 0x58,
+	0xfc, 0x43, 0x9b, 0x35, 0x14, 0xdf, 0x42, 0x37, 0x4e, 0x54, 0xea, 0xe7, 0x3a, 0x8e, 0x8c, 0xc9,
+	0xe0, 0x72, 0x38, 0xf1, 0x13, 0x3d, 0xf1, 0x7e, 0x46, 0xcb, 0xc3, 0x81, 0x7c, 0x64, 0xc6, 0xbf,
+	0x5b, 0xd0, 0x33, 0xb6, 0x77, 0x66, 0x67, 0x7c, 0x03, 0xb6, 0x79, 0x03, 0x63, 0xdb, 0xbb, 0x3c,
+	0x33, 0xe2, 0x1a, 0x50, 0xd6, 0xb2, 0x84, 0xf0, 0x03, 0x0c, 0x02, 0x95, 0xea, 0xbd, 0x0a, 0xb6,
+	0x66, 0x90, 0xb9, 0xad, 0x91, 0xf5, 0x1f, 0x59, 0xbf, 0xa2, 0x4d, 0x97, 0xbd, 0xfc, 0xd3, 0x04,
+	0xdb, 0x94, 0x48, 0xc0, 0xfa, 0xae, 0x7e, 0x55, 0xbb, 0x14, 0x25, 0xbe, 0x06, 0xbb, 0x88, 0x41,
+	0x55, 0x5b, 0x9c, 0x3e, 0x75, 0x54, 0xb2, 0x3c, 0xc5, 0x2b, 0xe8, 0x24, 0x65, 0x30, 0xae, 0x65,
+	0x6e, 0xfc, 0xc2, 0x80, 0xc7, 0x61, 0xdd, 0x36, 0xe4, 0x81, 0x2c, 0x44, 0xba, 0x0c, 0xc5, 0x6d,
+	0xd7, 0x44, 0xc7, 0x41, 0x15, 0xa2, 0x8a, 0xc4, 0x77, 0xe0, 0xdc, 0x9b, 0x14, 0x5c, 0xbb, 0xf6,
+	0x34, 0x47, 0xc1, 0xdc, 0x36, 0x64, 0xc5, 0x5d, 0x3f, 0x03, 0x27, 0x30, 0xb3, 0x8b, 0x1d, 0xc0,
+	0xe3, 0xd5, 0xf1, 0x14, 0x7a, 0x62, 0x29, 0xd8, 0x67, 0x7e, 0xe7, 0x31, 0xe1, 0x91, 0x06, 0x0e,
+	0x00, 0x3e, 0x2e, 0xc5, 0x8c, 0xdf, 0xac, 0x25, 0xa3, 0xa4, 0x89, 0x7d, 0xe8, 0x4a, 0xe6, 0x49,
+	0xce, 0x36, 0x8c, 0x92, 0x16, 0xf6, 0xa0, 0xb3, 0x62, 0x82, 0x72, 0x71, 0x43, 0xac, 0xa2, 0xe1,
+	0x62, 0x33, 0x9d, 0x73, 0x4a, 0xda, 0x38, 0x84, 0xfe, 0x5a, 0xf0, 0xc5, 0x6a, 0xce, 0x16, 0x4c,
+	0x78, 0x8c, 0x12, 0x1b, 0x01, 0x9c, 0xd9, 0x94, 0xcf, 0x19, 0x25, 0xce, 0xc5, 0x27, 0x38, 0xa9,
+	0xe7, 0x5e, 0xf8, 0xae, 0x05, 0x65, 0x33, 0x2e, 0x18, 0x25, 0x0d, 0xec, 0x80, 0x35, 0xa5, 0x94,
+	0x58, 0x85, 0x66, 0xb1, 0xa4, 0x7c, 0xf6, 0x85, 0xb4, 0x8b, 0x9a, 0xb2, 0x39, 0xf3, 0x58, 0xe9,
+	0xb5, 0x5e, 0xd1, 0xa9, 0xc7, 0x88, 0xf3, 0xcd, 0x31, 0xbf, 0xe1, 0xea, 0x6f, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0xdd, 0x88, 0x32, 0xf3, 0x23, 0x03, 0x00, 0x00,
 }

@@ -103,13 +103,6 @@ type KVDescriptor struct {
 	// KeySelector selects keys described by this descriptor.
 	KeySelector KeySelector
 
-	// ValueTypeName defines name of the proto.Message type used to represent
-	// described values. This attribute is mandatory, otherwise LazyValue-s
-	// received from NB (e.g. datasync package) cannot be un-marshalled.
-	// Note: proto Messages are registered against this type name in the generated
-	// code using proto.RegisterType().
-	ValueTypeName string
-
 	// KeyLabel can be *optionally* defined to provide a *shorter* value
 	// identifier, that, unlike the original key, only needs to be unique in the
 	// key scope of the descriptor and not necessarily in the entire key space.
@@ -154,9 +147,11 @@ type KVDescriptor struct {
 
 	// Validate value handler (optional).
 	// Validate is called for every new value before it is added/modified.
-	// If the validations fails, the scheduler will mark the value as invalid
-	// and will not attempt to apply it.
-	Validate func(key string, value proto.Message) error
+	// If the validations fails (returned <err> is non-nil), the scheduler will
+	// mark the value as invalid and will not attempt to apply it.
+	// The descriptor can further specify which field(s) are not valid
+	// by returning their names in the <invalidFields> slice.
+	Validate func(key string, value proto.Message) (invalidFields []string, err error)
 
 	// Add new value handler.
 	// For non-derived values, descriptor may return metadata to associate with

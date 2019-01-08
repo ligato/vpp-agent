@@ -19,45 +19,60 @@ enum ValueState {
     PENDING = 3;
 
     // ValueState_INVALID represents (NB) value that will not be configured
-    // because it either cannot be unmarshalled or it has an invalid content
-    // as declared by the Validate method of the associated descriptor.
-    // The corresponding error is stored in the <error> field of the value status.
-    INVALID = 4;
+    // because it has a logically invalid content as declared by the Validate
+    // method of the associated descriptor.
+    // The corresponding error and the list of affected fields are stored
+    // in the <InvalidValueDetails> structure available via <details> for invalid
+    // value.
+    INVALID = 5;
 
     // ValueState_UNIMPLEMENTED marks value received from NB that cannot
-    // be configured because there is no registered descriptor associated with it.
-    UNIMPLEMENTED = 5;
+    // be configured because there is no registered descriptor associated
+    // with it.
+    UNIMPLEMENTED = 6;
 
     // ValueState_FAILED marks (NB) value for which the last executed operation
-    // returned an error. The error is stored in the <error> field of the value
-    // status.
-    FAILED = 6;
+    // returned an error.
+    // The error and the type of the operation which caused the error are stored
+    // in the <FailedValueDetails> structure available via <details> for failed
+    // value.
+    FAILED = 7;
 }
 
-message ValueError {
-    string message = 1; // error message returned by the Error() method
+message PendingValueDetails {
+    repeated string missing_deps = 1;
+}
+
+message InvalidValueDetails {
+    repeated string fields = 1; // invalid field(s)
+    string error = 2;           // error returned by the descriptor's Validate method
+}
+
+message FailedValueDetails {
+    string error = 1;
     TxnOperation operation = 2;
 }
 
 enum TxnOperation {
     UNDEFINED = 0;
-    UNMARSHAL = 1;
-    VALIDATE = 2;
-    ADD = 3;
-    MODIFY = 4;
-    DELETE = 5;
-    UPDATE = 6;
+    VALIDATE = 1;
+    ADD = 2;
+    MODIFY = 3;
+    DELETE = 4;
+    UPDATE = 5;
 }
 
 message ValueStatus {
-    string key = 1;
-    ValueState state = 2;
-    ValueError error = 3;
+    message Value {
+        string key = 1;
+        ValueState state = 2;
+        oneof details {
+            PendingValueDetails pending = 3;
+            InvalidValueDetails invalid = 5;
+            FailedValueDetails failed = 6;
+        };
+    }
 
-    map<string, DerivedValueStatus> derived = 4; // key -> status of a derived value
-}
-
-message DerivedValueStatus {
-    ValueState state = 1;
-    ValueError error = 2;
+    Value value = 1;
+    repeated Value derived_values = 2;
 }
