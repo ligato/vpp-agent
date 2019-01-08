@@ -25,6 +25,8 @@ func getBinapiTypeSize(binapiType string) int {
 		b, err := strconv.Atoi(strings.TrimLeft(binapiType, "uif"))
 		if err == nil {
 			return b / 8
+		} else {
+			return 1
 		}
 	}
 	return -1
@@ -32,15 +34,17 @@ func getBinapiTypeSize(binapiType string) int {
 
 // binapiTypes is a set of types used VPP binary API for translation to Go types
 var binapiTypes = map[string]string{
-	"u8":  "uint8",
-	"i8":  "int8",
-	"u16": "uint16",
-	"i16": "int16",
-	"u32": "uint32",
-	"i32": "int32",
-	"u64": "uint64",
-	"i64": "int64",
-	"f64": "float64",
+	"bool":   "bool",
+	"u8":     "uint8",
+	"i8":     "int8",
+	"u16":    "uint16",
+	"i16":    "int16",
+	"u32":    "uint32",
+	"i32":    "int32",
+	"u64":    "uint64",
+	"i64":    "int64",
+	"f64":    "float64",
+	"string": "string",
 }
 
 func usesInitialism(s string) string {

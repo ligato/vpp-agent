@@ -165,18 +165,19 @@ func (h *IPSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfa
 
 		// Prepare tunnel interface data
 		tunnel := &ipsec.TunnelInterfaces_Tunnel{
-			Name:        ifName,
-			Esn:         uintToBool(saData.UseEsn),
-			AntiReplay:  uintToBool(saData.UseAntiReplay),
-			LocalIp:     tunnelSrcAddrStr,
-			RemoteIp:    tunnelDstAddrStr,
-			LocalSpi:    saData.Spi,
-			RemoteSpi:   firstSaData.Spi, // Fill remote SPI from stored SA data
-			CryptoAlg:   ipsec.CryptoAlgorithm(saData.CryptoAlg),
-			IntegAlg:    ipsec.IntegAlgorithm(saData.IntegAlg),
-			Enabled:     ifData.Enabled,
-			IpAddresses: ifData.IpAddresses,
-			Vrf:         ifData.Vrf,
+			Name:           ifName,
+			Esn:            uintToBool(saData.UseEsn),
+			AntiReplay:     uintToBool(saData.UseAntiReplay),
+			LocalIp:        tunnelSrcAddrStr,
+			RemoteIp:       tunnelDstAddrStr,
+			LocalSpi:       saData.Spi,
+			RemoteSpi:      firstSaData.Spi, // Fill remote SPI from stored SA data
+			CryptoAlg:      ipsec.CryptoAlgorithm(saData.CryptoAlg),
+			IntegAlg:       ipsec.IntegAlgorithm(saData.IntegAlg),
+			Enabled:        ifData.Enabled,
+			IpAddresses:    ifData.IpAddresses,
+			Vrf:            ifData.Vrf,
+			EnableUdpEncap: uintToBool(saData.UDPEncap),
 		}
 		tun = append(tun, &IPSecTunnelInterfaceDetails{
 			Tunnel: tunnel,
