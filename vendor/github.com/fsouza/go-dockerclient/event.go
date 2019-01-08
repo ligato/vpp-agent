@@ -330,6 +330,7 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 	if err != nil {
 		return err
 	}
+	//lint:ignore SA1019 this is needed here
 	conn := httputil.NewClientConn(dial, nil)
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
@@ -339,6 +340,7 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 	if err != nil {
 		return err
 	}
+	//lint:ignore SA1019 ClientConn is needed here
 	go func(res *http.Response, conn *httputil.ClientConn) {
 		defer conn.Close()
 		defer res.Body.Close()
@@ -350,9 +352,11 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 					c.eventMonitor.RLock()
 					if c.eventMonitor.enabled && c.eventMonitor.C == eventChan {
 						// Signal that we're exiting.
+						c.eventMonitor.RUnlock()
 						eventChan <- EOFEvent
+					} else {
+						c.eventMonitor.RUnlock()
 					}
-					c.eventMonitor.RUnlock()
 					break
 				}
 				errChan <- err
