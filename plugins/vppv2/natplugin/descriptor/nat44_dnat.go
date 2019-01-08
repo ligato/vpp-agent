@@ -320,7 +320,7 @@ func equivalentStaticMappings(stMapping1, stMapping2 *nat.DNat44_StaticMapping) 
 	// attributes compared as usually
 	if stMapping1.Protocol != stMapping2.Protocol || stMapping1.ExternalPort != stMapping2.ExternalPort ||
 		stMapping1.ExternalIp != stMapping2.ExternalIp || stMapping1.ExternalInterface != stMapping2.ExternalInterface ||
-		stMapping1.TwiceNat != stMapping2.TwiceNat {
+		stMapping1.TwiceNat != stMapping2.TwiceNat || stMapping1.SessionAffinity != stMapping1.SessionAffinity {
 		return false
 	}
 
