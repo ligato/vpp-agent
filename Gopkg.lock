@@ -30,6 +30,14 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  digest = "1:ed77032e4241e3b8329c9304d66452ed196e795876e14be677a546f36b94e67a"
+  name = "github.com/DataDog/zstd"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7161f8c63c045cbc7ca051dcc969dd0e4054de2"
+  version = "v1.3.5"
+
+[[projects]]
   digest = "1:f9ae348e1f793dcf9ed930ed47136a67343dbd6809c5c91391322267f4476892"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -46,15 +54,15 @@
   revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
 
 [[projects]]
-  digest = "1:b6957a1836b6d7e51e5a71391f5c08fa5d866f57e4ac425fa5f183d518a5657b"
+  digest = "1:49eb5d6ac71a788f1f15331e7cd87286b92951fdf758f418e12f22ac8dd27af1"
   name = "github.com/Shopify/sarama"
   packages = [
     ".",
     "mocks",
   ]
   pruneopts = "UT"
-  revision = "ec843464b50d4c8b56403ec9d589cf41ea30e722"
-  version = "v1.19.0"
+  revision = "879f631812a30a580659e8035e7cda9994bb99ac"
+  version = "v1.20.0"
 
 [[projects]]
   branch = "master"
@@ -292,7 +300,7 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:e4d1d8f3455dadab4e0f159acaff9075985ddaf6e807247923c088d964f1c845"
+  digest = "1:76d257c053e613c593017c941bbfe889442b51c40efb0ae44573891113431bc4"
   name = "github.com/fsouza/go-dockerclient"
   packages = [
     ".",
@@ -301,8 +309,8 @@
     "internal/term",
   ]
   pruneopts = "UT"
-  revision = "f3bdb27a96799b10006a884ef2fed89284466276"
-  version = "v1.3.1"
+  revision = "8300e91d8f670b3ae69ac75948337dba391a9768"
+  version = "v1.3.3"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
@@ -346,7 +354,7 @@
   version = "v5.0"
 
 [[projects]]
-  digest = "1:9b56c3d59d7899c60a02f4d0e8592fe70b19f3b6b47553849b20fe63a62efe66"
+  digest = "1:d3dd317f7fb7d94351b27dcc256b5b69ef13e8a86c57883949aa344cf640c51b"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -377,8 +385,8 @@
     "vanity/command",
   ]
   pruneopts = "UT"
-  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
-  version = "v1.1.1"
+  revision = "4cbf7e384e768b4e01799441fdf2a706a5635ae7"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:4c0989ca0bcd10799064318923b9bc2db6b4d6338dd75f3f2d86c3511aaaf5cf"
@@ -476,7 +484,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ff5d9579ce740b0f05978eb4df1e8c177829c29b11a90304257d8e7413a061cf"
+  digest = "1:bfd05a6bb0d66072633035054e5322561ada0e5a8790711888a0dd2b948f2c81"
   name = "github.com/ligato/cn-infra"
   packages = [
     "agent",
@@ -520,7 +528,7 @@
     "utils/safeclose",
   ]
   pruneopts = "T"
-  revision = "f597195a15762fa2bb1ce5bfdd875ec96c63d153"
+  revision = "764074c5f3e0cf4152ee08b667577a017a5dd926"
 
 [[projects]]
   branch = "master"
@@ -761,15 +769,15 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:d567a75ca7997f273776fc257f338d329c2e5877a8105ff8bd0234f75d45d4c0"
+  digest = "1:30520eb80678eddf5a5cc350ba4ffb4d8b6838d9f89a7e60efe7f5e30f2f9c18"
   name = "github.com/sirupsen/logrus"
   packages = [
     ".",
     "hooks/syslog",
   ]
   pruneopts = "UT"
-  revision = "bcd833dfe83d3cebad139e4a29ed79cb2318bf95"
-  version = "v1.2.0"
+  revision = "e1e72e9de974bd926e5c56f83753fba2df402ce5"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
@@ -821,14 +829,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bbdc3aac716e0d1f799e18b8461e7f5a5e74f9c069b121afd160b8fe2c2ba462"
+  digest = "1:e416f26d20a9d29b38c16a89d177a4021f814d4a1dadab3c376f90a1afa789db"
   name = "github.com/vishvananda/netlink"
   packages = [
     ".",
     "nl",
   ]
   pruneopts = "UT"
-  revision = "093e80f9fa21ff7b6d400d4cc54933558fd446a4"
+  revision = "1e2e7ab670e05e2fd29bf5d0bcab2f9907e9f9f4"
 
 [[projects]]
   branch = "master"
@@ -852,7 +860,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8b5682a2f0d3f944f12b9e87aeb6bbf451b55665ff6b87999c999b2240c390e9"
+  digest = "1:22cc09a0a3e3e7826986266cd4efca3b31b784cde07b0e5f2eacc5799d2ac5aa"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -867,7 +875,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "610586996380ceef02dd726cc09df7e00a3f8e56"
+  revision = "be88a9aa50a10f9e7a47479f127468a474701f09"
 
 [[projects]]
   branch = "master"

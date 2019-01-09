@@ -40,9 +40,9 @@ type TestApp struct{}
 
 // Run ticker literally forever, or for given time if set
 func (ta *TestApp) run() {
-	log.Info("test application started")
+	log.Info(">>> child >>> test application started")
 	if *maxUptime != 0 {
-		log.Infof("max uptime set to %d second(s)", *maxUptime)
+		log.Infof(">>> child >>> max uptime set to %d second(s)", *maxUptime)
 	}
 
 	ticker := time.NewTicker(1 * time.Second)
@@ -52,12 +52,12 @@ func (ta *TestApp) run() {
 		for range ticker.C {
 			uptime++
 			if uptime == *maxUptime {
-				log.Info("time's up, bye")
+				log.Info(">>> child >>> time's up, bye")
 				return
 			}
 		}
 	}()
 
-	log.Info("test application ended")
+	log.Info(">>> child >>> test application ended")
 	return
 }
