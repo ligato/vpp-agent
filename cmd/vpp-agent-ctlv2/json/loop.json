@@ -6,5 +6,5 @@
   ],
   "name": "loop1",
   "phys_address": "06:9e:df:66:54:47",
-  "type": 2
+  "type": "SOFTWARE_LOOPBACK"
 }
