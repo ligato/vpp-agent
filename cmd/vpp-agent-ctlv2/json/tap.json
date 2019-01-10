@@ -1,8 +1,6 @@
 {
-    "link": {
-        "tap": {
-            "host_if_name": "tap1"
-        }
+    "tap": {
+        "host_if_name": "tap1"
     },
     "enabled": true,
     "mtu": 1500,
