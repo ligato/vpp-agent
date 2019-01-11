@@ -19,6 +19,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
 )
 
+// Version as defined by the VPP API
+const (
+	ipv4 = 4
+	ipv6 = 6
+)
+
 // RegisterPuntSocket registers new punt to socket
 func (h *PuntVppHandler) RegisterPuntSocket(puntCfg *punt.Punt) ([]byte, error) {
 	return h.registerPuntWithSocket(puntCfg, true)
@@ -48,10 +54,12 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.Punt, isIPv4 bool) ([
 
 	req := &api_punt.PuntSocketRegister{
 		HeaderVersion: 1,
-		IsIP4:         boolToUint(isIPv4),
-		L4Protocol:    resolveL4Proto(punt.L4Protocol),
-		L4Port:        uint16(punt.Port),
-		Pathname:      pathByte,
+		Punt: api_punt.Punt{
+			IPv:        getIPv(isIPv4),
+			L4Protocol: resolveL4Proto(punt.L4Protocol),
+			L4Port:     uint16(punt.Port),
+		},
+		Pathname: pathByte,
 	}
 	reply := &api_punt.PuntSocketRegisterReply{}
 
@@ -64,9 +72,11 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.Punt, isIPv4 bool) ([
 
 func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.Punt, isIPv4 bool) error {
 	req := &api_punt.PuntSocketDeregister{
-		IsIP4:      boolToUint(isIPv4),
-		L4Protocol: resolveL4Proto(punt.L4Protocol),
-		L4Port:     uint16(punt.Port),
+		Punt: api_punt.Punt{
+			IPv:        getIPv(isIPv4),
+			L4Protocol: resolveL4Proto(punt.L4Protocol),
+			L4Port:     uint16(punt.Port),
+		},
 	}
 	reply := &api_punt.PuntSocketDeregisterReply{}
 
@@ -87,9 +97,9 @@ func resolveL4Proto(protocol punt.L4Protocol) uint8 {
 	return uint8(punt.L4Protocol_UNDEFINED_L4)
 }
 
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
+func getIPv(isIPv4 bool) uint8 {
+	if isIPv4 {
+		return ipv4
 	}
-	return 0
+	return ipv6
 }
