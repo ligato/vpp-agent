@@ -5,8 +5,9 @@
  Package punt is a generated from VPP binary API module 'punt'.
 
  It contains following objects:
-	  6 messages
-	  3 services
+	 10 messages
+	  1 type
+	  5 services
 
 */
 package punt
@@ -20,138 +21,252 @@ var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
 
-/* Messages */
-
-// Punt represents the VPP binary API message 'punt'.
+// Services represents VPP binary API services:
 //
-//            "punt",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "ipv"
-//            ],
-//            [
-//                "u8",
-//                "l4_protocol"
-//            ],
-//            [
-//                "u16",
-//                "l4_port"
-//            ],
-//            {
-//                "crc": "0x37760008"
-//            }
+//	"services": {
+//	    "set_punt": {
+//	        "reply": "set_punt_reply"
+//	    },
+//	    "punt_socket_dump": {
+//	        "reply": "punt_socket_details",
+//	        "stream": true
+//	    },
+//	    "punt_socket_deregister": {
+//	        "reply": "punt_socket_deregister_reply"
+//	    },
+//	    "punt_dump": {
+//	        "reply": "punt_details",
+//	        "stream": true
+//	    },
+//	    "punt_socket_register": {
+//	        "reply": "punt_socket_register_reply"
+//	    }
+//	},
+//
+type Services interface {
+	DumpPunt(*PuntDump) ([]*PuntDetails, error)
+	DumpPuntSocket(*PuntSocketDump) ([]*PuntSocketDetails, error)
+	PuntSocketDeregister(*PuntSocketDeregister) (*PuntSocketDeregisterReply, error)
+	PuntSocketRegister(*PuntSocketRegister) (*PuntSocketRegisterReply, error)
+	SetPunt(*SetPunt) (*SetPuntReply, error)
+}
+
+/* Types */
+
+// Punt represents VPP binary API type 'punt':
+//
+//	"punt",
+//	[
+//	    "u8",
+//	    "ipv"
+//	],
+//	[
+//	    "u8",
+//	    "l4_protocol"
+//	],
+//	[
+//	    "u16",
+//	    "l4_port"
+//	],
+//	{
+//	    "crc": "0xfe4f98ac"
+//	}
 //
 type Punt struct {
-	IsAdd      uint8
 	IPv        uint8
 	L4Protocol uint8
 	L4Port     uint16
 }
 
-func (*Punt) GetMessageName() string {
+func (*Punt) GetTypeName() string {
 	return "punt"
 }
 func (*Punt) GetCrcString() string {
-	return "37760008"
+	return "fe4f98ac"
 }
-func (*Punt) GetMessageType() api.MessageType {
+
+/* Messages */
+
+// SetPunt represents VPP binary API message 'set_punt':
+//
+//	"set_punt",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "vl_api_punt_t",
+//	    "punt"
+//	],
+//	{
+//	    "crc": "0x332d88dc"
+//	}
+//
+type SetPunt struct {
+	IsAdd uint8
+	Punt  Punt
+}
+
+func (*SetPunt) GetMessageName() string {
+	return "set_punt"
+}
+func (*SetPunt) GetCrcString() string {
+	return "332d88dc"
+}
+func (*SetPunt) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// PuntReply represents the VPP binary API message 'punt_reply'.
+// SetPuntReply represents VPP binary API message 'set_punt_reply':
 //
-//            "punt_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"set_punt_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
-type PuntReply struct {
+type SetPuntReply struct {
 	Retval int32
 }
 
-func (*PuntReply) GetMessageName() string {
-	return "punt_reply"
+func (*SetPuntReply) GetMessageName() string {
+	return "set_punt_reply"
 }
-func (*PuntReply) GetCrcString() string {
+func (*SetPuntReply) GetCrcString() string {
 	return "e8d4e804"
 }
-func (*PuntReply) GetMessageType() api.MessageType {
+func (*SetPuntReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// PuntSocketRegister represents the VPP binary API message 'punt_socket_register'.
+// PuntDump represents VPP binary API message 'punt_dump':
 //
-//            "punt_socket_register",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "header_version"
-//            ],
-//            [
-//                "u8",
-//                "is_ip4"
-//            ],
-//            [
-//                "u8",
-//                "l4_protocol"
-//            ],
-//            [
-//                "u16",
-//                "l4_port"
-//            ],
-//            [
-//                "u8",
-//                "pathname",
-//                108
-//            ],
-//            {
-//                "crc": "0xc163b363"
-//            }
+//	"punt_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_ipv6"
+//	],
+//	{
+//	    "crc": "0xde883da4"
+//	}
+//
+type PuntDump struct {
+	IsIPv6 uint8
+}
+
+func (*PuntDump) GetMessageName() string {
+	return "punt_dump"
+}
+func (*PuntDump) GetCrcString() string {
+	return "de883da4"
+}
+func (*PuntDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// PuntDetails represents VPP binary API message 'punt_details':
+//
+//	"punt_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "vl_api_punt_t",
+//	    "punt"
+//	],
+//	{
+//	    "crc": "0xe905318e"
+//	}
+//
+type PuntDetails struct {
+	Punt Punt
+}
+
+func (*PuntDetails) GetMessageName() string {
+	return "punt_details"
+}
+func (*PuntDetails) GetCrcString() string {
+	return "e905318e"
+}
+func (*PuntDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// PuntSocketRegister represents VPP binary API message 'punt_socket_register':
+//
+//	"punt_socket_register",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "header_version"
+//	],
+//	[
+//	    "vl_api_punt_t",
+//	    "punt"
+//	],
+//	[
+//	    "u8",
+//	    "pathname",
+//	    108
+//	],
+//	{
+//	    "crc": "0x9f3e2877"
+//	}
 //
 type PuntSocketRegister struct {
 	HeaderVersion uint32
-	IsIP4         uint8
-	L4Protocol    uint8
-	L4Port        uint16
+	Punt          Punt
 	Pathname      []byte `struc:"[108]byte"`
 }
 
@@ -159,35 +274,35 @@ func (*PuntSocketRegister) GetMessageName() string {
 	return "punt_socket_register"
 }
 func (*PuntSocketRegister) GetCrcString() string {
-	return "c163b363"
+	return "9f3e2877"
 }
 func (*PuntSocketRegister) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// PuntSocketRegisterReply represents the VPP binary API message 'punt_socket_register_reply'.
+// PuntSocketRegisterReply represents VPP binary API message 'punt_socket_register_reply':
 //
-//            "punt_socket_register_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "pathname",
-//                64
-//            ],
-//            {
-//                "crc": "0x42dc0ee6"
-//            }
+//	"punt_socket_register_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u8",
+//	    "pathname",
+//	    64
+//	],
+//	{
+//	    "crc": "0x42dc0ee6"
+//	}
 //
 type PuntSocketRegisterReply struct {
 	Retval   int32
@@ -204,71 +319,137 @@ func (*PuntSocketRegisterReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// PuntSocketDeregister represents the VPP binary API message 'punt_socket_deregister'.
+// PuntSocketDump represents VPP binary API message 'punt_socket_dump':
 //
-//            "punt_socket_deregister",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_ip4"
-//            ],
-//            [
-//                "u8",
-//                "l4_protocol"
-//            ],
-//            [
-//                "u16",
-//                "l4_port"
-//            ],
-//            {
-//                "crc": "0x9846a4cc"
-//            }
+//	"punt_socket_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_ipv6"
+//	],
+//	{
+//	    "crc": "0xde883da4"
+//	}
+//
+type PuntSocketDump struct {
+	IsIPv6 uint8
+}
+
+func (*PuntSocketDump) GetMessageName() string {
+	return "punt_socket_dump"
+}
+func (*PuntSocketDump) GetCrcString() string {
+	return "de883da4"
+}
+func (*PuntSocketDump) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// PuntSocketDetails represents VPP binary API message 'punt_socket_details':
+//
+//	"punt_socket_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "vl_api_punt_t",
+//	    "punt"
+//	],
+//	[
+//	    "u8",
+//	    "pathname",
+//	    108
+//	],
+//	{
+//	    "crc": "0x8911c6c5"
+//	}
+//
+type PuntSocketDetails struct {
+	Punt     Punt
+	Pathname []byte `struc:"[108]byte"`
+}
+
+func (*PuntSocketDetails) GetMessageName() string {
+	return "punt_socket_details"
+}
+func (*PuntSocketDetails) GetCrcString() string {
+	return "8911c6c5"
+}
+func (*PuntSocketDetails) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// PuntSocketDeregister represents VPP binary API message 'punt_socket_deregister':
+//
+//	"punt_socket_deregister",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "vl_api_punt_t",
+//	    "punt"
+//	],
+//	{
+//	    "crc": "0x0603ba46"
+//	}
 //
 type PuntSocketDeregister struct {
-	IsIP4      uint8
-	L4Protocol uint8
-	L4Port     uint16
+	Punt Punt
 }
 
 func (*PuntSocketDeregister) GetMessageName() string {
 	return "punt_socket_deregister"
 }
 func (*PuntSocketDeregister) GetCrcString() string {
-	return "9846a4cc"
+	return "0603ba46"
 }
 func (*PuntSocketDeregister) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// PuntSocketDeregisterReply represents the VPP binary API message 'punt_socket_deregister_reply'.
+// PuntSocketDeregisterReply represents VPP binary API message 'punt_socket_deregister_reply':
 //
-//            "punt_socket_deregister_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"punt_socket_deregister_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type PuntSocketDeregisterReply struct {
 	Retval int32
@@ -284,19 +465,15 @@ func (*PuntSocketDeregisterReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-/* Services */
-
-type Services interface {
-	Punt(*Punt) (*PuntReply, error)
-	PuntSocketDeregister(*PuntSocketDeregister) (*PuntSocketDeregisterReply, error)
-	PuntSocketRegister(*PuntSocketRegister) (*PuntSocketRegisterReply, error)
-}
-
 func init() {
-	api.RegisterMessage((*Punt)(nil), "punt.Punt")
-	api.RegisterMessage((*PuntReply)(nil), "punt.PuntReply")
+	api.RegisterMessage((*SetPunt)(nil), "punt.SetPunt")
+	api.RegisterMessage((*SetPuntReply)(nil), "punt.SetPuntReply")
+	api.RegisterMessage((*PuntDump)(nil), "punt.PuntDump")
+	api.RegisterMessage((*PuntDetails)(nil), "punt.PuntDetails")
 	api.RegisterMessage((*PuntSocketRegister)(nil), "punt.PuntSocketRegister")
 	api.RegisterMessage((*PuntSocketRegisterReply)(nil), "punt.PuntSocketRegisterReply")
+	api.RegisterMessage((*PuntSocketDump)(nil), "punt.PuntSocketDump")
+	api.RegisterMessage((*PuntSocketDetails)(nil), "punt.PuntSocketDetails")
 	api.RegisterMessage((*PuntSocketDeregister)(nil), "punt.PuntSocketDeregister")
 	api.RegisterMessage((*PuntSocketDeregisterReply)(nil), "punt.PuntSocketDeregisterReply")
 }
