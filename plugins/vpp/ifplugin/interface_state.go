@@ -34,34 +34,34 @@ import (
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-// PeriodicPollingTimeout between statistics reads
-// TODO set to the original VPP interval but should be configurable
-var PeriodicPollingTimeout = 10 * time.Second
+// PeriodicPollingPeriod between statistics reads
+// TODO  should be configurable
+var PeriodicPollingPeriod = 1 * time.Second
 
 // statType is the specific interface statistics type.
 type statType string
 
-// string used as pattern to filter stats results to interface only
-const ifFilter = "/if"
+// interface stats prefix as defined by the VPP
+const ifPrefix = "/if/"
 
 // interface statistics matching patterns
 const (
-	Drop        statType = ifFilter + "/drops"
-	Punt                 = ifFilter + "/punt"
-	IPv4                 = ifFilter + "/ip4"
-	IPv6                 = ifFilter + "/ip6"
-	RxNoBuf              = ifFilter + "/rx-no-buf"
-	RxMiss               = ifFilter + "/rx-miss"
-	RxError              = ifFilter + "rx-error"
-	TxError              = ifFilter + "/tx-error"
-	Rx                   = ifFilter + "/rx"
-	RxUnicast            = ifFilter + "/rx-unicast"
-	RxMulticast          = ifFilter + "/rx-multicast"
-	RxBroadcast          = ifFilter + "/rx-broadcast"
-	Tx                   = ifFilter + "/tx"
-	TxUnicast            = ifFilter + "/tx-unicast"
-	TxMulticast          = ifFilter + "/tx-multicast"
-	TxBroadcast          = ifFilter + "/tx-broadcast"
+	Drop        statType = ifPrefix + "drops"
+	Punt                 = ifPrefix + "punt"
+	IPv4                 = ifPrefix + "ip4"
+	IPv6                 = ifPrefix + "ip6"
+	RxNoBuf              = ifPrefix + "rx-no-buf"
+	RxMiss               = ifPrefix + "rx-miss"
+	RxError              = ifPrefix + "rx-error"
+	TxError              = ifPrefix + "tx-error"
+	Rx                   = ifPrefix + "rx"
+	RxUnicast            = ifPrefix + "rx-unicast"
+	RxMulticast          = ifPrefix + "rx-multicast"
+	RxBroadcast          = ifPrefix + "rx-broadcast"
+	Tx                   = ifPrefix + "tx"
+	TxUnicast            = ifPrefix + "tx-unicast"
+	TxMulticast          = ifPrefix + "tx-multicast"
+	TxBroadcast          = ifPrefix + "tx-broadcast"
 )
 
 const (
@@ -159,7 +159,7 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	return nil
 }
 
-// Close un-subscribes from interface state notifications from VPP & GOVPP channel
+// Close unsubscribes from interface state notifications from VPP & GOVPP channel
 func (c *InterfaceStateUpdater) Close() error {
 	c.cancel()
 	c.wg.Wait()
@@ -232,7 +232,7 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 func (c *InterfaceStateUpdater) startReadingCounters(ctx context.Context) {
 	for {
 		select {
-		case <-time.After(PeriodicPollingTimeout):
+		case <-time.After(PeriodicPollingPeriod):
 			c.doInterfaceStatsRead()
 		case <-ctx.Done():
 			c.log.Debug("Interface state VPP periodic polling stopped")
@@ -246,7 +246,7 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 	c.access.Lock()
 	defer c.access.Unlock()
 
-	statEntries, err := c.vppStats.DumpStats(ifFilter)
+	statEntries, err := c.vppStats.DumpStats(ifPrefix)
 	if err != nil {
 		// TODO add some counter to prevent it log forever
 		c.log.Errorf("failed to read statistics data: %v", err)
@@ -297,7 +297,7 @@ func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data
 		}
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 	}
 }
 
@@ -329,7 +329,7 @@ func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, da
 		// TODO process other stats types
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 	}
 }
 

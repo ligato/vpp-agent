@@ -33,12 +33,7 @@ func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac 
 	if err != nil {
 		return err
 	}
-	var macInt [6]uint8
-	for i := 0; i < 6; i++ {
-		macInt[i] = uint8(macAddr[i])
-	}
-	req.Mac = l2ba.MacAddress(macInt)
-
+	copy(req.Mac[:], macAddr)
 	isIpv6, err := addrs.IsIPv6(ip)
 	if err != nil {
 		return err
