@@ -45,6 +45,11 @@ type API interface {
 	//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 	//      ch.SendRequest(req).ReceiveReply
 	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error)
+}
+
+// APIWithStats is extended API for other plugins to get connectivity to VPP and VPP statistics
+type APIWithStats interface {
+	API
 
 	// GetStatsAdapter returns adapter which allows to read VPP statistics
 	GetStatsAdapter() adapter.StatsAPI
