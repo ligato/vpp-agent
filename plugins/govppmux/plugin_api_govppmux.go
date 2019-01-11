@@ -15,6 +15,7 @@
 package govppmux
 
 import (
+	"git.fd.io/govpp.git/adapter"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/measure/model/apitrace"
 )
@@ -44,4 +45,7 @@ type API interface {
 	//      ch, _ := govpp_mux.NewAPIChannelBuffered(100, 100)
 	//      ch.SendRequest(req).ReceiveReply
 	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error)
+
+	// GetStatsAdapter returns adapter which allows to read VPP statistics
+	GetStatsAdapter() adapter.StatsAPI
 }

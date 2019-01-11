@@ -35,13 +35,16 @@ import (
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vpp/aclplugin/vppcalls"
 )
 
+const defaultStatsSocket = "/run/vpp/stats.sock"
+
 // Plugin implements the govppmux plugin interface.
 type Plugin struct {
 	Deps
 
-	vppConn    *govpp.Connection
-	vppAdapter adapter.VppAPI
-	vppConChan chan govpp.ConnectionEvent
+	vppConn      *govpp.Connection
+	vppAdapter   adapter.VppAPI
+	statsAdapter adapter.StatsAPI
+	vppConChan   chan govpp.ConnectionEvent
 
 	lastConnErr error
 
@@ -75,6 +78,7 @@ type Config struct {
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
 	ShmPrefix       string `json:"shm-prefix"`
+	StatsSocketName string `json:"stats-socket-name"`
 	ReconnectResync bool   `json:"resync-after-reconnect"`
 	// How many times can be request resent in case vpp is suddenly disconnected.
 	RetryRequestCount int `json:"retry-request-count"`
@@ -149,6 +153,16 @@ func (plugin *Plugin) Init() error {
 	ctx, plugin.cancel = context.WithCancel(context.Background())
 	go plugin.handleVPPConnectionEvents(ctx)
 
+	// Connect to VPP status socket
+	if plugin.config.StatsSocketName != "" {
+		plugin.statsAdapter = NewStatsAdapter(plugin.config.StatsSocketName)
+	} else {
+		plugin.statsAdapter = NewStatsAdapter(defaultStatsSocket)
+	}
+	if err := plugin.statsAdapter.Connect(); err != nil {
+		plugin.Log.Errorf("Unable to connect to VPP statistics socket, %v", err)
+	}
+
 	return nil
 }
 
@@ -160,6 +174,11 @@ func (plugin *Plugin) Close() error {
 	defer func() {
 		if plugin.vppConn != nil {
 			plugin.vppConn.Disconnect()
+		}
+		if plugin.statsAdapter != nil {
+			if err := plugin.statsAdapter.Disconnect(); err != nil {
+				plugin.Log.Errorf("VPP statistics socket adapter disconnect error: %v", err)
+			}
 		}
 	}()
 
@@ -206,6 +225,11 @@ func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int
 		plugin.config.RetryRequestTimeout,
 	}
 	return &goVppChan{ch, retryCfg, plugin.tracer}, nil
+}
+
+// GetStatsAdapter returns adapter which allows to read VPP statistics
+func (plugin *Plugin) GetStatsAdapter() adapter.StatsAPI {
+	return plugin.statsAdapter
 }
 
 // GetTrace returns all trace entries measured so far
