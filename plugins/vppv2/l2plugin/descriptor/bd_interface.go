@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/idxvpp2"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
@@ -124,8 +124,8 @@ func (d *BDInterfaceDescriptor) ModifyWithRecreate(key string, oldBDIface, newBD
 }
 
 // Dependencies lists the interface as the only dependency for the binding.
-func (d *BDInterfaceDescriptor) Dependencies(key string, value *l2.BridgeDomain_Interface) []scheduler.Dependency {
-	return []scheduler.Dependency{
+func (d *BDInterfaceDescriptor) Dependencies(key string, value *l2.BridgeDomain_Interface) []kvs.Dependency {
+	return []kvs.Dependency{
 		{
 			Label: interfaceDep,
 			Key:   interfaces.InterfaceKey(value.Name),

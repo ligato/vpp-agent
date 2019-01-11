@@ -28,11 +28,11 @@ type StaticRouteDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value *l3.StaticRoute) error
 	Add                func(key string, value *l3.StaticRoute) (metadata interface{}, err error)
 	Delete             func(key string, value *l3.StaticRoute, metadata interface{}) error
 	Modify             func(key string, oldValue, newValue *l3.StaticRoute, oldMetadata interface{}) (newMetadata interface{}, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue *l3.StaticRoute, metadata interface{}) bool
-	Update             func(key string, value *l3.StaticRoute, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *l3.StaticRoute) []Dependency
 	DerivedValues      func(key string, value *l3.StaticRoute) []KeyValuePair
@@ -62,6 +62,9 @@ func NewStaticRouteDescriptor(typedDescriptor *StaticRouteDescriptor) *KVDescrip
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewStaticRouteDescriptor(typedDescriptor *StaticRouteDescriptor) *KVDescrip
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *StaticRouteDescriptorAdapter) ValueComparator(key string, oldValue, ne
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *StaticRouteDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castStaticRouteValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *StaticRouteDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *StaticRouteDescriptorAdapter) ModifyWithRecreate(key string, oldValue,
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *StaticRouteDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castStaticRouteValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castStaticRouteMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *StaticRouteDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

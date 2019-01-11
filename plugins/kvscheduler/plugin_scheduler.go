@@ -16,19 +16,23 @@ package kvscheduler
 
 import (
 	"context"
+	"reflect"
 	"sync"
 	"time"
-
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"errors"
 
 	"github.com/gogo/protobuf/proto"
+
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
+
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/registry"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
 const (
@@ -77,17 +81,21 @@ type Scheduler struct {
 
 	// TXN processing
 	txnLock      sync.Mutex // can be used to pause transaction processing; always lock before the graph!
-	txnQueue     chan *queuedTxn
-	errorSubs    []errorSubscription
+	txnQueue     chan *transaction
 	txnSeqNumber uint64
 	resyncCount  uint
-	lastError    map[string]error // key -> error
+
+	// value status
+	lastError        map[string]error // TODO key -> non-nil error (even for derived values removed by refresh)
+	updatedStates    utils.KeySet  // base values with updated status
+	valStateWatchers []valStateWatcher
 
 	// TXN history
 	historyLock sync.Mutex
 	txnHistory  []*kvs.RecordedTxn // ordered from the oldest to the latest
 	startTime   time.Time
 
+	// TODO: remove once Orchestrator is completed
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
 	resyncChan   chan datasync.ResyncEvent
@@ -111,12 +119,12 @@ type Config struct {
 // SchedulerTxn implements transaction for the KV scheduler.
 type SchedulerTxn struct {
 	scheduler *Scheduler
-	data      *queuedTxn
+	values    map[string]proto.Message
 }
 
-// errorSubscription represents one subscription for error updates.
-type errorSubscription struct {
-	channel  chan<- kvs.KeyWithError
+// valStateWatcher represents one subscription for value state updates.
+type valStateWatcher struct {
+	channel  chan<- *kvs.BaseValueStatus
 	selector kvs.KeySelector
 }
 
@@ -144,17 +152,19 @@ func (s *Scheduler) Init() error {
 
 	// prepare context for all go routines
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	// initialize graph for in-memory storage of added+pending kv pairs
+	// initialize graph for in-memory storage of key-value pairs
 	s.graph = graph.NewGraph(s.config.RecordTransactionHistory, s.config.TransactionHistoryAgeLimit,
 		s.config.PermanentlyRecordedInitPeriod)
 	// initialize registry for key->descriptor lookups
 	s.registry = registry.NewRegistry()
 	// prepare channel for serializing transactions
-	s.txnQueue = make(chan *queuedTxn, 100)
-	// map of last errors (even for nodes not in the graph anymore)
-	s.lastError = make(map[string]error)
+	s.txnQueue = make(chan *transaction, 100)
 	// register REST API handlers
 	s.registerHandlers(s.HTTPHandlers)
+	// initialize map with last errors
+	s.lastError = make(map[string]error)
+	// initialize key-set used to mark values with updated status
+	s.updatedStates = utils.NewSliceBasedKeySet()
 	// record startup time
 	s.startTime = time.Now()
 
@@ -192,6 +202,30 @@ func (s *Scheduler) AfterInit() (err error) {
 	return err
 }
 
+// TODO: temporary, remove once Orchestrator has replaced datasync.
+func (s *Scheduler) unmarshallLazyValue(lazyVal datasync.KeyVal) (value proto.Message) {
+	if lazyVal == nil {
+		return nil
+	}
+	descriptor := s.registry.GetDescriptorForKey(lazyVal.GetKey())
+	if descriptor == nil {
+		return nil
+	}
+	// create an instance of the target proto.Message type
+	valueType := proto.MessageType(descriptor.ValueTypeName)
+	if valueType == nil {
+		return nil
+	}
+	value = reflect.New(valueType.Elem()).Interface().(proto.Message)
+	// try to deserialize the value
+	err := lazyVal.GetValue(value)
+	if err != nil {
+		return nil
+	}
+	return value
+}
+
+// TODO: obsolete, transactions will be constructed by the Orchestrator
 func (s *Scheduler) watchEvents() {
 	for {
 		select {
@@ -199,16 +233,22 @@ func (s *Scheduler) watchEvents() {
 			s.Log.Debugf("=> SCHEDULER received CHANGE EVENT: %v changes", len(e.GetChanges()))
 
 			txn := s.StartNBTransaction()
+			s.txnLock.Lock()
 			for _, x := range e.GetChanges() {
 				s.Log.Debugf("  - Change %v: %q (rev: %v)",
 					x.GetChangeType(), x.GetKey(), x.GetRevision())
 				if x.GetChangeType() == datasync.Delete {
 					txn.SetValue(x.GetKey(), nil)
 				} else {
-					txn.SetValue(x.GetKey(), x)
+					val := s.unmarshallLazyValue(x)
+					if val == nil {
+						continue
+					}
+					txn.SetValue(x.GetKey(), val)
 				}
 			}
-			kvErrs, err := txn.Commit(kvs.WithRetry(context.Background(), time.Second, true))
+			s.txnLock.Unlock()
+			kvErrs, err := txn.Commit(kvs.WithRetryDefault(context.Background()))
 			s.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
 			e.Done(err)
 
@@ -216,19 +256,25 @@ func (s *Scheduler) watchEvents() {
 			s.Log.Debugf("=> SCHEDULER received RESYNC EVENT: %v prefixes", len(e.GetValues()))
 
 			txn := s.StartNBTransaction()
+			s.txnLock.Lock()
 			for prefix, iter := range e.GetValues() {
 				var keyVals []datasync.KeyVal
 				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
+					val := s.unmarshallLazyValue(x)
+					if val == nil {
+						continue
+					}
 					keyVals = append(keyVals, x)
-					txn.SetValue(x.GetKey(), x)
+					txn.SetValue(x.GetKey(), val)
 				}
 				s.Log.Debugf(" - Resync: %q (%v key-values)", prefix, len(keyVals))
 				for _, x := range keyVals {
 					s.Log.Debugf("\t%q: (rev: %v)", x.GetKey(), x.GetRevision())
 				}
 			}
+			s.txnLock.Unlock()
 			ctx := context.Background()
-			ctx = kvs.WithRetry(ctx, time.Second, true)
+			ctx = kvs.WithRetryDefault(ctx)
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			kvErrs, err := txn.Commit(ctx)
 			s.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
@@ -279,12 +325,7 @@ func (s *Scheduler) GetRegisteredNBKeyPrefixes() []string {
 func (s *Scheduler) StartNBTransaction() kvs.Txn {
 	txn := &SchedulerTxn{
 		scheduler: s,
-		data: &queuedTxn{
-			txnType: kvs.NBTransaction,
-			nb: &nbTxn{
-				value: make(map[string]datasync.LazyValue),
-			},
-		},
+		values:    make(map[string]proto.Message),
 	}
 	return txn
 }
@@ -299,38 +340,18 @@ func (s *Scheduler) TransactionBarrier() {
 // PushSBNotification notifies about a spontaneous value change in the SB
 // plane (i.e. not triggered by NB transaction).
 func (s *Scheduler) PushSBNotification(key string, value proto.Message, metadata kvs.Metadata) error {
-	txn := &queuedTxn{
+	txn := &transaction{
 		txnType: kvs.SBNotification,
-		sb: &sbNotif{
-			value:    kvs.KeyValuePair{Key: key, Value: value},
-			metadata: metadata,
+		values: []kvForTxn{
+			{
+				key:      key,
+				value:    value,
+				metadata: metadata,
+				origin:   kvs.FromSB,
+			},
 		},
 	}
 	return s.enqueueTxn(txn)
-}
-
-// GetValue currently set for the given key.
-// The function can be used from within a transaction. However, if update
-// of A uses the value of B, then A should be marked as dependent on B
-// so that the scheduler can ensure that B is updated before A is.
-func (s *Scheduler) GetValue(key string) proto.Message {
-	graphR := s.graph.Read()
-	defer graphR.Release()
-
-	node := graphR.GetNode(key)
-	if node != nil {
-		return node.GetValue()
-	}
-	return nil
-}
-
-// GetValues returns a set of values matched by the given selector.
-func (s *Scheduler) GetValues(selector kvs.KeySelector) []kvs.KeyValuePair {
-	graphR := s.graph.Read()
-	defer graphR.Release()
-
-	nodes := graphR.GetNodes(selector)
-	return nodesToKVPairs(nodes)
 }
 
 // GetMetadataMap returns (read-only) map associating value label with value
@@ -343,38 +364,114 @@ func (s *Scheduler) GetMetadataMap(descriptor string) idxmap.NamedMapping {
 	return graphR.GetMetadataMap(descriptor)
 }
 
-// GetPendingValues returns list of values (possibly filtered by selector)
-// waiting for their dependencies to be met.
-func (s *Scheduler) GetPendingValues(selector kvs.KeySelector) []kvs.KeyValuePair {
+// GetValueStatus returns the status of a non-derived value with the given
+// key.
+func (s *Scheduler) GetValueStatus(key string) *kvs.BaseValueStatus {
+	graphR := s.graph.Read()
+	defer graphR.Release()
+	return getValueStatus(graphR.GetNode(key), key)
+}
+
+// WatchValueStatus allows to watch for changes in the status of non-derived
+// values with keys selected by the selector (all if keySelector==nil).
+func (s *Scheduler) WatchValueStatus(channel chan<- *kvs.BaseValueStatus, keySelector kvs.KeySelector) {
+	s.txnLock.Lock()
+	defer s.txnLock.Unlock()
+	s.valStateWatchers = append(s.valStateWatchers, valStateWatcher{
+		channel:  channel,
+		selector: keySelector,
+	})
+}
+
+// DumpValuesByDescriptor dumps values associated with the given descriptor
+// as viewed from either NB (what was requested to be applied), SB (what is
+// actually applied) or from the inside (what kvscheduler's current view of SB is).
+func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (values []kvs.KVWithMetadata, err error) {
+	if view == kvs.SBView {
+		// pause transaction processing
+		s.txnLock.Lock()
+		defer s.txnLock.Unlock()
+	}
+
 	graphR := s.graph.Read()
 	defer graphR.Release()
 
-	nodes := graphR.GetNodes(selector, graph.WithFlags(&PendingFlag{}))
-	return nodesToKVPairs(nodes)
+	if view == kvs.NBView {
+		// dump the requested state
+		var kvPairs []kvs.KVWithMetadata
+		nbNodes := graphR.GetNodes(nil,
+			graph.WithFlags(&DescriptorFlag{descriptor}),
+			graph.WithoutFlags(&DerivedFlag{}, &ValueStateFlag{kvs.ValueState_RETRIEVED}))
+
+		for _, node := range nbNodes {
+			lastUpdate := getNodeLastUpdate(node)
+			if lastUpdate == nil || lastUpdate.value == nil {
+				// filter found NB values and values requested to be deleted
+				continue
+			}
+			kvPairs = append(kvPairs, kvs.KVWithMetadata{
+				Key:    node.GetKey(),
+				Value:  lastUpdate.value,
+				Origin: kvs.FromNB,
+			})
+		}
+		return kvPairs, nil
+	}
+
+	/* internal/SB: */
+
+	// dump from the in-memory graph first (for SB Dump it is used for correlation)
+	inMemNodes := nodesToKVPairsWithMetadata(
+		graphR.GetNodes(nil, correlateValsSelectors(descriptor)...))
+
+	if view == kvs.InternalView {
+		// return the scheduler's view of SB for the given descriptor
+		return inMemNodes, nil
+	}
+
+	// obtain Dump handler from the descriptor
+	kvDescriptor := s.registry.GetDescriptor(descriptor)
+	if kvDescriptor == nil {
+		err = errors.New("descriptor is not registered")
+		return
+	}
+	if kvDescriptor.Dump == nil {
+		err = errors.New("descriptor does not support Dump operation")
+		return
+	}
+
+	// dump the state directly from SB via descriptor
+	values, err = kvDescriptor.Dump(inMemNodes)
+	return
 }
 
-// GetFailedValues returns a list of keys (possibly filtered by selector)
-// whose (base) values are in a failed state (i.e. possibly not in the state as set
-// by the last transaction).
-func (s *Scheduler) GetFailedValues(selector kvs.KeySelector) []kvs.KeyWithError {
-	graphR := s.graph.Read()
-	defer graphR.Release()
-
-	nodes := graphR.GetNodes(selector, graph.WithFlags(&ErrorFlag{}))
-	return nodesToKeysWithError(nodes)
+func (s *Scheduler) getDescriptorForKeyPrefix(keyPrefix string) string {
+	var descriptorName string
+	s.txnLock.Lock()
+	for _, descriptor := range s.registry.GetAllDescriptors() {
+		if descriptor.NBKeyPrefix == keyPrefix {
+			descriptorName = descriptor.Name
+		}
+	}
+	s.txnLock.Unlock()
+	return descriptorName
 }
 
-// SubscribeForErrors allows to get notified about all failed (Error!=nil)
-// and restored (Error==nil) values (possibly filtered using the selector).
-func (s *Scheduler) SubscribeForErrors(channel chan<- kvs.KeyWithError, selector kvs.KeySelector) {
-	s.errorSubs = append(s.errorSubs, errorSubscription{channel: channel, selector: selector})
+// DumpValuesByKeyPrefix like DumpValuesByDescriptor returns dump of values,
+// but the descriptor is selected based on the common key prefix.
+func (s *Scheduler) DumpValuesByKeyPrefix(keyPrefix string, view kvs.View) (values []kvs.KVWithMetadata, err error) {
+	descriptorName := s.getDescriptorForKeyPrefix(keyPrefix)
+	if descriptorName == "" {
+		err = errors.New("unknown key prefix")
+		return
+	}
+	return s.DumpValuesByDescriptor(descriptorName, view)
 }
 
-// SetValue changes (non-derived) lazy value - un-marshalled during
-// transaction pre-processing using ValueTypeName given by descriptor.
+// SetValue changes (non-derived) value.
 // If <value> is nil, the value will get deleted.
-func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) kvs.Txn {
-	txn.data.nb.value[key] = value
+func (txn *SchedulerTxn) SetValue(key string, value proto.Message) kvs.Txn {
+	txn.values[key] = value
 	return txn
 }
 
@@ -384,37 +481,52 @@ func (txn *SchedulerTxn) SetValue(key string, value datasync.LazyValue) kvs.Txn 
 func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err error) {
 	txnSeqNum = ^uint64(0)
 
+	txnData := &transaction{
+		txnType: kvs.NBTransaction,
+		nb:      &nbTxn{},
+		values:  make([]kvForTxn, 0, len(txn.values)),
+	}
+
+	// collect values
+	for key, value := range txn.values {
+		txnData.values = append(txnData.values, kvForTxn{
+			key:    key,
+			value:  value,
+			origin: kvs.FromNB,
+		})
+	}
+
 	// parse transaction options
-	txn.data.nb.isBlocking = !kvs.IsNonBlockingTxn(ctx)
-	txn.data.nb.resyncType, txn.data.nb.verboseRefresh = kvs.IsResync(ctx)
-	txn.data.nb.retryPeriod, txn.data.nb.expBackoffRetry, txn.data.nb.retryFailed = kvs.IsWithRetry(ctx)
-	txn.data.nb.revertOnFailure = kvs.IsWithRevert(ctx)
-	txn.data.nb.description, _ = kvs.IsWithDescription(ctx)
+	txnData.nb.isBlocking = !kvs.IsNonBlockingTxn(ctx)
+	txnData.nb.resyncType, txnData.nb.verboseRefresh = kvs.IsResync(ctx)
+	txnData.nb.retryArgs, txnData.nb.retryEnabled = kvs.IsWithRetry(ctx)
+	txnData.nb.revertOnFailure = kvs.IsWithRevert(ctx)
+	txnData.nb.description, _ = kvs.IsWithDescription(ctx)
 
 	// validate transaction options
-	if txn.data.nb.resyncType == kvs.DownstreamResync && len(txn.data.nb.value) > 0 {
+	if txnData.nb.resyncType == kvs.DownstreamResync && len(txnData.values) > 0 {
 		return txnSeqNum, kvs.NewTransactionError(kvs.ErrCombinedDownstreamResyncWithChange, nil)
 	}
-	if txn.data.nb.revertOnFailure && txn.data.nb.resyncType != kvs.NotResync {
+	if txnData.nb.revertOnFailure && txnData.nb.resyncType != kvs.NotResync {
 		return txnSeqNum, kvs.NewTransactionError(kvs.ErrRevertNotSupportedWithResync, nil)
 	}
 
 	// enqueue txn and for blocking Commit wait for the errors
-	if txn.data.nb.isBlocking {
-		txn.data.nb.resultChan = make(chan txnResult, 1)
+	if txnData.nb.isBlocking {
+		txnData.nb.resultChan = make(chan txnResult, 1)
 	}
-	err = txn.scheduler.enqueueTxn(txn.data)
+	err = txn.scheduler.enqueueTxn(txnData)
 	if err != nil {
 		return txnSeqNum, kvs.NewTransactionError(err, nil)
 	}
-	if txn.data.nb.isBlocking {
+	if txnData.nb.isBlocking {
 		select {
 		case <-txn.scheduler.ctx.Done():
 			return txnSeqNum, kvs.NewTransactionError(kvs.ErrClosedScheduler, nil)
 		case <-ctx.Done():
 			return txnSeqNum, kvs.NewTransactionError(kvs.ErrTxnWaitCanceled, nil)
-		case txnResult := <-txn.data.nb.resultChan:
-			close(txn.data.nb.resultChan)
+		case txnResult := <-txnData.nb.resultChan:
+			close(txnData.nb.resultChan)
 			return txnResult.txnSeqNum, txnResult.err
 		}
 	}

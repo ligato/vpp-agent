@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/servicelabel"
 
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
@@ -58,7 +58,7 @@ type IfPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	ServiceLabel servicelabel.ReaderAPI
-	Scheduler    scheduler.KVScheduler
+	KVScheduler  kvs.KVScheduler
 	NsPlugin     nsplugin.API
 	VppIfPlugin  descriptor.VPPIfPluginAPI /* mandatory if TAP_TO_VPP interfaces are used */
 }
@@ -88,17 +88,17 @@ func (p *IfPlugin) Init() error {
 	p.ifHandler = linuxcalls.NewNetLinkHandler()
 
 	// init & register descriptors
-	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.Scheduler,
+	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.KVScheduler,
 		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log, config.DumpGoRoutinesCnt)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(ifDescriptor)
+	p.Deps.KVScheduler.RegisterKVDescriptor(ifDescriptor)
 
-	p.ifWatcher = descriptor.NewInterfaceWatcher(p.Scheduler, p.ifHandler, p.Log)
-	p.Deps.Scheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
+	p.ifWatcher = descriptor.NewInterfaceWatcher(p.KVScheduler, p.ifHandler, p.Log)
+	p.Deps.KVScheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
 
 	// obtain read-only reference to index map
 	var withIndex bool
-	metadataMap := p.Deps.Scheduler.GetMetadataMap(ifDescriptor.Name)
+	metadataMap := p.Deps.KVScheduler.GetMetadataMap(ifDescriptor.Name)
 	p.ifIndex, withIndex = metadataMap.(ifaceidx.LinuxIfMetadataIndex)
 	if !withIndex {
 		return errors.New("missing index with interface metadata")

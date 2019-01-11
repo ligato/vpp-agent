@@ -34,11 +34,6 @@ const (
 	// the context.
 	retryCtxKey
 
-	// default parameters for the *retry* txn option
-	defaultRetryPeriod = time.Second
-	defaultRetryMaxCount = 3
-	defaultRetryBackoff = true
-
 	// revertCtxKey is a key under which *revert* txn option is stored into
 	// the context.
 	revertCtxKey
@@ -46,6 +41,18 @@ const (
 	// txnDescriptionKey is a key under which transaction description is stored
 	// into the context.
 	txnDescriptionKey
+)
+
+// modifiable default parameters for the *retry* txn option
+var (
+	// DefaultRetryPeriod delays first retry by one second.
+	DefaultRetryPeriod = time.Second
+
+	// DefaultRetryMaxCount limits the number of retries to 3 attempts at maximum.
+	DefaultRetryMaxCount = 3
+
+	// DefaultRetryBackoff enables exponential back-off for retry delay.
+	DefaultRetryBackoff = true
 )
 
 /* Full-Resync */
@@ -128,11 +135,11 @@ func IsNonBlockingTxn(ctx context.Context) bool {
 
 /* Retry */
 
-// retryOpt represents the *retry* transaction option.
-type retryOpt struct {
-	period     time.Duration
-	maxCount   int
-	expBackoff bool
+// RetryOpt represents the *retry* transaction option.
+type RetryOpt struct {
+	Period     time.Duration
+	MaxCount   int
+	ExpBackoff bool
 }
 
 // WithRetry prepares context for transaction for which the scheduler will retry
@@ -142,41 +149,38 @@ type retryOpt struct {
 // Can be combined with revert - even failed revert operations will be re-tried.
 // By default, the scheduler will not automatically retry failed operations.
 func WithRetry(ctx context.Context, period time.Duration, maxCount int, expBackoff bool) context.Context {
-	return context.WithValue(ctx, retryCtxKey, &retryOpt{
-		period:     period,
-		maxCount:   maxCount,
-		expBackoff: expBackoff,
+	return context.WithValue(ctx, retryCtxKey, &RetryOpt{
+		Period:     period,
+		MaxCount:   maxCount,
+		ExpBackoff: expBackoff,
 	})
 }
 
 // WithRetryDefault is a specialization of WithRetry, where retry parameters
 // are set to default values.
 func WithRetryDefault(ctx context.Context) context.Context {
-	return context.WithValue(ctx, retryCtxKey, &retryOpt{
-		period:     defaultRetryPeriod,
-		maxCount:   defaultRetryMaxCount,
-		expBackoff: defaultRetryBackoff,
+	return context.WithValue(ctx, retryCtxKey, &RetryOpt{
+		Period:     DefaultRetryPeriod,
+		MaxCount:   DefaultRetryMaxCount,
+		ExpBackoff: DefaultRetryBackoff,
 	})
 }
 
 // WithRetryMaxCount is a specialization of WithRetry, where <period> and <expBackoff>
 // are set to default values and the maximum number of retries can be customized.
 func WithRetryMaxCount(ctx context.Context, maxCount int) context.Context {
-	return context.WithValue(ctx, retryCtxKey, &retryOpt{
-		period:     defaultRetryPeriod,
-		maxCount:   maxCount,
-		expBackoff: defaultRetryBackoff,
+	return context.WithValue(ctx, retryCtxKey, &RetryOpt{
+		Period:     DefaultRetryPeriod,
+		MaxCount:   maxCount,
+		ExpBackoff: DefaultRetryBackoff,
 	})
 }
 
 // IsWithRetry returns true if transaction context is configured to allow retry,
-// including the option parameters, or zero values if retry is not enabled.
-func IsWithRetry(ctx context.Context) (period time.Duration, maxCount int, expBackoff, withRetry bool) {
-	retryArgs, withRetry := ctx.Value(retryCtxKey).(*retryOpt)
-	if !withRetry {
-		return 0, 0, false, withRetry
-	}
-	return retryArgs.period, retryArgs.maxCount, retryArgs.expBackoff, withRetry
+// including the option parameters, or nil if retry is not enabled.
+func IsWithRetry(ctx context.Context) (retryArgs *RetryOpt, withRetry bool) {
+	retryArgs, withRetry = ctx.Value(retryCtxKey).(*RetryOpt)
+	return
 }
 
 /* Revert */

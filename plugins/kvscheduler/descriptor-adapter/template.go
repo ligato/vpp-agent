@@ -47,11 +47,11 @@ type {{ .DescriptorName }}Descriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value {{ .ValueT }}) error
 	Add                func(key string, value {{ .ValueT }}) (metadata {{ .MetadataT }}, err error)
 	Delete             func(key string, value {{ .ValueT }}, metadata {{ .MetadataT }}) error
 	Modify             func(key string, oldValue, newValue {{ .ValueT }}, oldMetadata {{ .MetadataT }}) (newMetadata {{ .MetadataT }}, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue {{ .ValueT }}, metadata {{ .MetadataT }}) bool
-	Update             func(key string, value {{ .ValueT }}, metadata {{ .MetadataT }}) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value {{ .ValueT }}) []Dependency
 	DerivedValues      func(key string, value {{ .ValueT }}) []KeyValuePair
@@ -81,6 +81,9 @@ func New{{ .DescriptorName }}Descriptor(typedDescriptor *{{ .DescriptorName }}De
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -92,9 +95,6 @@ func New{{ .DescriptorName }}Descriptor(typedDescriptor *{{ .DescriptorName }}De
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -115,6 +115,14 @@ func (da *{{ .DescriptorName }}DescriptorAdapter) ValueComparator(key string, ol
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *{{ .DescriptorName }}DescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := cast{{ .DescriptorName }}Value(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *{{ .DescriptorName }}DescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -167,18 +175,6 @@ func (da *{{ .DescriptorName }}DescriptorAdapter) ModifyWithRecreate(key string,
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *{{ .DescriptorName }}DescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := cast{{ .DescriptorName }}Value(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := cast{{ .DescriptorName }}Metadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *{{ .DescriptorName }}DescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

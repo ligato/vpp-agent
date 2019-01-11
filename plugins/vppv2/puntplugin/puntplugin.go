@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor/adapter"
@@ -48,7 +48,7 @@ type PuntPlugin struct {
 // Deps lists dependencies of the punt plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler   scheduler.KVScheduler
+	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -67,12 +67,12 @@ func (p *PuntPlugin) Init() (err error) {
 	// init and register punt descriptor
 	p.toHostDescriptor = descriptor.NewPuntToHostDescriptor(p.puntHandler, p.Log)
 	toHostDescriptor := adapter.NewPuntToHostDescriptor(p.toHostDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(toHostDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(toHostDescriptor)
 
 	// init and register IP punt redirect
 	p.ipRedirectDescriptor = descriptor.NewIPRedirectDescriptor(p.puntHandler, p.Log)
 	ipRedirectDescriptor := adapter.NewIPPuntRedirectDescriptor(p.ipRedirectDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(ipRedirectDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(ipRedirectDescriptor)
 
 	return nil
 }

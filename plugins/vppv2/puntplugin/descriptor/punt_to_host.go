@@ -19,6 +19,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
@@ -65,10 +66,10 @@ func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 		ValueTypeName:      proto.MessageName(&punt.ToHost{}),
 		ValueComparator:    d.EquivalentPuntToHost,
 		NBKeyPrefix:        punt.PrefixToHost,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dump:               d.Dump,
 	}
 }
@@ -85,15 +86,34 @@ func (d *PuntToHostDescriptor) EquivalentPuntToHost(key string, oldPunt, newPunt
 	return proto.Equal(oldPunt, newPunt)
 }
 
-// Add adds new punt to host entry or registers new punt to unix domain socket.
-func (d *PuntToHostDescriptor) Add(key string, punt *punt.ToHost) (metadata interface{}, err error) {
-	// validate the configuration
-	err = d.validatePuntConfig(punt)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
+// Validate validates VPP punt configuration.
+func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error {
+	// validate L3 protocol
+	switch puntCfg.L3Protocol {
+	case punt.L3Protocol_IPv4:
+	case punt.L3Protocol_IPv6:
+	case punt.L3Protocol_ALL:
+	default:
+		return kvs.NewInvalidValueError(ErrPuntWithoutL3Protocol, "l3_protocol")
 	}
 
+	// validate L4 protocol
+	switch puntCfg.L4Protocol {
+	case punt.L4Protocol_TCP:
+	case punt.L4Protocol_UDP:
+	default:
+		return kvs.NewInvalidValueError(ErrPuntWithoutL4Protocol, "l4_protocol")
+	}
+
+	if puntCfg.Port == 0 {
+		return kvs.NewInvalidValueError(ErrPuntWithoutPort, "port")
+	}
+
+	return nil
+}
+
+// Add adds new punt to host entry or registers new punt to unix domain socket.
+func (d *PuntToHostDescriptor) Add(key string, punt *punt.ToHost) (metadata interface{}, err error) {
 	// add punt to host
 	if punt.SocketPath == "" {
 		err = d.puntHandler.AddPunt(punt)
@@ -137,45 +157,4 @@ func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata
 // ModifyWithRecreate always returns true - punt entries are always modified via re-creation.
 func (d *PuntToHostDescriptor) ModifyWithRecreate(key string, oldPunt, newPunt *punt.ToHost, metadata interface{}) bool {
 	return true
-}
-
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *PuntToHostDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrPuntWithoutL3Protocol,
-		ErrPuntWithoutL4Protocol,
-		ErrPuntWithoutPort,
-	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
-		}
-	}
-	return true
-}
-
-// validatePuntConfig validates VPP punt configuration.
-func (d *PuntToHostDescriptor) validatePuntConfig(puntCfg *punt.ToHost) error {
-	// validate L3 protocol
-	switch puntCfg.L3Protocol {
-	case punt.L3Protocol_IPv4:
-	case punt.L3Protocol_IPv6:
-	case punt.L3Protocol_ALL:
-	default:
-		return ErrPuntWithoutL3Protocol
-	}
-
-	// validate L4 protocol
-	switch puntCfg.L4Protocol {
-	case punt.L4Protocol_TCP:
-	case punt.L4Protocol_UDP:
-	default:
-		return ErrPuntWithoutL4Protocol
-	}
-
-	if puntCfg.Port == 0 {
-		return ErrPuntWithoutPort
-	}
-
-	return nil
 }

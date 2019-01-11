@@ -42,8 +42,8 @@ type KeyValuePair struct {
 	// origin the scheduler reviews the value's history to determine where it came
 	// from.
 	//
-	// For descriptors the values are mutable objects - Add, Modify, Delete and
-	// Update methods should reflect the value content without changing it.
+	// For descriptors the values are mutable objects - Add, Modify and Delete
+	// methods should reflect the value content without changing it.
 	// To add and maintain extra (runtime) attributes alongside the value, descriptor
 	// can use the value metadata.
 	Value proto.Message
@@ -53,7 +53,7 @@ type KeyValuePair struct {
 // that descriptor may use for runtime attributes, secondary lookups, etc. This
 // data are opaque for the scheduler and fully owned by the descriptor.
 // Descriptor is supposed to create/edit (and use) metadata inside the Add,
-// Modify, Update methods and return the latest state in the dump.
+// Modify, Delete methods and return the latest state in the dump.
 // Metadata, however, should not be used to determine the list of derived values
 // and dependencies for a value - this needs to be fixed for a given value
 // (Modify is effectively replace) and known even before the value is added.
@@ -80,6 +80,35 @@ type KVWithMetadata struct {
 	Origin   ValueOrigin
 }
 
+// View chooses from which point of view to look at the key-value space when
+// dumping values.
+type View int
+
+const (
+	// SBView means to look directly into SB via Dump methods of descriptors
+	// to learn the real and up-to-date state of the system.
+	SBView View = iota
+
+	// NBView means to look at the key-value space from NB point of view, i.e.
+	// what key-values were requested and are assumed by NB to be applied.
+	NBView
+
+	// InternalView means to obtain the kvscheduler's current view of SB.
+	InternalView
+)
+
+// String converts View to string.
+func (v View) String() string {
+	switch v {
+	case SBView:
+		return "SB"
+	case NBView:
+		return "NB"
+	default:
+		return "internal"
+	}
+}
+
 // KVScheduler synchronizes the *desired* system state described by northbound
 // (NB) components via transactions with the *actual* state of the southbound (SB).
 // The  system state is represented as a set of inter-dependent key-value pairs
@@ -92,7 +121,7 @@ type KVWithMetadata struct {
 // For the scheduler, the key-value pairs are just abstract items that need
 // to be managed in a synchronized fashion according to the described relations.
 // It is up to the SB components to assign actual meaning to the individual
-// values (via methods Add, Delete, Modify & Update of the KVDescriptor).
+// values (via methods Add, Delete & Modify of the KVDescriptor).
 //
 // The idea behind scheduler is based on the Mediator pattern - SB components
 // do not communicate directly, but instead interact through the mediator.
@@ -122,14 +151,14 @@ type KVWithMetadata struct {
 //
 // Every key-value pair must have at most one descriptor associated with it.
 // Base NB value without descriptor is considered unimplemented and will never
-// be added (can only be pushed from SB as already created/executed).
+// be added.
 // On the other hand, derived value is allowed to have no descriptor associated
 // with it. Typically, properties of base values are implemented as derived
 // (often empty) values without attached SB operations, used as targets for
 // dependencies.
 //
-// For descriptors the values are mutable objects - Add, Modify, Delete and
-// Update method should reflect the value content without changing it.
+// For descriptors the values are mutable objects - Add, Modify and Delete
+// methods should reflect the value content without changing it.
 // To add and maintain extra (runtime) attributes alongside the value, scheduler
 // allows descriptors to append metadata - of any type - to each created
 // non-derived Object value. Descriptor can also use the metadata to define
@@ -196,34 +225,36 @@ type KVScheduler interface {
 	// by reconciliation or any other operation of the scheduler/descriptor.
 	PushSBNotification(key string, value proto.Message, metadata Metadata) error
 
-	// GetValue currently set for the given key.
-	// The function can be used from within a transaction. However, if update
-	// of A uses the value of B, then A should be marked as dependent on B
-	// so that the scheduler can ensure that B is updated before A is.
-	GetValue(key string) proto.Message
-
-	// GetValues returns a set of values matched by the given selector.
-	GetValues(selector KeySelector) []KeyValuePair
-
 	// GetMetadataMap returns (read-only) map associating value label with value
 	// metadata of a given descriptor.
 	// Returns nil if the descriptor does not expose metadata.
 	GetMetadataMap(descriptor string) idxmap.NamedMapping
 
-	// GetValueStatus returns the status of the value with the given key.
-	GetValueStatus(key string) *ValueStatus
+	// GetValueStatus returns the status of a non-derived value with the given
+	// key.
+	GetValueStatus(key string) *BaseValueStatus
 
-	// WatchValueStatus allows to watch for changes in the status of values
-	// with keys selected by the selector (all if keySelector==nil).
-	WatchValueStatus(channel chan<- *ValueStatus, keySelector KeySelector)
+	// WatchValueStatus allows to watch for changes in the status of non-derived
+	// values with keys selected by the selector (all if keySelector==nil).
+	WatchValueStatus(channel chan<- *BaseValueStatus, keySelector KeySelector)
 
-	// GetTransactionHistory returns history of transactions started within the specified
-	// time window, or the full recorded history if the timestamps are zero values.
+	// GetTransactionHistory returns history of transactions started within
+	// the specified time window, or the full recorded history if the timestamps
+	// are zero values.
 	GetTransactionHistory(since, until time.Time) (history RecordedTxns)
 
 	// GetRecordedTransaction returns record of a transaction referenced
 	// by the sequence number.
 	GetRecordedTransaction(SeqNum uint64) (txn *RecordedTxn)
+
+	// DumpValuesByDescriptor dumps values associated with the given descriptor
+	// as viewed from either NB (what was requested to be applied), SB (what is
+	// actually applied) or from the inside (what kvscheduler's current view of SB is).
+	DumpValuesByDescriptor(descriptor string, view View) (kvs []KVWithMetadata, err error)
+
+	// DumpValuesByKeyPrefix like DumpValuesByDescriptor returns dump of values,
+	// but the descriptor is selected based on the common key prefix.
+	DumpValuesByKeyPrefix(keyPrefix string, view View) (kvs []KVWithMetadata, err error)
 }
 
 // Txn represent a single transaction.

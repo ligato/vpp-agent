@@ -31,7 +31,7 @@ func NewPlugin(opts ...Option) *L2Plugin {
 
 	p.PluginName = "vpp-l2plugin"
 	p.StatusCheck = &statuscheck.DefaultPlugin
-	p.Scheduler = &kvscheduler.DefaultPlugin
+	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 

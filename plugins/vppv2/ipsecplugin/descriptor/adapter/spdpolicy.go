@@ -28,11 +28,11 @@ type SPDPolicyDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) error
 	Add                func(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) (metadata interface{}, err error)
 	Delete             func(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) error
 	Modify             func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_PolicyEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) bool
-	Update             func(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) []Dependency
 	DerivedValues      func(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) []KeyValuePair
@@ -62,6 +62,9 @@ func NewSPDPolicyDescriptor(typedDescriptor *SPDPolicyDescriptor) *KVDescriptor 
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewSPDPolicyDescriptor(typedDescriptor *SPDPolicyDescriptor) *KVDescriptor 
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *SPDPolicyDescriptorAdapter) ValueComparator(key string, oldValue, newV
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *SPDPolicyDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castSPDPolicyValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *SPDPolicyDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *SPDPolicyDescriptorAdapter) ModifyWithRecreate(key string, oldValue, n
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *SPDPolicyDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castSPDPolicyValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castSPDPolicyMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *SPDPolicyDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

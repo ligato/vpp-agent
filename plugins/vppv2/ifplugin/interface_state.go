@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
@@ -68,7 +68,7 @@ const (
 type InterfaceStateUpdater struct {
 	log logging.Logger
 
-	kvScheduler    scheduler.KVScheduler
+	kvScheduler    kvs.KVScheduler
 	swIfIndexes    ifaceidx.IfaceMetadataIndex
 	publishIfState func(notification *intf.InterfaceNotification)
 
@@ -87,7 +87,7 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, kvScheduler scheduler.KVScheduler,
+func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, kvScheduler kvs.KVScheduler,
 	goVppMux govppmux.API, swIfIndexes ifaceidx.IfaceMetadataIndex,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 

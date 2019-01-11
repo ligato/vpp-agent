@@ -16,7 +16,7 @@ func NewPlugin(opts ...Option) *L3Plugin {
 	p := &L3Plugin{}
 
 	p.PluginName = "linux-l3plugin"
-	p.Scheduler = &kvscheduler.DefaultPlugin
+	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.NsPlugin = &nsplugin.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 

@@ -17,7 +17,7 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
@@ -37,11 +37,11 @@ const (
 type ProxyArpInterfaceDescriptor struct {
 	log             logging.Logger
 	proxyArpHandler vppcalls.ProxyArpVppAPI
-	scheduler       scheduler.KVScheduler
+	scheduler       kvs.KVScheduler
 }
 
 // NewProxyArpInterfaceDescriptor creates a new instance of the ProxyArpInterfaceDescriptor.
-func NewProxyArpInterfaceDescriptor(scheduler scheduler.KVScheduler,
+func NewProxyArpInterfaceDescriptor(scheduler kvs.KVScheduler,
 	proxyArpHandler vppcalls.ProxyArpVppAPI, log logging.PluginLogger) *ProxyArpInterfaceDescriptor {
 
 	return &ProxyArpInterfaceDescriptor{
@@ -87,8 +87,8 @@ func (d *ProxyArpInterfaceDescriptor) Delete(key string, value *l3.ProxyARP_Inte
 }
 
 // Dependencies returns list of dependencies for VPP Proxy ARP interface.
-func (d *ProxyArpInterfaceDescriptor) Dependencies(key string, value *l3.ProxyARP_Interface) (deps []scheduler.Dependency) {
-	return []scheduler.Dependency{
+func (d *ProxyArpInterfaceDescriptor) Dependencies(key string, value *l3.ProxyARP_Interface) (deps []kvs.Dependency) {
+	return []kvs.Dependency{
 		{
 			Label: proxyArpInterfaceDep,
 			Key:   interfaces.InterfaceKey(value.Name),

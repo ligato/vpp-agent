@@ -82,7 +82,6 @@ func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
 		Delete:             d.Delete,
 		Modify:             d.Modify,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
@@ -163,18 +162,6 @@ func (d *ACLDescriptor) equivalentIPRuleNetworks(net1, net2 string) bool {
 		return ipNet1 == nil || ip1.IsUnspecified()
 	}
 	return ip1.Equal(ip2) && bytes.Equal(ipNet1.Mask, ipNet2.Mask)
-}
-
-var nonRetriableErrs []error
-
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *ACLDescriptor) IsRetriableFailure(err error) bool {
-	for _, e := range nonRetriableErrs {
-		if err == e {
-			return false
-		}
-	}
-	return true
 }
 
 // Add configures ACL
