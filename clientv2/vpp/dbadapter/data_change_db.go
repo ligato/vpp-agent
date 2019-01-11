@@ -18,14 +18,15 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -177,14 +178,26 @@ func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) vppclient.PutDSL {
 }
 
 // IPSecSA adds request to create a new Security Association
-func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) vppclient.PutDSL {
-	dsl.parent.txn.Put(ipsec.SAKey(sa.Name), sa)
+func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociation) vppclient.PutDSL {
+	dsl.parent.txn.Put(ipsec.SAKey(sa.Index), sa)
 	return dsl
 }
 
 // IPSecSPD adds request to create a new Security Policy Database
-func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) vppclient.PutDSL {
-	dsl.parent.txn.Put(ipsec.SPDKey(spd.Name), spd)
+func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.PutDSL {
+	dsl.parent.txn.Put(ipsec.SPDKey(spd.Index), spd)
+	return dsl
+}
+
+// PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
+func (dsl *PutDSL) PuntIPRedirect(val *punt.IpRedirect) vppclient.PutDSL {
+	dsl.parent.txn.Put(punt.IPRedirectKey(val.L3Protocol, val.TxInterface), val)
+	return dsl
+}
+
+// PuntToHost adds request to create or update rule to punt L4 traffic to a host.
+func (dsl *PutDSL) PuntToHost(val *punt.ToHost) vppclient.PutDSL {
+	dsl.parent.txn.Put(punt.ToHostKey(val.L3Protocol, val.L4Protocol, val.Port), val)
 	return dsl
 }
 
@@ -305,14 +318,26 @@ func (dsl *DeleteDSL) DNAT44(label string) vppclient.DeleteDSL {
 }
 
 // IPSecSA adds request to create a new Security Association
-func (dsl *DeleteDSL) IPSecSA(saName string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(ipsec.SAKey(saName))
+func (dsl *DeleteDSL) IPSecSA(saIndex string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(ipsec.SAKey(saIndex))
 	return dsl
 }
 
 // IPSecSPD adds request to create a new Security Policy Database
-func (dsl *DeleteDSL) IPSecSPD(spdName string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(ipsec.SPDKey(spdName))
+func (dsl *DeleteDSL) IPSecSPD(spdIndex string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(ipsec.SPDKey(spdIndex))
+	return dsl
+}
+
+// PuntIPRedirect adds request to delete a rule used to punt L3 traffic via interface.
+func (dsl *DeleteDSL) PuntIPRedirect(l3Proto punt.L3Protocol, txInterface string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(punt.IPRedirectKey(l3Proto, txInterface))
+	return dsl
+}
+
+// PuntToHost adds request to delete a rule used to punt L4 traffic to a host.
+func (dsl *DeleteDSL) PuntToHost(l3Proto punt.L3Protocol, l4Proto punt.L4Protocol, port uint32) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(punt.ToHostKey(l3Proto, l4Proto, port))
 	return dsl
 }
 

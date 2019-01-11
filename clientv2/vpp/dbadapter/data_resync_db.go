@@ -18,7 +18,6 @@ import (
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
@@ -26,6 +25,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -201,8 +202,8 @@ func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) vppclient.DataResyncDSL {
 }
 
 // IPSecSA adds request to create a new Security Association
-func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) vppclient.DataResyncDSL {
-	key := ipsec.SAKey(sa.Name)
+func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociation) vppclient.DataResyncDSL {
+	key := ipsec.SAKey(sa.Index)
 	dsl.txn.Put(key, sa)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -210,9 +211,27 @@ func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociations_SA) vppclient.D
 }
 
 // IPSecSPD adds request to create a new Security Policy Database
-func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabases_SPD) vppclient.DataResyncDSL {
-	key := ipsec.SPDKey(spd.Name)
+func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.DataResyncDSL {
+	key := ipsec.SPDKey(spd.Index)
 	dsl.txn.Put(key, spd)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
+func (dsl *DataResyncDSL)  PuntIPRedirect(val *punt.IpRedirect) vppclient.DataResyncDSL {
+	key := punt.IPRedirectKey(val.L3Protocol, val.TxInterface)
+	dsl.txn.Put(key, val)
+	dsl.txnKeys = append(dsl.txnKeys, key)
+
+	return dsl
+}
+
+// PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
+func (dsl *DataResyncDSL) PuntToHost(val *punt.ToHost) vppclient.DataResyncDSL {
+	key := punt.ToHostKey(val.L3Protocol, val.L4Protocol, val.Port)
+	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
 	return dsl
