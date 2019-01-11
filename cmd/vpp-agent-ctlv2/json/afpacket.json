@@ -1,8 +1,6 @@
 {
-    "link": {
-        "af_packet": {
-            "host_if_name": "lo"
-        }
+    "afpacket": {
+        "host_if_name": "lo"
     },
     "enabled": true,
     "mtu": 1500,
@@ -11,5 +9,5 @@
     ],
     "name": "afpacket1",
     "phys_address": "b4:e6:1c:a1:0d:31",
-    "type": 6
+    "type": "AF_PACKET"
 }
