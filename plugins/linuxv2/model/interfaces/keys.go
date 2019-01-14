@@ -150,3 +150,8 @@ func (m *Interface) MarshalJSON() ([]byte, error) {
 	}
 	return []byte(str), nil
 }
+
+// UnmarshalJSON ensures that field of type 'oneOf' is correctly unmarshaled
+func (m *Interface) UnmarshalJSON(data []byte) error {
+	return jsonpb.UnmarshalString(string(data), m)
+}
