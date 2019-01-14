@@ -232,7 +232,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbContext, 
 	req := &nat.Nat44AddDelLbStaticMapping{
 		Tag:          []byte(ctx.Tag),
 		Locals:       localAddrPorts,
-		LocalNum:     uint8(len(localAddrPorts)),
+		LocalNum:     uint32(len(localAddrPorts)),
 		ExternalAddr: ctx.ExternalIP,
 		ExternalPort: ctx.ExternalPort,
 		Protocol:     ctx.Protocol,

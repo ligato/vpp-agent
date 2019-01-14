@@ -5,9 +5,9 @@
  Package nat is a generated from VPP binary API module 'nat'.
 
  It contains following objects:
-	120 messages
+	122 messages
 	  1 type
-	 60 services
+	 61 services
 
 */
 package nat
@@ -21,31 +21,304 @@ var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
 
+// Services represents VPP binary API services:
+//
+//	"services": {
+//	    "nat66_static_mapping_dump": {
+//	        "reply": "nat66_static_mapping_details",
+//	        "stream": true
+//	    },
+//	    "dslite_set_b4_addr": {
+//	        "reply": "dslite_set_b4_addr_reply"
+//	    },
+//	    "nat44_add_del_address_range": {
+//	        "reply": "nat44_add_del_address_range_reply"
+//	    },
+//	    "nat66_add_del_interface": {
+//	        "reply": "nat66_add_del_interface_reply"
+//	    },
+//	    "dslite_address_dump": {
+//	        "reply": "dslite_address_details",
+//	        "stream": true
+//	    },
+//	    "nat_ipfix_enable_disable": {
+//	        "reply": "nat_ipfix_enable_disable_reply"
+//	    },
+//	    "nat44_interface_add_del_output_feature": {
+//	        "reply": "nat44_interface_add_del_output_feature_reply"
+//	    },
+//	    "dslite_get_b4_addr": {
+//	        "reply": "dslite_get_b4_addr_reply"
+//	    },
+//	    "nat_set_reass": {
+//	        "reply": "nat_set_reass_reply"
+//	    },
+//	    "nat44_interface_output_feature_dump": {
+//	        "reply": "nat44_interface_output_feature_details",
+//	        "stream": true
+//	    },
+//	    "nat44_interface_add_del_feature": {
+//	        "reply": "nat44_interface_add_del_feature_reply"
+//	    },
+//	    "nat_set_addr_and_port_alloc_alg": {
+//	        "reply": "nat_set_addr_and_port_alloc_alg_reply"
+//	    },
+//	    "nat44_lb_static_mapping_dump": {
+//	        "reply": "nat44_lb_static_mapping_details",
+//	        "stream": true
+//	    },
+//	    "nat_get_reass": {
+//	        "reply": "nat_get_reass_reply"
+//	    },
+//	    "nat66_add_del_static_mapping": {
+//	        "reply": "nat66_add_del_static_mapping_reply"
+//	    },
+//	    "nat_get_timeouts": {
+//	        "reply": "nat_get_timeouts_reply"
+//	    },
+//	    "nat64_interface_dump": {
+//	        "reply": "nat64_interface_details",
+//	        "stream": true
+//	    },
+//	    "nat_det_add_del_map": {
+//	        "reply": "nat_det_add_del_map_reply"
+//	    },
+//	    "nat66_interface_dump": {
+//	        "reply": "nat66_interface_details",
+//	        "stream": true
+//	    },
+//	    "nat_show_config": {
+//	        "reply": "nat_show_config_reply"
+//	    },
+//	    "nat64_st_dump": {
+//	        "reply": "nat64_st_details",
+//	        "stream": true
+//	    },
+//	    "nat_set_timeouts": {
+//	        "reply": "nat_set_timeouts_reply"
+//	    },
+//	    "nat44_identity_mapping_dump": {
+//	        "reply": "nat44_identity_mapping_details",
+//	        "stream": true
+//	    },
+//	    "nat_det_forward": {
+//	        "reply": "nat_det_forward_reply"
+//	    },
+//	    "nat44_address_dump": {
+//	        "reply": "nat44_address_details",
+//	        "stream": true
+//	    },
+//	    "nat_worker_dump": {
+//	        "reply": "nat_worker_details",
+//	        "stream": true
+//	    },
+//	    "nat44_add_del_identity_mapping": {
+//	        "reply": "nat44_add_del_identity_mapping_reply"
+//	    },
+//	    "nat44_static_mapping_dump": {
+//	        "reply": "nat44_static_mapping_details",
+//	        "stream": true
+//	    },
+//	    "nat44_forwarding_is_enabled": {
+//	        "reply": "nat44_forwarding_is_enabled_reply"
+//	    },
+//	    "nat44_interface_addr_dump": {
+//	        "reply": "nat44_interface_addr_details",
+//	        "stream": true
+//	    },
+//	    "dslite_set_aftr_addr": {
+//	        "reply": "dslite_set_aftr_addr_reply"
+//	    },
+//	    "nat44_user_dump": {
+//	        "reply": "nat44_user_details",
+//	        "stream": true
+//	    },
+//	    "nat44_lb_static_mapping_add_del_local": {
+//	        "reply": "nat44_lb_static_mapping_add_del_local_reply"
+//	    },
+//	    "nat44_del_session": {
+//	        "reply": "nat44_del_session_reply"
+//	    },
+//	    "nat64_prefix_dump": {
+//	        "reply": "nat64_prefix_details",
+//	        "stream": true
+//	    },
+//	    "nat_set_mss_clamping": {
+//	        "reply": "nat_set_mss_clamping_reply"
+//	    },
+//	    "nat64_add_del_static_bib": {
+//	        "reply": "nat64_add_del_static_bib_reply"
+//	    },
+//	    "nat_reass_dump": {
+//	        "reply": "nat_reass_details",
+//	        "stream": true
+//	    },
+//	    "nat44_interface_dump": {
+//	        "reply": "nat44_interface_details",
+//	        "stream": true
+//	    },
+//	    "nat_det_close_session_out": {
+//	        "reply": "nat_det_close_session_out_reply"
+//	    },
+//	    "nat64_bib_dump": {
+//	        "reply": "nat64_bib_details",
+//	        "stream": true
+//	    },
+//	    "nat64_add_del_pool_addr_range": {
+//	        "reply": "nat64_add_del_pool_addr_range_reply"
+//	    },
+//	    "dslite_add_del_pool_addr_range": {
+//	        "reply": "dslite_add_del_pool_addr_range_reply"
+//	    },
+//	    "nat_get_mss_clamping": {
+//	        "reply": "nat_get_mss_clamping_reply"
+//	    },
+//	    "nat64_pool_addr_dump": {
+//	        "reply": "nat64_pool_addr_details",
+//	        "stream": true
+//	    },
+//	    "nat44_add_del_lb_static_mapping": {
+//	        "reply": "nat44_add_del_lb_static_mapping_reply"
+//	    },
+//	    "nat_control_ping": {
+//	        "reply": "nat_control_ping_reply"
+//	    },
+//	    "nat_det_map_dump": {
+//	        "reply": "nat_det_map_details",
+//	        "stream": true
+//	    },
+//	    "nat44_add_del_static_mapping": {
+//	        "reply": "nat44_add_del_static_mapping_reply"
+//	    },
+//	    "nat44_add_del_interface_addr": {
+//	        "reply": "nat44_add_del_interface_addr_reply"
+//	    },
+//	    "nat_det_reverse": {
+//	        "reply": "nat_det_reverse_reply"
+//	    },
+//	    "nat64_add_del_interface": {
+//	        "reply": "nat64_add_del_interface_reply"
+//	    },
+//	    "nat_det_close_session_in": {
+//	        "reply": "nat_det_close_session_in_reply"
+//	    },
+//	    "nat44_user_session_dump": {
+//	        "reply": "nat44_user_session_details",
+//	        "stream": true
+//	    },
+//	    "nat_set_workers": {
+//	        "reply": "nat_set_workers_reply"
+//	    },
+//	    "dslite_get_aftr_addr": {
+//	        "reply": "dslite_get_aftr_addr_reply"
+//	    },
+//	    "nat_det_session_dump": {
+//	        "reply": "nat_det_session_details",
+//	        "stream": true
+//	    },
+//	    "nat64_add_del_prefix": {
+//	        "reply": "nat64_add_del_prefix_reply"
+//	    },
+//	    "nat64_add_del_interface_addr": {
+//	        "reply": "nat64_add_del_interface_addr_reply"
+//	    },
+//	    "nat_get_addr_and_port_alloc_alg": {
+//	        "reply": "nat_get_addr_and_port_alloc_alg_reply"
+//	    },
+//	    "nat44_forwarding_enable_disable": {
+//	        "reply": "nat44_forwarding_enable_disable_reply"
+//	    }
+//	},
+//
+type Services interface {
+	DumpDsliteAddress(*DsliteAddressDump) ([]*DsliteAddressDetails, error)
+	DumpNat44Address(*Nat44AddressDump) ([]*Nat44AddressDetails, error)
+	DumpNat44IdentityMapping(*Nat44IdentityMappingDump) ([]*Nat44IdentityMappingDetails, error)
+	DumpNat44InterfaceAddr(*Nat44InterfaceAddrDump) ([]*Nat44InterfaceAddrDetails, error)
+	DumpNat44Interface(*Nat44InterfaceDump) ([]*Nat44InterfaceDetails, error)
+	DumpNat44InterfaceOutputFeature(*Nat44InterfaceOutputFeatureDump) ([]*Nat44InterfaceOutputFeatureDetails, error)
+	DumpNat44LbStaticMapping(*Nat44LbStaticMappingDump) ([]*Nat44LbStaticMappingDetails, error)
+	DumpNat44StaticMapping(*Nat44StaticMappingDump) ([]*Nat44StaticMappingDetails, error)
+	DumpNat44User(*Nat44UserDump) ([]*Nat44UserDetails, error)
+	DumpNat44UserSession(*Nat44UserSessionDump) ([]*Nat44UserSessionDetails, error)
+	DumpNat64Bib(*Nat64BibDump) ([]*Nat64BibDetails, error)
+	DumpNat64Interface(*Nat64InterfaceDump) ([]*Nat64InterfaceDetails, error)
+	DumpNat64PoolAddr(*Nat64PoolAddrDump) ([]*Nat64PoolAddrDetails, error)
+	DumpNat64Prefix(*Nat64PrefixDump) ([]*Nat64PrefixDetails, error)
+	DumpNat64St(*Nat64StDump) ([]*Nat64StDetails, error)
+	DumpNat66Interface(*Nat66InterfaceDump) ([]*Nat66InterfaceDetails, error)
+	DumpNat66StaticMapping(*Nat66StaticMappingDump) ([]*Nat66StaticMappingDetails, error)
+	DumpNatDetMap(*NatDetMapDump) ([]*NatDetMapDetails, error)
+	DumpNatDetSession(*NatDetSessionDump) ([]*NatDetSessionDetails, error)
+	DumpNatReass(*NatReassDump) ([]*NatReassDetails, error)
+	DumpNatWorker(*NatWorkerDump) ([]*NatWorkerDetails, error)
+	DsliteAddDelPoolAddrRange(*DsliteAddDelPoolAddrRange) (*DsliteAddDelPoolAddrRangeReply, error)
+	DsliteGetAftrAddr(*DsliteGetAftrAddr) (*DsliteGetAftrAddrReply, error)
+	DsliteGetB4Addr(*DsliteGetB4Addr) (*DsliteGetB4AddrReply, error)
+	DsliteSetAftrAddr(*DsliteSetAftrAddr) (*DsliteSetAftrAddrReply, error)
+	DsliteSetB4Addr(*DsliteSetB4Addr) (*DsliteSetB4AddrReply, error)
+	Nat44AddDelAddressRange(*Nat44AddDelAddressRange) (*Nat44AddDelAddressRangeReply, error)
+	Nat44AddDelIdentityMapping(*Nat44AddDelIdentityMapping) (*Nat44AddDelIdentityMappingReply, error)
+	Nat44AddDelInterfaceAddr(*Nat44AddDelInterfaceAddr) (*Nat44AddDelInterfaceAddrReply, error)
+	Nat44AddDelLbStaticMapping(*Nat44AddDelLbStaticMapping) (*Nat44AddDelLbStaticMappingReply, error)
+	Nat44AddDelStaticMapping(*Nat44AddDelStaticMapping) (*Nat44AddDelStaticMappingReply, error)
+	Nat44DelSession(*Nat44DelSession) (*Nat44DelSessionReply, error)
+	Nat44ForwardingEnableDisable(*Nat44ForwardingEnableDisable) (*Nat44ForwardingEnableDisableReply, error)
+	Nat44ForwardingIsEnabled(*Nat44ForwardingIsEnabled) (*Nat44ForwardingIsEnabledReply, error)
+	Nat44InterfaceAddDelFeature(*Nat44InterfaceAddDelFeature) (*Nat44InterfaceAddDelFeatureReply, error)
+	Nat44InterfaceAddDelOutputFeature(*Nat44InterfaceAddDelOutputFeature) (*Nat44InterfaceAddDelOutputFeatureReply, error)
+	Nat44LbStaticMappingAddDelLocal(*Nat44LbStaticMappingAddDelLocal) (*Nat44LbStaticMappingAddDelLocalReply, error)
+	Nat64AddDelInterface(*Nat64AddDelInterface) (*Nat64AddDelInterfaceReply, error)
+	Nat64AddDelInterfaceAddr(*Nat64AddDelInterfaceAddr) (*Nat64AddDelInterfaceAddrReply, error)
+	Nat64AddDelPoolAddrRange(*Nat64AddDelPoolAddrRange) (*Nat64AddDelPoolAddrRangeReply, error)
+	Nat64AddDelPrefix(*Nat64AddDelPrefix) (*Nat64AddDelPrefixReply, error)
+	Nat64AddDelStaticBib(*Nat64AddDelStaticBib) (*Nat64AddDelStaticBibReply, error)
+	Nat66AddDelInterface(*Nat66AddDelInterface) (*Nat66AddDelInterfaceReply, error)
+	Nat66AddDelStaticMapping(*Nat66AddDelStaticMapping) (*Nat66AddDelStaticMappingReply, error)
+	NatControlPing(*NatControlPing) (*NatControlPingReply, error)
+	NatDetAddDelMap(*NatDetAddDelMap) (*NatDetAddDelMapReply, error)
+	NatDetCloseSessionIn(*NatDetCloseSessionIn) (*NatDetCloseSessionInReply, error)
+	NatDetCloseSessionOut(*NatDetCloseSessionOut) (*NatDetCloseSessionOutReply, error)
+	NatDetForward(*NatDetForward) (*NatDetForwardReply, error)
+	NatDetReverse(*NatDetReverse) (*NatDetReverseReply, error)
+	NatGetAddrAndPortAllocAlg(*NatGetAddrAndPortAllocAlg) (*NatGetAddrAndPortAllocAlgReply, error)
+	NatGetMssClamping(*NatGetMssClamping) (*NatGetMssClampingReply, error)
+	NatGetReass(*NatGetReass) (*NatGetReassReply, error)
+	NatGetTimeouts(*NatGetTimeouts) (*NatGetTimeoutsReply, error)
+	NatIpfixEnableDisable(*NatIpfixEnableDisable) (*NatIpfixEnableDisableReply, error)
+	NatSetAddrAndPortAllocAlg(*NatSetAddrAndPortAllocAlg) (*NatSetAddrAndPortAllocAlgReply, error)
+	NatSetMssClamping(*NatSetMssClamping) (*NatSetMssClampingReply, error)
+	NatSetReass(*NatSetReass) (*NatSetReassReply, error)
+	NatSetTimeouts(*NatSetTimeouts) (*NatSetTimeoutsReply, error)
+	NatSetWorkers(*NatSetWorkers) (*NatSetWorkersReply, error)
+	NatShowConfig(*NatShowConfig) (*NatShowConfigReply, error)
+}
+
 /* Types */
 
-// Nat44LbAddrPort represents the VPP binary API type 'nat44_lb_addr_port'.
+// Nat44LbAddrPort represents VPP binary API type 'nat44_lb_addr_port':
 //
-//            "nat44_lb_addr_port",
-//            [
-//                "u8",
-//                "addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "port"
-//            ],
-//            [
-//                "u8",
-//                "probability"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            {
-//                "crc": "0x15ce9cd1"
-//            }
+//	"nat44_lb_addr_port",
+//	[
+//	    "u8",
+//	    "addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "port"
+//	],
+//	[
+//	    "u8",
+//	    "probability"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	{
+//	    "crc": "0x15ce9cd1"
+//	}
 //
 type Nat44LbAddrPort struct {
 	Addr        []byte `struc:"[4]byte"`
@@ -63,24 +336,24 @@ func (*Nat44LbAddrPort) GetCrcString() string {
 
 /* Messages */
 
-// NatControlPing represents the VPP binary API message 'nat_control_ping'.
+// NatControlPing represents VPP binary API message 'nat_control_ping':
 //
-//            "nat_control_ping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_control_ping",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatControlPing struct{}
 
@@ -94,32 +367,32 @@ func (*NatControlPing) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatControlPingReply represents the VPP binary API message 'nat_control_ping_reply'.
+// NatControlPingReply represents VPP binary API message 'nat_control_ping_reply':
 //
-//            "nat_control_ping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "vpe_pid"
-//            ],
-//            {
-//                "crc": "0xf6b0b8ca"
-//            }
+//	"nat_control_ping_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "vpe_pid"
+//	],
+//	{
+//	    "crc": "0xf6b0b8ca"
+//	}
 //
 type NatControlPingReply struct {
 	Retval      int32
@@ -137,24 +410,24 @@ func (*NatControlPingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatShowConfig represents the VPP binary API message 'nat_show_config'.
+// NatShowConfig represents VPP binary API message 'nat_show_config':
 //
-//            "nat_show_config",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_show_config",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatShowConfig struct{}
 
@@ -168,92 +441,92 @@ func (*NatShowConfig) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatShowConfigReply represents the VPP binary API message 'nat_show_config_reply'.
+// NatShowConfigReply represents VPP binary API message 'nat_show_config_reply':
 //
-//            "nat_show_config_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "static_mapping_only"
-//            ],
-//            [
-//                "u8",
-//                "static_mapping_connection_tracking"
-//            ],
-//            [
-//                "u8",
-//                "deterministic"
-//            ],
-//            [
-//                "u8",
-//                "endpoint_dependent"
-//            ],
-//            [
-//                "u8",
-//                "out2in_dpo"
-//            ],
-//            [
-//                "u32",
-//                "translation_buckets"
-//            ],
-//            [
-//                "u32",
-//                "translation_memory_size"
-//            ],
-//            [
-//                "u32",
-//                "user_buckets"
-//            ],
-//            [
-//                "u32",
-//                "user_memory_size"
-//            ],
-//            [
-//                "u32",
-//                "max_translations_per_user"
-//            ],
-//            [
-//                "u32",
-//                "outside_vrf_id"
-//            ],
-//            [
-//                "u32",
-//                "inside_vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "dslite_ce"
-//            ],
-//            [
-//                "u32",
-//                "nat64_bib_buckets"
-//            ],
-//            [
-//                "u32",
-//                "nat64_bib_memory_size"
-//            ],
-//            [
-//                "u32",
-//                "nat64_st_buckets"
-//            ],
-//            [
-//                "u32",
-//                "nat64_st_memory_size"
-//            ],
-//            {
-//                "crc": "0xef8a2bbe"
-//            }
+//	"nat_show_config_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u8",
+//	    "static_mapping_only"
+//	],
+//	[
+//	    "u8",
+//	    "static_mapping_connection_tracking"
+//	],
+//	[
+//	    "u8",
+//	    "deterministic"
+//	],
+//	[
+//	    "u8",
+//	    "endpoint_dependent"
+//	],
+//	[
+//	    "u8",
+//	    "out2in_dpo"
+//	],
+//	[
+//	    "u32",
+//	    "translation_buckets"
+//	],
+//	[
+//	    "u32",
+//	    "translation_memory_size"
+//	],
+//	[
+//	    "u32",
+//	    "user_buckets"
+//	],
+//	[
+//	    "u32",
+//	    "user_memory_size"
+//	],
+//	[
+//	    "u32",
+//	    "max_translations_per_user"
+//	],
+//	[
+//	    "u32",
+//	    "outside_vrf_id"
+//	],
+//	[
+//	    "u32",
+//	    "inside_vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "dslite_ce"
+//	],
+//	[
+//	    "u32",
+//	    "nat64_bib_buckets"
+//	],
+//	[
+//	    "u32",
+//	    "nat64_bib_memory_size"
+//	],
+//	[
+//	    "u32",
+//	    "nat64_st_buckets"
+//	],
+//	[
+//	    "u32",
+//	    "nat64_st_memory_size"
+//	],
+//	{
+//	    "crc": "0xef8a2bbe"
+//	}
 //
 type NatShowConfigReply struct {
 	Retval                          int32
@@ -286,28 +559,28 @@ func (*NatShowConfigReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatSetWorkers represents the VPP binary API message 'nat_set_workers'.
+// NatSetWorkers represents VPP binary API message 'nat_set_workers':
 //
-//            "nat_set_workers",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u64",
-//                "worker_mask"
-//            ],
-//            {
-//                "crc": "0xda926638"
-//            }
+//	"nat_set_workers",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u64",
+//	    "worker_mask"
+//	],
+//	{
+//	    "crc": "0xda926638"
+//	}
 //
 type NatSetWorkers struct {
 	WorkerMask uint64
@@ -323,24 +596,24 @@ func (*NatSetWorkers) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatSetWorkersReply represents the VPP binary API message 'nat_set_workers_reply'.
+// NatSetWorkersReply represents VPP binary API message 'nat_set_workers_reply':
 //
-//            "nat_set_workers_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_set_workers_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatSetWorkersReply struct {
 	Retval int32
@@ -356,24 +629,24 @@ func (*NatSetWorkersReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatWorkerDump represents the VPP binary API message 'nat_worker_dump'.
+// NatWorkerDump represents VPP binary API message 'nat_worker_dump':
 //
-//            "nat_worker_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_worker_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatWorkerDump struct{}
 
@@ -387,33 +660,33 @@ func (*NatWorkerDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatWorkerDetails represents the VPP binary API message 'nat_worker_details'.
+// NatWorkerDetails represents VPP binary API message 'nat_worker_details':
 //
-//            "nat_worker_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "worker_index"
-//            ],
-//            [
-//                "u32",
-//                "lcore_id"
-//            ],
-//            [
-//                "u8",
-//                "name",
-//                64
-//            ],
-//            {
-//                "crc": "0x2e3f9d4b"
-//            }
+//	"nat_worker_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "worker_index"
+//	],
+//	[
+//	    "u32",
+//	    "lcore_id"
+//	],
+//	[
+//	    "u8",
+//	    "name",
+//	    64
+//	],
+//	{
+//	    "crc": "0x2e3f9d4b"
+//	}
 //
 type NatWorkerDetails struct {
 	WorkerIndex uint32
@@ -431,36 +704,36 @@ func (*NatWorkerDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatIpfixEnableDisable represents the VPP binary API message 'nat_ipfix_enable_disable'.
+// NatIpfixEnableDisable represents VPP binary API message 'nat_ipfix_enable_disable':
 //
-//            "nat_ipfix_enable_disable",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "domain_id"
-//            ],
-//            [
-//                "u16",
-//                "src_port"
-//            ],
-//            [
-//                "u8",
-//                "enable"
-//            ],
-//            {
-//                "crc": "0x745dd24b"
-//            }
+//	"nat_ipfix_enable_disable",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "domain_id"
+//	],
+//	[
+//	    "u16",
+//	    "src_port"
+//	],
+//	[
+//	    "u8",
+//	    "enable"
+//	],
+//	{
+//	    "crc": "0x745dd24b"
+//	}
 //
 type NatIpfixEnableDisable struct {
 	DomainID uint32
@@ -478,24 +751,24 @@ func (*NatIpfixEnableDisable) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatIpfixEnableDisableReply represents the VPP binary API message 'nat_ipfix_enable_disable_reply'.
+// NatIpfixEnableDisableReply represents VPP binary API message 'nat_ipfix_enable_disable_reply':
 //
-//            "nat_ipfix_enable_disable_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_ipfix_enable_disable_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatIpfixEnableDisableReply struct {
 	Retval int32
@@ -511,44 +784,44 @@ func (*NatIpfixEnableDisableReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatSetReass represents the VPP binary API message 'nat_set_reass'.
+// NatSetReass represents VPP binary API message 'nat_set_reass':
 //
-//            "nat_set_reass",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "timeout"
-//            ],
-//            [
-//                "u16",
-//                "max_reass"
-//            ],
-//            [
-//                "u8",
-//                "max_frag"
-//            ],
-//            [
-//                "u8",
-//                "drop_frag"
-//            ],
-//            [
-//                "u8",
-//                "is_ip6"
-//            ],
-//            {
-//                "crc": "0xcb126174"
-//            }
+//	"nat_set_reass",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "timeout"
+//	],
+//	[
+//	    "u16",
+//	    "max_reass"
+//	],
+//	[
+//	    "u8",
+//	    "max_frag"
+//	],
+//	[
+//	    "u8",
+//	    "drop_frag"
+//	],
+//	[
+//	    "u8",
+//	    "is_ip6"
+//	],
+//	{
+//	    "crc": "0xcb126174"
+//	}
 //
 type NatSetReass struct {
 	Timeout  uint32
@@ -568,24 +841,24 @@ func (*NatSetReass) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatSetReassReply represents the VPP binary API message 'nat_set_reass_reply'.
+// NatSetReassReply represents VPP binary API message 'nat_set_reass_reply':
 //
-//            "nat_set_reass_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_set_reass_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatSetReassReply struct {
 	Retval int32
@@ -601,24 +874,24 @@ func (*NatSetReassReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatGetReass represents the VPP binary API message 'nat_get_reass'.
+// NatGetReass represents VPP binary API message 'nat_get_reass':
 //
-//            "nat_get_reass",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_get_reass",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatGetReass struct{}
 
@@ -632,56 +905,56 @@ func (*NatGetReass) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatGetReassReply represents the VPP binary API message 'nat_get_reass_reply'.
+// NatGetReassReply represents VPP binary API message 'nat_get_reass_reply':
 //
-//            "nat_get_reass_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "ip4_timeout"
-//            ],
-//            [
-//                "u16",
-//                "ip4_max_reass"
-//            ],
-//            [
-//                "u8",
-//                "ip4_max_frag"
-//            ],
-//            [
-//                "u8",
-//                "ip4_drop_frag"
-//            ],
-//            [
-//                "u32",
-//                "ip6_timeout"
-//            ],
-//            [
-//                "u16",
-//                "ip6_max_reass"
-//            ],
-//            [
-//                "u8",
-//                "ip6_max_frag"
-//            ],
-//            [
-//                "u8",
-//                "ip6_drop_frag"
-//            ],
-//            {
-//                "crc": "0x8102a0fb"
-//            }
+//	"nat_get_reass_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u32",
+//	    "ip4_timeout"
+//	],
+//	[
+//	    "u16",
+//	    "ip4_max_reass"
+//	],
+//	[
+//	    "u8",
+//	    "ip4_max_frag"
+//	],
+//	[
+//	    "u8",
+//	    "ip4_drop_frag"
+//	],
+//	[
+//	    "u32",
+//	    "ip6_timeout"
+//	],
+//	[
+//	    "u16",
+//	    "ip6_max_reass"
+//	],
+//	[
+//	    "u8",
+//	    "ip6_max_frag"
+//	],
+//	[
+//	    "u8",
+//	    "ip6_drop_frag"
+//	],
+//	{
+//	    "crc": "0x8102a0fb"
+//	}
 //
 type NatGetReassReply struct {
 	Retval      int32
@@ -705,24 +978,24 @@ func (*NatGetReassReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatReassDump represents the VPP binary API message 'nat_reass_dump'.
+// NatReassDump represents VPP binary API message 'nat_reass_dump':
 //
-//            "nat_reass_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_reass_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatReassDump struct{}
 
@@ -736,46 +1009,46 @@ func (*NatReassDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatReassDetails represents the VPP binary API message 'nat_reass_details'.
+// NatReassDetails represents VPP binary API message 'nat_reass_details':
 //
-//            "nat_reass_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_ip4"
-//            ],
-//            [
-//                "u8",
-//                "src_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "dst_addr",
-//                16
-//            ],
-//            [
-//                "u32",
-//                "frag_id"
-//            ],
-//            [
-//                "u8",
-//                "proto"
-//            ],
-//            [
-//                "u8",
-//                "frag_n"
-//            ],
-//            {
-//                "crc": "0xee46e2d4"
-//            }
+//	"nat_reass_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_ip4"
+//	],
+//	[
+//	    "u8",
+//	    "src_addr",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "dst_addr",
+//	    16
+//	],
+//	[
+//	    "u32",
+//	    "frag_id"
+//	],
+//	[
+//	    "u8",
+//	    "proto"
+//	],
+//	[
+//	    "u8",
+//	    "frag_n"
+//	],
+//	{
+//	    "crc": "0xee46e2d4"
+//	}
 //
 type NatReassDetails struct {
 	IsIP4   uint8
@@ -796,40 +1069,40 @@ func (*NatReassDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatSetTimeouts represents the VPP binary API message 'nat_set_timeouts'.
+// NatSetTimeouts represents VPP binary API message 'nat_set_timeouts':
 //
-//            "nat_set_timeouts",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "udp"
-//            ],
-//            [
-//                "u32",
-//                "tcp_established"
-//            ],
-//            [
-//                "u32",
-//                "tcp_transitory"
-//            ],
-//            [
-//                "u32",
-//                "icmp"
-//            ],
-//            {
-//                "crc": "0xd4746b16"
-//            }
+//	"nat_set_timeouts",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "udp"
+//	],
+//	[
+//	    "u32",
+//	    "tcp_established"
+//	],
+//	[
+//	    "u32",
+//	    "tcp_transitory"
+//	],
+//	[
+//	    "u32",
+//	    "icmp"
+//	],
+//	{
+//	    "crc": "0xd4746b16"
+//	}
 //
 type NatSetTimeouts struct {
 	UDP            uint32
@@ -848,24 +1121,24 @@ func (*NatSetTimeouts) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatSetTimeoutsReply represents the VPP binary API message 'nat_set_timeouts_reply'.
+// NatSetTimeoutsReply represents VPP binary API message 'nat_set_timeouts_reply':
 //
-//            "nat_set_timeouts_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_set_timeouts_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatSetTimeoutsReply struct {
 	Retval int32
@@ -881,24 +1154,24 @@ func (*NatSetTimeoutsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatGetTimeouts represents the VPP binary API message 'nat_get_timeouts'.
+// NatGetTimeouts represents VPP binary API message 'nat_get_timeouts':
 //
-//            "nat_get_timeouts",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_get_timeouts",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatGetTimeouts struct{}
 
@@ -912,40 +1185,40 @@ func (*NatGetTimeouts) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatGetTimeoutsReply represents the VPP binary API message 'nat_get_timeouts_reply'.
+// NatGetTimeoutsReply represents VPP binary API message 'nat_get_timeouts_reply':
 //
-//            "nat_get_timeouts_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u32",
-//                "udp"
-//            ],
-//            [
-//                "u32",
-//                "tcp_established"
-//            ],
-//            [
-//                "u32",
-//                "tcp_transitory"
-//            ],
-//            [
-//                "u32",
-//                "icmp"
-//            ],
-//            {
-//                "crc": "0x3c4df4e1"
-//            }
+//	"nat_get_timeouts_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u32",
+//	    "udp"
+//	],
+//	[
+//	    "u32",
+//	    "tcp_established"
+//	],
+//	[
+//	    "u32",
+//	    "tcp_transitory"
+//	],
+//	[
+//	    "u32",
+//	    "icmp"
+//	],
+//	{
+//	    "crc": "0x3c4df4e1"
+//	}
 //
 type NatGetTimeoutsReply struct {
 	Retval         int32
@@ -965,48 +1238,48 @@ func (*NatGetTimeoutsReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatSetAddrAndPortAllocAlg represents the VPP binary API message 'nat_set_addr_and_port_alloc_alg'.
+// NatSetAddrAndPortAllocAlg represents VPP binary API message 'nat_set_addr_and_port_alloc_alg':
 //
-//            "nat_set_addr_and_port_alloc_alg",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "alg"
-//            ],
-//            [
-//                "u8",
-//                "psid_offset"
-//            ],
-//            [
-//                "u8",
-//                "psid_length"
-//            ],
-//            [
-//                "u16",
-//                "psid"
-//            ],
-//            [
-//                "u16",
-//                "start_port"
-//            ],
-//            [
-//                "u16",
-//                "end_port"
-//            ],
-//            {
-//                "crc": "0xdeeb746f"
-//            }
+//	"nat_set_addr_and_port_alloc_alg",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "alg"
+//	],
+//	[
+//	    "u8",
+//	    "psid_offset"
+//	],
+//	[
+//	    "u8",
+//	    "psid_length"
+//	],
+//	[
+//	    "u16",
+//	    "psid"
+//	],
+//	[
+//	    "u16",
+//	    "start_port"
+//	],
+//	[
+//	    "u16",
+//	    "end_port"
+//	],
+//	{
+//	    "crc": "0xdeeb746f"
+//	}
 //
 type NatSetAddrAndPortAllocAlg struct {
 	Alg        uint8
@@ -1027,24 +1300,24 @@ func (*NatSetAddrAndPortAllocAlg) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatSetAddrAndPortAllocAlgReply represents the VPP binary API message 'nat_set_addr_and_port_alloc_alg_reply'.
+// NatSetAddrAndPortAllocAlgReply represents VPP binary API message 'nat_set_addr_and_port_alloc_alg_reply':
 //
-//            "nat_set_addr_and_port_alloc_alg_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_set_addr_and_port_alloc_alg_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatSetAddrAndPortAllocAlgReply struct {
 	Retval int32
@@ -1060,24 +1333,24 @@ func (*NatSetAddrAndPortAllocAlgReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatGetAddrAndPortAllocAlg represents the VPP binary API message 'nat_get_addr_and_port_alloc_alg'.
+// NatGetAddrAndPortAllocAlg represents VPP binary API message 'nat_get_addr_and_port_alloc_alg':
 //
-//            "nat_get_addr_and_port_alloc_alg",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_get_addr_and_port_alloc_alg",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatGetAddrAndPortAllocAlg struct{}
 
@@ -1091,48 +1364,48 @@ func (*NatGetAddrAndPortAllocAlg) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatGetAddrAndPortAllocAlgReply represents the VPP binary API message 'nat_get_addr_and_port_alloc_alg_reply'.
+// NatGetAddrAndPortAllocAlgReply represents VPP binary API message 'nat_get_addr_and_port_alloc_alg_reply':
 //
-//            "nat_get_addr_and_port_alloc_alg_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "alg"
-//            ],
-//            [
-//                "u8",
-//                "psid_offset"
-//            ],
-//            [
-//                "u8",
-//                "psid_length"
-//            ],
-//            [
-//                "u16",
-//                "psid"
-//            ],
-//            [
-//                "u16",
-//                "start_port"
-//            ],
-//            [
-//                "u16",
-//                "end_port"
-//            ],
-//            {
-//                "crc": "0x3607a7d0"
-//            }
+//	"nat_get_addr_and_port_alloc_alg_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u8",
+//	    "alg"
+//	],
+//	[
+//	    "u8",
+//	    "psid_offset"
+//	],
+//	[
+//	    "u8",
+//	    "psid_length"
+//	],
+//	[
+//	    "u16",
+//	    "psid"
+//	],
+//	[
+//	    "u16",
+//	    "start_port"
+//	],
+//	[
+//	    "u16",
+//	    "end_port"
+//	],
+//	{
+//	    "crc": "0x3607a7d0"
+//	}
 //
 type NatGetAddrAndPortAllocAlgReply struct {
 	Retval     int32
@@ -1154,32 +1427,32 @@ func (*NatGetAddrAndPortAllocAlgReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatSetMssClamping represents the VPP binary API message 'nat_set_mss_clamping'.
+// NatSetMssClamping represents VPP binary API message 'nat_set_mss_clamping':
 //
-//            "nat_set_mss_clamping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u16",
-//                "mss_value"
-//            ],
-//            [
-//                "u8",
-//                "enable"
-//            ],
-//            {
-//                "crc": "0x6a2472be"
-//            }
+//	"nat_set_mss_clamping",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u16",
+//	    "mss_value"
+//	],
+//	[
+//	    "u8",
+//	    "enable"
+//	],
+//	{
+//	    "crc": "0x6a2472be"
+//	}
 //
 type NatSetMssClamping struct {
 	MssValue uint16
@@ -1196,24 +1469,24 @@ func (*NatSetMssClamping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatSetMssClampingReply represents the VPP binary API message 'nat_set_mss_clamping_reply'.
+// NatSetMssClampingReply represents VPP binary API message 'nat_set_mss_clamping_reply':
 //
-//            "nat_set_mss_clamping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_set_mss_clamping_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatSetMssClampingReply struct {
 	Retval int32
@@ -1229,24 +1502,24 @@ func (*NatSetMssClampingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatGetMssClamping represents the VPP binary API message 'nat_get_mss_clamping'.
+// NatGetMssClamping represents VPP binary API message 'nat_get_mss_clamping':
 //
-//            "nat_get_mss_clamping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_get_mss_clamping",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatGetMssClamping struct{}
 
@@ -1260,32 +1533,32 @@ func (*NatGetMssClamping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatGetMssClampingReply represents the VPP binary API message 'nat_get_mss_clamping_reply'.
+// NatGetMssClampingReply represents VPP binary API message 'nat_get_mss_clamping_reply':
 //
-//            "nat_get_mss_clamping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u16",
-//                "mss_value"
-//            ],
-//            [
-//                "u8",
-//                "enable"
-//            ],
-//            {
-//                "crc": "0xf7bd89f5"
-//            }
+//	"nat_get_mss_clamping_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u16",
+//	    "mss_value"
+//	],
+//	[
+//	    "u8",
+//	    "enable"
+//	],
+//	{
+//	    "crc": "0xf7bd89f5"
+//	}
 //
 type NatGetMssClampingReply struct {
 	Retval   int32
@@ -1303,46 +1576,46 @@ func (*NatGetMssClampingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44AddDelAddressRange represents the VPP binary API message 'nat44_add_del_address_range'.
+// Nat44AddDelAddressRange represents VPP binary API message 'nat44_add_del_address_range':
 //
-//            "nat44_add_del_address_range",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "first_ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "last_ip_address",
-//                4
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            {
-//                "crc": "0x4a7d5c11"
-//            }
+//	"nat44_add_del_address_range",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "first_ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "last_ip_address",
+//	    4
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	{
+//	    "crc": "0x4a7d5c11"
+//	}
 //
 type Nat44AddDelAddressRange struct {
 	FirstIPAddress []byte `struc:"[4]byte"`
@@ -1362,24 +1635,24 @@ func (*Nat44AddDelAddressRange) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44AddDelAddressRangeReply represents the VPP binary API message 'nat44_add_del_address_range_reply'.
+// Nat44AddDelAddressRangeReply represents VPP binary API message 'nat44_add_del_address_range_reply':
 //
-//            "nat44_add_del_address_range_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_add_del_address_range_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44AddDelAddressRangeReply struct {
 	Retval int32
@@ -1395,24 +1668,24 @@ func (*Nat44AddDelAddressRangeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44AddressDump represents the VPP binary API message 'nat44_address_dump'.
+// Nat44AddressDump represents VPP binary API message 'nat44_address_dump':
 //
-//            "nat44_address_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_address_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44AddressDump struct{}
 
@@ -1426,33 +1699,33 @@ func (*Nat44AddressDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44AddressDetails represents the VPP binary API message 'nat44_address_details'.
+// Nat44AddressDetails represents VPP binary API message 'nat44_address_details':
 //
-//            "nat44_address_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            {
-//                "crc": "0x512feae8"
-//            }
+//	"nat44_address_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	{
+//	    "crc": "0x512feae8"
+//	}
 //
 type Nat44AddressDetails struct {
 	IPAddress []byte `struc:"[4]byte"`
@@ -1470,36 +1743,36 @@ func (*Nat44AddressDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44InterfaceAddDelFeature represents the VPP binary API message 'nat44_interface_add_del_feature'.
+// Nat44InterfaceAddDelFeature represents VPP binary API message 'nat44_interface_add_del_feature':
 //
-//            "nat44_interface_add_del_feature",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x9b1ac600"
-//            }
+//	"nat44_interface_add_del_feature",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x9b1ac600"
+//	}
 //
 type Nat44InterfaceAddDelFeature struct {
 	IsAdd     uint8
@@ -1517,24 +1790,24 @@ func (*Nat44InterfaceAddDelFeature) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44InterfaceAddDelFeatureReply represents the VPP binary API message 'nat44_interface_add_del_feature_reply'.
+// Nat44InterfaceAddDelFeatureReply represents VPP binary API message 'nat44_interface_add_del_feature_reply':
 //
-//            "nat44_interface_add_del_feature_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_interface_add_del_feature_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44InterfaceAddDelFeatureReply struct {
 	Retval int32
@@ -1550,24 +1823,24 @@ func (*Nat44InterfaceAddDelFeatureReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44InterfaceDump represents the VPP binary API message 'nat44_interface_dump'.
+// Nat44InterfaceDump represents VPP binary API message 'nat44_interface_dump':
 //
-//            "nat44_interface_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_interface_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44InterfaceDump struct{}
 
@@ -1581,28 +1854,28 @@ func (*Nat44InterfaceDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44InterfaceDetails represents the VPP binary API message 'nat44_interface_details'.
+// Nat44InterfaceDetails represents VPP binary API message 'nat44_interface_details':
 //
-//            "nat44_interface_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x2b15e8e4"
-//            }
+//	"nat44_interface_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x2b15e8e4"
+//	}
 //
 type Nat44InterfaceDetails struct {
 	IsInside  uint8
@@ -1619,36 +1892,36 @@ func (*Nat44InterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44InterfaceAddDelOutputFeature represents the VPP binary API message 'nat44_interface_add_del_output_feature'.
+// Nat44InterfaceAddDelOutputFeature represents VPP binary API message 'nat44_interface_add_del_output_feature':
 //
-//            "nat44_interface_add_del_output_feature",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x9b1ac600"
-//            }
+//	"nat44_interface_add_del_output_feature",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x9b1ac600"
+//	}
 //
 type Nat44InterfaceAddDelOutputFeature struct {
 	IsAdd     uint8
@@ -1666,24 +1939,24 @@ func (*Nat44InterfaceAddDelOutputFeature) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44InterfaceAddDelOutputFeatureReply represents the VPP binary API message 'nat44_interface_add_del_output_feature_reply'.
+// Nat44InterfaceAddDelOutputFeatureReply represents VPP binary API message 'nat44_interface_add_del_output_feature_reply':
 //
-//            "nat44_interface_add_del_output_feature_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_interface_add_del_output_feature_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44InterfaceAddDelOutputFeatureReply struct {
 	Retval int32
@@ -1699,24 +1972,24 @@ func (*Nat44InterfaceAddDelOutputFeatureReply) GetMessageType() api.MessageType 
 	return api.ReplyMessage
 }
 
-// Nat44InterfaceOutputFeatureDump represents the VPP binary API message 'nat44_interface_output_feature_dump'.
+// Nat44InterfaceOutputFeatureDump represents VPP binary API message 'nat44_interface_output_feature_dump':
 //
-//            "nat44_interface_output_feature_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_interface_output_feature_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44InterfaceOutputFeatureDump struct{}
 
@@ -1730,28 +2003,28 @@ func (*Nat44InterfaceOutputFeatureDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44InterfaceOutputFeatureDetails represents the VPP binary API message 'nat44_interface_output_feature_details'.
+// Nat44InterfaceOutputFeatureDetails represents VPP binary API message 'nat44_interface_output_feature_details':
 //
-//            "nat44_interface_output_feature_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x2b15e8e4"
-//            }
+//	"nat44_interface_output_feature_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x2b15e8e4"
+//	}
 //
 type Nat44InterfaceOutputFeatureDetails struct {
 	IsInside  uint8
@@ -1768,79 +2041,79 @@ func (*Nat44InterfaceOutputFeatureDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44AddDelStaticMapping represents the VPP binary API message 'nat44_add_del_static_mapping'.
+// Nat44AddDelStaticMapping represents VPP binary API message 'nat44_add_del_static_mapping':
 //
-//            "nat44_add_del_static_mapping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "addr_only"
-//            ],
-//            [
-//                "u8",
-//                "local_ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "external_ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "protocol"
-//            ],
-//            [
-//                "u16",
-//                "local_port"
-//            ],
-//            [
-//                "u16",
-//                "external_port"
-//            ],
-//            [
-//                "u32",
-//                "external_sw_if_index"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "self_twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "out2in_only"
-//            ],
-//            [
-//                "u8",
-//                "tag",
-//                64
-//            ],
-//            {
-//                "crc": "0x9f35331e"
-//            }
+//	"nat44_add_del_static_mapping",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "addr_only"
+//	],
+//	[
+//	    "u8",
+//	    "local_ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "external_ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "u16",
+//	    "local_port"
+//	],
+//	[
+//	    "u16",
+//	    "external_port"
+//	],
+//	[
+//	    "u32",
+//	    "external_sw_if_index"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "self_twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "out2in_only"
+//	],
+//	[
+//	    "u8",
+//	    "tag",
+//	    64
+//	],
+//	{
+//	    "crc": "0x9f35331e"
+//	}
 //
 type Nat44AddDelStaticMapping struct {
 	IsAdd             uint8
@@ -1868,24 +2141,24 @@ func (*Nat44AddDelStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44AddDelStaticMappingReply represents the VPP binary API message 'nat44_add_del_static_mapping_reply'.
+// Nat44AddDelStaticMappingReply represents VPP binary API message 'nat44_add_del_static_mapping_reply':
 //
-//            "nat44_add_del_static_mapping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_add_del_static_mapping_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44AddDelStaticMappingReply struct {
 	Retval int32
@@ -1901,24 +2174,24 @@ func (*Nat44AddDelStaticMappingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44StaticMappingDump represents the VPP binary API message 'nat44_static_mapping_dump'.
+// Nat44StaticMappingDump represents VPP binary API message 'nat44_static_mapping_dump':
 //
-//            "nat44_static_mapping_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_static_mapping_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44StaticMappingDump struct{}
 
@@ -1932,71 +2205,71 @@ func (*Nat44StaticMappingDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44StaticMappingDetails represents the VPP binary API message 'nat44_static_mapping_details'.
+// Nat44StaticMappingDetails represents VPP binary API message 'nat44_static_mapping_details':
 //
-//            "nat44_static_mapping_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "addr_only"
-//            ],
-//            [
-//                "u8",
-//                "local_ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "external_ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "protocol"
-//            ],
-//            [
-//                "u16",
-//                "local_port"
-//            ],
-//            [
-//                "u16",
-//                "external_port"
-//            ],
-//            [
-//                "u32",
-//                "external_sw_if_index"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "self_twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "out2in_only"
-//            ],
-//            [
-//                "u8",
-//                "tag",
-//                64
-//            ],
-//            {
-//                "crc": "0xcf257b56"
-//            }
+//	"nat44_static_mapping_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "addr_only"
+//	],
+//	[
+//	    "u8",
+//	    "local_ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "external_ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "u16",
+//	    "local_port"
+//	],
+//	[
+//	    "u16",
+//	    "external_port"
+//	],
+//	[
+//	    "u32",
+//	    "external_sw_if_index"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "self_twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "out2in_only"
+//	],
+//	[
+//	    "u8",
+//	    "tag",
+//	    64
+//	],
+//	{
+//	    "crc": "0xcf257b56"
+//	}
 //
 type Nat44StaticMappingDetails struct {
 	AddrOnly          uint8
@@ -2023,58 +2296,58 @@ func (*Nat44StaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44AddDelIdentityMapping represents the VPP binary API message 'nat44_add_del_identity_mapping'.
+// Nat44AddDelIdentityMapping represents VPP binary API message 'nat44_add_del_identity_mapping':
 //
-//            "nat44_add_del_identity_mapping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "addr_only"
-//            ],
-//            [
-//                "u8",
-//                "ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "protocol"
-//            ],
-//            [
-//                "u16",
-//                "port"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "tag",
-//                64
-//            ],
-//            {
-//                "crc": "0x8ead5659"
-//            }
+//	"nat44_add_del_identity_mapping",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "addr_only"
+//	],
+//	[
+//	    "u8",
+//	    "ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "u16",
+//	    "port"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "tag",
+//	    64
+//	],
+//	{
+//	    "crc": "0x8ead5659"
+//	}
 //
 type Nat44AddDelIdentityMapping struct {
 	IsAdd     uint8
@@ -2097,24 +2370,24 @@ func (*Nat44AddDelIdentityMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44AddDelIdentityMappingReply represents the VPP binary API message 'nat44_add_del_identity_mapping_reply'.
+// Nat44AddDelIdentityMappingReply represents VPP binary API message 'nat44_add_del_identity_mapping_reply':
 //
-//            "nat44_add_del_identity_mapping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_add_del_identity_mapping_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44AddDelIdentityMappingReply struct {
 	Retval int32
@@ -2130,24 +2403,24 @@ func (*Nat44AddDelIdentityMappingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44IdentityMappingDump represents the VPP binary API message 'nat44_identity_mapping_dump'.
+// Nat44IdentityMappingDump represents VPP binary API message 'nat44_identity_mapping_dump':
 //
-//            "nat44_identity_mapping_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_identity_mapping_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44IdentityMappingDump struct{}
 
@@ -2161,50 +2434,50 @@ func (*Nat44IdentityMappingDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44IdentityMappingDetails represents the VPP binary API message 'nat44_identity_mapping_details'.
+// Nat44IdentityMappingDetails represents VPP binary API message 'nat44_identity_mapping_details':
 //
-//            "nat44_identity_mapping_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "addr_only"
-//            ],
-//            [
-//                "u8",
-//                "ip_address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "protocol"
-//            ],
-//            [
-//                "u16",
-//                "port"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "tag",
-//                64
-//            ],
-//            {
-//                "crc": "0x1f1d00d6"
-//            }
+//	"nat44_identity_mapping_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "addr_only"
+//	],
+//	[
+//	    "u8",
+//	    "ip_address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "u16",
+//	    "port"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "tag",
+//	    64
+//	],
+//	{
+//	    "crc": "0x1f1d00d6"
+//	}
 //
 type Nat44IdentityMappingDetails struct {
 	AddrOnly  uint8
@@ -2226,36 +2499,36 @@ func (*Nat44IdentityMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44AddDelInterfaceAddr represents the VPP binary API message 'nat44_add_del_interface_addr'.
+// Nat44AddDelInterfaceAddr represents VPP binary API message 'nat44_add_del_interface_addr':
 //
-//            "nat44_add_del_interface_addr",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x61105dfa"
-//            }
+//	"nat44_add_del_interface_addr",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x61105dfa"
+//	}
 //
 type Nat44AddDelInterfaceAddr struct {
 	IsAdd     uint8
@@ -2273,24 +2546,24 @@ func (*Nat44AddDelInterfaceAddr) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44AddDelInterfaceAddrReply represents the VPP binary API message 'nat44_add_del_interface_addr_reply'.
+// Nat44AddDelInterfaceAddrReply represents VPP binary API message 'nat44_add_del_interface_addr_reply':
 //
-//            "nat44_add_del_interface_addr_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_add_del_interface_addr_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44AddDelInterfaceAddrReply struct {
 	Retval int32
@@ -2306,24 +2579,24 @@ func (*Nat44AddDelInterfaceAddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44InterfaceAddrDump represents the VPP binary API message 'nat44_interface_addr_dump'.
+// Nat44InterfaceAddrDump represents VPP binary API message 'nat44_interface_addr_dump':
 //
-//            "nat44_interface_addr_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_interface_addr_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44InterfaceAddrDump struct{}
 
@@ -2337,28 +2610,28 @@ func (*Nat44InterfaceAddrDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44InterfaceAddrDetails represents the VPP binary API message 'nat44_interface_addr_details'.
+// Nat44InterfaceAddrDetails represents VPP binary API message 'nat44_interface_addr_details':
 //
-//            "nat44_interface_addr_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            {
-//                "crc": "0x4cdc575d"
-//            }
+//	"nat44_interface_addr_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	{
+//	    "crc": "0x4cdc575d"
+//	}
 //
 type Nat44InterfaceAddrDetails struct {
 	SwIfIndex uint32
@@ -2375,24 +2648,24 @@ func (*Nat44InterfaceAddrDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44UserDump represents the VPP binary API message 'nat44_user_dump'.
+// Nat44UserDump represents VPP binary API message 'nat44_user_dump':
 //
-//            "nat44_user_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_user_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44UserDump struct{}
 
@@ -2406,37 +2679,37 @@ func (*Nat44UserDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44UserDetails represents the VPP binary API message 'nat44_user_details'.
+// Nat44UserDetails represents VPP binary API message 'nat44_user_details':
 //
-//            "nat44_user_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "ip_address",
-//                4
-//            ],
-//            [
-//                "u32",
-//                "nsessions"
-//            ],
-//            [
-//                "u32",
-//                "nstaticsessions"
-//            ],
-//            {
-//                "crc": "0xabb91460"
-//            }
+//	"nat44_user_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "ip_address",
+//	    4
+//	],
+//	[
+//	    "u32",
+//	    "nsessions"
+//	],
+//	[
+//	    "u32",
+//	    "nstaticsessions"
+//	],
+//	{
+//	    "crc": "0xabb91460"
+//	}
 //
 type Nat44UserDetails struct {
 	VrfID           uint32
@@ -2455,33 +2728,33 @@ func (*Nat44UserDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44UserSessionDump represents the VPP binary API message 'nat44_user_session_dump'.
+// Nat44UserSessionDump represents VPP binary API message 'nat44_user_session_dump':
 //
-//            "nat44_user_session_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "ip_address",
-//                4
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            {
-//                "crc": "0xbca4d2c2"
-//            }
+//	"nat44_user_session_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "ip_address",
+//	    4
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	{
+//	    "crc": "0xbca4d2c2"
+//	}
 //
 type Nat44UserSessionDump struct {
 	IPAddress []byte `struc:"[4]byte"`
@@ -2498,84 +2771,84 @@ func (*Nat44UserSessionDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44UserSessionDetails represents the VPP binary API message 'nat44_user_session_details'.
+// Nat44UserSessionDetails represents VPP binary API message 'nat44_user_session_details':
 //
-//            "nat44_user_session_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "outside_ip_address",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "outside_port"
-//            ],
-//            [
-//                "u8",
-//                "inside_ip_address",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "inside_port"
-//            ],
-//            [
-//                "u16",
-//                "protocol"
-//            ],
-//            [
-//                "u8",
-//                "is_static"
-//            ],
-//            [
-//                "u64",
-//                "last_heard"
-//            ],
-//            [
-//                "u64",
-//                "total_bytes"
-//            ],
-//            [
-//                "u32",
-//                "total_pkts"
-//            ],
-//            [
-//                "u8",
-//                "is_twicenat"
-//            ],
-//            [
-//                "u8",
-//                "ext_host_valid"
-//            ],
-//            [
-//                "u8",
-//                "ext_host_address",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "ext_host_port"
-//            ],
-//            [
-//                "u8",
-//                "ext_host_nat_address",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "ext_host_nat_port"
-//            ],
-//            {
-//                "crc": "0x2250ec64"
-//            }
+//	"nat44_user_session_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "outside_ip_address",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "outside_port"
+//	],
+//	[
+//	    "u8",
+//	    "inside_ip_address",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "inside_port"
+//	],
+//	[
+//	    "u16",
+//	    "protocol"
+//	],
+//	[
+//	    "u8",
+//	    "is_static"
+//	],
+//	[
+//	    "u64",
+//	    "last_heard"
+//	],
+//	[
+//	    "u64",
+//	    "total_bytes"
+//	],
+//	[
+//	    "u32",
+//	    "total_pkts"
+//	],
+//	[
+//	    "u8",
+//	    "is_twicenat"
+//	],
+//	[
+//	    "u8",
+//	    "ext_host_valid"
+//	],
+//	[
+//	    "u8",
+//	    "ext_host_address",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "ext_host_port"
+//	],
+//	[
+//	    "u8",
+//	    "ext_host_nat_address",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "ext_host_nat_port"
+//	],
+//	{
+//	    "crc": "0x2250ec64"
+//	}
 //
 type Nat44UserSessionDetails struct {
 	OutsideIPAddress  []byte `struc:"[4]byte"`
@@ -2605,72 +2878,72 @@ func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44AddDelLbStaticMapping represents the VPP binary API message 'nat44_add_del_lb_static_mapping'.
+// Nat44AddDelLbStaticMapping represents VPP binary API message 'nat44_add_del_lb_static_mapping':
 //
-//            "nat44_add_del_lb_static_mapping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "external_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "external_port"
-//            ],
-//            [
-//                "u8",
-//                "protocol"
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "self_twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "out2in_only"
-//            ],
-//            [
-//                "u8",
-//                "tag",
-//                64
-//            ],
-//            [
-//                "u32",
-//                "affinity"
-//            ],
-//            [
-//                "u8",
-//                "local_num"
-//            ],
-//            [
-//                "vl_api_nat44_lb_addr_port_t",
-//                "locals",
-//                0,
-//                "local_num"
-//            ],
-//            {
-//                "crc": "0x135f5f3a"
-//            }
+//	"nat44_add_del_lb_static_mapping",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "external_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "external_port"
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "self_twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "out2in_only"
+//	],
+//	[
+//	    "u8",
+//	    "tag",
+//	    64
+//	],
+//	[
+//	    "u32",
+//	    "affinity"
+//	],
+//	[
+//	    "u32",
+//	    "local_num"
+//	],
+//	[
+//	    "vl_api_nat44_lb_addr_port_t",
+//	    "locals",
+//	    0,
+//	    "local_num"
+//	],
+//	{
+//	    "crc": "0x56a9542c"
+//	}
 //
 type Nat44AddDelLbStaticMapping struct {
 	IsAdd        uint8
@@ -2682,7 +2955,7 @@ type Nat44AddDelLbStaticMapping struct {
 	Out2inOnly   uint8
 	Tag          []byte `struc:"[64]byte"`
 	Affinity     uint32
-	LocalNum     uint8 `struc:"sizeof=Locals"`
+	LocalNum     uint32 `struc:"sizeof=Locals"`
 	Locals       []Nat44LbAddrPort
 }
 
@@ -2690,30 +2963,30 @@ func (*Nat44AddDelLbStaticMapping) GetMessageName() string {
 	return "nat44_add_del_lb_static_mapping"
 }
 func (*Nat44AddDelLbStaticMapping) GetCrcString() string {
-	return "135f5f3a"
+	return "56a9542c"
 }
 func (*Nat44AddDelLbStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44AddDelLbStaticMappingReply represents the VPP binary API message 'nat44_add_del_lb_static_mapping_reply'.
+// Nat44AddDelLbStaticMappingReply represents VPP binary API message 'nat44_add_del_lb_static_mapping_reply':
 //
-//            "nat44_add_del_lb_static_mapping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_add_del_lb_static_mapping_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44AddDelLbStaticMappingReply struct {
 	Retval int32
@@ -2729,24 +3002,115 @@ func (*Nat44AddDelLbStaticMappingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44LbStaticMappingDump represents the VPP binary API message 'nat44_lb_static_mapping_dump'.
+// Nat44LbStaticMappingAddDelLocal represents VPP binary API message 'nat44_lb_static_mapping_add_del_local':
 //
-//            "nat44_lb_static_mapping_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_lb_static_mapping_add_del_local",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "external_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "external_port"
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "vl_api_nat44_lb_addr_port_t",
+//	    "local"
+//	],
+//	{
+//	    "crc": "0x611a9a33"
+//	}
+//
+type Nat44LbStaticMappingAddDelLocal struct {
+	IsAdd        uint8
+	ExternalAddr []byte `struc:"[4]byte"`
+	ExternalPort uint16
+	Protocol     uint8
+	Local        Nat44LbAddrPort
+}
+
+func (*Nat44LbStaticMappingAddDelLocal) GetMessageName() string {
+	return "nat44_lb_static_mapping_add_del_local"
+}
+func (*Nat44LbStaticMappingAddDelLocal) GetCrcString() string {
+	return "611a9a33"
+}
+func (*Nat44LbStaticMappingAddDelLocal) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Nat44LbStaticMappingAddDelLocalReply represents VPP binary API message 'nat44_lb_static_mapping_add_del_local_reply':
+//
+//	"nat44_lb_static_mapping_add_del_local_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
+//
+type Nat44LbStaticMappingAddDelLocalReply struct {
+	Retval int32
+}
+
+func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageName() string {
+	return "nat44_lb_static_mapping_add_del_local_reply"
+}
+func (*Nat44LbStaticMappingAddDelLocalReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Nat44LbStaticMappingDump represents VPP binary API message 'nat44_lb_static_mapping_dump':
+//
+//	"nat44_lb_static_mapping_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44LbStaticMappingDump struct{}
 
@@ -2760,64 +3124,64 @@ func (*Nat44LbStaticMappingDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44LbStaticMappingDetails represents the VPP binary API message 'nat44_lb_static_mapping_details'.
+// Nat44LbStaticMappingDetails represents VPP binary API message 'nat44_lb_static_mapping_details':
 //
-//            "nat44_lb_static_mapping_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "external_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "external_port"
-//            ],
-//            [
-//                "u8",
-//                "protocol"
-//            ],
-//            [
-//                "u8",
-//                "twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "self_twice_nat"
-//            ],
-//            [
-//                "u8",
-//                "out2in_only"
-//            ],
-//            [
-//                "u8",
-//                "tag",
-//                64
-//            ],
-//            [
-//                "u32",
-//                "affinity"
-//            ],
-//            [
-//                "u8",
-//                "local_num"
-//            ],
-//            [
-//                "vl_api_nat44_lb_addr_port_t",
-//                "locals",
-//                0,
-//                "local_num"
-//            ],
-//            {
-//                "crc": "0xe5aba6bb"
-//            }
+//	"nat44_lb_static_mapping_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "external_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "external_port"
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "u8",
+//	    "twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "self_twice_nat"
+//	],
+//	[
+//	    "u8",
+//	    "out2in_only"
+//	],
+//	[
+//	    "u8",
+//	    "tag",
+//	    64
+//	],
+//	[
+//	    "u32",
+//	    "affinity"
+//	],
+//	[
+//	    "u32",
+//	    "local_num"
+//	],
+//	[
+//	    "vl_api_nat44_lb_addr_port_t",
+//	    "locals",
+//	    0,
+//	    "local_num"
+//	],
+//	{
+//	    "crc": "0xcce01363"
+//	}
 //
 type Nat44LbStaticMappingDetails struct {
 	ExternalAddr []byte `struc:"[4]byte"`
@@ -2828,7 +3192,7 @@ type Nat44LbStaticMappingDetails struct {
 	Out2inOnly   uint8
 	Tag          []byte `struc:"[64]byte"`
 	Affinity     uint32
-	LocalNum     uint8 `struc:"sizeof=Locals"`
+	LocalNum     uint32 `struc:"sizeof=Locals"`
 	Locals       []Nat44LbAddrPort
 }
 
@@ -2836,64 +3200,64 @@ func (*Nat44LbStaticMappingDetails) GetMessageName() string {
 	return "nat44_lb_static_mapping_details"
 }
 func (*Nat44LbStaticMappingDetails) GetCrcString() string {
-	return "e5aba6bb"
+	return "cce01363"
 }
 func (*Nat44LbStaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44DelSession represents the VPP binary API message 'nat44_del_session'.
+// Nat44DelSession represents VPP binary API message 'nat44_del_session':
 //
-//            "nat44_del_session",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_in"
-//            ],
-//            [
-//                "u8",
-//                "address",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "protocol"
-//            ],
-//            [
-//                "u16",
-//                "port"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "ext_host_valid"
-//            ],
-//            [
-//                "u8",
-//                "ext_host_address",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "ext_host_port"
-//            ],
-//            {
-//                "crc": "0x04154d0c"
-//            }
+//	"nat44_del_session",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_in"
+//	],
+//	[
+//	    "u8",
+//	    "address",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "u16",
+//	    "port"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "ext_host_valid"
+//	],
+//	[
+//	    "u8",
+//	    "ext_host_address",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "ext_host_port"
+//	],
+//	{
+//	    "crc": "0x04154d0c"
+//	}
 //
 type Nat44DelSession struct {
 	IsIn           uint8
@@ -2916,24 +3280,24 @@ func (*Nat44DelSession) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44DelSessionReply represents the VPP binary API message 'nat44_del_session_reply'.
+// Nat44DelSessionReply represents VPP binary API message 'nat44_del_session_reply':
 //
-//            "nat44_del_session_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_del_session_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44DelSessionReply struct {
 	Retval int32
@@ -2949,28 +3313,28 @@ func (*Nat44DelSessionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44ForwardingEnableDisable represents the VPP binary API message 'nat44_forwarding_enable_disable'.
+// Nat44ForwardingEnableDisable represents VPP binary API message 'nat44_forwarding_enable_disable':
 //
-//            "nat44_forwarding_enable_disable",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "enable"
-//            ],
-//            {
-//                "crc": "0x8050327d"
-//            }
+//	"nat44_forwarding_enable_disable",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "enable"
+//	],
+//	{
+//	    "crc": "0x8050327d"
+//	}
 //
 type Nat44ForwardingEnableDisable struct {
 	Enable uint8
@@ -2986,24 +3350,24 @@ func (*Nat44ForwardingEnableDisable) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44ForwardingEnableDisableReply represents the VPP binary API message 'nat44_forwarding_enable_disable_reply'.
+// Nat44ForwardingEnableDisableReply represents VPP binary API message 'nat44_forwarding_enable_disable_reply':
 //
-//            "nat44_forwarding_enable_disable_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat44_forwarding_enable_disable_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat44ForwardingEnableDisableReply struct {
 	Retval int32
@@ -3019,24 +3383,24 @@ func (*Nat44ForwardingEnableDisableReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat44ForwardingIsEnabled represents the VPP binary API message 'nat44_forwarding_is_enabled'.
+// Nat44ForwardingIsEnabled represents VPP binary API message 'nat44_forwarding_is_enabled':
 //
-//            "nat44_forwarding_is_enabled",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat44_forwarding_is_enabled",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat44ForwardingIsEnabled struct{}
 
@@ -3050,24 +3414,24 @@ func (*Nat44ForwardingIsEnabled) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat44ForwardingIsEnabledReply represents the VPP binary API message 'nat44_forwarding_is_enabled_reply'.
+// Nat44ForwardingIsEnabledReply represents VPP binary API message 'nat44_forwarding_is_enabled_reply':
 //
-//            "nat44_forwarding_is_enabled_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "enabled"
-//            ],
-//            {
-//                "crc": "0x9c4a7828"
-//            }
+//	"nat44_forwarding_is_enabled_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "enabled"
+//	],
+//	{
+//	    "crc": "0x9c4a7828"
+//	}
 //
 type Nat44ForwardingIsEnabledReply struct {
 	Enabled uint8
@@ -3083,54 +3447,54 @@ func (*Nat44ForwardingIsEnabledReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatDetAddDelMap represents the VPP binary API message 'nat_det_add_del_map'.
+// NatDetAddDelMap represents VPP binary API message 'nat_det_add_del_map':
 //
-//            "nat_det_add_del_map",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "is_nat44"
-//            ],
-//            [
-//                "u8",
-//                "addr_only"
-//            ],
-//            [
-//                "u8",
-//                "in_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "in_plen"
-//            ],
-//            [
-//                "u8",
-//                "out_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "out_plen"
-//            ],
-//            {
-//                "crc": "0x5bd37d5b"
-//            }
+//	"nat_det_add_del_map",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "is_nat44"
+//	],
+//	[
+//	    "u8",
+//	    "addr_only"
+//	],
+//	[
+//	    "u8",
+//	    "in_addr",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "in_plen"
+//	],
+//	[
+//	    "u8",
+//	    "out_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "out_plen"
+//	],
+//	{
+//	    "crc": "0x5bd37d5b"
+//	}
 //
 type NatDetAddDelMap struct {
 	IsAdd    uint8
@@ -3152,24 +3516,24 @@ func (*NatDetAddDelMap) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatDetAddDelMapReply represents the VPP binary API message 'nat_det_add_del_map_reply'.
+// NatDetAddDelMapReply represents VPP binary API message 'nat_det_add_del_map_reply':
 //
-//            "nat_det_add_del_map_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_det_add_del_map_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatDetAddDelMapReply struct {
 	Retval int32
@@ -3185,33 +3549,33 @@ func (*NatDetAddDelMapReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatDetForward represents the VPP binary API message 'nat_det_forward'.
+// NatDetForward represents VPP binary API message 'nat_det_forward':
 //
-//            "nat_det_forward",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_nat44"
-//            ],
-//            [
-//                "u8",
-//                "in_addr",
-//                16
-//            ],
-//            {
-//                "crc": "0x037d399b"
-//            }
+//	"nat_det_forward",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_nat44"
+//	],
+//	[
+//	    "u8",
+//	    "in_addr",
+//	    16
+//	],
+//	{
+//	    "crc": "0x037d399b"
+//	}
 //
 type NatDetForward struct {
 	IsNat44 uint8
@@ -3228,37 +3592,37 @@ func (*NatDetForward) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatDetForwardReply represents the VPP binary API message 'nat_det_forward_reply'.
+// NatDetForwardReply represents VPP binary API message 'nat_det_forward_reply':
 //
-//            "nat_det_forward_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u16",
-//                "out_port_lo"
-//            ],
-//            [
-//                "u16",
-//                "out_port_hi"
-//            ],
-//            [
-//                "u8",
-//                "out_addr",
-//                4
-//            ],
-//            {
-//                "crc": "0xbf9b96ea"
-//            }
+//	"nat_det_forward_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u16",
+//	    "out_port_lo"
+//	],
+//	[
+//	    "u16",
+//	    "out_port_hi"
+//	],
+//	[
+//	    "u8",
+//	    "out_addr",
+//	    4
+//	],
+//	{
+//	    "crc": "0xbf9b96ea"
+//	}
 //
 type NatDetForwardReply struct {
 	Retval    int32
@@ -3277,33 +3641,33 @@ func (*NatDetForwardReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatDetReverse represents the VPP binary API message 'nat_det_reverse'.
+// NatDetReverse represents VPP binary API message 'nat_det_reverse':
 //
-//            "nat_det_reverse",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u16",
-//                "out_port"
-//            ],
-//            [
-//                "u8",
-//                "out_addr",
-//                4
-//            ],
-//            {
-//                "crc": "0x80ab12d2"
-//            }
+//	"nat_det_reverse",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u16",
+//	    "out_port"
+//	],
+//	[
+//	    "u8",
+//	    "out_addr",
+//	    4
+//	],
+//	{
+//	    "crc": "0x80ab12d2"
+//	}
 //
 type NatDetReverse struct {
 	OutPort uint16
@@ -3320,33 +3684,33 @@ func (*NatDetReverse) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatDetReverseReply represents the VPP binary API message 'nat_det_reverse_reply'.
+// NatDetReverseReply represents VPP binary API message 'nat_det_reverse_reply':
 //
-//            "nat_det_reverse_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "is_nat44"
-//            ],
-//            [
-//                "u8",
-//                "in_addr",
-//                16
-//            ],
-//            {
-//                "crc": "0x26139a2f"
-//            }
+//	"nat_det_reverse_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u8",
+//	    "is_nat44"
+//	],
+//	[
+//	    "u8",
+//	    "in_addr",
+//	    16
+//	],
+//	{
+//	    "crc": "0x26139a2f"
+//	}
 //
 type NatDetReverseReply struct {
 	Retval  int32
@@ -3364,24 +3728,24 @@ func (*NatDetReverseReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatDetMapDump represents the VPP binary API message 'nat_det_map_dump'.
+// NatDetMapDump represents VPP binary API message 'nat_det_map_dump':
 //
-//            "nat_det_map_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat_det_map_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type NatDetMapDump struct{}
 
@@ -3395,54 +3759,54 @@ func (*NatDetMapDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatDetMapDetails represents the VPP binary API message 'nat_det_map_details'.
+// NatDetMapDetails represents VPP binary API message 'nat_det_map_details':
 //
-//            "nat_det_map_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_nat44"
-//            ],
-//            [
-//                "u8",
-//                "in_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "in_plen"
-//            ],
-//            [
-//                "u8",
-//                "out_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "out_plen"
-//            ],
-//            [
-//                "u32",
-//                "sharing_ratio"
-//            ],
-//            [
-//                "u16",
-//                "ports_per_host"
-//            ],
-//            [
-//                "u32",
-//                "ses_num"
-//            ],
-//            {
-//                "crc": "0x886138a8"
-//            }
+//	"nat_det_map_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_nat44"
+//	],
+//	[
+//	    "u8",
+//	    "in_addr",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "in_plen"
+//	],
+//	[
+//	    "u8",
+//	    "out_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "out_plen"
+//	],
+//	[
+//	    "u32",
+//	    "sharing_ratio"
+//	],
+//	[
+//	    "u16",
+//	    "ports_per_host"
+//	],
+//	[
+//	    "u32",
+//	    "ses_num"
+//	],
+//	{
+//	    "crc": "0x886138a8"
+//	}
 //
 type NatDetMapDetails struct {
 	IsNat44      uint8
@@ -3465,42 +3829,42 @@ func (*NatDetMapDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatDetCloseSessionOut represents the VPP binary API message 'nat_det_close_session_out'.
+// NatDetCloseSessionOut represents VPP binary API message 'nat_det_close_session_out':
 //
-//            "nat_det_close_session_out",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "out_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "out_port"
-//            ],
-//            [
-//                "u8",
-//                "ext_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "ext_port"
-//            ],
-//            {
-//                "crc": "0x2e165938"
-//            }
+//	"nat_det_close_session_out",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "out_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "out_port"
+//	],
+//	[
+//	    "u8",
+//	    "ext_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "ext_port"
+//	],
+//	{
+//	    "crc": "0x2e165938"
+//	}
 //
 type NatDetCloseSessionOut struct {
 	OutAddr []byte `struc:"[4]byte"`
@@ -3519,24 +3883,24 @@ func (*NatDetCloseSessionOut) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatDetCloseSessionOutReply represents the VPP binary API message 'nat_det_close_session_out_reply'.
+// NatDetCloseSessionOutReply represents VPP binary API message 'nat_det_close_session_out_reply':
 //
-//            "nat_det_close_session_out_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_det_close_session_out_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatDetCloseSessionOutReply struct {
 	Retval int32
@@ -3552,46 +3916,46 @@ func (*NatDetCloseSessionOutReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatDetCloseSessionIn represents the VPP binary API message 'nat_det_close_session_in'.
+// NatDetCloseSessionIn represents VPP binary API message 'nat_det_close_session_in':
 //
-//            "nat_det_close_session_in",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_nat44"
-//            ],
-//            [
-//                "u8",
-//                "in_addr",
-//                16
-//            ],
-//            [
-//                "u16",
-//                "in_port"
-//            ],
-//            [
-//                "u8",
-//                "ext_addr",
-//                16
-//            ],
-//            [
-//                "u16",
-//                "ext_port"
-//            ],
-//            {
-//                "crc": "0x147e430c"
-//            }
+//	"nat_det_close_session_in",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_nat44"
+//	],
+//	[
+//	    "u8",
+//	    "in_addr",
+//	    16
+//	],
+//	[
+//	    "u16",
+//	    "in_port"
+//	],
+//	[
+//	    "u8",
+//	    "ext_addr",
+//	    16
+//	],
+//	[
+//	    "u16",
+//	    "ext_port"
+//	],
+//	{
+//	    "crc": "0x147e430c"
+//	}
 //
 type NatDetCloseSessionIn struct {
 	IsNat44 uint8
@@ -3611,24 +3975,24 @@ func (*NatDetCloseSessionIn) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatDetCloseSessionInReply represents the VPP binary API message 'nat_det_close_session_in_reply'.
+// NatDetCloseSessionInReply represents VPP binary API message 'nat_det_close_session_in_reply':
 //
-//            "nat_det_close_session_in_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat_det_close_session_in_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type NatDetCloseSessionInReply struct {
 	Retval int32
@@ -3644,33 +4008,33 @@ func (*NatDetCloseSessionInReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// NatDetSessionDump represents the VPP binary API message 'nat_det_session_dump'.
+// NatDetSessionDump represents VPP binary API message 'nat_det_session_dump':
 //
-//            "nat_det_session_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_nat44"
-//            ],
-//            [
-//                "u8",
-//                "user_addr",
-//                16
-//            ],
-//            {
-//                "crc": "0xddfb6b28"
-//            }
+//	"nat_det_session_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_nat44"
+//	],
+//	[
+//	    "u8",
+//	    "user_addr",
+//	    16
+//	],
+//	{
+//	    "crc": "0xddfb6b28"
+//	}
 //
 type NatDetSessionDump struct {
 	IsNat44  uint8
@@ -3687,45 +4051,45 @@ func (*NatDetSessionDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// NatDetSessionDetails represents the VPP binary API message 'nat_det_session_details'.
+// NatDetSessionDetails represents VPP binary API message 'nat_det_session_details':
 //
-//            "nat_det_session_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u16",
-//                "in_port"
-//            ],
-//            [
-//                "u8",
-//                "ext_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "ext_port"
-//            ],
-//            [
-//                "u16",
-//                "out_port"
-//            ],
-//            [
-//                "u8",
-//                "state"
-//            ],
-//            [
-//                "u32",
-//                "expire"
-//            ],
-//            {
-//                "crc": "0xf620a631"
-//            }
+//	"nat_det_session_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u16",
+//	    "in_port"
+//	],
+//	[
+//	    "u8",
+//	    "ext_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "ext_port"
+//	],
+//	[
+//	    "u16",
+//	    "out_port"
+//	],
+//	[
+//	    "u8",
+//	    "state"
+//	],
+//	[
+//	    "u32",
+//	    "expire"
+//	],
+//	{
+//	    "crc": "0xf620a631"
+//	}
 //
 type NatDetSessionDetails struct {
 	InPort  uint16
@@ -3746,42 +4110,42 @@ func (*NatDetSessionDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64AddDelPoolAddrRange represents the VPP binary API message 'nat64_add_del_pool_addr_range'.
+// Nat64AddDelPoolAddrRange represents VPP binary API message 'nat64_add_del_pool_addr_range':
 //
-//            "nat64_add_del_pool_addr_range",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "start_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "end_addr",
-//                4
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            {
-//                "crc": "0x5eb50214"
-//            }
+//	"nat64_add_del_pool_addr_range",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "start_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "end_addr",
+//	    4
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	{
+//	    "crc": "0x5eb50214"
+//	}
 //
 type Nat64AddDelPoolAddrRange struct {
 	StartAddr []byte `struc:"[4]byte"`
@@ -3800,24 +4164,24 @@ func (*Nat64AddDelPoolAddrRange) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64AddDelPoolAddrRangeReply represents the VPP binary API message 'nat64_add_del_pool_addr_range_reply'.
+// Nat64AddDelPoolAddrRangeReply represents VPP binary API message 'nat64_add_del_pool_addr_range_reply':
 //
-//            "nat64_add_del_pool_addr_range_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat64_add_del_pool_addr_range_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat64AddDelPoolAddrRangeReply struct {
 	Retval int32
@@ -3833,24 +4197,24 @@ func (*Nat64AddDelPoolAddrRangeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64PoolAddrDump represents the VPP binary API message 'nat64_pool_addr_dump'.
+// Nat64PoolAddrDump represents VPP binary API message 'nat64_pool_addr_dump':
 //
-//            "nat64_pool_addr_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat64_pool_addr_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat64PoolAddrDump struct{}
 
@@ -3864,29 +4228,29 @@ func (*Nat64PoolAddrDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64PoolAddrDetails represents the VPP binary API message 'nat64_pool_addr_details'.
+// Nat64PoolAddrDetails represents VPP binary API message 'nat64_pool_addr_details':
 //
-//            "nat64_pool_addr_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "address",
-//                4
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            {
-//                "crc": "0x8d10231c"
-//            }
+//	"nat64_pool_addr_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "address",
+//	    4
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	{
+//	    "crc": "0x8d10231c"
+//	}
 //
 type Nat64PoolAddrDetails struct {
 	Address []byte `struc:"[4]byte"`
@@ -3903,36 +4267,36 @@ func (*Nat64PoolAddrDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64AddDelInterface represents the VPP binary API message 'nat64_add_del_interface'.
+// Nat64AddDelInterface represents VPP binary API message 'nat64_add_del_interface':
 //
-//            "nat64_add_del_interface",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            {
-//                "crc": "0xefbda9ce"
-//            }
+//	"nat64_add_del_interface",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	{
+//	    "crc": "0xefbda9ce"
+//	}
 //
 type Nat64AddDelInterface struct {
 	SwIfIndex uint32
@@ -3950,24 +4314,24 @@ func (*Nat64AddDelInterface) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64AddDelInterfaceReply represents the VPP binary API message 'nat64_add_del_interface_reply'.
+// Nat64AddDelInterfaceReply represents VPP binary API message 'nat64_add_del_interface_reply':
 //
-//            "nat64_add_del_interface_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat64_add_del_interface_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat64AddDelInterfaceReply struct {
 	Retval int32
@@ -3983,24 +4347,24 @@ func (*Nat64AddDelInterfaceReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64InterfaceDump represents the VPP binary API message 'nat64_interface_dump'.
+// Nat64InterfaceDump represents VPP binary API message 'nat64_interface_dump':
 //
-//            "nat64_interface_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat64_interface_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat64InterfaceDump struct{}
 
@@ -4014,28 +4378,28 @@ func (*Nat64InterfaceDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64InterfaceDetails represents the VPP binary API message 'nat64_interface_details'.
+// Nat64InterfaceDetails represents VPP binary API message 'nat64_interface_details':
 //
-//            "nat64_interface_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x2b15e8e4"
-//            }
+//	"nat64_interface_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x2b15e8e4"
+//	}
 //
 type Nat64InterfaceDetails struct {
 	IsInside  uint8
@@ -4052,54 +4416,54 @@ func (*Nat64InterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64AddDelStaticBib represents the VPP binary API message 'nat64_add_del_static_bib'.
+// Nat64AddDelStaticBib represents VPP binary API message 'nat64_add_del_static_bib':
 //
-//            "nat64_add_del_static_bib",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "i_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "o_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "i_port"
-//            ],
-//            [
-//                "u16",
-//                "o_port"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "proto"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            {
-//                "crc": "0xe36c7813"
-//            }
+//	"nat64_add_del_static_bib",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "i_addr",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "o_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "i_port"
+//	],
+//	[
+//	    "u16",
+//	    "o_port"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "proto"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	{
+//	    "crc": "0xe36c7813"
+//	}
 //
 type Nat64AddDelStaticBib struct {
 	IAddr []byte `struc:"[16]byte"`
@@ -4121,24 +4485,24 @@ func (*Nat64AddDelStaticBib) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64AddDelStaticBibReply represents the VPP binary API message 'nat64_add_del_static_bib_reply'.
+// Nat64AddDelStaticBibReply represents VPP binary API message 'nat64_add_del_static_bib_reply':
 //
-//            "nat64_add_del_static_bib_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat64_add_del_static_bib_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat64AddDelStaticBibReply struct {
 	Retval int32
@@ -4154,28 +4518,28 @@ func (*Nat64AddDelStaticBibReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64BibDump represents the VPP binary API message 'nat64_bib_dump'.
+// Nat64BibDump represents VPP binary API message 'nat64_bib_dump':
 //
-//            "nat64_bib_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "proto"
-//            ],
-//            {
-//                "crc": "0xcfcb6b75"
-//            }
+//	"nat64_bib_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "proto"
+//	],
+//	{
+//	    "crc": "0xcfcb6b75"
+//	}
 //
 type Nat64BibDump struct {
 	Proto uint8
@@ -4191,54 +4555,54 @@ func (*Nat64BibDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64BibDetails represents the VPP binary API message 'nat64_bib_details'.
+// Nat64BibDetails represents VPP binary API message 'nat64_bib_details':
 //
-//            "nat64_bib_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "i_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "o_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "i_port"
-//            ],
-//            [
-//                "u16",
-//                "o_port"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "proto"
-//            ],
-//            [
-//                "u8",
-//                "is_static"
-//            ],
-//            [
-//                "u32",
-//                "ses_num"
-//            ],
-//            {
-//                "crc": "0x372e7a98"
-//            }
+//	"nat64_bib_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "i_addr",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "o_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "i_port"
+//	],
+//	[
+//	    "u16",
+//	    "o_port"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "proto"
+//	],
+//	[
+//	    "u8",
+//	    "is_static"
+//	],
+//	[
+//	    "u32",
+//	    "ses_num"
+//	],
+//	{
+//	    "crc": "0x372e7a98"
+//	}
 //
 type Nat64BibDetails struct {
 	IAddr    []byte `struc:"[16]byte"`
@@ -4261,28 +4625,28 @@ func (*Nat64BibDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64StDump represents the VPP binary API message 'nat64_st_dump'.
+// Nat64StDump represents VPP binary API message 'nat64_st_dump':
 //
-//            "nat64_st_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "proto"
-//            ],
-//            {
-//                "crc": "0xcfcb6b75"
-//            }
+//	"nat64_st_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "proto"
+//	],
+//	{
+//	    "crc": "0xcfcb6b75"
+//	}
 //
 type Nat64StDump struct {
 	Proto uint8
@@ -4298,60 +4662,60 @@ func (*Nat64StDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64StDetails represents the VPP binary API message 'nat64_st_details'.
+// Nat64StDetails represents VPP binary API message 'nat64_st_details':
 //
-//            "nat64_st_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "il_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "ol_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "il_port"
-//            ],
-//            [
-//                "u16",
-//                "ol_port"
-//            ],
-//            [
-//                "u8",
-//                "ir_addr",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "or_addr",
-//                4
-//            ],
-//            [
-//                "u16",
-//                "r_port"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "proto"
-//            ],
-//            {
-//                "crc": "0x1aaf4631"
-//            }
+//	"nat64_st_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "il_addr",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "ol_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "il_port"
+//	],
+//	[
+//	    "u16",
+//	    "ol_port"
+//	],
+//	[
+//	    "u8",
+//	    "ir_addr",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "or_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "r_port"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "proto"
+//	],
+//	{
+//	    "crc": "0x1aaf4631"
+//	}
 //
 type Nat64StDetails struct {
 	IlAddr []byte `struc:"[16]byte"`
@@ -4375,41 +4739,41 @@ func (*Nat64StDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64AddDelPrefix represents the VPP binary API message 'nat64_add_del_prefix'.
+// Nat64AddDelPrefix represents VPP binary API message 'nat64_add_del_prefix':
 //
-//            "nat64_add_del_prefix",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "prefix",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "prefix_len"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            {
-//                "crc": "0xf4ae7173"
-//            }
+//	"nat64_add_del_prefix",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "prefix",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "prefix_len"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	{
+//	    "crc": "0xf4ae7173"
+//	}
 //
 type Nat64AddDelPrefix struct {
 	Prefix    []byte `struc:"[16]byte"`
@@ -4428,24 +4792,24 @@ func (*Nat64AddDelPrefix) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64AddDelPrefixReply represents the VPP binary API message 'nat64_add_del_prefix_reply'.
+// Nat64AddDelPrefixReply represents VPP binary API message 'nat64_add_del_prefix_reply':
 //
-//            "nat64_add_del_prefix_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat64_add_del_prefix_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat64AddDelPrefixReply struct {
 	Retval int32
@@ -4461,24 +4825,24 @@ func (*Nat64AddDelPrefixReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64PrefixDump represents the VPP binary API message 'nat64_prefix_dump'.
+// Nat64PrefixDump represents VPP binary API message 'nat64_prefix_dump':
 //
-//            "nat64_prefix_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat64_prefix_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat64PrefixDump struct{}
 
@@ -4492,33 +4856,33 @@ func (*Nat64PrefixDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64PrefixDetails represents the VPP binary API message 'nat64_prefix_details'.
+// Nat64PrefixDetails represents VPP binary API message 'nat64_prefix_details':
 //
-//            "nat64_prefix_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "prefix",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "prefix_len"
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            {
-//                "crc": "0xfb08875c"
-//            }
+//	"nat64_prefix_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "prefix",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "prefix_len"
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	{
+//	    "crc": "0xfb08875c"
+//	}
 //
 type Nat64PrefixDetails struct {
 	Prefix    []byte `struc:"[16]byte"`
@@ -4536,36 +4900,36 @@ func (*Nat64PrefixDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat64AddDelInterfaceAddr represents the VPP binary API message 'nat64_add_del_interface_addr'.
+// Nat64AddDelInterfaceAddr represents VPP binary API message 'nat64_add_del_interface_addr':
 //
-//            "nat64_add_del_interface_addr",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x9b1ac600"
-//            }
+//	"nat64_add_del_interface_addr",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x9b1ac600"
+//	}
 //
 type Nat64AddDelInterfaceAddr struct {
 	IsAdd     uint8
@@ -4583,24 +4947,24 @@ func (*Nat64AddDelInterfaceAddr) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat64AddDelInterfaceAddrReply represents the VPP binary API message 'nat64_add_del_interface_addr_reply'.
+// Nat64AddDelInterfaceAddrReply represents VPP binary API message 'nat64_add_del_interface_addr_reply':
 //
-//            "nat64_add_del_interface_addr_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat64_add_del_interface_addr_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat64AddDelInterfaceAddrReply struct {
 	Retval int32
@@ -4616,38 +4980,38 @@ func (*Nat64AddDelInterfaceAddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// DsliteAddDelPoolAddrRange represents the VPP binary API message 'dslite_add_del_pool_addr_range'.
+// DsliteAddDelPoolAddrRange represents VPP binary API message 'dslite_add_del_pool_addr_range':
 //
-//            "dslite_add_del_pool_addr_range",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "start_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "end_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            {
-//                "crc": "0x258bff2a"
-//            }
+//	"dslite_add_del_pool_addr_range",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "start_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "end_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	{
+//	    "crc": "0x258bff2a"
+//	}
 //
 type DsliteAddDelPoolAddrRange struct {
 	StartAddr []byte `struc:"[4]byte"`
@@ -4665,24 +5029,24 @@ func (*DsliteAddDelPoolAddrRange) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// DsliteAddDelPoolAddrRangeReply represents the VPP binary API message 'dslite_add_del_pool_addr_range_reply'.
+// DsliteAddDelPoolAddrRangeReply represents VPP binary API message 'dslite_add_del_pool_addr_range_reply':
 //
-//            "dslite_add_del_pool_addr_range_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"dslite_add_del_pool_addr_range_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type DsliteAddDelPoolAddrRangeReply struct {
 	Retval int32
@@ -4698,24 +5062,24 @@ func (*DsliteAddDelPoolAddrRangeReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// DsliteAddressDump represents the VPP binary API message 'dslite_address_dump'.
+// DsliteAddressDump represents VPP binary API message 'dslite_address_dump':
 //
-//            "dslite_address_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"dslite_address_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type DsliteAddressDump struct{}
 
@@ -4729,25 +5093,25 @@ func (*DsliteAddressDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// DsliteAddressDetails represents the VPP binary API message 'dslite_address_details'.
+// DsliteAddressDetails represents VPP binary API message 'dslite_address_details':
 //
-//            "dslite_address_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "ip_address",
-//                4
-//            ],
-//            {
-//                "crc": "0xade70e23"
-//            }
+//	"dslite_address_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "ip_address",
+//	    4
+//	],
+//	{
+//	    "crc": "0xade70e23"
+//	}
 //
 type DsliteAddressDetails struct {
 	IPAddress []byte `struc:"[4]byte"`
@@ -4763,34 +5127,34 @@ func (*DsliteAddressDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// DsliteSetAftrAddr represents the VPP binary API message 'dslite_set_aftr_addr'.
+// DsliteSetAftrAddr represents VPP binary API message 'dslite_set_aftr_addr':
 //
-//            "dslite_set_aftr_addr",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "ip4_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "ip6_addr",
-//                16
-//            ],
-//            {
-//                "crc": "0x2e9c01ef"
-//            }
+//	"dslite_set_aftr_addr",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "ip4_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "ip6_addr",
+//	    16
+//	],
+//	{
+//	    "crc": "0x2e9c01ef"
+//	}
 //
 type DsliteSetAftrAddr struct {
 	IP4Addr []byte `struc:"[4]byte"`
@@ -4807,24 +5171,24 @@ func (*DsliteSetAftrAddr) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// DsliteSetAftrAddrReply represents the VPP binary API message 'dslite_set_aftr_addr_reply'.
+// DsliteSetAftrAddrReply represents VPP binary API message 'dslite_set_aftr_addr_reply':
 //
-//            "dslite_set_aftr_addr_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"dslite_set_aftr_addr_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type DsliteSetAftrAddrReply struct {
 	Retval int32
@@ -4840,24 +5204,24 @@ func (*DsliteSetAftrAddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// DsliteGetAftrAddr represents the VPP binary API message 'dslite_get_aftr_addr'.
+// DsliteGetAftrAddr represents VPP binary API message 'dslite_get_aftr_addr':
 //
-//            "dslite_get_aftr_addr",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"dslite_get_aftr_addr",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type DsliteGetAftrAddr struct{}
 
@@ -4871,34 +5235,34 @@ func (*DsliteGetAftrAddr) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// DsliteGetAftrAddrReply represents the VPP binary API message 'dslite_get_aftr_addr_reply'.
+// DsliteGetAftrAddrReply represents VPP binary API message 'dslite_get_aftr_addr_reply':
 //
-//            "dslite_get_aftr_addr_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "ip4_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "ip6_addr",
-//                16
-//            ],
-//            {
-//                "crc": "0x2c4c3037"
-//            }
+//	"dslite_get_aftr_addr_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u8",
+//	    "ip4_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "ip6_addr",
+//	    16
+//	],
+//	{
+//	    "crc": "0x2c4c3037"
+//	}
 //
 type DsliteGetAftrAddrReply struct {
 	Retval  int32
@@ -4916,34 +5280,34 @@ func (*DsliteGetAftrAddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// DsliteSetB4Addr represents the VPP binary API message 'dslite_set_b4_addr'.
+// DsliteSetB4Addr represents VPP binary API message 'dslite_set_b4_addr':
 //
-//            "dslite_set_b4_addr",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "ip4_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "ip6_addr",
-//                16
-//            ],
-//            {
-//                "crc": "0x2e9c01ef"
-//            }
+//	"dslite_set_b4_addr",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "ip4_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "ip6_addr",
+//	    16
+//	],
+//	{
+//	    "crc": "0x2e9c01ef"
+//	}
 //
 type DsliteSetB4Addr struct {
 	IP4Addr []byte `struc:"[4]byte"`
@@ -4960,24 +5324,24 @@ func (*DsliteSetB4Addr) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// DsliteSetB4AddrReply represents the VPP binary API message 'dslite_set_b4_addr_reply'.
+// DsliteSetB4AddrReply represents VPP binary API message 'dslite_set_b4_addr_reply':
 //
-//            "dslite_set_b4_addr_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"dslite_set_b4_addr_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type DsliteSetB4AddrReply struct {
 	Retval int32
@@ -4993,24 +5357,24 @@ func (*DsliteSetB4AddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// DsliteGetB4Addr represents the VPP binary API message 'dslite_get_b4_addr'.
+// DsliteGetB4Addr represents VPP binary API message 'dslite_get_b4_addr':
 //
-//            "dslite_get_b4_addr",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"dslite_get_b4_addr",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type DsliteGetB4Addr struct{}
 
@@ -5024,34 +5388,34 @@ func (*DsliteGetB4Addr) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// DsliteGetB4AddrReply represents the VPP binary API message 'dslite_get_b4_addr_reply'.
+// DsliteGetB4AddrReply represents VPP binary API message 'dslite_get_b4_addr_reply':
 //
-//            "dslite_get_b4_addr_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "ip4_addr",
-//                4
-//            ],
-//            [
-//                "u8",
-//                "ip6_addr",
-//                16
-//            ],
-//            {
-//                "crc": "0x2c4c3037"
-//            }
+//	"dslite_get_b4_addr_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u8",
+//	    "ip4_addr",
+//	    4
+//	],
+//	[
+//	    "u8",
+//	    "ip6_addr",
+//	    16
+//	],
+//	{
+//	    "crc": "0x2c4c3037"
+//	}
 //
 type DsliteGetB4AddrReply struct {
 	Retval  int32
@@ -5069,36 +5433,36 @@ func (*DsliteGetB4AddrReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat66AddDelInterface represents the VPP binary API message 'nat66_add_del_interface'.
+// Nat66AddDelInterface represents VPP binary API message 'nat66_add_del_interface':
 //
-//            "nat66_add_del_interface",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x9b1ac600"
-//            }
+//	"nat66_add_del_interface",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x9b1ac600"
+//	}
 //
 type Nat66AddDelInterface struct {
 	IsAdd     uint8
@@ -5116,24 +5480,24 @@ func (*Nat66AddDelInterface) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat66AddDelInterfaceReply represents the VPP binary API message 'nat66_add_del_interface_reply'.
+// Nat66AddDelInterfaceReply represents VPP binary API message 'nat66_add_del_interface_reply':
 //
-//            "nat66_add_del_interface_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat66_add_del_interface_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat66AddDelInterfaceReply struct {
 	Retval int32
@@ -5149,24 +5513,24 @@ func (*Nat66AddDelInterfaceReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat66InterfaceDump represents the VPP binary API message 'nat66_interface_dump'.
+// Nat66InterfaceDump represents VPP binary API message 'nat66_interface_dump':
 //
-//            "nat66_interface_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat66_interface_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat66InterfaceDump struct{}
 
@@ -5180,28 +5544,28 @@ func (*Nat66InterfaceDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat66InterfaceDetails represents the VPP binary API message 'nat66_interface_details'.
+// Nat66InterfaceDetails represents VPP binary API message 'nat66_interface_details':
 //
-//            "nat66_interface_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_inside"
-//            ],
-//            [
-//                "u32",
-//                "sw_if_index"
-//            ],
-//            {
-//                "crc": "0x2b15e8e4"
-//            }
+//	"nat66_interface_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_inside"
+//	],
+//	[
+//	    "u32",
+//	    "sw_if_index"
+//	],
+//	{
+//	    "crc": "0x2b15e8e4"
+//	}
 //
 type Nat66InterfaceDetails struct {
 	IsInside  uint8
@@ -5218,42 +5582,42 @@ func (*Nat66InterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat66AddDelStaticMapping represents the VPP binary API message 'nat66_add_del_static_mapping'.
+// Nat66AddDelStaticMapping represents VPP binary API message 'nat66_add_del_static_mapping':
 //
-//            "nat66_add_del_static_mapping",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "local_ip_address",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "external_ip_address",
-//                16
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            {
-//                "crc": "0x67a1dbe1"
-//            }
+//	"nat66_add_del_static_mapping",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "local_ip_address",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "external_ip_address",
+//	    16
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	{
+//	    "crc": "0x67a1dbe1"
+//	}
 //
 type Nat66AddDelStaticMapping struct {
 	IsAdd             uint8
@@ -5272,24 +5636,24 @@ func (*Nat66AddDelStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat66AddDelStaticMappingReply represents the VPP binary API message 'nat66_add_del_static_mapping_reply'.
+// Nat66AddDelStaticMappingReply represents VPP binary API message 'nat66_add_del_static_mapping_reply':
 //
-//            "nat66_add_del_static_mapping_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"nat66_add_del_static_mapping_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type Nat66AddDelStaticMappingReply struct {
 	Retval int32
@@ -5305,24 +5669,24 @@ func (*Nat66AddDelStaticMappingReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// Nat66StaticMappingDump represents the VPP binary API message 'nat66_static_mapping_dump'.
+// Nat66StaticMappingDump represents VPP binary API message 'nat66_static_mapping_dump':
 //
-//            "nat66_static_mapping_dump",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            {
-//                "crc": "0x51077d14"
-//            }
+//	"nat66_static_mapping_dump",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
 //
 type Nat66StaticMappingDump struct{}
 
@@ -5336,42 +5700,42 @@ func (*Nat66StaticMappingDump) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// Nat66StaticMappingDetails represents the VPP binary API message 'nat66_static_mapping_details'.
+// Nat66StaticMappingDetails represents VPP binary API message 'nat66_static_mapping_details':
 //
-//            "nat66_static_mapping_details",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "local_ip_address",
-//                16
-//            ],
-//            [
-//                "u8",
-//                "external_ip_address",
-//                16
-//            ],
-//            [
-//                "u32",
-//                "vrf_id"
-//            ],
-//            [
-//                "u64",
-//                "total_bytes"
-//            ],
-//            [
-//                "u64",
-//                "total_pkts"
-//            ],
-//            {
-//                "crc": "0xf61e499a"
-//            }
+//	"nat66_static_mapping_details",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "local_ip_address",
+//	    16
+//	],
+//	[
+//	    "u8",
+//	    "external_ip_address",
+//	    16
+//	],
+//	[
+//	    "u32",
+//	    "vrf_id"
+//	],
+//	[
+//	    "u64",
+//	    "total_bytes"
+//	],
+//	[
+//	    "u64",
+//	    "total_pkts"
+//	],
+//	{
+//	    "crc": "0xf61e499a"
+//	}
 //
 type Nat66StaticMappingDetails struct {
 	LocalIPAddress    []byte `struc:"[16]byte"`
@@ -5389,71 +5753,6 @@ func (*Nat66StaticMappingDetails) GetCrcString() string {
 }
 func (*Nat66StaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
-}
-
-/* Services */
-
-type Services interface {
-	DumpDsliteAddress(*DsliteAddressDump) (*DsliteAddressDetails, error)
-	DumpNat44Address(*Nat44AddressDump) (*Nat44AddressDetails, error)
-	DumpNat44IdentityMapping(*Nat44IdentityMappingDump) (*Nat44IdentityMappingDetails, error)
-	DumpNat44InterfaceAddr(*Nat44InterfaceAddrDump) (*Nat44InterfaceAddrDetails, error)
-	DumpNat44Interface(*Nat44InterfaceDump) (*Nat44InterfaceDetails, error)
-	DumpNat44InterfaceOutputFeature(*Nat44InterfaceOutputFeatureDump) (*Nat44InterfaceOutputFeatureDetails, error)
-	DumpNat44LbStaticMapping(*Nat44LbStaticMappingDump) (*Nat44LbStaticMappingDetails, error)
-	DumpNat44StaticMapping(*Nat44StaticMappingDump) (*Nat44StaticMappingDetails, error)
-	DumpNat44User(*Nat44UserDump) (*Nat44UserDetails, error)
-	DumpNat44UserSession(*Nat44UserSessionDump) (*Nat44UserSessionDetails, error)
-	DumpNat64Bib(*Nat64BibDump) (*Nat64BibDetails, error)
-	DumpNat64Interface(*Nat64InterfaceDump) (*Nat64InterfaceDetails, error)
-	DumpNat64PoolAddr(*Nat64PoolAddrDump) (*Nat64PoolAddrDetails, error)
-	DumpNat64Prefix(*Nat64PrefixDump) (*Nat64PrefixDetails, error)
-	DumpNat64St(*Nat64StDump) (*Nat64StDetails, error)
-	DumpNat66Interface(*Nat66InterfaceDump) (*Nat66InterfaceDetails, error)
-	DumpNat66StaticMapping(*Nat66StaticMappingDump) (*Nat66StaticMappingDetails, error)
-	DumpNatDetMap(*NatDetMapDump) (*NatDetMapDetails, error)
-	DumpNatDetSession(*NatDetSessionDump) (*NatDetSessionDetails, error)
-	DumpNatReass(*NatReassDump) (*NatReassDetails, error)
-	DumpNatWorker(*NatWorkerDump) (*NatWorkerDetails, error)
-	DsliteAddDelPoolAddrRange(*DsliteAddDelPoolAddrRange) (*DsliteAddDelPoolAddrRangeReply, error)
-	DsliteGetAftrAddr(*DsliteGetAftrAddr) (*DsliteGetAftrAddrReply, error)
-	DsliteGetB4Addr(*DsliteGetB4Addr) (*DsliteGetB4AddrReply, error)
-	DsliteSetAftrAddr(*DsliteSetAftrAddr) (*DsliteSetAftrAddrReply, error)
-	DsliteSetB4Addr(*DsliteSetB4Addr) (*DsliteSetB4AddrReply, error)
-	Nat44AddDelAddressRange(*Nat44AddDelAddressRange) (*Nat44AddDelAddressRangeReply, error)
-	Nat44AddDelIdentityMapping(*Nat44AddDelIdentityMapping) (*Nat44AddDelIdentityMappingReply, error)
-	Nat44AddDelInterfaceAddr(*Nat44AddDelInterfaceAddr) (*Nat44AddDelInterfaceAddrReply, error)
-	Nat44AddDelLbStaticMapping(*Nat44AddDelLbStaticMapping) (*Nat44AddDelLbStaticMappingReply, error)
-	Nat44AddDelStaticMapping(*Nat44AddDelStaticMapping) (*Nat44AddDelStaticMappingReply, error)
-	Nat44DelSession(*Nat44DelSession) (*Nat44DelSessionReply, error)
-	Nat44ForwardingEnableDisable(*Nat44ForwardingEnableDisable) (*Nat44ForwardingEnableDisableReply, error)
-	Nat44ForwardingIsEnabled(*Nat44ForwardingIsEnabled) (*Nat44ForwardingIsEnabledReply, error)
-	Nat44InterfaceAddDelFeature(*Nat44InterfaceAddDelFeature) (*Nat44InterfaceAddDelFeatureReply, error)
-	Nat44InterfaceAddDelOutputFeature(*Nat44InterfaceAddDelOutputFeature) (*Nat44InterfaceAddDelOutputFeatureReply, error)
-	Nat64AddDelInterface(*Nat64AddDelInterface) (*Nat64AddDelInterfaceReply, error)
-	Nat64AddDelInterfaceAddr(*Nat64AddDelInterfaceAddr) (*Nat64AddDelInterfaceAddrReply, error)
-	Nat64AddDelPoolAddrRange(*Nat64AddDelPoolAddrRange) (*Nat64AddDelPoolAddrRangeReply, error)
-	Nat64AddDelPrefix(*Nat64AddDelPrefix) (*Nat64AddDelPrefixReply, error)
-	Nat64AddDelStaticBib(*Nat64AddDelStaticBib) (*Nat64AddDelStaticBibReply, error)
-	Nat66AddDelInterface(*Nat66AddDelInterface) (*Nat66AddDelInterfaceReply, error)
-	Nat66AddDelStaticMapping(*Nat66AddDelStaticMapping) (*Nat66AddDelStaticMappingReply, error)
-	NatControlPing(*NatControlPing) (*NatControlPingReply, error)
-	NatDetAddDelMap(*NatDetAddDelMap) (*NatDetAddDelMapReply, error)
-	NatDetCloseSessionIn(*NatDetCloseSessionIn) (*NatDetCloseSessionInReply, error)
-	NatDetCloseSessionOut(*NatDetCloseSessionOut) (*NatDetCloseSessionOutReply, error)
-	NatDetForward(*NatDetForward) (*NatDetForwardReply, error)
-	NatDetReverse(*NatDetReverse) (*NatDetReverseReply, error)
-	NatGetAddrAndPortAllocAlg(*NatGetAddrAndPortAllocAlg) (*NatGetAddrAndPortAllocAlgReply, error)
-	NatGetMssClamping(*NatGetMssClamping) (*NatGetMssClampingReply, error)
-	NatGetReass(*NatGetReass) (*NatGetReassReply, error)
-	NatGetTimeouts(*NatGetTimeouts) (*NatGetTimeoutsReply, error)
-	NatIpfixEnableDisable(*NatIpfixEnableDisable) (*NatIpfixEnableDisableReply, error)
-	NatSetAddrAndPortAllocAlg(*NatSetAddrAndPortAllocAlg) (*NatSetAddrAndPortAllocAlgReply, error)
-	NatSetMssClamping(*NatSetMssClamping) (*NatSetMssClampingReply, error)
-	NatSetReass(*NatSetReass) (*NatSetReassReply, error)
-	NatSetTimeouts(*NatSetTimeouts) (*NatSetTimeoutsReply, error)
-	NatSetWorkers(*NatSetWorkers) (*NatSetWorkersReply, error)
-	NatShowConfig(*NatShowConfig) (*NatShowConfigReply, error)
 }
 
 func init() {
@@ -5515,6 +5814,8 @@ func init() {
 	api.RegisterMessage((*Nat44UserSessionDetails)(nil), "nat.Nat44UserSessionDetails")
 	api.RegisterMessage((*Nat44AddDelLbStaticMapping)(nil), "nat.Nat44AddDelLbStaticMapping")
 	api.RegisterMessage((*Nat44AddDelLbStaticMappingReply)(nil), "nat.Nat44AddDelLbStaticMappingReply")
+	api.RegisterMessage((*Nat44LbStaticMappingAddDelLocal)(nil), "nat.Nat44LbStaticMappingAddDelLocal")
+	api.RegisterMessage((*Nat44LbStaticMappingAddDelLocalReply)(nil), "nat.Nat44LbStaticMappingAddDelLocalReply")
 	api.RegisterMessage((*Nat44LbStaticMappingDump)(nil), "nat.Nat44LbStaticMappingDump")
 	api.RegisterMessage((*Nat44LbStaticMappingDetails)(nil), "nat.Nat44LbStaticMappingDetails")
 	api.RegisterMessage((*Nat44DelSession)(nil), "nat.Nat44DelSession")

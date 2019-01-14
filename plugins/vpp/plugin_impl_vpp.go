@@ -155,7 +155,7 @@ type Deps struct {
 	PublishStatistics datasync.KeyProtoValWriter
 	Watcher           datasync.KeyValProtoWatcher
 	IfStatePub        datasync.KeyProtoValWriter
-	GoVppmux          govppmux.API
+	GoVppmux          govppmux.APIWithStats
 	Linux             LinuxPluginAPI
 
 	DataSyncs        map[string]datasync.KeyProtoValWriter
