@@ -10,7 +10,7 @@ option (gogoproto.messagename_all) = true;
 import "models/linux/interfaces/interface.proto";
 import "models/linux/l3/l3.proto";
 
-message ConfigData {
+message Config {
     repeated linux.interfaces.Interface interfaces = 10;
 
     repeated linux.l3.StaticARPEntry arp_entries = 20;

@@ -19,7 +19,7 @@ import "vpp/l3/static_route.proto";
 import "vpp/nat/nat.proto";
 import "vpp/punt/punt.proto";
 
-message ConfigData {
+message Config {
     repeated vpp.interfaces.Interface interfaces = 10;
 
     repeated vpp.acl.Acl acls = 20;
@@ -42,34 +42,3 @@ message ConfigData {
     repeated punt.IpRedirect IPRedirectPunts = 70;
     repeated punt.ToHost ToHostPunts = 71;
 }
-
-/*message Configuration {
-    repeated vpp.interfaces.Interface interfaces = 1;
-
-    message Acl {
-        repeated vpp.acl.Acl acls = 1;
-    }
-
-    message L2 {
-        repeated vpp.l2.BridgeDomain bridge_domains = 1;
-        repeated vpp.l2.FIBEntry fib_entries = 2;
-        repeated vpp.l2.XConnectPair xconnect_pairs = 3;
-    }
-
-    message L3 {
-        repeated vpp.l3.StaticRoute static_routes = 1;
-        repeated vpp.l3.ARPEntry arp_entries = 2;
-        vpp.l3.ProxyARP proxy_arp = 3;
-        vpp.l3.IPScanNeighbor ipscan_neighbor = 4;
-    }
-
-    message Nat {
-        vpp.nat.Nat44Global nat44_global = 1;
-        repeated vpp.nat.DNat44 dnats = 2;
-    }
-
-    message Punt {
-        repeated vpp.punt.IpRedirect ip_redirect_punts = 1;
-        repeated vpp.punt.ToHost to_host_punts = 2;
-    }
-}*/

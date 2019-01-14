@@ -134,7 +134,7 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 }
 
 func demonstrateClient(conn *grpc.ClientConn) {
-	c := remoteclient.NewClientGRPC(api.NewConfiguratorClient(conn))
+	c := remoteclient.NewClientGRPC(api.NewGenericConfiguratorClient(conn))
 
 	// List supported model specs
 	modules, err := c.ListModules()

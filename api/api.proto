@@ -18,19 +18,6 @@ message Value {
     google.protobuf.Any any = 1;
 }
 
-/*
-message Key {
-    repeated string parts = 1;
-}
-
-message Value {
-    oneof val {
-        google.protobuf.Any any_val = 1;
-        bytes bytes_val = 2;
-        string string_val = 3;
-    }
-}*/
-
 message ItemStatus {
     enum State {
         UNKNOWN = 0;
@@ -44,7 +31,7 @@ message ItemStatus {
     string message = 2;
 }
 
-service Configurator {
+service GenericConfigurator {
     rpc ListCapabilities (ListCapabilitiesRequest) returns (ListCapabilitiesResponse) {};
     rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {};
     rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {};
@@ -130,3 +117,17 @@ message SubscribeRequest {
 message SubscribeResponse {
 
 }
+
+
+/*
+message Key {
+    repeated string parts = 1;
+}
+
+message Value {
+    oneof val {
+        google.protobuf.Any any_val = 1;
+        bytes bytes_val = 2;
+        string string_val = 3;
+    }
+}*/

@@ -27,7 +27,7 @@ const LigatoApis = "api.ligato.io/"
 
 // UnmarshalItem is helper function for unmarshalling api.ProtoItem.
 func UnmarshalItem(m *api.Item) (ProtoItem, error) {
-	protoName, err := types.AnyMessageName(m.Val)
+	protoName, err := types.AnyMessageName(m.GetVal().GetAny())
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func UnmarshalItem(m *api.Item) (ProtoItem, error) {
 	}*/
 
 	var any types.DynamicAny
-	if err := types.UnmarshalAny(m.Val, &any); err != nil {
+	if err := types.UnmarshalAny(m.GetVal().GetAny(), &any); err != nil {
 		return nil, err
 	}
 	return any.Message.(ProtoItem), nil
@@ -63,7 +63,9 @@ func MarshalItem(pb ProtoItem) (*api.Item, error) {
 	model := &api.Item{
 		//Version: Spec.Version,
 		Key: Key(pb),
-		Val: any,
+		Val: &api.Value{
+			Any: any,
+		},
 	}
 	return model, nil
 }

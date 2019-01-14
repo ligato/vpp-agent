@@ -9,11 +9,11 @@ import (
 )
 
 type grpcClient struct {
-	remote pb.ConfiguratorClient
+	remote pb.GenericConfiguratorClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(client pb.ConfiguratorClient) client.ConfiguratorClient {
+func NewClientGRPC(client pb.GenericConfiguratorClient) client.ConfiguratorClient {
 	return &grpcClient{client}
 }
 
@@ -43,7 +43,7 @@ func (c *grpcClient) SetConfig(resync bool) client.SetConfigRequest {
 }
 
 type setConfigRequest struct {
-	client pb.ConfiguratorClient
+	client pb.GenericConfiguratorClient
 	req    *pb.SetConfigRequest
 	err    error
 }
@@ -58,7 +58,7 @@ func (r *setConfigRequest) Update(items ...models.ProtoItem) {
 			r.err = err
 			return
 		}
-		r.req.Update = append(r.req.Update, &pb.SetConfigRequest_UpdateItem{
+		r.req.Updates = append(r.req.Updates, &pb.SetConfigRequest_UpdateItem{
 			Item: item,
 		})
 	}
@@ -76,7 +76,7 @@ func (r *setConfigRequest) Delete(items ...models.ProtoItem) {
 				return
 			}
 		}
-		r.req.Update = append(r.req.Update, &pb.SetConfigRequest_UpdateItem{
+		r.req.Updates = append(r.req.Updates, &pb.SetConfigRequest_UpdateItem{
 			Item: &models.Item{
 				Key: item.Key,
 			},

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package dataconfigurator;
+
+option go_package = "github.com/ligato/vpp-agent/api/dataconfigurator;dataconfigurator";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+import "models/vpp/vpp.proto";
+import "models/linux/linux.proto";
+
+message ConfigData {
+    vpp.Config vpp = 1;
+    linux.Config linux = 2;
+}
+
+service DataConfigurator {
+    rpc Resync(ConfigData) returns (ResyncResponse);
+    rpc Update(ConfigData) returns (UpdateResponse);
+    rpc Delete(ConfigData) returns (DeleteResponse);
+    rpc Get(GetRequest) returns (ConfigData);
+}
+
+message ResyncResponse {
+
+}
+
+message UpdateResponse {
+
+}
+
+message DeleteResponse {
+
+}
+
+message GetRequest {
+
+}

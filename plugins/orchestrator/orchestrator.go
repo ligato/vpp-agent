@@ -15,11 +15,14 @@
 package orchestrator
 
 import (
+	"sync"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"golang.org/x/net/context"
 
@@ -34,12 +37,15 @@ var Registry = local.DefaultRegistry
 type Plugin struct {
 	Deps
 
-	grpcSvc *configuratorSvc
+	genericConfigurator *genericConfigurator
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
 	resyncChan   chan datasync.ResyncEvent
 	watchDataReg datasync.WatchRegistration
+
+	mu      sync.Mutex
+	localDB map[string]models.ProtoItem
 }
 
 // Deps represents dependencies for the plugin.
@@ -59,12 +65,14 @@ func (p *Plugin) Init() error {
 	p.changeChan = make(chan datasync.ChangeEvent)
 
 	// register grpc service
-	p.grpcSvc = &configuratorSvc{
+	p.genericConfigurator = &genericConfigurator{
 		log:  p.Log,
 		orch: p,
 	}
-	api.RegisterConfiguratorServer(p.GRPC.GetServer(), p.grpcSvc)
+	api.RegisterGenericConfiguratorServer(p.GRPC.GetServer(), p.genericConfigurator)
 	//reflection.Register(p.GRPC.GetServer())
+
+	p.localDB = map[string]models.ProtoItem{}
 
 	return nil
 }
@@ -239,8 +247,19 @@ func (item *ProtoWatchResp) GetValue(out proto.Message) error {
 	return nil
 }
 
+func (p *Plugin) ListData() map[string]models.ProtoItem {
+	return p.localDB
+}
+
 // PushData ...
 func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) (err error, kvErrs []kvs.KeyWithError) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if typ, _ := kvs.IsResync(ctx); typ == kvs.FullResync {
+		p.localDB = map[string]models.ProtoItem{}
+	}
+
 	txn := p.KVScheduler.StartNBTransaction()
 
 	for _, kv := range kvPairs {
@@ -249,8 +268,10 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp
 
 		if kv.GetChangeType() == datasync.Delete {
 			txn.SetValue(kv.GetKey(), nil)
+			delete(p.localDB, kv.GetKey())
 		} else {
 			txn.SetValue(kv.GetKey(), kv)
+			p.localDB[kv.GetKey()] = kv.(*ProtoWatchResp).Val
 		}
 	}
 

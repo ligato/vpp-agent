@@ -22,7 +22,6 @@ import (
 	"text/template"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api"
 )
 
 var debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
@@ -150,7 +149,7 @@ func GetRegisteredSpecs() map[string]Spec {
 }
 
 // RegisteredModels returns all registered modules.
-func RegisteredModels() (models []*api.Model) {
+func RegisteredModels() (models []*Model) {
 	for _, protos := range moduleSpecs {
 		//var specs []*api.Model
 		for _, protoName := range protos {

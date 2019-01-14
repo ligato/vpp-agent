@@ -22,17 +22,17 @@ import (
 	"github.com/ligato/vpp-agent/api"
 )
 
-type Model = api.Model
+type Model = api.ModelSpec
 type Item = api.Item
 
 /*type Module = api.Module
 type ModelSpec = api.ModelSpec*/
 
-func (s Spec) ToModelSpec() api.Model {
+func (s Spec) ToModelSpec() Model {
 	ref := strings.ToLower(s.protoName)
 	ref = strings.Replace(ref, ".", "/", -1)
 
-	return api.Model{
+	return Model{
 		Name:    s.Type,
 		Version: s.Version,
 		Module:  s.Module,

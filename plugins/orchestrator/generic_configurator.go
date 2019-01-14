@@ -27,24 +27,24 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-type configuratorSvc struct {
+type genericConfigurator struct {
 	log  logging.Logger
 	orch *Plugin
 }
 
 // ListCapabilities implements SyncServiceServer.
-func (s *configuratorSvc) ListCapabilities(ctx context.Context, req *api.ListCapabilitiesRequest) (*api.ListCapabilitiesResponse, error) {
+func (s *genericConfigurator) ListCapabilities(ctx context.Context, req *api.ListCapabilitiesRequest) (*api.ListCapabilitiesResponse, error) {
 	resp := &api.ListCapabilitiesResponse{
 		ActiveModels: models.RegisteredModels(),
 	}
 	return resp, nil
 }
 
-func (s *configuratorSvc) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
+func (s *genericConfigurator) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
 	s.log.Debug("------------------------------")
-	s.log.Debugf("=> Configurator.SetConfig: %d items", len(req.Update))
+	s.log.Debugf("=> Configurator.SetConfig: %d items", len(req.Updates))
 	s.log.Debug("------------------------------")
-	for _, item := range req.Update {
+	for _, item := range req.Updates {
 		s.log.Debugf(" - %v", item)
 	}
 	s.log.Debug("------------------------------")
@@ -56,7 +56,7 @@ func (s *configuratorSvc) SetConfig(ctx context.Context, req *api.SetConfigReque
 	var ops = make(map[string]api.UpdateResult_Operation)
 	var kvPairs []datasync.ProtoWatchResp
 
-	for _, update := range req.Update {
+	for _, update := range req.Updates {
 		item := update.Item
 		/*if item == nil {
 			return nil, status.Error(codes.InvalidArgument, "change item is nil")
@@ -124,14 +124,14 @@ func (s *configuratorSvc) SetConfig(ctx context.Context, req *api.SetConfigReque
 	return &api.SetConfigResponse{Results: results}, nil
 }
 
-func (s *configuratorSvc) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
+func (s *genericConfigurator) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
 	panic("implement me")
 }
 
-func (s *configuratorSvc) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
+func (s *genericConfigurator) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
 	panic("implement me")
 }
 
-func (s *configuratorSvc) Subscribe(*api.SubscribeRequest, api.Configurator_SubscribeServer) error {
+func (s *genericConfigurator) Subscribe(*api.SubscribeRequest, api.GenericConfigurator_SubscribeServer) error {
 	panic("implement me")
 }

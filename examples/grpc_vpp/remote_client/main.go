@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/api/datasyncer"
+	"github.com/ligato/vpp-agent/api/dataconfigurator"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp"
@@ -127,18 +127,18 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (p *ExamplePlugin) resyncVPP() {
-	client := datasyncer.NewDataSyncerClient(p.conn)
+	client := dataconfigurator.NewDataConfiguratorClient(p.conn)
 
 	ctx := context.Background()
 
-	_, err := client.Resync(ctx, &datasyncer.DataRequest{
-		Vpp: &vpp.ConfigData{
+	_, err := client.Resync(ctx, &dataconfigurator.ConfigData{
+		Vpp: &vpp.Config{
 			Interfaces: []*interfaces.Interface{
 				memif1,
 			},
 			IpscanNeighbor: ipScanNeigh,
 		},
-		Linux: &linux.ConfigData{
+		Linux: &linux.Config{
 			Interfaces: []*linux_interfaces.Interface{
 				veth1, veth2,
 			},
@@ -147,6 +147,13 @@ func (p *ExamplePlugin) resyncVPP() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	cfg, err := client.Get(context.Background(), &dataconfigurator.GetRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("Config: %+v\n", cfg)
+
 }
 
 var (

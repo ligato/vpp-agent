@@ -57,7 +57,7 @@ func (x ItemStatus_State) String() string {
 	return proto.EnumName(ItemStatus_State_name, int32(x))
 }
 func (ItemStatus_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{1, 0}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{2, 0}
 }
 
 type UpdateResult_Operation int32
@@ -86,22 +86,22 @@ func (x UpdateResult_Operation) String() string {
 	return proto.EnumName(UpdateResult_Operation_name, int32(x))
 }
 func (UpdateResult_Operation) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{7, 0}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{8, 0}
 }
 
 type Item struct {
-	Key                  string     `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Val                  *types.Any `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Val                  *Value   `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Item) Reset()         { *m = Item{} }
 func (m *Item) String() string { return proto.CompactTextString(m) }
 func (*Item) ProtoMessage()    {}
 func (*Item) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{0}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{0}
 }
 func (m *Item) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Item.Unmarshal(m, b)
@@ -128,7 +128,7 @@ func (m *Item) GetKey() string {
 	return ""
 }
 
-func (m *Item) GetVal() *types.Any {
+func (m *Item) GetVal() *Value {
 	if m != nil {
 		return m.Val
 	}
@@ -137,6 +137,48 @@ func (m *Item) GetVal() *types.Any {
 
 func (*Item) XXX_MessageName() string {
 	return "api.Item"
+}
+
+type Value struct {
+	Any                  *types.Any `protobuf:"bytes,1,opt,name=any,proto3" json:"any,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *Value) Reset()         { *m = Value{} }
+func (m *Value) String() string { return proto.CompactTextString(m) }
+func (*Value) ProtoMessage()    {}
+func (*Value) Descriptor() ([]byte, []int) {
+	return fileDescriptor_api_575ebe8f8c580f38, []int{1}
+}
+func (m *Value) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Value.Unmarshal(m, b)
+}
+func (m *Value) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Value.Marshal(b, m, deterministic)
+}
+func (dst *Value) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Value.Merge(dst, src)
+}
+func (m *Value) XXX_Size() int {
+	return xxx_messageInfo_Value.Size(m)
+}
+func (m *Value) XXX_DiscardUnknown() {
+	xxx_messageInfo_Value.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Value proto.InternalMessageInfo
+
+func (m *Value) GetAny() *types.Any {
+	if m != nil {
+		return m.Any
+	}
+	return nil
+}
+
+func (*Value) XXX_MessageName() string {
+	return "api.Value"
 }
 
 type ItemStatus struct {
@@ -151,7 +193,7 @@ func (m *ItemStatus) Reset()         { *m = ItemStatus{} }
 func (m *ItemStatus) String() string { return proto.CompactTextString(m) }
 func (*ItemStatus) ProtoMessage()    {}
 func (*ItemStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{1}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{2}
 }
 func (m *ItemStatus) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ItemStatus.Unmarshal(m, b)
@@ -199,7 +241,7 @@ func (m *ListCapabilitiesRequest) Reset()         { *m = ListCapabilitiesRequest
 func (m *ListCapabilitiesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListCapabilitiesRequest) ProtoMessage()    {}
 func (*ListCapabilitiesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{2}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{3}
 }
 func (m *ListCapabilitiesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListCapabilitiesRequest.Unmarshal(m, b)
@@ -224,17 +266,17 @@ func (*ListCapabilitiesRequest) XXX_MessageName() string {
 }
 
 type ListCapabilitiesResponse struct {
-	ActiveModels         []*Model `protobuf:"bytes,1,rep,name=active_models,json=activeModels,proto3" json:"active_models,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	ActiveModels         []*ModelSpec `protobuf:"bytes,1,rep,name=active_models,json=activeModels,proto3" json:"active_models,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
 func (m *ListCapabilitiesResponse) Reset()         { *m = ListCapabilitiesResponse{} }
 func (m *ListCapabilitiesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListCapabilitiesResponse) ProtoMessage()    {}
 func (*ListCapabilitiesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{3}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{4}
 }
 func (m *ListCapabilitiesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListCapabilitiesResponse.Unmarshal(m, b)
@@ -254,7 +296,7 @@ func (m *ListCapabilitiesResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ListCapabilitiesResponse proto.InternalMessageInfo
 
-func (m *ListCapabilitiesResponse) GetActiveModels() []*Model {
+func (m *ListCapabilitiesResponse) GetActiveModels() []*ModelSpec {
 	if m != nil {
 		return m.ActiveModels
 	}
@@ -265,80 +307,75 @@ func (*ListCapabilitiesResponse) XXX_MessageName() string {
 	return "api.ListCapabilitiesResponse"
 }
 
-type Model struct {
-	Name    string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	Module  string `protobuf:"bytes,3,opt,name=module,proto3" json:"module,omitempty"`
-	// enum Kind {
-	// UNDEFINED = 0;
-	// CONFIG = 1;
-	// }
-	// Kind kind = 4;
+type ModelSpec struct {
+	Name                 string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version              string            `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	Module               string            `protobuf:"bytes,3,opt,name=module,proto3" json:"module,omitempty"`
 	Meta                 map[string]string `protobuf:"bytes,5,rep,name=meta,proto3" json:"meta,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Model) Reset()         { *m = Model{} }
-func (m *Model) String() string { return proto.CompactTextString(m) }
-func (*Model) ProtoMessage()    {}
-func (*Model) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{4}
+func (m *ModelSpec) Reset()         { *m = ModelSpec{} }
+func (m *ModelSpec) String() string { return proto.CompactTextString(m) }
+func (*ModelSpec) ProtoMessage()    {}
+func (*ModelSpec) Descriptor() ([]byte, []int) {
+	return fileDescriptor_api_575ebe8f8c580f38, []int{5}
 }
-func (m *Model) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Model.Unmarshal(m, b)
+func (m *ModelSpec) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ModelSpec.Unmarshal(m, b)
 }
-func (m *Model) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Model.Marshal(b, m, deterministic)
+func (m *ModelSpec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ModelSpec.Marshal(b, m, deterministic)
 }
-func (dst *Model) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Model.Merge(dst, src)
+func (dst *ModelSpec) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ModelSpec.Merge(dst, src)
 }
-func (m *Model) XXX_Size() int {
-	return xxx_messageInfo_Model.Size(m)
+func (m *ModelSpec) XXX_Size() int {
+	return xxx_messageInfo_ModelSpec.Size(m)
 }
-func (m *Model) XXX_DiscardUnknown() {
-	xxx_messageInfo_Model.DiscardUnknown(m)
+func (m *ModelSpec) XXX_DiscardUnknown() {
+	xxx_messageInfo_ModelSpec.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Model proto.InternalMessageInfo
+var xxx_messageInfo_ModelSpec proto.InternalMessageInfo
 
-func (m *Model) GetName() string {
+func (m *ModelSpec) GetName() string {
 	if m != nil {
 		return m.Name
 	}
 	return ""
 }
 
-func (m *Model) GetVersion() string {
+func (m *ModelSpec) GetVersion() string {
 	if m != nil {
 		return m.Version
 	}
 	return ""
 }
 
-func (m *Model) GetModule() string {
+func (m *ModelSpec) GetModule() string {
 	if m != nil {
 		return m.Module
 	}
 	return ""
 }
 
-func (m *Model) GetMeta() map[string]string {
+func (m *ModelSpec) GetMeta() map[string]string {
 	if m != nil {
 		return m.Meta
 	}
 	return nil
 }
 
-func (*Model) XXX_MessageName() string {
-	return "api.Model"
+func (*ModelSpec) XXX_MessageName() string {
+	return "api.ModelSpec"
 }
 
 type SetConfigRequest struct {
 	Options              *SetConfigRequest_Options      `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"`
-	Update               []*SetConfigRequest_UpdateItem `protobuf:"bytes,2,rep,name=update,proto3" json:"update,omitempty"`
+	Updates              []*SetConfigRequest_UpdateItem `protobuf:"bytes,2,rep,name=updates,proto3" json:"updates,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
 	XXX_unrecognized     []byte                         `json:"-"`
 	XXX_sizecache        int32                          `json:"-"`
@@ -348,7 +385,7 @@ func (m *SetConfigRequest) Reset()         { *m = SetConfigRequest{} }
 func (m *SetConfigRequest) String() string { return proto.CompactTextString(m) }
 func (*SetConfigRequest) ProtoMessage()    {}
 func (*SetConfigRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{5}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{6}
 }
 func (m *SetConfigRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetConfigRequest.Unmarshal(m, b)
@@ -375,9 +412,9 @@ func (m *SetConfigRequest) GetOptions() *SetConfigRequest_Options {
 	return nil
 }
 
-func (m *SetConfigRequest) GetUpdate() []*SetConfigRequest_UpdateItem {
+func (m *SetConfigRequest) GetUpdates() []*SetConfigRequest_UpdateItem {
 	if m != nil {
-		return m.Update
+		return m.Updates
 	}
 	return nil
 }
@@ -397,7 +434,7 @@ func (m *SetConfigRequest_Options) Reset()         { *m = SetConfigRequest_Optio
 func (m *SetConfigRequest_Options) String() string { return proto.CompactTextString(m) }
 func (*SetConfigRequest_Options) ProtoMessage()    {}
 func (*SetConfigRequest_Options) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{5, 0}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{6, 0}
 }
 func (m *SetConfigRequest_Options) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetConfigRequest_Options.Unmarshal(m, b)
@@ -440,7 +477,7 @@ func (m *SetConfigRequest_UpdateItem) Reset()         { *m = SetConfigRequest_Up
 func (m *SetConfigRequest_UpdateItem) String() string { return proto.CompactTextString(m) }
 func (*SetConfigRequest_UpdateItem) ProtoMessage()    {}
 func (*SetConfigRequest_UpdateItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{5, 1}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{6, 1}
 }
 func (m *SetConfigRequest_UpdateItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetConfigRequest_UpdateItem.Unmarshal(m, b)
@@ -489,7 +526,7 @@ func (m *SetConfigResponse) Reset()         { *m = SetConfigResponse{} }
 func (m *SetConfigResponse) String() string { return proto.CompactTextString(m) }
 func (*SetConfigResponse) ProtoMessage()    {}
 func (*SetConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{6}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{7}
 }
 func (m *SetConfigResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetConfigResponse.Unmarshal(m, b)
@@ -533,7 +570,7 @@ func (m *UpdateResult) Reset()         { *m = UpdateResult{} }
 func (m *UpdateResult) String() string { return proto.CompactTextString(m) }
 func (*UpdateResult) ProtoMessage()    {}
 func (*UpdateResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{7}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{8}
 }
 func (m *UpdateResult) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateResult.Unmarshal(m, b)
@@ -590,7 +627,7 @@ func (m *GetConfigRequest) Reset()         { *m = GetConfigRequest{} }
 func (m *GetConfigRequest) String() string { return proto.CompactTextString(m) }
 func (*GetConfigRequest) ProtoMessage()    {}
 func (*GetConfigRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{8}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{9}
 }
 func (m *GetConfigRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetConfigRequest.Unmarshal(m, b)
@@ -639,7 +676,7 @@ func (m *GetConfigResponse) Reset()         { *m = GetConfigResponse{} }
 func (m *GetConfigResponse) String() string { return proto.CompactTextString(m) }
 func (*GetConfigResponse) ProtoMessage()    {}
 func (*GetConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{9}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{10}
 }
 func (m *GetConfigResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetConfigResponse.Unmarshal(m, b)
@@ -683,7 +720,7 @@ func (m *GetConfigResponse_ConfigItem) Reset()         { *m = GetConfigResponse_
 func (m *GetConfigResponse_ConfigItem) String() string { return proto.CompactTextString(m) }
 func (*GetConfigResponse_ConfigItem) ProtoMessage()    {}
 func (*GetConfigResponse_ConfigItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{9, 0}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{10, 0}
 }
 func (m *GetConfigResponse_ConfigItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetConfigResponse_ConfigItem.Unmarshal(m, b)
@@ -740,7 +777,7 @@ func (m *DumpStateRequest) Reset()         { *m = DumpStateRequest{} }
 func (m *DumpStateRequest) String() string { return proto.CompactTextString(m) }
 func (*DumpStateRequest) ProtoMessage()    {}
 func (*DumpStateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{10}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{11}
 }
 func (m *DumpStateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DumpStateRequest.Unmarshal(m, b)
@@ -779,7 +816,7 @@ func (*DumpStateRequest) XXX_MessageName() string {
 }
 
 type DumpStateResponse struct {
-	State                []*DumpStateResponse_StateItem `protobuf:"bytes,1,rep,name=state,proto3" json:"state,omitempty"`
+	States               []*DumpStateResponse_StateItem `protobuf:"bytes,1,rep,name=states,proto3" json:"states,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
 	XXX_unrecognized     []byte                         `json:"-"`
 	XXX_sizecache        int32                          `json:"-"`
@@ -789,7 +826,7 @@ func (m *DumpStateResponse) Reset()         { *m = DumpStateResponse{} }
 func (m *DumpStateResponse) String() string { return proto.CompactTextString(m) }
 func (*DumpStateResponse) ProtoMessage()    {}
 func (*DumpStateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{11}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{12}
 }
 func (m *DumpStateResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DumpStateResponse.Unmarshal(m, b)
@@ -809,9 +846,9 @@ func (m *DumpStateResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DumpStateResponse proto.InternalMessageInfo
 
-func (m *DumpStateResponse) GetState() []*DumpStateResponse_StateItem {
+func (m *DumpStateResponse) GetStates() []*DumpStateResponse_StateItem {
 	if m != nil {
-		return m.State
+		return m.States
 	}
 	return nil
 }
@@ -832,7 +869,7 @@ func (m *DumpStateResponse_StateItem) Reset()         { *m = DumpStateResponse_S
 func (m *DumpStateResponse_StateItem) String() string { return proto.CompactTextString(m) }
 func (*DumpStateResponse_StateItem) ProtoMessage()    {}
 func (*DumpStateResponse_StateItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{11, 0}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{12, 0}
 }
 func (m *DumpStateResponse_StateItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DumpStateResponse_StateItem.Unmarshal(m, b)
@@ -880,7 +917,7 @@ func (m *SubscribeRequest) Reset()         { *m = SubscribeRequest{} }
 func (m *SubscribeRequest) String() string { return proto.CompactTextString(m) }
 func (*SubscribeRequest) ProtoMessage()    {}
 func (*SubscribeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{12}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{13}
 }
 func (m *SubscribeRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SubscribeRequest.Unmarshal(m, b)
@@ -914,7 +951,7 @@ func (m *SubscribeResponse) Reset()         { *m = SubscribeResponse{} }
 func (m *SubscribeResponse) String() string { return proto.CompactTextString(m) }
 func (*SubscribeResponse) ProtoMessage()    {}
 func (*SubscribeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_api_480ebd8dbd840bdf, []int{13}
+	return fileDescriptor_api_575ebe8f8c580f38, []int{14}
 }
 func (m *SubscribeResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SubscribeResponse.Unmarshal(m, b)
@@ -939,11 +976,12 @@ func (*SubscribeResponse) XXX_MessageName() string {
 }
 func init() {
 	proto.RegisterType((*Item)(nil), "api.Item")
+	proto.RegisterType((*Value)(nil), "api.Value")
 	proto.RegisterType((*ItemStatus)(nil), "api.ItemStatus")
 	proto.RegisterType((*ListCapabilitiesRequest)(nil), "api.ListCapabilitiesRequest")
 	proto.RegisterType((*ListCapabilitiesResponse)(nil), "api.ListCapabilitiesResponse")
-	proto.RegisterType((*Model)(nil), "api.Model")
-	proto.RegisterMapType((map[string]string)(nil), "api.Model.MetaEntry")
+	proto.RegisterType((*ModelSpec)(nil), "api.ModelSpec")
+	proto.RegisterMapType((map[string]string)(nil), "api.ModelSpec.MetaEntry")
 	proto.RegisterType((*SetConfigRequest)(nil), "api.SetConfigRequest")
 	proto.RegisterType((*SetConfigRequest_Options)(nil), "api.SetConfigRequest.Options")
 	proto.RegisterType((*SetConfigRequest_UpdateItem)(nil), "api.SetConfigRequest.UpdateItem")
@@ -972,67 +1010,67 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// ConfiguratorClient is the client API for Configurator service.
+// GenericConfiguratorClient is the client API for GenericConfigurator service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type ConfiguratorClient interface {
+type GenericConfiguratorClient interface {
 	ListCapabilities(ctx context.Context, in *ListCapabilitiesRequest, opts ...grpc.CallOption) (*ListCapabilitiesResponse, error)
 	SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error)
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error)
 	DumpState(ctx context.Context, in *DumpStateRequest, opts ...grpc.CallOption) (*DumpStateResponse, error)
-	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Configurator_SubscribeClient, error)
+	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (GenericConfigurator_SubscribeClient, error)
 }
 
-type configuratorClient struct {
+type genericConfiguratorClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewConfiguratorClient(cc *grpc.ClientConn) ConfiguratorClient {
-	return &configuratorClient{cc}
+func NewGenericConfiguratorClient(cc *grpc.ClientConn) GenericConfiguratorClient {
+	return &genericConfiguratorClient{cc}
 }
 
-func (c *configuratorClient) ListCapabilities(ctx context.Context, in *ListCapabilitiesRequest, opts ...grpc.CallOption) (*ListCapabilitiesResponse, error) {
+func (c *genericConfiguratorClient) ListCapabilities(ctx context.Context, in *ListCapabilitiesRequest, opts ...grpc.CallOption) (*ListCapabilitiesResponse, error) {
 	out := new(ListCapabilitiesResponse)
-	err := c.cc.Invoke(ctx, "/api.Configurator/ListCapabilities", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.GenericConfigurator/ListCapabilities", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error) {
+func (c *genericConfiguratorClient) SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error) {
 	out := new(SetConfigResponse)
-	err := c.cc.Invoke(ctx, "/api.Configurator/SetConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.GenericConfigurator/SetConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error) {
+func (c *genericConfiguratorClient) GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*GetConfigResponse, error) {
 	out := new(GetConfigResponse)
-	err := c.cc.Invoke(ctx, "/api.Configurator/GetConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.GenericConfigurator/GetConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) DumpState(ctx context.Context, in *DumpStateRequest, opts ...grpc.CallOption) (*DumpStateResponse, error) {
+func (c *genericConfiguratorClient) DumpState(ctx context.Context, in *DumpStateRequest, opts ...grpc.CallOption) (*DumpStateResponse, error) {
 	out := new(DumpStateResponse)
-	err := c.cc.Invoke(ctx, "/api.Configurator/DumpState", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.GenericConfigurator/DumpState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configuratorClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Configurator_SubscribeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Configurator_serviceDesc.Streams[0], "/api.Configurator/Subscribe", opts...)
+func (c *genericConfiguratorClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (GenericConfigurator_SubscribeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_GenericConfigurator_serviceDesc.Streams[0], "/api.GenericConfigurator/Subscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &configuratorSubscribeClient{stream}
+	x := &genericConfiguratorSubscribeClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1042,16 +1080,16 @@ func (c *configuratorClient) Subscribe(ctx context.Context, in *SubscribeRequest
 	return x, nil
 }
 
-type Configurator_SubscribeClient interface {
+type GenericConfigurator_SubscribeClient interface {
 	Recv() (*SubscribeResponse, error)
 	grpc.ClientStream
 }
 
-type configuratorSubscribeClient struct {
+type genericConfiguratorSubscribeClient struct {
 	grpc.ClientStream
 }
 
-func (x *configuratorSubscribeClient) Recv() (*SubscribeResponse, error) {
+func (x *genericConfiguratorSubscribeClient) Recv() (*SubscribeResponse, error) {
 	m := new(SubscribeResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -1059,205 +1097,207 @@ func (x *configuratorSubscribeClient) Recv() (*SubscribeResponse, error) {
 	return m, nil
 }
 
-// ConfiguratorServer is the server API for Configurator service.
-type ConfiguratorServer interface {
+// GenericConfiguratorServer is the server API for GenericConfigurator service.
+type GenericConfiguratorServer interface {
 	ListCapabilities(context.Context, *ListCapabilitiesRequest) (*ListCapabilitiesResponse, error)
 	SetConfig(context.Context, *SetConfigRequest) (*SetConfigResponse, error)
 	GetConfig(context.Context, *GetConfigRequest) (*GetConfigResponse, error)
 	DumpState(context.Context, *DumpStateRequest) (*DumpStateResponse, error)
-	Subscribe(*SubscribeRequest, Configurator_SubscribeServer) error
+	Subscribe(*SubscribeRequest, GenericConfigurator_SubscribeServer) error
 }
 
-func RegisterConfiguratorServer(s *grpc.Server, srv ConfiguratorServer) {
-	s.RegisterService(&_Configurator_serviceDesc, srv)
+func RegisterGenericConfiguratorServer(s *grpc.Server, srv GenericConfiguratorServer) {
+	s.RegisterService(&_GenericConfigurator_serviceDesc, srv)
 }
 
-func _Configurator_ListCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GenericConfigurator_ListCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListCapabilitiesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).ListCapabilities(ctx, in)
+		return srv.(GenericConfiguratorServer).ListCapabilities(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.Configurator/ListCapabilities",
+		FullMethod: "/api.GenericConfigurator/ListCapabilities",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).ListCapabilities(ctx, req.(*ListCapabilitiesRequest))
+		return srv.(GenericConfiguratorServer).ListCapabilities(ctx, req.(*ListCapabilitiesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_SetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GenericConfigurator_SetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).SetConfig(ctx, in)
+		return srv.(GenericConfiguratorServer).SetConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.Configurator/SetConfig",
+		FullMethod: "/api.GenericConfigurator/SetConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).SetConfig(ctx, req.(*SetConfigRequest))
+		return srv.(GenericConfiguratorServer).SetConfig(ctx, req.(*SetConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GenericConfigurator_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).GetConfig(ctx, in)
+		return srv.(GenericConfiguratorServer).GetConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.Configurator/GetConfig",
+		FullMethod: "/api.GenericConfigurator/GetConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).GetConfig(ctx, req.(*GetConfigRequest))
+		return srv.(GenericConfiguratorServer).GetConfig(ctx, req.(*GetConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_DumpState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GenericConfigurator_DumpState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DumpStateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfiguratorServer).DumpState(ctx, in)
+		return srv.(GenericConfiguratorServer).DumpState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.Configurator/DumpState",
+		FullMethod: "/api.GenericConfigurator/DumpState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfiguratorServer).DumpState(ctx, req.(*DumpStateRequest))
+		return srv.(GenericConfiguratorServer).DumpState(ctx, req.(*DumpStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Configurator_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _GenericConfigurator_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(SubscribeRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ConfiguratorServer).Subscribe(m, &configuratorSubscribeServer{stream})
+	return srv.(GenericConfiguratorServer).Subscribe(m, &genericConfiguratorSubscribeServer{stream})
 }
 
-type Configurator_SubscribeServer interface {
+type GenericConfigurator_SubscribeServer interface {
 	Send(*SubscribeResponse) error
 	grpc.ServerStream
 }
 
-type configuratorSubscribeServer struct {
+type genericConfiguratorSubscribeServer struct {
 	grpc.ServerStream
 }
 
-func (x *configuratorSubscribeServer) Send(m *SubscribeResponse) error {
+func (x *genericConfiguratorSubscribeServer) Send(m *SubscribeResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-var _Configurator_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "api.Configurator",
-	HandlerType: (*ConfiguratorServer)(nil),
+var _GenericConfigurator_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "api.GenericConfigurator",
+	HandlerType: (*GenericConfiguratorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "ListCapabilities",
-			Handler:    _Configurator_ListCapabilities_Handler,
+			Handler:    _GenericConfigurator_ListCapabilities_Handler,
 		},
 		{
 			MethodName: "SetConfig",
-			Handler:    _Configurator_SetConfig_Handler,
+			Handler:    _GenericConfigurator_SetConfig_Handler,
 		},
 		{
 			MethodName: "GetConfig",
-			Handler:    _Configurator_GetConfig_Handler,
+			Handler:    _GenericConfigurator_GetConfig_Handler,
 		},
 		{
 			MethodName: "DumpState",
-			Handler:    _Configurator_DumpState_Handler,
+			Handler:    _GenericConfigurator_DumpState_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Subscribe",
-			Handler:       _Configurator_Subscribe_Handler,
+			Handler:       _GenericConfigurator_Subscribe_Handler,
 			ServerStreams: true,
 		},
 	},
 	Metadata: "api.proto",
 }
 
-func init() { proto.RegisterFile("api.proto", fileDescriptor_api_480ebd8dbd840bdf) }
+func init() { proto.RegisterFile("api.proto", fileDescriptor_api_575ebe8f8c580f38) }
 
-var fileDescriptor_api_480ebd8dbd840bdf = []byte{
-	// 949 bytes of a gzipped FileDescriptorProto
+var fileDescriptor_api_575ebe8f8c580f38 = []byte{
+	// 980 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xdd, 0x8e, 0xdb, 0x44,
-	0x14, 0x8e, 0x9d, 0xbf, 0xfa, 0x64, 0xdb, 0x3a, 0xc3, 0xb6, 0xa4, 0x86, 0x85, 0xad, 0x25, 0x60,
-	0xa5, 0x65, 0x1d, 0x14, 0x24, 0xb6, 0xfc, 0x08, 0x6d, 0xd8, 0xb8, 0x51, 0x68, 0x36, 0x1b, 0x66,
-	0x77, 0x8b, 0xc4, 0x0d, 0x9a, 0xec, 0x4e, 0x83, 0xd5, 0xd8, 0x63, 0xec, 0x71, 0xa4, 0x5c, 0xf2,
-	0x30, 0x5c, 0x20, 0x71, 0x81, 0xc4, 0x0d, 0x8f, 0xc0, 0x13, 0xc0, 0x05, 0x97, 0xbc, 0x08, 0x9a,
-	0x19, 0xdb, 0x09, 0x4e, 0xaa, 0x50, 0xd4, 0xab, 0x9c, 0x9f, 0xef, 0xcc, 0x39, 0xf3, 0xcd, 0x39,
-	0x27, 0x06, 0x83, 0x84, 0x9e, 0x13, 0x46, 0x8c, 0x33, 0x54, 0x26, 0xa1, 0x67, 0x1d, 0x4d, 0x3d,
-	0xfe, 0x5d, 0x32, 0x71, 0xae, 0x99, 0xdf, 0x9e, 0xb2, 0x29, 0x6b, 0x4b, 0xdf, 0x24, 0x79, 0x26,
-	0x35, 0xa9, 0x48, 0x49, 0xc5, 0x58, 0x0f, 0xa6, 0x8c, 0x4d, 0x67, 0x74, 0x89, 0x22, 0xc1, 0x42,
-	0xb9, 0xec, 0x13, 0xa8, 0x0c, 0x38, 0xf5, 0x91, 0x09, 0xe5, 0xe7, 0x74, 0xd1, 0xd2, 0xf6, 0xb5,
-	0x03, 0x03, 0x0b, 0x11, 0xbd, 0x0b, 0xe5, 0x39, 0x99, 0xb5, 0xf4, 0x7d, 0xed, 0xa0, 0xd1, 0xd9,
-	0x75, 0xd4, 0x11, 0x4e, 0x76, 0x84, 0xd3, 0x0d, 0x16, 0x58, 0x00, 0xec, 0x9f, 0x34, 0x00, 0x71,
-	0xc4, 0x05, 0x27, 0x3c, 0x89, 0xd1, 0x21, 0x54, 0x63, 0x4e, 0x38, 0x95, 0x47, 0xdd, 0xe9, 0xdc,
-	0x73, 0x44, 0xe9, 0x4b, 0xbf, 0x23, 0x7e, 0x28, 0x56, 0x18, 0xd4, 0x82, 0xba, 0x4f, 0xe3, 0x98,
-	0x4c, 0xa9, 0xcc, 0x63, 0xe0, 0x4c, 0xb5, 0x2f, 0xa1, 0x2a, 0x91, 0xa8, 0x01, 0xf5, 0xab, 0xd1,
-	0x93, 0xd1, 0xf9, 0xd7, 0x23, 0xb3, 0x24, 0x94, 0xb1, 0x3b, 0xea, 0x0d, 0x46, 0x7d, 0x53, 0x13,
-	0x4a, 0x77, 0x3c, 0x1e, 0x0e, 0xdc, 0x9e, 0xa9, 0x0b, 0x65, 0x30, 0x7a, 0xda, 0x1d, 0x0e, 0x7a,
-	0x66, 0x19, 0x01, 0xd4, 0x1e, 0x77, 0x07, 0x43, 0xb7, 0x67, 0x56, 0x84, 0x03, 0xbb, 0x67, 0xe7,
-	0x4f, 0xdd, 0x9e, 0x59, 0xb5, 0x1f, 0xc0, 0xeb, 0x43, 0x2f, 0xe6, 0xa7, 0x24, 0x24, 0x13, 0x6f,
-	0xe6, 0x71, 0x8f, 0xc6, 0x98, 0x7e, 0x9f, 0xd0, 0x98, 0xdb, 0x4f, 0xa0, 0xb5, 0xee, 0x8a, 0x43,
-	0x16, 0xc4, 0x14, 0xb5, 0xe1, 0x36, 0xb9, 0xe6, 0xde, 0x9c, 0x7e, 0xeb, 0xb3, 0x1b, 0x3a, 0x8b,
-	0x5b, 0xda, 0x7e, 0xf9, 0xa0, 0xd1, 0x01, 0x79, 0xb7, 0x33, 0x61, 0xc2, 0x3b, 0x0a, 0x20, 0x95,
-	0xd8, 0xfe, 0x45, 0x83, 0xaa, 0x14, 0x11, 0x82, 0x4a, 0x40, 0x7c, 0x9a, 0x12, 0x2b, 0x65, 0x71,
-	0xeb, 0x39, 0x8d, 0x62, 0x8f, 0x05, 0xd9, 0xad, 0x53, 0x15, 0xdd, 0x87, 0x9a, 0xcf, 0x6e, 0x92,
-	0x19, 0x6d, 0x95, 0xa5, 0x23, 0xd5, 0xd0, 0x01, 0x54, 0x7c, 0xca, 0x49, 0xab, 0x2a, 0xf3, 0xee,
-	0x2e, 0xf3, 0x3a, 0x67, 0x94, 0x13, 0x37, 0xe0, 0xd1, 0x02, 0x4b, 0x84, 0x75, 0x0c, 0x46, 0x6e,
-	0xda, 0xf0, 0xa8, 0xbb, 0x50, 0x9d, 0x93, 0x59, 0x92, 0xd1, 0xad, 0x94, 0x4f, 0xf4, 0x47, 0x9a,
-	0xfd, 0xa7, 0x0e, 0xe6, 0x05, 0xe5, 0xa7, 0x2c, 0x78, 0xe6, 0x4d, 0x53, 0x52, 0xd0, 0x31, 0xd4,
-	0x59, 0xc8, 0x3d, 0x16, 0xc4, 0xf2, 0x90, 0x46, 0x67, 0x4f, 0xa6, 0x2e, 0xe2, 0x9c, 0x73, 0x05,
-	0xc2, 0x19, 0x1a, 0x3d, 0x82, 0x5a, 0x12, 0xde, 0x88, 0x36, 0xd0, 0x65, 0xc9, 0xfb, 0x9b, 0xe3,
-	0xae, 0x24, 0x46, 0x74, 0x07, 0x4e, 0xf1, 0xd6, 0x43, 0xa8, 0xa7, 0xa7, 0x09, 0x36, 0x22, 0x1a,
-	0x2f, 0x82, 0x6b, 0x99, 0xfc, 0x16, 0x4e, 0x35, 0xeb, 0x67, 0x0d, 0x60, 0x19, 0x89, 0xf6, 0xa0,
-	0xe2, 0x71, 0xea, 0xa7, 0x15, 0x1a, 0x79, 0xc3, 0x61, 0x69, 0x46, 0x3d, 0xa8, 0xcd, 0xc8, 0x44,
-	0xbc, 0x9a, 0x2a, 0xe5, 0xfd, 0x6d, 0xa5, 0x38, 0x43, 0x09, 0x57, 0xac, 0xa6, 0xb1, 0xd6, 0xc7,
-	0xd0, 0x58, 0x31, 0xbf, 0x14, 0xb3, 0x27, 0xd0, 0x5c, 0xc9, 0x96, 0xb6, 0xd4, 0x21, 0xd4, 0x23,
-	0x1a, 0x27, 0x33, 0x9e, 0x35, 0x53, 0x53, 0x96, 0xa5, 0xaa, 0xc0, 0xd2, 0x83, 0x33, 0x84, 0xfd,
-	0x9b, 0x06, 0x3b, 0xab, 0x9e, 0x0d, 0xe9, 0xdf, 0x83, 0x5a, 0x2c, 0x07, 0x2c, 0x1d, 0xd8, 0xbb,
-	0x85, 0xb9, 0xc3, 0xa9, 0x1b, 0x1d, 0x82, 0xce, 0x42, 0xd9, 0x5e, 0x77, 0x3a, 0x6f, 0xac, 0xe5,
-	0x74, 0xce, 0x43, 0x1a, 0x11, 0x41, 0x3f, 0xd6, 0x59, 0x68, 0x9f, 0x80, 0x91, 0x1b, 0xd0, 0x5d,
-	0x68, 0x5c, 0x8d, 0x2e, 0xc6, 0xee, 0xe9, 0xe0, 0xb1, 0x98, 0xb9, 0x92, 0x18, 0xb3, 0x53, 0xec,
-	0x76, 0x2f, 0x5d, 0x53, 0x13, 0xf2, 0xd5, 0xb8, 0x27, 0x64, 0x5d, 0xc8, 0x3d, 0x77, 0xe8, 0x5e,
-	0xba, 0x66, 0xd9, 0x3e, 0x01, 0xb3, 0x5f, 0xec, 0x2a, 0x04, 0x95, 0xe7, 0x74, 0xa1, 0x2e, 0x6e,
-	0x60, 0x29, 0xcb, 0x4d, 0x20, 0x7b, 0x5d, 0x3d, 0x93, 0xd8, 0x04, 0x4a, 0xb5, 0x7f, 0xd4, 0xa1,
-	0xd9, 0x5f, 0xe3, 0xef, 0x18, 0xaa, 0xe2, 0x75, 0x33, 0xf6, 0x1e, 0xca, 0x9b, 0xac, 0xc1, 0x1c,
-	0xa5, 0xca, 0x6e, 0x50, 0x78, 0xeb, 0x0f, 0x0d, 0x60, 0x69, 0xdd, 0xd6, 0x3c, 0xff, 0x99, 0x56,
-	0x37, 0xef, 0xb2, 0xb2, 0x2c, 0xe8, 0x68, 0x6b, 0x41, 0xaf, 0xbe, 0xcd, 0xcc, 0x5e, 0xe2, 0x87,
-	0x6a, 0xbf, 0xfe, 0x2f, 0xa6, 0x7f, 0xd0, 0xa1, 0xb9, 0x72, 0x44, 0xca, 0xf4, 0x47, 0xcb, 0x85,
-	0xbe, 0x9c, 0xe4, 0x35, 0x98, 0xda, 0xeb, 0x8a, 0x68, 0x09, 0xb7, 0x7e, 0xd5, 0xc0, 0xc8, 0x8d,
-	0xdb, 0x78, 0xfe, 0x12, 0x6e, 0x89, 0xf5, 0x75, 0x43, 0x38, 0x49, 0xc7, 0xd4, 0xd9, 0x96, 0x47,
-	0xae, 0x3e, 0x11, 0xa0, 0x18, 0xcc, 0xe3, 0xad, 0x4f, 0xe1, 0xf6, 0xbf, 0x5c, 0x2f, 0xc5, 0x22,
-	0x02, 0xf3, 0x22, 0x99, 0xc4, 0xd7, 0x91, 0x37, 0xc9, 0x58, 0xb4, 0x5f, 0x83, 0xe6, 0x8a, 0x4d,
-	0xd5, 0xd1, 0xf9, 0x4b, 0x87, 0x1d, 0xf5, 0x98, 0x49, 0x44, 0x38, 0x8b, 0xd0, 0x57, 0x60, 0x16,
-	0xff, 0x40, 0xd0, 0x9b, 0xf2, 0x12, 0x2f, 0xf8, 0xcb, 0xb1, 0xf6, 0x5e, 0xe0, 0x55, 0x19, 0xec,
-	0x12, 0xfa, 0x0c, 0x8c, 0x7c, 0x73, 0xa0, 0x7b, 0x1b, 0xf7, 0x96, 0x75, 0xbf, 0x68, 0x5e, 0x8d,
-	0xee, 0x17, 0xa2, 0xfb, 0x9b, 0xa3, 0xfb, 0x9b, 0xa3, 0x73, 0xf2, 0xd3, 0xe8, 0x62, 0x7b, 0xa5,
-	0xd1, 0x6b, 0x6f, 0x64, 0x97, 0xd0, 0xe7, 0x60, 0xe4, 0x94, 0x65, 0x95, 0x17, 0x68, 0xcd, 0x2a,
-	0x2f, 0x32, 0x6b, 0x97, 0x3e, 0xd0, 0xbe, 0x78, 0xe7, 0xf7, 0xbf, 0xdf, 0xd2, 0xbe, 0x79, 0x7b,
-	0xe5, 0x33, 0x67, 0xe6, 0x4d, 0x09, 0x67, 0xed, 0x79, 0x18, 0x1e, 0x91, 0x29, 0x0d, 0x78, 0x9b,
-	0x84, 0xde, 0xa4, 0x26, 0x3f, 0x47, 0x3e, 0xfc, 0x27, 0x00, 0x00, 0xff, 0xff, 0x1d, 0x85, 0x6d,
-	0xb8, 0x20, 0x09, 0x00, 0x00,
+	0x14, 0x5e, 0x3b, 0x7f, 0xf5, 0x49, 0xbb, 0x75, 0xa6, 0x3f, 0xa4, 0xa6, 0x0b, 0x5b, 0x4b, 0xc0,
+	0x4a, 0xdb, 0x75, 0x50, 0x2a, 0xb1, 0xa5, 0x20, 0xb4, 0x61, 0xe3, 0x46, 0x81, 0x6c, 0x12, 0x26,
+	0xbb, 0x8b, 0xc4, 0x0d, 0x9a, 0x64, 0xa7, 0xc1, 0x6a, 0x62, 0x1b, 0x7b, 0x1c, 0x29, 0xd7, 0x3c,
+	0x0b, 0x17, 0x48, 0xdc, 0x71, 0xc3, 0x23, 0xf0, 0x04, 0x48, 0xdc, 0xc2, 0x8b, 0xa0, 0xf9, 0xb1,
+	0x37, 0x75, 0x52, 0x85, 0xa2, 0x5e, 0xed, 0x9c, 0x73, 0xbe, 0xe3, 0x73, 0xe6, 0x3b, 0xdf, 0x9c,
+	0x0d, 0x18, 0x24, 0xf4, 0x9c, 0x30, 0x0a, 0x58, 0x80, 0x0a, 0x24, 0xf4, 0xac, 0xa3, 0xa9, 0xc7,
+	0x7e, 0x48, 0xc6, 0xce, 0x24, 0x98, 0x37, 0xa6, 0xc1, 0x34, 0x68, 0x88, 0xd8, 0x38, 0x79, 0x21,
+	0x2c, 0x61, 0x88, 0x93, 0xcc, 0xb1, 0x1e, 0x4c, 0x83, 0x60, 0x3a, 0xa3, 0xd7, 0x28, 0xe2, 0x2f,
+	0x65, 0xc8, 0xfe, 0x04, 0x8a, 0x5d, 0x46, 0xe7, 0xc8, 0x84, 0xc2, 0x4b, 0xba, 0xac, 0x6b, 0xfb,
+	0xda, 0x81, 0x81, 0xf9, 0x11, 0x3d, 0x84, 0xc2, 0x82, 0xcc, 0xea, 0xfa, 0xbe, 0x76, 0x50, 0x6d,
+	0x82, 0xc3, 0x3b, 0xb8, 0x24, 0xb3, 0x84, 0x62, 0xee, 0xb6, 0x1b, 0x50, 0x12, 0x16, 0xfa, 0x10,
+	0x0a, 0xc4, 0x97, 0x89, 0xd5, 0xe6, 0x5d, 0x47, 0x56, 0x72, 0xd2, 0x4a, 0x4e, 0xcb, 0x5f, 0x62,
+	0x0e, 0xb0, 0x7f, 0xd1, 0x00, 0x78, 0xa5, 0x11, 0x23, 0x2c, 0x89, 0xd1, 0x21, 0x94, 0x62, 0x46,
+	0x18, 0x15, 0x89, 0xbb, 0xcd, 0x7b, 0xe2, 0xfb, 0xd7, 0x71, 0x87, 0xff, 0xa1, 0x58, 0x62, 0x50,
+	0x1d, 0x2a, 0x73, 0x1a, 0xc7, 0x64, 0x4a, 0x45, 0x3b, 0x06, 0x4e, 0x4d, 0xfb, 0x1c, 0x4a, 0x02,
+	0x89, 0xaa, 0x50, 0xb9, 0xe8, 0x7f, 0xdd, 0x1f, 0x7c, 0xdb, 0x37, 0x77, 0xb8, 0x31, 0x74, 0xfb,
+	0xed, 0x6e, 0xbf, 0x63, 0x6a, 0xdc, 0x68, 0x0d, 0x87, 0xbd, 0xae, 0xdb, 0x36, 0x75, 0x6e, 0x74,
+	0xfb, 0x97, 0xad, 0x5e, 0xb7, 0x6d, 0x16, 0x10, 0x40, 0xf9, 0x79, 0xab, 0xdb, 0x73, 0xdb, 0x66,
+	0x91, 0x07, 0xb0, 0x7b, 0x36, 0xb8, 0x74, 0xdb, 0x66, 0xc9, 0x7e, 0x00, 0xef, 0xf4, 0xbc, 0x98,
+	0x9d, 0x92, 0x90, 0x8c, 0xbd, 0x99, 0xc7, 0x3c, 0x1a, 0x63, 0xfa, 0x63, 0x42, 0x63, 0x66, 0x0f,
+	0xa0, 0xbe, 0x1e, 0x8a, 0xc3, 0xc0, 0x8f, 0x29, 0x7a, 0x02, 0xb7, 0xc8, 0x84, 0x79, 0x0b, 0xfa,
+	0xfd, 0x3c, 0xb8, 0xa2, 0xb3, 0xb8, 0xae, 0xed, 0x17, 0x0e, 0xaa, 0xcd, 0x5d, 0x71, 0xb7, 0x33,
+	0xee, 0x1a, 0x85, 0x74, 0x82, 0x6f, 0x4a, 0x90, 0x70, 0xc4, 0xf6, 0xef, 0x1a, 0x18, 0x59, 0x0c,
+	0x21, 0x28, 0xfa, 0x64, 0x4e, 0xd5, 0x1c, 0xc4, 0x99, 0xdf, 0x7e, 0x41, 0xa3, 0xd8, 0x0b, 0xfc,
+	0xf4, 0xf6, 0xca, 0x44, 0xf7, 0xa1, 0x3c, 0x0f, 0xae, 0x92, 0x19, 0xad, 0x17, 0x44, 0x40, 0x59,
+	0xe8, 0x31, 0x14, 0xe7, 0x94, 0x91, 0x7a, 0x49, 0xd4, 0xaf, 0xbf, 0x5a, 0xdf, 0x39, 0xa3, 0x8c,
+	0xb8, 0x3e, 0x8b, 0x96, 0x58, 0xa0, 0xac, 0x63, 0x30, 0x32, 0xd7, 0x06, 0x1d, 0xdc, 0x85, 0xd2,
+	0x82, 0x4f, 0x5a, 0x15, 0x97, 0xc6, 0x33, 0xfd, 0xa9, 0x66, 0xff, 0xa5, 0x83, 0x39, 0xa2, 0xec,
+	0x34, 0xf0, 0x5f, 0x78, 0x53, 0x45, 0x10, 0x3a, 0x86, 0x4a, 0x10, 0x32, 0x2f, 0xf0, 0x63, 0xa5,
+	0x89, 0x3d, 0x51, 0x3e, 0x8f, 0x73, 0x06, 0x12, 0x84, 0x53, 0x34, 0x7a, 0x06, 0x95, 0x24, 0xbc,
+	0x22, 0x8c, 0xc6, 0x75, 0x5d, 0xf4, 0xbd, 0xbf, 0x39, 0xf1, 0x42, 0x80, 0xb8, 0x54, 0x70, 0x9a,
+	0x60, 0x3d, 0x82, 0x8a, 0xfa, 0x1e, 0xe7, 0x24, 0xa2, 0xf1, 0xd2, 0x9f, 0x88, 0xf2, 0x37, 0xb0,
+	0xb2, 0xac, 0x5f, 0x35, 0x80, 0xeb, 0x54, 0xb4, 0x07, 0x45, 0x8f, 0xd1, 0xb9, 0xea, 0xd1, 0xc8,
+	0xe4, 0x87, 0x85, 0x1b, 0xb5, 0xa1, 0x3c, 0x23, 0x63, 0x3e, 0x43, 0xd9, 0xcb, 0xe3, 0x6d, 0xbd,
+	0x38, 0x3d, 0x01, 0x97, 0xbc, 0xaa, 0x5c, 0xeb, 0x53, 0xa8, 0xae, 0xb8, 0xdf, 0x88, 0xdb, 0x13,
+	0xa8, 0xad, 0x54, 0x53, 0x02, 0x3b, 0x84, 0x4a, 0x44, 0xe3, 0x64, 0xc6, 0x52, 0x69, 0xd5, 0x44,
+	0x5b, 0xb2, 0x0b, 0x2c, 0x22, 0x38, 0x45, 0x70, 0x61, 0xdd, 0x5c, 0x8d, 0x6c, 0x28, 0xff, 0x11,
+	0x94, 0x63, 0xf1, 0xdc, 0xd4, 0x2b, 0xbf, 0x9d, 0x7b, 0x85, 0x58, 0x85, 0xd1, 0x21, 0xe8, 0x41,
+	0x28, 0x44, 0xb6, 0xdb, 0x7c, 0x77, 0xad, 0xa6, 0x33, 0x08, 0x69, 0x44, 0x38, 0xfd, 0x58, 0x0f,
+	0x42, 0xfb, 0x04, 0x8c, 0xcc, 0x81, 0x6e, 0x43, 0xf5, 0xa2, 0x3f, 0x1a, 0xba, 0xa7, 0xdd, 0xe7,
+	0xfc, 0x05, 0xee, 0xf0, 0x47, 0x77, 0x8a, 0xdd, 0xd6, 0xb9, 0x6b, 0x6a, 0xfc, 0x7c, 0x31, 0x6c,
+	0xf3, 0xb3, 0xce, 0xcf, 0x6d, 0xb7, 0xe7, 0x9e, 0xbb, 0x66, 0xc1, 0x3e, 0x01, 0xb3, 0x93, 0xd7,
+	0x15, 0x82, 0xe2, 0x4b, 0xba, 0x94, 0x17, 0x37, 0xb0, 0x38, 0x8b, 0xbd, 0x20, 0x14, 0x2f, 0xc7,
+	0xc4, 0xf7, 0x82, 0x34, 0xed, 0x9f, 0x75, 0xa8, 0x75, 0xd6, 0xf8, 0x3b, 0x86, 0x12, 0x9f, 0x6e,
+	0xca, 0xde, 0x23, 0x71, 0x93, 0x35, 0x98, 0x23, 0x4d, 0xa1, 0x06, 0x89, 0xb7, 0xfe, 0xd4, 0x00,
+	0xae, 0xbd, 0xdb, 0xc4, 0xf3, 0x9f, 0x69, 0x75, 0x33, 0x95, 0x15, 0x44, 0x43, 0x47, 0x5b, 0x1b,
+	0x7a, 0xfb, 0x32, 0x33, 0xdb, 0xc9, 0x3c, 0x94, 0xdb, 0xf6, 0x7f, 0x31, 0xfd, 0x93, 0x0e, 0xb5,
+	0x95, 0x4f, 0x28, 0xa6, 0x9f, 0x4a, 0x0a, 0x68, 0x4a, 0xb5, 0x7c, 0xcb, 0x6b, 0x38, 0xb9, 0xe6,
+	0x05, 0x75, 0x0a, 0x6f, 0xfd, 0xa6, 0x81, 0x91, 0x79, 0xb7, 0x31, 0xfd, 0x15, 0xdc, 0xe0, 0x2b,
+	0xec, 0x8a, 0x30, 0xa2, 0x1e, 0xaa, 0xb3, 0xad, 0x90, 0x58, 0x7f, 0x3c, 0x41, 0x72, 0x98, 0xe5,
+	0x5b, 0x9f, 0xc1, 0xad, 0x57, 0x42, 0x6f, 0xc4, 0x23, 0x02, 0x73, 0x94, 0x8c, 0xe3, 0x49, 0xe4,
+	0x8d, 0x53, 0x1e, 0xed, 0x3b, 0x50, 0x5b, 0xf1, 0xc9, 0x3e, 0x9a, 0x7f, 0xeb, 0x70, 0xa7, 0x43,
+	0x7d, 0x1a, 0x79, 0x13, 0x39, 0xd5, 0x24, 0x22, 0x2c, 0x88, 0xd0, 0x37, 0x60, 0xe6, 0xff, 0xaf,
+	0xa0, 0x87, 0xe2, 0x2e, 0xaf, 0xf9, 0x4f, 0x64, 0xed, 0xbd, 0x26, 0x2a, 0x0b, 0xd9, 0x3b, 0xe8,
+	0x73, 0x30, 0xb2, 0x15, 0x82, 0xee, 0x6d, 0x5c, 0x60, 0xd6, 0xfd, 0xbc, 0x7b, 0x35, 0xbb, 0x93,
+	0xcb, 0xee, 0x6c, 0xce, 0xee, 0x6c, 0xce, 0xce, 0x66, 0xa0, 0xb2, 0xf3, 0x3a, 0x53, 0xd9, 0x6b,
+	0xa3, 0xb2, 0x77, 0xd0, 0x17, 0x60, 0x64, 0xcc, 0xa5, 0x9d, 0xe7, 0xd8, 0x4d, 0x3b, 0xcf, 0x13,
+	0x6c, 0xef, 0x7c, 0xac, 0x7d, 0xf9, 0xc1, 0x1f, 0xff, 0xbc, 0xa7, 0x7d, 0xf7, 0xfe, 0xca, 0x8f,
+	0xa4, 0x99, 0x37, 0x25, 0x2c, 0x68, 0x2c, 0xc2, 0xf0, 0x88, 0x4c, 0xa9, 0xcf, 0x1a, 0x24, 0xf4,
+	0xc6, 0x65, 0xf1, 0x2b, 0xe5, 0xc9, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xbb, 0xb1, 0x98, 0x90,
+	0x5e, 0x09, 0x00, 0x00,
 }

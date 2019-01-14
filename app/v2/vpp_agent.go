@@ -27,8 +27,8 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
-	"github.com/ligato/vpp-agent/plugins/datasyncer"
 
+	"github.com/ligato/vpp-agent/plugins/dataconfigurator"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
@@ -62,10 +62,10 @@ type VPPAgent struct {
 	VPP
 	Linux
 
-	DataSyncer *datasyncer.Plugin
-	RESTAPI    *rest.Plugin
-	Probe      *probe.Plugin
-	Telemetry  *telemetry.Plugin
+	DataConfigurator *dataconfigurator.Plugin
+	RESTAPI          *rest.Plugin
+	Probe            *probe.Plugin
+	Telemetry        *telemetry.Plugin
 }
 
 // New creates new VPPAgent instance.
@@ -107,18 +107,18 @@ func New() *VPPAgent {
 	linux := defaultLinux()
 
 	return &VPPAgent{
-		LogManager:     &logmanager.DefaultPlugin,
-		Scheduler:      &kvscheduler.DefaultPlugin,
-		ETCDDataSync:   etcdDataSync,
-		ConsulDataSync: consulDataSync,
-		RedisDataSync:  redisDataSync,
-		Orchestrator:   &orchestrator.DefaultPlugin,
-		RESTAPI:        &rest.DefaultPlugin,
-		VPP:            vpp,
-		Linux:          linux,
-		DataSyncer:     &datasyncer.DefaultPlugin,
-		Probe:          &probe.DefaultPlugin,
-		Telemetry:      &telemetry.DefaultPlugin,
+		LogManager:       &logmanager.DefaultPlugin,
+		Scheduler:        &kvscheduler.DefaultPlugin,
+		ETCDDataSync:     etcdDataSync,
+		ConsulDataSync:   consulDataSync,
+		RedisDataSync:    redisDataSync,
+		Orchestrator:     &orchestrator.DefaultPlugin,
+		RESTAPI:          &rest.DefaultPlugin,
+		VPP:              vpp,
+		Linux:            linux,
+		DataConfigurator: &dataconfigurator.DefaultPlugin,
+		Probe:            &probe.DefaultPlugin,
+		Telemetry:        &telemetry.DefaultPlugin,
 	}
 }
 
