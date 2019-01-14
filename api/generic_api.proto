@@ -32,10 +32,23 @@ message ItemStatus {
 }
 
 service GenericConfigurator {
+    // ListCapabilities returns information about service capabilities
+    // including list of models supported by the server.
     rpc ListCapabilities (ListCapabilitiesRequest) returns (ListCapabilitiesResponse) {};
+
+    // SetConfig is used to set desired configuration.
+    // It returns status for items specified in the requests.
     rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {};
+
+    // GetConfig returns desired configuration with item statuses.
     rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {};
+
+    // DumpState retrieves the current running state.
+    // The returned items also contain extra metadata not defined in models.
     rpc DumpState (DumpStateRequest) returns (DumpStateResponse) {};
+
+    // Subscribe is used for subscribing to events.
+    // Notifications are returned by streaming updates.
     rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse) {};
 }
 
@@ -111,13 +124,21 @@ message DumpStateResponse {
 }
 
 message SubscribeRequest {
+    repeated Subscription subscriptions = 1;
+}
 
+message Subscription {
+    string key = 1;
 }
 
 message SubscribeResponse {
-
+    repeated Notification notifications = 1;
 }
 
+message Notification {
+    Item item = 1;
+    ItemStatus status = 2;
+}
 
 /*
 message Key {
