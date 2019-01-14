@@ -38,7 +38,7 @@ func (m *BridgeDomain) Reset()         { *m = BridgeDomain{} }
 func (m *BridgeDomain) String() string { return proto.CompactTextString(m) }
 func (*BridgeDomain) ProtoMessage()    {}
 func (*BridgeDomain) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bd_fd4ce95644b62327, []int{0}
+	return fileDescriptor_bd_75399151143ce65e, []int{0}
 }
 func (m *BridgeDomain) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BridgeDomain.Unmarshal(m, b)
@@ -138,7 +138,7 @@ func (m *BridgeDomain_Interface) Reset()         { *m = BridgeDomain_Interface{}
 func (m *BridgeDomain_Interface) String() string { return proto.CompactTextString(m) }
 func (*BridgeDomain_Interface) ProtoMessage()    {}
 func (*BridgeDomain_Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bd_fd4ce95644b62327, []int{0, 0}
+	return fileDescriptor_bd_75399151143ce65e, []int{0, 0}
 }
 func (m *BridgeDomain_Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BridgeDomain_Interface.Unmarshal(m, b)
@@ -195,7 +195,7 @@ func (m *BridgeDomain_ArpTerminationEntry) Reset()         { *m = BridgeDomain_A
 func (m *BridgeDomain_ArpTerminationEntry) String() string { return proto.CompactTextString(m) }
 func (*BridgeDomain_ArpTerminationEntry) ProtoMessage()    {}
 func (*BridgeDomain_ArpTerminationEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bd_fd4ce95644b62327, []int{0, 1}
+	return fileDescriptor_bd_75399151143ce65e, []int{0, 1}
 }
 func (m *BridgeDomain_ArpTerminationEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BridgeDomain_ArpTerminationEntry.Unmarshal(m, b)
@@ -238,9 +238,9 @@ func init() {
 	proto.RegisterType((*BridgeDomain_ArpTerminationEntry)(nil), "vpp.l2.BridgeDomain.ArpTerminationEntry")
 }
 
-func init() { proto.RegisterFile("vpp/l2/bd.proto", fileDescriptor_bd_fd4ce95644b62327) }
+func init() { proto.RegisterFile("vpp/l2/bd.proto", fileDescriptor_bd_75399151143ce65e) }
 
-var fileDescriptor_bd_fd4ce95644b62327 = []byte{
+var fileDescriptor_bd_75399151143ce65e = []byte{
 	// 452 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x52, 0x5d, 0x6f, 0xd3, 0x30,
 	0x14, 0x55, 0xf6, 0xd1, 0xd2, 0xbb, 0x8d, 0x09, 0x97, 0x69, 0xa1, 0x12, 0x53, 0xe1, 0x85, 0xbc,

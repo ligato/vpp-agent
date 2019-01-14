@@ -31,7 +31,7 @@ func (m *XConnectPair) Reset()         { *m = XConnectPair{} }
 func (m *XConnectPair) String() string { return proto.CompactTextString(m) }
 func (*XConnectPair) ProtoMessage()    {}
 func (*XConnectPair) Descriptor() ([]byte, []int) {
-	return fileDescriptor_xconnect_3b73eceaecfadcd2, []int{0}
+	return fileDescriptor_xconnect_d91de748770199b0, []int{0}
 }
 func (m *XConnectPair) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_XConnectPair.Unmarshal(m, b)
@@ -72,9 +72,9 @@ func init() {
 	proto.RegisterType((*XConnectPair)(nil), "vpp.l2.XConnectPair")
 }
 
-func init() { proto.RegisterFile("vpp/l2/xconnect.proto", fileDescriptor_xconnect_3b73eceaecfadcd2) }
+func init() { proto.RegisterFile("vpp/l2/xconnect.proto", fileDescriptor_xconnect_d91de748770199b0) }
 
-var fileDescriptor_xconnect_3b73eceaecfadcd2 = []byte{
+var fileDescriptor_xconnect_d91de748770199b0 = []byte{
 	// 206 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2d, 0x2b, 0x28, 0xd0,
 	0xcf, 0x31, 0xd2, 0xaf, 0x48, 0xce, 0xcf, 0xcb, 0x4b, 0x4d, 0x2e, 0xd1, 0x2b, 0x28, 0xca, 0x2f,

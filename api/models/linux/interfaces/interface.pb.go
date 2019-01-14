@@ -43,7 +43,7 @@ func (x Interface_Type) String() string {
 	return proto.EnumName(Interface_Type_name, int32(x))
 }
 func (Interface_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_d8fe09c8a07f0b72, []int{0, 0}
+	return fileDescriptor_interface_a05888f1c5963525, []int{0, 0}
 }
 
 type VethLink_ChecksumOffloading int32
@@ -69,7 +69,7 @@ func (x VethLink_ChecksumOffloading) String() string {
 	return proto.EnumName(VethLink_ChecksumOffloading_name, int32(x))
 }
 func (VethLink_ChecksumOffloading) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_d8fe09c8a07f0b72, []int{1, 0}
+	return fileDescriptor_interface_a05888f1c5963525, []int{1, 0}
 }
 
 type Interface struct {
@@ -94,7 +94,7 @@ func (m *Interface) Reset()         { *m = Interface{} }
 func (m *Interface) String() string { return proto.CompactTextString(m) }
 func (*Interface) ProtoMessage()    {}
 func (*Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_d8fe09c8a07f0b72, []int{0}
+	return fileDescriptor_interface_a05888f1c5963525, []int{0}
 }
 func (m *Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface.Unmarshal(m, b)
@@ -296,7 +296,7 @@ func (m *VethLink) Reset()         { *m = VethLink{} }
 func (m *VethLink) String() string { return proto.CompactTextString(m) }
 func (*VethLink) ProtoMessage()    {}
 func (*VethLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_d8fe09c8a07f0b72, []int{1}
+	return fileDescriptor_interface_a05888f1c5963525, []int{1}
 }
 func (m *VethLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VethLink.Unmarshal(m, b)
@@ -352,7 +352,7 @@ func (m *TapLink) Reset()         { *m = TapLink{} }
 func (m *TapLink) String() string { return proto.CompactTextString(m) }
 func (*TapLink) ProtoMessage()    {}
 func (*TapLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_d8fe09c8a07f0b72, []int{2}
+	return fileDescriptor_interface_a05888f1c5963525, []int{2}
 }
 func (m *TapLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TapLink.Unmarshal(m, b)
@@ -391,10 +391,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("linux/interfaces/interface.proto", fileDescriptor_interface_d8fe09c8a07f0b72)
+	proto.RegisterFile("linux/interfaces/interface.proto", fileDescriptor_interface_a05888f1c5963525)
 }
 
-var fileDescriptor_interface_d8fe09c8a07f0b72 = []byte{
+var fileDescriptor_interface_a05888f1c5963525 = []byte{
 	// 565 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x4d, 0x6f, 0x9b, 0x40,
 	0x10, 0x0d, 0x86, 0x26, 0xf6, 0xe4, 0xa3, 0x68, 0x95, 0x44, 0xc4, 0x52, 0x5b, 0x6a, 0xa9, 0x12,

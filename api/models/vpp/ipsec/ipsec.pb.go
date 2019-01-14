@@ -45,7 +45,7 @@ func (x SecurityPolicyDatabase_PolicyEntry_Action) String() string {
 	return proto.EnumName(SecurityPolicyDatabase_PolicyEntry_Action_name, int32(x))
 }
 func (SecurityPolicyDatabase_PolicyEntry_Action) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{0, 1, 0}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{0, 1, 0}
 }
 
 type SecurityAssociation_IPSecProtocol int32
@@ -68,7 +68,7 @@ func (x SecurityAssociation_IPSecProtocol) String() string {
 	return proto.EnumName(SecurityAssociation_IPSecProtocol_name, int32(x))
 }
 func (SecurityAssociation_IPSecProtocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{1, 0}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{1, 0}
 }
 
 type SecurityAssociation_CryptoAlg int32
@@ -97,7 +97,7 @@ func (x SecurityAssociation_CryptoAlg) String() string {
 	return proto.EnumName(SecurityAssociation_CryptoAlg_name, int32(x))
 }
 func (SecurityAssociation_CryptoAlg) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{1, 1}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{1, 1}
 }
 
 type SecurityAssociation_IntegAlg int32
@@ -135,7 +135,7 @@ func (x SecurityAssociation_IntegAlg) String() string {
 	return proto.EnumName(SecurityAssociation_IntegAlg_name, int32(x))
 }
 func (SecurityAssociation_IntegAlg) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{1, 2}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{1, 2}
 }
 
 // Security Policy Database (SPD)
@@ -152,7 +152,7 @@ func (m *SecurityPolicyDatabase) Reset()         { *m = SecurityPolicyDatabase{}
 func (m *SecurityPolicyDatabase) String() string { return proto.CompactTextString(m) }
 func (*SecurityPolicyDatabase) ProtoMessage()    {}
 func (*SecurityPolicyDatabase) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{0}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{0}
 }
 func (m *SecurityPolicyDatabase) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SecurityPolicyDatabase.Unmarshal(m, b)
@@ -208,7 +208,7 @@ func (m *SecurityPolicyDatabase_Interface) Reset()         { *m = SecurityPolicy
 func (m *SecurityPolicyDatabase_Interface) String() string { return proto.CompactTextString(m) }
 func (*SecurityPolicyDatabase_Interface) ProtoMessage()    {}
 func (*SecurityPolicyDatabase_Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{0, 0}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{0, 0}
 }
 func (m *SecurityPolicyDatabase_Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SecurityPolicyDatabase_Interface.Unmarshal(m, b)
@@ -262,7 +262,7 @@ func (m *SecurityPolicyDatabase_PolicyEntry) Reset()         { *m = SecurityPoli
 func (m *SecurityPolicyDatabase_PolicyEntry) String() string { return proto.CompactTextString(m) }
 func (*SecurityPolicyDatabase_PolicyEntry) ProtoMessage()    {}
 func (*SecurityPolicyDatabase_PolicyEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{0, 1}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{0, 1}
 }
 func (m *SecurityPolicyDatabase_PolicyEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SecurityPolicyDatabase_PolicyEntry.Unmarshal(m, b)
@@ -400,7 +400,7 @@ func (m *SecurityAssociation) Reset()         { *m = SecurityAssociation{} }
 func (m *SecurityAssociation) String() string { return proto.CompactTextString(m) }
 func (*SecurityAssociation) ProtoMessage()    {}
 func (*SecurityAssociation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ipsec_f7e24128d7b84eab, []int{1}
+	return fileDescriptor_ipsec_158bfa389894ab18, []int{1}
 }
 func (m *SecurityAssociation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SecurityAssociation.Unmarshal(m, b)
@@ -518,9 +518,9 @@ func init() {
 	proto.RegisterEnum("vpp.ipsec.SecurityAssociation_IntegAlg", SecurityAssociation_IntegAlg_name, SecurityAssociation_IntegAlg_value)
 }
 
-func init() { proto.RegisterFile("vpp/ipsec/ipsec.proto", fileDescriptor_ipsec_f7e24128d7b84eab) }
+func init() { proto.RegisterFile("vpp/ipsec/ipsec.proto", fileDescriptor_ipsec_158bfa389894ab18) }
 
-var fileDescriptor_ipsec_f7e24128d7b84eab = []byte{
+var fileDescriptor_ipsec_158bfa389894ab18 = []byte{
 	// 874 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0xcf, 0x6f, 0xe2, 0x46,
 	0x14, 0x8e, 0x21, 0x18, 0x78, 0x14, 0xe2, 0x4e, 0x7f, 0xb9, 0xa9, 0xda, 0x45, 0x1c, 0x5a, 0xd4,

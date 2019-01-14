@@ -23,13 +23,17 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/api/datasyncer"
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/client/remoteclient"
 )
 
 var (
@@ -42,12 +46,10 @@ var (
 var exampleFinished = make(chan struct{})
 
 func main() {
-	// Init close channel to stop the example.
-
-	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{}
+	ep.SetName("remote-client-example")
+	ep.Setup()
 
-	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
 		agent.QuitOnClose(exampleFinished),
@@ -55,38 +57,20 @@ func main() {
 	if err := a.Run(); err != nil {
 		log.Fatal()
 	}
-
-	// End when the localhost example is finished.
-	//go closeExample("localhost example finished", exampleFinished)
-
 }
-
-// Stop the agent with desired info message.
-/*func closeExample(message string, exampleFinished chan struct{}) {
-	time.Sleep(25 * time.Second)
-	logrus.DefaultLogger().Info(message)
-	close(exampleFinished)
-}*/
-
-/******************
- * Example plugin *
- ******************/
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
+	infra.PluginDeps
+
 	conn *grpc.ClientConn
 
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
 }
 
-// String returns plugin name
-func (plugin *ExamplePlugin) String() string {
-	return "grpc-config-example"
-}
-
 // Init initializes example plugin.
-func (plugin *ExamplePlugin) Init() (err error) {
+func (p *ExamplePlugin) Init() (err error) {
 	switch *socketType {
 	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
 	default:
@@ -94,7 +78,7 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	}
 
 	// Set up connection to the server.
-	plugin.conn, err = grpc.Dial("unix",
+	p.conn, err = grpc.Dial("unix",
 		grpc.WithInsecure(),
 		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
 	)
@@ -102,134 +86,29 @@ func (plugin *ExamplePlugin) Init() (err error) {
 		return err
 	}
 
-	go my(plugin.conn)
-
 	// Apply initial VPP configuration.
-	//plugin.resyncVPP()
+	p.resyncVPP()
 
 	// Schedule reconfiguration.
 	var ctx context.Context
-	ctx, plugin.cancel = context.WithCancel(context.Background())
+	ctx, p.cancel = context.WithCancel(context.Background())
 	_ = ctx
 	/*plugin.wg.Add(1)
 	go plugin.reconfigureVPP(ctx)*/
 
-	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
+	close(exampleFinished)
+
 	return nil
 }
 
-func my(conn *grpc.ClientConn) {
-	time.Sleep(time.Second)
-
-	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
-
-	req := c.ResyncRequest()
-	req.Put(memif1, memif2)
-	if err := req.Send(context.Background()); err != nil {
-		log.Fatalln(err)
-	}
-
-	time.Sleep(time.Second * 5)
-
-	req2 := c.ChangeRequest()
-	req2.Delete(memif1)
-	if err := req2.Send(context.Background()); err != nil {
-		log.Fatalln(err)
-	}
-
-	time.Sleep(time.Second)
-	close(exampleFinished)
-}
-
-var memif1 = &interfaces.Interface{
-	Name:        "memif1",
-	Enabled:     true,
-	IpAddresses: []string{"3.3.0.1/16"},
-	Type:        interfaces.Interface_MEMIF,
-	Link: &interfaces.Interface_Memif{
-		Memif: &interfaces.MemifLink{
-			Id:             1,
-			Master:         true,
-			Secret:         "secret",
-			SocketFilename: "/tmp/memif1.sock",
-		},
-	},
-}
-var memif2 = &interfaces.Interface{
-	Name:        "memif0/10",
-	Enabled:     true,
-	Type:        interfaces.Interface_SUB_INTERFACE,
-	IpAddresses: []string{"3.10.0.10/32"},
-	Link: &interfaces.Interface_Sub{
-		Sub: &interfaces.SubInterface{
-			ParentName: "memif1",
-			SubId:      10,
-		},
-	},
-}
-
-/*
-func my(conn *grpc.ClientConn) {
-	time.Sleep(time.Second)
-
-	anyMemif1, err := types.MarshalAny(memif1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	anyMemif2, err := types.MarshalAny(memif2)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	req := &api.ResyncRequest{}
-
-	req.Models = append(req.Models, &api.Model{
-		Key:   interfaces.InterfaceKey(memif1.Name),
-		Value: anyMemif1,
-	})
-	req.Models = append(req.Models, &api.Model{
-		Key:   interfaces.InterfaceKey(memif2.Name),
-		Value: anyMemif2,
-	})
-
-	c := api.NewModelServiceClient(conn)
-
-	t0 := time.Now()
-
-	resp, err := c.Resync(context.Background(), req)
-	if err != nil {
-		//s := status.Convert(err)
-		s, ok := status.FromError(err)
-		if !ok {
-			log.Fatal("not ok!!!!")
-		}
-		var details []string
-		for _, d := range s.Details() {
-			switch dd := d.(type) {
-			case *rpc.DebugInfo:
-				details = append(details, dd.Detail)
-			default:
-				details = append(details, fmt.Sprint(dd))
-			}
-		}
-		log.Printf("gRPC status: CODE: %v MSG: %v DETAILS: %v (%#v)",
-			s.Code(), s.Message(), details, s.Details())
-
-		log.Fatalf("RESYNC FAILED: %v", err)
-	}
-
-	log.Printf("Resync took %s, response:\n%+v",
-		time.Since(t0).Round(time.Millisecond), *resp)
-}
-*/
 // Close cleans up the resources.
-func (plugin *ExamplePlugin) Close() error {
+func (p *ExamplePlugin) Close() error {
 	logrus.DefaultLogger().Info("Closing example plugin")
 
-	plugin.cancel()
-	plugin.wg.Wait()
+	p.cancel()
+	p.wg.Wait()
 
-	if err := plugin.conn.Close(); err != nil {
+	if err := p.conn.Close(); err != nil {
 		return err
 	}
 
@@ -245,6 +124,74 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 		return net.DialTimeout(socket, addr, timeoutVal)
 	}
 }
+
+// resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
+func (p *ExamplePlugin) resyncVPP() {
+	client := datasyncer.NewDataSyncerClient(p.conn)
+
+	ctx := context.Background()
+
+	_, err := client.Resync(ctx, &datasyncer.DataRequest{
+		Vpp: &vpp.ConfigData{
+			Interfaces: []*interfaces.Interface{
+				memif1,
+			},
+			IpscanNeighbor: ipScanNeigh,
+		},
+		Linux: &linux.ConfigData{
+			Interfaces: []*linux_interfaces.Interface{
+				veth1, veth2,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+var (
+	memif1 = &vpp.Interface{
+		Name:        "memif1",
+		Enabled:     true,
+		IpAddresses: []string{"3.3.0.1/16"},
+		Type:        interfaces.Interface_MEMIF,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             1,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
+	}
+	ipScanNeigh = &vpp.IPScanNeigh{
+		Mode:         vpp_l3.IPScanNeighbor_IPv4,
+		ScanInterval: 33,
+	}
+	veth1 = &linux.Interface{
+		Name:        "myVETH1",
+		Type:        linux_interfaces.Interface_VETH,
+		Enabled:     true,
+		HostIfName:  "veth1",
+		IpAddresses: []string{"10.10.3.1/24"},
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{
+				PeerIfName: "myVETH2",
+			},
+		},
+	}
+	veth2 = &linux.Interface{
+		Name:       "myVETH2",
+		Type:       linux_interfaces.Interface_VETH,
+		Enabled:    true,
+		HostIfName: "veth2",
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{
+				PeerIfName: "myVETH1",
+			},
+		},
+	}
+)
 
 /*
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.

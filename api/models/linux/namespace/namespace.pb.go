@@ -48,7 +48,7 @@ func (x NetNamespace_ReferenceType) String() string {
 	return proto.EnumName(NetNamespace_ReferenceType_name, int32(x))
 }
 func (NetNamespace_ReferenceType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_namespace_b86b0a34b57a1354, []int{0, 0}
+	return fileDescriptor_namespace_c4f25aa9d672c156, []int{0, 0}
 }
 
 type NetNamespace struct {
@@ -69,7 +69,7 @@ func (m *NetNamespace) Reset()         { *m = NetNamespace{} }
 func (m *NetNamespace) String() string { return proto.CompactTextString(m) }
 func (*NetNamespace) ProtoMessage()    {}
 func (*NetNamespace) Descriptor() ([]byte, []int) {
-	return fileDescriptor_namespace_b86b0a34b57a1354, []int{0}
+	return fileDescriptor_namespace_c4f25aa9d672c156, []int{0}
 }
 func (m *NetNamespace) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NetNamespace.Unmarshal(m, b)
@@ -112,10 +112,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("linux/namespace/namespace.proto", fileDescriptor_namespace_b86b0a34b57a1354)
+	proto.RegisterFile("linux/namespace/namespace.proto", fileDescriptor_namespace_c4f25aa9d672c156)
 }
 
-var fileDescriptor_namespace_b86b0a34b57a1354 = []byte{
+var fileDescriptor_namespace_c4f25aa9d672c156 = []byte{
 	// 270 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0xcf, 0xc9, 0xcc, 0x2b,
 	0xad, 0xd0, 0xcf, 0x4b, 0xcc, 0x4d, 0x2d, 0x2e, 0x48, 0x4c, 0x4e, 0x45, 0xb0, 0xf4, 0x0a, 0x8a,

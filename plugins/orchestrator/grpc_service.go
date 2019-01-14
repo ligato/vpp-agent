@@ -15,19 +15,21 @@
 package orchestrator
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/status"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/api/models"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 type grpcService struct {
-	log logging.Logger
+	log  logging.Logger
+	orch *Plugin
 }
 
 // ListModules implements SyncServiceServer.
@@ -48,13 +50,11 @@ func (s *grpcService) Sync(ctx context.Context, req *api.SyncRequest) (*api.Sync
 	}
 	s.log.Debug("------------------------------")
 
-	// prepare a transaction
-	var txn keyval.ProtoTxn
 	if req.GetOptions().GetResync() {
-		txn = local.NewProtoTxn(Registry.PropagateResync)
-	} else {
-		txn = local.NewProtoTxn(Registry.PropagateChanges)
+		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
+
+	var kvPairs []datasync.ProtoWatchResp
 
 	for _, change := range req.Items {
 		item := change.GetModel()
@@ -69,24 +69,36 @@ func (s *grpcService) Sync(ctx context.Context, req *api.SyncRequest) (*api.Sync
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		if change.Delete {
-			txn.Delete(key)
-		} else {
-			txn.Put(key, pb)
+
+		var val proto.Message
+		if !change.Delete {
+			val = pb
 		}
+
+		kvPairs = append(kvPairs, &ProtoWatchResp{
+			Key: key,
+			Val: val,
+		})
 	}
 
-	// commit the transaction
-	if err := txn.Commit(); err != nil {
+	if err := s.orch.CommitData(ctx, kvPairs); err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
-		// TODO: use the WithDetails to return extra info to clients.
-		//ds, err := st.WithDetails(&rpc.DebugInfo{Detail: "Local transaction failed!"})
-		//if err != nil {
-		//	return nil, st.Err()
-		//}
-		//return nil, ds.Err()
 	}
+
+	/*
+		// commit the transaction
+		if err := txn.Commit(); err != nil {
+			st := status.New(codes.FailedPrecondition, err.Error())
+			return nil, st.Err()
+			// TODO: use the WithDetails to return extra info to clients.
+			//ds, err := st.WithDetails(&rpc.DebugInfo{Detail: "Local transaction failed!"})
+			//if err != nil {
+			//	return nil, st.Err()
+			//}
+			//return nil, ds.Err()
+		}
+	*/
 
 	return &api.SyncResponse{}, nil
 }

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package linux;
+
+option go_package = "github.com/ligato/vpp-agent/api/models/linux;linux";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+import "models/linux/interfaces/interface.proto";
+import "models/linux/l3/l3.proto";
+
+message ConfigData {
+    repeated linux.interfaces.Interface interfaces = 10;
+
+    repeated linux.l3.StaticARPEntry arp_entries = 20;
+    repeated linux.l3.StaticRoute static_routes = 21;
+}

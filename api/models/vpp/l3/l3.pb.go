@@ -45,7 +45,7 @@ func (x IPScanNeighbor_Mode) String() string {
 	return proto.EnumName(IPScanNeighbor_Mode_name, int32(x))
 }
 func (IPScanNeighbor_Mode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_l3_9eda2765193982a5, []int{1, 0}
+	return fileDescriptor_l3_92aaa5a68f6811e2, []int{1, 0}
 }
 
 type ProxyARP struct {
@@ -60,7 +60,7 @@ func (m *ProxyARP) Reset()         { *m = ProxyARP{} }
 func (m *ProxyARP) String() string { return proto.CompactTextString(m) }
 func (*ProxyARP) ProtoMessage()    {}
 func (*ProxyARP) Descriptor() ([]byte, []int) {
-	return fileDescriptor_l3_9eda2765193982a5, []int{0}
+	return fileDescriptor_l3_92aaa5a68f6811e2, []int{0}
 }
 func (m *ProxyARP) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProxyARP.Unmarshal(m, b)
@@ -109,7 +109,7 @@ func (m *ProxyARP_Interface) Reset()         { *m = ProxyARP_Interface{} }
 func (m *ProxyARP_Interface) String() string { return proto.CompactTextString(m) }
 func (*ProxyARP_Interface) ProtoMessage()    {}
 func (*ProxyARP_Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_l3_9eda2765193982a5, []int{0, 0}
+	return fileDescriptor_l3_92aaa5a68f6811e2, []int{0, 0}
 }
 func (m *ProxyARP_Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProxyARP_Interface.Unmarshal(m, b)
@@ -152,7 +152,7 @@ func (m *ProxyARP_Range) Reset()         { *m = ProxyARP_Range{} }
 func (m *ProxyARP_Range) String() string { return proto.CompactTextString(m) }
 func (*ProxyARP_Range) ProtoMessage()    {}
 func (*ProxyARP_Range) Descriptor() ([]byte, []int) {
-	return fileDescriptor_l3_9eda2765193982a5, []int{0, 1}
+	return fileDescriptor_l3_92aaa5a68f6811e2, []int{0, 1}
 }
 func (m *ProxyARP_Range) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProxyARP_Range.Unmarshal(m, b)
@@ -206,7 +206,7 @@ func (m *IPScanNeighbor) Reset()         { *m = IPScanNeighbor{} }
 func (m *IPScanNeighbor) String() string { return proto.CompactTextString(m) }
 func (*IPScanNeighbor) ProtoMessage()    {}
 func (*IPScanNeighbor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_l3_9eda2765193982a5, []int{1}
+	return fileDescriptor_l3_92aaa5a68f6811e2, []int{1}
 }
 func (m *IPScanNeighbor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IPScanNeighbor.Unmarshal(m, b)
@@ -279,9 +279,9 @@ func init() {
 	proto.RegisterEnum("vpp.l3.IPScanNeighbor_Mode", IPScanNeighbor_Mode_name, IPScanNeighbor_Mode_value)
 }
 
-func init() { proto.RegisterFile("vpp/l3/l3.proto", fileDescriptor_l3_9eda2765193982a5) }
+func init() { proto.RegisterFile("vpp/l3/l3.proto", fileDescriptor_l3_92aaa5a68f6811e2) }
 
-var fileDescriptor_l3_9eda2765193982a5 = []byte{
+var fileDescriptor_l3_92aaa5a68f6811e2 = []byte{
 	// 451 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x92, 0xcf, 0x8a, 0xdb, 0x3a,
 	0x14, 0x87, 0xaf, 0x13, 0x4f, 0x48, 0x4e, 0xfe, 0x4c, 0xd0, 0xe2, 0x62, 0x52, 0xda, 0x86, 0xb4,

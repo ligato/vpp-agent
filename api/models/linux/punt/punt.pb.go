@@ -42,7 +42,7 @@ func (x PortBased_L4Protocol) String() string {
 	return proto.EnumName(PortBased_L4Protocol_name, int32(x))
 }
 func (PortBased_L4Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_punt_31001ac88f7e411f, []int{1, 0}
+	return fileDescriptor_punt_962118967d71d007, []int{1, 0}
 }
 
 type PortBased_L3Protocol int32
@@ -71,7 +71,7 @@ func (x PortBased_L3Protocol) String() string {
 	return proto.EnumName(PortBased_L3Protocol_name, int32(x))
 }
 func (PortBased_L3Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_punt_31001ac88f7e411f, []int{1, 1}
+	return fileDescriptor_punt_962118967d71d007, []int{1, 1}
 }
 
 // Proxy allows to listen on network socket or unix domain socket, and resend to another network/unix domain socket
@@ -93,7 +93,7 @@ func (m *Proxy) Reset()         { *m = Proxy{} }
 func (m *Proxy) String() string { return proto.CompactTextString(m) }
 func (*Proxy) ProtoMessage()    {}
 func (*Proxy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_punt_31001ac88f7e411f, []int{0}
+	return fileDescriptor_punt_962118967d71d007, []int{0}
 }
 func (m *Proxy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Proxy.Unmarshal(m, b)
@@ -321,7 +321,7 @@ func (m *PortBased) Reset()         { *m = PortBased{} }
 func (m *PortBased) String() string { return proto.CompactTextString(m) }
 func (*PortBased) ProtoMessage()    {}
 func (*PortBased) Descriptor() ([]byte, []int) {
-	return fileDescriptor_punt_31001ac88f7e411f, []int{1}
+	return fileDescriptor_punt_962118967d71d007, []int{1}
 }
 func (m *PortBased) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PortBased.Unmarshal(m, b)
@@ -378,7 +378,7 @@ func (m *SocketBased) Reset()         { *m = SocketBased{} }
 func (m *SocketBased) String() string { return proto.CompactTextString(m) }
 func (*SocketBased) ProtoMessage()    {}
 func (*SocketBased) Descriptor() ([]byte, []int) {
-	return fileDescriptor_punt_31001ac88f7e411f, []int{2}
+	return fileDescriptor_punt_962118967d71d007, []int{2}
 }
 func (m *SocketBased) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SocketBased.Unmarshal(m, b)
@@ -416,9 +416,9 @@ func init() {
 	proto.RegisterEnum("linux.punt.PortBased_L3Protocol", PortBased_L3Protocol_name, PortBased_L3Protocol_value)
 }
 
-func init() { proto.RegisterFile("linux/punt/punt.proto", fileDescriptor_punt_31001ac88f7e411f) }
+func init() { proto.RegisterFile("linux/punt/punt.proto", fileDescriptor_punt_962118967d71d007) }
 
-var fileDescriptor_punt_31001ac88f7e411f = []byte{
+var fileDescriptor_punt_962118967d71d007 = []byte{
 	// 393 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0xcf, 0x8e, 0xd3, 0x30,
 	0x10, 0xc6, 0x9b, 0x3f, 0x64, 0xdb, 0x29, 0x20, 0x63, 0x69, 0xc5, 0x8a, 0x03, 0x5a, 0x72, 0xe2,

@@ -63,7 +63,7 @@ func (x Interface_Type) String() string {
 	return proto.EnumName(Interface_Type_name, int32(x))
 }
 func (Interface_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{0, 0}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{0, 0}
 }
 
 // from vpp/build-root/install-vpp-native/vpp/include/vnet/interface.h
@@ -96,7 +96,7 @@ func (x Interface_RxModeSettings_RxModeType) String() string {
 	return proto.EnumName(Interface_RxModeSettings_RxModeType_name, int32(x))
 }
 func (Interface_RxModeSettings_RxModeType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{0, 1, 0}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{0, 1, 0}
 }
 
 type MemifLink_MemifMode int32
@@ -122,7 +122,7 @@ func (x MemifLink_MemifMode) String() string {
 	return proto.EnumName(MemifLink_MemifMode_name, int32(x))
 }
 func (MemifLink_MemifMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{2, 0}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{2, 0}
 }
 
 type IPSecLink_CryptoAlg int32
@@ -151,7 +151,7 @@ func (x IPSecLink_CryptoAlg) String() string {
 	return proto.EnumName(IPSecLink_CryptoAlg_name, int32(x))
 }
 func (IPSecLink_CryptoAlg) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{6, 0}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{6, 0}
 }
 
 type IPSecLink_IntegAlg int32
@@ -189,7 +189,7 @@ func (x IPSecLink_IntegAlg) String() string {
 	return proto.EnumName(IPSecLink_IntegAlg_name, int32(x))
 }
 func (IPSecLink_IntegAlg) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{6, 1}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{6, 1}
 }
 
 type Interface struct {
@@ -222,7 +222,7 @@ func (m *Interface) Reset()         { *m = Interface{} }
 func (m *Interface) String() string { return proto.CompactTextString(m) }
 func (*Interface) ProtoMessage()    {}
 func (*Interface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{0}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{0}
 }
 func (m *Interface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface.Unmarshal(m, b)
@@ -593,7 +593,7 @@ func (m *Interface_Unnumbered) Reset()         { *m = Interface_Unnumbered{} }
 func (m *Interface_Unnumbered) String() string { return proto.CompactTextString(m) }
 func (*Interface_Unnumbered) ProtoMessage()    {}
 func (*Interface_Unnumbered) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{0, 0}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{0, 0}
 }
 func (m *Interface_Unnumbered) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_Unnumbered.Unmarshal(m, b)
@@ -637,7 +637,7 @@ func (m *Interface_RxModeSettings) Reset()         { *m = Interface_RxModeSettin
 func (m *Interface_RxModeSettings) String() string { return proto.CompactTextString(m) }
 func (*Interface_RxModeSettings) ProtoMessage()    {}
 func (*Interface_RxModeSettings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{0, 1}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{0, 1}
 }
 func (m *Interface_RxModeSettings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_RxModeSettings.Unmarshal(m, b)
@@ -695,7 +695,7 @@ func (m *Interface_RxPlacementSettings) Reset()         { *m = Interface_RxPlace
 func (m *Interface_RxPlacementSettings) String() string { return proto.CompactTextString(m) }
 func (*Interface_RxPlacementSettings) ProtoMessage()    {}
 func (*Interface_RxPlacementSettings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{0, 2}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{0, 2}
 }
 func (m *Interface_RxPlacementSettings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Interface_RxPlacementSettings.Unmarshal(m, b)
@@ -752,7 +752,7 @@ func (m *SubInterface) Reset()         { *m = SubInterface{} }
 func (m *SubInterface) String() string { return proto.CompactTextString(m) }
 func (*SubInterface) ProtoMessage()    {}
 func (*SubInterface) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{1}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{1}
 }
 func (m *SubInterface) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SubInterface.Unmarshal(m, b)
@@ -809,7 +809,7 @@ func (m *MemifLink) Reset()         { *m = MemifLink{} }
 func (m *MemifLink) String() string { return proto.CompactTextString(m) }
 func (*MemifLink) ProtoMessage()    {}
 func (*MemifLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{2}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{2}
 }
 func (m *MemifLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MemifLink.Unmarshal(m, b)
@@ -910,7 +910,7 @@ func (m *VxlanLink) Reset()         { *m = VxlanLink{} }
 func (m *VxlanLink) String() string { return proto.CompactTextString(m) }
 func (*VxlanLink) ProtoMessage()    {}
 func (*VxlanLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{3}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{3}
 }
 func (m *VxlanLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VxlanLink.Unmarshal(m, b)
@@ -973,7 +973,7 @@ func (m *AfpacketLink) Reset()         { *m = AfpacketLink{} }
 func (m *AfpacketLink) String() string { return proto.CompactTextString(m) }
 func (*AfpacketLink) ProtoMessage()    {}
 func (*AfpacketLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{4}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{4}
 }
 func (m *AfpacketLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AfpacketLink.Unmarshal(m, b)
@@ -1019,7 +1019,7 @@ func (m *TapLink) Reset()         { *m = TapLink{} }
 func (m *TapLink) String() string { return proto.CompactTextString(m) }
 func (*TapLink) ProtoMessage()    {}
 func (*TapLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{5}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{5}
 }
 func (m *TapLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TapLink.Unmarshal(m, b)
@@ -1101,7 +1101,7 @@ func (m *IPSecLink) Reset()         { *m = IPSecLink{} }
 func (m *IPSecLink) String() string { return proto.CompactTextString(m) }
 func (*IPSecLink) ProtoMessage()    {}
 func (*IPSecLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{6}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{6}
 }
 func (m *IPSecLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IPSecLink.Unmarshal(m, b)
@@ -1232,7 +1232,7 @@ func (m *VmxNet3Link) Reset()         { *m = VmxNet3Link{} }
 func (m *VmxNet3Link) String() string { return proto.CompactTextString(m) }
 func (*VmxNet3Link) ProtoMessage()    {}
 func (*VmxNet3Link) Descriptor() ([]byte, []int) {
-	return fileDescriptor_interface_f2fab165c6c3c345, []int{7}
+	return fileDescriptor_interface_ad16fa799c609f27, []int{7}
 }
 func (m *VmxNet3Link) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VmxNet3Link.Unmarshal(m, b)
@@ -1296,10 +1296,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("vpp/interfaces/interface.proto", fileDescriptor_interface_f2fab165c6c3c345)
+	proto.RegisterFile("vpp/interfaces/interface.proto", fileDescriptor_interface_ad16fa799c609f27)
 }
 
-var fileDescriptor_interface_f2fab165c6c3c345 = []byte{
+var fileDescriptor_interface_ad16fa799c609f27 = []byte{
 	// 1595 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x57, 0xdd, 0x72, 0xe3, 0x48,
 	0x15, 0x8e, 0xff, 0xad, 0xe3, 0x9f, 0xd1, 0xf4, 0x32, 0xac, 0x66, 0x76, 0x99, 0x0d, 0x66, 0x0b,

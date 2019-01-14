@@ -22,21 +22,25 @@ import (
 	"github.com/ligato/vpp-agent/api"
 )
 
-const prefixTemplate = `{{.Module}}/{{.Class}}/{{.Version}}/{{.Type}}/`
+type Model = api.Model
 
 type Module = api.Module
 type ModelSpec = api.ModelSpec
 
 func (s Spec) ToModelSpec() ModelSpec {
+	ref := strings.ToLower(s.protoName)
+	ref = strings.Replace(ref, ".", "/", -1)
+
 	return ModelSpec{
 		Version: s.Version,
-		Class:   s.Class,
-		Module:  s.Module,
-		Type:    s.Type,
+		//Class:   s.Class,
+		Module: s.Module,
+		Type:   s.Type,
 		Meta: map[string]string{
 			"id-tmpl":    s.IdTemplate,
 			"proto-name": s.protoName,
 			"key-prefix": s.KeyPrefix(),
+			"REF":        ref, //fmt.Sprintf("%s", ref),
 		},
 	}
 }
@@ -100,11 +104,15 @@ func (s Spec) ProtoName() string {
 	return s.protoName
 }
 
+const prefixTemplate = `{{.Spec.Module}}/{{.Spec.Class}}/{{.Spec.Version}}/{{.Spec.Type}}/`
+
 var prefixTmpl = template.Must(template.New("keyPrefix").Parse(prefixTemplate))
 
 func (s Spec) buildPrefix() string {
 	var str strings.Builder
-	if err := prefixTmpl.Execute(&str, s); err != nil {
+	if err := prefixTmpl.Execute(&str, struct {
+		Spec Spec
+	}{s}); err != nil {
 		panic(err)
 	}
 	return str.String()

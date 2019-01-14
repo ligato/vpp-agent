@@ -26,7 +26,7 @@ func init() {
 		Module:     "linux",
 		Class:      "config",
 		Version:    "v2",
-		Type:       "interface",
+		Type:       "interfaces",
 		IdTemplate: "{{.Name}}",
 	})
 }

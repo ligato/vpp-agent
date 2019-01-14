@@ -188,7 +188,7 @@ func Register(pb proto.Message, spec Spec) {
 	spec.idTmpl = template.Must(template.New("TmplID").Funcs(funcMap).Parse(spec.IdTemplate))
 
 	if debugRegister {
-		fmt.Printf("- registered model: %v\t%q\n", spec, spec.KeyPrefix())
+		fmt.Printf("- registered model: %-40v\t%q\n", spec, spec.KeyPrefix())
 	}
 	registeredSpecs[protoName] = &spec
 	moduleSpecs[spec.Module] = append(moduleSpecs[spec.Module], protoName)

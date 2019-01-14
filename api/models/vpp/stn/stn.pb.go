@@ -31,7 +31,7 @@ func (m *Rule) Reset()         { *m = Rule{} }
 func (m *Rule) String() string { return proto.CompactTextString(m) }
 func (*Rule) ProtoMessage()    {}
 func (*Rule) Descriptor() ([]byte, []int) {
-	return fileDescriptor_stn_ff7f71da879f1d98, []int{0}
+	return fileDescriptor_stn_9a6ff96c308eed57, []int{0}
 }
 func (m *Rule) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Rule.Unmarshal(m, b)
@@ -72,9 +72,9 @@ func init() {
 	proto.RegisterType((*Rule)(nil), "vpp.stn.Rule")
 }
 
-func init() { proto.RegisterFile("vpp/stn/stn.proto", fileDescriptor_stn_ff7f71da879f1d98) }
+func init() { proto.RegisterFile("vpp/stn/stn.proto", fileDescriptor_stn_9a6ff96c308eed57) }
 
-var fileDescriptor_stn_ff7f71da879f1d98 = []byte{
+var fileDescriptor_stn_9a6ff96c308eed57 = []byte{
 	// 187 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2c, 0x2b, 0x28, 0xd0,
 	0x2f, 0x2e, 0xc9, 0x03, 0x61, 0xbd, 0x82, 0xa2, 0xfc, 0x92, 0x7c, 0x21, 0xf6, 0xb2, 0x82, 0x02,

@@ -33,7 +33,7 @@ func (m *ARPEntry) Reset()         { *m = ARPEntry{} }
 func (m *ARPEntry) String() string { return proto.CompactTextString(m) }
 func (*ARPEntry) ProtoMessage()    {}
 func (*ARPEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_arp_47869b41143fa9fb, []int{0}
+	return fileDescriptor_arp_bfe7e611aa75d76b, []int{0}
 }
 func (m *ARPEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ARPEntry.Unmarshal(m, b)
@@ -88,9 +88,9 @@ func init() {
 	proto.RegisterType((*ARPEntry)(nil), "vpp.l3.ARPEntry")
 }
 
-func init() { proto.RegisterFile("vpp/l3/arp.proto", fileDescriptor_arp_47869b41143fa9fb) }
+func init() { proto.RegisterFile("vpp/l3/arp.proto", fileDescriptor_arp_bfe7e611aa75d76b) }
 
-var fileDescriptor_arp_47869b41143fa9fb = []byte{
+var fileDescriptor_arp_bfe7e611aa75d76b = []byte{
 	// 226 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x28, 0x2b, 0x28, 0xd0,
 	0xcf, 0x31, 0xd6, 0x4f, 0x2c, 0x2a, 0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2b, 0x2b,

@@ -27,6 +27,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
+	"github.com/ligato/vpp-agent/plugins/datasyncer"
 
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
@@ -61,9 +62,10 @@ type VPPAgent struct {
 	VPP
 	Linux
 
-	RESTAPI   *rest.Plugin
-	Probe     *probe.Plugin
-	Telemetry *telemetry.Plugin
+	DataSyncer *datasyncer.Plugin
+	RESTAPI    *rest.Plugin
+	Probe      *probe.Plugin
+	Telemetry  *telemetry.Plugin
 }
 
 // New creates new VPPAgent instance.
@@ -114,6 +116,7 @@ func New() *VPPAgent {
 		RESTAPI:        &rest.DefaultPlugin,
 		VPP:            vpp,
 		Linux:          linux,
+		DataSyncer:     &datasyncer.DefaultPlugin,
 		Probe:          &probe.DefaultPlugin,
 		Telemetry:      &telemetry.DefaultPlugin,
 	}

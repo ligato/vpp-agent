@@ -48,7 +48,7 @@ func (x StaticRoute_Scope) String() string {
 	return proto.EnumName(StaticRoute_Scope_name, int32(x))
 }
 func (StaticRoute_Scope) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_l3_f6e71d92bcf6cc1a, []int{0, 0}
+	return fileDescriptor_l3_a55ec11e74a3cce4, []int{0, 0}
 }
 
 type StaticRoute struct {
@@ -66,7 +66,7 @@ func (m *StaticRoute) Reset()         { *m = StaticRoute{} }
 func (m *StaticRoute) String() string { return proto.CompactTextString(m) }
 func (*StaticRoute) ProtoMessage()    {}
 func (*StaticRoute) Descriptor() ([]byte, []int) {
-	return fileDescriptor_l3_f6e71d92bcf6cc1a, []int{0}
+	return fileDescriptor_l3_a55ec11e74a3cce4, []int{0}
 }
 func (m *StaticRoute) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StaticRoute.Unmarshal(m, b)
@@ -138,7 +138,7 @@ func (m *StaticARPEntry) Reset()         { *m = StaticARPEntry{} }
 func (m *StaticARPEntry) String() string { return proto.CompactTextString(m) }
 func (*StaticARPEntry) ProtoMessage()    {}
 func (*StaticARPEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_l3_f6e71d92bcf6cc1a, []int{1}
+	return fileDescriptor_l3_a55ec11e74a3cce4, []int{1}
 }
 func (m *StaticARPEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StaticARPEntry.Unmarshal(m, b)
@@ -188,9 +188,9 @@ func init() {
 	proto.RegisterEnum("linux.l3.StaticRoute_Scope", StaticRoute_Scope_name, StaticRoute_Scope_value)
 }
 
-func init() { proto.RegisterFile("linux/l3/l3.proto", fileDescriptor_l3_f6e71d92bcf6cc1a) }
+func init() { proto.RegisterFile("linux/l3/l3.proto", fileDescriptor_l3_a55ec11e74a3cce4) }
 
-var fileDescriptor_l3_f6e71d92bcf6cc1a = []byte{
+var fileDescriptor_l3_a55ec11e74a3cce4 = []byte{
 	// 374 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x91, 0x4d, 0xef, 0x93, 0x40,
 	0x10, 0xc6, 0xa5, 0xff, 0x16, 0xcb, 0x34, 0x6d, 0xe8, 0x1e, 0x94, 0xf8, 0xda, 0xf4, 0xd4, 0x4b,

@@ -142,7 +142,7 @@ func demonstrateClient(conn *grpc.ClientConn) {
 		log.Fatalln(err)
 	}
 
-	fmt.Printf("Listing %d modules\n", len(modules))
+	fmt.Printf("Listing %d supported modules\n", len(modules))
 	for _, module := range modules {
 		specs := module.Specs
 		fmt.Printf("* module %s (%d models)\n", module.Name, len(specs))
@@ -170,10 +170,12 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	fmt.Printf("Requesting change\n")
 
 	memif1.Enabled = false
+	memif1.Mtu = 666
 
 	req2 := c.ChangeRequest()
 	req2.Update(afp1, memif1)
-	req2.Delete(memif2)
+	//req2.Delete(memif2)
+	req2.Update(memif2)
 	if err := req2.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
@@ -196,10 +198,10 @@ var (
 		},
 	}
 	memif2 = &vpp.Interface{
-		Name:        "memif0/10",
+		Name:        "memif1.1",
 		Enabled:     true,
 		Type:        interfaces.Interface_SUB_INTERFACE,
-		IpAddresses: []string{"3.10.0.10/32"},
+		IpAddresses: []string{"3.10.0.1/32"},
 		Link: &interfaces.Interface_Sub{
 			Sub: &interfaces.SubInterface{
 				ParentName: "memif1",

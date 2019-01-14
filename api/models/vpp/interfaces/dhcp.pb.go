@@ -36,7 +36,7 @@ func (m *DHCPLease) Reset()         { *m = DHCPLease{} }
 func (m *DHCPLease) String() string { return proto.CompactTextString(m) }
 func (*DHCPLease) ProtoMessage()    {}
 func (*DHCPLease) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dhcp_9cbe07621d35cead, []int{0}
+	return fileDescriptor_dhcp_e41dddc3204328ef, []int{0}
 }
 func (m *DHCPLease) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DHCPLease.Unmarshal(m, b)
@@ -105,9 +105,9 @@ func init() {
 	proto.RegisterType((*DHCPLease)(nil), "vpp.interfaces.DHCPLease")
 }
 
-func init() { proto.RegisterFile("vpp/interfaces/dhcp.proto", fileDescriptor_dhcp_9cbe07621d35cead) }
+func init() { proto.RegisterFile("vpp/interfaces/dhcp.proto", fileDescriptor_dhcp_e41dddc3204328ef) }
 
-var fileDescriptor_dhcp_9cbe07621d35cead = []byte{
+var fileDescriptor_dhcp_e41dddc3204328ef = []byte{
 	// 284 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xc1, 0x4a, 0xf3, 0x40,
 	0x14, 0x85, 0xc9, 0xff, 0x6b, 0x6c, 0x06, 0xac, 0x34, 0x1b, 0xa3, 0x82, 0x14, 0x41, 0x29, 0x85,

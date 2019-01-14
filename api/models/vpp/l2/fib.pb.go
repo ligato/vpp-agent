@@ -39,7 +39,7 @@ func (x FIBEntry_Action) String() string {
 	return proto.EnumName(FIBEntry_Action_name, int32(x))
 }
 func (FIBEntry_Action) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_fib_2cc5747c1525229a, []int{0, 0}
+	return fileDescriptor_fib_7f22df9620e98c67, []int{0, 0}
 }
 
 type FIBEntry struct {
@@ -58,7 +58,7 @@ func (m *FIBEntry) Reset()         { *m = FIBEntry{} }
 func (m *FIBEntry) String() string { return proto.CompactTextString(m) }
 func (*FIBEntry) ProtoMessage()    {}
 func (*FIBEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fib_2cc5747c1525229a, []int{0}
+	return fileDescriptor_fib_7f22df9620e98c67, []int{0}
 }
 func (m *FIBEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FIBEntry.Unmarshal(m, b)
@@ -128,9 +128,9 @@ func init() {
 	proto.RegisterEnum("vpp.l2.FIBEntry_Action", FIBEntry_Action_name, FIBEntry_Action_value)
 }
 
-func init() { proto.RegisterFile("vpp/l2/fib.proto", fileDescriptor_fib_2cc5747c1525229a) }
+func init() { proto.RegisterFile("vpp/l2/fib.proto", fileDescriptor_fib_7f22df9620e98c67) }
 
-var fileDescriptor_fib_2cc5747c1525229a = []byte{
+var fileDescriptor_fib_7f22df9620e98c67 = []byte{
 	// 332 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x91, 0xcf, 0x4e, 0x02, 0x31,
 	0x10, 0xc6, 0x5d, 0xc4, 0x15, 0x0b, 0x1a, 0xec, 0x85, 0xd5, 0x83, 0x22, 0x5e, 0xb8, 0xb0, 0x4d,

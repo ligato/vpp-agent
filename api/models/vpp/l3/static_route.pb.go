@@ -42,7 +42,7 @@ func (x StaticRoute_RouteType) String() string {
 	return proto.EnumName(StaticRoute_RouteType_name, int32(x))
 }
 func (StaticRoute_RouteType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_static_route_cd5e6b8f04234e68, []int{0, 0}
+	return fileDescriptor_static_route_cdb436199aad59ab, []int{0, 0}
 }
 
 type StaticRoute struct {
@@ -64,7 +64,7 @@ func (m *StaticRoute) Reset()         { *m = StaticRoute{} }
 func (m *StaticRoute) String() string { return proto.CompactTextString(m) }
 func (*StaticRoute) ProtoMessage()    {}
 func (*StaticRoute) Descriptor() ([]byte, []int) {
-	return fileDescriptor_static_route_cd5e6b8f04234e68, []int{0}
+	return fileDescriptor_static_route_cdb436199aad59ab, []int{0}
 }
 func (m *StaticRoute) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StaticRoute.Unmarshal(m, b)
@@ -149,10 +149,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("vpp/l3/static_route.proto", fileDescriptor_static_route_cd5e6b8f04234e68)
+	proto.RegisterFile("vpp/l3/static_route.proto", fileDescriptor_static_route_cdb436199aad59ab)
 }
 
-var fileDescriptor_static_route_cd5e6b8f04234e68 = []byte{
+var fileDescriptor_static_route_cdb436199aad59ab = []byte{
 	// 363 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x51, 0xcd, 0xae, 0x12, 0x31,
 	0x18, 0x75, 0x10, 0x46, 0xf8, 0x08, 0x06, 0x9b, 0x68, 0x46, 0xa3, 0x48, 0x58, 0xb1, 0x61, 0x1a,

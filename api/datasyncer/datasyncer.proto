@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package datasyncer;
+
+option go_package = "github.com/ligato/vpp-agent/api/datasyncer;datasyncer";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+option (gogoproto.messagename_all) = true;
+
+import "models/vpp/vpp.proto";
+import "models/linux/linux.proto";
+
+message DataRequest {
+    vpp.ConfigData vpp = 1;
+    linux.ConfigData linux = 2;
+}
+
+service DataSyncer {
+    rpc Put(DataRequest) returns (PutResponse);
+    rpc Del(DataRequest) returns (DelResponse);
+    rpc Resync (DataRequest) returns (ResyncResponse);
+}
+
+message PutResponse {
+}
+
+message DelResponse {
+}
+
+message ResyncResponse {
+}

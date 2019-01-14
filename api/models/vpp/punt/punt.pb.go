@@ -45,7 +45,7 @@ func (x L3Protocol) String() string {
 	return proto.EnumName(L3Protocol_name, int32(x))
 }
 func (L3Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_punt_639a6c4dcf244366, []int{0}
+	return fileDescriptor_punt_bc7c8ac0f93efeb8, []int{0}
 }
 
 type L4Protocol int32
@@ -71,7 +71,7 @@ func (x L4Protocol) String() string {
 	return proto.EnumName(L4Protocol_name, int32(x))
 }
 func (L4Protocol) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_punt_639a6c4dcf244366, []int{1}
+	return fileDescriptor_punt_bc7c8ac0f93efeb8, []int{1}
 }
 
 // IpRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
@@ -90,7 +90,7 @@ func (m *IpRedirect) Reset()         { *m = IpRedirect{} }
 func (m *IpRedirect) String() string { return proto.CompactTextString(m) }
 func (*IpRedirect) ProtoMessage()    {}
 func (*IpRedirect) Descriptor() ([]byte, []int) {
-	return fileDescriptor_punt_639a6c4dcf244366, []int{0}
+	return fileDescriptor_punt_bc7c8ac0f93efeb8, []int{0}
 }
 func (m *IpRedirect) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IpRedirect.Unmarshal(m, b)
@@ -158,7 +158,7 @@ func (m *ToHost) Reset()         { *m = ToHost{} }
 func (m *ToHost) String() string { return proto.CompactTextString(m) }
 func (*ToHost) ProtoMessage()    {}
 func (*ToHost) Descriptor() ([]byte, []int) {
-	return fileDescriptor_punt_639a6c4dcf244366, []int{1}
+	return fileDescriptor_punt_bc7c8ac0f93efeb8, []int{1}
 }
 func (m *ToHost) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ToHost.Unmarshal(m, b)
@@ -216,9 +216,9 @@ func init() {
 	proto.RegisterEnum("vpp.punt.L4Protocol", L4Protocol_name, L4Protocol_value)
 }
 
-func init() { proto.RegisterFile("vpp/punt/punt.proto", fileDescriptor_punt_639a6c4dcf244366) }
+func init() { proto.RegisterFile("vpp/punt/punt.proto", fileDescriptor_punt_bc7c8ac0f93efeb8) }
 
-var fileDescriptor_punt_639a6c4dcf244366 = []byte{
+var fileDescriptor_punt_bc7c8ac0f93efeb8 = []byte{
 	// 374 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x4f, 0x8b, 0xda, 0x40,
 	0x18, 0xc6, 0x8d, 0xa6, 0x6a, 0x5f, 0x6d, 0x49, 0xa7, 0x3d, 0xa4, 0x3d, 0xb4, 0xd6, 0x93, 0x08,
