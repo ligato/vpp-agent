@@ -27,25 +27,24 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-type grpcService struct {
+type configuratorSvc struct {
 	log  logging.Logger
 	orch *Plugin
 }
 
-// ListModules implements SyncServiceServer.
-func (s *grpcService) ListModules(ctx context.Context, req *api.ListModulesRequest) (*api.ListModulesResponse, error) {
-	resp := &api.ListModulesResponse{
-		Modules: models.GetRegisteredModules(),
+// ListCapabilities implements SyncServiceServer.
+func (s *configuratorSvc) ListCapabilities(ctx context.Context, req *api.ListCapabilitiesRequest) (*api.ListCapabilitiesResponse, error) {
+	resp := &api.ListCapabilitiesResponse{
+		ActiveModels: models.RegisteredModels(),
 	}
 	return resp, nil
 }
 
-// Sync implements SyncServiceServer.
-func (s *grpcService) Sync(ctx context.Context, req *api.SyncRequest) (*api.SyncResponse, error) {
+func (s *configuratorSvc) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
 	s.log.Debug("------------------------------")
-	s.log.Debugf("=> GRPC SYNC: %d items", len(req.Items))
+	s.log.Debugf("=> Configurator.SetConfig: %d items", len(req.Update))
 	s.log.Debug("------------------------------")
-	for _, item := range req.Items {
+	for _, item := range req.Update {
 		s.log.Debugf(" - %v", item)
 	}
 	s.log.Debug("------------------------------")
@@ -54,36 +53,58 @@ func (s *grpcService) Sync(ctx context.Context, req *api.SyncRequest) (*api.Sync
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 
+	var ops = make(map[string]api.UpdateResult_Operation)
 	var kvPairs []datasync.ProtoWatchResp
 
-	for _, change := range req.Items {
-		item := change.GetModel()
-		if item == nil {
+	for _, update := range req.Update {
+		item := update.Item
+		/*if item == nil {
 			return nil, status.Error(codes.InvalidArgument, "change item is nil")
-		}
-		pb, err := models.Unmarshal(item)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		key, err := models.GetKey(pb)
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
+		}*/
+		var (
+			key string
+			val proto.Message
+		)
 
-		var val proto.Message
-		if !change.Delete {
-			val = pb
+		var err error
+		if item.Val != nil {
+			val, err = models.UnmarshalItem(item)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			key, err = models.GetKey(val)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			ops[key] = api.UpdateResult_UPDATE
+		} else if item.Key != "" {
+			key = item.Key
+			ops[key] = api.UpdateResult_DELETE
+		} else {
+			return nil, status.Error(codes.InvalidArgument, "ProtoItem has no key or val defined.")
 		}
-
 		kvPairs = append(kvPairs, &ProtoWatchResp{
 			Key: key,
 			Val: val,
 		})
 	}
 
-	if err := s.orch.CommitData(ctx, kvPairs); err != nil {
+	err, kvErrs := s.orch.PushData(ctx, kvPairs)
+	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
+	}
+
+	results := []*api.UpdateResult{}
+	for _, kvErr := range kvErrs {
+		results = append(results, &api.UpdateResult{
+			Key: kvErr.Key,
+			Status: &api.ItemStatus{
+				State:   api.ItemStatus_FAILED,
+				Message: kvErr.Error.Error(),
+			},
+			Op: ops[kvErr.Key],
+		})
 	}
 
 	/*
@@ -100,11 +121,17 @@ func (s *grpcService) Sync(ctx context.Context, req *api.SyncRequest) (*api.Sync
 		}
 	*/
 
-	return &api.SyncResponse{}, nil
+	return &api.SetConfigResponse{Results: results}, nil
 }
 
-// Obtain implements SyncServiceServer.
-func (*grpcService) Obtain(context.Context, *api.ObtainRequest) (*api.ObtainResponse, error) {
-	st := status.New(codes.Unimplemented, "obtain not implemented")
-	return nil, st.Err()
+func (s *configuratorSvc) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
+	panic("implement me")
+}
+
+func (s *configuratorSvc) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
+	panic("implement me")
+}
+
+func (s *configuratorSvc) Subscribe(*api.SubscribeRequest, api.Configurator_SubscribeServer) error {
+	panic("implement me")
 }

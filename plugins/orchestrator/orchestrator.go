@@ -20,6 +20,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"golang.org/x/net/context"
 
 	"github.com/ligato/vpp-agent/api"
@@ -33,7 +34,7 @@ var Registry = local.DefaultRegistry
 type Plugin struct {
 	Deps
 
-	grpcSvc *grpcService
+	grpcSvc *configuratorSvc
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
@@ -45,6 +46,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 
+	GoVPP       govppmux.API
 	GRPC        grpc.Server
 	KVScheduler kvs.KVScheduler
 	Watcher     datasync.KeyValProtoWatcher
@@ -57,11 +59,12 @@ func (p *Plugin) Init() error {
 	p.changeChan = make(chan datasync.ChangeEvent)
 
 	// register grpc service
-	p.grpcSvc = &grpcService{
+	p.grpcSvc = &configuratorSvc{
 		log:  p.Log,
 		orch: p,
 	}
-	api.RegisterSyncServiceServer(p.GRPC.GetServer(), p.grpcSvc)
+	api.RegisterConfiguratorServer(p.GRPC.GetServer(), p.grpcSvc)
+	//reflection.Register(p.GRPC.GetServer())
 
 	return nil
 }
@@ -105,7 +108,7 @@ func (p *Plugin) watchEvents() {
 
 			ctx := context.Background()
 			//ctx = kvs.WithRetry(ctx, time.Second, true)
-			err := p.CommitData(ctx, kvPairs)
+			err, _ := p.PushData(ctx, kvPairs)
 			e.Done(err)
 
 			/*txn := p.KVScheduler.StartNBTransaction()
@@ -162,7 +165,7 @@ func (p *Plugin) watchEvents() {
 			ctx := context.Background()
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			//ctx = kvs.WithRetry(ctx, time.Second, true)
-			err := p.CommitData(ctx, kvPairs)
+			err, _ := p.PushData(ctx, kvPairs)
 			e.Done(err)
 
 			/*n := 0
@@ -236,8 +239,8 @@ func (item *ProtoWatchResp) GetValue(out proto.Message) error {
 	return nil
 }
 
-// CommitData ...
-func (p *Plugin) CommitData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) error {
+// PushData ...
+func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) (err error, kvErrs []kvs.KeyWithError) {
 	txn := p.KVScheduler.StartNBTransaction()
 
 	for _, kv := range kvPairs {
@@ -254,13 +257,15 @@ func (p *Plugin) CommitData(ctx context.Context, kvPairs []datasync.ProtoWatchRe
 	seqID, err := txn.Commit(ctx)
 	if err != nil {
 		p.Log.Errorf("transaction failed (seq=%d): %v", seqID, err)
+		return err, nil
 	} else {
 		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
-			kvErrs := txErr.GetKVErrors()
+			kvErrs = txErr.GetKVErrors()
 			p.Log.Warnf("transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
 		}
 		p.Log.Infof("transaction successful (seq=%d)", seqID)
+		return err, kvErrs
 	}
 
-	return err
+	return nil, nil
 }

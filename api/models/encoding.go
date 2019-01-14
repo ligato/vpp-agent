@@ -23,11 +23,11 @@ import (
 )
 
 // This constant is used to replace the constant from types.MarshalAny.
-const LigatoApis = "models.ligato.io/"
+const LigatoApis = "api.ligato.io/"
 
-// Unmarshal is helper function for unmarshalling model data.
-func Unmarshal(m *api.Model) (ProtoModel, error) {
-	protoName, err := types.AnyMessageName(m.Any)
+// UnmarshalItem is helper function for unmarshalling api.ProtoItem.
+func UnmarshalItem(m *api.Item) (ProtoItem, error) {
+	protoName, err := types.AnyMessageName(m.Val)
 	if err != nil {
 		return nil, err
 	}
@@ -40,14 +40,14 @@ func Unmarshal(m *api.Model) (ProtoModel, error) {
 	}*/
 
 	var any types.DynamicAny
-	if err := types.UnmarshalAny(m.Any, &any); err != nil {
+	if err := types.UnmarshalAny(m.Val, &any); err != nil {
 		return nil, err
 	}
-	return any.Message.(ProtoModel), nil
+	return any.Message.(ProtoItem), nil
 }
 
-// Marshal is helper function for marshalling into model data.
-func Marshal(pb ProtoModel) (*api.Model, error) {
+// MarshalItem is helper function for marshalling into api.ProtoItem.
+func MarshalItem(pb ProtoItem) (*api.Item, error) {
 	protoName := proto.MessageName(pb)
 	spec := registeredSpecs[protoName]
 	if spec == nil {
@@ -60,9 +60,10 @@ func Marshal(pb ProtoModel) (*api.Model, error) {
 	}
 	any.TypeUrl = LigatoApis + proto.MessageName(pb)
 
-	model := &api.Model{
+	model := &api.Item{
 		//Version: Spec.Version,
-		Any: any,
+		Key: Key(pb),
+		Val: any,
 	}
 	return model, nil
 }

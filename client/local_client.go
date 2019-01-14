@@ -41,13 +41,10 @@ func NewClient(factory ProtoTxnFactory) SyncClient {
 }
 
 // ListModules lists all available modules and their model specs.
-func (c *client) ListModules() (modules map[string]models.Module, err error) {
-	modules = make(map[string]models.Module)
-	for _, module := range models.GetRegisteredModules() {
-		modules[module.Name] = models.Module{
-			Name:  module.Name,
-			Specs: module.Specs,
-		}
+func (c *client) ListCapabilities() (map[string][]models.Model, error) {
+	modules := make(map[string][]models.Model)
+	for _, model := range models.RegisteredModels() {
+		modules[model.Module] = append(modules[model.Module], *model)
 	}
 	return modules, nil
 }
@@ -68,12 +65,12 @@ type request struct {
 }
 
 // Put adds the given model data to the transaction.
-func (r *request) Put(items ...models.ProtoModel) {
+func (r *request) Put(items ...models.ProtoItem) {
 	r.Update(items...)
 }
 
 // Update adds update for the given model data to the transaction.
-func (r *request) Update(items ...models.ProtoModel) {
+func (r *request) Update(items ...models.ProtoItem) {
 	if r.err != nil {
 		return
 	}
@@ -88,7 +85,7 @@ func (r *request) Update(items ...models.ProtoModel) {
 }
 
 // Delete adds delete for the given model keys to the transaction.
-func (r *request) Delete(items ...models.ProtoModel) {
+func (r *request) Delete(items ...models.ProtoItem) {
 	if r.err != nil {
 		return
 	}

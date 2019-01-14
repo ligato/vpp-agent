@@ -134,19 +134,26 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 }
 
 func demonstrateClient(conn *grpc.ClientConn) {
-	c := remoteclient.NewClientGRPC(api.NewSyncServiceClient(conn))
+	c := remoteclient.NewClientGRPC(api.NewConfiguratorClient(conn))
 
 	// List supported model specs
-	modules, err := c.ListModules()
+	modules, err := c.ListCapabilities()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	fmt.Printf("Listing %d supported modules\n", len(modules))
+	/*fmt.Printf("Listing %d supported modules\n", len(modules))
 	for _, module := range modules {
 		specs := module.Specs
 		fmt.Printf("* module %s (%d models)\n", module.Name, len(specs))
 		for _, spec := range specs {
+			fmt.Printf(" - %v\n", spec.String())
+		}
+	}*/
+	fmt.Printf("Listing %d supported modules\n", len(modules))
+	for module, models := range modules {
+		fmt.Printf("* %s module (%d models)\n", module, len(models))
+		for _, spec := range models {
 			fmt.Printf(" - %v\n", spec.String())
 		}
 	}

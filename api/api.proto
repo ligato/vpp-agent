@@ -9,79 +9,143 @@ option (gogoproto.messagename_all) = true;
 
 import "google/protobuf/any.proto";
 
-message Module {
-    string name = 1;
-    repeated ModelSpec specs = 2;
+message Item {
+    string key = 1;
+    Value val = 2;
+}
+
+message Value {
+    google.protobuf.Any any = 1;
+}
+
+/*
+message Item {
+    Key key = 1;
+    Value value = 2;
+}
+
+message Key {
+    repeated string parts = 1;
+}
+
+message Value {
+    oneof val {
+        google.protobuf.Any any_val = 1;
+        bytes bytes_val = 2;
+        string string_val = 3;
+    }
+}*/
+
+message ItemStatus {
+    enum State {
+        UNKNOWN = 0;
+        PENDING = 1;
+        APPLIED = 2;
+        INVALID = 3;
+        FAILED = 4;
+        REMOVED = 5;
+        //DISCOVERED = 6;
+    }
+    State state = 1;
+    string message = 2;
+}
+
+/*enum ItemType {
+    UNDEFINED = 0;
+    CONFIG = 1;
+    STATE = 2;
+    METRIC = 3;
+}*/
+
+service Configurator {
+    rpc ListCapabilities (ListCapabilitiesRequest) returns (ListCapabilitiesResponse) {};
+    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {};
+    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {};
+    rpc DumpState (DumpStateRequest) returns (DumpStateResponse) {};
+    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse) {};
+}
+
+message ListCapabilitiesRequest {
+    // TODO: query filters
+}
+
+message ListCapabilitiesResponse {
+    repeated ModelSpec active_models = 1;
 }
 
 message ModelSpec {
-    string version = 1;
-    string class = 2;
+    string name = 1;
+    string version = 2;
     string module = 3;
-    string type = 4;
+    //string group = 4;
+    /*enum Kind {
+        UNDEFINED = 0;
+        CONFIG = 1;
+    }
+    Kind kind = 4;*/
     map<string,string> meta = 5;
 }
 
-message Model {
-    google.protobuf.Any any = 1;
-    map<string,string> metadata = 2;
+message SetConfigRequest {
+    message Options {
+        bool resync = 1;
+    }
+    Options options = 1;
+
+    message UpdateItem {
+        Item item = 1;
+        map<string,string> labels = 2;
+    }
+    repeated UpdateItem update = 2;
 }
 
-service SyncService {
-    rpc ListModules (ListModulesRequest) returns (ListModulesResponse) {};
-    rpc Sync (SyncRequest) returns (SyncResponse) {};
-    rpc Obtain (ObtainRequest) returns (ObtainResponse) {};
+message SetConfigResponse {
+    repeated UpdateResult results = 1;
 }
 
-message ListModulesRequest {
+message UpdateResult {
+    enum Operation {
+        UNSPECIFIED = 0;
+        CREATE = 1;
+        UPDATE = 2;
+        DELETE = 3;
+    }
+    string key = 1;
+    ItemStatus status = 2;
+    Operation op = 3;
 }
 
-message ListModulesResponse {
-    repeated Module modules = 1;
+message GetConfigRequest {
+    repeated string keys = 1;
+    repeated string modules = 2;
 }
 
-message SyncItem {
-    Model model = 1;
-    bool delete = 2;
+message GetConfigResponse {
+    message ConfigItem {
+        Item item = 1;
+        ItemStatus status = 2;
+        map<string,string> labels = 3;
+    }
+    repeated ConfigItem items = 1;
 }
 
-message SyncOptions {
-    bool resync = 1;
-    uint32 retry_count = 2;
+message DumpStateRequest {
+    repeated string keys = 1;
+    repeated string modules = 2;
 }
 
-message SyncRequest {
-    repeated SyncItem items = 1;
-    SyncOptions options = 2;
+message DumpStateResponse {
+    message StateItem {
+        Item item = 1;
+        map<string,string> metadata = 2;
+    }
+    repeated StateItem state = 1;
 }
 
-message SyncResponse {
-    repeated SyncItemResult results = 1;
+message SubscribeRequest {
+
 }
 
-message SyncItemResult {
-    string id = 1;
-    string status = 2;
-    string error = 3;
-}
+message SubscribeResponse {
 
-message ObtainOptions {
-    bool obtain_all = 1;
-}
-
-message ObtainRequest {
-    repeated string ids = 1;
-    repeated string specs = 2;
-    ObtainOptions options = 3;
-}
-
-message ObtainResponse {
-    repeated ModelInfo models = 1;
-}
-
-message ModelInfo {
-    ModelSpec spec = 1;
-    Model model = 2;
-    string status = 3;
-    string error = 4;
 }

@@ -22,15 +22,16 @@ import (
 	"text/template"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/vpp-agent/api"
 )
 
 var debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 
-// ProtoModel represents main model type.
-type ProtoModel = proto.Message
+// ProtoItem represents model instance item.
+type ProtoItem = proto.Message
 
 // ID is a shorthand for the GetID for avoid error checking.
-func ID(m ProtoModel) string {
+func ID(m ProtoItem) string {
 	id, err := GetID(m)
 	if err != nil {
 		panic(err)
@@ -39,7 +40,7 @@ func ID(m ProtoModel) string {
 }
 
 // Key is a shorthand for the GetKey for avoid error checking.
-func Key(m ProtoModel) string {
+func Key(m ProtoItem) string {
 	key, err := GetKey(m)
 	if err != nil {
 		panic(err)
@@ -48,7 +49,7 @@ func Key(m ProtoModel) string {
 }
 
 // KeyPrefix is a shorthand for the GetKeyPrefix for avoid error checking.
-func KeyPrefix(m ProtoModel) string {
+func KeyPrefix(m ProtoItem) string {
 	prefix, err := GetKeyPrefix(m)
 	if err != nil {
 		panic(err)
@@ -56,7 +57,17 @@ func KeyPrefix(m ProtoModel) string {
 	return prefix
 }
 
-func GetID(m ProtoModel) (string, error) {
+// MustSpec returns registered model specification for given item.
+func MustSpec(m ProtoItem) Spec {
+	spec, err := GetSpec(m)
+	if err != nil {
+		panic(err)
+	}
+	return spec
+}
+
+// GetID
+func GetID(m ProtoItem) (string, error) {
 	spec, err := GetSpec(m)
 	if err != nil {
 		return "", err
@@ -73,7 +84,7 @@ func GetID(m ProtoModel) (string, error) {
 // GetKey returns complete key for gived model,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
-func GetKey(m ProtoModel) (string, error) {
+func GetKey(m ProtoItem) (string, error) {
 	spec, err := GetSpec(m)
 	if err != nil {
 		return "", err
@@ -91,7 +102,7 @@ func GetKey(m ProtoModel) (string, error) {
 
 // GetKeyPrefix returns key prefix for gived model.
 // It returns error if given model is not registered.
-func GetKeyPrefix(m ProtoModel) (string, error) {
+func GetKeyPrefix(m ProtoItem) (string, error) {
 	spec, err := GetSpec(m)
 	if err != nil {
 		return "", err
@@ -103,17 +114,8 @@ func GetKeyPrefix(m ProtoModel) (string, error) {
 	return spec.KeyPrefix(), nil
 }
 
-// MustSpec returns registered model specification for given model.
-func MustSpec(m ProtoModel) Spec {
-	spec, err := GetSpec(m)
-	if err != nil {
-		panic(err)
-	}
-	return spec
-}
-
 // GetSpec returns registered model specification for given model.
-func GetSpec(m ProtoModel) (Spec, error) {
+func GetSpec(m ProtoItem) (Spec, error) {
 	protoName := proto.MessageName(m)
 	spec := registeredSpecs[protoName]
 	if spec == nil {
@@ -122,7 +124,7 @@ func GetSpec(m ProtoModel) (Spec, error) {
 	return *spec, nil
 }
 
-// StripKeyPrefix returns key with prefix stripped.
+/*// StripKeyPrefix returns key with prefix stripped.
 func StripKeyPrefix(s string) string {
 	for _, spec := range registeredSpecs {
 		if trim := strings.TrimPrefix(s, spec.KeyPrefix()); trim != s {
@@ -130,7 +132,7 @@ func StripKeyPrefix(s string) string {
 		}
 	}
 	return s
-}
+}*/
 
 var (
 	moduleSpecs     = make(map[string][]string)
@@ -147,18 +149,18 @@ func GetRegisteredSpecs() map[string]Spec {
 	return m
 }
 
-// GetRegisteredModules returns all registered modules.
-func GetRegisteredModules() (modules []*Module) {
-	for moduleName, protos := range moduleSpecs {
-		var specs []*ModelSpec
+// RegisteredModels returns all registered modules.
+func RegisteredModels() (models []*api.Model) {
+	for _, protos := range moduleSpecs {
+		//var specs []*api.Model
 		for _, protoName := range protos {
 			modelSpec := registeredSpecs[protoName].ToModelSpec()
-			specs = append(specs, &modelSpec)
+			models = append(models, &modelSpec)
 		}
-		modules = append(modules, &Module{
+		/*modules = append(modules, &Module{
 			Name:  moduleName,
 			Specs: specs,
-		})
+		})*/
 	}
 	return
 }

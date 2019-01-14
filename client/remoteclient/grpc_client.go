@@ -9,29 +9,26 @@ import (
 )
 
 type grpcClient struct {
-	remote pb.SyncServiceClient
+	remote pb.ConfiguratorClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(syncSvc pb.SyncServiceClient) client.SyncClient {
+func NewClientGRPC(syncSvc pb.ConfiguratorClient) client.SyncClient {
 	return &grpcClient{syncSvc}
 }
 
-// ListModules lists all available modules and their model specs.
-func (c *grpcClient) ListModules() (modules map[string]models.Module, err error) {
+// ListCapabilities retrieves supported capabilities.
+func (c *grpcClient) ListCapabilities() (map[string][]models.Model, error) {
 	ctx := context.Background()
 
-	resp, err := c.remote.ListModules(ctx, &pb.ListModulesRequest{})
+	resp, err := c.remote.ListCapabilities(ctx, &pb.ListCapabilitiesRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	modules = make(map[string]models.Module)
-	for _, module := range resp.Modules {
-		modules[module.Name] = models.Module{
-			Name:  module.Name,
-			Specs: module.Specs,
-		}
+	modules := make(map[string][]models.Model)
+	for _, model := range resp.ActiveModels {
+		modules[model.Module] = append(modules[model.Module], *model)
 	}
 
 	return modules, nil
@@ -41,8 +38,8 @@ func (c *grpcClient) ListModules() (modules map[string]models.Module, err error)
 func (c *grpcClient) ResyncRequest() client.ResyncRequest {
 	return &request{
 		serviceClient: c.remote,
-		req: &pb.SyncRequest{
-			Options: &pb.SyncOptions{Resync: true},
+		req: &pb.SetConfigRequest{
+			Options: &pb.SetConfigRequest_Options{Resync: true},
 		},
 	}
 }
@@ -51,54 +48,55 @@ func (c *grpcClient) ResyncRequest() client.ResyncRequest {
 func (c *grpcClient) ChangeRequest() client.ChangeRequest {
 	return &request{
 		serviceClient: c.remote,
-		req: &pb.SyncRequest{
-			Options: &pb.SyncOptions{Resync: false},
+		req: &pb.SetConfigRequest{
+			Options: &pb.SetConfigRequest_Options{Resync: false},
 		},
 	}
 }
 
 type request struct {
-	serviceClient pb.SyncServiceClient
-	req           *pb.SyncRequest
+	serviceClient pb.ConfiguratorClient
+	req           *pb.SetConfigRequest
 	err           error
 }
 
 // Put puts the given model data to the transaction.
-func (r *request) Put(protoModels ...models.ProtoModel) {
+func (r *request) Put(protoModels ...models.ProtoItem) {
 	r.Update(protoModels...)
 }
 
 // Update adds update for the given model data to the transaction.
-func (r *request) Update(protoModels ...models.ProtoModel) {
+func (r *request) Update(protoModels ...models.ProtoItem) {
 	if r.err != nil {
 		return
 	}
 	for _, protoModel := range protoModels {
-		model, err := models.Marshal(protoModel)
+		model, err := models.MarshalItem(protoModel)
 		if err != nil {
 			r.err = err
 			return
 		}
-		r.req.Items = append(r.req.Items, &pb.SyncItem{Model: model})
+		r.req.Update = append(r.req.Update, &pb.SetConfigRequest_UpdateItem{
+			Item: model,
+		})
 	}
 }
 
 // Delete adds delete for the given model keys to the transaction.
-func (r *request) Delete(protoModels ...models.ProtoModel) {
+func (r *request) Delete(protoModels ...models.ProtoItem) {
 	if r.err != nil {
 		return
 	}
 	for _, protoModel := range protoModels {
-		model, err := models.Marshal(protoModel)
+		item, err := models.MarshalItem(protoModel)
 		if err != nil {
 			if err != nil {
 				r.err = err
 				return
 			}
 		}
-		r.req.Items = append(r.req.Items, &pb.SyncItem{
-			Model:  model,
-			Delete: true,
+		r.req.Update = append(r.req.Update, &pb.SetConfigRequest_UpdateItem{
+			Item: item,
 		})
 	}
 }
@@ -108,6 +106,6 @@ func (r *request) Send(ctx context.Context) (err error) {
 	if r.err != nil {
 		return r.err
 	}
-	_, err = r.serviceClient.Sync(ctx, r.req)
+	_, err = r.serviceClient.SetConfig(ctx, r.req)
 	return err
 }

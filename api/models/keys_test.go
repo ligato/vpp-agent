@@ -30,7 +30,7 @@ import (
 func TestKeys(t *testing.T) {
 	tests := []struct {
 		name        string
-		model       models.ProtoModel
+		model       models.ProtoItem
 		expectedKey string
 	}{
 		{

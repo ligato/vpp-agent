@@ -113,7 +113,7 @@ func (svc *DataSyncer) Resync(ctx context.Context, data *rpc.DataRequest) (*rpc.
 		})
 	}
 
-	if err := svc.orch.CommitData(ctx, kvPairs); err != nil {
+	if err, _ := svc.orch.PushData(ctx, kvPairs); err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
 	}

@@ -8,8 +8,8 @@ import (
 
 // SyncClient defines the client-side interface for sync service.
 type SyncClient interface {
-	// ListModules lists all available modules and their model specs.
-	ListModules() (map[string]models.Module, error)
+	// ListCapabilities retrieves supported capabilities.
+	ListCapabilities() (map[string][]models.Model, error)
 
 	// ResyncRequest returns new request used for resync.
 	ResyncRequest() ResyncRequest
@@ -29,7 +29,7 @@ type ResyncRequest interface {
 	SyncRequest
 
 	// Put puts given models to the request.
-	Put(models ...models.ProtoModel)
+	Put(models ...models.ProtoItem)
 }
 
 // ChangeRequest defines interface for a request used for resync.
@@ -37,8 +37,8 @@ type ChangeRequest interface {
 	SyncRequest
 
 	// Update updates given models in the request.
-	Update(models ...models.ProtoModel)
+	Update(models ...models.ProtoItem)
 
 	// Delete deletes given models from the request.
-	Delete(models ...models.ProtoModel)
+	Delete(models ...models.ProtoItem)
 }

@@ -23,19 +23,19 @@ import (
 )
 
 type Model = api.Model
+type Item = api.Item
 
-type Module = api.Module
-type ModelSpec = api.ModelSpec
+/*type Module = api.Module
+type ModelSpec = api.ModelSpec*/
 
-func (s Spec) ToModelSpec() ModelSpec {
+func (s Spec) ToModelSpec() api.Model {
 	ref := strings.ToLower(s.protoName)
 	ref = strings.Replace(ref, ".", "/", -1)
 
-	return ModelSpec{
+	return api.Model{
+		Name:    s.Type,
 		Version: s.Version,
-		//Class:   s.Class,
-		Module: s.Module,
-		Type:   s.Type,
+		Module:  s.Module,
 		Meta: map[string]string{
 			"id-tmpl":    s.IdTemplate,
 			"proto-name": s.protoName,
