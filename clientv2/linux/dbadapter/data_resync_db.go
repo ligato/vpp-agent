@@ -30,6 +30,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -176,14 +178,36 @@ func (dsl *DataResyncDSL) StnRule(stn *stn.STN_Rule) linuxclient.DataResyncDSL {
 // NAT44Global adds global NAT44 configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.NAT44Global(nat44)
-
 	return dsl
 }
 
 // DNAT44 adds DNAT44 configuration to the RESYNC request
 func (dsl *DataResyncDSL) DNAT44(nat44 *nat.DNat44) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.DNAT44(nat44)
+	return dsl
+}
 
+// IPSecSA adds request to RESYNC a new Security Association
+func (dsl *DataResyncDSL) IPSecSA(sa *ipsec.SecurityAssociation) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecSA(sa)
+	return dsl
+}
+
+// IPSecSPD adds request to RESYNC a new Security Policy Database
+func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.IPSecSPD(spd)
+	return dsl
+}
+
+// PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
+func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IpRedirect) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.PuntIPRedirect(val)
+	return dsl
+}
+
+// PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
+func (dsl *DataResyncDSL) PuntToHost(val *punt.ToHost) linuxclient.DataResyncDSL {
+	dsl.vppDataResync.PuntToHost(val)
 	return dsl
 }
 

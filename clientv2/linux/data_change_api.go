@@ -26,6 +26,8 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change
@@ -99,6 +101,14 @@ type PutDSL interface {
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// DNAT44 adds a request to create or update DNAT44 configuration
 	DNAT44(dnat *nat.DNat44) PutDSL
+	// IPSecSA adds request to create a new Security Association
+	IPSecSA(sa *ipsec.SecurityAssociation) PutDSL
+	// IPSecSPD adds request to create a new Security Policy Database
+	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) PutDSL
+	// PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
+	PuntIPRedirect(val *punt.IpRedirect) PutDSL
+	// PuntToHost adds request to create or update rule to punt L4 traffic to a host.
+	PuntToHost(val *punt.ToHost) PutDSL
 
 	// Delete changes the DSL mode to allow removing an existing configuration.
 	// See documentation for DataChangeDSL.Delete().
@@ -158,6 +168,14 @@ type DeleteDSL interface {
 	NAT44Global() DeleteDSL
 	// DNAT44 adds a request to delete an existing DNAT-44 configuration
 	DNAT44(label string) DeleteDSL
+	// IPSecSA adds request to delete a Security Association
+	IPSecSA(saIndex string) DeleteDSL
+	// IPSecSPD adds request to delete a Security Policy Database
+	IPSecSPD(spdIndex string) DeleteDSL
+	// PuntIPRedirect adds request to delete a rule used to punt L3 traffic via interface.
+	PuntIPRedirect(l3Proto punt.L3Protocol, txInterface string) DeleteDSL
+	// PuntToHost adds request to delete a rule used to punt L4 traffic to a host.
+	PuntToHost(l3Proto punt.L3Protocol, l4Proto punt.L4Protocol, port uint32) DeleteDSL
 
 	// Put changes the DSL mode to allow configuration editing.
 	// See documentation for DataChangeDSL.Put().

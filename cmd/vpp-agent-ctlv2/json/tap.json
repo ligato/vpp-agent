@@ -1,8 +1,6 @@
 {
-    "link": {
-        "tap": {
-            "host_if_name": "tap1"
-        }
+    "tap": {
+        "host_if_name": "tap1"
     },
     "enabled": true,
     "mtu": 1500,
@@ -11,5 +9,5 @@
     ],
     "name": "tap1",
     "phys_address": "7C:4E:E7:8A:63:68",
-    "type": 5
+    "type": "TAP"
 }
