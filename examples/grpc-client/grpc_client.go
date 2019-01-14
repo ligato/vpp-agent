@@ -137,19 +137,11 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	c := remoteclient.NewClientGRPC(api.NewConfiguratorClient(conn))
 
 	// List supported model specs
-	modules, err := c.ListCapabilities()
+	modules, err := c.ListModules()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	/*fmt.Printf("Listing %d supported modules\n", len(modules))
-	for _, module := range modules {
-		specs := module.Specs
-		fmt.Printf("* module %s (%d models)\n", module.Name, len(specs))
-		for _, spec := range specs {
-			fmt.Printf(" - %v\n", spec.String())
-		}
-	}*/
 	fmt.Printf("Listing %d supported modules\n", len(modules))
 	for module, models := range modules {
 		fmt.Printf("* %s module (%d models)\n", module, len(models))
@@ -163,8 +155,8 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	fmt.Printf("Requesting resync\n")
 
 	// Resync
-	req := c.ResyncRequest()
-	req.Put(
+	req := c.SetConfig(true)
+	req.Update(
 		memif1, memif2,
 		veth1, veth2,
 		routeX,
@@ -179,10 +171,10 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	memif1.Enabled = false
 	memif1.Mtu = 666
 
-	req2 := c.ChangeRequest()
+	req2 := c.SetConfig(false)
 	req2.Update(afp1, memif1)
-	//req2.Delete(memif2)
-	req2.Update(memif2)
+	req2.Delete(memif2)
+	//req2.Update(memif2)
 	if err := req2.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}

@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/api/models"
 )
@@ -26,22 +25,16 @@ import (
 // Local is global client for direct local access.
 var Local = NewClient(&txnFactory{local.DefaultRegistry})
 
-// ProtoTxnFactory defines interface for keyval transaction provider.
-type ProtoTxnFactory interface {
-	NewTxn(resync bool) keyval.ProtoTxn
-}
-
 type client struct {
 	txnFactory ProtoTxnFactory
 }
 
 // NewClient returns new instance that uses given registry for data propagation.
-func NewClient(factory ProtoTxnFactory) SyncClient {
+func NewClient(factory ProtoTxnFactory) ConfiguratorClient {
 	return &client{factory}
 }
 
-// ListModules lists all available modules and their model specs.
-func (c *client) ListCapabilities() (map[string][]models.Model, error) {
+func (c *client) ListModules() (map[string][]models.Model, error) {
 	modules := make(map[string][]models.Model)
 	for _, model := range models.RegisteredModels() {
 		modules[model.Module] = append(modules[model.Module], *model)
@@ -49,28 +42,16 @@ func (c *client) ListCapabilities() (map[string][]models.Model, error) {
 	return modules, nil
 }
 
-// ResyncRequest returns new resync request.
-func (c *client) ResyncRequest() ResyncRequest {
-	return &request{txn: c.txnFactory.NewTxn(true)}
+func (c *client) SetConfig(resync bool) SetConfigRequest {
+	return &setConfigRequest{txn: c.txnFactory.NewTxn(resync)}
 }
 
-// ChangeRequest return new change request.
-func (c *client) ChangeRequest() ChangeRequest {
-	return &request{txn: c.txnFactory.NewTxn(false)}
-}
-
-type request struct {
+type setConfigRequest struct {
 	txn keyval.ProtoTxn
 	err error
 }
 
-// Put adds the given model data to the transaction.
-func (r *request) Put(items ...models.ProtoItem) {
-	r.Update(items...)
-}
-
-// Update adds update for the given model data to the transaction.
-func (r *request) Update(items ...models.ProtoItem) {
+func (r *setConfigRequest) Update(items ...models.ProtoItem) {
 	if r.err != nil {
 		return
 	}
@@ -84,8 +65,7 @@ func (r *request) Update(items ...models.ProtoItem) {
 	}
 }
 
-// Delete adds delete for the given model keys to the transaction.
-func (r *request) Delete(items ...models.ProtoItem) {
+func (r *setConfigRequest) Delete(items ...models.ProtoItem) {
 	if r.err != nil {
 		return
 	}
@@ -99,22 +79,9 @@ func (r *request) Delete(items ...models.ProtoItem) {
 	}
 }
 
-// Send commits the transaction with all data.
-func (r *request) Send(ctx context.Context) error {
+func (r *setConfigRequest) Send(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
 	}
 	return r.txn.Commit()
-}
-
-type txnFactory struct {
-	registry *syncbase.Registry
-}
-
-func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
-	if resync {
-		return local.NewProtoTxn(p.registry.PropagateResync)
-	} else {
-		return local.NewProtoTxn(p.registry.PropagateChanges)
-	}
 }

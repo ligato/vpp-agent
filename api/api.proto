@@ -19,11 +19,6 @@ message Value {
 }
 
 /*
-message Item {
-    Key key = 1;
-    Value value = 2;
-}
-
 message Key {
     repeated string parts = 1;
 }
@@ -44,18 +39,10 @@ message ItemStatus {
         INVALID = 3;
         FAILED = 4;
         REMOVED = 5;
-        //DISCOVERED = 6;
     }
     State state = 1;
     string message = 2;
 }
-
-/*enum ItemType {
-    UNDEFINED = 0;
-    CONFIG = 1;
-    STATE = 2;
-    METRIC = 3;
-}*/
 
 service Configurator {
     rpc ListCapabilities (ListCapabilitiesRequest) returns (ListCapabilitiesResponse) {};
@@ -77,12 +64,6 @@ message ModelSpec {
     string name = 1;
     string version = 2;
     string module = 3;
-    //string group = 4;
-    /*enum Kind {
-        UNDEFINED = 0;
-        CONFIG = 1;
-    }
-    Kind kind = 4;*/
     map<string,string> meta = 5;
 }
 
@@ -96,7 +77,7 @@ message SetConfigRequest {
         Item item = 1;
         map<string,string> labels = 2;
     }
-    repeated UpdateItem update = 2;
+    repeated UpdateItem updates = 2;
 }
 
 message SetConfigResponse {
@@ -139,7 +120,7 @@ message DumpStateResponse {
         Item item = 1;
         map<string,string> metadata = 2;
     }
-    repeated StateItem state = 1;
+    repeated StateItem states = 1;
 }
 
 message SubscribeRequest {
