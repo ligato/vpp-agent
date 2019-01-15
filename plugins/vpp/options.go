@@ -29,7 +29,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.PluginName = "vpp"
 	p.StatusCheck = &statuscheck.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
-	p.GoVppmux = &govppmux.DefaultPlugin
+	p.GoVppMux = &govppmux.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

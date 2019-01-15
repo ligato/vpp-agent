@@ -155,7 +155,7 @@ type Deps struct {
 	PublishStatistics datasync.KeyProtoValWriter
 	Watcher           datasync.KeyValProtoWatcher
 	IfStatePub        datasync.KeyProtoValWriter
-	GoVppmux          govppmux.APIWithStats
+	GoVppMux          govppmux.StatsAPI
 	Linux             LinuxPluginAPI
 
 	DataSyncs        map[string]datasync.KeyProtoValWriter
@@ -436,7 +436,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	// Interface configurator
 	plugin.ifVppNotifChan = make(chan govppapi.Message, 100)
 	plugin.ifConfigurator = &ifplugin.InterfaceConfigurator{}
-	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu); err != nil {
+	if err := plugin.ifConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.Linux, plugin.ifVppNotifChan, plugin.ifMtu); err != nil {
 		return plugin.ifConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("ifConfigurator Initialized")
@@ -448,7 +448,7 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 	}
 	// Interface state updater
 	plugin.ifStateUpdater = &ifplugin.InterfaceStateUpdater{}
-	if err := plugin.ifStateUpdater.Init(ctx, plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
+	if err := plugin.ifStateUpdater.Init(ctx, plugin.Log, plugin.GoVppMux, plugin.swIfIndexes, plugin.ifVppNotifChan, func(state *intf.InterfaceNotification) {
 		select {
 		case plugin.ifStateChan <- state:
 			// OK
@@ -463,21 +463,21 @@ func (plugin *Plugin) initIF(ctx context.Context) error {
 
 	// BFD configurator
 	plugin.bfdConfigurator = &ifplugin.BFDConfigurator{}
-	if err := plugin.bfdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.bfdConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.bfdConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("bfdConfigurator Initialized")
 
 	// STN configurator
 	plugin.stnConfigurator = &ifplugin.StnConfigurator{}
-	if err := plugin.stnConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.stnConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.stnConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("stnConfigurator Initialized")
 
 	// NAT configurator
 	plugin.natConfigurator = &ifplugin.NatConfigurator{}
-	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.natConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.natConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("natConfigurator Initialized")
@@ -490,7 +490,7 @@ func (plugin *Plugin) initIPSec(ctx context.Context) (err error) {
 
 	// IPSec configurator
 	plugin.ipSecConfigurator = &ipsecplugin.IPSecConfigurator{}
-	if err = plugin.ipSecConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err = plugin.ipSecConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.ipSecConfigurator.LogError(err)
 	}
 
@@ -503,7 +503,7 @@ func (plugin *Plugin) initACL(ctx context.Context) error {
 
 	// ACL configurator
 	plugin.aclConfigurator = &aclplugin.ACLConfigurator{}
-	err := plugin.aclConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes)
+	err := plugin.aclConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes)
 	if err != nil {
 		return plugin.aclConfigurator.LogError(err)
 	}
@@ -518,7 +518,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 	// Bridge domain configurator
 	plugin.bdVppNotifChan = make(chan l2plugin.BridgeDomainStateMessage, 100)
 	plugin.bdConfigurator = &l2plugin.BDConfigurator{}
-	err := plugin.bdConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdVppNotifChan)
+	err := plugin.bdConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes, plugin.bdVppNotifChan)
 	if err != nil {
 		return plugin.bdConfigurator.LogError(err)
 	}
@@ -529,7 +529,7 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// Bridge domain state updater
 	plugin.bdStateUpdater = &l2plugin.BridgeDomainStateUpdater{}
-	if err := plugin.bdStateUpdater.Init(ctx, plugin.Log, plugin.GoVppmux, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan,
+	if err := plugin.bdStateUpdater.Init(ctx, plugin.Log, plugin.GoVppMux, plugin.bdIndexes, plugin.swIfIndexes, plugin.bdVppNotifChan,
 		func(state *l2plugin.BridgeDomainStateNotification) {
 			select {
 			case plugin.bdStateChan <- state:
@@ -543,14 +543,14 @@ func (plugin *Plugin) initL2(ctx context.Context) error {
 
 	// L2 FIB configurator
 	plugin.fibConfigurator = &l2plugin.FIBConfigurator{}
-	if err := plugin.fibConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, plugin.bdIndexes); err != nil {
+	if err := plugin.fibConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes, plugin.bdIndexes); err != nil {
 		return plugin.fibConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("fibConfigurator Initialized")
 
 	// L2 cross connect
 	plugin.xcConfigurator = &l2plugin.XConnectConfigurator{}
-	if err := plugin.xcConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.xcConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.xcConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("xcConfigurator Initialized")
@@ -563,28 +563,28 @@ func (plugin *Plugin) initL3(ctx context.Context) error {
 
 	// ARP configurator
 	plugin.arpConfigurator = &l3plugin.ArpConfigurator{}
-	if err := plugin.arpConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.arpConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.arpConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("arpConfigurator Initialized")
 
 	// Proxy ARP configurator
 	plugin.proxyArpConfigurator = &l3plugin.ProxyArpConfigurator{}
-	if err := plugin.proxyArpConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.proxyArpConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.proxyArpConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("proxyArpConfigurator Initialized")
 
 	// Route configurator
 	plugin.routeConfigurator = &l3plugin.RouteConfigurator{}
-	if err := plugin.routeConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.routeConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.routeConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("routeConfigurator Initialized")
 
 	// IP neighbor configurator
 	plugin.ipNeighConfigurator = &l3plugin.IPNeighConfigurator{}
-	if err := plugin.ipNeighConfigurator.Init(plugin.Log, plugin.GoVppmux); err != nil {
+	if err := plugin.ipNeighConfigurator.Init(plugin.Log, plugin.GoVppMux); err != nil {
 		return plugin.ipNeighConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("ipNeighConfigurator Initialized")
@@ -597,7 +597,7 @@ func (plugin *Plugin) initL4(ctx context.Context) error {
 
 	// Application namespace configurator
 	plugin.appNsConfigurator = &l4plugin.AppNsConfigurator{}
-	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes); err != nil {
+	if err := plugin.appNsConfigurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes); err != nil {
 		return plugin.appNsConfigurator.LogError(err)
 	}
 	plugin.Log.Debug("l4Configurator Initialized")
@@ -610,7 +610,7 @@ func (plugin *Plugin) initPunt(ctx context.Context) (err error) {
 
 	// Init Punt configurator
 	plugin.puntConfigurator = &puntplugin.PuntConfigurator{}
-	if err := plugin.puntConfigurator.Init(plugin.Log, plugin.GoVppmux); err != nil {
+	if err := plugin.puntConfigurator.Init(plugin.Log, plugin.GoVppMux); err != nil {
 		return plugin.puntConfigurator.LogError(err)
 	}
 
@@ -623,7 +623,7 @@ func (plugin *Plugin) initSR(ctx context.Context) (err error) {
 
 	// Init SR configurator
 	plugin.srv6Configurator = &srplugin.SRv6Configurator{}
-	if err := plugin.srv6Configurator.Init(plugin.Log, plugin.GoVppmux, plugin.swIfIndexes, nil); err != nil {
+	if err := plugin.srv6Configurator.Init(plugin.Log, plugin.GoVppMux, plugin.swIfIndexes, nil); err != nil {
 		return plugin.srv6Configurator.LogError(err)
 	}
 

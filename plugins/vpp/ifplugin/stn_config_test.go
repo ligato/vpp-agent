@@ -18,9 +18,9 @@ import (
 	"net"
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	stn_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
@@ -36,8 +36,8 @@ import (
 
 // Add STN rule
 func TestStnConfiguratorAddRule(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -55,8 +55,8 @@ func TestStnConfiguratorAddRule(t *testing.T) {
 
 // Add STN rule with full IP (address/mask)
 func TestStnConfiguratorAddRuleFullIP(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -74,8 +74,8 @@ func TestStnConfiguratorAddRuleFullIP(t *testing.T) {
 
 // Add STN rule while interface is missing
 func TestStnConfiguratorAddRuleMissingInterface(t *testing.T) {
-	ctx, conn, plugin, _ := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -91,8 +91,8 @@ func TestStnConfiguratorAddRuleMissingInterface(t *testing.T) {
 
 // Add STN rule while non-zero return value is get
 func TestStnConfiguratorAddRuleRetvalError(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{
@@ -112,8 +112,8 @@ func TestStnConfiguratorAddRuleRetvalError(t *testing.T) {
 
 // Add nil STN rule
 func TestStnConfiguratorAddRuleNoInput(t *testing.T) {
-	_, conn, plugin, _ := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	_, goVppMux, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Test add empty rule
 	err := plugin.Add(nil)
@@ -122,8 +122,8 @@ func TestStnConfiguratorAddRuleNoInput(t *testing.T) {
 
 // Add STN rule without interface
 func TestStnConfiguratorAddRuleNoInterface(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -141,8 +141,8 @@ func TestStnConfiguratorAddRuleNoInterface(t *testing.T) {
 
 // Add STN rule without IP
 func TestStnConfiguratorAddRuleNoIP(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -160,8 +160,8 @@ func TestStnConfiguratorAddRuleNoIP(t *testing.T) {
 
 // Add STN rule with invalid IP
 func TestStnConfiguratorAddRuleInvalidIP(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -180,8 +180,8 @@ func TestStnConfiguratorAddRuleInvalidIP(t *testing.T) {
 
 // Delete STN rule
 func TestStnConfiguratorDeleteRule(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -202,8 +202,8 @@ func TestStnConfiguratorDeleteRule(t *testing.T) {
 
 // Delete STN rule with missing interface
 func TestStnConfiguratorDeleteRuleMissingInterface(t *testing.T) {
-	_, conn, plugin, _ := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	_, goVppMux, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Data
 	data := getTestStnRule("rule1", "if1", "10.0.0.1")
@@ -219,8 +219,8 @@ func TestStnConfiguratorDeleteRuleMissingInterface(t *testing.T) {
 
 // Delete STN rule non-zero return value
 func TestStnConfiguratorDeleteRuleRetvalError(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -243,8 +243,8 @@ func TestStnConfiguratorDeleteRuleRetvalError(t *testing.T) {
 
 // Delete STN rule failed check
 func TestStnConfiguratorDeleteRuleCheckError(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -264,8 +264,8 @@ func TestStnConfiguratorDeleteRuleCheckError(t *testing.T) {
 
 // Delete STN rule without interface
 func TestStnConfiguratorDeleteRuleNoInterface(t *testing.T) {
-	_, conn, plugin, _ := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	_, goVppMux, plugin, _ := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Data
 	data := getTestStnRule("rule1", "", "10.0.0.1")
@@ -277,8 +277,8 @@ func TestStnConfiguratorDeleteRuleNoInterface(t *testing.T) {
 
 // Modify STN rule
 func TestStnConfiguratorModifyRule(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -300,8 +300,8 @@ func TestStnConfiguratorModifyRule(t *testing.T) {
 
 // Modify STN rule nil check
 func TestStnConfiguratorModifyRuleNilCheck(t *testing.T) {
-	_, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	_, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Data
 	oldData := getTestStnRule("rule1", "if1", "10.0.0.1")
@@ -319,8 +319,8 @@ func TestStnConfiguratorModifyRuleNilCheck(t *testing.T) {
 
 // Dump STN rule
 func TestStnConfiguratorDumpRule(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnRulesDetails{
@@ -345,8 +345,8 @@ func TestStnConfiguratorDumpRule(t *testing.T) {
 
 // Resolve new interface for STN
 func TestStnConfiguratorResolveCreatedInterface(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -361,15 +361,16 @@ func TestStnConfiguratorResolveCreatedInterface(t *testing.T) {
 	swIfIndices.RegisterName("if1", 1, nil)
 
 	// Test resolving of new interface
-	plugin.ResolveCreatedInterface("if1")
+	err = plugin.ResolveCreatedInterface("if1")
+	Expect(err).To(BeNil())
 	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeTrue())
 	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 // Resolve removed interface for STN
 func TestStnConfiguratorResolveDeletedInterface(t *testing.T) {
-	ctx, conn, plugin, swIfIndices := stnTestSetup(t)
-	defer stnTestTeardown(conn, plugin)
+	ctx, goVppMux, plugin, swIfIndices := stnTestSetup(t)
+	defer stnTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&stn_api.StnAddDelRuleReply{})
@@ -383,19 +384,20 @@ func TestStnConfiguratorResolveDeletedInterface(t *testing.T) {
 
 	// Test resolving of deleted interface
 	swIfIndices.UnregisterName("if1")
-	plugin.ResolveDeletedInterface("if1")
+	err = plugin.ResolveDeletedInterface("if1")
+	Expect(err).To(BeNil())
 	Expect(plugin.IndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 	Expect(plugin.UnstoredIndexExistsFor(ifplugin.StnIdentifier("if1"))).To(BeFalse())
 }
 
 /* STN Test Setup */
 
-func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.StnConfigurator, ifaceidx.SwIfIndexRW) {
+func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *ifplugin.StnConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -404,14 +406,14 @@ func stnTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn", nil))
 	// Configurator
 	plugin := &ifplugin.StnConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices)
+	err = plugin.Init(log, goVppMux, swIfIndices)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin, swIfIndices
+	return ctx, goVppMux, plugin, swIfIndices
 }
 
-func stnTestTeardown(connection *core.Connection, plugin *ifplugin.StnConfigurator) {
-	connection.Disconnect()
+func stnTestTeardown(goVppMux *mock.GoVPPMux, plugin *ifplugin.StnConfigurator) {
+	goVppMux.Close()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

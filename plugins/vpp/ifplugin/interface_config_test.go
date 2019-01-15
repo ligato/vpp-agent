@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
@@ -43,8 +43,8 @@ import (
 func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	_, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Register
 	plugin.GetSwIfIndexes().RegisterName("if1", 1, nil)
 	plugin.GetSwIfIndexes().RegisterName("if2", 2, nil)
@@ -94,8 +94,8 @@ func TestInterfaceConfiguratorDHCPNotifications(t *testing.T) {
 // Get interface details and propagate it to status
 func TestInterfaceConfiguratorPropagateIfDetailsToStatus(t *testing.T) {
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(
@@ -137,8 +137,8 @@ func TestInterfaceConfiguratorPropagateIfDetailsToStatus(t *testing.T) {
 func TestInterfacesConfigureTapV1(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&tap.TapConnectReply{
 		SwIfIndex: 1,
@@ -171,8 +171,8 @@ func TestInterfacesConfigureTapV1(t *testing.T) {
 func TestInterfacesConfigureTapV2(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&tapv2.TapCreateV2Reply{
 		SwIfIndex: 1,
@@ -204,8 +204,8 @@ func TestInterfacesConfigureTapV2(t *testing.T) {
 func TestInterfacesConfigureMemif(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{}) // Memif socket filename registration
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
@@ -240,8 +240,8 @@ func TestInterfacesConfigureMemif(t *testing.T) {
 func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{}) // Memif socket filename registration
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{                 // Initial memif interface (just to register filename)
@@ -311,8 +311,8 @@ func TestInterfacesConfigureMemifAsSlave(t *testing.T) {
 func TestInterfacesConfigureVxLAN(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
 		SwIfIndex: 1,
@@ -339,8 +339,8 @@ func TestInterfacesConfigureVxLAN(t *testing.T) {
 func TestInterfacesConfigureVxLANWithMulticast(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
 		SwIfIndex: 1,
@@ -385,8 +385,8 @@ func TestInterfacesConfigureVxLANWithMulticast(t *testing.T) {
 func TestInterfacesConfigureVxLANWithMulticastCache(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
 		SwIfIndex: 1,
@@ -432,8 +432,8 @@ func TestInterfacesConfigureVxLANWithMulticastCache(t *testing.T) {
 func TestInterfacesConfigureVxLANWithMulticastCacheDelete(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	_, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_VXLAN_TUNNEL, []string{"10.0.0.1/24"}, false, "", 0)
 	data.Vxlan = getTestVxLanInterface("10.0.0.2", "10.0.0.3", "multicastIf", 1)
@@ -453,8 +453,8 @@ func TestInterfacesConfigureVxLANWithMulticastCacheDelete(t *testing.T) {
 func TestInterfacesConfigureVxLANWithMulticastError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
 		SwIfIndex: 1,
@@ -483,8 +483,8 @@ func TestInterfacesConfigureVxLANWithMulticastError(t *testing.T) {
 func TestInterfacesConfigureVxLANWithMulticastIPError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Multicast
 		SwIfIndex: 1,
@@ -511,8 +511,8 @@ func TestInterfacesConfigureVxLANWithMulticastIPError(t *testing.T) {
 func TestInterfacesConfigureLoopback(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{
 		SwIfIndex: 1,
@@ -541,8 +541,8 @@ func TestInterfacesConfigureLoopback(t *testing.T) {
 func TestInterfacesConfigureEthernet(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
@@ -570,8 +570,8 @@ func TestInterfacesConfigureEthernet(t *testing.T) {
 func TestInterfacesConfigureEthernetNonExisting(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	_, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestInterface("if1", if_api.InterfaceType_ETHERNET_CSMACD, []string{"10.0.0.1/24"}, false, "46:06:18:DB:05:3A", 1500)
 	// Test configure TAP
@@ -586,8 +586,8 @@ func TestInterfacesConfigureEthernetNonExisting(t *testing.T) {
 func TestInterfacesConfigureAfPacket(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{
 		SwIfIndex: 1,
@@ -615,8 +615,8 @@ func TestInterfacesConfigureAfPacket(t *testing.T) {
 func TestInterfacesConfigureAfPacketPending(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	_, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestAfPacket("if1", []string{"10.0.0.1/24"}, "host1")
 	// Test configure TAP
@@ -630,8 +630,8 @@ func TestInterfacesConfigureAfPacketPending(t *testing.T) {
 func TestInterfacesConfigureInterfaceLoopbackError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{
 		SwIfIndex: 1,
@@ -650,8 +650,8 @@ func TestInterfacesConfigureInterfaceLoopbackError(t *testing.T) {
 func TestInterfacesConfigureInterfaceRxModeError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -672,8 +672,8 @@ func TestInterfacesConfigureInterfaceRxModeError(t *testing.T) {
 func TestInterfacesConfigureInterfaceMacError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -695,8 +695,8 @@ func TestInterfacesConfigureInterfaceMacError(t *testing.T) {
 func TestInterfacesConfigureInterfaceVrfError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -719,8 +719,8 @@ func TestInterfacesConfigureInterfaceVrfError(t *testing.T) {
 func TestInterfacesConfigureInterfaceIPAddressError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -744,8 +744,8 @@ func TestInterfacesConfigureInterfaceIPAddressError(t *testing.T) {
 func TestInterfacesConfigureInterfaceContainerIPAddressError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -770,8 +770,8 @@ func TestInterfacesConfigureInterfaceContainerIPAddressError(t *testing.T) {
 func TestInterfacesConfigureInterfaceMtuError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -797,8 +797,8 @@ func TestInterfacesConfigureInterfaceMtuError(t *testing.T) {
 func TestInterfacesConfigureInterfaceAdminUpError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -823,8 +823,8 @@ func TestInterfacesConfigureInterfaceAdminUpError(t *testing.T) {
 func TestInterfacesModifyTapV1WithoutTapData(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
@@ -859,8 +859,8 @@ func TestInterfacesModifyTapV1WithoutTapData(t *testing.T) {
 func TestInterfacesModifyTapV1TapData(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{}) // Delete
@@ -903,8 +903,8 @@ func TestInterfacesModifyTapV1TapData(t *testing.T) {
 func TestInterfacesModifyMemifWithoutMemifData(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DHCPClientConfigReply{})
@@ -935,8 +935,8 @@ func TestInterfacesModifyMemifWithoutMemifData(t *testing.T) {
 func TestInterfacesModifyMemifData(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&memif.MemifSocketFilenameAddDelReply{}) // Create - configure old data
 	ctx.MockVpp.MockReply(&memif.MemifCreateReply{
@@ -993,8 +993,8 @@ func TestInterfacesModifyMemifData(t *testing.T) {
 func TestInterfacesModifyVxLanSimple(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // Create - configure old data
 		SwIfIndex: 1,
@@ -1030,8 +1030,8 @@ func TestInterfacesModifyVxLanSimple(t *testing.T) {
 func TestInterfacesModifyVxLanMulticast(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{
 		SwIfIndex: 1,
@@ -1063,8 +1063,8 @@ func TestInterfacesModifyVxLanMulticast(t *testing.T) {
 func TestInterfacesModifyVxLanData(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&vxlan.VxlanAddDelTunnelReply{ // Create - configure old data
 		SwIfIndex: 1,
@@ -1110,8 +1110,8 @@ func TestInterfacesModifyVxLanData(t *testing.T) {
 // Modify loopback interface
 func TestInterfacesModifyLoopback(t *testing.T) {
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.CreateLoopbackReply{ // Create
@@ -1160,8 +1160,8 @@ func TestInterfacesModifyLoopback(t *testing.T) {
 func TestInterfacesModifyEthernet(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{}) // Configure
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetMacAddressReply{})
@@ -1202,8 +1202,8 @@ func TestInterfacesModifyEthernet(t *testing.T) {
 func TestInterfacesModifyAfPacket(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -1246,8 +1246,8 @@ func TestInterfacesModifyAfPacket(t *testing.T) {
 func TestInterfacesModifyAfPacketPending(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -1272,8 +1272,8 @@ func TestInterfacesModifyAfPacketPending(t *testing.T) {
 func TestInterfacesModifyAfPacketRecreate(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -1316,8 +1316,8 @@ func TestInterfacesModifyAfPacketRecreate(t *testing.T) {
 func TestInterfacesDeleteTapInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&dhcp_api.DHCPClientConfigReply{})
@@ -1340,8 +1340,8 @@ func TestInterfacesDeleteTapInterface(t *testing.T) {
 func TestInterfacesDeleteMemifInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
@@ -1362,8 +1362,8 @@ func TestInterfacesDeleteMemifInterface(t *testing.T) {
 func TestInterfacesDeleteVxlanInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
@@ -1385,8 +1385,8 @@ func TestInterfacesDeleteVxlanInterface(t *testing.T) {
 func TestInterfacesDeleteLoopbackInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
@@ -1407,8 +1407,8 @@ func TestInterfacesDeleteLoopbackInterface(t *testing.T) {
 func TestInterfacesDeleteEthernetInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetFlagsReply{})
 	ctx.MockVpp.MockReply(&ip.IPContainerProxyAddDelReply{})
@@ -1427,8 +1427,8 @@ func TestInterfacesDeleteEthernetInterface(t *testing.T) {
 func TestInterfacesDeleteAfPacketInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{}) // Delete
 	ctx.MockVpp.MockReply(&af_packet.AfPacketDeleteReply{})
@@ -1449,8 +1449,8 @@ func TestInterfacesDeleteAfPacketInterface(t *testing.T) {
 func TestInterfacesDeletePendingAfPacketInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&af_packet.AfPacketCreateReply{}) // Create
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
@@ -1484,8 +1484,8 @@ func TestInterfacesDeletePendingAfPacketInterface(t *testing.T) {
 }
 
 func TestModifyRxMode(t *testing.T) {
-	ctx, connection, plugin := ifTestSetup(t)
-	defer ifTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := ifTestSetup(t)
+	defer ifTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
@@ -1518,13 +1518,14 @@ func TestModifyRxMode(t *testing.T) {
 
 /* Interface Test Setup */
 
-func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.InterfaceConfigurator) {
+func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *ifplugin.InterfaceConfigurator) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// Logger
@@ -1534,14 +1535,14 @@ func ifTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugi
 	// Configurator
 	plugin := &ifplugin.InterfaceConfigurator{}
 	notifChan := make(chan govppapi.Message, 5)
-	err = plugin.Init(log, connection, 1, notifChan, 1500)
+	err = plugin.Init(log, goVppMux, 1, notifChan, 1500)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin
+	return ctx, goVppMux, plugin
 }
 
-func ifTestTeardown(connection *core.Connection, plugin *ifplugin.InterfaceConfigurator) {
-	connection.Disconnect()
+func ifTestTeardown(goVppMux *mock.GoVPPMux, plugin *ifplugin.InterfaceConfigurator) {
+	goVppMux.Close()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

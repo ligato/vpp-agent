@@ -17,9 +17,9 @@ package l2plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -39,8 +39,8 @@ import (
 func TestConfigureXConnectPair(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -64,8 +64,8 @@ func TestConfigureXConnectPair(t *testing.T) {
 func TestConfigureXConnectPairMissingRcIf(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -88,8 +88,8 @@ func TestConfigureXConnectPairMissingRcIf(t *testing.T) {
 func TestConfigureXConnectPairMissingTxIf(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -112,8 +112,8 @@ func TestConfigureXConnectPairMissingTxIf(t *testing.T) {
 func TestConfigureXConnectPairAddErr(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{
 		Retval: 1,
@@ -134,8 +134,8 @@ func TestConfigureXConnectPairAddErr(t *testing.T) {
 func TestConfigureXConnectPairInvalidRxConfig(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestXConnect("", "txIf")
 	// Test configure XConnect
@@ -147,8 +147,8 @@ func TestConfigureXConnectPairInvalidRxConfig(t *testing.T) {
 func TestConfigureXConnectPairInvalidTxConfig(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestXConnect("rcIf", "")
 	// Test configure XConnect
@@ -160,8 +160,8 @@ func TestConfigureXConnectPairInvalidTxConfig(t *testing.T) {
 func TestConfigureXConnectPairInvalidIfConfig(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestXConnect("rcIf", "rcIf")
 	// Test configure XConnect
@@ -173,8 +173,8 @@ func TestConfigureXConnectPairInvalidIfConfig(t *testing.T) {
 func TestModifyXConnectPair(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
@@ -204,8 +204,8 @@ func TestModifyXConnectPair(t *testing.T) {
 func TestModifyXConnectPairMissingRcIf(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -235,8 +235,8 @@ func TestModifyXConnectPairMissingRcIf(t *testing.T) {
 func TestModifyXConnectPairMissingTxIfRemoveOld(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
@@ -264,8 +264,8 @@ func TestModifyXConnectPairMissingTxIfRemoveOld(t *testing.T) {
 func TestModifyXConnectPairMissingTxIfKeepOld(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -294,8 +294,8 @@ func TestModifyXConnectPairMissingTxIfKeepOld(t *testing.T) {
 func TestModifyXConnectPairInvalidRxConfig(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Data
 	oldData := getTestXConnect("rcIf", "txIf1")
 	newData := getTestXConnect("", "txIf2")
@@ -308,8 +308,8 @@ func TestModifyXConnectPairInvalidRxConfig(t *testing.T) {
 func TestDeleteXConnectPair(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
@@ -336,8 +336,8 @@ func TestDeleteXConnectPair(t *testing.T) {
 func TestDeleteXConnectPairMissingRcIf(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -365,8 +365,8 @@ func TestDeleteXConnectPairMissingRcIf(t *testing.T) {
 func TestDeleteXConnectPairMissingTxIf(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -394,8 +394,8 @@ func TestDeleteXConnectPairMissingTxIf(t *testing.T) {
 func TestDeleteXConnectPairError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{
@@ -418,8 +418,8 @@ func TestDeleteXConnectPairError(t *testing.T) {
 func TestDeleteXConnectPairInvalidRxConfig(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestXConnect("", "txIf")
 	// Test configure XConnect
@@ -431,8 +431,8 @@ func TestDeleteXConnectPairInvalidRxConfig(t *testing.T) {
 func TestConfigureXConnectPairResolveCreatedInterfaceAdd(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -468,8 +468,8 @@ func TestConfigureXConnectPairResolveCreatedInterfaceAdd(t *testing.T) {
 func TestConfigureXConnectPairResolveCreatedInterfaceAddError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{
 		Retval: 1,
@@ -503,8 +503,8 @@ func TestConfigureXConnectPairResolveCreatedInterfaceAddError(t *testing.T) {
 func TestConfigureXConnectPairResolveCreatedInterfaceDel(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
@@ -537,8 +537,8 @@ func TestConfigureXConnectPairResolveCreatedInterfaceDel(t *testing.T) {
 func TestConfigureXConnectPairResolveCreatedInterfaceDelError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{
@@ -569,8 +569,8 @@ func TestConfigureXConnectPairResolveCreatedInterfaceDelError(t *testing.T) {
 func TestConfigureXConnectPairResolveDeletedRcInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := xcTestSetup(t)
-	defer xcTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := xcTestSetup(t)
+	defer xcTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2api.SwInterfaceSetL2XconnectReply{})
 	// Data
@@ -592,12 +592,12 @@ func TestConfigureXConnectPairResolveDeletedRcInterface(t *testing.T) {
 
 /* XConnect Test Setup */
 
-func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugin.XConnectConfigurator, ifaceidx.SwIfIndexRW) {
+func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *l2plugin.XConnectConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -606,14 +606,14 @@ func xcTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugi
 	swIfIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "xc-if", nil))
 	// Configurator
 	plugin := &l2plugin.XConnectConfigurator{}
-	err = plugin.Init(log, connection, swIfIndexes)
+	err = plugin.Init(log, goVppMux, swIfIndexes)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin, swIfIndexes
+	return ctx, goVppMux, plugin, swIfIndexes
 }
 
-func xcTestTeardown(connection *core.Connection, plugin *l2plugin.XConnectConfigurator) {
-	connection.Disconnect()
+func xcTestTeardown(goVppMux *mock.GoVPPMux, plugin *l2plugin.XConnectConfigurator) {
+	goVppMux.Close()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

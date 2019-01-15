@@ -19,9 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
@@ -52,8 +52,8 @@ func (m *mockCallback) Done(err error) {
 func TestFIBConfiguratorAdd(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -74,8 +74,8 @@ func TestFIBConfiguratorAdd(t *testing.T) {
 func TestFIBConfiguratorAddWithoutPhysicalAddress(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _, _ := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _, _ := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestFIB("if1", "bd1", "")
 	// Test configure FIB
@@ -88,8 +88,8 @@ func TestFIBConfiguratorAddWithoutPhysicalAddress(t *testing.T) {
 func TestFIBConfiguratorAddWithoutBd(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _, _ := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _, _ := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestFIB("if1", "", "00:00:00:00:00:01")
 	// Test configure FIB
@@ -102,8 +102,8 @@ func TestFIBConfiguratorAddWithoutBd(t *testing.T) {
 func TestFIBConfiguratorAddUntiedIfBd(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -125,8 +125,8 @@ func TestFIBConfiguratorAddUntiedIfBd(t *testing.T) {
 func TestFIBConfiguratorRemoveObsoleteDelCache(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -148,8 +148,8 @@ func TestFIBConfiguratorRemoveObsoleteDelCache(t *testing.T) {
 func TestFIBConfiguratorMissingInterface(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestFIB("if1", "bd1", "00:00:00:00:00:01")
 	// Register interface and bridge domain
@@ -170,8 +170,8 @@ func TestFIBConfiguratorMissingInterface(t *testing.T) {
 func TestFIBConfiguratorMissingBridgeDomain(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes, _ := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes, _ := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestFIB("if1", "bd1", "00:00:00:00:00:01")
 	// Register interface and bridge domain
@@ -192,8 +192,8 @@ func TestFIBConfiguratorMissingBridgeDomain(t *testing.T) {
 func TestFIBConfiguratorModify(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -223,8 +223,8 @@ func TestFIBConfiguratorModify(t *testing.T) {
 func TestFIBConfiguratorModifyWithMissingOldInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -254,8 +254,8 @@ func TestFIBConfiguratorModifyWithMissingOldInterface(t *testing.T) {
 func TestFIBConfiguratorModifyWithMissingOldBd(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -285,8 +285,8 @@ func TestFIBConfiguratorModifyWithMissingOldBd(t *testing.T) {
 func TestFIBConfiguratorModifyOldError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{
@@ -318,8 +318,8 @@ func TestFIBConfiguratorModifyOldError(t *testing.T) {
 func TestFIBConfiguratorModifyAndUnregisterAdd(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -347,8 +347,8 @@ func TestFIBConfiguratorModifyAndUnregisterAdd(t *testing.T) {
 func TestFIBConfiguratorModifyWithMissingNewInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -375,8 +375,8 @@ func TestFIBConfiguratorModifyWithMissingNewInterface(t *testing.T) {
 func TestFIBConfiguratorModifyWithMissingNewBD(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -399,12 +399,12 @@ func TestFIBConfiguratorModifyWithMissingNewBD(t *testing.T) {
 	Expect(found).To(BeTrue())
 }
 
-// Configures and Remvoes FIB entry
+// Configures and Removes FIB entry
 func TestFIBConfiguratorDelete(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -431,8 +431,8 @@ func TestFIBConfiguratorDelete(t *testing.T) {
 func TestFIBConfiguratorDeleteFromAdd(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes, _ := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes, _ := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestFIB("if1", "bd1", "00:00:00:00:00:01")
 	// Register interface and bridge domain
@@ -454,8 +454,8 @@ func TestFIBConfiguratorDeleteFromAdd(t *testing.T) {
 func TestFIBConfiguratorDeleteMissingInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -481,8 +481,8 @@ func TestFIBConfiguratorDeleteMissingInterface(t *testing.T) {
 func TestFIBConfiguratorDeleteMissingBD(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -508,8 +508,8 @@ func TestFIBConfiguratorDeleteMissingBD(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -541,8 +541,8 @@ func TestFIBConfiguratorResolveCreatedInterface(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedInterfaceMissingBridgeDomain(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes, _ := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes, _ := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestFIB("if1", "bd1", "00:00:00:00:00:01")
 	// Test configure FIB
@@ -563,8 +563,8 @@ func TestFIBConfiguratorResolveCreatedInterfaceMissingBridgeDomain(t *testing.T)
 func TestFIBConfiguratorResolveCreatedInterfaceWithoutMeta(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -591,8 +591,8 @@ func TestFIBConfiguratorResolveCreatedInterfaceWithoutMeta(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedInterfaceDeleteFIB(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -632,8 +632,8 @@ func TestFIBConfiguratorResolveCreatedInterfaceDeleteFIB(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedInterfaceDeleteFIBError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{
@@ -669,8 +669,8 @@ func TestFIBConfiguratorResolveCreatedInterfaceDeleteFIBError(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedInterfaceDeleteFIBWithoutMeta(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -706,8 +706,8 @@ func TestFIBConfiguratorResolveCreatedInterfaceDeleteFIBWithoutMeta(t *testing.T
 func TestFIBConfiguratorResolveDeletedInterface(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -748,8 +748,8 @@ func TestFIBConfiguratorResolveDeletedInterface(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedBridgeDomain(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -781,8 +781,8 @@ func TestFIBConfiguratorResolveCreatedBridgeDomain(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedBridgeDomainMissingInterface(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestFIB("if1", "bd1", "00:00:00:00:00:01")
 	// Test configure FIB
@@ -803,8 +803,8 @@ func TestFIBConfiguratorResolveCreatedBridgeDomainMissingInterface(t *testing.T)
 func TestFIBConfiguratorResolveCreatedBDWithoutMeta(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -831,8 +831,8 @@ func TestFIBConfiguratorResolveCreatedBDWithoutMeta(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedBDDeleteFIB(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -872,8 +872,8 @@ func TestFIBConfiguratorResolveCreatedBDDeleteFIB(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedBDDeleteFIBError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{
@@ -909,8 +909,8 @@ func TestFIBConfiguratorResolveCreatedBDDeleteFIBError(t *testing.T) {
 func TestFIBConfiguratorResolveCreatedBDDeleteFIBWithoutMeta(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -946,8 +946,8 @@ func TestFIBConfiguratorResolveCreatedBDDeleteFIBWithoutMeta(t *testing.T) {
 func TestFIBConfiguratorResolveUpdatedBridgeDomain(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	// Data
@@ -975,8 +975,8 @@ func TestFIBConfiguratorResolveUpdatedBridgeDomain(t *testing.T) {
 func TestFIBConfiguratorResolveDeletedBridgeDomain(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
-	defer fibTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes, bdIndexes := fibTestSetup(t)
+	defer fibTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
 	ctx.MockVpp.MockReply(&l2Api.L2fibAddDelReply{})
@@ -1100,12 +1100,12 @@ func blockingResolveUpdatedBridgeDomain(plugin *l2plugin.FIBConfigurator, bdName
 
 /* FIB Test Setup */
 
-func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plugin.FIBConfigurator, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
+func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *l2plugin.FIBConfigurator, ifaceidx.SwIfIndexRW, l2idx.BDIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -1115,10 +1115,10 @@ func fibTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l2plug
 	bdIndexes := l2idx.NewBDIndex(nametoidx.NewNameToIdx(log, "fib-bd", nil))
 	// Configurator
 	plugin := &l2plugin.FIBConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), connection, swIfIndexes, bdIndexes)
+	err = plugin.Init(logging.ForPlugin("test-log"), goVppMux, swIfIndexes, bdIndexes)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin, swIfIndexes, bdIndexes
+	return ctx, goVppMux, plugin, swIfIndexes, bdIndexes
 }
 
 func getCallback(buffer int) *mockCallback {
@@ -1127,8 +1127,8 @@ func getCallback(buffer int) *mockCallback {
 	}
 }
 
-func fibTestTeardown(connection *core.Connection, plugin *l2plugin.FIBConfigurator) {
-	connection.Disconnect()
+func fibTestTeardown(goVppMux *mock.GoVPPMux, plugin *l2plugin.FIBConfigurator) {
+	goVppMux.Close()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }

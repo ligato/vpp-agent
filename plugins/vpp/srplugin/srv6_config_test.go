@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -80,8 +80,8 @@ func TestAddLocalSID(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			sid := sidA
 			data := localSID(sid)
 			if td.FailIn != nil {
@@ -124,8 +124,8 @@ func TestDeleteLocalSID(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			sid := sidA
 			data := localSID(sid)
 			configurator.AddLocalSID(data)
@@ -181,8 +181,8 @@ func TestModifyLocalSID(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup and teardown
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// data
 			sid := sidA
 			prevData := &srv6.LocalSID{
@@ -239,7 +239,7 @@ func TestAddPolicy(t *testing.T) {
 			},
 		},
 		{
-			Name: "add 2 segments to nonexisting policy and add policy", // handling of first segment is special -> adding 2 segments
+			Name:                   "add 2 segments to nonexisting policy and add policy", // handling of first segment is special -> adding 2 segments
 			SetPolicySegmentsFirst: true,
 			VerifyAfterFirstAddPolicySegment: func(policy *srv6.Policy, segment *srv6.PolicySegment, segment2 *srv6.PolicySegment, err error, fakeVPPCalls *SRv6Calls) {
 				Expect(err).To(BeNil())
@@ -279,8 +279,8 @@ func TestAddPolicy(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup and teardown
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// Data
 			bsid := sidA
 			policy := policy(bsid)
@@ -382,8 +382,8 @@ func TestDeletePolicy(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup and teardown
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// Data
 			bsid := sidA
 			policy := policy(bsid)
@@ -455,8 +455,8 @@ func TestModifyPolicy(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup and teardown
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// Data
 			bsid := sidA
 			prevPolicy := &srv6.Policy{
@@ -556,8 +556,8 @@ func TestModifyPolicySegment(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup and teardown
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// Data
 			bsid := sidA
 			policy := policy(bsid)
@@ -613,8 +613,8 @@ func TestFillingAlreadyCreatedSegmentEmptyPolicy(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup and teardown
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// Data
 			bsid := sidA
 			policy := policy(bsid)
@@ -674,7 +674,7 @@ func TestAddSteering(t *testing.T) {
 			},
 		},
 		{
-			Name: "addition of steering (with already existing Index-referenced policy)",
+			Name:                   "addition of steering (with already existing Index-referenced policy)",
 			ReferencePolicyByIndex: true,
 			VerifyAfterAddPolicy: func(steering *srv6.Steering, fakeVPPCalls *SRv6Calls) {
 				Expect(fakeVPPCalls.SteeringState()).To(BeEmpty())
@@ -687,7 +687,7 @@ func TestAddSteering(t *testing.T) {
 			},
 		},
 		{
-			Name: "addition of steering (with Index-referenced policy added later)",
+			Name:                   "addition of steering (with Index-referenced policy added later)",
 			ReferencePolicyByIndex: true,
 			CreatePolicyAfter:      true,
 			VerifyAfterAddSteering: func(steering *srv6.Steering, err error, fakeVPPCalls *SRv6Calls) {
@@ -721,8 +721,8 @@ func TestAddSteering(t *testing.T) {
 	// Run all cases
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// data
 			bsid := sidA
 			policy := policy(bsid)
@@ -795,8 +795,8 @@ func TestRemoveSteering(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// data
 			bsid := sidA
 			policy := policy(bsid)
@@ -859,8 +859,8 @@ func TestModifySteering(t *testing.T) {
 	for _, td := range cases {
 		t.Run(td.Name, func(t *testing.T) {
 			// setup and teardown
-			configurator, fakeVPPCalls, connection := srv6TestSetup(t)
-			defer srv6TestTeardown(connection, configurator)
+			configurator, fakeVPPCalls, goVppMux := srv6TestSetup(t)
+			defer srv6TestTeardown(goVppMux, configurator)
 			// data
 			bsid := sidA
 			policy := policy(bsid)
@@ -896,13 +896,13 @@ func TestModifySteering(t *testing.T) {
 
 /* Srv6 Test Setup */
 
-func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.Connection) {
+func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *mock.GoVPPMux) {
 	RegisterTestingT(t)
 	// connection
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -912,16 +912,16 @@ func srv6TestSetup(t *testing.T) (*srplugin.SRv6Configurator, *SRv6Calls, *core.
 	// Configurator
 	fakeVPPCalls := NewSRv6Calls()
 	configurator := &srplugin.SRv6Configurator{}
-	err = configurator.Init(log, connection, swIndex, fakeVPPCalls)
+	err = configurator.Init(log, goVppMux, swIndex, fakeVPPCalls)
 	Expect(err).To(BeNil())
 
-	return configurator, fakeVPPCalls, connection
+	return configurator, fakeVPPCalls, goVppMux
 }
 
 /* Srv6 Test Teardown */
 
-func srv6TestTeardown(connection *core.Connection, plugin *srplugin.SRv6Configurator) {
-	connection.Disconnect()
+func srv6TestTeardown(goVppMux *mock.GoVPPMux, plugin *srplugin.SRv6Configurator) {
+	goVppMux.Close()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

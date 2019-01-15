@@ -17,9 +17,9 @@ package l3plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -34,8 +34,8 @@ import (
 // Test adding of routes entry
 func TestConfigureRoute(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	// add interface
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
@@ -58,8 +58,8 @@ func TestConfigureRoute(t *testing.T) {
 // Test adding of routes entry with invalid "VrfFromKey"
 func TestConfigureRouteValidateVrfFromKey(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	// add interface
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
@@ -81,8 +81,8 @@ func TestConfigureRouteValidateVrfFromKey(t *testing.T) {
 // Test adding of routes entry to cached indexes
 func TestConfigureCachedRoute(t *testing.T) {
 	// Setup
-	_, connection, plugin, _ := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	err := plugin.ConfigureRoute(&l3.StaticRoutes_Route{
 		VrfId:             0,
@@ -100,8 +100,8 @@ func TestConfigureCachedRoute(t *testing.T) {
 // Test deletion of route entry
 func TestDeleteRoute(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	// add interface
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
@@ -134,8 +134,8 @@ func TestDeleteRoute(t *testing.T) {
 // Test deletion of cached route entry
 func TestDeleteCachedRoute(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	err := plugin.ConfigureRoute(&l3.StaticRoutes_Route{
 		VrfId:             0,
@@ -167,8 +167,8 @@ func TestDeleteCachedRoute(t *testing.T) {
 // Test modify of existing route
 func TestModifyRoute(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	// add interfaces
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
@@ -199,8 +199,8 @@ func TestModifyRoute(t *testing.T) {
 // Test modify of cached route
 func TestModifyCachedRoute(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, _ := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	err := plugin.ConfigureRoute(&l3.StaticRoutes_Route{
 		VrfId:             0,
@@ -240,8 +240,8 @@ func TestModifyCachedRoute(t *testing.T) {
 // Test modify of cached route
 func TestModifyCachedRouteInterface(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	// add interface
 	ifIndexes.GetMapping().RegisterName("tap2", 1, nil)
@@ -284,8 +284,8 @@ func TestModifyCachedRouteInterface(t *testing.T) {
 // Test modify of existing route from no-default VRF
 func TestModifyRouteVrf(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	// add interface
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
@@ -328,8 +328,8 @@ func TestModifyRouteVrf(t *testing.T) {
 // Test deletion of cached route entry
 func TestConfigureAndResolveRoute(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	err := plugin.ConfigureRoute(&l3.StaticRoutes_Route{
 		VrfId:             0,
@@ -347,7 +347,8 @@ func TestConfigureAndResolveRoute(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
 	ctx.MockVpp.MockReply(&ip.IPAddDelRouteReply{})
 	// reslove interfaces
-	plugin.ResolveCreatedInterface("tap1", 1)
+	err = plugin.ResolveCreatedInterface("tap1", 1)
+	Expect(err).ShouldNot(HaveOccurred())
 	Expect(plugin.GetCachedRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
 	routes := plugin.GetRouteIndexes().GetMapping().ListNames()
 	Expect(routes).To(HaveLen(1))
@@ -357,8 +358,8 @@ func TestConfigureAndResolveRoute(t *testing.T) {
 // Test resolving routes of deleted interface
 func TestResolveDeletedRoute(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := routeTestSetup(t)
-	defer routeTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := routeTestSetup(t)
+	defer routeTestTeardown(goVppMux, plugin)
 
 	// add interface
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
@@ -375,27 +376,28 @@ func TestResolveDeletedRoute(t *testing.T) {
 	Expect(plugin.GetRouteIndexes().GetMapping().ListNames()).To(HaveLen(1))
 
 	ifIndexes.GetMapping().UnregisterName("tap1")
-	plugin.ResolveDeletedInterface("tap1", 1)
+	err = plugin.ResolveDeletedInterface("tap1", 1)
+	Expect(err).ShouldNot(HaveOccurred())
 	Expect(plugin.GetCachedRouteIndexes().GetMapping().ListNames()).To(HaveLen(1))
 	Expect(plugin.GetRouteIndexes().GetMapping().ListNames()).To(HaveLen(0))
 }
 
 // Rotue Test Setup
-func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plugin.RouteConfigurator, ifaceidx.SwIfIndex) {
+func routeTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *l3plugin.RouteConfigurator, ifaceidx.SwIfIndex) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	plugin := &l3plugin.RouteConfigurator{}
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logging.ForPlugin("test-log"), "l3-plugin", nil))
 
-	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes)
+	err = plugin.Init(logging.ForPlugin("test-log"), goVppMux, ifIndexes)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin, ifIndexes
+	return ctx, goVppMux, plugin, ifIndexes
 }
 
 func TestDiffRoutesAddedOnly(t *testing.T) {
@@ -516,8 +518,8 @@ func TestDiffRoutesMultipleChanges(t *testing.T) {
 }
 
 // Test Teardown
-func routeTestTeardown(connection *core.Connection, plugin *l3plugin.RouteConfigurator) {
-	connection.Disconnect()
+func routeTestTeardown(goVppMux *mock.GoVPPMux, plugin *l3plugin.RouteConfigurator) {
+	goVppMux.Close()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

@@ -17,9 +17,9 @@ package ifplugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	nat_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
@@ -34,8 +34,8 @@ import (
 
 // Enable NAT forwarding
 func TestNatConfiguratorEnableForwarding(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -49,8 +49,8 @@ func TestNatConfiguratorEnableForwarding(t *testing.T) {
 
 // Disable NAT forwarding
 func TestNatConfiguratorDisableForwarding(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -64,8 +64,8 @@ func TestNatConfiguratorDisableForwarding(t *testing.T) {
 
 // Modify NAT forwarding
 func TestNatConfiguratorModifyForwarding(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Create
@@ -85,8 +85,8 @@ func TestNatConfiguratorModifyForwarding(t *testing.T) {
 
 // NAT set forwarding return error
 func TestNatConfiguratorCreateForwardingError(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{
@@ -102,8 +102,8 @@ func TestNatConfiguratorCreateForwardingError(t *testing.T) {
 
 // Modify NAT forwarding error
 func TestNatConfiguratorModifyForwardingError(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Create
@@ -125,8 +125,8 @@ func TestNatConfiguratorModifyForwardingError(t *testing.T) {
 
 // Enable two interfaces for NAT, then remove one
 func TestNatConfiguratorEnableDisableInterfaces(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // First case
@@ -165,8 +165,8 @@ func TestNatConfiguratorEnableDisableInterfaces(t *testing.T) {
 
 // Attempt to enable interface resulting in return value error
 func TestNatConfiguratorEnableDisableInterfacesError(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // First case
@@ -187,9 +187,9 @@ func TestNatConfiguratorEnableDisableInterfacesError(t *testing.T) {
 
 // Enable two output interfaces for NAT, then remove one
 func TestNatConfiguratorEnableDisableOutputInterfaces(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
 
-	defer natTestTeardown(connection, plugin)
+	defer natTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // First case
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelOutputFeatureReply{})
@@ -227,8 +227,8 @@ func TestNatConfiguratorEnableDisableOutputInterfaces(t *testing.T) {
 
 // Create and modify NAT interfaces and output interfaces
 func TestNatConfiguratorModifyInterfaces(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Create
@@ -269,8 +269,8 @@ func TestNatConfiguratorModifyInterfaces(t *testing.T) {
 
 // Test interface cache registering and un-registering interfaces after configuration
 func TestNatConfiguratorInterfaceCache(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -323,8 +323,8 @@ func TestNatConfiguratorInterfaceCache(t *testing.T) {
 
 // Set NAT address pools
 func TestNatConfiguratorCreateAddressPool(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -346,8 +346,8 @@ func TestNatConfiguratorCreateAddressPool(t *testing.T) {
 
 // Set NAT address pool with return value error
 func TestNatConfiguratorCreateAddressPoolRetvalError(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -366,8 +366,8 @@ func TestNatConfiguratorCreateAddressPoolRetvalError(t *testing.T) {
 
 // Set and modify NAT address pools
 func TestNatConfiguratorModifyAddressPool(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Configure
@@ -396,8 +396,8 @@ func TestNatConfiguratorModifyAddressPool(t *testing.T) {
 
 // Test various errors which may occur during address pool configuration
 func TestNatConfiguratorAddressPoolErrors(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -422,8 +422,8 @@ func TestNatConfiguratorAddressPoolErrors(t *testing.T) {
 
 // Set NAT address pool with invalid ip addresses
 func TestNatConfiguratorModifyAddressPoolErrors(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -447,8 +447,8 @@ func TestNatConfiguratorModifyAddressPoolErrors(t *testing.T) {
 
 // Set NAT address pool with invalid ip addresses and then modify it with correct one
 func TestNatConfiguratorModifyAddressPoolModifyErrors(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{})
@@ -471,8 +471,8 @@ func TestNatConfiguratorModifyAddressPoolModifyErrors(t *testing.T) {
 
 // Remove global NAT configuration
 func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44ForwardingEnableDisableReply{}) // Configure
@@ -538,8 +538,8 @@ func TestNatConfiguratorDeleteGlobalConfig(t *testing.T) {
 
 // Remove global NAT configuration with errors
 func TestNatConfiguratorDeleteGlobalConfigErrors(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44InterfaceAddDelFeatureReply{
@@ -565,8 +565,8 @@ func TestNatConfiguratorDeleteGlobalConfigErrors(t *testing.T) {
 
 // Remove empty global NAT configuration
 func TestNatConfiguratorDeleteGlobalConfigEmpty(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 	ctx.MockVpp.MockReply(&nat_api.NatSetReassReply{})
 	ctx.MockVpp.MockReply(&nat_api.NatSetReassReply{})
 	// Data
@@ -582,8 +582,8 @@ func TestNatConfiguratorDeleteGlobalConfigEmpty(t *testing.T) {
 
 // Test SNAT Create
 func TestNatConfiguratorSNatCreate(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	data := &nat.Nat44SNat_SNatConfig{
@@ -597,8 +597,8 @@ func TestNatConfiguratorSNatCreate(t *testing.T) {
 
 // Test SNAT Modify
 func TestNatConfiguratorSNatModify(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	oldData := &nat.Nat44SNat_SNatConfig{
@@ -615,8 +615,8 @@ func TestNatConfiguratorSNatModify(t *testing.T) {
 
 // Test SNAT Delete
 func TestNatConfiguratorSNatDelete(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	data := &nat.Nat44SNat_SNatConfig{
@@ -632,8 +632,8 @@ func TestNatConfiguratorSNatDelete(t *testing.T) {
 
 // Configure DNAT static mapping without local IP
 func TestNatConfiguratorDNatStaticMappingNoLocalIPError(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
@@ -650,8 +650,8 @@ func TestNatConfiguratorDNatStaticMappingNoLocalIPError(t *testing.T) {
 
 // Configure DNAT static mapping using external IP
 func TestNatConfiguratorDNatStaticMapping(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
@@ -671,8 +671,8 @@ func TestNatConfiguratorDNatStaticMapping(t *testing.T) {
 
 // Configure DNAT static mapping using external interface
 func TestNatConfiguratorDNatStaticMappingExternalInterface(t *testing.T) {
-	ctx, connection, plugin, ifconfig := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifconfig := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
@@ -694,8 +694,8 @@ func TestNatConfiguratorDNatStaticMappingExternalInterface(t *testing.T) {
 
 // Configure DNAT static mapping as address-only
 func TestNatConfiguratorDNatStaticMappingAddressOnly(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
@@ -715,8 +715,8 @@ func TestNatConfiguratorDNatStaticMappingAddressOnly(t *testing.T) {
 
 // Configure DNAT with invalid local IP
 func TestNatConfiguratorDNatStaticMappingInvalidLocalAddressError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -734,8 +734,8 @@ func TestNatConfiguratorDNatStaticMappingInvalidLocalAddressError(t *testing.T) 
 
 // Configure DNAT with invalid external IP
 func TestNatConfiguratorDNatStaticMappingInvalidExternalAddressError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -753,8 +753,8 @@ func TestNatConfiguratorDNatStaticMappingInvalidExternalAddressError(t *testing.
 
 // Configure DNAT with non-existing external interface
 func TestNatConfiguratorDNatStaticMappingMissingInterfaceError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -772,8 +772,8 @@ func TestNatConfiguratorDNatStaticMappingMissingInterfaceError(t *testing.T) {
 
 // Configure DNAT with unknown protocol and check whether it will be set to default
 func TestNatConfiguratorDNatStaticMappingUnknownProtocol(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{})
@@ -793,8 +793,8 @@ func TestNatConfiguratorDNatStaticMappingUnknownProtocol(t *testing.T) {
 
 // Configure DNAT static mapping with load balancer
 func TestNatConfiguratorDNatStaticMappingLb(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{})
@@ -815,8 +815,8 @@ func TestNatConfiguratorDNatStaticMappingLb(t *testing.T) {
 
 // Configure DNAT static mapping with load balancer with invalid local IP
 func TestNatConfiguratorDNatStaticMappingLbInvalidLocalError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -835,8 +835,8 @@ func TestNatConfiguratorDNatStaticMappingLbInvalidLocalError(t *testing.T) {
 
 // Configure DNAT static mapping with load balancer with missing external port
 func TestNatConfiguratorDNatStaticMappingLbMissingExternalPortError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -855,8 +855,8 @@ func TestNatConfiguratorDNatStaticMappingLbMissingExternalPortError(t *testing.T
 
 // Configure DNAT static mapping with load balancer with invalid external IP
 func TestNatConfiguratorDNatStaticMappingLbInvalidExternalIPError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -875,8 +875,8 @@ func TestNatConfiguratorDNatStaticMappingLbInvalidExternalIPError(t *testing.T) 
 
 // Configure NAT identity mapping
 func TestNatConfiguratorDNatIdentityMapping(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
@@ -895,8 +895,8 @@ func TestNatConfiguratorDNatIdentityMapping(t *testing.T) {
 
 // Configure NAT identity mapping with address interface
 func TestNatConfiguratorDNatIdentityMappingInterface(t *testing.T) {
-	ctx, connection, plugin, ifIndexes := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{})
@@ -917,8 +917,8 @@ func TestNatConfiguratorDNatIdentityMappingInterface(t *testing.T) {
 
 // Configure NAT identity mapping with address interface while interface is not registered
 func TestNatConfiguratorDNatIdentityMappingMissingInterfaceError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMapping
@@ -935,8 +935,8 @@ func TestNatConfiguratorDNatIdentityMappingMissingInterfaceError(t *testing.T) {
 
 // Create NAT identity mapping with invalid IP address
 func TestNatConfiguratorDNatIdentityMappingInvalidIPError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMapping
@@ -953,9 +953,9 @@ func TestNatConfiguratorDNatIdentityMappingInvalidIPError(t *testing.T) {
 
 // Create identity mapping without IP address and interface set
 func TestNatConfiguratorDNatIdentityMappingNoInterfaceAndIPError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
+	_, goVppMux, plugin, _ := natTestSetup(t)
 
-	defer natTestTeardown(connection, plugin)
+	defer natTestTeardown(goVppMux, plugin)
 	// Data
 	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMapping
 	data := &nat.Nat44DNat_DNatConfig{Label: "dNatLabel", IdMappings: append(idMaps,
@@ -971,8 +971,8 @@ func TestNatConfiguratorDNatIdentityMappingNoInterfaceAndIPError(t *testing.T) {
 
 // Configure and modify static and identity mappings
 func TestNatConfiguratorDNatModify(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{}) // Configure
@@ -1024,8 +1024,8 @@ func TestNatConfiguratorDNatModify(t *testing.T) {
 
 // Configure and modify static and identity mappings with errors
 func TestNatConfiguratorDNatModifyErrors(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{}) // Configure
@@ -1066,8 +1066,8 @@ func TestNatConfiguratorDNatModifyErrors(t *testing.T) {
 
 //  Configure and delete static mapping
 func TestNatConfiguratorDeleteDNatStaticMapping(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelStaticMappingReply{}) // Configure
@@ -1094,8 +1094,8 @@ func TestNatConfiguratorDeleteDNatStaticMapping(t *testing.T) {
 
 // Delete static mapping with invalid IP
 func TestNatConfiguratorDeleteDNatStaticMappingInvalidIPError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -1110,8 +1110,8 @@ func TestNatConfiguratorDeleteDNatStaticMappingInvalidIPError(t *testing.T) {
 
 // Configure and delete static mapping with load balancer
 func TestNatConfiguratorDeleteDNatStaticMappingLb(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelLbStaticMappingReply{}) // Configure
@@ -1139,8 +1139,8 @@ func TestNatConfiguratorDeleteDNatStaticMappingLb(t *testing.T) {
 
 // Delete static mapping with load ballancer with invalid IP address
 func TestNatConfiguratorDeleteDNatStaticMappingLbInvalidIPError(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var stMaps []*nat.Nat44DNat_DNatConfig_StaticMapping
@@ -1156,8 +1156,8 @@ func TestNatConfiguratorDeleteDNatStaticMappingLbInvalidIPError(t *testing.T) {
 
 // Configure and delete NAT identity mapping
 func TestNatConfiguratorDNatDeleteIdentityMapping(t *testing.T) {
-	ctx, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Reply set
 	ctx.MockVpp.MockReply(&nat_api.Nat44AddDelIdentityMappingReply{}) // Configure
@@ -1183,8 +1183,8 @@ func TestNatConfiguratorDNatDeleteIdentityMapping(t *testing.T) {
 
 // Delete NAT identity mapping without ip address set
 func TestNatConfiguratorDNatDeleteIdentityMappingNoInterfaceAndIP(t *testing.T) {
-	_, connection, plugin, _ := natTestSetup(t)
-	defer natTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := natTestSetup(t)
+	defer natTestTeardown(goVppMux, plugin)
 
 	// Data
 	var idMaps []*nat.Nat44DNat_DNatConfig_IdentityMapping
@@ -1198,13 +1198,13 @@ func TestNatConfiguratorDNatDeleteIdentityMappingNoInterfaceAndIP(t *testing.T) 
 
 /* NAT Test Setup */
 
-func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.NatConfigurator, ifaceidx.SwIfIndexRW) {
+func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *ifplugin.NatConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	// Logger
@@ -1216,14 +1216,14 @@ func natTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 
 	// Configurator
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices)
+	err = plugin.Init(log, goVppMux, swIfIndices)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin, swIfIndices
+	return ctx, goVppMux, plugin, swIfIndices
 }
 
-func natTestTeardown(connection *core.Connection, plugin *ifplugin.NatConfigurator) {
-	connection.Disconnect()
+func natTestTeardown(goVppMux *mock.GoVPPMux, plugin *ifplugin.NatConfigurator) {
+	goVppMux.Close()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

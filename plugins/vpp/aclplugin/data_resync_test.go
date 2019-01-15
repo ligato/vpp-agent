@@ -67,8 +67,8 @@ var acls = []*acl.AccessLists_Acl{
 // Test synchronisation - writes ACLs to the empty VPP
 func TestResyncEmpty(t *testing.T) {
 	// Setup
-	ctx, connection, plugin := aclTestSetup(t, false)
-	defer aclTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := aclTestSetup(t, false)
+	defer aclTestTeardown(goVppMux, plugin)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -118,8 +118,8 @@ func TestResyncEmpty(t *testing.T) {
 // Test synchronisation - writes ACLs to the already configured VPP
 func TestResyncConfigured(t *testing.T) {
 	// Setup
-	ctx, connection, plugin := aclTestSetup(t, false)
-	defer aclTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := aclTestSetup(t, false)
+	defer aclTestTeardown(goVppMux, plugin)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -214,8 +214,8 @@ func TestResyncConfigured(t *testing.T) {
 // Test Resync with error when removing existing IP ACL
 func TestResyncErr1(t *testing.T) {
 	// Setup
-	ctx, connection, plugin := aclTestSetup(t, false)
-	defer aclTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := aclTestSetup(t, false)
+	defer aclTestTeardown(goVppMux, plugin)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -284,8 +284,8 @@ func TestResyncErr1(t *testing.T) {
 // Test Resync with error when removing existing IP ACL
 func TestResyncErr2(t *testing.T) {
 	// Setup
-	ctx, connection, plugin := aclTestSetup(t, false)
-	defer aclTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := aclTestSetup(t, false)
+	defer aclTestTeardown(goVppMux, plugin)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -360,8 +360,8 @@ func TestResyncErr2(t *testing.T) {
 // Test Resync with error when configuring new ALCs
 func TestResyncErr3(t *testing.T) {
 	// Setup
-	ctx, connection, plugin := aclTestSetup(t, false)
-	defer aclTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin := aclTestSetup(t, false)
+	defer aclTestTeardown(goVppMux, plugin)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{

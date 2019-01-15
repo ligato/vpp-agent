@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build ignore
-
 package ifplugin_test
 
 import (
 	"net"
 	"testing"
+	"time"
 
-	"git.fd.io/govpp.git/core"
+	"git.fd.io/govpp.git/adapter"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
@@ -37,7 +36,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater,
+func testPluginDataInitialization(t *testing.T) (*mock.GoVPPMux, ifaceidx.SwIfIndexRW, *ifplugin.InterfaceStateUpdater,
 	chan govppapi.Message, chan *intf.InterfaceNotification) {
 	RegisterTestingT(t)
 
@@ -60,40 +59,41 @@ func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIf
 	// Create context
 	ctx, _ := context.WithCancel(context.Background())
 
-	// Create connection
+	// Create VPP connection
 	mockCtx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp:   govppmock.NewVppAdapter(),
+		MockStats: govppmock.NewStatsAdapter(),
 	}
-	connection, err := core.Connect(mockCtx.MockVpp)
+
+	goVppMux, err := mock.NewMockGoVPPMux(mockCtx)
 	Expect(err).To(BeNil())
 
 	// Prepare Init VPP replies
 	mockCtx.MockVpp.MockReply(&interfaces.WantInterfaceEventsReply{})
-	mockCtx.MockVpp.MockReply(&stats.WantStatsReply{})
 
 	// Create plugin logger
 	pluginLogger := logging.ForPlugin("testname")
 
 	// Test initialization
 	ifPlugin := &ifplugin.InterfaceStateUpdater{}
-	err = ifPlugin.Init(ctx, pluginLogger, connection, index, notifChan, publishIfState)
+	err = ifPlugin.Init(ctx, pluginLogger, goVppMux, index, notifChan, publishIfState)
 	Expect(err).To(BeNil())
 	err = ifPlugin.AfterInit()
 	Expect(err).To(BeNil())
 
-	return connection, index, ifPlugin, notifChan, publishChan
+	return goVppMux, index, ifPlugin, notifChan, publishChan
 }
 
-func testPluginDataTeardown(plugin *ifplugin.InterfaceStateUpdater, connection *core.Connection) {
-	connection.Disconnect()
+func testPluginDataTeardown(plugin *ifplugin.InterfaceStateUpdater, goVPPMux *mock.GoVPPMux) {
+	goVPPMux.Close()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
 // Test UPDOWN notification
 func TestInterfaceStateUpdaterUpDownNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
-	defer testPluginDataTeardown(ifPlugin, conn)
+	goVppMux, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, goVppMux)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{
@@ -121,8 +121,8 @@ func TestInterfaceStateUpdaterUpDownNotif(t *testing.T) {
 
 // Test simple counter notification
 func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
-	defer testPluginDataTeardown(ifPlugin, conn)
+	goVPPMux, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, goVPPMux)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{
@@ -132,56 +132,51 @@ func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
 		IpAddresses: []string{"192.168.0.1/24"},
 	})
 
-	// Test notifications
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 0, // Drop,
-		Count:           1,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32768},
-	}
-
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 1, // Punt,
-		Count:           1,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32769},
-	}
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 2, // Ipv4,
-		Count:           1,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32770},
-	}
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 3, // Ipv6,
-		Count:           3,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32771},
-	}
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 4, // RxNoBuf,
-		Count:           1,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32772},
-	}
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 5, // RxMiss,
-		Count:           1,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32773},
-	}
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 6, // RxError,
-		Count:           1,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32774},
-	}
-	notifChan <- &stats.VnetInterfaceSimpleCounters{
-		VnetCounterType: 7, // TxError,
-		Count:           1,
-		FirstSwIfIndex:  0,
-		Data:            []uint64{32775},
-	}
+	// Test stats
+	var stats []*adapter.StatEntry
+	stats = append(stats,
+		&adapter.StatEntry{
+			Name: "/if/drops",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32768}},
+		},
+		&adapter.StatEntry{
+			Name: "/if/punt",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32769}},
+		},
+		&adapter.StatEntry{
+			Name: "/if/ip4",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32770}},
+		},
+		&adapter.StatEntry{
+			Name: "/if/ip6",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32771}},
+		},
+		&adapter.StatEntry{
+			Name: "/if/rx-no-buf",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32772}},
+		},
+		&adapter.StatEntry{
+			Name: "/if/rx-miss",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32773}},
+		},
+		&adapter.StatEntry{
+			Name: "/if/rx-error",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32774}},
+		},
+		&adapter.StatEntry{
+			Name: "/if/tx-error",
+			Type: adapter.StatType(2),
+			Data: adapter.SimpleCounterStat{{32775}},
+		})
+	err := goVPPMux.MockStats(stats)
+	Expect(err).To(BeNil())
 
 	// Send interface event notification to propagate update from counter to publish channel
 	notifChan <- &interfaces.SwInterfaceEvent{
@@ -192,20 +187,13 @@ func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
 		Deleted:     0,
 	}
 
+	// Stats are read periodically every second, let's give it some time to update the notification
+	time.Sleep(2* time.Second)
+
 	var notif *intf.InterfaceNotification
 	Eventually(publishChan).Should(Receive(&notif))
 	Expect(notif.Type).To(Equal(intf.InterfaceNotification_UPDOWN))
 	Expect(notif.State.AdminStatus).Should(BeEquivalentTo(intf.InterfacesState_Interface_UP))
-	Expect(notif.State.Statistics).To(BeEquivalentTo(&intf.InterfacesState_Interface_Statistics{
-		DropPackets:     32768,
-		PuntPackets:     32769,
-		Ipv4Packets:     32770,
-		Ipv6Packets:     32771,
-		InNobufPackets:  32772,
-		InMissPackets:   32773,
-		InErrorPackets:  32774,
-		OutErrorPackets: 32775,
-	}))
 	Expect(notif.State.Statistics.DropPackets).Should(BeEquivalentTo(32768))
 	Expect(notif.State.Statistics.PuntPackets).Should(BeEquivalentTo(32769))
 	Expect(notif.State.Statistics.Ipv4Packets).Should(BeEquivalentTo(32770))
@@ -218,8 +206,8 @@ func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
 
 // Test VnetIntCombined notification
 func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
-	defer testPluginDataTeardown(ifPlugin, conn)
+	goVPPMux, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, goVPPMux)
 
 	// Register name
 	index.RegisterName("test0", 0, &intf.Interfaces_Interface{
@@ -236,40 +224,44 @@ func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
 		IpAddresses: []string{"192.168.0.2/24"},
 	})
 
-	// Test notifications
-	notifChan <- &stats.VnetInterfaceCombinedCounters{
-		VnetCounterType: 4, // TX
-		FirstSwIfIndex:  0,
-		Count:           2,
-		Data: []stats.VlibCounter{
-			{Packets: 1000, Bytes: 3000},
-			{Packets: 2000, Bytes: 5000},
-		},
+	// Test stats
+	var stats []*adapter.StatEntry
+	stats = append(stats,
+		&adapter.StatEntry{
+			Name: "/if/tx",
+			Type: adapter.StatType(3),
+			Data: adapter.CombinedCounterStat{{adapter.CombinedCounter{
+				Packets: 3000,
+				Bytes:   8000,
+			}}},
+		})
+	err := goVPPMux.MockStats(stats)
+	Expect(err).To(BeNil())
+
+	// Send interface event notification to propagate update from counter to publish channel
+	notifChan <- &interfaces.SwInterfaceEvent{
+		PID:         0,
+		SwIfIndex:   0,
+		AdminUpDown: 1,
+		LinkUpDown:  1,
+		Deleted:     0,
 	}
 
+	// Stats are read periodically every second, let's give it some time to update the notification
+	time.Sleep(2 * time.Second)
+
 	var notif *intf.InterfaceNotification
-	var outPackets, outBytes uint64
 
 	Eventually(publishChan).Should(Receive(&notif))
 	Expect(notif.Type).To(Equal(intf.InterfaceNotification_UPDOWN))
-	outPackets += notif.GetState().GetStatistics().GetOutPackets()
-	outBytes += notif.GetState().GetStatistics().GetOutBytes()
-
-	Eventually(publishChan).Should(Receive(&notif))
-	Expect(notif.Type).To(Equal(intf.InterfaceNotification_UPDOWN))
-	outPackets += notif.GetState().GetStatistics().GetOutPackets()
-	outBytes += notif.GetState().GetStatistics().GetOutBytes()
-
-	// NOTE: Notifications from publishChan cannot gurantee
-	// to be in same order as the ones going into notifChan.
-	Expect(outPackets).Should(BeEquivalentTo(3000))
-	Expect(outBytes).Should(BeEquivalentTo(8000))
+	Expect(notif.State.Statistics.OutPackets).Should(BeEquivalentTo(3000))
+	Expect(notif.State.Statistics.OutBytes).Should(BeEquivalentTo(8000))
 }
 
 // Test SwInterfaceDetails notification
 func TestInterfaceStateUpdaterSwInterfaceDetailsNotif(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
-	defer testPluginDataTeardown(ifPlugin, conn)
+	goVPPMux, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, goVPPMux)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{
@@ -308,8 +300,8 @@ func TestInterfaceStateUpdaterSwInterfaceDetailsNotif(t *testing.T) {
 
 // Test deleted notification
 func TestInterfaceStateUpdaterIfStateDeleted(t *testing.T) {
-	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
-	defer testPluginDataTeardown(ifPlugin, conn)
+	goVPPMux, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
+	defer testPluginDataTeardown(ifPlugin, goVPPMux)
 
 	// Register name
 	index.RegisterName("test", 0, &intf.Interfaces_Interface{
