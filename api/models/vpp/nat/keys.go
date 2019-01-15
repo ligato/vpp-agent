@@ -24,18 +24,18 @@ const NAT44_GlobalID = "GLOBAL"
 
 func init() {
 	models.Register(&Nat44Global{}, models.Spec{
-		Module:     "vpp",
-		Class:      "config",
-		Version:    "v2",
-		Type:       "nat44",
-		IdTemplate: NAT44_GlobalID,
+		Module:   "vpp/nat",
+		Type:     "nat44",
+		Version:  "v2",
+		Class:    "config",
+		IDFormat: NAT44_GlobalID,
 	})
 	models.Register(&DNat44{}, models.Spec{
-		Module:     "vpp",
-		Class:      "config",
-		Version:    "v2",
-		Type:       "nat44/dnat",
-		IdTemplate: "{{.Label}}",
+		Module:   "vpp/nat",
+		Type:     "nat44-dnats",
+		Version:  "v2",
+		Class:    "config",
+		IDFormat: "{{.Label}}",
 	})
 }
 

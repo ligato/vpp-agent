@@ -62,10 +62,10 @@ func NewIPSecSADescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.PluginL
 func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 	return &adapter.SADescriptor{
 		Name:               SADescriptorName,
-		NBKeyPrefix:        vpp.IPSecSASpec.KeyPrefix(),
-		ValueTypeName:      vpp.IPSecSASpec.ProtoName(),
-		KeySelector:        vpp.IPSecSASpec.IsKeyValid,
-		KeyLabel:           vpp.IPSecSASpec.StripKeyPrefix,
+		NBKeyPrefix:        vpp.IPSecSAModel.KeyPrefix(),
+		ValueTypeName:      vpp.IPSecSAModel.ProtoName(),
+		KeySelector:        vpp.IPSecSAModel.IsKeyValid,
+		KeyLabel:           vpp.IPSecSAModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSAs,
 		Add:                d.Add,
 		Delete:             d.Delete,

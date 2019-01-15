@@ -65,10 +65,9 @@ func NewRouteDescriptor(scheduler scheduler.KVScheduler,
 func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	return &adapter.StaticRouteDescriptor{
 		Name:            StaticRouteDescriptorName,
-		NBKeyPrefix:     vpp.StaticRouteSpec.KeyPrefix(),
-		ValueTypeName:   vpp.StaticRouteSpec.ProtoName(),
-		KeySelector:     vpp.StaticRouteSpec.IsKeyValid,
-		KeyLabel:        vpp.StaticRouteSpec.StripKeyPrefix,
+		NBKeyPrefix:     vpp.StaticRouteModel.KeyPrefix(),
+		ValueTypeName:   vpp.StaticRouteModel.ProtoName(),
+		KeySelector:     vpp.StaticRouteModel.IsKeyValid,
 		ValueComparator: d.EquivalentRoutes,
 		Add:             d.Add,
 		Delete:          d.Delete,

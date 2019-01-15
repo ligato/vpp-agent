@@ -3,29 +3,30 @@ package remoteclient
 import (
 	"context"
 
-	pb "github.com/ligato/vpp-agent/api"
+	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/client"
 )
 
 type grpcClient struct {
-	remote pb.GenericConfiguratorClient
+	remote api.GenericConfiguratorClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(client pb.GenericConfiguratorClient) client.ConfiguratorClient {
+func NewClientGRPC(client api.GenericConfiguratorClient) client.ConfigClient {
 	return &grpcClient{client}
 }
 
-func (c *grpcClient) ListModules() (map[string][]models.Model, error) {
+func (c *grpcClient) ActiveModels() (map[string][]api.Model, error) {
 	ctx := context.Background()
 
-	resp, err := c.remote.ListCapabilities(ctx, &pb.ListCapabilitiesRequest{})
+	resp, err := c.remote.Capabilities(ctx, &api.CapabilitiesRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	modules := make(map[string][]models.Model)
+	modules := make(map[string][]api.Model)
 	for _, model := range resp.ActiveModels {
 		modules[model.Module] = append(modules[model.Module], *model)
 	}
@@ -36,19 +37,19 @@ func (c *grpcClient) ListModules() (map[string][]models.Model, error) {
 func (c *grpcClient) SetConfig(resync bool) client.SetConfigRequest {
 	return &setConfigRequest{
 		client: c.remote,
-		req: &pb.SetConfigRequest{
-			Options: &pb.SetConfigRequest_Options{Resync: resync},
+		req: &api.SetConfigRequest{
+			Options: &api.SetConfigRequest_Options{Resync: resync},
 		},
 	}
 }
 
 type setConfigRequest struct {
-	client pb.GenericConfiguratorClient
-	req    *pb.SetConfigRequest
+	client api.GenericConfiguratorClient
+	req    *api.SetConfigRequest
 	err    error
 }
 
-func (r *setConfigRequest) Update(items ...models.ProtoItem) {
+func (r *setConfigRequest) Update(items ...proto.Message) {
 	if r.err != nil {
 		return
 	}
@@ -58,13 +59,13 @@ func (r *setConfigRequest) Update(items ...models.ProtoItem) {
 			r.err = err
 			return
 		}
-		r.req.Updates = append(r.req.Updates, &pb.SetConfigRequest_UpdateItem{
+		r.req.Updates = append(r.req.Updates, &api.SetConfigRequest_UpdateItem{
 			Item: item,
 		})
 	}
 }
 
-func (r *setConfigRequest) Delete(items ...models.ProtoItem) {
+func (r *setConfigRequest) Delete(items ...proto.Message) {
 	if r.err != nil {
 		return
 	}
@@ -76,8 +77,8 @@ func (r *setConfigRequest) Delete(items ...models.ProtoItem) {
 				return
 			}
 		}
-		r.req.Updates = append(r.req.Updates, &pb.SetConfigRequest_UpdateItem{
-			Item: &models.Item{
+		r.req.Updates = append(r.req.Updates, &api.SetConfigRequest_UpdateItem{
+			Item: &api.Item{
 				Key: item.Key,
 			},
 		})

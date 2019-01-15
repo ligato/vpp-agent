@@ -77,10 +77,10 @@ func NewBridgeDomainDescriptor(bdHandler vppcalls.BridgeDomainVppAPI, log loggin
 func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor {
 	return &adapter.BridgeDomainDescriptor{
 		Name:               BridgeDomainDescriptorName,
-		NBKeyPrefix:        vpp.BridgeDomainSpec.KeyPrefix(),
-		ValueTypeName:      vpp.BridgeDomainSpec.ProtoName(),
-		KeySelector:        vpp.BridgeDomainSpec.IsKeyValid,
-		KeyLabel:           vpp.BridgeDomainSpec.StripKeyPrefix,
+		NBKeyPrefix:        vpp.BridgeDomainModel.KeyPrefix(),
+		ValueTypeName:      vpp.BridgeDomainModel.ProtoName(),
+		KeySelector:        vpp.BridgeDomainModel.IsKeyValid,
+		KeyLabel:           vpp.BridgeDomainModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentBridgeDomains,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

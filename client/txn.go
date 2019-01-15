@@ -15,6 +15,7 @@
 package client
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
@@ -43,44 +44,44 @@ type Transaction interface {
 	// ProtoItem returns model with given ID from the request items.
 	// If the found is true the model with such ID is found
 	// and if the model is nil the item represents delete.
-	Item(id string) (model models.ProtoItem, found bool)
+	Item(id string) (model proto.Message, found bool)
 
 	// Items returns map of items defined for the request,
 	// where key represents model ID and nil value represents delete.
-	Items() map[string]models.ProtoItem
+	Items() map[string]proto.Message
 }
 
 type Txn struct {
-	items map[string]models.ProtoItem
+	items map[string]proto.Message
 }
 
 func NewTxn() *Txn {
 	return &Txn{
-		items: make(map[string]models.ProtoItem),
+		items: make(map[string]proto.Message),
 	}
 }
 
-func (t *Txn) Add(model models.ProtoItem) {
+func (t *Txn) Add(model proto.Message) {
 	t.items[models.Key(model)] = model
 }
 
-func (t *Txn) Remove(model models.ProtoItem) {
+func (t *Txn) Remove(model proto.Message) {
 	delete(t.items, models.Key(model))
 }
 
-func (t *Txn) Set(model models.ProtoItem) {
+func (t *Txn) Set(model proto.Message) {
 	t.items[models.Key(model)] = model
 }
 
-func (t *Txn) SetDelete(model models.ProtoItem) {
+func (t *Txn) SetDelete(model proto.Message) {
 	t.items[models.Key(model)] = nil
 }
 
-func (t *Txn) Item(id string) (model models.ProtoItem, found bool) {
+func (t *Txn) Item(id string) (model proto.Message, found bool) {
 	item, ok := t.items[id]
 	return item, ok
 }
 
-func (t *Txn) Items() map[string]models.ProtoItem {
+func (t *Txn) Items() map[string]proto.Message {
 	return t.items
 }

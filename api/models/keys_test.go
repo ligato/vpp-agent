@@ -17,6 +17,7 @@ package models_test
 import (
 	"testing"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
@@ -30,7 +31,7 @@ import (
 func TestKeys(t *testing.T) {
 	tests := []struct {
 		name        string
-		model       models.ProtoItem
+		model       proto.Message
 		expectedKey string
 	}{
 		{
@@ -121,8 +122,8 @@ func TestKeys(t *testing.T) {
 			if key != test.expectedKey {
 				t.Errorf("expected key: \n%q\ngot: \n%q", test.expectedKey, key)
 			} else {
-				spec := models.MustSpec(test.model)
-				t.Logf("key: %q (%s)\n\tspec: %v", key, spec, spec.ToModelSpec())
+				spec := models.ModelSpec(test.model)
+				t.Logf("key: %q (%s)\n\tspec: %v", key, spec, spec.toModelSpec())
 			}
 		})
 	}

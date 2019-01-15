@@ -23,11 +23,11 @@ import (
 
 func init() {
 	models.Register(&Interface{}, models.Spec{
-		Module:     "linux",
-		Class:      "config",
-		Version:    "v2",
-		Type:       "interfaces",
-		IdTemplate: "{{.Name}}",
+		Module:   "linux",
+		Type:     "interfaces",
+		Version:  "v2",
+		Class:    "config",
+		IDFormat: "{{.Name}}",
 	})
 }
 

@@ -68,10 +68,10 @@ func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger
 func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 	return &adapter.DNAT44Descriptor{
 		Name:               DNAT44DescriptorName,
-		NBKeyPrefix:        vpp.DNAT44Spec.KeyPrefix(),
-		ValueTypeName:      vpp.DNAT44Spec.ProtoName(),
-		KeySelector:        vpp.DNAT44Spec.IsKeyValid,
-		KeyLabel:           vpp.DNAT44Spec.StripKeyPrefix,
+		NBKeyPrefix:        vpp.DNAT44Model.KeyPrefix(),
+		ValueTypeName:      vpp.DNAT44Model.ProtoName(),
+		KeySelector:        vpp.DNAT44Model.IsKeyValid,
+		KeyLabel:           vpp.DNAT44Model.StripKeyPrefix,
 		ValueComparator:    d.EquivalentDNAT44,
 		Add:                d.Add,
 		Delete:             d.Delete,

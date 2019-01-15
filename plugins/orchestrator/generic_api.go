@@ -27,20 +27,19 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-type genericConfigurator struct {
+type genericApi struct {
 	log  logging.Logger
 	orch *Plugin
 }
 
-// ListCapabilities implements SyncServiceServer.
-func (s *genericConfigurator) ListCapabilities(ctx context.Context, req *api.ListCapabilitiesRequest) (*api.ListCapabilitiesResponse, error) {
-	resp := &api.ListCapabilitiesResponse{
+func (s *genericApi) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
+	resp := &api.CapabilitiesResponse{
 		ActiveModels: models.RegisteredModels(),
 	}
 	return resp, nil
 }
 
-func (s *genericConfigurator) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
+func (s *genericApi) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
 	s.log.Debug("------------------------------")
 	s.log.Debugf("=> Configurator.SetConfig: %d items", len(req.Updates))
 	s.log.Debug("------------------------------")
@@ -124,14 +123,14 @@ func (s *genericConfigurator) SetConfig(ctx context.Context, req *api.SetConfigR
 	return &api.SetConfigResponse{Results: results}, nil
 }
 
-func (s *genericConfigurator) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
+func (s *genericApi) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
 	panic("implement me")
 }
 
-func (s *genericConfigurator) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
+func (s *genericApi) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
 	panic("implement me")
 }
 
-func (s *genericConfigurator) Subscribe(*api.SubscribeRequest, api.GenericConfigurator_SubscribeServer) error {
+func (s *genericApi) Subscribe(*api.SubscribeRequest, api.GenericConfigurator_SubscribeServer) error {
 	panic("implement me")
 }

@@ -137,7 +137,7 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	c := remoteclient.NewClientGRPC(api.NewGenericConfiguratorClient(conn))
 
 	// List supported model specs
-	modules, err := c.ListModules()
+	modules, err := c.ActiveModels()
 	if err != nil {
 		log.Fatalln(err)
 	}

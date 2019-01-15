@@ -22,6 +22,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
@@ -141,10 +142,10 @@ func NewInterfaceDescriptor(
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		NBKeyPrefix:        linux.InterfaceSpec.KeyPrefix(),
-		ValueTypeName:      linux.InterfaceSpec.ProtoName(),
-		KeySelector:        linux.InterfaceSpec.IsKeyValid,
-		KeyLabel:           linux.InterfaceSpec.StripKeyPrefix,
+		NBKeyPrefix:        linux.InterfaceModel.KeyPrefix(),
+		ValueTypeName:      linux.InterfaceModel.ProtoName(),
+		KeySelector:        linux.InterfaceModel.IsKeyValid,
+		KeyLabel:           linux.InterfaceModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
@@ -854,7 +855,8 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 
 			// build key-value pair for the dumped interface
 			dump.interfaces = append(dump.interfaces, adapter.InterfaceKVWithMetadata{
-				Key:    interfaces.InterfaceKey(intf.Name),
+				//Key:    interfaces.InterfaceKey(intf.Name),
+				Key:    models.Key(intf),
 				Value:  intf,
 				Origin: scheduler.FromNB,
 				Metadata: &ifaceidx.LinuxIfMetadata{

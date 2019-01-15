@@ -68,10 +68,10 @@ func NewIPRedirectDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor {
 	return &adapter.IPPuntRedirectDescriptor{
 		Name:               IPRedirectDescriptorName,
-		NBKeyPrefix:        vpp.PuntIpRedirect.KeyPrefix(),
-		ValueTypeName:      vpp.PuntIpRedirect.ProtoName(),
-		KeySelector:        vpp.PuntIpRedirect.IsKeyValid,
-		KeyLabel:           vpp.PuntIpRedirect.StripKeyPrefix,
+		NBKeyPrefix:        vpp.PuntIPModel.KeyPrefix(),
+		ValueTypeName:      vpp.PuntIPModel.ProtoName(),
+		KeySelector:        vpp.PuntIPModel.IsKeyValid,
+		KeyLabel:           vpp.PuntIPModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPRedirect,
 		Add:                d.Add,
 		Delete:             d.Delete,
@@ -124,7 +124,7 @@ func (d *IPRedirectDescriptor) Delete(key string, redirect *punt.IpRedirect, met
 // Dump returns all configured VPP punt to host entries.
 func (d *IPRedirectDescriptor) Dump(correlate []adapter.IPPuntRedirectKVWithMetadata) (dump []adapter.IPPuntRedirectKVWithMetadata, err error) {
 	// TODO dump for IP redirect missing in api
-	d.log.Warn("Dump IP punt redirect is not supported by the VPP")
+	d.log.Info("Dump IP punt redirect is not supported by the VPP")
 	return []adapter.IPPuntRedirectKVWithMetadata{}, nil
 }
 

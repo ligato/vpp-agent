@@ -27,32 +27,32 @@ const (
 
 func init() {
 	models.Register(&ARPEntry{}, models.Spec{
-		Module:     "vpp",
-		Class:      "config",
-		Version:    "v2",
-		Type:       "arp",
-		IdTemplate: "{{.Interface}}/{{.IpAddress}}",
+		Module:   "vpp",
+		Type:     "arps",
+		Version:  "v2",
+		Class:    "config",
+		IDFormat: "{{.Interface}}/{{.IpAddress}}",
 	})
 	models.Register(&StaticRoute{}, models.Spec{
-		Module:     "vpp",
-		Class:      "config",
-		Version:    "v2",
-		Type:       "route",
-		IdTemplate: `vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
+		Module:   "vpp",
+		Type:     "routes",
+		Version:  "v2",
+		Class:    "config",
+		IDFormat: `vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
 	})
 	models.Register(&ProxyARP{}, models.Spec{
-		Module:     "vpp",
-		Class:      "config",
-		Version:    "v2",
-		Type:       "proxyarp",
-		IdTemplate: ProxyARP_GlobalID,
+		Module:   "vpp",
+		Type:     "proxyarp",
+		Version:  "v2",
+		Class:    "config",
+		IDFormat: ProxyARP_GlobalID,
 	})
 	models.Register(&IPScanNeighbor{}, models.Spec{
-		Module:     "vpp",
-		Class:      "config",
-		Version:    "v2",
-		Type:       "ipneigh",
-		IdTemplate: IPScanNeigh_GlobalID,
+		Module:   "vpp",
+		Type:     "ipscanneigh",
+		Version:  "v2",
+		Class:    "config",
+		IDFormat: IPScanNeigh_GlobalID,
 	})
 }
 

@@ -54,54 +54,35 @@ type (
 
 	// STN
 	STNRule = vpp_stn.Rule
-)
-
-var (
-	ACLModel *ACL
-
-	InterfaceModel *Interface
-
-	BridgeDomainModel *BridgeDomain
-	FIBEntryModel     *L2FIB
-	XConnectPairModel *XConnect
-
-	StaticRouteModel *L3Route
-	ARPEntryModel    *L3ARP
-	IPScanNeighModel *IPScanNeigh
-	ProxyARPModel    *ProxyARP
-
-	IPSecSPDModel *IPSecSPD
-	IPSecSAModel  *IPSecSA
-
-	NAT44GlobalModel *NAT44Global
-	DNAT44Model      *DNAT44
-
-	STNRuleModel *STNRule
-)
-
-var (
-	ACLSpec = models.MustSpec(&ACL{})
-
-	InterfaceSpec = models.MustSpec(&Interface{})
-
-	BridgeDomainSpec = models.MustSpec(&BridgeDomain{})
-	FIBEntrySpec     = models.MustSpec(&L2FIB{})
-	XConnectPairSpec = models.MustSpec(&XConnect{})
-
-	StaticRouteSpec = models.MustSpec(&L3Route{})
-	ARPEntrySpec    = models.MustSpec(&L3ARP{})
-	IPScanNeighSpec = models.MustSpec(&IPScanNeigh{})
-	ProxyARPSpec    = models.MustSpec(&ProxyARP{})
-
-	IPSecSPDSpec = models.MustSpec(&IPSecSPD{})
-	IPSecSASpec  = models.MustSpec(&IPSecSA{})
-
-	NAT44GlobalSpec = models.MustSpec(&NAT44Global{})
-	DNAT44Spec      = models.MustSpec(&DNAT44{})
-
-	STNRuleSpec = models.MustSpec(&STNRule{})
 
 	// Punt
-	PuntIpRedirect = models.MustSpec(&vpp_punt.IpRedirect{})
-	PuntIToHost    = models.MustSpec(&vpp_punt.ToHost{})
+	PuntIP     = vpp_punt.IpRedirect
+	PuntToHost = vpp_punt.ToHost
+)
+
+var (
+	ACLModel = models.ModelSpec(&ACL{})
+
+	InterfaceModel = models.ModelSpec(&Interface{})
+
+	BridgeDomainModel = models.ModelSpec(&BridgeDomain{})
+	FIBEntryModel     = models.ModelSpec(&L2FIB{})
+	XConnectPairModel = models.ModelSpec(&XConnect{})
+
+	StaticRouteModel = models.ModelSpec(&L3Route{})
+	ARPEntryModel    = models.ModelSpec(&L3ARP{})
+	IPScanNeighModel = models.ModelSpec(&IPScanNeigh{})
+	ProxyARPModel    = models.ModelSpec(&ProxyARP{})
+
+	IPSecSPDModel = models.ModelSpec(&IPSecSPD{})
+	IPSecSAModel  = models.ModelSpec(&IPSecSA{})
+
+	NAT44GlobalModel = models.ModelSpec(&NAT44Global{})
+	DNAT44Model      = models.ModelSpec(&DNAT44{})
+
+	STNRuleModel = models.ModelSpec(&STNRule{})
+
+	// Punt
+	PuntIPModel     = models.ModelSpec(&PuntIP{})
+	PuntToHostModel = models.ModelSpec(&PuntToHost{})
 )

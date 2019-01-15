@@ -3,25 +3,27 @@ package client
 import (
 	"context"
 
-	"github.com/ligato/vpp-agent/api/models"
+	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/vpp-agent/api"
 )
 
-// ConfiguratorClient defines the client-side interface for sync service.
-type ConfiguratorClient interface {
-	// ListModules retrieves list of supported modules.
-	ListModules() (map[string][]models.Model, error)
+// ConfigClient defines the client-side interface for config service.
+type ConfigClient interface {
+	// ActiveModels retrieves list of active modules.
+	ActiveModels() (map[string][]api.Model, error)
 
-	// SetConfig
 	SetConfig(resync bool) SetConfigRequest
+
+	//GetConfig()
 }
 
-// SetConfigRequest defines request interface for setting config.
+// SetConfigRequest defines interface for config set request.
 type SetConfigRequest interface {
 	// Update appends updates for given items to the request.
-	Update(items ...models.ProtoItem)
+	Update(items ...proto.Message)
 
 	// Delete appends deletes for given items to the request.
-	Delete(items ...models.ProtoItem)
+	Delete(items ...proto.Message)
 
 	// Send sends the request.
 	Send(ctx context.Context) error

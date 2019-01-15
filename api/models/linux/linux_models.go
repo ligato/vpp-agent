@@ -23,19 +23,15 @@ import (
 type (
 	// Interfaces
 	Interface = linux_interfaces.Interface
+
 	// L3
 	StaticRoute = linux_l3.StaticRoute
 	ARPEntry    = linux_l3.StaticARPEntry
 )
 
 var (
-	InterfaceModel   *Interface
-	StaticRouteModel *StaticRoute
-	ARPEntryModel    *ARPEntry
-)
+	InterfaceModel = models.ModelSpec(&Interface{})
 
-var (
-	InterfaceSpec   = models.MustSpec(InterfaceModel)
-	StaticRouteSpec = models.MustSpec(StaticRouteModel)
-	ARPEntrySpec    = models.MustSpec(ARPEntryModel)
+	StaticRouteModel = models.ModelSpec(&StaticRoute{})
+	ARPEntryModel    = models.ModelSpec(&ARPEntry{})
 )

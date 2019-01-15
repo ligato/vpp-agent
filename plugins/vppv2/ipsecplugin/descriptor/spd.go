@@ -79,10 +79,10 @@ func NewIPSecSPDDescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.Plugin
 func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 	return &adapter.SPDDescriptor{
 		Name:               IPSecSPDDescriptorName,
-		NBKeyPrefix:        vpp.IPSecSPDSpec.KeyPrefix(),
-		ValueTypeName:      vpp.IPSecSPDSpec.ProtoName(),
-		KeySelector:        vpp.IPSecSPDSpec.IsKeyValid,
-		KeyLabel:           vpp.IPSecSPDSpec.StripKeyPrefix,
+		NBKeyPrefix:        vpp.IPSecSPDModel.KeyPrefix(),
+		ValueTypeName:      vpp.IPSecSPDModel.ProtoName(),
+		KeySelector:        vpp.IPSecSPDModel.IsKeyValid,
+		KeyLabel:           vpp.IPSecSPDModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSPDs,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

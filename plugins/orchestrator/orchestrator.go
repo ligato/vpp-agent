@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
-	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"golang.org/x/net/context"
 
@@ -37,7 +36,7 @@ var Registry = local.DefaultRegistry
 type Plugin struct {
 	Deps
 
-	genericConfigurator *genericConfigurator
+	genericConfigurator *genericApi
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
@@ -45,7 +44,7 @@ type Plugin struct {
 	watchDataReg datasync.WatchRegistration
 
 	mu      sync.Mutex
-	localDB map[string]models.ProtoItem
+	localDB map[string]proto.Message
 }
 
 // Deps represents dependencies for the plugin.
@@ -65,14 +64,14 @@ func (p *Plugin) Init() error {
 	p.changeChan = make(chan datasync.ChangeEvent)
 
 	// register grpc service
-	p.genericConfigurator = &genericConfigurator{
+	p.genericConfigurator = &genericApi{
 		log:  p.Log,
 		orch: p,
 	}
 	api.RegisterGenericConfiguratorServer(p.GRPC.GetServer(), p.genericConfigurator)
 	//reflection.Register(p.GRPC.GetServer())
 
-	p.localDB = map[string]models.ProtoItem{}
+	p.localDB = map[string]proto.Message{}
 
 	return nil
 }
@@ -247,7 +246,7 @@ func (item *ProtoWatchResp) GetValue(out proto.Message) error {
 	return nil
 }
 
-func (p *Plugin) ListData() map[string]models.ProtoItem {
+func (p *Plugin) ListData() map[string]proto.Message {
 	return p.localDB
 }
 
@@ -257,7 +256,7 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp
 	defer p.mu.Unlock()
 
 	if typ, _ := kvs.IsResync(ctx); typ == kvs.FullResync {
-		p.localDB = map[string]models.ProtoItem{}
+		p.localDB = map[string]proto.Message{}
 	}
 
 	txn := p.KVScheduler.StartNBTransaction()

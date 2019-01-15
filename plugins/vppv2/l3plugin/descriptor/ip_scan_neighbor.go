@@ -70,10 +70,10 @@ func NewIPScanNeighborDescriptor(scheduler scheduler.KVScheduler,
 func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescriptor {
 	return &adapter.IPScanNeighborDescriptor{
 		Name:               IPScanNeighborDescriptorName,
-		NBKeyPrefix:        vpp.IPScanNeighSpec.KeyPrefix(),
-		ValueTypeName:      vpp.IPScanNeighSpec.ProtoName(),
-		KeySelector:        vpp.IPScanNeighSpec.IsKeyValid,
-		KeyLabel:           vpp.IPScanNeighSpec.StripKeyPrefix,
+		NBKeyPrefix:        vpp.IPScanNeighModel.KeyPrefix(),
+		ValueTypeName:      vpp.IPScanNeighModel.ProtoName(),
+		KeySelector:        vpp.IPScanNeighModel.IsKeyValid,
+		KeyLabel:           vpp.IPScanNeighModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPScanNeighbors,
 		Add:                d.Add,
 		Modify:             d.Modify,
@@ -129,7 +129,7 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 	}
 
 	dump = append(dump, adapter.IPScanNeighborKVWithMetadata{
-		Key:    vpp.IPScanNeighSpec.KeyPrefix() + l3.IPScanNeigh_GlobalID,
+		Key:    vpp.IPScanNeighModel.KeyPrefix() + l3.IPScanNeigh_GlobalID,
 		Value:  ipNeigh,
 		Origin: origin,
 	})

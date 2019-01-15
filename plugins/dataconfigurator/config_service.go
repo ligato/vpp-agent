@@ -109,7 +109,7 @@ func extractProtos(from ...interface{}) (protos []proto.Message) {
 	return
 }
 
-func placeProtos(protos map[string]models.ProtoItem, dsts ...interface{}) {
+func placeProtos(protos map[string]proto.Message, dsts ...interface{}) {
 	for _, prot := range protos {
 		protTyp := reflect.TypeOf(prot)
 		for _, dst := range dsts {

@@ -62,10 +62,10 @@ func NewPuntToHostDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 	return &adapter.PuntToHostDescriptor{
 		Name:               PuntToHostDescriptorName,
-		NBKeyPrefix:        vpp.PuntIToHost.KeyPrefix(),
-		ValueTypeName:      vpp.PuntIToHost.ProtoName(),
-		KeySelector:        vpp.PuntIToHost.IsKeyValid,
-		KeyLabel:           vpp.PuntIToHost.StripKeyPrefix,
+		NBKeyPrefix:        vpp.PuntToHostModel.KeyPrefix(),
+		ValueTypeName:      vpp.PuntToHostModel.ProtoName(),
+		KeySelector:        vpp.PuntToHostModel.IsKeyValid,
+		KeyLabel:           vpp.PuntToHostModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentPuntToHost,
 		Add:                d.Add,
 		Delete:             d.Delete,
@@ -126,7 +126,7 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 // Dump returns all configured VPP punt to host entries.
 func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata) (dump []adapter.PuntToHostKVWithMetadata, err error) {
 	// TODO dump for punt and punt socket register missing in api
-	d.log.Warn("Dump punt/socket register is not supported by the VPP")
+	d.log.Info("Dump punt/socket register is not supported by the VPP")
 	return []adapter.PuntToHostKVWithMetadata{}, nil
 }
 

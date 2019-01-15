@@ -16,54 +16,38 @@ package models
 
 import (
 	"fmt"
+	"net"
+	"os"
+	"regexp"
 	"strings"
 	"text/template"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/api"
 )
 
-type Model = api.ModelSpec
-type Item = api.Item
+var debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 
-func (s Spec) ToModelSpec() Model {
-	ref := strings.ToLower(s.protoName)
-	ref = strings.Replace(ref, ".", "/", -1)
-
-	return Model{
-		Name:    s.Type,
-		Version: s.Version,
-		Module:  s.Module,
-		Meta: map[string]string{
-			"id-tmpl":    s.IdTemplate,
-			"proto-name": s.protoName,
-			"key-prefix": s.KeyPrefix(),
-			"REF":        ref, //fmt.Sprintf("%s", ref),
-		},
-	}
-}
-
-// Spec represents model specification for registering models.
+// Spec represents model specification.
 type Spec struct {
-	Version    string
-	Class      string
-	Module     string
-	Type       string
-	IdTemplate string
+	Module   string
+	Type     string
+	Version  string
+	Class    string
+	IDFormat string
 
 	protoName string
 	keyPrefix string
 	idTmpl    *template.Template
 }
 
-func (s Spec) String() string {
-	return fmt.Sprintf("%s.%s", s.protoName, s.Version)
+// ProtoName returns proto message name of the model.
+func (s Spec) ProtoName() string {
+	return s.protoName
 }
 
 // KeyPrefix returns key prefix used for storing model in KV stores.
 func (s Spec) KeyPrefix() string {
-	if s.keyPrefix == "" {
-		s.keyPrefix = s.buildPrefix()
-	}
 	return s.keyPrefix
 }
 
@@ -72,6 +56,7 @@ func (s Spec) KeyPrefix() string {
 func (s Spec) ParseKey(key string) (id string, valid bool) {
 	trim := strings.TrimPrefix(key, s.KeyPrefix())
 	if trim != key && trim != "" {
+		// TODO: validate name?
 		return trim, true
 	}
 	return "", false
@@ -79,12 +64,9 @@ func (s Spec) ParseKey(key string) (id string, valid bool) {
 
 // IsKeyValid returns true if give key is valid and matches this model Spec.
 func (s Spec) IsKeyValid(key string) bool {
-	trim := strings.TrimPrefix(key, s.keyPrefix)
-	if trim != key && trim != "" {
-		// TODO: validate name?
-		return true
-	}
-	return false
+	_, valid := s.ParseKey(key)
+	return valid
+
 }
 
 // StripKeyPrefix returns key with prefix stripped.
@@ -96,21 +78,83 @@ func (s Spec) StripKeyPrefix(key string) string {
 	return key
 }
 
-// ProtoName returns proto message name of the model.
-func (s Spec) ProtoName() string {
-	return s.protoName
+var (
+	registeredSpecs = make(map[string]*Spec)
+	keyPrefixes     = make(map[string]string)
+)
+
+// RegisteredModels returns all registered modules.
+func RegisteredModels() (models []*api.Model) {
+	for _, s := range registeredSpecs {
+		models = append(models, &api.Model{
+			Module:  s.Module,
+			Type:    s.Type,
+			Version: s.Version,
+			Meta: map[string]string{
+				"id-format":  s.IDFormat,
+				"proto-name": s.protoName,
+				"key-prefix": s.keyPrefix,
+			},
+		})
+	}
+	return
 }
 
-const prefixTemplate = `{{.Spec.Module}}/{{.Spec.Class}}/{{.Spec.Version}}/{{.Spec.Type}}/`
+var (
+	validType   = regexp.MustCompile(`^[a-z_0-9-]+$`)
+	validModule = regexp.MustCompile(`^[a-z_0-9-/]+$`)
+)
 
-var prefixTmpl = template.Must(template.New("keyPrefix").Parse(prefixTemplate))
+const keyPrefix = `{{.Class}}/{{.Version}}/{{.Module}}/{{.Type}}/`
 
-func (s Spec) buildPrefix() string {
-	var str strings.Builder
-	if err := prefixTmpl.Execute(&str, struct {
-		Spec Spec
-	}{s}); err != nil {
+// Register registers given protobuf with model specification.
+func Register(pb proto.Message, spec Spec) {
+	spec.protoName = proto.MessageName(pb)
+
+	if _, ok := registeredSpecs[spec.protoName]; ok {
+		panic(fmt.Sprintf("duplicate model registered: %s", spec.protoName))
+	}
+	if !validModule.MatchString(spec.Module) {
+		panic(fmt.Sprintf("module for model %s is invalid", spec.protoName))
+	}
+	if !validType.MatchString(spec.Type) {
+		panic(fmt.Sprintf("name for model %s is invalid", spec.protoName))
+	}
+	if !strings.HasPrefix(spec.Version, "v") {
+		panic(fmt.Sprintf("version for model %s is invalid", spec.protoName))
+	}
+	if spec.Class == "" {
+		panic(fmt.Sprintf("class for model %s is empty", spec.protoName))
+	}
+	if spec.IDFormat == "" {
+		panic(fmt.Sprintf("ID format for model %s is empty", spec.protoName))
+	}
+	spec.idTmpl = template.Must(template.New("ID").Funcs(funcMap).Parse(spec.IDFormat))
+
+	prefixTmpl := template.Must(template.New("keyPrefix").Parse(keyPrefix))
+	var prefix strings.Builder
+	if err := prefixTmpl.Execute(&prefix, spec); err != nil {
 		panic(err)
 	}
-	return str.String()
+	spec.keyPrefix = prefix.String()
+	if pn, ok := keyPrefixes[spec.keyPrefix]; ok {
+		panic(fmt.Sprintf("key prefix %q already used by: %s", spec.keyPrefix, pn))
+	}
+	keyPrefixes[spec.keyPrefix] = spec.protoName
+
+	if debugRegister {
+		fmt.Printf("- registered model: %-40v\t%q\n", spec, spec.KeyPrefix())
+	}
+	registeredSpecs[spec.protoName] = &spec
+}
+
+var funcMap = template.FuncMap{
+	"ipnet": func(s string) map[string]interface{} {
+		_, ipNet, _ := net.ParseCIDR(s)
+		maskSize, _ := ipNet.Mask.Size()
+		return map[string]interface{}{
+			"IP":       ipNet.IP.String(),
+			"MaskSize": maskSize,
+		}
+	},
 }

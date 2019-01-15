@@ -9,6 +9,14 @@ option (gogoproto.messagename_all) = true;
 
 import "google/protobuf/any.proto";
 
+message Model {
+    string module = 1;
+    string type = 2;
+    string version = 3;
+    string class = 4;
+    map<string,string> meta = 5;
+}
+
 message Item {
     string key = 1;
     Value val = 2;
@@ -31,10 +39,12 @@ message ItemStatus {
     string message = 2;
 }
 
+//------------------------------------------------------------------------------
+
 service GenericConfigurator {
-    // ListCapabilities returns information about service capabilities
+    // Capabilities returns information about service capabilities
     // including list of models supported by the server.
-    rpc ListCapabilities (ListCapabilitiesRequest) returns (ListCapabilitiesResponse) {};
+    rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse) {};
 
     // SetConfig is used to set desired configuration.
     // It returns status for items specified in the requests.
@@ -52,20 +62,17 @@ service GenericConfigurator {
     rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse) {};
 }
 
-message ListCapabilitiesRequest {
+//------------------------------------------------------------------------------
+
+message CapabilitiesRequest {
     // TODO: query filters
 }
 
-message ListCapabilitiesResponse {
-    repeated ModelSpec active_models = 1;
+message CapabilitiesResponse {
+    repeated Model active_models = 1;
 }
 
-message ModelSpec {
-    string name = 1;
-    string version = 2;
-    string module = 3;
-    map<string,string> meta = 5;
-}
+//------------------------------------------------------------------------------
 
 message SetConfigRequest {
     message Options {
@@ -96,6 +103,8 @@ message UpdateResult {
     Operation op = 3;
 }
 
+//------------------------------------------------------------------------------
+
 message GetConfigRequest {
     repeated string keys = 1;
     repeated string modules = 2;
@@ -110,6 +119,8 @@ message GetConfigResponse {
     repeated ConfigItem items = 1;
 }
 
+//------------------------------------------------------------------------------
+
 message DumpStateRequest {
     repeated string keys = 1;
     repeated string modules = 2;
@@ -118,10 +129,12 @@ message DumpStateRequest {
 message DumpStateResponse {
     message StateItem {
         Item item = 1;
-        map<string,string> metadata = 2;
+        map<string, string> metadata = 2;
     }
     repeated StateItem states = 1;
 }
+
+//------------------------------------------------------------------------------
 
 message SubscribeRequest {
     repeated Subscription subscriptions = 1;

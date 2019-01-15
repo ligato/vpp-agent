@@ -56,10 +56,10 @@ func NewProxyArpDescriptor(scheduler scheduler.KVScheduler,
 func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
 	return &adapter.ProxyARPDescriptor{
 		Name:               ProxyArpDescriptorName,
-		NBKeyPrefix:        vpp.ProxyARPSpec.KeyPrefix(),
-		ValueTypeName:      vpp.ProxyARPSpec.ProtoName(),
-		KeySelector:        vpp.ProxyARPSpec.IsKeyValid,
-		KeyLabel:           vpp.ProxyARPSpec.StripKeyPrefix,
+		NBKeyPrefix:        vpp.ProxyARPModel.KeyPrefix(),
+		ValueTypeName:      vpp.ProxyARPModel.ProtoName(),
+		KeySelector:        vpp.ProxyARPModel.IsKeyValid,
+		KeyLabel:           vpp.ProxyARPModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentProxyArps,
 		Add:                d.Add,
 		Modify:             d.Modify,
@@ -187,7 +187,7 @@ func (d *ProxyArpDescriptor) Dump(correlate []adapter.ProxyARPKVWithMetadata) (
 	}
 
 	dump = append(dump, adapter.ProxyARPKVWithMetadata{
-		Key:    vpp.ProxyARPSpec.KeyPrefix() + l3.ProxyARP_GlobalID,
+		Key:    vpp.ProxyARPModel.KeyPrefix() + l3.ProxyARP_GlobalID,
 		Value:  proxyArp,
 		Origin: scheduler.UnknownOrigin,
 	})

@@ -17,8 +17,10 @@ package client
 import (
 	"context"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/api/models"
 )
 
@@ -30,12 +32,12 @@ type client struct {
 }
 
 // NewClient returns new instance that uses given registry for data propagation.
-func NewClient(factory ProtoTxnFactory) ConfiguratorClient {
+func NewClient(factory ProtoTxnFactory) ConfigClient {
 	return &client{factory}
 }
 
-func (c *client) ListModules() (map[string][]models.Model, error) {
-	modules := make(map[string][]models.Model)
+func (c *client) ActiveModels() (map[string][]api.Model, error) {
+	modules := make(map[string][]api.Model)
 	for _, model := range models.RegisteredModels() {
 		modules[model.Module] = append(modules[model.Module], *model)
 	}
@@ -51,7 +53,7 @@ type setConfigRequest struct {
 	err error
 }
 
-func (r *setConfigRequest) Update(items ...models.ProtoItem) {
+func (r *setConfigRequest) Update(items ...proto.Message) {
 	if r.err != nil {
 		return
 	}
@@ -65,7 +67,7 @@ func (r *setConfigRequest) Update(items ...models.ProtoItem) {
 	}
 }
 
-func (r *setConfigRequest) Delete(items ...models.ProtoItem) {
+func (r *setConfigRequest) Delete(items ...proto.Message) {
 	if r.err != nil {
 		return
 	}

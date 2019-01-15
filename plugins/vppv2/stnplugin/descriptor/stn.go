@@ -67,10 +67,10 @@ func NewSTNDescriptor(stnHandler vppcalls.StnVppAPI, log logging.PluginLogger) *
 func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 	return &adapter.STNDescriptor{
 		Name:               STNDescriptorName,
-		NBKeyPrefix:        vpp.STNRuleSpec.KeyPrefix(),
-		ValueTypeName:      vpp.STNRuleSpec.ProtoName(),
-		KeySelector:        vpp.STNRuleSpec.IsKeyValid,
-		KeyLabel:           vpp.STNRuleSpec.StripKeyPrefix,
+		NBKeyPrefix:        vpp.STNRuleModel.KeyPrefix(),
+		ValueTypeName:      vpp.STNRuleModel.ProtoName(),
+		KeySelector:        vpp.STNRuleModel.IsKeyValid,
+		KeyLabel:           vpp.STNRuleModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentSTNs,
 		Add:                d.Add,
 		Delete:             d.Delete,
