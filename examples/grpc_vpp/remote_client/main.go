@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -71,12 +72,6 @@ type ExamplePlugin struct {
 
 // Init initializes example plugin.
 func (p *ExamplePlugin) Init() (err error) {
-	switch *socketType {
-	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
-	default:
-		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
-	}
-
 	// Set up connection to the server.
 	p.conn, err = grpc.Dial("unix",
 		grpc.WithInsecure(),
@@ -127,22 +122,27 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (p *ExamplePlugin) resyncVPP() {
-	client := dataconfigurator.NewDataConfiguratorClient(p.conn)
+	client := dataconfigurator.NewConfigClient(p.conn)
 
 	ctx := context.Background()
 
-	_, err := client.Resync(ctx, &dataconfigurator.ConfigData{
-		Vpp: &vpp.Config{
+	update := &dataconfigurator.Data{
+		Vpp: &vpp.Data{
 			Interfaces: []*interfaces.Interface{
 				memif1,
 			},
 			IpscanNeighbor: ipScanNeigh,
 		},
-		Linux: &linux.Config{
+		Linux: &linux.Data{
 			Interfaces: []*linux_interfaces.Interface{
 				veth1, veth2,
 			},
 		},
+	}
+
+	_, err := client.Update(ctx, &dataconfigurator.UpdateRequest{
+		Update:     update,
+		FullResync: true,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -152,7 +152,15 @@ func (p *ExamplePlugin) resyncVPP() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Printf("Config: %+v\n", cfg)
+	fmt.Printf("Config:\n %+v\n", proto.MarshalTextString(cfg))
+
+	client2 := dataconfigurator.NewStateClient(p.conn)
+
+	dump, err := client2.Dump(context.Background(), &dataconfigurator.DumpRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
 
 }
 
@@ -164,16 +172,16 @@ var (
 		Type:        interfaces.Interface_MEMIF,
 		Link: &interfaces.Interface_Memif{
 			Memif: &interfaces.MemifLink{
-				Id:             1,
-				Master:         true,
+				Id:     1,
+				Master: true,
+
 				Secret:         "secret",
 				SocketFilename: "/tmp/memif1.sock",
 			},
 		},
 	}
 	ipScanNeigh = &vpp.IPScanNeigh{
-		Mode:         vpp_l3.IPScanNeighbor_IPv4,
-		ScanInterval: 33,
+		Mode: vpp_l3.IPScanNeighbor_BOTH,
 	}
 	veth1 = &linux.Interface{
 		Name:        "myVETH1",

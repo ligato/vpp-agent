@@ -10,30 +10,60 @@ option (gogoproto.messagename_all) = true;
 import "models/vpp/vpp.proto";
 import "models/linux/linux.proto";
 
-message ConfigData {
-    vpp.Config vpp = 1;
-    linux.Config linux = 2;
+message Data {
+    vpp.Data vpp = 1;
+    linux.Data linux = 2;
 }
 
-service DataConfigurator {
-    rpc Resync(ConfigData) returns (ResyncResponse);
-    rpc Update(ConfigData) returns (UpdateResponse);
-    rpc Delete(ConfigData) returns (DeleteResponse);
-    rpc Get(GetRequest) returns (ConfigData);
+//------------------------------------------------------------------------------
+
+service Config {
+    rpc Update(UpdateRequest) returns (UpdateResponse);
+    rpc Delete(DeleteRequest) returns (DeleteResponse);
+    rpc Get(GetRequest) returns (GetResponse);
 }
 
-message ResyncResponse {
+service State {
+    rpc Dump(DumpRequest) returns (DumpResponse);
+}
 
+//------------------------------------------------------------------------------
+
+message UpdateRequest {
+    Data update = 1;
+    bool full_resync = 2;
 }
 
 message UpdateResponse {
 
 }
 
+//------------------------------------------------------------------------------
+
+message DeleteRequest {
+    Data delete = 1;
+}
+
 message DeleteResponse {
 
 }
 
+//------------------------------------------------------------------------------
+
 message GetRequest {
 
+}
+
+message GetResponse {
+    Data config = 1;
+}
+
+//------------------------------------------------------------------------------
+
+message DumpRequest {
+
+}
+
+message DumpResponse {
+    Data state = 1;
 }

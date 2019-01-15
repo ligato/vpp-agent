@@ -26,88 +26,104 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion2 // please upgrade the proto package
 
-type ConfigData struct {
-	Vpp                  *vpp.Config   `protobuf:"bytes,1,opt,name=vpp,proto3" json:"vpp,omitempty"`
-	Linux                *linux.Config `protobuf:"bytes,2,opt,name=linux,proto3" json:"linux,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
+type Data struct {
+	Vpp                  *vpp.Data   `protobuf:"bytes,1,opt,name=vpp,proto3" json:"vpp,omitempty"`
+	Linux                *linux.Data `protobuf:"bytes,2,opt,name=linux,proto3" json:"linux,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *ConfigData) Reset()         { *m = ConfigData{} }
-func (m *ConfigData) String() string { return proto.CompactTextString(m) }
-func (*ConfigData) ProtoMessage()    {}
-func (*ConfigData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_c834c371a8c8da75, []int{0}
+func (m *Data) Reset()         { *m = Data{} }
+func (m *Data) String() string { return proto.CompactTextString(m) }
+func (*Data) ProtoMessage()    {}
+func (*Data) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{0}
 }
-func (m *ConfigData) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ConfigData.Unmarshal(m, b)
+func (m *Data) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Data.Unmarshal(m, b)
 }
-func (m *ConfigData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ConfigData.Marshal(b, m, deterministic)
+func (m *Data) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Data.Marshal(b, m, deterministic)
 }
-func (dst *ConfigData) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfigData.Merge(dst, src)
+func (dst *Data) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Data.Merge(dst, src)
 }
-func (m *ConfigData) XXX_Size() int {
-	return xxx_messageInfo_ConfigData.Size(m)
+func (m *Data) XXX_Size() int {
+	return xxx_messageInfo_Data.Size(m)
 }
-func (m *ConfigData) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConfigData.DiscardUnknown(m)
+func (m *Data) XXX_DiscardUnknown() {
+	xxx_messageInfo_Data.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ConfigData proto.InternalMessageInfo
+var xxx_messageInfo_Data proto.InternalMessageInfo
 
-func (m *ConfigData) GetVpp() *vpp.Config {
+func (m *Data) GetVpp() *vpp.Data {
 	if m != nil {
 		return m.Vpp
 	}
 	return nil
 }
 
-func (m *ConfigData) GetLinux() *linux.Config {
+func (m *Data) GetLinux() *linux.Data {
 	if m != nil {
 		return m.Linux
 	}
 	return nil
 }
 
-func (*ConfigData) XXX_MessageName() string {
-	return "dataconfigurator.ConfigData"
+func (*Data) XXX_MessageName() string {
+	return "dataconfigurator.Data"
 }
 
-type ResyncResponse struct {
+type UpdateRequest struct {
+	Update               *Data    `protobuf:"bytes,1,opt,name=update,proto3" json:"update,omitempty"`
+	FullResync           bool     `protobuf:"varint,2,opt,name=full_resync,json=fullResync,proto3" json:"full_resync,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ResyncResponse) Reset()         { *m = ResyncResponse{} }
-func (m *ResyncResponse) String() string { return proto.CompactTextString(m) }
-func (*ResyncResponse) ProtoMessage()    {}
-func (*ResyncResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_c834c371a8c8da75, []int{1}
+func (m *UpdateRequest) Reset()         { *m = UpdateRequest{} }
+func (m *UpdateRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateRequest) ProtoMessage()    {}
+func (*UpdateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{1}
 }
-func (m *ResyncResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ResyncResponse.Unmarshal(m, b)
+func (m *UpdateRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateRequest.Unmarshal(m, b)
 }
-func (m *ResyncResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ResyncResponse.Marshal(b, m, deterministic)
+func (m *UpdateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateRequest.Marshal(b, m, deterministic)
 }
-func (dst *ResyncResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ResyncResponse.Merge(dst, src)
+func (dst *UpdateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateRequest.Merge(dst, src)
 }
-func (m *ResyncResponse) XXX_Size() int {
-	return xxx_messageInfo_ResyncResponse.Size(m)
+func (m *UpdateRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateRequest.Size(m)
 }
-func (m *ResyncResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ResyncResponse.DiscardUnknown(m)
+func (m *UpdateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ResyncResponse proto.InternalMessageInfo
+var xxx_messageInfo_UpdateRequest proto.InternalMessageInfo
 
-func (*ResyncResponse) XXX_MessageName() string {
-	return "dataconfigurator.ResyncResponse"
+func (m *UpdateRequest) GetUpdate() *Data {
+	if m != nil {
+		return m.Update
+	}
+	return nil
+}
+
+func (m *UpdateRequest) GetFullResync() bool {
+	if m != nil {
+		return m.FullResync
+	}
+	return false
+}
+
+func (*UpdateRequest) XXX_MessageName() string {
+	return "dataconfigurator.UpdateRequest"
 }
 
 type UpdateResponse struct {
@@ -120,7 +136,7 @@ func (m *UpdateResponse) Reset()         { *m = UpdateResponse{} }
 func (m *UpdateResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateResponse) ProtoMessage()    {}
 func (*UpdateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_c834c371a8c8da75, []int{2}
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{2}
 }
 func (m *UpdateResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateResponse.Unmarshal(m, b)
@@ -144,6 +160,48 @@ func (*UpdateResponse) XXX_MessageName() string {
 	return "dataconfigurator.UpdateResponse"
 }
 
+type DeleteRequest struct {
+	Delete               *Data    `protobuf:"bytes,1,opt,name=delete,proto3" json:"delete,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteRequest) Reset()         { *m = DeleteRequest{} }
+func (m *DeleteRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteRequest) ProtoMessage()    {}
+func (*DeleteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{3}
+}
+func (m *DeleteRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteRequest.Unmarshal(m, b)
+}
+func (m *DeleteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteRequest.Merge(dst, src)
+}
+func (m *DeleteRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteRequest.Size(m)
+}
+func (m *DeleteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteRequest proto.InternalMessageInfo
+
+func (m *DeleteRequest) GetDelete() *Data {
+	if m != nil {
+		return m.Delete
+	}
+	return nil
+}
+
+func (*DeleteRequest) XXX_MessageName() string {
+	return "dataconfigurator.DeleteRequest"
+}
+
 type DeleteResponse struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -154,7 +212,7 @@ func (m *DeleteResponse) Reset()         { *m = DeleteResponse{} }
 func (m *DeleteResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteResponse) ProtoMessage()    {}
 func (*DeleteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_c834c371a8c8da75, []int{3}
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{4}
 }
 func (m *DeleteResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteResponse.Unmarshal(m, b)
@@ -188,7 +246,7 @@ func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_c834c371a8c8da75, []int{4}
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{5}
 }
 func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRequest.Unmarshal(m, b)
@@ -211,12 +269,134 @@ var xxx_messageInfo_GetRequest proto.InternalMessageInfo
 func (*GetRequest) XXX_MessageName() string {
 	return "dataconfigurator.GetRequest"
 }
+
+type GetResponse struct {
+	Config               *Data    `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetResponse) Reset()         { *m = GetResponse{} }
+func (m *GetResponse) String() string { return proto.CompactTextString(m) }
+func (*GetResponse) ProtoMessage()    {}
+func (*GetResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{6}
+}
+func (m *GetResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetResponse.Unmarshal(m, b)
+}
+func (m *GetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetResponse.Merge(dst, src)
+}
+func (m *GetResponse) XXX_Size() int {
+	return xxx_messageInfo_GetResponse.Size(m)
+}
+func (m *GetResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetResponse proto.InternalMessageInfo
+
+func (m *GetResponse) GetConfig() *Data {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (*GetResponse) XXX_MessageName() string {
+	return "dataconfigurator.GetResponse"
+}
+
+type DumpRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DumpRequest) Reset()         { *m = DumpRequest{} }
+func (m *DumpRequest) String() string { return proto.CompactTextString(m) }
+func (*DumpRequest) ProtoMessage()    {}
+func (*DumpRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{7}
+}
+func (m *DumpRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DumpRequest.Unmarshal(m, b)
+}
+func (m *DumpRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DumpRequest.Marshal(b, m, deterministic)
+}
+func (dst *DumpRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DumpRequest.Merge(dst, src)
+}
+func (m *DumpRequest) XXX_Size() int {
+	return xxx_messageInfo_DumpRequest.Size(m)
+}
+func (m *DumpRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DumpRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DumpRequest proto.InternalMessageInfo
+
+func (*DumpRequest) XXX_MessageName() string {
+	return "dataconfigurator.DumpRequest"
+}
+
+type DumpResponse struct {
+	State                *Data    `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DumpResponse) Reset()         { *m = DumpResponse{} }
+func (m *DumpResponse) String() string { return proto.CompactTextString(m) }
+func (*DumpResponse) ProtoMessage()    {}
+func (*DumpResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dataconfigurator_7bd70f1158b2717a, []int{8}
+}
+func (m *DumpResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DumpResponse.Unmarshal(m, b)
+}
+func (m *DumpResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DumpResponse.Marshal(b, m, deterministic)
+}
+func (dst *DumpResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DumpResponse.Merge(dst, src)
+}
+func (m *DumpResponse) XXX_Size() int {
+	return xxx_messageInfo_DumpResponse.Size(m)
+}
+func (m *DumpResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DumpResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DumpResponse proto.InternalMessageInfo
+
+func (m *DumpResponse) GetState() *Data {
+	if m != nil {
+		return m.State
+	}
+	return nil
+}
+
+func (*DumpResponse) XXX_MessageName() string {
+	return "dataconfigurator.DumpResponse"
+}
 func init() {
-	proto.RegisterType((*ConfigData)(nil), "dataconfigurator.ConfigData")
-	proto.RegisterType((*ResyncResponse)(nil), "dataconfigurator.ResyncResponse")
+	proto.RegisterType((*Data)(nil), "dataconfigurator.Data")
+	proto.RegisterType((*UpdateRequest)(nil), "dataconfigurator.UpdateRequest")
 	proto.RegisterType((*UpdateResponse)(nil), "dataconfigurator.UpdateResponse")
+	proto.RegisterType((*DeleteRequest)(nil), "dataconfigurator.DeleteRequest")
 	proto.RegisterType((*DeleteResponse)(nil), "dataconfigurator.DeleteResponse")
 	proto.RegisterType((*GetRequest)(nil), "dataconfigurator.GetRequest")
+	proto.RegisterType((*GetResponse)(nil), "dataconfigurator.GetResponse")
+	proto.RegisterType((*DumpRequest)(nil), "dataconfigurator.DumpRequest")
+	proto.RegisterType((*DumpResponse)(nil), "dataconfigurator.DumpResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -227,163 +407,194 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// DataConfiguratorClient is the client API for DataConfigurator service.
+// ConfigClient is the client API for Config service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type DataConfiguratorClient interface {
-	Resync(ctx context.Context, in *ConfigData, opts ...grpc.CallOption) (*ResyncResponse, error)
-	Update(ctx context.Context, in *ConfigData, opts ...grpc.CallOption) (*UpdateResponse, error)
-	Delete(ctx context.Context, in *ConfigData, opts ...grpc.CallOption) (*DeleteResponse, error)
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*ConfigData, error)
+type ConfigClient interface {
+	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
+	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 }
 
-type dataConfiguratorClient struct {
+type configClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewDataConfiguratorClient(cc *grpc.ClientConn) DataConfiguratorClient {
-	return &dataConfiguratorClient{cc}
+func NewConfigClient(cc *grpc.ClientConn) ConfigClient {
+	return &configClient{cc}
 }
 
-func (c *dataConfiguratorClient) Resync(ctx context.Context, in *ConfigData, opts ...grpc.CallOption) (*ResyncResponse, error) {
-	out := new(ResyncResponse)
-	err := c.cc.Invoke(ctx, "/dataconfigurator.DataConfigurator/Resync", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dataConfiguratorClient) Update(ctx context.Context, in *ConfigData, opts ...grpc.CallOption) (*UpdateResponse, error) {
+func (c *configClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
 	out := new(UpdateResponse)
-	err := c.cc.Invoke(ctx, "/dataconfigurator.DataConfigurator/Update", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dataconfigurator.Config/Update", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dataConfiguratorClient) Delete(ctx context.Context, in *ConfigData, opts ...grpc.CallOption) (*DeleteResponse, error) {
+func (c *configClient) Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
 	out := new(DeleteResponse)
-	err := c.cc.Invoke(ctx, "/dataconfigurator.DataConfigurator/Delete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dataconfigurator.Config/Delete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dataConfiguratorClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*ConfigData, error) {
-	out := new(ConfigData)
-	err := c.cc.Invoke(ctx, "/dataconfigurator.DataConfigurator/Get", in, out, opts...)
+func (c *configClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	out := new(GetResponse)
+	err := c.cc.Invoke(ctx, "/dataconfigurator.Config/Get", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// DataConfiguratorServer is the server API for DataConfigurator service.
-type DataConfiguratorServer interface {
-	Resync(context.Context, *ConfigData) (*ResyncResponse, error)
-	Update(context.Context, *ConfigData) (*UpdateResponse, error)
-	Delete(context.Context, *ConfigData) (*DeleteResponse, error)
-	Get(context.Context, *GetRequest) (*ConfigData, error)
+// ConfigServer is the server API for Config service.
+type ConfigServer interface {
+	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
+	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)
+	Get(context.Context, *GetRequest) (*GetResponse, error)
 }
 
-func RegisterDataConfiguratorServer(s *grpc.Server, srv DataConfiguratorServer) {
-	s.RegisterService(&_DataConfigurator_serviceDesc, srv)
+func RegisterConfigServer(s *grpc.Server, srv ConfigServer) {
+	s.RegisterService(&_Config_serviceDesc, srv)
 }
 
-func _DataConfigurator_Resync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfigData)
+func _Config_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DataConfiguratorServer).Resync(ctx, in)
+		return srv.(ConfigServer).Update(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dataconfigurator.DataConfigurator/Resync",
+		FullMethod: "/dataconfigurator.Config/Update",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataConfiguratorServer).Resync(ctx, req.(*ConfigData))
+		return srv.(ConfigServer).Update(ctx, req.(*UpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DataConfigurator_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfigData)
+func _Config_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DataConfiguratorServer).Update(ctx, in)
+		return srv.(ConfigServer).Delete(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dataconfigurator.DataConfigurator/Update",
+		FullMethod: "/dataconfigurator.Config/Delete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataConfiguratorServer).Update(ctx, req.(*ConfigData))
+		return srv.(ConfigServer).Delete(ctx, req.(*DeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DataConfigurator_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConfigData)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DataConfiguratorServer).Delete(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/dataconfigurator.DataConfigurator/Delete",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataConfiguratorServer).Delete(ctx, req.(*ConfigData))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _DataConfigurator_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Config_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DataConfiguratorServer).Get(ctx, in)
+		return srv.(ConfigServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dataconfigurator.DataConfigurator/Get",
+		FullMethod: "/dataconfigurator.Config/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataConfiguratorServer).Get(ctx, req.(*GetRequest))
+		return srv.(ConfigServer).Get(ctx, req.(*GetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _DataConfigurator_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "dataconfigurator.DataConfigurator",
-	HandlerType: (*DataConfiguratorServer)(nil),
+var _Config_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "dataconfigurator.Config",
+	HandlerType: (*ConfigServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Resync",
-			Handler:    _DataConfigurator_Resync_Handler,
-		},
-		{
 			MethodName: "Update",
-			Handler:    _DataConfigurator_Update_Handler,
+			Handler:    _Config_Update_Handler,
 		},
 		{
 			MethodName: "Delete",
-			Handler:    _DataConfigurator_Delete_Handler,
+			Handler:    _Config_Delete_Handler,
 		},
 		{
 			MethodName: "Get",
-			Handler:    _DataConfigurator_Get_Handler,
+			Handler:    _Config_Get_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "dataconfigurator/dataconfigurator.proto",
+}
+
+// StateClient is the client API for State service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type StateClient interface {
+	Dump(ctx context.Context, in *DumpRequest, opts ...grpc.CallOption) (*DumpResponse, error)
+}
+
+type stateClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewStateClient(cc *grpc.ClientConn) StateClient {
+	return &stateClient{cc}
+}
+
+func (c *stateClient) Dump(ctx context.Context, in *DumpRequest, opts ...grpc.CallOption) (*DumpResponse, error) {
+	out := new(DumpResponse)
+	err := c.cc.Invoke(ctx, "/dataconfigurator.State/Dump", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// StateServer is the server API for State service.
+type StateServer interface {
+	Dump(context.Context, *DumpRequest) (*DumpResponse, error)
+}
+
+func RegisterStateServer(s *grpc.Server, srv StateServer) {
+	s.RegisterService(&_State_serviceDesc, srv)
+}
+
+func _State_Dump_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DumpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StateServer).Dump(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dataconfigurator.State/Dump",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StateServer).Dump(ctx, req.(*DumpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _State_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "dataconfigurator.State",
+	HandlerType: (*StateServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Dump",
+			Handler:    _State_Dump_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -391,29 +602,35 @@ var _DataConfigurator_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("dataconfigurator/dataconfigurator.proto", fileDescriptor_dataconfigurator_c834c371a8c8da75)
+	proto.RegisterFile("dataconfigurator/dataconfigurator.proto", fileDescriptor_dataconfigurator_7bd70f1158b2717a)
 }
 
-var fileDescriptor_dataconfigurator_c834c371a8c8da75 = []byte{
-	// 311 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x92, 0xcd, 0x4a, 0xc3, 0x40,
-	0x10, 0x80, 0x69, 0x8b, 0x3d, 0x4c, 0x55, 0xca, 0xe2, 0x21, 0x04, 0x95, 0x52, 0x0f, 0x7a, 0x69,
-	0x02, 0xf5, 0xe8, 0xa9, 0xb6, 0x10, 0x8f, 0x12, 0xf0, 0xe2, 0x6d, 0x93, 0x4c, 0xd7, 0x40, 0x9a,
-	0x5d, 0x93, 0x49, 0xd1, 0xe7, 0xf2, 0x25, 0x7c, 0x0f, 0x5f, 0x44, 0x76, 0x37, 0xd0, 0xfc, 0x88,
-	0xd0, 0x43, 0x42, 0xf6, 0x9b, 0xc9, 0xb7, 0x33, 0xc3, 0xc0, 0x6d, 0xc2, 0x89, 0xc7, 0x32, 0xdf,
-	0xa6, 0xa2, 0x2a, 0x38, 0xc9, 0xc2, 0xef, 0x02, 0x4f, 0x15, 0x92, 0x24, 0x9b, 0x76, 0xb9, 0xbb,
-	0x10, 0x29, 0xbd, 0x55, 0x91, 0x17, 0xcb, 0x9d, 0x2f, 0xa4, 0x90, 0xbe, 0x49, 0x8c, 0xaa, 0xad,
-	0x39, 0x99, 0x83, 0xf9, 0xb2, 0x02, 0xf7, 0x62, 0x27, 0x13, 0xcc, 0x4a, 0x7f, 0xaf, 0x94, 0x7e,
-	0x6a, 0xea, 0xd4, 0x34, 0x4b, 0xf3, 0xea, 0xc3, 0xbe, 0x6d, 0x64, 0xfe, 0x0c, 0xb0, 0x36, 0xd7,
-	0x6d, 0x38, 0x71, 0x76, 0x05, 0xa3, 0xbd, 0x52, 0xce, 0x60, 0x36, 0xb8, 0x9b, 0x2c, 0x27, 0x9e,
-	0x16, 0xd8, 0x68, 0xa8, 0x39, 0xbb, 0x81, 0x13, 0xf3, 0xaf, 0x33, 0x34, 0x09, 0x67, 0x9e, 0x35,
-	0xd5, 0x29, 0x36, 0x36, 0x9f, 0xc2, 0x79, 0x88, 0xe5, 0x67, 0x1e, 0x87, 0x58, 0x2a, 0x99, 0x97,
-	0xa8, 0xc9, 0x8b, 0x4a, 0x38, 0x61, 0x93, 0x6c, 0x30, 0xc3, 0x06, 0x39, 0x05, 0x08, 0x90, 0x42,
-	0x7c, 0xaf, 0xb0, 0xa4, 0xe5, 0xd7, 0x10, 0xa6, 0xba, 0xa0, 0x75, 0x63, 0x12, 0xec, 0x09, 0xc6,
-	0x56, 0xcc, 0x2e, 0xbd, 0xde, 0xf8, 0x0e, 0x4d, 0xb8, 0xb3, 0x7e, 0xb4, 0x5d, 0x90, 0x36, 0xd9,
-	0x82, 0x8e, 0x37, 0xb5, 0x1b, 0xd1, 0x26, 0xdb, 0xc8, 0xf1, 0xa6, 0xf6, 0x00, 0xd8, 0x0a, 0x46,
-	0x01, 0xd2, 0x5f, 0x9a, 0xc3, 0x5c, 0xdc, 0x7f, 0x2f, 0x79, 0x0c, 0xbe, 0x7f, 0xae, 0x07, 0xaf,
-	0xab, 0xc6, 0xc2, 0x64, 0xa9, 0xe0, 0x24, 0xf5, 0x22, 0x2c, 0xb8, 0xc0, 0x9c, 0x7c, 0xae, 0xd2,
-	0xde, 0xea, 0x3d, 0x74, 0x41, 0x34, 0x36, 0xbb, 0x71, 0xff, 0x1b, 0x00, 0x00, 0xff, 0xff, 0x0c,
-	0x17, 0xc7, 0x30, 0xb7, 0x02, 0x00, 0x00,
+var fileDescriptor_dataconfigurator_7bd70f1158b2717a = []byte{
+	// 415 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0xcf, 0x6e, 0xda, 0x40,
+	0x10, 0xc6, 0xe5, 0x02, 0x56, 0x3b, 0x86, 0x0a, 0xad, 0xaa, 0x0a, 0xb9, 0x2d, 0xa5, 0xbe, 0xb4,
+	0x87, 0x62, 0x4b, 0xe4, 0x98, 0x44, 0x51, 0x08, 0x09, 0x07, 0xa4, 0x1c, 0x1c, 0x71, 0xc9, 0x25,
+	0x59, 0xf0, 0xe2, 0x58, 0x32, 0xde, 0x8d, 0xbd, 0x8b, 0x92, 0x37, 0xcc, 0x7b, 0x44, 0xca, 0x73,
+	0x44, 0xfb, 0x07, 0x05, 0x63, 0x10, 0x07, 0x10, 0xf3, 0xcd, 0x37, 0xbf, 0xc1, 0x9f, 0x35, 0xf0,
+	0x37, 0xc2, 0x1c, 0xcf, 0x69, 0xb6, 0x48, 0x62, 0x91, 0x63, 0x4e, 0xf3, 0x60, 0x5b, 0xf0, 0x59,
+	0x4e, 0x39, 0x45, 0xed, 0x6d, 0xdd, 0xed, 0xc7, 0x09, 0x7f, 0x10, 0x33, 0x7f, 0x4e, 0x97, 0x41,
+	0x4c, 0x63, 0x1a, 0x28, 0xe3, 0x4c, 0x2c, 0x54, 0xa5, 0x0a, 0xf5, 0x4b, 0x03, 0xdc, 0x6f, 0x4b,
+	0x1a, 0x91, 0xb4, 0x08, 0x56, 0x8c, 0xc9, 0x8f, 0x51, 0x3b, 0x46, 0x4d, 0x93, 0x4c, 0x3c, 0xe9,
+	0x6f, 0xdd, 0xf1, 0xae, 0xa0, 0x3e, 0xc2, 0x1c, 0xa3, 0x1f, 0x50, 0x5b, 0x31, 0xd6, 0xb1, 0x7a,
+	0xd6, 0x3f, 0x67, 0xf0, 0xc5, 0x97, 0xa3, 0x52, 0x0f, 0xa5, 0x8a, 0xfe, 0x40, 0x43, 0xcd, 0x74,
+	0x3e, 0xa9, 0xb6, 0xe3, 0x6b, 0x82, 0x32, 0xe8, 0x8e, 0x77, 0x0f, 0xad, 0x29, 0x8b, 0x30, 0x27,
+	0x21, 0x79, 0x14, 0xa4, 0xe0, 0xc8, 0x07, 0x5b, 0x28, 0xc1, 0x30, 0xbf, 0xfb, 0x95, 0x47, 0x56,
+	0xf3, 0xc6, 0x85, 0x7e, 0x83, 0xb3, 0x10, 0x69, 0x7a, 0x97, 0x93, 0xe2, 0x39, 0x9b, 0xab, 0x4d,
+	0x9f, 0x43, 0x90, 0x52, 0xa8, 0x14, 0xaf, 0x0d, 0x5f, 0xd7, 0x1b, 0x0a, 0x46, 0xb3, 0x82, 0x78,
+	0x67, 0xd0, 0x1a, 0x91, 0x94, 0x94, 0x76, 0x46, 0x4a, 0x38, 0xb4, 0x53, 0xbb, 0x24, 0x72, 0x0d,
+	0x30, 0xc8, 0x26, 0xc0, 0x98, 0x70, 0xc3, 0xf3, 0x4e, 0xc1, 0x51, 0x95, 0x6e, 0x4a, 0xbc, 0x66,
+	0x1d, 0xc2, 0x6b, 0xc9, 0x6b, 0x81, 0x33, 0x12, 0x4b, 0xb6, 0xa6, 0x9d, 0x40, 0x53, 0x97, 0x06,
+	0xf7, 0x1f, 0x1a, 0x05, 0x3f, 0x1c, 0x90, 0x36, 0x0d, 0xde, 0x2c, 0xb0, 0x2f, 0x54, 0x13, 0x4d,
+	0xc0, 0x9e, 0x9a, 0xd0, 0xaa, 0x33, 0xa5, 0xb7, 0xe0, 0xf6, 0xf6, 0x1b, 0xcc, 0xbf, 0x98, 0x80,
+	0xad, 0x33, 0xd8, 0x05, 0x2b, 0xc5, 0xbb, 0x0b, 0x56, 0x8e, 0x0f, 0x0d, 0xa1, 0x36, 0x26, 0x1c,
+	0xfd, 0xac, 0x1a, 0x3f, 0x52, 0x75, 0x7f, 0xed, 0xe9, 0x6a, 0xc6, 0xe0, 0x1a, 0x1a, 0x37, 0xf2,
+	0x89, 0xd1, 0x25, 0xd4, 0x65, 0x5e, 0x68, 0x87, 0x7f, 0x23, 0x56, 0xb7, 0xbb, 0xaf, 0xad, 0x79,
+	0xc3, 0xf1, 0xcb, 0x6b, 0xd7, 0xba, 0x3d, 0xdf, 0x38, 0xa3, 0x34, 0x89, 0x31, 0xa7, 0xf2, 0x3c,
+	0xfa, 0x38, 0x26, 0x19, 0x0f, 0x30, 0x4b, 0x2a, 0x07, 0x79, 0xbc, 0x2d, 0xcc, 0x6c, 0x75, 0x31,
+	0x47, 0xef, 0x01, 0x00, 0x00, 0xff, 0xff, 0x4f, 0xaf, 0x6d, 0x68, 0xcd, 0x03, 0x00, 0x00,
 }

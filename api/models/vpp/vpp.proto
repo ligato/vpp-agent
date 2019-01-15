@@ -19,7 +19,7 @@ import "vpp/l3/static_route.proto";
 import "vpp/nat/nat.proto";
 import "vpp/punt/punt.proto";
 
-message Config {
+message Data {
     repeated vpp.interfaces.Interface interfaces = 10;
 
     repeated vpp.acl.Acl acls = 20;

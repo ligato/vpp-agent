@@ -23,7 +23,6 @@ import (
 	"github.com/ligato/cn-infra/rpc/rest"
 	access "github.com/ligato/cn-infra/rpc/rest/security/model/access-security"
 	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
@@ -32,6 +31,7 @@ import (
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
 	natvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
