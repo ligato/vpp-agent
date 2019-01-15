@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"context"
+	"reflect"
 	"sync"
 	"time"
 
@@ -227,11 +228,6 @@ func (plugin *Plugin) NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int
 	return &goVppChan{ch, retryCfg, plugin.tracer}, nil
 }
 
-// GetStatsAdapter returns adapter which allows to read VPP statistics
-func (plugin *Plugin) GetStatsAdapter() adapter.StatsAPI {
-	return plugin.statsAdapter
-}
-
 // GetTrace returns all trace entries measured so far
 func (plugin *Plugin) GetTrace() *apitrace.Trace {
 	if !plugin.config.TraceEnabled {
@@ -239,6 +235,22 @@ func (plugin *Plugin) GetTrace() *apitrace.Trace {
 		return nil
 	}
 	return plugin.tracer.Get()
+}
+
+// ListStats returns all stats names
+func (plugin *Plugin) ListStats(prefixes... string) ([]string, error) {
+	if reflect.ValueOf(plugin.statsAdapter).IsNil() {
+		return nil, nil
+	}
+	return plugin.statsAdapter.ListStats(prefixes...)
+}
+
+// DumpStats returns all stats with name, type and value
+func (plugin *Plugin) DumpStats(prefixes... string) ([]*adapter.StatEntry, error) {
+	if reflect.ValueOf(plugin.statsAdapter).IsNil() {
+		return nil, nil
+	}
+	return plugin.statsAdapter.DumpStats(prefixes...)
 }
 
 // handleVPPConnectionEvents handles VPP connection events.

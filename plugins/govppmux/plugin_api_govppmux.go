@@ -28,6 +28,29 @@ type TraceAPI interface {
 	GetTrace() *apitrace.Trace
 }
 
+// StatsAPI is extended API with ability to get VPP stats data
+type StatsAPI interface {
+	API
+
+	// ListStats returns all stats names present on the VPP. Patterns can be used as a prefix
+	// to filter the output
+	ListStats(patterns... string) ([]string, error)
+
+	// ListStats returns all stats names, types and values from the VPP. Patterns can be used as a prefix
+	// to filter the output. Stats are divided between workers. Example:
+	//
+	// stats values: {{0, 20, 30}{0, 0, 10}}
+	//
+	// It means there are three interfaces on two workers (inner arrays, array index == sw_if_index),
+	// and statistics are like following:
+	//
+	// 0 for sw_if_index 0
+	// 20 for sw_if_index 1
+	// 40 for sw_if_index 2 (sum of stats from all workers)
+	//
+	DumpStats(patterns... string) ([]*adapter.StatEntry, error)
+}
+
 // API for other plugins to get connectivity to VPP.
 type API interface {
 	// NewAPIChannel returns a new API channel for communication with VPP via govpp core.
@@ -47,10 +70,4 @@ type API interface {
 	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error)
 }
 
-// APIWithStats is extended API for other plugins to get connectivity to VPP and VPP statistics
-type APIWithStats interface {
-	API
 
-	// GetStatsAdapter returns adapter which allows to read VPP statistics
-	GetStatsAdapter() adapter.StatsAPI
-}
