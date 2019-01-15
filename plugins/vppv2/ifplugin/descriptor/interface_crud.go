@@ -201,21 +201,11 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 		return nil, err
 	}
 
-	// VRF (optional), should be done before IP addresses, configured separately for IPv4/IPv6
-	isIPv4, isIPv6 := getIPAddressVersions(ipAddresses)
-	if isIPv4 {
-		if err = d.ifHandler.SetInterfaceVrf(ifIdx, intf.Vrf); err != nil {
-			err = errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", intf.Name, intf.Vrf, err)
-			d.log.Error(err)
-			return nil, err
-		}
-	}
-	if isIPv6 {
-		if err := d.ifHandler.SetInterfaceVrfIPv6(ifIdx, intf.Vrf); err != nil {
-			err = errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", intf.Name, intf.Vrf, err)
-			d.log.Error(err)
-			return nil, err
-		}
+	// VRF (optional), should be done before IP addresses
+	err = setInterfaceVrf(d.ifHandler, intf.Name, ifIdx, intf.Vrf, ipAddresses)
+	if err != nil {
+		d.log.Error(err)
+		return nil, err
 	}
 
 	// configure IP addresses
@@ -255,6 +245,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 	// fill the metadata
 	metadata = &ifaceidx.IfaceMetadata{
 		SwIfIndex:     ifIdx,
+		Vrf:           intf.Vrf,
 		IPAddresses:   intf.GetIpAddresses(),
 		TAPHostIfName: tapHostIfName,
 	}

@@ -33,11 +33,11 @@ import (
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	linux_intf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 )
 
 const (
@@ -662,4 +662,28 @@ func getIPAddressVersions(ipAddrs []*net.IPNet) (isIPv4, isIPv6 bool) {
 		}
 	}
 	return
+}
+
+// setInterfaceVrf sets the interface to VRF according to versions of IP addresses configured on the interface.
+func setInterfaceVrf(ifHandler vppcalls.IfVppAPI, ifName string, ifIdx uint32, vrf uint32, ipAddresses []*net.IPNet) error {
+	if vrf == 0 {
+		// explicit set to VRF 0 seems to be causing issues on VPP
+		// NOTE: because of this return, this function cannot be used to switch VRF from non-zero to zero
+		// (can be only used to put a newly created interface to a VRF)
+		return nil
+	}
+	isIPv4, isIPv6 := getIPAddressVersions(ipAddresses)
+	if isIPv4 {
+		if err := ifHandler.SetInterfaceVrf(ifIdx, vrf); err != nil {
+			err = errors.Errorf("failed to set interface %s as IPv4 VRF %d: %v", ifName, vrf, err)
+			return err
+		}
+	}
+	if isIPv6 {
+		if err := ifHandler.SetInterfaceVrfIPv6(ifIdx, vrf); err != nil {
+			err = errors.Errorf("failed to set interface %s as IPv6 VRF %d: %v", ifName, vrf, err)
+			return err
+		}
+	}
+	return nil
 }
