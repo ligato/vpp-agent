@@ -19,12 +19,11 @@ import (
 )
 
 func init() {
-	models.Register(&Rule{}, models.Spec{
-		Module:   "vpp/stn",
-		Type:     "rule",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Interface}}/ip/{{.IpAddress}}",
+	models.RegisterProto(&Rule{}, models.Spec{
+		Module:       "vpp",
+		Type:         "stn/rule",
+		Version:      "v2",
+		NameTemplate: "{{.Interface}}/ip/{{.IpAddress}}",
 	})
 }
 

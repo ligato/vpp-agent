@@ -14,7 +14,7 @@ type ConfigClient interface {
 
 	SetConfig(resync bool) SetConfigRequest
 
-	//GetConfig()
+	GetConfig(dsts ...interface{}) error
 }
 
 // SetConfigRequest defines interface for config set request.

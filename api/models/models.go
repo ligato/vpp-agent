@@ -16,92 +16,92 @@ package models
 
 import (
 	"fmt"
-	"strings"
+	"path"
 
 	"github.com/gogo/protobuf/proto"
 )
 
-// ID is a shorthand for the GetID for avoid error checking.
-func ID(m proto.Message) string {
-	id, err := GetID(m)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // Key is a shorthand for the GetKey for avoid error checking.
-func Key(m proto.Message) string {
-	key, err := GetKey(m)
+func Key(x proto.Message) string {
+	key, err := GetKey(x)
 	if err != nil {
 		panic(err)
 	}
 	return key
 }
 
-// KeyPrefix is a shorthand for the GetKeyPrefix for avoid error checking.
-func KeyPrefix(m proto.Message) string {
-	prefix, err := GetKeyPrefix(m)
+// Name is a shorthand for the GetName for avoid error checking.
+func Name(x proto.Message) string {
+	name, err := GetName(x)
 	if err != nil {
 		panic(err)
 	}
-	return prefix
+	return name
 }
 
-// ModelSpec returns registered model specification for given item.
-func ModelSpec(m proto.Message) Spec {
-	spec, err := GetModelSpec(m)
+// Path is a shorthand for the GetPath for avoid error checking.
+func Path(x proto.Message) string {
+	path, err := GetPath(x)
 	if err != nil {
 		panic(err)
 	}
-	return spec
+	return path
 }
 
-// GetID
-func GetID(m proto.Message) (string, error) {
-	spec, err := GetModelSpec(m)
+// Model returns registered model for the given proto message.
+func Model(x proto.Message) registeredModel {
+	model, err := GetModel(x)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
-	var str strings.Builder
-	if err := spec.idTmpl.Execute(&str, m); err != nil {
-		return "", err
-	}
-	return str.String(), nil
+	return model
 }
 
 // GetKey returns complete key for gived model,
 // including key prefix defined by model specification.
 // It returns error if given model is not registered.
-func GetKey(m proto.Message) (string, error) {
-	spec, err := GetModelSpec(m)
+func GetKey(x proto.Message) (string, error) {
+	model, err := GetModel(x)
 	if err != nil {
 		return "", err
 	}
-	var id strings.Builder
-	if err := spec.idTmpl.Execute(&id, m); err != nil {
-		panic(err)
+	name, err := model.NameFunc(x)
+	if err != nil {
+		return "", err
 	}
-	key := spec.KeyPrefix() + id.String()
+	key := path.Join(model.keyPrefix, name)
 	return key, nil
+}
+
+// GetName
+func GetName(x proto.Message) (string, error) {
+	model, err := GetModel(x)
+	if err != nil {
+		return "", err
+	}
+	name, err := model.NameFunc(x)
+	if err != nil {
+		return "", err
+	}
+	return name, nil
 }
 
 // GetKeyPrefix returns key prefix for gived model.
 // It returns error if given model is not registered.
-func GetKeyPrefix(m proto.Message) (string, error) {
-	spec, err := GetModelSpec(m)
+func GetPath(x proto.Message) (string, error) {
+	model, err := GetModel(x)
 	if err != nil {
 		return "", err
 	}
-	return spec.KeyPrefix(), nil
+	return model.Path(), nil
 }
 
-// GetModelSpec returns registered model specification for given model.
-func GetModelSpec(m proto.Message) (Spec, error) {
-	protoName := proto.MessageName(m)
-	spec := registeredSpecs[protoName]
-	if spec == nil {
-		return Spec{}, fmt.Errorf("model %s is not registered", protoName)
+// GetModel returns registered model for the given proto message.
+func GetModel(x proto.Message) (registeredModel, error) {
+	protoName := proto.MessageName(x)
+	model, found := registeredModels[protoName]
+	if !found {
+		return registeredModel{}, fmt.Errorf("no model registered for %s", protoName)
 	}
-	return *spec, nil
+	return model, nil
 }

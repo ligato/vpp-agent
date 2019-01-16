@@ -23,19 +23,17 @@ import (
 )
 
 func init() {
-	models.Register(&StaticARPEntry{}, models.Spec{
-		Module:   "linux/l3",
-		Type:     "arps",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Interface}}/{{.IpAddress}}",
+	models.RegisterProto(&StaticARPEntry{}, models.Spec{
+		Module:       "linux",
+		Type:         "arp",
+		Version:      "v2",
+		NameTemplate: "{{.Interface}}/{{.IpAddress}}",
 	})
-	models.Register(&StaticRoute{}, models.Spec{
-		Module:   "linux/3",
-		Type:     "routes",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: `{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
+	models.RegisterProto(&StaticRoute{}, models.Spec{
+		Module:       "linux",
+		Type:         "route",
+		Version:      "v2",
+		NameTemplate: `{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
 	})
 }
 
@@ -61,11 +59,8 @@ const (
 	// StaticLinkLocalRouteKeyPrefix is a prefix for keys derived from link-local routes.
 	StaticLinkLocalRouteKeyPrefix = "linux/link-local-route/"
 
-	// staticRouteKeySuffix is a suffix common to all keys representing routes.
-	staticRouteKeySuffix = "{dest-net}/{dest-mask}/{out-intf}"
-
 	// staticLinkLocalRouteKeyTemplate is a template for key derived from link-local route.
-	staticLinkLocalRouteKeyTemplate = StaticLinkLocalRouteKeyPrefix + staticRouteKeySuffix
+	staticLinkLocalRouteKeyTemplate = StaticLinkLocalRouteKeyPrefix + "{dest-net}/{dest-mask}/{out-intf}"
 )
 
 /* Link-local Route (derived) */

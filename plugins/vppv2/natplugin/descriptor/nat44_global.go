@@ -19,6 +19,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/api/models/vpp"
@@ -219,7 +220,7 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 	}
 
 	dump := []adapter.NAT44GlobalKVWithMetadata{{
-		Key:    vpp.NAT44GlobalModel.KeyPrefix() + nat.NAT44_GlobalID,
+		Key:    models.Key(globalCfg),
 		Value:  globalCfg,
 		Origin: origin,
 	}}

@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package orchestrator
+package dispatcher
 
 import (
 	"github.com/ligato/cn-infra/rpc/grpc"
@@ -26,7 +26,7 @@ var DefaultPlugin = *NewPlugin()
 func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
-	p.PluginName = "orchestrator"
+	p.PluginName = "dispatcher"
 	p.GRPC = &grpc.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
 

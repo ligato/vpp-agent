@@ -16,6 +16,7 @@ package descriptor
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"strings"
 
@@ -65,9 +66,9 @@ func NewRouteDescriptor(scheduler scheduler.KVScheduler,
 func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	return &adapter.StaticRouteDescriptor{
 		Name:            StaticRouteDescriptorName,
-		NBKeyPrefix:     vpp.StaticRouteModel.KeyPrefix(),
-		ValueTypeName:   vpp.StaticRouteModel.ProtoName(),
-		KeySelector:     vpp.StaticRouteModel.IsKeyValid,
+		NBKeyPrefix:     vpp.RouteModel.KeyPrefix(),
+		ValueTypeName:   vpp.RouteModel.ProtoName(),
+		KeySelector:     vpp.RouteModel.IsKeyValid,
 		ValueComparator: d.EquivalentRoutes,
 		Add:             d.Add,
 		Delete:          d.Delete,
@@ -84,7 +85,6 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 
 // EquivalentRoutes is case-insensitive comparison function for l3.StaticRoute.
 func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.StaticRoute) bool {
-
 	if oldRoute.GetType() != newRoute.GetType() ||
 		oldRoute.GetVrfId() != newRoute.GetVrfId() ||
 		oldRoute.GetViaVrfId() != newRoute.GetViaVrfId() ||
@@ -114,6 +114,9 @@ func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
 
 // Add adds VPP static route.
 func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata interface{}, err error) {
+	if err = validateRoute(route); err != nil {
+		return nil, err
+	}
 
 	err = d.routeHandler.VppAddRoute(route)
 	if err != nil {
@@ -123,9 +126,19 @@ func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata inter
 	return nil, nil
 }
 
+func validateRoute(route *l3.StaticRoute) error {
+	_, ipNet, err := net.ParseCIDR(route.DstNetwork)
+	if err != nil {
+		return err
+	}
+	if ipNet.String() != route.DstNetwork {
+		return fmt.Errorf("DstNetwork must represent IP network")
+	}
+	return nil
+}
+
 // Delete removes VPP static route.
 func (d *RouteDescriptor) Delete(key string, route *l3.StaticRoute, metadata interface{}) error {
-
 	err := d.routeHandler.VppDelRoute(route)
 	if err != nil {
 		return err

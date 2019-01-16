@@ -22,19 +22,17 @@ import (
 )
 
 func init() {
-	models.Register(&SecurityPolicyDatabase{}, models.Spec{
-		Module:   "vpp/ipsec",
-		Type:     "spds",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Index}}",
+	models.RegisterProto(&SecurityPolicyDatabase{}, models.Spec{
+		Module:       "vpp",
+		Type:         "ipsec/spd",
+		Version:      "v2",
+		NameTemplate: "{{.Index}}",
 	})
-	models.Register(&SecurityAssociation{}, models.Spec{
-		Module:   "vpp/ipsec",
-		Type:     "sas",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Index}}",
+	models.RegisterProto(&SecurityAssociation{}, models.Spec{
+		Module:       "vpp",
+		Type:         "ipsec/sa",
+		Version:      "v2",
+		NameTemplate: "{{.Index}}",
 	})
 }
 

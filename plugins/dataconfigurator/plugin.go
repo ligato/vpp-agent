@@ -16,6 +16,7 @@ package dataconfigurator
 
 import (
 	"git.fd.io/govpp.git/api"
+	"github.com/ligato/vpp-agent/plugins/dispatcher"
 	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
 
 	"github.com/ligato/cn-infra/infra"
@@ -27,7 +28,6 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
@@ -53,7 +53,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	GRPCServer  grpc.Server
-	Orch        *orchestrator.Plugin
+	Orch        *dispatcher.Plugin
 	GoVppmux    govppmux.TraceAPI
 	VPPIfPlugin ifplugin.API
 	VPPL2Plugin *l2plugin.L2Plugin
@@ -62,7 +62,7 @@ type Deps struct {
 // Init sets plugin child loggers
 func (p *Plugin) Init() error {
 	p.configSvc.log = p.Log.NewLogger("dataservice")
-	p.configSvc.orch = p.Orch
+	p.configSvc.dispatch = p.Orch
 
 	if err := p.initHandlers(); err != nil {
 		return err

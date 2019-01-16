@@ -23,49 +23,62 @@ import (
 )
 
 // This constant is used to replace the constant from types.MarshalAny.
-const LigatoApis = "api.ligato.io/"
+const ligatoApis = "models.ligato.io/"
 
-// UnmarshalItem is helper function for unmarshalling api.ProtoItem.
+// Unmarshal is helper function for unmarshalling items.
 func UnmarshalItem(m *api.Item) (proto.Message, error) {
-	protoName, err := types.AnyMessageName(m.GetVal().GetAny())
+	protoName, err := types.AnyMessageName(m.GetValue().GetAny())
 	if err != nil {
 		return nil, err
 	}
-	spec := registeredSpecs[protoName]
-	if spec == nil {
-		return nil, fmt.Errorf("model %s is not registered", protoName)
-	} /*else if Spec.Version != m.Version {
-		return nil, fmt.Errorf("model %s (%s) is registered with different version: %q",
-			protoName, m.Version, Spec.Version)
-	}*/
+	_, found := registeredModels[protoName]
+	if !found {
+		return nil, fmt.Errorf("model %s is not registered as model", protoName)
+	}
 
 	var any types.DynamicAny
-	if err := types.UnmarshalAny(m.GetVal().GetAny(), &any); err != nil {
+	if err := types.UnmarshalAny(m.GetValue().GetAny(), &any); err != nil {
 		return nil, err
 	}
 	return any.Message, nil
 }
 
-// MarshalItem is helper function for marshalling into api.ProtoItem.
+// Marshal is helper function for marshalling items.
 func MarshalItem(pb proto.Message) (*api.Item, error) {
 	protoName := proto.MessageName(pb)
-	spec := registeredSpecs[protoName]
-	if spec == nil {
-		return nil, fmt.Errorf("model %s is not registered", protoName)
+	_, found := registeredModels[protoName]
+	if !found {
+		return nil, fmt.Errorf("proto %s is not registered as model", protoName)
 	}
 
 	any, err := types.MarshalAny(pb)
 	if err != nil {
 		return nil, err
 	}
-	any.TypeUrl = LigatoApis + proto.MessageName(pb)
+	any.TypeUrl = ligatoApis + proto.MessageName(pb)
 
-	model := &api.Item{
-		//Version: Spec.Version,
+	object := &api.Item{
 		Key: Key(pb),
-		Val: &api.Value{
+		Value: &api.Value{
 			Any: any,
 		},
 	}
-	return model, nil
+	return object, nil
+}
+
+// RegisteredModels returns all registered modules.
+func RegisteredModels() (models []*api.Model) {
+	for _, s := range registeredModels {
+		models = append(models, &api.Model{
+			Module:  s.Module,
+			Type:    s.Type,
+			Version: s.Version,
+			Meta: map[string]string{
+				"nameTemplate": s.NameTemplate,
+				"protoName":    s.protoName,
+				"modelPath":    s.modelPath,
+			},
+		})
+	}
+	return
 }

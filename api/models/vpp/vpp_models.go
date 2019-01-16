@@ -39,8 +39,8 @@ type (
 	XConnect     = vpp_l2.XConnectPair
 
 	// L3
-	L3Route     = vpp_l3.StaticRoute
-	L3ARP       = vpp_l3.ARPEntry
+	Route       = vpp_l3.StaticRoute
+	ARPEntry    = vpp_l3.ARPEntry
 	IPScanNeigh = vpp_l3.IPScanNeighbor
 	ProxyARP    = vpp_l3.ProxyARP
 
@@ -61,28 +61,28 @@ type (
 )
 
 var (
-	ACLModel = models.ModelSpec(&ACL{})
+	ACLModel = models.Model(&ACL{})
 
-	InterfaceModel = models.ModelSpec(&Interface{})
+	InterfaceModel = models.Model(&Interface{})
 
-	BridgeDomainModel = models.ModelSpec(&BridgeDomain{})
-	FIBEntryModel     = models.ModelSpec(&L2FIB{})
-	XConnectPairModel = models.ModelSpec(&XConnect{})
+	BridgeDomainModel = models.Model(&BridgeDomain{})
+	FIBEntryModel     = models.Model(&L2FIB{})
+	XConnectPairModel = models.Model(&XConnect{})
 
-	StaticRouteModel = models.ModelSpec(&L3Route{})
-	ARPEntryModel    = models.ModelSpec(&L3ARP{})
-	IPScanNeighModel = models.ModelSpec(&IPScanNeigh{})
-	ProxyARPModel    = models.ModelSpec(&ProxyARP{})
+	RouteModel       = models.Model(&Route{})
+	ARPEntryModel    = models.Model(&ARPEntry{})
+	IPScanNeighModel = models.Model(&IPScanNeigh{})
+	ProxyARPModel    = models.Model(&ProxyARP{})
 
-	IPSecSPDModel = models.ModelSpec(&IPSecSPD{})
-	IPSecSAModel  = models.ModelSpec(&IPSecSA{})
+	IPSecSPDModel = models.Model(&IPSecSPD{})
+	IPSecSAModel  = models.Model(&IPSecSA{})
 
-	NAT44GlobalModel = models.ModelSpec(&NAT44Global{})
-	DNAT44Model      = models.ModelSpec(&DNAT44{})
+	NAT44GlobalModel = models.Model(&NAT44Global{})
+	DNAT44Model      = models.Model(&DNAT44{})
 
-	STNRuleModel = models.ModelSpec(&STNRule{})
+	STNRuleModel = models.Model(&STNRule{})
 
 	// Punt
-	PuntIPModel     = models.ModelSpec(&PuntIP{})
-	PuntToHostModel = models.ModelSpec(&PuntToHost{})
+	PuntIPModel     = models.Model(&PuntIP{})
+	PuntToHostModel = models.Model(&PuntToHost{})
 )

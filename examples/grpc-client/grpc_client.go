@@ -22,9 +22,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/api/dataconfigurator"
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
@@ -134,7 +137,7 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 }
 
 func demonstrateClient(conn *grpc.ClientConn) {
-	c := remoteclient.NewClientGRPC(api.NewGenericConfiguratorClient(conn))
+	c := remoteclient.NewClientGRPC(api.NewConfiguratorClient(conn))
 
 	// List supported model specs
 	modules, err := c.ActiveModels()
@@ -152,9 +155,8 @@ func demonstrateClient(conn *grpc.ClientConn) {
 
 	ctx := context.Background()
 
-	fmt.Printf("Requesting resync\n")
-
 	// Resync
+	fmt.Printf("Requesting resync\n")
 	req := c.SetConfig(true)
 	req.Update(
 		memif1, memif2,
@@ -166,19 +168,29 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	}
 
 	time.Sleep(time.Second * 5)
-	fmt.Printf("Requesting change\n")
 
+	fmt.Printf("Requesting change\n")
 	memif1.Enabled = false
 	memif1.Mtu = 666
-
 	req2 := c.SetConfig(false)
-	req2.Update(afp1, memif1)
+	req2.Update(afp1, memif1, bd1)
 	req2.Delete(memif2)
-	//req2.Update(memif2)
+	req2.Update(vppRoute1)
 	if err := req2.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
 
+	time.Sleep(time.Second * 5)
+
+	fmt.Printf("Retrieving config\n")
+	data := &dataconfigurator.Data{
+		Vpp:   &vpp.Data{},
+		Linux: &linux.Data{},
+	}
+	if err := c.GetConfig(data.Vpp, data.Linux); err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("Config:\n%+v\n", proto.MarshalTextString(data))
 }
 
 var (
@@ -200,13 +212,24 @@ var (
 		Name:        "memif1.1",
 		Enabled:     true,
 		Type:        interfaces.Interface_SUB_INTERFACE,
-		IpAddresses: []string{"3.10.0.1/32"},
+		IpAddresses: []string{"3.10.0.1/24"},
 		Link: &interfaces.Interface_Sub{
 			Sub: &interfaces.SubInterface{
 				ParentName: "memif1",
 				SubId:      10,
 			},
 		},
+	}
+	bd1 = &vpp.BridgeDomain{
+		Name: "bd1",
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
+			{Name: "memif1"},
+		},
+	}
+	vppRoute1 = &vpp.Route{
+		OutgoingInterface: "memif1",
+		DstNetwork:        "4.4.10.0/24",
+		NextHopAddr:       "3.10.0.5",
 	}
 	afp1 = &vpp.Interface{
 		Name:        "afp1",

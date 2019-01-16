@@ -16,28 +16,8 @@ package client
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/datasync/syncbase"
-	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/api/models"
 )
-
-// ProtoTxnFactory defines interface for keyval transaction provider.
-type ProtoTxnFactory interface {
-	NewTxn(resync bool) keyval.ProtoTxn
-}
-
-type txnFactory struct {
-	registry *syncbase.Registry
-}
-
-func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
-	if resync {
-		return local.NewProtoTxn(p.registry.PropagateResync)
-	} else {
-		return local.NewProtoTxn(p.registry.PropagateChanges)
-	}
-}
 
 // Transaction prepares request data.
 type Transaction interface {

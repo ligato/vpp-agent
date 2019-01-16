@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,26 +12,28 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package linux
+package dispatcher
 
-import (
-	"github.com/ligato/vpp-agent/api/models"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
-)
+import "github.com/gogo/protobuf/proto"
 
-type (
-	// Interfaces
-	Interface = linux_interfaces.Interface
+type memStore struct {
+	db map[string]proto.Message
+}
 
-	// L3
-	StaticRoute = linux_l3.StaticRoute
-	ARPEntry    = linux_l3.StaticARPEntry
-)
+func newMemStore() *memStore {
+	return &memStore{
+		db: map[string]proto.Message{},
+	}
+}
 
-var (
-	InterfaceModel = models.Model(&Interface{})
+func (s *memStore) Reset() {
+	s.db = map[string]proto.Message{}
+}
 
-	StaticRouteModel = models.Model(&StaticRoute{})
-	ARPEntryModel    = models.Model(&ARPEntry{})
-)
+func (s *memStore) Delete(key string) {
+	delete(s.db, key)
+}
+
+func (s *memStore) Update(key string, val proto.Message) {
+	s.db[key] = val
+}

@@ -21,12 +21,10 @@ import (
 )
 
 func init() {
-	models.Register(&Acl{}, models.Spec{
-		Module:   "vpp/acl",
-		Type:     "acls",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Name}}",
+	models.RegisterProto(&Acl{}, models.Spec{
+		Module:  "vpp",
+		Type:    "acl",
+		Version: "v2",
 	})
 }
 

@@ -9,18 +9,16 @@ option (gogoproto.messagename_all) = true;
 
 import "google/protobuf/any.proto";
 
-message Model {
-    string module = 1;
-    string type = 2;
-    string version = 3;
-    string class = 4;
-    map<string,string> meta = 5;
-}
-
 message Item {
     string key = 1;
-    Value val = 2;
+    Value value = 2;
 }
+
+message Path {
+    string prefix = 1;
+    string name = 2;
+}
+
 
 message Value {
     google.protobuf.Any any = 1;
@@ -41,7 +39,8 @@ message ItemStatus {
 
 //------------------------------------------------------------------------------
 
-service GenericConfigurator {
+// Configurator defines the RPC methods for managing configuration.
+service Configurator {
     // Capabilities returns information about service capabilities
     // including list of models supported by the server.
     rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse) {};
@@ -69,7 +68,15 @@ message CapabilitiesRequest {
 }
 
 message CapabilitiesResponse {
-    repeated Model active_models = 1;
+    repeated Model known_models = 1;
+    repeated string active_modules = 2;
+}
+
+message Model {
+    string module = 1;
+    string type = 2;
+    string version = 3;
+    map<string,string> meta = 4;
 }
 
 //------------------------------------------------------------------------------
@@ -152,16 +159,3 @@ message Notification {
     Item item = 1;
     ItemStatus status = 2;
 }
-
-/*
-message Key {
-    repeated string parts = 1;
-}
-
-message Value {
-    oneof val {
-        google.protobuf.Any any_val = 1;
-        bytes bytes_val = 2;
-        string string_val = 3;
-    }
-}*/

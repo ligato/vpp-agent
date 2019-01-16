@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package orchestrator
+package dispatcher
 
 import (
 	"github.com/gogo/protobuf/proto"
@@ -27,19 +27,19 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-type genericApi struct {
+type configuratorServer struct {
 	log  logging.Logger
 	orch *Plugin
 }
 
-func (s *genericApi) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
+func (s *configuratorServer) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
 	resp := &api.CapabilitiesResponse{
-		ActiveModels: models.RegisteredModels(),
+		KnownModels: models.RegisteredModels(),
 	}
 	return resp, nil
 }
 
-func (s *genericApi) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
+func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
 	s.log.Debug("------------------------------")
 	s.log.Debugf("=> Configurator.SetConfig: %d items", len(req.Updates))
 	s.log.Debug("------------------------------")
@@ -66,7 +66,7 @@ func (s *genericApi) SetConfig(ctx context.Context, req *api.SetConfigRequest) (
 		)
 
 		var err error
-		if item.Val != nil {
+		if item.Value != nil {
 			val, err = models.UnmarshalItem(item)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -123,14 +123,27 @@ func (s *genericApi) SetConfig(ctx context.Context, req *api.SetConfigRequest) (
 	return &api.SetConfigResponse{Results: results}, nil
 }
 
-func (s *genericApi) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
+func (s *configuratorServer) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
+	var items []*api.GetConfigResponse_ConfigItem
+
+	for _, data := range s.orch.ListData() {
+		item, err := models.MarshalItem(data)
+		if err != nil {
+			err = err
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		items = append(items, &api.GetConfigResponse_ConfigItem{
+			Item: item,
+		})
+	}
+
+	return &api.GetConfigResponse{Items: items}, nil
+}
+
+func (s *configuratorServer) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
 	panic("implement me")
 }
 
-func (s *genericApi) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
-	panic("implement me")
-}
-
-func (s *genericApi) Subscribe(*api.SubscribeRequest, api.GenericConfigurator_SubscribeServer) error {
+func (s *configuratorServer) Subscribe(*api.SubscribeRequest, api.Configurator_SubscribeServer) error {
 	panic("implement me")
 }

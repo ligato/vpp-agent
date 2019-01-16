@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package orchestrator
+package dispatcher
 
 import (
 	"sync"
@@ -22,6 +22,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"golang.org/x/net/context"
 
@@ -36,15 +37,15 @@ var Registry = local.DefaultRegistry
 type Plugin struct {
 	Deps
 
-	genericConfigurator *genericApi
+	configurator *configuratorServer
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
 	resyncChan   chan datasync.ResyncEvent
 	watchDataReg datasync.WatchRegistration
 
-	mu      sync.Mutex
-	localDB map[string]proto.Message
+	mu    sync.Mutex
+	store *memStore
 }
 
 // Deps represents dependencies for the plugin.
@@ -59,30 +60,35 @@ type Deps struct {
 
 // Init registers the service to GRPC server.
 func (p *Plugin) Init() error {
+	p.store = newMemStore()
+
 	// initialize datasync channels
 	p.resyncChan = make(chan datasync.ResyncEvent)
 	p.changeChan = make(chan datasync.ChangeEvent)
 
 	// register grpc service
-	p.genericConfigurator = &genericApi{
+	p.configurator = &configuratorServer{
 		log:  p.Log,
 		orch: p,
 	}
-	api.RegisterGenericConfiguratorServer(p.GRPC.GetServer(), p.genericConfigurator)
+	api.RegisterConfiguratorServer(p.GRPC.GetServer(), p.configurator)
 	//reflection.Register(p.GRPC.GetServer())
-
-	p.localDB = map[string]proto.Message{}
 
 	return nil
 }
 
 // AfterInit subscribes to known NB prefixes.
-func (p *Plugin) AfterInit() error {
+func (p *Plugin) AfterInit() (err error) {
 	go p.watchEvents()
 
-	var err error
-	p.watchDataReg, err = p.Watcher.Watch("orchestrator",
-		p.changeChan, p.resyncChan, p.KVScheduler.GetRegisteredNBKeyPrefixes()...)
+	var prefixes []string
+	for _, nb := range p.KVScheduler.GetRegisteredNBKeyPrefixes() {
+		prefix := models.ConfigKeyPrefix + nb
+		prefixes = append(prefixes, prefix)
+	}
+
+	p.watchDataReg, err = p.Watcher.Watch(p.PluginName.String(),
+		p.changeChan, p.resyncChan, prefixes...)
 	if err != nil {
 		return err
 	}
@@ -212,6 +218,52 @@ func (p *Plugin) watchEvents() {
 	}
 }
 
+func (p *Plugin) ListData() map[string]proto.Message {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.store.db
+}
+
+// PushData ...
+func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) (err error, kvErrs []kvs.KeyWithError) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if typ, _ := kvs.IsResync(ctx); typ == kvs.FullResync {
+		p.store.Reset()
+	}
+
+	txn := p.KVScheduler.StartNBTransaction()
+
+	for _, kv := range kvPairs {
+		p.Log.Debugf(" - %v: %q (rev: %v)",
+			kv.GetChangeType(), kv.GetKey(), kv.GetRevision())
+
+		if kv.GetChangeType() == datasync.Delete {
+			txn.SetValue(kv.GetKey(), nil)
+			p.store.Delete(kv.GetKey())
+		} else {
+			txn.SetValue(kv.GetKey(), kv)
+			p.store.Update(kv.GetKey(), kv.(*ProtoWatchResp).Val)
+		}
+	}
+
+	seqID, err := txn.Commit(ctx)
+	if err != nil {
+		p.Log.Errorf("Transaction %d failed: %v", seqID, err)
+		return err, nil
+	} else {
+		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
+			kvErrs = txErr.GetKVErrors()
+			p.Log.Warnf("Transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
+		}
+		p.Log.Infof("Transaction %d successful!", seqID)
+		return err, kvErrs
+	}
+
+	return nil, nil
+}
+
 type ProtoWatchResp struct {
 	Key  string
 	Val  proto.Message
@@ -244,48 +296,4 @@ func (item *ProtoWatchResp) GetValue(out proto.Message) error {
 		return item.lazy.GetValue(out)
 	}
 	return nil
-}
-
-func (p *Plugin) ListData() map[string]proto.Message {
-	return p.localDB
-}
-
-// PushData ...
-func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) (err error, kvErrs []kvs.KeyWithError) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if typ, _ := kvs.IsResync(ctx); typ == kvs.FullResync {
-		p.localDB = map[string]proto.Message{}
-	}
-
-	txn := p.KVScheduler.StartNBTransaction()
-
-	for _, kv := range kvPairs {
-		p.Log.Debugf(" - %v: %q (rev: %v)",
-			kv.GetChangeType(), kv.GetKey(), kv.GetRevision())
-
-		if kv.GetChangeType() == datasync.Delete {
-			txn.SetValue(kv.GetKey(), nil)
-			delete(p.localDB, kv.GetKey())
-		} else {
-			txn.SetValue(kv.GetKey(), kv)
-			p.localDB[kv.GetKey()] = kv.(*ProtoWatchResp).Val
-		}
-	}
-
-	seqID, err := txn.Commit(ctx)
-	if err != nil {
-		p.Log.Errorf("transaction failed (seq=%d): %v", seqID, err)
-		return err, nil
-	} else {
-		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
-			kvErrs = txErr.GetKVErrors()
-			p.Log.Warnf("transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
-		}
-		p.Log.Infof("transaction successful (seq=%d)", seqID)
-		return err, kvErrs
-	}
-
-	return nil, nil
 }

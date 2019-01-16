@@ -444,6 +444,8 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 		})
 	}
 
+	// TODO: define derived value for UP/DOWN state (needed for subinterfaces)
+
 	return derValues
 }
 

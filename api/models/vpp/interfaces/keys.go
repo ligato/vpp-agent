@@ -22,12 +22,10 @@ import (
 )
 
 func init() {
-	models.Register(&Interface{}, models.Spec{
-		Module:   "vpp",
-		Type:     "interfaces",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Name}}",
+	models.RegisterProto(&Interface{}, models.Spec{
+		Module:  "vpp",
+		Type:    "interfaces",
+		Version: "v2",
 	})
 }
 

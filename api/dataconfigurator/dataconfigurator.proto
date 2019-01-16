@@ -7,18 +7,12 @@ option go_package = "github.com/ligato/vpp-agent/api/dataconfigurator;dataconfig
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
-import "google/protobuf/any.proto";
 import "models/vpp/vpp.proto";
 import "models/linux/linux.proto";
 
 message Data {
     vpp.Data vpp = 1;
     linux.Data linux = 2;
-    repeated CustomData custom = 3;
-}
-
-message CustomData {
-    google.protobuf.Any custom = 1;
 }
 
 service Config {

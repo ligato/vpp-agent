@@ -18,6 +18,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
+	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -129,7 +130,7 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 	}
 
 	dump = append(dump, adapter.IPScanNeighborKVWithMetadata{
-		Key:    vpp.IPScanNeighModel.KeyPrefix() + l3.IPScanNeigh_GlobalID,
+		Key:    models.Key(ipNeigh),
 		Value:  ipNeigh,
 		Origin: origin,
 	})

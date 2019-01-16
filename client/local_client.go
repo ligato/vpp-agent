@@ -19,6 +19,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/api/models"
@@ -42,6 +43,11 @@ func (c *client) ActiveModels() (map[string][]api.Model, error) {
 		modules[model.Module] = append(modules[model.Module], *model)
 	}
 	return modules, nil
+}
+
+func (c *client) GetConfig(dsts ...interface{}) error {
+
+	return nil
 }
 
 func (c *client) SetConfig(resync bool) SetConfigRequest {
@@ -86,4 +92,21 @@ func (r *setConfigRequest) Send(ctx context.Context) error {
 		return r.err
 	}
 	return r.txn.Commit()
+}
+
+// ProtoTxnFactory defines interface for keyval transaction provider.
+type ProtoTxnFactory interface {
+	NewTxn(resync bool) keyval.ProtoTxn
+}
+
+type txnFactory struct {
+	registry *syncbase.Registry
+}
+
+func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
+	if resync {
+		return local.NewProtoTxn(p.registry.PropagateResync)
+	} else {
+		return local.NewProtoTxn(p.registry.PropagateChanges)
+	}
 }

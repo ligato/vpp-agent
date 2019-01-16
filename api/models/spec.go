@@ -18,60 +18,78 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api"
 )
 
-var debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
+const (
+	// ConfigKeyPrefix is used as key prefix for config storage.
+	ConfigKeyPrefix = `config/`
+)
+
+var (
+	validType   = regexp.MustCompile(`^[-a-z0-9_./]+$`)
+	validModule = regexp.MustCompile(`^[-a-z0-9_.]+$`)
+)
+
+type NameFunc func(obj interface{}) (string, error)
 
 // Spec represents model specification.
 type Spec struct {
-	Module   string
-	Type     string
-	Version  string
-	Class    string
-	IDFormat string
+	Module       string
+	Type         string
+	Version      string
+	NameTemplate string
+	NameFunc     NameFunc
+}
+
+type registeredModel struct {
+	Spec
 
 	protoName string
 	keyPrefix string
-	idTmpl    *template.Template
+	modelPath string
 }
 
-// ProtoName returns proto message name of the model.
-func (s Spec) ProtoName() string {
-	return s.protoName
+// ProtoName returns proto message name registered with the model.
+func (m registeredModel) ProtoName() string {
+	return m.protoName
 }
 
-// KeyPrefix returns key prefix used for storing model in KV stores.
-func (s Spec) KeyPrefix() string {
-	return s.keyPrefix
+// Path returns path for the model.
+func (m registeredModel) Path() string {
+	return m.modelPath
 }
 
-// ParseKey parses the given key and returns model ID or
-// returns valid as false if the key is not valid.
-func (s Spec) ParseKey(key string) (id string, valid bool) {
-	trim := strings.TrimPrefix(key, s.KeyPrefix())
-	if trim != key && trim != "" {
+// KeyPrefix returns key prefix for the model.
+func (m registeredModel) KeyPrefix() string {
+	return m.keyPrefix
+}
+
+// ParseKey parses the given key and returns item name
+// or returns empty name and valid as false if the key is not valid.
+func (m registeredModel) ParseKey(key string) (name string, valid bool) {
+	name = strings.TrimPrefix(key, m.keyPrefix)
+	if name != key && name != "" {
 		// TODO: validate name?
-		return trim, true
+		return name, true
 	}
 	return "", false
 }
 
-// IsKeyValid returns true if give key is valid and matches this model Spec.
-func (s Spec) IsKeyValid(key string) bool {
-	_, valid := s.ParseKey(key)
+// IsKeyValid returns true if given key is valid for this model.
+func (m registeredModel) IsKeyValid(key string) bool {
+	_, valid := m.ParseKey(key)
 	return valid
-
 }
 
 // StripKeyPrefix returns key with prefix stripped.
-func (s Spec) StripKeyPrefix(key string) string {
-	trim := strings.TrimPrefix(key, s.KeyPrefix())
+func (m registeredModel) StripKeyPrefix(key string) string {
+	trim := strings.TrimPrefix(key, m.keyPrefix)
 	if trim != key && trim != "" {
 		return trim
 	}
@@ -79,73 +97,84 @@ func (s Spec) StripKeyPrefix(key string) string {
 }
 
 var (
-	registeredSpecs = make(map[string]*Spec)
-	keyPrefixes     = make(map[string]string)
+	registeredModels = make(map[string]registeredModel)
+	modelPaths       = make(map[string]string)
+
+	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 )
 
-// RegisteredModels returns all registered modules.
-func RegisteredModels() (models []*api.Model) {
-	for _, s := range registeredSpecs {
-		models = append(models, &api.Model{
-			Module:  s.Module,
-			Type:    s.Type,
-			Version: s.Version,
-			Meta: map[string]string{
-				"id-format":  s.IDFormat,
-				"proto-name": s.protoName,
-				"key-prefix": s.keyPrefix,
-			},
-		})
+// RegisterProto registers given protobuf with model specification.
+func RegisterProto(pb proto.Message, spec Spec) registeredModel {
+	model := registeredModel{
+		Spec:      spec,
+		protoName: proto.MessageName(pb),
 	}
-	return
-}
 
-var (
-	validType   = regexp.MustCompile(`^[a-z_0-9-]+$`)
-	validModule = regexp.MustCompile(`^[a-z_0-9-/]+$`)
-)
-
-const keyPrefix = `{{.Class}}/{{.Version}}/{{.Module}}/{{.Type}}/`
-
-// Register registers given protobuf with model specification.
-func Register(pb proto.Message, spec Spec) {
-	spec.protoName = proto.MessageName(pb)
-
-	if _, ok := registeredSpecs[spec.protoName]; ok {
-		panic(fmt.Sprintf("duplicate model registered: %s", spec.protoName))
+	if _, ok := registeredModels[model.protoName]; ok {
+		panic(fmt.Sprintf("proto message %q already registered", model.protoName))
 	}
 	if !validModule.MatchString(spec.Module) {
-		panic(fmt.Sprintf("module for model %s is invalid", spec.protoName))
+		panic(fmt.Sprintf("module for model %s is invalid", model.protoName))
 	}
 	if !validType.MatchString(spec.Type) {
-		panic(fmt.Sprintf("name for model %s is invalid", spec.protoName))
+		panic(fmt.Sprintf("model type for %s is invalid", model.protoName))
 	}
 	if !strings.HasPrefix(spec.Version, "v") {
-		panic(fmt.Sprintf("version for model %s is invalid", spec.protoName))
+		panic(fmt.Sprintf("model version for %s is invalid", model.protoName))
 	}
-	if spec.Class == "" {
-		panic(fmt.Sprintf("class for model %s is empty", spec.protoName))
-	}
-	if spec.IDFormat == "" {
-		panic(fmt.Sprintf("ID format for model %s is empty", spec.protoName))
-	}
-	spec.idTmpl = template.Must(template.New("ID").Funcs(funcMap).Parse(spec.IDFormat))
 
-	prefixTmpl := template.Must(template.New("keyPrefix").Parse(keyPrefix))
-	var prefix strings.Builder
-	if err := prefixTmpl.Execute(&prefix, spec); err != nil {
-		panic(err)
+	if spec.NameFunc == nil {
+		if _, ok := pb.(named); ok {
+			model.NameFunc = func(obj interface{}) (s string, e error) {
+				return obj.(named).GetName(), nil
+			}
+		} else if spec.NameTemplate == "" {
+			panic(fmt.Sprintf("name func for model %s is nil", model.protoName))
+		} else {
+			model.NameFunc = NameTemplate(spec.NameTemplate)
+		}
 	}
-	spec.keyPrefix = prefix.String()
-	if pn, ok := keyPrefixes[spec.keyPrefix]; ok {
-		panic(fmt.Sprintf("key prefix %q already used by: %s", spec.keyPrefix, pn))
+	/*if spec.NameTemplate == "" {
+		panic(fmt.Sprintf("name template for model %s is empty", model.protoName))
+	}*/
+
+	model.modelPath = path.Join(spec.Module, spec.Type)
+	if pn, ok := modelPaths[model.modelPath]; ok {
+		panic(fmt.Sprintf("path prefix %q already used by: %s", model.modelPath, pn))
 	}
-	keyPrefixes[spec.keyPrefix] = spec.protoName
+
+	/*model.keyPrefix = strings.Join([]string{
+		spec.Version, spec.Module, spec.Type,
+	}, "/")*/
+	//model.keyPrefix = fmt.Sprintf("%s/%s/%s/", spec.Module, spec.Version, spec.Type)
+
+	model.keyPrefix = fmt.Sprintf("%s/%s/", spec.Module, spec.Type)
 
 	if debugRegister {
-		fmt.Printf("- registered model: %-40v\t%q\n", spec, spec.KeyPrefix())
+		fmt.Printf("- registered model: %-40v\t%q\n", spec, model.modelPath)
 	}
-	registeredSpecs[spec.protoName] = &spec
+
+	registeredModels[model.protoName] = model
+	modelPaths[model.modelPath] = model.protoName
+
+	return model
+}
+
+type named interface {
+	GetName() string
+}
+
+func NameTemplate(t string) NameFunc {
+	tmpl := template.Must(
+		template.New("name").Funcs(funcMap).Option("missingkey=error").Parse(t),
+	)
+	return func(obj interface{}) (string, error) {
+		var s strings.Builder
+		if err := tmpl.Execute(&s, obj); err != nil {
+			return "", err
+		}
+		return s.String(), nil
+	}
 }
 
 var funcMap = template.FuncMap{

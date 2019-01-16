@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -187,7 +188,7 @@ func (d *ProxyArpDescriptor) Dump(correlate []adapter.ProxyARPKVWithMetadata) (
 	}
 
 	dump = append(dump, adapter.ProxyARPKVWithMetadata{
-		Key:    vpp.ProxyARPModel.KeyPrefix() + l3.ProxyARP_GlobalID,
+		Key:    models.Key(proxyArp),
 		Value:  proxyArp,
 		Origin: scheduler.UnknownOrigin,
 	})

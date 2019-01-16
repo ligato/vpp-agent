@@ -19,19 +19,17 @@ import (
 )
 
 func init() {
-	models.Register(&ToHost{}, models.Spec{
-		Module:   "vpp/punt",
-		Type:     "tohosts",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}",
+	models.RegisterProto(&ToHost{}, models.Spec{
+		Module:       "vpp",
+		Type:         "tohost",
+		Version:      "v2",
+		NameTemplate: "l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}",
 	})
-	models.Register(&IpRedirect{}, models.Spec{
-		Module:   "vpp/punt",
-		Type:     "ipredirects",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "l3/{{.L3Protocol}}/tx/{{.TxInterface}}",
+	models.RegisterProto(&IpRedirect{}, models.Spec{
+		Module:       "vpp",
+		Type:         "ipredirect",
+		Version:      "v2",
+		NameTemplate: "l3/{{.L3Protocol}}/tx/{{.TxInterface}}",
 	})
 }
 

@@ -122,7 +122,7 @@ func TestKeys(t *testing.T) {
 			if key != test.expectedKey {
 				t.Errorf("expected key: \n%q\ngot: \n%q", test.expectedKey, key)
 			} else {
-				spec := models.ModelSpec(test.model)
+				spec := models.Model(test.model)
 				t.Logf("key: %q (%s)\n\tspec: %v", key, spec, spec.toModelSpec())
 			}
 		})

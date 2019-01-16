@@ -20,22 +20,18 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
-const NAT44_GlobalID = "GLOBAL"
-
 func init() {
-	models.Register(&Nat44Global{}, models.Spec{
-		Module:   "vpp/nat",
-		Type:     "nat44",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: NAT44_GlobalID,
+	models.RegisterProto(&Nat44Global{}, models.Spec{
+		Module:       "vpp",
+		Type:         "nat44/global",
+		Version:      "v2",
+		NameTemplate: "settings",
 	})
-	models.Register(&DNat44{}, models.Spec{
-		Module:   "vpp/nat",
-		Type:     "nat44-dnats",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Label}}",
+	models.RegisterProto(&DNat44{}, models.Spec{
+		Module:       "vpp",
+		Type:         "nat44/dnat",
+		Version:      "v2",
+		NameTemplate: "{{.Label}}",
 	})
 }
 

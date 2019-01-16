@@ -29,11 +29,11 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 
 	"github.com/ligato/vpp-agent/plugins/dataconfigurator"
+	"github.com/ligato/vpp-agent/plugins/dispatcher"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/ligato/vpp-agent/plugins/restv2"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
@@ -52,7 +52,7 @@ import (
 type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
-	Orchestrator *orchestrator.Plugin
+	Orchestrator *dispatcher.Plugin
 	Scheduler    *kvscheduler.Scheduler
 
 	ETCDDataSync   *kvdbsync.Plugin
@@ -93,7 +93,7 @@ func New() *VPPAgent {
 		etcdDataSync,
 		consulDataSync,
 	}
-	orchestrator.DefaultPlugin.Watcher = watchers
+	dispatcher.DefaultPlugin.Watcher = watchers
 
 	// connect IfPlugins for Linux & VPP
 	linux_ifplugin.DefaultPlugin.VppIfPlugin = &ifplugin.DefaultPlugin
@@ -112,7 +112,7 @@ func New() *VPPAgent {
 		ETCDDataSync:     etcdDataSync,
 		ConsulDataSync:   consulDataSync,
 		RedisDataSync:    redisDataSync,
-		Orchestrator:     &orchestrator.DefaultPlugin,
+		Orchestrator:     &dispatcher.DefaultPlugin,
 		RESTAPI:          &rest.DefaultPlugin,
 		VPP:              vpp,
 		Linux:            linux,

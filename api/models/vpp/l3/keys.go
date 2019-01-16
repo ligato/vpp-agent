@@ -20,39 +20,30 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
-const (
-	ProxyARP_GlobalID    = "GLOBAL"
-	IPScanNeigh_GlobalID = "GLOBAL"
-)
-
 func init() {
-	models.Register(&ARPEntry{}, models.Spec{
+	models.RegisterProto(&ARPEntry{}, models.Spec{
 		Module:   "vpp",
-		Type:     "arps",
+		Type:     "arp",
 		Version:  "v2",
-		Class:    "config",
-		IDFormat: "{{.Interface}}/{{.IpAddress}}",
+		NameFunc: models.NameTemplate("{{.Interface}}/{{.IpAddress}}"),
 	})
-	models.Register(&StaticRoute{}, models.Spec{
-		Module:   "vpp",
-		Type:     "routes",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: `vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
+	models.RegisterProto(&StaticRoute{}, models.Spec{
+		Module:       "vpp",
+		Type:         "route",
+		Version:      "v2",
+		NameTemplate: `vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
 	})
-	models.Register(&ProxyARP{}, models.Spec{
-		Module:   "vpp",
-		Type:     "proxyarp",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: ProxyARP_GlobalID,
+	models.RegisterProto(&ProxyARP{}, models.Spec{
+		Module:       "vpp",
+		Type:         "proxyarp/global",
+		Version:      "v2",
+		NameTemplate: "settings",
 	})
-	models.Register(&IPScanNeighbor{}, models.Spec{
-		Module:   "vpp",
-		Type:     "ipscanneigh",
-		Version:  "v2",
-		Class:    "config",
-		IDFormat: IPScanNeigh_GlobalID,
+	models.RegisterProto(&IPScanNeighbor{}, models.Spec{
+		Module:       "vpp",
+		Type:         "ipscanneigh/global",
+		Version:      "v2",
+		NameTemplate: "settings",
 	})
 }
 
