@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	"git.fd.io/govpp.git/adapter"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
@@ -30,34 +32,32 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
-// counterType is the basic counter type - contains only packet statistics.
-type counterType int
+// PeriodicPollingPeriod between statistics reads
+// TODO  should be configurable
+var PeriodicPollingPeriod = 1 * time.Second
 
-// constants as defined in the vnet_interface_counter_type_t enum in 'vnet/interface.h'
+// statType is the specific interface statistics type.
+type statType string
+
+// interface stats prefix as defined by the VPP
+const ifPrefix = "/if/"
+
+// interface statistics matching patterns
 const (
-	Drop    counterType = 0
-	Punt                = 1
-	IPv4                = 2
-	IPv6                = 3
-	RxNoBuf             = 4
-	RxMiss              = 5
-	RxError             = 6
-	TxError             = 7
-	MPLS                = 8
-)
-
-// combinedCounterType is the extended counter type - contains both packet and byte statistics.
-type combinedCounterType int
-
-// constants as defined in the vnet_interface_counter_type_t enum in 'vnet/interface.h'
-const (
-	Rx combinedCounterType = 0
-	Tx                     = 1
+	Drop    statType = ifPrefix + "drops"
+	Punt             = ifPrefix + "punt"
+	IPv4             = ifPrefix + "ip4"
+	IPv6             = ifPrefix + "ip6"
+	RxNoBuf          = ifPrefix + "rx-no-buf"
+	RxMiss           = ifPrefix + "rx-miss"
+	RxError          = ifPrefix + "rx-error"
+	TxError          = ifPrefix + "tx-error"
+	Rx               = ifPrefix + "rx"
+	Tx               = ifPrefix + "tx"
 )
 
 const (
@@ -75,6 +75,8 @@ type InterfaceStateUpdater struct {
 	ifState map[uint32]*intf.InterfaceState // swIfIndex to state data map
 	access  sync.Mutex                      // lock for the state data map
 
+	goVppMux govppmux.StatsAPI
+
 	vppCh                   govppapi.Channel
 	vppNotifSubs            govppapi.SubscriptionCtx
 	vppCountersSubs         govppapi.SubscriptionCtx
@@ -88,7 +90,7 @@ type InterfaceStateUpdater struct {
 
 // Init members (channels, maps...) and start go routines
 func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, kvScheduler scheduler.KVScheduler,
-	goVppMux govppmux.API, swIfIndexes ifaceidx.IfaceMetadataIndex,
+	goVppMux govppmux.StatsAPI, swIfIndexes ifaceidx.IfaceMetadataIndex,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 
 	// Logger
@@ -102,7 +104,8 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	c.ifState = make(map[uint32]*intf.InterfaceState)
 
 	// VPP channel
-	c.vppCh, err = goVppMux.NewAPIChannel()
+	c.goVppMux = goVppMux
+	c.vppCh, err = c.goVppMux.NewAPIChannel()
 	if err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
@@ -141,16 +144,6 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
 	}
 
-	// subscribe for receiving VnetInterfaceSimpleCounters notifications
-	if c.vppCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &stats.VnetInterfaceSimpleCounters{}); err != nil {
-		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_simple_counters): %v", err)
-	}
-
-	// subscribe for receiving VnetInterfaceCombinedCounters notifications
-	if c.vppCombinedCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &stats.VnetInterfaceCombinedCounters{}); err != nil {
-		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_combined_counters): %v", err)
-	}
-
 	wantIfEventsReply := &interfaces.WantInterfaceEventsReply{}
 	// enable interface state notifications from VPP
 	err = c.vppCh.SendRequest(&interfaces.WantInterfaceEvents{
@@ -159,26 +152,6 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	}).ReceiveReply(wantIfEventsReply)
 	if err != nil {
 		return errors.Errorf("failed to get interface events: %v", err)
-	}
-
-	wantSimpleStatsReply := &stats.WantInterfaceSimpleStatsReply{}
-	// enable interface counters notifications from VPP
-	err = c.vppCh.SendRequest(&stats.WantInterfaceSimpleStats{
-		PID:           uint32(os.Getpid()),
-		EnableDisable: 1,
-	}).ReceiveReply(wantSimpleStatsReply)
-	if err != nil {
-		return errors.Errorf("failed to subscribe for interface simple stats: %v", err)
-	}
-
-	wantCombinedStatsReply := &stats.WantInterfaceCombinedStatsReply{}
-	// enable interface counters notifications from VPP
-	err = c.vppCh.SendRequest(&stats.WantInterfaceCombinedStats{
-		PID:           uint32(os.Getpid()),
-		EnableDisable: 1,
-	}).ReceiveReply(wantCombinedStatsReply)
-	if err != nil {
-		return errors.Errorf("failed to subscribe for interface combined stats: %v", err)
 	}
 
 	return nil
@@ -223,6 +196,9 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 		return
 	}
 
+	// Periodically read VPP counters and combined counters for VPP statistics
+	go c.startReadingCounters(ctx)
+
 	for {
 		select {
 		case msg := <-c.notifChan:
@@ -232,11 +208,7 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 
 			switch notif := msg.(type) {
 			case *interfaces.SwInterfaceEvent:
-				c.processIfStateNotification(notif)
-			case *stats.VnetInterfaceSimpleCounters:
-				c.processIfCounterNotification(notif)
-			case *stats.VnetInterfaceCombinedCounters:
-				c.processIfCombinedCounterNotification(notif)
+				c.processIfStateEvent(notif)
 			default:
 				c.log.Debugf("Ignoring unknown VPP notification: %s, %v",
 					msg.GetMessageName(), msg)
@@ -269,15 +241,129 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 			}
 
 		case <-ctx.Done():
-			// stop watching for notifications
+			// stop watching for notifications and periodic statistics reader
 			c.log.Debug("Interface state VPP notification watcher stopped")
 			return
 		}
 	}
 }
 
-// processIfStateNotification process a VPP state notification.
-func (c *InterfaceStateUpdater) processIfStateNotification(notif *interfaces.SwInterfaceEvent) {
+// startReadingCounters periodically reads statistics for all interfaces
+func (c *InterfaceStateUpdater) startReadingCounters(ctx context.Context) {
+	for {
+		select {
+		case <-time.After(PeriodicPollingPeriod):
+			c.doInterfaceStatsRead()
+		case <-ctx.Done():
+			c.log.Debug("Interface state VPP periodic polling stopped")
+			return
+		}
+	}
+}
+
+// doInterfaceStatsRead dumps statistics using interface filter and processes them
+func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
+	c.access.Lock()
+	defer c.access.Unlock()
+
+	statEntries, err := c.goVppMux.DumpStats(ifPrefix)
+	if err != nil {
+		// TODO add some counter to prevent it log forever
+		c.log.Errorf("failed to read statistics data: %v", err)
+	}
+	for _, statEntry := range statEntries {
+		switch data := statEntry.Data.(type) {
+		case adapter.SimpleCounterStat:
+			c.processSimpleCounterStat(statType(statEntry.Name), data)
+		case adapter.CombinedCounterStat:
+			c.processCombinedCounterStat(statType(statEntry.Name), data)
+		}
+	}
+}
+
+// processSimpleCounterStat fills state data for every registered interface and publishes them
+func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data adapter.SimpleCounterStat) {
+	if data == nil || len(data) == 0 {
+		return
+	}
+	// Add up counter values from all workers, sumPackets is fixed length - all the inner arrays (workers)
+	// have values for all interfaces. Length is taken from the first worker (main thread) which is always present
+	sumPackets := make([]adapter.Counter, len(data[0]))
+	for _, worker := range data {
+		for swIfIndex, partialPackets := range worker {
+			sumPackets[swIfIndex] += partialPackets
+		}
+	}
+	for swIfIndex, packets := range sumPackets {
+		ifState, found := c.getIfStateDataWLookup(uint32(swIfIndex))
+		if !found {
+			continue
+		}
+		ifStats := ifState.Statistics
+		switch statName {
+		case Drop:
+			ifStats.DropPackets = uint64(packets)
+		case Punt:
+			ifStats.PuntPackets = uint64(packets)
+		case IPv4:
+			ifStats.Ipv4Packets = uint64(packets)
+		case IPv6:
+			ifStats.Ipv6Packets = uint64(packets)
+		case RxNoBuf:
+			ifStats.InNobufPackets = uint64(packets)
+		case RxMiss:
+			ifStats.InMissPackets = uint64(packets)
+		case RxError:
+			ifStats.InErrorPackets = uint64(packets)
+		case TxError:
+			ifStats.OutErrorPackets = uint64(packets)
+		}
+
+		c.publishIfState(&intf.InterfaceNotification{
+			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+	}
+}
+
+// processCombinedCounterStat fills combined state data for every registered interface and publishes them
+func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, data adapter.CombinedCounterStat) {
+	if data == nil || len(data) == 0 {
+		return
+	}
+	// Add up counter values from all workers, sumPackets is fixed length - all the inner arrays (workers)
+	// have values for all interfaces. Length is taken from the first worker (main thread) which is always present
+	sumCombined := make([]adapter.CombinedCounter, len(data[0]))
+	for _, worker := range data {
+		for swIfIndex, partialPackets := range worker {
+			sumCombined[swIfIndex].Packets += partialPackets.Packets
+			sumCombined[swIfIndex].Bytes += partialPackets.Bytes
+		}
+	}
+	for swIfIndex, combined := range sumCombined {
+		ifState, found := c.getIfStateDataWLookup(uint32(swIfIndex))
+		if !found {
+			continue
+		}
+		ifStats := ifState.Statistics
+		switch statName {
+		case Rx:
+			ifStats.InPackets = uint64(combined.Packets)
+			ifStats.InBytes = uint64(combined.Bytes)
+		case Tx:
+			ifStats.OutPackets = uint64(combined.Packets)
+			ifStats.OutBytes = uint64(combined.Bytes)
+		}
+		// TODO process other stats types
+
+		c.publishIfState(&intf.InterfaceNotification{
+			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+	}
+}
+
+// processIfStateEvent process a VPP state event notification.
+func (c *InterfaceStateUpdater) processIfStateEvent(notif *interfaces.SwInterfaceEvent) {
+	c.access.Lock()
+	defer c.access.Unlock()
+
 	// update and return if state data
 	ifState, found := c.updateIfStateFlags(notif)
 	if !found {
@@ -356,70 +442,6 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfac
 		}
 	}
 	return ifState, true
-}
-
-// processIfCounterNotification processes a VPP (simple) counter message.
-func (c *InterfaceStateUpdater) processIfCounterNotification(counter *stats.VnetInterfaceSimpleCounters) {
-	c.access.Lock()
-	defer c.access.Unlock()
-
-	for i := uint32(0); i < counter.Count; i++ {
-		swIfIndex := counter.FirstSwIfIndex + i
-		ifState, found := c.getIfStateDataWLookup(swIfIndex)
-		if !found {
-			continue
-		}
-		ifStats := ifState.Statistics
-		packets := counter.Data[i]
-		switch counterType(counter.VnetCounterType) {
-		case Drop:
-			ifStats.DropPackets = packets
-		case Punt:
-			ifStats.PuntPackets = packets
-		case IPv4:
-			ifStats.Ipv4Packets = packets
-		case IPv6:
-			ifStats.Ipv6Packets = packets
-		case RxNoBuf:
-			ifStats.InNobufPackets = packets
-		case RxMiss:
-			ifStats.InMissPackets = packets
-		case RxError:
-			ifStats.InErrorPackets = packets
-		case TxError:
-			ifStats.OutErrorPackets = packets
-		}
-	}
-}
-
-// processIfCombinedCounterNotification processes a VPP message with combined counters.
-func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *stats.VnetInterfaceCombinedCounters) {
-	c.access.Lock()
-	defer c.access.Unlock()
-
-	if counter.VnetCounterType > Tx {
-		// TODO: process other types of combined counters (RX/TX for unicast/multicast/broadcast)
-		return
-	}
-
-	for i := uint32(0); i < counter.Count; i++ {
-		swIfIndex := counter.FirstSwIfIndex + i
-		ifState, found := c.getIfStateDataWLookup(swIfIndex)
-		if !found {
-			continue
-		}
-		ifStats := ifState.Statistics
-		if combinedCounterType(counter.VnetCounterType) == Rx {
-			ifStats.InPackets = counter.Data[i].Packets
-			ifStats.InBytes = counter.Data[i].Bytes
-		} else if combinedCounterType(counter.VnetCounterType) == Tx {
-			ifStats.OutPackets = counter.Data[i].Packets
-			ifStats.OutBytes = counter.Data[i].Bytes
-			// publish Tx + Rx for this interface (Tx counters are received after RX counters)
-			c.publishIfState(&intf.InterfaceNotification{
-				Type: intf.InterfaceNotification_UPDOWN, State: ifState})
-		}
-	}
 }
 
 // updateIfStateDetails updates the interface state data in memory from provided VPP details message.
