@@ -138,7 +138,6 @@ func (c *Client) Delete(key string, opts ...datasync.DelOption) (existed bool, e
 		return fmt.Errorf("key %q not found in bucket", key)
 	})
 
-	fmt.Printf("del: %v, %q\n", key, prevVal)
 	c.bumpWatchers(&watchEvent{
 		Key:       key,
 		PrevValue: prevVal,
