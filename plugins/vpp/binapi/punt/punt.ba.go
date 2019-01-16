@@ -20,42 +20,62 @@ var _ = api.RegisterMessage
 var _ = struc.Pack
 var _ = bytes.NewBuffer
 
+// Services represents VPP binary API services:
+//
+//	"services": {
+//	    "punt": {
+//	        "reply": "punt_reply"
+//	    },
+//	    "punt_socket_deregister": {
+//	        "reply": "punt_socket_deregister_reply"
+//	    },
+//	    "punt_socket_register": {
+//	        "reply": "punt_socket_register_reply"
+//	    }
+//	},
+//
+type Services interface {
+	Punt(*Punt) (*PuntReply, error)
+	PuntSocketDeregister(*PuntSocketDeregister) (*PuntSocketDeregisterReply, error)
+	PuntSocketRegister(*PuntSocketRegister) (*PuntSocketRegisterReply, error)
+}
+
 /* Messages */
 
-// Punt represents the VPP binary API message 'punt'.
+// Punt represents VPP binary API message 'punt':
 //
-//            "punt",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_add"
-//            ],
-//            [
-//                "u8",
-//                "ipv"
-//            ],
-//            [
-//                "u8",
-//                "l4_protocol"
-//            ],
-//            [
-//                "u16",
-//                "l4_port"
-//            ],
-//            {
-//                "crc": "0x37760008"
-//            }
+//	"punt",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "ipv"
+//	],
+//	[
+//	    "u8",
+//	    "l4_protocol"
+//	],
+//	[
+//	    "u16",
+//	    "l4_port"
+//	],
+//	{
+//	    "crc": "0x37760008"
+//	}
 //
 type Punt struct {
 	IsAdd      uint8
@@ -74,24 +94,24 @@ func (*Punt) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// PuntReply represents the VPP binary API message 'punt_reply'.
+// PuntReply represents VPP binary API message 'punt_reply':
 //
-//            "punt_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"punt_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type PuntReply struct {
 	Retval int32
@@ -107,45 +127,45 @@ func (*PuntReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// PuntSocketRegister represents the VPP binary API message 'punt_socket_register'.
+// PuntSocketRegister represents VPP binary API message 'punt_socket_register':
 //
-//            "punt_socket_register",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u32",
-//                "header_version"
-//            ],
-//            [
-//                "u8",
-//                "is_ip4"
-//            ],
-//            [
-//                "u8",
-//                "l4_protocol"
-//            ],
-//            [
-//                "u16",
-//                "l4_port"
-//            ],
-//            [
-//                "u8",
-//                "pathname",
-//                108
-//            ],
-//            {
-//                "crc": "0xc163b363"
-//            }
+//	"punt_socket_register",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u32",
+//	    "header_version"
+//	],
+//	[
+//	    "u8",
+//	    "is_ip4"
+//	],
+//	[
+//	    "u8",
+//	    "l4_protocol"
+//	],
+//	[
+//	    "u16",
+//	    "l4_port"
+//	],
+//	[
+//	    "u8",
+//	    "pathname",
+//	    108
+//	],
+//	{
+//	    "crc": "0xc163b363"
+//	}
 //
 type PuntSocketRegister struct {
 	HeaderVersion uint32
@@ -165,29 +185,29 @@ func (*PuntSocketRegister) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// PuntSocketRegisterReply represents the VPP binary API message 'punt_socket_register_reply'.
+// PuntSocketRegisterReply represents VPP binary API message 'punt_socket_register_reply':
 //
-//            "punt_socket_register_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            [
-//                "u8",
-//                "pathname",
-//                64
-//            ],
-//            {
-//                "crc": "0x42dc0ee6"
-//            }
+//	"punt_socket_register_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	[
+//	    "u8",
+//	    "pathname",
+//	    64
+//	],
+//	{
+//	    "crc": "0x42dc0ee6"
+//	}
 //
 type PuntSocketRegisterReply struct {
 	Retval   int32
@@ -204,36 +224,36 @@ func (*PuntSocketRegisterReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
-// PuntSocketDeregister represents the VPP binary API message 'punt_socket_deregister'.
+// PuntSocketDeregister represents VPP binary API message 'punt_socket_deregister':
 //
-//            "punt_socket_deregister",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "client_index"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "u8",
-//                "is_ip4"
-//            ],
-//            [
-//                "u8",
-//                "l4_protocol"
-//            ],
-//            [
-//                "u16",
-//                "l4_port"
-//            ],
-//            {
-//                "crc": "0x9846a4cc"
-//            }
+//	"punt_socket_deregister",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_ip4"
+//	],
+//	[
+//	    "u8",
+//	    "l4_protocol"
+//	],
+//	[
+//	    "u16",
+//	    "l4_port"
+//	],
+//	{
+//	    "crc": "0x9846a4cc"
+//	}
 //
 type PuntSocketDeregister struct {
 	IsIP4      uint8
@@ -251,24 +271,24 @@ func (*PuntSocketDeregister) GetMessageType() api.MessageType {
 	return api.RequestMessage
 }
 
-// PuntSocketDeregisterReply represents the VPP binary API message 'punt_socket_deregister_reply'.
+// PuntSocketDeregisterReply represents VPP binary API message 'punt_socket_deregister_reply':
 //
-//            "punt_socket_deregister_reply",
-//            [
-//                "u16",
-//                "_vl_msg_id"
-//            ],
-//            [
-//                "u32",
-//                "context"
-//            ],
-//            [
-//                "i32",
-//                "retval"
-//            ],
-//            {
-//                "crc": "0xe8d4e804"
-//            }
+//	"punt_socket_deregister_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
 //
 type PuntSocketDeregisterReply struct {
 	Retval int32
@@ -282,14 +302,6 @@ func (*PuntSocketDeregisterReply) GetCrcString() string {
 }
 func (*PuntSocketDeregisterReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
-}
-
-/* Services */
-
-type Services interface {
-	Punt(*Punt) (*PuntReply, error)
-	PuntSocketDeregister(*PuntSocketDeregister) (*PuntSocketDeregisterReply, error)
-	PuntSocketRegister(*PuntSocketRegister) (*PuntSocketRegisterReply, error)
 }
 
 func init() {
