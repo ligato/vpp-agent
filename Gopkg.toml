@@ -95,7 +95,7 @@ required = [
 
 [[override]]
   name = "github.com/coreos/etcd"
-  version = "=3.3.10"
+  version = ">= 3.3.10, < 4.0.0"
 
 [[constraint]]
   name = "github.com/opencontainers/runc"
