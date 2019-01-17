@@ -18,6 +18,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/gogo/protobuf/jsonpb"
+
 	"github.com/ligato/vpp-agent/api/models"
 )
 
@@ -142,4 +144,20 @@ func ParseInterfaceAddressKey(key string) (ifName string, ifAddr *net.IPNet, isA
 		return
 	}
 	return "", nil, false
+}
+
+// MarshalJSON ensures that field of type 'oneOf' is correctly marshaled
+// by using gogo lib marshaller
+func (m *Interface) MarshalJSON() ([]byte, error) {
+	marshaller := &jsonpb.Marshaler{}
+	str, err := marshaller.MarshalToString(m)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(str), nil
+}
+
+// UnmarshalJSON ensures that field of type 'oneOf' is correctly unmarshaled
+func (m *Interface) UnmarshalJSON(data []byte) error {
+	return jsonpb.UnmarshalString(string(data), m)
 }

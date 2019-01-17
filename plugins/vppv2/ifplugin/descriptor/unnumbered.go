@@ -17,6 +17,7 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -93,6 +94,20 @@ func (d *UnnumberedIfDescriptor) Add(key string, unIntf *interfaces.Interface_Un
 	if !found {
 		err = errors.Errorf("failed to find interface %s referenced by unnumbered interface %s",
 			unIntf.InterfaceWithIp, ifName)
+		d.log.Error(err)
+		return nil, err
+	}
+
+	ipAddresses, err := addrs.StrAddrsToStruct(ifWithIPMeta.IPAddresses)
+	if err != nil {
+		err = errors.Errorf("failed to convert %s IP address list to IPNet structures: %v", ifName, err)
+		d.log.Error(err)
+		return nil, err
+	}
+
+	// VRF (optional), should be done before setting as unnumbered
+	err = setInterfaceVrf(d.ifHandler, ifName, ifMeta.SwIfIndex, ifMeta.Vrf, ipAddresses)
+	if err != nil {
 		d.log.Error(err)
 		return nil, err
 	}
