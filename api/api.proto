@@ -14,27 +14,13 @@ message Item {
     Value value = 2;
 }
 
-message Path {
+message ItemRef {
     string prefix = 1;
     string name = 2;
 }
 
-
 message Value {
     google.protobuf.Any any = 1;
-}
-
-message ItemStatus {
-    enum State {
-        UNKNOWN = 0;
-        PENDING = 1;
-        APPLIED = 2;
-        INVALID = 3;
-        FAILED = 4;
-        REMOVED = 5;
-    }
-    State state = 1;
-    string message = 2;
 }
 
 //------------------------------------------------------------------------------
@@ -76,22 +62,17 @@ message Model {
     string module = 1;
     string type = 2;
     string version = 3;
-    map<string,string> meta = 4;
 }
 
 //------------------------------------------------------------------------------
 
 message SetConfigRequest {
-    message Options {
-        bool resync = 1;
-    }
-    Options options = 1;
-
     message UpdateItem {
         Item item = 1;
         map<string,string> labels = 2;
     }
-    repeated UpdateItem updates = 2;
+    repeated UpdateItem updates = 1;    // Set of items to update
+
 }
 
 message SetConfigResponse {
@@ -124,6 +105,19 @@ message GetConfigResponse {
         map<string,string> labels = 3;
     }
     repeated ConfigItem items = 1;
+}
+
+message ItemStatus {
+    enum State {
+        UNKNOWN = 0;
+        PENDING = 1;
+        APPLIED = 2;
+        INVALID = 3;
+        FAILED = 4;
+        REMOVED = 5;
+    }
+    State state = 1;
+    string message = 2;
 }
 
 //------------------------------------------------------------------------------

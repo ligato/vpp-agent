@@ -265,7 +265,7 @@ var (
 			},
 		},
 	}
-	routeX = &linux.StaticRoute{
+	routeX = &linux.Route{
 		DstNetwork:        "192.168.5.0/24",
 		OutgoingInterface: "myVETH1",
 		GwAddr:            "10.10.3.254",

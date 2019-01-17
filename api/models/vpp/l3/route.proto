@@ -7,7 +7,7 @@ option go_package = "github.com/ligato/vpp-agent/api/models/vpp/l3;vpp_l3";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
-message StaticRoute {
+message Route {
     enum RouteType {
         INTRA_VRF = 0;                  /* Forwarding is being done in the specified vrf_id only, or according to
                                            the specified outgoing interface. */

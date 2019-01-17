@@ -23,13 +23,13 @@ import (
 )
 
 func init() {
-	models.RegisterProto(&StaticARPEntry{}, models.Spec{
+	models.RegisterProto(&ARPEntry{}, models.Spec{
 		Module:       "linux",
 		Type:         "arp",
 		Version:      "v2",
 		NameTemplate: "{{.Interface}}/{{.IpAddress}}",
 	})
-	models.RegisterProto(&StaticRoute{}, models.Spec{
+	models.RegisterProto(&Route{}, models.Spec{
 		Module:       "linux",
 		Type:         "route",
 		Version:      "v2",
@@ -39,7 +39,7 @@ func init() {
 
 // StaticArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
 func StaticArpKey(iface, ipAddr string) string {
-	return models.Key(&StaticARPEntry{
+	return models.Key(&ARPEntry{
 		Interface: iface,
 		IpAddress: ipAddr,
 	})
@@ -47,7 +47,7 @@ func StaticArpKey(iface, ipAddr string) string {
 
 // StaticRouteKey returns the key used in ETCD to store configuration of a particular Linux route.
 func StaticRouteKey(dstNetwork, outgoingInterface string) string {
-	return models.Key(&StaticRoute{
+	return models.Key(&Route{
 		DstNetwork:        dstNetwork,
 		OutgoingInterface: outgoingInterface,
 	})

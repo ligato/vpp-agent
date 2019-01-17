@@ -36,8 +36,6 @@ var (
 	validModule = regexp.MustCompile(`^[-a-z0-9_.]+$`)
 )
 
-type NameFunc func(obj interface{}) (string, error)
-
 // Spec represents model specification.
 type Spec struct {
 	Module       string
@@ -46,6 +44,9 @@ type Spec struct {
 	NameTemplate string
 	NameFunc     NameFunc
 }
+
+// NameFunc represents function which can name model instance.
+type NameFunc func(obj interface{}) (string, error)
 
 type registeredModel struct {
 	Spec

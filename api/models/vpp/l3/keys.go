@@ -27,7 +27,7 @@ func init() {
 		Version:  "v2",
 		NameFunc: models.NameTemplate("{{.Interface}}/{{.IpAddress}}"),
 	})
-	models.RegisterProto(&StaticRoute{}, models.Spec{
+	models.RegisterProto(&Route{}, models.Spec{
 		Module:       "vpp",
 		Type:         "route",
 		Version:      "v2",
@@ -49,7 +49,7 @@ func init() {
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
 func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
-	return models.Key(&StaticRoute{
+	return models.Key(&Route{
 		VrfId:       vrf,
 		DstNetwork:  dstNet,
 		NextHopAddr: nextHopAddr,

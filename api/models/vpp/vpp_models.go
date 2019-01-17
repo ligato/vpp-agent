@@ -39,7 +39,7 @@ type (
 	XConnect     = vpp_l2.XConnectPair
 
 	// L3
-	Route       = vpp_l3.StaticRoute
+	Route       = vpp_l3.Route
 	ARPEntry    = vpp_l3.ARPEntry
 	IPScanNeigh = vpp_l3.IPScanNeighbor
 	ProxyARP    = vpp_l3.ProxyARP
@@ -56,8 +56,8 @@ type (
 	STNRule = vpp_stn.Rule
 
 	// Punt
-	PuntIP     = vpp_punt.IpRedirect
-	PuntToHost = vpp_punt.ToHost
+	PuntIPRedirect = vpp_punt.IpRedirect
+	PuntToHost     = vpp_punt.ToHost
 )
 
 var (
@@ -83,6 +83,6 @@ var (
 	STNRuleModel = models.Model(&STNRule{})
 
 	// Punt
-	PuntIPModel     = models.Model(&PuntIP{})
+	PuntIPModel     = models.Model(&PuntIPRedirect{})
 	PuntToHostModel = models.Model(&PuntToHost{})
 )

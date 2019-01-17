@@ -5,49 +5,49 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
-type SPDPolicyKVWithMetadata struct {
+type RouteKVWithMetadata struct {
 	Key      string
-	Value    *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry
+	Value    *vpp_l3.Route
 	Metadata interface{}
 	Origin   ValueOrigin
 }
 
 ////////// type-safe Descriptor structure //////////
 
-type SPDPolicyDescriptor struct {
+type RouteDescriptor struct {
 	Name               string
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_l3.Route) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) (metadata interface{}, err error)
-	Delete             func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) bool
-	Update             func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) error
+	Add                func(key string, value *vpp_l3.Route) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_l3.Route, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_l3.Route, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_l3.Route, metadata interface{}) bool
+	Update             func(key string, value *vpp_l3.Route, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) []Dependency
-	DerivedValues      func(key string, value *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry) []KeyValuePair
-	Dump               func(correlate []SPDPolicyKVWithMetadata) ([]SPDPolicyKVWithMetadata, error)
+	Dependencies       func(key string, value *vpp_l3.Route) []Dependency
+	DerivedValues      func(key string, value *vpp_l3.Route) []KeyValuePair
+	Dump               func(correlate []RouteKVWithMetadata) ([]RouteKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
 
-type SPDPolicyDescriptorAdapter struct {
-	descriptor *SPDPolicyDescriptor
+type RouteDescriptorAdapter struct {
+	descriptor *RouteDescriptor
 }
 
-func NewSPDPolicyDescriptor(typedDescriptor *SPDPolicyDescriptor) *KVDescriptor {
-	adapter := &SPDPolicyDescriptorAdapter{descriptor: typedDescriptor}
+func NewRouteDescriptor(typedDescriptor *RouteDescriptor) *KVDescriptor {
+	adapter := &RouteDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
 		Name:               typedDescriptor.Name,
 		KeySelector:        typedDescriptor.KeySelector,
@@ -89,108 +89,108 @@ func NewSPDPolicyDescriptor(typedDescriptor *SPDPolicyDescriptor) *KVDescriptor 
 	return descriptor
 }
 
-func (da *SPDPolicyDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
-	typedOldValue, err1 := castSPDPolicyValue(key, oldValue)
-	typedNewValue, err2 := castSPDPolicyValue(key, newValue)
+func (da *RouteDescriptorAdapter) ValueComparator(key string, oldValue, newValue proto.Message) bool {
+	typedOldValue, err1 := castRouteValue(key, oldValue)
+	typedNewValue, err2 := castRouteValue(key, newValue)
 	if err1 != nil || err2 != nil {
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *RouteDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
+	typedValue, err := castRouteValue(key, value)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Add(key, typedValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
-	oldTypedValue, err := castSPDPolicyValue(key, oldValue)
+func (da *RouteDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+	oldTypedValue, err := castRouteValue(key, oldValue)
 	if err != nil {
 		return nil, err
 	}
-	newTypedValue, err := castSPDPolicyValue(key, newValue)
+	newTypedValue, err := castRouteValue(key, newValue)
 	if err != nil {
 		return nil, err
 	}
-	typedOldMetadata, err := castSPDPolicyMetadata(key, oldMetadata)
+	typedOldMetadata, err := castRouteMetadata(key, oldMetadata)
 	if err != nil {
 		return nil, err
 	}
 	return da.descriptor.Modify(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *RouteDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castRouteValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castSPDPolicyMetadata(key, metadata)
+	typedMetadata, err := castRouteMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *SPDPolicyDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
-	oldTypedValue, err := castSPDPolicyValue(key, oldValue)
+func (da *RouteDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+	oldTypedValue, err := castRouteValue(key, oldValue)
 	if err != nil {
 		return true
 	}
-	newTypedValue, err := castSPDPolicyValue(key, newValue)
+	newTypedValue, err := castRouteValue(key, newValue)
 	if err != nil {
 		return true
 	}
-	typedMetadata, err := castSPDPolicyMetadata(key, metadata)
+	typedMetadata, err := castRouteMetadata(key, metadata)
 	if err != nil {
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *RouteDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
+	typedValue, err := castRouteValue(key, value)
 	if err != nil {
 		return err
 	}
-	typedMetadata, err := castSPDPolicyMetadata(key, metadata)
+	typedMetadata, err := castRouteMetadata(key, metadata)
 	if err != nil {
 		return err
 	}
 	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *RouteDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castRouteValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.Dependencies(key, typedValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castSPDPolicyValue(key, value)
+func (da *RouteDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castRouteValue(key, value)
 	if err != nil {
 		return nil
 	}
 	return da.descriptor.DerivedValues(key, typedValue)
 }
 
-func (da *SPDPolicyDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
-	var correlateWithType []SPDPolicyKVWithMetadata
+func (da *RouteDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+	var correlateWithType []RouteKVWithMetadata
 	for _, kvpair := range correlate {
-		typedValue, err := castSPDPolicyValue(kvpair.Key, kvpair.Value)
+		typedValue, err := castRouteValue(kvpair.Key, kvpair.Value)
 		if err != nil {
 			continue
 		}
-		typedMetadata, err := castSPDPolicyMetadata(kvpair.Key, kvpair.Metadata)
+		typedMetadata, err := castRouteMetadata(kvpair.Key, kvpair.Metadata)
 		if err != nil {
 			continue
 		}
 		correlateWithType = append(correlateWithType,
-			SPDPolicyKVWithMetadata{
+			RouteKVWithMetadata{
 				Key:      kvpair.Key,
 				Value:    typedValue,
 				Metadata: typedMetadata,
@@ -217,15 +217,15 @@ func (da *SPDPolicyDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWith
 
 ////////// Helper methods //////////
 
-func castSPDPolicyValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry, error) {
-	typedValue, ok := value.(*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry)
+func castRouteValue(key string, value proto.Message) (*vpp_l3.Route, error) {
+	typedValue, ok := value.(*vpp_l3.Route)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}
 	return typedValue, nil
 }
 
-func castSPDPolicyMetadata(key string, metadata Metadata) (interface{}, error) {
+func castRouteMetadata(key string, metadata Metadata) (interface{}, error) {
 	if metadata == nil {
 		return nil, nil
 	}

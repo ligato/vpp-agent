@@ -22,8 +22,8 @@ import (
 	"github.com/ligato/vpp-agent/api"
 )
 
-// This constant is used to replace the constant from types.MarshalAny.
-const ligatoApis = "models.ligato.io/"
+// This constant is used as prefix for TypeUrl when marshalling to Any.
+const ligatoUrl = "models.ligato.io/"
 
 // Unmarshal is helper function for unmarshalling items.
 func UnmarshalItem(m *api.Item) (proto.Message, error) {
@@ -55,7 +55,7 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	any.TypeUrl = ligatoApis + proto.MessageName(pb)
+	any.TypeUrl = ligatoUrl + proto.MessageName(pb)
 
 	object := &api.Item{
 		Key: Key(pb),

@@ -10,12 +10,12 @@ option (gogoproto.messagename_all) = true;
 import "vpp/acl/acl.proto";
 import "vpp/interfaces/interface.proto";
 import "vpp/ipsec/ipsec.proto";
-import "vpp/l2/bd.proto";
+import "vpp/l2/bridge-domain.proto";
 import "vpp/l2/fib.proto";
 import "vpp/l2/xconnect.proto";
 import "vpp/l3/arp.proto";
 import "vpp/l3/l3.proto";
-import "vpp/l3/static_route.proto";
+import "vpp/l3/route.proto";
 import "vpp/nat/nat.proto";
 import "vpp/punt/punt.proto";
 
@@ -28,7 +28,7 @@ message Data {
     repeated vpp.l2.FIBEntry fib_entries = 31;
     repeated vpp.l2.XConnectPair xconnect_pairs = 32;
 
-    repeated vpp.l3.StaticRoute static_routes = 40;
+    repeated vpp.l3.Route routes = 40;
     repeated vpp.l3.ARPEntry arp_entries = 41;
     vpp.l3.ProxyARP proxy_arp = 42;
     vpp.l3.IPScanNeighbor ipscan_neighbor = 43;
@@ -36,9 +36,9 @@ message Data {
     vpp.nat.Nat44Global nat44_global = 50;
     repeated vpp.nat.DNat44 dnats = 51;
 
-    repeated ipsec.SecurityPolicyDatabase SPDs = 60;
-    repeated ipsec.SecurityAssociation SAs = 61;
+    repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
+    repeated ipsec.SecurityAssociation ipsec_sas = 61;
 
-    repeated punt.IpRedirect IPRedirectPunts = 70;
-    repeated punt.ToHost ToHostPunts = 71;
+    repeated punt.IpRedirect punt_ipredirects = 70;
+    repeated punt.ToHost punt_tohosts = 71;
 }

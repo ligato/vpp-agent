@@ -25,13 +25,13 @@ type (
 	Interface = linux_interfaces.Interface
 
 	// L3
-	StaticRoute = linux_l3.StaticRoute
-	ARPEntry    = linux_l3.StaticARPEntry
+	Route    = linux_l3.Route
+	ARPEntry = linux_l3.ARPEntry
 )
 
 var (
 	InterfaceModel = models.Model(&Interface{})
 
-	StaticRouteModel = models.Model(&StaticRoute{})
+	StaticRouteModel = models.Model(&Route{})
 	ARPEntryModel    = models.Model(&ARPEntry{})
 )
