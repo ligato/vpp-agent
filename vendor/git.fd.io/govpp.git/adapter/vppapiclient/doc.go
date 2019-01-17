@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build mockvpp
-
-package govppmux
-
-import (
-	"git.fd.io/govpp.git/adapter"
-	govppmock "git.fd.io/govpp.git/adapter/mock"
-)
-
-// NewVppAdapter returns mock adapter, used for building without vppapiclient library.
-func NewVppAdapter(shmPrefix string) adapter.VppAPI {
-	return govppmock.NewVppAdapter()
-}
-
-// NewStatsAdapter returns stats vpp api adapter, used for reading statistics with vppapiclient library.
-func NewStatsAdapter(socketName string) adapter.StatsAPI {
-	return govppmock.NewStatsAdapter()
-}
+// Package vppapiclient is the default VPP adapter being used for
+// the connection to VPP binary & stats API via shared memory.
+// It is essentially Go wrapper for the VPP vppapiclient library written in C.
+package vppapiclient

@@ -16,6 +16,7 @@ package govppmux
 
 import (
 	"context"
+	"reflect"
 	"sync"
 	"time"
 
@@ -34,13 +35,17 @@ import (
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 )
 
+// Default path to socket for VPP stats
+const defaultStatsSocket = "/run/vpp/stats.sock"
+
 // Plugin implements the govppmux plugin interface.
 type Plugin struct {
 	Deps
 
-	vppConn    *govpp.Connection
-	vppAdapter adapter.VppAdapter
-	vppConChan chan govpp.ConnectionEvent
+	vppConn      *govpp.Connection
+	vppAdapter   adapter.VppAPI
+	statsAdapter adapter.StatsAPI
+	vppConChan   chan govpp.ConnectionEvent
 
 	lastConnErr error
 
@@ -74,7 +79,8 @@ type Config struct {
 	ReplyTimeout             time.Duration `json:"reply-timeout"`
 	// The prefix prepended to the name used for shared memory (SHM) segments. If not set,
 	// shared memory segments are created directly in the SHM directory /dev/shm.
-	ShmPrefix string `json:"shm-prefix"`
+	ShmPrefix       string `json:"shm-prefix"`
+	StatsSocketName string `json:"stats-socket-name"`
 	// How many times can be request resent in case vpp is suddenly disconnected.
 	RetryRequestCount int `json:"retry-request-count"`
 	// Time between request resend attempts. Default is 500ms.
@@ -161,6 +167,16 @@ func (p *Plugin) Init() error {
 	ctx, p.cancel = context.WithCancel(context.Background())
 	go p.handleVPPConnectionEvents(ctx)
 
+	// Connect to VPP status socket
+	if p.config.StatsSocketName != "" {
+		p.statsAdapter = NewStatsAdapter(p.config.StatsSocketName)
+	} else {
+		p.statsAdapter = NewStatsAdapter(defaultStatsSocket)
+	}
+	if err := p.statsAdapter.Connect(); err != nil {
+		p.Log.Errorf("Unable to connect to VPP statistics socket, %v", err)
+	}
+
 	return nil
 }
 
@@ -172,6 +188,11 @@ func (p *Plugin) Close() error {
 	defer func() {
 		if p.vppConn != nil {
 			p.vppConn.Disconnect()
+		}
+		if p.statsAdapter != nil {
+			if err := p.statsAdapter.Disconnect(); err != nil {
+				p.Log.Errorf("VPP statistics socket adapter disconnect error: %v", err)
+			}
 		}
 	}()
 
@@ -221,6 +242,22 @@ func (p *Plugin) GetTrace() *apitrace.Trace {
 		return nil
 	}
 	return p.tracer.Get()
+}
+
+// ListStats returns all stats names
+func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
+	if reflect.ValueOf(p.statsAdapter).IsNil() {
+		return nil, nil
+	}
+	return p.statsAdapter.ListStats(prefixes...)
+}
+
+// DumpStats returns all stats with name, type and value
+func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
+	if reflect.ValueOf(p.statsAdapter).IsNil() {
+		return nil, nil
+	}
+	return p.statsAdapter.DumpStats(prefixes...)
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
