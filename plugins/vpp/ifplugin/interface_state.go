@@ -78,11 +78,12 @@ type InterfaceStateUpdater struct {
 	ifState map[uint32]*intf.InterfacesState_Interface // swIfIndex to state data map
 	access  sync.Mutex                                 // lock for the state data map
 
+	goVppMux                govppmux.StatsAPI
+
 	vppCh                   govppapi.Channel
 	vppNotifSubs            govppapi.SubscriptionCtx
 	vppCountersSubs         govppapi.SubscriptionCtx
 	vppCombinedCountersSubs govppapi.SubscriptionCtx
-	vppStats                adapter.StatsAPI
 	notifChan               chan govppapi.Message
 	swIdxChan               chan ifaceidx.SwIfIdxDto
 
@@ -91,7 +92,7 @@ type InterfaceStateUpdater struct {
 }
 
 // Init members (channels, maps...) and start go routines
-func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.APIWithStats,
+func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginLogger, goVppMux govppmux.StatsAPI,
 	swIfIndexes ifaceidx.SwIfIndex, notifChan chan govppapi.Message,
 	publishIfState func(notification *intf.InterfaceNotification)) (err error) {
 	// Logger
@@ -104,11 +105,11 @@ func (c *InterfaceStateUpdater) Init(ctx context.Context, logger logging.PluginL
 	c.ifState = make(map[uint32]*intf.InterfacesState_Interface)
 
 	// VPP channel
-	c.vppCh, err = goVppMux.NewAPIChannel()
+	c.goVppMux = goVppMux
+	c.vppCh, err = c.goVppMux.NewAPIChannel()
 	if err != nil {
 		return errors.Errorf("failed to create API channel: %v", err)
 	}
-	c.vppStats = goVppMux.GetStatsAdapter()
 
 	c.swIdxChan = make(chan ifaceidx.SwIfIdxDto, 100)
 	swIfIndexes.WatchNameToIdx("ifplugin_ifstate", c.swIdxChan)
@@ -246,7 +247,7 @@ func (c *InterfaceStateUpdater) doInterfaceStatsRead() {
 	c.access.Lock()
 	defer c.access.Unlock()
 
-	statEntries, err := c.vppStats.DumpStats(ifPrefix)
+	statEntries, err := c.goVppMux.DumpStats(ifPrefix)
 	if err != nil {
 		// TODO add some counter to prevent it log forever
 		c.log.Errorf("failed to read statistics data: %v", err)
@@ -297,7 +298,7 @@ func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data
 		}
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
+			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 	}
 }
 
@@ -329,7 +330,7 @@ func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, da
 		// TODO process other stats types
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
+			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
 	}
 }
 

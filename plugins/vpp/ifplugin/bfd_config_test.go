@@ -15,11 +15,12 @@
 package ifplugin_test
 
 import (
-	"git.fd.io/govpp.git/core"
 	"net"
 	"testing"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
+
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
@@ -38,8 +39,8 @@ import (
 func TestBfdConfiguratorConfigureSessionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestBfdSession("if1", "10.0.0.1")
 	// Test configure BFD session without interface
@@ -51,8 +52,8 @@ func TestBfdConfiguratorConfigureSessionNoInterfaceError(t *testing.T) {
 func TestBfdConfiguratorConfigureSessionNoInterfaceMetaError(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
@@ -68,8 +69,8 @@ func TestBfdConfiguratorConfigureSessionNoInterfaceMetaError(t *testing.T) {
 func TestBfdConfiguratorConfigureSessionSrcDoNotMatch(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestBfdSession("if1", "10.0.0.2")
 	// Register
@@ -85,8 +86,8 @@ func TestBfdConfiguratorConfigureSessionSrcDoNotMatch(t *testing.T) {
 func TestBfdConfiguratorConfigureSession(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 	// Data
@@ -105,8 +106,8 @@ func TestBfdConfiguratorConfigureSession(t *testing.T) {
 func TestBfdConfiguratorConfigureSessionError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{
 		Retval: 1,
@@ -126,8 +127,8 @@ func TestBfdConfiguratorConfigureSessionError(t *testing.T) {
 func TestBfdConfiguratorModifySessionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	oldData := getTestBfdSession("if1", "10.0.0.1")
 	newData := getTestBfdSession("if2", "10.0.0.2")
@@ -142,8 +143,8 @@ func TestBfdConfiguratorModifySessionNoInterfaceError(t *testing.T) {
 func TestBfdConfiguratorModifySessionNoInterfaceMeta(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	oldData := getTestBfdSession("if1", "10.0.0.1")
 	newData := getTestBfdSession("if1", "10.0.0.2")
@@ -158,8 +159,8 @@ func TestBfdConfiguratorModifySessionNoInterfaceMeta(t *testing.T) {
 func TestBfdConfiguratorModifySessionSrcDoNotMatchError(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	oldData := getTestBfdSession("if1", "10.0.0.1")
 	newData := getTestBfdSession("if1", "10.0.0.2")
@@ -175,8 +176,8 @@ func TestBfdConfiguratorModifySessionSrcDoNotMatchError(t *testing.T) {
 func TestBfdConfiguratorModifySessionNoPrevious(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPAddReply{})
 	// Data
@@ -196,8 +197,8 @@ func TestBfdConfiguratorModifySessionNoPrevious(t *testing.T) {
 func TestBfdConfiguratorModifySessionSrcAddrDiffError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
 	// Data
@@ -215,8 +216,8 @@ func TestBfdConfiguratorModifySessionSrcAddrDiffError(t *testing.T) {
 func TestBfdConfiguratorModifySession(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPModReply{})
 	// Data
@@ -239,8 +240,8 @@ func TestBfdConfiguratorModifySession(t *testing.T) {
 func TestBfdConfiguratorDeleteSessionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestBfdSession("if1", "10.0.0.1")
 	// Register
@@ -254,8 +255,8 @@ func TestBfdConfiguratorDeleteSessionNoInterfaceError(t *testing.T) {
 func TestBfdConfiguratorDeleteSession(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelReply{})
 	// Data
@@ -274,8 +275,8 @@ func TestBfdConfiguratorDeleteSession(t *testing.T) {
 func TestBfdConfiguratorDeleteSessionError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelReply{
 		Retval: 1,
@@ -294,8 +295,8 @@ func TestBfdConfiguratorDeleteSessionError(t *testing.T) {
 func TestBfdConfiguratorSetAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{})
 	// Data
@@ -311,8 +312,8 @@ func TestBfdConfiguratorSetAuthKey(t *testing.T) {
 func TestBfdConfiguratorSetAuthKeyError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdAuthSetKeyReply{
 		Retval: 1,
@@ -330,8 +331,8 @@ func TestBfdConfiguratorSetAuthKeyError(t *testing.T) {
 func TestBfdConfiguratorModifyUnusedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply() // Session dump
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -349,8 +350,8 @@ func TestBfdConfiguratorModifyUnusedAuthKey(t *testing.T) {
 
 // Modify BFD authentication key which is used in session
 func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
-	ctx, connection, plugin, swIfIdx := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, swIfIdx := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 
 	// Reply handler
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
@@ -384,8 +385,8 @@ func TestBfdConfiguratorModifyUsedAuthKey(t *testing.T) {
 func TestBfdConfiguratorDeleteUnusedAuthKey(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply() // Session dump
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
@@ -401,8 +402,8 @@ func TestBfdConfiguratorDeleteUnusedAuthKey(t *testing.T) {
 
 // Delete BFD authentication key which is used in session
 func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
-	ctx, connection, plugin, swIfIdx := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, swIfIdx := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 
 	// Reply handler
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
@@ -435,8 +436,8 @@ func TestBfdConfiguratorDeleteUsedAuthKey(t *testing.T) {
 func TestBfdConfiguratorEchoFunction(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{})
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPDelEchoSourceReply{})
@@ -463,8 +464,8 @@ func TestBfdConfiguratorEchoFunction(t *testing.T) {
 func TestBfdConfiguratorEchoFunctionConfigError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, ifIndexes := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{
 		Retval: 1,
@@ -484,8 +485,8 @@ func TestBfdConfiguratorEchoFunctionConfigError(t *testing.T) {
 func TestBfdConfiguratorEchoFunctionNoInterfaceError(t *testing.T) {
 	var err error
 	// Setup
-	_, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	_, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Data
 	data := getTestBfdEchoFunction("if1")
 	// Test Echo function create
@@ -499,8 +500,8 @@ func TestBfdConfiguratorEchoFunctionNoInterfaceError(t *testing.T) {
 func TestBfdConfiguratorEchoFunctionDeleteError(t *testing.T) {
 	var err error
 	// Setup
-	ctx, connection, plugin, _ := bfdTestSetup(t)
-	defer bfdTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := bfdTestSetup(t)
+	defer bfdTestTeardown(goVppMux, plugin)
 	// Reply set
 	ctx.MockVpp.MockReply(&bfd_api.BfdUDPSetEchoSourceReply{
 		Retval: 1,
@@ -516,12 +517,12 @@ func TestBfdConfiguratorEchoFunctionDeleteError(t *testing.T) {
 
 /* BFD Test Setup */
 
-func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplugin.BFDConfigurator, ifaceidx.SwIfIndexRW) {
+func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *ifplugin.BFDConfigurator, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 	// Logger
 	log := logging.ForPlugin("test-log")
@@ -530,14 +531,14 @@ func bfdTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *ifplug
 	swIfIndices := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "stn", nil))
 	// Configurator
 	plugin := &ifplugin.BFDConfigurator{}
-	err = plugin.Init(log, connection, swIfIndices)
+	err = plugin.Init(log, goVppMux, swIfIndices)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin, swIfIndices
+	return ctx, goVppMux, plugin, swIfIndices
 }
 
-func bfdTestTeardown(connection *core.Connection, plugin *ifplugin.BFDConfigurator) {
-	connection.Disconnect()
+func bfdTestTeardown(goVppMux *mock.GoVPPMux, plugin *ifplugin.BFDConfigurator) {
+	goVppMux.Close()
 	err := plugin.Close()
 	Expect(err).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()

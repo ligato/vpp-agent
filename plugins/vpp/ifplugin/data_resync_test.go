@@ -17,9 +17,9 @@ package ifplugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
@@ -43,14 +43,14 @@ import (
 
 // TODO: use configurator initializers from other files which do the same thing
 
-func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *core.Connection) {
+func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.InterfaceConfigurator, *mock.GoVPPMux) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
 
-	conn, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).To(BeNil())
 
 	// Test init
@@ -59,26 +59,26 @@ func interfaceConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx
 	ifVppNotifCh := make(chan govppapi.Message, 100)
 	plugLog := logging.ForPlugin("tests")
 
-	err = plugin.Init(plugLog, conn, nil, ifVppNotifCh, 0)
+	err = plugin.Init(plugLog, goVppMux, nil, ifVppNotifCh, 0)
 	Expect(err).To(BeNil())
 
-	return ctx, plugin, conn
+	return ctx, plugin, goVppMux
 }
 
-func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, conn *core.Connection) {
-	conn.Disconnect()
+func interfaceConfiguratorTestTeardown(plugin *ifplugin.InterfaceConfigurator, goVppMock *mock.GoVPPMux) {
+	goVppMock.Close()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *core.Connection, ifaceidx.SwIfIndexRW) {
+func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.BFDConfigurator, *mock.GoVPPMux, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
 
-	c, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -89,25 +89,25 @@ func bfdConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.BFDConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
+	err = plugin.Init(logging.ForPlugin("test-log"), goVppMux, index)
 	Expect(err).To(BeNil())
 
-	return ctx, plugin, c, index
+	return ctx, plugin, goVppMux, index
 }
 
-func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, conn *core.Connection) {
-	conn.Disconnect()
+func bfdConfiguratorTestTeardown(plugin *ifplugin.BFDConfigurator, goVppMock *mock.GoVPPMux) {
+	goVppMock.Close()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *core.Connection) {
+func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.StnConfigurator, *mock.GoVPPMux) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	c, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -118,25 +118,25 @@ func stnConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.StnConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
+	err = plugin.Init(logging.ForPlugin("test-log"), goVppMux, index)
 	Expect(err).To(BeNil())
 
-	return ctx, plugin, c
+	return ctx, plugin, goVppMux
 }
 
-func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, conn *core.Connection) {
-	conn.Disconnect()
+func stnConfiguratorTestTeardown(plugin *ifplugin.StnConfigurator, goVppMock *mock.GoVPPMux) {
+	goVppMock.Close()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
-func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *core.Connection, ifaceidx.SwIfIndexRW) {
+func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifplugin.NatConfigurator, *mock.GoVPPMux, ifaceidx.SwIfIndexRW) {
 	RegisterTestingT(t)
 
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	c, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).To(BeNil())
 
 	// initialize index
@@ -147,22 +147,22 @@ func natConfiguratorTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *ifp
 
 	// Test init
 	plugin := &ifplugin.NatConfigurator{}
-	err = plugin.Init(logging.ForPlugin("test-log"), c, index)
+	err = plugin.Init(logging.ForPlugin("test-log"), goVppMux, index)
 	Expect(err).To(BeNil())
 
-	return ctx, plugin, c, index
+	return ctx, plugin, goVppMux, index
 }
 
-func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, conn *core.Connection) {
-	conn.Disconnect()
+func natConfiguratorTestTeardown(plugin *ifplugin.NatConfigurator, goVppMux *mock.GoVPPMux) {
+	goVppMux.Close()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
 // Tests InterfaceConfigurator resync
 func TestDataResyncResync(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -213,8 +213,8 @@ func TestDataResyncResync(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with SwIfIndex 0
 func TestDataResyncResyncIdx0(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -264,8 +264,8 @@ func TestDataResyncResyncIdx0(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with same interface name/tag
 func TestDataResyncResyncSameName(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -313,8 +313,8 @@ func TestDataResyncResyncSameName(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnamed interface
 func TestDataResyncResyncUnnamed(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -363,8 +363,8 @@ func TestDataResyncResyncUnnamed(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered VXLAN interface
 func TestDataResyncResyncUnnumbered(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -427,8 +427,8 @@ func TestDataResyncResyncUnnumbered(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered tap interface
 func TestDataResyncResyncUnnumberedTap(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -491,8 +491,8 @@ func TestDataResyncResyncUnnumberedTap(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered AF_PACKET interface
 func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -544,8 +544,8 @@ func TestDataResyncResyncUnnumberedAfPacket(t *testing.T) {
 
 // Tests InterfaceConfigurator resync with unnumbered MEMIF interface
 func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -611,8 +611,8 @@ func TestDataResyncResyncUnnumberedMemif(t *testing.T) {
 
 // Tests if InterfaceConfigurator VPP config is present
 func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -654,8 +654,8 @@ func TestDataResyncVerifyVPPConfigPresence(t *testing.T) {
 
 // Tests if InterfaceConfigurator VPP config is not present
 func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
-	ctx, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -694,8 +694,8 @@ func TestDataResyncVerifyVPPConfigPresenceNegative(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonType(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name: "if1",
@@ -712,8 +712,8 @@ func TestInterfaceModifyComparisonType(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonEnabled(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name:    "if1",
@@ -730,8 +730,8 @@ func TestInterfaceModifyComparisonEnabled(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonVrf(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name: "if1",
@@ -748,8 +748,8 @@ func TestInterfaceModifyComparisonVrf(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonContainerIP(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name:               "if1",
@@ -766,8 +766,8 @@ func TestInterfaceModifyComparisonContainerIP(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonDHCP(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name:          "if1",
@@ -784,8 +784,8 @@ func TestInterfaceModifyComparisonDHCP(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonMtu(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name: "if1",
@@ -807,8 +807,8 @@ func TestInterfaceModifyComparisonMtu(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonMAC(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name:        "if1",
@@ -828,8 +828,8 @@ func TestInterfaceModifyComparisonMAC(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonUnnumbered(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	// Unnumbered set only for NB
 	nbIf := &intf.Interfaces_Interface{
@@ -866,8 +866,8 @@ func TestInterfaceModifyComparisonUnnumbered(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonIPAddress(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	// Test IP count
 	nbIf := &intf.Interfaces_Interface{
@@ -894,8 +894,8 @@ func TestInterfaceModifyComparisonIPAddress(t *testing.T) {
 }
 
 func TestInterfaceModifyComparisonRxMode(t *testing.T) {
-	_, plugin, conn := interfaceConfiguratorTestInitialization(t)
-	defer interfaceConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux := interfaceConfiguratorTestInitialization(t)
+	defer interfaceConfiguratorTestTeardown(plugin, goVppMux)
 
 	nbIf := &intf.Interfaces_Interface{
 		Name: "if1",
@@ -925,8 +925,8 @@ func TestInterfaceModifyComparisonRxMode(t *testing.T) {
 
 // Tests BFDConfigurator session resync
 func TestDataResyncResyncSession(t *testing.T) {
-	ctx, plugin, conn, index := bfdConfiguratorTestInitialization(t)
-	defer bfdConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, index := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -971,8 +971,8 @@ func TestDataResyncResyncSession(t *testing.T) {
 
 // Tests BFDConfigurator session resync
 func TestDataResyncResyncSessionSameData(t *testing.T) {
-	ctx, plugin, conn, index := bfdConfiguratorTestInitialization(t)
-	defer bfdConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, index := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1022,8 +1022,8 @@ func TestDataResyncResyncSessionSameData(t *testing.T) {
 
 // Tests BFDConfigurator authorization key resync
 func TestDataResyncResyncAuthKey(t *testing.T) {
-	ctx, plugin, conn, swIfIdx := bfdConfiguratorTestInitialization(t)
-	defer bfdConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, swIfIdx := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1063,8 +1063,8 @@ func TestDataResyncResyncAuthKey(t *testing.T) {
 
 // Tests BFDConfigurator authorization key resync
 func TestDataResyncResyncAuthKeyNoMatch(t *testing.T) {
-	ctx, plugin, conn, _ := bfdConfiguratorTestInitialization(t)
-	defer bfdConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, _ := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1106,8 +1106,8 @@ func TestDataResyncResyncAuthKeyNoMatch(t *testing.T) {
 
 // Tests BFDConfigurator echo resync
 func TestDataResyncResyncEchoFunction(t *testing.T) {
-	ctx, plugin, conn, index := bfdConfiguratorTestInitialization(t)
-	defer bfdConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, index := bfdConfiguratorTestInitialization(t)
+	defer bfdConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1138,8 +1138,8 @@ func TestDataResyncResyncEchoFunction(t *testing.T) {
 
 // Tests StnConfigurator resync
 func TestDataResyncResyncStn(t *testing.T) {
-	ctx, plugin, conn := stnConfiguratorTestInitialization(t)
-	defer stnConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux := stnConfiguratorTestInitialization(t)
+	defer stnConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1165,8 +1165,8 @@ func TestDataResyncResyncStn(t *testing.T) {
 
 // Tests NATConfigurator NAT global resync
 func TestDataResyncResyncNatGlobal(t *testing.T) {
-	ctx, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1216,8 +1216,8 @@ func TestDataResyncResyncNatGlobal(t *testing.T) {
 
 // Tests NATConfigurator SNAT resync
 func TestDataResyncResyncSNat(t *testing.T) {
-	ctx, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies(nil)
 
@@ -1235,8 +1235,8 @@ func TestDataResyncResyncSNat(t *testing.T) {
 
 // Tests NATConfigurator DNAT resync
 func TestDataResyncResyncDNat(t *testing.T) {
-	ctx, plugin, conn, index := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, index := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1391,8 +1391,8 @@ func TestDataResyncResyncDNat(t *testing.T) {
 
 // Tests NATConfigurator DNAT resync
 func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
-	ctx, plugin, conn, index := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	ctx, plugin, goVppMux, index := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	ctx.MockReplies([]*vppcallmock.HandleReplies{
 		{
@@ -1590,8 +1590,8 @@ func TestDataResyncResyncDNatMultipleIPs(t *testing.T) {
 // Test unexported method resolving NB static mapping equal to the VPP static mapping. Mapping
 // is expected to be registered
 func TestResolveStaticMapping(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1606,8 +1606,8 @@ func TestResolveStaticMapping(t *testing.T) {
 // Test unexported method resolving NB static mapping with different local IP address as the VPP static mapping. Mapping
 // is not expected to be registered
 func TestResolveStaticMappingNoMatch1(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1623,8 +1623,8 @@ func TestResolveStaticMappingNoMatch1(t *testing.T) {
 // Test unexported method resolving NB static mapping with different external IP address as the VPP static mapping.
 // Mapping  is not expected to be registered
 func TestResolveStaticMappingNoMatch2(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1640,8 +1640,8 @@ func TestResolveStaticMappingNoMatch2(t *testing.T) {
 // Test unexported method resolving NB static mapping with different VRF as the VPP static mapping. Mapping
 // is not expected to be registered
 func TestResolveStaticMappingNoMatch3(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1657,8 +1657,8 @@ func TestResolveStaticMappingNoMatch3(t *testing.T) {
 // Test unexported method resolving NB static mapping with different count of local IP addresses as the VPP static
 // mapping. Mapping is not expected to be registered
 func TestResolveStaticMappingNoMatch4(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1674,8 +1674,8 @@ func TestResolveStaticMappingNoMatch4(t *testing.T) {
 // Test unexported method resolving NB load-balanced static mapping equal to the VPP load-balanced static mapping.
 // Mapping is expected to be registered
 func TestResolveStaticMappingLb(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1690,8 +1690,8 @@ func TestResolveStaticMappingLb(t *testing.T) {
 // Test unexported method resolving NB load-balanced static mapping with different local IP in one of the entries.
 // Mapping is expected to not be registered
 func TestResolveStaticMappingLbNoMatch1(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1707,8 +1707,8 @@ func TestResolveStaticMappingLbNoMatch1(t *testing.T) {
 // Test unexported method resolving NB load-balanced static mapping with different external IP.
 // Mapping is expected to not be registered
 func TestResolveStaticMappingLbNoMatch2(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1724,8 +1724,8 @@ func TestResolveStaticMappingLbNoMatch2(t *testing.T) {
 // Test unexported method resolving NB load-balanced static mapping with different VRF.
 // Mapping is expected to not be registered
 func TestResolveStaticMappingLbNoMatch3(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1741,8 +1741,8 @@ func TestResolveStaticMappingLbNoMatch3(t *testing.T) {
 // Test unexported method resolving NB load-balanced static mapping with different count of local IP entries.
 // Mapping is expected to not be registered
 func TestResolveStaticMappingLbNoMatch4(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var idMappings []*nat.Nat44DNat_DNatConfig_IdentityMapping
 
@@ -1758,8 +1758,8 @@ func TestResolveStaticMappingLbNoMatch4(t *testing.T) {
 // Test unexported method resolving NB identity mapping equal to the VPP identity mapping.
 // Mapping is expected to be registered.
 func TestResolveIdentityMapping(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
 
@@ -1774,8 +1774,8 @@ func TestResolveIdentityMapping(t *testing.T) {
 // Test unexported method resolving NB identity mapping with different IP address.
 // Mapping is expected to not be registered.
 func TestResolveIdentityMappingNoMatch1(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
 
@@ -1791,8 +1791,8 @@ func TestResolveIdentityMappingNoMatch1(t *testing.T) {
 // Test unexported method resolving NB identity mapping with different VRF.
 // Mapping is expected to not be registered.
 func TestResolveIdentityMappingNoMatch2(t *testing.T) {
-	_, plugin, conn, _ := natConfiguratorTestInitialization(t)
-	defer natConfiguratorTestTeardown(plugin, conn)
+	_, plugin, goVppMux, _ := natConfiguratorTestInitialization(t)
+	defer natConfiguratorTestTeardown(plugin, goVppMux)
 
 	var stMappings []*nat.Nat44DNat_DNatConfig_StaticMapping
 

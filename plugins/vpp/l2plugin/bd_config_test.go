@@ -17,9 +17,9 @@ package l2plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
@@ -34,7 +34,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator) {
+func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, ifaceidx.SwIfIndexRW, chan l2plugin.BridgeDomainStateMessage, *l2plugin.BDConfigurator) {
 	RegisterTestingT(t)
 
 	// Initialize notification channel
@@ -50,9 +50,9 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 
 	// Create connection
 	mockCtx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(mockCtx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(mockCtx)
 	Expect(err).To(BeNil())
 
 	// Create plugin logger
@@ -60,22 +60,22 @@ func bdConfigTestInitialization(t *testing.T) (*vppcallmock.TestCtx, *core.Conne
 
 	// Test initialization
 	bdConfiguratorPlugin := &l2plugin.BDConfigurator{}
-	err = bdConfiguratorPlugin.Init(pluginLogger, connection, swIfIndex, notifChan)
+	err = bdConfiguratorPlugin.Init(pluginLogger, goVppMux, swIfIndex, notifChan)
 	Expect(err).To(BeNil())
 
-	return mockCtx, connection, swIfIndex, notifChan, bdConfiguratorPlugin
+	return mockCtx, goVppMux, swIfIndex, notifChan, bdConfiguratorPlugin
 }
 
-func bdConfigTeardown(conn *core.Connection, plugin *l2plugin.BDConfigurator) {
-	conn.Disconnect()
+func bdConfigTeardown(goVppMux *mock.GoVPPMux, plugin *l2plugin.BDConfigurator) {
+	goVppMux.Close()
 	Expect(plugin.Close()).To(Succeed())
 	logging.DefaultRegistry.ClearRegistry()
 }
 
 // Tests configuration of bridge domain
 func TestBDConfigurator_ConfigureBridgeDomain(t *testing.T) {
-	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
@@ -92,7 +92,7 @@ func TestBDConfigurator_ConfigureBridgeDomain(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -118,8 +118,8 @@ func TestBDConfigurator_ConfigureBridgeDomain(t *testing.T) {
 
 // Tests modification of bridge domain (recreating it)
 func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
-	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
@@ -139,7 +139,7 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 		MacAge:              15,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -160,7 +160,7 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -187,8 +187,8 @@ func TestBDConfigurator_ModifyBridgeDomainRecreate(t *testing.T) {
 
 // Tests modification of bridge domain (bridge domain not found)
 func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
-	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
@@ -205,7 +205,7 @@ func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if1",
+				Name:                    "if1",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -226,7 +226,7 @@ func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -252,8 +252,8 @@ func TestBDConfigurator_ModifyBridgeDomainNotFound(t *testing.T) {
 
 // Tests modification of bridge domain (bridge domain already present)
 func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
-	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
 	ctx.MockVpp.MockReply(&l22.BdIPMacAddDelReply{})
@@ -270,7 +270,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -293,7 +293,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -314,7 +314,7 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: false,
 				SplitHorizonGroup:       1,
 			},
@@ -340,8 +340,8 @@ func TestBDConfigurator_ModifyBridgeDomainFound(t *testing.T) {
 
 // Tests deletion of bridge domain
 func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
-	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainAddDelReply{})
 
@@ -355,7 +355,7 @@ func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -378,7 +378,7 @@ func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -399,8 +399,8 @@ func TestBDConfigurator_DeleteBridgeDomain(t *testing.T) {
 
 // Tests resolving of created interface (not found)
 func TestBDConfigurator_ResolveCreatedInterfaceNotFound(t *testing.T) {
-	_, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	_, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	err := plugin.ResolveCreatedInterface("test", 0)
 	Expect(err).To(BeNil())
@@ -408,8 +408,8 @@ func TestBDConfigurator_ResolveCreatedInterfaceNotFound(t *testing.T) {
 
 // Tests resolving of created interface (present)
 func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
-	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{
 		BdID:         1,
@@ -442,7 +442,7 @@ func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "test",
+				Name:                    "test",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -466,8 +466,8 @@ func TestBDConfigurator_ResolveCreatedInterfaceFound(t *testing.T) {
 
 // Tests checks that calling Resolve twice with the same interface registers it to the metadata only once
 func TestBDConfigurator_ResolveCreatedInterfaceDuplicated(t *testing.T) {
-	ctx, conn, ifIndexes, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, ifIndexes, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	// Register bridge domain (as created)
 	plugin.GetBdIndexes().RegisterName("bd1", 1, &l2idx.BdMetadata{
@@ -506,8 +506,8 @@ func TestBDConfigurator_ResolveCreatedInterfaceDuplicated(t *testing.T) {
 
 // Tests resolving of deleted interface (not found)
 func TestBDConfigurator_ResolveDeletedInterfaceNotFound(t *testing.T) {
-	_, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	_, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	err := plugin.ResolveDeletedInterface("test")
 	Expect(err).To(BeNil())
@@ -515,8 +515,8 @@ func TestBDConfigurator_ResolveDeletedInterfaceNotFound(t *testing.T) {
 
 // Tests resolving of deleted interface (present)
 func TestBDConfigurator_ResolveDeletedInterfaceFound(t *testing.T) {
-	ctx, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&l22.BridgeDomainDetails{
 		BdID:         1,
@@ -549,7 +549,7 @@ func TestBDConfigurator_ResolveDeletedInterfaceFound(t *testing.T) {
 		MacAge:              20,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "test",
+				Name:                    "test",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       1,
 			},
@@ -572,8 +572,8 @@ func TestBDConfigurator_ResolveDeletedInterfaceFound(t *testing.T) {
 
 // Tests configuration and modification of bridge domain with 4 interfaces
 func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
-	ctx, conn, index, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	ctx, goVppMux, index, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	// Register interfaces to index
 	index.RegisterName("if0", 0, &interfaces.Interfaces_Interface{
@@ -669,7 +669,7 @@ func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
 				Name: "if3",
 			},
 			{
-				Name: "if4",
+				Name:                    "if4",
 				BridgedVirtualInterface: true,
 			},
 			{
@@ -713,7 +713,7 @@ func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
 				Name: "if4",
 			},
 			{
-				Name: "if5",
+				Name:                    "if5",
 				BridgedVirtualInterface: true,
 			},
 		},
@@ -731,8 +731,8 @@ func TestBDConfigurator_FourInterfacesModify(t *testing.T) {
 
 // Tests invalid bridge domain with 2 BVI interfaces
 func TestBDConfigurator_TwoBVI(t *testing.T) {
-	_, conn, _, _, plugin := bdConfigTestInitialization(t)
-	defer bdConfigTeardown(conn, plugin)
+	_, goVppMux, _, _, plugin := bdConfigTestInitialization(t)
+	defer bdConfigTeardown(goVppMux, plugin)
 
 	// Create incorrect domain
 	bdData := &l2.BridgeDomains_BridgeDomain{
@@ -743,11 +743,11 @@ func TestBDConfigurator_TwoBVI(t *testing.T) {
 		Learn:               true,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
-				Name: "if0",
+				Name:                    "if0",
 				BridgedVirtualInterface: true,
 			},
 			{
-				Name: "if1",
+				Name:                    "if1",
 				BridgedVirtualInterface: true,
 			},
 		},

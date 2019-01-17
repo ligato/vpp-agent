@@ -17,9 +17,9 @@ package l3plugin_test
 import (
 	"testing"
 
-	"git.fd.io/govpp.git/core"
+	"github.com/ligato/vpp-agent/plugins/govppmux/mock"
 
-	"git.fd.io/govpp.git/adapter/mock"
+	govppmock "git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
@@ -33,8 +33,8 @@ import (
 // Test adding of ARP proxy entry
 func TestAddInterface(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
 	ifIndexes.GetMapping().RegisterName("tap2", 2, nil)
@@ -75,8 +75,8 @@ func TestAddInterface(t *testing.T) {
 // Test deleting of ARP proxy entry
 func TestDeleteInterface(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
 	ifIndexes.GetMapping().RegisterName("tap2", 2, nil)
@@ -130,8 +130,8 @@ func TestDeleteInterface(t *testing.T) {
 // Test deleting of ARP proxy entry
 func TestModifyInterface(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
 	ifIndexes.GetMapping().RegisterName("tap2", 2, nil)
@@ -197,8 +197,8 @@ func TestModifyInterface(t *testing.T) {
 // Test adding of ARP proxy range
 func TestAddRange(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, _ := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
@@ -242,8 +242,8 @@ func TestAddRange(t *testing.T) {
 // Test deleting of ARP proxy range
 func TestDeleteRange(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, _ := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	plugin.GetArpRngIndexes().RegisterName("proxyArpIf1", 1, nil)
 	Expect(plugin.GetArpRngIndexes().ListNames()).To(HaveLen(1))
@@ -290,8 +290,8 @@ func TestDeleteRange(t *testing.T) {
 // Test modification of ARP proxy range
 func TestModifyRange1(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, _ := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	plugin.GetArpRngIndexes().RegisterName("proxyArpIf1", 1, nil)
 	Expect(plugin.GetArpRngIndexes().ListNames()).To(HaveLen(1))
@@ -358,8 +358,8 @@ func TestModifyRange1(t *testing.T) {
 // Test resolution of new registered interface for proxy ARP
 func TestArpProxyResolveCreatedInterface(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, _ := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, _ := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	err := plugin.AddInterface(&l3.ProxyArpInterfaces_InterfaceList{
 		Label:      "proxyArpIf2",
@@ -380,8 +380,8 @@ func TestArpProxyResolveCreatedInterface(t *testing.T) {
 // Test resolution of new registered interface for proxy ARP
 func TestArpProxyResolveDeletedInterface(t *testing.T) {
 	// Setup
-	ctx, connection, plugin, ifIndexes := proxyarpTestSetup(t)
-	defer proxyarpTestTeardown(connection, plugin)
+	ctx, goVppMux, plugin, ifIndexes := proxyarpTestSetup(t)
+	defer proxyarpTestTeardown(goVppMux, plugin)
 
 	ifIndexes.GetMapping().RegisterName("tap1", 1, nil)
 
@@ -402,26 +402,26 @@ func TestArpProxyResolveDeletedInterface(t *testing.T) {
 }
 
 // Test Setup
-func proxyarpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *core.Connection, *l3plugin.ProxyArpConfigurator, ifaceidx.SwIfIndex) {
+func proxyarpTestSetup(t *testing.T) (*vppcallmock.TestCtx, *mock.GoVPPMux, *l3plugin.ProxyArpConfigurator, ifaceidx.SwIfIndex) {
 	RegisterTestingT(t)
 	ctx := &vppcallmock.TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp: govppmock.NewVppAdapter(),
 	}
-	connection, err := core.Connect(ctx.MockVpp)
+	goVppMux, err := mock.NewMockGoVPPMux(ctx)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	plugin := &l3plugin.ProxyArpConfigurator{}
 	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logging.ForPlugin("test-log"), "l3-plugin", nil))
 
-	err = plugin.Init(logging.ForPlugin("test-log"), connection, ifIndexes)
+	err = plugin.Init(logging.ForPlugin("test-log"), goVppMux, ifIndexes)
 	Expect(err).To(BeNil())
 
-	return ctx, connection, plugin, ifIndexes
+	return ctx, goVppMux, plugin, ifIndexes
 }
 
 // Test Teardown
-func proxyarpTestTeardown(connection *core.Connection, plugin *l3plugin.ProxyArpConfigurator) {
-	connection.Disconnect()
+func proxyarpTestTeardown(goVppMux *mock.GoVPPMux, plugin *l3plugin.ProxyArpConfigurator) {
+	goVppMux.Close()
 	Expect(plugin.Close()).To(BeNil())
 	logging.DefaultRegistry.ClearRegistry()
 }
