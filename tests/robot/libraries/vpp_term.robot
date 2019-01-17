@@ -419,6 +419,44 @@ vpp_term: Show Local SIDs
     ${out}=            vpp_term: Issue Command  ${node}   sh sr localsids
     [Return]           ${out}
 
+vpp_term: Check DNAT exists
+    [Arguments]        ${node}     ${dnat_file}    #${interface}    ${address}
+    [Documentation]    Checking if specified dnat exists
+    ${localsidsStr}=   vpp_term: Show DNAT Static Mapping    ${node}
+    Create File        /tmp/dnat_config_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=   OperatingSystem.Get File    /tmp/dnat_config_output.txt
+    ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
+    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/${dnat_file}
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Should Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Show DNAT Static Mapping
+    [Arguments]        ${node}
+    [Documentation]    Show locasids through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   sh nat44 static mappings
+    [Return]           ${out}
+
+vpp_term: Check DNAT Global exists
+    [Arguments]        ${node}     ${dnat_file}    #${interface}    ${address}
+    [Documentation]    Checking if specified dnat exists
+    ${localsidsStr}=   vpp_term: Show DNAT Global Config    ${node}
+    Create File        /tmp/dnat_config_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=   OperatingSystem.Get File    /tmp/dnat_config_output.txt
+    ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
+    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/${dnat_file}
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Should Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Show DNAT Global Config
+    [Arguments]        ${node}
+    [Documentation]    Show locasids through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   sh nat44 interfaces
+    [Return]           ${out}
+
 vpp_term: Check Local SID Deleted
     [Arguments]        ${node}     ${sidAddress}
     [Documentation]    Checking if specified local sid will be(or already is) deleted
