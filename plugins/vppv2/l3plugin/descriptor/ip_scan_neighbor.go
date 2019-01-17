@@ -74,7 +74,6 @@ func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescri
 		NBKeyPrefix:        vpp.IPScanNeighModel.KeyPrefix(),
 		ValueTypeName:      vpp.IPScanNeighModel.ProtoName(),
 		KeySelector:        vpp.IPScanNeighModel.IsKeyValid,
-		KeyLabel:           vpp.IPScanNeighModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPScanNeighbors,
 		Add:                d.Add,
 		Modify:             d.Modify,

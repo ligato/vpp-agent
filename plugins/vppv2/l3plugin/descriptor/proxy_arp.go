@@ -60,7 +60,6 @@ func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
 		NBKeyPrefix:        vpp.ProxyARPModel.KeyPrefix(),
 		ValueTypeName:      vpp.ProxyARPModel.ProtoName(),
 		KeySelector:        vpp.ProxyARPModel.IsKeyValid,
-		KeyLabel:           vpp.ProxyARPModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentProxyArps,
 		Add:                d.Add,
 		Modify:             d.Modify,

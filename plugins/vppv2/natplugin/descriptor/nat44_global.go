@@ -91,7 +91,6 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 		NBKeyPrefix:        vpp.NAT44GlobalModel.KeyPrefix(),
 		ValueTypeName:      vpp.NAT44GlobalModel.ProtoName(),
 		KeySelector:        vpp.NAT44GlobalModel.IsKeyValid,
-		KeyLabel:           vpp.NAT44GlobalModel.StripKeyPrefix,
 		ValueComparator:    d.EquivalentNAT44Global,
 		Add:                d.Add,
 		Delete:             d.Delete,
