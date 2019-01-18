@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 
-	"github.com/ligato/vpp-agent/idxvpp2"
+	"github.com/ligato/vpp-agent/pkg/idxvpp2"
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"

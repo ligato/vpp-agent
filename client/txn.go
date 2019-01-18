@@ -16,7 +16,7 @@ package client
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api/models"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // Transaction prepares request data.

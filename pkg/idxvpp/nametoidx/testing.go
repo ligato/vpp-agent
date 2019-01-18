@@ -15,11 +15,10 @@
 package nametoidx
 
 import (
-	"github.com/ligato/vpp-agent/idxvpp"
-
 	"testing"
 	"time"
 
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 	. "github.com/onsi/gomega"
 )
 

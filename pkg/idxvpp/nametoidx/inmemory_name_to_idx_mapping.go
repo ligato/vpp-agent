@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 )
 
 const idxKey = "idxKey"

@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
 	"github.com/ligato/vpp-agent/api"
-	"github.com/ligato/vpp-agent/api/models"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // Local is global client for direct local access.

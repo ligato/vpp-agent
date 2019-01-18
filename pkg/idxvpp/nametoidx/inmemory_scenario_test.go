@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 	"github.com/onsi/gomega"
 )
 

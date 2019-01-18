@@ -17,7 +17,7 @@ package cacheutil
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/vpp-agent/idxvpp"
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 )
 
 // CacheHelper is a helper the implementation of which is reused among multiple typesafe Caches.

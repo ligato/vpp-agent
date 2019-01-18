@@ -15,9 +15,9 @@
 package linux
 
 import (
-	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 type (

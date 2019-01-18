@@ -19,7 +19,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/vpp-agent/api/models/vpp"

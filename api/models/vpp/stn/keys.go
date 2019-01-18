@@ -15,7 +15,7 @@
 package vpp_stn
 
 import (
-	"github.com/ligato/vpp-agent/api/models"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // ModuleName is the module name used for models.

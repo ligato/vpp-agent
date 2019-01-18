@@ -15,7 +15,6 @@
 package vpp
 
 import (
-	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/api/models/vpp/acl"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -24,6 +23,7 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/api/models/vpp/stn"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 type (

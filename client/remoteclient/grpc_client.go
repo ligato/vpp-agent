@@ -6,8 +6,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/api"
-	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/client"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/dispatcher"
 )
 

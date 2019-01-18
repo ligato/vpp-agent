@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	rpc "github.com/ligato/vpp-agent/api/dataconfigurator"
-	"github.com/ligato/vpp-agent/api/models"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/dispatcher"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
