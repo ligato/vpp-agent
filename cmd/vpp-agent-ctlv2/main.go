@@ -30,6 +30,11 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 )
 
+const (
+	etcdLabel  = "etcd"
+	redisLabel = "redis"
+)
+
 func main() {
 	// Read args
 	args := os.Args
@@ -40,11 +45,11 @@ func main() {
 		usage()
 		return
 	}
-	// Check if second argument is a command or path to the ETCD config file
-	var etcdCfg string
+	// Check if second argument is a command or a label for the ETCD or Redis config file
+	var dbCfg string
 	var cmdSet []string
-	if argsLen >= 2 && !strings.HasPrefix(args[1], "-") {
-		etcdCfg = args[1]
+	if argsLen >= 2 && (strings.HasPrefix(args[1], etcdLabel) || (strings.HasPrefix(args[1], redisLabel))) {
+		dbCfg = args[1]
 		// Remove first two arguments
 		cmdSet = args[2:]
 	} else {
@@ -56,9 +61,11 @@ func main() {
 		fmt.Printf("failed to parse environment variables")
 		return
 	}
-	ctl, err := data.NewVppAgentCtl(etcdCfg, cmdSet)
+	isEtcd, cfg := removeDBLabel(dbCfg)
+	ctl, err := data.NewVppAgentCtl(cfg, cmdSet, isEtcd)
 	if err != nil {
 		// Error is already printed in 'bytes_broker_impl.go'
+		logrus.DefaultLogger().Warnf("err: %v", err)
 		usage()
 		return
 	}
@@ -309,4 +316,22 @@ func usage() {
 	} else {
 		logrus.DefaultLogger().Print(buffer.String())
 	}
+}
+
+// Returns true if given label belongs to ETCD database and also returns the config
+func removeDBLabel(dbCfg string) (isETCD bool, path string) {
+	if dbCfg == "" {
+		isETCD = true // use ETCD by default
+		return
+	}
+	if strings.HasPrefix(dbCfg, etcdLabel) {
+		path = strings.Replace(dbCfg, etcdLabel, "", 1)
+		isETCD = true
+	} else {
+		path = strings.Replace(dbCfg, redisLabel, "", 1)
+	}
+	if len(path) > 0 && path[:1] == "=" {
+		path = path[1:]
+	}
+	return
 }

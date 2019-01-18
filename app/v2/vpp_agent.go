@@ -73,6 +73,7 @@ func New() *VPPAgent {
 
 	writers := datasync.KVProtoWriters{
 		etcdDataSync,
+		redisDataSync,
 		consulDataSync,
 	}
 	statuscheck.DefaultPlugin.Transport = writers
@@ -88,6 +89,7 @@ func New() *VPPAgent {
 	watchers := datasync.KVProtoWatchers{
 		local.DefaultRegistry,
 		etcdDataSync,
+		redisDataSync,
 		consulDataSync,
 	}
 	kvscheduler.DefaultPlugin.Watcher = watchers

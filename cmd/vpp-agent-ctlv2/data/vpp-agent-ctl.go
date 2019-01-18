@@ -15,9 +15,7 @@
 package data
 
 import (
-	"fmt"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
@@ -29,8 +27,8 @@ type VppAgentCtl interface {
 	// GetCommands returns provided command set
 	GetCommands() []string
 
-	// Etcd access
-	EtcdCtl
+	// DB access
+	DbCtl
 	// Other interfaces with configuration related methods
 	ACLCtl
 	InterfacesCtl
@@ -47,23 +45,22 @@ type VppAgentCtlImpl struct {
 	Log             logging.Logger
 	commands        []string
 	serviceLabel    servicelabel.Plugin
-	bytesConnection *etcd.BytesConnectionEtcd
+	bytesConnection keyval.BytesBroker
 	broker          keyval.ProtoBroker
 }
 
 // NewVppAgentCtl creates new VppAgentCtl object with initialized fields
-func NewVppAgentCtl(etcdCfg string, cmdSet []string) (*VppAgentCtlImpl, error) {
+func NewVppAgentCtl(dbCfg string, cmdSet []string, etcd bool) (*VppAgentCtlImpl, error) {
 	var err error
-	ctl := &VppAgentCtlImpl{
-		Log:      logrus.DefaultLogger(),
-		commands: cmdSet,
-	}
+	ctl := initVppAgentCtl(cmdSet)
 
-	if err = ctl.serviceLabel.Init(); err != nil {
-		return nil, fmt.Errorf("failed to init servicvice label plugin")
+	if etcd {
+		// Establish ETCD connection
+		ctl.bytesConnection, ctl.broker, err = CreateEtcdClient(dbCfg, ctl.serviceLabel.GetAgentPrefix(), ctl.Log)
+	} else {
+		// Establish Redis connection
+		ctl.bytesConnection, ctl.broker, err = CreateRedisClient(dbCfg, ctl.serviceLabel.GetAgentPrefix(), ctl.Log)
 	}
-	// Establish ETCD connection
-	ctl.bytesConnection, ctl.broker, err = ctl.CreateEtcdClient(etcdCfg)
 
 	return ctl, err
 }
@@ -71,4 +68,16 @@ func NewVppAgentCtl(etcdCfg string, cmdSet []string) (*VppAgentCtlImpl, error) {
 // GetCommands returns origin al vpp-agent-ctl commands
 func (ctl *VppAgentCtlImpl) GetCommands() []string {
 	return ctl.commands
+}
+
+func initVppAgentCtl(cmdSet []string) *VppAgentCtlImpl {
+	ctl := &VppAgentCtlImpl{
+		Log:      logrus.DefaultLogger(),
+		commands: cmdSet,
+	}
+
+	if err := ctl.serviceLabel.Init(); err != nil {
+		ctl.Log.Panic("failed to init servicvice label plugin")
+	}
+	return ctl
 }

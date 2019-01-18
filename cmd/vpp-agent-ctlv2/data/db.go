@@ -1,17 +1,3 @@
-// Copyright (c) 2018 Cisco and/or its affiliates.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package data
 
 import (
@@ -21,17 +7,18 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/ligato/cn-infra/db/keyval/etcd"
+	"github.com/ligato/cn-infra/db/keyval/redis"
+	"github.com/ligato/cn-infra/logging"
+
 	"github.com/ligato/cn-infra/config"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/kvproto"
 )
 
-// EtcdCtl provides ETCD crud methods for vpp-agent-ctl
-type EtcdCtl interface {
-	// CreateEtcdClient creates a new connection to etcd
-	CreateEtcdClient(configFile string) (*etcd.BytesConnectionEtcd, keyval.ProtoBroker, error)
+// DbCtl provides ETCD crud methods for vpp-agent-ctl
+type DbCtl interface {
 	// ListAllAgentKeys prints all agent keys
 	ListAllAgentKeys()
 	// Put adds new data to etcd
@@ -62,11 +49,11 @@ func (ctl *VppAgentCtlImpl) ListAllAgentKeys() {
 }
 
 // CreateEtcdClient uses environment variable or ETCD config file to establish connection
-func (ctl *VppAgentCtlImpl) CreateEtcdClient(configFile string) (*etcd.BytesConnectionEtcd, keyval.ProtoBroker, error) {
+func CreateEtcdClient(configFile, agentPrefix string, log logging.Logger) (*etcd.BytesConnectionEtcd, keyval.ProtoBroker, error) {
 	var err error
 
 	if configFile == "" {
-		configFile = os.Getenv("ETCD_CONFIG")
+		configFile = os.Getenv("REDIS_CONFIG")
 	}
 
 	cfg := &etcd.Config{}
@@ -78,16 +65,51 @@ func (ctl *VppAgentCtlImpl) CreateEtcdClient(configFile string) (*etcd.BytesConn
 	}
 	etcdConfig, err := etcd.ConfigToClient(cfg)
 	if err != nil {
-		ctl.Log.Fatal(err)
+		log.Fatal(err)
 	}
 
-	bDB, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, ctl.Log)
+	bDB, err := etcd.NewEtcdConnectionWithBytes(*etcdConfig, log)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return bDB, kvproto.NewProtoWrapperWithSerializer(bDB, &keyval.SerializerJSON{}).
-		NewBroker(ctl.serviceLabel.GetAgentPrefix()), nil
+		NewBroker(agentPrefix), nil
+}
+
+// CreateRedisClient uses environment variable or Redis config file to establish connection
+func CreateRedisClient(configFile, agentPrefix string, log logging.Logger) (*redis.BytesConnectionRedis, keyval.ProtoBroker, error) {
+	var err error
+
+	if configFile == "" {
+		configFile = os.Getenv("ETCD_CONFIG")
+	}
+	if configFile == "" {
+		configFile = "/opt/vpp-agent/dev/redis.yaml"
+	}
+	if configFile == "" {
+		log.Fatal("config file path not available")
+	}
+
+	cfg := redis.NodeConfig{}
+	if configFile != "" {
+		err = config.ParseConfigFromYamlFile(configFile, &cfg)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	redisConfig, err := redis.ConfigToClient(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bDB, err := redis.NewBytesConnection(redisConfig, log)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bDB, kvproto.NewProtoWrapperWithSerializer(bDB, &keyval.SerializerJSON{}).
+		NewBroker(agentPrefix), nil
 }
 
 // Get uses ETCD connection to get value for specific key
