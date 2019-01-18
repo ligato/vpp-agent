@@ -17,21 +17,21 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -86,14 +86,14 @@ func (dsl *PutDSL) LinuxInterface(val *linux_interfaces.Interface) linuxclient.P
 }
 
 // LinuxArpEntry adds a request to create or update Linux ARP entry.
-func (dsl *PutDSL) LinuxArpEntry(val *linux_l3.StaticARPEntry) linuxclient.PutDSL {
-	dsl.parent.txn.Put(linux_l3.StaticArpKey(val.Interface, val.IpAddress), val)
+func (dsl *PutDSL) LinuxArpEntry(val *linux_l3.ARPEntry) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linux_l3.ArpKey(val.Interface, val.IpAddress), val)
 	return dsl
 }
 
 // LinuxRoute adds a request to create or update Linux route.
-func (dsl *PutDSL) LinuxRoute(val *linux_l3.StaticRoute) linuxclient.PutDSL {
-	dsl.parent.txn.Put(linux_l3.StaticRouteKey(val.DstNetwork, val.OutgoingInterface), val)
+func (dsl *PutDSL) LinuxRoute(val *linux_l3.Route) linuxclient.PutDSL {
+	dsl.parent.txn.Put(linux_l3.RouteKey(val.DstNetwork, val.OutgoingInterface), val)
 	return dsl
 }
 
@@ -149,7 +149,7 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPair) linuxclient.PutDSL {
 }
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
-func (dsl *PutDSL) StaticRoute(val *l3.StaticRoute) linuxclient.PutDSL {
+func (dsl *PutDSL) StaticRoute(val *l3.Route) linuxclient.PutDSL {
 	dsl.vppPut.StaticRoute(val)
 	return dsl
 }
@@ -245,13 +245,13 @@ func (dsl *DeleteDSL) LinuxInterface(interfaceName string) linuxclient.DeleteDSL
 
 // LinuxArpEntry adds a request to delete Linux ARP entry.
 func (dsl *DeleteDSL) LinuxArpEntry(ifaceName string, ipAddr string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(linux_l3.StaticArpKey(ifaceName, ipAddr))
+	dsl.parent.txn.Delete(linux_l3.ArpKey(ifaceName, ipAddr))
 	return dsl
 }
 
 // LinuxRoute adds a request to delete Linux route.
 func (dsl *DeleteDSL) LinuxRoute(dstAddr, outIfaceName string) linuxclient.DeleteDSL {
-	dsl.parent.txn.Delete(linux_l3.StaticRouteKey(dstAddr, outIfaceName))
+	dsl.parent.txn.Delete(linux_l3.RouteKey(dstAddr, outIfaceName))
 	return dsl
 }
 

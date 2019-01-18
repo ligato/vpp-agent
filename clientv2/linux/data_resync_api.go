@@ -15,19 +15,19 @@
 package linuxclient
 
 import (
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	vpp_clientv2 "github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -40,9 +40,9 @@ type DataResyncDSL interface {
 	// LinuxInterface adds Linux interface to the RESYNC request.
 	LinuxInterface(intf *linux_interfaces.Interface) DataResyncDSL
 	// LinuxInterface adds Linux ARP entry to the RESYNC request.
-	LinuxArpEntry(arp *linux_l3.StaticARPEntry) DataResyncDSL
+	LinuxArpEntry(arp *linux_l3.ARPEntry) DataResyncDSL
 	// LinuxInterface adds Linux route to the RESYNC request.
-	LinuxRoute(route *linux_l3.StaticRoute) DataResyncDSL
+	LinuxRoute(route *linux_l3.Route) DataResyncDSL
 
 	// VppInterface adds VPP interface to the RESYNC request.
 	VppInterface(intf *vpp_interfaces.Interface) DataResyncDSL
@@ -64,7 +64,7 @@ type DataResyncDSL interface {
 	// XConnect adds VPP Cross Connect to the RESYNC request.
 	XConnect(xcon *vpp_l2.XConnectPair) DataResyncDSL
 	// StaticRoute adds VPP L3 Static Route to the RESYNC request.
-	StaticRoute(staticRoute *vpp_l3.StaticRoute) DataResyncDSL
+	StaticRoute(staticRoute *vpp_l3.Route) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
 	Arp(arp *vpp_l3.ARPEntry) DataResyncDSL
 	// ProxyArp adds L3 proxy ARP interfaces to the RESYNC request.

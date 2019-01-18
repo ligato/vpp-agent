@@ -16,22 +16,23 @@ package dbadapter
 
 import (
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -64,8 +65,8 @@ func (dsl *DataResyncDSL) LinuxInterface(val *linux_interfaces.Interface) linuxc
 }
 
 // LinuxArpEntry adds Linux ARP entry to the RESYNC request.
-func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.StaticARPEntry) linuxclient.DataResyncDSL {
-	key := linux_l3.StaticArpKey(val.Interface, val.IpAddress)
+func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.ARPEntry) linuxclient.DataResyncDSL {
+	key := linux_l3.ArpKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -73,8 +74,8 @@ func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.StaticARPEntry) linuxclien
 }
 
 // LinuxRoute adds Linux route to the RESYNC request.
-func (dsl *DataResyncDSL) LinuxRoute(val *linux_l3.StaticRoute) linuxclient.DataResyncDSL {
-	key := linux_l3.StaticRouteKey(val.DstNetwork, val.OutgoingInterface)
+func (dsl *DataResyncDSL) LinuxRoute(val *linux_l3.Route) linuxclient.DataResyncDSL {
+	key := linux_l3.RouteKey(val.DstNetwork, val.OutgoingInterface)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -133,7 +134,7 @@ func (dsl *DataResyncDSL) XConnect(xcon *l2.XConnectPair) linuxclient.DataResync
 }
 
 // StaticRoute adds VPP L3 Static Route to the RESYNC request.
-func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.StaticRoute) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.Route) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.StaticRoute(staticRoute)
 	return dsl
 }
@@ -236,7 +237,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		toBeDeleted := keySet{}
 
 		// fill all known keys associated with the Linux network configuration:
-		keys, err := dsl.listKeys(interfaces.Prefix)
+		keys, err := dsl.listKeys(vpp.InterfaceModel.KeyPrefix())
 		if err != nil {
 			break
 		}

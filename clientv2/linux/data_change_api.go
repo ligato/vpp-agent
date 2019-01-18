@@ -15,19 +15,19 @@
 package linuxclient
 
 import (
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	vpp_acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	vpp_l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	vpp_clientv2 "github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
 	vpp_bfd "github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
 	vpp_l4 "github.com/ligato/vpp-agent/plugins/vpp/model/l4"
 	vpp_stn "github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	vpp_acl "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // DataChangeDSL defines the Domain Specific Language (DSL) for data change
@@ -60,9 +60,9 @@ type PutDSL interface {
 	// LinuxInterface adds a request to create or update Linux network interface.
 	LinuxInterface(val *linux_interfaces.Interface) PutDSL
 	// LinuxArpEntry adds a request to crete or update Linux ARP entry
-	LinuxArpEntry(val *linux_l3.StaticARPEntry) PutDSL
+	LinuxArpEntry(val *linux_l3.ARPEntry) PutDSL
 	// LinuxRoute adds a request to crete or update Linux route
-	LinuxRoute(val *linux_l3.StaticRoute) PutDSL
+	LinuxRoute(val *linux_l3.Route) PutDSL
 
 	// VppInterface adds a request to create or update VPP network interface.
 	VppInterface(val *vpp_interfaces.Interface) PutDSL
@@ -84,7 +84,7 @@ type PutDSL interface {
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *vpp_l2.XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
-	StaticRoute(val *vpp_l3.StaticRoute) PutDSL
+	StaticRoute(val *vpp_l3.Route) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
 	Arp(arp *vpp_l3.ARPEntry) PutDSL
 	// ProxyArp adds a request to create or update VPP L3 proxy ARP.

@@ -31,7 +31,7 @@ message Item {
     Data data = 2;
 }
 
-// Data represents encoded data used for item
+// Data represents encoded data for an item.
 message Data {
     google.protobuf.Any any = 1;
 }

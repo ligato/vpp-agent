@@ -15,16 +15,14 @@
 package vppclient
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -38,15 +36,6 @@ type DataResyncDSL interface {
 	Interface(intf *interfaces.Interface) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.
 	ACL(acl *acl.Acl) DataResyncDSL
-	// BfdSession adds bidirectional forwarding detection session to the RESYNC
-	// request.
-	BfdSession(val *bfd.SingleHopBFD_Session) DataResyncDSL
-	// BfdAuthKeys adds bidirectional forwarding detection key to the RESYNC
-	// request.
-	BfdAuthKeys(val *bfd.SingleHopBFD_Key) DataResyncDSL
-	// BfdEchoFunction adds bidirectional forwarding detection echo function
-	// to the RESYNC request.
-	BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) DataResyncDSL
 	// BD adds Bridge Domain to the RESYNC request.
 	BD(bd *l2.BridgeDomain) DataResyncDSL
 	// BDFIB adds L2 Forwarding Information Base.
@@ -54,19 +43,15 @@ type DataResyncDSL interface {
 	// XConnect adds Cross Connect to the RESYNC request.
 	XConnect(xcon *l2.XConnectPair) DataResyncDSL
 	// StaticRoute adds L3 Static Route to the RESYNC request.
-	StaticRoute(staticRoute *l3.StaticRoute) DataResyncDSL
+	StaticRoute(staticRoute *l3.Route) DataResyncDSL
 	// Arp adds VPP L3 ARP to the RESYNC request.
 	Arp(arp *l3.ARPEntry) DataResyncDSL
 	// ProxyArp adds L3 proxy ARP interfaces to the RESYNC request.
 	ProxyArp(proxyArp *l3.ProxyARP) DataResyncDSL
 	// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
 	IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) DataResyncDSL
-	// L4Features adds L4 features to the RESYNC request
-	L4Features(val *l4.L4Features) DataResyncDSL
-	// AppNamespace adds VPP Application namespaces to the RESYNC request
-	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) DataResyncDSL
 	// StnRule adds Stn rule to the RESYNC request.
-	StnRule(stn *stn.STN_Rule) DataResyncDSL
+	StnRule(stn *stn.Rule) DataResyncDSL
 	// NAT44Global adds global NAT44 configuration to the RESYNC request.
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
 	// DNAT44 adds DNAT44 configuration to the RESYNC request

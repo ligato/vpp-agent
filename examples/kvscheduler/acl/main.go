@@ -22,12 +22,13 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
-	"github.com/ligato/vpp-agent/clientv2"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
+	"github.com/ligato/vpp-agent/plugins/dispatcher"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 /*
@@ -36,10 +37,11 @@ import (
 
 func main() {
 	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
+	dispatcher.DefaultPlugin.Watcher = local.DefaultRegistry
 
 	ep := &ExamplePlugin{
 		Scheduler:    &kvscheduler.DefaultPlugin,
+		Dispatcher:   &dispatcher.DefaultPlugin,
 		VPPIfPlugin:  &vpp_ifplugin.DefaultPlugin,
 		VPPACLPlugin: &vpp_aclplugin.DefaultPlugin,
 	}
@@ -56,6 +58,7 @@ func main() {
 // handles resync and changes in this example.
 type ExamplePlugin struct {
 	Scheduler    *kvscheduler.Scheduler
+	Dispatcher   *dispatcher.Plugin
 	VPPIfPlugin  *vpp_ifplugin.IfPlugin
 	VPPACLPlugin *vpp_aclplugin.ACLPlugin
 }
@@ -86,14 +89,13 @@ func testLocalClientWithScheduler() {
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC ===")
 
-	//txn := localclient.DataResyncRequest("example")
-	txn := clientv2.LocalClient.Resync()
-	err := txn.VPP().
+	txn := localclient.DataResyncRequest("example")
+	err := txn.
 		Interface(memif0).
 		ACL(acl0).
 		ACL(acl1).
 		ACL(acl3).
-		Commit()
+		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -107,13 +109,12 @@ func testLocalClientWithScheduler() {
 	acl0.Interfaces.Egress = nil
 	acl3.Rules[0].IpRule.Ip.SourceNetwork = "0.0.0.0/0" // this is actually equivalent to unspecified field
 
-	//txn2 := localclient.DataChangeRequest("example")
-	txn2 := clientv2.LocalClient.Change()
-	err = txn2.VPP().Put().
+	txn2 := localclient.DataChangeRequest("example")
+	err = txn2.Put().
 		ACL(acl0).
 		ACL(acl1).
 		ACL(acl3).
-		Commit()
+		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
 		return

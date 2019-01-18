@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
-	"github.com/ligato/vpp-agent/api/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"golang.org/x/net/context"
 
@@ -81,9 +80,17 @@ func (p *Plugin) Init() error {
 func (p *Plugin) AfterInit() (err error) {
 	go p.watchEvents()
 
+	nbPrefixes := p.KVScheduler.GetRegisteredNBKeyPrefixes()
+	if len(nbPrefixes) > 0 {
+		p.Log.Infof("starting watch for %d NB prefixes", len(nbPrefixes))
+	} else {
+		p.Log.Warnf("no NB prefixes found")
+	}
+
 	var prefixes []string
-	for _, nb := range p.KVScheduler.GetRegisteredNBKeyPrefixes() {
-		prefix := models.ConfigKeyPrefix + nb
+	for _, nb := range nbPrefixes {
+		prefix := nb
+		p.Log.Debugf("- watching NB prefix: %s", prefix)
 		prefixes = append(prefixes, prefix)
 	}
 
@@ -117,7 +124,13 @@ func (p *Plugin) watchEvents() {
 					Val: val,
 				})
 			}*/
-			kvPairs := e.GetChanges()
+			var kvPairs []datasync.ProtoWatchResp
+			for _, x := range e.GetChanges() {
+				kvPairs = append(kvPairs, &ProtoWatchResp{
+					Key:  x.GetKey(),
+					lazy: x,
+				})
+			}
 
 			ctx := context.Background()
 			//ctx = kvs.WithRetry(ctx, time.Second, true)
@@ -161,13 +174,14 @@ func (p *Plugin) watchEvents() {
 						Key:  x.GetKey(),
 						lazy: x,
 					})
+					p.Log.Debugf(" -- key: %s", x.GetKey())
 					keyVals = append(keyVals, x)
 					n++
 				}
 				if len(keyVals) > 0 {
-					p.Log.Debugf(" - Resync: %q (%v items)", prefix, len(keyVals))
+					p.Log.Debugf("= Resync: %q (%v items)", prefix, len(keyVals))
 				} else {
-					p.Log.Debugf(" - Resync: %q", prefix)
+					p.Log.Debugf("= Resync: %q (no items)", prefix)
 				}
 				for _, x := range keyVals {
 					p.Log.Debugf("\t - %q: (rev: %v)", x.GetKey(), x.GetRevision())
@@ -250,13 +264,13 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp
 
 	seqID, err := txn.Commit(ctx)
 	if err != nil {
-		p.Log.Errorf("Transaction %d failed: %v", seqID, err)
-		return err, nil
-	} else {
 		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
 			kvErrs = txErr.GetKVErrors()
-			p.Log.Warnf("Transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
+			p.Log.Errorf("Transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
+		} else {
+			p.Log.Errorf("Transaction %d failed: %v", seqID, err)
 		}
+	} else {
 		p.Log.Infof("Transaction %d successful!", seqID)
 		return err, kvErrs
 	}
