@@ -27,8 +27,12 @@ var (
 	// used for sending updates through single writer
 	UpdatesChannelSize = 100
 
-	minimumTimeout = time.Second / 50
+	// DefaultSafeUpdateTimeout is used as default timeout
+	// for waiting on result from updater.
+	DefaultSafeUpdateTimeout = time.Second
 )
+
+const minimumTimeout = time.Second / 100
 
 type updateTx struct {
 	updates []*update
@@ -50,7 +54,7 @@ func (c *Client) safeUpdate(updates ...*update) (prevVal []byte, err error) {
 		updates: updates,
 		done:    make(chan *result, 1),
 	}
-	timeoutDur := c.cfg.LockTimeout
+	timeoutDur := DefaultSafeUpdateTimeout
 	if timeoutDur < minimumTimeout {
 		timeoutDur = minimumTimeout
 	}
