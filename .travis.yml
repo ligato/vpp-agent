@@ -39,7 +39,7 @@ script:
   - make check-links || true
   - make lint
   - make dep-check
-  - make verify-binapi
+ # - make verify-binapi
   - make
   - make test-cover
 
