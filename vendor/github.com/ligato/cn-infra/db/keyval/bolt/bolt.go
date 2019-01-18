@@ -16,10 +16,8 @@ package bolt
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/boltdb/bolt"
@@ -44,8 +42,15 @@ var rootBucket = []byte("root")
 type Client struct {
 	db *bolt.DB
 
+	cfg Config
+
+	updateChan chan *updateTx
+
 	mu       sync.RWMutex
 	watchers []*prefixWatcher
+
+	wg   sync.WaitGroup
+	quit chan struct{}
 }
 
 // NewClient creates new client for Bolt using given config.
@@ -58,19 +63,32 @@ func NewClient(cfg *Config) (client *Client, err error) {
 	}
 	boltLogger.Infof("bolt path: %v", db.Path())
 
-	db.Update(func(tx *bolt.Tx) error {
+	err = db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(rootBucket)
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	return &Client{db: db}, nil
+	c := &Client{
+		db:         db,
+		cfg:        *cfg,
+		quit:       make(chan struct{}),
+		updateChan: make(chan *updateTx, UpdatesChannelSize),
+	}
+
+	c.wg.Add(1)
+	go c.startUpdater()
+
+	return c, nil
 }
 
-// NewTxn creates new transaction
-func (c *Client) NewTxn() keyval.BytesTxn {
-	return &txn{
-		db: c.db,
-	}
+// Close closes Bolt database.
+func (c *Client) Close() error {
+	close(c.quit)
+	c.wg.Wait()
+	return c.db.Close()
 }
 
 // GetValue returns data for the given key
@@ -95,17 +113,11 @@ func (c *Client) GetValue(key string) (data []byte, found bool, revision int64, 
 func (c *Client) Put(key string, data []byte, opts ...datasync.PutOption) (err error) {
 	boltLogger.Debugf("Put: %q (len=%d)", key, len(data))
 
-	var prevVal []byte
-	if err = c.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(rootBucket)
-		byteKey := []byte(key)
-
-		value := bucket.Get(byteKey)
-		if value != nil {
-			prevVal = append([]byte(nil), value...) // value needs to be copied
-		}
-		return bucket.Put(byteKey, data)
-	}); err != nil {
+	prevVal, err := c.safeUpdate(&update{
+		key:   []byte(key),
+		value: data,
+	})
+	if err != nil {
 		return err
 	}
 
@@ -123,20 +135,14 @@ func (c *Client) Put(key string, data []byte, opts ...datasync.PutOption) (err e
 func (c *Client) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
 	boltLogger.Debugf("Delete: %q", key)
 
-	var prevVal []byte
-	err = c.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(rootBucket)
-		byteKey := []byte(key)
-
-		if value := bucket.Get(byteKey); value != nil {
-			existed = true
-			prevVal = append([]byte(nil), value...) // value needs to be copied
-
-			return bucket.Delete(byteKey)
-		}
-
-		return fmt.Errorf("key %q not found in bucket", key)
+	prevVal, err := c.safeUpdate(&update{
+		key:   []byte(key),
+		value: nil,
 	})
+	if err != nil {
+		return false, err
+	}
+	existed = prevVal != nil
 
 	fmt.Printf("del: %v, %q\n", key, prevVal)
 	c.bumpWatchers(&watchEvent{
@@ -203,256 +209,49 @@ func (c *Client) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, 
 	return nil
 }
 
-type watchResp struct {
-	typ              datasync.Op
-	key              string
-	value, prevValue []byte
-	rev              int64
+// NewTxn creates new transaction
+func (c *Client) NewTxn() keyval.BytesTxn {
+	return &txn{
+		c: c,
+	}
 }
 
-// GetChangeType returns "Put" for BytesWatchPutResp.
-func (resp *watchResp) GetChangeType() datasync.Op {
-	return resp.typ
+// Txn allows grouping operations into the transaction. Transaction executes
+// multiple operations in a more efficient way in contrast to executing
+// them one by one.
+type txn struct {
+	c       *Client
+	updates []*update
 }
 
-// GetKey returns the key that the value has been inserted under.
-func (resp *watchResp) GetKey() string {
-	return resp.key
-}
-
-// GetValue returns the value that has been inserted.
-func (resp *watchResp) GetValue() []byte {
-	return resp.value
-}
-
-// GetPrevValue returns the previous value that has been inserted.
-func (resp *watchResp) GetPrevValue() []byte {
-	return resp.prevValue
-}
-
-// GetRevision returns the revision associated with the 'put' operation.
-func (resp *watchResp) GetRevision() int64 {
-	return resp.rev
-}
-
-func (c *Client) watch(resp func(watchResp keyval.BytesWatchResp), closeCh chan string, prefix string) error {
-	boltLogger.Debug("watch:", prefix)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	recvChan := c.watchPrefix(ctx, prefix)
-
-	go func(regPrefix string) {
-		defer cancel()
-		for {
-			select {
-			case ev, ok := <-recvChan:
-				if !ok {
-					boltLogger.WithField("prefix", prefix).
-						Debug("Watch recv chan was closed")
-					return
-				}
-				r := &watchResp{
-					typ:       ev.Type,
-					key:       ev.Key,
-					value:     ev.Value,
-					prevValue: ev.PrevValue,
-					rev:       ev.Revision,
-				}
-				resp(r)
-			case closeVal, ok := <-closeCh:
-				if !ok || closeVal == regPrefix {
-					boltLogger.WithField("prefix", prefix).
-						Debug("Watch ended")
-					return
-				}
-			}
-		}
-	}(prefix)
-
-	return nil
-}
-
-type watchEvent struct {
-	Type      datasync.Op
-	Key       string
-	Value     []byte
-	PrevValue []byte
-	Revision  int64
-}
-
-type prefixWatcher struct {
-	prefix  string
-	watchCh chan *watchEvent
-}
-
-func (c *Client) watchPrefix(ctx context.Context, prefix string) <-chan *watchEvent {
-	boltLogger.Debug("watchPrefix:", prefix)
-
-	ch := make(chan *watchEvent, 1)
-
-	c.mu.Lock()
-	index := len(c.watchers)
-	c.watchers = append(c.watchers, &prefixWatcher{
-		prefix:  prefix,
-		watchCh: ch,
+// Put adds a new 'put' operation to a previously created transaction.
+// If the <key> does not exist in the data store, a new key-value item
+// will be added to the data store. If <key> exists in the data store,
+// the existing value will be overwritten with the <value> from this
+// operation.
+func (t *txn) Put(key string, value []byte) keyval.BytesTxn {
+	t.updates = append(t.updates, &update{
+		key:   []byte(key),
+		value: value,
 	})
-	c.mu.Unlock()
-
-	go func() {
-		select {
-		case <-ctx.Done():
-			c.mu.Lock()
-			if len(c.watchers) == index+1 {
-				c.watchers = c.watchers[:index]
-			} else {
-				c.watchers = append(c.watchers[:index], c.watchers[index+1:]...)
-			}
-			c.mu.Unlock()
-		}
-	}()
-
-	return ch
+	return t
 }
 
-func (c *Client) bumpWatchers(we *watchEvent) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	for _, w := range c.watchers {
-		if strings.HasPrefix(we.Key, w.prefix) {
-			w.watchCh <- we
-		}
-	}
-}
-
-// Close closes Bolt database.
-func (c *Client) Close() error {
-	return c.db.Close()
-}
-
-// NewBroker creates a new instance of a proxy that provides
-// access to Bolt. The proxy will reuse the connection from Client.
-// <prefix> will be prepended to the key argument in all calls from the created
-// BrokerWatcher. To avoid using a prefix, pass keyval. Root constant as
-// an argument.
-func (c *Client) NewBroker(prefix string) keyval.BytesBroker {
-	return &BrokerWatcher{
-		Client: c,
-		prefix: prefix,
-	}
-}
-
-// NewWatcher creates a new instance of a proxy that provides
-// access to Bolt. The proxy will reuse the connection from Client.
-// <prefix> will be prepended to the key argument in all calls on created
-// BrokerWatcher. To avoid using a prefix, pass keyval. Root constant as
-// an argument.
-func (c *Client) NewWatcher(prefix string) keyval.BytesWatcher {
-	return &BrokerWatcher{
-		Client: c,
-		prefix: prefix,
-	}
-}
-
-// BrokerWatcher uses Client to access the datastore.
-// The connection can be shared among multiple BrokerWatcher.
-// In case of accessing a particular subtree in Bolt only,
-// BrokerWatcher allows defining a keyPrefix that is prepended
-// to all keys in its methods in order to shorten keys used in arguments.
-type BrokerWatcher struct {
-	*Client
-	prefix string
-}
-
-func (pdb *BrokerWatcher) prefixKey(key string) string {
-	return pdb.prefix + key
-}
-
-// Put calls 'Put' function of the underlying Client.
-// KeyPrefix defined in constructor is prepended to the key argument.
-func (pdb *BrokerWatcher) Put(key string, data []byte, opts ...datasync.PutOption) error {
-	return pdb.Client.Put(pdb.prefixKey(key), data, opts...)
-}
-
-// NewTxn creates a new transaction.
-// KeyPrefix defined in constructor will be prepended to all key arguments
-// in the transaction.
-func (pdb *BrokerWatcher) NewTxn() keyval.BytesTxn {
-	return pdb.Client.NewTxn()
-}
-
-// GetValue calls 'GetValue' function of the underlying Client.
-// KeyPrefix defined in constructor is prepended to the key argument.
-func (pdb *BrokerWatcher) GetValue(key string) (data []byte, found bool, revision int64, err error) {
-	return pdb.Client.GetValue(pdb.prefixKey(key))
-}
-
-// Delete calls 'Delete' function of the underlying Client.
-// KeyPrefix defined in constructor is prepended to the key argument.
-func (pdb *BrokerWatcher) Delete(key string, opts ...datasync.DelOption) (existed bool, err error) {
-	return pdb.Client.Delete(pdb.prefixKey(key), opts...)
-}
-
-// ListKeys calls 'ListKeys' function of the underlying Client.
-// KeyPrefix defined in constructor is prepended to the argument.
-func (pdb *BrokerWatcher) ListKeys(keyPrefix string) (keyval.BytesKeyIterator, error) {
-	boltLogger.Debugf("ListKeys: %q [namespace=%s]", keyPrefix, pdb.prefix)
-
-	var keys []string
-	err := pdb.Client.db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket(rootBucket).Cursor()
-		prefix := []byte(pdb.prefixKey(keyPrefix))
-		boltLogger.Debugf("listing keys: %q", string(prefix))
-
-		for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
-			boltLogger.Debugf(" listing key: %q", string(k))
-			keys = append(keys, string(k))
-		}
-		return nil
+// Delete adds a new 'delete' operation to a previously created
+// transaction. If <key> exists in the data store, the associated value
+// will be removed.
+func (t *txn) Delete(key string) keyval.BytesTxn {
+	t.updates = append(t.updates, &update{
+		key:   []byte(key),
+		value: nil,
 	})
-
-	return &bytesKeyIterator{prefix: pdb.prefix, len: len(keys), keys: keys}, err
+	return t
 }
 
-// ListValues calls 'ListValues' function of the underlying Client.
-// KeyPrefix defined in constructor is prepended to the key argument.
-// The prefix is removed from the keys of the returned values.
-func (pdb *BrokerWatcher) ListValues(keyPrefix string) (keyval.BytesKeyValIterator, error) {
-	boltLogger.Debugf("ListValues: %q [namespace=%s]", keyPrefix, pdb.prefix)
-
-	var pairs []*kvPair
-	err := pdb.Client.db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket(rootBucket).Cursor()
-		prefix := []byte(pdb.prefixKey(keyPrefix))
-		boltLogger.Debugf("listing vals: %q", string(prefix))
-
-		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
-			boltLogger.Debugf(" listing val: %q (len=%d)", string(k), len(v))
-
-			pair := &kvPair{Key: string(k)}
-			pair.Value = append([]byte(nil), v...) // value needs to be copied
-
-			pairs = append(pairs, pair)
-		}
-		return nil
-	})
-
-	return &bytesKeyValIterator{prefix: pdb.prefix, pairs: pairs, len: len(pairs)}, err
-}
-
-// Watch starts subscription for changes associated with the selected <keys>.
-// KeyPrefix defined in constructor is prepended to all <keys> in the argument
-// list. The prefix is removed from the keys returned in watch events.
-// Watch events will be delivered to <resp> callback.
-func (pdb *BrokerWatcher) Watch(resp func(keyval.BytesWatchResp), closeChan chan string, keys ...string) error {
-	var prefixedKeys []string
-	for _, key := range keys {
-		prefixedKeys = append(prefixedKeys, pdb.prefixKey(key))
-	}
-	return pdb.Client.Watch(func(origResp keyval.BytesWatchResp) {
-		r := origResp.(*watchResp)
-		r.key = strings.TrimPrefix(r.key, pdb.prefix)
-		resp(r)
-	}, closeChan, prefixedKeys...)
+// Commit commits all operations in a transaction to the data store.
+// Commit is atomic - either all operations in the transaction are
+// committed to the data store, or none of them.
+func (t *txn) Commit() error {
+	_, err := t.c.safeUpdate(t.updates...)
+	return err
 }
