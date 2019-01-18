@@ -164,8 +164,12 @@ type Services interface {
 //	    "tag",
 //	    64
 //	],
+//	[
+//	    "u32",
+//	    "tap_flags"
+//	],
 //	{
-//	    "crc": "0x34ce8043"
+//	    "crc": "0xeabede03"
 //	}
 //
 type TapCreateV2 struct {
@@ -193,13 +197,14 @@ type TapCreateV2 struct {
 	HostIP6GwSet     uint8
 	HostIP6Gw        []byte `struc:"[16]byte"`
 	Tag              []byte `struc:"[64]byte"`
+	TapFlags         uint32
 }
 
 func (*TapCreateV2) GetMessageName() string {
 	return "tap_create_v2"
 }
 func (*TapCreateV2) GetCrcString() string {
-	return "34ce8043"
+	return "eabede03"
 }
 func (*TapCreateV2) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -414,8 +419,12 @@ func (*SwInterfaceTapV2Dump) GetMessageType() api.MessageType {
 //	    "u8",
 //	    "host_ip6_prefix_len"
 //	],
+//	[
+//	    "u32",
+//	    "tap_flags"
+//	],
 //	{
-//	    "crc": "0xb4c58229"
+//	    "crc": "0x73dbc2d2"
 //	}
 //
 type SwInterfaceTapV2Details struct {
@@ -432,13 +441,14 @@ type SwInterfaceTapV2Details struct {
 	HostIP4PrefixLen uint8
 	HostIP6Addr      []byte `struc:"[16]byte"`
 	HostIP6PrefixLen uint8
+	TapFlags         uint32
 }
 
 func (*SwInterfaceTapV2Details) GetMessageName() string {
 	return "sw_interface_tap_v2_details"
 }
 func (*SwInterfaceTapV2Details) GetCrcString() string {
-	return "b4c58229"
+	return "73dbc2d2"
 }
 func (*SwInterfaceTapV2Details) GetMessageType() api.MessageType {
 	return api.ReplyMessage

@@ -333,7 +333,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	req := &binapi.Nat44AddDelLbStaticMapping{
 		Tag:          []byte(dnatLabel),
 		Locals:       locals,
-		LocalNum:     uint8(len(locals)),
+		LocalNum:     uint32(len(locals)),
 		ExternalAddr: exIPAddrByte,
 		ExternalPort: uint16(mapping.ExternalPort),
 		Protocol:     h.protocolNBValueToNumber(mapping.Protocol),

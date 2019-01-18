@@ -6,7 +6,7 @@
 
  It contains following objects:
 	 51 messages
-	  3 types
+	  1 alias
 	 25 services
 
 */
@@ -134,203 +134,15 @@ type Services interface {
 	WantInterfaceEvents(*WantInterfaceEvents) (*WantInterfaceEventsReply, error)
 }
 
-/* Types */
+/* Aliases */
 
-// VlibCounter represents VPP binary API type 'vlib_counter':
+// InterfaceIndex represents VPP binary API alias 'interface_index':
 //
-//	"vlib_counter",
-//	[
-//	    "u64",
-//	    "packets"
-//	],
-//	[
-//	    "u64",
-//	    "bytes"
-//	],
-//	{
-//	    "crc": "0xce2325a2"
+//	"interface_index": {
+//	    "type": "u32"
 //	}
 //
-type VlibCounter struct {
-	Packets uint64
-	Bytes   uint64
-}
-
-func (*VlibCounter) GetTypeName() string {
-	return "vlib_counter"
-}
-func (*VlibCounter) GetCrcString() string {
-	return "ce2325a2"
-}
-
-// VnetCombinedCounter represents VPP binary API type 'vnet_combined_counter':
-//
-//	"vnet_combined_counter",
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u64",
-//	    "rx_packets"
-//	],
-//	[
-//	    "u64",
-//	    "rx_bytes"
-//	],
-//	[
-//	    "u64",
-//	    "rx_unicast_packets"
-//	],
-//	[
-//	    "u64",
-//	    "rx_unicast_bytes"
-//	],
-//	[
-//	    "u64",
-//	    "rx_multicast_packets"
-//	],
-//	[
-//	    "u64",
-//	    "rx_multicast_bytes"
-//	],
-//	[
-//	    "u64",
-//	    "rx_broadcast_packets"
-//	],
-//	[
-//	    "u64",
-//	    "rx_broadcast_bytes"
-//	],
-//	[
-//	    "u64",
-//	    "tx_packets"
-//	],
-//	[
-//	    "u64",
-//	    "tx_bytes"
-//	],
-//	[
-//	    "u64",
-//	    "tx_unicast_packets"
-//	],
-//	[
-//	    "u64",
-//	    "tx_unicast_bytes"
-//	],
-//	[
-//	    "u64",
-//	    "tx_multicast_packets"
-//	],
-//	[
-//	    "u64",
-//	    "tx_multicast_bytes"
-//	],
-//	[
-//	    "u64",
-//	    "tx_broadcast_packets"
-//	],
-//	[
-//	    "u64",
-//	    "tx_broadcast_bytes"
-//	],
-//	{
-//	    "crc": "0x20905ca4"
-//	}
-//
-type VnetCombinedCounter struct {
-	SwIfIndex          uint32
-	RxPackets          uint64
-	RxBytes            uint64
-	RxUnicastPackets   uint64
-	RxUnicastBytes     uint64
-	RxMulticastPackets uint64
-	RxMulticastBytes   uint64
-	RxBroadcastPackets uint64
-	RxBroadcastBytes   uint64
-	TxPackets          uint64
-	TxBytes            uint64
-	TxUnicastPackets   uint64
-	TxUnicastBytes     uint64
-	TxMulticastPackets uint64
-	TxMulticastBytes   uint64
-	TxBroadcastPackets uint64
-	TxBroadcastBytes   uint64
-}
-
-func (*VnetCombinedCounter) GetTypeName() string {
-	return "vnet_combined_counter"
-}
-func (*VnetCombinedCounter) GetCrcString() string {
-	return "20905ca4"
-}
-
-// VnetSimpleCounter represents VPP binary API type 'vnet_simple_counter':
-//
-//	"vnet_simple_counter",
-//	[
-//	    "u32",
-//	    "sw_if_index"
-//	],
-//	[
-//	    "u64",
-//	    "drop"
-//	],
-//	[
-//	    "u64",
-//	    "punt"
-//	],
-//	[
-//	    "u64",
-//	    "rx_ip4"
-//	],
-//	[
-//	    "u64",
-//	    "rx_ip6"
-//	],
-//	[
-//	    "u64",
-//	    "rx_no_buffer"
-//	],
-//	[
-//	    "u64",
-//	    "rx_miss"
-//	],
-//	[
-//	    "u64",
-//	    "rx_error"
-//	],
-//	[
-//	    "u64",
-//	    "tx_error"
-//	],
-//	[
-//	    "u64",
-//	    "rx_mpls"
-//	],
-//	{
-//	    "crc": "0x8bd65e2d"
-//	}
-//
-type VnetSimpleCounter struct {
-	SwIfIndex  uint32
-	Drop       uint64
-	Punt       uint64
-	RxIP4      uint64
-	RxIP6      uint64
-	RxNoBuffer uint64
-	RxMiss     uint64
-	RxError    uint64
-	TxError    uint64
-	RxMpls     uint64
-}
-
-func (*VnetSimpleCounter) GetTypeName() string {
-	return "vnet_simple_counter"
-}
-func (*VnetSimpleCounter) GetCrcString() string {
-	return "8bd65e2d"
-}
+type InterfaceIndex uint32
 
 /* Messages */
 
@@ -809,7 +621,7 @@ func (*WantInterfaceEventsReply) GetMessageType() api.MessageType {
 //	    "link_duplex"
 //	],
 //	[
-//	    "u8",
+//	    "u32",
 //	    "link_speed"
 //	],
 //	[
@@ -905,7 +717,7 @@ func (*WantInterfaceEventsReply) GetMessageType() api.MessageType {
 //	    "i_sid"
 //	],
 //	{
-//	    "crc": "0x09b4b510"
+//	    "crc": "0xe4ee7eb6"
 //	}
 //
 type SwInterfaceDetails struct {
@@ -917,7 +729,7 @@ type SwInterfaceDetails struct {
 	AdminUpDown       uint8
 	LinkUpDown        uint8
 	LinkDuplex        uint8
-	LinkSpeed         uint8
+	LinkSpeed         uint32
 	LinkMtu           uint16
 	Mtu               []uint32 `struc:"[4]uint32"`
 	SubID             uint32
@@ -946,7 +758,7 @@ func (*SwInterfaceDetails) GetMessageName() string {
 	return "sw_interface_details"
 }
 func (*SwInterfaceDetails) GetCrcString() string {
-	return "09b4b510"
+	return "e4ee7eb6"
 }
 func (*SwInterfaceDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage

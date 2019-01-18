@@ -5,9 +5,9 @@
  Package acl is a generated from VPP binary API module 'acl'.
 
  It contains following objects:
-	 34 messages
+	 36 messages
 	  2 types
-	 17 services
+	 18 services
 
 */
 package acl
@@ -37,6 +37,9 @@ var _ = bytes.NewBuffer
 //	    "acl_del": {
 //	        "reply": "acl_del_reply"
 //	    },
+//	    "macip_acl_del": {
+//	        "reply": "macip_acl_del_reply"
+//	    },
 //	    "acl_plugin_control_ping": {
 //	        "reply": "acl_plugin_control_ping_reply"
 //	    },
@@ -50,11 +53,11 @@ var _ = bytes.NewBuffer
 //	    "macip_acl_interface_add_del": {
 //	        "reply": "macip_acl_interface_add_del_reply"
 //	    },
-//	    "macip_acl_del": {
-//	        "reply": "macip_acl_del_reply"
+//	    "acl_add_replace": {
+//	        "reply": "acl_add_replace_reply"
 //	    },
-//	    "macip_acl_add": {
-//	        "reply": "macip_acl_add_reply"
+//	    "acl_plugin_get_conn_table_max_entries": {
+//	        "reply": "acl_plugin_get_conn_table_max_entries_reply"
 //	    },
 //	    "acl_interface_list_dump": {
 //	        "reply": "acl_interface_list_details",
@@ -63,8 +66,8 @@ var _ = bytes.NewBuffer
 //	    "acl_interface_set_acl_list": {
 //	        "reply": "acl_interface_set_acl_list_reply"
 //	    },
-//	    "acl_add_replace": {
-//	        "reply": "acl_add_replace_reply"
+//	    "macip_acl_add": {
+//	        "reply": "macip_acl_add_reply"
 //	    },
 //	    "acl_interface_set_etype_whitelist": {
 //	        "reply": "acl_interface_set_etype_whitelist_reply"
@@ -94,6 +97,7 @@ type Services interface {
 	ACLInterfaceSetACLList(*ACLInterfaceSetACLList) (*ACLInterfaceSetACLListReply, error)
 	ACLInterfaceSetEtypeWhitelist(*ACLInterfaceSetEtypeWhitelist) (*ACLInterfaceSetEtypeWhitelistReply, error)
 	ACLPluginControlPing(*ACLPluginControlPing) (*ACLPluginControlPingReply, error)
+	ACLPluginGetConnTableMaxEntries(*ACLPluginGetConnTableMaxEntries) (*ACLPluginGetConnTableMaxEntriesReply, error)
 	ACLPluginGetVersion(*ACLPluginGetVersion) (*ACLPluginGetVersionReply, error)
 	MacipACLAdd(*MacipACLAdd) (*MacipACLAddReply, error)
 	MacipACLAddReplace(*MacipACLAddReplace) (*MacipACLAddReplaceReply, error)
@@ -380,6 +384,70 @@ func (*ACLPluginControlPingReply) GetCrcString() string {
 	return "f6b0b8ca"
 }
 func (*ACLPluginControlPingReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// ACLPluginGetConnTableMaxEntries represents VPP binary API message 'acl_plugin_get_conn_table_max_entries':
+//
+//	"acl_plugin_get_conn_table_max_entries",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	{
+//	    "crc": "0x51077d14"
+//	}
+//
+type ACLPluginGetConnTableMaxEntries struct{}
+
+func (*ACLPluginGetConnTableMaxEntries) GetMessageName() string {
+	return "acl_plugin_get_conn_table_max_entries"
+}
+func (*ACLPluginGetConnTableMaxEntries) GetCrcString() string {
+	return "51077d14"
+}
+func (*ACLPluginGetConnTableMaxEntries) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// ACLPluginGetConnTableMaxEntriesReply represents VPP binary API message 'acl_plugin_get_conn_table_max_entries_reply':
+//
+//	"acl_plugin_get_conn_table_max_entries_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u64",
+//	    "conn_table_max_entries"
+//	],
+//	{
+//	    "crc": "0x7a096d3d"
+//	}
+//
+type ACLPluginGetConnTableMaxEntriesReply struct {
+	ConnTableMaxEntries uint64
+}
+
+func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageName() string {
+	return "acl_plugin_get_conn_table_max_entries_reply"
+}
+func (*ACLPluginGetConnTableMaxEntriesReply) GetCrcString() string {
+	return "7a096d3d"
+}
+func (*ACLPluginGetConnTableMaxEntriesReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
@@ -1644,6 +1712,8 @@ func init() {
 	api.RegisterMessage((*ACLPluginGetVersionReply)(nil), "acl.ACLPluginGetVersionReply")
 	api.RegisterMessage((*ACLPluginControlPing)(nil), "acl.ACLPluginControlPing")
 	api.RegisterMessage((*ACLPluginControlPingReply)(nil), "acl.ACLPluginControlPingReply")
+	api.RegisterMessage((*ACLPluginGetConnTableMaxEntries)(nil), "acl.ACLPluginGetConnTableMaxEntries")
+	api.RegisterMessage((*ACLPluginGetConnTableMaxEntriesReply)(nil), "acl.ACLPluginGetConnTableMaxEntriesReply")
 	api.RegisterMessage((*ACLAddReplace)(nil), "acl.ACLAddReplace")
 	api.RegisterMessage((*ACLAddReplaceReply)(nil), "acl.ACLAddReplaceReply")
 	api.RegisterMessage((*ACLDel)(nil), "acl.ACLDel")

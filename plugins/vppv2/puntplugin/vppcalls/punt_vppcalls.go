@@ -23,6 +23,12 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
+// Version as defined by the VPP API
+const (
+	ipv4 = 4
+	ipv6 = 6
+)
+
 // AddPunt configures new punt entry
 func (h *PuntVppHandler) AddPunt(puntCfg *punt.ToHost) error {
 	return h.handlePuntToHost(puntCfg, true)
@@ -94,13 +100,15 @@ func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IpRedirect) error {
 }
 
 func (h *PuntVppHandler) handlePuntToHost(punt *punt.ToHost, isAdd bool) error {
-	req := &api_punt.Punt{
-		IsAdd:      boolToUint(isAdd),
-		IPv:        resolveL3Proto(punt.L3Protocol),
-		L4Protocol: resolveL4Proto(punt.L4Protocol),
-		L4Port:     uint16(punt.Port),
+	req := &api_punt.SetPunt{
+		IsAdd: boolToUint(isAdd),
+		Punt: api_punt.Punt{
+			IPv:        resolveL3Proto(punt.L3Protocol),
+			L4Protocol: resolveL4Proto(punt.L4Protocol),
+			L4Port:     uint16(punt.Port),
+		},
 	}
-	reply := &api_punt.PuntReply{}
+	reply := &api_punt.SetPuntReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -126,10 +134,12 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 
 	req := &api_punt.PuntSocketRegister{
 		HeaderVersion: 1,
-		IsIP4:         boolToUint(isIPv4),
-		L4Protocol:    resolveL4Proto(punt.L4Protocol),
-		L4Port:        uint16(punt.Port),
-		Pathname:      pathByte,
+		Punt: api_punt.Punt{
+			IPv:        resolveL3ProtoAsBool(isIPv4),
+			L4Protocol: resolveL4Proto(punt.L4Protocol),
+			L4Port:     uint16(punt.Port),
+		},
+		Pathname: pathByte,
 	}
 	reply := &api_punt.PuntSocketRegisterReply{}
 
@@ -150,9 +160,11 @@ func (h *PuntVppHandler) unregisterPuntWithSocketIPv6(punt *punt.ToHost) error {
 
 func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool) error {
 	req := &api_punt.PuntSocketDeregister{
-		IsIP4:      boolToUint(isIPv4),
-		L4Protocol: resolveL4Proto(punt.L4Protocol),
-		L4Port:     uint16(punt.Port),
+		Punt: api_punt.Punt{
+			IPv:        resolveL3ProtoAsBool(isIPv4),
+			L4Protocol: resolveL4Proto(punt.L4Protocol),
+			L4Port:     uint16(punt.Port),
+		},
 	}
 	reply := &api_punt.PuntSocketDeregisterReply{}
 
@@ -191,20 +203,31 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IpRedirect, isIPv4, isAdd
 	}
 
 	// next hop address
-	var nextHop []byte
-	if isIPv4 {
-		nextHop = net.ParseIP(punt.NextHop).To4()
-	} else {
-		nextHop = net.ParseIP(punt.NextHop).To16()
-	}
+	var ipAddress [16]byte
+	parsedNh := net.ParseIP(punt.NextHop)
 
 	req := &api_ip.IPPuntRedirect{
-		IsAdd:       boolToUint(isAdd),
-		IsIP6:       boolToUint(!isIPv4),
-		RxSwIfIndex: rxIfIdx,
-		TxSwIfIndex: txMetadata.SwIfIndex,
-		Nh:          nextHop,
+		IsAdd: boolToUint(isAdd),
+		Punt: api_ip.PuntRedirect{
+			RxSwIfIndex: rxIfIdx,
+			TxSwIfIndex: txMetadata.SwIfIndex,
+		},
 	}
+
+	if isIPv4 {
+		copy(ipAddress[:], []byte(parsedNh.To4()))
+		req.Punt.Nh = api_ip.Address{
+			Af: api_ip.ADDRESS_IP6,
+			Un: api_ip.AddressUnion{Union_data: ipAddress},
+		}
+	} else {
+		copy(ipAddress[:], []byte(parsedNh.To16()))
+		req.Punt.Nh = api_ip.Address{
+			Af: api_ip.ADDRESS_IP4,
+			Un: api_ip.AddressUnion{Union_data: ipAddress},
+		}
+	}
+
 	reply := &api_ip.IPPuntRedirectReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
@@ -223,6 +246,13 @@ func resolveL3Proto(protocol punt.L3Protocol) uint8 {
 		return ^uint8(0) // binary API representation for both protocols
 	}
 	return uint8(punt.L3Protocol_UNDEFINED_L3)
+}
+
+func resolveL3ProtoAsBool(isIPv4 bool) uint8 {
+	if isIPv4 {
+		return uint8(punt.L3Protocol_IPv4)
+	}
+	return uint8(punt.L3Protocol_IPv6)
 }
 
 func resolveL4Proto(protocol punt.L4Protocol) uint8 {

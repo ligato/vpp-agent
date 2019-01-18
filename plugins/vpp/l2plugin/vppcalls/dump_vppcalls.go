@@ -153,7 +153,9 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 		} else {
 			arpEntry.IpAddress = ipAddr[:4].To4().String()
 		}
-		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress).String()
+		mac := make([]byte, len(msg.MacAddress))
+		copy(mac, msg.MacAddress[:])
+		arpEntry.PhysAddress = net.HardwareAddr(mac).String()
 
 		// Add ARP entry to result map
 		arpEntries, ok := bdArpTable[msg.BdID]

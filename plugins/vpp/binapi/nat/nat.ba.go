@@ -5,9 +5,9 @@
  Package nat is a generated from VPP binary API module 'nat'.
 
  It contains following objects:
-	120 messages
+	122 messages
 	  1 type
-	 60 services
+	 61 services
 
 */
 package nat
@@ -37,8 +37,9 @@ var _ = bytes.NewBuffer
 //	    "nat66_add_del_interface": {
 //	        "reply": "nat66_add_del_interface_reply"
 //	    },
-//	    "nat64_add_del_static_bib": {
-//	        "reply": "nat64_add_del_static_bib_reply"
+//	    "dslite_address_dump": {
+//	        "reply": "dslite_address_details",
+//	        "stream": true
 //	    },
 //	    "nat_ipfix_enable_disable": {
 //	        "reply": "nat_ipfix_enable_disable_reply"
@@ -121,9 +122,6 @@ var _ = bytes.NewBuffer
 //	    "nat44_forwarding_is_enabled": {
 //	        "reply": "nat44_forwarding_is_enabled_reply"
 //	    },
-//	    "nat64_add_del_prefix": {
-//	        "reply": "nat64_add_del_prefix_reply"
-//	    },
 //	    "nat44_interface_addr_dump": {
 //	        "reply": "nat44_interface_addr_details",
 //	        "stream": true
@@ -135,6 +133,9 @@ var _ = bytes.NewBuffer
 //	        "reply": "nat44_user_details",
 //	        "stream": true
 //	    },
+//	    "nat44_lb_static_mapping_add_del_local": {
+//	        "reply": "nat44_lb_static_mapping_add_del_local_reply"
+//	    },
 //	    "nat44_del_session": {
 //	        "reply": "nat44_del_session_reply"
 //	    },
@@ -144,6 +145,9 @@ var _ = bytes.NewBuffer
 //	    },
 //	    "nat_set_mss_clamping": {
 //	        "reply": "nat_set_mss_clamping_reply"
+//	    },
+//	    "nat64_add_del_static_bib": {
+//	        "reply": "nat64_add_del_static_bib_reply"
 //	    },
 //	    "nat_reass_dump": {
 //	        "reply": "nat_reass_details",
@@ -212,9 +216,8 @@ var _ = bytes.NewBuffer
 //	        "reply": "nat_det_session_details",
 //	        "stream": true
 //	    },
-//	    "dslite_address_dump": {
-//	        "reply": "dslite_address_details",
-//	        "stream": true
+//	    "nat64_add_del_prefix": {
+//	        "reply": "nat64_add_del_prefix_reply"
 //	    },
 //	    "nat64_add_del_interface_addr": {
 //	        "reply": "nat64_add_del_interface_addr_reply"
@@ -264,6 +267,7 @@ type Services interface {
 	Nat44ForwardingIsEnabled(*Nat44ForwardingIsEnabled) (*Nat44ForwardingIsEnabledReply, error)
 	Nat44InterfaceAddDelFeature(*Nat44InterfaceAddDelFeature) (*Nat44InterfaceAddDelFeatureReply, error)
 	Nat44InterfaceAddDelOutputFeature(*Nat44InterfaceAddDelOutputFeature) (*Nat44InterfaceAddDelOutputFeatureReply, error)
+	Nat44LbStaticMappingAddDelLocal(*Nat44LbStaticMappingAddDelLocal) (*Nat44LbStaticMappingAddDelLocalReply, error)
 	Nat64AddDelInterface(*Nat64AddDelInterface) (*Nat64AddDelInterfaceReply, error)
 	Nat64AddDelInterfaceAddr(*Nat64AddDelInterfaceAddr) (*Nat64AddDelInterfaceAddrReply, error)
 	Nat64AddDelPoolAddrRange(*Nat64AddDelPoolAddrRange) (*Nat64AddDelPoolAddrRangeReply, error)
@@ -2928,7 +2932,7 @@ func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
 //	    "affinity"
 //	],
 //	[
-//	    "u8",
+//	    "u32",
 //	    "local_num"
 //	],
 //	[
@@ -2938,7 +2942,7 @@ func (*Nat44UserSessionDetails) GetMessageType() api.MessageType {
 //	    "local_num"
 //	],
 //	{
-//	    "crc": "0x135f5f3a"
+//	    "crc": "0x56a9542c"
 //	}
 //
 type Nat44AddDelLbStaticMapping struct {
@@ -2951,7 +2955,7 @@ type Nat44AddDelLbStaticMapping struct {
 	Out2inOnly   uint8
 	Tag          []byte `struc:"[64]byte"`
 	Affinity     uint32
-	LocalNum     uint8 `struc:"sizeof=Locals"`
+	LocalNum     uint32 `struc:"sizeof=Locals"`
 	Locals       []Nat44LbAddrPort
 }
 
@@ -2959,7 +2963,7 @@ func (*Nat44AddDelLbStaticMapping) GetMessageName() string {
 	return "nat44_add_del_lb_static_mapping"
 }
 func (*Nat44AddDelLbStaticMapping) GetCrcString() string {
-	return "135f5f3a"
+	return "56a9542c"
 }
 func (*Nat44AddDelLbStaticMapping) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -2995,6 +2999,97 @@ func (*Nat44AddDelLbStaticMappingReply) GetCrcString() string {
 	return "e8d4e804"
 }
 func (*Nat44AddDelLbStaticMappingReply) GetMessageType() api.MessageType {
+	return api.ReplyMessage
+}
+
+// Nat44LbStaticMappingAddDelLocal represents VPP binary API message 'nat44_lb_static_mapping_add_del_local':
+//
+//	"nat44_lb_static_mapping_add_del_local",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "client_index"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "u8",
+//	    "is_add"
+//	],
+//	[
+//	    "u8",
+//	    "external_addr",
+//	    4
+//	],
+//	[
+//	    "u16",
+//	    "external_port"
+//	],
+//	[
+//	    "u8",
+//	    "protocol"
+//	],
+//	[
+//	    "vl_api_nat44_lb_addr_port_t",
+//	    "local"
+//	],
+//	{
+//	    "crc": "0x611a9a33"
+//	}
+//
+type Nat44LbStaticMappingAddDelLocal struct {
+	IsAdd        uint8
+	ExternalAddr []byte `struc:"[4]byte"`
+	ExternalPort uint16
+	Protocol     uint8
+	Local        Nat44LbAddrPort
+}
+
+func (*Nat44LbStaticMappingAddDelLocal) GetMessageName() string {
+	return "nat44_lb_static_mapping_add_del_local"
+}
+func (*Nat44LbStaticMappingAddDelLocal) GetCrcString() string {
+	return "611a9a33"
+}
+func (*Nat44LbStaticMappingAddDelLocal) GetMessageType() api.MessageType {
+	return api.RequestMessage
+}
+
+// Nat44LbStaticMappingAddDelLocalReply represents VPP binary API message 'nat44_lb_static_mapping_add_del_local_reply':
+//
+//	"nat44_lb_static_mapping_add_del_local_reply",
+//	[
+//	    "u16",
+//	    "_vl_msg_id"
+//	],
+//	[
+//	    "u32",
+//	    "context"
+//	],
+//	[
+//	    "i32",
+//	    "retval"
+//	],
+//	{
+//	    "crc": "0xe8d4e804"
+//	}
+//
+type Nat44LbStaticMappingAddDelLocalReply struct {
+	Retval int32
+}
+
+func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageName() string {
+	return "nat44_lb_static_mapping_add_del_local_reply"
+}
+func (*Nat44LbStaticMappingAddDelLocalReply) GetCrcString() string {
+	return "e8d4e804"
+}
+func (*Nat44LbStaticMappingAddDelLocalReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
 }
 
@@ -3075,7 +3170,7 @@ func (*Nat44LbStaticMappingDump) GetMessageType() api.MessageType {
 //	    "affinity"
 //	],
 //	[
-//	    "u8",
+//	    "u32",
 //	    "local_num"
 //	],
 //	[
@@ -3085,7 +3180,7 @@ func (*Nat44LbStaticMappingDump) GetMessageType() api.MessageType {
 //	    "local_num"
 //	],
 //	{
-//	    "crc": "0xe5aba6bb"
+//	    "crc": "0xcce01363"
 //	}
 //
 type Nat44LbStaticMappingDetails struct {
@@ -3097,7 +3192,7 @@ type Nat44LbStaticMappingDetails struct {
 	Out2inOnly   uint8
 	Tag          []byte `struc:"[64]byte"`
 	Affinity     uint32
-	LocalNum     uint8 `struc:"sizeof=Locals"`
+	LocalNum     uint32 `struc:"sizeof=Locals"`
 	Locals       []Nat44LbAddrPort
 }
 
@@ -3105,7 +3200,7 @@ func (*Nat44LbStaticMappingDetails) GetMessageName() string {
 	return "nat44_lb_static_mapping_details"
 }
 func (*Nat44LbStaticMappingDetails) GetCrcString() string {
-	return "e5aba6bb"
+	return "cce01363"
 }
 func (*Nat44LbStaticMappingDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -5719,6 +5814,8 @@ func init() {
 	api.RegisterMessage((*Nat44UserSessionDetails)(nil), "nat.Nat44UserSessionDetails")
 	api.RegisterMessage((*Nat44AddDelLbStaticMapping)(nil), "nat.Nat44AddDelLbStaticMapping")
 	api.RegisterMessage((*Nat44AddDelLbStaticMappingReply)(nil), "nat.Nat44AddDelLbStaticMappingReply")
+	api.RegisterMessage((*Nat44LbStaticMappingAddDelLocal)(nil), "nat.Nat44LbStaticMappingAddDelLocal")
+	api.RegisterMessage((*Nat44LbStaticMappingAddDelLocalReply)(nil), "nat.Nat44LbStaticMappingAddDelLocalReply")
 	api.RegisterMessage((*Nat44LbStaticMappingDump)(nil), "nat.Nat44LbStaticMappingDump")
 	api.RegisterMessage((*Nat44LbStaticMappingDetails)(nil), "nat.Nat44LbStaticMappingDetails")
 	api.RegisterMessage((*Nat44DelSession)(nil), "nat.Nat44DelSession")
