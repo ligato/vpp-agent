@@ -23,9 +23,12 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "linux"
+
 func init() {
-	models.RegisterProto(&Interface{}, models.Spec{
-		Module:  "linux",
+	models.Register(&Interface{}, models.Spec{
+		Module:  ModuleName,
 		Type:    "interfaces",
 		Version: "v2",
 	})

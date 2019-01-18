@@ -37,10 +37,10 @@ func NewClient(factory ProtoTxnFactory) ConfigClient {
 	return &client{factory}
 }
 
-func (c *client) ActiveModels() (map[string][]api.Model, error) {
-	modules := make(map[string][]api.Model)
-	for _, model := range models.RegisteredModels() {
-		modules[model.Module] = append(modules[model.Module], *model)
+func (c *client) ActiveModels() (map[string][]api.ModelInfo, error) {
+	modules := make(map[string][]api.ModelInfo)
+	for _, info := range models.RegisteredModels() {
+		modules[info.Model.Module] = append(modules[info.Model.Module], *info)
 	}
 	return modules, nil
 }

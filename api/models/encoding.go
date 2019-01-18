@@ -27,17 +27,24 @@ const ligatoUrl = "models.ligato.io/"
 
 // Unmarshal is helper function for unmarshalling items.
 func UnmarshalItem(m *api.Item) (proto.Message, error) {
-	protoName, err := types.AnyMessageName(m.GetValue().GetAny())
+	protoName, err := types.AnyMessageName(m.GetData().GetAny())
 	if err != nil {
 		return nil, err
 	}
-	_, found := registeredModels[protoName]
+	model, found := registeredModels[protoName]
 	if !found {
-		return nil, fmt.Errorf("model %s is not registered as model", protoName)
+		return nil, fmt.Errorf("message %s is not registered as model", protoName)
+	}
+
+	itemModel := m.Id.Model
+	if itemModel.Module != model.Module ||
+		itemModel.Version != model.Version ||
+		itemModel.Type != model.Type {
+		return nil, fmt.Errorf("item model does not match the one registered (%+v)", itemModel)
 	}
 
 	var any types.DynamicAny
-	if err := types.UnmarshalAny(m.GetValue().GetAny(), &any); err != nil {
+	if err := types.UnmarshalAny(m.GetData().GetAny(), &any); err != nil {
 		return nil, err
 	}
 	return any.Message, nil
@@ -45,10 +52,9 @@ func UnmarshalItem(m *api.Item) (proto.Message, error) {
 
 // Marshal is helper function for marshalling items.
 func MarshalItem(pb proto.Message) (*api.Item, error) {
-	protoName := proto.MessageName(pb)
-	_, found := registeredModels[protoName]
-	if !found {
-		return nil, fmt.Errorf("proto %s is not registered as model", protoName)
+	id, err := getItemID(pb)
+	if err != nil {
+		return nil, err
 	}
 
 	any, err := types.MarshalAny(pb)
@@ -57,26 +63,105 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 	}
 	any.TypeUrl = ligatoUrl + proto.MessageName(pb)
 
-	object := &api.Item{
-		Key: Key(pb),
-		Value: &api.Value{
+	/*name, err := model.nameFunc(pb)
+	if err != nil {
+		return nil, err
+	}
+	path := path.Join(model.Path(), name)*/
+
+	item := &api.Item{
+		/*Ref: &api.ItemRef{
+			Path: model.modelPath,
+			Name: name,
+		},*/
+		Id: id,
+		//Key: path,
+		Data: &api.Data{
 			Any: any,
 		},
 	}
-	return object, nil
+	return item, nil
+}
+
+func getItemID(pb proto.Message) (*api.Item_ID, error) {
+	protoName := proto.MessageName(pb)
+	model, found := registeredModels[protoName]
+	if !found {
+		return nil, fmt.Errorf("message %s is not registered as model", protoName)
+	}
+
+	name, err := model.nameFunc(pb)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.Item_ID{
+		Name: name,
+		Model: &api.Model{
+			Module:  model.Module,
+			Version: model.Version,
+			Type:    model.Type,
+		},
+	}, nil
+}
+
+type model interface {
+	GetModule() string
+	GetVersion() string
+	GetType() string
+}
+
+func getModelPath(m model) string {
+	return buildModelPath(m.GetVersion(), m.GetModule(), m.GetType())
+}
+
+func ModelForItem(item *api.Item) (registeredModel, error) {
+	if data := item.GetData(); data != nil {
+		return GetModel(data)
+	}
+	if id := item.GetId(); id != nil {
+		modelPath := getModelPath(id.Model)
+		protoName, found := modelPaths[modelPath]
+		if found {
+			model, _ := registeredModels[protoName]
+			return *model, nil
+		}
+	}
+
+	return registeredModel{}, fmt.Errorf("no model found for item %v", item)
+}
+
+func ItemKey(item *api.Item) (string, error) {
+	if data := item.GetData(); data != nil {
+		return GetKey(data)
+	}
+	if id := item.GetId(); id != nil {
+		modelPath := getModelPath(id.Model)
+		protoName, found := modelPaths[modelPath]
+		if found {
+			model, _ := registeredModels[protoName]
+			key := model.KeyPrefix() + id.Name
+			return key, nil
+		}
+	}
+
+	return "", fmt.Errorf("invalid item: %v", item)
 }
 
 // RegisteredModels returns all registered modules.
-func RegisteredModels() (models []*api.Model) {
+func RegisteredModels() (models []*api.ModelInfo) {
 	for _, s := range registeredModels {
-		models = append(models, &api.Model{
-			Module:  s.Module,
-			Type:    s.Type,
-			Version: s.Version,
-			Meta: map[string]string{
-				"nameTemplate": s.NameTemplate,
+		models = append(models, &api.ModelInfo{
+			Model: &api.Model{
+				Module:  s.Module,
+				Type:    s.Type,
+				Version: s.Version,
+			},
+			Info: map[string]string{
+				"nameTemplate": s.nameTemplate,
 				"protoName":    s.protoName,
 				"modelPath":    s.modelPath,
+				"keyPrefix":    s.keyPrefix,
 			},
 		})
 	}

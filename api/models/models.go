@@ -21,6 +21,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+const (
+	// ConfigKeyPrefix is used as key prefix for config storage.
+	ConfigKeyPrefix = `config/`
+)
+
 // Key is a shorthand for the GetKey for avoid error checking.
 func Key(x proto.Message) string {
 	key, err := GetKey(x)
@@ -65,7 +70,7 @@ func GetKey(x proto.Message) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	name, err := model.NameFunc(x)
+	name, err := model.nameFunc(x)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +84,7 @@ func GetName(x proto.Message) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	name, err := model.NameFunc(x)
+	name, err := model.nameFunc(x)
 	if err != nil {
 		return "", err
 	}
@@ -103,5 +108,5 @@ func GetModel(x proto.Message) (registeredModel, error) {
 	if !found {
 		return registeredModel{}, fmt.Errorf("no model registered for %s", protoName)
 	}
-	return model, nil
+	return *model, nil
 }

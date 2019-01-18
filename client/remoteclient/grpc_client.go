@@ -2,6 +2,7 @@ package remoteclient
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/api"
@@ -19,7 +20,7 @@ func NewClientGRPC(client api.ConfiguratorClient) client.ConfigClient {
 	return &grpcClient{client}
 }
 
-func (c *grpcClient) ActiveModels() (map[string][]api.Model, error) {
+func (c *grpcClient) ActiveModels() (map[string][]api.ModelInfo, error) {
 	ctx := context.Background()
 
 	resp, err := c.remote.Capabilities(ctx, &api.CapabilitiesRequest{})
@@ -27,9 +28,9 @@ func (c *grpcClient) ActiveModels() (map[string][]api.Model, error) {
 		return nil, err
 	}
 
-	modules := make(map[string][]api.Model)
-	for _, model := range resp.KnownModels {
-		modules[model.Module] = append(modules[model.Module], *model)
+	modules := make(map[string][]api.ModelInfo)
+	for _, info := range resp.KnownModels {
+		modules[info.Model.Module] = append(modules[info.Model.Module], *info)
 	}
 
 	return modules, nil
@@ -43,13 +44,25 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		return err
 	}
 
+	fmt.Printf("GetConfig: %+v\n", resp)
+
 	protos := map[string]proto.Message{}
 	for _, item := range resp.Items {
 		val, err := models.UnmarshalItem(item.Item)
 		if err != nil {
 			return err
 		}
-		protos[item.Item.Key] = val
+		var key string
+		if data := item.Item.GetData(); data != nil {
+			key, err = models.GetKey(val)
+		} else {
+			// protos[item.Item.Key] = val
+			key, err = models.ItemKey(item.Item)
+		}
+		if err != nil {
+			return err
+		}
+		protos[key] = val
 	}
 
 	dispatcher.PlaceProtos(protos, dsts...)
@@ -61,7 +74,8 @@ func (c *grpcClient) SetConfig(resync bool) client.SetConfigRequest {
 	return &setConfigRequest{
 		client: c.remote,
 		req: &api.SetConfigRequest{
-			Options: &api.SetConfigRequest_Options{Resync: resync},
+			//Options: &api.SetConfigRequest_Options{Resync: resync},
+			OverwriteAll: resync,
 		},
 	}
 }
@@ -82,7 +96,7 @@ func (r *setConfigRequest) Update(items ...proto.Message) {
 			r.err = err
 			return
 		}
-		r.req.Updates = append(r.req.Updates, &api.SetConfigRequest_UpdateItem{
+		r.req.Updates = append(r.req.Updates, &api.UpdateItem{
 			Item: item,
 		})
 	}
@@ -100,10 +114,11 @@ func (r *setConfigRequest) Delete(items ...proto.Message) {
 				return
 			}
 		}
-		r.req.Updates = append(r.req.Updates, &api.SetConfigRequest_UpdateItem{
-			Item: &api.Item{
+		r.req.Updates = append(r.req.Updates, &api.UpdateItem{
+			/*Item: &api.Item{
 				Key: item.Key,
-			},
+			},*/
+			Item: item,
 		})
 	}
 }

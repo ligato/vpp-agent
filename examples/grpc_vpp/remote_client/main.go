@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
@@ -30,6 +31,7 @@ import (
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp"
+	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
@@ -131,7 +133,9 @@ func (p *ExamplePlugin) resyncVPP() {
 			Interfaces: []*interfaces.Interface{
 				memif1,
 			},
-			IpscanNeighbor: ipScanNeigh,
+			IPScanNeighbor: ipScanNeigh,
+			IPSecSAs:       []*vpp_ipsec.SecurityAssociation{sa10},
+			IPSecSPDs:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
 		},
 		Linux: &linux.Data{
 			Interfaces: []*linux_interfaces.Interface{
@@ -152,7 +156,8 @@ func (p *ExamplePlugin) resyncVPP() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Printf("Config:\n %+v\n", proto.MarshalTextString(cfg))
+	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+	fmt.Printf("Config:\n %+v\n", out)
 
 	client2 := dataconfigurator.NewStateClient(p.conn)
 
@@ -165,6 +170,27 @@ func (p *ExamplePlugin) resyncVPP() {
 }
 
 var (
+	sa10 = &vpp.IPSecSA{
+		Index:     "10",
+		Spi:       1001,
+		Protocol:  1,
+		CryptoAlg: 1,
+		CryptoKey: "4a506a794f574265564551694d653768",
+		IntegAlg:  2,
+		IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+	}
+	spd1 = &vpp.IPSecSPD{
+		Index: "1",
+		PolicyEntries: []*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry{
+			{
+				Priority:   100,
+				IsOutbound: false,
+				Action:     0,
+				Protocol:   50,
+				SaIndex:    "10",
+			},
+		},
+	}
 	memif1 = &vpp.Interface{
 		Name:        "memif1",
 		Enabled:     true,

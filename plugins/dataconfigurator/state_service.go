@@ -43,14 +43,14 @@ func (svc *stateService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespo
 	state := newData()
 
 	state.Vpp.Interfaces, _ = svc.DumpInterfaces()
-	state.Vpp.Acls, _ = svc.DumpAcls()
-	state.Vpp.SPDs, _ = svc.DumpIPSecSPDs()
-	state.Vpp.SAs, _ = svc.DumpIPSecSAs()
+	state.Vpp.ACLs, _ = svc.DumpAcls()
+	state.Vpp.IPSecSPDs, _ = svc.DumpIPSecSPDs()
+	state.Vpp.IPSecSAs, _ = svc.DumpIPSecSAs()
 	state.Vpp.BridgeDomains, _ = svc.DumpBDs()
-	state.Vpp.StaticRoutes, _ = svc.DumpRoutes()
-	state.Vpp.ArpEntries, _ = svc.DumpARPs()
-	state.Vpp.FibEntries, _ = svc.DumpFIBs()
-	state.Vpp.XconnectPairs, _ = svc.DumpXConnects()
+	state.Vpp.Routes, _ = svc.DumpRoutes()
+	state.Vpp.ARPs, _ = svc.DumpARPs()
+	state.Vpp.FIBs, _ = svc.DumpFIBs()
+	state.Vpp.XConnectPairs, _ = svc.DumpXConnects()
 
 	return &rpc.DumpResponse{State: state}, nil
 }
@@ -184,9 +184,9 @@ func (svc *stateService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 
 // DumpRoutes reads VPP routes and returns them as an *RoutesResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpRoutes() ([]*vpp_l3.StaticRoute, error) {
-	var routes []*vpp_l3.StaticRoute
-	rtDetails, err := svc.rtHandler.DumpStaticRoutes()
+func (svc *stateService) DumpRoutes() ([]*vpp_l3.Route, error) {
+	var routes []*vpp_l3.Route
+	rtDetails, err := svc.rtHandler.DumpRoutes()
 	if err != nil {
 		return nil, err
 	}

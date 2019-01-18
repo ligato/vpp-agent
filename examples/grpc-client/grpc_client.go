@@ -269,6 +269,6 @@ var (
 		DstNetwork:        "192.168.5.0/24",
 		OutgoingInterface: "myVETH1",
 		GwAddr:            "10.10.3.254",
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 	}
 )

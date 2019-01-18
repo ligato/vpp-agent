@@ -17,36 +17,20 @@ package models
 import (
 	"fmt"
 	"net"
-	"os"
-	"path"
 	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/gogo/protobuf/proto"
-)
-
-const (
-	// ConfigKeyPrefix is used as key prefix for config storage.
-	ConfigKeyPrefix = `config/`
+	"github.com/ligato/vpp-agent/api"
 )
 
 var (
-	validType   = regexp.MustCompile(`^[-a-z0-9_./]+$`)
-	validModule = regexp.MustCompile(`^[-a-z0-9_.]+$`)
+	validModule = regexp.MustCompile(`^[-a-z0-9_]+(?:\.[-a-z0-9_]+)?$`)
+	validType   = regexp.MustCompile(`^[-a-z0-9_]+$`)
 )
 
-// Spec represents model specification.
-type Spec struct {
-	Module       string
-	Type         string
-	Version      string
-	NameTemplate string
-	NameFunc     NameFunc
-}
-
-// NameFunc represents function which can name model instance.
-type NameFunc func(obj interface{}) (string, error)
+type Spec api.Model
 
 type registeredModel struct {
 	Spec
@@ -54,6 +38,18 @@ type registeredModel struct {
 	protoName string
 	keyPrefix string
 	modelPath string
+
+	nameTemplate string
+	nameFunc     NameFunc
+}
+
+func (m *registeredModel) WithNameTemplate(t string) *registeredModel {
+	/*if m.nameFunc != nil {
+		panic(fmt.Sprintf("name template for model %s already exists", m.protoName))
+	}*/
+	m.nameFunc = NameTemplate(t)
+	m.nameTemplate = t
+	return m
 }
 
 // ProtoName returns proto message name registered with the model.
@@ -75,6 +71,9 @@ func (m registeredModel) KeyPrefix() string {
 // or returns empty name and valid as false if the key is not valid.
 func (m registeredModel) ParseKey(key string) (name string, valid bool) {
 	name = strings.TrimPrefix(key, m.keyPrefix)
+	if name == key || name == "" {
+		name = strings.TrimPrefix(key, m.modelPath)
+	}
 	if name != key && name != "" {
 		// TODO: validate name?
 		return name, true
@@ -90,23 +89,22 @@ func (m registeredModel) IsKeyValid(key string) bool {
 
 // StripKeyPrefix returns key with prefix stripped.
 func (m registeredModel) StripKeyPrefix(key string) string {
-	trim := strings.TrimPrefix(key, m.keyPrefix)
-	if trim != key && trim != "" {
-		return trim
+	if name, valid := m.ParseKey(key); valid {
+		return name
 	}
 	return key
 }
 
 var (
-	registeredModels = make(map[string]registeredModel)
+	registeredModels = make(map[string]*registeredModel)
 	modelPaths       = make(map[string]string)
 
-	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
+	debugRegister = true //strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 )
 
-// RegisterProto registers given protobuf with model specification.
-func RegisterProto(pb proto.Message, spec Spec) registeredModel {
-	model := registeredModel{
+// Register registers the protobuf message with given model specification.
+func Register(pb proto.Message, spec Spec) *registeredModel {
+	model := &registeredModel{
 		Spec:      spec,
 		protoName: proto.MessageName(pb),
 	}
@@ -124,35 +122,22 @@ func RegisterProto(pb proto.Message, spec Spec) registeredModel {
 		panic(fmt.Sprintf("model version for %s is invalid", model.protoName))
 	}
 
-	if spec.NameFunc == nil {
-		if _, ok := pb.(named); ok {
-			model.NameFunc = func(obj interface{}) (s string, e error) {
-				return obj.(named).GetName(), nil
-			}
-		} else if spec.NameTemplate == "" {
-			panic(fmt.Sprintf("name func for model %s is nil", model.protoName))
-		} else {
-			model.NameFunc = NameTemplate(spec.NameTemplate)
-		}
-	}
-	/*if spec.NameTemplate == "" {
-		panic(fmt.Sprintf("name template for model %s is empty", model.protoName))
-	}*/
-
-	model.modelPath = path.Join(spec.Module, spec.Type)
+	model.modelPath = buildModelPath(spec.Version, spec.Module, spec.Type) //fmt.Sprintf("%s.%s.%s", spec.Module, spec.Version, spec.Type)
 	if pn, ok := modelPaths[model.modelPath]; ok {
 		panic(fmt.Sprintf("path prefix %q already used by: %s", model.modelPath, pn))
 	}
 
-	/*model.keyPrefix = strings.Join([]string{
-		spec.Version, spec.Module, spec.Type,
-	}, "/")*/
-	//model.keyPrefix = fmt.Sprintf("%s/%s/%s/", spec.Module, spec.Version, spec.Type)
-
-	model.keyPrefix = fmt.Sprintf("%s/%s/", spec.Module, spec.Type)
+	modulePath := strings.Replace(spec.Module, ".", "/", -1)
+	model.keyPrefix = fmt.Sprintf("%s/%s/", modulePath, spec.Type)
 
 	if debugRegister {
-		fmt.Printf("- registered model: %-40v\t%q\n", spec, model.modelPath)
+		fmt.Printf("- registered model: %+v\t%q\n", model, model.modelPath)
+	}
+
+	if _, ok := pb.(named); ok {
+		model.nameFunc = func(obj interface{}) (s string, e error) {
+			return obj.(named).GetName(), nil
+		}
 	}
 
 	registeredModels[model.protoName] = model
@@ -161,9 +146,16 @@ func RegisterProto(pb proto.Message, spec Spec) registeredModel {
 	return model
 }
 
+func buildModelPath(version, module, typ string) string {
+	return fmt.Sprintf("%s.%s.%s", version, module, typ)
+}
+
 type named interface {
 	GetName() string
 }
+
+// NameFunc represents function which can name model instance.
+type NameFunc func(obj interface{}) (string, error)
 
 func NameTemplate(t string) NameFunc {
 	tmpl := template.Must(

@@ -20,9 +20,12 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "vpp.acl"
+
 func init() {
-	models.RegisterProto(&Acl{}, models.Spec{
-		Module:  "vpp",
+	models.Register(&Acl{}, models.Spec{
+		Module:  ModuleName,
 		Type:    "acl",
 		Version: "v2",
 	})

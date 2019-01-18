@@ -28,6 +28,25 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp/stn"
 )
 
+func TestEncoding(t *testing.T) {
+	in := &linux_interfaces.Interface{
+		Name: "testName",
+		Type: linux_interfaces.Interface_VETH,
+	}
+
+	item, err := models.MarshalItem(in)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+	t.Logf("marshalled:\n%+v", proto.MarshalTextString(item))
+
+	out, err := models.UnmarshalItem(item)
+	if err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	t.Logf("unmarshalled:\n%+v", proto.MarshalTextString(out))
+}
+
 func TestKeys(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -44,7 +63,7 @@ func TestKeys(t *testing.T) {
 		},
 		{
 			name: "linux route",
-			model: &linux_l3.StaticRoute{
+			model: &linux_l3.Route{
 				DstNetwork:        "1.1.1.1/24",
 				OutgoingInterface: "eth0",
 				GwAddr:            "9.9.9.9",
@@ -53,7 +72,7 @@ func TestKeys(t *testing.T) {
 		},
 		{
 			name: "linux arp",
-			model: &linux_l3.StaticARPEntry{
+			model: &linux_l3.ARPEntry{
 				Interface: "if1",
 				IpAddress: "1.2.3.4",
 				HwAddress: "11:22:33:44:55:66",
@@ -99,7 +118,7 @@ func TestKeys(t *testing.T) {
 		},
 		{
 			name: "vpp route",
-			model: &vpp_l3.StaticRoute{
+			model: &vpp_l3.Route{
 				VrfId:       0,
 				DstNetwork:  "10.10.0.10/24",
 				NextHopAddr: "0.0.0.0",
@@ -123,7 +142,7 @@ func TestKeys(t *testing.T) {
 				t.Errorf("expected key: \n%q\ngot: \n%q", test.expectedKey, key)
 			} else {
 				spec := models.Model(test.model)
-				t.Logf("key: %q (%s)\n\tspec: %v", key, spec, spec.toModelSpec())
+				t.Logf("key: %q (%v)\n", key, spec)
 			}
 		})
 	}

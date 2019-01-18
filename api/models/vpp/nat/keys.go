@@ -20,19 +20,20 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "vpp.nat"
+
 func init() {
-	models.RegisterProto(&Nat44Global{}, models.Spec{
-		Module:       "vpp",
-		Type:         "nat44/global",
-		Version:      "v2",
-		NameTemplate: "settings",
-	})
-	models.RegisterProto(&DNat44{}, models.Spec{
-		Module:       "vpp",
-		Type:         "nat44/dnat",
-		Version:      "v2",
-		NameTemplate: "{{.Label}}",
-	})
+	models.Register(&Nat44Global{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "nat44-global",
+		Version: "v2",
+	}).WithNameTemplate("settings")
+	models.Register(&DNat44{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "dnat44",
+		Version: "v2",
+	}).WithNameTemplate("{{.Label}}")
 }
 
 // DNAT44Key returns the key used in NB DB to store the configuration of the

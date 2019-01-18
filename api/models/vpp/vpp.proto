@@ -20,25 +20,25 @@ import "vpp/nat/nat.proto";
 import "vpp/punt/punt.proto";
 
 message Data {
-    repeated vpp.interfaces.Interface interfaces = 10;
+    repeated interfaces.Interface interfaces = 10;
 
-    repeated vpp.acl.Acl acls = 20;
+    repeated acl.Acl acls = 20 [(gogoproto.customname) = "ACLs"];
 
-    repeated vpp.l2.BridgeDomain bridge_domains = 30;
-    repeated vpp.l2.FIBEntry fib_entries = 31;
-    repeated vpp.l2.XConnectPair xconnect_pairs = 32;
+    repeated l2.BridgeDomain bridge_domains = 30;
+    repeated l2.FIBEntry fibs = 31 [(gogoproto.customname) = "FIBs"];
+    repeated l2.XConnectPair xconnect_pairs = 32 [(gogoproto.customname) = "XConnectPairs"];
 
-    repeated vpp.l3.Route routes = 40;
-    repeated vpp.l3.ARPEntry arp_entries = 41;
-    vpp.l3.ProxyARP proxy_arp = 42;
-    vpp.l3.IPScanNeighbor ipscan_neighbor = 43;
+    repeated l3.Route routes = 40;
+    repeated l3.ARPEntry arps = 41 [(gogoproto.customname) = "ARPs"];
+    l3.ProxyARP proxy_arp = 42 [(gogoproto.customname) = "ProxyARP"];
+    l3.IPScanNeighbor ipscan_neighbor = 43 [(gogoproto.customname) = "IPScanNeighbor"];
 
-    vpp.nat.Nat44Global nat44_global = 50;
-    repeated vpp.nat.DNat44 dnats = 51;
+    nat.Nat44Global nat44_global = 50 [(gogoproto.customname) = "NAT44Global"];
+    repeated nat.DNat44 dnat44s = 51 [(gogoproto.customname) = "DNAT44s"];
 
-    repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
-    repeated ipsec.SecurityAssociation ipsec_sas = 61;
+    repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60 [(gogoproto.customname) = "IPSecSPDs"];
+    repeated ipsec.SecurityAssociation ipsec_sas = 61 [(gogoproto.customname) = "IPSecSAs"];
 
-    repeated punt.IpRedirect punt_ipredirects = 70;
-    repeated punt.ToHost punt_tohosts = 71;
+    repeated punt.IpRedirect punt_ipredirects = 70 [(gogoproto.customname) = "PuntIPRedirects"];
+    repeated punt.ToHost punt_tohosts = 71 [(gogoproto.customname) = "PuntToHosts"];
 }

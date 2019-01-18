@@ -21,19 +21,21 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "vpp.ipsec"
+
 func init() {
-	models.RegisterProto(&SecurityPolicyDatabase{}, models.Spec{
-		Module:       "vpp",
-		Type:         "ipsec/spd",
-		Version:      "v2",
-		NameTemplate: "{{.Index}}",
-	})
-	models.RegisterProto(&SecurityAssociation{}, models.Spec{
-		Module:       "vpp",
-		Type:         "ipsec/sa",
-		Version:      "v2",
-		NameTemplate: "{{.Index}}",
-	})
+	models.Register(&SecurityPolicyDatabase{}, models.Spec{
+		Module:  ModuleName,
+		Version: "v2",
+		Type:    "spd",
+	}).WithNameTemplate("{{.Index}}")
+
+	models.Register(&SecurityAssociation{}, models.Spec{
+		Module:  ModuleName,
+		Version: "v2",
+		Type:    "sa",
+	}).WithNameTemplate("{{.Index}}")
 }
 
 // SPDKey returns the key used in NB DB to store the configuration of the

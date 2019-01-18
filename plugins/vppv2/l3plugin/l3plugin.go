@@ -81,7 +81,7 @@ func (p *L3Plugin) Init() error {
 
 	// init & register descriptors
 	p.routeDescriptor = descriptor.NewRouteDescriptor(p.Scheduler, p.routeHandler, p.Log)
-	routeDescriptor := adapter.NewStaticRouteDescriptor(p.routeDescriptor.GetDescriptor())
+	routeDescriptor := adapter.NewRouteDescriptor(p.routeDescriptor.GetDescriptor())
 	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
 
 	p.arpDescriptor = descriptor.NewArpDescriptor(p.Scheduler, p.arpandler, p.Log)

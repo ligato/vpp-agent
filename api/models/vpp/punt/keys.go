@@ -18,19 +18,20 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "vpp"
+
 func init() {
-	models.RegisterProto(&ToHost{}, models.Spec{
-		Module:       "vpp",
-		Type:         "tohost",
-		Version:      "v2",
-		NameTemplate: "l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}",
-	})
-	models.RegisterProto(&IpRedirect{}, models.Spec{
-		Module:       "vpp",
-		Type:         "ipredirect",
-		Version:      "v2",
-		NameTemplate: "l3/{{.L3Protocol}}/tx/{{.TxInterface}}",
-	})
+	models.Register(&ToHost{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "tohost",
+		Version: "v2",
+	}).WithNameTemplate("l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}")
+	models.Register(&IpRedirect{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "ipredirect",
+		Version: "v2",
+	}).WithNameTemplate("l3/{{.L3Protocol}}/tx/{{.TxInterface}}")
 }
 
 // ToHostKey returns key representing punt to host/socket configuration.

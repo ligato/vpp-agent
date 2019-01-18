@@ -126,7 +126,7 @@ func (p *Plugin) registerL3Handlers() {
 	})
 	// GET static routes
 	p.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
-		return p.rtHandler.DumpStaticRoutes()
+		return p.rtHandler.DumpRoutes()
 	})
 }
 
@@ -146,7 +146,7 @@ func (p *Plugin) registerLinuxInterfaceHandlers() {
 func (p *Plugin) registerLinuxL3Handlers() {
 	// GET linux routes
 	p.registerHTTPHandler(resturl.LinuxRoutes, GET, func() (interface{}, error) {
-		routes4, routes6, err := p.linuxL3Handler.GetStaticRoutes(0)
+		routes4, routes6, err := p.linuxL3Handler.GetRoutes(0)
 		if err != nil {
 			return nil, err
 		}

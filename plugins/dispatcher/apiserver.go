@@ -48,7 +48,7 @@ func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRe
 	}
 	s.log.Debug("------------------------------")
 
-	if req.GetOptions().GetResync() {
+	if req.OverwriteAll {
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 
@@ -66,7 +66,7 @@ func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRe
 		)
 
 		var err error
-		if item.Value != nil {
+		if item.Data != nil {
 			val, err = models.UnmarshalItem(item)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -76,8 +76,12 @@ func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRe
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
 			ops[key] = api.UpdateResult_UPDATE
-		} else if item.Key != "" {
-			key = item.Key
+		} else if item.Id != nil {
+			model, err := models.ModelForItem(item)
+			if err != nil {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			key := model.KeyPrefix() + item.Id.Name
 			ops[key] = api.UpdateResult_DELETE
 		} else {
 			return nil, status.Error(codes.InvalidArgument, "ProtoItem has no key or val defined.")
@@ -99,7 +103,7 @@ func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRe
 		results = append(results, &api.UpdateResult{
 			Key: kvErr.Key,
 			Status: &api.ItemStatus{
-				State:   api.ItemStatus_FAILED,
+				State:   api.ItemStatus_FAILURE,
 				Message: kvErr.Error.Error(),
 			},
 			Op: ops[kvErr.Key],

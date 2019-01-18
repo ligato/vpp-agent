@@ -20,31 +20,33 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "vpp"
+
 func init() {
-	models.RegisterProto(&ARPEntry{}, models.Spec{
-		Module:   "vpp",
-		Type:     "arp",
-		Version:  "v2",
-		NameFunc: models.NameTemplate("{{.Interface}}/{{.IpAddress}}"),
-	})
-	models.RegisterProto(&Route{}, models.Spec{
-		Module:       "vpp",
-		Type:         "route",
-		Version:      "v2",
-		NameTemplate: `vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
-	})
-	models.RegisterProto(&ProxyARP{}, models.Spec{
-		Module:       "vpp",
-		Type:         "proxyarp/global",
-		Version:      "v2",
-		NameTemplate: "settings",
-	})
-	models.RegisterProto(&IPScanNeighbor{}, models.Spec{
-		Module:       "vpp",
-		Type:         "ipscanneigh/global",
-		Version:      "v2",
-		NameTemplate: "settings",
-	})
+	models.Register(&ARPEntry{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "arp",
+		Version: "v2",
+	}).WithNameTemplate("{{.Interface}}/{{.IpAddress}}")
+
+	models.Register(&Route{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "route",
+		Version: "v2",
+	}).WithNameTemplate(`vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`)
+
+	models.Register(&ProxyARP{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "proxyarp-global",
+		Version: "v2",
+	}).WithNameTemplate("settings")
+
+	models.Register(&IPScanNeighbor{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "ipscanneigh-global",
+		Version: "v2",
+	}).WithNameTemplate("settings")
 }
 
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.

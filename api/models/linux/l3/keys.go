@@ -22,31 +22,33 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "linux"
+
 func init() {
-	models.RegisterProto(&ARPEntry{}, models.Spec{
-		Module:       "linux",
-		Type:         "arp",
-		Version:      "v2",
-		NameTemplate: "{{.Interface}}/{{.IpAddress}}",
-	})
-	models.RegisterProto(&Route{}, models.Spec{
-		Module:       "linux",
-		Type:         "route",
-		Version:      "v2",
-		NameTemplate: `{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
-	})
+	models.Register(&ARPEntry{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "arp",
+		Version: "v2",
+	}).WithNameTemplate("{{.Interface}}/{{.IpAddress}}")
+
+	models.Register(&Route{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "route",
+		Version: "v2",
+	}).WithNameTemplate(`{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`)
 }
 
-// StaticArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
-func StaticArpKey(iface, ipAddr string) string {
+// ArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
+func ArpKey(iface, ipAddr string) string {
 	return models.Key(&ARPEntry{
 		Interface: iface,
 		IpAddress: ipAddr,
 	})
 }
 
-// StaticRouteKey returns the key used in ETCD to store configuration of a particular Linux route.
-func StaticRouteKey(dstNetwork, outgoingInterface string) string {
+// RouteKey returns the key used in ETCD to store configuration of a particular Linux route.
+func RouteKey(dstNetwork, outgoingInterface string) string {
 	return models.Key(&Route{
 		DstNetwork:        dstNetwork,
 		OutgoingInterface: outgoingInterface,
@@ -57,28 +59,28 @@ const (
 	/* Link-local route (derived) */
 
 	// StaticLinkLocalRouteKeyPrefix is a prefix for keys derived from link-local routes.
-	StaticLinkLocalRouteKeyPrefix = "linux/link-local-route/"
+	LinkLocalRouteKeyPrefix = "linux/link-local-route/"
 
 	// staticLinkLocalRouteKeyTemplate is a template for key derived from link-local route.
-	staticLinkLocalRouteKeyTemplate = StaticLinkLocalRouteKeyPrefix + "{dest-net}/{dest-mask}/{out-intf}"
+	linkLocalRouteKeyTemplate = LinkLocalRouteKeyPrefix + "{dest-net}/{dest-mask}/{out-intf}"
 )
 
 /* Link-local Route (derived) */
 
 // StaticLinkLocalRouteKey returns a derived key used to represent link-local route.
 func StaticLinkLocalRouteKey(dstAddr, outgoingInterface string) string {
-	return staticRouteKeyFromTemplate(staticLinkLocalRouteKeyTemplate, dstAddr, outgoingInterface)
+	return RouteKeyFromTemplate(linkLocalRouteKeyTemplate, dstAddr, outgoingInterface)
 }
 
 // ParseStaticLinkLocalRouteKey parses route attributes from a key derived from link-local route.
 func ParseStaticLinkLocalRouteKey(key string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
-	return parseStaticRouteFromKeySuffix(key, StaticLinkLocalRouteKeyPrefix, "invalid Linux link-local Route key: ")
+	return parseRouteFromKeySuffix(key, LinkLocalRouteKeyPrefix, "invalid Linux link-local Route key: ")
 }
 
 /* Route helpers */
 
-// staticRouteKeyFromTemplate fills key template with route attributes.
-func staticRouteKeyFromTemplate(template, dstAddr, outgoingInterface string) string {
+// RouteKeyFromTemplate fills key template with route attributes.
+func RouteKeyFromTemplate(template, dstAddr, outgoingInterface string) string {
 	_, dstNet, _ := net.ParseCIDR(dstAddr)
 	dstNetAddr := dstNet.IP.String()
 	dstNetMask, _ := dstNet.Mask.Size()
@@ -88,8 +90,8 @@ func staticRouteKeyFromTemplate(template, dstAddr, outgoingInterface string) str
 	return key
 }
 
-// parseStaticRouteFromKeySuffix parses destination network and outgoing interface from a route key suffix.
-func parseStaticRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
+// parseRouteFromKeySuffix parses destination network and outgoing interface from a route key suffix.
+func parseRouteFromKeySuffix(key, prefix, errPrefix string) (dstNetAddr *net.IPNet, outgoingInterface string, isRouteKey bool) {
 	var err error
 	if strings.HasPrefix(key, prefix) {
 		routeSuffix := strings.TrimPrefix(key, prefix)

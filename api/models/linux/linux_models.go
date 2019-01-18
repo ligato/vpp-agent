@@ -32,6 +32,6 @@ type (
 var (
 	InterfaceModel = models.Model(&Interface{})
 
-	StaticRouteModel = models.Model(&Route{})
-	ARPEntryModel    = models.Model(&ARPEntry{})
+	RouteModel    = models.Model(&Route{})
+	ARPEntryModel = models.Model(&ARPEntry{})
 )

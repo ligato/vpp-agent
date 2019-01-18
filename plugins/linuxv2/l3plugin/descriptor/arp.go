@@ -114,8 +114,8 @@ func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 	}
 }
 
-// EquivalentARPs is case-insensitive comparison function for l3.LinuxStaticARPEntry.
-func (d *ARPDescriptor) EquivalentARPs(key string, oldArp, NewArp *l3.StaticARPEntry) bool {
+// EquivalentARPs is case-insensitive comparison function for l3.LinuxARPEntry.
+func (d *ARPDescriptor) EquivalentARPs(key string, oldArp, NewArp *l3.ARPEntry) bool {
 	// interfaces compared as usually:
 	if oldArp.Interface != NewArp.Interface {
 		return false
@@ -148,24 +148,24 @@ func (d *ARPDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Add creates ARP entry.
-func (d *ARPDescriptor) Add(key string, arp *l3.StaticARPEntry) (metadata interface{}, err error) {
+func (d *ARPDescriptor) Add(key string, arp *l3.ARPEntry) (metadata interface{}, err error) {
 	err = d.updateARPEntry(arp, "add", d.l3Handler.SetARPEntry)
 	return nil, err
 }
 
 // Delete removes ARP entry.
-func (d *ARPDescriptor) Delete(key string, arp *l3.StaticARPEntry, metadata interface{}) error {
+func (d *ARPDescriptor) Delete(key string, arp *l3.ARPEntry, metadata interface{}) error {
 	return d.updateARPEntry(arp, "delete", d.l3Handler.DelARPEntry)
 }
 
 // Modify is able to change MAC address of the ARP entry.
-func (d *ARPDescriptor) Modify(key string, oldARP, newARP *l3.StaticARPEntry, oldMetadata interface{}) (newMetadata interface{}, err error) {
+func (d *ARPDescriptor) Modify(key string, oldARP, newARP *l3.ARPEntry, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	err = d.updateARPEntry(newARP, "modify", d.l3Handler.SetARPEntry)
 	return nil, err
 }
 
 // updateARPEntry adds, modifies or deletes an ARP entry.
-func (d *ARPDescriptor) updateARPEntry(arp *l3.StaticARPEntry, actionName string, actionClb func(arpEntry *netlink.Neigh) error) error {
+func (d *ARPDescriptor) updateARPEntry(arp *l3.ARPEntry, actionName string, actionClb func(arpEntry *netlink.Neigh) error) error {
 	var err error
 
 	// validate the configuration first
@@ -249,7 +249,7 @@ func (d *ARPDescriptor) updateARPEntry(arp *l3.StaticARPEntry, actionName string
 }
 
 // Dependencies lists dependencies for a Linux ARP entry.
-func (d *ARPDescriptor) Dependencies(key string, arp *l3.StaticARPEntry) []scheduler.Dependency {
+func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) []scheduler.Dependency {
 	// the associated interface must exist and be UP
 	if arp.Interface != "" {
 		return []scheduler.Dependency{
@@ -349,8 +349,8 @@ func (d *ARPDescriptor) dumpARPs(interfaces []string, goRoutineIdx, goRoutinesCn
 			hwAddr := arp.HardwareAddr.String()
 
 			dump.arps = append(dump.arps, adapter.ARPKVWithMetadata{
-				Key: l3.StaticArpKey(ifName, ipAddr),
-				Value: &l3.StaticARPEntry{
+				Key: l3.ArpKey(ifName, ipAddr),
+				Value: &l3.ARPEntry{
 					Interface: ifName,
 					IpAddress: ipAddr,
 					HwAddress: hwAddr,

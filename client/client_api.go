@@ -10,7 +10,7 @@ import (
 // ConfigClient defines the client-side interface for config service.
 type ConfigClient interface {
 	// ActiveModels retrieves list of active modules.
-	ActiveModels() (map[string][]api.Model, error)
+	ActiveModels() (map[string][]api.ModelInfo, error)
 
 	SetConfig(resync bool) SetConfigRequest
 

@@ -18,13 +18,15 @@ import (
 	"github.com/ligato/vpp-agent/api/models"
 )
 
+// ModuleName is the module name used for models.
+const ModuleName = "vpp.stn"
+
 func init() {
-	models.RegisterProto(&Rule{}, models.Spec{
-		Module:       "vpp",
-		Type:         "stn/rule",
-		Version:      "v2",
-		NameTemplate: "{{.Interface}}/ip/{{.IpAddress}}",
-	})
+	models.Register(&Rule{}, models.Spec{
+		Module:  ModuleName,
+		Type:    "rule",
+		Version: "v2",
+	}).WithNameTemplate("{{.Interface}}/ip/{{.IpAddress}}")
 }
 
 // Key returns the prefix used in the ETCD to store a VPP STN config

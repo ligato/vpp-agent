@@ -9,17 +9,30 @@ option (gogoproto.messagename_all) = true;
 
 import "google/protobuf/any.proto";
 
+// Model represents a model description to for recognizing
+// different item types.
+message Model {
+    // Module describes group of the model.
+    string module = 1;
+    // Version describes concrete version of the model schema.
+    string version = 2;
+    // Type describes name of type described by this model.
+    string type = 3;
+}
+
+// Item represents single instance described by the Model.
 message Item {
-    string key = 1;
-    Value value = 2;
+    // ID represents identifier for distinguishing items.
+    message ID {
+        Model model = 1;
+        string name = 2;
+    }
+    ID id = 1;
+    Data data = 2;
 }
 
-message ItemRef {
-    string prefix = 1;
-    string name = 2;
-}
-
-message Value {
+// Data represents encoded data used for item
+message Data {
     google.protobuf.Any any = 1;
 }
 
@@ -29,22 +42,27 @@ message Value {
 service Configurator {
     // Capabilities returns information about service capabilities
     // including list of models supported by the server.
-    rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse) {};
+    rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse) {
+    };
 
     // SetConfig is used to set desired configuration.
     // It returns status for items specified in the requests.
-    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {};
+    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {
+    };
 
     // GetConfig returns desired configuration with item statuses.
-    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {};
+    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {
+    };
 
     // DumpState retrieves the current running state.
     // The returned items also contain extra metadata not defined in models.
-    rpc DumpState (DumpStateRequest) returns (DumpStateResponse) {};
+    rpc DumpState (DumpStateRequest) returns (DumpStateResponse) {
+    };
 
     // Subscribe is used for subscribing to events.
     // Notifications are returned by streaming updates.
-    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse) {};
+    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse) {
+    };
 }
 
 //------------------------------------------------------------------------------
@@ -52,31 +70,34 @@ service Configurator {
 message CapabilitiesRequest {
     // TODO: query filters
 }
-
 message CapabilitiesResponse {
-    repeated Model known_models = 1;
+    repeated ModelInfo known_models = 1;
     repeated string active_modules = 2;
 }
 
-message Model {
-    string module = 1;
-    string type = 2;
-    string version = 3;
+message ModelInfo {
+    Model model = 1;
+    map<string, string> info = 2;
 }
 
 //------------------------------------------------------------------------------
 
 message SetConfigRequest {
-    message UpdateItem {
-        Item item = 1;
-        map<string,string> labels = 2;
-    }
-    repeated UpdateItem updates = 1;    // Set of items to update
-
+    repeated UpdateItem updates = 1;
+    // The overwrite_all can be set to true to overwrite all other configuration
+    // (this is also known as Full Resync)
+    bool overwrite_all = 2;
 }
-
 message SetConfigResponse {
     repeated UpdateResult results = 1;
+}
+
+message UpdateItem {
+    // The item describes item to be updated.
+    // For a delete operation set fields item.Data to nil.
+    Item item = 1;
+    // The labels can be used to define user-defined labels for item.
+    map<string, string> labels = 2;
 }
 
 message UpdateResult {
@@ -86,25 +107,10 @@ message UpdateResult {
         UPDATE = 2;
         DELETE = 3;
     }
+    Item.ID id = 4;
     string key = 1;
-    ItemStatus status = 2;
-    Operation op = 3;
-}
-
-//------------------------------------------------------------------------------
-
-message GetConfigRequest {
-    repeated string keys = 1;
-    repeated string modules = 2;
-}
-
-message GetConfigResponse {
-    message ConfigItem {
-        Item item = 1;
-        ItemStatus status = 2;
-        map<string,string> labels = 3;
-    }
-    repeated ConfigItem items = 1;
+    Operation op = 2;
+    ItemStatus status = 3;
 }
 
 message ItemStatus {
@@ -113,7 +119,7 @@ message ItemStatus {
         PENDING = 1;
         APPLIED = 2;
         INVALID = 3;
-        FAILED = 4;
+        FAILURE = 4;
         REMOVED = 5;
     }
     State state = 1;
@@ -122,11 +128,23 @@ message ItemStatus {
 
 //------------------------------------------------------------------------------
 
-message DumpStateRequest {
-    repeated string keys = 1;
-    repeated string modules = 2;
+message GetConfigRequest {
+    repeated Item.ID ids = 1;
+}
+message GetConfigResponse {
+    message ConfigItem {
+        Item item = 1;
+        ItemStatus status = 2;
+        map<string, string> labels = 3;
+    }
+    repeated ConfigItem items = 1;
 }
 
+//------------------------------------------------------------------------------
+
+message DumpStateRequest {
+    repeated string keys = 1;
+}
 message DumpStateResponse {
     message StateItem {
         Item item = 1;
@@ -140,13 +158,12 @@ message DumpStateResponse {
 message SubscribeRequest {
     repeated Subscription subscriptions = 1;
 }
-
-message Subscription {
-    string key = 1;
-}
-
 message SubscribeResponse {
     repeated Notification notifications = 1;
+}
+
+message Subscription {
+    Item.ID id = 1;
 }
 
 message Notification {

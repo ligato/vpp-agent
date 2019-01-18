@@ -33,8 +33,8 @@ import (
 )
 
 const (
-	// StaticRouteDescriptorName is the name of the descriptor for static routes.
-	StaticRouteDescriptorName = "vpp-static-route"
+	// RouteDescriptorName is the name of the descriptor for static routes.
+	RouteDescriptorName = "vpp-route"
 
 	// dependency labels
 	routeOutInterfaceDep = "interface-exists"
@@ -63,16 +63,16 @@ func NewRouteDescriptor(scheduler scheduler.KVScheduler,
 
 // GetDescriptor returns descriptor suitable for registration (via adapter) with
 // the KVScheduler.
-func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
-	return &adapter.StaticRouteDescriptor{
-		Name:            StaticRouteDescriptorName,
+func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
+	return &adapter.RouteDescriptor{
+		Name:            RouteDescriptorName,
 		NBKeyPrefix:     vpp.RouteModel.KeyPrefix(),
 		ValueTypeName:   vpp.RouteModel.ProtoName(),
 		KeySelector:     vpp.RouteModel.IsKeyValid,
 		ValueComparator: d.EquivalentRoutes,
 		Add:             d.Add,
 		Delete:          d.Delete,
-		ModifyWithRecreate: func(key string, oldValue, newValue *l3.StaticRoute, metadata interface{}) bool {
+		ModifyWithRecreate: func(key string, oldValue, newValue *l3.Route, metadata interface{}) bool {
 			return true
 		},
 		IsRetriableFailure: d.IsRetriableFailure,
@@ -83,8 +83,8 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.StaticRouteDescriptor {
 	}
 }
 
-// EquivalentRoutes is case-insensitive comparison function for l3.StaticRoute.
-func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.StaticRoute) bool {
+// EquivalentRoutes is case-insensitive comparison function for l3.Route.
+func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.Route) bool {
 	if oldRoute.GetType() != newRoute.GetType() ||
 		oldRoute.GetVrfId() != newRoute.GetVrfId() ||
 		oldRoute.GetViaVrfId() != newRoute.GetViaVrfId() ||
@@ -113,7 +113,7 @@ func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Add adds VPP static route.
-func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata interface{}, err error) {
+func (d *RouteDescriptor) Add(key string, route *l3.Route) (metadata interface{}, err error) {
 	if err = validateRoute(route); err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (d *RouteDescriptor) Add(key string, route *l3.StaticRoute) (metadata inter
 	return nil, nil
 }
 
-func validateRoute(route *l3.StaticRoute) error {
+func validateRoute(route *l3.Route) error {
 	_, ipNet, err := net.ParseCIDR(route.DstNetwork)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func validateRoute(route *l3.StaticRoute) error {
 }
 
 // Delete removes VPP static route.
-func (d *RouteDescriptor) Delete(key string, route *l3.StaticRoute, metadata interface{}) error {
+func (d *RouteDescriptor) Delete(key string, route *l3.Route, metadata interface{}) error {
 	err := d.routeHandler.VppDelRoute(route)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (d *RouteDescriptor) Delete(key string, route *l3.StaticRoute, metadata int
 }
 
 // Dependencies lists dependencies for a VPP route.
-func (d *RouteDescriptor) Dependencies(key string, route *l3.StaticRoute) []scheduler.Dependency {
+func (d *RouteDescriptor) Dependencies(key string, route *l3.Route) []scheduler.Dependency {
 	var dependencies []scheduler.Dependency
 	// the outgoing interface must exist and be UP
 	if route.OutgoingInterface != "" {
@@ -183,8 +183,8 @@ func (d *RouteDescriptor) Dependencies(key string, route *l3.StaticRoute) []sche
 
 // DerivedValues derives empty value under StaticLinkLocalRouteKey if route is link-local.
 // It is used in dependencies for network reachability of a route gateway (see above).
-func (d *RouteDescriptor) DerivedValues(key string, route *l3.StaticRoute) (derValues []scheduler.KeyValuePair) {
-	/*if route.Scope == l3.LinuxStaticRoute_LINK {
+func (d *RouteDescriptor) DerivedValues(key string, route *l3.Route) (derValues []scheduler.KeyValuePair) {
+	/*if route.Scope == l3.LinuxRoute_LINK {
 		derValues = append(derValues, scheduler.KeyValuePair{
 			Key:   l3.StaticLinkLocalRouteKey(route.DstNetwork, route.OutgoingInterface),
 			Value: &prototypes.Empty{},
@@ -194,19 +194,19 @@ func (d *RouteDescriptor) DerivedValues(key string, route *l3.StaticRoute) (derV
 }
 
 // Dump returns all routes associated with interfaces managed by this agent.
-func (d *RouteDescriptor) Dump(correlate []adapter.StaticRouteKVWithMetadata) (
-	dump []adapter.StaticRouteKVWithMetadata, err error,
+func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) (
+	dump []adapter.RouteKVWithMetadata, err error,
 ) {
 	// Retrieve VPP route configuration
-	staticRoutes, err := d.routeHandler.DumpStaticRoutes()
+	Routes, err := d.routeHandler.DumpRoutes()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump VPP routes: %v", err)
 	}
 
-	for _, staticRoute := range staticRoutes {
-		dump = append(dump, adapter.StaticRouteKVWithMetadata{
-			Key:    l3.RouteKey(staticRoute.Route.VrfId, staticRoute.Route.DstNetwork, staticRoute.Route.NextHopAddr),
-			Value:  staticRoute.Route,
+	for _, Route := range Routes {
+		dump = append(dump, adapter.RouteKVWithMetadata{
+			Key:    l3.RouteKey(Route.Route.VrfId, Route.Route.DstNetwork, Route.Route.NextHopAddr),
+			Value:  Route.Route,
 			Origin: scheduler.UnknownOrigin,
 		})
 	}
@@ -227,7 +227,7 @@ func equalAddrs(addr1, addr2 string) bool {
 
 // getGwAddr returns the GW address chosen in the given route, handling the cases
 // when it is left undefined.
-func getGwAddr(route *l3.StaticRoute) string {
+func getGwAddr(route *l3.Route) string {
 	if route.GetNextHopAddr() != "" {
 		return route.GetNextHopAddr()
 	}
@@ -243,7 +243,7 @@ func getGwAddr(route *l3.StaticRoute) string {
 }
 
 // getWeight returns static route weight, handling the cases when it is left undefined.
-func getWeight(route *l3.StaticRoute) uint32 {
+func getWeight(route *l3.Route) uint32 {
 	if route.Weight == 0 {
 		return defaultWeight
 	}
