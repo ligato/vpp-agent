@@ -15,13 +15,10 @@ message Data {
     linux.Data linux = 2;
 }
 
-service Config {
+service DataConfigurator {
     rpc Update(UpdateRequest) returns (UpdateResponse);
     rpc Delete(DeleteRequest) returns (DeleteResponse);
     rpc Get(GetRequest) returns (GetResponse);
-}
-
-service State {
     rpc Dump(DumpRequest) returns (DumpResponse);
 }
 

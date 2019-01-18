@@ -13,13 +13,14 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-// configService implements DataSyncer service.
-type configService struct {
+// configuratorServer implements DataSyncer service.
+type configuratorServer struct {
 	log      logging.Logger
 	dispatch *dispatcher.Plugin
+	dumpService
 }
 
-func (svc *configService) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
+func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
 	config := newData()
 
 	dispatcher.PlaceProtos(svc.dispatch.ListData(), config.Linux, config.Vpp)
@@ -28,7 +29,7 @@ func (svc *configService) Get(context.Context, *rpc.GetRequest) (*rpc.GetRespons
 }
 
 // Update adds configuration data present in data request to the VPP/Linux
-func (svc *configService) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
+func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
 	protos := dispatcher.ExtractProtos(req.Update.Vpp, req.Update.Linux)
 
 	var kvPairs []datasync.ProtoWatchResp
@@ -57,7 +58,7 @@ func (svc *configService) Update(ctx context.Context, req *rpc.UpdateRequest) (*
 }
 
 // Delete removes configuration data present in data request from the VPP/linux
-func (svc *configService) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
+func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
 	protos := dispatcher.ExtractProtos(req.Delete.Vpp, req.Delete.Linux)
 
 	var kvPairs []datasync.ProtoWatchResp

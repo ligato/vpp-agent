@@ -148,6 +148,6 @@ func (s *configuratorServer) DumpState(context.Context, *api.DumpStateRequest) (
 	panic("implement me")
 }
 
-func (s *configuratorServer) Subscribe(*api.SubscribeRequest, api.Configurator_SubscribeServer) error {
+func (s *configuratorServer) Subscribe(*api.SubscribeRequest, api.GenericConfigurator_SubscribeServer) error {
 	panic("implement me")
 }

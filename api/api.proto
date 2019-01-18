@@ -38,8 +38,9 @@ message Data {
 
 //------------------------------------------------------------------------------
 
-// Configurator defines the RPC methods for managing configuration.
-service Configurator {
+// GenericConfigurator defines the RPC methods for managing configuration
+// using generic model, allowing extending with custom models.
+service GenericConfigurator {
     // Capabilities returns information about service capabilities
     // including list of models supported by the server.
     rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse) {

@@ -41,8 +41,7 @@ import (
 type Plugin struct {
 	Deps
 
-	configSvc configService
-	stateSvc  stateService
+	configSvc configuratorServer
 
 	// Channels
 	vppChan  api.Channel
@@ -61,7 +60,7 @@ type Deps struct {
 
 // Init sets plugin child loggers
 func (p *Plugin) Init() error {
-	p.configSvc.log = p.Log.NewLogger("dataservice")
+	p.configSvc.log = p.Log.NewLogger("dataconfigurator")
 	p.configSvc.dispatch = p.Orch
 
 	if err := p.initHandlers(); err != nil {
@@ -70,8 +69,7 @@ func (p *Plugin) Init() error {
 
 	grpcServer := p.GRPCServer.GetServer()
 	if grpcServer != nil {
-		rpc.RegisterConfigServer(grpcServer, &p.configSvc)
-		rpc.RegisterStateServer(grpcServer, &p.stateSvc)
+		rpc.RegisterDataConfiguratorServer(grpcServer, &p.configSvc)
 	}
 
 	return nil
@@ -98,20 +96,20 @@ func (p *Plugin) initHandlers() (err error) {
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
 	// Initialize VPP handlers
-	p.stateSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
-	p.stateSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
-	p.stateSvc.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
-	p.stateSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.stateSvc.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
-	p.stateSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.stateSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.stateSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.stateSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.stateSvc.ipsecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
+	p.configSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
+	p.configSvc.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.configSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configSvc.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
+	p.configSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configSvc.ipsecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, p.Log)
 
 	// Linux indexes and handlers
-	p.stateSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
-	p.stateSvc.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	p.configSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
+	p.configSvc.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
 
 	return nil
 }

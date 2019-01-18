@@ -20,7 +20,7 @@ import (
 	natvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
 
-type stateService struct {
+type dumpService struct {
 	log logging.Logger
 
 	// VPP Handlers
@@ -39,7 +39,7 @@ type stateService struct {
 	linuxL3Handler l3linuxcalls.NetlinkAPIRead
 }
 
-func (svc *stateService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
+func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
 	state := newData()
 
 	state.Vpp.Interfaces, _ = svc.DumpInterfaces()
@@ -57,7 +57,7 @@ func (svc *stateService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespo
 
 // DumpAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpAcls() ([]*vpp_acl.Acl, error) {
+func (svc *dumpService) DumpAcls() ([]*vpp_acl.Acl, error) {
 	var acls []*vpp_acl.Acl
 	ipACLs, err := svc.aclHandler.DumpACL()
 	if err != nil {
@@ -79,7 +79,7 @@ func (svc *stateService) DumpAcls() ([]*vpp_acl.Acl, error) {
 
 // DumpInterfaces reads interfaces and returns them as an *InterfaceResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpInterfaces() ([]*vpp_interfaces.Interface, error) {
+func (svc *dumpService) DumpInterfaces() ([]*vpp_interfaces.Interface, error) {
 	var ifs []*vpp_interfaces.Interface
 	ifDetails, err := svc.ifHandler.DumpInterfaces()
 	if err != nil {
@@ -94,7 +94,7 @@ func (svc *stateService) DumpInterfaces() ([]*vpp_interfaces.Interface, error) {
 
 // DumpIPSecSPDs reads IPSec SPD and returns them as an *IPSecSPDResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpIPSecSPDs() ([]*vpp_ipsec.SecurityPolicyDatabase, error) {
+func (svc *dumpService) DumpIPSecSPDs() ([]*vpp_ipsec.SecurityPolicyDatabase, error) {
 	var spds []*vpp_ipsec.SecurityPolicyDatabase
 	spdDetails, err := svc.ipsecHandler.DumpIPSecSPD()
 	if err != nil {
@@ -109,7 +109,7 @@ func (svc *stateService) DumpIPSecSPDs() ([]*vpp_ipsec.SecurityPolicyDatabase, e
 
 // DumpIPSecSAs reads IPSec SA and returns them as an *IPSecSAResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error) {
+func (svc *dumpService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error) {
 	var sas []*vpp_ipsec.SecurityAssociation
 	saDetails, err := svc.ipsecHandler.DumpIPSecSA()
 	if err != nil {
@@ -124,7 +124,7 @@ func (svc *stateService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error
 
 // DumpIPSecTunnels reads IPSec tunnels and returns them as an *IPSecTunnelResponse. If reading ends up with error,
 // only error is send back in response
-/*func (svc *stateService) DumpIPSecTunnels() (*rpc.IPSecTunnelResponse, error) {
+/*func (svc *dumpService) DumpIPSecTunnels() (*rpc.IPSecTunnelResponse, error) {
 	var tuns []*vpp_ipsec.
 	tunDetails, err := svc.ipSecHandler.DumpIPSecTunnelInterfaces()
 	if err != nil {
@@ -139,7 +139,7 @@ func (svc *stateService) DumpIPSecSAs() ([]*vpp_ipsec.SecurityAssociation, error
 
 // DumpBDs reads bridge domains and returns them as an *BDResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
+func (svc *dumpService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 	var bds []*vpp_l2.BridgeDomain
 	bdDetails, err := svc.bdHandler.DumpBridgeDomains()
 	if err != nil {
@@ -154,7 +154,7 @@ func (svc *stateService) DumpBDs() ([]*vpp_l2.BridgeDomain, error) {
 
 // DumpFIBs reads FIBs and returns them as an *FibResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
+func (svc *dumpService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 	var fibs []*vpp_l2.FIBEntry
 	fibDetails, err := svc.fibHandler.DumpL2FIBs()
 	if err != nil {
@@ -169,7 +169,7 @@ func (svc *stateService) DumpFIBs() ([]*vpp_l2.FIBEntry, error) {
 
 // DumpXConnects reads cross connects and returns them as an *XcResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
+func (svc *dumpService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 	var xcs []*vpp_l2.XConnectPair
 	xcDetails, err := svc.xcHandler.DumpXConnectPairs()
 	if err != nil {
@@ -184,7 +184,7 @@ func (svc *stateService) DumpXConnects() ([]*vpp_l2.XConnectPair, error) {
 
 // DumpRoutes reads VPP routes and returns them as an *RoutesResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpRoutes() ([]*vpp_l3.Route, error) {
+func (svc *dumpService) DumpRoutes() ([]*vpp_l3.Route, error) {
 	var routes []*vpp_l3.Route
 	rtDetails, err := svc.rtHandler.DumpRoutes()
 	if err != nil {
@@ -199,7 +199,7 @@ func (svc *stateService) DumpRoutes() ([]*vpp_l3.Route, error) {
 
 // DumpARPs reads VPP ARPs and returns them as an *ARPsResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
+func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 	var arps []*vpp_l3.ARPEntry
 	arpDetails, err := svc.arpHandler.DumpArpEntries()
 	if err != nil {
@@ -213,7 +213,7 @@ func (svc *stateService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 }
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
-/*func (svc *stateService) DumpPunt() ([]*vpp_punt.ToHost, error) {
+/*func (svc *dumpService) DumpPunt() ([]*vpp_punt.ToHost, error) {
 	var punts []*vpp_punt.ToHost
 	puntDetailsList := svc.puntHandler.DumpPuntRegisteredSockets()
 	for _, puntDetails := range puntDetailsList {
@@ -228,7 +228,7 @@ func (svc *stateService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 
 // DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
 // only error is send back in response
-/*func (svc *stateService) DumpLinuxInterfaces() ([]*linux_interfaces.Interface, error) {
+/*func (svc *dumpService) DumpLinuxInterfaces() ([]*linux_interfaces.Interface, error) {
 	var linuxIfs []*linux_interfaces.Interface
 	ifDetails, err := svc.linuxIfHandler.GetLinkList()
 	if err != nil {
@@ -243,7 +243,7 @@ func (svc *stateService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 
 // DumpLinuxARPs reads linux ARPs and returns them as an *LinuxARPsResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpLinuxARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxARPsResponse, error) {
+func (svc *dumpService) DumpLinuxARPs(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxARPsResponse, error) {
 	var linuxArps []*linuxL3.LinuxStaticArpEntries_ArpEntry
 	arpDetails, err := svc.linuxL3Handler.DumpArpEntries()
 	if err != nil {
@@ -258,7 +258,7 @@ func (svc *stateService) DumpLinuxARPs(ctx context.Context, request *rpc.DumpReq
 
 // DumpLinuxRoutes reads linux routes and returns them as an *LinuxRoutesResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *stateService) DumpLinuxRoutes(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxRoutesResponse, error) {
+func (svc *dumpService) DumpLinuxRoutes(ctx context.Context, request *rpc.DumpRequest) (*rpc.LinuxRoutesResponse, error) {
 	var linuxRoutes []*linuxL3.LinuxStaticRoutes_Route
 	rtDetails, err := svc.linuxL3Handler.DumpRoutes()
 	if err != nil {

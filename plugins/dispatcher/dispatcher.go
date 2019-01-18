@@ -70,7 +70,7 @@ func (p *Plugin) Init() error {
 		log:  p.Log,
 		orch: p,
 	}
-	api.RegisterConfiguratorServer(p.GRPC.GetServer(), p.configurator)
+	api.RegisterGenericConfiguratorServer(p.GRPC.GetServer(), p.configurator)
 	//reflection.Register(p.GRPC.GetServer())
 
 	return nil

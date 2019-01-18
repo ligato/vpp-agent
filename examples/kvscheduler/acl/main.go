@@ -20,13 +20,12 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
 	"github.com/ligato/vpp-agent/plugins/dispatcher"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	//"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 )
@@ -36,11 +35,8 @@ import (
 */
 
 func main() {
-	// Set watcher for KVScheduler.
-	dispatcher.DefaultPlugin.Watcher = local.DefaultRegistry
-
 	ep := &ExamplePlugin{
-		Scheduler:    &kvscheduler.DefaultPlugin,
+		//Scheduler:    &kvscheduler.DefaultPlugin,
 		Dispatcher:   &dispatcher.DefaultPlugin,
 		VPPIfPlugin:  &vpp_ifplugin.DefaultPlugin,
 		VPPACLPlugin: &vpp_aclplugin.DefaultPlugin,
@@ -57,7 +53,7 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler    *kvscheduler.Scheduler
+	//Scheduler    *kvscheduler.Scheduler
 	Dispatcher   *dispatcher.Plugin
 	VPPIfPlugin  *vpp_ifplugin.IfPlugin
 	VPPACLPlugin *vpp_aclplugin.ACLPlugin

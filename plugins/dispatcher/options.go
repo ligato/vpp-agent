@@ -15,6 +15,7 @@
 package dispatcher
 
 import (
+	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 )
@@ -29,6 +30,7 @@ func NewPlugin(opts ...Option) *Plugin {
 	p.PluginName = "dispatcher"
 	p.GRPC = &grpc.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
+	p.Watcher = local.DefaultRegistry
 
 	for _, o := range opts {
 		o(p)
