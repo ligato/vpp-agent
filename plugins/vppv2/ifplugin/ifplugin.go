@@ -102,7 +102,7 @@ type IfPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	Scheduler scheduler.KVScheduler
-	GoVppmux  govppmux.API
+	GoVppmux  govppmux.StatsAPI
 
 	/*	LinuxIfPlugin and NsPlugin deps are optional,
 		but they are required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */

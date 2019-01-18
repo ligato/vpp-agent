@@ -21,6 +21,7 @@ RUN apt-get update \
      ipsec-tools \
      python \
      supervisor \
+     netcat \
  && rm -rf /var/lib/apt/lists/*
 
 # install vpp
