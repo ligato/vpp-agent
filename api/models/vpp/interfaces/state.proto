@@ -7,7 +7,7 @@ option go_package = "github.com/ligato/vpp-agent/api/models/vpp/interfaces;vpp_i
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
-import "vpp/interfaces/interface.proto";
+import "models/vpp/interfaces/interface.proto";
 
 message InterfaceState {
     string name = 1;

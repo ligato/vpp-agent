@@ -7,7 +7,7 @@ option go_package = "github.com/ligato/vpp-agent/api/models/linux/interfaces;lin
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
-import "linux/namespace/namespace.proto";
+import "models/linux/namespace/namespace.proto";
 
 message Interface {
     enum Type {

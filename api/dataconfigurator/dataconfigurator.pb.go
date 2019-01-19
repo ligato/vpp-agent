@@ -38,7 +38,7 @@ func (m *Data) Reset()         { *m = Data{} }
 func (m *Data) String() string { return proto.CompactTextString(m) }
 func (*Data) ProtoMessage()    {}
 func (*Data) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{0}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{0}
 }
 func (m *Data) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Data.Unmarshal(m, b)
@@ -87,7 +87,7 @@ func (m *UpdateRequest) Reset()         { *m = UpdateRequest{} }
 func (m *UpdateRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateRequest) ProtoMessage()    {}
 func (*UpdateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{1}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{1}
 }
 func (m *UpdateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateRequest.Unmarshal(m, b)
@@ -131,7 +131,7 @@ func (m *UpdateResponse) Reset()         { *m = UpdateResponse{} }
 func (m *UpdateResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateResponse) ProtoMessage()    {}
 func (*UpdateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{2}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{2}
 }
 func (m *UpdateResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateResponse.Unmarshal(m, b)
@@ -163,7 +163,7 @@ func (m *DeleteRequest) Reset()         { *m = DeleteRequest{} }
 func (m *DeleteRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteRequest) ProtoMessage()    {}
 func (*DeleteRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{3}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{3}
 }
 func (m *DeleteRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteRequest.Unmarshal(m, b)
@@ -200,7 +200,7 @@ func (m *DeleteResponse) Reset()         { *m = DeleteResponse{} }
 func (m *DeleteResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteResponse) ProtoMessage()    {}
 func (*DeleteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{4}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{4}
 }
 func (m *DeleteResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteResponse.Unmarshal(m, b)
@@ -230,7 +230,7 @@ func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{5}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{5}
 }
 func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRequest.Unmarshal(m, b)
@@ -251,7 +251,7 @@ func (m *GetRequest) XXX_DiscardUnknown() {
 var xxx_messageInfo_GetRequest proto.InternalMessageInfo
 
 type GetResponse struct {
-	// Config describes current config data retrieved from server.
+	// Config describes current config data retrieved from agent.
 	Config               *Data    `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -262,7 +262,7 @@ func (m *GetResponse) Reset()         { *m = GetResponse{} }
 func (m *GetResponse) String() string { return proto.CompactTextString(m) }
 func (*GetResponse) ProtoMessage()    {}
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{6}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{6}
 }
 func (m *GetResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetResponse.Unmarshal(m, b)
@@ -299,7 +299,7 @@ func (m *DumpRequest) Reset()         { *m = DumpRequest{} }
 func (m *DumpRequest) String() string { return proto.CompactTextString(m) }
 func (*DumpRequest) ProtoMessage()    {}
 func (*DumpRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{7}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{7}
 }
 func (m *DumpRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DumpRequest.Unmarshal(m, b)
@@ -320,7 +320,7 @@ func (m *DumpRequest) XXX_DiscardUnknown() {
 var xxx_messageInfo_DumpRequest proto.InternalMessageInfo
 
 type DumpResponse struct {
-	// State describes running state that was dumped from southbound.
+	// State describes running state data that was dumped from southbound.
 	State                *Data    `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -331,7 +331,7 @@ func (m *DumpResponse) Reset()         { *m = DumpResponse{} }
 func (m *DumpResponse) String() string { return proto.CompactTextString(m) }
 func (*DumpResponse) ProtoMessage()    {}
 func (*DumpResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataconfigurator_25235cb5ed948a71, []int{8}
+	return fileDescriptor_dataconfigurator_82b99ef3bb04c26e, []int{8}
 }
 func (m *DumpResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DumpResponse.Unmarshal(m, b)
@@ -550,10 +550,10 @@ var _DataConfigurator_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("dataconfigurator/dataconfigurator.proto", fileDescriptor_dataconfigurator_25235cb5ed948a71)
+	proto.RegisterFile("dataconfigurator/dataconfigurator.proto", fileDescriptor_dataconfigurator_82b99ef3bb04c26e)
 }
 
-var fileDescriptor_dataconfigurator_25235cb5ed948a71 = []byte{
+var fileDescriptor_dataconfigurator_82b99ef3bb04c26e = []byte{
 	// 392 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0x5f, 0x6b, 0xe2, 0x40,
 	0x14, 0xc5, 0xd1, 0x75, 0xb3, 0x7a, 0xa3, 0x8b, 0x0c, 0xcb, 0x22, 0xa1, 0x7f, 0x24, 0x14, 0x5a,

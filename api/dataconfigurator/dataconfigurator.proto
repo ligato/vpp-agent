@@ -55,7 +55,7 @@ message GetRequest {
 }
 
 message GetResponse {
-    // Config describes current config data retrieved from server.
+    // Config describes current config data retrieved from agent.
     Data config = 1;
 }
 
@@ -64,6 +64,6 @@ message DumpRequest {
 }
 
 message DumpResponse {
-    // State describes running state that was dumped from southbound.
+    // State describes running state data that was dumped from southbound.
     Data state = 1;
 }
