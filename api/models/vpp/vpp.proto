@@ -22,23 +22,23 @@ import "vpp/punt/punt.proto";
 message Data {
     repeated interfaces.Interface interfaces = 10;
 
-    repeated acl.Acl acls = 20 [(gogoproto.customname) = "ACLs"];
+    repeated acl.Acl acls = 20;
 
     repeated l2.BridgeDomain bridge_domains = 30;
-    repeated l2.FIBEntry fibs = 31 [(gogoproto.customname) = "FIBs"];
-    repeated l2.XConnectPair xconnect_pairs = 32 [(gogoproto.customname) = "XConnectPairs"];
+    repeated l2.FIBEntry fibs = 31;
+    repeated l2.XConnectPair xconnect_pairs = 32;
 
     repeated l3.Route routes = 40;
-    repeated l3.ARPEntry arps = 41 [(gogoproto.customname) = "ARPs"];
-    l3.ProxyARP proxy_arp = 42 [(gogoproto.customname) = "ProxyARP"];
-    l3.IPScanNeighbor ipscan_neighbor = 43 [(gogoproto.customname) = "IPScanNeighbor"];
+    repeated l3.ARPEntry arps = 41;
+    l3.ProxyARP proxy_arp = 42;
+    l3.IPScanNeighbor ipscan_neighbor = 43;
 
-    nat.Nat44Global nat44_global = 50 [(gogoproto.customname) = "NAT44Global"];
-    repeated nat.DNat44 dnat44s = 51 [(gogoproto.customname) = "DNAT44s"];
+    nat.Nat44Global nat44_global = 50;
+    repeated nat.DNat44 dnat44s = 51;
 
-    repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60 [(gogoproto.customname) = "IPSecSPDs"];
-    repeated ipsec.SecurityAssociation ipsec_sas = 61 [(gogoproto.customname) = "IPSecSAs"];
+    repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
+    repeated ipsec.SecurityAssociation ipsec_sas = 61;
 
-    repeated punt.IpRedirect punt_ipredirects = 70 [(gogoproto.customname) = "PuntIPRedirects"];
-    repeated punt.ToHost punt_tohosts = 71 [(gogoproto.customname) = "PuntToHosts"];
+    repeated punt.IpRedirect punt_ipredirects = 70;
+    repeated punt.ToHost punt_tohosts = 71;
 }

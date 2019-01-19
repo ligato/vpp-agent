@@ -43,14 +43,14 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 	state := newData()
 
 	state.Vpp.Interfaces, _ = svc.DumpInterfaces()
-	state.Vpp.ACLs, _ = svc.DumpAcls()
-	state.Vpp.IPSecSPDs, _ = svc.DumpIPSecSPDs()
-	state.Vpp.IPSecSAs, _ = svc.DumpIPSecSAs()
+	state.Vpp.Acls, _ = svc.DumpAcls()
+	state.Vpp.IpsecSpds, _ = svc.DumpIPSecSPDs()
+	state.Vpp.IpsecSas, _ = svc.DumpIPSecSAs()
 	state.Vpp.BridgeDomains, _ = svc.DumpBDs()
 	state.Vpp.Routes, _ = svc.DumpRoutes()
-	state.Vpp.ARPs, _ = svc.DumpARPs()
-	state.Vpp.FIBs, _ = svc.DumpFIBs()
-	state.Vpp.XConnectPairs, _ = svc.DumpXConnects()
+	state.Vpp.Arps, _ = svc.DumpARPs()
+	state.Vpp.Fibs, _ = svc.DumpFIBs()
+	state.Vpp.XconnectPairs, _ = svc.DumpXConnects()
 
 	return &rpc.DumpResponse{State: state}, nil
 }

@@ -12,11 +12,11 @@ import (
 )
 
 type grpcClient struct {
-	remote api.ConfiguratorClient
+	remote api.GenericConfiguratorClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(client api.ConfiguratorClient) client.ConfigClient {
+func NewClientGRPC(client api.GenericConfiguratorClient) client.ConfigClient {
 	return &grpcClient{client}
 }
 
@@ -81,7 +81,7 @@ func (c *grpcClient) SetConfig(resync bool) client.SetConfigRequest {
 }
 
 type setConfigRequest struct {
-	client api.ConfiguratorClient
+	client api.GenericConfiguratorClient
 	req    *api.SetConfigRequest
 	err    error
 }

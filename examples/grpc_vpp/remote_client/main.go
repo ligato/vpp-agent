@@ -124,7 +124,7 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
 func (p *ExamplePlugin) resyncVPP() {
-	client := dataconfigurator.NewConfigClient(p.conn)
+	client := dataconfigurator.NewDataConfiguratorClient(p.conn)
 
 	ctx := context.Background()
 
@@ -133,9 +133,9 @@ func (p *ExamplePlugin) resyncVPP() {
 			Interfaces: []*interfaces.Interface{
 				memif1,
 			},
-			IPScanNeighbor: ipScanNeigh,
-			IPSecSAs:       []*vpp_ipsec.SecurityAssociation{sa10},
-			IPSecSPDs:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
+			IpscanNeighbor: ipScanNeigh,
+			IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
+			IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
 		},
 		Linux: &linux.Data{
 			Interfaces: []*linux_interfaces.Interface{
@@ -159,9 +159,7 @@ func (p *ExamplePlugin) resyncVPP() {
 	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
 	fmt.Printf("Config:\n %+v\n", out)
 
-	client2 := dataconfigurator.NewStateClient(p.conn)
-
-	dump, err := client2.Dump(context.Background(), &dataconfigurator.DumpRequest{})
+	dump, err := client.Dump(context.Background(), &dataconfigurator.DumpRequest{})
 	if err != nil {
 		log.Fatalln(err)
 	}
