@@ -17,7 +17,6 @@ package vppcalls
 import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 )
@@ -56,16 +55,13 @@ type PuntVppHandler struct {
 	callsChannel api.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
-	// FIXME: temporary solutions for providing data in dump
-	socketPathMap map[uint32]*vpp.PuntToHost
 }
 
 // NewPuntVppHandler creates new instance of punt vppcalls handler
 func NewPuntVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *PuntVppHandler {
 	return &PuntVppHandler{
-		callsChannel:  callsChan,
-		ifIndexes:     ifIndexes,
-		log:           log,
-		socketPathMap: map[uint32]*vpp.PuntToHost{},
+		callsChannel: callsChan,
+		ifIndexes:    ifIndexes,
+		log:          log,
 	}
 }

@@ -14,7 +14,10 @@
 
 package vppcalls
 
-import punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+import (
+	"github.com/ligato/vpp-agent/api/models/vpp"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+)
 
 // PuntDetails includes proto-modelled punt object and its socket path
 type PuntDetails struct {
@@ -22,10 +25,13 @@ type PuntDetails struct {
 	SocketPath string
 }
 
+// FIXME: temporary solutions for providing data in dump
+var socketPathMap = map[uint32]*vpp.PuntToHost{}
+
 // DumpPuntRegisteredSockets returns punt to host via registered socket entries
 // TODO since the binary API is not available, all data are read from local cache for now
 func (h *PuntVppHandler) DumpPuntRegisteredSockets() (punts []*PuntDetails, err error) {
-	for _, punt := range h.socketPathMap {
+	for _, punt := range socketPathMap {
 		punts = append(punts, &PuntDetails{
 			PuntData:   punt,
 			SocketPath: punt.SocketPath,

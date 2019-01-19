@@ -139,7 +139,7 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 
 	p := *punt
 	p.SocketPath = punt.SocketPath
-	h.socketPathMap[punt.Port] = &p
+	socketPathMap[punt.Port] = &p
 
 	return nil
 }
@@ -164,7 +164,7 @@ func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool
 		return err
 	}
 
-	delete(h.socketPathMap, punt.Port)
+	delete(socketPathMap, punt.Port)
 
 	return nil
 }
