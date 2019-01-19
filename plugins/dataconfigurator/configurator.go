@@ -23,14 +23,14 @@ type configuratorServer struct {
 func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
 	config := newData()
 
-	dispatcher.PlaceProtos(svc.dispatch.ListData(), config.Linux, config.Vpp)
+	dispatcher.PlaceProtos(svc.dispatch.ListData(), config.LinuxData, config.VppData)
 
 	return &rpc.GetResponse{Config: config}, nil
 }
 
 // Update adds configuration data present in data request to the VPP/Linux
 func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
-	protos := dispatcher.ExtractProtos(req.Update.Vpp, req.Update.Linux)
+	protos := dispatcher.ExtractProtos(req.Update.VppData, req.Update.LinuxData)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {
@@ -59,7 +59,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 
 // Delete removes configuration data present in data request from the VPP/linux
 func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
-	protos := dispatcher.ExtractProtos(req.Delete.Vpp, req.Delete.Linux)
+	protos := dispatcher.ExtractProtos(req.Delete.VppData, req.Delete.LinuxData)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {

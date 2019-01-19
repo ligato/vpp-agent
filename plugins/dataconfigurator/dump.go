@@ -42,15 +42,15 @@ type dumpService struct {
 func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
 	state := newData()
 
-	state.Vpp.Interfaces, _ = svc.DumpInterfaces()
-	state.Vpp.Acls, _ = svc.DumpAcls()
-	state.Vpp.IpsecSpds, _ = svc.DumpIPSecSPDs()
-	state.Vpp.IpsecSas, _ = svc.DumpIPSecSAs()
-	state.Vpp.BridgeDomains, _ = svc.DumpBDs()
-	state.Vpp.Routes, _ = svc.DumpRoutes()
-	state.Vpp.Arps, _ = svc.DumpARPs()
-	state.Vpp.Fibs, _ = svc.DumpFIBs()
-	state.Vpp.XconnectPairs, _ = svc.DumpXConnects()
+	state.VppData.Interfaces, _ = svc.DumpInterfaces()
+	state.VppData.Acls, _ = svc.DumpAcls()
+	state.VppData.IpsecSpds, _ = svc.DumpIPSecSPDs()
+	state.VppData.IpsecSas, _ = svc.DumpIPSecSAs()
+	state.VppData.BridgeDomains, _ = svc.DumpBDs()
+	state.VppData.Routes, _ = svc.DumpRoutes()
+	state.VppData.Arps, _ = svc.DumpARPs()
+	state.VppData.Fibs, _ = svc.DumpFIBs()
+	state.VppData.XconnectPairs, _ = svc.DumpXConnects()
 
 	return &rpc.DumpResponse{State: state}, nil
 }

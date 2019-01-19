@@ -116,7 +116,7 @@ func (p *Plugin) initHandlers() (err error) {
 
 func newData() *rpc.Data {
 	return &rpc.Data{
-		Linux: &linux.Data{},
-		Vpp:   &vpp.Data{},
+		LinuxData: &linux.Data{},
+		VppData:   &vpp.Data{},
 	}
 }

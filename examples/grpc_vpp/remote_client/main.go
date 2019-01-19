@@ -129,7 +129,7 @@ func (p *ExamplePlugin) resyncVPP() {
 	ctx := context.Background()
 
 	update := &dataconfigurator.Data{
-		Vpp: &vpp.Data{
+		VppData: &vpp.Data{
 			Interfaces: []*interfaces.Interface{
 				memif1,
 			},
@@ -137,7 +137,7 @@ func (p *ExamplePlugin) resyncVPP() {
 			IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
 			IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
 		},
-		Linux: &linux.Data{
+		LinuxData: &linux.Data{
 			Interfaces: []*linux_interfaces.Interface{
 				veth1, veth2,
 			},
