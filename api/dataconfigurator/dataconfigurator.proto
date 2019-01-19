@@ -4,9 +4,6 @@ package dataconfigurator;
 
 option go_package = "github.com/ligato/vpp-agent/api/dataconfigurator;dataconfigurator";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
-
 import "models/vpp/vpp.proto";
 import "models/linux/linux.proto";
 
