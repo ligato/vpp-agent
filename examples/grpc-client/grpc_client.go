@@ -184,10 +184,10 @@ func demonstrateClient(conn *grpc.ClientConn) {
 
 	fmt.Printf("Retrieving config\n")
 	data := &dataconfigurator.Data{
-		Vpp:   &vpp.Data{},
-		Linux: &linux.Data{},
+		VppData:   &vpp.Data{},
+		LinuxData: &linux.Data{},
 	}
-	if err := c.GetConfig(data.Vpp, data.Linux); err != nil {
+	if err := c.GetConfig(data.VppData, data.LinuxData); err != nil {
 		log.Fatalln(err)
 	}
 	fmt.Printf("Config:\n%+v\n", proto.MarshalTextString(data))

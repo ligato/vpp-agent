@@ -2,14 +2,15 @@ package dataconfigurator
 
 import (
 	"github.com/ligato/cn-infra/logging"
+	"golang.org/x/net/context"
+
+	rpc "github.com/ligato/vpp-agent/api/dataconfigurator"
 	"github.com/ligato/vpp-agent/api/models/vpp/acl"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"golang.org/x/net/context"
-
-	rpc "github.com/ligato/vpp-agent/api/dataconfigurator"
+	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
 	aclvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/vppcalls"
@@ -18,6 +19,7 @@ import (
 	l2vppcalls "github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	l3vppcalls "github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
 	natvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 )
 
 type dumpService struct {
@@ -34,6 +36,7 @@ type dumpService struct {
 	pArpHandler  l3vppcalls.ProxyArpVppRead
 	rtHandler    l3vppcalls.RouteVppRead
 	ipsecHandler ipsecvppcalls.IPSecVPPRead
+	puntHandler  vppcalls.PuntVPPRead
 	// Linux handlers
 	linuxIfHandler iflinuxcalls.NetlinkAPIRead
 	linuxL3Handler l3linuxcalls.NetlinkAPIRead
@@ -51,6 +54,7 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 	state.VppData.Arps, _ = svc.DumpARPs()
 	state.VppData.Fibs, _ = svc.DumpFIBs()
 	state.VppData.XconnectPairs, _ = svc.DumpXConnects()
+	state.VppData.PuntTohosts, _ = svc.DumpPunt()
 
 	return &rpc.DumpResponse{State: state}, nil
 }
@@ -213,18 +217,17 @@ func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 }
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
-/*func (svc *dumpService) DumpPunt() ([]*vpp_punt.ToHost, error) {
-	var punts []*vpp_punt.ToHost
-	puntDetailsList := svc.puntHandler.DumpPuntRegisteredSockets()
-	for _, puntDetails := range puntDetailsList {
-		punts = append(punts, &rpc.PuntResponse_PuntEntry{
-			PuntData: puntDetails.PuntData,
-			PathName: puntDetails.SocketPath,
-		})
+func (svc *dumpService) DumpPunt() (punts []*vpp_punt.ToHost, err error) {
+	dump, err := svc.puntHandler.DumpPuntRegisteredSockets()
+	if err != nil {
+		return nil, err
+	}
+	for _, puntDetails := range dump {
+		punts = append(punts, puntDetails.PuntData)
 	}
 
-	return &rpc.PuntResponse{PuntEntries: punts}, nil
-}*/
+	return punts, nil
+}
 
 // DumpLinuxInterfaces reads linux interfaces and returns them as an *LinuxInterfaceResponse. If reading ends up with error,
 // only error is send back in response
