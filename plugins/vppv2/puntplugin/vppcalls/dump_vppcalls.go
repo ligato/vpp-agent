@@ -19,26 +19,22 @@ import punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 // PuntDetails includes proto-modelled punt object and its socket path
 type PuntDetails struct {
 	PuntData   *punt.ToHost
-	SocketPath []byte
+	SocketPath string
 }
 
 // DumpPuntRegisteredSockets returns punt to host via registered socket entries
 // TODO since the binary API is not available, all data are read from local cache for now
-func (h *PuntVppHandler) DumpPuntRegisteredSockets() (punts []*PuntDetails) {
-	/*for _, puntName := range h.mapping.GetMapping().ListNames() {
-		_, puntMeta, found := h.mapping.LookupIdx(puntName)
-		if !found {
-			continue
-		}
+func (h *PuntVppHandler) DumpPuntRegisteredSockets() (punts []*PuntDetails, err error) {
+	for _, punt := range h.socketPathMap {
 		punts = append(punts, &PuntDetails{
-			PuntData:   puntMeta.Punt,
-			SocketPath: puntMeta.SocketPath,
+			PuntData:   punt,
+			SocketPath: punt.SocketPath,
 		})
 	}
 
 	if len(punts) > 0 {
 		h.log.Warnf("Dump punt socket register: all entries were read from local cache")
-	}*/
+	}
 
-	return punts
+	return punts, nil
 }

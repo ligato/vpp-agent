@@ -48,17 +48,13 @@ type PuntToHostDescriptor struct {
 	// dependencies
 	log         logging.Logger
 	puntHandler vppcalls.PuntVppAPI
-
-	// FIXME: temporary solutions for providing data in dump
-	socketPathMap map[uint32]*vpp.PuntToHost
 }
 
 // NewPuntToHostDescriptor creates a new instance of the punt to host descriptor.
 func NewPuntToHostDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.LoggerFactory) *PuntToHostDescriptor {
 	return &PuntToHostDescriptor{
-		log:           log.NewLogger("punt-to-host-descriptor"),
-		puntHandler:   puntHandler,
-		socketPathMap: map[uint32]*vpp.PuntToHost{},
+		log:         log.NewLogger("punt-to-host-descriptor"),
+		puntHandler: puntHandler,
 	}
 }
 
@@ -113,7 +109,6 @@ func (d *PuntToHostDescriptor) Add(key string, punt *punt.ToHost) (metadata inte
 	if err != nil {
 		d.log.Error(err)
 	}
-	d.socketPathMap[punt.Port] = punt
 
 	return nil, err
 }
@@ -131,7 +126,6 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 	if err != nil {
 		d.log.Error(err)
 	}
-	delete(d.socketPathMap, punt.Port)
 
 	return err
 }
@@ -141,10 +135,15 @@ func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata
 	// TODO dump for punt and punt socket register missing in api
 	d.log.Info("Dump punt/socket register is not supported by the VPP")
 
-	for _, punt := range d.socketPathMap {
+	socks, err := d.puntHandler.DumpPuntRegisteredSockets()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, punt := range socks {
 		dump = append(dump, adapter.PuntToHostKVWithMetadata{
-			Key:    models.Key(punt),
-			Value:  punt,
+			Key:    models.Key(punt.PuntData),
+			Value:  punt.PuntData,
 			Origin: kvs.FromNB,
 		})
 	}

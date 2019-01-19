@@ -17,6 +17,7 @@ package vppcalls
 import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 )
@@ -47,7 +48,7 @@ type PuntVPPWrite interface {
 type PuntVPPRead interface {
 	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
 	// TODO since the API to dump sockets is missing, the method works only with the entries in local cache
-	DumpPuntRegisteredSockets() (punts []*PuntDetails)
+	DumpPuntRegisteredSockets() ([]*PuntDetails, error)
 }
 
 // PuntVppHandler is accessor for punt-related vppcalls methods.
@@ -55,13 +56,16 @@ type PuntVppHandler struct {
 	callsChannel api.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
+	// FIXME: temporary solutions for providing data in dump
+	socketPathMap map[uint32]*vpp.PuntToHost
 }
 
 // NewPuntVppHandler creates new instance of punt vppcalls handler
 func NewPuntVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *PuntVppHandler {
 	return &PuntVppHandler{
-		callsChannel: callsChan,
-		ifIndexes:    ifIndexes,
-		log:          log,
+		callsChannel:  callsChan,
+		ifIndexes:     ifIndexes,
+		log:           log,
+		socketPathMap: map[uint32]*vpp.PuntToHost{},
 	}
 }
