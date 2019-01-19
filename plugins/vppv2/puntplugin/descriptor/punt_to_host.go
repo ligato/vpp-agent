@@ -17,10 +17,11 @@ package descriptor
 import (
 	"errors"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	"github.com/ligato/vpp-agent/pkg/models"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 )
@@ -47,13 +48,17 @@ type PuntToHostDescriptor struct {
 	// dependencies
 	log         logging.Logger
 	puntHandler vppcalls.PuntVppAPI
+
+	// FIXME: temporary solutions for providing data in dump
+	socketPathMap map[uint32]*vpp.PuntToHost
 }
 
 // NewPuntToHostDescriptor creates a new instance of the punt to host descriptor.
 func NewPuntToHostDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.LoggerFactory) *PuntToHostDescriptor {
 	return &PuntToHostDescriptor{
-		log:         log.NewLogger("punt-to-host-descriptor"),
-		puntHandler: puntHandler,
+		log:           log.NewLogger("punt-to-host-descriptor"),
+		puntHandler:   puntHandler,
+		socketPathMap: map[uint32]*vpp.PuntToHost{},
 	}
 }
 
@@ -77,8 +82,12 @@ func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 
 // EquivalentPuntToHost is case-insensitive comparison function for punt.ToHost.
 func (d *PuntToHostDescriptor) EquivalentPuntToHost(key string, oldPunt, newPunt *punt.ToHost) bool {
-	// parameters compared by proto equal
-	return proto.Equal(oldPunt, newPunt)
+	if oldPunt.L3Protocol != newPunt.L3Protocol ||
+		oldPunt.L4Protocol != newPunt.L4Protocol ||
+		oldPunt.Port != newPunt.Port {
+		return false
+	}
+	return true
 }
 
 // Add adds new punt to host entry or registers new punt to unix domain socket.
@@ -104,6 +113,8 @@ func (d *PuntToHostDescriptor) Add(key string, punt *punt.ToHost) (metadata inte
 	if err != nil {
 		d.log.Error(err)
 	}
+	d.socketPathMap[punt.Port] = punt
+
 	return nil, err
 }
 
@@ -120,6 +131,8 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 	if err != nil {
 		d.log.Error(err)
 	}
+	delete(d.socketPathMap, punt.Port)
+
 	return err
 }
 
@@ -127,7 +140,16 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata) (dump []adapter.PuntToHostKVWithMetadata, err error) {
 	// TODO dump for punt and punt socket register missing in api
 	d.log.Info("Dump punt/socket register is not supported by the VPP")
-	return []adapter.PuntToHostKVWithMetadata{}, nil
+
+	for _, punt := range d.socketPathMap {
+		dump = append(dump, adapter.PuntToHostKVWithMetadata{
+			Key:    models.Key(punt),
+			Value:  punt,
+			Origin: kvs.FromNB,
+		})
+	}
+
+	return dump, nil
 }
 
 // ModifyWithRecreate always returns true - punt entries are always modified via re-creation.

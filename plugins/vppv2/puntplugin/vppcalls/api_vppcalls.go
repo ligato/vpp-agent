@@ -23,6 +23,12 @@ import (
 
 // PuntVppAPI provides methods for managing VPP punt configuration.
 type PuntVppAPI interface {
+	PuntVPPWrite
+	PuntVPPRead
+}
+
+// PuntVPPWrite provides write methods for punt
+type PuntVPPWrite interface {
 	// AddPunt configures new punt to the host from the VPP
 	AddPunt(punt *punt.ToHost) error
 	// DeletePunt removes or unregisters punt entry
@@ -35,6 +41,13 @@ type PuntVppAPI interface {
 	AddPuntRedirect(punt *punt.IpRedirect) error
 	// DeletePuntRedirect removes existing redirect entry
 	DeletePuntRedirect(punt *punt.IpRedirect) error
+}
+
+// PuntVPPRead provides read methods for punt
+type PuntVPPRead interface {
+	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
+	// TODO since the API to dump sockets is missing, the method works only with the entries in local cache
+	DumpPuntRegisteredSockets() (punts []*PuntDetails)
 }
 
 // PuntVppHandler is accessor for punt-related vppcalls methods.
