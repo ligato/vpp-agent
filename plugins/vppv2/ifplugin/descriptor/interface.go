@@ -480,6 +480,10 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 		if intf.Type != interfaces.Interface_TAP {
 			return ErrInterfaceLinkMismatch
 		}
+	case *interfaces.Interface_Ipsec:
+		if intf.Type != interfaces.Interface_IPSEC_TUNNEL {
+			return ErrInterfaceLinkMismatch
+		}
 	}
 
 	// validate type specific
@@ -495,6 +499,10 @@ func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface
 	case interfaces.Interface_AF_PACKET:
 		if intf.GetAfpacket().GetHostIfName() == "" {
 			return ErrAfPacketWithoutHostName
+		}
+	case interfaces.Interface_IPSEC_TUNNEL:
+		if intf.GetIpsec() == nil {
+			return ErrInterfaceLinkMismatch
 		}
 	case interfaces.Interface_UNDEFINED_TYPE:
 		return ErrInterfaceWithoutType
