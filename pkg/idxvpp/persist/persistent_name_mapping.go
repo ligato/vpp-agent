@@ -29,7 +29,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/pkg/idxvpp"
-	"github.com/ligato/vpp-agent/pkg/idxvppxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
 )
 
 var (
