@@ -1,11 +1,8 @@
 syntax = "proto3";
 
-package api;
+package genericmanager;
 
-option go_package = "github.com/ligato/vpp-agent/api";
-
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
+option go_package = "github.com/ligato/vpp-agent/api/genericmanager";
 
 import "google/protobuf/any.proto";
 
@@ -63,8 +60,7 @@ service GenericManager {
 
     // Subscribe is used for subscribing to events.
     // Notifications are returned by streaming updates.
-    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse) {
-    };
+    rpc Subscribe (SubscribeRequest) returns (stream SubscribeResponse);
 }
 
 //------------------------------------------------------------------------------

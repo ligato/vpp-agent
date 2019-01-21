@@ -18,9 +18,11 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
+
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
+	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
@@ -36,13 +38,13 @@ func NewClient(factory ProtoTxnFactory) ConfigClient {
 	return &client{factory}
 }
 
-/*func (c *client) ActiveModels() (map[string][]api.ModelInfo, error) {
-	modules := make(map[string][]api.ModelInfo)
+func (c *client) KnownModels() ([]api.ModelInfo, error) {
+	var modules []api.ModelInfo
 	for _, info := range models.RegisteredModels() {
-		modules[info.Model.Module] = append(modules[info.Model.Module], *info)
+		modules = append(modules, *info)
 	}
 	return modules, nil
-}*/
+}
 
 func (c *client) ResyncConfig(items ...proto.Message) error {
 	txn := c.txnFactory.NewTxn(true)

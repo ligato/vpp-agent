@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api"
+
+	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/pkg/util"
@@ -20,7 +21,7 @@ func NewClientGRPC(client api.GenericManagerClient) client.ConfigClient {
 	return &grpcClient{client}
 }
 
-/*func (c *grpcClient) KnownModels() ([]api.ModelInfo, error) {
+func (c *grpcClient) KnownModels() ([]api.ModelInfo, error) {
 	ctx := context.Background()
 
 	resp, err := c.remote.Capabilities(ctx, &api.CapabilitiesRequest{})
@@ -34,7 +35,7 @@ func NewClientGRPC(client api.GenericManagerClient) client.ConfigClient {
 	}
 
 	return modules, nil
-}*/
+}
 
 func (c *grpcClient) ChangeConfig() client.ChangeRequest {
 	return &setConfigRequest{

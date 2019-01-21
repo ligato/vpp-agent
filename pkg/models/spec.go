@@ -23,7 +23,7 @@ import (
 	"text/template"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/vpp-agent/api"
+	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
 
 var (

@@ -22,10 +22,10 @@ import (
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"golang.org/x/net/context"
 
-	"github.com/ligato/vpp-agent/api"
+	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 

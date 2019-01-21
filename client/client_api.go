@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
+	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
 
 // ConfigClient defines the client-side interface for config.
 type ConfigClient interface {
 	// KnownModels retrieves list of known modules.
-	//KnownModels() ([]api.ModelInfo, error)
+	KnownModels() ([]api.ModelInfo, error)
 
 	// ChangeConfig returns transaction for changing config.
 	ChangeConfig() ChangeRequest

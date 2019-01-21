@@ -19,7 +19,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/ligato/vpp-agent/api"
+
+	api "github.com/ligato/vpp-agent/api/genericmanager"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
