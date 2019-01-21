@@ -138,7 +138,7 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 	}
 
 	p := *punt
-	p.SocketPath = punt.SocketPath
+	p.SocketPath = string(reply.Pathname)
 	socketPathMap[punt.Port] = &p
 
 	return nil
