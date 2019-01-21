@@ -813,11 +813,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2ac7a6137a887542d0775ac7754948d4d34bad1fcbd4a7cbe9013c2211b1b566"
+  digest = "1:d81a708124c38e074fd655f8e9e9218e9461eb208cf23d787b58b193fd3547af"
   name = "github.com/unrolled/render"
   packages = ["."]
   pruneopts = "UT"
-  revision = "4c664cb3ad2f9856d1debd49977df56221ab45a9"
+  revision = "449f3985007486f7f42ca7f62b4c8b45d6d89cbf"
 
 [[projects]]
   digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
