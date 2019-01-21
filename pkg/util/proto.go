@@ -22,6 +22,9 @@ import (
 
 func ExtractProtos(from ...interface{}) (protos []proto.Message) {
 	for _, v := range from {
+		if reflect.ValueOf(v).IsNil() {
+			continue
+		}
 		val := reflect.ValueOf(v).Elem()
 		typ := val.Type()
 		if typ.Kind() != reflect.Struct {

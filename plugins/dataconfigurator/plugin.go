@@ -18,6 +18,7 @@ import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
+	puntvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
@@ -106,6 +107,7 @@ func (p *Plugin) initHandlers() (err error) {
 	p.configSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.configSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
 	p.configSvc.ipsecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configSvc.puntHandler = puntvppcalls.NewPuntVppHandler(p.vppChan, ifIndexes, p.Log)
 
 	// Linux indexes and handlers
 	p.configSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
