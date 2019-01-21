@@ -19,12 +19,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/linux/l3"
-	"github.com/ligato/vpp-agent/api/models/vpp/acl"
-	"github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/api/models/vpp/nat"
-	"github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
@@ -47,7 +41,7 @@ func TestEncoding(t *testing.T) {
 	t.Logf("unmarshalled:\n%+v", proto.MarshalTextString(out))
 }
 
-func TestKeys(t *testing.T) {
+/*func TestKeys(t *testing.T) {
 	tests := []struct {
 		name        string
 		model       proto.Message
@@ -146,7 +140,7 @@ func TestKeys(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 /*func TestParseKeys(t *testing.T) {
 	tests := []struct {

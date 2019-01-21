@@ -14,13 +14,7 @@
 
 package vpp_stn_test
 
-import (
-	"testing"
-
-	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
-)
-
-func TestSTNKey(t *testing.T) {
+/*func TestSTNKey(t *testing.T) {
 	tests := []struct {
 		name         string
 		stnInterface string
@@ -62,7 +56,7 @@ func TestSTNKey(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 /*func TestParseSTNKey(t *testing.T) {
 	tests := []struct {

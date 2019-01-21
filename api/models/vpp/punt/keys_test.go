@@ -14,11 +14,7 @@
 
 package vpp_punt
 
-import (
-	"testing"
-)
-
-func TestPuntToHostKey(t *testing.T) {
+/*func TestPuntToHostKey(t *testing.T) {
 	tests := []struct {
 		name        string
 		l3Protocol  L3Protocol
@@ -72,7 +68,7 @@ func TestPuntToHostKey(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 /*func TestParsePuntToHostKey(t *testing.T) {
 	tests := []struct {
@@ -151,7 +147,7 @@ func TestPuntToHostKey(t *testing.T) {
 	}
 }*/
 
-func TestIPredirectKey(t *testing.T) {
+/*func TestIPredirectKey(t *testing.T) {
 	tests := []struct {
 		name        string
 		l3Protocol  L3Protocol
@@ -187,7 +183,7 @@ func TestIPredirectKey(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 /*func TestParseIPRedirectKey(t *testing.T) {
 	tests := []struct {

@@ -20,7 +20,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
@@ -29,9 +28,6 @@ import (
 	"github.com/ligato/vpp-agent/api"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
-
-// Registry is used for propagating transactions.
-var Registry = local.DefaultRegistry
 
 // Plugin implements sync service for GRPC.
 type Plugin struct {

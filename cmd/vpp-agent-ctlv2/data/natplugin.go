@@ -75,15 +75,13 @@ func (ctl *VppAgentCtlImpl) PutGlobalNat() error {
 	}
 
 	ctl.Log.Info("Global NAT put")
-	return ctl.broker.Put(nat.GlobalNAT44Key, natGlobal)
+	return ctl.broker.Put(nat.GlobalNAT44Key(), natGlobal)
 }
 
 // DeleteGlobalNat removes global NAT configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteGlobalNat() error {
-	globalNat := nat.GlobalNAT44Key
-
 	ctl.Log.Info("Global NAT delete")
-	_, err := ctl.broker.Delete(globalNat)
+	_, err := ctl.broker.Delete(nat.GlobalNAT44Key())
 	return err
 }
 

@@ -16,11 +16,9 @@ package vpp_interfaces
 
 import (
 	"testing"
-
-	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-func TestInterfaceKey(t *testing.T) {
+/*func TestInterfaceKey(t *testing.T) {
 	tests := []struct {
 		name        string
 		iface       string
@@ -103,7 +101,7 @@ func TestParseNameFromKey(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 func TestInterfaceErrorKey(t *testing.T) {
 	tests := []struct {

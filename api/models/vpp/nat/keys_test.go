@@ -18,7 +18,7 @@ import (
 	"testing"
 )
 
-func TestDNAT44Key(t *testing.T) {
+/*func TestDNAT44Key(t *testing.T) {
 	tests := []struct {
 		name        string
 		label       string
@@ -45,7 +45,7 @@ func TestDNAT44Key(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 func TestInterfaceNAT44Key(t *testing.T) {
 	tests := []struct {
