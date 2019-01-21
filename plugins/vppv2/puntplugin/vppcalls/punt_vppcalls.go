@@ -16,6 +16,7 @@ package vppcalls
 
 import (
 	"net"
+	"strings"
 
 	"github.com/go-errors/errors"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
@@ -138,7 +139,7 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 	}
 
 	p := *punt
-	p.SocketPath = string(reply.Pathname)
+	p.SocketPath = strings.SplitN(string(reply.Pathname), "\x00", 2)[0]
 	socketPathMap[punt.Port] = &p
 
 	return nil
