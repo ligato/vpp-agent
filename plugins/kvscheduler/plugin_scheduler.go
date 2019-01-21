@@ -86,7 +86,6 @@ type Scheduler struct {
 	resyncCount  uint
 
 	// value status
-	lastError        map[string]error // TODO key -> non-nil error (even for derived values removed by refresh)
 	updatedStates    utils.KeySet  // base values with updated status
 	valStateWatchers []valStateWatcher
 
@@ -161,8 +160,6 @@ func (s *Scheduler) Init() error {
 	s.txnQueue = make(chan *transaction, 100)
 	// register REST API handlers
 	s.registerHandlers(s.HTTPHandlers)
-	// initialize map with last errors
-	s.lastError = make(map[string]error)
 	// initialize key-set used to mark values with updated status
 	s.updatedStates = utils.NewSliceBasedKeySet()
 	// record startup time
