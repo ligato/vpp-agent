@@ -16,7 +16,6 @@ package govppmux
 
 import (
 	"context"
-	"reflect"
 	"sync"
 	"time"
 
@@ -180,7 +179,8 @@ func (p *Plugin) Init() error {
 		p.statsAdapter = NewStatsAdapter(defaultStatsSocket)
 	}
 	if err := p.statsAdapter.Connect(); err != nil {
-		p.Log.Errorf("Unable to connect to VPP statistics socket, %v", err)
+		p.Log.Warnf("Unable to connect to VPP statistics socket, %v", err)
+		p.statsAdapter = nil
 	}
 
 	return nil
@@ -252,7 +252,7 @@ func (p *Plugin) GetTrace() *apitrace.Trace {
 
 // ListStats returns all stats names
 func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
-	if reflect.ValueOf(p.statsAdapter).IsNil() {
+	if p.statsAdapter == nil {
 		return nil, nil
 	}
 	return p.statsAdapter.ListStats(prefixes...)
@@ -260,7 +260,7 @@ func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
 
 // DumpStats returns all stats with name, type and value
 func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
-	if reflect.ValueOf(p.statsAdapter).IsNil() {
+	if p.statsAdapter == nil {
 		return nil, nil
 	}
 	return p.statsAdapter.DumpStats(prefixes...)
