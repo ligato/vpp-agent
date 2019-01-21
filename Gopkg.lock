@@ -46,14 +46,6 @@
   version = "v0.4.11"
 
 [[projects]]
-  branch = "master"
-  digest = "1:3721a10686511b80c052323423f0de17a8c06d417dbdd3b392b1578432a33aae"
-  name = "github.com/Nvveen/Gotty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
-
-[[projects]]
   digest = "1:49eb5d6ac71a788f1f15331e7cd87286b92951fdf758f418e12f22ac8dd27af1"
   name = "github.com/Shopify/sarama"
   packages = [
@@ -300,7 +292,7 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:76d257c053e613c593017c941bbfe889442b51c40efb0ae44573891113431bc4"
+  digest = "1:27faff505d42f8291f35961b3e47a7598a70599379afa171f9a78047059736da"
   name = "github.com/fsouza/go-dockerclient"
   packages = [
     ".",
@@ -309,8 +301,8 @@
     "internal/term",
   ]
   pruneopts = "UT"
-  revision = "8300e91d8f670b3ae69ac75948337dba391a9768"
-  version = "v1.3.3"
+  revision = "bcd4059882ad0ce568e55b899c16b0f1ee7dc4ae"
+  version = "v1.3.5"
 
 [[projects]]
   digest = "1:2cd7915ab26ede7d95b8749e6b1f933f1c6d5398030684e6505940a10f31cfda"
@@ -465,6 +457,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "2b2a61e366a66d3efb279e46176e7291001e0354"
+
+[[projects]]
+  branch = "master"
+  digest = "1:33f920ba428942560c22c0e145127dc09a52c52d64eac284daea6b0926fab0d1"
+  name = "github.com/ijc/Gotty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a8b993ba6abdb0e0c12b0125c603323a71c7790c"
 
 [[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
