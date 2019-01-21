@@ -91,7 +91,6 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
 COPY \
     docker/dev/etcd.conf \
     docker/dev/kafka.conf \
-    docker/dev/govpp.conf \
     docker/dev/vpp-plugin.conf \
     docker/dev/linux-plugin.conf \
     docker/dev/logs.conf \

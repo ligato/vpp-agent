@@ -30,6 +30,8 @@ import (
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -200,6 +202,30 @@ func (dsl *PutDSL) DNAT44(nat44 *nat.DNat44) linuxclient.PutDSL {
 	return dsl
 }
 
+// IPSecSA adds request to create a new Security Association
+func (dsl *PutDSL) IPSecSA(sa *ipsec.SecurityAssociation) linuxclient.PutDSL {
+	dsl.vppPut.IPSecSA(sa)
+	return dsl
+}
+
+// IPSecSPD adds request to create a new Security Policy Database
+func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclient.PutDSL {
+	dsl.vppPut.IPSecSPD(spd)
+	return dsl
+}
+
+// PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
+func (dsl *PutDSL) PuntIPRedirect(val *punt.IpRedirect) linuxclient.PutDSL {
+	dsl.vppPut.PuntIPRedirect(val)
+	return dsl
+}
+
+// PuntToHost adds request to create or update rule to punt L4 traffic to a host.
+func (dsl *PutDSL) PuntToHost(val *punt.ToHost) linuxclient.PutDSL {
+	dsl.vppPut.PuntToHost(val)
+	return dsl
+}
+
 // Delete changes the DSL mode to allow removal of an existing configuration.
 func (dsl *PutDSL) Delete() linuxclient.DeleteDSL {
 	return &DeleteDSL{dsl.parent, dsl.vppPut.Delete()}
@@ -332,6 +358,30 @@ func (dsl *DeleteDSL) NAT44Global() linuxclient.DeleteDSL {
 // DNAT44 adds a request to delete an existing DNAT44 configuration
 func (dsl *DeleteDSL) DNAT44(label string) linuxclient.DeleteDSL {
 	dsl.vppDelete.DNAT44(label)
+	return dsl
+}
+
+// IPSecSA adds request to delete a Security Association
+func (dsl *DeleteDSL) IPSecSA(saIndex string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecSA(saIndex)
+	return dsl
+}
+
+// IPSecSPD adds request to delete a Security Policy Database
+func (dsl *DeleteDSL) IPSecSPD(spdIndex string) linuxclient.DeleteDSL {
+	dsl.vppDelete.IPSecSPD(spdIndex)
+	return dsl
+}
+
+// PuntIPRedirect adds request to delete a rule used to punt L3 traffic via interface.
+func (dsl *DeleteDSL) PuntIPRedirect(l3Proto punt.L3Protocol, txInterface string) linuxclient.DeleteDSL {
+	dsl.vppDelete.PuntIPRedirect(l3Proto, txInterface)
+	return dsl
+}
+
+// PuntToHost adds request to delete a rule used to punt L4 traffic to a host.
+func (dsl *DeleteDSL) PuntToHost(l3Proto punt.L3Protocol, l4Proto punt.L4Protocol, port uint32) linuxclient.DeleteDSL {
+	dsl.vppDelete.PuntToHost(l3Proto, l4Proto, port)
 	return dsl
 }
 

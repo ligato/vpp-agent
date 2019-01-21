@@ -26,6 +26,8 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	vpp_l3 "github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // DataResyncDSL defines the Domain Specific Language (DSL) for data RESYNC
@@ -79,6 +81,14 @@ type DataResyncDSL interface {
 	NAT44Global(nat *nat.Nat44Global) DataResyncDSL
 	// DNAT44 adds DNAT44 configuration to the RESYNC request
 	DNAT44(dnat *nat.DNat44) DataResyncDSL
+	// IPSecSA adds request to RESYNC a new Security Association
+	IPSecSA(sa *ipsec.SecurityAssociation) DataResyncDSL
+	// IPSecSPD adds request to RESYNC a new Security Policy Database
+	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) DataResyncDSL
+	// PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
+	PuntIPRedirect(val *punt.IpRedirect) DataResyncDSL
+	// PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
+	PuntToHost(val *punt.ToHost) DataResyncDSL
 
 	// Send propagates the RESYNC request to the plugins.
 	Send() vpp_clientv2.Reply

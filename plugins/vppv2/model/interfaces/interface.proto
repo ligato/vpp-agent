@@ -140,6 +140,7 @@ message IPSecLink {
     IntegAlg integ_alg = 11;            /* Cryptographic algorithm for authentication */
     string local_integ_key = 12;
     string remote_integ_key = 13;
+    bool enable_udp_encap = 14;         /* Enable UDP encapsulation */
 }
 
 /* PCI address (unsigned 32bit int) is derived from vmxnet3 interface name. It is expected that the interface

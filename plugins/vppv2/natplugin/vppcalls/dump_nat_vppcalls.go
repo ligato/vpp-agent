@@ -216,6 +216,8 @@ func (h *NatVppHandler) nat44StaticMappingDump() (entries stMappingMap, err erro
 			},
 			Protocol: h.protocolNumberToNBValue(msg.Protocol),
 			TwiceNat: h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
+			// if there is only one backend the affinity can not be set
+			SessionAffinity: 0,
 		}
 		if !exIPAddress.IsUnspecified() {
 			mapping.ExternalIp = exIPAddress.To4().String()
@@ -294,6 +296,7 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 			LocalIps:     locals,
 			Protocol:     h.protocolNumberToNBValue(msg.Protocol),
 			TwiceNat:     h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
+			SessionAffinity: msg.Affinity,
 		}
 		if !exIPAddress.IsUnspecified() {
 			mapping.ExternalIp = exIPAddress.To4().String()
