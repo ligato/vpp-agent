@@ -37,7 +37,7 @@ func (c *grpcClient) KnownModels() ([]api.ModelInfo, error) {
 	return modules, nil
 }
 
-func (c *grpcClient) ChangeConfig() client.ChangeRequest {
+func (c *grpcClient) ChangeRequest() client.ChangeRequest {
 	return &setConfigRequest{
 		client: c.remote,
 		req:    &api.SetConfigRequest{},

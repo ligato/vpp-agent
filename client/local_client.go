@@ -65,16 +65,16 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return nil
 }
 
-func (c *client) ChangeConfig() ChangeRequest {
-	return &setConfigRequest{txn: c.txnFactory.NewTxn(false)}
+func (c *client) ChangeRequest() ChangeRequest {
+	return &changeRequest{txn: c.txnFactory.NewTxn(false)}
 }
 
-type setConfigRequest struct {
+type changeRequest struct {
 	txn keyval.ProtoTxn
 	err error
 }
 
-func (r *setConfigRequest) Update(items ...proto.Message) ChangeRequest {
+func (r *changeRequest) Update(items ...proto.Message) ChangeRequest {
 	if r.err != nil {
 		return r
 	}
@@ -89,7 +89,7 @@ func (r *setConfigRequest) Update(items ...proto.Message) ChangeRequest {
 	return r
 }
 
-func (r *setConfigRequest) Delete(items ...proto.Message) ChangeRequest {
+func (r *changeRequest) Delete(items ...proto.Message) ChangeRequest {
 	if r.err != nil {
 		return r
 	}
@@ -104,7 +104,7 @@ func (r *setConfigRequest) Delete(items ...proto.Message) ChangeRequest {
 	return r
 }
 
-func (r *setConfigRequest) Send(ctx context.Context) error {
+func (r *changeRequest) Send(ctx context.Context) error {
 	if r.err != nil {
 		return r.err
 	}

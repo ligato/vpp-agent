@@ -12,8 +12,8 @@ type ConfigClient interface {
 	// KnownModels retrieves list of known modules.
 	KnownModels() ([]api.ModelInfo, error)
 
-	// ChangeConfig returns transaction for changing config.
-	ChangeConfig() ChangeRequest
+	// ChangeRequest returns transaction for changing config.
+	ChangeRequest() ChangeRequest
 
 	// ResyncConfig overwrites existing config.
 	ResyncConfig(items ...proto.Message) error

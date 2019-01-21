@@ -92,6 +92,7 @@ func New() *VPPAgent {
 		local.DefaultRegistry,
 		etcdDataSync,
 		consulDataSync,
+		redisDataSync,
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 
@@ -103,8 +104,8 @@ func New() *VPPAgent {
 	ifplugin.DefaultPlugin.NotifyStatistics = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers
 
-	vpp := defaultVPP()
-	linux := defaultLinux()
+	vpp := DefaultVPP()
+	linux := DefaultLinux()
 
 	return &VPPAgent{
 		LogManager:       &logmanager.DefaultPlugin,
@@ -156,7 +157,7 @@ type VPP struct {
 	STNPlugin   *stnplugin.STNPlugin
 }
 
-func defaultVPP() VPP {
+func DefaultVPP() VPP {
 	return VPP{
 		IfPlugin:    &ifplugin.DefaultPlugin,
 		IPSecPlugin: &ipsecplugin.DefaultPlugin,
@@ -176,7 +177,7 @@ type Linux struct {
 	NSPlugin *linux_nsplugin.NsPlugin
 }
 
-func defaultLinux() Linux {
+func DefaultLinux() Linux {
 	return Linux{
 		IfPlugin: &linux_ifplugin.DefaultPlugin,
 		L3Plugin: &linux_l3plugin.DefaultPlugin,

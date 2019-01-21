@@ -24,7 +24,6 @@ import (
 	"golang.org/x/net/context"
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
@@ -47,7 +46,6 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 
-	GoVPP       govppmux.API
 	GRPC        grpc.Server
 	KVScheduler kvs.KVScheduler
 	Watcher     datasync.KeyValProtoWatcher

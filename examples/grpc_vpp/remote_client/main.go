@@ -196,9 +196,8 @@ var (
 		Type:        interfaces.Interface_MEMIF,
 		Link: &interfaces.Interface_Memif{
 			Memif: &interfaces.MemifLink{
-				Id:     1,
-				Master: true,
-
+				Id:             1,
+				Master:         true,
 				Secret:         "secret",
 				SocketFilename: "/tmp/memif1.sock",
 			},

@@ -26,18 +26,20 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/client"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app/v2"
+	"github.com/ligato/vpp-agent/examples/generic-client/pb"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
 	"github.com/ligato/vpp-agent/api/dataconfigurator"
-	api "github.com/ligato/vpp-agent/api/genericmanager"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
 	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/l2"
-	"github.com/ligato/vpp-agent/client/remoteclient"
 )
 
 var (
@@ -50,8 +52,12 @@ var (
 var exampleFinished = make(chan struct{})
 
 func main() {
-	ep := &ExamplePlugin{}
-	ep.SetName("grpc-client-example")
+	ep := &ExamplePlugin{
+		Orchestrator: &orchestrator.DefaultPlugin,
+		VPP:          appv2.DefaultVPP(),
+		Linux:        appv2.DefaultLinux(),
+	}
+	ep.SetName("generic-client-example")
 	ep.Setup()
 
 	a := agent.NewAgent(
@@ -66,6 +72,9 @@ func main() {
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
 	infra.PluginDeps
+	Orchestrator *orchestrator.Plugin
+	appv2.VPP
+	appv2.Linux
 
 	conn *grpc.ClientConn
 
@@ -95,9 +104,12 @@ func (p *ExamplePlugin) AfterInit() (err error) {
 	go func() {
 		time.Sleep(time.Second)
 
-		demonstrateClient(p.conn)
+		//c := remoteclient.NewClientGRPC(api.NewGenericManagerClient(conn))
+		c := client.LocalClient
 
-		time.Sleep(time.Second)
+		demonstrateClient(c)
+
+		time.Sleep(time.Second * 3)
 
 		logrus.DefaultLogger().Info("Closing example")
 		close(exampleFinished)
@@ -119,34 +131,24 @@ func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
-// Dialer for unix domain socket
-func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
-	return func(addr string, timeout time.Duration) (net.Conn, error) {
-		// Pass values
-		addr, timeout = address, timeoutVal
-		// Dial with timeout
-		return net.DialTimeout(socket, addr, timeoutVal)
-	}
-}
-
-func demonstrateClient(conn *grpc.ClientConn) {
-	client := api.NewGenericManagerClient(conn)
-	c := remoteclient.NewClientGRPC(client)
-
-	// List supported model specs
-	caps, err := client.Capabilities(context.Background(), &api.CapabilitiesRequest{})
+func demonstrateClient(c client.ConfigClient) {
+	// ==========================================
+	// List known models
+	// ==========================================
+	knownModels, err := c.KnownModels()
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	knownModels := caps.KnownModels
-	fmt.Printf("Listing %d known models\n", len(knownModels))
+	fmt.Printf("Listing %d known models..\n", len(knownModels))
 	for _, model := range knownModels {
 		fmt.Printf(" - %v\n", model.String())
 	}
+	time.Sleep(time.Second * 3)
 
-	// Resync
-	fmt.Printf("Requesting resync\n")
+	// ==========================================
+	// Resync config
+	// ==========================================
+	fmt.Printf("Requesting config resync..\n")
 	err = c.ResyncConfig(
 		memif1, memif2,
 		veth1, veth2,
@@ -155,23 +157,32 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	time.Sleep(time.Second * 5)
 
-	fmt.Printf("Requesting change\n")
+	// ==========================================
+	// Change config
+	// ==========================================
+	fmt.Printf("Requesting config change..\n")
 	memif1.Enabled = false
 	memif1.Mtu = 666
-	req := c.ChangeConfig()
-	req.Update(afp1, memif1, bd1)
+
+	custom := &mymodel.MyModel{
+		Name:  "my1",
+		Mynum: 33,
+	}
+
+	req := c.ChangeRequest()
+	req.Update(afp1, memif1, bd1, vppRoute1, custom)
 	req.Delete(memif2)
-	req.Update(vppRoute1)
 	if err := req.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
-
 	time.Sleep(time.Second * 5)
 
-	fmt.Printf("Retrieving config\n")
+	// ==========================================
+	// Get config
+	// ==========================================
+	fmt.Printf("Retrieving config..\n")
 	data := &dataconfigurator.Data{
 		VppData:   &vpp.Data{},
 		LinuxData: &linux.Data{},
@@ -179,7 +190,17 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	if err := c.GetConfig(data.VppData, data.LinuxData); err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Printf("Config:\n%+v\n", proto.MarshalTextString(data))
+	fmt.Printf("Retrieved config:\n%+v\n", proto.MarshalTextString(data))
+}
+
+// Dialer for unix domain socket
+func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
+	return func(addr string, timeout time.Duration) (net.Conn, error) {
+		// Pass values
+		addr, timeout = address, timeoutVal
+		// Dial with timeout
+		return net.DialTimeout(socket, addr, timeoutVal)
+	}
 }
 
 var (
