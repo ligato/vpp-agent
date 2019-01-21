@@ -15,7 +15,6 @@
 package orchestrator
 
 import (
-	"path"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
@@ -86,7 +85,7 @@ func (p *Plugin) AfterInit() (err error) {
 
 	var prefixes []string
 	for _, prefix := range nbPrefixes {
-		prefix = path.Join("config", prefix)
+		//prefix = path.Join("config", prefix)
 		p.Log.Debugf("- watching NB prefix: %s", prefix)
 		prefixes = append(prefixes, prefix)
 	}
@@ -123,9 +122,13 @@ func (p *Plugin) watchEvents() {
 			}*/
 			var kvPairs []datasync.ProtoWatchResp
 			for _, x := range e.GetChanges() {
+				var lazy datasync.LazyValue
+				if x.GetChangeType() != datasync.Delete {
+					lazy = x
+				}
 				kvPairs = append(kvPairs, &ProtoWatchResp{
 					Key:  x.GetKey(),
-					lazy: x,
+					lazy: lazy,
 				})
 			}
 
@@ -176,9 +179,9 @@ func (p *Plugin) watchEvents() {
 					n++
 				}
 				if len(keyVals) > 0 {
-					p.Log.Debugf("= Resync: %q (%v items)", prefix, len(keyVals))
+					p.Log.Debugf("- %q (%v items)", prefix, len(keyVals))
 				} else {
-					p.Log.Debugf("= Resync: %q (no items)", prefix)
+					p.Log.Debugf("- %q (no items)", prefix)
 				}
 				for _, x := range keyVals {
 					p.Log.Debugf("\t - %q: (rev: %v)", x.GetKey(), x.GetRevision())
