@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package dispatcher
+package orchestrator
 
 import (
 	"github.com/gogo/protobuf/proto"
@@ -27,19 +27,19 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-type configuratorServer struct {
+type genericManagerSvc struct {
 	log  logging.Logger
 	orch *Plugin
 }
 
-func (s *configuratorServer) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
+func (s *genericManagerSvc) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
 	resp := &api.CapabilitiesResponse{
 		KnownModels: models.RegisteredModels(),
 	}
 	return resp, nil
 }
 
-func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
+func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigRequest) (*api.SetConfigResponse, error) {
 	s.log.Debug("------------------------------")
 	s.log.Debugf("=> Configurator.SetConfig: %d items", len(req.Updates))
 	s.log.Debug("------------------------------")
@@ -92,7 +92,7 @@ func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRe
 		})
 	}
 
-	err, kvErrs := s.orch.PushData(ctx, kvPairs)
+	kvErrs, err := s.orch.PushData(ctx, kvPairs)
 	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
@@ -103,7 +103,7 @@ func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRe
 		results = append(results, &api.UpdateResult{
 			Key: kvErr.Key,
 			Status: &api.ItemStatus{
-				State:   api.ItemStatus_FAILURE,
+				//State:   api.ItemStatus_FAILURE,
 				Message: kvErr.Error.Error(),
 			},
 			Op: ops[kvErr.Key],
@@ -127,13 +127,12 @@ func (s *configuratorServer) SetConfig(ctx context.Context, req *api.SetConfigRe
 	return &api.SetConfigResponse{Results: results}, nil
 }
 
-func (s *configuratorServer) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
+func (s *genericManagerSvc) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
 	var items []*api.GetConfigResponse_ConfigItem
 
 	for _, data := range s.orch.ListData() {
 		item, err := models.MarshalItem(data)
 		if err != nil {
-			err = err
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		items = append(items, &api.GetConfigResponse_ConfigItem{
@@ -144,10 +143,10 @@ func (s *configuratorServer) GetConfig(context.Context, *api.GetConfigRequest) (
 	return &api.GetConfigResponse{Items: items}, nil
 }
 
-func (s *configuratorServer) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
+func (s *genericManagerSvc) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
 	panic("implement me")
 }
 
-func (s *configuratorServer) Subscribe(*api.SubscribeRequest, api.GenericConfigurator_SubscribeServer) error {
+func (s *genericManagerSvc) Subscribe(req *api.SubscribeRequest, server api.GenericManager_SubscribeServer) error {
 	panic("implement me")
 }

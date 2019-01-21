@@ -14,7 +14,7 @@
 
 package data
 
-import "github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+import nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 
 // NatCtl NAT plugin related methods for vpp-agent-ctl
 type NatCtl interface {

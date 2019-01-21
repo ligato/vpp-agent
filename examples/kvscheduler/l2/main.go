@@ -20,18 +20,17 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
 	linux_interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	vpp_l2plugin "github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
-	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 /*
@@ -39,15 +38,12 @@ import (
 */
 
 func main() {
-	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
-
 	// Set inter-dependency between VPP & Linux plugins
 	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
 	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
 	ep := &ExamplePlugin{
-		Scheduler:     &kvscheduler.DefaultPlugin,
+		Orchestrator:  &orchestrator.DefaultPlugin,
 		LinuxIfPlugin: &linux_ifplugin.DefaultPlugin,
 		LinuxL3Plugin: &linux_l3plugin.DefaultPlugin,
 		VPPIfPlugin:   &vpp_ifplugin.DefaultPlugin,
@@ -65,7 +61,7 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler     *kvscheduler.Scheduler
+	Orchestrator  *orchestrator.Plugin
 	LinuxIfPlugin *linux_ifplugin.IfPlugin
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
@@ -195,7 +191,7 @@ var (
 			Veth: &linux_interfaces.VethLink{PeerIfName: veth2LogicalName},
 		},
 		Namespace: &linux_ns.NetNamespace{
-			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
+			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroservice1,
 		},
 	}
@@ -237,7 +233,7 @@ var (
 			},
 		},
 		Namespace: &linux_ns.NetNamespace{
-			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
+			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroservice2,
 		},
 	}

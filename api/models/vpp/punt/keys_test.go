@@ -74,7 +74,7 @@ func TestPuntToHostKey(t *testing.T) {
 	}
 }
 
-func TestParsePuntToHostKey(t *testing.T) {
+/*func TestParsePuntToHostKey(t *testing.T) {
 	tests := []struct {
 		name            string
 		key             string
@@ -149,7 +149,7 @@ func TestParsePuntToHostKey(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 func TestIPredirectKey(t *testing.T) {
 	tests := []struct {
@@ -189,7 +189,7 @@ func TestIPredirectKey(t *testing.T) {
 	}
 }
 
-func TestParseIPRedirectKey(t *testing.T) {
+/*func TestParseIPRedirectKey(t *testing.T) {
 	tests := []struct {
 		name            string
 		key             string
@@ -233,4 +233,4 @@ func TestParseIPRedirectKey(t *testing.T) {
 			}
 		})
 	}
-}
+}*/

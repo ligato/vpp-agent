@@ -14,7 +14,7 @@
 
 package data
 
-import "github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+import ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 
 // IPSecCtl IPSec plugin related methods for vpp-agent-ctl (SPD, SA)
 type IPSecCtl interface {

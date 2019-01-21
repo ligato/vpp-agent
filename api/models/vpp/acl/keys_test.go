@@ -16,6 +16,8 @@ package vpp_acl
 
 import (
 	"testing"
+
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func TestACLKey(t *testing.T) {
@@ -81,7 +83,7 @@ func TestParseNameFromKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			aclName, isACLKey := ParseNameFromKey(test.key)
+			aclName, isACLKey := models.Model(&Acl{}).ParseKey(test.key)
 			if isACLKey != test.expectedIsACLKey {
 				t.Errorf("expected isACLKey: %v\tgot: %v", test.expectedIsACLKey, isACLKey)
 			}

@@ -15,18 +15,16 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/client"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
 )
@@ -36,13 +34,10 @@ import (
 */
 
 func main() {
-	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
-
 	ep := &ExamplePlugin{
-		Scheduler:   &kvscheduler.DefaultPlugin,
-		VPPIfPlugin: &ifplugin.DefaultPlugin,
-		VPPL3Plugin: &l3plugin.DefaultPlugin,
+		Orchestrator: &orchestrator.DefaultPlugin,
+		VPPIfPlugin:  &ifplugin.DefaultPlugin,
+		VPPL3Plugin:  &l3plugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -56,9 +51,9 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler   *kvscheduler.Scheduler
-	VPPIfPlugin *ifplugin.IfPlugin
-	VPPL3Plugin *l3plugin.L3Plugin
+	Orchestrator *orchestrator.Plugin
+	VPPIfPlugin  *ifplugin.IfPlugin
+	VPPL3Plugin  *l3plugin.L3Plugin
 }
 
 // String returns plugin name
@@ -87,24 +82,17 @@ func testLocalClientWithScheduler() {
 	time.Sleep(time.Second * 2)
 	fmt.Println("=== RESYNC ===")
 
-	/*txn := localclient.DataResyncRequest("example")
+	txn := localclient.DataResyncRequest("example")
 	err := txn.
 		VppInterface(memif0).
 		VppInterface(memif0_10).
-		//StaticRoute(route0).
-		//StaticRoute(route1).
-		//Arp(arp0).
-		//ProxyArp(proxyArp).
-		//IPScanNeighbor(ipScanNeighbor).
+		StaticRoute(route0).
+		StaticRoute(route1).
+		Arp(arp0).
+		ProxyArp(proxyArp).
+		IPScanNeighbor(ipScanNeighbor).
 		Send().ReceiveReply()
 	if err != nil {
-		fmt.Println(err)
-		return
-	}*/
-
-	req := client.Local.ResyncRequest()
-	req.Put(memif0, memif0_10)
-	if err := req.Send(context.Background()); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -120,26 +108,19 @@ func testLocalClientWithScheduler() {
 	})
 	proxyArp.Interfaces = nil
 
-	/*txn2 := localclient.DataChangeRequest("example")
+	txn2 := localclient.DataChangeRequest("example")
 	err = txn2.
-		//Put().
-		//VppInterface(memif0_10).
-		//StaticRoute(route0).
+		Put().
+		VppInterface(memif0_10).
+		StaticRoute(route0).
 		Delete().
 		VppInterface(memif0.Name).
-		//StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
-		//Put().
-		//Arp(arp0).
-		//ProxyArp(proxyArp).
+		StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
+		Put().
+		Arp(arp0).
+		ProxyArp(proxyArp).
 		Send().ReceiveReply()
 	if err != nil {
-		fmt.Println(err)
-		return
-	}*/
-
-	req2 := client.Local.ChangeRequest()
-	req2.Delete(memif0)
-	if err := req2.Send(context.Background()); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -172,12 +153,12 @@ var (
 			},
 		},
 	}
-	route0 = &l3.StaticRoute{
+	route0 = &l3.Route{
 		DstNetwork:        "10.10.1.0/24",
 		OutgoingInterface: "memif0",
 		Weight:            200,
 	}
-	route1 = &l3.StaticRoute{
+	route1 = &l3.Route{
 		DstNetwork:        "2001:DB8::0001/32",
 		OutgoingInterface: "memif0",
 		Weight:            100,

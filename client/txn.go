@@ -15,53 +15,54 @@
 package client
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-// Transaction prepares request data.
-type Transaction interface {
-	// ProtoItem returns model with given ID from the request items.
-	// If the found is true the model with such ID is found
-	// and if the model is nil the item represents delete.
-	Item(id string) (model proto.Message, found bool)
-
-	// Items returns map of items defined for the request,
-	// where key represents model ID and nil value represents delete.
-	Items() map[string]proto.Message
-}
-
+// Txn is the
 type Txn struct {
 	items map[string]proto.Message
 }
 
-func NewTxn() *Txn {
+// NewTxn
+func NewTxn(commitFunc func() error) *Txn {
 	return &Txn{
 		items: make(map[string]proto.Message),
 	}
 }
 
-func (t *Txn) Add(model proto.Message) {
-	t.items[models.Key(model)] = model
+// Update updates
+func (t *Txn) Update(item proto.Message) {
+	t.items[models.Key(item)] = item
 }
 
-func (t *Txn) Remove(model proto.Message) {
-	delete(t.items, models.Key(model))
+func (t *Txn) Delete(item proto.Message) {
+	t.items[models.Key(item)] = nil
 }
 
-func (t *Txn) Set(model proto.Message) {
-	t.items[models.Key(model)] = model
+func (t *Txn) Commit(ctx context.Context) {
+
 }
 
-func (t *Txn) SetDelete(model proto.Message) {
-	t.items[models.Key(model)] = nil
-}
-
-func (t *Txn) Item(id string) (model proto.Message, found bool) {
+// FindItem returns item with given ID from the request items.
+// If the found is true the model with such ID is found
+// and if the model is nil the item represents delete.
+func (t *Txn) FindItem(id string) (model proto.Message, found bool) {
 	item, ok := t.items[id]
 	return item, ok
 }
 
-func (t *Txn) Items() map[string]proto.Message {
+// Items returns map of items defined for the request,
+// where key represents model ID and nil value represents delete.
+// NOTE: Do not alter the returned map directly.
+func (t *Txn) ListItems() map[string]proto.Message {
 	return t.items
+}
+
+// RemoveItem removes an item from the transaction.
+// This will revert any Update or Delete done for the item.
+func (t *Txn) RemoveItem(model proto.Message) {
+	delete(t.items, models.Key(model))
 }

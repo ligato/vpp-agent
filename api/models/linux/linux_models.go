@@ -21,7 +21,7 @@ import (
 )
 
 type (
-	// Interfaces
+	// Interface
 	Interface = linux_interfaces.Interface
 
 	// L3

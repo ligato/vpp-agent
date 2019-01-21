@@ -21,11 +21,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-const (
-	// ConfigKeyPrefix is used as key prefix for config storage.
-	ConfigKeyPrefix = `config/`
-)
-
 // Key is a shorthand for the GetKey for avoid error checking.
 func Key(x proto.Message) string {
 	key, err := GetKey(x)

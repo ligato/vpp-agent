@@ -17,6 +17,7 @@ package models
 import (
 	"fmt"
 	"net"
+	"os"
 	"regexp"
 	"strings"
 	"text/template"
@@ -99,7 +100,7 @@ var (
 	registeredModels = make(map[string]*registeredModel)
 	modelPaths       = make(map[string]string)
 
-	debugRegister = true //strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
+	debugRegister = strings.Contains(os.Getenv("DEBUG_MODELS"), "register")
 )
 
 // Register registers the protobuf message with given model specification.
@@ -128,7 +129,7 @@ func Register(pb proto.Message, spec Spec) *registeredModel {
 	}
 
 	modulePath := strings.Replace(spec.Module, ".", "/", -1)
-	model.keyPrefix = fmt.Sprintf("%s/%s/", modulePath, spec.Type)
+	model.keyPrefix = fmt.Sprintf("%s/%s/%s/", spec.Version, modulePath, spec.Type)
 
 	if debugRegister {
 		fmt.Printf("- registered model: %+v\t%q\n", model, model.modelPath)

@@ -12,9 +12,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package dispatcher
+package orchestrator
 
 import (
+	"path"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
@@ -36,7 +37,7 @@ var Registry = local.DefaultRegistry
 type Plugin struct {
 	Deps
 
-	configurator *configuratorServer
+	manager *genericManagerSvc
 
 	// datasync channels
 	changeChan   chan datasync.ChangeEvent
@@ -66,11 +67,11 @@ func (p *Plugin) Init() error {
 	p.changeChan = make(chan datasync.ChangeEvent)
 
 	// register grpc service
-	p.configurator = &configuratorServer{
+	p.manager = &genericManagerSvc{
 		log:  p.Log,
 		orch: p,
 	}
-	api.RegisterGenericConfiguratorServer(p.GRPC.GetServer(), p.configurator)
+	api.RegisterGenericManagerServer(p.GRPC.GetServer(), p.manager)
 	//reflection.Register(p.GRPC.GetServer())
 
 	return nil
@@ -88,8 +89,8 @@ func (p *Plugin) AfterInit() (err error) {
 	}
 
 	var prefixes []string
-	for _, nb := range nbPrefixes {
-		prefix := nb
+	for _, prefix := range nbPrefixes {
+		prefix = path.Join("config", prefix)
 		p.Log.Debugf("- watching NB prefix: %s", prefix)
 		prefixes = append(prefixes, prefix)
 	}
@@ -134,7 +135,7 @@ func (p *Plugin) watchEvents() {
 
 			ctx := context.Background()
 			//ctx = kvs.WithRetry(ctx, time.Second, true)
-			err, _ := p.PushData(ctx, kvPairs)
+			_, err := p.PushData(ctx, kvPairs)
 			e.Done(err)
 
 			/*txn := p.KVScheduler.StartNBTransaction()
@@ -192,7 +193,7 @@ func (p *Plugin) watchEvents() {
 			ctx := context.Background()
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 			//ctx = kvs.WithRetry(ctx, time.Second, true)
-			err, _ := p.PushData(ctx, kvPairs)
+			_, err := p.PushData(ctx, kvPairs)
 			e.Done(err)
 
 			/*n := 0
@@ -239,7 +240,7 @@ func (p *Plugin) ListData() map[string]proto.Message {
 }
 
 // PushData ...
-func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) (err error, kvErrs []kvs.KeyWithError) {
+func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) (kvErrs []kvs.KeyWithError, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -272,7 +273,7 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp
 		}
 	} else {
 		p.Log.Infof("Transaction %d successful!", seqID)
-		return err, kvErrs
+		return kvErrs, err
 	}
 
 	return nil, nil

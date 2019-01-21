@@ -16,8 +16,8 @@ package dataconfigurator
 
 import (
 	"github.com/ligato/cn-infra/rpc/grpc"
-	"github.com/ligato/vpp-agent/plugins/dispatcher"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
 )
@@ -31,7 +31,7 @@ func NewPlugin(opts ...Option) *Plugin {
 
 	p.PluginName = "dataconfigurator"
 	p.GRPCServer = &grpc.DefaultPlugin
-	p.Orch = &dispatcher.DefaultPlugin
+	p.Orch = &orchestrator.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 	p.VPPIfPlugin = &ifplugin.DefaultPlugin
 	p.VPPL2Plugin = &l2plugin.DefaultPlugin

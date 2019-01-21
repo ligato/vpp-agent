@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	if_api "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	. "github.com/onsi/gomega"

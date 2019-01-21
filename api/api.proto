@@ -27,6 +27,7 @@ message Item {
         Model model = 1;
         string name = 2;
     }
+
     ID id = 1;
     Data data = 2;
 }
@@ -36,29 +37,29 @@ message Data {
     google.protobuf.Any any = 1;
 }
 
+// Item status describes status of an item.
+message ItemStatus {
+    string status = 1;
+    string message = 2;
+}
+
 //------------------------------------------------------------------------------
 
-// GenericConfigurator defines the RPC methods for managing configuration
+// GenericManager defines the RPC methods for managing config
 // using generic model, allowing extending with custom models.
-service GenericConfigurator {
+service GenericManager {
     // Capabilities returns information about service capabilities
     // including list of models supported by the server.
-    rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse) {
-    };
+    rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse);
 
-    // SetConfig is used to set desired configuration.
-    // It returns status for items specified in the requests.
-    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse) {
-    };
+    // SetConfig is used to update desired configuration.
+    rpc SetConfig (SetConfigRequest) returns (SetConfigResponse);
 
-    // GetConfig returns desired configuration with item statuses.
-    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {
-    };
+    // GetConfig is used to readt current configuration.
+    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
 
     // DumpState retrieves the current running state.
-    // The returned items also contain extra metadata not defined in models.
-    rpc DumpState (DumpStateRequest) returns (DumpStateResponse) {
-    };
+    rpc DumpState (DumpStateRequest) returns (DumpStateResponse);
 
     // Subscribe is used for subscribing to events.
     // Notifications are returned by streaming updates.
@@ -89,9 +90,6 @@ message SetConfigRequest {
     // (this is also known as Full Resync)
     bool overwrite_all = 2;
 }
-message SetConfigResponse {
-    repeated UpdateResult results = 1;
-}
 
 message UpdateItem {
     // The item describes item to be updated.
@@ -99,6 +97,10 @@ message UpdateItem {
     Item item = 1;
     // The labels can be used to define user-defined labels for item.
     map<string, string> labels = 2;
+}
+
+message SetConfigResponse {
+    repeated UpdateResult results = 1;
 }
 
 message UpdateResult {
@@ -112,19 +114,6 @@ message UpdateResult {
     string key = 1;
     Operation op = 2;
     ItemStatus status = 3;
-}
-
-message ItemStatus {
-    enum State {
-        UNKNOWN = 0;
-        PENDING = 1;
-        APPLIED = 2;
-        INVALID = 3;
-        FAILURE = 4;
-        REMOVED = 5;
-    }
-    State state = 1;
-    string message = 2;
 }
 
 //------------------------------------------------------------------------------

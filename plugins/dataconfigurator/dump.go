@@ -56,6 +56,9 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 	state.VppData.XconnectPairs, _ = svc.DumpXConnects()
 	state.VppData.PuntTohosts, _ = svc.DumpPunt()
 
+	// FIXME: linux interface handler should return known proto instead of netlink
+	// state.LinuxData.Interfaces, _ = svc.DumpLinuxInterfaces()
+
 	return &rpc.DumpResponse{State: state}, nil
 }
 

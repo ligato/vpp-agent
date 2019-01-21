@@ -75,13 +75,6 @@ type ExamplePlugin struct {
 
 // Init initializes example plugin.
 func (p *ExamplePlugin) Init() (err error) {
-	// Validate socket type
-	switch *socketType {
-	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
-	default:
-		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
-	}
-
 	_, p.cancel = context.WithCancel(context.Background())
 
 	// Set up connection to the server.
@@ -137,33 +130,29 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 }
 
 func demonstrateClient(conn *grpc.ClientConn) {
-	c := remoteclient.NewClientGRPC(api.NewGenericConfiguratorClient(conn))
+	client := api.NewGenericManagerClient(conn)
+	c := remoteclient.NewClientGRPC(client)
 
 	// List supported model specs
-	modules, err := c.ActiveModels()
+	caps, err := client.Capabilities(context.Background(), &api.CapabilitiesRequest{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	fmt.Printf("Listing %d supported modules\n", len(modules))
-	for module, models := range modules {
-		fmt.Printf("* %s module (%d models)\n", module, len(models))
-		for _, spec := range models {
-			fmt.Printf(" - %v\n", spec.String())
-		}
+	knownModels := caps.KnownModels
+	fmt.Printf("Listing %d known models\n", len(knownModels))
+	for _, model := range knownModels {
+		fmt.Printf(" - %v\n", model.String())
 	}
-
-	ctx := context.Background()
 
 	// Resync
 	fmt.Printf("Requesting resync\n")
-	req := c.SetConfig(true)
-	req.Update(
+	err = c.ResyncConfig(
 		memif1, memif2,
 		veth1, veth2,
 		routeX,
 	)
-	if err = req.Send(ctx); err != nil {
+	if err != nil {
 		log.Fatalln(err)
 	}
 
@@ -172,11 +161,11 @@ func demonstrateClient(conn *grpc.ClientConn) {
 	fmt.Printf("Requesting change\n")
 	memif1.Enabled = false
 	memif1.Mtu = 666
-	req2 := c.SetConfig(false)
-	req2.Update(afp1, memif1, bd1)
-	req2.Delete(memif2)
-	req2.Update(vppRoute1)
-	if err := req2.Send(context.Background()); err != nil {
+	req := c.ChangeConfig()
+	req.Update(afp1, memif1, bd1)
+	req.Delete(memif2)
+	req.Update(vppRoute1)
+	if err := req.Send(context.Background()); err != nil {
 		log.Fatalln(err)
 	}
 

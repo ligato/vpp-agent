@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package dispatcher
+package orchestrator
 
 import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
@@ -27,7 +27,7 @@ var DefaultPlugin = *NewPlugin()
 func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
-	p.PluginName = "dispatcher"
+	p.PluginName = "orchestrator"
 	p.GRPC = &grpc.DefaultPlugin
 	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.Watcher = local.DefaultRegistry

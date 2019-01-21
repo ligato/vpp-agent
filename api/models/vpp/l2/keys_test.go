@@ -15,7 +15,10 @@
 package vpp_l2
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func TestBridgeDomainKey(t *testing.T) {
@@ -75,7 +78,7 @@ func TestParseBDNameFromKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			bdName, isBDKey := ParseBDNameFromKey(test.key)
+			bdName, isBDKey := models.Model(&BridgeDomain{}).ParseKey(test.key)
 			if isBDKey != test.expectedIsBDKey {
 				t.Errorf("expected isBDKey: %v\tgot: %v", test.expectedIsBDKey, isBDKey)
 			}
@@ -299,7 +302,12 @@ func TestParseFIBKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			bdName, fibMac, isFIBKey := ParseFIBKey(test.key)
+			name, isFIBKey := models.Model(&FIBEntry{}).ParseKey(test.key)
+			nameParts := strings.Split(name, "/")
+			if len(nameParts) != 3 {
+				t.Fatalf("invalid name: %q", name)
+			}
+			bdName, fibMac := nameParts[0], nameParts[2]
 			if isFIBKey != test.expectedIsFIBKey {
 				t.Errorf("expected isFIBKey: %v\tgot: %v", test.expectedIsFIBKey, isFIBKey)
 			}

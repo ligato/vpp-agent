@@ -15,7 +15,7 @@
 package data
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 )
 
 // PuntCtl punt plugin related methods for vpp-agent-ctl (bridge domains, FIBs, L2 cross connects)

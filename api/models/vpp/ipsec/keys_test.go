@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func TestIPSecSPDKey(t *testing.T) {
@@ -88,7 +89,7 @@ func TestParseIPSecSPDNameFromKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			spdName, isSPDKey := ipsec.ParseSPDIndexFromKey(test.key)
+			spdName, isSPDKey := models.Model(&ipsec.SecurityPolicyDatabase{}).ParseKey(test.key)
 			if isSPDKey != test.expectedIsSPDKey {
 				t.Errorf("expected isSPDKey: %v\tgot: %v", test.expectedIsSPDKey, isSPDKey)
 			}
@@ -386,7 +387,7 @@ func TestParseIPSecSANameFromKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			saName, isSAKey := ipsec.ParseSAIndexFromKey(test.key)
+			saName, isSAKey := models.Model(&ipsec.SecurityAssociation{}).ParseKey(test.key)
 			if isSAKey != test.expectedIsSAKey {
 				t.Errorf("expected isSAKey: %v\tgot: %v", test.expectedIsSAKey, isSAKey)
 			}

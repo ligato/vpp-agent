@@ -15,7 +15,11 @@
 package vpp_l3
 
 import (
+	"strconv"
+	"strings"
 	"testing"
+
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func TestRouteKey(t *testing.T) {
@@ -131,7 +135,16 @@ func TestParseRouteKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			vrfIndex, dstNetAddr, dstNetMask, nextHopAddr, isRouteKey := ParseRouteKey(test.routeKey)
+			name, isRouteKey := models.Model(&Route{}).ParseKey(test.routeKey)
+			nameParts := strings.Split(name, "/")
+			if len(nameParts) != 7 {
+				t.Fatalf("invalid name: %q", name)
+			}
+			vrfIndex, dstNetAddr, nextHopAddr := nameParts[1], nameParts[3], nameParts[6]
+			dstNetMask, err := strconv.Atoi(nameParts[4])
+			if err != nil {
+				t.Fatalf("invalid mask: %v", dstNetMask)
+			}
 			if isRouteKey != test.expectedIsRouteKey {
 				t.Errorf("expected isRouteKey: %v\tgot: %v", test.expectedIsRouteKey, isRouteKey)
 			}

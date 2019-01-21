@@ -27,12 +27,10 @@ import (
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -94,7 +92,7 @@ func (dsl *DataResyncDSL) ACL(acl *acl.Acl) linuxclient.DataResyncDSL {
 	return dsl
 }
 
-// BfdSession adds VPP bidirectional forwarding detection session
+/*// BfdSession adds VPP bidirectional forwarding detection session
 // to the RESYNC request.
 func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.BfdSession(val)
@@ -113,7 +111,7 @@ func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) linuxclient.Dat
 func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.BfdEchoFunction(val)
 	return dsl
-}
+}*/
 
 // BD adds VPP Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BD(bd *l2.BridgeDomain) linuxclient.DataResyncDSL {
@@ -158,7 +156,7 @@ func (dsl *DataResyncDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) linuxcl
 	return dsl
 }
 
-// L4Features adds L4 features to the RESYNC request
+/*// L4Features adds L4 features to the RESYNC request
 func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.L4Features(val)
 	return dsl
@@ -168,10 +166,10 @@ func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) linuxclient.DataResyncD
 func (dsl *DataResyncDSL) AppNamespace(appNs *l4.AppNamespaces_AppNamespace) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.AppNamespace(appNs)
 	return dsl
-}
+}*/
 
 // StnRule adds Stn rule to the RESYNC request.
-func (dsl *DataResyncDSL) StnRule(stn *stn.STN_Rule) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) StnRule(stn *stn.Rule) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.StnRule(stn)
 	return dsl
 }

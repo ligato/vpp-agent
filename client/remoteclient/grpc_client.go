@@ -8,19 +8,19 @@ import (
 	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/plugins/dispatcher"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 type grpcClient struct {
-	remote api.GenericConfiguratorClient
+	remote api.GenericManagerClient
 }
 
 // NewClientGRPC returns new instance that uses given service client for requests.
-func NewClientGRPC(client api.GenericConfiguratorClient) client.ConfigClient {
+func NewClientGRPC(client api.GenericManagerClient) client.ConfigClient {
 	return &grpcClient{client}
 }
 
-func (c *grpcClient) ActiveModels() (map[string][]api.ModelInfo, error) {
+/*func (c *grpcClient) KnownModels() ([]api.ModelInfo, error) {
 	ctx := context.Background()
 
 	resp, err := c.remote.Capabilities(ctx, &api.CapabilitiesRequest{})
@@ -28,12 +28,38 @@ func (c *grpcClient) ActiveModels() (map[string][]api.ModelInfo, error) {
 		return nil, err
 	}
 
-	modules := make(map[string][]api.ModelInfo)
+	var modules []api.ModelInfo
 	for _, info := range resp.KnownModels {
-		modules[info.Model.Module] = append(modules[info.Model.Module], *info)
+		modules = append(modules, *info)
 	}
 
 	return modules, nil
+}*/
+
+func (c *grpcClient) ChangeConfig() client.ChangeRequest {
+	return &setConfigRequest{
+		client: c.remote,
+		req:    &api.SetConfigRequest{},
+	}
+}
+
+func (c *grpcClient) ResyncConfig(items ...proto.Message) error {
+	req := &api.SetConfigRequest{
+		OverwriteAll: true,
+	}
+
+	for _, protoModel := range items {
+		item, err := models.MarshalItem(protoModel)
+		if err != nil {
+			return err
+		}
+		req.Updates = append(req.Updates, &api.UpdateItem{
+			Item: item,
+		})
+	}
+
+	_, err := c.remote.SetConfig(context.Background(), req)
+	return err
 }
 
 func (c *grpcClient) GetConfig(dsts ...interface{}) error {
@@ -65,53 +91,44 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		protos[key] = val
 	}
 
-	dispatcher.PlaceProtos(protos, dsts...)
+	orchestrator.PlaceProtos(protos, dsts...)
 
 	return nil
 }
 
-func (c *grpcClient) SetConfig(resync bool) client.SetConfigRequest {
-	return &setConfigRequest{
-		client: c.remote,
-		req: &api.SetConfigRequest{
-			//Options: &api.SetConfigRequest_Options{Resync: resync},
-			OverwriteAll: resync,
-		},
-	}
-}
-
 type setConfigRequest struct {
-	client api.GenericConfiguratorClient
+	client api.GenericManagerClient
 	req    *api.SetConfigRequest
 	err    error
 }
 
-func (r *setConfigRequest) Update(items ...proto.Message) {
+func (r *setConfigRequest) Update(items ...proto.Message) client.ChangeRequest {
 	if r.err != nil {
-		return
+		return r
 	}
 	for _, protoModel := range items {
 		item, err := models.MarshalItem(protoModel)
 		if err != nil {
 			r.err = err
-			return
+			return r
 		}
 		r.req.Updates = append(r.req.Updates, &api.UpdateItem{
 			Item: item,
 		})
 	}
+	return r
 }
 
-func (r *setConfigRequest) Delete(items ...proto.Message) {
+func (r *setConfigRequest) Delete(items ...proto.Message) client.ChangeRequest {
 	if r.err != nil {
-		return
+		return r
 	}
 	for _, protoModel := range items {
 		item, err := models.MarshalItem(protoModel)
 		if err != nil {
 			if err != nil {
 				r.err = err
-				return
+				return r
 			}
 		}
 		r.req.Updates = append(r.req.Updates, &api.UpdateItem{
@@ -121,6 +138,7 @@ func (r *setConfigRequest) Delete(items ...proto.Message) {
 			Item: item,
 		})
 	}
+	return r
 }
 
 func (r *setConfigRequest) Send(ctx context.Context) (err error) {

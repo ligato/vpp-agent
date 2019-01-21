@@ -26,12 +26,10 @@ import (
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -109,7 +107,7 @@ func (dsl *PutDSL) ACL(acl *acl.Acl) linuxclient.PutDSL {
 	return dsl
 }
 
-// BfdSession adds a request to create or update VPP bidirectional forwarding
+/*// BfdSession adds a request to create or update VPP bidirectional forwarding
 // detection session.
 func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.PutDSL {
 	dsl.vppPut.BfdSession(val)
@@ -128,7 +126,7 @@ func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) linuxclient.PutDSL {
 func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) linuxclient.PutDSL {
 	dsl.vppPut.BfdEchoFunction(val)
 	return dsl
-}
+}*/
 
 // BD adds a request to create or update VPP Bridge Domain.
 func (dsl *PutDSL) BD(val *l2.BridgeDomain) linuxclient.PutDSL {
@@ -172,7 +170,7 @@ func (dsl *PutDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) linuxclient.Pu
 	return dsl
 }
 
-// L4Features adds a request to enable or disable L4 features
+/*// L4Features adds a request to enable or disable L4 features
 func (dsl *PutDSL) L4Features(val *l4.L4Features) linuxclient.PutDSL {
 	dsl.vppPut.L4Features(val)
 	return dsl
@@ -182,10 +180,10 @@ func (dsl *PutDSL) L4Features(val *l4.L4Features) linuxclient.PutDSL {
 func (dsl *PutDSL) AppNamespace(appNs *l4.AppNamespaces_AppNamespace) linuxclient.PutDSL {
 	dsl.vppPut.AppNamespace(appNs)
 	return dsl
-}
+}*/
 
 // StnRule adds a request to create or update VPP Stn rule.
-func (dsl *PutDSL) StnRule(stn *stn.STN_Rule) linuxclient.PutDSL {
+func (dsl *PutDSL) StnRule(stn *stn.Rule) linuxclient.PutDSL {
 	dsl.vppPut.StnRule(stn)
 	return dsl
 }
@@ -267,7 +265,7 @@ func (dsl *DeleteDSL) ACL(aclName string) linuxclient.DeleteDSL {
 	return dsl
 }
 
-// BfdSession adds a request to delete an existing VPP bidirectional forwarding
+/*// BfdSession adds a request to delete an existing VPP bidirectional forwarding
 // detection session.
 func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.BfdSession(bfdSessionIfaceName)
@@ -286,7 +284,7 @@ func (dsl *DeleteDSL) BfdAuthKeys(bfdKey string) linuxclient.DeleteDSL {
 func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) linuxclient.DeleteDSL {
 	dsl.vppDelete.BfdEchoFunction(bfdEchoName)
 	return dsl
-}
+}*/
 
 // BD adds a request to delete an existing VPP Bridge Domain.
 func (dsl *DeleteDSL) BD(bdName string) linuxclient.DeleteDSL {
@@ -330,7 +328,7 @@ func (dsl *DeleteDSL) ProxyArp() linuxclient.DeleteDSL {
 	return dsl
 }
 
-// L4Features adds a request to enable or disable L4 features
+/*// L4Features adds a request to enable or disable L4 features
 func (dsl *DeleteDSL) L4Features() linuxclient.DeleteDSL {
 	dsl.vppDelete.L4Features()
 	return dsl
@@ -341,11 +339,11 @@ func (dsl *DeleteDSL) L4Features() linuxclient.DeleteDSL {
 func (dsl *DeleteDSL) AppNamespace(id string) linuxclient.DeleteDSL {
 	dsl.vppDelete.AppNamespace(id)
 	return dsl
-}
+}*/
 
 // StnRule adds a request to delete an existing VPP Stn rule.
-func (dsl *DeleteDSL) StnRule(ruleName string) linuxclient.DeleteDSL {
-	dsl.vppDelete.StnRule(ruleName)
+func (dsl *DeleteDSL) StnRule(iface, addr string) linuxclient.DeleteDSL {
+	dsl.vppDelete.StnRule(iface, addr)
 	return dsl
 }
 

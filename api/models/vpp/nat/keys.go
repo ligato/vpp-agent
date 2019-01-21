@@ -36,6 +36,11 @@ func init() {
 	}).WithNameTemplate("{{.Label}}")
 }
 
+// GlobalNAT44Key returns key for Nat44Global.
+func GlobalNAT44Key() string {
+	return models.Key(&Nat44Global{})
+}
+
 // DNAT44Key returns the key used in NB DB to store the configuration of the
 // given DNAT-44 configuration.
 func DNAT44Key(label string) string {

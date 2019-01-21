@@ -23,7 +23,7 @@ import (
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
-const ligatoUrl = "models.ligato.io/"
+const ligatoModels = "models.ligato.io/"
 
 // Unmarshal is helper function for unmarshalling items.
 func UnmarshalItem(m *api.Item) (proto.Message, error) {
@@ -61,7 +61,7 @@ func MarshalItem(pb proto.Message) (*api.Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	any.TypeUrl = ligatoUrl + proto.MessageName(pb)
+	any.TypeUrl = ligatoModels + proto.MessageName(pb)
 
 	/*name, err := model.nameFunc(pb)
 	if err != nil {
@@ -115,6 +115,7 @@ func getModelPath(m model) string {
 	return buildModelPath(m.GetVersion(), m.GetModule(), m.GetType())
 }
 
+// ModelForItem
 func ModelForItem(item *api.Item) (registeredModel, error) {
 	if data := item.GetData(); data != nil {
 		return GetModel(data)

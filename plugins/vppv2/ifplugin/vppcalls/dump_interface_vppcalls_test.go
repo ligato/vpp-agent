@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	interfaces2 "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"

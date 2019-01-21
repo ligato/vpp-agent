@@ -14,7 +14,7 @@
 
 package data
 
-import "github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
+import acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 
 // ACLCtl provides access list related methods for vpp-agent-ctl
 type ACLCtl interface {

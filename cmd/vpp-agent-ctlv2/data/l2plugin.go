@@ -14,7 +14,7 @@
 
 package data
 
-import "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+import l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 
 // L2Ctl L2 plugin related methods for vpp-agent-ctl (bridge domains, FIBs, L2 cross connects)
 type L2Ctl interface {
@@ -44,17 +44,17 @@ func (ctl *VppAgentCtlImpl) PutBridgeDomain() error {
 		MacAge:              0,
 		Interfaces: []*l2.BridgeDomain_Interface{
 			{
-				Name:                    "loop1",
+				Name: "loop1",
 				BridgedVirtualInterface: true,
 				SplitHorizonGroup:       0,
 			},
 			{
-				Name:                    "tap1",
+				Name: "tap1",
 				BridgedVirtualInterface: false,
 				SplitHorizonGroup:       1,
 			},
 			{
-				Name:                    "memif1",
+				Name: "memif1",
 				BridgedVirtualInterface: false,
 				SplitHorizonGroup:       2,
 			},

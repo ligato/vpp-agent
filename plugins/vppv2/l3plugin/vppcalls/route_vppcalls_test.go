@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var routes = []*l3.StaticRoute{
+var routes = []*l3.Route{
 	{
 		VrfId:       1,
 		DstNetwork:  "192.168.10.21/24",

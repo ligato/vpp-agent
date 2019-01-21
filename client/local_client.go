@@ -21,12 +21,11 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/syncbase"
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/pkg/models"
 )
 
-// Local is global client for direct local access.
-var Local = NewClient(&txnFactory{local.DefaultRegistry})
+// LocalClient is global client for direct local access.
+var LocalClient = NewClient(&txnFactory{local.DefaultRegistry})
 
 type client struct {
 	txnFactory ProtoTxnFactory
@@ -37,12 +36,26 @@ func NewClient(factory ProtoTxnFactory) ConfigClient {
 	return &client{factory}
 }
 
-func (c *client) ActiveModels() (map[string][]api.ModelInfo, error) {
+/*func (c *client) ActiveModels() (map[string][]api.ModelInfo, error) {
 	modules := make(map[string][]api.ModelInfo)
 	for _, info := range models.RegisteredModels() {
 		modules[info.Model.Module] = append(modules[info.Model.Module], *info)
 	}
 	return modules, nil
+}*/
+
+func (c *client) ResyncConfig(items ...proto.Message) error {
+	txn := c.txnFactory.NewTxn(true)
+
+	for _, item := range items {
+		key, err := models.GetKey(item)
+		if err != nil {
+			return err
+		}
+		txn.Put(key, item)
+	}
+
+	return txn.Commit()
 }
 
 func (c *client) GetConfig(dsts ...interface{}) error {
@@ -50,8 +63,8 @@ func (c *client) GetConfig(dsts ...interface{}) error {
 	return nil
 }
 
-func (c *client) SetConfig(resync bool) SetConfigRequest {
-	return &setConfigRequest{txn: c.txnFactory.NewTxn(resync)}
+func (c *client) ChangeConfig() ChangeRequest {
+	return &setConfigRequest{txn: c.txnFactory.NewTxn(false)}
 }
 
 type setConfigRequest struct {
@@ -59,32 +72,34 @@ type setConfigRequest struct {
 	err error
 }
 
-func (r *setConfigRequest) Update(items ...proto.Message) {
+func (r *setConfigRequest) Update(items ...proto.Message) ChangeRequest {
 	if r.err != nil {
-		return
+		return r
 	}
 	for _, item := range items {
 		key, err := models.GetKey(item)
 		if err != nil {
 			r.err = err
-			return
+			return r
 		}
 		r.txn.Put(key, item)
 	}
+	return r
 }
 
-func (r *setConfigRequest) Delete(items ...proto.Message) {
+func (r *setConfigRequest) Delete(items ...proto.Message) ChangeRequest {
 	if r.err != nil {
-		return
+		return r
 	}
 	for _, item := range items {
 		key, err := models.GetKey(item)
 		if err != nil {
 			r.err = err
-			return
+			return r
 		}
 		r.txn.Delete(key)
 	}
+	return r
 }
 
 func (r *setConfigRequest) Send(ctx context.Context) error {
@@ -106,7 +121,6 @@ type txnFactory struct {
 func (p *txnFactory) NewTxn(resync bool) keyval.ProtoTxn {
 	if resync {
 		return local.NewProtoTxn(p.registry.PropagateResync)
-	} else {
-		return local.NewProtoTxn(p.registry.PropagateChanges)
 	}
+	return local.NewProtoTxn(p.registry.PropagateChanges)
 }

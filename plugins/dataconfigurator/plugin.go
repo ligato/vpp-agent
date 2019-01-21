@@ -16,7 +16,7 @@ package dataconfigurator
 
 import (
 	"git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/dispatcher"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
 
 	"github.com/ligato/cn-infra/infra"
@@ -52,7 +52,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	GRPCServer  grpc.Server
-	Orch        *dispatcher.Plugin
+	Orch        *orchestrator.Plugin
 	GoVppmux    govppmux.TraceAPI
 	VPPIfPlugin ifplugin.API
 	VPPL2Plugin *l2plugin.L2Plugin

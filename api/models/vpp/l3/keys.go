@@ -49,6 +49,16 @@ func init() {
 	}).WithNameTemplate("settings")
 }
 
+// ProxyARPKey is key for global proxy arp
+func ProxyARPKey() string {
+	return models.Key(&ProxyARP{})
+}
+
+// ProxyARPKey is key for global ip scan neighbor
+func IPScanNeighborKey() string {
+	return models.Key(&IPScanNeighbor{})
+}
+
 // RouteKey returns the key used in ETCD to store vpp route for vpp instance.
 func RouteKey(vrf uint32, dstNet string, nextHopAddr string) string {
 	return models.Key(&Route{

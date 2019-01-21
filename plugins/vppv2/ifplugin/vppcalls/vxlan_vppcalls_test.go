@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"

@@ -9,28 +9,28 @@ import (
 
 	rpc "github.com/ligato/vpp-agent/api/dataconfigurator"
 	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/plugins/dispatcher"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 // configuratorServer implements DataSyncer service.
 type configuratorServer struct {
 	log      logging.Logger
-	dispatch *dispatcher.Plugin
+	dispatch *orchestrator.Plugin
 	dumpService
 }
 
 func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
 	config := newData()
 
-	dispatcher.PlaceProtos(svc.dispatch.ListData(), config.LinuxData, config.VppData)
+	orchestrator.PlaceProtos(svc.dispatch.ListData(), config.LinuxData, config.VppData)
 
 	return &rpc.GetResponse{Config: config}, nil
 }
 
 // Update adds configuration data present in data request to the VPP/Linux
 func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
-	protos := dispatcher.ExtractProtos(req.Update.VppData, req.Update.LinuxData)
+	protos := orchestrator.ExtractProtos(req.Update.VppData, req.Update.LinuxData)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {
@@ -39,7 +39,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 			svc.log.Debug("models.GetKey failed: %s", err)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		kvPairs = append(kvPairs, &dispatcher.ProtoWatchResp{
+		kvPairs = append(kvPairs, &orchestrator.ProtoWatchResp{
 			Key: key,
 			Val: p,
 		})
@@ -49,7 +49,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 
-	if err, _ := svc.dispatch.PushData(ctx, kvPairs); err != nil {
+	if _, err := svc.dispatch.PushData(ctx, kvPairs); err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
 	}
@@ -59,7 +59,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 
 // Delete removes configuration data present in data request from the VPP/linux
 func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
-	protos := dispatcher.ExtractProtos(req.Delete.VppData, req.Delete.LinuxData)
+	protos := orchestrator.ExtractProtos(req.Delete.VppData, req.Delete.LinuxData)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {
@@ -68,13 +68,13 @@ func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteReques
 			svc.log.Debug("models.GetKey failed: %s", err)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		kvPairs = append(kvPairs, &dispatcher.ProtoWatchResp{
+		kvPairs = append(kvPairs, &orchestrator.ProtoWatchResp{
 			Key: key,
 			Val: nil,
 		})
 	}
 
-	if err, _ := svc.dispatch.PushData(ctx, kvPairs); err != nil {
+	if _, err := svc.dispatch.PushData(ctx, kvPairs); err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
 	}

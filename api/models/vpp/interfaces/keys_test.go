@@ -16,6 +16,8 @@ package vpp_interfaces
 
 import (
 	"testing"
+
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 func TestInterfaceKey(t *testing.T) {
@@ -92,7 +94,7 @@ func TestParseNameFromKey(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			iface, isInterfaceKey := ParseNameFromKey(test.key)
+			iface, isInterfaceKey := models.Model(&Interface{}).ParseKey(test.key)
 			if isInterfaceKey != test.expectedIsIfaceKey {
 				t.Errorf("expected isInterfaceKey: %v\tgot: %v", test.expectedIsIfaceKey, isInterfaceKey)
 			}
