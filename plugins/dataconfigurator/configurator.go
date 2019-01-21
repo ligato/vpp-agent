@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/pkg/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
@@ -13,24 +14,24 @@ import (
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
-// configuratorServer implements DataSyncer service.
-type configuratorServer struct {
+// configuratorService implements DataSyncer service.
+type configuratorService struct {
 	log      logging.Logger
 	dispatch *orchestrator.Plugin
 	dumpService
 }
 
-func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
+func (svc *configuratorService) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
 	config := newData()
 
-	orchestrator.PlaceProtos(svc.dispatch.ListData(), config.LinuxData, config.VppData)
+	util.PlaceProtos(svc.dispatch.ListData(), config.LinuxData, config.VppData)
 
 	return &rpc.GetResponse{Config: config}, nil
 }
 
 // Update adds configuration data present in data request to the VPP/Linux
-func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
-	protos := orchestrator.ExtractProtos(req.Update.VppData, req.Update.LinuxData)
+func (svc *configuratorService) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
+	protos := util.ExtractProtos(req.Update.VppData, req.Update.LinuxData)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {
@@ -58,8 +59,8 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 }
 
 // Delete removes configuration data present in data request from the VPP/linux
-func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
-	protos := orchestrator.ExtractProtos(req.Delete.VppData, req.Delete.LinuxData)
+func (svc *configuratorService) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
+	protos := util.ExtractProtos(req.Delete.VppData, req.Delete.LinuxData)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {

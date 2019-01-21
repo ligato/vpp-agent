@@ -41,7 +41,7 @@ import (
 type Plugin struct {
 	Deps
 
-	configSvc configuratorServer
+	configSvc configuratorService
 
 	// Channels
 	vppChan  api.Channel

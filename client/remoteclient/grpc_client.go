@@ -8,7 +8,7 @@ import (
 	"github.com/ligato/vpp-agent/api"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/pkg/models"
-	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"github.com/ligato/vpp-agent/pkg/util"
 )
 
 type grpcClient struct {
@@ -91,7 +91,7 @@ func (c *grpcClient) GetConfig(dsts ...interface{}) error {
 		protos[key] = val
 	}
 
-	orchestrator.PlaceProtos(protos, dsts...)
+	util.PlaceProtos(protos, dsts...)
 
 	return nil
 }
