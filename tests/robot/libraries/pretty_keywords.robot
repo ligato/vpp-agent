@@ -53,6 +53,24 @@ Create Route On ${node} With IP ${ip}/${prefix} With Next Hop VRF ${next_hop_vrf
     ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
     ${out}=         Put Json    ${uri}   ${data}
 
+Create DNat On ${node} With Name ${name} Local IP ${local_ip} Local Port ${local_port} External IP ${ext_ip} External Interface ${ext_int} External Port ${ext_port} Vrf Id ${id}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/nat-dnat.json
+    ${data}=        replace variables           ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/nat44/dnat/${name}
+    ${out}=         Put Json    ${uri}   ${data}
+
+Create Interface GlobalNat On ${node} With First IP ${int_ip_1} On Inteface ${interface_1} And Second IP ${int_ip_2} On Interface ${interface_2} Vrf Id ${id} Config File ${nat_global_conf}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/${nat_global_conf}
+    ${data}=        replace variables           ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/nat44/global
+    ${out}=         Put Json    ${uri}   ${data}
+
+Remove DNat On ${node} With Name ${name}
+    Delete Dnat    ${node}    ${name}
+
+Remove Global Nat On ${node}
+    Delete Nat Global   ${node}
+
 Delete IPsec On ${node} With Prefix ${prefix} And Index ${index}
     Delete IPsec    ${node}    ${prefix}    ${index}
 

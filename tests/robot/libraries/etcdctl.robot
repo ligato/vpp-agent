@@ -147,6 +147,22 @@ Get VPP Interface Config As Json
     ${output}=            Evaluate             json.loads('''${data}''')    json
     [Return]              ${output}
 
+Get VPP NAT44 Config As Json
+    [Arguments]    ${node}    ${name}=None
+    ${key}=               Set Variable    /vnf-agent/${node}/vpp/config/${AGENT_VER}/nat44/dnat/${name}
+    ${data}=              Read Key    ${key}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
+
+Get VPP NAT44 Global Config As Json
+    [Arguments]    ${node}
+    ${key}=               Set Variable    /vnf-agent/${node}/vpp/config/${AGENT_VER}/nat44/global
+    ${data}=              Read Key    ${key}
+    ${data}=              Set Variable If      '''${data}'''==""    {}    ${data}
+    ${output}=            Evaluate             json.loads('''${data}''')    json
+    [Return]              ${output}
+
 Get Linux Interface Config As Json
     [Arguments]    ${node}    ${name}
     ${key}=               Set Variable    /vnf-agent/${node}/linux/config/${AGENT_VER}/interface/${name}
@@ -262,6 +278,18 @@ Delete Routes
 Delete IPsec
     [Arguments]    ${node}    ${prefix}    ${name}
     ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/ipsec/${prefix}/${name}
+    ${out}=         Delete key  ${uri}
+    [Return]       ${out}
+
+Delete Dnat
+    [Arguments]    ${node}    ${name}
+    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/nat44/dnat/${name}
+    ${out}=         Delete key  ${uri}
+    [Return]       ${out}
+
+Delete Nat Global
+    [Arguments]    ${node}
+    ${uri}=    Set Variable                /vnf-agent/${node}/vpp/config/${AGENT_VER}/nat44/global
     ${out}=         Delete key  ${uri}
     [Return]       ${out}
 
