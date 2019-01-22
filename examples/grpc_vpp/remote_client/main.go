@@ -27,16 +27,16 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/api/dataconfigurator"
-	"github.com/ligato/vpp-agent/api/models/linux"
-	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
+	"github.com/ligato/vpp-agent/api/configurator"
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 var (
@@ -83,8 +83,10 @@ func (p *ExamplePlugin) Init() (err error) {
 		return err
 	}
 
+	client := configurator.NewConfiguratorClient(p.conn)
+
 	// Apply initial VPP configuration.
-	p.resyncVPP()
+	go p.demonstrateClient(client)
 
 	// Schedule reconfiguration.
 	var ctx context.Context
@@ -93,7 +95,10 @@ func (p *ExamplePlugin) Init() (err error) {
 	/*plugin.wg.Add(1)
 	go plugin.reconfigureVPP(ctx)*/
 
-	close(exampleFinished)
+	go func() {
+		time.Sleep(time.Second * 30)
+		close(exampleFinished)
+	}()
 
 	return nil
 }
@@ -112,6 +117,83 @@ func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
+// demonstrateClient propagates snapshot of the whole initial configuration to VPP plugins.
+func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorClient) {
+	time.Sleep(time.Second * 2)
+	p.Log.Infof("Requesting resync..")
+
+	config := &configurator.Config{
+		VppConfig: &vpp.ConfigData{
+			Interfaces: []*interfaces.Interface{
+				memif1,
+			},
+			IpscanNeighbor: ipScanNeigh,
+			IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
+			IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
+		},
+		LinuxConfig: &linux.ConfigData{
+			Interfaces: []*linux_interfaces.Interface{
+				veth1, veth2,
+			},
+		},
+	}
+	_, err := client.Update(context.Background(), &configurator.UpdateRequest{
+		Update:     config,
+		FullResync: true,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting change..")
+
+	ifaces := []*interfaces.Interface{memif1, memif2}
+	_, err = client.Update(context.Background(), &configurator.UpdateRequest{
+		Update: &configurator.Config{
+			VppConfig: &vpp.ConfigData{
+				Interfaces: ifaces,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting delete..")
+
+	ifaces = []*interfaces.Interface{memif1}
+	_, err = client.Delete(context.Background(), &configurator.DeleteRequest{
+		Delete: &configurator.Config{
+			VppConfig: &vpp.ConfigData{
+				Interfaces: ifaces,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting get..")
+
+	cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+	fmt.Printf("Config:\n %+v\n", out)
+
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting dump..")
+
+	dump, err := client.Dump(context.Background(), &configurator.DumpRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
+}
+
 // Dialer for unix domain socket
 func dialer(socket, address string, timeoutVal time.Duration) func(string, time.Duration) (net.Conn, error) {
 	return func(addr string, timeout time.Duration) (net.Conn, error) {
@@ -120,51 +202,6 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 		// Dial with timeout
 		return net.DialTimeout(socket, addr, timeoutVal)
 	}
-}
-
-// resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
-func (p *ExamplePlugin) resyncVPP() {
-	client := dataconfigurator.NewDataConfiguratorClient(p.conn)
-
-	ctx := context.Background()
-
-	update := &dataconfigurator.Data{
-		VppData: &vpp.Data{
-			Interfaces: []*interfaces.Interface{
-				memif1,
-			},
-			IpscanNeighbor: ipScanNeigh,
-			IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
-			IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
-		},
-		LinuxData: &linux.Data{
-			Interfaces: []*linux_interfaces.Interface{
-				veth1, veth2,
-			},
-		},
-	}
-
-	_, err := client.Update(ctx, &dataconfigurator.UpdateRequest{
-		Update:     update,
-		FullResync: true,
-	})
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	cfg, err := client.Get(context.Background(), &dataconfigurator.GetRequest{})
-	if err != nil {
-		log.Fatalln(err)
-	}
-	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
-	fmt.Printf("Config:\n %+v\n", out)
-
-	dump, err := client.Dump(context.Background(), &dataconfigurator.DumpRequest{})
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
-
 }
 
 var (
@@ -203,6 +240,20 @@ var (
 			},
 		},
 	}
+	memif2 = &vpp.Interface{
+		Name:        "memif2",
+		Enabled:     true,
+		IpAddresses: []string{"4.3.0.1/16"},
+		Type:        interfaces.Interface_MEMIF,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             2,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif2.sock",
+			},
+		},
+	}
 	ipScanNeigh = &vpp.IPScanNeigh{
 		Mode: vpp_l3.IPScanNeighbor_BOTH,
 	}
@@ -232,8 +283,8 @@ var (
 )
 
 /*
-// resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
-func (plugin *ExamplePlugin) resyncVPP() {
+// demonstrateClient propagates snapshot of the whole initial configuration to VPP plugins.
+func (plugin *ExamplePlugin) demonstrateClient() {
 	err := remoteclient.DataResyncRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn)).
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).

@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package dataconfigurator
+package configurator
 
 import (
 	"github.com/ligato/cn-infra/rpc/grpc"
@@ -29,7 +29,7 @@ var DefaultPlugin = *NewPlugin()
 func NewPlugin(opts ...Option) *Plugin {
 	p := &Plugin{}
 
-	p.PluginName = "dataconfigurator"
+	p.PluginName = "configurator"
 	p.GRPCServer = &grpc.DefaultPlugin
 	p.Orch = &orchestrator.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin

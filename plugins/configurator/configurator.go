@@ -1,37 +1,41 @@
-package dataconfigurator
+package configurator
 
 import (
 	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/ligato/vpp-agent/pkg/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
-	rpc "github.com/ligato/vpp-agent/api/dataconfigurator"
+	rpc "github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
-// configuratorService implements DataSyncer service.
-type configuratorService struct {
+// configuratorServer implements DataSyncer service.
+type configuratorServer struct {
+	dumpService
+	notifyService
+
 	log      logging.Logger
 	dispatch *orchestrator.Plugin
-	dumpService
 }
 
-func (svc *configuratorService) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
-	config := newData()
+func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
+	config := newConfig()
 
-	util.PlaceProtos(svc.dispatch.ListData(), config.LinuxData, config.VppData)
+	util.PlaceProtos(svc.dispatch.ListData(), config.LinuxConfig, config.VppConfig)
 
 	return &rpc.GetResponse{Config: config}, nil
 }
 
 // Update adds configuration data present in data request to the VPP/Linux
-func (svc *configuratorService) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
-	protos := util.ExtractProtos(req.Update.VppData, req.Update.LinuxData)
+func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
+	protos := util.ExtractProtos(req.Update.VppConfig, req.Update.LinuxConfig)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {
@@ -59,8 +63,8 @@ func (svc *configuratorService) Update(ctx context.Context, req *rpc.UpdateReque
 }
 
 // Delete removes configuration data present in data request from the VPP/linux
-func (svc *configuratorService) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
-	protos := util.ExtractProtos(req.Delete.VppData, req.Delete.LinuxData)
+func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
+	protos := util.ExtractProtos(req.Delete.VppConfig, req.Delete.LinuxConfig)
 
 	var kvPairs []datasync.ProtoWatchResp
 	for _, p := range protos {
@@ -81,4 +85,11 @@ func (svc *configuratorService) Delete(ctx context.Context, req *rpc.DeleteReque
 	}
 
 	return &rpc.DeleteResponse{}, nil
+}
+
+func newConfig() *rpc.Config {
+	return &rpc.Config{
+		LinuxConfig: &linux.ConfigData{},
+		VppConfig:   &vpp.ConfigData{},
+	}
 }

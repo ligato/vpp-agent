@@ -101,8 +101,8 @@ func (p *IfPlugin) publishIfStateEvents() {
 			}
 
 			// Marshall data into JSON & send kafka message.
-			if p.NotifyStatistics != nil && ifState.Type == interfaces.InterfaceNotification_UPDOWN {
-				err := p.NotifyStatistics.Put(key, ifState.State)
+			if p.NotifyStates != nil && ifState.Type == interfaces.InterfaceNotification_UPDOWN {
+				err := p.NotifyStates.Put(key, ifState.State)
 				if err != nil {
 					if lastNotifErr == nil || lastNotifErr.Error() != err.Error() {
 						p.Log.Error(err)
@@ -121,12 +121,14 @@ func (p *IfPlugin) publishIfStateEvents() {
 				})
 			}
 
-			/* TODO
-			// Update interface notification data enabled for external GRPC endpoints
-			if p.GRPCSvc != nil {
-				p.GRPCSvc.UpdateNotifications(context.Background(), ifState)
+			if p.PushNotification != nil &&
+				ifState.Type == interfaces.InterfaceNotification_UPDOWN ||
+				ifState.State.OperStatus == interfaces.InterfaceState_DELETED {
+				p.PushNotification(&vpp.Notification{
+					Interface: ifState,
+				})
 			}
-			*/
+
 			p.publishLock.Unlock()
 
 		case <-p.ctx.Done():

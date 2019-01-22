@@ -12,10 +12,11 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package dataconfigurator
+package configurator
 
 import (
 	"git.fd.io/govpp.git/api"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	ipsecvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
 	puntvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
@@ -23,9 +24,7 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/grpc"
 
-	rpc "github.com/ligato/vpp-agent/api/dataconfigurator"
-	"github.com/ligato/vpp-agent/api/models/linux"
-	"github.com/ligato/vpp-agent/api/models/vpp"
+	rpc "github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 	l3linuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
@@ -42,7 +41,7 @@ import (
 type Plugin struct {
 	Deps
 
-	configSvc configuratorService
+	configurator configuratorServer
 
 	// Channels
 	vppChan  api.Channel
@@ -61,8 +60,9 @@ type Deps struct {
 
 // Init sets plugin child loggers
 func (p *Plugin) Init() error {
-	p.configSvc.log = p.Log.NewLogger("dataconfigurator")
-	p.configSvc.dispatch = p.Orch
+	p.configurator.log = p.Log.NewLogger("configurator")
+	p.configurator.notifyService.log = p.Log.NewLogger("configurator-notify")
+	p.configurator.dispatch = p.Orch
 
 	if err := p.initHandlers(); err != nil {
 		return err
@@ -70,7 +70,17 @@ func (p *Plugin) Init() error {
 
 	grpcServer := p.GRPCServer.GetServer()
 	if grpcServer != nil {
-		rpc.RegisterDataConfiguratorServer(grpcServer, &p.configSvc)
+		rpc.RegisterConfiguratorServer(grpcServer, &p.configurator)
+	}
+
+	if p.VPPIfPlugin != nil {
+		p.VPPIfPlugin.SetNotifyService(func(vppNotification *vpp.Notification) {
+			p.configurator.notifyService.pushNotification(&rpc.Notification{
+				Notification: &rpc.Notification_VppNotification{
+					VppNotification: vppNotification,
+				},
+			})
+		})
 	}
 
 	return nil
@@ -97,28 +107,21 @@ func (p *Plugin) initHandlers() (err error) {
 	dhcpIndexes := p.VPPIfPlugin.GetDHCPIndex()
 
 	// Initialize VPP handlers
-	p.configSvc.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
-	p.configSvc.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
-	p.configSvc.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
-	p.configSvc.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configSvc.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
-	p.configSvc.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configSvc.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configSvc.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configSvc.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configSvc.ipsecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, p.Log)
-	p.configSvc.puntHandler = puntvppcalls.NewPuntVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.aclHandler = aclvppcalls.NewACLVppHandler(p.vppChan, p.dumpChan, ifIndexes)
+	p.configurator.ifHandler = ifvppcalls.NewIfVppHandler(p.vppChan, p.Log)
+	p.configurator.natHandler = natvppcalls.NewNatVppHandler(p.vppChan, ifIndexes, dhcpIndexes, p.Log)
+	p.configurator.bdHandler = l2vppcalls.NewBridgeDomainVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.fibHandler = l2vppcalls.NewFIBVppHandler(p.vppChan, ifIndexes, bdIndexes, p.Log)
+	p.configurator.xcHandler = l2vppcalls.NewXConnectVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.arpHandler = l3vppcalls.NewArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.pArpHandler = l3vppcalls.NewProxyArpVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.rtHandler = l3vppcalls.NewRouteVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.ipsecHandler = ipsecvppcalls.NewIPsecVppHandler(p.vppChan, ifIndexes, p.Log)
+	p.configurator.puntHandler = puntvppcalls.NewPuntVppHandler(p.vppChan, ifIndexes, p.Log)
 
 	// Linux indexes and handlers
-	p.configSvc.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
-	p.configSvc.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
+	p.configurator.linuxIfHandler = iflinuxcalls.NewNetLinkHandler()
+	p.configurator.linuxL3Handler = l3linuxcalls.NewNetLinkHandler()
 
 	return nil
-}
-
-func newData() *rpc.Data {
-	return &rpc.Data{
-		LinuxData: &linux.Data{},
-		VppData:   &vpp.Data{},
-	}
 }

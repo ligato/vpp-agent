@@ -28,7 +28,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
 
-	"github.com/ligato/vpp-agent/plugins/dataconfigurator"
+	"github.com/ligato/vpp-agent/plugins/configurator"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
@@ -62,7 +62,7 @@ type VPPAgent struct {
 	VPP
 	Linux
 
-	DataConfigurator *dataconfigurator.Plugin
+	DataConfigurator *configurator.Plugin
 	RESTAPI          *rest.Plugin
 	Probe            *probe.Plugin
 	Telemetry        *telemetry.Plugin
@@ -101,7 +101,7 @@ func New() *VPPAgent {
 	ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
 	ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
 
-	ifplugin.DefaultPlugin.NotifyStatistics = ifStatePub
+	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers
 
 	vpp := DefaultVPP()
@@ -117,7 +117,7 @@ func New() *VPPAgent {
 		RESTAPI:          &rest.DefaultPlugin,
 		VPP:              vpp,
 		Linux:            linux,
-		DataConfigurator: &dataconfigurator.DefaultPlugin,
+		DataConfigurator: &configurator.DefaultPlugin,
 		Probe:            &probe.DefaultPlugin,
 		Telemetry:        &telemetry.DefaultPlugin,
 	}

@@ -1,10 +1,10 @@
-package dataconfigurator
+package configurator
 
 import (
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 
-	rpc "github.com/ligato/vpp-agent/api/dataconfigurator"
+	rpc "github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/api/models/vpp/acl"
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -43,23 +43,23 @@ type dumpService struct {
 }
 
 func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpResponse, error) {
-	state := newData()
+	dump := newConfig()
 
-	state.VppData.Interfaces, _ = svc.DumpInterfaces()
-	state.VppData.Acls, _ = svc.DumpAcls()
-	state.VppData.IpsecSpds, _ = svc.DumpIPSecSPDs()
-	state.VppData.IpsecSas, _ = svc.DumpIPSecSAs()
-	state.VppData.BridgeDomains, _ = svc.DumpBDs()
-	state.VppData.Routes, _ = svc.DumpRoutes()
-	state.VppData.Arps, _ = svc.DumpARPs()
-	state.VppData.Fibs, _ = svc.DumpFIBs()
-	state.VppData.XconnectPairs, _ = svc.DumpXConnects()
-	state.VppData.PuntTohosts, _ = svc.DumpPunt()
+	dump.VppConfig.Interfaces, _ = svc.DumpInterfaces()
+	dump.VppConfig.Acls, _ = svc.DumpAcls()
+	dump.VppConfig.IpsecSpds, _ = svc.DumpIPSecSPDs()
+	dump.VppConfig.IpsecSas, _ = svc.DumpIPSecSAs()
+	dump.VppConfig.BridgeDomains, _ = svc.DumpBDs()
+	dump.VppConfig.Routes, _ = svc.DumpRoutes()
+	dump.VppConfig.Arps, _ = svc.DumpARPs()
+	dump.VppConfig.Fibs, _ = svc.DumpFIBs()
+	dump.VppConfig.XconnectPairs, _ = svc.DumpXConnects()
+	dump.VppConfig.PuntTohosts, _ = svc.DumpPunt()
 
 	// FIXME: linux interface handler should return known proto instead of netlink
 	// state.LinuxData.Interfaces, _ = svc.DumpLinuxInterfaces()
 
-	return &rpc.DumpResponse{State: state}, nil
+	return &rpc.DumpResponse{Dump: dump}, nil
 }
 
 // DumpAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,

@@ -319,7 +319,7 @@ func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data
 		}
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 	}
 }
 
@@ -354,7 +354,7 @@ func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, da
 		// TODO process other stats types
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 	}
 }
 

@@ -26,6 +26,7 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/cmd/vpp-agent/app/v2"
 	"github.com/ligato/vpp-agent/examples/generic-client/pb"
@@ -33,7 +34,6 @@ import (
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
 
-	"github.com/ligato/vpp-agent/api/dataconfigurator"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
@@ -183,11 +183,11 @@ func demonstrateClient(c client.ConfigClient) {
 	// Get config
 	// ==========================================
 	fmt.Printf("Retrieving config..\n")
-	data := &dataconfigurator.Data{
-		VppData:   &vpp.Data{},
-		LinuxData: &linux.Data{},
+	data := &configurator.Config{
+		VppConfig:   &vpp.ConfigData{},
+		LinuxConfig: &linux.ConfigData{},
 	}
-	if err := c.GetConfig(data.VppData, data.LinuxData); err != nil {
+	if err := c.GetConfig(data.VppConfig, data.LinuxConfig); err != nil {
 		log.Fatalln(err)
 	}
 	fmt.Printf("Retrieved config:\n%+v\n", proto.MarshalTextString(data))

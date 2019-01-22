@@ -31,6 +31,7 @@ import (
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/utils/safeclose"
 
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -113,10 +114,10 @@ type Deps struct {
 	StatusCheck       statuscheck.PluginStatusWriter
 	PublishErrors     datasync.KeyProtoValWriter            // TODO: to be used with a generic plugin for publishing errors (not just interfaces and BDs)
 	Watcher           datasync.KeyValProtoWatcher           /* for resync of interface state data (PublishStatistics) */
-	NotifyStatistics  datasync.KeyProtoValWriter            /* e.g. Kafka (up/down events only)*/
+	NotifyStates      datasync.KeyProtoValWriter            /* e.g. Kafka (up/down events only)*/
 	PublishStatistics datasync.KeyProtoValWriter            /* e.g. ETCD (with resync) */
 	DataSyncs         map[string]datasync.KeyProtoValWriter /* available DBs for PublishStatistics */
-	// TODO: GRPCSvc           rpc.GRPCService
+	PushNotification  func(notification *vpp.Notification)
 }
 
 // Config holds the vpp-plugin configuration.
@@ -136,7 +137,7 @@ func (p *IfPlugin) Init() error {
 	p.fromConfigFile()
 
 	// Fills nil dependencies with default values
-	p.publishStats = p.PublishStatistics != nil || p.NotifyStatistics != nil
+	p.publishStats = p.PublishStatistics != nil || p.NotifyStates != nil
 	p.fixNilPointers()
 
 	// VPP channel
@@ -276,6 +277,10 @@ func (p *IfPlugin) GetDHCPIndex() idxmap.NamedMapping {
 	return p.dhcpIndex
 }
 
+func (p *IfPlugin) SetNotifyService(notify func(notification *vpp.Notification)) {
+	p.PushNotification = notify
+}
+
 // fromConfigFile loads plugin attributes from the configuration file.
 func (p *IfPlugin) fromConfigFile() {
 	config, err := p.loadConfig()
@@ -333,8 +338,8 @@ func (p *IfPlugin) fixNilPointers() {
 		p.Deps.PublishStatistics = noopWriter
 		p.Log.Debug("setting default noop writer for PublishStatistics dependency")
 	}
-	if p.Deps.NotifyStatistics == nil {
-		p.Deps.NotifyStatistics = noopWriter
+	if p.Deps.NotifyStates == nil {
+		p.Deps.NotifyStates = noopWriter
 		p.Log.Debug("setting default noop writer for NotifyStatistics dependency")
 	}
 	if p.Deps.Watcher == nil {

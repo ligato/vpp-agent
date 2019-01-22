@@ -11,9 +11,13 @@ import "models/linux/interfaces/interface.proto";
 import "models/linux/l3/arp.proto";
 import "models/linux/l3/route.proto";
 
-message Data {
+message ConfigData {
     repeated linux.interfaces.Interface interfaces = 10;
 
     repeated linux.l3.ARPEntry arp_entries = 20;
     repeated linux.l3.Route routes = 21;
+}
+
+message Notification {
+
 }

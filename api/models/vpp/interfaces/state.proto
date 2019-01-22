@@ -59,6 +59,6 @@ message InterfaceNotification {
         UPDOWN = 1;
         COUNTERS = 2;
     }
-    NotifType Type = 1;
+    NotifType type = 1;
     InterfaceState state = 2;
 }
