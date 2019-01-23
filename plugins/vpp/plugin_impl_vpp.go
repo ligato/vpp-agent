@@ -384,7 +384,7 @@ func (plugin *Plugin) Close() error {
 		plugin.aclConfigurator, plugin.ifConfigurator, plugin.bfdConfigurator, plugin.natConfigurator, plugin.stnConfigurator,
 		plugin.ipSecConfigurator, plugin.bdConfigurator, plugin.fibConfigurator, plugin.xcConfigurator, plugin.arpConfigurator,
 		plugin.proxyArpConfigurator, plugin.routeConfigurator, plugin.ipNeighConfigurator, plugin.appNsConfigurator,
-		plugin.puntConfigurator,
+		plugin.puntConfigurator, plugin.srv6Configurator,
 		// State updaters
 		plugin.ifStateUpdater, plugin.bdStateUpdater,
 		// Channels

@@ -4,7 +4,11 @@ package srv6;
 
 message LocalSID {
     string sid = 1;                      /* segment id (IPv6 Address) */
-    uint32 fib_table_id = 2;             /* ID of FIB table where to install localsid entry */
+    uint32 fib_table_id = 2;             /* ID of FIB table where to install localsid entry
+                                            (LocalSids with End.AD function ignore this setting due to missing setting
+                                            in the API. The End.AD functionality is separated from the SRv6 functionality
+                                            and have no binary API. It has only the CLI API and that doesn't have
+                                            the FIB table setting configurable.) */
 
     /* Configuration for end functions (all end functions are mutually exclusive) */
     End base_end_function = 3;
@@ -15,6 +19,7 @@ message LocalSID {
     EndDX6 end_function_DX6 = 8;
     EndDT4 end_function_DT4 = 9;
     EndDT6 end_function_DT6 = 10;
+    EndAD end_function_AD = 11;
 
     /* End function behavior of simple endpoint */
     message End {
@@ -60,6 +65,13 @@ message LocalSID {
     /* End function behavior of endpoint with decapsulation and specific IPv6 table lookup*/
     message EndDT6 {
         // TODO model this end function
+    }
+
+    /* End function behavior of dynamic segment routing proxy endpoint */
+    message EndAD {
+        string service_address = 1;      /* IPv6/IPv4 address of SR-unaware service (address type depends whether service is IPv4 or IPv6 service) */
+        string outgoing_interface = 2;   /* name of interface on segment routing proxy side sending data to segment routing unaware service */
+        string incoming_interface = 3;   /* name of interface on segment routing proxy side receiving data from segment routing unaware service */
     }
 }
 

@@ -15,13 +15,17 @@
 package vppcalls
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/sr"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
+	ifnb "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 )
 
@@ -68,6 +72,9 @@ func (h *SRv6VppHandler) DeleteLocalSid(sidAddr net.IP) error {
 func (h *SRv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
 	h.log.WithFields(logging.Fields{"localSID": sidAddr, "delete": deletion, "FIB table ID": h.fibTableID(localSID), "end function": h.endFunction(localSID)}).
 		Debug("Adding/deleting Local SID", sidAddr)
+	if !deletion && localSID.EndFunction_AD != nil {
+		return h.addSRProxy(sidAddr, localSID, swIfIndex)
+	}
 	req := &sr.SrLocalsidAddDel{
 		IsDel:    boolToUint(deletion),
 		Localsid: sr.Srv6Sid{Addr: []byte(sidAddr)},
@@ -91,6 +98,63 @@ func (h *SRv6VppHandler) addDelLocalSid(deletion bool, sidAddr net.IP, localSID 
 		Debug("Added/deleted Local SID ", sidAddr)
 
 	return nil
+}
+
+// addSRProxy adds local sid with SR-proxy end function (End.AD). This functionality has no binary API in VPP, therefore
+// CLI commands are used (VPE binary API that calls VPP's CLI).
+func (h *SRv6VppHandler) addSRProxy(sidAddr net.IP, localSID *srv6.LocalSID, swIfIndex ifaceidx.SwIfIndex) error {
+	// get VPP-internal names of IN and OUT interfaces
+	names, err := h.interfaceNameMapping()
+	if err != nil {
+		return fmt.Errorf("can't convert interface names from etcd to VPP-internal interface names:%v", err)
+	}
+	outInterface, found := names[localSID.EndFunction_AD.OutgoingInterface]
+	if !found {
+		return fmt.Errorf("can't find VPP-internal name for interface %v (name in etcd)", localSID.EndFunction_AD.OutgoingInterface)
+	}
+	inInterface, found := names[localSID.EndFunction_AD.IncomingInterface]
+	if !found {
+		return fmt.Errorf("can't find VPP-internal name for interface %v (name in etcd)", localSID.EndFunction_AD.IncomingInterface)
+	}
+
+	// add SR-proxy using VPP CLI
+	data, err := vppcalls.RunCliCommand(h.callsChannel,
+		fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidAddr, localSID.EndFunction_AD.ServiceAddress, outInterface, inInterface))
+	if err != nil {
+		return err
+	}
+	if len(strings.TrimSpace(string(data))) > 0 {
+		return fmt.Errorf("addition of dynamic segment routing proxy failed by returning nonblank space text in CLI: %v", string(data))
+	}
+	return nil
+}
+
+// interfaceNameMapping dumps from VPP internal names of interfaces and uses them to produce mapping from ligato interface names to vpp internal names.
+func (h *SRv6VppHandler) interfaceNameMapping() (map[string]string, error) {
+	mapping := make(map[string]string)
+	reqCtx := h.callsChannel.SendMultiRequest(&interfaces.SwInterfaceDump{})
+
+	for {
+		// get next interface info
+		ifDetails := &interfaces.SwInterfaceDetails{}
+		stop, err := reqCtx.ReceiveReply(ifDetails)
+		if stop {
+			break // Break from the loop.
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to dump interface: %v", err)
+		}
+
+		// extract and compute names
+		ligatoName := string(bytes.SplitN(ifDetails.Tag, []byte{0x00}, 2)[0])
+		vppInternalName := string(bytes.SplitN(ifDetails.InterfaceName, []byte{0x00}, 2)[0])
+		if guessInterfaceType(string(ifDetails.InterfaceName)) == ifnb.InterfaceType_ETHERNET_CSMACD { // fill name for physical interfaces (they are mostly without tag)
+			ligatoName = vppInternalName
+		}
+
+		mapping[ligatoName] = vppInternalName
+	}
+	return mapping, nil
 }
 
 func (h *SRv6VppHandler) fibTableID(localSID *srv6.LocalSID) string {
@@ -119,6 +183,8 @@ func (h *SRv6VppHandler) endFunction(localSID *srv6.LocalSID) string {
 		return fmt.Sprint("DT4")
 	} else if localSID.EndFunction_DT6 != nil {
 		return fmt.Sprint("DT6")
+	} else if localSID.EndFunction_AD != nil {
+		return fmt.Sprintf("AD{ServiceAddress: %v, OutgoingInterface: %v, IncomingInterface: %v}", localSID.EndFunction_AD.ServiceAddress, localSID.EndFunction_AD.OutgoingInterface, localSID.EndFunction_AD.IncomingInterface)
 	}
 	return "unknown end function"
 }
@@ -458,4 +524,30 @@ func parseIPv6(str string) (net.IP, error) {
 		return nil, fmt.Errorf(" %q is not ipv6 address", str)
 	}
 	return ipv6, nil
+}
+
+// guessInterfaceType attempts to guess the correct interface type from its internal name (as given by VPP).
+// This is required mainly for those interface types, that do not provide dump binary API,
+// such as loopback of af_packet.
+func guessInterfaceType(ifName string) ifnb.InterfaceType {
+	switch {
+	case strings.HasPrefix(ifName, "loop"):
+		return ifnb.InterfaceType_SOFTWARE_LOOPBACK
+	case strings.HasPrefix(ifName, "local"):
+		return ifnb.InterfaceType_SOFTWARE_LOOPBACK
+	case strings.HasPrefix(ifName, "memif"):
+		return ifnb.InterfaceType_MEMORY_INTERFACE
+	case strings.HasPrefix(ifName, "tap"):
+		return ifnb.InterfaceType_TAP_INTERFACE
+	case strings.HasPrefix(ifName, "host"):
+		return ifnb.InterfaceType_AF_PACKET_INTERFACE
+	case strings.HasPrefix(ifName, "vxlan"):
+		return ifnb.InterfaceType_VXLAN_TUNNEL
+	case strings.HasPrefix(ifName, "ipsec"):
+		return ifnb.InterfaceType_IPSEC_TUNNEL
+	case strings.HasPrefix(ifName, "vmxnet3"):
+		return ifnb.InterfaceType_VMXNET3_INTERFACE
+	}
+
+	return ifnb.InterfaceType_ETHERNET_CSMACD
 }
