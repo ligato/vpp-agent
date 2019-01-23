@@ -22,7 +22,9 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/sr"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
@@ -33,9 +35,12 @@ import (
 
 const (
 	ifaceA                  = "A"
+	ifaceB                  = "B"
 	ifaceBOutOfidxs         = "B"
 	swIndexA         uint32 = 1
 	invalidIPAddress        = "XYZ"
+	memif1                  = "memif1/1"
+	memif2                  = "memif2/2"
 )
 
 var (
@@ -57,11 +62,14 @@ func init() {
 func TestAddLocalSID(t *testing.T) {
 	// Prepare different cases
 	cases := []struct {
-		Name          string
-		FailInVPP     bool
-		ExpectFailure bool
-		Input         *srv6.LocalSID
-		Expected      *sr.SrLocalsidAddDel
+		Name              string
+		FailInVPP         bool
+		FailInVPPDump     bool
+		ExpectFailure     bool
+		cliMode           bool // sr-proxy can be se only using CLI -> using VPE binary API to send VPP CLI commands
+		MockInterfaceDump []govppapi.Message
+		Input             *srv6.LocalSID
+		Expected          govppapi.Message
 	}{
 		{
 			Name: "addition with end behaviour",
@@ -245,6 +253,106 @@ func TestAddLocalSID(t *testing.T) {
 			},
 		},
 		{
+			Name:    "addition with endAD behaviour (+ memif interface name translation)",
+			cliMode: true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
+				},
+			},
+			Expected: &vpe.CliInband{
+				Cmd:    []byte(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2)),
+				Length: uint32(len(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), memif1, memif2))),
+			},
+		},
+		{
+			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (local and tap kind of interfaces)",
+			cliMode: true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("local0")},
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("tap0")},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
+				},
+			},
+			Expected: &vpe.CliInband{
+				Cmd:    []byte(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "local0", "tap0")),
+				Length: uint32(len(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "local0", "tap0"))),
+			},
+		},
+		{
+			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (host and vxlan kind of interfaces)",
+			cliMode: true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("host0")},
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vxlan0")},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
+				},
+			},
+			Expected: &vpe.CliInband{
+				Cmd:    []byte(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "host0", "vxlan0")),
+				Length: uint32(len(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "host0", "vxlan0"))),
+			},
+		},
+		{
+			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (ipsec and vmxnet3 kind of interfaces)",
+			cliMode: true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("ipsec0")},
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("vmxnet3-0")},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
+				},
+			},
+			Expected: &vpe.CliInband{
+				Cmd:    []byte(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "ipsec0", "vmxnet3-0")),
+				Length: uint32(len(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "ipsec0", "vmxnet3-0"))),
+			},
+		},
+		{
+			Name:    "etcd-to-vpp-internal interface name translation for endAD behaviour (loop and unknown kind of interfaces)",
+			cliMode: true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte("loop0")},
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte("unknown0")},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: "unknown0", // interface name is taken from vpp internal name
+				},
+			},
+			Expected: &vpe.CliInband{
+				Cmd:    []byte(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "loop0", "unknown0")),
+				Length: uint32(len(fmt.Sprintf("sr localsid address %v behavior end.ad nh %v oif %v iif %v", sidToStr(sidA), nextHopIPv4.String(), "loop0", "unknown0"))),
+			},
+		},
+		{
 			Name:          "fail due to missing end function",
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
@@ -252,13 +360,77 @@ func TestAddLocalSID(t *testing.T) {
 			},
 		},
 		{
-			Name:          "failure propagation from VPP",
+			Name:          "failure propagation from VPP (doing main VPP call)",
 			FailInVPP:     true,
 			ExpectFailure: true,
 			Input: &srv6.LocalSID{
 				FibTableId: 0,
 				BaseEndFunction: &srv6.LocalSID_End{
 					Psp: true,
+				},
+			},
+		},
+		{
+			Name:          "failure propagation from VPP (doing main VPP call) for SR-proxy (CLI using VPE binary API)",
+			FailInVPP:     true,
+			ExpectFailure: true,
+			cliMode:       true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
+				},
+			},
+		},
+		{
+			Name:          "failure propagation from VPP Dump call",
+			FailInVPPDump: true,
+			ExpectFailure: true,
+			cliMode:       true,
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
+				},
+			},
+		},
+		{
+			Name:          "missing SR-proxy outgoing interface in VPP interface dump",
+			ExpectFailure: true,
+			cliMode:       true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceB), InterfaceName: toIFaceByte(memif2)},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
+				},
+			},
+		},
+		{
+			Name:          "missing SR-proxy incoming interface in VPP interface dump",
+			ExpectFailure: true,
+			cliMode:       true,
+			MockInterfaceDump: []govppapi.Message{
+				&interfaces.SwInterfaceDetails{Tag: toIFaceByte(ifaceA), InterfaceName: toIFaceByte(memif1)},
+			},
+			Input: &srv6.LocalSID{
+				FibTableId: 10,
+				EndFunction_AD: &srv6.LocalSID_EndAD{
+					ServiceAddress:    nextHopIPv4.String(),
+					OutgoingInterface: ifaceA,
+					IncomingInterface: ifaceB,
 				},
 			},
 		},
@@ -373,10 +545,26 @@ func TestAddLocalSID(t *testing.T) {
 			ctx, vppCalls := setup(t)
 			defer teardown(ctx)
 			// prepare reply
-			if td.FailInVPP {
-				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
-			} else {
-				ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
+			if td.MockInterfaceDump != nil {
+				if td.FailInVPPDump {
+					ctx.MockVpp.MockReply(&sr.SrPolicyDelReply{}) //unexpected type of message creates error (swInterfaceDetail doesn't have way how to indicate failure)
+				} else {
+					ctx.MockVpp.MockReply(td.MockInterfaceDump...)
+					ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+				}
+			}
+			if td.cliMode && !td.FailInVPPDump { // SR-proxy can be set only using VPP CLI (-> using VPE binary API to deliver command to VPP)
+				if td.FailInVPP {
+					ctx.MockVpp.MockReply(&vpe.CliInbandReply{Retval: 1})
+				} else {
+					ctx.MockVpp.MockReply(&vpe.CliInbandReply{})
+				}
+			} else { // normal SR binary API
+				if td.FailInVPP {
+					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{Retval: 1})
+				} else {
+					ctx.MockVpp.MockReply(&sr.SrLocalsidAddDelReply{})
+				}
 			}
 			// make the call
 			err := vppCalls.AddLocalSid(sidA.Addr, td.Input, swIfIndex)
@@ -966,4 +1154,9 @@ func boolToUint(input bool) uint8 {
 
 func sidToStr(sid sr.Srv6Sid) string {
 	return srv6.SID(sid.Addr).String()
+}
+
+// toIFaceByte converts value to byte representation as returned by VPP binary api in case of interface info (string bytes + 1 zero byte)
+func toIFaceByte(val string) []byte {
+	return append([]byte(val), 0x00)
 }
