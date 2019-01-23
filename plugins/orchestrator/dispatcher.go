@@ -64,8 +64,12 @@ func (p *Plugin) Init() error {
 		log:  p.Log,
 		orch: p,
 	}
-	api.RegisterGenericManagerServer(p.GRPC.GetServer(), p.manager)
-	//reflection.Register(p.GRPC.GetServer())
+
+	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
+		api.RegisterGenericManagerServer(grpcServer, p.manager)
+	} else {
+		p.Log.Infof("grpc server not available")
+	}
 
 	return nil
 }

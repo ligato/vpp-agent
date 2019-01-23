@@ -148,7 +148,7 @@ func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorClient
 	time.Sleep(time.Second * 5)
 	p.Log.Infof("Requesting change..")
 
-	ifaces := []*interfaces.Interface{memif1, memif2}
+	ifaces := []*interfaces.Interface{memif1, memif2, afpacket}
 	_, err = client.Update(context.Background(), &configurator.UpdateRequest{
 		Update: &configurator.Config{
 			VppConfig: &vpp.ConfigData{
@@ -277,6 +277,21 @@ var (
 		Link: &linux_interfaces.Interface_Veth{
 			Veth: &linux_interfaces.VethLink{
 				PeerIfName: "myVETH1",
+			},
+		},
+	}
+	afpacket = &vpp.Interface{
+		Name:        "myAFpacket",
+		Type:        interfaces.Interface_AF_PACKET,
+		Enabled:     true,
+		PhysAddress: "a7:35:45:55:65:75",
+		IpAddresses: []string{
+			"10.20.30.40/24",
+		},
+		Mtu: 1800,
+		Link: &interfaces.Interface_Afpacket{
+			Afpacket: &interfaces.AfpacketLink{
+				HostIfName: "veth2",
 			},
 		},
 	}

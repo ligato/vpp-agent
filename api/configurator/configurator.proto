@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package dataconfigurator;
+package configurator;
 
 option go_package = "github.com/ligato/vpp-agent/api/configurator;configurator";
 

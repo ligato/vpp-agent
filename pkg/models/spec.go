@@ -31,6 +31,7 @@ var (
 	validType   = regexp.MustCompile(`^[-a-z0-9_]+$`)
 )
 
+// Spec defines model specification used for registering model.
 type Spec api.Model
 
 type registeredModel struct {
@@ -48,8 +49,11 @@ type modelOptions struct {
 	nameFunc     NameFunc
 }
 
+// ModelOption defines function type which sets model options.
 type ModelOption func(*modelOptions)
 
+// WithNameTemplate returns option for models which sets function
+// for generating name of instances using custom template.
 func WithNameTemplate(t string) ModelOption {
 	return func(opts *modelOptions) {
 		opts.nameFunc = NameTemplate(t)

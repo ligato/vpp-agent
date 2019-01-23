@@ -29,7 +29,7 @@ import (
 	"github.com/ligato/vpp-agent/api/configurator"
 	"github.com/ligato/vpp-agent/client"
 	"github.com/ligato/vpp-agent/cmd/vpp-agent/app/v2"
-	"github.com/ligato/vpp-agent/examples/generic-client/pb"
+	"github.com/ligato/vpp-agent/examples/custom_model/pb"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
@@ -52,12 +52,13 @@ var (
 var exampleFinished = make(chan struct{})
 
 func main() {
-	ep := &ExamplePlugin{
+	ep := &ExamplePlugin{}
+	ep.Deps = Deps{
 		Orchestrator: &orchestrator.DefaultPlugin,
 		VPP:          appv2.DefaultVPP(),
 		Linux:        appv2.DefaultLinux(),
 	}
-	ep.SetName("generic-client-example")
+	ep.SetName("custom-model-example")
 	ep.Setup()
 
 	a := agent.NewAgent(
@@ -71,15 +72,19 @@ func main() {
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
-	infra.PluginDeps
-	Orchestrator *orchestrator.Plugin
-	appv2.VPP
-	appv2.Linux
+	Deps
 
 	conn *grpc.ClientConn
 
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
+}
+
+type Deps struct {
+	infra.PluginDeps
+	Orchestrator *orchestrator.Plugin
+	appv2.VPP
+	appv2.Linux
 }
 
 // Init initializes example plugin.
