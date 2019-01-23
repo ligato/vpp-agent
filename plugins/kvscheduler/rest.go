@@ -151,6 +151,7 @@ func (s *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	http.RegisterHTTPHandler(flagStatsURL, s.flagStatsGetHandler, "GET")
 	http.RegisterHTTPHandler(downstreamResyncURL, s.downstreamResyncPostHandler, "POST")
 	http.RegisterHTTPHandler(dumpURL, s.dumpGetHandler, "GET")
+	http.RegisterHTTPHandler(urlPrefix+"graph", s.dotGraphHandler, "GET")
 }
 
 // txnHistoryGetHandler is the GET handler for "txn-history" API.
