@@ -129,7 +129,7 @@ func Register(pb proto.Message, spec Spec) *registeredModel {
 	}
 
 	modulePath := strings.Replace(spec.Module, ".", "/", -1)
-	model.keyPrefix = fmt.Sprintf("config/%s/%s/%s/", modulePath, spec.Type, spec.Version)
+	model.keyPrefix = fmt.Sprintf("config/%s/%s/%s/", modulePath, spec.Version, spec.Type)
 
 	if debugRegister {
 		fmt.Printf("- registered model: %+v\t%q\n", model, model.modelPath)
@@ -148,7 +148,7 @@ func Register(pb proto.Message, spec Spec) *registeredModel {
 }
 
 func buildModelPath(version, module, typ string) string {
-	return fmt.Sprintf("%s.%s.%s", module, typ, version)
+	return fmt.Sprintf("%s.%s.%s", module, version, typ)
 }
 
 type named interface {
