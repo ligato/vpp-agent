@@ -164,7 +164,8 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	if args.txn.txnType == kvs.NBTransaction {
 		lastUpdateFlag.retryEnabled = args.txn.nb.retryEnabled
 		lastUpdateFlag.retryArgs = args.txn.nb.retryArgs
-	} else {
+	} else if prevUpdate != nil {
+		// inherit retry arguments from the last NB txn for this value
 		lastUpdateFlag.retryEnabled = prevUpdate.retryEnabled
 		lastUpdateFlag.retryArgs = prevUpdate.retryArgs
 	}
@@ -220,7 +221,8 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	)
 	defer func() {
 		if inheritedErr != nil {
-			node.DelFlags(UnavailValueFlagName) // revert back to available, the error is elsewhere
+			// revert back to available, derived value failed instead
+			node.DelFlags(UnavailValueFlagName)
 			return
 		}
 		if err == nil {
@@ -277,12 +279,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// update values that depend on this kv-pair
-	updateExecs, inheritedErr := s.runUpdates(node, args)
-	executed = append(executed, updateExecs...)
-	if inheritedErr != nil {
-		err = inheritedErr
-		return
-	}
+	executed = append(executed, s.runUpdates(node, args)...)
 
 	// execute delete operation
 	descriptor := s.registry.GetDescriptorForKey(node.GetKey())
@@ -416,12 +413,7 @@ func (s *Scheduler) applyAdd(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *
 	}
 
 	// update values that depend on this kv-pair
-	updateExecs, inheritedErr = s.runUpdates(node, args)
-	executed = append(executed, updateExecs...)
-	if inheritedErr != nil {
-		err = inheritedErr
-		return
-	}
+	executed = append(executed, s.runUpdates(node, args)...)
 
 	// created derived values
 	if !args.isDerived {
@@ -555,11 +547,20 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		txnOp.NewState = kvs.ValueState_CONFIGURED
 	}
 	s.updateNodeState(node, txnOp.NewState)
+
+	// if the value was modified or the state changed, record operation
 	if !equivalent || txnOp.PrevState != txnOp.NewState {
-		// if the value was modified or the state changed, record operation
-		txnOp.NOOP = equivalent
-		executed = append(executed, txnOp)
+		// do not record transition if it only confirms that the value is in sync
+		confirmsInSync := equivalent &&
+			txnOp.PrevState == kvs.ValueState_FOUND &&
+			txnOp.NewState == kvs.ValueState_CONFIGURED
+		if !confirmsInSync {
+			txnOp.NOOP = equivalent
+			executed = append(executed, txnOp)
+		}
 	}
+
+	// save before going into derived values
 	if !args.dryRun {
 		args.graphW.Save()
 	}
@@ -650,8 +651,7 @@ func (s *Scheduler) applyDerived(derivedVals []kvForTxn, args *applyValueArgs, c
 }
 
 // runUpdates triggers updates on all nodes that depend on the given node.
-func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed kvs.RecordedTxnOps, err error) {
-	var wasErr error
+func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed kvs.RecordedTxnOps) {
 	depNodes := node.GetSources(DependencyRelation)
 
 	// order depNodes by key (just for deterministic behaviour which simplifies testing)
@@ -661,7 +661,7 @@ func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed 
 		if getNodeOrigin(depNode) != kvs.FromNB {
 			continue
 		}
-		ops, _, err := s.applyValue(
+		ops, _, _ := s.applyValue(
 			&applyValueArgs{
 				graphW: args.graphW,
 				txn:    args.txn,
@@ -671,18 +671,16 @@ func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed 
 					origin:   getNodeOrigin(depNode),
 					isRevert: args.kv.isRevert,
 				},
-				baseKey:  getNodeBaseKey(depNode),
-				isRetry:  args.isRetry,
-				dryRun:   args.dryRun,
-				isUpdate: true, // <- update
-				branch:   args.branch,
+				baseKey:   getNodeBaseKey(depNode),
+				isRetry:   args.isRetry,
+				dryRun:    args.dryRun,
+				isDerived: isNodeDerived(depNode),
+				isUpdate:  true, // <- update
+				branch:    args.branch,
 			})
-		if err != nil {
-			wasErr = err
-		}
 		executed = append(executed, ops...)
 	}
-	return executed, wasErr
+	return executed
 }
 
 // determineUpdateOperation determines if the value needs update and what operation to execute.

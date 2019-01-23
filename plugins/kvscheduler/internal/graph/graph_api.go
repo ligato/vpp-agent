@@ -221,8 +221,9 @@ type RelationTargetDef struct {
 // Target nodes are not referenced directly, instead via their keys (suitable
 // for recording).
 type Targets struct {
-	Label string
-	Keys  utils.KeySet
+	Label        string
+	ExpectedKey  string // empty if AnyOf predicate is used instead
+	MatchingKeys utils.KeySet
 }
 
 // TargetsByLabel is a slice of single-relation targets, grouped by labels.
@@ -235,7 +236,7 @@ func (t TargetsByLabel) String() string {
 		if idx > 0 {
 			str += ", "
 		}
-		str += fmt.Sprintf("%s->%s", targets.Label, targets.Keys.String())
+		str += fmt.Sprintf("%s->%s", targets.Label, targets.MatchingKeys.String())
 	}
 	str += "}"
 	return str

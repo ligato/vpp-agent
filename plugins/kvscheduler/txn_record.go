@@ -81,15 +81,15 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 	}
 	_, prevErr := getNodeError(node)
 	return &kvs.RecordedTxnOp{
-		Key:        args.kv.key,
-		Derived:    isNodeDerived(node),
-		Property:   isNodeDerived(node) && getNodeDescriptor(node) == "",
-		PrevValue:  utils.RecordProtoMessage(node.GetValue()),
-		NewValue:   utils.RecordProtoMessage(args.kv.value),
-		PrevState:  getNodeState(node),
-		PrevErr:    prevErr,
-		IsRevert:   args.kv.isRevert,
-		IsRetry:    args.isRetry,
+		Key:         args.kv.key,
+		PrevValue:   utils.RecordProtoMessage(node.GetValue()),
+		NewValue:    utils.RecordProtoMessage(args.kv.value),
+		PrevState:   getNodeState(node),
+		PrevErr:     prevErr,
+		IsDerived:   args.isDerived,
+		IsProperty:  args.isDerived && s.registry.GetDescriptorForKey(args.kv.key) == nil,
+		IsRevert:    args.kv.isRevert,
+		IsRetry:     args.isRetry,
 	}
 }
 
@@ -98,10 +98,10 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedTxnOps) *kvs.RecordedTxn {
 	// allocate new transaction record
 	record := &kvs.RecordedTxn{
-		PreRecord:        true,
-		SeqNum:           txn.seqNum,
-		TxnType:          txn.txnType,
-		Planned:          planned,
+		PreRecord: true,
+		SeqNum:    txn.seqNum,
+		TxnType:   txn.txnType,
+		Planned:   planned,
 	}
 	if txn.txnType == kvs.NBTransaction {
 		record.ResyncType = txn.nb.resyncType

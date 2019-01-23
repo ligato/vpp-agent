@@ -394,7 +394,7 @@ func dumpGraph(g graph.RWAccess) string {
 			var nodeDers []string
 			for _, der := range f {
 				if len(der.Nodes) == 0 {
-					nodeDers = append(nodeDers, "%s", der.Label)
+					nodeDers = append(nodeDers, fmt.Sprintf("%s", der.Label))
 				} else {
 					for _, node := range der.Nodes {
 						desc := ""

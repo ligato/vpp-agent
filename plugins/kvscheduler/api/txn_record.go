@@ -81,8 +81,6 @@ type RecordedTxnOp struct {
 	// identification
 	Operation TxnOperation
 	Key       string
-	Derived   bool
-	Property  bool
 
 	// changes
 	PrevValue proto.Message
@@ -94,9 +92,11 @@ type RecordedTxnOp struct {
 	NOOP      bool
 
 	// flags
-	IsRevert   bool
-	IsRetry    bool
-	IsRecreate bool
+	IsDerived   bool
+	IsProperty  bool
+	IsRevert    bool
+	IsRetry     bool
+	IsRecreate  bool
 }
 
 // RecordedKVPair is used to record key-value pair.
@@ -205,19 +205,19 @@ func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) str
 
 	var flags []string
 	// operation flags
-	if op.Derived {
+	if op.IsDerived && !op.IsProperty {
 		flags = append(flags, "DERIVED")
 	}
-	if op.Property {
+	if op.IsProperty {
 		flags = append(flags, "PROPERTY")
 	}
 	if op.NOOP {
 		flags = append(flags, "NOOP")
 	}
-	if op.IsRevert {
+	if op.IsRevert && !op.IsProperty {
 		flags = append(flags, "REVERT")
 	}
-	if op.IsRetry {
+	if op.IsRetry && !op.IsProperty {
 		flags = append(flags, "RETRY")
 	}
 	if op.IsRecreate {

@@ -249,7 +249,7 @@ func isNodeDerived(node graph.Node) bool {
 }
 
 func getNodeBaseKey(node graph.Node) string {
-	flag := node.GetFlag(DescriptorFlagName)
+	flag := node.GetFlag(DerivedFlagName)
 	if flag == nil {
 		return node.GetKey()
 	}

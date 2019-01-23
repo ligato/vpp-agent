@@ -307,11 +307,11 @@ func prettyPrintEdges(edges TargetsByLabel) string {
 	var str string
 	idx := 0
 	for _, edge := range edges {
-		if edge.Keys.Length() == 1 && edge.Keys.Has(edge.Label) {
+		if edge.MatchingKeys.Length() == 1 && edge.MatchingKeys.Has(edge.Label) {
 			// special case: there 1:1 between label and the key
 			str += edge.Label
 		} else {
-			str += edge.Label + " -> " + edge.Keys.String()
+			str += edge.Label + " -> " + edge.MatchingKeys.String()
 		}
 		if idx < len(edges)-1 {
 			str += printDelimiter
