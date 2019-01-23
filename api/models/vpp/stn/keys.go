@@ -21,13 +21,13 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp.stn"
 
-func init() {
-	models.Register(&Rule{}, models.Spec{
+var (
+	ModelRule = models.Register(&Rule{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "rule",
 		Version: "v2",
-	}).WithNameTemplate("{{.Interface}}/ip/{{.IpAddress}}")
-}
+	}, models.WithNameTemplate("{{.Interface}}/ip/{{.IpAddress}}"))
+)
 
 // Key returns the prefix used in the ETCD to store a VPP STN config
 // of a particular STN rule in selected VPP instance.

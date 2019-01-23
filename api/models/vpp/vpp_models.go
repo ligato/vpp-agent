@@ -23,12 +23,11 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/api/models/vpp/stn"
-	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 type (
 	// ACL
-	ACL = vpp_acl.Acl
+	ACL = vpp_acl.ACL
 
 	// Interfaces
 	Interface = vpp_interfaces.Interface
@@ -56,33 +55,6 @@ type (
 	STNRule = vpp_stn.Rule
 
 	// Punt
-	PuntIPRedirect = vpp_punt.IpRedirect
+	PuntIPRedirect = vpp_punt.IPRedirect
 	PuntToHost     = vpp_punt.ToHost
-)
-
-var (
-	ACLModel = models.Model(&ACL{})
-
-	InterfaceModel = models.Model(&Interface{})
-
-	BridgeDomainModel = models.Model(&BridgeDomain{})
-	FIBEntryModel     = models.Model(&L2FIB{})
-	XConnectPairModel = models.Model(&XConnect{})
-
-	RouteModel       = models.Model(&Route{})
-	ARPEntryModel    = models.Model(&ARPEntry{})
-	IPScanNeighModel = models.Model(&IPScanNeigh{})
-	ProxyARPModel    = models.Model(&ProxyARP{})
-
-	IPSecSPDModel = models.Model(&IPSecSPD{})
-	IPSecSAModel  = models.Model(&IPSecSA{})
-
-	NAT44GlobalModel = models.Model(&NAT44Global{})
-	DNAT44Model      = models.Model(&DNAT44{})
-
-	STNRuleModel = models.Model(&STNRule{})
-
-	// Punt
-	PuntIPModel     = models.Model(&PuntIPRedirect{})
-	PuntToHostModel = models.Model(&PuntToHost{})
 )

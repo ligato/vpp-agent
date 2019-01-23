@@ -30,7 +30,6 @@ import (
 
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
@@ -163,10 +162,10 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		NBKeyPrefix:        vpp.InterfaceModel.KeyPrefix(),
-		ValueTypeName:      vpp.InterfaceModel.ProtoName(),
-		KeySelector:        vpp.InterfaceModel.IsKeyValid,
-		KeyLabel:           vpp.InterfaceModel.StripKeyPrefix,
+		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
+		ValueTypeName:      interfaces.ModelInterface.ProtoName(),
+		KeySelector:        interfaces.ModelInterface.IsKeyValid,
+		KeyLabel:           interfaces.ModelInterface.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

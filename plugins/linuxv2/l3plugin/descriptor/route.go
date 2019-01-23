@@ -25,7 +25,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
-	"github.com/ligato/vpp-agent/api/models/linux"
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -107,10 +106,10 @@ func NewRouteDescriptor(
 func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 	return &adapter.RouteDescriptor{
 		Name:               RouteDescriptorName,
-		NBKeyPrefix:        linux.RouteModel.KeyPrefix(),
-		ValueTypeName:      linux.RouteModel.ProtoName(),
-		KeySelector:        linux.RouteModel.IsKeyValid,
-		KeyLabel:           linux.RouteModel.StripKeyPrefix,
+		NBKeyPrefix:        linux_l3.ModelRoute.KeyPrefix(),
+		ValueTypeName:      linux_l3.ModelRoute.ProtoName(),
+		KeySelector:        linux_l3.ModelRoute.IsKeyValid,
+		KeyLabel:           linux_l3.ModelRoute.StripKeyPrefix,
 		ValueComparator:    d.EquivalentRoutes,
 		Add:                d.Add,
 		Delete:             d.Delete,

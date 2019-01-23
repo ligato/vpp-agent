@@ -20,9 +20,9 @@ enum L4Protocol {
     UDP = 17;
 }
 
-/* IpRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
+/* IPRedirect allows otherwise dropped packet which destination IP address matching some of the VPP addresses
 to redirect to the defined next hop address via the TX interface */
-message IpRedirect {
+message IPRedirect {
     L3Protocol l3_protocol = 1; /* L3 protocol */
     string rx_interface = 2;    /* Receive interface name. Optional, only redirect traffic incoming from this interface */
     string tx_interface = 3;    /* Transmit interface name */

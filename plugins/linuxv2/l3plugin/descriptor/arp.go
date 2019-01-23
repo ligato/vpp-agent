@@ -18,7 +18,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 
@@ -99,10 +98,10 @@ func NewARPDescriptor(
 func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 	return &adapter.ARPDescriptor{
 		Name:               ARPDescriptorName,
-		NBKeyPrefix:        linux.ARPEntryModel.KeyPrefix(),
-		ValueTypeName:      linux.ARPEntryModel.ProtoName(),
-		KeySelector:        linux.ARPEntryModel.IsKeyValid,
-		KeyLabel:           linux.ARPEntryModel.StripKeyPrefix,
+		NBKeyPrefix:        l3.ModelARPEntry.KeyPrefix(),
+		ValueTypeName:      l3.ModelARPEntry.ProtoName(),
+		KeySelector:        l3.ModelARPEntry.IsKeyValid,
+		KeyLabel:           l3.ModelARPEntry.StripKeyPrefix,
 		ValueComparator:    d.EquivalentARPs,
 		Add:                d.Add,
 		Delete:             d.Delete,

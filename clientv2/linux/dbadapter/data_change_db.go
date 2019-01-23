@@ -102,7 +102,7 @@ func (dsl *PutDSL) VppInterface(val *interfaces.Interface) linuxclient.PutDSL {
 }
 
 // ACL adds a request to create or update VPP Access Control List.
-func (dsl *PutDSL) ACL(acl *acl.Acl) linuxclient.PutDSL {
+func (dsl *PutDSL) ACL(acl *acl.ACL) linuxclient.PutDSL {
 	dsl.vppPut.ACL(acl)
 	return dsl
 }
@@ -213,7 +213,7 @@ func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclient.PutDS
 }
 
 // PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
-func (dsl *PutDSL) PuntIPRedirect(val *punt.IpRedirect) linuxclient.PutDSL {
+func (dsl *PutDSL) PuntIPRedirect(val *punt.IPRedirect) linuxclient.PutDSL {
 	dsl.vppPut.PuntIPRedirect(val)
 	return dsl
 }

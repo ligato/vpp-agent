@@ -16,8 +16,8 @@ package dbadapter
 
 import (
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/pkg/models"
 
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -77,7 +77,7 @@ func (dsl *PutDSL) Interface(val *intf.Interface) vppclient.PutDSL {
 }
 
 // ACL adds a request to create or update VPP Access Control List.
-func (dsl *PutDSL) ACL(val *acl.Acl) vppclient.PutDSL {
+func (dsl *PutDSL) ACL(val *acl.ACL) vppclient.PutDSL {
 	dsl.parent.txn.Put(acl.Key(val.Name), val)
 	return dsl
 }
@@ -114,13 +114,13 @@ func (dsl *PutDSL) Arp(arp *l3.ARPEntry) vppclient.PutDSL {
 
 // ProxyArp adds a request to create or update VPP L3 proxy ARP.
 func (dsl *PutDSL) ProxyArp(proxyArp *l3.ProxyARP) vppclient.PutDSL {
-	dsl.parent.txn.Put(vpp.ProxyARPModel.KeyPrefix(), proxyArp)
+	dsl.parent.txn.Put(models.Key(&l3.ProxyARP{}), proxyArp)
 	return dsl
 }
 
 // IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
 func (dsl *PutDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) vppclient.PutDSL {
-	dsl.parent.txn.Put(vpp.IPScanNeighModel.KeyPrefix(), ipScanNeigh)
+	dsl.parent.txn.Put(models.Key(&l3.IPScanNeighbor{}), ipScanNeigh)
 	return dsl
 }
 
@@ -132,7 +132,7 @@ func (dsl *PutDSL) StnRule(val *stn.Rule) vppclient.PutDSL {
 
 // NAT44Global adds a request to set global configuration for NAT44
 func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.PutDSL {
-	dsl.parent.txn.Put(vpp.NAT44GlobalModel.KeyPrefix(), nat44)
+	dsl.parent.txn.Put(models.Key(&nat.Nat44Global{}), nat44)
 	return dsl
 }
 
@@ -155,7 +155,7 @@ func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.PutDSL 
 }
 
 // PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
-func (dsl *PutDSL) PuntIPRedirect(val *punt.IpRedirect) vppclient.PutDSL {
+func (dsl *PutDSL) PuntIPRedirect(val *punt.IPRedirect) vppclient.PutDSL {
 	dsl.parent.txn.Put(punt.IPRedirectKey(val.L3Protocol, val.TxInterface), val)
 	return dsl
 }
@@ -221,13 +221,13 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) vppclient.DeleteDSL {
 
 // ProxyArp adds a request to delete an existing VPP L3 proxy ARP.
 func (dsl *DeleteDSL) ProxyArp() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(vpp.ProxyARPModel.KeyPrefix())
+	dsl.parent.txn.Delete(models.Key(&l3.ProxyARP{}))
 	return dsl
 }
 
 // IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
 func (dsl *DeleteDSL) IPScanNeighbor() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(vpp.IPScanNeighModel.KeyPrefix())
+	dsl.parent.txn.Delete(models.Key(&l3.IPScanNeighbor{}))
 	return dsl
 }
 
@@ -239,7 +239,7 @@ func (dsl *DeleteDSL) StnRule(iface, addr string) vppclient.DeleteDSL {
 
 // NAT44Global adds a request to remove global configuration for NAT44
 func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(vpp.NAT44GlobalModel.KeyPrefix())
+	dsl.parent.txn.Delete(models.Key(&nat.Nat44Global{}))
 	return dsl
 }
 

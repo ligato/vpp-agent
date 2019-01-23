@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/pkg/models"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -57,9 +56,9 @@ func NewProxyArpDescriptor(scheduler scheduler.KVScheduler,
 func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
 	return &adapter.ProxyARPDescriptor{
 		Name:               ProxyArpDescriptorName,
-		NBKeyPrefix:        vpp.ProxyARPModel.KeyPrefix(),
-		ValueTypeName:      vpp.ProxyARPModel.ProtoName(),
-		KeySelector:        vpp.ProxyARPModel.IsKeyValid,
+		NBKeyPrefix:        l3.ModelProxyARP.KeyPrefix(),
+		ValueTypeName:      l3.ModelProxyARP.ProtoName(),
+		KeySelector:        l3.ModelProxyARP.IsKeyValid,
 		ValueComparator:    d.EquivalentProxyArps,
 		Add:                d.Add,
 		Modify:             d.Modify,

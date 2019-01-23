@@ -16,8 +16,8 @@ package dbadapter
 
 import (
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/pkg/models"
 
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
@@ -55,7 +55,7 @@ func (dsl *DataResyncDSL) Interface(val *intf.Interface) vppclient.DataResyncDSL
 }
 
 // ACL adds Access Control List to the RESYNC request.
-func (dsl *DataResyncDSL) ACL(val *acl.Acl) vppclient.DataResyncDSL {
+func (dsl *DataResyncDSL) ACL(val *acl.ACL) vppclient.DataResyncDSL {
 	key := acl.Key(val.Name)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -101,7 +101,7 @@ func (dsl *DataResyncDSL) StaticRoute(val *l3.Route) vppclient.DataResyncDSL {
 
 // ProxyArp adds L3 proxy ARP to the RESYNC request.
 func (dsl *DataResyncDSL) ProxyArp(proxyArp *l3.ProxyARP) vppclient.DataResyncDSL {
-	key := vpp.ProxyARPModel.KeyPrefix()
+	key := models.Key(&l3.ProxyARP{})
 	dsl.txn.Put(key, proxyArp)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -119,7 +119,7 @@ func (dsl *DataResyncDSL) Arp(val *l3.ARPEntry) vppclient.DataResyncDSL {
 
 // IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
 func (dsl *DataResyncDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) vppclient.DataResyncDSL {
-	key := vpp.IPScanNeighModel.KeyPrefix()
+	key := models.Key(&l3.IPScanNeighbor{})
 	dsl.txn.Put(key, ipScanNeigh)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -137,7 +137,7 @@ func (dsl *DataResyncDSL) StnRule(val *stn.Rule) vppclient.DataResyncDSL {
 
 // NAT44Global adds global NAT44 configuration to the RESYNC request.
 func (dsl *DataResyncDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.DataResyncDSL {
-	key := vpp.NAT44GlobalModel.KeyPrefix()
+	key := models.Key(&nat.Nat44Global{})
 	dsl.txn.Put(key, nat44)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -172,7 +172,7 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.
 }
 
 // PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
-func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IpRedirect) vppclient.DataResyncDSL {
+func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IPRedirect) vppclient.DataResyncDSL {
 	key := punt.IPRedirectKey(val.L3Protocol, val.TxInterface)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
@@ -215,27 +215,27 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 
 		// fill all known keys of one VPP:
 
-		keys, err := dsl.listKeys(vpp.InterfaceModel.KeyPrefix())
+		keys, err := dsl.listKeys(intf.ModelInterface.KeyPrefix())
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(vpp.BridgeDomainModel.KeyPrefix())
+		keys, err = dsl.listKeys(l2.ModelBridgeDomain.KeyPrefix())
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(vpp.XConnectPairModel.KeyPrefix())
+		keys, err = dsl.listKeys(l2.ModelXConnectPair.KeyPrefix())
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(vpp.RouteModel.KeyPrefix())
+		keys, err = dsl.listKeys(l3.ModelRoute.KeyPrefix())
 		if err != nil {
 			break
 		}
 		appendKeys(&toBeDeleted, keys)
-		keys, err = dsl.listKeys(vpp.ARPEntryModel.KeyPrefix())
+		keys, err = dsl.listKeys(l3.ModelARPEntry.KeyPrefix())
 		if err != nil {
 			break
 		}

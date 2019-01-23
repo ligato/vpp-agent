@@ -21,20 +21,20 @@ import (
 )
 
 // ModuleName is the module name used for models.
-const ModuleName = "vpp.acl"
+const ModuleName = "vpp.acls"
 
-func init() {
-	models.Register(&Acl{}, models.Spec{
+var (
+	ModelACL = models.Register(&ACL{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "acl",
 		Version: "v2",
+		Type:    "acl",
 	})
-}
+)
 
 // Key returns the prefix used in ETCD to store vpp ACL config
 // of a particular ACL in selected vpp instance.
 func Key(aclName string) string {
-	return models.Key(&Acl{
+	return models.Key(&ACL{
 		Name: aclName,
 	})
 }

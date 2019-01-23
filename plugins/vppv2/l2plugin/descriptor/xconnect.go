@@ -16,7 +16,6 @@ package descriptor
 
 import (
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -64,10 +63,10 @@ func NewXConnectDescriptor(xcHandler vppcalls.XConnectVppAPI, log logging.Plugin
 func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 	return &adapter.XConnectDescriptor{
 		Name:               XConnectDescriptorName,
-		NBKeyPrefix:        vpp.XConnectPairModel.KeyPrefix(),
-		ValueTypeName:      vpp.XConnectPairModel.ProtoName(),
-		KeySelector:        vpp.XConnectPairModel.IsKeyValid,
-		KeyLabel:           vpp.XConnectPairModel.StripKeyPrefix,
+		NBKeyPrefix:        l2.ModelXConnectPair.KeyPrefix(),
+		ValueTypeName:      l2.ModelXConnectPair.ProtoName(),
+		KeySelector:        l2.ModelXConnectPair.IsKeyValid,
+		KeyLabel:           l2.ModelXConnectPair.StripKeyPrefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,

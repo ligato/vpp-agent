@@ -23,21 +23,23 @@ import (
 )
 
 // ModuleName is the module name used for models.
-const ModuleName = "linux"
+const ModuleName = "linux.l3"
 
-func init() {
-	models.Register(&ARPEntry{}, models.Spec{
+var (
+	ModelARPEntry = models.Register(&ARPEntry{}, models.Spec{
 		Module:  ModuleName,
+		Version: "v2",
 		Type:    "arp",
-		Version: "v2",
-	}).WithNameTemplate("{{.Interface}}/{{.IpAddress}}")
+	}, models.WithNameTemplate("{{.Interface}}/{{.IpAddress}}"))
 
-	models.Register(&Route{}, models.Spec{
+	ModelRoute = models.Register(&Route{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "route",
 		Version: "v2",
-	}).WithNameTemplate(`{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`)
-}
+		Type:    "route",
+	}, models.WithNameTemplate(
+		`{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/{{.OutgoingInterface}}`,
+	))
+)
 
 // ArpKey returns the key used in ETCD to store configuration of a particular Linux ARP entry.
 func ArpKey(iface, ipAddr string) string {

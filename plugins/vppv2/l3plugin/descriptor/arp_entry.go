@@ -17,7 +17,6 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -59,10 +58,10 @@ func NewArpDescriptor(scheduler scheduler.KVScheduler,
 func (d *ArpDescriptor) GetDescriptor() *adapter.ARPEntryDescriptor {
 	return &adapter.ARPEntryDescriptor{
 		Name:            ArpDescriptorName,
-		NBKeyPrefix:     vpp.ARPEntryModel.KeyPrefix(),
-		ValueTypeName:   vpp.ARPEntryModel.ProtoName(),
-		KeySelector:     vpp.ARPEntryModel.IsKeyValid,
-		KeyLabel:        vpp.ARPEntryModel.StripKeyPrefix,
+		NBKeyPrefix:     l3.ModelARPEntry.KeyPrefix(),
+		ValueTypeName:   l3.ModelARPEntry.ProtoName(),
+		KeySelector:     l3.ModelARPEntry.IsKeyValid,
+		KeyLabel:        l3.ModelARPEntry.StripKeyPrefix,
 		ValueComparator: d.EquivalentArps,
 		Add:             d.Add,
 		Delete:          d.Delete,

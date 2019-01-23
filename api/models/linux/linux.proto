@@ -4,9 +4,6 @@ package linux;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/linux;linux";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
-
 import "models/linux/interfaces/interface.proto";
 import "models/linux/l3/arp.proto";
 import "models/linux/l3/route.proto";

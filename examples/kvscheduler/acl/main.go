@@ -128,30 +128,30 @@ var (
 			},
 		},
 	}
-	acl0 = &acl.Acl{
+	acl0 = &acl.ACL{
 		Name: "acl0",
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Ip: &acl.Acl_Rule_IpRule_Ip{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Ip: &acl.ACL_Rule_IpRule_Ip{
 						SourceNetwork:      "10.0.0.0/24",
 						DestinationNetwork: "20.0.0.0/24",
 					},
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Ingress: []string{"memif0"},
 			Egress:  []string{"memif0"},
 		},
 	}
-	acl1 = &acl.Acl{
+	acl1 = &acl.ACL{
 		Name: "acl1",
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				MacipRule: &acl.Acl_Rule_MacIpRule{
+				Action: acl.ACL_Rule_PERMIT,
+				MacipRule: &acl.ACL_Rule_MacIpRule{
 					SourceAddress:        "192.168.0.1",
 					SourceAddressPrefix:  16,
 					SourceMacAddress:     "b2:74:8c:12:67:d2",
@@ -159,24 +159,24 @@ var (
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Ingress: []string{"memif0"},
 		},
 	}
-	acl3 = &acl.Acl{
+	acl3 = &acl.ACL{
 		Name: "acl3",
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			{
-				Action: acl.Acl_Rule_DENY,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Ip: &acl.Acl_Rule_IpRule_Ip{
+				Action: acl.ACL_Rule_DENY,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Ip: &acl.ACL_Rule_IpRule_Ip{
 						// SourceNetwork is unspecified (ANY)
 						DestinationNetwork: "30.0.0.0/8",
 					},
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Egress: []string{"memif0"},
 		},
 	}

@@ -17,7 +17,6 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
@@ -68,10 +67,10 @@ func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger
 func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 	return &adapter.DNAT44Descriptor{
 		Name:               DNAT44DescriptorName,
-		NBKeyPrefix:        vpp.DNAT44Model.KeyPrefix(),
-		ValueTypeName:      vpp.DNAT44Model.ProtoName(),
-		KeySelector:        vpp.DNAT44Model.IsKeyValid,
-		KeyLabel:           vpp.DNAT44Model.StripKeyPrefix,
+		NBKeyPrefix:        nat.ModelDNat44.KeyPrefix(),
+		ValueTypeName:      nat.ModelDNat44.ProtoName(),
+		KeySelector:        nat.ModelDNat44.IsKeyValid,
+		KeyLabel:           nat.ModelDNat44.StripKeyPrefix,
 		ValueComparator:    d.EquivalentDNAT44,
 		Add:                d.Add,
 		Delete:             d.Delete,

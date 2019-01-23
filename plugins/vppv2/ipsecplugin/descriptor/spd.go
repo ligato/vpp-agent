@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 
 	"github.com/ligato/vpp-agent/pkg/idxvpp2"
 
@@ -79,10 +78,10 @@ func NewIPSecSPDDescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.Plugin
 func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 	return &adapter.SPDDescriptor{
 		Name:               IPSecSPDDescriptorName,
-		NBKeyPrefix:        vpp.IPSecSPDModel.KeyPrefix(),
-		ValueTypeName:      vpp.IPSecSPDModel.ProtoName(),
-		KeySelector:        vpp.IPSecSPDModel.IsKeyValid,
-		KeyLabel:           vpp.IPSecSPDModel.StripKeyPrefix,
+		NBKeyPrefix:        ipsec.ModelSecurityPolicyDatabase.KeyPrefix(),
+		ValueTypeName:      ipsec.ModelSecurityPolicyDatabase.ProtoName(),
+		KeySelector:        ipsec.ModelSecurityPolicyDatabase.IsKeyValid,
+		KeyLabel:           ipsec.ModelSecurityPolicyDatabase.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSPDs,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

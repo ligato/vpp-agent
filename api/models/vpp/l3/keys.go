@@ -23,31 +23,35 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp"
 
-func init() {
-	models.Register(&ARPEntry{}, models.Spec{
+var (
+	ModelARPEntry = models.Register(&ARPEntry{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "arp",
 		Version: "v2",
-	}).WithNameTemplate("{{.Interface}}/{{.IpAddress}}")
+	}, models.WithNameTemplate(
+		"{{.Interface}}/{{.IpAddress}}",
+	))
 
-	models.Register(&Route{}, models.Spec{
+	ModelRoute = models.Register(&Route{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "route",
 		Version: "v2",
-	}).WithNameTemplate(`vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`)
+	}, models.WithNameTemplate(
+		`vrf/{{.VrfId}}/dst/{{with ipnet .DstNetwork}}{{printf "%s/%d" .IP .MaskSize}}{{end}}/gw/{{.NextHopAddr}}`,
+	))
 
-	models.Register(&ProxyARP{}, models.Spec{
+	ModelProxyARP = models.Register(&ProxyARP{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "proxyarp-global",
 		Version: "v2",
-	}).WithNameTemplate("settings")
+	}, models.WithNameTemplate("settings"))
 
-	models.Register(&IPScanNeighbor{}, models.Spec{
+	ModelIPScanNeighbor = models.Register(&IPScanNeighbor{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "ipscanneigh-global",
 		Version: "v2",
-	}).WithNameTemplate("settings")
-}
+	}, models.WithNameTemplate("settings"))
+)
 
 // ProxyARPKey is key for global proxy arp
 func ProxyARPKey() string {

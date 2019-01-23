@@ -22,7 +22,6 @@ import (
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
@@ -64,10 +63,10 @@ func NewACLDescriptor(aclHandler vppcalls.ACLVppAPI, ifPlugin ifplugin.API,
 func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
 	return &adapter.ACLDescriptor{
 		Name:            ACLDescriptorName,
-		NBKeyPrefix:     vpp.ACLModel.KeyPrefix(),
-		ValueTypeName:   vpp.ACLModel.ProtoName(),
-		KeySelector:     vpp.ACLModel.IsKeyValid,
-		KeyLabel:        vpp.ACLModel.StripKeyPrefix,
+		NBKeyPrefix:     acl.ModelACL.KeyPrefix(),
+		ValueTypeName:   acl.ModelACL.ProtoName(),
+		KeySelector:     acl.ModelACL.IsKeyValid,
+		KeyLabel:        acl.ModelACL.StripKeyPrefix,
 		ValueComparator: d.EquivalentACLs,
 		WithMetadata:    true,
 		MetadataMapFactory: func() idxmap.NamedMappingRW {
@@ -85,7 +84,7 @@ func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
 }
 
 // EquivalentACLs compares two ACLs
-func (d *ACLDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool {
+func (d *ACLDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.ACL) bool {
 	// check if ACL name changed
 	if oldACL.Name != newACL.Name {
 		return false
@@ -107,9 +106,9 @@ func (d *ACLDescriptor) EquivalentACLs(key string, oldACL, newACL *acl.Acl) bool
 // validateRules provided in ACL. Every rule has to contain actions and matches.
 // Current limitation: L2 and L3/4 have to be split to different ACLs and
 // there cannot be L2 rules and L3/4 rules in the same ACL.
-func (d *ACLDescriptor) validateRules(aclName string, rules []*acl.Acl_Rule) ([]*acl.Acl_Rule, bool) {
-	var validL3L4Rules []*acl.Acl_Rule
-	var validL2Rules []*acl.Acl_Rule
+func (d *ACLDescriptor) validateRules(aclName string, rules []*acl.ACL_Rule) ([]*acl.ACL_Rule, bool) {
+	var validL3L4Rules []*acl.ACL_Rule
+	var validL2Rules []*acl.ACL_Rule
 
 	for _, rule := range rules {
 		if rule.GetIpRule() != nil {
@@ -143,7 +142,7 @@ func (d *ACLDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // Add configures ACL
-func (d *ACLDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.ACLMetadata, err error) {
+func (d *ACLDescriptor) Add(key string, acl *acl.ACL) (metadata *aclidx.ACLMetadata, err error) {
 	if len(acl.Rules) == 0 {
 		return nil, errors.Errorf("failed to configure ACL %s, no rules to set", acl.Name)
 	}
@@ -172,7 +171,7 @@ func (d *ACLDescriptor) Add(key string, acl *acl.Acl) (metadata *aclidx.ACLMetad
 }
 
 // Delete deletes ACL
-func (d *ACLDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.ACLMetadata) error {
+func (d *ACLDescriptor) Delete(key string, acl *acl.ACL, metadata *aclidx.ACLMetadata) error {
 	if metadata.L2 {
 		// Remove ACL L2.
 		err := d.aclHandler.DeleteMACIPACL(metadata.Index)
@@ -190,7 +189,7 @@ func (d *ACLDescriptor) Delete(key string, acl *acl.Acl, metadata *aclidx.ACLMet
 }
 
 // Modify modifies ACL
-func (d *ACLDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error) {
+func (d *ACLDescriptor) Modify(key string, oldACL, newACL *acl.ACL, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error) {
 	// Validate rules.
 	rules, isL2MacIP := d.validateRules(newACL.Name, newACL.Rules)
 
@@ -216,7 +215,7 @@ func (d *ACLDescriptor) Modify(key string, oldACL, newACL *acl.Acl, oldMetadata 
 }
 
 // ModifyWithRecreate checks if modification requires recreation
-func (d *ACLDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, metadata *aclidx.ACLMetadata) bool {
+func (d *ACLDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.ACL, metadata *aclidx.ACLMetadata) bool {
 	var hasL2 bool
 	for _, rule := range oldACL.Rules {
 		if rule.GetMacipRule() != nil {
@@ -229,7 +228,7 @@ func (d *ACLDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.Acl, 
 }
 
 // DerivedValues returns list of derived values for ACL.
-func (d *ACLDescriptor) DerivedValues(key string, value *acl.Acl) (derived []api.KeyValuePair) {
+func (d *ACLDescriptor) DerivedValues(key string, value *acl.ACL) (derived []api.KeyValuePair) {
 	for _, ifName := range value.GetInterfaces().GetIngress() {
 		derived = append(derived, api.KeyValuePair{
 			Key:   acl.ToInterfaceKey(value.Name, ifName, acl.IngressFlow),
@@ -286,7 +285,7 @@ func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (
 
 // equivalentACLRules compares two ACL rules, handling the cases of unspecified
 // source/destination networks.
-func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.Acl_Rule) bool {
+func (d *ACLDescriptor) equivalentACLRules(rule1, rule2 *acl.ACL_Rule) bool {
 	// Action
 	if rule1.Action != rule2.Action {
 		return false

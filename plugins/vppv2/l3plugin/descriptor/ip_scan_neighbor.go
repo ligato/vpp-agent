@@ -18,7 +18,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/pkg/models"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -71,9 +70,9 @@ func NewIPScanNeighborDescriptor(scheduler scheduler.KVScheduler,
 func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescriptor {
 	return &adapter.IPScanNeighborDescriptor{
 		Name:               IPScanNeighborDescriptorName,
-		NBKeyPrefix:        vpp.IPScanNeighModel.KeyPrefix(),
-		ValueTypeName:      vpp.IPScanNeighModel.ProtoName(),
-		KeySelector:        vpp.IPScanNeighModel.IsKeyValid,
+		NBKeyPrefix:        l3.ModelIPScanNeighbor.KeyPrefix(),
+		ValueTypeName:      l3.ModelIPScanNeighbor.ProtoName(),
+		KeySelector:        l3.ModelIPScanNeighbor.IsKeyValid,
 		ValueComparator:    d.EquivalentIPScanNeighbors,
 		Add:                d.Add,
 		Modify:             d.Modify,

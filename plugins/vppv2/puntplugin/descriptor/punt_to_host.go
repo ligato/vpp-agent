@@ -18,7 +18,6 @@ import (
 	"errors"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -63,10 +62,10 @@ func NewPuntToHostDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 	return &adapter.PuntToHostDescriptor{
 		Name:               PuntToHostDescriptorName,
-		NBKeyPrefix:        vpp.PuntToHostModel.KeyPrefix(),
-		ValueTypeName:      vpp.PuntToHostModel.ProtoName(),
-		KeySelector:        vpp.PuntToHostModel.IsKeyValid,
-		KeyLabel:           vpp.PuntToHostModel.StripKeyPrefix,
+		NBKeyPrefix:        punt.ModelToHost.KeyPrefix(),
+		ValueTypeName:      punt.ModelToHost.ProtoName(),
+		KeySelector:        punt.ModelToHost.IsKeyValid,
+		KeyLabel:           punt.ModelToHost.StripKeyPrefix,
 		ValueComparator:    d.EquivalentPuntToHost,
 		Add:                d.Add,
 		Delete:             d.Delete,

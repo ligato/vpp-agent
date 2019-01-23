@@ -24,19 +24,19 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp.ipsec"
 
-func init() {
-	models.Register(&SecurityPolicyDatabase{}, models.Spec{
+var (
+	ModelSecurityPolicyDatabase = models.Register(&SecurityPolicyDatabase{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
 		Type:    "spd",
-	}).WithNameTemplate("{{.Index}}")
+	}, models.WithNameTemplate("{{.Index}}"))
 
-	models.Register(&SecurityAssociation{}, models.Spec{
+	ModelSecurityAssociation = models.Register(&SecurityAssociation{}, models.Spec{
 		Module:  ModuleName,
 		Version: "v2",
 		Type:    "sa",
-	}).WithNameTemplate("{{.Index}}")
-}
+	}, models.WithNameTemplate("{{.Index}}"))
+)
 
 // SPDKey returns the key used in NB DB to store the configuration of the
 // given security policy database configuration.

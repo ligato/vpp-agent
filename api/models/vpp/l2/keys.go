@@ -21,27 +21,27 @@ import (
 )
 
 // ModuleName is the module name used for models.
-const ModuleName = "vpp"
+const ModuleName = "vpp.l2"
 
-func init() {
-	models.Register(&BridgeDomain{}, models.Spec{
+var (
+	ModelBridgeDomain = models.Register(&BridgeDomain{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "bridge-domains",
+		Type:    "bridge-domain",
 		Version: "v2",
 	})
 
-	models.Register(&FIBEntry{}, models.Spec{
+	ModelFIBEntry = models.Register(&FIBEntry{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "fib",
 		Version: "v2",
-	}).WithNameTemplate("{{.BridgeDomain}}/mac/{{.PhysAddress}}")
+	}, models.WithNameTemplate("{{.BridgeDomain}}/mac/{{.PhysAddress}}"))
 
-	models.Register(&XConnectPair{}, models.Spec{
+	ModelXConnectPair = models.Register(&XConnectPair{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "xconnect",
 		Version: "v2",
-	}).WithNameTemplate("{{.ReceiveInterface}}")
-}
+	}, models.WithNameTemplate("{{.ReceiveInterface}}"))
+)
 
 // BridgeDomainKey returns the key used in NB DB to store the configuration of the
 // given bridge domain.

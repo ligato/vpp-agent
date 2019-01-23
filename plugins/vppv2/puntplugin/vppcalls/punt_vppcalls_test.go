@@ -133,7 +133,7 @@ func TestAddIPRedirect(t *testing.T) {
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	err := puntHandler.AddPuntRedirect(&punt.IpRedirect{
+	err := puntHandler.AddPuntRedirect(&punt.IPRedirect{
 		L3Protocol:  punt.L3Protocol_IPv4,
 		RxInterface: "if1",
 		TxInterface: "if2",
@@ -158,7 +158,7 @@ func TestAddIPRedirectAll(t *testing.T) {
 
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 
-	err := puntHandler.AddPuntRedirect(&punt.IpRedirect{
+	err := puntHandler.AddPuntRedirect(&punt.IPRedirect{
 		L3Protocol:  punt.L3Protocol_IPv4,
 		TxInterface: "if1",
 		NextHop:     "30.0.0.1",
@@ -183,7 +183,7 @@ func TestDeleteIPRedirect(t *testing.T) {
 	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
 	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
-	err := puntHandler.DeletePuntRedirect(&punt.IpRedirect{
+	err := puntHandler.DeletePuntRedirect(&punt.IPRedirect{
 		L3Protocol:  punt.L3Protocol_IPv4,
 		RxInterface: "if1",
 		TxInterface: "if2",

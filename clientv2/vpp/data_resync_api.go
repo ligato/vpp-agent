@@ -35,7 +35,7 @@ type DataResyncDSL interface {
 	// Interface adds interface to the RESYNC request.
 	Interface(intf *interfaces.Interface) DataResyncDSL
 	// ACL adds Access Control List to the RESYNC request.
-	ACL(acl *acl.Acl) DataResyncDSL
+	ACL(acl *acl.ACL) DataResyncDSL
 	// BD adds Bridge Domain to the RESYNC request.
 	BD(bd *l2.BridgeDomain) DataResyncDSL
 	// BDFIB adds L2 Forwarding Information Base.
@@ -61,7 +61,7 @@ type DataResyncDSL interface {
 	// IPSecSPD adds request to RESYNC a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) DataResyncDSL
 	// PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
-	PuntIPRedirect(val *punt.IpRedirect) DataResyncDSL
+	PuntIPRedirect(val *punt.IPRedirect) DataResyncDSL
 	// PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
 	PuntToHost(val *punt.ToHost) DataResyncDSL
 

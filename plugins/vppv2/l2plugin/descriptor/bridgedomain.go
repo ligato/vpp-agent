@@ -21,7 +21,6 @@ import (
 
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
@@ -77,10 +76,10 @@ func NewBridgeDomainDescriptor(bdHandler vppcalls.BridgeDomainVppAPI, log loggin
 func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor {
 	return &adapter.BridgeDomainDescriptor{
 		Name:               BridgeDomainDescriptorName,
-		NBKeyPrefix:        vpp.BridgeDomainModel.KeyPrefix(),
-		ValueTypeName:      vpp.BridgeDomainModel.ProtoName(),
-		KeySelector:        vpp.BridgeDomainModel.IsKeyValid,
-		KeyLabel:           vpp.BridgeDomainModel.StripKeyPrefix,
+		NBKeyPrefix:        l2.ModelBridgeDomain.KeyPrefix(),
+		ValueTypeName:      l2.ModelBridgeDomain.ProtoName(),
+		KeySelector:        l2.ModelBridgeDomain.IsKeyValid,
+		KeyLabel:           l2.ModelBridgeDomain.StripKeyPrefix,
 		ValueComparator:    d.EquivalentBridgeDomains,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

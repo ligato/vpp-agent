@@ -38,9 +38,9 @@ type PuntVPPWrite interface {
 	// DeregisterPuntSocket removes existing punt to socket registration
 	DeregisterPuntSocket(puntCfg *punt.ToHost) error
 	// AddPuntRedirect adds new punt IP redirect entry
-	AddPuntRedirect(punt *punt.IpRedirect) error
+	AddPuntRedirect(punt *punt.IPRedirect) error
 	// DeletePuntRedirect removes existing redirect entry
-	DeletePuntRedirect(punt *punt.IpRedirect) error
+	DeletePuntRedirect(punt *punt.IPRedirect) error
 }
 
 // PuntVPPRead provides read methods for punt

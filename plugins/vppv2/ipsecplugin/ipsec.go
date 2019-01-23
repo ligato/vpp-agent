@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name SPD  --value-type *vpp_ipsec.SecurityPolicyDatabase --meta-type *idxvpp2.OnlyIndex --import "github.com/ligato/vpp-agent/idxvpp2" --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPD  --value-type *vpp_ipsec.SecurityPolicyDatabase --meta-type *idxvpp2.OnlyIndex --import "github.com/ligato/vpp-agent/pkg/idxvpp2" --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name SPDInterface --value-type *vpp_ipsec.SecurityPolicyDatabase_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name SPDPolicy --value-type *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name SA  --value-type *vpp_ipsec.SecurityAssociation --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"

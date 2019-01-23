@@ -45,7 +45,7 @@ type DataResyncDSL interface {
 	// VppInterface adds VPP interface to the RESYNC request.
 	VppInterface(intf *vpp_interfaces.Interface) DataResyncDSL
 	// ACL adds VPP Access Control List to the RESYNC request.
-	ACL(acl *vpp_acl.Acl) DataResyncDSL
+	ACL(acl *vpp_acl.ACL) DataResyncDSL
 	/*// BfdSession adds VPP bidirectional forwarding detection session
 	// to the RESYNC request.
 	BfdSession(val *vpp_bfd.SingleHopBFD_Session) DataResyncDSL
@@ -84,7 +84,7 @@ type DataResyncDSL interface {
 	// IPSecSPD adds request to RESYNC a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) DataResyncDSL
 	// PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
-	PuntIPRedirect(val *punt.IpRedirect) DataResyncDSL
+	PuntIPRedirect(val *punt.IPRedirect) DataResyncDSL
 	// PuntToHost adds request to RESYNC a rule used to punt L4 traffic to a host.
 	PuntToHost(val *punt.ToHost) DataResyncDSL
 

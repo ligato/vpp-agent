@@ -79,7 +79,7 @@ func (ctl *VppAgentCtlImpl) DeregisterPuntViaSocket() error {
 
 // PutIPRedirect puts IP redirect configuration to the ETCD
 func (ctl *VppAgentCtlImpl) PutIPRedirect() error {
-	puntCfg := &punt.IpRedirect{
+	puntCfg := &punt.IPRedirect{
 		L3Protocol:  punt.L3Protocol_IPv4,
 		TxInterface: "tap1",
 		NextHop:     "192.168.0.1",

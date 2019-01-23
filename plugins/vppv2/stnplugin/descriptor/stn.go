@@ -19,7 +19,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/pkg/models"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -67,10 +66,10 @@ func NewSTNDescriptor(stnHandler vppcalls.StnVppAPI, log logging.PluginLogger) *
 func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 	return &adapter.STNDescriptor{
 		Name:               STNDescriptorName,
-		NBKeyPrefix:        vpp.STNRuleModel.KeyPrefix(),
-		ValueTypeName:      vpp.STNRuleModel.ProtoName(),
-		KeySelector:        vpp.STNRuleModel.IsKeyValid,
-		KeyLabel:           vpp.STNRuleModel.StripKeyPrefix,
+		NBKeyPrefix:        stn.ModelRule.KeyPrefix(),
+		ValueTypeName:      stn.ModelRule.ProtoName(),
+		KeySelector:        stn.ModelRule.IsKeyValid,
+		KeyLabel:           stn.ModelRule.StripKeyPrefix,
 		ValueComparator:    d.EquivalentSTNs,
 		Add:                d.Add,
 		Delete:             d.Delete,

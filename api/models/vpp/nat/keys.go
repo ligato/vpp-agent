@@ -23,18 +23,18 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp.nat"
 
-func init() {
-	models.Register(&Nat44Global{}, models.Spec{
+var (
+	ModelNat44Global = models.Register(&Nat44Global{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "nat44-global",
 		Version: "v2",
-	}).WithNameTemplate("settings")
-	models.Register(&DNat44{}, models.Spec{
+	}, models.WithNameTemplate("settings"))
+	ModelDNat44 = models.Register(&DNat44{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "dnat44",
 		Version: "v2",
-	}).WithNameTemplate("{{.Label}}")
-}
+	}, models.WithNameTemplate("{{.Label}}"))
+)
 
 // GlobalNAT44Key returns key for Nat44Global.
 func GlobalNAT44Key() string {

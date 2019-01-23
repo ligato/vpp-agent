@@ -17,7 +17,6 @@ package linux
 import (
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
-	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 type (
@@ -27,11 +26,4 @@ type (
 	// L3
 	Route    = linux_l3.Route
 	ARPEntry = linux_l3.ARPEntry
-)
-
-var (
-	InterfaceModel = models.Model(&Interface{})
-
-	RouteModel    = models.Model(&Route{})
-	ARPEntryModel = models.Model(&ARPEntry{})
 )

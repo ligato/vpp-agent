@@ -20,7 +20,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
@@ -68,10 +67,10 @@ func NewIPRedirectDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor {
 	return &adapter.IPPuntRedirectDescriptor{
 		Name:               IPRedirectDescriptorName,
-		NBKeyPrefix:        vpp.PuntIPModel.KeyPrefix(),
-		ValueTypeName:      vpp.PuntIPModel.ProtoName(),
-		KeySelector:        vpp.PuntIPModel.IsKeyValid,
-		KeyLabel:           vpp.PuntIPModel.StripKeyPrefix,
+		NBKeyPrefix:        punt.ModelIPRedirect.KeyPrefix(),
+		ValueTypeName:      punt.ModelIPRedirect.ProtoName(),
+		KeySelector:        punt.ModelIPRedirect.IsKeyValid,
+		KeyLabel:           punt.ModelIPRedirect.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPRedirect,
 		Add:                d.Add,
 		Delete:             d.Delete,
@@ -83,13 +82,13 @@ func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor
 }
 
 // EquivalentIPRedirect is case-insensitive comparison function for punt.IpRedirect.
-func (d *IPRedirectDescriptor) EquivalentIPRedirect(key string, oldIPRedirect, newIPRedirect *punt.IpRedirect) bool {
+func (d *IPRedirectDescriptor) EquivalentIPRedirect(key string, oldIPRedirect, newIPRedirect *punt.IPRedirect) bool {
 	// parameters compared by proto equal
 	return proto.Equal(oldIPRedirect, newIPRedirect)
 }
 
 // Add adds new IP punt redirect entry.
-func (d *IPRedirectDescriptor) Add(key string, redirect *punt.IpRedirect) (metadata interface{}, err error) {
+func (d *IPRedirectDescriptor) Add(key string, redirect *punt.IPRedirect) (metadata interface{}, err error) {
 	// remove mask from IP address if necessary
 	ipParts := strings.Split(redirect.NextHop, "/")
 	if len(ipParts) > 1 {
@@ -113,7 +112,7 @@ func (d *IPRedirectDescriptor) Add(key string, redirect *punt.IpRedirect) (metad
 }
 
 // Delete removes VPP IP punt redirect configuration.
-func (d *IPRedirectDescriptor) Delete(key string, redirect *punt.IpRedirect, metadata interface{}) error {
+func (d *IPRedirectDescriptor) Delete(key string, redirect *punt.IPRedirect, metadata interface{}) error {
 	err := d.puntHandler.DeletePuntRedirect(redirect)
 	if err != nil {
 		d.log.Error(err)
@@ -129,12 +128,12 @@ func (d *IPRedirectDescriptor) Dump(correlate []adapter.IPPuntRedirectKVWithMeta
 }
 
 // ModifyWithRecreate always returns true - IP punt redirect entries are always modified via re-creation.
-func (d *IPRedirectDescriptor) ModifyWithRecreate(key string, oldIPRedirect, newIPRedirect *punt.IpRedirect, metadata interface{}) bool {
+func (d *IPRedirectDescriptor) ModifyWithRecreate(key string, oldIPRedirect, newIPRedirect *punt.IPRedirect, metadata interface{}) bool {
 	return true
 }
 
 // Dependencies for IP punt redirect are represented by tx interface
-func (d *IPRedirectDescriptor) Dependencies(key string, redirect *punt.IpRedirect) (dependencies []scheduler.Dependency) {
+func (d *IPRedirectDescriptor) Dependencies(key string, redirect *punt.IPRedirect) (dependencies []scheduler.Dependency) {
 	dependencies = append(dependencies, scheduler.Dependency{
 		Label: ipRedirectTxInterfaceDep,
 		Key:   interfaces.InterfaceKey(redirect.TxInterface),
@@ -158,7 +157,7 @@ func (d *IPRedirectDescriptor) IsRetriableFailure(err error) bool {
 }
 
 // validatePuntConfig validates VPP punt configuration.
-func (d *IPRedirectDescriptor) validateIPRedirectConfig(redirect *punt.IpRedirect) error {
+func (d *IPRedirectDescriptor) validateIPRedirectConfig(redirect *punt.IPRedirect) error {
 	// validate L3 protocol
 	switch redirect.L3Protocol {
 	case punt.L3Protocol_IPv4:

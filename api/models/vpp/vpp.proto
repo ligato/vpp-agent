@@ -4,9 +4,6 @@ package vpp;
 
 option go_package = "github.com/ligato/vpp-agent/api/models/vpp;vpp";
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-option (gogoproto.messagename_all) = true;
-
 import "models/vpp/acl/acl.proto";
 import "models/vpp/interfaces/interface.proto";
 import "models/vpp/interfaces/state.proto";
@@ -23,7 +20,7 @@ import "models/vpp/punt/punt.proto";
 message ConfigData {
     repeated interfaces.Interface interfaces = 10;
 
-    repeated acl.Acl acls = 20;
+    repeated acl.ACL acls = 20;
 
     repeated l2.BridgeDomain bridge_domains = 30;
     repeated l2.FIBEntry fibs = 31;
@@ -40,7 +37,7 @@ message ConfigData {
     repeated ipsec.SecurityPolicyDatabase ipsec_spds = 60;
     repeated ipsec.SecurityAssociation ipsec_sas = 61;
 
-    repeated punt.IpRedirect punt_ipredirects = 70;
+    repeated punt.IPRedirect punt_ipredirects = 70;
     repeated punt.ToHost punt_tohosts = 71;
 }
 

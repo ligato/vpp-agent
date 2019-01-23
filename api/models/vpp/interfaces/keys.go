@@ -26,13 +26,13 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp"
 
-func init() {
-	models.Register(&Interface{}, models.Spec{
+var (
+	ModelInterface = models.Register(&Interface{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "interfaces",
 		Version: "v2",
+		Type:    "interfaces",
 	})
-}
+)
 
 // InterfaceKey returns the key used in NB DB to store the configuration of the
 // given vpp interface.

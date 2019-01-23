@@ -64,8 +64,8 @@ func (svc *dumpService) Dump(context.Context, *rpc.DumpRequest) (*rpc.DumpRespon
 
 // DumpAcls reads IP/MACIP access lists and returns them as an *AclResponse. If reading ends up with error,
 // only error is send back in response
-func (svc *dumpService) DumpAcls() ([]*vpp_acl.Acl, error) {
-	var acls []*vpp_acl.Acl
+func (svc *dumpService) DumpAcls() ([]*vpp_acl.ACL, error) {
+	var acls []*vpp_acl.ACL
 	ipACLs, err := svc.aclHandler.DumpACL()
 	if err != nil {
 		return nil, err

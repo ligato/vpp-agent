@@ -40,17 +40,21 @@ type registeredModel struct {
 	keyPrefix string
 	modelPath string
 
+	modelOptions
+}
+
+type modelOptions struct {
 	nameTemplate string
 	nameFunc     NameFunc
 }
 
-func (m *registeredModel) WithNameTemplate(t string) *registeredModel {
-	/*if m.nameFunc != nil {
-		panic(fmt.Sprintf("name template for model %s already exists", m.protoName))
-	}*/
-	m.nameFunc = NameTemplate(t)
-	m.nameTemplate = t
-	return m
+type ModelOption func(*modelOptions)
+
+func WithNameTemplate(t string) ModelOption {
+	return func(opts *modelOptions) {
+		opts.nameFunc = NameTemplate(t)
+		opts.nameTemplate = t
+	}
 }
 
 // ProtoName returns proto message name registered with the model.
@@ -104,15 +108,18 @@ var (
 )
 
 // Register registers the protobuf message with given model specification.
-func Register(pb proto.Message, spec Spec) *registeredModel {
+func Register(pb proto.Message, spec Spec, opts ...ModelOption) *registeredModel {
 	model := &registeredModel{
 		Spec:      spec,
 		protoName: proto.MessageName(pb),
 	}
 
+	// Check duplicate registration
 	if _, ok := registeredModels[model.protoName]; ok {
 		panic(fmt.Sprintf("proto message %q already registered", model.protoName))
 	}
+
+	// Validate model spec
 	if !validModule.MatchString(spec.Module) {
 		panic(fmt.Sprintf("module for model %s is invalid", model.protoName))
 	}
@@ -123,26 +130,32 @@ func Register(pb proto.Message, spec Spec) *registeredModel {
 		panic(fmt.Sprintf("model version for %s is invalid", model.protoName))
 	}
 
-	model.modelPath = buildModelPath(spec.Version, spec.Module, spec.Type) //fmt.Sprintf("%s.%s.%s", spec.Module, spec.Version, spec.Type)
+	// Generate keys & paths
+	model.modelPath = buildModelPath(spec.Version, spec.Module, spec.Type)
 	if pn, ok := modelPaths[model.modelPath]; ok {
 		panic(fmt.Sprintf("path prefix %q already used by: %s", model.modelPath, pn))
 	}
-
 	modulePath := strings.Replace(spec.Module, ".", "/", -1)
 	model.keyPrefix = fmt.Sprintf("config/%s/%s/%s/", modulePath, spec.Version, spec.Type)
 
-	if debugRegister {
-		fmt.Printf("- registered model: %+v\t%q\n", model, model.modelPath)
-	}
-
+	// Use GetName as fallback for generating name
 	if _, ok := pb.(named); ok {
 		model.nameFunc = func(obj interface{}) (s string, e error) {
 			return obj.(named).GetName(), nil
 		}
 	}
 
+	// Apply custom options
+	for _, opt := range opts {
+		opt(&model.modelOptions)
+	}
+
 	registeredModels[model.protoName] = model
 	modelPaths[model.modelPath] = model.protoName
+
+	if debugRegister {
+		fmt.Printf("- registered model: %+v\t%q\n", model, model.modelPath)
+	}
 
 	return model
 }

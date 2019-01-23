@@ -14,80 +14,80 @@
 
 package resturl
 
-// ACL
+// Linux Dumps
+const (
+	// Interfaces
+
+	// LinuxInterface is a linux interface rest path
+	LinuxInterface = "/dump/linux/v2/interfaces"
+
+	// L3
+
+	// LinuxRoutes is the rest linux route path
+	LinuxRoutes = "/dump/linux/v2/routes"
+	// LinuxArps is the rest linux ARPs path
+	LinuxArps = "/dump/linux/v2/arps"
+)
+
+// VPP ACL
 const (
 	// REST ACL IP prefix
-	ACLIP = "/vpp/dump/v2/acl/ip"
+	ACLIP = "/dump/vpp/v2/acl/ip"
 	// REST ACL MACIP prefix
-	ACLMACIP = "/vpp/dump/v2/acl/macip"
+	ACLMACIP = "/dump/vpp/v2/acl/macip"
 )
 
-// VPP interface
+// VPP Interfaces
 const (
 	// Interface is rest interface path
-	Interface = "/vpp/dump/v2/interfaces"
+	Interface = "/dump/vpp/v2/interfaces"
+
 	// Loopback is path for loopback interface
-	Loopback = "/vpp/dump/v2/interfaces/loopback"
+	Loopback = "/dump/vpp/v2/interfaces/loopback"
 	// Ethernet is path for physical interface
-	Ethernet = "/vpp/dump/v2/interfaces/ethernet"
+	Ethernet = "/dump/vpp/v2/interfaces/ethernet"
 	// Memif is path for memif interface
-	Memif = "/vpp/dump/v2/interfaces/memif"
+	Memif = "/dump/vpp/v2/interfaces/memif"
 	// Tap is path for tap interface
-	Tap = "/vpp/dump/v2/interfaces/tap"
+	Tap = "/dump/vpp/v2/interfaces/tap"
 	// AfPacket is path for af-packet interface
-	AfPacket = "/vpp/dump/v2/interfaces/afpacket"
+	AfPacket = "/dump/vpp/v2/interfaces/afpacket"
 	// VxLan is path for vxlan interface
-	VxLan = "/vpp/dump/v2/interfaces/vxlan"
+	VxLan = "/dump/vpp/v2/interfaces/vxlan"
 )
 
-// Linux interface REST urls
-const (
-	// LinuxInterface is a linux interface rest path
-	LinuxInterface = "/linux/dump/v2/interfaces"
-	// LinuxInterfaceStats is a linux interface statistics rest path
-	LinuxInterfaceStats = "/linux/dump/v2/interfaces/statistics"
-)
-
-// NAT REST urls
+// VPP NAT
 const (
 	// NatURL is a REST path of a NAT
-	NatURL = "/vpp/dump/v2/nat"
+	NatURL = "/dump/vpp/v2/nat"
 	// NatGlobal is a REST path of a global NAT config
-	NatGlobal = "/vpp/dump/v2/nat/global"
+	NatGlobal = "/dump/vpp/v2/nat/global"
 	// NatDNat is a REST path of a DNAT configurations
-	NatDNat = "/vpp/dump/v2/nat/dnat"
+	NatDNat = "/dump/vpp/v2/nat/dnat"
 )
 
 // L2 plugin
 const (
 	// restBd is rest bridge domain path
-	Bd = "/vpp/dump/v2/bd"
+	Bd = "/dump/vpp/v2/bd"
 	// restBdId is rest bridge domain ID path
-	BdID = "/vpp/dump/v2/bdid"
+	BdID = "/dump/vpp/v2/bdid"
 	// restFib is rest FIB path
-	Fib = "/vpp/dump/v2/fib"
+	Fib = "/dump/vpp/v2/fib"
 	// restXc is rest cross-connect path
-	Xc = "/vpp/dump/v2/xc"
+	Xc = "/dump/vpp/v2/xc"
 )
 
 // VPP L3 plugin
 const (
 	// Routes is rest static route path
-	Routes = "/vpp/dump/v2/routes"
+	Routes = "/dump/vpp/v2/routes"
 	// Arps is rest ARPs path
-	Arps = "/vpp/dump/v2/arps"
+	Arps = "/dump/vpp/v2/arps"
 	// PArpIfs is rest proxy ARP interfaces path
-	PArpIfs = "/vpp/dump/v2/proxyarp/interfaces"
+	PArpIfs = "/dump/vpp/v2/proxyarp/interfaces"
 	// PArpRngs is rest proxy ARP ranges path
-	PArpRngs = "/vpp/dump/v2/proxyarp/ranges"
-)
-
-// Linux L3 plugin
-const (
-	// LinuxRoutes is the rest linux route path
-	LinuxRoutes = "/linux/dump/v2/routes"
-	// LinuxArps is the rest linux ARPs path
-	LinuxArps = "/linux/dump/v2/arps"
+	PArpRngs = "/dump/vpp/v2/proxyarp/ranges"
 )
 
 // Command

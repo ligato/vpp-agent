@@ -8,7 +8,7 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 option (gogoproto.messagename_all) = true;
 
 // Access Control List (ACL)
-message Acl {
+message ACL {
     // The name of an access list. A device MAY restrict the length
     // and value of this name, possibly spaces and special
     // characters are not allowed.

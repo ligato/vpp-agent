@@ -20,7 +20,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	"github.com/ligato/cn-infra/logging"
@@ -66,9 +65,9 @@ func NewRouteDescriptor(scheduler scheduler.KVScheduler,
 func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 	return &adapter.RouteDescriptor{
 		Name:            RouteDescriptorName,
-		NBKeyPrefix:     vpp.RouteModel.KeyPrefix(),
-		ValueTypeName:   vpp.RouteModel.ProtoName(),
-		KeySelector:     vpp.RouteModel.IsKeyValid,
+		NBKeyPrefix:     l3.ModelRoute.KeyPrefix(),
+		ValueTypeName:   l3.ModelRoute.ProtoName(),
+		KeySelector:     l3.ModelRoute.IsKeyValid,
 		ValueComparator: d.EquivalentRoutes,
 		Add:             d.Add,
 		Delete:          d.Delete,

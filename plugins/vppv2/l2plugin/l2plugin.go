@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *vpp_l2.BridgeDomain --meta-type *idxvpp2.OnlyIndex --import "github.com/ligato/vpp-agent/idxvpp2" --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name BridgeDomain --value-type *vpp_l2.BridgeDomain --meta-type *idxvpp2.OnlyIndex --import "github.com/ligato/vpp-agent/pkg/idxvpp2" --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name BDInterface --value-type *vpp_l2.BridgeDomain_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name FIB  --value-type *vpp_l2.FIBEntry --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"
 //go:generate descriptor-adapter --descriptor-name XConnect  --value-type *vpp_l2.XConnectPair --import "github.com/ligato/vpp-agent/api/models/vpp/l2" --output-dir "descriptor"

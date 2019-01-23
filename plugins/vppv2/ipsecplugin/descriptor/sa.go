@@ -19,7 +19,6 @@ import (
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
@@ -62,10 +61,10 @@ func NewIPSecSADescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.PluginL
 func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 	return &adapter.SADescriptor{
 		Name:               SADescriptorName,
-		NBKeyPrefix:        vpp.IPSecSAModel.KeyPrefix(),
-		ValueTypeName:      vpp.IPSecSAModel.ProtoName(),
-		KeySelector:        vpp.IPSecSAModel.IsKeyValid,
-		KeyLabel:           vpp.IPSecSAModel.StripKeyPrefix,
+		NBKeyPrefix:        ipsec.ModelSecurityAssociation.KeyPrefix(),
+		ValueTypeName:      ipsec.ModelSecurityAssociation.ProtoName(),
+		KeySelector:        ipsec.ModelSecurityAssociation.IsKeyValid,
+		KeyLabel:           ipsec.ModelSecurityAssociation.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSAs,
 		Add:                d.Add,
 		Delete:             d.Delete,

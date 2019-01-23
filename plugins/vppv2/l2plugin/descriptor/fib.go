@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/pkg/errors"
 
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
@@ -71,10 +70,10 @@ func NewFIBDescriptor(fibHandler vppcalls.FIBVppAPI, log logging.PluginLogger) *
 func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 	return &adapter.FIBDescriptor{
 		Name:            FIBDescriptorName,
-		NBKeyPrefix:     vpp.FIBEntryModel.KeyPrefix(),
-		ValueTypeName:   vpp.FIBEntryModel.ProtoName(),
-		KeySelector:     vpp.FIBEntryModel.IsKeyValid,
-		KeyLabel:        vpp.FIBEntryModel.StripKeyPrefix,
+		NBKeyPrefix:     l2.ModelFIBEntry.KeyPrefix(),
+		ValueTypeName:   l2.ModelFIBEntry.ProtoName(),
+		KeySelector:     l2.ModelFIBEntry.IsKeyValid,
+		KeyLabel:        l2.ModelFIBEntry.StripKeyPrefix,
 		ValueComparator: d.EquivalentFIBs,
 		// NB keys already covered by the prefix for bridge domains
 		Add:                d.Add,

@@ -30,14 +30,14 @@ type ACLCtl interface {
 
 // PutIPAcl puts IPO access list config to the ETCD
 func (ctl *VppAgentCtlImpl) PutIPAcl() error {
-	accessList := &acl.Acl{
+	accessList := &acl.ACL{
 		Name: "aclip1",
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			// ACL IP rule
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Ip: &acl.Acl_Rule_IpRule_Ip{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Ip: &acl.ACL_Rule_IpRule_Ip{
 						SourceNetwork:      "192.168.1.1/32",
 						DestinationNetwork: "10.20.0.1/24",
 					},
@@ -45,15 +45,15 @@ func (ctl *VppAgentCtlImpl) PutIPAcl() error {
 			},
 			// ACL ICMP rule
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Icmp: &acl.Acl_Rule_IpRule_Icmp{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Icmp: &acl.ACL_Rule_IpRule_Icmp{
 						Icmpv6: false,
-						IcmpCodeRange: &acl.Acl_Rule_IpRule_Icmp_Range{
+						IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
 							First: 150,
 							Last:  250,
 						},
-						IcmpTypeRange: &acl.Acl_Rule_IpRule_Icmp_Range{
+						IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
 							First: 1150,
 							Last:  1250,
 						},
@@ -62,16 +62,16 @@ func (ctl *VppAgentCtlImpl) PutIPAcl() error {
 			},
 			// ACL TCP rule
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Tcp: &acl.Acl_Rule_IpRule_Tcp{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Tcp: &acl.ACL_Rule_IpRule_Tcp{
 						TcpFlagsMask:  20,
 						TcpFlagsValue: 10,
-						SourcePortRange: &acl.Acl_Rule_IpRule_PortRange{
+						SourcePortRange: &acl.ACL_Rule_IpRule_PortRange{
 							LowerPort: 150,
 							UpperPort: 250,
 						},
-						DestinationPortRange: &acl.Acl_Rule_IpRule_PortRange{
+						DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
 							LowerPort: 1150,
 							UpperPort: 1250,
 						},
@@ -80,14 +80,14 @@ func (ctl *VppAgentCtlImpl) PutIPAcl() error {
 			},
 			// ACL UDP rule
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Udp: &acl.Acl_Rule_IpRule_Udp{
-						SourcePortRange: &acl.Acl_Rule_IpRule_PortRange{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Udp: &acl.ACL_Rule_IpRule_Udp{
+						SourcePortRange: &acl.ACL_Rule_IpRule_PortRange{
 							LowerPort: 150,
 							UpperPort: 250,
 						},
-						DestinationPortRange: &acl.Acl_Rule_IpRule_PortRange{
+						DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
 							LowerPort: 1150,
 							UpperPort: 1250,
 						},
@@ -95,7 +95,7 @@ func (ctl *VppAgentCtlImpl) PutIPAcl() error {
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Ingress: []string{"tap1", "tap2"},
 			Egress:  []string{"tap1", "tap2"},
 		},
@@ -116,14 +116,14 @@ func (ctl *VppAgentCtlImpl) DeleteIPAcl() error {
 
 // PutMACIPAcl puts MAC IP access list config to the ETCD
 func (ctl *VppAgentCtlImpl) PutMACIPAcl() error {
-	accessList := &acl.Acl{
+	accessList := &acl.ACL{
 		Name: "aclmac1",
 		// ACL rules
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			// ACL MAC IP rule. Note: do not combine ACL ip and mac ip rules in single acl
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				MacipRule: &acl.Acl_Rule_MacIpRule{
+				Action: acl.ACL_Rule_PERMIT,
+				MacipRule: &acl.ACL_Rule_MacIpRule{
 					SourceAddress:        "192.168.0.1",
 					SourceAddressPrefix:  uint32(16),
 					SourceMacAddress:     "11:44:0A:B8:4A:35",
@@ -131,7 +131,7 @@ func (ctl *VppAgentCtlImpl) PutMACIPAcl() error {
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Ingress: []string{"tap1", "tap2"},
 			Egress:  []string{"tap1", "tap2"},
 		},

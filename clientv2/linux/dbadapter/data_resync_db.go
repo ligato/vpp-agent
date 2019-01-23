@@ -16,7 +16,6 @@ package dbadapter
 
 import (
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/api/models/vpp"
 
 	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	"github.com/ligato/vpp-agent/api/models/linux/l3"
@@ -87,7 +86,7 @@ func (dsl *DataResyncDSL) VppInterface(intf *interfaces.Interface) linuxclient.D
 }
 
 // ACL adds VPP Access Control List to the RESYNC request.
-func (dsl *DataResyncDSL) ACL(acl *acl.Acl) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) ACL(acl *acl.ACL) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.ACL(acl)
 	return dsl
 }
@@ -199,7 +198,7 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclien
 }
 
 // PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
-func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IpRedirect) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IPRedirect) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.PuntIPRedirect(val)
 	return dsl
 }
@@ -235,7 +234,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		toBeDeleted := keySet{}
 
 		// fill all known keys associated with the Linux network configuration:
-		keys, err := dsl.listKeys(vpp.InterfaceModel.KeyPrefix())
+		keys, err := dsl.listKeys(interfaces.ModelInterface.KeyPrefix())
 		if err != nil {
 			break
 		}

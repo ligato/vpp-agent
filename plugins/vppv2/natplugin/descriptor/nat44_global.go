@@ -22,7 +22,6 @@ import (
 	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/api/models/vpp"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
@@ -88,9 +87,9 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 	return &adapter.NAT44GlobalDescriptor{
 		Name:               NAT44GlobalDescriptorName,
-		NBKeyPrefix:        vpp.NAT44GlobalModel.KeyPrefix(),
-		ValueTypeName:      vpp.NAT44GlobalModel.ProtoName(),
-		KeySelector:        vpp.NAT44GlobalModel.IsKeyValid,
+		NBKeyPrefix:        nat.ModelNat44Global.KeyPrefix(),
+		ValueTypeName:      nat.ModelNat44Global.ProtoName(),
+		KeySelector:        nat.ModelNat44Global.IsKeyValid,
 		ValueComparator:    d.EquivalentNAT44Global,
 		Add:                d.Add,
 		Delete:             d.Delete,

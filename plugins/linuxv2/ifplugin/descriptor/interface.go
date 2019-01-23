@@ -22,7 +22,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
-	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
@@ -142,10 +141,10 @@ func NewInterfaceDescriptor(
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		NBKeyPrefix:        linux.InterfaceModel.KeyPrefix(),
-		ValueTypeName:      linux.InterfaceModel.ProtoName(),
-		KeySelector:        linux.InterfaceModel.IsKeyValid,
-		KeyLabel:           linux.InterfaceModel.StripKeyPrefix,
+		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
+		ValueTypeName:      interfaces.ModelInterface.ProtoName(),
+		KeySelector:        interfaces.ModelInterface.IsKeyValid,
+		KeyLabel:           interfaces.ModelInterface.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,

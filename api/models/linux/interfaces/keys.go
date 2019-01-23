@@ -24,15 +24,15 @@ import (
 )
 
 // ModuleName is the module name used for models.
-const ModuleName = "linux"
+const ModuleName = "linux.interfaces"
 
-func init() {
-	models.Register(&Interface{}, models.Spec{
+var (
+	ModelInterface = models.Register(&Interface{}, models.Spec{
 		Module:  ModuleName,
-		Type:    "interfaces",
 		Version: "v2",
+		Type:    "interface",
 	})
-}
+)
 
 // InterfaceKey returns the key used in ETCD to store configuration of a particular Linux interface.
 func InterfaceKey(name string) string {

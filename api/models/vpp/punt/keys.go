@@ -21,18 +21,22 @@ import (
 // ModuleName is the module name used for models.
 const ModuleName = "vpp"
 
-func init() {
-	models.Register(&ToHost{}, models.Spec{
+var (
+	ModelToHost = models.Register(&ToHost{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "tohost",
 		Version: "v2",
-	}).WithNameTemplate("l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}")
-	models.Register(&IpRedirect{}, models.Spec{
+	}, models.WithNameTemplate(
+		"l3/{{.L3Protocol}}/l4/{{.L4Protocol}}/port/{{.Port}}",
+	))
+	ModelIPRedirect = models.Register(&IPRedirect{}, models.Spec{
 		Module:  ModuleName,
 		Type:    "ipredirect",
 		Version: "v2",
-	}).WithNameTemplate("l3/{{.L3Protocol}}/tx/{{.TxInterface}}")
-}
+	}, models.WithNameTemplate(
+		"l3/{{.L3Protocol}}/tx/{{.TxInterface}}",
+	))
+)
 
 // ToHostKey returns key representing punt to host/socket configuration.
 func ToHostKey(l3Proto L3Protocol, l4Proto L4Protocol, port uint32) string {
@@ -45,7 +49,7 @@ func ToHostKey(l3Proto L3Protocol, l4Proto L4Protocol, port uint32) string {
 
 // IPRedirectKey returns key representing IP punt redirect configuration.
 func IPRedirectKey(l3Proto L3Protocol, txIf string) string {
-	return models.Key(&IpRedirect{
+	return models.Key(&IPRedirect{
 		L3Protocol:  l3Proto,
 		TxInterface: txIf,
 	})

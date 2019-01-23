@@ -65,7 +65,7 @@ func (h *PuntVppHandler) DeregisterPuntSocket(puntCfg *punt.ToHost) error {
 }
 
 // AddPuntRedirect adds new redirect entry
-func (h *PuntVppHandler) AddPuntRedirect(puntCfg *punt.IpRedirect) error {
+func (h *PuntVppHandler) AddPuntRedirect(puntCfg *punt.IPRedirect) error {
 	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
 		return h.handlePuntRedirectIPv4(puntCfg, true)
 	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
@@ -80,7 +80,7 @@ func (h *PuntVppHandler) AddPuntRedirect(puntCfg *punt.IpRedirect) error {
 }
 
 // DeletePuntRedirect removes existing redirect entry
-func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IpRedirect) error {
+func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IPRedirect) error {
 	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
 		return h.handlePuntRedirectIPv4(puntCfg, false)
 	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
@@ -170,15 +170,15 @@ func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool
 	return nil
 }
 
-func (h *PuntVppHandler) handlePuntRedirectIPv4(punt *punt.IpRedirect, isAdd bool) error {
+func (h *PuntVppHandler) handlePuntRedirectIPv4(punt *punt.IPRedirect, isAdd bool) error {
 	return h.handlePuntRedirect(punt, true, isAdd)
 }
 
-func (h *PuntVppHandler) handlePuntRedirectIPv6(punt *punt.IpRedirect, isAdd bool) error {
+func (h *PuntVppHandler) handlePuntRedirectIPv6(punt *punt.IPRedirect, isAdd bool) error {
 	return h.handlePuntRedirect(punt, false, isAdd)
 }
 
-func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IpRedirect, isIPv4, isAdd bool) error {
+func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd bool) error {
 	// rx interface
 	var rxIfIdx uint32
 	if punt.RxInterface == "" {

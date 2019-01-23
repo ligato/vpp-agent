@@ -55,7 +55,7 @@ type PutDSL interface {
 	// Interface adds a request to create or update VPP network interface.
 	Interface(val *interfaces.Interface) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
-	ACL(acl *acl.Acl) PutDSL
+	ACL(acl *acl.ACL) PutDSL
 	// BD adds a request to create or update VPP Bridge Domain.
 	BD(val *l2.BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
@@ -81,7 +81,7 @@ type PutDSL interface {
 	// IPSecSPD adds request to create a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) PutDSL
 	// PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
-	PuntIPRedirect(val *punt.IpRedirect) PutDSL
+	PuntIPRedirect(val *punt.IPRedirect) PutDSL
 	// PuntToHost adds request to create or update rule to punt L4 traffic to a host.
 	PuntToHost(val *punt.ToHost) PutDSL
 
