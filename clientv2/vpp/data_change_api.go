@@ -15,16 +15,14 @@
 package vppclient
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 )
 
 // DataChangeDSL defines Domain Specific Language (DSL) for data change.
@@ -57,16 +55,7 @@ type PutDSL interface {
 	// Interface adds a request to create or update VPP network interface.
 	Interface(val *interfaces.Interface) PutDSL
 	// ACL adds a request to create or update VPP Access Control List.
-	ACL(acl *acl.Acl) PutDSL
-	// BfdSession adds a request to create or update bidirectional forwarding
-	// detection session.
-	BfdSession(val *bfd.SingleHopBFD_Session) PutDSL
-	// BfdAuthKeys adds a request to create or update bidirectional forwarding
-	// detection key.
-	BfdAuthKeys(val *bfd.SingleHopBFD_Key) PutDSL
-	// BfdEchoFunction adds a request to create or update bidirectional
-	// forwarding detection echo function.
-	BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) PutDSL
+	ACL(acl *acl.ACL) PutDSL
 	// BD adds a request to create or update VPP Bridge Domain.
 	BD(val *l2.BridgeDomain) PutDSL
 	// BDFIB adds a request to create or update VPP L2 Forwarding Information Base.
@@ -74,19 +63,15 @@ type PutDSL interface {
 	// XConnect adds a request to create or update VPP Cross Connect.
 	XConnect(val *l2.XConnectPair) PutDSL
 	// StaticRoute adds a request to create or update VPP L3 Static Route.
-	StaticRoute(val *l3.StaticRoute) PutDSL
+	StaticRoute(val *l3.Route) PutDSL
 	// Arp adds a request to create or update VPP L3 ARP.
 	Arp(arp *l3.ARPEntry) PutDSL
 	// ProxyArpInterfaces adds a request to create or update VPP L3 proxy ARP interfaces
 	ProxyArp(proxyArp *l3.ProxyARP) PutDSL
 	// IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
 	IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) PutDSL
-	// L4Features adds a request to enable or disable L4 features
-	L4Features(val *l4.L4Features) PutDSL
-	// AppNamespace adds a request to create or update VPP Application namespace
-	AppNamespace(appNs *l4.AppNamespaces_AppNamespace) PutDSL
 	// StnRule adds a request to create or update Stn rule.
-	StnRule(stn *stn.STN_Rule) PutDSL
+	StnRule(stn *stn.Rule) PutDSL
 	// NAT44Global adds a request to set global configuration for NAT44
 	NAT44Global(nat *nat.Nat44Global) PutDSL
 	// DNAT44 adds a request to create or update DNAT44 configuration
@@ -96,7 +81,7 @@ type PutDSL interface {
 	// IPSecSPD adds request to create a new Security Policy Database
 	IPSecSPD(spd *ipsec.SecurityPolicyDatabase) PutDSL
 	// PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
-	PuntIPRedirect(val *punt.IpRedirect) PutDSL
+	PuntIPRedirect(val *punt.IPRedirect) PutDSL
 	// PuntToHost adds request to create or update rule to punt L4 traffic to a host.
 	PuntToHost(val *punt.ToHost) PutDSL
 
@@ -115,15 +100,6 @@ type DeleteDSL interface {
 	Interface(ifaceName string) DeleteDSL
 	// ACL adds a request to delete an existing VPP Access Control List.
 	ACL(aclName string) DeleteDSL
-	// BfdSession adds a request to delete an existing bidirectional forwarding
-	// detection session.
-	BfdSession(bfdSessionIfaceName string) DeleteDSL
-	// BfdAuthKeys adds a request to delete an existing bidirectional forwarding
-	// detection key.
-	BfdAuthKeys(bfdKey string) DeleteDSL
-	// BfdEchoFunction adds a request to delete an existing bidirectional
-	// forwarding detection echo function.
-	BfdEchoFunction(bfdEchoName string) DeleteDSL
 	// BD adds a request to delete an existing VPP Bridge Domain.
 	BD(bdName string) DeleteDSL
 	// BDFIB adds a request to delete an existing VPP L2 Forwarding Information
@@ -133,11 +109,6 @@ type DeleteDSL interface {
 	XConnect(rxIfaceName string) DeleteDSL
 	// StaticRoute adds a request to delete an existing VPP L3 Static Route.
 	StaticRoute(vrf uint32, dstAddr string, nextHopAddr string) DeleteDSL
-	// L4Features adds a request to enable or disable L4 features
-	L4Features() DeleteDSL
-	// AppNamespace adds a request to delete VPP Application namespace
-	// Note: current version does not support application namespace deletion
-	AppNamespace(id string) DeleteDSL
 	// Arp adds a request to delete an existing VPP L3 ARP.
 	Arp(ifaceName string, ipAddr string) DeleteDSL
 	// ProxyArpInterfaces adds a request to delete an existing VPP L3 proxy ARP interfaces
@@ -145,7 +116,7 @@ type DeleteDSL interface {
 	// IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
 	IPScanNeighbor() DeleteDSL
 	// StnRule adds a request to delete an existing Stn rule.
-	StnRule(ruleName string) DeleteDSL
+	StnRule(iface, addr string) DeleteDSL
 	// NAT44Global adds a request to remove global configuration for NAT44
 	NAT44Global() DeleteDSL
 	// DNAT44 adds a request to delete an existing DNAT44 configuration

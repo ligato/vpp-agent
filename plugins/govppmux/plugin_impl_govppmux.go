@@ -16,7 +16,6 @@ package govppmux
 
 import (
 	"context"
-	"reflect"
 	"sync"
 	"time"
 
@@ -156,7 +155,13 @@ func (p *Plugin) Init() error {
 		return errors.New("unable to connect to VPP")
 	}
 	vppConnectTime := time.Since(startTime)
-	p.Log.Info("Connecting to VPP took ", vppConnectTime)
+	info, err := p.retrieveVpeInfo()
+	if err != nil {
+		p.Log.Errorf("retrieving vpe info failed: %v", err)
+		return err
+	}
+	p.Log.Infof("Connected to VPP [PID:%d] (took %s)",
+		info.PID, vppConnectTime.Truncate(time.Millisecond))
 	p.retrieveVersion()
 
 	// Register providing status reports (push mode)
@@ -174,7 +179,8 @@ func (p *Plugin) Init() error {
 		p.statsAdapter = NewStatsAdapter(defaultStatsSocket)
 	}
 	if err := p.statsAdapter.Connect(); err != nil {
-		p.Log.Errorf("Unable to connect to VPP statistics socket, %v", err)
+		p.Log.Warnf("Unable to connect to VPP statistics socket, %v", err)
+		p.statsAdapter = nil
 	}
 
 	return nil
@@ -246,7 +252,7 @@ func (p *Plugin) GetTrace() *apitrace.Trace {
 
 // ListStats returns all stats names
 func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
-	if reflect.ValueOf(p.statsAdapter).IsNil() {
+	if p.statsAdapter == nil {
 		return nil, nil
 	}
 	return p.statsAdapter.ListStats(prefixes...)
@@ -254,7 +260,7 @@ func (p *Plugin) ListStats(prefixes ...string) ([]string, error) {
 
 // DumpStats returns all stats with name, type and value
 func (p *Plugin) DumpStats(prefixes ...string) ([]*adapter.StatEntry, error) {
-	if reflect.ValueOf(p.statsAdapter).IsNil() {
+	if p.statsAdapter == nil {
 		return nil, nil
 	}
 	return p.statsAdapter.DumpStats(prefixes...)
@@ -269,6 +275,7 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 		select {
 		case status := <-p.vppConChan:
 			if status.State == govpp.Connected {
+				p.retrieveVpeInfo()
 				p.retrieveVersion()
 				if p.config.ReconnectResync && p.lastConnErr != nil {
 					p.Log.Info("Starting resync after VPP reconnect")
@@ -291,6 +298,24 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 	}
 }
 
+func (p *Plugin) retrieveVpeInfo() (*vppcalls.VpeInfo, error) {
+	vppAPIChan, err := p.vppConn.NewAPIChannel()
+	if err != nil {
+		p.Log.Error("getting new api channel failed:", err)
+		return nil, err
+	}
+	defer vppAPIChan.Close()
+
+	info, err := vppcalls.GetVpeInfo(vppAPIChan)
+	if err != nil {
+		p.Log.Warn("getting version info failed:", err)
+		return nil, err
+	}
+	p.Log.Debugf("connection info: %+v", info)
+
+	return info, nil
+}
+
 func (p *Plugin) retrieveVersion() {
 	vppAPIChan, err := p.vppConn.NewAPIChannel()
 	if err != nil {
@@ -299,14 +324,14 @@ func (p *Plugin) retrieveVersion() {
 	}
 	defer vppAPIChan.Close()
 
-	info, err := vppcalls.GetVersionInfo(vppAPIChan)
+	version, err := vppcalls.GetVersionInfo(vppAPIChan)
 	if err != nil {
 		p.Log.Warn("getting version info failed:", err)
 		return
 	}
 
-	p.Log.Debugf("version info: %+v", info)
-	p.Log.Infof("VPP version: %q (%v)", info.Version, info.BuildDate)
+	p.Log.Debugf("version info: %+v", version)
+	p.Log.Infof("VPP version: %q (%v)", version.Version, version.BuildDate)
 
 	// Get VPP ACL plugin version
 	var aclVersion string

@@ -28,16 +28,16 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	"github.com/pkg/errors"
 
+	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (
@@ -162,11 +162,11 @@ func NewInterfaceDescriptor(ifHandler vppcalls.IfVppAPI, defaultMtu uint32,
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		KeySelector:        d.IsInterfaceKey,
-		ValueTypeName:      proto.MessageName(&interfaces.Interface{}),
-		KeyLabel:           d.InterfaceNameFromKey,
+		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
+		ValueTypeName:      interfaces.ModelInterface.ProtoName(),
+		KeySelector:        interfaces.ModelInterface.IsKeyValid,
+		KeyLabel:           interfaces.ModelInterface.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
-		NBKeyPrefix:        interfaces.Prefix,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Validate:           d.Validate,
@@ -186,17 +186,6 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 // the descriptor registration.
 func (d *InterfaceDescriptor) SetInterfaceIndex(intfIndex ifaceidx.IfaceMetadataIndex) {
 	d.intfIndex = intfIndex
-}
-
-// IsInterfaceKey returns true if the key is identifying VPP interface configuration.
-func (d *InterfaceDescriptor) IsInterfaceKey(key string) bool {
-	return strings.HasPrefix(key, interfaces.Prefix)
-}
-
-// InterfaceNameFromKey returns VPP interface name from the key.
-func (d *InterfaceDescriptor) InterfaceNameFromKey(key string) string {
-	name, _ := interfaces.ParseNameFromKey(key)
-	return name
 }
 
 // EquivalentInterfaces is case-insensitive comparison function for
@@ -495,6 +484,8 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 			Value: &prototypes.Empty{},
 		})
 	}
+
+	// TODO: define derived value for UP/DOWN state (needed for subinterfaces)
 
 	return derValues
 }

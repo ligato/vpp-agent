@@ -18,17 +18,17 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	ifvppcalls "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
-var routes = []*l3.StaticRoute{
+var routes = []*l3.Route{
 	{
 		VrfId:       1,
 		DstNetwork:  "192.168.10.21/24",

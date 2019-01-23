@@ -20,14 +20,13 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
-	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 /*
@@ -35,11 +34,8 @@ import (
 */
 
 func main() {
-	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
-
 	ep := &ExamplePlugin{
-		Scheduler:    &kvscheduler.DefaultPlugin,
+		Orchestrator: &orchestrator.DefaultPlugin,
 		VPPIfPlugin:  &vpp_ifplugin.DefaultPlugin,
 		VPPACLPlugin: &vpp_aclplugin.DefaultPlugin,
 	}
@@ -55,7 +51,7 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler    *kvscheduler.Scheduler
+	Orchestrator *orchestrator.Plugin
 	VPPIfPlugin  *vpp_ifplugin.IfPlugin
 	VPPACLPlugin *vpp_aclplugin.ACLPlugin
 }
@@ -88,7 +84,7 @@ func testLocalClientWithScheduler() {
 
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
-		VppInterface(memif0).
+		Interface(memif0).
 		ACL(acl0).
 		ACL(acl1).
 		ACL(acl3).
@@ -132,30 +128,30 @@ var (
 			},
 		},
 	}
-	acl0 = &acl.Acl{
+	acl0 = &acl.ACL{
 		Name: "acl0",
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Ip: &acl.Acl_Rule_IpRule_Ip{
+				Action: acl.ACL_Rule_PERMIT,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Ip: &acl.ACL_Rule_IpRule_Ip{
 						SourceNetwork:      "10.0.0.0/24",
 						DestinationNetwork: "20.0.0.0/24",
 					},
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Ingress: []string{"memif0"},
 			Egress:  []string{"memif0"},
 		},
 	}
-	acl1 = &acl.Acl{
+	acl1 = &acl.ACL{
 		Name: "acl1",
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			{
-				Action: acl.Acl_Rule_PERMIT,
-				MacipRule: &acl.Acl_Rule_MacIpRule{
+				Action: acl.ACL_Rule_PERMIT,
+				MacipRule: &acl.ACL_Rule_MacIpRule{
 					SourceAddress:        "192.168.0.1",
 					SourceAddressPrefix:  16,
 					SourceMacAddress:     "b2:74:8c:12:67:d2",
@@ -163,24 +159,24 @@ var (
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Ingress: []string{"memif0"},
 		},
 	}
-	acl3 = &acl.Acl{
+	acl3 = &acl.ACL{
 		Name: "acl3",
-		Rules: []*acl.Acl_Rule{
+		Rules: []*acl.ACL_Rule{
 			{
-				Action: acl.Acl_Rule_DENY,
-				IpRule: &acl.Acl_Rule_IpRule{
-					Ip: &acl.Acl_Rule_IpRule_Ip{
+				Action: acl.ACL_Rule_DENY,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Ip: &acl.ACL_Rule_IpRule_Ip{
 						// SourceNetwork is unspecified (ANY)
 						DestinationNetwork: "30.0.0.0/8",
 					},
 				},
 			},
 		},
-		Interfaces: &acl.Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Egress: []string{"memif0"},
 		},
 	}

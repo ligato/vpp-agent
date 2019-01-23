@@ -19,12 +19,12 @@ import (
 	"net"
 	"strings"
 
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 )
 
 // AddACL implements ACL handler.
-func (h *ACLVppHandler) AddACL(rules []*acl.Acl_Rule, aclName string) (uint32, error) {
+func (h *ACLVppHandler) AddACL(rules []*acl.ACL_Rule, aclName string) (uint32, error) {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -50,7 +50,7 @@ func (h *ACLVppHandler) AddACL(rules []*acl.Acl_Rule, aclName string) (uint32, e
 }
 
 // AddMACIPACL implements ACL handler.
-func (h *ACLVppHandler) AddMACIPACL(rules []*acl.Acl_Rule, aclName string) (uint32, error) {
+func (h *ACLVppHandler) AddMACIPACL(rules []*acl.ACL_Rule, aclName string) (uint32, error) {
 	// Prepare MAc Ip rules
 	aclMacIPRules, err := h.transformACLMacIPRules(rules)
 	if err != nil {
@@ -75,7 +75,7 @@ func (h *ACLVppHandler) AddMACIPACL(rules []*acl.Acl_Rule, aclName string) (uint
 }
 
 // ModifyACL implements ACL handler.
-func (h *ACLVppHandler) ModifyACL(aclIndex uint32, rules []*acl.Acl_Rule, aclName string) error {
+func (h *ACLVppHandler) ModifyACL(aclIndex uint32, rules []*acl.ACL_Rule, aclName string) error {
 	// Prepare Ip rules
 	aclIPRules, err := transformACLIpRules(rules)
 	if err != nil {
@@ -101,7 +101,7 @@ func (h *ACLVppHandler) ModifyACL(aclIndex uint32, rules []*acl.Acl_Rule, aclNam
 }
 
 // ModifyMACIPACL implements ACL handler.
-func (h *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.Acl_Rule, aclName string) error {
+func (h *ACLVppHandler) ModifyMACIPACL(aclIndex uint32, rules []*acl.ACL_Rule, aclName string) error {
 	// Prepare MAc Ip rules
 	aclMacIPRules, err := h.transformACLMacIPRules(rules)
 	if err != nil {
@@ -155,7 +155,7 @@ func (h *ACLVppHandler) DeleteMACIPACL(aclIndex uint32) error {
 }
 
 // Method transforms provided set of IP proto ACL rules to binapi ACL rules.
-func transformACLIpRules(rules []*acl.Acl_Rule) (aclIPRules []aclapi.ACLRule, err error) {
+func transformACLIpRules(rules []*acl.ACL_Rule) (aclIPRules []aclapi.ACLRule, err error) {
 	for _, rule := range rules {
 		aclRule := &aclapi.ACLRule{
 			IsPermit: uint8(rule.Action),
@@ -184,7 +184,7 @@ func transformACLIpRules(rules []*acl.Acl_Rule) (aclIPRules []aclapi.ACLRule, er
 	return aclIPRules, nil
 }
 
-func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.Acl_Rule) (aclMacIPRules []aclapi.MacipACLRule, err error) {
+func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.ACL_Rule) (aclMacIPRules []aclapi.MacipACLRule, err error) {
 	for _, rule := range rules {
 		aclMacIPRule := &aclapi.MacipACLRule{
 			IsPermit: uint8(rule.Action),
@@ -224,7 +224,7 @@ func (h *ACLVppHandler) transformACLMacIPRules(rules []*acl.Acl_Rule) (aclMacIPR
 
 // The function sets an IP ACL rule fields into provided ACL Rule object. Source
 // and destination addresses have to be the same IP version and contain a network mask.
-func ipACL(ipRule *acl.Acl_Rule_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACLRule, error) {
+func ipACL(ipRule *acl.ACL_Rule_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACLRule, error) {
 	var (
 		err        error
 		srcIP      net.IP
@@ -291,7 +291,7 @@ func ipACL(ipRule *acl.Acl_Rule_IpRule_Ip, aclRule *aclapi.ACLRule) (*aclapi.ACL
 
 // The function sets an ICMP ACL rule fields into provided ACL Rule object.
 // The ranges are exclusive, use first = 0 and last = 255/65535 (icmpv4/icmpv6) to match "any".
-func icmpACL(icmpRule *acl.Acl_Rule_IpRule_Icmp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+func icmpACL(icmpRule *acl.ACL_Rule_IpRule_Icmp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
 	if icmpRule == nil {
 		return aclRule
 	}
@@ -318,7 +318,7 @@ func icmpACL(icmpRule *acl.Acl_Rule_IpRule_Icmp, aclRule *aclapi.ACLRule) *aclap
 }
 
 // Sets an TCP ACL rule fields into provided ACL Rule object.
-func tcpACL(tcpRule *acl.Acl_Rule_IpRule_Tcp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+func tcpACL(tcpRule *acl.ACL_Rule_IpRule_Tcp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
 	aclRule.Proto = TCPProto // IANA TCP
 	aclRule.SrcportOrIcmptypeFirst = uint16(tcpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(tcpRule.SourcePortRange.UpperPort)
@@ -330,7 +330,7 @@ func tcpACL(tcpRule *acl.Acl_Rule_IpRule_Tcp, aclRule *aclapi.ACLRule) *aclapi.A
 }
 
 // Sets an UDP ACL rule fields into provided ACL Rule object.
-func udpACL(udpRule *acl.Acl_Rule_IpRule_Udp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
+func udpACL(udpRule *acl.ACL_Rule_IpRule_Udp, aclRule *aclapi.ACLRule) *aclapi.ACLRule {
 	aclRule.Proto = UDPProto // IANA UDP
 	aclRule.SrcportOrIcmptypeFirst = uint16(udpRule.SourcePortRange.LowerPort)
 	aclRule.SrcportOrIcmptypeLast = uint16(udpRule.SourcePortRange.UpperPort)

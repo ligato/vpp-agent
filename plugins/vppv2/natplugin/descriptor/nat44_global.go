@@ -20,11 +20,12 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
 
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
@@ -87,10 +88,10 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 	return &adapter.NAT44GlobalDescriptor{
 		Name:               NAT44GlobalDescriptorName,
-		KeySelector:        d.IsNAT44GlobalKey,
+		NBKeyPrefix:        nat.ModelNat44Global.KeyPrefix(),
+		ValueTypeName:      nat.ModelNat44Global.ProtoName(),
+		KeySelector:        nat.ModelNat44Global.IsKeyValid,
 		ValueComparator:    d.EquivalentNAT44Global,
-		ValueTypeName:      proto.MessageName(&nat.Nat44Global{}),
-		NBKeyPrefix:        nat.GlobalNAT44Key,
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
@@ -99,11 +100,6 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsNAT44GlobalKey returns true if the key is identifying global VPP NAT44 options.
-func (d *NAT44GlobalDescriptor) IsNAT44GlobalKey(key string) bool {
-	return key == nat.GlobalNAT44Key
 }
 
 // EquivalentNAT44Global compares two NAT44 global configs for equality.
@@ -254,7 +250,7 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 	}
 
 	dump := []adapter.NAT44GlobalKVWithMetadata{{
-		Key:    nat.GlobalNAT44Key,
+		Key:    models.Key(globalCfg),
 		Value:  globalCfg,
 		Origin: origin,
 	}}

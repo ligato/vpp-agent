@@ -22,6 +22,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/pkg/errors"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -33,16 +34,16 @@ import (
 	"github.com/ligato/cn-infra/utils/addrs"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	iflinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
-	interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	namespace "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	nsdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 	vpp_ifaceidx "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (
@@ -53,9 +54,9 @@ const (
 	defaultEthernetMTU = 1500
 
 	// dependency labels
-	tapInterfaceDep = "vpp-tap-interface"
-	vethPeerDep     = "veth-peer"
-	microserviceDep = "microservice"
+	tapInterfaceDep = "vpp-tap-interface-exists"
+	vethPeerDep     = "veth-peer-exists"
+	microserviceDep = "microservice-available"
 
 	// suffix attached to logical names of duplicate VETH interfaces
 	vethDuplicateSuffix = "-DUPLICATE"
@@ -140,11 +141,11 @@ func NewInterfaceDescriptor(
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
 		Name:               InterfaceDescriptorName,
-		KeySelector:        d.IsInterfaceKey,
-		ValueTypeName:      proto.MessageName(&interfaces.Interface{}),
-		KeyLabel:           d.InterfaceNameFromKey,
+		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
+		ValueTypeName:      interfaces.ModelInterface.ProtoName(),
+		KeySelector:        interfaces.ModelInterface.IsKeyValid,
+		KeyLabel:           interfaces.ModelInterface.StripKeyPrefix,
 		ValueComparator:    d.EquivalentInterfaces,
-		NBKeyPrefix:        interfaces.InterfaceKeyPrefix,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Validate:           d.Validate,
@@ -157,16 +158,6 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{nsdescriptor.MicroserviceDescriptorName},
 	}
-}
-
-// IsInterfaceKey returns true if the key is identifying Linux interface configuration.
-func (d *InterfaceDescriptor) IsInterfaceKey(key string) bool {
-	return strings.HasPrefix(key, interfaces.InterfaceKeyPrefix)
-}
-
-// InterfaceNameFromKey returns Linux interface name from the key.
-func (d *InterfaceDescriptor) InterfaceNameFromKey(key string) string {
-	return strings.TrimPrefix(key, interfaces.InterfaceKeyPrefix)
 }
 
 // EquivalentInterfaces is case-insensitive comparison function for
@@ -240,7 +231,7 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 		return ErrTAPRequiresVPPIfPlugin
 	}
 	if linuxIf.GetNamespace() != nil &&
-		(linuxIf.GetNamespace().GetType() == namespace.NetNamespace_NETNS_REF_UNDEFINED ||
+		(linuxIf.GetNamespace().GetType() == namespace.NetNamespace_UNDEFINED ||
 			linuxIf.GetNamespace().GetReference() == "") {
 		return kvs.NewInvalidValueError(ErrNamespaceWithoutReference, "namespace")
 	}
@@ -573,7 +564,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 		}
 	}
 
-	if linuxIf.GetNamespace().GetType() == namespace.NetNamespace_NETNS_REF_MICROSERVICE {
+	if linuxIf.GetNamespace().GetType() == namespace.NetNamespace_MICROSERVICE {
 		dependencies = append(dependencies, kvs.Dependency{
 			Label: microserviceDep,
 			Key:   namespace.MicroserviceKey(linuxIf.Namespace.Reference),
@@ -865,7 +856,8 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 
 			// build key-value pair for the dumped interface
 			dump.interfaces = append(dump.interfaces, adapter.InterfaceKVWithMetadata{
-				Key:    interfaces.InterfaceKey(intf.Name),
+				//Key:    interfaces.InterfaceKey(intf.Name),
+				Key:    models.Key(intf),
 				Value:  intf,
 				Origin: kvs.FromNB,
 				Metadata: &ifaceidx.LinuxIfMetadata{

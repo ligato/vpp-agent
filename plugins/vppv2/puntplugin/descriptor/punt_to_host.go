@@ -17,10 +17,10 @@ package descriptor
 import (
 	"errors"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 )
@@ -62,10 +62,11 @@ func NewPuntToHostDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 	return &adapter.PuntToHostDescriptor{
 		Name:               PuntToHostDescriptorName,
-		KeySelector:        d.IsPuntToHostKey,
-		ValueTypeName:      proto.MessageName(&punt.ToHost{}),
+		NBKeyPrefix:        punt.ModelToHost.KeyPrefix(),
+		ValueTypeName:      punt.ModelToHost.ProtoName(),
+		KeySelector:        punt.ModelToHost.IsKeyValid,
+		KeyLabel:           punt.ModelToHost.StripKeyPrefix,
 		ValueComparator:    d.EquivalentPuntToHost,
-		NBKeyPrefix:        punt.PrefixToHost,
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
@@ -74,16 +75,14 @@ func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 	}
 }
 
-// IsPuntToHostKey returns true if the key is identifying VPP punt to host/socket configuration.
-func (d *PuntToHostDescriptor) IsPuntToHostKey(key string) bool {
-	_, _, _, isPuntToHostKey := punt.ParsePuntToHostKey(key)
-	return isPuntToHostKey
-}
-
 // EquivalentPuntToHost is case-insensitive comparison function for punt.ToHost.
 func (d *PuntToHostDescriptor) EquivalentPuntToHost(key string, oldPunt, newPunt *punt.ToHost) bool {
-	// parameters compared by proto equal
-	return proto.Equal(oldPunt, newPunt)
+	if oldPunt.L3Protocol != newPunt.L3Protocol ||
+		oldPunt.L4Protocol != newPunt.L4Protocol ||
+		oldPunt.Port != newPunt.Port {
+		return false
+	}
+	return true
 }
 
 // Validate validates VPP punt configuration.
@@ -128,6 +127,7 @@ func (d *PuntToHostDescriptor) Add(key string, punt *punt.ToHost) (metadata inte
 	if err != nil {
 		d.log.Error(err)
 	}
+
 	return nil, err
 }
 
@@ -144,14 +144,29 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 	if err != nil {
 		d.log.Error(err)
 	}
+
 	return err
 }
 
 // Dump returns all configured VPP punt to host entries.
 func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata) (dump []adapter.PuntToHostKVWithMetadata, err error) {
 	// TODO dump for punt and punt socket register missing in api
-	d.log.Warn("Dump punt/socket register is not supported by the VPP")
-	return []adapter.PuntToHostKVWithMetadata{}, nil
+	d.log.Info("Dump punt/socket register is not supported by the VPP")
+
+	socks, err := d.puntHandler.DumpPuntRegisteredSockets()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, punt := range socks {
+		dump = append(dump, adapter.PuntToHostKVWithMetadata{
+			Key:    models.Key(punt.PuntData),
+			Value:  punt.PuntData,
+			Origin: kvs.FromNB,
+		})
+	}
+
+	return dump, nil
 }
 
 // ModifyWithRecreate always returns true - punt entries are always modified via re-creation.

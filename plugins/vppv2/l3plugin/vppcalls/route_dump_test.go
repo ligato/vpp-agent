@@ -44,7 +44,7 @@ func TestDumpStaticRoutes(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	rtDetails, err := l3handler.DumpStaticRoutes()
+	rtDetails, err := l3handler.DumpRoutes()
 	Expect(err).To(Succeed())
 	Expect(rtDetails).To(HaveLen(2))
 	Expect(rtDetails[0].Route.OutgoingInterface).To(Equal("if2"))

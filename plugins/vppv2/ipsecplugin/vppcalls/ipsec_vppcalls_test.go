@@ -19,10 +19,10 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	ipsec2 "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
-	ipsec2 "github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

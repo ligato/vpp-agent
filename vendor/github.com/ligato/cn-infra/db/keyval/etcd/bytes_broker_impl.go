@@ -223,7 +223,8 @@ func (db *BytesConnectionEtcd) Watch(resp func(keyval.BytesWatchResp), closeChan
 
 // watchInternal starts the watch subscription for the key.
 func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan string, prefix string, resp func(keyval.BytesWatchResp)) error {
-	recvChan := watcher.Watch(context.Background(), prefix, clientv3.WithPrefix(), clientv3.WithPrevKV())
+	ctx, cancel := context.WithCancel(context.Background())
+	recvChan := watcher.Watch(ctx, prefix, clientv3.WithPrefix(), clientv3.WithPrevKV())
 
 	go func(registeredKey string) {
 		var compactRev int64
@@ -267,6 +268,7 @@ func watchInternal(log logging.Logger, watcher clientv3.Watcher, closeCh chan st
 
 			case closeVal, ok := <-closeCh:
 				if !ok || closeVal == registeredKey {
+					cancel()
 					log.WithField("prefix", prefix).Debug("Watch ended")
 					return
 				}

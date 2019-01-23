@@ -18,11 +18,11 @@ import (
 	"net"
 	"testing"
 
+	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
-	ifModel "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	. "github.com/onsi/gomega"
 )
 

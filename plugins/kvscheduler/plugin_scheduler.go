@@ -16,14 +16,12 @@ package kvscheduler
 
 import (
 	"context"
-	"reflect"
 	"sync"
 	"time"
 	"errors"
 
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/infra"
@@ -93,19 +91,12 @@ type Scheduler struct {
 	historyLock sync.Mutex
 	txnHistory  []*kvs.RecordedTxn // ordered from the oldest to the latest
 	startTime   time.Time
-
-	// TODO: remove once Orchestrator is completed
-	// datasync channels
-	changeChan   chan datasync.ChangeEvent
-	resyncChan   chan datasync.ResyncEvent
-	watchDataReg datasync.WatchRegistration
 }
 
 // Deps lists dependencies of the scheduler.
 type Deps struct {
 	infra.PluginDeps
 	HTTPHandlers rest.HTTPHandlers
-	Watcher      datasync.KeyValProtoWatcher
 }
 
 // Config holds the KVScheduler configuration.
@@ -144,10 +135,6 @@ func (s *Scheduler) Init() error {
 		return err
 	}
 	s.Log.Infof("KVScheduler configuration: %+v", *s.config)
-
-	// initialize datasync channels
-	s.resyncChan = make(chan datasync.ResyncEvent)
-	s.changeChan = make(chan datasync.ChangeEvent)
 
 	// prepare context for all go routines
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -188,96 +175,6 @@ func (s *Scheduler) loadConfig(config *Config) error {
 	}
 	s.Log.Debugf("%v config found: %+v", s.PluginName, config)
 	return err
-}
-
-// AfterInit subscribes to known NB prefixes.
-func (s *Scheduler) AfterInit() (err error) {
-	go s.watchEvents()
-
-	s.watchDataReg, err = s.Watcher.Watch("scheduler",
-		s.changeChan, s.resyncChan, s.GetRegisteredNBKeyPrefixes()...)
-	return err
-}
-
-// TODO: temporary, remove once Orchestrator has replaced datasync.
-func (s *Scheduler) unmarshallLazyValue(lazyVal datasync.KeyVal) (value proto.Message) {
-	if lazyVal == nil {
-		return nil
-	}
-	descriptor := s.registry.GetDescriptorForKey(lazyVal.GetKey())
-	if descriptor == nil {
-		return nil
-	}
-	// create an instance of the target proto.Message type
-	valueType := proto.MessageType(descriptor.ValueTypeName)
-	if valueType == nil {
-		return nil
-	}
-	value = reflect.New(valueType.Elem()).Interface().(proto.Message)
-	// try to deserialize the value
-	err := lazyVal.GetValue(value)
-	if err != nil {
-		return nil
-	}
-	return value
-}
-
-// TODO: obsolete, transactions will be constructed by the Orchestrator
-func (s *Scheduler) watchEvents() {
-	for {
-		select {
-		case e := <-s.changeChan:
-			s.Log.Debugf("=> SCHEDULER received CHANGE EVENT: %v changes", len(e.GetChanges()))
-
-			txn := s.StartNBTransaction()
-			s.txnLock.Lock()
-			for _, x := range e.GetChanges() {
-				s.Log.Debugf("  - Change %v: %q (rev: %v)",
-					x.GetChangeType(), x.GetKey(), x.GetRevision())
-				if x.GetChangeType() == datasync.Delete {
-					txn.SetValue(x.GetKey(), nil)
-				} else {
-					val := s.unmarshallLazyValue(x)
-					if val == nil {
-						continue
-					}
-					txn.SetValue(x.GetKey(), val)
-				}
-			}
-			s.txnLock.Unlock()
-			kvErrs, err := txn.Commit(kvs.WithRetryDefault(context.Background()))
-			s.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
-			e.Done(err)
-
-		case e := <-s.resyncChan:
-			s.Log.Debugf("=> SCHEDULER received RESYNC EVENT: %v prefixes", len(e.GetValues()))
-
-			txn := s.StartNBTransaction()
-			s.txnLock.Lock()
-			for prefix, iter := range e.GetValues() {
-				var keyVals []datasync.KeyVal
-				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
-					val := s.unmarshallLazyValue(x)
-					if val == nil {
-						continue
-					}
-					keyVals = append(keyVals, x)
-					txn.SetValue(x.GetKey(), val)
-				}
-				s.Log.Debugf(" - Resync: %q (%v key-values)", prefix, len(keyVals))
-				for _, x := range keyVals {
-					s.Log.Debugf("\t%q: (rev: %v)", x.GetKey(), x.GetRevision())
-				}
-			}
-			s.txnLock.Unlock()
-			ctx := context.Background()
-			ctx = kvs.WithRetryDefault(ctx)
-			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
-			kvErrs, err := txn.Commit(ctx)
-			s.Log.Debugf("commit result: err=%v kvErrs=%+v", err, kvErrs)
-			e.Done(err)
-		}
-	}
 }
 
 // Close stops all the go routines.

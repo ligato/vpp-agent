@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"net"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
-	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
-func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.VxlanLink, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
+func (h *IfVppHandler) addDelVxLanTunnel(vxLan *interfaces.VxlanLink, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
 	req := &vxlan.VxlanAddDelTunnel{
 		IsAdd:          boolToUint(isAdd),
 		Vni:            vxLan.Vni,
@@ -67,7 +67,7 @@ func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.VxlanLink, vrf, multicastIf
 }
 
 // AddVxLanTunnel implements VxLan handler.
-func (h *IfVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *intf.VxlanLink) (swIndex uint32, err error) {
+func (h *IfVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error) {
 	swIfIdx, err := h.addDelVxLanTunnel(vxLan, vrf, multicastIf, true)
 	if err != nil {
 		return 0, err
@@ -76,7 +76,7 @@ func (h *IfVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vx
 }
 
 // DeleteVxLanTunnel implements VxLan handler.
-func (h *IfVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *intf.VxlanLink) error {
+func (h *IfVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error {
 	// Multicast does not need to be set
 	if _, err := h.addDelVxLanTunnel(vxLan, vrf, 0, false); err != nil {
 		return err

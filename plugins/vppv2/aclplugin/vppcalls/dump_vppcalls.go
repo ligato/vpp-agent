@@ -21,8 +21,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 )
 
 // Protocol types that can occur in ACLs
@@ -35,7 +35,7 @@ const (
 
 // ACLDetails is combination of proto-modelled ACL data and VPP provided metadata
 type ACLDetails struct {
-	ACL  *acl.Acl `json:"acl"`
+	ACL  *acl.ACL `json:"acl"`
 	Meta *ACLMeta `json:"acl_meta"`
 }
 
@@ -55,7 +55,7 @@ type ACLToInterface struct {
 
 // DumpACL implements ACL handler.
 func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
-	ruleIPData := make(map[ACLMeta][]*acl.Acl_Rule)
+	ruleIPData := make(map[ACLMeta][]*acl.ACL_Rule)
 
 	// get all ACLs with IP ruleData
 	IPRuleACLs, err := h.DumpIPAcls()
@@ -67,7 +67,7 @@ func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
 	// Note: currently ACL may have only IP ruleData or only MAC IP ruleData
 	var wasErr error
 	for identifier, IPRules := range IPRuleACLs {
-		var rulesDetails []*acl.Acl_Rule
+		var rulesDetails []*acl.ACL_Rule
 
 		if len(IPRules) > 0 {
 			for _, IPRule := range IPRules {
@@ -97,7 +97,7 @@ func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for identifier, rules := range ruleIPData {
 		ACLs = append(ACLs, &ACLDetails{
-			ACL: &acl.Acl{
+			ACL: &acl.ACL{
 				Name:       identifier.Tag,
 				Rules:      rules,
 				Interfaces: interfaceData[identifier.Index],
@@ -114,7 +114,7 @@ func (h *ACLVppHandler) DumpACL() ([]*ACLDetails, error) {
 
 // DumpMACIPACL implements ACL handler.
 func (h *ACLVppHandler) DumpMACIPACL() ([]*ACLDetails, error) {
-	ruleMACIPData := make(map[ACLMeta][]*acl.Acl_Rule)
+	ruleMACIPData := make(map[ACLMeta][]*acl.ACL_Rule)
 
 	// get all ACLs with MACIP ruleData
 	MACIPRuleACLs, err := h.DumpMacIPAcls()
@@ -124,7 +124,7 @@ func (h *ACLVppHandler) DumpMACIPACL() ([]*ACLDetails, error) {
 
 	// resolve MACIP rules for every ACL
 	for metadata, MACIPRules := range MACIPRuleACLs {
-		var rulesDetails []*acl.Acl_Rule
+		var rulesDetails []*acl.ACL_Rule
 
 		for _, MACIPRule := range MACIPRules {
 			ruleDetails, err := h.getMACIPRuleDetails(MACIPRule)
@@ -152,7 +152,7 @@ func (h *ACLVppHandler) DumpMACIPACL() ([]*ACLDetails, error) {
 	// Build a list of ACL ruleData with ruleData, interfaces, index and tag (name)
 	for metadata, rules := range ruleMACIPData {
 		ACLs = append(ACLs, &ACLDetails{
-			ACL: &acl.Acl{
+			ACL: &acl.ACL{
 				Name:       metadata.Tag,
 				Rules:      rules,
 				Interfaces: interfaceData[metadata.Index],
@@ -167,9 +167,9 @@ func (h *ACLVppHandler) DumpMACIPACL() ([]*ACLDetails, error) {
 }
 
 // DumpACLInterfaces implements ACL handler.
-func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error) {
+func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.ACL_Interfaces, error) {
 	// list of ACL-to-interfaces
-	aclsWithInterfaces := make(map[uint32]*acl.Acl_Interfaces)
+	aclsWithInterfaces := make(map[uint32]*acl.ACL_Interfaces)
 
 	var interfaceData []*ACLToInterface
 	var wasErr error
@@ -230,7 +230,7 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.Acl
 			}
 		}
 
-		aclsWithInterfaces[aclIdx] = &acl.Acl_Interfaces{
+		aclsWithInterfaces[aclIdx] = &acl.ACL_Interfaces{
 			Egress:  egress,
 			Ingress: ingress,
 		}
@@ -240,9 +240,9 @@ func (h *ACLVppHandler) DumpACLInterfaces(indices []uint32) (map[uint32]*acl.Acl
 }
 
 // DumpMACIPACLInterfaces implements ACL handler.
-func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error) {
+func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*acl.ACL_Interfaces, error) {
 	// list of ACL-to-interfaces
-	aclsWithInterfaces := make(map[uint32]*acl.Acl_Interfaces)
+	aclsWithInterfaces := make(map[uint32]*acl.ACL_Interfaces)
 
 	var interfaceData []*ACLToInterface
 
@@ -284,9 +284,9 @@ func (h *ACLVppHandler) DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*ac
 				}
 			}
 		}
-		var ifaces *acl.Acl_Interfaces
+		var ifaces *acl.ACL_Interfaces
 		if len(ingress) > 0 {
-			ifaces = &acl.Acl_Interfaces{
+			ifaces = &acl.ACL_Interfaces{
 				Egress:  nil,
 				Ingress: ingress,
 			}
@@ -356,7 +356,7 @@ func (h *ACLVppHandler) DumpMacIPAcls() (map[ACLMeta][]acl_api.MacipACLRule, err
 }
 
 // DumpInterfaceACLs implements ACL handler.
-func (h *ACLVppHandler) DumpInterfaceACLs(swIndex uint32) (acls []*acl.Acl, err error) {
+func (h *ACLVppHandler) DumpInterfaceACLs(swIndex uint32) (acls []*acl.ACL, err error) {
 	res, err := h.DumpInterfaceACLList(swIndex)
 	if err != nil {
 		return nil, err
@@ -377,7 +377,7 @@ func (h *ACLVppHandler) DumpInterfaceACLs(swIndex uint32) (acls []*acl.Acl, err 
 }
 
 // DumpInterfaceMACIPACLs implements ACL handler.
-func (h *ACLVppHandler) DumpInterfaceMACIPACLs(swIndex uint32) (acls []*acl.Acl, err error) {
+func (h *ACLVppHandler) DumpInterfaceMACIPACLs(swIndex uint32) (acls []*acl.ACL, err error) {
 	resMacIP, err := h.DumpInterfaceMACIPACLList(swIndex)
 	if err != nil {
 		return nil, err
@@ -470,14 +470,14 @@ func (h *ACLVppHandler) DumpInterfacesLists() ([]*acl_api.ACLInterfaceListDetail
 	return IPaclInterfaces, MACIPaclInterfaces, nil
 }
 
-func (h *ACLVppHandler) getIPRuleDetails(rule acl_api.ACLRule) (*acl.Acl_Rule, error) {
+func (h *ACLVppHandler) getIPRuleDetails(rule acl_api.ACLRule) (*acl.ACL_Rule, error) {
 	// Resolve rule actions
 	aclAction, err := h.resolveRuleAction(rule.IsPermit)
 	if err != nil {
 		return nil, err
 	}
 
-	return &acl.Acl_Rule{
+	return &acl.ACL_Rule{
 		Action: aclAction,
 		IpRule: h.getIPRuleMatches(rule),
 	}, nil
@@ -485,7 +485,7 @@ func (h *ACLVppHandler) getIPRuleDetails(rule acl_api.ACLRule) (*acl.Acl_Rule, e
 
 // getIPACLDetails gets details for a given IP ACL from VPP and translates
 // them from the binary VPP API format into the ACL Plugin's NB format.
-func (h *ACLVppHandler) getIPACLDetails(idx uint32) (aclRule *acl.Acl, err error) {
+func (h *ACLVppHandler) getIPACLDetails(idx uint32) (aclRule *acl.ACL, err error) {
 	req := &acl_api.ACLDump{
 		ACLIndex: uint32(idx),
 	}
@@ -495,9 +495,9 @@ func (h *ACLVppHandler) getIPACLDetails(idx uint32) (aclRule *acl.Acl, err error
 		return nil, err
 	}
 
-	var ruleData []*acl.Acl_Rule
+	var ruleData []*acl.ACL_Rule
 	for _, r := range reply.R {
-		rule := &acl.Acl_Rule{}
+		rule := &acl.ACL_Rule{}
 
 		ipRule, err := h.getIPRuleDetails(r)
 		if err != nil {
@@ -514,17 +514,17 @@ func (h *ACLVppHandler) getIPACLDetails(idx uint32) (aclRule *acl.Acl, err error
 		ruleData = append(ruleData, rule)
 	}
 
-	return &acl.Acl{Rules: ruleData, Name: string(bytes.SplitN(reply.Tag, []byte{0x00}, 2)[0])}, nil
+	return &acl.ACL{Rules: ruleData, Name: string(bytes.SplitN(reply.Tag, []byte{0x00}, 2)[0])}, nil
 }
 
-func (h *ACLVppHandler) getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.Acl_Rule, error) {
+func (h *ACLVppHandler) getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.ACL_Rule, error) {
 	// Resolve rule actions
 	aclAction, err := h.resolveRuleAction(rule.IsPermit)
 	if err != nil {
 		return nil, err
 	}
 
-	return &acl.Acl_Rule{
+	return &acl.ACL_Rule{
 		Action:    aclAction,
 		MacipRule: h.getMACIPRuleMatches(rule),
 	}, nil
@@ -532,7 +532,7 @@ func (h *ACLVppHandler) getMACIPRuleDetails(rule acl_api.MacipACLRule) (*acl.Acl
 
 // getMACIPACLDetails gets details for a given MACIP ACL from VPP and translates
 // them from the binary VPP API format into the ACL Plugin's NB format.
-func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.Acl, err error) {
+func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.ACL, err error) {
 	req := &acl_api.MacipACLDump{
 		ACLIndex: uint32(idx),
 	}
@@ -542,9 +542,9 @@ func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.Acl, err er
 		return nil, err
 	}
 
-	var ruleData []*acl.Acl_Rule
+	var ruleData []*acl.ACL_Rule
 	for _, r := range reply.R {
-		rule := &acl.Acl_Rule{}
+		rule := &acl.ACL_Rule{}
 
 		ipRule, err := h.getMACIPRuleDetails(r)
 		if err != nil {
@@ -561,12 +561,12 @@ func (h *ACLVppHandler) getMACIPACLDetails(idx uint32) (aclRule *acl.Acl, err er
 		ruleData = append(ruleData, rule)
 	}
 
-	return &acl.Acl{Rules: ruleData, Name: string(bytes.SplitN(reply.Tag, []byte{0x00}, 2)[0])}, nil
+	return &acl.ACL{Rules: ruleData, Name: string(bytes.SplitN(reply.Tag, []byte{0x00}, 2)[0])}, nil
 }
 
 // getIPRuleMatches translates an IP rule from the binary VPP API format into the
 // ACL Plugin's NB format
-func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.Acl_Rule_IpRule {
+func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.ACL_Rule_IpRule {
 	var srcIP, dstIP string
 	if r.IsIPv6 == 1 {
 		srcIP = net.IP(r.SrcIPAddr).To16().String()
@@ -576,8 +576,8 @@ func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.Acl_Rule_IpRule
 		dstIP = net.IP(r.DstIPAddr[:4]).To4().String()
 	}
 
-	ipRule := &acl.Acl_Rule_IpRule{
-		Ip: &acl.Acl_Rule_IpRule_Ip{
+	ipRule := &acl.ACL_Rule_IpRule{
+		Ip: &acl.ACL_Rule_IpRule_Ip{
 			SourceNetwork:      fmt.Sprintf("%s/%d", srcIP, r.SrcIPPrefixLen),
 			DestinationNetwork: fmt.Sprintf("%s/%d", dstIP, r.DstIPPrefixLen),
 		},
@@ -596,7 +596,7 @@ func (h *ACLVppHandler) getIPRuleMatches(r acl_api.ACLRule) *acl.Acl_Rule_IpRule
 
 // getMACIPRuleMatches translates an MACIP rule from the binary VPP API format into the
 // ACL Plugin's NB format
-func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.Acl_Rule_MacIpRule {
+func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.ACL_Rule_MacIpRule {
 	var srcAddr string
 	if rule.IsIPv6 == 1 {
 		srcAddr = net.IP(rule.SrcIPAddr).To16().String()
@@ -605,7 +605,7 @@ func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.Acl_
 	}
 	srcMacAddr := net.HardwareAddr(rule.SrcMac)
 	srcMacAddrMask := net.HardwareAddr(rule.SrcMacMask)
-	return &acl.Acl_Rule_MacIpRule{
+	return &acl.ACL_Rule_MacIpRule{
 		SourceAddress:        srcAddr,
 		SourceAddressPrefix:  uint32(rule.SrcIPPrefixLen),
 		SourceMacAddress:     srcMacAddr.String(),
@@ -615,16 +615,16 @@ func (h *ACLVppHandler) getMACIPRuleMatches(rule acl_api.MacipACLRule) *acl.Acl_
 
 // getTCPMatchRule translates a TCP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
-func (h *ACLVppHandler) getTCPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_Tcp {
-	dstPortRange := &acl.Acl_Rule_IpRule_PortRange{
+func (h *ACLVppHandler) getTCPMatchRule(r acl_api.ACLRule) *acl.ACL_Rule_IpRule_Tcp {
+	dstPortRange := &acl.ACL_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
 	}
-	srcPortRange := &acl.Acl_Rule_IpRule_PortRange{
+	srcPortRange := &acl.ACL_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.SrcportOrIcmptypeFirst),
 		UpperPort: uint32(r.SrcportOrIcmptypeLast),
 	}
-	tcp := acl.Acl_Rule_IpRule_Tcp{
+	tcp := acl.ACL_Rule_IpRule_Tcp{
 		DestinationPortRange: dstPortRange,
 		SourcePortRange:      srcPortRange,
 		TcpFlagsMask:         uint32(r.TCPFlagsMask),
@@ -635,16 +635,16 @@ func (h *ACLVppHandler) getTCPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_
 
 // getUDPMatchRule translates a UDP match rule from the binary VPP API format
 // into the ACL Plugin's NB format
-func (h *ACLVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_Udp {
-	dstPortRange := &acl.Acl_Rule_IpRule_PortRange{
+func (h *ACLVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.ACL_Rule_IpRule_Udp {
+	dstPortRange := &acl.ACL_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.DstportOrIcmpcodeFirst),
 		UpperPort: uint32(r.DstportOrIcmpcodeLast),
 	}
-	srcPortRange := &acl.Acl_Rule_IpRule_PortRange{
+	srcPortRange := &acl.ACL_Rule_IpRule_PortRange{
 		LowerPort: uint32(r.SrcportOrIcmptypeFirst),
 		UpperPort: uint32(r.SrcportOrIcmptypeLast),
 	}
-	udp := acl.Acl_Rule_IpRule_Udp{
+	udp := acl.ACL_Rule_IpRule_Udp{
 		DestinationPortRange: dstPortRange,
 		SourcePortRange:      srcPortRange,
 	}
@@ -653,25 +653,25 @@ func (h *ACLVppHandler) getUDPMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_
 
 // getIcmpMatchRule translates an ICMP match rule from the binary VPP API
 // format into the ACL Plugin's NB format
-func (h *ACLVppHandler) getIcmpMatchRule(r acl_api.ACLRule) *acl.Acl_Rule_IpRule_Icmp {
-	icmp := &acl.Acl_Rule_IpRule_Icmp{
+func (h *ACLVppHandler) getIcmpMatchRule(r acl_api.ACLRule) *acl.ACL_Rule_IpRule_Icmp {
+	icmp := &acl.ACL_Rule_IpRule_Icmp{
 		Icmpv6:        r.IsIPv6 > 0,
-		IcmpCodeRange: &acl.Acl_Rule_IpRule_Icmp_Range{},
-		IcmpTypeRange: &acl.Acl_Rule_IpRule_Icmp_Range{},
+		IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{},
+		IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{},
 	}
 	return icmp
 }
 
 // Returns rule action representation in model according to the vpp input
-func (h *ACLVppHandler) resolveRuleAction(isPermit uint8) (acl.Acl_Rule_Action, error) {
+func (h *ACLVppHandler) resolveRuleAction(isPermit uint8) (acl.ACL_Rule_Action, error) {
 	switch isPermit {
 	case 0:
-		return acl.Acl_Rule_DENY, nil
+		return acl.ACL_Rule_DENY, nil
 	case 1:
-		return acl.Acl_Rule_PERMIT, nil
+		return acl.ACL_Rule_PERMIT, nil
 	case 2:
-		return acl.Acl_Rule_REFLECT, nil
+		return acl.ACL_Rule_REFLECT, nil
 	default:
-		return acl.Acl_Rule_DENY, fmt.Errorf("invalid match rule %d", isPermit)
+		return acl.ACL_Rule_DENY, fmt.Errorf("invalid match rule %d", isPermit)
 	}
 }

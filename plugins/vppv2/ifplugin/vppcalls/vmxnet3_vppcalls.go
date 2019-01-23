@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/go-errors/errors"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 // AddVmxNet3 implements interface handler

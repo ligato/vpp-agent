@@ -5,7 +5,8 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 // watchStatusEvents watches for resync event of interface state data.
@@ -54,7 +55,7 @@ func (p *IfPlugin) resyncIfStateEvents(keys []string) error {
 	defer p.publishLock.Unlock()
 
 	for _, key := range keys {
-		ifaceName, isIntfKey := interfaces.ParseNameFromKey(key)
+		ifaceName, isIntfKey := interfaces.ModelInterface.ParseKey(key)
 		if !isIntfKey {
 			continue
 		}
@@ -100,8 +101,8 @@ func (p *IfPlugin) publishIfStateEvents() {
 			}
 
 			// Marshall data into JSON & send kafka message.
-			if p.NotifyStatistics != nil && ifState.Type == interfaces.InterfaceNotification_UPDOWN {
-				err := p.NotifyStatistics.Put(key, ifState.State)
+			if p.NotifyStates != nil && ifState.Type == interfaces.InterfaceNotification_UPDOWN {
+				err := p.NotifyStates.Put(key, ifState.State)
 				if err != nil {
 					if lastNotifErr == nil || lastNotifErr.Error() != err.Error() {
 						p.Log.Error(err)
@@ -120,12 +121,14 @@ func (p *IfPlugin) publishIfStateEvents() {
 				})
 			}
 
-			/* TODO
-			// Update interface notification data enabled for external GRPC endpoints
-			if p.GRPCSvc != nil {
-				p.GRPCSvc.UpdateNotifications(context.Background(), ifState)
+			if p.PushNotification != nil &&
+				ifState.Type == interfaces.InterfaceNotification_UPDOWN ||
+				ifState.State.OperStatus == interfaces.InterfaceState_DELETED {
+				p.PushNotification(&vpp.Notification{
+					Interface: ifState,
+				})
 			}
-			*/
+
 			p.publishLock.Unlock()
 
 		case <-p.ctx.Done():

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ARP --value-type *linux_l3.StaticARPEntry --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Route --value-type *linux_l3.StaticRoute --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARP --value-type *linux_l3.ARPEntry --import "github.com/ligato/vpp-agent/api/models/linux/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *linux_l3.Route --import "github.com/ligato/vpp-agent/api/models/linux/l3" --output-dir "descriptor"
 
 package l3plugin
 

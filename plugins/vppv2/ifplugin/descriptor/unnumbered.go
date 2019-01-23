@@ -17,14 +17,14 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/pkg/errors"
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/pkg/errors"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 const (

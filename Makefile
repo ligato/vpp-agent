@@ -123,9 +123,7 @@ generate-proto: get-proto-generators
 	@echo "=> generating proto"
 	cd plugins/linux/model && go generate
 	cd plugins/vpp/model && go generate
-	cd plugins/linuxv2/model && go generate
-	cd plugins/vppv2/model && go generate
-	@echo
+	./scripts/genprotos.sh
 
 # Get generator tools
 get-binapi-generators:
@@ -154,6 +152,7 @@ generate-desc-adapters: get-desc-adapter-generator
 	cd plugins/vppv2/natplugin && go generate
 	cd plugins/vppv2/puntplugin && go generate
 	cd plugins/vppv2/stnplugin && go generate
+	cd plugins/vppv2/puntplugin && go generate
 	@echo
 
 verify-binapi:

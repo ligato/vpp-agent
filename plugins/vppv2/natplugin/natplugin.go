@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *nat.Nat44Global --import "../model/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *nat.Nat44Global_Interface --import "../model/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *nat.DNat44 --import "../model/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *vpp_nat.Nat44Global --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Global_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
 
 package natplugin
 

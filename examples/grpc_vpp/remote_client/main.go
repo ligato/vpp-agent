@@ -16,58 +16,43 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
-	"os"
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/cn-infra/utils/safeclose"
-	"github.com/ligato/vpp-agent/clientv1/vpp/remoteclient"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
-
-	"fmt"
-
+	"github.com/gogo/protobuf/jsonpb"
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/namsral/flag"
 	"google.golang.org/grpc"
+
+	"github.com/ligato/vpp-agent/api/configurator"
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
-const (
-	defaultAddress = "localhost:9111"
-	defaultSocket  = "tcp"
+var (
+	address    = flag.String("address", "172.17.0.2:9111", "address of GRPC server")
+	socketType = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
+
+	dialTimeout = time.Second * 2
 )
 
-var address = defaultAddress
-var socketType string
+var exampleFinished = make(chan struct{})
 
-// init sets the default logging level
-func init() {
-	logrus.DefaultLogger().SetOutput(os.Stdout)
-	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
-}
-
-/********
- * Main *
- ********/
-
-// Start Agent plugins selected for this example.
 func main() {
-	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
-	flag.StringVar(&socketType, "socket-type", defaultSocket, "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-
-	//Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
-
-	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{}
-	// Start Agent
+	ep.SetName("remote-client-example")
+	ep.Setup()
+
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
 		agent.QuitOnClose(exampleFinished),
@@ -75,74 +60,138 @@ func main() {
 	if err := a.Run(); err != nil {
 		log.Fatal()
 	}
-
-	// End when the localhost example is finished.
-	go closeExample("localhost example finished", exampleFinished)
-
 }
-
-// Stop the agent with desired info message.
-func closeExample(message string, exampleFinished chan struct{}) {
-	time.Sleep(25 * time.Second)
-	logrus.DefaultLogger().Info(message)
-	close(exampleFinished)
-}
-
-/******************
- * Example plugin *
- ******************/
-
-// PluginName represents name of plugin.
-const PluginName = "grpc-config-example"
 
 // ExamplePlugin demonstrates the use of the remoteclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
+	infra.PluginDeps
+
+	conn *grpc.ClientConn
+
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
-	conn   *grpc.ClientConn
 }
 
 // Init initializes example plugin.
-func (plugin *ExamplePlugin) Init() (err error) {
+func (p *ExamplePlugin) Init() (err error) {
 	// Set up connection to the server.
-	switch socketType {
-	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
-		plugin.conn, err = grpc.Dial("unix", grpc.WithInsecure(),
-			grpc.WithDialer(dialer(socketType, address, 2*time.Second)))
-	default:
-		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
-	}
-
-	// Apply initial VPP configuration.
-	plugin.resyncVPP()
-
-	// Schedule reconfiguration.
-	var ctx context.Context
-	ctx, plugin.cancel = context.WithCancel(context.Background())
-	plugin.wg.Add(1)
-	go plugin.reconfigureVPP(ctx)
-
-	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
-	return nil
-}
-
-// Close cleans up the resources.
-func (plugin *ExamplePlugin) Close() error {
-	plugin.cancel()
-	plugin.wg.Wait()
-
-	err := safeclose.Close(plugin.conn)
+	p.conn, err = grpc.Dial("unix",
+		grpc.WithInsecure(),
+		grpc.WithDialer(dialer(*socketType, *address, dialTimeout)),
+	)
 	if err != nil {
 		return err
 	}
 
-	logrus.DefaultLogger().Info("Closed example plugin")
+	client := configurator.NewConfiguratorClient(p.conn)
+
+	// Apply initial VPP configuration.
+	go p.demonstrateClient(client)
+
+	// Schedule reconfiguration.
+	var ctx context.Context
+	ctx, p.cancel = context.WithCancel(context.Background())
+	_ = ctx
+	/*plugin.wg.Add(1)
+	go plugin.reconfigureVPP(ctx)*/
+
+	go func() {
+		time.Sleep(time.Second * 30)
+		close(exampleFinished)
+	}()
+
 	return nil
 }
 
-// String returns plugin name
-func (plugin *ExamplePlugin) String() string {
-	return PluginName
+// Close cleans up the resources.
+func (p *ExamplePlugin) Close() error {
+	logrus.DefaultLogger().Info("Closing example plugin")
+
+	p.cancel()
+	p.wg.Wait()
+
+	if err := p.conn.Close(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// demonstrateClient propagates snapshot of the whole initial configuration to VPP plugins.
+func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorClient) {
+	time.Sleep(time.Second * 2)
+	p.Log.Infof("Requesting resync..")
+
+	config := &configurator.Config{
+		VppConfig: &vpp.ConfigData{
+			Interfaces: []*interfaces.Interface{
+				memif1,
+			},
+			IpscanNeighbor: ipScanNeigh,
+			IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
+			IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
+		},
+		LinuxConfig: &linux.ConfigData{
+			Interfaces: []*linux_interfaces.Interface{
+				veth1, veth2,
+			},
+		},
+	}
+	_, err := client.Update(context.Background(), &configurator.UpdateRequest{
+		Update:     config,
+		FullResync: true,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting change..")
+
+	ifaces := []*interfaces.Interface{memif1, memif2, afpacket}
+	_, err = client.Update(context.Background(), &configurator.UpdateRequest{
+		Update: &configurator.Config{
+			VppConfig: &vpp.ConfigData{
+				Interfaces: ifaces,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting delete..")
+
+	ifaces = []*interfaces.Interface{memif1}
+	_, err = client.Delete(context.Background(), &configurator.DeleteRequest{
+		Delete: &configurator.Config{
+			VppConfig: &vpp.ConfigData{
+				Interfaces: ifaces,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting get..")
+
+	cfg, err := client.Get(context.Background(), &configurator.GetRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	out, _ := (&jsonpb.Marshaler{Indent: "  "}).MarshalToString(cfg)
+	fmt.Printf("Config:\n %+v\n", out)
+
+	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting dump..")
+
+	dump, err := client.Dump(context.Background(), &configurator.DumpRequest{})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("Dump:\n %+v\n", proto.MarshalTextString(dump))
 }
 
 // Dialer for unix domain socket
@@ -155,8 +204,102 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 	}
 }
 
-// resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
-func (plugin *ExamplePlugin) resyncVPP() {
+var (
+	sa10 = &vpp.IPSecSA{
+		Index:     "10",
+		Spi:       1001,
+		Protocol:  1,
+		CryptoAlg: 1,
+		CryptoKey: "4a506a794f574265564551694d653768",
+		IntegAlg:  2,
+		IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+	}
+	spd1 = &vpp.IPSecSPD{
+		Index: "1",
+		PolicyEntries: []*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry{
+			{
+				Priority:   100,
+				IsOutbound: false,
+				Action:     0,
+				Protocol:   50,
+				SaIndex:    "10",
+			},
+		},
+	}
+	memif1 = &vpp.Interface{
+		Name:        "memif1",
+		Enabled:     true,
+		IpAddresses: []string{"3.3.0.1/16"},
+		Type:        interfaces.Interface_MEMIF,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             1,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
+	}
+	memif2 = &vpp.Interface{
+		Name:        "memif2",
+		Enabled:     true,
+		IpAddresses: []string{"4.3.0.1/16"},
+		Type:        interfaces.Interface_MEMIF,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             2,
+				Master:         true,
+				Secret:         "secret",
+				SocketFilename: "/tmp/memif2.sock",
+			},
+		},
+	}
+	ipScanNeigh = &vpp.IPScanNeigh{
+		Mode: vpp_l3.IPScanNeighbor_BOTH,
+	}
+	veth1 = &linux.Interface{
+		Name:        "myVETH1",
+		Type:        linux_interfaces.Interface_VETH,
+		Enabled:     true,
+		HostIfName:  "veth1",
+		IpAddresses: []string{"10.10.3.1/24"},
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{
+				PeerIfName: "myVETH2",
+			},
+		},
+	}
+	veth2 = &linux.Interface{
+		Name:       "myVETH2",
+		Type:       linux_interfaces.Interface_VETH,
+		Enabled:    true,
+		HostIfName: "veth2",
+		Link: &linux_interfaces.Interface_Veth{
+			Veth: &linux_interfaces.VethLink{
+				PeerIfName: "myVETH1",
+			},
+		},
+	}
+	afpacket = &vpp.Interface{
+		Name:        "myAFpacket",
+		Type:        interfaces.Interface_AF_PACKET,
+		Enabled:     true,
+		PhysAddress: "a7:35:45:55:65:75",
+		IpAddresses: []string{
+			"10.20.30.40/24",
+		},
+		Mtu: 1800,
+		Link: &interfaces.Interface_Afpacket{
+			Afpacket: &interfaces.AfpacketLink{
+				HostIfName: "veth2",
+			},
+		},
+	}
+)
+
+/*
+// demonstrateClient propagates snapshot of the whole initial configuration to VPP plugins.
+func (plugin *ExamplePlugin) demonstrateClient() {
 	err := remoteclient.DataResyncRequestGRPC(rpc.NewDataResyncServiceClient(plugin.conn)).
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).
@@ -172,6 +315,7 @@ func (plugin *ExamplePlugin) resyncVPP() {
 
 // reconfigureVPP simulates a set of changes in the configuration related to VPP plugins.
 func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
+	return
 	_, dstNetAddr, err := net.ParseCIDR("192.168.2.1/32")
 	if err != nil {
 		return
@@ -183,15 +327,15 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 		// Simulate configuration change exactly 15seconds after resync.
 		err := remoteclient.DataChangeRequestGRPC(rpc.NewDataChangeServiceClient(plugin.conn)).
 			Put().
-			Interface(&memif1AsSlave).     /* turn memif1 into slave, remove the IP address */
-			Interface(&memif2).            /* newly added memif interface */
-			Interface(&tap1Enabled).       /* enable tap1 interface */
-			Interface(&loopback1WithAddr). /* assign IP address to loopback1 interface */
-			ACL(&acl1).                    /* declare ACL for the traffic leaving tap1 interface */
-			XConnect(&XConMemif1ToMemif2). /* xconnect memif interfaces */
-			BD(&BDLoopback1ToTap1).        /* put loopback and tap1 into the same bridge domain */
+			Interface(&memif1AsSlave).
+			Interface(&memif2).
+			Interface(&tap1Enabled).
+			Interface(&loopback1WithAddr).
+			ACL(&acl1).
+			XConnect(&XConMemif1ToMemif2).
+			BD(&BDLoopback1ToTap1).
 			Delete().
-			StaticRoute(0, dstNetAddr.String(), nextHopAddr.String()). /* remove the route going through memif1 */
+			StaticRoute(0, dstNetAddr.String(), nextHopAddr.String()).
 			Send().ReceiveReply()
 		if err != nil {
 			logrus.DefaultLogger().Errorf("Failed to reconfigure VPP: %v", err)
@@ -204,7 +348,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	}
 	plugin.wg.Done()
 }
-
+*/
 /*************************
  * Example plugin config *
  *************************/
@@ -246,7 +390,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
  *  +------------------------------------------------+  *
  *                                                      *
  ********************************************************/
-
+/*
 var (
 	// memif1AsMaster is an example of a memory interface configuration. (Master=true, with IPv4 address).
 	memif1AsMaster = interfaces.Interfaces_Interface{
@@ -372,7 +516,7 @@ var (
 		Forward:             true,
 		Learn:               true,
 		ArpTermination:      false,
-		MacAge:              0, /* means disable aging */
+		MacAge:              0,
 		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
 			{
 				Name: "loopback1",
@@ -393,3 +537,4 @@ var (
 		Weight:      5,
 	}
 )
+*/

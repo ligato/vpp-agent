@@ -19,11 +19,11 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	"github.com/ligato/vpp-agent/idxvpp2"
+	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/pkg/idxvpp2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
-	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )

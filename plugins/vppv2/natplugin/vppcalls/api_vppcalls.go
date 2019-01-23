@@ -19,8 +19,8 @@ import (
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 )
 
 // NatVppAPI provides methods for managing VPP NAT configuration.

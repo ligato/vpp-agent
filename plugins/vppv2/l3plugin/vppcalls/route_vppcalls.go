@@ -19,8 +19,8 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 	"github.com/pkg/errors"
 )
 
@@ -39,7 +39,7 @@ const (
 )
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
-func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoute, rtIfIdx uint32, delete bool) error {
+func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delete bool) error {
 	req := &ip.IPAddDelRoute{}
 	if delete {
 		req.IsAdd = 0
@@ -73,10 +73,10 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoute, rtIfIdx uint32, del
 
 	// VRF/Other route parameters based on type
 	req.TableID = route.VrfId
-	if route.Type == l3.StaticRoute_INTER_VRF {
+	if route.Type == vpp_l3.Route_INTER_VRF {
 		req.NextHopSwIfIndex = rtIfIdx
 		req.NextHopTableID = route.ViaVrfId
-	} else if route.Type == l3.StaticRoute_DROP {
+	} else if route.Type == vpp_l3.Route_DROP {
 		req.IsDrop = 1
 	} else {
 		req.NextHopSwIfIndex = rtIfIdx
@@ -96,7 +96,7 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoute, rtIfIdx uint32, del
 }
 
 // VppAddRoute implements route handler.
-func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute) error {
+func (h *RouteHandler) VppAddRoute(route *vpp_l3.Route) error {
 	// Evaluate route IP version
 	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstNetwork)
 	if err != nil {
@@ -107,7 +107,7 @@ func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute) error {
 	if err := h.createVrfIfNeeded(route.VrfId, isIPv6); err != nil {
 		return err
 	}
-	if route.Type == l3.StaticRoute_INTER_VRF {
+	if route.Type == vpp_l3.Route_INTER_VRF {
 		if err := h.createVrfIfNeeded(route.ViaVrfId, isIPv6); err != nil {
 			return err
 		}
@@ -122,7 +122,7 @@ func (h *RouteHandler) VppAddRoute(route *l3.StaticRoute) error {
 }
 
 // VppDelRoute implements route handler.
-func (h *RouteHandler) VppDelRoute(route *l3.StaticRoute) error {
+func (h *RouteHandler) VppDelRoute(route *vpp_l3.Route) error {
 	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
 	if err != nil {
 		return err

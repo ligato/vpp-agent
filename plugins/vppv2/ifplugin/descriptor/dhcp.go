@@ -30,10 +30,10 @@ import (
 	"bytes"
 
 	"github.com/gogo/protobuf/proto"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/pkg/errors"
 )
 

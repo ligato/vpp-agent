@@ -23,17 +23,16 @@ import (
 	"time"
 
 	"git.fd.io/govpp.git/adapter"
-
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/pkg/errors"
 
+	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 // PeriodicPollingPeriod between statistics reads
@@ -320,7 +319,7 @@ func (c *InterfaceStateUpdater) processSimpleCounterStat(statName statType, data
 		}
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 	}
 }
 
@@ -355,7 +354,7 @@ func (c *InterfaceStateUpdater) processCombinedCounterStat(statName statType, da
 		// TODO process other stats types
 
 		c.publishIfState(&intf.InterfaceNotification{
-			Type: intf.InterfaceNotification_UPDOWN, State: ifState})
+			Type: intf.InterfaceNotification_COUNTERS, State: ifState})
 	}
 }
 
@@ -369,7 +368,8 @@ func (c *InterfaceStateUpdater) processIfStateEvent(notif *interfaces.SwInterfac
 	if !found {
 		return
 	}
-	c.log.Debugf("Interface state notification for %s (Idx %d)", ifState.Name, ifState.IfIndex)
+	c.log.Debugf("Interface state notification for %s (idx: %d): %+v",
+		ifState.Name, ifState.IfIndex, notif)
 
 	// store data in ETCD
 	c.publishIfState(&intf.InterfaceNotification{

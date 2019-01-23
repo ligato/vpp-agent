@@ -23,10 +23,10 @@ import (
 	"net/http"
 
 	govppapi "git.fd.io/govpp.git/api"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/restv2/resturl"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 	"github.com/unrolled/render"
 )
 
@@ -126,7 +126,7 @@ func (p *Plugin) registerL3Handlers() {
 	})
 	// GET static routes
 	p.registerHTTPHandler(resturl.Routes, GET, func() (interface{}, error) {
-		return p.rtHandler.DumpStaticRoutes()
+		return p.rtHandler.DumpRoutes()
 	})
 }
 
@@ -146,7 +146,7 @@ func (p *Plugin) registerLinuxInterfaceHandlers() {
 func (p *Plugin) registerLinuxL3Handlers() {
 	// GET linux routes
 	p.registerHTTPHandler(resturl.LinuxRoutes, GET, func() (interface{}, error) {
-		routes4, routes6, err := p.linuxL3Handler.GetStaticRoutes(0)
+		routes4, routes6, err := p.linuxL3Handler.GetRoutes(0)
 		if err != nil {
 			return nil, err
 		}

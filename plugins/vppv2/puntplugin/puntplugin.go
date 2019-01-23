@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *punt.ToHost --import "../model/punt" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *punt.IpRedirect --import "../model/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name PuntToHost --value-type *vpp_punt.ToHost --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPPuntRedirect --value-type *vpp_punt.IPRedirect --import "github.com/ligato/vpp-agent/api/models/vpp/punt" --output-dir "descriptor"
 
 package puntplugin
 
