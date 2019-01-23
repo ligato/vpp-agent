@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type UnnumberedKVWithMetadata struct {
 	Key      string
-	Value    *interfaces.Interface_Unnumbered
+	Value    *vpp_interfaces.Interface_Unnumbered
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type UnnumberedDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *interfaces.Interface_Unnumbered) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_interfaces.Interface_Unnumbered) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *interfaces.Interface_Unnumbered) (metadata interface{}, err error)
-	Delete             func(key string, value *interfaces.Interface_Unnumbered, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *interfaces.Interface_Unnumbered, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *interfaces.Interface_Unnumbered, metadata interface{}) bool
-	Update             func(key string, value *interfaces.Interface_Unnumbered, metadata interface{}) error
+	Add                func(key string, value *vpp_interfaces.Interface_Unnumbered) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_interfaces.Interface_Unnumbered, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_interfaces.Interface_Unnumbered, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_interfaces.Interface_Unnumbered, metadata interface{}) bool
+	Update             func(key string, value *vpp_interfaces.Interface_Unnumbered, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *interfaces.Interface_Unnumbered) []Dependency
-	DerivedValues      func(key string, value *interfaces.Interface_Unnumbered) []KeyValuePair
+	Dependencies       func(key string, value *vpp_interfaces.Interface_Unnumbered) []Dependency
+	DerivedValues      func(key string, value *vpp_interfaces.Interface_Unnumbered) []KeyValuePair
 	Dump               func(correlate []UnnumberedKVWithMetadata) ([]UnnumberedKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *UnnumberedDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWit
 
 ////////// Helper methods //////////
 
-func castUnnumberedValue(key string, value proto.Message) (*interfaces.Interface_Unnumbered, error) {
-	typedValue, ok := value.(*interfaces.Interface_Unnumbered)
+func castUnnumberedValue(key string, value proto.Message) (*vpp_interfaces.Interface_Unnumbered, error) {
+	typedValue, ok := value.(*vpp_interfaces.Interface_Unnumbered)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

@@ -17,15 +17,14 @@ package descriptor
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 const (
@@ -71,8 +70,10 @@ func NewFIBDescriptor(fibHandler vppcalls.FIBVppAPI, log logging.PluginLogger) *
 func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 	return &adapter.FIBDescriptor{
 		Name:            FIBDescriptorName,
-		KeySelector:     d.IsFIBKey,
-		ValueTypeName:   proto.MessageName(&l2.FIBEntry{}),
+		NBKeyPrefix:     l2.ModelFIBEntry.KeyPrefix(),
+		ValueTypeName:   l2.ModelFIBEntry.ProtoName(),
+		KeySelector:     l2.ModelFIBEntry.IsKeyValid,
+		KeyLabel:        l2.ModelFIBEntry.StripKeyPrefix,
 		ValueComparator: d.EquivalentFIBs,
 		// NB keys already covered by the prefix for bridge domains
 		Add:                d.Add,
@@ -83,12 +84,6 @@ func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName, BridgeDomainDescriptorName},
 	}
-}
-
-// IsFIBKey returns true if the key is identifying VPP L2 FIB configuration.
-func (d *FIBDescriptor) IsFIBKey(key string) bool {
-	_, _, isFIBKey := l2.ParseFIBKey(key)
-	return isFIBKey
 }
 
 // EquivalentFIBs is case-insensitive comparison function for l2.FIBEntry.

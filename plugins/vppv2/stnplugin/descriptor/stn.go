@@ -19,10 +19,11 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
+	"github.com/ligato/vpp-agent/pkg/models"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	ifDescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/vppcalls"
 	"github.com/pkg/errors"
@@ -65,10 +66,11 @@ func NewSTNDescriptor(stnHandler vppcalls.StnVppAPI, log logging.PluginLogger) *
 func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 	return &adapter.STNDescriptor{
 		Name:               STNDescriptorName,
-		KeySelector:        d.IsSTNKey,
-		ValueTypeName:      proto.MessageName(&stn.Rule{}),
+		NBKeyPrefix:        stn.ModelRule.KeyPrefix(),
+		ValueTypeName:      stn.ModelRule.ProtoName(),
+		KeySelector:        stn.ModelRule.IsKeyValid,
+		KeyLabel:           stn.ModelRule.StripKeyPrefix,
 		ValueComparator:    d.EquivalentSTNs,
-		NBKeyPrefix:        stn.Prefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
@@ -77,12 +79,6 @@ func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifDescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsSTNKey returns true if the key is identifying VPP STN rule configuration.
-func (d *STNDescriptor) IsSTNKey(key string) bool {
-	_, _, isSTNKey := stn.ParseKey(key)
-	return isSTNKey
 }
 
 // EquivalentSTNs is case-insensitive comparison function for stn.Rule.
@@ -164,7 +160,7 @@ func (d *STNDescriptor) Dump(correlate []adapter.STNKVWithMetadata) (dump []adap
 	}
 	for _, stnRule := range stnRules {
 		dump = append(dump, adapter.STNKVWithMetadata{
-			Key:    stn.Key(stnRule.Rule.Interface, stnRule.Rule.IpAddress),
+			Key:    models.Key(stnRule.Rule), //stn.Key(stnRule.Rule.Interface, stnRule.Rule.IpAddress),
 			Value:  stnRule.Rule,
 			Origin: scheduler.FromNB, // all STN rules are configured from NB
 		})

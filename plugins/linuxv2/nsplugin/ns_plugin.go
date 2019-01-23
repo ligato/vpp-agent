@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	nsmodel "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
 	nsLinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
@@ -127,7 +127,7 @@ func (p *NsPlugin) GetNamespaceHandle(ctx nsLinuxcalls.NamespaceMgmtCtx, namespa
 		return 0, errors.New("NsPlugin is disabled")
 	}
 	// Convert microservice namespace
-	if namespace != nil && namespace.Type == nsmodel.NetNamespace_NETNS_REF_MICROSERVICE {
+	if namespace != nil && namespace.Type == nsmodel.NetNamespace_MICROSERVICE {
 		// Convert namespace
 		reference := namespace.Reference
 		namespace = p.convertMicroserviceNsToPidNs(reference)
@@ -216,7 +216,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 	}
 
 	switch ns.Type {
-	case nsmodel.NetNamespace_NETNS_REF_PID:
+	case nsmodel.NetNamespace_PID:
 		pid, err := strconv.Atoi(ns.Reference)
 		if err != nil {
 			return netns.None(), errors.Errorf("failed to parse network namespace PID reference: %v", err)
@@ -226,7 +226,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 			return netns.None(), errors.Errorf("failed to get namespace handle from PID: %v", err)
 		}
 
-	case nsmodel.NetNamespace_NETNS_REF_NSID:
+	case nsmodel.NetNamespace_NSID:
 		nsHandle, err = p.sysHandler.GetNamespaceFromName(ns.Reference)
 		if err != nil {
 			// Create named namespace if it doesn't exist yet.
@@ -240,7 +240,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 			}
 		}
 
-	case nsmodel.NetNamespace_NETNS_REF_FD:
+	case nsmodel.NetNamespace_FD:
 		if ns.Reference == "" {
 			return p.sysHandler.DuplicateNamespaceHandle(p.defaultNs)
 		}
@@ -249,7 +249,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 			return netns.None(), errors.Errorf("failed to get file %s from path: %v", ns.Reference, err)
 		}
 
-	case nsmodel.NetNamespace_NETNS_REF_MICROSERVICE:
+	case nsmodel.NetNamespace_MICROSERVICE:
 		return netns.None(), errors.Errorf("unable to convert microservice label to PID at this level")
 
 	default:
@@ -263,7 +263,7 @@ func (p *NsPlugin) getOrCreateNs(ctx nsLinuxcalls.NamespaceMgmtCtx, ns *nsmodel.
 func (p *NsPlugin) convertMicroserviceNsToPidNs(microserviceLabel string) (pidNs *nsmodel.NetNamespace) {
 	if microservice, found := p.msDescriptor.GetMicroserviceStateData(microserviceLabel); found {
 		pidNamespace := &nsmodel.NetNamespace{}
-		pidNamespace.Type = nsmodel.NetNamespace_NETNS_REF_PID
+		pidNamespace.Type = nsmodel.NetNamespace_PID
 		pidNamespace.Reference = strconv.Itoa(microservice.PID)
 		return pidNamespace
 	}

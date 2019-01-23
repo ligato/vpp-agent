@@ -28,7 +28,7 @@ import (
 	"github.com/ligato/cn-infra/servicelabel"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
-	nsmodel "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
+	nsmodel "github.com/ligato/vpp-agent/api/models/linux/namespace"
 )
 
 const (

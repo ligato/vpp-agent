@@ -14,7 +14,7 @@
 
 package data
 
-import "github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+import nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 
 // NatCtl NAT plugin related methods for vpp-agent-ctl
 type NatCtl interface {
@@ -75,15 +75,13 @@ func (ctl *VppAgentCtlImpl) PutGlobalNat() error {
 	}
 
 	ctl.Log.Info("Global NAT put")
-	return ctl.broker.Put(nat.GlobalNAT44Key, natGlobal)
+	return ctl.broker.Put(nat.GlobalNAT44Key(), natGlobal)
 }
 
 // DeleteGlobalNat removes global NAT configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteGlobalNat() error {
-	globalNat := nat.GlobalNAT44Key
-
 	ctl.Log.Info("Global NAT delete")
-	_, err := ctl.broker.Delete(globalNat)
+	_, err := ctl.broker.Delete(nat.GlobalNAT44Key())
 	return err
 }
 

@@ -18,8 +18,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // ArpVppAPI provides methods for managing ARP entries
@@ -78,17 +78,17 @@ type RouteVppAPI interface {
 type RouteVppWrite interface {
 	// VppAddRoute adds new route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppAddRoute(route *l3.StaticRoute) error
+	VppAddRoute(route *l3.Route) error
 	// VppDelRoute removes old route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *l3.StaticRoute) error
+	VppDelRoute(route *l3.Route) error
 }
 
 // RouteVppRead provides read methods for routes
 type RouteVppRead interface {
-	// DumpStaticRoutes dumps l3 routes from VPP and fills them
+	// DumpRoutes dumps l3 routes from VPP and fills them
 	// into the provided static route map.
-	DumpStaticRoutes() ([]*RouteDetails, error)
+	DumpRoutes() ([]*RouteDetails, error)
 }
 
 // IPNeighVppAPI provides methods for managing IP scan neighbor configuration

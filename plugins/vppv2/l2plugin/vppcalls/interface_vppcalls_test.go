@@ -15,12 +15,13 @@
 package vppcalls_test
 
 import (
-	. "github.com/onsi/gomega"
 	"testing"
 
+	. "github.com/onsi/gomega"
+
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 func TestAddInterfaceToBridgeDomain(t *testing.T) {
@@ -31,7 +32,7 @@ func TestAddInterfaceToBridgeDomain(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
-		Name:                    "if1",
+		Name: "if1",
 		BridgedVirtualInterface: true,
 		SplitHorizonGroup:       0,
 	})
@@ -56,7 +57,7 @@ func TestAddMissingInterfaceToBridgeDomain(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2BridgeReply{})
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
-		Name:                    "if1",
+		Name: "if1",
 		BridgedVirtualInterface: true,
 		SplitHorizonGroup:       0,
 	})
@@ -73,7 +74,7 @@ func TestAddInterfaceToBridgeDomainWithError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2Bridge{}) // wrong reply message type
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
-		Name:                    "if1",
+		Name: "if1",
 		BridgedVirtualInterface: true,
 		SplitHorizonGroup:       0,
 	})
@@ -92,7 +93,7 @@ func TestAddInterfaceToBridgeDomainWithNonZeroRetval(t *testing.T) {
 		Retval: 1,
 	})
 	err := bdHandler.AddInterfaceToBridgeDomain(1, &l2.BridgeDomain_Interface{
-		Name:                    "if1",
+		Name: "if1",
 		BridgedVirtualInterface: true,
 		SplitHorizonGroup:       0,
 	})

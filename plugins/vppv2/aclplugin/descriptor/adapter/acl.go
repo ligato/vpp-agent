@@ -6,14 +6,14 @@ import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/aclidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
+	"github.com/ligato/vpp-agent/api/models/vpp/acl"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type ACLKVWithMetadata struct {
 	Key      string
-	Value    *acl.Acl
+	Value    *vpp_acl.ACL
 	Metadata *aclidx.ACLMetadata
 	Origin   ValueOrigin
 }
@@ -25,18 +25,18 @@ type ACLDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *acl.Acl) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_acl.ACL) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *acl.Acl) (metadata *aclidx.ACLMetadata, err error)
-	Delete             func(key string, value *acl.Acl, metadata *aclidx.ACLMetadata) error
-	Modify             func(key string, oldValue, newValue *acl.Acl, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *acl.Acl, metadata *aclidx.ACLMetadata) bool
-	Update             func(key string, value *acl.Acl, metadata *aclidx.ACLMetadata) error
+	Add                func(key string, value *vpp_acl.ACL) (metadata *aclidx.ACLMetadata, err error)
+	Delete             func(key string, value *vpp_acl.ACL, metadata *aclidx.ACLMetadata) error
+	Modify             func(key string, oldValue, newValue *vpp_acl.ACL, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_acl.ACL, metadata *aclidx.ACLMetadata) bool
+	Update             func(key string, value *vpp_acl.ACL, metadata *aclidx.ACLMetadata) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *acl.Acl) []Dependency
-	DerivedValues      func(key string, value *acl.Acl) []KeyValuePair
+	Dependencies       func(key string, value *vpp_acl.ACL) []Dependency
+	DerivedValues      func(key string, value *vpp_acl.ACL) []KeyValuePair
 	Dump               func(correlate []ACLKVWithMetadata) ([]ACLKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -218,8 +218,8 @@ func (da *ACLDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 
 ////////// Helper methods //////////
 
-func castACLValue(key string, value proto.Message) (*acl.Acl, error) {
-	typedValue, ok := value.(*acl.Acl)
+func castACLValue(key string, value proto.Message) (*vpp_acl.ACL, error) {
+	typedValue, ok := value.(*vpp_acl.ACL)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

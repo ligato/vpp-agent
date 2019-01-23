@@ -18,20 +18,20 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
 
-var aclNoRules []*acl.Acl_Rule
+var aclNoRules []*acl.ACL_Rule
 
-var aclErr1Rules = []*acl.Acl_Rule{
+var aclErr1Rules = []*acl.ACL_Rule{
 	{
-		Action: acl.Acl_Rule_PERMIT,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Ip: &acl.Acl_Rule_IpRule_Ip{
+		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Ip: &acl.ACL_Rule_IpRule_Ip{
 				SourceNetwork:      ".0.",
 				DestinationNetwork: "10.20.0.0/24",
 			},
@@ -39,11 +39,11 @@ var aclErr1Rules = []*acl.Acl_Rule{
 	},
 }
 
-var aclErr2Rules = []*acl.Acl_Rule{
+var aclErr2Rules = []*acl.ACL_Rule{
 	{
-		Action: acl.Acl_Rule_PERMIT,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Ip: &acl.Acl_Rule_IpRule_Ip{
+		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Ip: &acl.ACL_Rule_IpRule_Ip{
 				SourceNetwork:      "192.168.1.1/32",
 				DestinationNetwork: ".0.",
 			},
@@ -51,11 +51,11 @@ var aclErr2Rules = []*acl.Acl_Rule{
 	},
 }
 
-var aclErr3Rules = []*acl.Acl_Rule{
+var aclErr3Rules = []*acl.ACL_Rule{
 	{
-		Action: acl.Acl_Rule_PERMIT,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Ip: &acl.Acl_Rule_IpRule_Ip{
+		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Ip: &acl.ACL_Rule_IpRule_Ip{
 				SourceNetwork:      "192.168.1.1/32",
 				DestinationNetwork: "dead::1/64",
 			},
@@ -63,10 +63,10 @@ var aclErr3Rules = []*acl.Acl_Rule{
 	},
 }
 
-var aclErr4Rules = []*acl.Acl_Rule{
+var aclErr4Rules = []*acl.ACL_Rule{
 	{
-		Action: acl.Acl_Rule_PERMIT,
-		MacipRule: &acl.Acl_Rule_MacIpRule{
+		Action: acl.ACL_Rule_PERMIT,
+		MacipRule: &acl.ACL_Rule_MacIpRule{
 			SourceAddress:        "192.168.0.1",
 			SourceAddressPrefix:  uint32(16),
 			SourceMacAddress:     "",
@@ -75,10 +75,10 @@ var aclErr4Rules = []*acl.Acl_Rule{
 	},
 }
 
-var aclErr5Rules = []*acl.Acl_Rule{
+var aclErr5Rules = []*acl.ACL_Rule{
 	{
-		Action: acl.Acl_Rule_PERMIT,
-		MacipRule: &acl.Acl_Rule_MacIpRule{
+		Action: acl.ACL_Rule_PERMIT,
+		MacipRule: &acl.ACL_Rule_MacIpRule{
 			SourceAddress:        "192.168.0.1",
 			SourceAddressPrefix:  uint32(16),
 			SourceMacAddress:     "11:44:0A:B8:4A:36",
@@ -87,10 +87,10 @@ var aclErr5Rules = []*acl.Acl_Rule{
 	},
 }
 
-var aclErr6Rules = []*acl.Acl_Rule{
+var aclErr6Rules = []*acl.ACL_Rule{
 	{
-		Action: acl.Acl_Rule_PERMIT,
-		MacipRule: &acl.Acl_Rule_MacIpRule{
+		Action: acl.ACL_Rule_PERMIT,
+		MacipRule: &acl.ACL_Rule_MacIpRule{
 			SourceAddress:        "",
 			SourceAddressPrefix:  uint32(16),
 			SourceMacAddress:     "11:44:0A:B8:4A:36",
@@ -99,12 +99,12 @@ var aclErr6Rules = []*acl.Acl_Rule{
 	},
 }
 
-var aclIPrules = []*acl.Acl_Rule{
+var aclIPrules = []*acl.ACL_Rule{
 	{
 		//RuleName:  "permitIPv4",
-		Action: acl.Acl_Rule_PERMIT,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Ip: &acl.Acl_Rule_IpRule_Ip{
+		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Ip: &acl.ACL_Rule_IpRule_Ip{
 				SourceNetwork:      "192.168.1.1/32",
 				DestinationNetwork: "10.20.0.0/24",
 			},
@@ -112,9 +112,9 @@ var aclIPrules = []*acl.Acl_Rule{
 	},
 	{
 		//RuleName:  "permitIPv6",
-		Action: acl.Acl_Rule_PERMIT,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Ip: &acl.Acl_Rule_IpRule_Ip{
+		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Ip: &acl.ACL_Rule_IpRule_Ip{
 				SourceNetwork:      "dead::1/64",
 				DestinationNetwork: "dead::2/64",
 			},
@@ -122,9 +122,9 @@ var aclIPrules = []*acl.Acl_Rule{
 	},
 	{
 		//RuleName:  "permitIP",
-		Action: acl.Acl_Rule_PERMIT,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Ip: &acl.Acl_Rule_IpRule_Ip{
+		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Ip: &acl.ACL_Rule_IpRule_Ip{
 				SourceNetwork:      "",
 				DestinationNetwork: "",
 			},
@@ -132,15 +132,15 @@ var aclIPrules = []*acl.Acl_Rule{
 	},
 	{
 		//RuleName:  "denyICMP",
-		Action: acl.Acl_Rule_DENY,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Icmp: &acl.Acl_Rule_IpRule_Icmp{
+		Action: acl.ACL_Rule_DENY,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Icmp: &acl.ACL_Rule_IpRule_Icmp{
 				Icmpv6: false,
-				IcmpCodeRange: &acl.Acl_Rule_IpRule_Icmp_Range{
+				IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
 					First: 150,
 					Last:  250,
 				},
-				IcmpTypeRange: &acl.Acl_Rule_IpRule_Icmp_Range{
+				IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
 					First: 1150,
 					Last:  1250,
 				},
@@ -149,15 +149,15 @@ var aclIPrules = []*acl.Acl_Rule{
 	},
 	{
 		//RuleName:  "denyICMPv6",
-		Action: acl.Acl_Rule_DENY,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Icmp: &acl.Acl_Rule_IpRule_Icmp{
+		Action: acl.ACL_Rule_DENY,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Icmp: &acl.ACL_Rule_IpRule_Icmp{
 				Icmpv6: true,
-				IcmpCodeRange: &acl.Acl_Rule_IpRule_Icmp_Range{
+				IcmpCodeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
 					First: 150,
 					Last:  250,
 				},
-				IcmpTypeRange: &acl.Acl_Rule_IpRule_Icmp_Range{
+				IcmpTypeRange: &acl.ACL_Rule_IpRule_Icmp_Range{
 					First: 1150,
 					Last:  1250,
 				},
@@ -166,16 +166,16 @@ var aclIPrules = []*acl.Acl_Rule{
 	},
 	{
 		//RuleName:  "permitTCP",
-		Action: acl.Acl_Rule_PERMIT,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Tcp: &acl.Acl_Rule_IpRule_Tcp{
+		Action: acl.ACL_Rule_PERMIT,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Tcp: &acl.ACL_Rule_IpRule_Tcp{
 				TcpFlagsMask:  20,
 				TcpFlagsValue: 10,
-				SourcePortRange: &acl.Acl_Rule_IpRule_PortRange{
+				SourcePortRange: &acl.ACL_Rule_IpRule_PortRange{
 					LowerPort: 150,
 					UpperPort: 250,
 				},
-				DestinationPortRange: &acl.Acl_Rule_IpRule_PortRange{
+				DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
 					LowerPort: 1150,
 					UpperPort: 1250,
 				},
@@ -184,14 +184,14 @@ var aclIPrules = []*acl.Acl_Rule{
 	},
 	{
 		//RuleName:  "denyUDP",
-		Action: acl.Acl_Rule_DENY,
-		IpRule: &acl.Acl_Rule_IpRule{
-			Udp: &acl.Acl_Rule_IpRule_Udp{
-				SourcePortRange: &acl.Acl_Rule_IpRule_PortRange{
+		Action: acl.ACL_Rule_DENY,
+		IpRule: &acl.ACL_Rule_IpRule{
+			Udp: &acl.ACL_Rule_IpRule_Udp{
+				SourcePortRange: &acl.ACL_Rule_IpRule_PortRange{
 					LowerPort: 150,
 					UpperPort: 250,
 				},
-				DestinationPortRange: &acl.Acl_Rule_IpRule_PortRange{
+				DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
 					LowerPort: 1150,
 					UpperPort: 1250,
 				},
@@ -200,11 +200,11 @@ var aclIPrules = []*acl.Acl_Rule{
 	},
 }
 
-var aclMACIPrules = []*acl.Acl_Rule{
+var aclMACIPrules = []*acl.ACL_Rule{
 	{
 		//RuleName:  "denyIPv4",
-		Action: acl.Acl_Rule_DENY,
-		MacipRule: &acl.Acl_Rule_MacIpRule{
+		Action: acl.ACL_Rule_DENY,
+		MacipRule: &acl.ACL_Rule_MacIpRule{
 			SourceAddress:        "192.168.0.1",
 			SourceAddressPrefix:  uint32(16),
 			SourceMacAddress:     "11:44:0A:B8:4A:35",
@@ -213,8 +213,8 @@ var aclMACIPrules = []*acl.Acl_Rule{
 	},
 	{
 		//RuleName:  "denyIPv6",
-		Action: acl.Acl_Rule_DENY,
-		MacipRule: &acl.Acl_Rule_MacIpRule{
+		Action: acl.ACL_Rule_DENY,
+		MacipRule: &acl.ACL_Rule_MacIpRule{
 			SourceAddress:        "dead::1",
 			SourceAddressPrefix:  uint32(64),
 			SourceMacAddress:     "11:44:0A:B8:4A:35",
@@ -319,11 +319,11 @@ func TestDeleteIPAcl(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	rule2del := []*acl.Acl_Rule{
+	rule2del := []*acl.ACL_Rule{
 		{
-			Action: acl.Acl_Rule_PERMIT,
-			IpRule: &acl.Acl_Rule_IpRule{
-				Ip: &acl.Acl_Rule_IpRule_Ip{
+			Action: acl.ACL_Rule_PERMIT,
+			IpRule: &acl.ACL_Rule_IpRule{
+				Ip: &acl.ACL_Rule_IpRule_Ip{
 					SourceNetwork:      "10.20.30.1/32",
 					DestinationNetwork: "10.20.0.0/24",
 				},
@@ -359,10 +359,10 @@ func TestDeleteMACIPAcl(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	rule2del := []*acl.Acl_Rule{
+	rule2del := []*acl.ACL_Rule{
 		{
-			Action: acl.Acl_Rule_PERMIT,
-			MacipRule: &acl.Acl_Rule_MacIpRule{
+			Action: acl.ACL_Rule_PERMIT,
+			MacipRule: &acl.ACL_Rule_MacIpRule{
 				SourceAddress:        "192.168.0.1",
 				SourceAddressPrefix:  uint32(16),
 				SourceMacAddress:     "11:44:0A:B8:4A:35",
@@ -399,20 +399,20 @@ func TestModifyIPAcl(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	rule2modify := []*acl.Acl_Rule{
+	rule2modify := []*acl.ACL_Rule{
 		{
-			Action: acl.Acl_Rule_PERMIT,
-			IpRule: &acl.Acl_Rule_IpRule{
-				Ip: &acl.Acl_Rule_IpRule_Ip{
+			Action: acl.ACL_Rule_PERMIT,
+			IpRule: &acl.ACL_Rule_IpRule{
+				Ip: &acl.ACL_Rule_IpRule_Ip{
 					SourceNetwork:      "10.20.30.1/32",
 					DestinationNetwork: "10.20.0.0/24",
 				},
 			},
 		},
 		{
-			Action: acl.Acl_Rule_PERMIT,
-			IpRule: &acl.Acl_Rule_IpRule{
-				Ip: &acl.Acl_Rule_IpRule_Ip{
+			Action: acl.ACL_Rule_PERMIT,
+			IpRule: &acl.ACL_Rule_IpRule{
+				Ip: &acl.ACL_Rule_IpRule_Ip{
 					SourceNetwork:      "dead:dead::3/64",
 					DestinationNetwork: "dead:dead::4/64",
 				},
@@ -449,10 +449,10 @@ func TestModifyMACIPAcl(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(aclIndex).To(BeEquivalentTo(0))
 
-	rule2modify := []*acl.Acl_Rule{
+	rule2modify := []*acl.ACL_Rule{
 		{
-			Action: acl.Acl_Rule_DENY,
-			MacipRule: &acl.Acl_Rule_MacIpRule{
+			Action: acl.ACL_Rule_DENY,
+			MacipRule: &acl.ACL_Rule_MacIpRule{
 				SourceAddress:        "192.168.10.1",
 				SourceAddressPrefix:  uint32(24),
 				SourceMacAddress:     "11:44:0A:B8:4A:37",
@@ -460,8 +460,8 @@ func TestModifyMACIPAcl(t *testing.T) {
 			},
 		},
 		{
-			Action: acl.Acl_Rule_DENY,
-			MacipRule: &acl.Acl_Rule_MacIpRule{
+			Action: acl.ACL_Rule_DENY,
+			MacipRule: &acl.ACL_Rule_MacIpRule{
 				SourceAddress:        "dead::2",
 				SourceAddressPrefix:  uint32(64),
 				SourceMacAddress:     "11:44:0A:B8:4A:38",

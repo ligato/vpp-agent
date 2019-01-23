@@ -15,18 +15,15 @@
 package descriptor
 
 import (
-	"strings"
-
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 const (
@@ -66,9 +63,10 @@ func NewXConnectDescriptor(xcHandler vppcalls.XConnectVppAPI, log logging.Plugin
 func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 	return &adapter.XConnectDescriptor{
 		Name:               XConnectDescriptorName,
-		KeySelector:        d.IsXConnectKey,
-		ValueTypeName:      proto.MessageName(&l2.XConnectPair{}),
-		NBKeyPrefix:        l2.XConnectPrefix,
+		NBKeyPrefix:        l2.ModelXConnectPair.KeyPrefix(),
+		ValueTypeName:      l2.ModelXConnectPair.ProtoName(),
+		KeySelector:        l2.ModelXConnectPair.IsKeyValid,
+		KeyLabel:           l2.ModelXConnectPair.StripKeyPrefix,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
@@ -77,11 +75,6 @@ func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsXConnectKey returns true if the key is identifying VPP xConnect configuration.
-func (d *XConnectDescriptor) IsXConnectKey(key string) bool {
-	return strings.HasPrefix(key, l2.XConnectPrefix)
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

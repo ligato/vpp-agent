@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
+	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type PuntToHostKVWithMetadata struct {
 	Key      string
-	Value    *punt.ToHost
+	Value    *vpp_punt.ToHost
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type PuntToHostDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *punt.ToHost) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_punt.ToHost) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *punt.ToHost) (metadata interface{}, err error)
-	Delete             func(key string, value *punt.ToHost, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *punt.ToHost, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *punt.ToHost, metadata interface{}) bool
-	Update             func(key string, value *punt.ToHost, metadata interface{}) error
+	Add                func(key string, value *vpp_punt.ToHost) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_punt.ToHost, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_punt.ToHost, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_punt.ToHost, metadata interface{}) bool
+	Update             func(key string, value *vpp_punt.ToHost, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *punt.ToHost) []Dependency
-	DerivedValues      func(key string, value *punt.ToHost) []KeyValuePair
+	Dependencies       func(key string, value *vpp_punt.ToHost) []Dependency
+	DerivedValues      func(key string, value *vpp_punt.ToHost) []KeyValuePair
 	Dump               func(correlate []PuntToHostKVWithMetadata) ([]PuntToHostKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *PuntToHostDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWit
 
 ////////// Helper methods //////////
 
-func castPuntToHostValue(key string, value proto.Message) (*punt.ToHost, error) {
-	typedValue, ok := value.(*punt.ToHost)
+func castPuntToHostValue(key string, value proto.Message) (*vpp_punt.ToHost, error) {
+	typedValue, ok := value.(*vpp_punt.ToHost)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

@@ -20,14 +20,13 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	vpp_l3plugin "github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
 )
 
 /*
@@ -35,13 +34,10 @@ import (
 */
 
 func main() {
-	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
-
 	ep := &ExamplePlugin{
-		Scheduler:   &kvscheduler.DefaultPlugin,
-		VPPIfPlugin: &vpp_ifplugin.DefaultPlugin,
-		VPPL3Plugin: &vpp_l3plugin.DefaultPlugin,
+		Orchestrator: &orchestrator.DefaultPlugin,
+		VPPIfPlugin:  &ifplugin.DefaultPlugin,
+		VPPL3Plugin:  &l3plugin.DefaultPlugin,
 	}
 
 	a := agent.NewAgent(
@@ -55,9 +51,9 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler   *kvscheduler.Scheduler
-	VPPIfPlugin *vpp_ifplugin.IfPlugin
-	VPPL3Plugin *vpp_l3plugin.L3Plugin
+	Orchestrator *orchestrator.Plugin
+	VPPIfPlugin  *ifplugin.IfPlugin
+	VPPL3Plugin  *l3plugin.L3Plugin
 }
 
 // String returns plugin name
@@ -89,6 +85,7 @@ func testLocalClientWithScheduler() {
 	txn := localclient.DataResyncRequest("example")
 	err := txn.
 		VppInterface(memif0).
+		VppInterface(memif0_10).
 		StaticRoute(route0).
 		StaticRoute(route1).
 		Arp(arp0).
@@ -114,8 +111,10 @@ func testLocalClientWithScheduler() {
 	txn2 := localclient.DataChangeRequest("example")
 	err = txn2.
 		Put().
+		VppInterface(memif0_10).
 		StaticRoute(route0).
 		Delete().
+		VppInterface(memif0.Name).
 		StaticRoute(route1.VrfId, route1.DstNetwork, route1.NextHopAddr).
 		Put().
 		Arp(arp0).
@@ -142,12 +141,24 @@ var (
 			},
 		},
 	}
-	route0 = &l3.StaticRoute{
+	memif0_10 = &interfaces.Interface{
+		Name:        "memif0/10",
+		Enabled:     true,
+		Type:        interfaces.Interface_SUB_INTERFACE,
+		IpAddresses: []string{"3.10.0.10/32"},
+		Link: &interfaces.Interface_Sub{
+			Sub: &interfaces.SubInterface{
+				ParentName: "memif0",
+				SubId:      10,
+			},
+		},
+	}
+	route0 = &l3.Route{
 		DstNetwork:        "10.10.1.0/24",
 		OutgoingInterface: "memif0",
 		Weight:            200,
 	}
-	route1 = &l3.StaticRoute{
+	route1 = &l3.Route{
 		DstNetwork:        "2001:DB8::0001/32",
 		OutgoingInterface: "memif0",
 		Weight:            100,

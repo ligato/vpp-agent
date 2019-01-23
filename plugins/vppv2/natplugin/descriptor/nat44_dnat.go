@@ -15,16 +15,14 @@
 package descriptor
 
 import (
-	"strings"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
@@ -69,10 +67,11 @@ func NewDNAT44Descriptor(natHandler vppcalls.NatVppAPI, log logging.PluginLogger
 func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 	return &adapter.DNAT44Descriptor{
 		Name:               DNAT44DescriptorName,
-		KeySelector:        d.IsDNAT44Key,
+		NBKeyPrefix:        nat.ModelDNat44.KeyPrefix(),
+		ValueTypeName:      nat.ModelDNat44.ProtoName(),
+		KeySelector:        nat.ModelDNat44.IsKeyValid,
+		KeyLabel:           nat.ModelDNat44.StripKeyPrefix,
 		ValueComparator:    d.EquivalentDNAT44,
-		ValueTypeName:      proto.MessageName(&nat.DNat44{}),
-		NBKeyPrefix:        nat.PrefixNAT44,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
@@ -82,11 +81,6 @@ func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 		// dump interfaces and allocated IP addresses first
 		DumpDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName, vpp_ifdescriptor.DHCPDescriptorName},
 	}
-}
-
-// IsDNAT44Key returns true if the key is identifying VPP destination-NAT44.
-func (d *DNAT44Descriptor) IsDNAT44Key(key string) bool {
-	return strings.HasPrefix(key, nat.DNAT44Prefix)
 }
 
 // EquivalentDNAT44 compares two instances of DNAT44 for equality.

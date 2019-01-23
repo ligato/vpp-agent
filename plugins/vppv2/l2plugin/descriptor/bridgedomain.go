@@ -19,17 +19,16 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/idxvpp2"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/pkg/idxvpp2"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 const (
@@ -77,11 +76,11 @@ func NewBridgeDomainDescriptor(bdHandler vppcalls.BridgeDomainVppAPI, log loggin
 func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor {
 	return &adapter.BridgeDomainDescriptor{
 		Name:               BridgeDomainDescriptorName,
-		KeySelector:        d.IsBridgeDomainKey,
-		ValueTypeName:      proto.MessageName(&l2.BridgeDomain{}),
-		KeyLabel:           d.BridgeDomainNameFromKey,
+		NBKeyPrefix:        l2.ModelBridgeDomain.KeyPrefix(),
+		ValueTypeName:      l2.ModelBridgeDomain.ProtoName(),
+		KeySelector:        l2.ModelBridgeDomain.IsKeyValid,
+		KeyLabel:           l2.ModelBridgeDomain.StripKeyPrefix,
 		ValueComparator:    d.EquivalentBridgeDomains,
-		NBKeyPrefix:        l2.BDPrefix,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Add:                d.Add,
@@ -93,19 +92,6 @@ func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsBridgeDomainKey returns true if the key is identifying VPP bridge domain
-// configuration.
-func (d *BridgeDomainDescriptor) IsBridgeDomainKey(key string) bool {
-	_, isBDKey := l2.ParseBDNameFromKey(key)
-	return isBDKey
-}
-
-// BridgeDomainNameFromKey returns VPP bridge domain name from the key.
-func (d *BridgeDomainDescriptor) BridgeDomainNameFromKey(key string) string {
-	name, _ := l2.ParseBDNameFromKey(key)
-	return name
 }
 
 // EquivalentBridgeDomains is case-insensitive comparison function for

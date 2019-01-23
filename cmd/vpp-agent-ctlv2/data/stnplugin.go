@@ -14,7 +14,7 @@
 
 package data
 
-import "github.com/ligato/vpp-agent/plugins/vppv2/model/stn"
+import stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 
 // StnCtl STN plugin related methods for vpp-agent-ctl
 type StnCtl interface {

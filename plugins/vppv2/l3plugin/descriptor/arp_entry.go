@@ -16,15 +16,15 @@ package descriptor
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/cn-infra/logging"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 const (
@@ -57,14 +57,12 @@ func NewArpDescriptor(scheduler scheduler.KVScheduler,
 // the KVScheduler.
 func (d *ArpDescriptor) GetDescriptor() *adapter.ARPEntryDescriptor {
 	return &adapter.ARPEntryDescriptor{
-		Name: ArpDescriptorName,
-		KeySelector: func(key string) bool {
-			_, _, ok := l3.ParseArpKey(key)
-			return ok
-		},
-		ValueTypeName:   proto.MessageName(&l3.ARPEntry{}),
+		Name:            ArpDescriptorName,
+		NBKeyPrefix:     l3.ModelARPEntry.KeyPrefix(),
+		ValueTypeName:   l3.ModelARPEntry.ProtoName(),
+		KeySelector:     l3.ModelARPEntry.IsKeyValid,
+		KeyLabel:        l3.ModelARPEntry.StripKeyPrefix,
 		ValueComparator: d.EquivalentArps,
-		NBKeyPrefix:     l3.ArpPrefix,
 		Add:             d.Add,
 		Delete:          d.Delete,
 		ModifyWithRecreate: func(key string, oldValue, newValue *l3.ARPEntry, metadata interface{}) bool {

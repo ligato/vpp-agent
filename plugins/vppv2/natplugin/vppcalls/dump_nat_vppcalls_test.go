@@ -15,19 +15,20 @@
 package vppcalls_test
 
 import (
-	. "github.com/onsi/gomega"
 	"net"
 	"testing"
+
+	. "github.com/onsi/gomega"
 
 	"github.com/ligato/cn-infra/idxmap"
 	idxmap_mem "github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging/logrus"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
 	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 )

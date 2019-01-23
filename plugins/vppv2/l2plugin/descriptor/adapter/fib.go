@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type FIBKVWithMetadata struct {
 	Key      string
-	Value    *l2.FIBEntry
+	Value    *vpp_l2.FIBEntry
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type FIBDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *l2.FIBEntry) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_l2.FIBEntry) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *l2.FIBEntry) (metadata interface{}, err error)
-	Delete             func(key string, value *l2.FIBEntry, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *l2.FIBEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *l2.FIBEntry, metadata interface{}) bool
-	Update             func(key string, value *l2.FIBEntry, metadata interface{}) error
+	Add                func(key string, value *vpp_l2.FIBEntry) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_l2.FIBEntry, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_l2.FIBEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_l2.FIBEntry, metadata interface{}) bool
+	Update             func(key string, value *vpp_l2.FIBEntry, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *l2.FIBEntry) []Dependency
-	DerivedValues      func(key string, value *l2.FIBEntry) []KeyValuePair
+	Dependencies       func(key string, value *vpp_l2.FIBEntry) []Dependency
+	DerivedValues      func(key string, value *vpp_l2.FIBEntry) []KeyValuePair
 	Dump               func(correlate []FIBKVWithMetadata) ([]FIBKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *FIBDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 
 ////////// Helper methods //////////
 
-func castFIBValue(key string, value proto.Message) (*l2.FIBEntry, error) {
-	typedValue, ok := value.(*l2.FIBEntry)
+func castFIBValue(key string, value proto.Message) (*vpp_l2.FIBEntry, error) {
+	typedValue, ok := value.(*vpp_l2.FIBEntry)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

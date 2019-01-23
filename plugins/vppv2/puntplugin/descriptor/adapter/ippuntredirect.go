@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
+	"github.com/ligato/vpp-agent/api/models/vpp/punt"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type IPPuntRedirectKVWithMetadata struct {
 	Key      string
-	Value    *punt.IpRedirect
+	Value    *vpp_punt.IPRedirect
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type IPPuntRedirectDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *punt.IpRedirect) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_punt.IPRedirect) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *punt.IpRedirect) (metadata interface{}, err error)
-	Delete             func(key string, value *punt.IpRedirect, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *punt.IpRedirect, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *punt.IpRedirect, metadata interface{}) bool
-	Update             func(key string, value *punt.IpRedirect, metadata interface{}) error
+	Add                func(key string, value *vpp_punt.IPRedirect) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_punt.IPRedirect, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_punt.IPRedirect, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_punt.IPRedirect, metadata interface{}) bool
+	Update             func(key string, value *vpp_punt.IPRedirect, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *punt.IpRedirect) []Dependency
-	DerivedValues      func(key string, value *punt.IpRedirect) []KeyValuePair
+	Dependencies       func(key string, value *vpp_punt.IPRedirect) []Dependency
+	DerivedValues      func(key string, value *vpp_punt.IPRedirect) []KeyValuePair
 	Dump               func(correlate []IPPuntRedirectKVWithMetadata) ([]IPPuntRedirectKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *IPPuntRedirectDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]K
 
 ////////// Helper methods //////////
 
-func castIPPuntRedirectValue(key string, value proto.Message) (*punt.IpRedirect, error) {
-	typedValue, ok := value.(*punt.IpRedirect)
+func castIPPuntRedirectValue(key string, value proto.Message) (*vpp_punt.IPRedirect, error) {
+	typedValue, ok := value.(*vpp_punt.IPRedirect)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type RouteKVWithMetadata struct {
 	Key      string
-	Value    *linux_l3.StaticRoute
+	Value    *linux_l3.Route
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type RouteDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *linux_l3.StaticRoute) bool
+	ValueComparator    func(key string, oldValue, newValue *linux_l3.Route) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *linux_l3.StaticRoute) (metadata interface{}, err error)
-	Delete             func(key string, value *linux_l3.StaticRoute, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *linux_l3.StaticRoute, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.StaticRoute, metadata interface{}) bool
-	Update             func(key string, value *linux_l3.StaticRoute, metadata interface{}) error
+	Add                func(key string, value *linux_l3.Route) (metadata interface{}, err error)
+	Delete             func(key string, value *linux_l3.Route, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *linux_l3.Route, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.Route, metadata interface{}) bool
+	Update             func(key string, value *linux_l3.Route, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *linux_l3.StaticRoute) []Dependency
-	DerivedValues      func(key string, value *linux_l3.StaticRoute) []KeyValuePair
+	Dependencies       func(key string, value *linux_l3.Route) []Dependency
+	DerivedValues      func(key string, value *linux_l3.Route) []KeyValuePair
 	Dump               func(correlate []RouteKVWithMetadata) ([]RouteKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -217,8 +217,8 @@ func (da *RouteDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMeta
 
 ////////// Helper methods //////////
 
-func castRouteValue(key string, value proto.Message) (*linux_l3.StaticRoute, error) {
-	typedValue, ok := value.(*linux_l3.StaticRoute)
+func castRouteValue(key string, value proto.Message) (*linux_l3.Route, error) {
+	typedValue, ok := value.(*linux_l3.Route)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

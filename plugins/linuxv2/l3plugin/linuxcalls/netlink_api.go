@@ -35,12 +35,12 @@ type NetlinkAPIWrite interface {
 	DelARPEntry(arpEntry *netlink.Neigh) error
 
 	/* Routes */
-	// AddStaticRoute adds new linux static route.
-	AddStaticRoute(route *netlink.Route) error
-	// ReplaceStaticRoute changes existing linux static route.
-	ReplaceStaticRoute(route *netlink.Route) error
-	// DelStaticRoute removes linux static route.
-	DelStaticRoute(route *netlink.Route) error
+	// AddRoute adds new linux static route.
+	AddRoute(route *netlink.Route) error
+	// ReplaceRoute changes existing linux static route.
+	ReplaceRoute(route *netlink.Route) error
+	// DelRoute removes linux static route.
+	DelRoute(route *netlink.Route) error
 }
 
 // NetlinkAPIRead interface covers read methods inside linux calls package
@@ -51,11 +51,11 @@ type NetlinkAPIRead interface {
 	// are returned.
 	GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error)
 
-	// GetStaticRoutes reads all configured static routes with the given outgoing
+	// GetRoutes reads all configured static routes with the given outgoing
 	// interface.
 	// <interfaceIdx> works as filter, if set to zero, all routes in the namespace
 	// are returned.
-	GetStaticRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error)
+	GetRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error)
 }
 
 // NetLinkHandler is accessor for Netlink methods.

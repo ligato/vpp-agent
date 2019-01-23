@@ -15,8 +15,8 @@
 package data
 
 import (
-	linuxL3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
+	linuxL3 "github.com/ligato/vpp-agent/api/models/linux/l3"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 )
 
 // L3Ctl L3 plugin related methods for vpp-agent-ctl (including linux)
@@ -61,7 +61,7 @@ type L3Ctl interface {
 
 // PutRoute puts VPP route configuration to the ETCD
 func (ctl *VppAgentCtlImpl) PutRoute() error {
-	route := &l3.StaticRoute{
+	route := &l3.Route{
 		VrfId:             0,
 		DstNetwork:        "10.1.1.3/32",
 		NextHopAddr:       "192.168.1.13",
@@ -84,8 +84,8 @@ func (ctl *VppAgentCtlImpl) DeleteRoute() error {
 
 // PutInterVrfRoute puts inter-VRF VPP route configuration to the ETCD
 func (ctl *VppAgentCtlImpl) PutInterVrfRoute() error {
-	route := &l3.StaticRoute{
-		Type:       l3.StaticRoute_INTER_VRF,
+	route := &l3.Route{
+		Type:       l3.Route_INTER_VRF,
 		VrfId:      0,
 		DstNetwork: "1.2.3.4/32",
 		ViaVrfId:   1,
@@ -106,8 +106,8 @@ func (ctl *VppAgentCtlImpl) DeleteInterVrfRoute() error {
 
 // PutNextHopRoute puts inter-VRF VPP route configuration with next hop to the ETCD
 func (ctl *VppAgentCtlImpl) PutNextHopRoute() error {
-	route := &l3.StaticRoute{
-		Type:        l3.StaticRoute_INTER_VRF,
+	route := &l3.Route{
+		Type:        l3.Route_INTER_VRF,
 		VrfId:       1,
 		DstNetwork:  "10.1.1.3/32",
 		NextHopAddr: "192.168.1.13",
@@ -129,43 +129,43 @@ func (ctl *VppAgentCtlImpl) DeleteNextHopRoute() error {
 
 // PutLinuxRoute puts linux route configuration to the ETCD
 func (ctl *VppAgentCtlImpl) PutLinuxRoute() error {
-	linuxRoute := &linuxL3.StaticRoute{
+	linuxRoute := &linuxL3.Route{
 		DstNetwork:        "10.0.2.0/24",
 		OutgoingInterface: "veth1",
 		Metric:            100,
 	}
 
 	ctl.Log.Infof("Route put: %v", linuxRoute)
-	return ctl.broker.Put(linuxL3.StaticRouteKey(linuxRoute.DstNetwork, linuxRoute.OutgoingInterface), linuxRoute)
+	return ctl.broker.Put(linuxL3.RouteKey(linuxRoute.DstNetwork, linuxRoute.OutgoingInterface), linuxRoute)
 }
 
 // DeleteLinuxRoute removes linux route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteLinuxRoute() error {
-	linuxStaticRouteKey := linuxL3.StaticRouteKey("10.0.2.0/24", "veth1")
+	linuxRouteKey := linuxL3.RouteKey("10.0.2.0/24", "veth1")
 
-	ctl.Log.Println("Linux route delete: %v", linuxStaticRouteKey)
-	_, err := ctl.broker.Delete(linuxStaticRouteKey)
+	ctl.Log.Println("Linux route delete: %v", linuxRouteKey)
+	_, err := ctl.broker.Delete(linuxRouteKey)
 	return err
 }
 
 // PutLinuxDefaultRoute puts linux default route configuration to the ETCD
 func (ctl *VppAgentCtlImpl) PutLinuxDefaultRoute() error {
-	linuxRoute := &linuxL3.StaticRoute{
+	linuxRoute := &linuxL3.Route{
 		GwAddr:            "10.0.2.2",
 		OutgoingInterface: "veth1",
 		Metric:            100,
 	}
 
 	ctl.Log.Infof("Linux default route put: %v", linuxRoute)
-	return ctl.broker.Put(linuxL3.StaticRouteKey(linuxRoute.DstNetwork, linuxRoute.OutgoingInterface), linuxRoute)
+	return ctl.broker.Put(linuxL3.RouteKey(linuxRoute.DstNetwork, linuxRoute.OutgoingInterface), linuxRoute)
 }
 
 // DeleteLinuxDefaultRoute removes linux default route configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteLinuxDefaultRoute() error {
-	linuxStaticRouteKey := linuxL3.StaticRouteKey("0.0.0.0/32", "veth1")
+	linuxRouteKey := linuxL3.RouteKey("0.0.0.0/32", "veth1")
 
-	ctl.Log.Info("Linux route delete: %v", linuxStaticRouteKey)
-	_, err := ctl.broker.Delete(linuxStaticRouteKey)
+	ctl.Log.Info("Linux route delete: %v", linuxRouteKey)
+	_, err := ctl.broker.Delete(linuxRouteKey)
 	return err
 }
 
@@ -211,13 +211,13 @@ func (ctl *VppAgentCtlImpl) PutProxyArp() error {
 	}
 
 	ctl.Log.Infof("Proxy ARP put: %v", proxyArp)
-	return ctl.broker.Put(l3.ProxyARPKey, proxyArp)
+	return ctl.broker.Put(l3.ProxyARPKey(), proxyArp)
 }
 
 // DeleteProxyArp removes VPP proxy ARPconfiguration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteProxyArp() error {
 	ctl.Log.Info("Proxy ARP deleted")
-	_, err := ctl.broker.Delete(l3.ProxyARPKey)
+	_, err := ctl.broker.Delete(l3.ProxyARPKey())
 	return err
 }
 
@@ -233,31 +233,31 @@ func (ctl *VppAgentCtlImpl) SetIPScanNeigh() error {
 	}
 
 	ctl.Log.Info("IP scan neighbor set")
-	return ctl.broker.Put(l3.IPScanNeighborKey, ipScanNeigh)
+	return ctl.broker.Put(l3.IPScanNeighborKey(), ipScanNeigh)
 }
 
 // UnsetIPScanNeigh removes VPP IP scan neighbor configuration from the ETCD
 func (ctl *VppAgentCtlImpl) UnsetIPScanNeigh() error {
 	ctl.Log.Info("IP scan neighbor unset")
-	_, err := ctl.broker.Delete(l3.IPScanNeighborKey)
+	_, err := ctl.broker.Delete(l3.IPScanNeighborKey())
 	return err
 }
 
 // PutLinuxArp puts linux ARP entry configuration to the ETCD
 func (ctl *VppAgentCtlImpl) PutLinuxArp() error {
-	linuxArp := &linuxL3.StaticARPEntry{
+	linuxArp := &linuxL3.ARPEntry{
 		Interface: "veth1",
 		IpAddress: "130.0.0.1",
 		HwAddress: "46:06:18:DB:05:3A",
 	}
 
 	ctl.Log.Info("Linux ARP put: %v", linuxArp)
-	return ctl.broker.Put(linuxL3.StaticArpKey(linuxArp.Interface, linuxArp.IpAddress), linuxArp)
+	return ctl.broker.Put(linuxL3.ArpKey(linuxArp.Interface, linuxArp.IpAddress), linuxArp)
 }
 
 // DeleteLinuxArp removes Linux ARP entry configuration from the ETCD
 func (ctl *VppAgentCtlImpl) DeleteLinuxArp() error {
-	linuxArpKey := linuxL3.StaticArpKey("veth1", "130.0.0.1")
+	linuxArpKey := linuxL3.ArpKey("veth1", "130.0.0.1")
 
 	ctl.Log.Info("Linux ARP delete: %v", linuxArpKey)
 	_, err := ctl.broker.Delete(linuxArpKey)

@@ -20,8 +20,8 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
+	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
 )
 
 // *************************************************************************

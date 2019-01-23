@@ -16,8 +16,8 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
 )
 
 // ACLVppAPI provides read/write methods required to handle VPP access lists
@@ -29,13 +29,13 @@ type ACLVppAPI interface {
 // ACLVppWrite provides write methods for ACL plugin
 type ACLVppWrite interface {
 	// AddACL create new ACL (L3/L4). Returns ACL index provided by VPP.
-	AddACL(rules []*acl.Acl_Rule, aclName string) (aclIdx uint32, err error)
+	AddACL(rules []*acl.ACL_Rule, aclName string) (aclIdx uint32, err error)
 	// AddMACIPACL creates new MACIP ACL (L2). Returns ACL index provided by VPP.
-	AddMACIPACL(rules []*acl.Acl_Rule, aclName string) (aclIdx uint32, err error)
+	AddMACIPACL(rules []*acl.ACL_Rule, aclName string) (aclIdx uint32, err error)
 	// ModifyACL modifies ACL (L3/L4) by updating its rules. It uses ACL index to identify ACL.
-	ModifyACL(aclIdx uint32, rules []*acl.Acl_Rule, aclName string) error
+	ModifyACL(aclIdx uint32, rules []*acl.ACL_Rule, aclName string) error
 	// ModifyACL modifies MACIP ACL (L2) by updating its rules. It uses ACL index to identify ACL.
-	ModifyMACIPACL(aclIdx uint32, rules []*acl.Acl_Rule, aclName string) error
+	ModifyMACIPACL(aclIdx uint32, rules []*acl.ACL_Rule, aclName string) error
 	// DeleteACL removes ACL (L3/L4).
 	DeleteACL(aclIdx uint32) error
 	// DeleteMACIPACL removes MACIP ACL (L2).
@@ -73,13 +73,13 @@ type ACLVppRead interface {
 	// DumpMACIPACL dumps all MACIP ACLs (L2).
 	DumpMACIPACL() ([]*ACLDetails, error)
 	// DumpACLInterfaces dumps all ACLs (L3/L4) for given ACL indexes. Returns map of ACL indexes with assigned interfaces.
-	DumpACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error)
+	DumpACLInterfaces(indices []uint32) (map[uint32]*acl.ACL_Interfaces, error)
 	// DumpMACIPACLInterfaces dumps all ACLs (L2) for given ACL indexes. Returns map of MACIP ACL indexes with assigned interfaces.
-	DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*acl.Acl_Interfaces, error)
+	DumpMACIPACLInterfaces(indices []uint32) (map[uint32]*acl.ACL_Interfaces, error)
 	// DumpInterfaceAcls finds interface in VPP and returns its ACL (L3/L4) configuration.
-	DumpInterfaceACLs(ifIdx uint32) ([]*acl.Acl, error)
+	DumpInterfaceACLs(ifIdx uint32) ([]*acl.ACL, error)
 	// DumpInterfaceMACIPACLs finds interface in VPP and returns its MACIP ACL (L2) configuration.
-	DumpInterfaceMACIPACLs(ifIdx uint32) ([]*acl.Acl, error)
+	DumpInterfaceMACIPACLs(ifIdx uint32) ([]*acl.ACL, error)
 }
 
 // ACLVppHandler is accessor for acl-related vppcalls methods
