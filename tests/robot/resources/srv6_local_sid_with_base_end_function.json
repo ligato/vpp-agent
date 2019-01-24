@@ -1,0 +1,6 @@
+{
+  "sid": "${sidAddress}",
+  "fib_table_id": ${fibtable},
+  "base_end_function": {
+  }
+}
