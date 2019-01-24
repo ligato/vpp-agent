@@ -2,7 +2,6 @@ package configurator
 
 import (
 	"github.com/gogo/status"
-	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/api/models/linux"
 	"github.com/ligato/vpp-agent/api/models/vpp"
@@ -37,16 +36,16 @@ func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetRe
 func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
 	protos := util.ExtractProtos(req.Update.VppConfig, req.Update.LinuxConfig)
 
-	var kvPairs []datasync.ProtoWatchResp
+	var kvPairs []orchestrator.KeyValuePair
 	for _, p := range protos {
 		key, err := models.GetKey(p)
 		if err != nil {
 			svc.log.Debug("models.GetKey failed: %s", err)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		kvPairs = append(kvPairs, &orchestrator.ProtoWatchResp{
-			Key: key,
-			Val: p,
+		kvPairs = append(kvPairs, orchestrator.KeyValuePair{
+			Key:   key,
+			Value: p,
 		})
 	}
 
@@ -66,16 +65,16 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
 	protos := util.ExtractProtos(req.Delete.VppConfig, req.Delete.LinuxConfig)
 
-	var kvPairs []datasync.ProtoWatchResp
+	var kvPairs []orchestrator.KeyValuePair
 	for _, p := range protos {
 		key, err := models.GetKey(p)
 		if err != nil {
 			svc.log.Debug("models.GetKey failed: %s", err)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		kvPairs = append(kvPairs, &orchestrator.ProtoWatchResp{
-			Key: key,
-			Val: nil,
+		kvPairs = append(kvPairs, orchestrator.KeyValuePair{
+			Key:   key,
+			Value: nil,
 		})
 	}
 

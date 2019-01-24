@@ -103,21 +103,30 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 			}
 			c = c.Clusters[descriptor]
 		}
-		origin := graphNode.GetFlag(OriginFlagName)
-		if origin != nil {
-			if o := origin.GetValue(); o == api.FromSB.String() {
-				attrs["fillcolor"] = "LightCyan"
-			} else if o == api.FromNB.String() {
-				//attrs["penwidth"] = "1.5"
-			}
-		}
-		pending := graphNode.GetFlag(PendingFlagName)
-		if pending != nil {
+
+		switch getNodeState(graphNode) {
+		case api.ValueState_MISSING:
+			attrs["fillcolor"] = "Dimgray"
+			attrs["style"] = "dashed,filled"
+		case api.ValueState_UNIMPLEMENTED:
+			attrs["fillcolor"] = "Darkkhaki"
+			attrs["style"] = "dashed,filled"
+		case api.ValueState_REMOVED:
+			attrs["fillcolor"] = "Black"
+			attrs["style"] = "dashed,filled"
+		// case api.ValueState_CONFIGURED // leave default
+		case api.ValueState_RETRIEVED:
+			attrs["fillcolor"] = "LightCyan"
+		case api.ValueState_FOUND:
+			attrs["fillcolor"] = "Lime"
+		case api.ValueState_PENDING:
 			attrs["style"] = "dashed,filled"
 			attrs["fillcolor"] = "Pink"
+		case api.ValueState_INVALID:
+			attrs["fillcolor"] = "Maroon"
+		case api.ValueState_FAILED:
+			attrs["fillcolor"] = "Orangered"
 		}
-		//attrs["margin"] = "0.04,0.01"
-		//attrs["pad"] = "0.04"
 
 		n := &dotNode{
 			ID:    key,

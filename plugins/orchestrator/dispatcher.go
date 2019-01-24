@@ -25,6 +25,7 @@ import (
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	"github.com/ligato/vpp-agent/pkg/models"
 )
 
 // Plugin implements sync service for GRPC.
@@ -122,21 +123,23 @@ func (p *Plugin) watchEvents() {
 					Val: val,
 				})
 			}*/
-			var kvPairs []datasync.ProtoWatchResp
+			var err error
+			var kvPairs []KeyValuePair
 			for _, x := range e.GetChanges() {
-				var lazy datasync.LazyValue
+				kv := KeyValuePair{Key:  x.GetKey()}
 				if x.GetChangeType() != datasync.Delete {
-					lazy = x
+					kv.Value, err = models.UnmarshalLazyValue(kv.Key, x)
+					if err != nil {
+						p.Log.Error(err)
+						continue
+					}
 				}
-				kvPairs = append(kvPairs, &ProtoWatchResp{
-					Key:  x.GetKey(),
-					lazy: lazy,
-				})
+				kvPairs = append(kvPairs, kv)
 			}
 
 			ctx := context.Background()
 			//ctx = kvs.WithRetry(ctx, time.Second, true)
-			_, err := p.PushData(ctx, kvPairs)
+			_, err = p.PushData(ctx, kvPairs)
 			e.Done(err)
 
 			/*txn := p.KVScheduler.StartNBTransaction()
@@ -166,16 +169,20 @@ func (p *Plugin) watchEvents() {
 		case e := <-p.resyncChan:
 			p.Log.Debugf("=> received RESYNC event (%v prefixes)", len(e.GetValues()))
 
-			var kvPairs []datasync.ProtoWatchResp
+			var kvPairs []KeyValuePair
 
 			n := 0
 			for prefix, iter := range e.GetValues() {
+				var err error
 				var keyVals []datasync.KeyVal
 				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
-					kvPairs = append(kvPairs, &ProtoWatchResp{
-						Key:  x.GetKey(),
-						lazy: x,
-					})
+					kv := KeyValuePair{Key: x.GetKey()}
+					kv.Value, err = models.UnmarshalLazyValue(kv.Key, x)
+					if err != nil {
+						p.Log.Error(err)
+						continue
+					}
+					kvPairs = append(kvPairs, kv)
 					p.Log.Debugf(" -- key: %s", x.GetKey())
 					keyVals = append(keyVals, x)
 					n++
@@ -241,7 +248,7 @@ func (p *Plugin) ListData() map[string]proto.Message {
 }
 
 // PushData ...
-func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp) (kvErrs []kvs.KeyWithError, err error) {
+func (p *Plugin) PushData(ctx context.Context, kvPairs []KeyValuePair) (kvErrs []kvs.KeyWithError, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -252,15 +259,19 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp
 	txn := p.KVScheduler.StartNBTransaction()
 
 	for _, kv := range kvPairs {
-		p.Log.Debugf(" - %v: %q (rev: %v)",
-			kv.GetChangeType(), kv.GetKey(), kv.GetRevision())
-
-		if kv.GetChangeType() == datasync.Delete {
-			txn.SetValue(kv.GetKey(), nil)
-			p.store.Delete(kv.GetKey())
+		if kv.Value == nil {
+			p.Log.Debugf(" - DELETE: %q", 	kv.Key)
 		} else {
-			txn.SetValue(kv.GetKey(), kv)
-			p.store.Update(kv.GetKey(), kv.(*ProtoWatchResp).Val)
+
+		}
+		p.Log.Debugf(" - PUT: %q ", kv.Key)
+
+		if kv.Value == nil {
+			txn.SetValue(kv.Key, nil)
+			p.store.Delete(kv.Key)
+		} else {
+			txn.SetValue(kv.Key, kv.Value)
+			p.store.Update(kv.Key, kv.Value)
 		}
 	}
 
@@ -280,36 +291,8 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []datasync.ProtoWatchResp
 	return nil, nil
 }
 
-type ProtoWatchResp struct {
-	Key  string
-	Val  proto.Message
-	lazy datasync.LazyValue
-}
-
-func (item *ProtoWatchResp) GetRevision() int64 {
-	return 0
-}
-
-func (item *ProtoWatchResp) GetPrevValue(prevValue proto.Message) (prevValueExist bool, err error) {
-	return false, nil
-}
-
-func (item *ProtoWatchResp) GetChangeType() datasync.Op {
-	if item.Val == nil && item.lazy == nil {
-		return datasync.Delete
-	}
-	return datasync.Put
-}
-
-func (item *ProtoWatchResp) GetKey() string {
-	return item.Key
-}
-
-func (item *ProtoWatchResp) GetValue(out proto.Message) error {
-	if item.Val != nil {
-		proto.Merge(out, item.Val)
-	} else if item.lazy != nil {
-		return item.lazy.GetValue(out)
-	}
-	return nil
+// KeyValuePair associates value with its key.
+type KeyValuePair struct {
+	Key   string
+	Value proto.Message
 }

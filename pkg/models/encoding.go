@@ -16,15 +16,37 @@ package models
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
+	"github.com/ligato/cn-infra/datasync"
 )
 
 // This constant is used as prefix for TypeUrl when marshalling to Any.
 const ligatoModels = "models.ligato.io/"
+
+func UnmarshalLazyValue(key string, lazy datasync.LazyValue) (proto.Message, error) {
+	for _, model := range registeredModels {
+		if !model.IsKeyValid(key) {
+			continue
+		}
+		valueType := proto.MessageType(model.ProtoName())
+		if valueType == nil {
+			return nil, fmt.Errorf("unknown proto message defined for key %s", key)
+		}
+		value := reflect.New(valueType.Elem()).Interface().(proto.Message)
+		// try to deserialize the value
+		err := lazy.GetValue(value)
+		if err != nil {
+			return nil, err
+		}
+		return value, nil
+	}
+	return nil, fmt.Errorf("no model registered for key %s", key)
+}
 
 // Unmarshal is helper function for unmarshalling items.
 func UnmarshalItem(m *api.Item) (proto.Message, error) {
