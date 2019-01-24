@@ -13,6 +13,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/unrolled/render"
@@ -29,7 +30,10 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("DOT:\n%s\n", output)
+		if format := req.FormValue("format"); format == "dot" {
+			w.Write(output)
+			return
+		}
 
 		img, err := dotToImage("", "svg", output)
 		if err != nil {
@@ -75,9 +79,14 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 
 		fmt.Printf("- key: %q\n", key)
 
+		attrs["tooltip"] = fmt.Sprintf("[ %s ]\n%s", key, proto.MarshalTextString(graphNode.GetValue()))
+
 		if label := graphNode.GetLabel(); label != "" {
 			attrs["label"] = label
 		}
+
+		attrs["pad"] = "0.01"
+		attrs["margin"] = "0.01"
 
 		c := cluster
 
@@ -93,11 +102,9 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 					Attrs: dotAttrs{
 						"penwidth":  "0.8",
 						"fontsize":  "16",
-						"label":     fmt.Sprintf("[ %s ]", descriptor),
+						"label":     fmt.Sprintf("< %s >", descriptor),
 						"style":     "filled",
 						"fillcolor": "#e6ecfa",
-						//"fontname":  "bold",
-						//"rank":      "sink",
 					},
 				}
 			}
@@ -116,8 +123,6 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 			attrs["style"] = "dashed,filled"
 			attrs["fillcolor"] = "Pink"
 		}
-		//attrs["margin"] = "0.04,0.01"
-		//attrs["pad"] = "0.04"
 
 		n := &dotNode{
 			ID:    key,
@@ -183,8 +188,7 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 		Nodes:   nodes,
 		Edges:   edges,
 		Options: map[string]string{
-			"minlen":  fmt.Sprint(minlen),
-			"nodesep": fmt.Sprint(nodesep),
+			"minlen": fmt.Sprint(minlen),
 		},
 	}
 
@@ -197,8 +201,7 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 }
 
 var (
-	minlen  uint    = 1
-	nodesep float64 = 1
+	minlen uint = 1
 )
 
 // location of dot executable for converting from .dot to .svg
@@ -243,11 +246,11 @@ const tmplGraph = `digraph kvscheduler {
     bgcolor="lightgray";
     style="solid";
     penwidth="1";
-    pad="0.05";
+    pad="0.04";
     nodesep="{{.Options.nodesep}}";
 	ordering="out";
 
-    node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.05,0.0"];
+    node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
     edge [minlen="{{.Options.minlen}}"]
 
     {{template "cluster" .Cluster}}
