@@ -16,9 +16,9 @@ package vppcalls
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	aclapi "github.com/ligato/vpp-binapi/binapi/acl"
 )
 
 // ACLVppAPI provides read/write methods required to handle VPP access lists

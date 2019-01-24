@@ -15,10 +15,14 @@
 package vppcalls
 
 import (
+	"fmt"
+	"net"
+
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	"github.com/ligato/vpp-binapi/binapi/ip"
 )
 
 // PuntVppAPI provides methods for managing VPP punt configuration.
@@ -64,4 +68,23 @@ func NewPuntVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIn
 		ifIndexes:    ifIndexes,
 		log:          log,
 	}
+}
+
+func ipToAddress(ipstr string) (addr ip.Address, err error) {
+	netIP := net.ParseIP(ipstr)
+	if netIP == nil {
+		return ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
+	}
+	if ip4 := netIP.To4(); ip4 == nil {
+		addr.Af = ip.ADDRESS_IP6
+		var ip6addr ip.IP6Address
+		copy(ip6addr[:], netIP.To16())
+		addr.Un.SetIP6(ip6addr)
+	} else {
+		addr.Af = ip.ADDRESS_IP4
+		var ip4addr ip.IP4Address
+		copy(ip4addr[:], ip4)
+		addr.Un.SetIP4(ip4addr)
+	}
+	return
 }

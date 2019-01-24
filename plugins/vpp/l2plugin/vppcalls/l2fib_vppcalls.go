@@ -19,7 +19,7 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/logging"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // FibLogicalReq groups multiple fields so that all of them do

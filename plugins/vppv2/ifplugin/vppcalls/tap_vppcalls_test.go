@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
+	"github.com/ligato/vpp-binapi/binapi/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/tap"
+	"github.com/ligato/vpp-binapi/binapi/tapv2"
 	. "github.com/onsi/gomega"
 )
 

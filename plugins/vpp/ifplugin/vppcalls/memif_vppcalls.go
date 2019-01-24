@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/memif"
 )
 
 // AddMemifInterface implements interface handler.

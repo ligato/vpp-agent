@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/vxlan"
 )
 
 func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {

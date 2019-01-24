@@ -1,0 +1,222 @@
+{
+    "messages": [
+        [
+            "vmxnet3_create",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "pci_addr"
+            ],
+            [
+                "i32",
+                "enable_elog"
+            ],
+            [
+                "u16",
+                "rxq_size"
+            ],
+            [
+                "u16",
+                "txq_size"
+            ],
+            {
+                "crc": "0x7318251d"
+            }
+        ],
+        [
+            "vmxnet3_create_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "vmxnet3_delete",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "vmxnet3_delete_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "vmxnet3_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "if_name",
+                64
+            ],
+            [
+                "u8",
+                "hw_addr",
+                6
+            ],
+            [
+                "u32",
+                "pci_addr"
+            ],
+            [
+                "u8",
+                "version"
+            ],
+            [
+                "u16",
+                "rx_qid"
+            ],
+            [
+                "u16",
+                "rx_qsize"
+            ],
+            [
+                "u16",
+                "rx_fill",
+                2
+            ],
+            [
+                "u16",
+                "rx_next"
+            ],
+            [
+                "u16",
+                "rx_produce",
+                2
+            ],
+            [
+                "u16",
+                "rx_consume",
+                2
+            ],
+            [
+                "u16",
+                "tx_qid"
+            ],
+            [
+                "u16",
+                "tx_qsize"
+            ],
+            [
+                "u16",
+                "tx_next"
+            ],
+            [
+                "u16",
+                "tx_produce"
+            ],
+            [
+                "u16",
+                "tx_consume"
+            ],
+            [
+                "u8",
+                "admin_up_down"
+            ],
+            {
+                "crc": "0x2374ddc9"
+            }
+        ],
+        [
+            "vmxnet3_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            {
+                "crc": "0x51077d14"
+            }
+        ]
+    ],
+    "vl_api_version": "0xe6419b6b",
+    "unions": [],
+    "services": {
+        "vmxnet3_dump": {
+            "reply": "vmxnet3_details",
+            "stream": true
+        },
+        "vmxnet3_delete": {
+            "reply": "vmxnet3_delete_reply"
+        },
+        "vmxnet3_create": {
+            "reply": "vmxnet3_create_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

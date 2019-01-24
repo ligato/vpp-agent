@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
+	"github.com/ligato/vpp-binapi/binapi/session"
 )
 
 // AddAppNamespace adds app namespace.

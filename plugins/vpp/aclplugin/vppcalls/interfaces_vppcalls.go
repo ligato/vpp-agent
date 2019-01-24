@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"fmt"
 
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	acl_api "github.com/ligato/vpp-binapi/binapi/acl"
 )
 
 // ACLInterfaceLogicalReq groups multiple fields to not enumerate all of them in one function call

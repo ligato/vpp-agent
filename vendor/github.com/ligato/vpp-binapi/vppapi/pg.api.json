@@ -1,0 +1,172 @@
+{
+    "messages": [
+        [
+            "pg_create_interface",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "interface_id"
+            ],
+            {
+                "crc": "0xef1dc980"
+            }
+        ],
+        [
+            "pg_create_interface_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "pg_capture",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "interface_id"
+            ],
+            [
+                "u8",
+                "is_enabled"
+            ],
+            [
+                "u32",
+                "count"
+            ],
+            [
+                "u32",
+                "pcap_name_length"
+            ],
+            [
+                "u8",
+                "pcap_file_name",
+                0,
+                "pcap_name_length"
+            ],
+            {
+                "crc": "0x453da78d"
+            }
+        ],
+        [
+            "pg_capture_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "pg_enable_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "is_enabled"
+            ],
+            [
+                "u32",
+                "stream_name_length"
+            ],
+            [
+                "u8",
+                "stream_name",
+                0,
+                "stream_name_length"
+            ],
+            {
+                "crc": "0x0cb71d10"
+            }
+        ],
+        [
+            "pg_enable_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0xf189eee1",
+    "unions": [],
+    "services": {
+        "pg_create_interface": {
+            "reply": "pg_create_interface_reply"
+        },
+        "pg_enable_disable": {
+            "reply": "pg_enable_disable_reply"
+        },
+        "pg_capture": {
+            "reply": "pg_capture_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

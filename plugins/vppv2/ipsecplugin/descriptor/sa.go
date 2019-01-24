@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	"net"
 	"strconv"
 
 	"github.com/go-errors/errors"
@@ -77,18 +78,37 @@ func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 // EquivalentIPSecSAs is case-insensitive comparison function for
 // ipsec.SecurityAssociation
 func (d *IPSecSADescriptor) EquivalentIPSecSAs(key string, oldSA, newSA *ipsec.SecurityAssociation) bool {
-	// compare base fields
-	return oldSA.Spi == newSA.Spi &&
-		oldSA.Protocol == newSA.Protocol &&
-		oldSA.CryptoAlg == newSA.CryptoAlg &&
-		oldSA.CryptoKey == newSA.CryptoKey &&
-		oldSA.IntegAlg == newSA.IntegAlg &&
-		oldSA.IntegKey == newSA.IntegKey &&
-		oldSA.UseEsn == newSA.UseEsn &&
-		oldSA.UseAntiReplay == newSA.UseAntiReplay &&
-		oldSA.TunnelSrcAddr == newSA.TunnelSrcAddr &&
-		oldSA.TunnelDstAddr == newSA.TunnelDstAddr &&
-		oldSA.EnableUdpEncap == newSA.EnableUdpEncap
+	// compare exact fields
+	if oldSA.Spi != newSA.Spi ||
+		oldSA.Protocol != newSA.Protocol ||
+		oldSA.CryptoAlg != newSA.CryptoAlg ||
+		oldSA.CryptoKey != newSA.CryptoKey ||
+		oldSA.IntegAlg != newSA.IntegAlg ||
+		oldSA.IntegKey != newSA.IntegKey ||
+		oldSA.UseEsn != newSA.UseEsn ||
+		oldSA.UseAntiReplay != newSA.UseAntiReplay ||
+		oldSA.EnableUdpEncap != newSA.EnableUdpEncap {
+		return false
+	}
+
+	if !equalIPAddrs(oldSA.TunnelSrcAddr, newSA.TunnelSrcAddr) ||
+		!equalIPAddrs(oldSA.TunnelDstAddr, newSA.TunnelDstAddr) {
+		return false
+	}
+
+	return true
+}
+
+func equalIPAddrs(ip1, ip2 string) bool {
+	if ip1 == ip2 {
+		return true
+	}
+	if ip1 == "" {
+		return net.ParseIP(ip2).IsUnspecified()
+	} else if ip2 == "" {
+		return net.ParseIP(ip1).IsUnspecified()
+	}
+	return net.ParseIP(ip1).Equal(net.ParseIP(ip2))
 }
 
 // IsRetriableFailure returns <false> for errors related to invalid configuration.

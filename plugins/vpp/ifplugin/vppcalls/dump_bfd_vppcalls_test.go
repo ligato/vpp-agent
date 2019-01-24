@@ -18,8 +18,8 @@ import (
 	"net"
 	"testing"
 
-	bfd_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	bfd_api "github.com/ligato/vpp-binapi/binapi/bfd"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 	. "github.com/onsi/gomega"
 )
 

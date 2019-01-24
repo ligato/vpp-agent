@@ -1,0 +1,162 @@
+{
+    "messages": [
+        [
+            "gre_add_del_tunnel",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "is_add"
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            [
+                "u8",
+                "tunnel_type"
+            ],
+            [
+                "u32",
+                "instance"
+            ],
+            [
+                "u8",
+                "src_address",
+                16
+            ],
+            [
+                "u8",
+                "dst_address",
+                16
+            ],
+            [
+                "u32",
+                "outer_fib_id"
+            ],
+            [
+                "u16",
+                "session_id"
+            ],
+            {
+                "crc": "0x9f03ede2"
+            }
+        ],
+        [
+            "gre_add_del_tunnel_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "gre_tunnel_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "gre_tunnel_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u32",
+                "instance"
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            [
+                "u8",
+                "tunnel_type"
+            ],
+            [
+                "u8",
+                "src_address",
+                16
+            ],
+            [
+                "u8",
+                "dst_address",
+                16
+            ],
+            [
+                "u32",
+                "outer_fib_id"
+            ],
+            [
+                "u16",
+                "session_id"
+            ],
+            {
+                "crc": "0x1a12b8c1"
+            }
+        ]
+    ],
+    "vl_api_version": "0x83d2c14f",
+    "unions": [],
+    "services": {
+        "gre_add_del_tunnel": {
+            "reply": "gre_add_del_tunnel_reply"
+        },
+        "gre_tunnel_dump": {
+            "reply": "gre_tunnel_details",
+            "stream": true
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

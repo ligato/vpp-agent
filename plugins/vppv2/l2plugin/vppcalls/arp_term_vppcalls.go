@@ -17,8 +17,7 @@ package vppcalls
 import (
 	"net"
 
-	"github.com/ligato/cn-infra/utils/addrs"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac string, ip string) error {
@@ -31,19 +30,11 @@ func (h *BridgeDomainVppHandler) callBdIPMacAddDel(isAdd bool, bdID uint32, mac 
 	if err != nil {
 		return err
 	}
-	req.MacAddress = macAddr
+	copy(req.Mac[:], macAddr)
 
-	isIpv6, err := addrs.IsIPv6(ip)
+	req.IP, err = ipToAddress(ip)
 	if err != nil {
 		return err
-	}
-	ipAddr := net.ParseIP(ip)
-	if isIpv6 {
-		req.IsIPv6 = 1
-		req.IPAddress = []byte(ipAddr.To16())
-	} else {
-		req.IsIPv6 = 0
-		req.IPAddress = []byte(ipAddr.To4())
 	}
 	reply := &l2ba.BdIPMacAddDelReply{}
 

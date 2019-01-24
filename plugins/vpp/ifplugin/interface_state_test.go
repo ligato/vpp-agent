@@ -25,12 +25,12 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-binapi/binapi/interfaces"
+	//"github.com/ligato/vpp-binapi/binapi/stats"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 )
@@ -67,7 +67,7 @@ func testPluginDataInitialization(t *testing.T) (*core.Connection, ifaceidx.SwIf
 
 	// Prepare Init VPP replies
 	mockCtx.MockVpp.MockReply(&interfaces.WantInterfaceEventsReply{})
-	mockCtx.MockVpp.MockReply(&stats.WantStatsReply{})
+	//mockCtx.MockVpp.MockReply(&stats.WantStatsReply{})
 
 	// Create plugin logger
 	pluginLogger := logging.ForPlugin("testname")
@@ -118,7 +118,7 @@ func TestInterfaceStateUpdaterUpDownNotif(t *testing.T) {
 }
 
 // Test simple counter notification
-func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
+/*func TestInterfaceStateUpdaterVnetSimpleCounterNotif(t *testing.T) {
 	conn, index, ifPlugin, notifChan, publishChan := testPluginDataInitialization(t)
 	defer testPluginDataTeardown(ifPlugin, conn)
 
@@ -262,7 +262,7 @@ func TestInterfaceStateUpdaterVnetIntCombinedNotif(t *testing.T) {
 	// to be in same order as the ones going into notifChan.
 	Expect(outPackets).Should(BeEquivalentTo(3000))
 	Expect(outBytes).Should(BeEquivalentTo(8000))
-}
+}*/
 
 // Test SwInterfaceDetails notification
 func TestInterfaceStateUpdaterSwInterfaceDetailsNotif(t *testing.T) {

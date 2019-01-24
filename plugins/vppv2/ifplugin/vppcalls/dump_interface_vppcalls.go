@@ -21,15 +21,15 @@ import (
 	"strings"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
-	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
+	"github.com/ligato/vpp-binapi/binapi/dhcp"
+	binapi_interface "github.com/ligato/vpp-binapi/binapi/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/ip"
+	"github.com/ligato/vpp-binapi/binapi/ipsec"
+	"github.com/ligato/vpp-binapi/binapi/memif"
+	"github.com/ligato/vpp-binapi/binapi/tap"
+	"github.com/ligato/vpp-binapi/binapi/tapv2"
+	"github.com/ligato/vpp-binapi/binapi/vmxnet3"
+	"github.com/ligato/vpp-binapi/binapi/vxlan"
 )
 
 // Default VPP MTU value

@@ -19,10 +19,10 @@ import (
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 	. "github.com/onsi/gomega"
 )
 

@@ -17,9 +17,9 @@ package vppcalls
 import (
 	"testing"
 
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	acl_api "github.com/ligato/vpp-binapi/binapi/acl"
 	. "github.com/onsi/gomega"
 )
 

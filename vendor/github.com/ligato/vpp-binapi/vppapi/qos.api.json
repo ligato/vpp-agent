@@ -1,0 +1,243 @@
+{
+    "messages": [
+        [
+            "qos_record_enable_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "vl_api_qos_source_t",
+                "input_source"
+            ],
+            [
+                "u8",
+                "enable"
+            ],
+            {
+                "crc": "0xf768050f"
+            }
+        ],
+        [
+            "qos_record_enable_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "qos_egress_map_update",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "map_id"
+            ],
+            [
+                "vl_api_qos_egress_map_row_t",
+                "rows",
+                4
+            ],
+            {
+                "crc": "0x5d5c3cad"
+            }
+        ],
+        [
+            "qos_egress_map_update_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "qos_egress_map_delete",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "map_id"
+            ],
+            {
+                "crc": "0xdaab68c1"
+            }
+        ],
+        [
+            "qos_egress_map_delete_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "qos_mark_enable_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "map_id"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "vl_api_qos_source_t",
+                "output_source"
+            ],
+            [
+                "u8",
+                "enable"
+            ],
+            {
+                "crc": "0x3990ab06"
+            }
+        ],
+        [
+            "qos_mark_enable_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0xa23036b4",
+    "unions": [],
+    "services": {
+        "qos_record_enable_disable": {
+            "reply": "qos_record_enable_disable_reply"
+        },
+        "qos_mark_enable_disable": {
+            "reply": "qos_mark_enable_disable_reply"
+        },
+        "qos_egress_map_delete": {
+            "reply": "qos_egress_map_delete_reply"
+        },
+        "qos_egress_map_update": {
+            "reply": "qos_egress_map_update_reply"
+        }
+    },
+    "enums": [
+        [
+            "qos_source",
+            [
+                "QOS_API_SOURCE_EXT",
+                0
+            ],
+            [
+                "QOS_API_SOURCE_VLAN",
+                1
+            ],
+            [
+                "QOS_API_SOURCE_MPLS",
+                2
+            ],
+            [
+                "QOS_API_SOURCE_IP",
+                3
+            ],
+            {
+                "enumtype": "u32"
+            }
+        ]
+    ],
+    "types": [
+        [
+            "qos_egress_map_row",
+            [
+                "u8",
+                "outputs",
+                256
+            ],
+            {
+                "crc": "0xd3bbaed6"
+            }
+        ]
+    ],
+    "aliases": {}
+}

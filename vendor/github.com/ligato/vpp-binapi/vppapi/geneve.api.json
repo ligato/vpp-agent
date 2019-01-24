@@ -1,0 +1,213 @@
+{
+    "messages": [
+        [
+            "geneve_add_del_tunnel",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "is_add"
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            [
+                "u8",
+                "local_address",
+                16
+            ],
+            [
+                "u8",
+                "remote_address",
+                16
+            ],
+            [
+                "u32",
+                "mcast_sw_if_index"
+            ],
+            [
+                "u32",
+                "encap_vrf_id"
+            ],
+            [
+                "u32",
+                "decap_next_index"
+            ],
+            [
+                "u32",
+                "vni"
+            ],
+            {
+                "crc": "0x403cf981"
+            }
+        ],
+        [
+            "geneve_add_del_tunnel_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "geneve_tunnel_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "geneve_tunnel_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "src_address",
+                16
+            ],
+            [
+                "u8",
+                "dst_address",
+                16
+            ],
+            [
+                "u32",
+                "mcast_sw_if_index"
+            ],
+            [
+                "u32",
+                "encap_vrf_id"
+            ],
+            [
+                "u32",
+                "decap_next_index"
+            ],
+            [
+                "u32",
+                "vni"
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            {
+                "crc": "0x024fa31f"
+            }
+        ],
+        [
+            "sw_interface_set_geneve_bypass",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            [
+                "u8",
+                "enable"
+            ],
+            {
+                "crc": "0xe74ca095"
+            }
+        ],
+        [
+            "sw_interface_set_geneve_bypass_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0xe0ad9743",
+    "unions": [],
+    "services": {
+        "geneve_tunnel_dump": {
+            "reply": "geneve_tunnel_details",
+            "stream": true
+        },
+        "geneve_add_del_tunnel": {
+            "reply": "geneve_add_del_tunnel_reply"
+        },
+        "sw_interface_set_geneve_bypass": {
+            "reply": "sw_interface_set_geneve_bypass_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	govppapi "git.fd.io/govpp.git/api"
-	aclapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	aclapi "github.com/ligato/vpp-binapi/binapi/acl"
 )
 
 // GetACLPluginVersion retrieves ACL plugin version.

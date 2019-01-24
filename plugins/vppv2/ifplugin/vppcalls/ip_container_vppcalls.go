@@ -16,7 +16,7 @@ package vppcalls
 
 import (
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-binapi/binapi/ip"
 )
 
 const (

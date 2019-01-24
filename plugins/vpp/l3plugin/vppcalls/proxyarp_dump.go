@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net"
 
-	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	l3binapi "github.com/ligato/vpp-binapi/binapi/ip"
 )
 
 // ProxyArpRangesDetails holds info about proxy ARP range as a proto modeled data

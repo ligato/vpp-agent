@@ -23,14 +23,14 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
-	l22 "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	l22 "github.com/ligato/vpp-binapi/binapi/l2"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 	. "github.com/onsi/gomega"
 )
 

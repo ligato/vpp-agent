@@ -17,8 +17,8 @@ package vppcalls_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/interfaces"
 	. "github.com/onsi/gomega"
 )
 

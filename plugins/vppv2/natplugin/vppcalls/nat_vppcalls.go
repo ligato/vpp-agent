@@ -15,13 +15,12 @@
 package vppcalls
 
 import (
-	"math"
 	"net"
 
 	"github.com/pkg/errors"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
+	binapi "github.com/ligato/vpp-binapi/binapi/nat"
 )
 
 // Num protocol representation
@@ -286,6 +285,7 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	// parse external IP address
+	// FIXME: move to Validate in descriptor
 	exIPAddrByte := net.ParseIP(mapping.ExternalIp).To4()
 	if exIPAddrByte == nil {
 		return errors.Errorf("cannot configure LB static mapping for DNAT %s: unable to parse external IP %s",
@@ -293,29 +293,21 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	}
 
 	// In this case, external port is required
+	// FIXME: move to Validate in descriptor
 	if mapping.ExternalPort == 0 {
 		return errors.Errorf("cannot configure LB static mapping for DNAT %s: external port is not set", dnatLabel)
 	}
 
 	// Transform local IP/Ports
-	var (
-		locals   []binapi.Nat44LbAddrPort
-		localNum int
-	)
+	var locals []binapi.Nat44LbAddrPort
 	for _, local := range mapping.LocalIps {
-		// TODO: this is a temporary solution
-		// once LocalNum uses bigger range than uint8 this check should be removed
-		// as well as the cast below uint8(len...
-		localNum++
-		if localNum > math.MaxUint8 {
-			h.log.Warnf("Only the first %v local addresses will be programmed", math.MaxUint8)
-			break
-		}
+		// FIXME: move to Validate in descriptor
 		if local.LocalPort == 0 {
 			return errors.Errorf("cannot set local IP/Port for DNAT mapping %s: port is missing",
 				dnatLabel)
 		}
 
+		// FIXME: move to Validate in descriptor
 		localIP := net.ParseIP(local.LocalIp).To4()
 		if localIP == nil {
 			return errors.Errorf("cannot set local IP/Port for DNAT mapping %s: unable to parse local IP %v",
@@ -333,7 +325,6 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(mapping *nat.DNat44_StaticMap
 	req := &binapi.Nat44AddDelLbStaticMapping{
 		Tag:          []byte(dnatLabel),
 		Locals:       locals,
-		LocalNum:     uint8(len(locals)),
 		ExternalAddr: exIPAddrByte,
 		ExternalPort: uint16(mapping.ExternalPort),
 		Protocol:     h.protocolNBValueToNumber(mapping.Protocol),

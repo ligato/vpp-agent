@@ -23,11 +23,11 @@ import (
 	govppcore "git.fd.io/govpp.git/core"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/l2idx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 	. "github.com/onsi/gomega"
 	logrus2 "github.com/sirupsen/logrus"
 )

@@ -1,0 +1,340 @@
+{
+    "messages": [
+        [
+            "set_ipfix_exporter",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "collector_address",
+                16
+            ],
+            [
+                "u16",
+                "collector_port"
+            ],
+            [
+                "u8",
+                "src_address",
+                16
+            ],
+            [
+                "u32",
+                "vrf_id"
+            ],
+            [
+                "u32",
+                "path_mtu"
+            ],
+            [
+                "u32",
+                "template_interval"
+            ],
+            [
+                "u8",
+                "udp_checksum"
+            ],
+            {
+                "crc": "0x4ff71dea"
+            }
+        ],
+        [
+            "set_ipfix_exporter_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "ipfix_exporter_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            {
+                "crc": "0x51077d14"
+            }
+        ],
+        [
+            "ipfix_exporter_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "collector_address",
+                16
+            ],
+            [
+                "u16",
+                "collector_port"
+            ],
+            [
+                "u8",
+                "src_address",
+                16
+            ],
+            [
+                "u32",
+                "vrf_id"
+            ],
+            [
+                "u32",
+                "path_mtu"
+            ],
+            [
+                "u32",
+                "template_interval"
+            ],
+            [
+                "u8",
+                "udp_checksum"
+            ],
+            {
+                "crc": "0x742dddee"
+            }
+        ],
+        [
+            "set_ipfix_classify_stream",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "domain_id"
+            ],
+            [
+                "u16",
+                "src_port"
+            ],
+            {
+                "crc": "0xc9cbe053"
+            }
+        ],
+        [
+            "set_ipfix_classify_stream_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "ipfix_classify_stream_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            {
+                "crc": "0x51077d14"
+            }
+        ],
+        [
+            "ipfix_classify_stream_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "domain_id"
+            ],
+            [
+                "u16",
+                "src_port"
+            ],
+            {
+                "crc": "0x2903539d"
+            }
+        ],
+        [
+            "ipfix_classify_table_add_del",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "table_id"
+            ],
+            [
+                "u8",
+                "ip_version"
+            ],
+            [
+                "u8",
+                "transport_protocol"
+            ],
+            [
+                "u8",
+                "is_add"
+            ],
+            {
+                "crc": "0x48efe167"
+            }
+        ],
+        [
+            "ipfix_classify_table_add_del_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "ipfix_classify_table_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            {
+                "crc": "0x51077d14"
+            }
+        ],
+        [
+            "ipfix_classify_table_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "table_id"
+            ],
+            [
+                "u8",
+                "ip_version"
+            ],
+            [
+                "u8",
+                "transport_protocol"
+            ],
+            {
+                "crc": "0x973d0d5b"
+            }
+        ]
+    ],
+    "vl_api_version": "0x3e08644f",
+    "unions": [],
+    "services": {
+        "ipfix_exporter_dump": {
+            "reply": "ipfix_exporter_details",
+            "stream": true
+        },
+        "ipfix_classify_stream_dump": {
+            "reply": "ipfix_classify_stream_details",
+            "stream": true
+        },
+        "ipfix_classify_table_add_del": {
+            "reply": "ipfix_classify_table_add_del_reply"
+        },
+        "set_ipfix_classify_stream": {
+            "reply": "set_ipfix_classify_stream_reply"
+        },
+        "set_ipfix_exporter": {
+            "reply": "set_ipfix_exporter_reply"
+        },
+        "ipfix_classify_table_dump": {
+            "reply": "ipfix_classify_table_details",
+            "stream": true
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

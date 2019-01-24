@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/af_packet"
 )
 
 // AddAfPacketInterface implements AfPacket handler.

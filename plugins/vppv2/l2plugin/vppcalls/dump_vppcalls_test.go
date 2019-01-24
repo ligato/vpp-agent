@@ -20,11 +20,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/pkg/idxvpp2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 	. "github.com/onsi/gomega"
 )
 

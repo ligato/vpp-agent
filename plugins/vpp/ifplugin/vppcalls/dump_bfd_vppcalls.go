@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"net"
 
-	bfdapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/bfd"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
+	bfdapi "github.com/ligato/vpp-binapi/binapi/bfd"
 )
 
 // BfdDetails is the wrapper structure for the BFD northbound API structure.

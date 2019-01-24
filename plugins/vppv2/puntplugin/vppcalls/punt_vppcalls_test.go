@@ -18,14 +18,14 @@ import (
 	"net"
 	"testing"
 
-	ipApi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	ipApi "github.com/ligato/vpp-binapi/binapi/ip"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	api "github.com/ligato/vpp-binapi/binapi/punt"
 	. "github.com/onsi/gomega"
 )
 

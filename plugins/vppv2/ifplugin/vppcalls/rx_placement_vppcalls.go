@@ -16,7 +16,7 @@ package vppcalls
 
 import (
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	binapi_interface "github.com/ligato/vpp-binapi/binapi/interfaces"
 )
 
 // SetRxPlacement implements interface handler.

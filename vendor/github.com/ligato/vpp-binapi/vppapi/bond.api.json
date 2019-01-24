@@ -1,0 +1,338 @@
+{
+    "messages": [
+        [
+            "bond_create",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "id"
+            ],
+            [
+                "u8",
+                "use_custom_mac"
+            ],
+            [
+                "u8",
+                "mac_address",
+                6
+            ],
+            [
+                "u8",
+                "mode"
+            ],
+            [
+                "u8",
+                "lb"
+            ],
+            {
+                "crc": "0x3b21645d"
+            }
+        ],
+        [
+            "bond_create_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "bond_delete",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "bond_delete_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "bond_enslave",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u32",
+                "bond_sw_if_index"
+            ],
+            [
+                "u8",
+                "is_passive"
+            ],
+            [
+                "u8",
+                "is_long_timeout"
+            ],
+            {
+                "crc": "0x0ded34f6"
+            }
+        ],
+        [
+            "bond_enslave_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "bond_detach_slave",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "bond_detach_slave_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "sw_interface_bond_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            {
+                "crc": "0x51077d14"
+            }
+        ],
+        [
+            "sw_interface_bond_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u32",
+                "id"
+            ],
+            [
+                "u8",
+                "interface_name",
+                64
+            ],
+            [
+                "u8",
+                "mode"
+            ],
+            [
+                "u8",
+                "lb"
+            ],
+            [
+                "u32",
+                "active_slaves"
+            ],
+            [
+                "u32",
+                "slaves"
+            ],
+            {
+                "crc": "0x22e48daa"
+            }
+        ],
+        [
+            "sw_interface_slave_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "sw_interface_slave_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "interface_name",
+                64
+            ],
+            [
+                "u8",
+                "is_passive"
+            ],
+            [
+                "u8",
+                "is_long_timeout"
+            ],
+            {
+                "crc": "0xd5c58e45"
+            }
+        ]
+    ],
+    "vl_api_version": "0x33cb944c",
+    "unions": [],
+    "services": {
+        "bond_enslave": {
+            "reply": "bond_enslave_reply"
+        },
+        "bond_create": {
+            "reply": "bond_create_reply"
+        },
+        "bond_detach_slave": {
+            "reply": "bond_detach_slave_reply"
+        },
+        "sw_interface_bond_dump": {
+            "reply": "sw_interface_bond_details",
+            "stream": true
+        },
+        "sw_interface_slave_dump": {
+            "reply": "sw_interface_slave_details",
+            "stream": true
+        },
+        "bond_delete": {
+            "reply": "bond_delete_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

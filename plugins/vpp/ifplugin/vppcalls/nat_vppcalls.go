@@ -19,9 +19,10 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	nat2 "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"math"
+
+	nat2 "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-binapi/binapi/nat"
 )
 
 // Num protocol representation

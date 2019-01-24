@@ -15,13 +15,12 @@
 package vppcalls
 
 import (
-	"net"
 	"strings"
 
 	"github.com/go-errors/errors"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	api_ip "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	api_punt "github.com/ligato/vpp-agent/plugins/vpp/binapi/punt"
+	api_ip "github.com/ligato/vpp-binapi/binapi/ip"
+	api_punt "github.com/ligato/vpp-binapi/binapi/punt"
 )
 
 // AddPunt configures new punt entry
@@ -34,79 +33,36 @@ func (h *PuntVppHandler) DeletePunt(puntCfg *punt.ToHost) error {
 	return h.handlePuntToHost(puntCfg, false)
 }
 
-// RegisterPuntSocket registers new punt to socket
-func (h *PuntVppHandler) RegisterPuntSocket(puntCfg *punt.ToHost) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
-		return h.registerPuntWithSocketIPv4(puntCfg)
-	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
-		return h.registerPuntWithSocketIPv6(puntCfg)
+func (h *PuntVppHandler) handlePuntToHost(toHost *punt.ToHost, isAdd bool) error {
+	req := &api_punt.SetPunt{
+		IsAdd: boolToUint(isAdd),
+		Punt: api_punt.Punt{
+			IPv:        resolveL3Proto(toHost.L3Protocol),
+			L4Protocol: resolveL4Proto(toHost.L4Protocol),
+			L4Port:     uint16(toHost.Port),
+		},
 	}
-	// if L3 is set to all, register both, IPv4 and IPv6
-	err := h.registerPuntWithSocketIPv4(puntCfg)
-	if err != nil {
-		return err
-	}
-	return h.registerPuntWithSocketIPv6(puntCfg)
-}
-
-// DeregisterPuntSocket removes existing punt to socket sogistration
-func (h *PuntVppHandler) DeregisterPuntSocket(puntCfg *punt.ToHost) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
-		return h.registerPuntWithSocketIPv4(puntCfg)
-	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
-		return h.registerPuntWithSocketIPv6(puntCfg)
-	}
-	// if L3 is set to all, deregister both, IPv4 and IPv6
-	err := h.registerPuntWithSocketIPv4(puntCfg)
-	if err != nil {
-		return err
-	}
-	return h.registerPuntWithSocketIPv6(puntCfg)
-}
-
-// AddPuntRedirect adds new redirect entry
-func (h *PuntVppHandler) AddPuntRedirect(puntCfg *punt.IPRedirect) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
-		return h.handlePuntRedirectIPv4(puntCfg, true)
-	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
-		return h.handlePuntRedirectIPv6(puntCfg, true)
-	}
-	// un-configure both, IPv4 and IPv6
-	err := h.handlePuntRedirectIPv4(puntCfg, true)
-	if err != nil {
-		return err
-	}
-	return h.handlePuntRedirectIPv6(puntCfg, true)
-}
-
-// DeletePuntRedirect removes existing redirect entry
-func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IPRedirect) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 {
-		return h.handlePuntRedirectIPv4(puntCfg, false)
-	} else if puntCfg.L3Protocol == punt.L3Protocol_IPv6 {
-		return h.handlePuntRedirectIPv6(puntCfg, false)
-	}
-	// un-configure both, IPv4 and IPv6
-	err := h.handlePuntRedirectIPv6(puntCfg, false)
-	if err != nil {
-		return err
-	}
-	return h.handlePuntRedirectIPv4(puntCfg, false)
-}
-
-func (h *PuntVppHandler) handlePuntToHost(punt *punt.ToHost, isAdd bool) error {
-	req := &api_punt.Punt{
-		IsAdd:      boolToUint(isAdd),
-		IPv:        resolveL3Proto(punt.L3Protocol),
-		L4Protocol: resolveL4Proto(punt.L4Protocol),
-		L4Port:     uint16(punt.Port),
-	}
-	reply := &api_punt.PuntReply{}
+	reply := &api_punt.SetPuntReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// RegisterPuntSocket registers new punt to socket
+func (h *PuntVppHandler) RegisterPuntSocket(puntCfg *punt.ToHost) error {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.registerPuntWithSocketIPv4(puntCfg); err != nil {
+			return err
+		}
+	}
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.registerPuntWithSocketIPv6(puntCfg); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -118,19 +74,21 @@ func (h *PuntVppHandler) registerPuntWithSocketIPv6(punt *punt.ToHost) error {
 	return h.registerPuntWithSocket(punt, false)
 }
 
-func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) error {
-	pathName := []byte(punt.SocketPath)
-	pathByte := make([]byte, 108) // linux sun_path defined to 108 bytes as by unix(7)
-	for i, c := range pathName {
-		pathByte[i] = c
-	}
+func (h *PuntVppHandler) registerPuntWithSocket(toHost *punt.ToHost, isIPv4 bool) error {
+	//pathName := []byte(toHost.SocketPath)
+	//pathByte := make([]byte, 108) // linux sun_path defined to 108 bytes as by unix(7)
+	//for i, c := range pathName {
+	//	pathByte[i] = c
+	//}
 
 	req := &api_punt.PuntSocketRegister{
 		HeaderVersion: 1,
-		IsIP4:         boolToUint(isIPv4),
-		L4Protocol:    resolveL4Proto(punt.L4Protocol),
-		L4Port:        uint16(punt.Port),
-		Pathname:      pathByte,
+		Punt: api_punt.Punt{
+			IPv:        resolveL3Proto(toHost.L3Protocol),
+			L4Protocol: resolveL4Proto(toHost.L4Protocol),
+			L4Port:     uint16(toHost.Port),
+		},
+		Pathname: []byte(toHost.SocketPath),
 	}
 	reply := &api_punt.PuntSocketRegisterReply{}
 
@@ -138,10 +96,25 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 		return err
 	}
 
-	p := *punt
+	p := *toHost
 	p.SocketPath = strings.SplitN(string(reply.Pathname), "\x00", 2)[0]
-	socketPathMap[punt.Port] = &p
+	socketPathMap[toHost.Port] = &p
 
+	return nil
+}
+
+// DeregisterPuntSocket removes existing punt to socket sogistration
+func (h *PuntVppHandler) DeregisterPuntSocket(puntCfg *punt.ToHost) error {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.unregisterPuntWithSocketIPv4(puntCfg); err != nil {
+			return err
+		}
+	}
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.unregisterPuntWithSocketIPv6(puntCfg); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -153,11 +126,13 @@ func (h *PuntVppHandler) unregisterPuntWithSocketIPv6(punt *punt.ToHost) error {
 	return h.unregisterPuntWithSocket(punt, false)
 }
 
-func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool) error {
+func (h *PuntVppHandler) unregisterPuntWithSocket(toHost *punt.ToHost, isIPv4 bool) error {
 	req := &api_punt.PuntSocketDeregister{
-		IsIP4:      boolToUint(isIPv4),
-		L4Protocol: resolveL4Proto(punt.L4Protocol),
-		L4Port:     uint16(punt.Port),
+		Punt: api_punt.Punt{
+			IPv:        resolveL3Proto(toHost.L3Protocol),
+			L4Protocol: resolveL4Proto(toHost.L4Protocol),
+			L4Port:     uint16(toHost.Port),
+		},
 	}
 	reply := &api_punt.PuntSocketDeregisterReply{}
 
@@ -165,8 +140,38 @@ func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool
 		return err
 	}
 
-	delete(socketPathMap, punt.Port)
+	delete(socketPathMap, toHost.Port)
 
+	return nil
+}
+
+// AddPuntRedirect adds new redirect entry
+func (h *PuntVppHandler) AddPuntRedirect(puntCfg *punt.IPRedirect) error {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handlePuntRedirectIPv4(puntCfg, true); err != nil {
+			return err
+		}
+	}
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handlePuntRedirectIPv6(puntCfg, true); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DeletePuntRedirect removes existing redirect entry
+func (h *PuntVppHandler) DeletePuntRedirect(puntCfg *punt.IPRedirect) error {
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handlePuntRedirectIPv4(puntCfg, false); err != nil {
+			return err
+		}
+	}
+	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
+		if err := h.handlePuntRedirectIPv6(puntCfg, false); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -198,19 +203,18 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 	}
 
 	// next hop address
-	var nextHop []byte
-	if isIPv4 {
-		nextHop = net.ParseIP(punt.NextHop).To4()
-	} else {
-		nextHop = net.ParseIP(punt.NextHop).To16()
+	nextHop, err := ipToAddress(punt.NextHop)
+	if err != nil {
+		return err
 	}
 
 	req := &api_ip.IPPuntRedirect{
-		IsAdd:       boolToUint(isAdd),
-		IsIP6:       boolToUint(!isIPv4),
-		RxSwIfIndex: rxIfIdx,
-		TxSwIfIndex: txMetadata.SwIfIndex,
-		Nh:          nextHop,
+		IsAdd: boolToUint(isAdd),
+		Punt: api_ip.PuntRedirect{
+			RxSwIfIndex: rxIfIdx,
+			TxSwIfIndex: txMetadata.SwIfIndex,
+			Nh:          nextHop,
+		},
 	}
 	reply := &api_ip.IPPuntRedirectReply{}
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {

@@ -26,11 +26,11 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	bin_api "github.com/ligato/vpp-binapi/binapi/nat"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 )
 
 func TestNat44GlobalConfigDump(t *testing.T) {

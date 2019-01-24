@@ -22,12 +22,12 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/sr"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/srv6"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/srplugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-binapi/binapi/sr"
 	. "github.com/onsi/gomega"
 )
 

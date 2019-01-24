@@ -22,11 +22,11 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
-	nat_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	nat_api "github.com/ligato/vpp-binapi/binapi/nat"
 	. "github.com/onsi/gomega"
 )
 

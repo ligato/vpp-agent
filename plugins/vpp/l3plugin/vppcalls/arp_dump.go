@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net"
 
-	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	l3binapi "github.com/ligato/vpp-binapi/binapi/ip"
 )
 
 // ArpDetails holds info about ARP entry as a proto model

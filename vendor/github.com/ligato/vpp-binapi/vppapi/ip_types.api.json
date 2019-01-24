@@ -1,0 +1,127 @@
+{
+    "messages": [],
+    "vl_api_version": "0x8492dbcc",
+    "unions": [
+        [
+            "address_union",
+            [
+                "vl_api_ip4_address_t",
+                "ip4"
+            ],
+            [
+                "vl_api_ip6_address_t",
+                "ip6"
+            ],
+            {
+                "crc": "0xd68a2fb4"
+            }
+        ]
+    ],
+    "services": {},
+    "enums": [
+        [
+            "address_family",
+            [
+                "ADDRESS_IP4",
+                0
+            ],
+            [
+                "ADDRESS_IP6",
+                1
+            ],
+            {
+                "enumtype": "u32"
+            }
+        ]
+    ],
+    "types": [
+        [
+            "address",
+            [
+                "vl_api_address_family_t",
+                "af"
+            ],
+            [
+                "vl_api_address_union_t",
+                "un"
+            ],
+            {
+                "crc": "0x09f11671"
+            }
+        ],
+        [
+            "prefix",
+            [
+                "vl_api_address_t",
+                "address"
+            ],
+            [
+                "u8",
+                "address_length"
+            ],
+            {
+                "crc": "0x0403aebc"
+            }
+        ],
+        [
+            "mprefix",
+            [
+                "vl_api_address_family_t",
+                "af"
+            ],
+            [
+                "u16",
+                "grp_address_length"
+            ],
+            [
+                "vl_api_address_union_t",
+                "grp_address"
+            ],
+            [
+                "vl_api_address_union_t",
+                "src_address"
+            ],
+            {
+                "crc": "0x1c4cba05"
+            }
+        ],
+        [
+            "ip6_prefix",
+            [
+                "vl_api_ip6_address_t",
+                "prefix"
+            ],
+            [
+                "u8",
+                "len"
+            ],
+            {
+                "crc": "0x779fd64f"
+            }
+        ],
+        [
+            "ip4_prefix",
+            [
+                "vl_api_ip4_address_t",
+                "prefix"
+            ],
+            [
+                "u8",
+                "len"
+            ],
+            {
+                "crc": "0xea8dc11d"
+            }
+        ]
+    ],
+    "aliases": {
+        "ip6_address": {
+            "length": 16,
+            "type": "u8"
+        },
+        "ip4_address": {
+            "length": 4,
+            "type": "u8"
+        }
+    }
+}

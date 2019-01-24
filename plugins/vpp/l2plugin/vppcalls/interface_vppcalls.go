@@ -20,9 +20,9 @@ import (
 	"github.com/go-errors/errors"
 
 	"github.com/ligato/cn-infra/logging"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // SetInterfaceToBridgeDomain implements bridge domain handler. Returns an interface configured to the BD.

@@ -20,8 +20,8 @@ import (
 
 	"github.com/go-errors/errors"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.

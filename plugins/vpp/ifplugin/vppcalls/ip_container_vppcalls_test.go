@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-binapi/binapi/ip"
 	. "github.com/onsi/gomega"
 )
 
