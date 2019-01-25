@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -41,7 +40,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		log.Println("serving file:", img)
+		s.Log.Debug("serving graph image from:", img)
 		http.ServeFile(w, req, img)
 	}
 }
@@ -56,10 +55,6 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 		"fontsize":  "18",
 		"tooltip":   "",
 	}
-	/*if focusPkg != nil {
-		cluster.Attrs["bgcolor"] = "#e6ecfa"
-		cluster.Attrs["label"] = focusPkg.Name
-	}*/
 
 	var (
 		nodes []*dotNode
@@ -76,8 +71,6 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 			return n
 		}
 		attrs := make(dotAttrs)
-
-		fmt.Printf("- key: %q\n", key)
 
 		attrs["tooltip"] = fmt.Sprintf("[ %s ]\n%s", key, proto.MarshalTextString(graphNode.GetValue()))
 
