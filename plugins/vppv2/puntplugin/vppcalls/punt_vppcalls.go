@@ -52,35 +52,7 @@ func (h *PuntVppHandler) handlePuntToHost(toHost *punt.ToHost, isAdd bool) error
 }
 
 // RegisterPuntSocket registers new punt to socket
-func (h *PuntVppHandler) RegisterPuntSocket(puntCfg *punt.ToHost) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.registerPuntWithSocketIPv4(puntCfg); err != nil {
-			return err
-		}
-	}
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.registerPuntWithSocketIPv6(puntCfg); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (h *PuntVppHandler) registerPuntWithSocketIPv4(punt *punt.ToHost) error {
-	return h.registerPuntWithSocket(punt, true)
-}
-
-func (h *PuntVppHandler) registerPuntWithSocketIPv6(punt *punt.ToHost) error {
-	return h.registerPuntWithSocket(punt, false)
-}
-
-func (h *PuntVppHandler) registerPuntWithSocket(toHost *punt.ToHost, isIPv4 bool) error {
-	//pathName := []byte(toHost.SocketPath)
-	//pathByte := make([]byte, 108) // linux sun_path defined to 108 bytes as by unix(7)
-	//for i, c := range pathName {
-	//	pathByte[i] = c
-	//}
-
+func (h *PuntVppHandler) RegisterPuntSocket(toHost *punt.ToHost) error {
 	req := &api_punt.PuntSocketRegister{
 		HeaderVersion: 1,
 		Punt: api_punt.Punt{
@@ -104,29 +76,7 @@ func (h *PuntVppHandler) registerPuntWithSocket(toHost *punt.ToHost, isIPv4 bool
 }
 
 // DeregisterPuntSocket removes existing punt to socket sogistration
-func (h *PuntVppHandler) DeregisterPuntSocket(puntCfg *punt.ToHost) error {
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv4 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.unregisterPuntWithSocketIPv4(puntCfg); err != nil {
-			return err
-		}
-	}
-	if puntCfg.L3Protocol == punt.L3Protocol_IPv6 || puntCfg.L3Protocol == punt.L3Protocol_ALL {
-		if err := h.unregisterPuntWithSocketIPv6(puntCfg); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (h *PuntVppHandler) unregisterPuntWithSocketIPv4(punt *punt.ToHost) error {
-	return h.unregisterPuntWithSocket(punt, true)
-}
-
-func (h *PuntVppHandler) unregisterPuntWithSocketIPv6(punt *punt.ToHost) error {
-	return h.unregisterPuntWithSocket(punt, false)
-}
-
-func (h *PuntVppHandler) unregisterPuntWithSocket(toHost *punt.ToHost, isIPv4 bool) error {
+func (h *PuntVppHandler) DeregisterPuntSocket(toHost *punt.ToHost) error {
 	req := &api_punt.PuntSocketDeregister{
 		Punt: api_punt.Punt{
 			IPv:        resolveL3Proto(toHost.L3Protocol),
