@@ -1,0 +1,5 @@
+	Address: 	${sidAddress}
+	Behavior: 	End.AD (Endpoint with dynamic proxy to SR-unaware appliance)
+	Next-hop:	${serviceaddress}
+	Outgoing iface:	${outinterface}
+	Incoming iface:	${ininterface}
