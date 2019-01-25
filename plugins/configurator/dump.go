@@ -221,7 +221,7 @@ func (svc *dumpService) DumpARPs() ([]*vpp_l3.ARPEntry, error) {
 
 // DumpPunt reads VPP Punt socket registrations and returns them as an *PuntResponse.
 func (svc *dumpService) DumpPunt() (punts []*vpp_punt.ToHost, err error) {
-	dump, err := svc.puntHandler.DumpPuntRegisteredSockets()
+	dump, err := svc.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
 		return nil, err
 	}

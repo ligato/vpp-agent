@@ -49,9 +49,9 @@ type PuntVPPWrite interface {
 
 // PuntVPPRead provides read methods for punt
 type PuntVPPRead interface {
-	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
+	// DumpRegisteredPuntSockets returns all punt socket registrations known to the VPP agent
 	// TODO since the API to dump sockets is missing, the method works only with the entries in local cache
-	DumpPuntRegisteredSockets() ([]*PuntDetails, error)
+	DumpRegisteredPuntSockets() ([]*PuntDetails, error)
 }
 
 // PuntVppHandler is accessor for punt-related vppcalls methods.

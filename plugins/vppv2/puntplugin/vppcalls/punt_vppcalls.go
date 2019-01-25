@@ -24,13 +24,13 @@ import (
 )
 
 // AddPunt configures new punt entry
-func (h *PuntVppHandler) AddPunt(puntCfg *punt.ToHost) error {
-	return h.handlePuntToHost(puntCfg, true)
+func (h *PuntVppHandler) AddPunt(p *punt.ToHost) error {
+	return h.handlePuntToHost(p, true)
 }
 
 // DeletePunt removes punt entry
-func (h *PuntVppHandler) DeletePunt(puntCfg *punt.ToHost) error {
-	return h.handlePuntToHost(puntCfg, false)
+func (h *PuntVppHandler) DeletePunt(p *punt.ToHost) error {
+	return h.handlePuntToHost(p, false)
 }
 
 func (h *PuntVppHandler) handlePuntToHost(toHost *punt.ToHost, isAdd bool) error {
@@ -44,6 +44,7 @@ func (h *PuntVppHandler) handlePuntToHost(toHost *punt.ToHost, isAdd bool) error
 	}
 	reply := &api_punt.SetPuntReply{}
 
+	h.log.Debugf("Setting punt: %+v", req.Punt)
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
@@ -64,9 +65,11 @@ func (h *PuntVppHandler) RegisterPuntSocket(toHost *punt.ToHost) error {
 	}
 	reply := &api_punt.PuntSocketRegisterReply{}
 
+	h.log.Debugf("Registering punt socket: %+v (Pathname: %s)", req.Punt, req.Pathname)
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
+	h.log.Infof("Punt socket registered (Pathname: %s)", reply.Pathname)
 
 	p := *toHost
 	p.SocketPath = strings.SplitN(string(reply.Pathname), "\x00", 2)[0]
@@ -172,6 +175,26 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 	}
 
 	return nil
+}
+
+func parseL3Proto(p uint8) punt.L3Protocol {
+	switch p {
+	case uint8(punt.L3Protocol_IPv4), uint8(punt.L3Protocol_IPv6):
+		return punt.L3Protocol(p)
+	case ^uint8(0):
+		return punt.L3Protocol_ALL
+	}
+	return punt.L3Protocol_UNDEFINED_L3
+}
+
+func parseL4Proto(p uint8) punt.L4Protocol {
+	switch p {
+	case uint8(punt.L4Protocol_TCP):
+		return punt.L4Protocol_TCP
+	case uint8(punt.L4Protocol_UDP):
+		return punt.L4Protocol_UDP
+	}
+	return punt.L4Protocol_UNDEFINED_L4
 }
 
 func resolveL3Proto(protocol punt.L3Protocol) uint8 {
