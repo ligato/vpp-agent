@@ -52,6 +52,12 @@ enum ValueState {
     // in the <FailedValueDetails> structure available via <details> for failed
     // value.
     FAILED = 9;
+
+    // ValueState_RETRYING marks unsucessfully applied (NB) value, for which,
+    // however, one or more attempts to fix the error by repeating the last
+    // operation are planned, and only if all the retries fail, the value will
+    // then transit to the FAILED state.
+    RETRYING = 10;
 }
 
 enum TxnOperation {

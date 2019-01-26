@@ -138,7 +138,7 @@ func (p *Plugin) watchEvents() {
 			}
 
 			ctx := context.Background()
-			//ctx = kvs.WithRetry(ctx, time.Second, true)
+			ctx = kvs.WithRetryDefault(ctx)
 			_, err = p.PushData(ctx, kvPairs)
 			e.Done(err)
 
@@ -200,7 +200,7 @@ func (p *Plugin) watchEvents() {
 
 			ctx := context.Background()
 			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
-			//ctx = kvs.WithRetry(ctx, time.Second, true)
+			ctx = kvs.WithRetryDefault(ctx)
 			_, err := p.PushData(ctx, kvPairs)
 			e.Done(err)
 

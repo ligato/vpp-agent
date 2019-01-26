@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
+	//"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -29,7 +29,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("DOT:\n%s\n", output)
+		//fmt.Printf("DOT:\n%s\n", output)
 
 		img, err := dotToImage("", "svg", output)
 		if err != nil {
@@ -37,7 +37,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		log.Println("serving file:", img)
+		//log.Println("serving file:", img)
 		http.ServeFile(w, req, img)
 	}
 }
@@ -73,7 +73,7 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 		}
 		attrs := make(dotAttrs)
 
-		fmt.Printf("- key: %q\n", key)
+		//fmt.Printf("- key: %q\n", key)
 
 		if label := graphNode.GetLabel(); label != "" {
 			attrs["label"] = label
@@ -126,6 +126,8 @@ func renderDotOutput(g graph.ReadAccess) ([]byte, error) {
 			attrs["fillcolor"] = "Maroon"
 		case api.ValueState_FAILED:
 			attrs["fillcolor"] = "Orangered"
+		case api.ValueState_RETRYING:
+			attrs["fillcolor"] = "Deeppink"
 		}
 
 		n := &dotNode{

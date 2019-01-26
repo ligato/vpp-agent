@@ -286,28 +286,19 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 		if op.NewErr == nil {
 			continue
 		}
-
-		// is the value in the failed state at the end of the transaction?
 		node := graphR.GetNode(op.Key)
 		if node == nil {
 			continue
 		}
-		if getNodeState(node) != kvs.ValueState_FAILED {
-			continue
-		}
+		state := getNodeState(node)
 		baseKey := getNodeBaseKey(node)
-		failed.Add(baseKey)
-
-		// can the value be retried?
-		retriableErr, _ := getNodeError(node)
-		if !retriableErr {
-			continue
+		if state == kvs.ValueState_FAILED {
+			failed.Add(baseKey)
 		}
-		lastUpdate := getNodeLastUpdate(node)
-		if !lastUpdate.retryEnabled || lastUpdate.retryArgs == nil {
-			continue
+		if state == kvs.ValueState_RETRYING {
+			failed.Add(baseKey)
+			toRetry.Add(baseKey)
 		}
-		toRetry.Add(baseKey)
 	}
 	graphR.Release()
 
@@ -336,10 +327,6 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 			attempt := 1
 			if alreadyRetried {
 				attempt = txn.retry.attempt + 1
-			}
-			if lastUpdate.retryArgs.MaxCount > 0 && attempt > lastUpdate.retryArgs.MaxCount {
-				// value has run out of retry attempts
-				continue
 			}
 			// determine which transaction this retry is for
 			seqNum := txn.seqNum

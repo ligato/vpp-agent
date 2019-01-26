@@ -222,7 +222,7 @@ func getNodeLastUpdate(node graph.Node) *LastUpdateFlag {
 
 // getNodeLastOperation returns last operation executed over the given node.
 func getNodeLastOperation(node graph.Node) kvs.TxnOperation {
-	if node != nil {
+	if node != nil && getNodeState(node) != kvs.ValueState_RETRIEVED {
 		lastUpdate := getNodeLastUpdate(node)
 		if lastUpdate != nil {
 			return lastUpdate.txnOp

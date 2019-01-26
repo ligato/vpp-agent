@@ -174,8 +174,8 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	// if the value is already "broken" by this transaction, do not try to update
 	// anymore, unless this is a revert
 	// (needs to be refreshed first in the post-processing stage)
-	if !args.kv.isRevert && getNodeState(node) == kvs.ValueState_FAILED &&
-		prevUpdate != nil && prevUpdate.txnSeqNum == args.txn.seqNum {
+	if (prevState == kvs.ValueState_FAILED || prevState == kvs.ValueState_RETRYING) &&
+		!args.kv.isRevert && prevUpdate != nil && prevUpdate.txnSeqNum == args.txn.seqNum {
 		_, prevErr := getNodeError(node)
 		return executed, prevValue, prevErr
 	}
@@ -193,7 +193,7 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	// detect value state changes
 	if !args.dryRun {
 		nodeR := args.graphW.GetNode(args.kv.key)
-		if prevState != getNodeState(nodeR) || prevOp != getNodeLastOperation(nodeR) ||
+		if prevUpdate == nil || prevState != getNodeState(nodeR) || prevOp != getNodeLastOperation(nodeR) ||
 			prevErr != getNodeErrorString(nodeR) || !equalValueDetails(prevDetails, getValueDetails(nodeR)) {
 			s.updatedStates.Add(args.baseKey)
 		}
@@ -242,9 +242,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			}
 		} else {
 			txnOp.NewErr = err
-			txnOp.NewState = kvs.ValueState_FAILED
-			s.updateNodeState(node, txnOp.NewState)
-			node.SetFlags(&ErrorFlag{err: err, retriable: retriableErr})
+			txnOp.NewState = s.markFailedValue(node, args, err, retriableErr)
 		}
 		executed = append(executed, txnOp)
 	}()
@@ -384,11 +382,9 @@ func (s *Scheduler) applyAdd(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *
 		if err != nil {
 			// add failed => assume the value is unavailable
 			node.SetFlags(&UnavailValueFlag{})
-			txnOp.NewErr = err
-			txnOp.NewState = kvs.ValueState_FAILED
-			s.updateNodeState(node, txnOp.NewState)
 			retriableErr := handler.isRetriableFailure(err)
-			node.SetFlags(&ErrorFlag{err: err, retriable: retriableErr})
+			txnOp.NewErr = err
+			txnOp.NewState = s.markFailedValue(node, args, err, retriableErr)
 			return kvs.RecordedTxnOps{txnOp}, err
 		}
 
@@ -524,11 +520,9 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		}
 
 		if err != nil {
-			txnOp.NewErr = err
-			txnOp.NewState = kvs.ValueState_FAILED
-			s.updateNodeState(node, txnOp.NewState)
 			retriableErr := handler.isRetriableFailure(err)
-			node.SetFlags(&ErrorFlag{err: err, retriable: retriableErr})
+			txnOp.NewErr = err
+			txnOp.NewState = s.markFailedValue(node, args, err, retriableErr)
 			executed = append(executed, txnOp)
 			return
 		}
@@ -756,6 +750,35 @@ func (s *Scheduler) updateNodeState(node graph.NodeRW, newState kvs.ValueState) 
 	if getNodeState(node) != newState {
 		node.SetFlags(&ValueStateFlag{valueState: newState})
 	}
+}
+
+func (s *Scheduler) markFailedValue(node graph.NodeRW, args *applyValueArgs, err error,
+	retriableErr bool) (newState kvs.ValueState) {
+
+	// decide value state between FAILED and RETRYING
+	newState = kvs.ValueState_FAILED
+	toBeReverted := args.txn.txnType == kvs.NBTransaction && args.txn.nb.revertOnFailure && !args.kv.isRevert
+	if retriableErr && !toBeReverted {
+		// consider operation retry
+		var alreadyRetried bool
+		if args.txn.txnType == kvs.RetryFailedOps {
+			baseKey := getNodeBaseKey(node)
+			_, alreadyRetried = args.txn.retry.keys[baseKey]
+		}
+		attempt := 1
+		if alreadyRetried {
+			attempt = args.txn.retry.attempt + 1
+		}
+		lastUpdate := getNodeLastUpdate(node)
+		if lastUpdate.retryEnabled && lastUpdate.retryArgs != nil &&
+			(lastUpdate.retryArgs.MaxCount == 0 || attempt <= lastUpdate.retryArgs.MaxCount) {
+			// retry is allowed
+			newState = kvs.ValueState_RETRYING
+		}
+	}
+	s.updateNodeState(node, newState)
+	node.SetFlags(&ErrorFlag{err: err, retriable: retriableErr})
+	return newState
 }
 
 // validDerivedKV check validity of a derived KV pair.
