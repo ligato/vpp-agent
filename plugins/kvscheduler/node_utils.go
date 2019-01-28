@@ -18,6 +18,7 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"github.com/gogo/protobuf/proto"
 )
 
 func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []kvs.KVWithMetadata) {
@@ -220,6 +221,15 @@ func getNodeLastUpdate(node graph.Node) *LastUpdateFlag {
 	return flag.(*LastUpdateFlag)
 }
 
+// getNodeLastAppliedValue return the last applied value for the given node
+func getNodeLastAppliedValue(node graph.Node) proto.Message {
+	lastUpdate := getNodeLastUpdate(node)
+	if lastUpdate == nil {
+		return nil
+	}
+	return lastUpdate.value
+}
+
 // getNodeLastOperation returns last operation executed over the given node.
 func getNodeLastOperation(node graph.Node) kvs.TxnOperation {
 	if node != nil && getNodeState(node) != kvs.ValueState_RETRIEVED {
@@ -258,6 +268,9 @@ func getNodeBaseKey(node graph.Node) string {
 
 // isNodePending checks whether the node is available for dependency resolution.
 func isNodeAvailable(node graph.Node) bool {
+	if node == nil {
+		return false
+	}
 	return node.GetFlag(UnavailValueFlagName) == nil
 }
 

@@ -16,9 +16,10 @@ package kvscheduler
 
 import (
 	"context"
+	"errors"
+	"os"
 	"sync"
 	"time"
-	"errors"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -53,6 +54,13 @@ const (
 	// by default, transactions from the first hour of runtime stay permanently
 	// recorded
 	defaultPermanentlyRecordedInitPeriod = 60 // in minutes
+
+	// name of the environment variable used to enable verification after every transaction
+	verifyModeEnv = "KVSCHED_VERIFY_MODE"
+
+	// name of the environment variable used to trigger log messages showing
+	// graph traversal
+	logGraphWalkEnv = "KVSCHED_LOG_GRAPH_WALK"
 )
 
 // Scheduler is a CN-infra plugin implementing KVScheduler.
@@ -84,13 +92,17 @@ type Scheduler struct {
 	resyncCount  uint
 
 	// value status
-	updatedStates    utils.KeySet  // base values with updated status
+	updatedStates    utils.KeySet // base values with updated status
 	valStateWatchers []valStateWatcher
 
 	// TXN history
 	historyLock sync.Mutex
 	txnHistory  []*kvs.RecordedTxn // ordered from the oldest to the latest
 	startTime   time.Time
+
+	// debugging
+	verifyMode   bool
+	logGraphWalk bool
 }
 
 // Deps lists dependencies of the scheduler.
@@ -151,6 +163,10 @@ func (s *Scheduler) Init() error {
 	s.updatedStates = utils.NewSliceBasedKeySet()
 	// record startup time
 	s.startTime = time.Now()
+
+	// enable or disable debugging mode
+	s.verifyMode = os.Getenv(verifyModeEnv) != ""
+	s.logGraphWalk = os.Getenv(logGraphWalkEnv) != ""
 
 	// go routine processing serialized transactions
 	s.wg.Add(1)

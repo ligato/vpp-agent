@@ -77,13 +77,10 @@ func checkRecordedValues(recorded, expected []RecordedKVPair) {
 func checkTxnOperation(recorded, expected *RecordedTxnOp) {
 	Expect(recorded.Operation).To(Equal(expected.Operation))
 	Expect(recorded.Key).To(Equal(expected.Key))
-	Expect(recorded.Derived).To(Equal(expected.Derived))
 	Expect(proto.Equal(recorded.PrevValue, expected.PrevValue)).To(BeTrue())
 	Expect(proto.Equal(recorded.NewValue, expected.NewValue)).To(BeTrue())
-	Expect(recorded.PrevOrigin).To(Equal(expected.PrevOrigin))
-	Expect(recorded.NewOrigin).To(Equal(expected.NewOrigin))
-	Expect(recorded.WasPending).To(Equal(expected.WasPending))
-	Expect(recorded.IsPending).To(Equal(expected.IsPending))
+	Expect(recorded.PrevState).To(Equal(expected.PrevState))
+	Expect(recorded.NewState).To(Equal(expected.NewState))
 	if expected.PrevErr == nil {
 		Expect(recorded.PrevErr).To(BeNil())
 	} else {
@@ -96,8 +93,12 @@ func checkTxnOperation(recorded, expected *RecordedTxnOp) {
 		Expect(recorded.NewErr).ToNot(BeNil())
 		Expect(recorded.NewErr.Error()).To(BeEquivalentTo(expected.NewErr.Error()))
 	}
+	Expect(recorded.NOOP).To(Equal(expected.NOOP))
+	Expect(recorded.IsDerived).To(Equal(expected.IsDerived))
+	Expect(recorded.IsProperty).To(Equal(expected.IsProperty))
 	Expect(recorded.IsRevert).To(Equal(expected.IsRevert))
 	Expect(recorded.IsRetry).To(Equal(expected.IsRetry))
+	Expect(recorded.IsRecreate).To(Equal(expected.IsRecreate))
 }
 
 func checkTxnOperations(recorded, expected RecordedTxnOps) {

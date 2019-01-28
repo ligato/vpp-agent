@@ -161,3 +161,55 @@ func (e *InvalidValueError) GetInvalidFields() []string {
 	return e.invalidFields
 }
 
+/***************************** Verification Failure ****************************/
+
+type VerificationErrorType int
+
+const (
+	// ExpectedToExist marks verification error returned when configured (non-nil)
+	// value is not found by the refresh.
+	ExpectedToExist VerificationErrorType = iota
+
+	// ExpectedToNotExist marks verification error returned when removed (nil)
+	// value is found by the refresh to still exist.
+	ExpectedToNotExist
+
+	// NotEquivalent marks verification error returned when applied value is not
+	// equivalent with the refreshed value.
+	NotEquivalent
+)
+
+// VerificationError is returned by the scheduler for a transaction when an applied
+// value does not match with the refreshed value.
+type VerificationError struct {
+	key     string
+	errType VerificationErrorType
+}
+
+// NewVerificationError is constructor for a verification error.
+func NewVerificationError(key string, errType VerificationErrorType) *VerificationError {
+	return &VerificationError{key: key, errType: errType}
+}
+
+// Error returns a string representation of the error.
+func (e *VerificationError) Error() string {
+	switch e.errType {
+	case ExpectedToExist:
+		return "value is not actually configured"
+	case ExpectedToNotExist:
+		return "value is not actually removed"
+	case NotEquivalent:
+		return "applied value is not equivalent with the refreshed value"
+	}
+	return ""
+}
+
+// Key returns the key of the value for which the verification failed.
+func (e *VerificationError) Key() string {
+	return e.key
+}
+
+// Type returns the verification error type.
+func (e *VerificationError) Type() VerificationErrorType {
+	return e.errType
+}

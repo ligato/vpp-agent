@@ -20,7 +20,7 @@ import (
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ifDescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/vppcalls"

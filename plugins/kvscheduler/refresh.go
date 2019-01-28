@@ -25,6 +25,11 @@ import (
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
+const (
+	nodeVisitBeginMark = "[BEGIN]"
+	nodeVisitEndMark = "[END]"
+)
+
 // resyncData stores data to be used for resync after refresh.
 type resyncData struct {
 	first   bool // true if startup-resync
@@ -35,6 +40,15 @@ type resyncData struct {
 // refreshGraph updates all/some values in the graph to their *real* state
 // using the Dump methods from descriptors.
 func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyncData *resyncData) {
+	if s.logGraphWalk {
+		keysToRefresh := "<ALL>"
+		if keys.Length() > 0 {
+			keysToRefresh = keys.String()
+		}
+		msg := fmt.Sprintf("refreshGrap (keys=%s)", keysToRefresh)
+		fmt.Printf("%s %s\n", nodeVisitBeginMark, msg)
+		defer fmt.Printf("%s %s\n", nodeVisitEndMark, msg)
+	}
 	refreshedKeys := utils.NewMapBasedKeySet()
 
 	// iterate over all descriptors, in order given by dump dependencies
@@ -155,13 +169,16 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 			}
 
 			// refresh node that represents this kv-pair
-			s.refreshValue(graphW, dumpedKV, handler, refreshedKeys)
+			s.refreshValue(graphW, dumpedKV, handler, refreshedKeys, 2)
 		}
 
 		// unset the metadata from base NB values that do not actually exists
 		for _, node := range prevAvailNodes {
 			if refreshed := refreshedKeys.Has(node.GetKey()); !refreshed {
 				if getNodeOrigin(node) == kvs.FromNB {
+					if s.logGraphWalk {
+						fmt.Printf("  -> unset metadata for key=%s\n", node.GetKey())
+					}
 					missingNode := graphW.SetNode(node.GetKey())
 					missingNode.SetMetadata(nil)
 				}
@@ -178,7 +195,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 		if refreshed := refreshedKeys.Has(node.GetKey()); refreshed {
 			continue
 		}
-		s.refreshUnavailNode(graphW, node, refreshedKeys)
+		s.refreshUnavailNode(graphW, node, refreshedKeys, 2)
 	}
 
 	if resyncData == nil || resyncData.verbose {
@@ -188,7 +205,13 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 
 // refreshValue refreshes node that represents the given dumped key-value pair.
 func (s *Scheduler) refreshValue(graphW graph.RWAccess, dumpedKV kvs.KVWithMetadata,
-	handler *descriptorHandler, refreshed utils.KeySet) {
+	handler *descriptorHandler, refreshed utils.KeySet, indent int) {
+	if s.logGraphWalk {
+		indentStr := strings.Repeat(" ", indent)
+		msg := fmt.Sprintf("refreshValue (key=%s)", dumpedKV.Key)
+		fmt.Printf("%s%s %s\n", indentStr, nodeVisitBeginMark, msg)
+		defer fmt.Printf("%s%s %s\n", indentStr, nodeVisitEndMark, msg)
+	}
 
 	// refresh node that represents this kv-pair
 	node := graphW.SetNode(dumpedKV.Key)
@@ -198,7 +221,7 @@ func (s *Scheduler) refreshValue(graphW graph.RWAccess, dumpedKV kvs.KVWithMetad
 		node.SetMetadataMap(handler.descriptor.Name)
 		node.SetMetadata(dumpedKV.Metadata)
 	}
-	s.refreshAvailNode(graphW, node, dumpedKV.Origin, false, node.GetKey(), refreshed)
+	s.refreshAvailNode(graphW, node, dumpedKV.Origin, false, node.GetKey(), refreshed, indent+2)
 
 	// determine the set of unavailable derived values
 	obsolete := getDerivedKeys(node)
@@ -226,16 +249,22 @@ func (s *Scheduler) refreshValue(graphW graph.RWAccess, dumpedKV kvs.KVWithMetad
 			derNode.SetValue(kv.Value)
 			dependencies := derHandler.dependencies(derNode.GetKey(), derNode.GetValue())
 			derNode.SetTargets(constructTargets(dependencies, nil))
-			s.refreshAvailNode(graphW, derNode, dumpedKV.Origin, true, node.GetKey(), refreshed)
+			s.refreshAvailNode(graphW, derNode, dumpedKV.Origin, true, node.GetKey(), refreshed, indent+2)
 		} else {
-			s.refreshUnavailNode(graphW, derNode, refreshed)
+			s.refreshUnavailNode(graphW, derNode, refreshed, indent+2)
 		}
 	}
 }
 
 // refreshAvailNode refreshes state of a node whose value was returned by Dump.
 func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
-	origin kvs.ValueOrigin, derived bool, baseKey string, refreshed utils.KeySet) {
+	origin kvs.ValueOrigin, derived bool, baseKey string, refreshed utils.KeySet, indent int) {
+	if s.logGraphWalk {
+		indentStr := strings.Repeat(" ", indent)
+		msg := fmt.Sprintf("refreshAvailNode (key=%s, isDerived=%t)", node.GetKey(), derived)
+		fmt.Printf("%s%s %s\n", indentStr, nodeVisitBeginMark, msg)
+		defer fmt.Printf("%s%s %s\n", indentStr, nodeVisitEndMark, msg)
+	}
 
 	// update availability
 	if !isNodeAvailable(node) {
@@ -248,14 +277,14 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	if getNodeState(node) == kvs.ValueState_NONEXISTENT {
 		// newly found node
 		if origin == kvs.FromSB {
-			node.SetFlags(&ValueStateFlag{kvs.ValueState_RETRIEVED})
+			s.refreshNodeState(node, kvs.ValueState_RETRIEVED, indent)
 		} else {
-			node.SetFlags(&ValueStateFlag{kvs.ValueState_FOUND})
+			s.refreshNodeState(node, kvs.ValueState_FOUND, indent)
 		}
 	}
 	if getNodeState(node) == kvs.ValueState_PENDING {
 		// no longer pending apparently
-		node.SetFlags(&ValueStateFlag{kvs.ValueState_CONFIGURED})
+		s.refreshNodeState(node, kvs.ValueState_CONFIGURED, indent)
 	}
 
 	// update descriptor flag
@@ -279,7 +308,14 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 }
 
 // refreshUnavailNode refreshes state of a node whose value is found to be unavailable.
-func (s *Scheduler) refreshUnavailNode(graphW graph.RWAccess, node graph.Node, refreshed utils.KeySet) {
+func (s *Scheduler) refreshUnavailNode(graphW graph.RWAccess, node graph.Node, refreshed utils.KeySet, indent int) {
+	if s.logGraphWalk {
+		indentStr := strings.Repeat(" ", indent)
+		msg := fmt.Sprintf("refreshUnavailNode (key=%s, isDerived=%t)", node.GetKey(), isNodeDerived(node))
+		fmt.Printf("%s%s %s\n", indentStr, nodeVisitBeginMark, msg)
+		defer fmt.Printf("%s%s %s\n", indentStr, nodeVisitEndMark, msg)
+	}
+
 	refreshed.Add(node.GetKey())
 	if isNodeAvailable(node) {
 		s.updatedStates.Add(getNodeBaseKey(node))
@@ -304,10 +340,20 @@ func (s *Scheduler) refreshUnavailNode(graphW graph.RWAccess, node graph.Node, r
 	}
 	if state == kvs.ValueState_CONFIGURED {
 		if getNodeLastUpdate(node).value == nil {
-			nodeW.SetFlags(&ValueStateFlag{kvs.ValueState_REMOVED})
+			s.refreshNodeState(nodeW, kvs.ValueState_REMOVED, indent)
 		} else {
-			nodeW.SetFlags(&ValueStateFlag{kvs.ValueState_MISSING})
+			s.refreshNodeState(nodeW, kvs.ValueState_MISSING, indent)
 		}
+	}
+}
+
+func (s *Scheduler) refreshNodeState(node graph.NodeRW, newState kvs.ValueState, indent int) {
+	if getNodeState(node) != newState {
+		if s.logGraphWalk {
+			fmt.Printf("%s  -> change value state from %v to %v\n",
+				strings.Repeat(" ", indent), getNodeState(node), newState)
+		}
+		node.SetFlags(&ValueStateFlag{valueState: newState})
 	}
 }
 

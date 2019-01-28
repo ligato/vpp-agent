@@ -69,8 +69,8 @@ type retryTxn struct {
 // retryTxnMeta contains metadata for Retry transaction.
 type retryTxnMeta struct {
 	txnSeqNum uint64
-	delay   time.Duration
-	attempt int
+	delay     time.Duration
+	attempt   int
 }
 
 // txnResult represents transaction result.
@@ -279,33 +279,37 @@ func (s *Scheduler) preProcessRetryTxn(txn *transaction) (skip bool) {
 // commit.
 func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.RecordedTxnOps) {
 	// collect new failures (combining derived with base)
-	failed := utils.NewSliceBasedKeySet()
 	toRetry := utils.NewSliceBasedKeySet()
+	toRefresh := utils.NewSliceBasedKeySet()
 	graphR := s.graph.Read()
 	for _, op := range executed {
-		if op.NewErr == nil {
-			continue
-		}
 		node := graphR.GetNode(op.Key)
 		if node == nil {
 			continue
 		}
 		state := getNodeState(node)
 		baseKey := getNodeBaseKey(node)
+		if state == kvs.ValueState_UNIMPLEMENTED {
+			continue
+		}
 		if state == kvs.ValueState_FAILED {
-			failed.Add(baseKey)
+			toRefresh.Add(baseKey)
 		}
 		if state == kvs.ValueState_RETRYING {
-			failed.Add(baseKey)
+			toRefresh.Add(baseKey)
 			toRetry.Add(baseKey)
+		}
+		if s.verifyMode {
+			toRefresh.Add(baseKey)
 		}
 	}
 	graphR.Release()
 
 	// refresh base values which themselves are in a failed state or have derived failed values
-	if failed.Length() > 0 {
+	// - in verifyMode all updated values are re-freshed
+	if toRefresh.Length() > 0 {
 		graphW := s.graph.Write(false)
-		s.refreshGraph(graphW, failed, nil)
+		s.refreshGraph(graphW, toRefresh, nil)
 		graphW.Save()
 
 		// split values based on the retry metadata
@@ -371,25 +375,69 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	// clear the set of updated states
 	s.updatedStates = utils.NewSliceBasedKeySet()
 
+	// if enabled, verify transaction effects
+	var kvErrors []kvs.KeyWithError
+	if s.verifyMode {
+		graphR = s.graph.Read()
+		for _, op := range executed {
+			key := op.Key
+			node := graphR.GetNode(key)
+			if node == nil {
+				continue
+			}
+			state := getNodeState(node)
+			if state == kvs.ValueState_RETRYING || state == kvs.ValueState_FAILED {
+				// effects of failed operations are uncertain and cannot be therefore verified
+				continue
+			}
+			expValue := getNodeLastAppliedValue(node)
+			if expValue == nil && isNodeAvailable(node) {
+				kvErrors = append(kvErrors, kvs.KeyWithError{
+					Key:   key,
+					Error: kvs.NewVerificationError(key, kvs.ExpectedToNotExist),
+				})
+				continue
+			}
+			if expValue == nil {
+				// properly removed
+				continue
+			}
+			if !isNodeAvailable(node) {
+				kvErrors = append(kvErrors, kvs.KeyWithError{
+					Key:   key,
+					Error: kvs.NewVerificationError(key, kvs.ExpectedToExist),
+				})
+				continue
+			}
+			descriptor := s.registry.GetDescriptorForKey(key)
+			handler := &descriptorHandler{descriptor}
+			equivalent := handler.equivalentValues(key, expValue, node.GetValue())
+			if !equivalent {
+				kvErrors = append(kvErrors, kvs.KeyWithError{
+					Key:   key,
+					Error: kvs.NewVerificationError(key, kvs.NotEquivalent),
+				})
+			}
+		}
+		graphR.Release()
+	}
+
 	// for blocking txn, send non-nil errors to the resultChan
 	if txn.txnType == kvs.NBTransaction && txn.nb.isBlocking {
-		var (
-			txnErr error
-		    errors []kvs.KeyWithError
-		)
+		var txnErr error
 		for _, txnOp := range executed {
 			if txnOp.NewErr == nil {
 				continue
 			}
-			errors = append(errors,
+			kvErrors = append(kvErrors,
 				kvs.KeyWithError{
 					Key:          txnOp.Key,
 					TxnOperation: txnOp.Operation,
 					Error:        txnOp.NewErr,
 				})
 		}
-		if len(errors) > 0 {
-			txnErr = kvs.NewTransactionError(nil, errors)
+		if len(kvErrors) > 0 {
+			txnErr = kvs.NewTransactionError(nil, kvErrors)
 		}
 		select {
 		case txn.nb.resultChan <- txnResult{txnSeqNum: txn.seqNum, err: txnErr}:
