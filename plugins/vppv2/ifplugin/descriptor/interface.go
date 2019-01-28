@@ -31,7 +31,7 @@ import (
 	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	linux_ifdescriptor "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/descriptor"
 	linux_ifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
@@ -169,11 +169,11 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		ValueComparator:    d.EquivalentInterfaces,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
@@ -325,24 +325,66 @@ func (d *InterfaceDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 	return ifaceidx.NewIfaceIndex(d.log, "vpp-interface-index")
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrUnsupportedVPPInterfaceType,
-		ErrInterfaceWithoutName,
-		ErrInterfaceNameTooLong,
-		ErrInterfaceWithoutType,
-		ErrUnnumberedWithIP,
-		ErrAfPacketWithoutHostName,
-		ErrInterfaceLinkMismatch,
-		ErrUnsupportedRxMode,
+// Validate validates VPP interface configuration.
+func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) error {
+	// validate name
+	if name := intf.GetName(); name == "" {
+		return kvs.NewInvalidValueError(ErrInterfaceWithoutName, "name")
+	} else if len(name) > logicalNameLengthLimit {
+		return kvs.NewInvalidValueError(ErrInterfaceNameTooLong, "name")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
+
+	// validate link with type
+	linkMismatchErr := kvs.NewInvalidValueError(ErrInterfaceLinkMismatch, "link")
+	switch intf.Link.(type) {
+	case *interfaces.Interface_Sub:
+		if intf.Type != interfaces.Interface_SUB_INTERFACE {
+			return linkMismatchErr
+		}
+	case *interfaces.Interface_Memif:
+		if intf.Type != interfaces.Interface_MEMIF {
+			return linkMismatchErr
+		}
+	case *interfaces.Interface_Afpacket:
+		if intf.Type != interfaces.Interface_AF_PACKET {
+			return linkMismatchErr
+		}
+	case *interfaces.Interface_Vxlan:
+		if intf.Type != interfaces.Interface_VXLAN_TUNNEL {
+			return linkMismatchErr
+		}
+	case *interfaces.Interface_Tap:
+		if intf.Type != interfaces.Interface_TAP {
+			return linkMismatchErr
 		}
 	}
-	return true
+
+	// validate type specific
+	switch intf.GetType() {
+	case interfaces.Interface_SUB_INTERFACE:
+		if parentName := intf.GetSub().GetParentName(); parentName == "" {
+			return kvs.NewInvalidValueError(ErrSubInterfaceWithoutParent, "link.sub.parent_name")
+		}
+	case interfaces.Interface_DPDK:
+		if getRxMode(intf).GetRxMode() != interfaces.Interface_RxModeSettings_POLLING {
+			return kvs.NewInvalidValueError(ErrUnsupportedRxMode, "rx_mode_settings.rx_mode")
+		}
+	case interfaces.Interface_AF_PACKET:
+		if intf.GetAfpacket().GetHostIfName() == "" {
+			return kvs.NewInvalidValueError(ErrAfPacketWithoutHostName, "link.afpacket.host_if_name")
+		}
+	case interfaces.Interface_UNDEFINED_TYPE:
+		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
+	}
+
+	// validate unnumbered
+	if intf.GetUnnumbered() != nil {
+		if len(intf.GetIpAddresses()) > 0 {
+			return kvs.NewInvalidValueError(ErrUnnumberedWithIP, "unnumbered", "ip_addresses")
+		}
+	}
+
+	return nil
 }
 
 // ModifyWithRecreate returns true if Type, VRF (or VRF IP version) or Type-specific
@@ -374,18 +416,18 @@ func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *i
 }
 
 // Dependencies lists dependencies for a VPP interface.
-func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interface) (dependencies []scheduler.Dependency) {
+func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interface) (dependencies []kvs.Dependency) {
 	switch intf.Type {
 	case interfaces.Interface_AF_PACKET:
 		// AF-PACKET depends on a referenced Linux interface in the default namespace
-		dependencies = append(dependencies, scheduler.Dependency{
+		dependencies = append(dependencies, kvs.Dependency{
 			Label: afPacketHostInterfaceDep,
 			Key:   linux_intf.InterfaceHostNameKey(intf.GetAfpacket().GetHostIfName()),
 		})
 	case interfaces.Interface_TAP:
 		// TAP connects VPP with microservice
 		if toMicroservice := intf.GetTap().GetToMicroservice(); toMicroservice != "" {
-			dependencies = append(dependencies, scheduler.Dependency{
+			dependencies = append(dependencies, kvs.Dependency{
 				Label: microserviceDep,
 				Key:   linux_ns.MicroserviceKey(toMicroservice),
 			})
@@ -393,7 +435,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 	case interfaces.Interface_VXLAN_TUNNEL:
 		// VXLAN referencing an interface with Multicast IP address
 		if vxlanMulticast := intf.GetVxlan().GetMulticast(); vxlanMulticast != "" {
-			dependencies = append(dependencies, scheduler.Dependency{
+			dependencies = append(dependencies, kvs.Dependency{
 				Label: vxlanMulticastDep,
 				AnyOf: func(key string) bool {
 					ifName, ifaceAddr, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)
@@ -404,7 +446,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 	case interfaces.Interface_SUB_INTERFACE:
 		// SUB_INTERFACE requires parent interface
 		if parentName := intf.GetSub().GetParentName(); parentName != "" {
-			dependencies = append(dependencies, scheduler.Dependency{
+			dependencies = append(dependencies, kvs.Dependency{
 				Label: parentInterfaceDep,
 				Key:   interfaces.InterfaceKey(parentName),
 			})
@@ -418,10 +460,10 @@ func (d *InterfaceDescriptor) Dependencies(key string, intf *interfaces.Interfac
 //  - key-value for unnumbered configuration sub-section
 //  - empty value for enabled DHCP client
 //  - one empty value for every IP address assigned to the interface.
-func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []scheduler.KeyValuePair) {
+func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// unnumbered interface
 	if intf.GetUnnumbered() != nil {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.UnnumberedKey(intf.Name),
 			Value: intf.GetUnnumbered(),
 		})
@@ -429,7 +471,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 
 	// DHCP client
 	if intf.SetDhcpClient {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.DHCPClientKey(intf.Name),
 			Value: &prototypes.Empty{},
 		})
@@ -437,7 +479,7 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 
 	// IP addresses
 	for _, ipAddr := range intf.IpAddresses {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.InterfaceAddressKey(intf.Name, ipAddr),
 			Value: &prototypes.Empty{},
 		})
@@ -446,77 +488,6 @@ func (d *InterfaceDescriptor) DerivedValues(key string, intf *interfaces.Interfa
 	// TODO: define derived value for UP/DOWN state (needed for subinterfaces)
 
 	return derValues
-}
-
-// validateInterfaceConfig validates VPP interface configuration.
-func (d *InterfaceDescriptor) validateInterfaceConfig(intf *interfaces.Interface) error {
-	// validate name
-	if name := intf.GetName(); name == "" {
-		return ErrInterfaceWithoutName
-	} else if len(name) > logicalNameLengthLimit {
-		return ErrInterfaceNameTooLong
-	}
-
-	// validate link with type
-	switch intf.Link.(type) {
-	case *interfaces.Interface_Sub:
-		if intf.Type != interfaces.Interface_SUB_INTERFACE {
-			return ErrInterfaceLinkMismatch
-		}
-	case *interfaces.Interface_Memif:
-		if intf.Type != interfaces.Interface_MEMIF {
-			return ErrInterfaceLinkMismatch
-		}
-	case *interfaces.Interface_Afpacket:
-		if intf.Type != interfaces.Interface_AF_PACKET {
-			return ErrInterfaceLinkMismatch
-		}
-	case *interfaces.Interface_Vxlan:
-		if intf.Type != interfaces.Interface_VXLAN_TUNNEL {
-			return ErrInterfaceLinkMismatch
-		}
-	case *interfaces.Interface_Tap:
-		if intf.Type != interfaces.Interface_TAP {
-			return ErrInterfaceLinkMismatch
-		}
-	case *interfaces.Interface_Ipsec:
-		if intf.Type != interfaces.Interface_IPSEC_TUNNEL {
-			return ErrInterfaceLinkMismatch
-		}
-	}
-
-	// validate type specific
-	switch intf.GetType() {
-	case interfaces.Interface_SUB_INTERFACE:
-		if parentName := intf.GetSub().GetParentName(); parentName == "" {
-			return ErrSubInterfaceWithoutParent
-		}
-	case interfaces.Interface_DPDK:
-		if getRxMode(intf).GetRxMode() != interfaces.Interface_RxModeSettings_POLLING {
-			return ErrUnsupportedRxMode
-		}
-	case interfaces.Interface_AF_PACKET:
-		if intf.GetAfpacket().GetHostIfName() == "" {
-			return ErrAfPacketWithoutHostName
-		}
-	case interfaces.Interface_IPSEC_TUNNEL:
-		if intf.GetIpsec() == nil {
-			return ErrInterfaceLinkMismatch
-		}
-	case interfaces.Interface_UNDEFINED_TYPE:
-		return ErrInterfaceWithoutType
-	}
-
-	// validate unnumbered
-	if intf.GetUnnumbered() != nil {
-		if len(intf.GetIpAddresses()) > 0 {
-			return ErrUnnumberedWithIP
-		}
-	}
-
-	// TODO: validate ip addresses
-
-	return nil
 }
 
 // getInterfaceMTU returns the interface MTU.

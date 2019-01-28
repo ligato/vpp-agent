@@ -14,7 +14,7 @@ func NewPlugin(opts ...Option) *NsPlugin {
 	p := &NsPlugin{}
 
 	p.PluginName = "linux-nsplugin"
-	p.Scheduler = &kvscheduler.DefaultPlugin
+	p.KVScheduler = &kvscheduler.DefaultPlugin
 
 	for _, o := range opts {
 		o(p)

@@ -20,7 +20,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
 )
@@ -99,8 +99,8 @@ func (d *NAT44InterfaceDescriptor) ModifyWithRecreate(key string, oldNATIface, n
 }
 
 // Dependencies lists the interface as the only dependency.
-func (d *NAT44InterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Global_Interface) []scheduler.Dependency {
-	return []scheduler.Dependency{
+func (d *NAT44InterfaceDescriptor) Dependencies(key string, natIface *nat.Nat44Global_Interface) []kvs.Dependency {
+	return []kvs.Dependency{
 		{
 			Label: natInterfaceDep,
 			Key:   interfaces.InterfaceKey(natIface.Name),

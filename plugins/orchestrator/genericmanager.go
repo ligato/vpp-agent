@@ -17,7 +17,6 @@ package orchestrator
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/status"
-	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -53,7 +52,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 	}
 
 	var ops = make(map[string]api.UpdateResult_Operation)
-	var kvPairs []datasync.ProtoWatchResp
+	var kvPairs []KeyValuePair
 
 	for _, update := range req.Updates {
 		item := update.Item
@@ -86,9 +85,9 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 		} else {
 			return nil, status.Error(codes.InvalidArgument, "ProtoItem has no key or val defined.")
 		}
-		kvPairs = append(kvPairs, &ProtoWatchResp{
-			Key: key,
-			Val: val,
+		kvPairs = append(kvPairs, KeyValuePair{
+			Key:   key,
+			Value: val,
 		})
 	}
 

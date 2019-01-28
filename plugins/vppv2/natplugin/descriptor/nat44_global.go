@@ -15,6 +15,7 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/gogo/protobuf/proto"
@@ -23,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
@@ -91,10 +92,10 @@ func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 		ValueTypeName:      nat.ModelNat44Global.ProtoName(),
 		KeySelector:        nat.ModelNat44Global.IsKeyValid,
 		ValueComparator:    d.EquivalentNAT44Global,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
-		IsRetriableFailure: d.IsRetriableFailure,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
@@ -117,19 +118,57 @@ func (d *NAT44GlobalDescriptor) EquivalentNAT44Global(key string, oldGlobalCfg, 
 	return len(obsoleteAddrs) == 0 && len(newAddrs) == 0
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *NAT44GlobalDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrNATInterfaceFeatureCollision,
-		ErrDuplicateNATAddress,
-		ErrInvalidNATAddress,
-	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
+// Validate validates VPP NAT44 global configuration.
+func (d *NAT44GlobalDescriptor) Validate(key string, globalCfg *nat.Nat44Global) error {
+	// check NAT interface features for collisions
+	natIfaceMap := make(map[string]*natIface)
+	for _, iface := range globalCfg.NatInterfaces {
+		if _, hasEntry := natIfaceMap[iface.Name]; !hasEntry {
+			natIfaceMap[iface.Name] = &natIface{}
+		}
+		ifaceCfg := natIfaceMap[iface.Name]
+		if iface.IsInside {
+			ifaceCfg.in++
+		} else {
+			ifaceCfg.out++
+		}
+		if iface.OutputFeature {
+			ifaceCfg.output++
 		}
 	}
-	return true
+	natIfaceCollisionErr := kvs.NewInvalidValueError(ErrNATInterfaceFeatureCollision, "nat_interfaces")
+	for _, ifaceCfg := range natIfaceMap {
+		if ifaceCfg.in > 1 {
+			// duplicate IN
+			return natIfaceCollisionErr
+		}
+		if ifaceCfg.out > 1 {
+			// duplicate OUT
+			return natIfaceCollisionErr
+		}
+		if ifaceCfg.output == 1 && (ifaceCfg.in+ifaceCfg.out > 1) {
+			// OUTPUT interface cannot be both IN and OUT
+			return natIfaceCollisionErr
+		}
+	}
+
+	// check NAT address pool for invalid addresses and duplicities
+	var ipAddrs []net.IP
+	for _, addr := range globalCfg.AddressPool {
+		ipAddr := net.ParseIP(addr.Address)
+		if ipAddr == nil {
+			return kvs.NewInvalidValueError(ErrInvalidNATAddress,
+				fmt.Sprintf("address_pool.address=%s", addr.Address))
+		}
+		for _, ipAddr2 := range ipAddrs {
+			if ipAddr.Equal(ipAddr2) {
+				return kvs.NewInvalidValueError(ErrDuplicateNATAddress,
+					fmt.Sprintf("address_pool.address=%s", addr.Address))
+			}
+		}
+		ipAddrs = append(ipAddrs, ipAddr)
+	}
+	return nil
 }
 
 // Add applies NAT44 global options.
@@ -145,13 +184,6 @@ func (d *NAT44GlobalDescriptor) Delete(key string, globalCfg *nat.Nat44Global, m
 
 // Modify updates NAT44 global options.
 func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *nat.Nat44Global, oldMetadata interface{}) (newMetadata interface{}, err error) {
-	// validate configuration first
-	err = d.validateNAT44GlobalConfig(newGlobalCfg)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// update forwarding
 	if oldGlobalCfg.Forwarding != newGlobalCfg.Forwarding {
 		if err = d.natHandler.SetNat44Forwarding(newGlobalCfg.Forwarding); err != nil {
@@ -193,10 +225,10 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 }
 
 // DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration.
-func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []scheduler.KeyValuePair) {
+func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []kvs.KeyValuePair) {
 	// NAT interfaces
 	for _, natIface := range globalCfg.NatInterfaces {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   nat.InterfaceNAT44Key(natIface.Name, natIface.IsInside),
 			Value: natIface,
 		})
@@ -212,9 +244,9 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 		return nil, err
 	}
 
-	origin := scheduler.FromNB
+	origin := kvs.FromNB
 	if proto.Equal(globalCfg, defaultGlobalCfg) {
-		origin = scheduler.FromSB
+		origin = kvs.FromSB
 	}
 
 	dump := []adapter.NAT44GlobalKVWithMetadata{{
@@ -232,56 +264,6 @@ type natIface struct {
 	in     int
 	out    int
 	output int
-}
-
-// validateNAT44GlobalConfig validates VPP NAT44 global configuration.
-func (d *NAT44GlobalDescriptor) validateNAT44GlobalConfig(globalCfg *nat.Nat44Global) error {
-	// check NAT interface features for collisions
-	natIfaceMap := make(map[string]*natIface)
-	for _, iface := range globalCfg.NatInterfaces {
-		if _, hasEntry := natIfaceMap[iface.Name]; !hasEntry {
-			natIfaceMap[iface.Name] = &natIface{}
-		}
-		ifaceCfg := natIfaceMap[iface.Name]
-		if iface.IsInside {
-			ifaceCfg.in++
-		} else {
-			ifaceCfg.out++
-		}
-		if iface.OutputFeature {
-			ifaceCfg.output++
-		}
-	}
-	for _, ifaceCfg := range natIfaceMap {
-		if ifaceCfg.in > 1 {
-			// duplicate IN
-			return ErrNATInterfaceFeatureCollision
-		}
-		if ifaceCfg.out > 1 {
-			// duplicate OUT
-			return ErrNATInterfaceFeatureCollision
-		}
-		if ifaceCfg.output == 1 && (ifaceCfg.in+ifaceCfg.out > 1) {
-			// OUTPUT interface cannot be both IN and OUT
-			return ErrNATInterfaceFeatureCollision
-		}
-	}
-
-	// check NAT address pool for invalid addresses and duplicities
-	var ipAddrs []net.IP
-	for _, addr := range globalCfg.AddressPool {
-		ipAddr := net.ParseIP(addr.Address)
-		if ipAddr == nil {
-			return ErrInvalidNATAddress
-		}
-		for _, ipAddr2 := range ipAddrs {
-			if ipAddr.Equal(ipAddr2) {
-				return ErrDuplicateNATAddress
-			}
-		}
-		ipAddrs = append(ipAddrs, ipAddr)
-	}
-	return nil
 }
 
 func getVirtualReassembly(globalCfg *nat.Nat44Global) *nat.VirtualReassembly {

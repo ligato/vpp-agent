@@ -16,13 +16,12 @@ package descriptor
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin/vppcalls"
 )
@@ -72,10 +71,10 @@ func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor
 		KeySelector:        punt.ModelIPRedirect.IsKeyValid,
 		KeyLabel:           punt.ModelIPRedirect.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPRedirect,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 	}
@@ -87,22 +86,32 @@ func (d *IPRedirectDescriptor) EquivalentIPRedirect(key string, oldIPRedirect, n
 	return proto.Equal(oldIPRedirect, newIPRedirect)
 }
 
+// Validate validates VPP punt configuration.
+func (d *IPRedirectDescriptor) Validate(key string, redirect *punt.IPRedirect) error {
+	// validate L3 protocol
+	switch redirect.L3Protocol {
+	case punt.L3Protocol_IPv4:
+	case punt.L3Protocol_IPv6:
+	case punt.L3Protocol_ALL:
+	default:
+		return kvs.NewInvalidValueError(ErrIPRedirectWithoutL3Protocol, "l3_protocol")
+	}
+
+	// validate tx interface
+	if redirect.TxInterface == "" {
+		return kvs.NewInvalidValueError(ErrIPRedirectWithoutTxInterface, "tx_interface")
+	}
+
+	// validate next hop
+	if redirect.NextHop == "" {
+		return kvs.NewInvalidValueError(ErrIPRedirectWithoutNextHop, "next_hop")
+	}
+
+	return nil
+}
+
 // Add adds new IP punt redirect entry.
 func (d *IPRedirectDescriptor) Add(key string, redirect *punt.IPRedirect) (metadata interface{}, err error) {
-	// remove mask from IP address if necessary
-	ipParts := strings.Split(redirect.NextHop, "/")
-	if len(ipParts) > 1 {
-		d.log.Debugf("IP punt redirect next hop IP address %s is defined with mask, removing it")
-		redirect.NextHop = ipParts[0]
-	}
-
-	// validate the configuration
-	err = d.validateIPRedirectConfig(redirect)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// add Punt to host/socket
 	err = d.puntHandler.AddPuntRedirect(redirect)
 	if err != nil {
@@ -133,49 +142,12 @@ func (d *IPRedirectDescriptor) ModifyWithRecreate(key string, oldIPRedirect, new
 }
 
 // Dependencies for IP punt redirect are represented by tx interface
-func (d *IPRedirectDescriptor) Dependencies(key string, redirect *punt.IPRedirect) (dependencies []scheduler.Dependency) {
-	dependencies = append(dependencies, scheduler.Dependency{
+func (d *IPRedirectDescriptor) Dependencies(key string, redirect *punt.IPRedirect) (dependencies []kvs.Dependency) {
+	dependencies = append(dependencies, kvs.Dependency{
 		Label: ipRedirectTxInterfaceDep,
 		Key:   interfaces.InterfaceKey(redirect.TxInterface),
 	})
 	return dependencies
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *IPRedirectDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrIPRedirectWithoutL3Protocol,
-		ErrIPRedirectWithoutTxInterface,
-		ErrIPRedirectWithoutNextHop,
-	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
-		}
-	}
-	return true
-}
 
-// validatePuntConfig validates VPP punt configuration.
-func (d *IPRedirectDescriptor) validateIPRedirectConfig(redirect *punt.IPRedirect) error {
-	// validate L3 protocol
-	switch redirect.L3Protocol {
-	case punt.L3Protocol_IPv4:
-	case punt.L3Protocol_IPv6:
-	case punt.L3Protocol_ALL:
-	default:
-		return ErrIPRedirectWithoutL3Protocol
-	}
-
-	// validate tx interface
-	if redirect.TxInterface == "" {
-		return ErrIPRedirectWithoutTxInterface
-	}
-
-	// validate next hop
-	if redirect.NextHop == "" {
-		return ErrIPRedirectWithoutNextHop
-	}
-
-	return nil
-}

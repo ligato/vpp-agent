@@ -21,8 +21,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+ 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
 )
 
@@ -149,8 +149,8 @@ func (d *SPDPolicyDescriptor) ModifyWithRecreate(key string, oldSPDPolicy, newSP
 }
 
 // Dependencies lists the security association as the only dependency for the binding.
-func (d *SPDPolicyDescriptor) Dependencies(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) []scheduler.Dependency {
-	return []scheduler.Dependency{
+func (d *SPDPolicyDescriptor) Dependencies(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) []kvs.Dependency {
+	return []kvs.Dependency{
 		{
 			Label: policyDep,
 			Key:   ipsec.SAKey(value.SaIndex),

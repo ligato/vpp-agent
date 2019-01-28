@@ -79,49 +79,52 @@ func (s *Scheduler) preRecordTxnOp(args *applyValueArgs, node graph.Node) *kvs.R
 		// new value
 		prevOrigin = args.kv.origin
 	}
+	_, prevErr := getNodeError(node)
 	return &kvs.RecordedTxnOp{
-		Key:        args.kv.key,
-		Derived:    isNodeDerived(node),
-		PrevValue:  utils.RecordProtoMessage(node.GetValue()),
-		NewValue:   utils.RecordProtoMessage(args.kv.value),
-		PrevOrigin: prevOrigin,
-		NewOrigin:  args.kv.origin,
-		WasPending: isNodePending(node),
-		PrevErr:    s.getNodeLastError(args.kv.key),
-		IsRevert:   args.kv.isRevert,
-		IsRetry:    args.isRetry,
+		Key:         args.kv.key,
+		PrevValue:   utils.RecordProtoMessage(node.GetValue()),
+		NewValue:    utils.RecordProtoMessage(args.kv.value),
+		PrevState:   getNodeState(node),
+		PrevErr:     prevErr,
+		IsDerived:   args.isDerived,
+		IsProperty:  args.isDerived && s.registry.GetDescriptorForKey(args.kv.key) == nil,
+		IsRevert:    args.kv.isRevert,
+		IsRetry:     args.isRetry,
 	}
 }
 
 // preRecordTransaction logs transaction arguments + plan before execution to
 // persist some information in case there is a crash during execution.
-func (s *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned kvs.RecordedTxnOps, preErrors []kvs.KeyWithError) *kvs.RecordedTxn {
+func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedTxnOps) *kvs.RecordedTxn {
 	// allocate new transaction record
 	record := &kvs.RecordedTxn{
 		PreRecord: true,
 		SeqNum:    txn.seqNum,
-		TxnType:   txn.args.txnType,
-		PreErrors: preErrors,
+		TxnType:   txn.txnType,
 		Planned:   planned,
 	}
-	if txn.args.txnType == kvs.NBTransaction {
-		record.ResyncType = txn.args.nb.resyncType
-		record.Description = txn.args.nb.description
+	if txn.txnType == kvs.NBTransaction {
+		record.ResyncType = txn.nb.resyncType
+		record.Description = txn.nb.description
+	}
+	if txn.txnType == kvs.RetryFailedOps {
+		record.RetryForTxn = txn.retry.txnSeqNum
+		record.RetryAttempt = txn.retry.attempt
 	}
 
 	// build header for the log
 	var downstreamResync bool
-	txnInfo := fmt.Sprintf("%s", txn.args.txnType.String())
-	if txn.args.txnType == kvs.NBTransaction && txn.args.nb.resyncType != kvs.NotResync {
+	txnInfo := fmt.Sprintf("%s", txn.txnType.String())
+	if txn.txnType == kvs.NBTransaction && txn.nb.resyncType != kvs.NotResync {
 		ResyncType := "Full Resync"
-		if txn.args.nb.resyncType == kvs.DownstreamResync {
+		if txn.nb.resyncType == kvs.DownstreamResync {
 			ResyncType = "SB Sync"
 			downstreamResync = true
 		}
-		if txn.args.nb.resyncType == kvs.UpstreamResync {
+		if txn.nb.resyncType == kvs.UpstreamResync {
 			ResyncType = "NB Sync"
 		}
-		txnInfo = fmt.Sprintf("%s (%s)", txn.args.txnType.String(), ResyncType)
+		txnInfo = fmt.Sprintf("%s (%s)", txn.txnType.String(), ResyncType)
 	}
 
 	// record values sorted alphabetically by keys
@@ -145,7 +148,7 @@ func (s *Scheduler) preRecordTransaction(txn *preProcessedTxn, planned kvs.Recor
 	n := 115 - len(msg)
 	buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(n)+"s |\n", msg, txnInfo))
 	buf.WriteString("+======================================================================================================================+\n")
-	buf.WriteString(record.StringWithOpts(false, 2))
+	buf.WriteString(record.StringWithOpts(false, false, 2))
 	fmt.Println(buf.String())
 
 	return record
@@ -160,7 +163,7 @@ func (s *Scheduler) recordTransaction(txnRecord *kvs.RecordedTxn, executed kvs.R
 
 	var buf strings.Builder
 	buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
-	buf.WriteString(txnRecord.StringWithOpts(true, 2))
+	buf.WriteString(txnRecord.StringWithOpts(true, false, 2))
 	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
 	msg := fmt.Sprintf("#%d", txnRecord.SeqNum)
 	msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Millisecond))

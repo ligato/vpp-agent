@@ -32,7 +32,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/servicelabel"
 	"github.com/ligato/cn-infra/utils/addrs"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	namespace "github.com/ligato/vpp-agent/api/models/linux/namespace"
@@ -107,7 +107,7 @@ type InterfaceDescriptor struct {
 	ifHandler    iflinuxcalls.NetlinkAPI
 	nsPlugin     nsplugin.API
 	vppIfPlugin  VPPIfPluginAPI
-	scheduler    scheduler.KVScheduler
+	scheduler    kvs.KVScheduler
 
 	// parallelization of the Dump operation
 	dumpGoRoutinesCnt int
@@ -122,7 +122,7 @@ type VPPIfPluginAPI interface {
 
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(
-	scheduler scheduler.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API,
+	scheduler kvs.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API,
 	vppIfPlugin VPPIfPluginAPI, ifHandler iflinuxcalls.NetlinkAPI, log logging.PluginLogger, dumpGoRoutinesCnt int) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
@@ -148,11 +148,11 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		ValueComparator:    d.EquivalentInterfaces,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
@@ -219,35 +219,43 @@ func (d *InterfaceDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 	return ifaceidx.NewLinuxIfIndex(logrus.DefaultLogger(), "linux-interface-index")
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *InterfaceDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrUnsupportedLinuxInterfaceType,
-		ErrInterfaceWithoutName,
-		ErrInterfaceWithoutType,
-		ErrInterfaceReferenceMismatch,
-		ErrVETHWithoutPeer,
-		ErrTAPWithoutVPPReference,
-		ErrTAPRequiresVPPIfPlugin,
-		ErrNamespaceWithoutReference,
+// Validate validates Linux interface configuration.
+func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface) error {
+	if linuxIf.GetName() == "" {
+		return kvs.NewInvalidValueError(ErrInterfaceWithoutName, "name")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
+	if linuxIf.GetType() == interfaces.Interface_UNDEFINED {
+		return kvs.NewInvalidValueError(ErrInterfaceWithoutType, "type")
+	}
+	if linuxIf.GetType() == interfaces.Interface_TAP_TO_VPP && d.vppIfPlugin == nil {
+		return ErrTAPRequiresVPPIfPlugin
+	}
+	if linuxIf.GetNamespace() != nil &&
+		(linuxIf.GetNamespace().GetType() == namespace.NetNamespace_UNDEFINED ||
+			linuxIf.GetNamespace().GetReference() == "") {
+		return kvs.NewInvalidValueError(ErrNamespaceWithoutReference, "namespace")
+	}
+	switch linuxIf.Link.(type) {
+	case *interfaces.Interface_Tap:
+		if linuxIf.GetType() != interfaces.Interface_TAP_TO_VPP {
+			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
+		}
+		if linuxIf.GetTap().GetVppTapIfName() == "" {
+			return kvs.NewInvalidValueError(ErrTAPWithoutVPPReference, "vpp_tap_if_name")
+		}
+	case *interfaces.Interface_Veth:
+		if linuxIf.GetType() != interfaces.Interface_VETH {
+			return kvs.NewInvalidValueError(ErrInterfaceReferenceMismatch, "link")
+		}
+		if linuxIf.GetVeth().GetPeerIfName() == "" {
+			return kvs.NewInvalidValueError(ErrVETHWithoutPeer, "peer_if_name")
 		}
 	}
-	return true
+	return nil
 }
 
 // Add creates VETH or configures TAP interface.
 func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
-	// validate configuration first
-	err = d.validateInterfaceConfig(linuxIf)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// move to the default namespace
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	revert1, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
@@ -393,12 +401,6 @@ func (d *InterfaceDescriptor) Modify(key string, oldLinuxIf, newLinuxIf *interfa
 	oldHostName := getHostIfName(oldLinuxIf)
 	newHostName := getHostIfName(newLinuxIf)
 
-	// validate the new configuration first
-	err = d.validateInterfaceConfig(newLinuxIf)
-	if err != nil {
-		d.log.Error(err)
-		return oldMetadata, err
-	}
 	// move to the namespace with the interface
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	revert, err := d.nsPlugin.SwitchToNamespace(nsCtx, oldLinuxIf.Namespace)
@@ -540,12 +542,12 @@ func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldLinuxIf, newLinu
 }
 
 // Dependencies lists dependencies for a Linux interface.
-func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Interface) []scheduler.Dependency {
-	var dependencies []scheduler.Dependency
+func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Interface) []kvs.Dependency {
+	var dependencies []kvs.Dependency
 
 	if linuxIf.Type == interfaces.Interface_TAP_TO_VPP {
 		// dependency on VPP TAP
-		dependencies = append(dependencies, scheduler.Dependency{
+		dependencies = append(dependencies, kvs.Dependency{
 			Label: tapInterfaceDep,
 			Key:   vpp_intf.InterfaceKey(linuxIf.GetTap().GetVppTapIfName()),
 		})
@@ -555,7 +557,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 	if linuxIf.Type == interfaces.Interface_VETH {
 		peerName := linuxIf.GetVeth().GetPeerIfName()
 		if peerName != "" {
-			dependencies = append(dependencies, scheduler.Dependency{
+			dependencies = append(dependencies, kvs.Dependency{
 				Label: vethPeerDep,
 				Key:   interfaces.InterfaceKey(peerName),
 			})
@@ -563,7 +565,7 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 	}
 
 	if linuxIf.GetNamespace().GetType() == namespace.NetNamespace_MICROSERVICE {
-		dependencies = append(dependencies, scheduler.Dependency{
+		dependencies = append(dependencies, kvs.Dependency{
 			Label: microserviceDep,
 			Key:   namespace.MicroserviceKey(linuxIf.Namespace.Reference),
 		})
@@ -574,15 +576,15 @@ func (d *InterfaceDescriptor) Dependencies(key string, linuxIf *interfaces.Inter
 
 // DerivedValues derives one empty value to represent interface state and also
 // one empty value for every IP address assigned to the interface.
-func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Interface) (derValues []scheduler.KeyValuePair) {
+func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Interface) (derValues []kvs.KeyValuePair) {
 	// interface state
-	derValues = append(derValues, scheduler.KeyValuePair{
+	derValues = append(derValues, kvs.KeyValuePair{
 		Key:   interfaces.InterfaceStateKey(linuxIf.Name, linuxIf.Enabled),
 		Value: &prototypes.Empty{},
 	})
 	// IP addresses
 	for _, ipAddr := range linuxIf.IpAddresses {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   interfaces.InterfaceAddressKey(linuxIf.Name, ipAddr),
 			Value: &prototypes.Empty{},
 		})
@@ -857,7 +859,7 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 				//Key:    interfaces.InterfaceKey(intf.Name),
 				Key:    models.Key(intf),
 				Value:  intf,
-				Origin: scheduler.FromNB,
+				Origin: kvs.FromNB,
 				Metadata: &ifaceidx.LinuxIfMetadata{
 					LinuxIfIndex: link.Attrs().Index,
 					VPPTapName:   vppTapIfName,
@@ -964,41 +966,6 @@ func (d *InterfaceDescriptor) getInterfaceAddresses(ifName string) (addresses []
 		addresses = append(addresses, ipAddr.IPNet)
 	}
 	return addresses, hasIPv6, nil
-}
-
-// validateInterfaceConfig validates Linux interface configuration.
-func (d *InterfaceDescriptor) validateInterfaceConfig(linuxIf *interfaces.Interface) error {
-	if linuxIf.GetName() == "" {
-		return ErrInterfaceWithoutName
-	}
-	if linuxIf.GetType() == interfaces.Interface_UNDEFINED {
-		return ErrInterfaceWithoutType
-	}
-	if linuxIf.GetType() == interfaces.Interface_TAP_TO_VPP && d.vppIfPlugin == nil {
-		return ErrTAPRequiresVPPIfPlugin
-	}
-	if linuxIf.GetNamespace() != nil &&
-		(linuxIf.GetNamespace().GetType() == namespace.NetNamespace_UNDEFINED ||
-			linuxIf.GetNamespace().GetReference() == "") {
-		return ErrNamespaceWithoutReference
-	}
-	switch linuxIf.Link.(type) {
-	case *interfaces.Interface_Tap:
-		if linuxIf.GetType() != interfaces.Interface_TAP_TO_VPP {
-			return ErrInterfaceReferenceMismatch
-		}
-		if linuxIf.GetTap().GetVppTapIfName() == "" {
-			return ErrTAPWithoutVPPReference
-		}
-	case *interfaces.Interface_Veth:
-		if linuxIf.GetType() != interfaces.Interface_VETH {
-			return ErrInterfaceReferenceMismatch
-		}
-		if linuxIf.GetVeth().GetPeerIfName() == "" {
-			return ErrVETHWithoutPeer
-		}
-	}
-	return nil
 }
 
 // getHostIfName returns the interface host name.

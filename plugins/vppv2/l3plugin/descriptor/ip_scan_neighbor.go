@@ -20,7 +20,7 @@ import (
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/pkg/models"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
 )
@@ -51,11 +51,11 @@ var defaultIPScanNeighbor = &l3.IPScanNeighbor{
 type IPScanNeighborDescriptor struct {
 	log       logging.Logger
 	ipNeigh   vppcalls.IPNeighVppAPI
-	scheduler scheduler.KVScheduler
+	scheduler kvs.KVScheduler
 }
 
 // NewIPScanNeighborDescriptor creates a new instance of the IPScanNeighborDescriptor.
-func NewIPScanNeighborDescriptor(scheduler scheduler.KVScheduler,
+func NewIPScanNeighborDescriptor(scheduler kvs.KVScheduler,
 	proxyArpHandler vppcalls.IPNeighVppAPI, log logging.PluginLogger) *IPScanNeighborDescriptor {
 
 	return &IPScanNeighborDescriptor{
@@ -77,7 +77,6 @@ func (d *IPScanNeighborDescriptor) GetDescriptor() *adapter.IPScanNeighborDescri
 		Add:                d.Add,
 		Modify:             d.Modify,
 		Delete:             d.Delete,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dump:               d.Dump,
 	}
 }
@@ -106,11 +105,6 @@ func (d *IPScanNeighborDescriptor) Modify(key string, oldValue, newValue *l3.IPS
 	return nil, nil
 }
 
-// IsRetriableFailure returns true for retriable errors.
-func (d *IPScanNeighborDescriptor) IsRetriableFailure(err error) bool {
-	return false
-}
-
 // Dump dumps VPP IP Scan Neighbor.
 func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWithMetadata) (
 	dump []adapter.IPScanNeighborKVWithMetadata, err error,
@@ -122,9 +116,9 @@ func (d *IPScanNeighborDescriptor) Dump(correlate []adapter.IPScanNeighborKVWith
 	}
 	fillDefaults(ipNeigh)
 
-	var origin = scheduler.FromNB
+	var origin = kvs.FromNB
 	if proto.Equal(ipNeigh, defaultIPScanNeighbor) {
-		origin = scheduler.FromSB
+		origin = kvs.FromSB
 	}
 
 	dump = append(dump, adapter.IPScanNeighborKVWithMetadata{

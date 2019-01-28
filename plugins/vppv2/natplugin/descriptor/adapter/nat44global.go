@@ -28,11 +28,11 @@ type NAT44GlobalDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value *vpp_nat.Nat44Global) error
 	Add                func(key string, value *vpp_nat.Nat44Global) (metadata interface{}, err error)
 	Delete             func(key string, value *vpp_nat.Nat44Global, metadata interface{}) error
 	Modify             func(key string, oldValue, newValue *vpp_nat.Nat44Global, oldMetadata interface{}) (newMetadata interface{}, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue *vpp_nat.Nat44Global, metadata interface{}) bool
-	Update             func(key string, value *vpp_nat.Nat44Global, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *vpp_nat.Nat44Global) []Dependency
 	DerivedValues      func(key string, value *vpp_nat.Nat44Global) []KeyValuePair
@@ -62,6 +62,9 @@ func NewNAT44GlobalDescriptor(typedDescriptor *NAT44GlobalDescriptor) *KVDescrip
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewNAT44GlobalDescriptor(typedDescriptor *NAT44GlobalDescriptor) *KVDescrip
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *NAT44GlobalDescriptorAdapter) ValueComparator(key string, oldValue, ne
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *NAT44GlobalDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castNAT44GlobalValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *NAT44GlobalDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *NAT44GlobalDescriptorAdapter) ModifyWithRecreate(key string, oldValue,
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *NAT44GlobalDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castNAT44GlobalValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castNAT44GlobalMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *NAT44GlobalDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

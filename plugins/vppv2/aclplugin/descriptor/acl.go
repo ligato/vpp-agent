@@ -76,7 +76,6 @@ func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
 		Delete:             d.Delete,
 		Modify:             d.Modify,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
@@ -127,18 +126,6 @@ func (d *ACLDescriptor) validateRules(aclName string, rules []*acl.ACL_Rule) ([]
 	} else {
 		return validL2Rules, true
 	}
-}
-
-var nonRetriableErrs []error
-
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *ACLDescriptor) IsRetriableFailure(err error) bool {
-	for _, e := range nonRetriableErrs {
-		if err == e {
-			return false
-		}
-	}
-	return true
 }
 
 // Add configures ACL

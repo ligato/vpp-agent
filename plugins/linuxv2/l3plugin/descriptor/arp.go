@@ -22,7 +22,7 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
@@ -72,7 +72,7 @@ type ARPDescriptor struct {
 	l3Handler l3linuxcalls.NetlinkAPI
 	ifPlugin  ifplugin.API
 	nsPlugin  nsplugin.API
-	scheduler scheduler.KVScheduler
+	scheduler kvs.KVScheduler
 
 	// parallelization of the Dump operation
 	dumpGoRoutinesCnt int
@@ -80,7 +80,7 @@ type ARPDescriptor struct {
 
 // NewARPDescriptor creates a new instance of the ARP descriptor.
 func NewARPDescriptor(
-	scheduler scheduler.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
+	scheduler kvs.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
 	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger, dumpGoRoutinesCnt int) *ARPDescriptor {
 
 	return &ARPDescriptor{
@@ -103,10 +103,10 @@ func (d *ARPDescriptor) GetDescriptor() *adapter.ARPDescriptor {
 		KeySelector:        l3.ModelARPEntry.IsKeyValid,
 		KeyLabel:           l3.ModelARPEntry.StripKeyPrefix,
 		ValueComparator:    d.EquivalentARPs,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
@@ -129,21 +129,18 @@ func (d *ARPDescriptor) EquivalentARPs(key string, oldArp, NewArp *l3.ARPEntry) 
 	return equalAddrs(oldArp.IpAddress, NewArp.IpAddress)
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *ARPDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrARPWithoutInterface,
-		ErrARPWithoutIP,
-		ErrARPWithInvalidIP,
-		ErrARPWithoutHwAddr,
-		ErrARPWithInvalidHwAddr,
+// Validate validates ARP entry configuration.
+func (d *ARPDescriptor) Validate(key string, arp *l3.ARPEntry) (err error) {
+	if arp.Interface == "" {
+		return kvs.NewInvalidValueError(ErrARPWithoutInterface, "interface")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
-		}
+	if arp.IpAddress == "" {
+		return kvs.NewInvalidValueError(ErrARPWithoutIP, "ip_address")
 	}
-	return true
+	if arp.HwAddress == "" {
+		return kvs.NewInvalidValueError(ErrARPWithoutHwAddr, "hw_address")
+	}
+	return nil
 }
 
 // Add creates ARP entry.
@@ -166,23 +163,6 @@ func (d *ARPDescriptor) Modify(key string, oldARP, newARP *l3.ARPEntry, oldMetad
 // updateARPEntry adds, modifies or deletes an ARP entry.
 func (d *ARPDescriptor) updateARPEntry(arp *l3.ARPEntry, actionName string, actionClb func(arpEntry *netlink.Neigh) error) error {
 	var err error
-
-	// validate the configuration first
-	if arp.Interface == "" {
-		err = ErrARPWithoutInterface
-		d.log.Error(err)
-		return err
-	}
-	if arp.IpAddress == "" {
-		err = ErrARPWithoutIP
-		d.log.Error(err)
-		return err
-	}
-	if arp.HwAddress == "" {
-		err = ErrARPWithoutHwAddr
-		d.log.Error(err)
-		return err
-	}
 
 	// Prepare ARP entry object
 	neigh := &netlink.Neigh{}
@@ -248,10 +228,10 @@ func (d *ARPDescriptor) updateARPEntry(arp *l3.ARPEntry, actionName string, acti
 }
 
 // Dependencies lists dependencies for a Linux ARP entry.
-func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) []scheduler.Dependency {
+func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) []kvs.Dependency {
 	// the associated interface must exist and be UP
 	if arp.Interface != "" {
-		return []scheduler.Dependency{
+		return []kvs.Dependency{
 			{
 				Label: arpInterfaceDep,
 				Key:   ifmodel.InterfaceStateKey(arp.Interface, true),
@@ -354,7 +334,7 @@ func (d *ARPDescriptor) dumpARPs(interfaces []string, goRoutineIdx, goRoutinesCn
 					IpAddress: ipAddr,
 					HwAddress: hwAddr,
 				},
-				Origin: scheduler.UnknownOrigin, // let the scheduler to determine the origin
+				Origin: kvs.UnknownOrigin, // let the scheduler to determine the origin
 			})
 		}
 	}

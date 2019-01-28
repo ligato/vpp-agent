@@ -28,11 +28,11 @@ type IPPuntRedirectDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value *vpp_punt.IPRedirect) error
 	Add                func(key string, value *vpp_punt.IPRedirect) (metadata interface{}, err error)
 	Delete             func(key string, value *vpp_punt.IPRedirect, metadata interface{}) error
 	Modify             func(key string, oldValue, newValue *vpp_punt.IPRedirect, oldMetadata interface{}) (newMetadata interface{}, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue *vpp_punt.IPRedirect, metadata interface{}) bool
-	Update             func(key string, value *vpp_punt.IPRedirect, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *vpp_punt.IPRedirect) []Dependency
 	DerivedValues      func(key string, value *vpp_punt.IPRedirect) []KeyValuePair
@@ -62,6 +62,9 @@ func NewIPPuntRedirectDescriptor(typedDescriptor *IPPuntRedirectDescriptor) *KVD
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewIPPuntRedirectDescriptor(typedDescriptor *IPPuntRedirectDescriptor) *KVD
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *IPPuntRedirectDescriptorAdapter) ValueComparator(key string, oldValue,
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *IPPuntRedirectDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castIPPuntRedirectValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *IPPuntRedirectDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *IPPuntRedirectDescriptorAdapter) ModifyWithRecreate(key string, oldVal
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *IPPuntRedirectDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castIPPuntRedirectValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castIPPuntRedirectMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *IPPuntRedirectDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

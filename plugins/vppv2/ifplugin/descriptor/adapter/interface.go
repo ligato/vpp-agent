@@ -29,11 +29,11 @@ type InterfaceDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value *vpp_interfaces.Interface) error
 	Add                func(key string, value *vpp_interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error)
 	Delete             func(key string, value *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
 	Modify             func(key string, oldValue, newValue *vpp_interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool
-	Update             func(key string, value *vpp_interfaces.Interface, metadata *ifaceidx.IfaceMetadata) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *vpp_interfaces.Interface) []Dependency
 	DerivedValues      func(key string, value *vpp_interfaces.Interface) []KeyValuePair
@@ -63,6 +63,9 @@ func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor 
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -74,9 +77,6 @@ func NewInterfaceDescriptor(typedDescriptor *InterfaceDescriptor) *KVDescriptor 
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -97,6 +97,14 @@ func (da *InterfaceDescriptorAdapter) ValueComparator(key string, oldValue, newV
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *InterfaceDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castInterfaceValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *InterfaceDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -149,18 +157,6 @@ func (da *InterfaceDescriptorAdapter) ModifyWithRecreate(key string, oldValue, n
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *InterfaceDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castInterfaceValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castInterfaceMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *InterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

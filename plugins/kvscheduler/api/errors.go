@@ -37,13 +37,6 @@ var (
 	// ErrTxnQueueFull is returned when the queue of pending transactions is full.
 	ErrTxnQueueFull = errors.New("transaction queue is full")
 
-	// ErrUnregisteredValueType is returned for non-derived values whose proto.Message type
-	// is not registered.
-	ErrUnregisteredValueType = errors.New("protobuf message type is not registered")
-
-	// ErrUnimplementedKey is returned for non-derived values without provided descriptor.
-	ErrUnimplementedKey = errors.New("unimplemented key")
-
 	// ErrUnimplementedAdd is returned when NB transaction attempts to Add value
 	// for which there is a descriptor, but Add operation is not implemented.
 	ErrUnimplementedAdd = errors.New("Add operation is not implemented")
@@ -126,4 +119,97 @@ func (e *TransactionError) GetTxnInitError() error {
 		return nil
 	}
 	return e.txnInitError
+}
+
+/******************************** Invalid Value *******************************/
+
+// InvalidValueError can be used by descriptor for the Validate method to return
+// validation error together with a list of invalid fields for further
+// clarification.
+type InvalidValueError struct {
+	err           error
+	invalidFields []string
+}
+
+// NewInvalidValueError is a constructor for invalid-value error.
+func NewInvalidValueError(err error, invalidFields... string) *InvalidValueError {
+	return &InvalidValueError{err: err, invalidFields: invalidFields}
+}
+
+// Error returns a string representation of all errors encountered during
+// the transaction processing.
+func (e *InvalidValueError) Error() string {
+	if e == nil || e.err == nil {
+		return ""
+	}
+	if len(e.invalidFields) == 0 {
+		return e.err.Error()
+	}
+	if len(e.invalidFields) == 1 {
+		return fmt.Sprintf("field %v is invalid: %v", e.invalidFields[0], e.err)
+	}
+	return fmt.Sprintf("fields %v are invalid: %v", e.invalidFields, e.err)
+}
+
+// GetValidationError returns internally stored validation error.
+func (e *InvalidValueError) GetValidationError() error {
+	return e.err
+}
+
+// GetInvalidFields returns internally stored slice of invalid fields.
+func (e *InvalidValueError) GetInvalidFields() []string {
+	return e.invalidFields
+}
+
+/***************************** Verification Failure ****************************/
+
+type VerificationErrorType int
+
+const (
+	// ExpectedToExist marks verification error returned when configured (non-nil)
+	// value is not found by the refresh.
+	ExpectedToExist VerificationErrorType = iota
+
+	// ExpectedToNotExist marks verification error returned when removed (nil)
+	// value is found by the refresh to still exist.
+	ExpectedToNotExist
+
+	// NotEquivalent marks verification error returned when applied value is not
+	// equivalent with the refreshed value.
+	NotEquivalent
+)
+
+// VerificationError is returned by the scheduler for a transaction when an applied
+// value does not match with the refreshed value.
+type VerificationError struct {
+	key     string
+	errType VerificationErrorType
+}
+
+// NewVerificationError is constructor for a verification error.
+func NewVerificationError(key string, errType VerificationErrorType) *VerificationError {
+	return &VerificationError{key: key, errType: errType}
+}
+
+// Error returns a string representation of the error.
+func (e *VerificationError) Error() string {
+	switch e.errType {
+	case ExpectedToExist:
+		return "value is not actually configured"
+	case ExpectedToNotExist:
+		return "value is not actually removed"
+	case NotEquivalent:
+		return "applied value is not equivalent with the refreshed value"
+	}
+	return ""
+}
+
+// Key returns the key of the value for which the verification failed.
+func (e *VerificationError) Key() string {
+	return e.key
+}
+
+// Type returns the verification error type.
+func (e *VerificationError) Type() VerificationErrorType {
+	return e.errType
 }

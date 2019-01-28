@@ -79,7 +79,7 @@ func (vo ValueOrigin) String() string {
 	}
 }
 
-// KVDescriptor teaches KVScheduler how to add/delete/modify/update & dump
+// KVDescriptor teaches KVScheduler how to add/delete/modify & dump
 // values under keys matched by KeySelector().
 //
 // Every SB component should define one or more descriptors to cover all
@@ -91,7 +91,7 @@ func (vo ValueOrigin) String() string {
 //
 // Every key-value pair must have at most one descriptor associated with it.
 // NB base value without descriptor is considered unimplemented and will never
-// be added (can only be pushed from SB as already created/executed).
+// be added.
 // On the other hand, derived value is allowed to have no descriptor associated
 // with it. Typically, properties of base values are implemented as derived
 // (often empty) values without attached SB operations, used as targets for
@@ -100,9 +100,13 @@ type KVDescriptor struct {
 	// Name of the descriptor unique across all registered descriptors.
 	Name string
 
+	// TODO: replace KeySelector, KeyLabel & NBKeyPrefix with methods from
+	// models.Spec.
+
 	// KeySelector selects keys described by this descriptor.
 	KeySelector KeySelector
 
+	// TODO: obsolete, remove once Orchestrator is completed
 	// ValueTypeName defines name of the proto.Message type used to represent
 	// described values. This attribute is mandatory, otherwise LazyValue-s
 	// received from NB (e.g. datasync package) cannot be un-marshalled.
@@ -117,14 +121,6 @@ type KVDescriptor struct {
 	// and in the non-verbose logs.
 	KeyLabel func(key string) string
 
-	// ValueComparator can be *optionally* provided to customize comparision
-	// of values for equality.
-	// Scheduler compares values to determine if Modify operation is really
-	// needed.
-	// For NB values, <oldValue> was either previously set by NB or dumped,
-	// whereas <newValue> is a new value to be applied by NB.
-	ValueComparator func(key string, oldValue, newValue proto.Message) bool
-
 	// NBKeyPrefix is a key prefix that the scheduler should watch
 	// in NB to receive all NB-values described by this descriptor.
 	// The key space defined by NBKeyPrefix may cover more than KeySelector
@@ -136,6 +132,14 @@ type KVDescriptor struct {
 	// within the same plugin and in such case it is not needed to mention the
 	// same prefix again.
 	NBKeyPrefix string
+
+	// ValueComparator can be *optionally* provided to customize comparision
+	// of values for equality.
+	// Scheduler compares values to determine if Modify operation is really
+	// needed.
+	// For NB values, <oldValue> was either previously set by NB or dumped,
+	// whereas <newValue> is a new value to be applied by NB.
+	ValueComparator func(key string, oldValue, newValue proto.Message) bool
 
 	// WithMetadata tells scheduler whether to enable metadata - run-time,
 	// descriptor-owned, scheduler-opaque, data carried alongside a created
@@ -151,6 +155,15 @@ type KVDescriptor struct {
 	// If not defined, the scheduler will use the bare NamedMapping from
 	// the idxmap package.
 	MetadataMapFactory MetadataMapFactory
+
+	// Validate value handler (optional).
+	// Validate is called for every new value before it is added/modified.
+	// If the validations fails (returned <err> is non-nil), the scheduler will
+	// mark the value as invalid and will not attempt to apply it.
+	// The descriptor can further specify which field(s) are not valid
+	// by wrapping the validation error together with a slice of invalid fields
+	// using the error InvalidValueError (see errors.go).
+	Validate func(key string, value proto.Message) error
 
 	// Add new value handler.
 	// For non-derived values, descriptor may return metadata to associate with
@@ -175,14 +188,8 @@ type KVDescriptor struct {
 	// re-creation.
 	ModifyWithRecreate func(key string, oldValue, newValue proto.Message, metadata Metadata) bool
 
-	// Update value handler (optional for any value).
-	// Update is called every time the "context" of the value changes - whenever
-	// a dependency is modified or the set of dependencies changes without
-	// preventing the existence of this value.
-	Update func(key string, value proto.Message, metadata Metadata) error
-
 	// IsRetriableFailure tells scheduler if the given error, returned by one
-	// of Add/Delete/Modify/Update handlers, will always be returned for the
+	// of Add/Delete/Modify handlers, will always be returned for the
 	// the same value (non-retriable) or if the value can be theoretically
 	// fixed merely by repeating the operation.
 	// If the callback is not defined, every error will be considered retriable.
@@ -220,8 +227,8 @@ type KVDescriptor struct {
 	// <correlate> represents the non-derived values currently created
 	// as viewed from the northbound/scheduler point of view:
 	//   -> startup resync: <correlate> = values received from NB to be applied
-	//   -> run-time/downstream resync: <correlate> = values applied according to the
-	//      in-memory kv-store (scheduler's view of SB)
+	//   -> run-time/downstream resync: <correlate> = values applied according
+	//      to the in-memory kv-store (scheduler's view of SB)
 	//
 	// The callback is optional - if not defined, it is assumed that descriptor
 	// is not able to dump the current SB state and thus refresh cannot be
@@ -229,8 +236,7 @@ type KVDescriptor struct {
 	Dump func(correlate []KVWithMetadata) ([]KVWithMetadata, error)
 
 	// DumpDependencies is a list of descriptors that have to be dumped
-	// before this descriptor. Values already dumped are available for reading
-	// via scheduler methods GetValue(), GetValues() and runtime data using
-	// GetMetadataMap().
+	// before this descriptor. Metadata for values already dumped are available
+	// via GetMetadataMap().
 	DumpDependencies []string /* descriptor name */
 }

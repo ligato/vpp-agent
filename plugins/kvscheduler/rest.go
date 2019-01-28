@@ -26,8 +26,10 @@ import (
 
 	"github.com/ligato/cn-infra/rpc/rest"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"net/url"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
+	"sort"
 )
 
 const (
@@ -92,25 +94,23 @@ const (
 	verboseArg = "verbose"
 
 	// dumpURL is URL used to dump either SB or scheduler's internal state of kv-pairs
-	// under the given descriptor.
+	// under the given descriptor / key-prefix.
 	dumpURL = urlPrefix + "dump"
 
 	// descriptorArg is the name of the argument used to define descriptor for "dump" API.
 	descriptorArg = "descriptor"
 
-	// stateArg is the name of the argument used for "dump" API to tell whether
-	// to dump "SB" (what there really is), "internal" state (what scheduler thinks
-	// there is) or "NB" (the requested state). Default is to dump SB.
-	stateArg = "state"
+	// keyPrefixArg is the name of the argument used to define key prefix for "dump" API.
+	keyPrefixArg = "key-prefix"
 
-	/* recognized system states: */
+	// viewArg is the name of the argument used for "dump" API to chooses from
+	// which point of view to look at the key-value space when dumping values.
+	// See type View from kvscheduler's API to learn the set of possible values.
+	viewArg = "view"
 
-	// SB = southbound (what there really is)
-	SB = "SB"
-	// internalState (scheduler's view of SB)
-	internalState = "internal"
-	// NB = northbound (the requested state)
-	NB = "NB"
+	// statusURL is URL used to print the state of values under the given
+	// descriptor / key-prefix or all of them.
+	statusURL = urlPrefix + "status"
 )
 
 // errorString wraps string representation of an error that, unlike the original
@@ -122,7 +122,8 @@ type errorString struct {
 // dumpIndex defines "index" page for the Dump REST API.
 type dumpIndex struct {
 	Descriptors []string
-	States      []string
+	KeyPrefixes []string
+	Views       []string
 }
 
 // kvsWithMetaForREST converts a list of key-value pairs with metadata
@@ -151,6 +152,7 @@ func (s *Scheduler) registerHandlers(http rest.HTTPHandlers) {
 	http.RegisterHTTPHandler(flagStatsURL, s.flagStatsGetHandler, "GET")
 	http.RegisterHTTPHandler(downstreamResyncURL, s.downstreamResyncPostHandler, "POST")
 	http.RegisterHTTPHandler(dumpURL, s.dumpGetHandler, "GET")
+	http.RegisterHTTPHandler(statusURL, s.statusGetHandler, "GET")
 	http.RegisterHTTPHandler(urlPrefix+"graph", s.dotGraphHandler, "GET")
 }
 
@@ -192,7 +194,7 @@ func (s *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.HandlerF
 			if format == formatJSON {
 				s.logError(formatter.JSON(w, http.StatusOK, txn))
 			} else {
-				s.logError(formatter.Text(w, http.StatusOK, txn.StringWithOpts(false, 0)))
+				s.logError(formatter.Text(w, http.StatusOK, txn.StringWithOpts(false, true,0)))
 			}
 			return
 		}
@@ -221,7 +223,7 @@ func (s *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.HandlerF
 		if format == formatJSON {
 			s.logError(formatter.JSON(w, http.StatusOK, txnHistory))
 		} else {
-			s.logError(formatter.Text(w, http.StatusOK, txnHistory.StringWithOpts(false, 0)))
+			s.logError(formatter.Text(w, http.StatusOK, txnHistory.StringWithOpts(false, false,0)))
 		}
 	}
 }
@@ -327,7 +329,7 @@ func (s *Scheduler) downstreamResyncPostHandler(formatter *render.Render) http.H
 		ctx := context.Background()
 		ctx = kvs.WithResync(ctx, kvs.DownstreamResync, verbose)
 		if retry {
-			ctx = kvs.WithRetry(ctx, time.Second, true)
+			ctx = kvs.WithRetryDefault(ctx)
 		}
 		_, err := s.StartNBTransaction().Commit(ctx)
 		if err != nil {
@@ -338,110 +340,124 @@ func (s *Scheduler) downstreamResyncPostHandler(formatter *render.Render) http.H
 	}
 }
 
+func parseDumpAndStatusCommonArgs(args url.Values) (descriptor, keyPrefix string, err error) {
+	// parse optional *descriptor* argument
+	descriptors, withDescriptor := args[descriptorArg]
+	if withDescriptor && len(descriptors) != 1 {
+		err = errors.New("descriptor argument listed more than once")
+		return
+	}
+	descriptor = descriptors[0]
+
+	// parse optional *key-prefix* argument
+	keyPrefixes, withKeyPrefix := args[keyPrefixArg]
+	if withKeyPrefix && len(keyPrefixes) != 1 {
+		err = errors.New("key-prefix argument listed more than once")
+		return
+	}
+	keyPrefix = keyPrefixes[0]
+	return
+}
+
 // dumpGetHandler is the GET handler for "dump" API.
 func (s *Scheduler) dumpGetHandler(formatter *render.Render) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		args := req.URL.Query()
 
-		// parse optional *descriptor* argument
-		descriptors, withDescriptor := args[descriptorArg]
-		if !withDescriptor {
-			// return "index" page
-			s.txnLock.Lock()
-			defer s.txnLock.Unlock()
-			index := dumpIndex{States: []string{SB, internalState, NB}}
-			for _, descriptor := range s.registry.GetAllDescriptors() {
-				index.Descriptors = append(index.Descriptors, descriptor.Name)
-			}
-			s.logError(formatter.JSON(w, http.StatusOK, index))
-			return
-		}
-		if len(descriptors) != 1 {
-			err := errors.New("descriptor argument listed more than once")
-			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-			return
-		}
-		descriptor := descriptors[0]
-
-		// parse optional *state* argument (default = SB)
-		state := SB
-		if stateStr, withState := args[stateArg]; withState && len(stateStr) == 1 {
-			state = stateStr[0]
-			if state != SB && state != NB && state != internalState {
-				err := errors.New("unrecognized system state")
-				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-				return
-			}
-		}
-
-		// pause transaction processing
-		if state == SB {
-			s.txnLock.Lock()
-			defer s.txnLock.Unlock()
-		}
-
-		graphR := s.graph.Read()
-		defer graphR.Release()
-
-		if state == NB {
-			// dump the requested state
-			var kvPairs []kvs.KVWithMetadata
-			nbNodes := graphR.GetNodes(nil,
-				graph.WithFlags(&DescriptorFlag{descriptor}, &OriginFlag{kvs.FromNB}),
-				graph.WithoutFlags(&DerivedFlag{}))
-
-			for _, node := range nbNodes {
-				lastChange := getNodeLastChange(node)
-				if lastChange.value == nil {
-					// value requested to be deleted
-					continue
-				}
-				kvPairs = append(kvPairs, kvs.KVWithMetadata{
-					Key:    node.GetKey(),
-					Value:  utils.RecordProtoMessage(lastChange.value),
-					Origin: kvs.FromNB,
-				})
-			}
-			s.logError(formatter.JSON(w, http.StatusOK, kvPairs))
-			return
-		}
-
-		/* internal/SB: */
-
-		// dump from the in-memory graph first (for SB Dump it is used for correlation)
-		inMemNodes := nodesToKVPairsWithMetadata(
-			graphR.GetNodes(nil,
-				graph.WithFlags(&DescriptorFlag{descriptor}),
-				graph.WithoutFlags(&PendingFlag{}, &DerivedFlag{})))
-
-		if state == internalState {
-			// return the scheduler's view of SB for the given descriptor
-			s.logError(formatter.JSON(w, http.StatusOK, kvsWithMetaForREST(inMemNodes)))
-			return
-		}
-
-		// obtain Dump handler from the descriptor
-		kvDescriptor := s.registry.GetDescriptor(descriptor)
-		if kvDescriptor == nil {
-			err := errors.New("descriptor is not registered")
-			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-			return
-		}
-		if kvDescriptor.Dump == nil {
-			err := errors.New("descriptor does not support Dump operation")
-			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
-			return
-		}
-
-		// dump the state directly from SB via descriptor
-		dump, err := kvDescriptor.Dump(inMemNodes)
+		descriptor, keyPrefix, err := parseDumpAndStatusCommonArgs(args)
 		if err != nil {
 			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
 			return
 		}
 
+		// without descriptor and key prefix return "index" page
+		if descriptor == "" && keyPrefix == "" {
+			s.txnLock.Lock()
+			defer s.txnLock.Unlock()
+			index := dumpIndex{Views: []string{
+				kvs.SBView.String(), kvs.NBView.String(), kvs.InternalView.String()}}
+			for _, descriptor := range s.registry.GetAllDescriptors() {
+				index.Descriptors = append(index.Descriptors, descriptor.Name)
+				index.KeyPrefixes = append(index.KeyPrefixes, descriptor.NBKeyPrefix)
+			}
+			s.logError(formatter.JSON(w, http.StatusOK, index))
+			return
+		}
+
+		// parse optional *view* argument (default = SBView)
+		var view kvs.View
+		if viewStr, withState := args[viewArg]; withState && len(viewStr) == 1 {
+			switch viewStr[0] {
+			case kvs.SBView.String():
+				view = kvs.SBView
+			case kvs.NBView.String():
+				view = kvs.NBView
+			case kvs.InternalView.String():
+				view = kvs.InternalView
+			default:
+				err := errors.New("unrecognized system view")
+				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+				return
+			}
+		}
+
+		var dump []kvs.KVWithMetadata
+		if descriptor != "" {
+			dump, err = s.DumpValuesByDescriptor(descriptor, view)
+		} else {
+			dump, err = s.DumpValuesByKeyPrefix(keyPrefix, view)
+		}
+		if err != nil {
+			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+			return
+		}
 		s.logError(formatter.JSON(w, http.StatusOK, kvsWithMetaForREST(dump)))
-		return
+	}
+}
+
+// statusGetHandler is the GET handler for "status" API.
+func (s *Scheduler) statusGetHandler(formatter *render.Render) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		args := req.URL.Query()
+
+		descriptor, keyPrefix, err := parseDumpAndStatusCommonArgs(args)
+		if err != nil {
+			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+			return
+		}
+
+		graphR := s.graph.Read()
+		defer graphR.Release()
+
+		if descriptor == "" && keyPrefix != "" {
+			descriptor = s.getDescriptorForKeyPrefix(keyPrefix)
+			if descriptor == "" {
+				err = errors.New("unknown key prefix")
+			}
+			s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+			return
+		}
+
+		var nodes []graph.Node
+		if descriptor == "" {
+			// get all nodes with base values
+			nodes = graphR.GetNodes(nil, graph.WithoutFlags(&DerivedFlag{}))
+		} else {
+			// get nodes with base values under the given descriptor
+			nodes = graphR.GetNodes(nil,
+				graph.WithFlags(&DescriptorFlag{descriptor}),
+				graph.WithoutFlags(&DerivedFlag{}))
+		}
+
+		var status []*kvs.BaseValueStatus
+		for _, node := range nodes {
+			status = append(status, getValueStatus(node, node.GetKey()))
+		}
+		// sort by keys
+		sort.Slice(status, func(i, j int) bool {
+			return status[i].Value.Key < status[j].Value.Key
+		})
+		s.logError(formatter.JSON(w, http.StatusOK, status))
 	}
 }
 

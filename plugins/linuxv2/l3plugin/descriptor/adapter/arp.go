@@ -28,11 +28,11 @@ type ARPDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value *linux_l3.ARPEntry) error
 	Add                func(key string, value *linux_l3.ARPEntry) (metadata interface{}, err error)
 	Delete             func(key string, value *linux_l3.ARPEntry, metadata interface{}) error
 	Modify             func(key string, oldValue, newValue *linux_l3.ARPEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.ARPEntry, metadata interface{}) bool
-	Update             func(key string, value *linux_l3.ARPEntry, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *linux_l3.ARPEntry) []Dependency
 	DerivedValues      func(key string, value *linux_l3.ARPEntry) []KeyValuePair
@@ -62,6 +62,9 @@ func NewARPDescriptor(typedDescriptor *ARPDescriptor) *KVDescriptor {
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewARPDescriptor(typedDescriptor *ARPDescriptor) *KVDescriptor {
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *ARPDescriptorAdapter) ValueComparator(key string, oldValue, newValue p
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *ARPDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castARPValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *ARPDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *ARPDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValu
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *ARPDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castARPValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castARPMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *ARPDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

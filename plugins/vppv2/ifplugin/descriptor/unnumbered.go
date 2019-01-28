@@ -21,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/vppcalls"
@@ -145,11 +145,11 @@ func (d *UnnumberedIfDescriptor) ModifyWithRecreate(key string, oldUnIntf, newUn
 }
 
 // Dependencies lists dependencies for an unnumbered VPP interface.
-func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Interface_Unnumbered) []scheduler.Dependency {
+func (d *UnnumberedIfDescriptor) Dependencies(key string, unIntf *interfaces.Interface_Unnumbered) []kvs.Dependency {
 	// link between unnumbered interface and the referenced interface with IP address
 	// - satisfied as along as the referenced interface is configured and has at least
 	//   one IP address assigned
-	return []scheduler.Dependency{{
+	return []kvs.Dependency{{
 		Label: unnumberedInterfaceHasIPDep,
 		AnyOf: func(key string) bool {
 			ifName, _, _, isIfaceAddrKey := interfaces.ParseInterfaceAddressKey(key)

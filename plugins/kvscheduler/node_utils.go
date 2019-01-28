@@ -18,28 +18,8 @@ import (
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
+	"github.com/gogo/protobuf/proto"
 )
-
-func nodesToKVPairs(nodes []graph.Node) (kvPairs []kvs.KeyValuePair) {
-	for _, node := range nodes {
-		kvPairs = append(kvPairs, kvs.KeyValuePair{
-			Key:   node.GetKey(),
-			Value: node.GetValue()})
-	}
-	return kvPairs
-}
-
-func nodesToKeysWithError(nodes []graph.Node) (kvPairs []kvs.KeyWithError) {
-	for _, node := range nodes {
-		txnOp, err := getNodeError(node)
-		kvPairs = append(kvPairs, kvs.KeyWithError{
-			Key:          node.GetKey(),
-			TxnOperation: txnOp,
-			Error:        err,
-		})
-	}
-	return kvPairs
-}
 
 func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []kvs.KVWithMetadata) {
 	for _, node := range nodes {
@@ -78,38 +58,162 @@ func constructTargets(deps []kvs.Dependency, derives []kvs.KeyValuePair) (target
 	return targets
 }
 
-// getNodeOrigin returns node origin stored in Origin flag.
-func getNodeOrigin(node graph.Node) kvs.ValueOrigin {
-	flag := node.GetFlag(OriginFlagName)
-	if flag != nil {
-		return flag.(*OriginFlag).origin
+// equalValueDetails compares value state details for equality.
+func equalValueDetails(details1, details2 []string) bool {
+	if len(details1) != len(details2) {
+		return false
 	}
-	return kvs.UnknownOrigin
+	for _, d1 := range details1 {
+		found := false
+		for _, d2 := range details2 {
+			if d1 == d2 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+// getValueDetails returns further details about the value state.
+func getValueDetails(node graph.Node) (details []string) {
+	state := getNodeState(node)
+	_, err := getNodeError(node)
+	if state == kvs.ValueState_INVALID {
+		if ivErr, isIVErr := err.(*kvs.InvalidValueError); isIVErr {
+			details = ivErr.GetInvalidFields()
+			return
+		}
+	}
+	if state == kvs.ValueState_PENDING {
+		for _, targets := range node.GetTargets(DependencyRelation) {
+			satisfied := false
+			for _, target := range targets.Nodes {
+				if isNodeAvailable(target) {
+					satisfied = true
+				}
+			}
+			if !satisfied {
+				details = append(details, targets.Label)
+			}
+		}
+	}
+	return details
+}
+
+// getValueStatus reads the value status from the corresponding node.
+func getValueStatus(node graph.Node, key string) *kvs.BaseValueStatus {
+	status := &kvs.BaseValueStatus{
+		Value: &kvs.ValueStatus{
+			Key: key,
+		},
+	}
+
+	status.Value.State = getNodeState(node)
+	if status.Value.State == kvs.ValueState_NONEXISTENT {
+		// nothing else to get for non-existent value
+		return status
+	}
+	_, err := getNodeError(node)
+	if err != nil {
+		status.Value.Error = err.Error()
+	}
+	status.Value.LastOperation = getNodeLastOperation(node)
+	status.Value.State = getNodeState(node)
+	status.Value.Details = getValueDetails(node)
+
+	// derived nodes
+	if !isNodeDerived(node) {
+		for _, derivedNode := range getDerivedNodes(node) {
+			derValStatus := getValueStatus(derivedNode, derivedNode.GetKey())
+			status.DerivedValues = append(status.DerivedValues, derValStatus.Value)
+		}
+	}
+
+	return status
+}
+
+// functions returns selectors selecting non-derived NB values.
+func nbBaseValsSelectors() []graph.FlagSelector {
+	return []graph.FlagSelector{
+		graph.WithoutFlags(&DerivedFlag{}),
+		graph.WithoutFlags(&ValueStateFlag{kvs.ValueState_RETRIEVED}),
+	}
+}
+
+// functions returns selectors selecting non-derived SB values.
+func sbBaseValsSelectors() []graph.FlagSelector {
+	return []graph.FlagSelector{
+		graph.WithoutFlags(&DerivedFlag{}),
+		graph.WithFlags(&ValueStateFlag{kvs.ValueState_RETRIEVED}),
+	}
+}
+
+// function returns selectors selecting values to be used for correlation for
+// the Dump operation of the given descriptor.
+func correlateValsSelectors(descriptor string) []graph.FlagSelector {
+	return []graph.FlagSelector{
+		graph.WithFlags(&DescriptorFlag{descriptor}),
+		graph.WithoutFlags(&UnavailValueFlag{}, &DerivedFlag{}),
+	}
+}
+
+// getNodeState returns state stored in the ValueState flag.
+func getNodeState(node graph.Node) kvs.ValueState {
+	if node != nil {
+		flag := node.GetFlag(ValueStateFlagName)
+		if flag != nil {
+			return flag.(*ValueStateFlag).valueState
+		}
+	}
+	return kvs.ValueState_NONEXISTENT
+}
+
+func valueStateToOrigin(state kvs.ValueState) kvs.ValueOrigin {
+	switch state {
+	case kvs.ValueState_NONEXISTENT:
+		return kvs.UnknownOrigin
+	case kvs.ValueState_RETRIEVED:
+		return kvs.FromSB
+	}
+	return kvs.FromNB
+}
+
+// getNodeOrigin returns node origin based on the value state.
+func getNodeOrigin(node graph.Node) kvs.ValueOrigin {
+	state := getNodeState(node)
+	return valueStateToOrigin(state)
 }
 
 // getNodeError returns node error stored in Error flag.
-func getNodeError(node graph.Node) (operation kvs.TxnOperation, err error) {
-	errorFlag := node.GetFlag(ErrorFlagName)
-	if errorFlag != nil {
-		flag := errorFlag.(*ErrorFlag)
-		err = flag.err
-		operation = flag.txnOp
-		return
+func getNodeError(node graph.Node) (retriable bool, err error) {
+	if node != nil {
+		errorFlag := node.GetFlag(ErrorFlagName)
+		if errorFlag != nil {
+			flag := errorFlag.(*ErrorFlag)
+			return flag.retriable, flag.err
+		}
 	}
-	return kvs.UndefinedTxnOp, nil
+	return false, nil
 }
 
-// getNodeLastChange returns info about the last change for a given node, stored in LastChange flag.
-func getNodeLastChange(node graph.Node) *LastChangeFlag {
-	flag := node.GetFlag(LastChangeFlagName)
-	if flag == nil {
+// getNodeErrorString returns node error stored in Error flag as string.
+func getNodeErrorString(node graph.Node) string {
+	_, err := getNodeError(node)
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
+
+// getNodeLastUpdate returns info about the last update for a given node, stored in LastUpdate flag.
+func getNodeLastUpdate(node graph.Node) *LastUpdateFlag {
+	if node == nil {
 		return nil
 	}
-	return flag.(*LastChangeFlag)
-}
-
-// getNodeLastUpdate returns info about the last update for a given node, stored in LastChange flag.
-func getNodeLastUpdate(node graph.Node) *LastUpdateFlag {
 	flag := node.GetFlag(LastUpdateFlagName)
 	if flag == nil {
 		return nil
@@ -117,12 +221,57 @@ func getNodeLastUpdate(node graph.Node) *LastUpdateFlag {
 	return flag.(*LastUpdateFlag)
 }
 
+// getNodeLastAppliedValue return the last applied value for the given node
+func getNodeLastAppliedValue(node graph.Node) proto.Message {
+	lastUpdate := getNodeLastUpdate(node)
+	if lastUpdate == nil {
+		return nil
+	}
+	return lastUpdate.value
+}
+
+// getNodeLastOperation returns last operation executed over the given node.
+func getNodeLastOperation(node graph.Node) kvs.TxnOperation {
+	if node != nil && getNodeState(node) != kvs.ValueState_RETRIEVED {
+		lastUpdate := getNodeLastUpdate(node)
+		if lastUpdate != nil {
+			return lastUpdate.txnOp
+		}
+	}
+	return kvs.TxnOperation_UNDEFINED
+}
+
+// getNodeDescriptor returns name of the descriptor associated with the given node.
+// Empty for properties and unimplemented values.
+func getNodeDescriptor(node graph.Node) string {
+	if node == nil {
+		return ""
+	}
+	flag := node.GetFlag(DescriptorFlagName)
+	if flag == nil {
+		return ""
+	}
+	return flag.(*DescriptorFlag).descriptorName
+}
+
 func isNodeDerived(node graph.Node) bool {
 	return node.GetFlag(DerivedFlagName) != nil
 }
 
-func isNodePending(node graph.Node) bool {
-	return node.GetFlag(PendingFlagName) != nil
+func getNodeBaseKey(node graph.Node) string {
+	flag := node.GetFlag(DerivedFlagName)
+	if flag == nil {
+		return node.GetKey()
+	}
+	return flag.(*DerivedFlag).baseKey
+}
+
+// isNodePending checks whether the node is available for dependency resolution.
+func isNodeAvailable(node graph.Node) bool {
+	if node == nil {
+		return false
+	}
+	return node.GetFlag(UnavailValueFlagName) == nil
 }
 
 // isNodeReady return true if the given node has all dependencies satisfied.
@@ -150,11 +299,7 @@ func isNodeReadyRec(node graph.Node, depth int, visited map[string]int) (ready b
 	for _, targets := range node.GetTargets(DependencyRelation) {
 		satisfied := false
 		for _, target := range targets.Nodes {
-			if isNodeBeingRemoved(target) {
-				// do not consider values that are about to be removed
-				continue
-			}
-			if !isNodePending(target) {
+			if isNodeAvailable(target) {
 				satisfied = true
 			}
 
@@ -176,44 +321,8 @@ func isNodeReadyRec(node graph.Node, depth int, visited map[string]int) (ready b
 	return true, cycleDepth
 }
 
-// isNodeBeingRemoved returns true for a given node if it is being removed
-// by a transaction or a notification (including failed removal attempt).
-func isNodeBeingRemoved(node graph.Node) bool {
-	base := node
-	if isNodeDerived(node) {
-		for {
-			derivedFrom := base.GetSources(DerivesRelation)
-			if len(derivedFrom) == 0 {
-				break
-			}
-			base = derivedFrom[0]
-			if isNodePending(base) {
-				// one of the values from which this derives is pending
-				return true
-			}
-		}
-		if isNodeDerived(base) {
-			// derived without base -> it is being removed by Modify()
-			return true
-		}
-	}
-	if getNodeLastChange(base) != nil && getNodeLastChange(base).value == nil {
-		// about to be removed by transaction
-		return true
-	}
-	return false
-}
-
 func canNodeHaveMetadata(node graph.Node) bool {
 	return !isNodeDerived(node)
-}
-
-func getNodeBase(node graph.Node) graph.Node {
-	derivedFrom := node.GetSources(DerivesRelation)
-	if len(derivedFrom) == 0 {
-		return node
-	}
-	return getNodeBase(derivedFrom[0])
 }
 
 func getDerivedNodes(node graph.Node) (derived []graph.Node) {

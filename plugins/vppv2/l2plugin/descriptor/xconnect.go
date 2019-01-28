@@ -20,7 +20,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
@@ -67,38 +67,27 @@ func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 		ValueTypeName:      l2.ModelXConnectPair.ProtoName(),
 		KeySelector:        l2.ModelXConnectPair.IsKeyValid,
 		KeyLabel:           l2.ModelXConnectPair.StripKeyPrefix,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *XConnectDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrXConnectWithoutInterface,
+// Validate validates VPP xConnect pair configuration.
+func (d *XConnectDescriptor) Validate(key string, xc *l2.XConnectPair) error {
+	if xc.ReceiveInterface == "" || xc.TransmitInterface == "" {
+		return kvs.NewInvalidValueError(ErrXConnectWithoutInterface,
+			"receive_interface", "transmit_interface")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
-		}
-	}
-	return true
+	return nil
 }
 
 // Add adds new xConnect pair.
 func (d *XConnectDescriptor) Add(key string, xc *l2.XConnectPair) (metadata interface{}, err error) {
-	// validate the configuration first
-	err = d.validateXConnectConfig(xc)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// add xConnect pair
 	err = d.xcHandler.AddL2XConnect(xc.ReceiveInterface, xc.TransmitInterface)
 	if err != nil {
@@ -122,8 +111,8 @@ func (d *XConnectDescriptor) ModifyWithRecreate(key string, oldXC, newXC *l2.XCo
 }
 
 // Dependencies lists both Rx and Tx interface as dependencies.
-func (d *XConnectDescriptor) Dependencies(key string, xc *l2.XConnectPair) []scheduler.Dependency {
-	return []scheduler.Dependency{
+func (d *XConnectDescriptor) Dependencies(key string, xc *l2.XConnectPair) []kvs.Dependency {
+	return []kvs.Dependency{
 		{
 			Label: rxInterfaceDep,
 			Key:   interfaces.InterfaceKey(xc.ReceiveInterface),
@@ -147,16 +136,8 @@ func (d *XConnectDescriptor) Dump(correlate []adapter.XConnectKVWithMetadata) (d
 		dump = append(dump, adapter.XConnectKVWithMetadata{
 			Key:    l2.XConnectKey(xc.Xc.ReceiveInterface),
 			Value:  xc.Xc,
-			Origin: scheduler.FromNB,
+			Origin: kvs.FromNB,
 		})
 	}
 	return dump, nil
-}
-
-// validateXConnectConfig validates VPP xConnect pair configuration.
-func (d *XConnectDescriptor) validateXConnectConfig(xc *l2.XConnectPair) error {
-	if xc.ReceiveInterface == "" || xc.TransmitInterface == "" {
-		return ErrXConnectWithoutInterface
-	}
-	return nil
 }

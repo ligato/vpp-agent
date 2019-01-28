@@ -27,7 +27,7 @@ import (
 
 	"github.com/ligato/vpp-agent/pkg/idxvpp2"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
@@ -59,7 +59,7 @@ type L2Plugin struct {
 // Deps lists dependencies of the L2 plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler   scheduler.KVScheduler
+	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -78,11 +78,11 @@ func (p *L2Plugin) Init() (err error) {
 	// init and register bridge domain descriptor
 	p.bdDescriptor = descriptor.NewBridgeDomainDescriptor(p.bdHandler, p.Log)
 	bdDescriptor := adapter.NewBridgeDomainDescriptor(p.bdDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(bdDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(bdDescriptor)
 
 	// obtain read-only references to BD index map
 	var withIndex bool
-	metadataMap := p.Deps.Scheduler.GetMetadataMap(bdDescriptor.Name)
+	metadataMap := p.KVScheduler.GetMetadataMap(bdDescriptor.Name)
 	p.bdIndex, withIndex = metadataMap.(idxvpp2.NameToIndex)
 	if !withIndex {
 		return errors.New("missing index with bridge domain metadata")
@@ -95,15 +95,15 @@ func (p *L2Plugin) Init() (err error) {
 	// init & register descriptors
 	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.bdHandler, p.Log)
 	bdIfaceDescriptor := adapter.NewBDInterfaceDescriptor(p.bdIfaceDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(bdIfaceDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(bdIfaceDescriptor)
 
 	p.fibDescriptor = descriptor.NewFIBDescriptor(p.fibHandler, p.Log)
 	fibDescriptor := adapter.NewFIBDescriptor(p.fibDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(fibDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(fibDescriptor)
 
 	p.xcDescriptor = descriptor.NewXConnectDescriptor(p.xCHandler, p.Log)
 	xcDescriptor := adapter.NewXConnectDescriptor(p.xcDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(xcDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(xcDescriptor)
 
 	return nil
 }

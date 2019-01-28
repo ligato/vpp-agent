@@ -43,8 +43,6 @@ const (
 	MockModify
 	// MockDelete is a mock Delete operation.
 	MockDelete
-	// MockUpdate is a mock Update operation.
-	MockUpdate
 	// MockDump is a mock Dump operation.
 	MockDump
 )

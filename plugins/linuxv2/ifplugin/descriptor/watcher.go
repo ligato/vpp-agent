@@ -27,7 +27,7 @@ import (
 	"github.com/vishvananda/netlink"
 
 	ifmodel "github.com/ligato/vpp-agent/api/models/linux/interfaces"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
 )
 
@@ -45,9 +45,9 @@ const (
 // InterfaceWatcher watches default namespace for newly added/removed Linux interfaces.
 type InterfaceWatcher struct {
 	// input arguments
-	log       logging.Logger
-	scheduler scheduler.KVScheduler
-	ifHandler linuxcalls.NetlinkAPIRead
+	log         logging.Logger
+	kvscheduler kvs.KVScheduler
+	ifHandler   linuxcalls.NetlinkAPIRead
 
 	// go routine management
 	ctx    context.Context
@@ -72,10 +72,10 @@ type InterfaceWatcher struct {
 }
 
 // NewInterfaceWatcher creates a new instance of the Interface Watcher.
-func NewInterfaceWatcher(scheduler scheduler.KVScheduler, ifHandler linuxcalls.NetlinkAPI, log logging.PluginLogger) *InterfaceWatcher {
+func NewInterfaceWatcher(kvscheduler kvs.KVScheduler, ifHandler linuxcalls.NetlinkAPI, log logging.PluginLogger) *InterfaceWatcher {
 	descriptor := &InterfaceWatcher{
 		log:          log.NewLogger("if-watcher"),
-		scheduler:    scheduler,
+		kvscheduler:  kvscheduler,
 		ifHandler:    ifHandler,
 		ifaces:       make(map[string]struct{}),
 		pendingIntfs: make(map[string]bool),
@@ -89,8 +89,8 @@ func NewInterfaceWatcher(scheduler scheduler.KVScheduler, ifHandler linuxcalls.N
 }
 
 // GetDescriptor returns descriptor suitable for registration with the KVScheduler.
-func (w *InterfaceWatcher) GetDescriptor() *scheduler.KVDescriptor {
-	return &scheduler.KVDescriptor{
+func (w *InterfaceWatcher) GetDescriptor() *kvs.KVDescriptor {
+	return &kvs.KVDescriptor{
 		Name:        InterfaceWatcherName,
 		KeySelector: w.IsLinuxInterfaceNotification,
 		Dump:        w.Dump,
@@ -105,7 +105,7 @@ func (w *InterfaceWatcher) IsLinuxInterfaceNotification(key string) bool {
 
 // Dump returns key with empty value for every currently existing Linux interface
 // in the default network namespace.
-func (w *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump []scheduler.KVWithMetadata, err error) {
+func (w *InterfaceWatcher) Dump(correlate []kvs.KVWithMetadata) (dump []kvs.KVWithMetadata, err error) {
 	// wait until the set of interfaces is in-sync with the Linux network stack
 	w.ifacesMu.Lock()
 	if !w.intfsInSync {
@@ -114,10 +114,10 @@ func (w *InterfaceWatcher) Dump(correlate []scheduler.KVWithMetadata) (dump []sc
 	defer w.ifacesMu.Unlock()
 
 	for ifName := range w.ifaces {
-		dump = append(dump, scheduler.KVWithMetadata{
+		dump = append(dump, kvs.KVWithMetadata{
 			Key:    ifmodel.InterfaceHostNameKey(ifName),
 			Value:  &prototypes.Empty{},
-			Origin: scheduler.FromSB,
+			Origin: kvs.FromSB,
 		})
 	}
 
@@ -251,7 +251,7 @@ func (w *InterfaceWatcher) notifyScheduler(ifName string, enabled bool) {
 		delete(w.ifaces, ifName)
 	}
 
-	w.scheduler.PushSBNotification(
+	w.kvscheduler.PushSBNotification(
 		ifmodel.InterfaceHostNameKey(ifName),
 		value,
 		nil)

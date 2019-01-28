@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
@@ -46,15 +46,13 @@ const (
 type RouteDescriptor struct {
 	log          logging.Logger
 	routeHandler vppcalls.RouteVppAPI
-	scheduler    scheduler.KVScheduler
 }
 
 // NewRouteDescriptor creates a new instance of the Route descriptor.
-func NewRouteDescriptor(scheduler scheduler.KVScheduler,
+func NewRouteDescriptor(
 	routeHandler vppcalls.RouteVppAPI, log logging.PluginLogger) *RouteDescriptor {
 
 	return &RouteDescriptor{
-		scheduler:    scheduler,
 		routeHandler: routeHandler,
 		log:          log.NewLogger("static-route-descriptor"),
 	}
@@ -74,11 +72,9 @@ func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 		ModifyWithRecreate: func(key string, oldValue, newValue *l3.Route, metadata interface{}) bool {
 			return true
 		},
-		IsRetriableFailure: d.IsRetriableFailure,
-		Dependencies:       d.Dependencies,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
+		Dependencies:     d.Dependencies,
+		Dump:             d.Dump,
+		DumpDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -104,11 +100,6 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.Ro
 	}
 
 	return true
-}
-
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *RouteDescriptor) IsRetriableFailure(err error) bool {
-	return false // nothing retriable
 }
 
 // Add adds VPP static route.
@@ -147,49 +138,17 @@ func (d *RouteDescriptor) Delete(key string, route *l3.Route, metadata interface
 }
 
 // Dependencies lists dependencies for a VPP route.
-func (d *RouteDescriptor) Dependencies(key string, route *l3.Route) []scheduler.Dependency {
-	var dependencies []scheduler.Dependency
+func (d *RouteDescriptor) Dependencies(key string, route *l3.Route) []kvs.Dependency {
+	var dependencies []kvs.Dependency
 	// the outgoing interface must exist and be UP
 	if route.OutgoingInterface != "" {
-		dependencies = append(dependencies, scheduler.Dependency{
+		dependencies = append(dependencies, kvs.Dependency{
 			Label: routeOutInterfaceDep,
 			Key:   interfaces.InterfaceKey(route.OutgoingInterface),
 		})
 	}
-	// GW must be routable
-	/*gwAddr := net.ParseIP(getGwAddr(route))
-	if gwAddr != nil && !gwAddr.IsUnspecified() {
-		dependencies = append(dependencies, scheduler.Dependency{
-			Label: routeGwReachabilityDep,
-			AnyOf: func(key string) bool {
-				dstAddr, ifName, err := l3.ParseStaticLinkLocalRouteKey(key)
-				if err == nil && ifName == route.OutgoingInterface && dstAddr.Contains(gwAddr) {
-					// GW address is neighbour as told by another link-local route
-					return true
-				}
-				ifName, addr, err := ifmodel.ParseInterfaceAddressKey(key)
-				if err == nil && ifName == route.OutgoingInterface && addr.Contains(gwAddr) {
-					// GW address is inside the local network of the outgoing interface
-					// as given by the assigned IP address
-					return true
-				}
-				return false
-			},
-		})
-	}*/
+	// TODO: perhaps check GW routability
 	return dependencies
-}
-
-// DerivedValues derives empty value under StaticLinkLocalRouteKey if route is link-local.
-// It is used in dependencies for network reachability of a route gateway (see above).
-func (d *RouteDescriptor) DerivedValues(key string, route *l3.Route) (derValues []scheduler.KeyValuePair) {
-	/*if route.Scope == l3.LinuxRoute_LINK {
-		derValues = append(derValues, scheduler.KeyValuePair{
-			Key:   l3.StaticLinkLocalRouteKey(route.DstNetwork, route.OutgoingInterface),
-			Value: &prototypes.Empty{},
-		})
-	}*/
-	return derValues
 }
 
 // Dump returns all routes associated with interfaces managed by this agent.
@@ -206,7 +165,7 @@ func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) (
 		dump = append(dump, adapter.RouteKVWithMetadata{
 			Key:    l3.RouteKey(Route.Route.VrfId, Route.Route.DstNetwork, Route.Route.NextHopAddr),
 			Value:  Route.Route,
-			Origin: scheduler.UnknownOrigin,
+			Origin: kvs.UnknownOrigin,
 		})
 	}
 

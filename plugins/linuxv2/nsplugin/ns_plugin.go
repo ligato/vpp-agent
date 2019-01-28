@@ -23,7 +23,7 @@ import (
 
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	nsmodel "github.com/ligato/vpp-agent/api/models/linux/namespace"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/descriptor"
@@ -54,7 +54,7 @@ type NsPlugin struct {
 // Deps lists dependencies of the NsPlugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler scheduler.KVScheduler
+	KVScheduler kvs.KVScheduler
 }
 
 // Config holds the nsplugin configuration.
@@ -97,11 +97,11 @@ func (p *NsPlugin) Init() error {
 	}
 
 	// Microservice descriptor
-	p.msDescriptor, err = descriptor.NewMicroserviceDescriptor(p.Scheduler, p.Log)
+	p.msDescriptor, err = descriptor.NewMicroserviceDescriptor(p.KVScheduler, p.Log)
 	if err != nil {
 		return err
 	}
-	p.Scheduler.RegisterKVDescriptor(p.msDescriptor.GetDescriptor())
+	p.KVScheduler.RegisterKVDescriptor(p.msDescriptor.GetDescriptor())
 	p.msDescriptor.StartTracker()
 
 	p.Log.Infof("Namespace plugin initialized")

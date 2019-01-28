@@ -20,9 +20,8 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-
 	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
@@ -135,8 +134,8 @@ func (d *SPDInterfaceDescriptor) ModifyWithRecreate(key string, oldSPDIface, new
 }
 
 // Dependencies lists the interface as the only dependency for the binding.
-func (d *SPDInterfaceDescriptor) Dependencies(key string, value *ipsec.SecurityPolicyDatabase_Interface) []scheduler.Dependency {
-	return []scheduler.Dependency{
+func (d *SPDInterfaceDescriptor) Dependencies(key string, value *ipsec.SecurityPolicyDatabase_Interface) []kvs.Dependency {
+	return []kvs.Dependency{
 		{
 			Label: interfaceDep,
 			Key:   interfaces.InterfaceKey(value.Name),

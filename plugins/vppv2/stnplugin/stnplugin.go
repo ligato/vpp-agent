@@ -21,7 +21,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor/adapter"
@@ -46,7 +46,7 @@ type STNPlugin struct {
 // Deps lists dependencies of the STN plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler   scheduler.KVScheduler
+	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -65,7 +65,7 @@ func (p *STNPlugin) Init() (err error) {
 	// init and register STN descriptor
 	p.stnDescriptor = descriptor.NewSTNDescriptor(p.stnHandler, p.Log)
 	stnDescriptor := adapter.NewSTNDescriptor(p.stnDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(stnDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(stnDescriptor)
 
 	return nil
 }

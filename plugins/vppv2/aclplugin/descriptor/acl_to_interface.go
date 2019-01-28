@@ -7,7 +7,7 @@ import (
 
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/aclidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin/vppcalls"
 )
@@ -38,8 +38,8 @@ func NewACLToInterfaceDescriptor(aclIndex aclidx.ACLMetadataIndex, aclHandler vp
 }
 
 // GetDescriptor returns descriptor suitable for registration with the KVScheduler.
-func (d *ACLToInterfaceDescriptor) GetDescriptor() *scheduler.KVDescriptor {
-	return &scheduler.KVDescriptor{
+func (d *ACLToInterfaceDescriptor) GetDescriptor() *kvs.KVDescriptor {
+	return &kvs.KVDescriptor{
 		Name:         ACLToInterfaceDescriptorName,
 		KeySelector:  d.IsACLInterfaceKey,
 		Add:          d.Add,
@@ -55,7 +55,7 @@ func (d *ACLToInterfaceDescriptor) IsACLInterfaceKey(key string) bool {
 }
 
 // Add binds interface to ACL.
-func (d *ACLToInterfaceDescriptor) Add(key string, emptyVal proto.Message) (metadata scheduler.Metadata, err error) {
+func (d *ACLToInterfaceDescriptor) Add(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
 	aclName, ifName, flow, _ := acl.ParseACLToInterfaceKey(key)
 
 	aclMeta, found := d.aclIndex.LookupByName(aclName)
@@ -90,7 +90,7 @@ func (d *ACLToInterfaceDescriptor) Add(key string, emptyVal proto.Message) (meta
 }
 
 // Delete unbinds interface from ACL.
-func (d *ACLToInterfaceDescriptor) Delete(key string, emptyVal proto.Message, metadata scheduler.Metadata) error {
+func (d *ACLToInterfaceDescriptor) Delete(key string, emptyVal proto.Message, metadata kvs.Metadata) error {
 	aclName, ifName, flow, _ := acl.ParseACLToInterfaceKey(key)
 
 	aclMeta, found := d.aclIndex.LookupByName(aclName)
@@ -125,9 +125,9 @@ func (d *ACLToInterfaceDescriptor) Delete(key string, emptyVal proto.Message, me
 }
 
 // Dependencies lists the interface as the only dependency for the binding.
-func (d *ACLToInterfaceDescriptor) Dependencies(key string, emptyVal proto.Message) []scheduler.Dependency {
+func (d *ACLToInterfaceDescriptor) Dependencies(key string, emptyVal proto.Message) []kvs.Dependency {
 	_, ifName, _, _ := acl.ParseACLToInterfaceKey(key)
-	return []scheduler.Dependency{
+	return []kvs.Dependency{
 		{
 			Label: interfaceDep,
 			Key:   interfaces.InterfaceKey(ifName),

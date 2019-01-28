@@ -28,11 +28,11 @@ type IPScanNeighborDescriptor struct {
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
+	Validate           func(key string, value *vpp_l3.IPScanNeighbor) error
 	Add                func(key string, value *vpp_l3.IPScanNeighbor) (metadata interface{}, err error)
 	Delete             func(key string, value *vpp_l3.IPScanNeighbor, metadata interface{}) error
 	Modify             func(key string, oldValue, newValue *vpp_l3.IPScanNeighbor, oldMetadata interface{}) (newMetadata interface{}, err error)
 	ModifyWithRecreate func(key string, oldValue, newValue *vpp_l3.IPScanNeighbor, metadata interface{}) bool
-	Update             func(key string, value *vpp_l3.IPScanNeighbor, metadata interface{}) error
 	IsRetriableFailure func(err error) bool
 	Dependencies       func(key string, value *vpp_l3.IPScanNeighbor) []Dependency
 	DerivedValues      func(key string, value *vpp_l3.IPScanNeighbor) []KeyValuePair
@@ -62,6 +62,9 @@ func NewIPScanNeighborDescriptor(typedDescriptor *IPScanNeighborDescriptor) *KVD
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewIPScanNeighborDescriptor(typedDescriptor *IPScanNeighborDescriptor) *KVD
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *IPScanNeighborDescriptorAdapter) ValueComparator(key string, oldValue,
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *IPScanNeighborDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castIPScanNeighborValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *IPScanNeighborDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *IPScanNeighborDescriptorAdapter) ModifyWithRecreate(key string, oldVal
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *IPScanNeighborDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castIPScanNeighborValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castIPScanNeighborMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *IPScanNeighborDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {

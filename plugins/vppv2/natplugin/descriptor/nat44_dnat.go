@@ -21,7 +21,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
@@ -72,10 +72,10 @@ func (d *DNAT44Descriptor) GetDescriptor() *adapter.DNAT44Descriptor {
 		KeySelector:        nat.ModelDNat44.IsKeyValid,
 		KeyLabel:           nat.ModelDNat44.StripKeyPrefix,
 		ValueComparator:    d.EquivalentDNAT44,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		// dump interfaces and allocated IP addresses first
@@ -101,6 +101,14 @@ func (d *DNAT44Descriptor) IsRetriableFailure(err error) bool {
 	return err != ErrDNAT44WithEmptyLabel
 }
 
+// Validate validates VPP destination-NAT44 configuration.
+func (d *DNAT44Descriptor) Validate(key string, dnat *nat.DNat44) error {
+	if dnat.Label == "" {
+		return kvs.NewInvalidValueError(ErrDNAT44WithEmptyLabel, "label")
+	}
+	return nil
+}
+
 // Add adds new destination-NAT44 configuration.
 func (d *DNAT44Descriptor) Add(key string, dnat *nat.DNat44) (metadata interface{}, err error) {
 	// Add = Modify from empty DNAT
@@ -116,13 +124,6 @@ func (d *DNAT44Descriptor) Delete(key string, dnat *nat.DNat44, metadata interfa
 
 // Modify updates destination-NAT44 configuration.
 func (d *DNAT44Descriptor) Modify(key string, oldDNAT, newDNAT *nat.DNat44, oldMetadata interface{}) (newMetadata interface{}, err error) {
-	// validate configuration first
-	err = d.validateDNAT44Config(newDNAT)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	obsoleteIDMappings, newIDMappings := diffIdentityMappings(oldDNAT.IdMappings, newDNAT.IdMappings)
 	obsoleteStMappings, newStMappings := diffStaticMappings(oldDNAT.StMappings, newDNAT.StMappings)
 
@@ -166,7 +167,7 @@ func (d *DNAT44Descriptor) Modify(key string, oldDNAT, newDNAT *nat.DNat44, oldM
 }
 
 // Dependencies lists external interfaces from mappings as dependencies.
-func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []scheduler.Dependency) {
+func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependencies []kvs.Dependency) {
 	// collect referenced external interfaces
 	externalIfaces := make(map[string]struct{})
 	for _, mapping := range dnat.StMappings {
@@ -182,7 +183,7 @@ func (d *DNAT44Descriptor) Dependencies(key string, dnat *nat.DNat44) (dependenc
 
 	// for every external interface add one dependency
 	for externalIface := range externalIfaces {
-		dependencies = append(dependencies, scheduler.Dependency{
+		dependencies = append(dependencies, kvs.Dependency{
 			Label: mappingInterfaceDep + "-" + externalIface,
 			Key:   interfaces.InterfaceKey(externalIface),
 		})
@@ -223,7 +224,7 @@ func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (
 		dump = append(dump, adapter.DNAT44KVWithMetadata{
 			Key:    nat.DNAT44Key(dnat.Label),
 			Value:  dnat,
-			Origin: scheduler.FromNB,
+			Origin: kvs.FromNB,
 		})
 	}
 
@@ -232,19 +233,11 @@ func (d *DNAT44Descriptor) Dump(correlate []adapter.DNAT44KVWithMetadata) (
 		dump = append(dump, adapter.DNAT44KVWithMetadata{
 			Key:    nat.DNAT44Key(dnatLabel),
 			Value:  dnat,
-			Origin: scheduler.FromNB,
+			Origin: kvs.FromNB,
 		})
 	}
 
 	return dump, nil
-}
-
-// validateDNAT44Config validates VPP destination-NAT44 configuration.
-func (d *DNAT44Descriptor) validateDNAT44Config(dnat *nat.DNat44) error {
-	if dnat.Label == "" {
-		return ErrDNAT44WithEmptyLabel
-	}
-	return nil
 }
 
 // diffIdentityMappings compares two *sets* of identity mappings.

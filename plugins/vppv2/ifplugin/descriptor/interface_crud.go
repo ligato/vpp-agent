@@ -10,7 +10,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/pkg/models"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
@@ -20,13 +20,6 @@ import (
 func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error) {
 	var ifIdx uint32
 	var tapHostIfName string
-
-	// validate the configuration first
-	err = d.validateInterfaceConfig(intf)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
 
 	// create the interface of the given type
 	switch intf.Type {
@@ -322,13 +315,6 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 
 // Modify is able to change Type-unspecific attributes.
 func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
-	// validate the new configuration first
-	err = d.validateInterfaceConfig(newIntf)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	ifIdx := oldMetadata.SwIfIndex
 
 	// rx-mode
@@ -484,10 +470,10 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 	}
 
 	for ifIdx, intf := range vppIfs {
-		origin := scheduler.FromNB
+		origin := kvs.FromNB
 		if ifIdx == 0 {
 			// local0 is created automatically
-			origin = scheduler.FromSB
+			origin = kvs.FromSB
 		}
 		if intf.Interface.Type == interfaces.Interface_DPDK {
 			d.ethernetIfs[intf.Interface.Name] = ifIdx

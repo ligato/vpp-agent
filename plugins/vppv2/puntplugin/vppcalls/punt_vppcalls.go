@@ -198,11 +198,18 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 	}
 
 	// next hop address
+	//  - remove mask from IP address if necessary
+	nextHopStr := punt.NextHop
+	ipParts := strings.Split(punt.NextHop, "/")
+	if len(ipParts) > 1 {
+		h.log.Debugf("IP punt redirect next hop IP address %s is defined with mask, removing it")
+		nextHopStr = ipParts[0]
+	}
 	var nextHop []byte
 	if isIPv4 {
-		nextHop = net.ParseIP(punt.NextHop).To4()
+		nextHop = net.ParseIP(nextHopStr).To4()
 	} else {
-		nextHop = net.ParseIP(punt.NextHop).To16()
+		nextHop = net.ParseIP(nextHopStr).To16()
 	}
 
 	req := &api_ip.IPPuntRedirect{

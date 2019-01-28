@@ -21,7 +21,7 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
@@ -39,11 +39,11 @@ const (
 type ArpDescriptor struct {
 	log        logging.Logger
 	arpHandler vppcalls.ArpVppAPI
-	scheduler  scheduler.KVScheduler
+	scheduler  kvs.KVScheduler
 }
 
 // NewArpDescriptor creates a new instance of the ArpDescriptor.
-func NewArpDescriptor(scheduler scheduler.KVScheduler,
+func NewArpDescriptor(scheduler kvs.KVScheduler,
 	arpHandler vppcalls.ArpVppAPI, log logging.PluginLogger) *ArpDescriptor {
 
 	return &ArpDescriptor{
@@ -68,7 +68,6 @@ func (d *ArpDescriptor) GetDescriptor() *adapter.ARPEntryDescriptor {
 		ModifyWithRecreate: func(key string, oldValue, newValue *l3.ARPEntry, metadata interface{}) bool {
 			return true
 		},
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
@@ -78,11 +77,6 @@ func (d *ArpDescriptor) GetDescriptor() *adapter.ARPEntryDescriptor {
 // EquivalentArps is comparison function for ARP entries.
 func (d *ArpDescriptor) EquivalentArps(key string, oldArp, newArp *l3.ARPEntry) bool {
 	return proto.Equal(oldArp, newArp)
-}
-
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *ArpDescriptor) IsRetriableFailure(err error) bool {
-	return false // nothing retriable
 }
 
 // Add adds VPP ARP entry.
@@ -102,10 +96,10 @@ func (d *ArpDescriptor) Delete(key string, arp *l3.ARPEntry, metadata interface{
 }
 
 // Dependencies lists dependencies for a VPP ARP entry.
-func (d *ArpDescriptor) Dependencies(key string, arp *l3.ARPEntry) (deps []scheduler.Dependency) {
+func (d *ArpDescriptor) Dependencies(key string, arp *l3.ARPEntry) (deps []kvs.Dependency) {
 	// the outgoing interface must exist
 	if arp.Interface != "" {
-		deps = append(deps, scheduler.Dependency{
+		deps = append(deps, kvs.Dependency{
 			Label: arpEntryInterfaceDep,
 			Key:   interfaces.InterfaceKey(arp.Interface),
 		})
@@ -127,7 +121,7 @@ func (d *ArpDescriptor) Dump(correlate []adapter.ARPEntryKVWithMetadata) (
 		dump = append(dump, adapter.ARPEntryKVWithMetadata{
 			Key:    l3.ArpEntryKey(arp.Arp.Interface, arp.Arp.IpAddress),
 			Value:  arp.Arp,
-			Origin: scheduler.UnknownOrigin,
+			Origin: kvs.UnknownOrigin,
 		})
 	}
 
