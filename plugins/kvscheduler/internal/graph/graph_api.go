@@ -319,6 +319,17 @@ type RecordedNode struct {
 	TargetUpdateOnly bool                // true if only runtime Targets have changed since the last rev
 }
 
+// GetFlag returns reference to the given flag or nil if the node didn't have
+// this flag associated at the time when it was recorded.
+func (node *RecordedNode) GetFlag(name string) Flag {
+	for _, flag := range node.Flags.Flags {
+		if flag.GetName() == name {
+			return flag
+		}
+	}
+	return nil
+}
+
 // RecordedFlags is a record of assigned flags at a given time.
 type RecordedFlags struct {
 	Flags []Flag
