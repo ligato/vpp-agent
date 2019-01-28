@@ -27,22 +27,21 @@ import (
 
 const (
 	nodeVisitBeginMark = "[BEGIN]"
-	nodeVisitEndMark = "[END]"
+	nodeVisitEndMark   = "[END]"
 )
 
 // resyncData stores data to be used for resync after refresh.
 type resyncData struct {
-	first   bool // true if startup-resync
-	values  []kvForTxn
-	verbose bool
+	first  bool // true if startup-resync
+	values []kvForTxn
 }
 
 // refreshGraph updates all/some values in the graph to their *real* state
 // using the Dump methods from descriptors.
-func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyncData *resyncData) {
+func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyncData *resyncData, verbose bool) {
 	if s.logGraphWalk {
 		keysToRefresh := "<ALL>"
-		if keys.Length() > 0 {
+		if keys != nil && keys.Length() > 0 {
 			keysToRefresh = keys.String()
 		}
 		msg := fmt.Sprintf("refreshGrap (keys=%s)", keysToRefresh)
@@ -107,7 +106,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 			}
 			s.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
 			continue
-		} else if resyncData == nil || resyncData.verbose {
+		} else if verbose {
 			plural := "s"
 			if len(dump) == 1 {
 				plural = ""
@@ -198,7 +197,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 		s.refreshUnavailNode(graphW, node, refreshedKeys, 2)
 	}
 
-	if resyncData == nil || resyncData.verbose {
+	if verbose {
 		fmt.Println(dumpGraph(graphW))
 	}
 }
@@ -266,6 +265,13 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 		defer fmt.Printf("%s%s %s\n", indentStr, nodeVisitEndMark, msg)
 	}
 
+	// validate first
+	descriptor := s.registry.GetDescriptorForKey(node.GetKey()) // nil for properties
+	if derived && !s.validDumpedDerivedKV(node, descriptor, refreshed) {
+		graphW.DeleteNode(node.GetKey())
+		return
+	}
+
 	// update availability
 	if !isNodeAvailable(node) {
 		s.updatedStates.Add(baseKey)
@@ -288,7 +294,6 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	}
 
 	// update descriptor flag
-	descriptor := s.registry.GetDescriptorForKey(node.GetKey()) // nil for properties
 	if descriptor != nil {
 		node.SetFlags(&DescriptorFlag{descriptor.Name})
 	} else {
@@ -299,10 +304,6 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	if !derived {
 		node.DelFlags(DerivedFlagName)
 	} else {
-		if !s.validDumpedDerivedKV(node, descriptor, refreshed) {
-			graphW.DeleteNode(node.GetKey())
-			return
-		}
 		node.SetFlags(&DerivedFlag{baseKey})
 	}
 }

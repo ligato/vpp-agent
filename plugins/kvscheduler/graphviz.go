@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"io"
 	//"log"
+	"errors"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
-	"errors"
-	"strconv"
 
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
@@ -26,8 +26,8 @@ const (
 	txnArg = "txn" // value = txn sequence number
 )
 
-type depNode struct{
-	node *dotNode
+type depNode struct {
+	node  *dotNode
 	label string
 }
 
@@ -172,6 +172,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 			attrs["fillcolor"] = "Darkkhaki"
 			attrs["style"] = "dashed,filled"
 		case kvs.ValueState_REMOVED:
+			attrs["fontcolor"] = "White"
 			attrs["fillcolor"] = "Black"
 			attrs["style"] = "dashed,filled"
 		// case kvs.ValueState_CONFIGURED // leave default
@@ -183,6 +184,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 			attrs["style"] = "dashed,filled"
 			attrs["fillcolor"] = "Pink"
 		case kvs.ValueState_INVALID:
+			attrs["fontcolor"] = "White"
 			attrs["fillcolor"] = "Maroon"
 		case kvs.ValueState_FAILED:
 			attrs["fillcolor"] = "Orangered"
@@ -267,8 +269,8 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 
 	hostname, _ := os.Hostname()
 	title := fmt.Sprintf("KVScheduler Graph from %s: %d keys - generated %s on %s (PID: %d)",
-		len(graphNodes), timestamp.Format(time.RFC1123), time.Now().Format(time.RFC1123),
-			hostname, os.Getpid())
+		timestamp.Format(time.RFC1123), len(graphNodes), time.Now().Format(time.RFC1123),
+		hostname, os.Getpid())
 
 	dot := &dotGraph{
 		Title:   title,

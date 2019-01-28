@@ -72,8 +72,8 @@ type RecordedTxn struct {
 	Values       []RecordedKVPair
 
 	// operations
-	Planned   RecordedTxnOps
-	Executed  RecordedTxnOps
+	Planned  RecordedTxnOps
+	Executed RecordedTxnOps
 }
 
 // RecordedTxnOp is used to record executed/planned transaction operation.
@@ -92,11 +92,11 @@ type RecordedTxnOp struct {
 	NOOP      bool
 
 	// flags
-	IsDerived   bool
-	IsProperty  bool
-	IsRevert    bool
-	IsRetry     bool
-	IsRecreate  bool
+	IsDerived  bool
+	IsProperty bool
+	IsRevert   bool
+	IsRetry    bool
+	IsRecreate bool
 }
 
 // RecordedKVPair is used to record key-value pair.
@@ -114,7 +114,7 @@ type RecordedTxns []*RecordedTxn
 
 // String returns a *multi-line* human-readable string representation of recorded transaction.
 func (txn *RecordedTxn) String() string {
-	return txn.StringWithOpts(false, false,0)
+	return txn.StringWithOpts(false, false, 0)
 }
 
 // StringWithOpts allows to format string representation of recorded transaction.
@@ -175,7 +175,7 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 	printOps:
 		// planned operations
 		str += indent1 + "* planned operations:\n"
-		str += txn.Planned.StringWithOpts(verbose, indent + 4)
+		str += txn.Planned.StringWithOpts(verbose, indent+4)
 	}
 
 	if !txn.PreRecord {
@@ -185,7 +185,7 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 			str += indent1 + fmt.Sprintf("* executed operations (%s - %s, duration = %s):\n",
 				txn.Start.String(), txn.Stop.String(), txn.Stop.Sub(txn.Start).String())
 		}
-		str += txn.Executed.StringWithOpts(verbose, indent + 4)
+		str += txn.Executed.StringWithOpts(verbose, indent+4)
 	}
 
 	return str
@@ -194,7 +194,7 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 // String returns a *multi-line* human-readable string representation of a recorded
 // transaction operation.
 func (op *RecordedTxnOp) String() string {
-	return op.StringWithOpts(0, false,0)
+	return op.StringWithOpts(0, false, 0)
 }
 
 // StringWithOpts allows to format string representation of a transaction operation.

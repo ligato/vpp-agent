@@ -48,7 +48,11 @@ type applyValueArgs struct {
 // and the graph will be returned to its original state at the end.
 func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed kvs.RecordedTxnOps) {
 	if s.logGraphWalk {
-		msg := fmt.Sprintf("executeTransaction (seqNum=%d)", txn.seqNum)
+		op := "execute transaction"
+		if dryRun {
+			op = "simulate transaction"
+		}
+		msg := fmt.Sprintf("%s (seqNum=%d)", op, txn.seqNum)
 		fmt.Printf("%s %s\n", nodeVisitBeginMark, msg)
 		defer fmt.Printf("%s %s\n", nodeVisitEndMark, msg)
 	}
@@ -78,7 +82,7 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 			if txn.txnType == kvs.NBTransaction && txn.nb.revertOnFailure {
 				// refresh failed value and trigger reverting
 				failedKey := utils.NewSingletonKeySet(kv.key)
-				s.refreshGraph(graphW, failedKey, nil)
+				s.refreshGraph(graphW, failedKey, nil, true)
 				graphW.Save() // certainly not dry-run
 				revert = true
 				break
@@ -304,7 +308,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		if err != nil {
 			retriableErr = handler.isRetriableFailure(err)
 		}
-		if err == nil && canNodeHaveMetadata(node) && descriptor.WithMetadata {
+		if canNodeHaveMetadata(node) && descriptor.WithMetadata {
 			node.SetMetadata(nil)
 		}
 	}

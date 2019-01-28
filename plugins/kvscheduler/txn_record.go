@@ -148,7 +148,7 @@ func (s *Scheduler) preRecordTransaction(txn *transaction, planned kvs.RecordedT
 	n := 115 - len(msg)
 	buf.WriteString(fmt.Sprintf("| %s %"+fmt.Sprint(n)+"s |\n", msg, txnInfo))
 	buf.WriteString("+======================================================================================================================+\n")
-	buf.WriteString(record.StringWithOpts(false, true, 2))
+	buf.WriteString(record.StringWithOpts(false, false, 2))
 	fmt.Println(buf.String())
 
 	return record
@@ -163,7 +163,7 @@ func (s *Scheduler) recordTransaction(txnRecord *kvs.RecordedTxn, executed kvs.R
 
 	var buf strings.Builder
 	buf.WriteString("o----------------------------------------------------------------------------------------------------------------------o\n")
-	buf.WriteString(txnRecord.StringWithOpts(true, true, 2))
+	buf.WriteString(txnRecord.StringWithOpts(true, false, 2))
 	buf.WriteString("x----------------------------------------------------------------------------------------------------------------------x\n")
 	msg := fmt.Sprintf("#%d", txnRecord.SeqNum)
 	msg2 := fmt.Sprintf("took %v", stop.Sub(start).Round(time.Millisecond))

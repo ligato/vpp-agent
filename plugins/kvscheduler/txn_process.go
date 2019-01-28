@@ -210,9 +210,9 @@ func (s *Scheduler) preProcessNBTransaction(txn *transaction) (skip bool) {
 	// state of SB
 	if txn.nb.resyncType != kvs.UpstreamResync {
 		s.refreshGraph(graphW, nil, &resyncData{
-			first:   s.resyncCount == 1,
-			values:  txn.values,
-			verbose: txn.nb.verboseRefresh})
+			first:  s.resyncCount == 1,
+			values: txn.values,
+		}, txn.nb.verboseRefresh)
 	}
 
 	// collect deletes for obsolete values
@@ -281,6 +281,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	// collect new failures (combining derived with base)
 	toRetry := utils.NewSliceBasedKeySet()
 	toRefresh := utils.NewSliceBasedKeySet()
+	var verboseRefresh bool
 	graphR := s.graph.Read()
 	for _, op := range executed {
 		node := graphR.GetNode(op.Key)
@@ -294,10 +295,12 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 		}
 		if state == kvs.ValueState_FAILED {
 			toRefresh.Add(baseKey)
+			verboseRefresh = true
 		}
 		if state == kvs.ValueState_RETRYING {
 			toRefresh.Add(baseKey)
 			toRetry.Add(baseKey)
+			verboseRefresh = true
 		}
 		if s.verifyMode {
 			toRefresh.Add(baseKey)
@@ -309,7 +312,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 	// - in verifyMode all updated values are re-freshed
 	if toRefresh.Length() > 0 {
 		graphW := s.graph.Write(false)
-		s.refreshGraph(graphW, toRefresh, nil)
+		s.refreshGraph(graphW, toRefresh, nil, verboseRefresh)
 		graphW.Save()
 
 		// split values based on the retry metadata
@@ -391,10 +394,13 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 				continue
 			}
 			expValue := getNodeLastAppliedValue(node)
-			if expValue == nil && isNodeAvailable(node) {
+			lastOp := getNodeLastOperation(node)
+			expToNotExist := expValue == nil || state == kvs.ValueState_PENDING || state == kvs.ValueState_INVALID
+			if expToNotExist && isNodeAvailable(node) {
 				kvErrors = append(kvErrors, kvs.KeyWithError{
-					Key:   key,
-					Error: kvs.NewVerificationError(key, kvs.ExpectedToNotExist),
+					Key:          key,
+					Error:        kvs.NewVerificationError(key, kvs.ExpectedToNotExist),
+					TxnOperation: lastOp,
 				})
 				continue
 			}
@@ -402,48 +408,63 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 				// properly removed
 				continue
 			}
-			if !isNodeAvailable(node) {
+			if !expToNotExist && !isNodeAvailable(node) {
 				kvErrors = append(kvErrors, kvs.KeyWithError{
-					Key:   key,
-					Error: kvs.NewVerificationError(key, kvs.ExpectedToExist),
+					Key:          key,
+					Error:        kvs.NewVerificationError(key, kvs.ExpectedToExist),
+					TxnOperation: lastOp,
 				})
 				continue
 			}
 			descriptor := s.registry.GetDescriptorForKey(key)
 			handler := &descriptorHandler{descriptor}
-			equivalent := handler.equivalentValues(key, expValue, node.GetValue())
+			equivalent := handler.equivalentValues(key, node.GetValue(), expValue)
 			if !equivalent {
 				kvErrors = append(kvErrors, kvs.KeyWithError{
-					Key:   key,
-					Error: kvs.NewVerificationError(key, kvs.NotEquivalent),
+					Key:          key,
+					Error:        kvs.NewVerificationError(key, kvs.NotEquivalent),
+					TxnOperation: lastOp,
 				})
+				s.Log.WithFields(
+					logging.Fields{
+						"applied":   expValue,
+						"refreshed": node.GetValue(),
+					}).Warn("Detected non-equivalent applied vs. refreshed values")
 			}
 		}
 		graphR.Release()
 	}
 
-	// for blocking txn, send non-nil errors to the resultChan
+	// build transaction error
+	var txnErr error
+	for _, txnOp := range executed {
+		if txnOp.NewErr == nil {
+			continue
+		}
+		kvErrors = append(kvErrors,
+			kvs.KeyWithError{
+				Key:          txnOp.Key,
+				TxnOperation: txnOp.Operation,
+				Error:        txnOp.NewErr,
+			})
+	}
+	if len(kvErrors) > 0 {
+		txnErr = kvs.NewTransactionError(nil, kvErrors)
+	}
 	if txn.txnType == kvs.NBTransaction && txn.nb.isBlocking {
-		var txnErr error
-		for _, txnOp := range executed {
-			if txnOp.NewErr == nil {
-				continue
-			}
-			kvErrors = append(kvErrors,
-				kvs.KeyWithError{
-					Key:          txnOp.Key,
-					TxnOperation: txnOp.Operation,
-					Error:        txnOp.NewErr,
-				})
-		}
-		if len(kvErrors) > 0 {
-			txnErr = kvs.NewTransactionError(nil, kvErrors)
-		}
+		// for blocking txn, send non-nil errors to the resultChan
 		select {
 		case txn.nb.resultChan <- txnResult{txnSeqNum: txn.seqNum, err: txnErr}:
 		default:
 			s.Log.WithField("txnSeq", txn.seqNum).
 				Warn("Failed to deliver transaction result to the caller")
+		}
+	} else {
+		// for asynchronous events, just log the transaction error
+		if txnErr == nil {
+			s.Log.Infof("Transaction %d successful!", txn.seqNum)
+		} else {
+			s.Log.Error(txnErr.Error())
 		}
 	}
 
