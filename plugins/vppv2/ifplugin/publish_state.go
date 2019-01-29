@@ -122,8 +122,8 @@ func (p *IfPlugin) publishIfStateEvents() {
 			}
 
 			if p.PushNotification != nil &&
-				ifState.Type == interfaces.InterfaceNotification_UPDOWN ||
-				ifState.State.OperStatus == interfaces.InterfaceState_DELETED {
+				(ifState.Type == interfaces.InterfaceNotification_UPDOWN ||
+					ifState.State.OperStatus == interfaces.InterfaceState_DELETED) {
 				p.PushNotification(&vpp.Notification{
 					Interface: ifState,
 				})

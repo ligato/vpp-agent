@@ -96,8 +96,8 @@ func (e *TransactionError) Error() string {
 		for _, kvError := range e.kvErrors {
 			kvErrMsgs = append(kvErrMsgs,
 				fmt.Sprintf("%s (%v): %v", kvError.Key, kvError.TxnOperation, kvError.Error))
-			return fmt.Sprintf("failed key-value pairs: [%s]", strings.Join(kvErrMsgs, ", "))
 		}
+		return fmt.Sprintf("failed key-value pairs: [%s]", strings.Join(kvErrMsgs, ", "))
 	}
 	return ""
 }
