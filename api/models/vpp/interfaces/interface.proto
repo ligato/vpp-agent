@@ -65,6 +65,7 @@ message Interface {
         VxlanLink vxlan = 104;          /* VXLAN-specific configuration */
         IPSecLink ipsec = 105;          /* IPSec tunnel-specific configuration */
         VmxNet3Link vmx_net3 = 106;     /* VmxNet3-specific configuration */
+        DPDKLink dpdk = 107;            /* DPDK-interface configuration */
     };
 };
 
@@ -155,4 +156,10 @@ message VmxNet3Link {
     bool enable_elog = 2;   /* turn on elog */
     uint32 rxq_size = 3;    /* receive queue size (default is 1024) */
     uint32 txq_size = 4;    /* transmit queue size (default is 1024) */
+}
+
+/* DPDK interface are not directly created by the VPP agent so the "name" field always reflects VPP internal name
+   of the interface. This configuration allows to add custom tag to the DPDK interface */
+message DPDKLink {
+    string custom_tag = 1;
 }

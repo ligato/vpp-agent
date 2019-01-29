@@ -100,7 +100,10 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 			d.log.Error(err)
 			return nil, err
 		}
-
+		if err = d.setCustomDPDKTag(nil, intf.GetDpdk(), ifIdx); err != nil {
+			d.log.Error(err)
+			return nil, err
+		}
 	case interfaces.Interface_AF_PACKET:
 		ifIdx, err = d.ifHandler.AddAfPacketInterface(intf.Name, intf.GetPhysAddress(), intf.GetAfpacket())
 		if err != nil {
@@ -316,6 +319,16 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 // Modify is able to change Type-unspecific attributes.
 func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
 	ifIdx := oldMetadata.SwIfIndex
+
+	// update DPDK interface tag
+	if newIntf.Type == interfaces.Interface_DPDK {
+		if !proto.Equal(oldIntf.GetDpdk(), newIntf.GetDpdk()) {
+			if err != d.setCustomDPDKTag(oldIntf.GetDpdk(), newIntf.GetDpdk(), ifIdx) {
+				d.log.Error(err)
+				return nil, err
+			}
+		}
+	}
 
 	// rx-mode
 	oldRx := getRxMode(oldIntf)
@@ -558,6 +571,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			IPAddresses:   intf.Interface.IpAddresses,
 			TAPHostIfName: tapHostIfName,
 		}
+		d.log.Warnf("intf: %v", intf)
 		dump = append(dump, adapter.InterfaceKVWithMetadata{
 			Key:      models.Key(intf.Interface),
 			Value:    intf.Interface,
@@ -568,6 +582,13 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 	}
 
 	return dump, nil
+}
+
+func (d *InterfaceDescriptor) setCustomDPDKTag(oldDPDK, newDPDK *interfaces.DPDKLink, ifIdx uint32) error {
+	if newDPDK == nil || newDPDK.CustomTag == "" && oldDPDK != nil {
+		return d.ifHandler.RemoveInterfaceTag(oldDPDK.CustomTag, ifIdx)
+	}
+	return d.ifHandler.SetInterfaceTag(newDPDK.CustomTag, ifIdx)
 }
 
 func ifaceSupportsSetMTU(intf *interfaces.Interface) bool {

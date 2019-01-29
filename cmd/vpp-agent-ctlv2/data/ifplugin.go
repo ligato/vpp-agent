@@ -70,6 +70,11 @@ func (ctl *VppAgentCtlImpl) PutDPDKInterface() error {
 			"192.168.1.1",
 			"2001:db8:0:0:0:ff00:5168:2bc8/48",
 		},
+		Link: &interfaces.Interface_Dpdk{
+			Dpdk: &interfaces.DPDKLink{
+				CustomTag: "dpdk-tag-1",
+			},
+		},
 	}
 
 	ctl.Log.Infof("Interface put: %v", ethernet)

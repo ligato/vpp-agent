@@ -248,6 +248,10 @@ func (d *InterfaceDescriptor) EquivalentInterfaces(key string, oldIntf, newIntf 
 // equivalentTypeSpecificConfig compares type-specific sections of two interface configurations.
 func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *interfaces.Interface) bool {
 	switch oldIntf.Type {
+	case interfaces.Interface_DPDK:
+		if !proto.Equal(oldIntf.GetDpdk(), newIntf.GetDpdk()) {
+			return false
+		}
 	case interfaces.Interface_TAP:
 		if !proto.Equal(getTapConfig(oldIntf), getTapConfig(newIntf)) {
 			return false
