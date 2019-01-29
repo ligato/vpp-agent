@@ -45,7 +45,7 @@ func (s *Scheduler) orderValuesByOp(values []kvForTxn) []kvForTxn {
 			delete = append(delete, kv)
 			continue
 		}
-		if node == nil || node.GetFlag(PendingFlagName) != nil {
+		if node == nil || node.GetFlag(UnavailValueFlagName) != nil {
 			add = append(add, kv)
 			continue
 		}

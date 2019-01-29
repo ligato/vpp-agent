@@ -29,7 +29,7 @@ func NewPlugin(opts ...Option) *STNPlugin {
 	p := &STNPlugin{}
 
 	p.PluginName = "vpp-stn-plugin"
-	p.Scheduler = &kvscheduler.DefaultPlugin
+	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 	p.IfPlugin = &ifplugin.DefaultPlugin
 

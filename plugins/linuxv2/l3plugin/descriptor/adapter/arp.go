@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type ARPKVWithMetadata struct {
 	Key      string
-	Value    *linux_l3.StaticARPEntry
+	Value    *linux_l3.ARPEntry
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type ARPDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *linux_l3.StaticARPEntry) bool
+	ValueComparator    func(key string, oldValue, newValue *linux_l3.ARPEntry) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *linux_l3.StaticARPEntry) (metadata interface{}, err error)
-	Delete             func(key string, value *linux_l3.StaticARPEntry, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *linux_l3.StaticARPEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.StaticARPEntry, metadata interface{}) bool
-	Update             func(key string, value *linux_l3.StaticARPEntry, metadata interface{}) error
+	Validate           func(key string, value *linux_l3.ARPEntry) error
+	Add                func(key string, value *linux_l3.ARPEntry) (metadata interface{}, err error)
+	Delete             func(key string, value *linux_l3.ARPEntry, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *linux_l3.ARPEntry, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.ARPEntry, metadata interface{}) bool
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *linux_l3.StaticARPEntry) []Dependency
-	DerivedValues      func(key string, value *linux_l3.StaticARPEntry) []KeyValuePair
+	Dependencies       func(key string, value *linux_l3.ARPEntry) []Dependency
+	DerivedValues      func(key string, value *linux_l3.ARPEntry) []KeyValuePair
 	Dump               func(correlate []ARPKVWithMetadata) ([]ARPKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -62,6 +62,9 @@ func NewARPDescriptor(typedDescriptor *ARPDescriptor) *KVDescriptor {
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewARPDescriptor(typedDescriptor *ARPDescriptor) *KVDescriptor {
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *ARPDescriptorAdapter) ValueComparator(key string, oldValue, newValue p
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *ARPDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castARPValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *ARPDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *ARPDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValu
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *ARPDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castARPValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castARPMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *ARPDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
@@ -217,8 +213,8 @@ func (da *ARPDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 
 ////////// Helper methods //////////
 
-func castARPValue(key string, value proto.Message) (*linux_l3.StaticARPEntry, error) {
-	typedValue, ok := value.(*linux_l3.StaticARPEntry)
+func castARPValue(key string, value proto.Message) (*linux_l3.ARPEntry, error) {
+	typedValue, ok := value.(*linux_l3.ARPEntry)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

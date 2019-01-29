@@ -27,6 +27,14 @@ func (h *descriptorHandler) equivalentValues(key string, oldValue, newValue prot
 	return h.descriptor.ValueComparator(key, oldValue, newValue)
 }
 
+// validate return nil if Validate is not provided (optional method).
+func (h *descriptorHandler) validate(key string, value proto.Message) error {
+	if h.descriptor == nil || h.descriptor.Validate == nil {
+		return nil
+	}
+	return h.descriptor.Validate(key, value)
+}
+
 // add returns ErrUnimplementedAdd is Add is not provided.
 func (h *descriptorHandler) add(key string, value proto.Message) (metadata kvs.Metadata, err error) {
 	if h.descriptor == nil {
@@ -67,14 +75,6 @@ func (h *descriptorHandler) delete(key string, value proto.Message, metadata kvs
 		return kvs.ErrUnimplementedDelete
 	}
 	return h.descriptor.Delete(key, value, metadata)
-}
-
-// update does nothing if Update is not provided (totally optional method).
-func (h *descriptorHandler) update(key string, value proto.Message, metadata kvs.Metadata) error {
-	if h.descriptor == nil || h.descriptor.Update == nil {
-		return nil
-	}
-	return h.descriptor.Update(key, value, metadata)
 }
 
 // isRetriableFailure first checks for errors returned by the handler itself.

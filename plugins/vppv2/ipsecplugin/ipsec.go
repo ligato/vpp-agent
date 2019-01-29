@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name SPD  --value-type *ipsec.SecurityPolicyDatabase --meta-type *idxvpp2.OnlyIndex --import "github.com/ligato/vpp-agent/idxvpp2" --import "../model/ipsec" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SPDInterface --value-type *ipsec.SecurityPolicyDatabase_Interface --import "../model/ipsec" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SPDPolicy --value-type *ipsec.SecurityPolicyDatabase_PolicyEntry --import "../model/ipsec" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name SA  --value-type *ipsec.SecurityAssociation --import "../model/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPD  --value-type *vpp_ipsec.SecurityPolicyDatabase --meta-type *idxvpp2.OnlyIndex --import "github.com/ligato/vpp-agent/pkg/idxvpp2" --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPDInterface --value-type *vpp_ipsec.SecurityPolicyDatabase_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SPDPolicy --value-type *vpp_ipsec.SecurityPolicyDatabase_PolicyEntry --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name SA  --value-type *vpp_ipsec.SecurityAssociation --import "github.com/ligato/vpp-agent/api/models/vpp/ipsec" --output-dir "descriptor"
 
 package ipsecplugin
 
@@ -25,7 +25,7 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
@@ -52,7 +52,7 @@ type IPSecPlugin struct {
 // Deps lists dependencies of the IPSec plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler   scheduler.KVScheduler
+	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -71,21 +71,21 @@ func (p *IPSecPlugin) Init() (err error) {
 	// init and register security policy database descriptor
 	p.spdDescriptor = descriptor.NewIPSecSPDDescriptor(p.ipSecHandler, p.Log)
 	spdDescriptor := adapter.NewSPDDescriptor(p.spdDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(spdDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(spdDescriptor)
 
 	// init and register security association descriptor
 	p.saDescriptor = descriptor.NewIPSecSADescriptor(p.ipSecHandler, p.Log)
 	saDescriptor := adapter.NewSADescriptor(p.saDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(saDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(saDescriptor)
 
 	// init & register other descriptors for derived types
 	p.spdIfDescriptor = descriptor.NewSPDInterfaceDescriptor(p.ipSecHandler, p.Log)
 	spdIfDescriptor := adapter.NewSPDInterfaceDescriptor(p.spdIfDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(spdIfDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(spdIfDescriptor)
 
 	p.spdPolicyDescriptor = descriptor.NewSPDPolicyDescriptor(p.ipSecHandler, p.Log)
 	spdPolicyDescriptor := adapter.NewSPDPolicyDescriptor(p.spdPolicyDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(spdPolicyDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(spdPolicyDescriptor)
 
 	return nil
 }

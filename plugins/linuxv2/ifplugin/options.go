@@ -16,7 +16,7 @@ func NewPlugin(opts ...Option) *IfPlugin {
 	p := &IfPlugin{}
 
 	p.PluginName = "linux-ifplugin"
-	p.Scheduler = &kvscheduler.DefaultPlugin
+	p.KVScheduler = &kvscheduler.DefaultPlugin
 	p.NsPlugin = &nsplugin.DefaultPlugin
 	p.ServiceLabel = &servicelabel.DefaultPlugin
 

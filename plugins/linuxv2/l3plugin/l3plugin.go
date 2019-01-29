@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name ARP --value-type *linux_l3.StaticARPEntry --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name Route --value-type *linux_l3.StaticRoute --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARP --value-type *linux_l3.ARPEntry --import "github.com/ligato/vpp-agent/api/models/linux/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *linux_l3.Route --import "github.com/ligato/vpp-agent/api/models/linux/l3" --output-dir "descriptor"
 
 package l3plugin
 
 import (
 	"github.com/ligato/cn-infra/infra"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 
 	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/descriptor"
@@ -52,9 +52,9 @@ type L3Plugin struct {
 // Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler scheduler.KVScheduler
-	NsPlugin  nsplugin.API
-	IfPlugin  ifplugin.API
+	KVScheduler kvs.KVScheduler
+	NsPlugin    nsplugin.API
+	IfPlugin    ifplugin.API
 }
 
 // Config holds the l3plugin configuration.
@@ -82,13 +82,13 @@ func (p *L3Plugin) Init() error {
 
 	// init & register descriptors
 	arpDescriptor := adapter.NewARPDescriptor(descriptor.NewARPDescriptor(
-		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
 
 	routeDescriptor := adapter.NewRouteDescriptor(descriptor.NewRouteDescriptor(
-		p.Scheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
 
-	p.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
-	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
+	p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
+	p.Deps.KVScheduler.RegisterKVDescriptor(routeDescriptor)
 
 	return nil
 }

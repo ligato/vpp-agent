@@ -18,10 +18,11 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/stn"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/pkg/errors"
 
 	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"strings"
 )
 
 // AddSTNRule implements STN handler, adds a new STN rule to the VPP.
@@ -42,12 +43,20 @@ func (h *StnVppHandler) addDelStnRule(stnRule *stn.Rule, isAdd bool) error {
 	}
 	swIfIndex := ifaceMeta.GetIndex()
 
+	// remove mask from IP address if necessary
+	ipAddr := stnRule.IpAddress
+	ipParts := strings.Split(ipAddr, "/")
+	if len(ipParts) > 1 {
+		h.log.Debugf("STN IP address %s is defined with mask, removing it")
+		ipAddr = ipParts[0]
+	}
+
 	// parse IP address
 	var byteIP []byte
 	var isIPv4 uint8
-	ip := net.ParseIP(stnRule.IpAddress)
+	ip := net.ParseIP(ipAddr)
 	if ip == nil {
-		return errors.Errorf("failed to parse IP address %s", stnRule.IpAddress)
+		return errors.Errorf("failed to parse IP address %s", ipAddr)
 	} else if ip.To4() == nil {
 		byteIP = []byte(ip.To16())
 		isIPv4 = 0

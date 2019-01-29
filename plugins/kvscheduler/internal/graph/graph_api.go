@@ -221,8 +221,9 @@ type RelationTargetDef struct {
 // Target nodes are not referenced directly, instead via their keys (suitable
 // for recording).
 type Targets struct {
-	Label string
-	Keys  utils.KeySet
+	Label        string
+	ExpectedKey  string // empty if AnyOf predicate is used instead
+	MatchingKeys utils.KeySet
 }
 
 // TargetsByLabel is a slice of single-relation targets, grouped by labels.
@@ -235,7 +236,7 @@ func (t TargetsByLabel) String() string {
 		if idx > 0 {
 			str += ", "
 		}
-		str += fmt.Sprintf("%s->%s", targets.Label, targets.Keys.String())
+		str += fmt.Sprintf("%s->%s", targets.Label, targets.MatchingKeys.String())
 	}
 	str += "}"
 	return str
@@ -316,6 +317,17 @@ type RecordedNode struct {
 	MetadataFields   map[string][]string // field name -> values
 	Targets          TargetsByRelation
 	TargetUpdateOnly bool                // true if only runtime Targets have changed since the last rev
+}
+
+// GetFlag returns reference to the given flag or nil if the node didn't have
+// this flag associated at the time when it was recorded.
+func (node *RecordedNode) GetFlag(name string) Flag {
+	for _, flag := range node.Flags.Flags {
+		if flag.GetName() == name {
+			return flag
+		}
+	}
+	return nil
 }
 
 // RecordedFlags is a record of assigned flags at a given time.

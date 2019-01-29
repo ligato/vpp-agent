@@ -20,19 +20,18 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
-	linux_interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	vpp_nat "github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
 	vpp_natplugin "github.com/ligato/vpp-agent/plugins/vppv2/natplugin"
 )
 
@@ -71,16 +70,13 @@ import (
 */
 
 func main() {
-	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
-
 	// Set inter-dependency between VPP & Linux plugins
 	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
 	vpp_ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
 	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
 	ep := &ExamplePlugin{
-		Scheduler:     &kvscheduler.DefaultPlugin,
+		Orchestrator:  &orchestrator.DefaultPlugin,
 		LinuxIfPlugin: &linux_ifplugin.DefaultPlugin,
 		LinuxL3Plugin: &linux_l3plugin.DefaultPlugin,
 		VPPIfPlugin:   &vpp_ifplugin.DefaultPlugin,
@@ -98,7 +94,7 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler     *kvscheduler.Scheduler
+	Orchestrator  *orchestrator.Plugin
 	LinuxIfPlugin *linux_ifplugin.IfPlugin
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
@@ -288,9 +284,9 @@ var (
 			},
 		},
 	}
-	hostRouteToServices = &linux_l3.StaticRoute{
+	hostRouteToServices = &linux_l3.Route{
 		OutgoingInterface: linuxTapHostLogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapHostIPAddr,
 	}
@@ -311,7 +307,7 @@ var (
 			},
 		},
 		Namespace: &linux_ns.NetNamespace{
-			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
+			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroserviceClient,
 		},
 	}
@@ -329,15 +325,15 @@ var (
 			},
 		},
 	}
-	clientRouteToServices = &linux_l3.StaticRoute{
+	clientRouteToServices = &linux_l3.Route{
 		OutgoingInterface: linuxTapClientLogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapClientIPAddr,
 	}
-	clientRouteToHost = &linux_l3.StaticRoute{
+	clientRouteToHost = &linux_l3.Route{
 		OutgoingInterface: linuxTapClientLogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapClientIPAddr,
 	}
@@ -358,7 +354,7 @@ var (
 			},
 		},
 		Namespace: &linux_ns.NetNamespace{
-			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
+			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroserviceServer1,
 		},
 	}
@@ -376,21 +372,21 @@ var (
 			},
 		},
 	}
-	server1RouteToServices = &linux_l3.StaticRoute{
+	server1RouteToServices = &linux_l3.Route{
 		OutgoingInterface: linuxTapServer1LogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapServer1IPAddr,
 	}
-	server1RouteToHost = &linux_l3.StaticRoute{
+	server1RouteToHost = &linux_l3.Route{
 		OutgoingInterface: linuxTapServer1LogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapServer1IPAddr,
 	}
-	server1RouteToClient = &linux_l3.StaticRoute{
+	server1RouteToClient = &linux_l3.Route{
 		OutgoingInterface: linuxTapServer1LogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        linuxTapClientIPAddr + "/32",
 		GwAddr:            vppTapServer1IPAddr,
 	}
@@ -410,7 +406,7 @@ var (
 			},
 		},
 		Namespace: &linux_ns.NetNamespace{
-			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
+			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroserviceServer2,
 		},
 	}
@@ -428,21 +424,21 @@ var (
 			},
 		},
 	}
-	server2RouteToServices = &linux_l3.StaticRoute{
+	server2RouteToServices = &linux_l3.Route{
 		OutgoingInterface: linuxTapServer2LogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        serviceNetPrefix + "0" + serviceNetMask,
 		GwAddr:            vppTapServer2IPAddr,
 	}
-	server2RouteToHost = &linux_l3.StaticRoute{
+	server2RouteToHost = &linux_l3.Route{
 		OutgoingInterface: linuxTapServer2LogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        hostNetPrefix + "0" + hostNetMask,
 		GwAddr:            vppTapServer2IPAddr,
 	}
-	server2RouteToClient = &linux_l3.StaticRoute{
+	server2RouteToClient = &linux_l3.Route{
 		OutgoingInterface: linuxTapServer2LogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        linuxTapClientIPAddr + "/32",
 		GwAddr:            vppTapServer2IPAddr,
 	}

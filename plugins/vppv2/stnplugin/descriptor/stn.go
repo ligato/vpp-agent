@@ -15,14 +15,13 @@
 package descriptor
 
 import (
-	"strings"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
+	"github.com/ligato/vpp-agent/pkg/models"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ifDescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/stn"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/vppcalls"
 	"github.com/pkg/errors"
@@ -65,24 +64,19 @@ func NewSTNDescriptor(stnHandler vppcalls.StnVppAPI, log logging.PluginLogger) *
 func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 	return &adapter.STNDescriptor{
 		Name:               STNDescriptorName,
-		KeySelector:        d.IsSTNKey,
-		ValueTypeName:      proto.MessageName(&stn.Rule{}),
+		NBKeyPrefix:        stn.ModelRule.KeyPrefix(),
+		ValueTypeName:      stn.ModelRule.ProtoName(),
+		KeySelector:        stn.ModelRule.IsKeyValid,
+		KeyLabel:           stn.ModelRule.StripKeyPrefix,
 		ValueComparator:    d.EquivalentSTNs,
-		NBKeyPrefix:        stn.Prefix,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifDescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsSTNKey returns true if the key is identifying VPP STN rule configuration.
-func (d *STNDescriptor) IsSTNKey(key string) bool {
-	_, _, isSTNKey := stn.ParseKey(key)
-	return isSTNKey
 }
 
 // EquivalentSTNs is case-insensitive comparison function for stn.Rule.
@@ -94,36 +88,19 @@ func (d *STNDescriptor) EquivalentSTNs(key string, oldSTN, newSTN *stn.Rule) boo
 	return false
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *STNDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrSTNWithoutInterface,
-		ErrSTNWithoutIPAddress,
+// Validate validates VPP STN rule configuration.
+func (d *STNDescriptor) Validate(key string, stn *stn.Rule) error {
+	if stn.Interface == "" {
+		return kvs.NewInvalidValueError(ErrSTNWithoutInterface, "interface")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
-		}
+	if stn.IpAddress == "" {
+		return kvs.NewInvalidValueError(ErrSTNWithoutIPAddress, "ip_address")
 	}
-	return true
+	return nil
 }
 
 // Add adds new STN rule.
 func (d *STNDescriptor) Add(key string, stn *stn.Rule) (metadata interface{}, err error) {
-	// remove mask from IP address if necessary
-	ipParts := strings.Split(stn.IpAddress, "/")
-	if len(ipParts) > 1 {
-		d.log.Debugf("STN IP address %s is defined with mask, removing it")
-		stn.IpAddress = ipParts[0]
-	}
-
-	// validate the configuration
-	err = d.validateSTNConfig(stn)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// add STN rule
 	err = d.stnHandler.AddSTNRule(stn)
 	if err != nil {
@@ -147,8 +124,8 @@ func (d *STNDescriptor) ModifyWithRecreate(key string, oldSTN, newSTN *stn.Rule,
 }
 
 // Dependencies for STN rule are represented by interface
-func (d *STNDescriptor) Dependencies(key string, stn *stn.Rule) (dependencies []scheduler.Dependency) {
-	dependencies = append(dependencies, scheduler.Dependency{
+func (d *STNDescriptor) Dependencies(key string, stn *stn.Rule) (dependencies []kvs.Dependency) {
+	dependencies = append(dependencies, kvs.Dependency{
 		Label: stnInterfaceDep,
 		Key:   interfaces.InterfaceKey(stn.Interface),
 	})
@@ -164,22 +141,11 @@ func (d *STNDescriptor) Dump(correlate []adapter.STNKVWithMetadata) (dump []adap
 	}
 	for _, stnRule := range stnRules {
 		dump = append(dump, adapter.STNKVWithMetadata{
-			Key:    stn.Key(stnRule.Rule.Interface, stnRule.Rule.IpAddress),
+			Key:    models.Key(stnRule.Rule), //stn.Key(stnRule.Rule.Interface, stnRule.Rule.IpAddress),
 			Value:  stnRule.Rule,
-			Origin: scheduler.FromNB, // all STN rules are configured from NB
+			Origin: kvs.FromNB, // all STN rules are configured from NB
 		})
 	}
 
 	return dump, nil
-}
-
-// validateSTNConfig validates VPP STN rule configuration.
-func (d *STNDescriptor) validateSTNConfig(stn *stn.Rule) error {
-	if stn.Interface == "" {
-		return ErrSTNWithoutInterface
-	}
-	if stn.IpAddress == "" {
-		return ErrSTNWithoutIPAddress
-	}
-	return nil
 }

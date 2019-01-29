@@ -17,21 +17,19 @@ package dbadapter
 import (
 	"github.com/ligato/cn-infra/db/keyval"
 
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/clientv2/linux"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
 	"github.com/ligato/vpp-agent/clientv2/vpp/dbadapter"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataResyncDSL returns a new instance of DataResyncDSL which implements
@@ -64,8 +62,8 @@ func (dsl *DataResyncDSL) LinuxInterface(val *linux_interfaces.Interface) linuxc
 }
 
 // LinuxArpEntry adds Linux ARP entry to the RESYNC request.
-func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.StaticARPEntry) linuxclient.DataResyncDSL {
-	key := linux_l3.StaticArpKey(val.Interface, val.IpAddress)
+func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.ARPEntry) linuxclient.DataResyncDSL {
+	key := linux_l3.ArpKey(val.Interface, val.IpAddress)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -73,8 +71,8 @@ func (dsl *DataResyncDSL) LinuxArpEntry(val *linux_l3.StaticARPEntry) linuxclien
 }
 
 // LinuxRoute adds Linux route to the RESYNC request.
-func (dsl *DataResyncDSL) LinuxRoute(val *linux_l3.StaticRoute) linuxclient.DataResyncDSL {
-	key := linux_l3.StaticRouteKey(val.DstNetwork, val.OutgoingInterface)
+func (dsl *DataResyncDSL) LinuxRoute(val *linux_l3.Route) linuxclient.DataResyncDSL {
+	key := linux_l3.RouteKey(val.DstNetwork, val.OutgoingInterface)
 	dsl.txn.Put(key, val)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
@@ -88,12 +86,12 @@ func (dsl *DataResyncDSL) VppInterface(intf *interfaces.Interface) linuxclient.D
 }
 
 // ACL adds VPP Access Control List to the RESYNC request.
-func (dsl *DataResyncDSL) ACL(acl *acl.Acl) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) ACL(acl *acl.ACL) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.ACL(acl)
 	return dsl
 }
 
-// BfdSession adds VPP bidirectional forwarding detection session
+/*// BfdSession adds VPP bidirectional forwarding detection session
 // to the RESYNC request.
 func (dsl *DataResyncDSL) BfdSession(val *bfd.SingleHopBFD_Session) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.BfdSession(val)
@@ -112,7 +110,7 @@ func (dsl *DataResyncDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) linuxclient.Dat
 func (dsl *DataResyncDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.BfdEchoFunction(val)
 	return dsl
-}
+}*/
 
 // BD adds VPP Bridge Domain to the RESYNC request.
 func (dsl *DataResyncDSL) BD(bd *l2.BridgeDomain) linuxclient.DataResyncDSL {
@@ -133,7 +131,7 @@ func (dsl *DataResyncDSL) XConnect(xcon *l2.XConnectPair) linuxclient.DataResync
 }
 
 // StaticRoute adds VPP L3 Static Route to the RESYNC request.
-func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.StaticRoute) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) StaticRoute(staticRoute *l3.Route) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.StaticRoute(staticRoute)
 	return dsl
 }
@@ -157,7 +155,7 @@ func (dsl *DataResyncDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) linuxcl
 	return dsl
 }
 
-// L4Features adds L4 features to the RESYNC request
+/*// L4Features adds L4 features to the RESYNC request
 func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.L4Features(val)
 	return dsl
@@ -167,10 +165,10 @@ func (dsl *DataResyncDSL) L4Features(val *l4.L4Features) linuxclient.DataResyncD
 func (dsl *DataResyncDSL) AppNamespace(appNs *l4.AppNamespaces_AppNamespace) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.AppNamespace(appNs)
 	return dsl
-}
+}*/
 
 // StnRule adds Stn rule to the RESYNC request.
-func (dsl *DataResyncDSL) StnRule(stn *stn.STN_Rule) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) StnRule(stn *stn.Rule) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.StnRule(stn)
 	return dsl
 }
@@ -200,7 +198,7 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) linuxclien
 }
 
 // PuntIPRedirect adds request to RESYNC a rule used to punt L3 traffic via interface.
-func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IpRedirect) linuxclient.DataResyncDSL {
+func (dsl *DataResyncDSL) PuntIPRedirect(val *punt.IPRedirect) linuxclient.DataResyncDSL {
 	dsl.vppDataResync.PuntIPRedirect(val)
 	return dsl
 }
@@ -236,7 +234,7 @@ func (dsl *DataResyncDSL) Send() vppclient.Reply {
 		toBeDeleted := keySet{}
 
 		// fill all known keys associated with the Linux network configuration:
-		keys, err := dsl.listKeys(interfaces.Prefix)
+		keys, err := dsl.listKeys(interfaces.ModelInterface.KeyPrefix())
 		if err != nil {
 			break
 		}

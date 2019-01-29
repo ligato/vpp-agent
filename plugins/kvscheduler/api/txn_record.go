@@ -63,16 +63,17 @@ type RecordedTxn struct {
 	Stop  time.Time
 
 	// arguments
-	SeqNum      uint64
-	TxnType     TxnType
-	ResyncType  ResyncType
-	Description string
-	Values      []RecordedKVPair
+	SeqNum       uint64
+	TxnType      TxnType
+	ResyncType   ResyncType
+	Description  string
+	RetryForTxn  uint64
+	RetryAttempt int
+	Values       []RecordedKVPair
 
-	// result
-	PreErrors []KeyWithError // pre-processing errors
-	Planned   RecordedTxnOps
-	Executed  RecordedTxnOps
+	// operations
+	Planned  RecordedTxnOps
+	Executed RecordedTxnOps
 }
 
 // RecordedTxnOp is used to record executed/planned transaction operation.
@@ -80,21 +81,22 @@ type RecordedTxnOp struct {
 	// identification
 	Operation TxnOperation
 	Key       string
-	Derived   bool
 
 	// changes
-	PrevValue  proto.Message
-	NewValue   proto.Message
-	PrevOrigin ValueOrigin
-	NewOrigin  ValueOrigin
-	WasPending bool
-	IsPending  bool
-	PrevErr    error
-	NewErr     error
+	PrevValue proto.Message
+	NewValue  proto.Message
+	PrevState ValueState
+	NewState  ValueState
+	PrevErr   error
+	NewErr    error
+	NOOP      bool
 
 	// flags
-	IsRevert bool
-	IsRetry  bool
+	IsDerived  bool
+	IsProperty bool
+	IsRevert   bool
+	IsRetry    bool
+	IsRecreate bool
 }
 
 // RecordedKVPair is used to record key-value pair.
@@ -112,11 +114,11 @@ type RecordedTxns []*RecordedTxn
 
 // String returns a *multi-line* human-readable string representation of recorded transaction.
 func (txn *RecordedTxn) String() string {
-	return txn.StringWithOpts(false, 0)
+	return txn.StringWithOpts(false, false, 0)
 }
 
 // StringWithOpts allows to format string representation of recorded transaction.
-func (txn *RecordedTxn) StringWithOpts(resultOnly bool, indent int) string {
+func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) string {
 	var str string
 	indent1 := strings.Repeat(" ", indent)
 	indent2 := strings.Repeat(" ", indent+4)
@@ -136,7 +138,12 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			}
 			str += indent2 + fmt.Sprintf("- type: %s, %s\n", txn.TxnType.String(), ResyncType)
 		} else {
-			str += indent2 + fmt.Sprintf("- type: %s\n", txn.TxnType.String())
+			if txn.TxnType == RetryFailedOps {
+				str += indent2 + fmt.Sprintf("- type: %s (for txn %d, attempt #%d)\n",
+					txn.TxnType.String(), txn.RetryForTxn, txn.RetryAttempt)
+			} else {
+				str += indent2 + fmt.Sprintf("- type: %s\n", txn.TxnType.String())
+			}
 		}
 		if txn.Description != "" {
 			descriptionLines := strings.Split(txn.Description, "\n")
@@ -165,19 +172,10 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			str += indent3 + fmt.Sprintf("  value: %s\n", utils.ProtoToString(kv.Value))
 		}
 
-		// pre-processing errors
-		if len(txn.PreErrors) > 0 {
-			str += indent1 + "* pre-processing errors:\n"
-			for _, preError := range txn.PreErrors {
-				str += indent2 + fmt.Sprintf("- key: %s\n", preError.Key)
-				str += indent2 + fmt.Sprintf("  error: %s\n", preError.Error.Error())
-			}
-		}
-
 	printOps:
 		// planned operations
 		str += indent1 + "* planned operations:\n"
-		str += txn.Planned.StringWithOpts(indent + 4)
+		str += txn.Planned.StringWithOpts(verbose, indent+4)
 	}
 
 	if !txn.PreRecord {
@@ -187,7 +185,7 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 			str += indent1 + fmt.Sprintf("* executed operations (%s - %s, duration = %s):\n",
 				txn.Start.String(), txn.Stop.String(), txn.Stop.Sub(txn.Start).String())
 		}
-		str += txn.Executed.StringWithOpts(indent + 4)
+		str += txn.Executed.StringWithOpts(verbose, indent+4)
 	}
 
 	return str
@@ -196,37 +194,98 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly bool, indent int) string {
 // String returns a *multi-line* human-readable string representation of a recorded
 // transaction operation.
 func (op *RecordedTxnOp) String() string {
-	return op.StringWithOpts(0, 0)
+	return op.StringWithOpts(0, false, 0)
 }
 
 // StringWithOpts allows to format string representation of a transaction operation.
-func (op *RecordedTxnOp) StringWithOpts(index int, indent int) string {
+func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) string {
 	var str string
 	indent1 := strings.Repeat(" ", indent)
 	indent2 := strings.Repeat(" ", indent+4)
 
 	var flags []string
-	if op.NewOrigin == FromSB {
-		flags = append(flags, "NOTIFICATION")
-	}
-	if op.Derived {
+	// operation flags
+	if op.IsDerived && !op.IsProperty {
 		flags = append(flags, "DERIVED")
 	}
-	if op.IsRevert {
+	if op.IsProperty {
+		flags = append(flags, "PROPERTY")
+	}
+	if op.NOOP {
+		flags = append(flags, "NOOP")
+	}
+	if op.IsRevert && !op.IsProperty {
 		flags = append(flags, "REVERT")
 	}
-	if op.IsRetry {
+	if op.IsRetry && !op.IsProperty {
 		flags = append(flags, "RETRY")
 	}
-	if op.WasPending {
-		if op.IsPending {
+	if op.IsRecreate {
+		flags = append(flags, "RECREATE")
+	}
+	// value state transition
+	//  -> RETRIEVED
+	if op.NewState == ValueState_RETRIEVED {
+		flags = append(flags, "RETRIEVED")
+	}
+	if op.PrevState == ValueState_RETRIEVED && op.PrevState != op.NewState {
+		flags = append(flags, "WAS-RETRIEVED")
+	}
+	//  -> UNIMPLEMENTED
+	if op.NewState == ValueState_UNIMPLEMENTED {
+		flags = append(flags, "UNIMPLEMENTED")
+	}
+	if op.PrevState == ValueState_UNIMPLEMENTED && op.PrevState != op.NewState {
+		flags = append(flags, "WAS-UNIMPLEMENTED")
+	}
+	//  -> REMOVED / MISSING
+	if op.PrevState == ValueState_REMOVED && !op.IsRecreate {
+		flags = append(flags, "ALREADY-REMOVED")
+	}
+	if op.PrevState == ValueState_MISSING {
+		if op.NewState == ValueState_REMOVED {
+			flags = append(flags, "ALREADY-MISSING")
+		} else {
+			flags = append(flags, "WAS-MISSING")
+		}
+	}
+	//  -> FOUND
+	if op.PrevState == ValueState_FOUND {
+		flags = append(flags, "FOUND")
+	}
+	//  -> PENDING
+	if op.PrevState == ValueState_PENDING {
+		if op.NewState == ValueState_PENDING {
 			flags = append(flags, "STILL-PENDING")
 		} else {
 			flags = append(flags, "WAS-PENDING")
 		}
 	} else {
-		if op.IsPending {
+		if op.NewState == ValueState_PENDING {
 			flags = append(flags, "IS-PENDING")
+		}
+	}
+	//  -> FAILED / INVALID
+	if op.PrevState == ValueState_FAILED {
+		if op.NewState == ValueState_FAILED {
+			flags = append(flags, "STILL-FAILING")
+		} else if op.NewState == ValueState_CONFIGURED {
+			flags = append(flags, "FIXED")
+		}
+	} else {
+		if op.NewState == ValueState_FAILED {
+			flags = append(flags, "FAILED")
+		}
+	}
+	if op.PrevState == ValueState_INVALID {
+		if op.NewState == ValueState_INVALID {
+			flags = append(flags, "STILL-INVALID")
+		} else if op.NewState == ValueState_CONFIGURED {
+			flags = append(flags, "FIXED")
+		}
+	} else {
+		if op.NewState == ValueState_INVALID {
+			flags = append(flags, "INVALID")
 		}
 	}
 
@@ -245,26 +304,25 @@ func (op *RecordedTxnOp) StringWithOpts(index int, indent int) string {
 	}
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.Key)
-	showPrevForAdd := op.WasPending && !proto.Equal(op.PrevValue, op.NewValue)
-	if op.Operation == Modify || (op.Operation == Add && showPrevForAdd) {
+	if op.Operation == TxnOperation_MODIFY {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", utils.ProtoToString(op.PrevValue))
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", utils.ProtoToString(op.NewValue))
 	}
-	if op.Operation == Delete || op.Operation == Update {
+	if op.Operation == TxnOperation_DELETE {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.PrevValue))
 	}
-	if op.Operation == Add && !showPrevForAdd {
+	if op.Operation == TxnOperation_ADD {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.NewValue))
-	}
-	if op.PrevOrigin != op.NewOrigin {
-		str += indent2 + fmt.Sprintf("- prev-origin: %s\n", op.PrevOrigin.String())
-		str += indent2 + fmt.Sprintf("- new-origin: %s\n", op.NewOrigin.String())
 	}
 	if op.PrevErr != nil {
 		str += indent2 + fmt.Sprintf("- prev-error: %s\n", utils.ErrorToString(op.PrevErr))
 	}
 	if op.NewErr != nil {
 		str += indent2 + fmt.Sprintf("- error: %s\n", utils.ErrorToString(op.NewErr))
+	}
+	if verbose {
+		str += indent2 + fmt.Sprintf("- prev-state: %s \n", op.PrevState.String())
+		str += indent2 + fmt.Sprintf("- new-state: %s \n", op.NewState.String())
 	}
 
 	return str
@@ -273,18 +331,18 @@ func (op *RecordedTxnOp) StringWithOpts(index int, indent int) string {
 // String returns a *multi-line* human-readable string representation of transaction
 // operations.
 func (ops RecordedTxnOps) String() string {
-	return ops.StringWithOpts(0)
+	return ops.StringWithOpts(false, 0)
 }
 
 // StringWithOpts allows to format string representation of transaction operations.
-func (ops RecordedTxnOps) StringWithOpts(indent int) string {
+func (ops RecordedTxnOps) StringWithOpts(verbose bool, indent int) string {
 	if len(ops) == 0 {
 		return strings.Repeat(" ", indent) + "<NONE>\n"
 	}
 
 	var str string
 	for idx, op := range ops {
-		str += op.StringWithOpts(idx+1, indent)
+		str += op.StringWithOpts(idx+1, verbose, indent)
 	}
 	return str
 }
@@ -292,11 +350,11 @@ func (ops RecordedTxnOps) StringWithOpts(indent int) string {
 // String returns a *multi-line* human-readable string representation of a transaction
 // list.
 func (txns RecordedTxns) String() string {
-	return txns.StringWithOpts(false, 0)
+	return txns.StringWithOpts(false, false, 0)
 }
 
 // StringWithOpts allows to format string representation of a transaction list.
-func (txns RecordedTxns) StringWithOpts(resultOnly bool, indent int) string {
+func (txns RecordedTxns) StringWithOpts(resultOnly, verbose bool, indent int) string {
 	if len(txns) == 0 {
 		return strings.Repeat(" ", indent) + "<NONE>\n"
 	}
@@ -304,7 +362,7 @@ func (txns RecordedTxns) StringWithOpts(resultOnly bool, indent int) string {
 	var str string
 	for idx, txn := range txns {
 		str += strings.Repeat(" ", indent) + fmt.Sprintf("Transaction #%d:\n", txn.SeqNum)
-		str += txn.StringWithOpts(resultOnly, indent+4)
+		str += txn.StringWithOpts(resultOnly, verbose, indent+4)
 		if idx < len(txns)-1 {
 			str += "\n"
 		}

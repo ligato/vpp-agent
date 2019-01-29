@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
+	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type DNAT44KVWithMetadata struct {
 	Key      string
-	Value    *nat.DNat44
+	Value    *vpp_nat.DNat44
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type DNAT44Descriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *nat.DNat44) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_nat.DNat44) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *nat.DNat44) (metadata interface{}, err error)
-	Delete             func(key string, value *nat.DNat44, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *nat.DNat44, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *nat.DNat44, metadata interface{}) bool
-	Update             func(key string, value *nat.DNat44, metadata interface{}) error
+	Validate           func(key string, value *vpp_nat.DNat44) error
+	Add                func(key string, value *vpp_nat.DNat44) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_nat.DNat44, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_nat.DNat44, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_nat.DNat44, metadata interface{}) bool
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *nat.DNat44) []Dependency
-	DerivedValues      func(key string, value *nat.DNat44) []KeyValuePair
+	Dependencies       func(key string, value *vpp_nat.DNat44) []Dependency
+	DerivedValues      func(key string, value *vpp_nat.DNat44) []KeyValuePair
 	Dump               func(correlate []DNAT44KVWithMetadata) ([]DNAT44KVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -62,6 +62,9 @@ func NewDNAT44Descriptor(typedDescriptor *DNAT44Descriptor) *KVDescriptor {
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewDNAT44Descriptor(typedDescriptor *DNAT44Descriptor) *KVDescriptor {
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *DNAT44DescriptorAdapter) ValueComparator(key string, oldValue, newValu
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *DNAT44DescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castDNAT44Value(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *DNAT44DescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *DNAT44DescriptorAdapter) ModifyWithRecreate(key string, oldValue, newV
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *DNAT44DescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castDNAT44Value(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castDNAT44Metadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *DNAT44DescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
@@ -217,8 +213,8 @@ func (da *DNAT44DescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMet
 
 ////////// Helper methods //////////
 
-func castDNAT44Value(key string, value proto.Message) (*nat.DNat44, error) {
-	typedValue, ok := value.(*nat.DNat44)
+func castDNAT44Value(key string, value proto.Message) (*vpp_nat.DNat44, error) {
+	typedValue, ok := value.(*vpp_nat.DNat44)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

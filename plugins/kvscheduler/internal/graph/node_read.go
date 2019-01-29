@@ -115,7 +115,7 @@ func (node *nodeR) GetTargets(relation string) (runtimeTargets RuntimeTargetsByL
 	}
 	for _, targets := range relTargets.Targets {
 		var nodes []Node
-		for _, key := range targets.Keys.Iterate() {
+		for _, key := range targets.MatchingKeys.Iterate() {
 			nodes = append(nodes, node.graph.nodes[key])
 		}
 		runtimeTargets = append(runtimeTargets, &RuntimeTargets{
@@ -163,8 +163,9 @@ func (node *nodeR) copy() *nodeR {
 		targets := make(TargetsByLabel, 0, len(relTargets.Targets))
 		for _, target := range relTargets.Targets {
 			targets = append(targets, &Targets{
-				Label: target.Label,
-				Keys:  target.Keys.CopyOnWrite(),
+				Label:        target.Label,
+				ExpectedKey:  target.ExpectedKey,
+				MatchingKeys: target.MatchingKeys.CopyOnWrite(),
 			})
 		}
 		nodeCopy.targets = append(nodeCopy.targets, &RelationTargets{

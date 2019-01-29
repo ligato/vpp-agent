@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
+	"github.com/ligato/vpp-agent/api/models/vpp/l2"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type XConnectKVWithMetadata struct {
 	Key      string
-	Value    *l2.XConnectPair
+	Value    *vpp_l2.XConnectPair
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type XConnectDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *l2.XConnectPair) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_l2.XConnectPair) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *l2.XConnectPair) (metadata interface{}, err error)
-	Delete             func(key string, value *l2.XConnectPair, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *l2.XConnectPair, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *l2.XConnectPair, metadata interface{}) bool
-	Update             func(key string, value *l2.XConnectPair, metadata interface{}) error
+	Validate           func(key string, value *vpp_l2.XConnectPair) error
+	Add                func(key string, value *vpp_l2.XConnectPair) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_l2.XConnectPair, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_l2.XConnectPair, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_l2.XConnectPair, metadata interface{}) bool
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *l2.XConnectPair) []Dependency
-	DerivedValues      func(key string, value *l2.XConnectPair) []KeyValuePair
+	Dependencies       func(key string, value *vpp_l2.XConnectPair) []Dependency
+	DerivedValues      func(key string, value *vpp_l2.XConnectPair) []KeyValuePair
 	Dump               func(correlate []XConnectKVWithMetadata) ([]XConnectKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -62,6 +62,9 @@ func NewXConnectDescriptor(typedDescriptor *XConnectDescriptor) *KVDescriptor {
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewXConnectDescriptor(typedDescriptor *XConnectDescriptor) *KVDescriptor {
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *XConnectDescriptorAdapter) ValueComparator(key string, oldValue, newVa
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *XConnectDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castXConnectValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *XConnectDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *XConnectDescriptorAdapter) ModifyWithRecreate(key string, oldValue, ne
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *XConnectDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castXConnectValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castXConnectMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *XConnectDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
@@ -217,8 +213,8 @@ func (da *XConnectDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithM
 
 ////////// Helper methods //////////
 
-func castXConnectValue(key string, value proto.Message) (*l2.XConnectPair, error) {
-	typedValue, ok := value.(*l2.XConnectPair)
+func castXConnectValue(key string, value proto.Message) (*vpp_l2.XConnectPair, error) {
+	typedValue, ok := value.(*vpp_l2.XConnectPair)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

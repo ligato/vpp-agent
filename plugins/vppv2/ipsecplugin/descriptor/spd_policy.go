@@ -20,10 +20,10 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+ 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
 )
 
 const (
@@ -134,7 +134,6 @@ func (d *SPDPolicyDescriptor) Delete(key string, policy *ipsec.SecurityPolicyDat
 		return err
 	}
 
-
 	err = d.ipSecHandler.DeleteSPDEntry(uint32(spdID), uint32(saID), policy)
 	if err != nil {
 		d.log.Error(err)
@@ -150,8 +149,8 @@ func (d *SPDPolicyDescriptor) ModifyWithRecreate(key string, oldSPDPolicy, newSP
 }
 
 // Dependencies lists the security association as the only dependency for the binding.
-func (d *SPDPolicyDescriptor) Dependencies(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) []scheduler.Dependency {
-	return []scheduler.Dependency{
+func (d *SPDPolicyDescriptor) Dependencies(key string, value *ipsec.SecurityPolicyDatabase_PolicyEntry) []kvs.Dependency {
+	return []kvs.Dependency{
 		{
 			Label: policyDep,
 			Key:   ipsec.SAKey(value.SaIndex),

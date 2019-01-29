@@ -8,24 +8,18 @@ import (
 
 	"github.com/ligato/cn-infra/utils/addrs"
 
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	"github.com/ligato/vpp-agent/pkg/models"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 // Add creates a VPP interface.
 func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metadata *ifaceidx.IfaceMetadata, err error) {
 	var ifIdx uint32
 	var tapHostIfName string
-
-	// validate the configuration first
-	err = d.validateInterfaceConfig(intf)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
 
 	// create the interface of the given type
 	switch intf.Type {
@@ -219,7 +213,7 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 
 	// configure MTU. Prefer value in the interface config, otherwise set the plugin-wide
 	// default value if provided.
-	if intf.Type != interfaces.Interface_VXLAN_TUNNEL && intf.Type != interfaces.Interface_IPSEC_TUNNEL {
+	if ifaceSupportsSetMTU(intf) {
 		mtuToConfigure := intf.Mtu
 		if mtuToConfigure == 0 && d.defaultMtu != 0 {
 			mtuToConfigure = d.defaultMtu
@@ -321,13 +315,6 @@ func (d *InterfaceDescriptor) Delete(key string, intf *interfaces.Interface, met
 
 // Modify is able to change Type-unspecific attributes.
 func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.Interface, oldMetadata *ifaceidx.IfaceMetadata) (newMetadata *ifaceidx.IfaceMetadata, err error) {
-	// validate the new configuration first
-	err = d.validateInterfaceConfig(newIntf)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	ifIdx := oldMetadata.SwIfIndex
 
 	// rx-mode
@@ -422,7 +409,7 @@ func (d *InterfaceDescriptor) Modify(key string, oldIntf, newIntf *interfaces.In
 	oldMetadata.IPAddresses = newIntf.IpAddresses
 
 	// update MTU (except VxLan, IPSec)
-	if newIntf.Type != interfaces.Interface_VXLAN_TUNNEL && newIntf.Type != interfaces.Interface_IPSEC_TUNNEL {
+	if ifaceSupportsSetMTU(newIntf) {
 		if newIntf.Mtu != 0 && newIntf.Mtu != oldIntf.Mtu {
 			if err := d.ifHandler.SetInterfaceMtu(ifIdx, newIntf.Mtu); err != nil {
 				err = errors.Errorf("failed to set MTU to interface %s: %v", newIntf.Name, err)
@@ -483,10 +470,10 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 	}
 
 	for ifIdx, intf := range vppIfs {
-		origin := scheduler.FromNB
+		origin := kvs.FromNB
 		if ifIdx == 0 {
 			// local0 is created automatically
-			origin = scheduler.FromSB
+			origin = kvs.FromSB
 		}
 		if intf.Interface.Type == interfaces.Interface_DPDK {
 			d.ethernetIfs[intf.Interface.Name] = ifIdx
@@ -572,7 +559,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			TAPHostIfName: tapHostIfName,
 		}
 		dump = append(dump, adapter.InterfaceKVWithMetadata{
-			Key:      interfaces.InterfaceKey(intf.Interface.Name),
+			Key:      models.Key(intf.Interface),
 			Value:    intf.Interface,
 			Metadata: metadata,
 			Origin:   origin,
@@ -581,4 +568,15 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 	}
 
 	return dump, nil
+}
+
+func ifaceSupportsSetMTU(intf *interfaces.Interface) bool {
+	switch intf.Type {
+	case interfaces.Interface_VXLAN_TUNNEL,
+		interfaces.Interface_IPSEC_TUNNEL,
+		interfaces.Interface_SUB_INTERFACE:
+		// MTU not supported
+		return false
+	}
+	return true
 }

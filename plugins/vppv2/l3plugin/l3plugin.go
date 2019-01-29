@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name StaticRoute --value-type *l3.StaticRoute --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *l3.ARPEntry --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *l3.ProxyARP --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *l3.ProxyARP_Interface --import "../model/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *l3.IPScanNeighbor --import "../model/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *vpp_l3.Route --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "github.com/ligato/vpp-agent/api/models/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
 import (
 	govppapi "git.fd.io/govpp.git/api"
-
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/pkg/errors"
+
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin/vppcalls"
-	"github.com/pkg/errors"
 )
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
@@ -58,7 +58,7 @@ type L3Plugin struct {
 // Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler   scheduler.KVScheduler
+	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -80,25 +80,25 @@ func (p *L3Plugin) Init() error {
 	p.ipNeigh = vppcalls.NewIPNeighVppHandler(p.vppCh, nil)
 
 	// init & register descriptors
-	p.routeDescriptor = descriptor.NewRouteDescriptor(p.Scheduler, p.routeHandler, p.Log)
-	routeDescriptor := adapter.NewStaticRouteDescriptor(p.routeDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(routeDescriptor)
+	p.routeDescriptor = descriptor.NewRouteDescriptor(p.routeHandler, p.Log)
+	routeDescriptor := adapter.NewRouteDescriptor(p.routeDescriptor.GetDescriptor())
+	p.Deps.KVScheduler.RegisterKVDescriptor(routeDescriptor)
 
-	p.arpDescriptor = descriptor.NewArpDescriptor(p.Scheduler, p.arpandler, p.Log)
+	p.arpDescriptor = descriptor.NewArpDescriptor(p.KVScheduler, p.arpandler, p.Log)
 	arpDescriptor := adapter.NewARPEntryDescriptor(p.arpDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(arpDescriptor)
+	p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
 
-	p.proxyArpDescriptor = descriptor.NewProxyArpDescriptor(p.Scheduler, p.proxyArpHandler, p.Log)
+	p.proxyArpDescriptor = descriptor.NewProxyArpDescriptor(p.KVScheduler, p.proxyArpHandler, p.Log)
 	proxyArpDescriptor := adapter.NewProxyARPDescriptor(p.proxyArpDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(proxyArpDescriptor)
+	p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpDescriptor)
 
-	p.proxyArpIfaceDescriptor = descriptor.NewProxyArpInterfaceDescriptor(p.Scheduler, p.proxyArpHandler, p.Log)
+	p.proxyArpIfaceDescriptor = descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.proxyArpHandler, p.Log)
 	proxyArpIfaceDescriptor := adapter.NewProxyARPInterfaceDescriptor(p.proxyArpIfaceDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(proxyArpIfaceDescriptor)
+	p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpIfaceDescriptor)
 
-	p.ipScanNeighborDescriptor = descriptor.NewIPScanNeighborDescriptor(p.Scheduler, p.ipNeigh, p.Log)
+	p.ipScanNeighborDescriptor = descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.ipNeigh, p.Log)
 	ipScanNeighborDescriptor := adapter.NewIPScanNeighborDescriptor(p.ipScanNeighborDescriptor.GetDescriptor())
-	p.Deps.Scheduler.RegisterKVDescriptor(ipScanNeighborDescriptor)
+	p.Deps.KVScheduler.RegisterKVDescriptor(ipScanNeighborDescriptor)
 
 	return nil
 }

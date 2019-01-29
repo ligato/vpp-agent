@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
+	"github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type SPDInterfaceKVWithMetadata struct {
 	Key      string
-	Value    *ipsec.SecurityPolicyDatabase_Interface
+	Value    *vpp_ipsec.SecurityPolicyDatabase_Interface
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type SPDInterfaceDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_Interface) bool
+	ValueComparator    func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_Interface) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *ipsec.SecurityPolicyDatabase_Interface) (metadata interface{}, err error)
-	Delete             func(key string, value *ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_Interface, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) bool
-	Update             func(key string, value *ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) error
+	Validate           func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface) error
+	Add                func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface) (metadata interface{}, err error)
+	Delete             func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_Interface, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *vpp_ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) bool
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *ipsec.SecurityPolicyDatabase_Interface) []Dependency
-	DerivedValues      func(key string, value *ipsec.SecurityPolicyDatabase_Interface) []KeyValuePair
+	Dependencies       func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface) []Dependency
+	DerivedValues      func(key string, value *vpp_ipsec.SecurityPolicyDatabase_Interface) []KeyValuePair
 	Dump               func(correlate []SPDInterfaceKVWithMetadata) ([]SPDInterfaceKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -62,6 +62,9 @@ func NewSPDInterfaceDescriptor(typedDescriptor *SPDInterfaceDescriptor) *KVDescr
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewSPDInterfaceDescriptor(typedDescriptor *SPDInterfaceDescriptor) *KVDescr
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *SPDInterfaceDescriptorAdapter) ValueComparator(key string, oldValue, n
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *SPDInterfaceDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castSPDInterfaceValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *SPDInterfaceDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *SPDInterfaceDescriptorAdapter) ModifyWithRecreate(key string, oldValue
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *SPDInterfaceDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castSPDInterfaceValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castSPDInterfaceMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *SPDInterfaceDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
@@ -217,8 +213,8 @@ func (da *SPDInterfaceDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVW
 
 ////////// Helper methods //////////
 
-func castSPDInterfaceValue(key string, value proto.Message) (*ipsec.SecurityPolicyDatabase_Interface, error) {
-	typedValue, ok := value.(*ipsec.SecurityPolicyDatabase_Interface)
+func castSPDInterfaceValue(key string, value proto.Message) (*vpp_ipsec.SecurityPolicyDatabase_Interface, error) {
+	typedValue, ok := value.(*vpp_ipsec.SecurityPolicyDatabase_Interface)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

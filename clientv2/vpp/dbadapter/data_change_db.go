@@ -16,17 +16,17 @@ package dbadapter
 
 import (
 	"github.com/ligato/cn-infra/db/keyval"
+	"github.com/ligato/vpp-agent/pkg/models"
+
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/clientv2/vpp"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/bfd"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l4"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/acl"
-	intf "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/nat"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/punt"
 )
 
 // NewDataChangeDSL returns a new instance of DataChangeDSL which implements
@@ -77,29 +77,8 @@ func (dsl *PutDSL) Interface(val *intf.Interface) vppclient.PutDSL {
 }
 
 // ACL adds a request to create or update VPP Access Control List.
-func (dsl *PutDSL) ACL(val *acl.Acl) vppclient.PutDSL {
+func (dsl *PutDSL) ACL(val *acl.ACL) vppclient.PutDSL {
 	dsl.parent.txn.Put(acl.Key(val.Name), val)
-	return dsl
-}
-
-// BfdSession adds a request to create or update bidirectional forwarding
-// detection session.
-func (dsl *PutDSL) BfdSession(val *bfd.SingleHopBFD_Session) vppclient.PutDSL {
-	dsl.parent.txn.Put(bfd.SessionKey(val.Interface), val)
-	return dsl
-}
-
-// BfdAuthKeys adds a request to create or update bidirectional forwarding
-// detection key.
-func (dsl *PutDSL) BfdAuthKeys(val *bfd.SingleHopBFD_Key) vppclient.PutDSL {
-	dsl.parent.txn.Put(bfd.AuthKeysKey(string(val.Id)), val)
-	return dsl
-}
-
-// BfdEchoFunction adds a request to create or update bidirectional forwarding
-// detection echo function.
-func (dsl *PutDSL) BfdEchoFunction(val *bfd.SingleHopBFD_EchoFunction) vppclient.PutDSL {
-	dsl.parent.txn.Put(bfd.EchoFunctionKey(val.EchoSourceInterface), val)
 	return dsl
 }
 
@@ -122,7 +101,7 @@ func (dsl *PutDSL) XConnect(val *l2.XConnectPair) vppclient.PutDSL {
 }
 
 // StaticRoute adds a request to create or update VPP L3 Static Route.
-func (dsl *PutDSL) StaticRoute(val *l3.StaticRoute) vppclient.PutDSL {
+func (dsl *PutDSL) StaticRoute(val *l3.Route) vppclient.PutDSL {
 	dsl.parent.txn.Put(l3.RouteKey(val.VrfId, val.DstNetwork, val.NextHopAddr), val)
 	return dsl
 }
@@ -135,39 +114,25 @@ func (dsl *PutDSL) Arp(arp *l3.ARPEntry) vppclient.PutDSL {
 
 // ProxyArp adds a request to create or update VPP L3 proxy ARP.
 func (dsl *PutDSL) ProxyArp(proxyArp *l3.ProxyARP) vppclient.PutDSL {
-	dsl.parent.txn.Put(l3.ProxyARPKey, proxyArp)
+	dsl.parent.txn.Put(models.Key(&l3.ProxyARP{}), proxyArp)
 	return dsl
 }
 
 // IPScanNeighbor adds L3 IP Scan Neighbor to the RESYNC request.
 func (dsl *PutDSL) IPScanNeighbor(ipScanNeigh *l3.IPScanNeighbor) vppclient.PutDSL {
-	dsl.parent.txn.Put(l3.IPScanNeighborKey, ipScanNeigh)
-	return dsl
-}
-
-// L4Features create or update request for the L4Features
-func (dsl *PutDSL) L4Features(val *l4.L4Features) vppclient.PutDSL {
-	dsl.parent.txn.Put(l4.FeatureKey(), val)
-
-	return dsl
-}
-
-// AppNamespace create or update request for the Application Namespaces List
-func (dsl *PutDSL) AppNamespace(val *l4.AppNamespaces_AppNamespace) vppclient.PutDSL {
-	dsl.parent.txn.Put(l4.AppNamespacesKey(val.NamespaceId), val)
-
+	dsl.parent.txn.Put(models.Key(&l3.IPScanNeighbor{}), ipScanNeigh)
 	return dsl
 }
 
 // StnRule adds a request to create or update STN rule.
-func (dsl *PutDSL) StnRule(val *stn.STN_Rule) vppclient.PutDSL {
-	dsl.parent.txn.Put(stn.Key(val.RuleName), val)
+func (dsl *PutDSL) StnRule(val *stn.Rule) vppclient.PutDSL {
+	dsl.parent.txn.Put(stn.Key(val.Interface, val.IpAddress), val)
 	return dsl
 }
 
 // NAT44Global adds a request to set global configuration for NAT44
 func (dsl *PutDSL) NAT44Global(nat44 *nat.Nat44Global) vppclient.PutDSL {
-	dsl.parent.txn.Put(nat.GlobalNAT44Key, nat44)
+	dsl.parent.txn.Put(models.Key(&nat.Nat44Global{}), nat44)
 	return dsl
 }
 
@@ -190,7 +155,7 @@ func (dsl *PutDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.PutDSL 
 }
 
 // PuntIPRedirect adds request to create or update rule to punt L3 traffic via interface.
-func (dsl *PutDSL) PuntIPRedirect(val *punt.IpRedirect) vppclient.PutDSL {
+func (dsl *PutDSL) PuntIPRedirect(val *punt.IPRedirect) vppclient.PutDSL {
 	dsl.parent.txn.Put(punt.IPRedirectKey(val.L3Protocol, val.TxInterface), val)
 	return dsl
 }
@@ -220,27 +185,6 @@ func (dsl *DeleteDSL) Interface(interfaceName string) vppclient.DeleteDSL {
 // ACL adds a request to delete an existing VPP Access Control List.
 func (dsl *DeleteDSL) ACL(aclName string) vppclient.DeleteDSL {
 	dsl.parent.txn.Delete(acl.Key(aclName))
-	return dsl
-}
-
-// BfdSession adds a request to delete an existing bidirectional forwarding
-// detection session.
-func (dsl *DeleteDSL) BfdSession(bfdSessionIfaceName string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(bfd.SessionKey(bfdSessionIfaceName))
-	return dsl
-}
-
-// BfdAuthKeys adds a request to delete an existing bidirectional forwarding
-// detection key.
-func (dsl *DeleteDSL) BfdAuthKeys(bfdKey string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(bfd.AuthKeysKey(bfdKey))
-	return dsl
-}
-
-// BfdEchoFunction adds a request to delete an existing bidirectional forwarding
-// detection echo function.
-func (dsl *DeleteDSL) BfdEchoFunction(bfdEchoName string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(bfd.EchoFunctionKey(bfdEchoName))
 	return dsl
 }
 
@@ -277,37 +221,25 @@ func (dsl *DeleteDSL) Arp(ifaceName string, ipAddr string) vppclient.DeleteDSL {
 
 // ProxyArp adds a request to delete an existing VPP L3 proxy ARP.
 func (dsl *DeleteDSL) ProxyArp() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l3.ProxyARPKey)
+	dsl.parent.txn.Delete(models.Key(&l3.ProxyARP{}))
 	return dsl
 }
 
 // IPScanNeighbor adds a request to delete an existing VPP L3 IP Scan Neighbor.
 func (dsl *DeleteDSL) IPScanNeighbor() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l3.IPScanNeighborKey)
-	return dsl
-}
-
-// L4Features delete request for the L4Features
-func (dsl *DeleteDSL) L4Features() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l4.FeatureKey())
-	return dsl
-}
-
-// AppNamespace adds a request to delete an existing VPP Application Namespace.
-func (dsl *DeleteDSL) AppNamespace(id string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(l4.AppNamespacesKey(id))
+	dsl.parent.txn.Delete(models.Key(&l3.IPScanNeighbor{}))
 	return dsl
 }
 
 // StnRule adds request to delete Stn rule.
-func (dsl *DeleteDSL) StnRule(ruleName string) vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(stn.Key(ruleName))
+func (dsl *DeleteDSL) StnRule(iface, addr string) vppclient.DeleteDSL {
+	dsl.parent.txn.Delete(stn.Key(iface, addr))
 	return dsl
 }
 
 // NAT44Global adds a request to remove global configuration for NAT44
 func (dsl *DeleteDSL) NAT44Global() vppclient.DeleteDSL {
-	dsl.parent.txn.Delete(nat.GlobalNAT44Key)
+	dsl.parent.txn.Delete(models.Key(&nat.Nat44Global{}))
 	return dsl
 }
 

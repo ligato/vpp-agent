@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"net"
 
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l3"
 )
 
 // RouteDetails is object returned as a VPP dump. It contains static route data in proto format, and VPP-specific
 // metadata
 type RouteDetails struct {
-	Route *l3.StaticRoute
+	Route *l3.Route
 	Meta  *RouteMeta
 }
 
@@ -49,8 +49,8 @@ type RouteMeta struct {
 	LabelStack        []l3binapi.FibMplsLabel
 }
 
-// DumpStaticRoutes implements route handler.
-func (h *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
+// DumpRoutes implements route handler.
+func (h *RouteHandler) DumpRoutes() ([]*RouteDetails, error) {
 	var routes []*RouteDetails
 	// Dump IPv4 l3 FIB.
 	reqCtx := h.callsChannel.SendMultiRequest(&l3binapi.IPFibDump{})
@@ -63,7 +63,7 @@ func (h *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 		if err != nil {
 			return nil, err
 		}
-		ipv4Route, err := h.dumpStaticRouteIPv4Details(fibDetails)
+		ipv4Route, err := h.dumpRouteIPv4Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (h *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 		if err != nil {
 			return nil, err
 		}
-		ipv6Route, err := h.dumpStaticRouteIPv6Details(fibDetails)
+		ipv6Route, err := h.dumpRouteIPv6Details(fibDetails)
 		if err != nil {
 			return nil, err
 		}
@@ -91,17 +91,17 @@ func (h *RouteHandler) DumpStaticRoutes() ([]*RouteDetails, error) {
 	return routes, nil
 }
 
-func (h *RouteHandler) dumpStaticRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*RouteDetails, error) {
-	return h.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
+func (h *RouteHandler) dumpRouteIPv4Details(fibDetails *l3binapi.IPFibDetails) ([]*RouteDetails, error) {
+	return h.dumpRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, false)
 }
 
-func (h *RouteHandler) dumpStaticRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*RouteDetails, error) {
-	return h.dumpStaticRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
+func (h *RouteHandler) dumpRouteIPv6Details(fibDetails *l3binapi.IP6FibDetails) ([]*RouteDetails, error) {
+	return h.dumpRouteIPDetails(fibDetails.TableID, fibDetails.TableName, fibDetails.Address, fibDetails.AddressLength, fibDetails.Path, true)
 }
 
-// dumpStaticRouteIPDetails processes static route details and returns a route objects. Number of routes returned
+// dumpRouteIPDetails processes static route details and returns a route objects. Number of routes returned
 // depends on size of path list.
-func (h *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*RouteDetails, error) {
+func (h *RouteHandler) dumpRouteIPDetails(tableID uint32, tableName []byte, address []byte, prefixLen uint8, paths []l3binapi.FibPath, ipv6 bool) ([]*RouteDetails, error) {
 	// Common fields for every route path (destination IP, VRF)
 	var dstIP string
 	if ipv6 {
@@ -124,16 +124,16 @@ func (h *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte
 			}
 
 			// Route type (if via VRF is used)
-			var routeType l3.StaticRoute_RouteType
+			var routeType l3.Route_RouteType
 			var viaVrfID uint32
 			if uintToBool(path.IsDrop) {
-				routeType = l3.StaticRoute_DROP
+				routeType = l3.Route_DROP
 			} else if path.SwIfIndex == NextHopOutgoingIfUnset && path.TableID != tableID {
 				// outgoing interface not specified and path table is not equal to route table id = inter-VRF route
-				routeType = l3.StaticRoute_INTER_VRF
+				routeType = l3.Route_INTER_VRF
 				viaVrfID = path.TableID
 			} else {
-				routeType = l3.StaticRoute_INTRA_VRF // default
+				routeType = l3.Route_INTRA_VRF // default
 			}
 
 			// Outgoing interface
@@ -150,7 +150,7 @@ func (h *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte
 			}
 
 			// Route configuration
-			route := &l3.StaticRoute{
+			route := &l3.Route{
 				Type:              routeType,
 				VrfId:             tableID,
 				DstNetwork:        dstIP,
@@ -188,8 +188,8 @@ func (h *RouteHandler) dumpStaticRouteIPDetails(tableID uint32, tableName []byte
 	} else {
 		// Return route without path fields, but this is not a valid configuration
 		h.log.Warnf("Route with destination IP %s (VRF %d) has no path specified", dstIP, tableID)
-		route := &l3.StaticRoute{
-			Type:       l3.StaticRoute_INTRA_VRF, // default
+		route := &l3.Route{
+			Type:       l3.Route_INTRA_VRF, // default
 			VrfId:      tableID,
 			DstNetwork: dstIP,
 		}

@@ -20,20 +20,19 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
+
+	"github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
+	linux_ns "github.com/ligato/vpp-agent/api/models/linux/namespace"
+	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linuxifaceidx "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/ifaceidx"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
-	linux_interfaces "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	linux_l3 "github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
-	linux_ns "github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
 	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	vppifaceidx "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
-	vpp_interfaces "github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
 )
 
 /*
@@ -41,16 +40,13 @@ import (
 */
 
 func main() {
-	// Set watcher for KVScheduler.
-	kvscheduler.DefaultPlugin.Watcher = local.DefaultRegistry
-
 	// Set inter-dependency between VPP & Linux plugins
 	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
 	vpp_ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
 	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
 	ep := &ExamplePlugin{
-		Scheduler:     &kvscheduler.DefaultPlugin,
+		Orchestrator:  &orchestrator.DefaultPlugin,
 		LinuxIfPlugin: &linux_ifplugin.DefaultPlugin,
 		LinuxL3Plugin: &linux_l3plugin.DefaultPlugin,
 		VPPIfPlugin:   &vpp_ifplugin.DefaultPlugin,
@@ -67,7 +63,7 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Scheduler     *kvscheduler.Scheduler
+	Orchestrator  *orchestrator.Plugin
 	LinuxIfPlugin *linux_ifplugin.IfPlugin
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
@@ -129,9 +125,13 @@ func testLocalClientWithScheduler(
 	fmt.Println("=== CHANGE ===")
 
 	veth1.Enabled = false
+
 	txn2 := localclient.DataChangeRequest("example")
-	err = txn2.Put().
+	err = txn2.
+		Put().
 		LinuxInterface(veth1).
+		Delete().
+		VppInterface(vppTap.Name).
 		Send().ReceiveReply()
 	if err != nil {
 		fmt.Println(err)
@@ -197,26 +197,26 @@ var (
 			Veth: &linux_interfaces.VethLink{PeerIfName: veth2LogicalName},
 		},
 		Namespace: &linux_ns.NetNamespace{
-			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
+			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroservice1,
 		},
 	}
 
-	arpForVeth1 = &linux_l3.StaticARPEntry{
+	arpForVeth1 = &linux_l3.ARPEntry{
 		Interface: veth1LogicalName,
 		IpAddress: vppTapIPAddr,
 		HwAddress: vppTapHwAddr,
 	}
 
-	linkRouteToMs2 = &linux_l3.StaticRoute{
+	linkRouteToMs2 = &linux_l3.Route{
 		OutgoingInterface: veth1LogicalName,
-		Scope:             linux_l3.StaticRoute_LINK,
+		Scope:             linux_l3.Route_LINK,
 		DstNetwork:        vppTapIPAddr + "/32",
 	}
 
-	routeToMs2 = &linux_l3.StaticRoute{
+	routeToMs2 = &linux_l3.Route{
 		OutgoingInterface: veth1LogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        microservice2Net,
 		GwAddr:            vppTapIPAddr,
 		Metric:            routeMetric,
@@ -267,7 +267,7 @@ var (
 			},
 		},
 		Namespace: &linux_ns.NetNamespace{
-			Type:      linux_ns.NetNamespace_NETNS_REF_MICROSERVICE,
+			Type:      linux_ns.NetNamespace_MICROSERVICE,
 			Reference: mycroservice2,
 		},
 	}
@@ -289,21 +289,21 @@ var (
 		},
 	}
 
-	arpForLinuxTap = &linux_l3.StaticARPEntry{
+	arpForLinuxTap = &linux_l3.ARPEntry{
 		Interface: linuxTapLogicalName,
 		IpAddress: afPacketIPAddr,
 		HwAddress: "a7:35:45:55:65:75",
 	}
 
-	linkRouteToMs1 = &linux_l3.StaticRoute{
+	linkRouteToMs1 = &linux_l3.Route{
 		OutgoingInterface: linuxTapLogicalName,
-		Scope:             linux_l3.StaticRoute_LINK,
+		Scope:             linux_l3.Route_LINK,
 		DstNetwork:        afPacketIPAddr + "/32",
 	}
 
-	routeToMs1 = &linux_l3.StaticRoute{
+	routeToMs1 = &linux_l3.Route{
 		OutgoingInterface: linuxTapLogicalName,
-		Scope:             linux_l3.StaticRoute_GLOBAL,
+		Scope:             linux_l3.Route_GLOBAL,
 		DstNetwork:        microservice1Net,
 		GwAddr:            afPacketIPAddr,
 		Metric:            routeMetric,

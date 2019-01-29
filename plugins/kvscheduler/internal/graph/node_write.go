@@ -123,7 +123,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 
 			// collect keys to remove for this relation+label
 			var toRemove []string
-			for _, target := range targets.Keys.Iterate() {
+			for _, target := range targets.MatchingKeys.Iterate() {
 				obsolete := true
 				targetDefs := node.getTargetDefsForKey(target, relTargets.Relation)
 				for _, targetDef := range targetDefs {
@@ -158,7 +158,7 @@ func (node *node) SetTargets(targetsDef []RelationTargetDef) {
 			} else {
 				// remove just obsolete targets, not the entire label
 				for _, target := range toRemove {
-					targets.Keys.Del(target)
+					targets.MatchingKeys.Del(target)
 				}
 				labelIdx++
 			}
@@ -224,15 +224,16 @@ func (node *node) createEntryForTarget(targetDef RelationTargetDef) {
 	targets := relTargets.GetTargetsForLabel(targetDef.Label)
 	if targets == nil {
 		// new relation label
-		newTargets := &Targets{Label: targetDef.Label}
+		targets = &Targets{Label: targetDef.Label, ExpectedKey: targetDef.Key}
 		if targetDef.Key != "" {
-			newTargets.Keys = utils.NewSingletonKeySet("")
+			targets.MatchingKeys = utils.NewSingletonKeySet("")
 		} else {
 			// selector
-			newTargets.Keys = utils.NewSliceBasedKeySet()
+			targets.MatchingKeys = utils.NewSliceBasedKeySet()
 		}
-		relTargets.Targets = append(relTargets.Targets, newTargets)
+		relTargets.Targets = append(relTargets.Targets, targets)
 	}
+	targets.ExpectedKey = targetDef.Key
 }
 
 // addToTargets adds node2 into the set of targets for this node. Sources of node2
@@ -241,7 +242,7 @@ func (node *node) addToTargets(node2 *node, targetDef RelationTargetDef) {
 	// update targets of node
 	relTargets := node.targets.GetTargetsForRelation(targetDef.Relation)
 	targets := relTargets.GetTargetsForLabel(targetDef.Label)
-	node.targetsUpdated = targets.Keys.Add(node2.key) || node.targetsUpdated
+	node.targetsUpdated = targets.MatchingKeys.Add(node2.key) || node.targetsUpdated
 
 	// update sources of node2
 	relSources := node2.sources.getSourcesForRelation(targetDef.Relation)
@@ -259,7 +260,7 @@ func (node *node) addToTargets(node2 *node, targetDef RelationTargetDef) {
 func (node *node) removeFromTargets(key string) {
 	for _, relTargets := range node.targets {
 		for _, targets := range relTargets.Targets {
-			node.targetsUpdated = targets.Keys.Del(key) || node.targetsUpdated
+			node.targetsUpdated = targets.MatchingKeys.Del(key) || node.targetsUpdated
 		}
 	}
 }
@@ -268,7 +269,7 @@ func (node *node) removeFromTargets(key string) {
 func (node *node) removeThisFromSources() {
 	for _, relTargets := range node.targets {
 		for _, targets := range relTargets.Targets {
-			for _, key := range targets.Keys.Iterate() {
+			for _, key := range targets.MatchingKeys.Iterate() {
 				targetNode := node.graph.nodes[key]
 				targetNode.removeFromSources(relTargets.Relation, node.GetKey())
 			}

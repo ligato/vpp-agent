@@ -20,8 +20,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	l2nb "github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 // BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.
@@ -90,7 +90,7 @@ func (h *BridgeDomainVppHandler) DumpBridgeDomains() ([]*BridgeDomainDetails, er
 			}
 			// add interface entry
 			bdData.Bd.Interfaces = append(bdData.Bd.Interfaces, &l2nb.BridgeDomain_Interface{
-				Name:                    ifaceName,
+				Name: ifaceName,
 				BridgedVirtualInterface: bvi,
 				SplitHorizonGroup:       uint32(iface.Shg),
 			})

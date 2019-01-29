@@ -32,8 +32,6 @@ const (
 	WithoutModify
 	// WithoutDelete tells MockDescriptor to leave Delete as nil.
 	WithoutDelete
-	// WithoutUpdate tells MockDescriptor to leave Update as nil.
-	WithoutUpdate
 	// WithoutDump tells MockDescriptor to leave Dump as nil.
 	WithoutDump
 )
@@ -60,6 +58,7 @@ func NewMockDescriptor(args *KVDescriptor, sb *MockSouthbound, firstFreeIndex in
 		KeyLabel:           args.KeyLabel,
 		NBKeyPrefix:        args.NBKeyPrefix,
 		WithMetadata:       args.WithMetadata,
+		Validate:           args.Validate,
 		IsRetriableFailure: args.IsRetriableFailure,
 		ModifyWithRecreate: args.ModifyWithRecreate,
 		Dependencies:       args.Dependencies,
@@ -90,9 +89,6 @@ func NewMockDescriptor(args *KVDescriptor, sb *MockSouthbound, firstFreeIndex in
 	}
 	if _, withoutModify := withoutMap[WithoutModify]; !withoutModify {
 		descriptor.Modify = mock.Modify
-	}
-	if _, withoutUpdate := withoutMap[WithoutUpdate]; !withoutUpdate {
-		descriptor.Update = mock.Update
 	}
 	if _, withoutDump := withoutMap[WithoutDump]; !withoutDump {
 		descriptor.Dump = mock.Dump
@@ -167,19 +163,6 @@ func (md *mockDescriptor) Modify(key string, oldValue, newValue proto.Message, o
 		err = md.sb.executeChange(md.args.Name, MockModify, key, newValue, newMetadata)
 	}
 	return newMetadata, err
-}
-
-// Update executes update operation in the mock SB.
-func (md *mockDescriptor) Update(key string, value proto.Message, metadata Metadata) (err error) {
-	md.validateKey(key, md.args.KeySelector(key))
-	if md.sb != nil {
-		kv := md.sb.GetValue(key)
-		md.validateKey(key, kv != nil)
-		md.validateKey(key, md.equalValues(key, kv.Value, value))
-		md.validateKey(key, kv.Metadata == metadata)
-		err = md.sb.executeChange(md.args.Name, MockUpdate, key, value, metadata)
-	}
-	return nil
 }
 
 // Dependencies uses provided DerValuesBuilder.

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *nat.Nat44Global --import "../model/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *nat.Nat44Global_Interface --import "../model/nat" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *nat.DNat44 --import "../model/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Global --value-type *vpp_nat.Nat44Global --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name NAT44Interface --value-type *vpp_nat.Nat44Global_Interface --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DNAT44 --value-type *vpp_nat.DNat44 --import "github.com/ligato/vpp-agent/api/models/vpp/nat" --output-dir "descriptor"
 
 package natplugin
 
@@ -26,7 +26,7 @@ import (
 	"github.com/ligato/cn-infra/infra"
 
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/descriptor/adapter"
@@ -52,7 +52,7 @@ type NATPlugin struct {
 // Deps lists dependencies of the NAT plugin.
 type Deps struct {
 	infra.PluginDeps
-	Scheduler   scheduler.KVScheduler
+	KVScheduler kvs.KVScheduler
 	GoVppmux    govppmux.API
 	IfPlugin    ifplugin.API
 	StatusCheck statuscheck.PluginStatusWriter // optional
@@ -73,15 +73,15 @@ func (p *NATPlugin) Init() error {
 	// init and register descriptors
 	p.nat44GlobalDescriptor = descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)
 	nat44GlobalDescriptor := adapter.NewNAT44GlobalDescriptor(p.nat44GlobalDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(nat44GlobalDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(nat44GlobalDescriptor)
 
 	p.nat44IfaceDescriptor = descriptor.NewNAT44InterfaceDescriptor(p.natHandler, p.Log)
 	nat44IfaceDescriptor := adapter.NewNAT44InterfaceDescriptor(p.nat44IfaceDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(nat44IfaceDescriptor)
+	p.KVScheduler.RegisterKVDescriptor(nat44IfaceDescriptor)
 
 	p.dnat44Descriptor = descriptor.NewDNAT44Descriptor(p.natHandler, p.Log)
 	dnat44Descriptor := adapter.NewDNAT44Descriptor(p.dnat44Descriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(dnat44Descriptor)
+	p.KVScheduler.RegisterKVDescriptor(dnat44Descriptor)
 
 	return nil
 }

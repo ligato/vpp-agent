@@ -5,14 +5,14 @@ package adapter
 import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/l3"
+	"github.com/ligato/vpp-agent/api/models/linux/l3"
 )
 
 ////////// type-safe key-value pair with metadata //////////
 
 type RouteKVWithMetadata struct {
 	Key      string
-	Value    *linux_l3.StaticRoute
+	Value    *linux_l3.Route
 	Metadata interface{}
 	Origin   ValueOrigin
 }
@@ -24,18 +24,18 @@ type RouteDescriptor struct {
 	KeySelector        KeySelector
 	ValueTypeName      string
 	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *linux_l3.StaticRoute) bool
+	ValueComparator    func(key string, oldValue, newValue *linux_l3.Route) bool
 	NBKeyPrefix        string
 	WithMetadata       bool
 	MetadataMapFactory MetadataMapFactory
-	Add                func(key string, value *linux_l3.StaticRoute) (metadata interface{}, err error)
-	Delete             func(key string, value *linux_l3.StaticRoute, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *linux_l3.StaticRoute, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.StaticRoute, metadata interface{}) bool
-	Update             func(key string, value *linux_l3.StaticRoute, metadata interface{}) error
+	Validate           func(key string, value *linux_l3.Route) error
+	Add                func(key string, value *linux_l3.Route) (metadata interface{}, err error)
+	Delete             func(key string, value *linux_l3.Route, metadata interface{}) error
+	Modify             func(key string, oldValue, newValue *linux_l3.Route, oldMetadata interface{}) (newMetadata interface{}, err error)
+	ModifyWithRecreate func(key string, oldValue, newValue *linux_l3.Route, metadata interface{}) bool
 	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *linux_l3.StaticRoute) []Dependency
-	DerivedValues      func(key string, value *linux_l3.StaticRoute) []KeyValuePair
+	Dependencies       func(key string, value *linux_l3.Route) []Dependency
+	DerivedValues      func(key string, value *linux_l3.Route) []KeyValuePair
 	Dump               func(correlate []RouteKVWithMetadata) ([]RouteKVWithMetadata, error)
 	DumpDependencies   []string /* descriptor name */
 }
@@ -62,6 +62,9 @@ func NewRouteDescriptor(typedDescriptor *RouteDescriptor) *KVDescriptor {
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
 	}
+	if typedDescriptor.Validate != nil {
+		descriptor.Validate = adapter.Validate
+	}
 	if typedDescriptor.Add != nil {
 		descriptor.Add = adapter.Add
 	}
@@ -73,9 +76,6 @@ func NewRouteDescriptor(typedDescriptor *RouteDescriptor) *KVDescriptor {
 	}
 	if typedDescriptor.ModifyWithRecreate != nil {
 		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
-	}
-	if typedDescriptor.Update != nil {
-		descriptor.Update = adapter.Update
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
@@ -96,6 +96,14 @@ func (da *RouteDescriptorAdapter) ValueComparator(key string, oldValue, newValue
 		return false
 	}
 	return da.descriptor.ValueComparator(key, typedOldValue, typedNewValue)
+}
+
+func (da *RouteDescriptorAdapter) Validate(key string, value proto.Message) (err error) {
+	typedValue, err := castRouteValue(key, value)
+	if err != nil {
+		return err
+	}
+	return da.descriptor.Validate(key, typedValue)
 }
 
 func (da *RouteDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
@@ -148,18 +156,6 @@ func (da *RouteDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newVa
 		return true
 	}
 	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
-}
-
-func (da *RouteDescriptorAdapter) Update(key string, value proto.Message, metadata Metadata) error {
-	typedValue, err := castRouteValue(key, value)
-	if err != nil {
-		return err
-	}
-	typedMetadata, err := castRouteMetadata(key, metadata)
-	if err != nil {
-		return err
-	}
-	return da.descriptor.Update(key, typedValue, typedMetadata)
 }
 
 func (da *RouteDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
@@ -217,8 +213,8 @@ func (da *RouteDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMeta
 
 ////////// Helper methods //////////
 
-func castRouteValue(key string, value proto.Message) (*linux_l3.StaticRoute, error) {
-	typedValue, ok := value.(*linux_l3.StaticRoute)
+func castRouteValue(key string, value proto.Message) (*linux_l3.Route, error) {
+	typedValue, ok := value.(*linux_l3.Route)
 	if !ok {
 		return nil, ErrInvalidValueType(key, value)
 	}

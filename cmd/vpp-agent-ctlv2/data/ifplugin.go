@@ -15,9 +15,9 @@
 package data
 
 import (
-	linuxIf "github.com/ligato/vpp-agent/plugins/linuxv2/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linuxv2/model/namespace"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/interfaces"
+	linuxIf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/namespace"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 // InterfacesCtl interface plugin related methods for vpp-agent-ctl (interfaces including linux ones)
@@ -289,7 +289,7 @@ func (ctl *VppAgentCtlImpl) PutVEthPair() error {
 		PhysAddress: "D2:74:8C:12:67:D2",
 		Namespace: &linux_namespace.NetNamespace{
 			Reference: "ns1",
-			Type:      linux_namespace.NetNamespace_NETNS_REF_NSID,
+			Type:      linux_namespace.NetNamespace_NSID,
 		},
 		Mtu: 1500,
 		IpAddresses: []string{
@@ -310,7 +310,7 @@ func (ctl *VppAgentCtlImpl) PutVEthPair() error {
 		PhysAddress: "92:C7:42:67:AB:CD",
 		Namespace: &linux_namespace.NetNamespace{
 			Reference: "ns2",
-			Type:      linux_namespace.NetNamespace_NETNS_REF_NSID,
+			Type:      linux_namespace.NetNamespace_NSID,
 		},
 		Mtu: 1500,
 		IpAddresses: []string{
@@ -354,7 +354,7 @@ func (ctl *VppAgentCtlImpl) PutLinuxTap() error {
 		PhysAddress: "BC:FE:E9:5E:07:04",
 		Namespace: &linux_namespace.NetNamespace{
 			Reference: "ns2",
-			Type:      linux_namespace.NetNamespace_NETNS_REF_NSID,
+			Type:      linux_namespace.NetNamespace_NSID,
 		},
 		Mtu: 1500,
 		IpAddresses: []string{

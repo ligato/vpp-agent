@@ -208,9 +208,9 @@ func checkRecordedTargets(recordedTargets TargetsByRelation, relation string, la
 	Expect(targets).ToNot(BeNil())
 	Expect(targets.Label).To(Equal(label))
 	for _, targetKey := range targetKeys {
-		Expect(targets.Keys.Has(targetKey)).To(BeTrue())
+		Expect(targets.MatchingKeys.Has(targetKey)).To(BeTrue())
 	}
-	Expect(targets.Keys.Length()).To(Equal(len(targetKeys)))
+	Expect(targets.MatchingKeys.Length()).To(Equal(len(targetKeys)))
 }
 
 func checkNodes(nodes []Node, keys ...string) {

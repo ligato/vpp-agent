@@ -15,23 +15,23 @@
 package descriptor
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
 
 	"github.com/ligato/cn-infra/idxmap"
 
-	"github.com/ligato/vpp-agent/idxvpp2"
+	"github.com/ligato/vpp-agent/pkg/idxvpp2"
 
 	"github.com/go-errors/errors"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vppIfDescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
 )
 
 const (
@@ -79,35 +79,21 @@ func NewIPSecSPDDescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.Plugin
 func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 	return &adapter.SPDDescriptor{
 		Name:               IPSecSPDDescriptorName,
-		KeySelector:        d.IsIPSecSPDKey,
-		ValueTypeName:      proto.MessageName(&ipsec.SecurityPolicyDatabase{}),
-		KeyLabel:           d.IPSecSPDIndexFromKey,
+		NBKeyPrefix:        ipsec.ModelSecurityPolicyDatabase.KeyPrefix(),
+		ValueTypeName:      ipsec.ModelSecurityPolicyDatabase.ProtoName(),
+		KeySelector:        ipsec.ModelSecurityPolicyDatabase.IsKeyValid,
+		KeyLabel:           ipsec.ModelSecurityPolicyDatabase.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSPDs,
-		NBKeyPrefix:        ipsec.PrefixIPSecSPD,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vppIfDescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsIPSecSPDKey returns true if the key is identifying VPP security
-// policy database.
-func (d *IPSecSPDDescriptor) IsIPSecSPDKey(key string) bool {
-	_, isSPDKey := ipsec.ParseSPDIndexFromKey(key)
-	return isSPDKey
-}
-
-// IPSecSPDIndexFromKey returns VPP security policy database name from the key.
-func (d *IPSecSPDDescriptor) IPSecSPDIndexFromKey(key string) string {
-	index, _ := ipsec.ParseSPDIndexFromKey(key)
-	return index
 }
 
 // EquivalentIPSecSPDs is case-insensitive comparison function for
@@ -130,30 +116,28 @@ func (d *IPSecSPDDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 	return idxvpp2.NewNameToIndex(d.log, "vpp-spd-index", nil)
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *IPSecSPDDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrIPSecSPDWithoutIndex,
-		ErrIPSecSPDInvalidIndex,
-		ErrSPDWithoutSA,
+// Validate validates VPP IPSec security policy database configuration.
+func (d *IPSecSPDDescriptor) Validate(key string, spd *ipsec.SecurityPolicyDatabase) error {
+	if spd.Index == "" {
+		return kvs.NewInvalidValueError(ErrIPSecSPDWithoutIndex, "index")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
+	if _, err := strconv.Atoi(spd.Index); err != nil {
+		return kvs.NewInvalidValueError(ErrIPSecSPDInvalidIndex, "index")
+	}
+
+	// check list of policies for security associations
+	for idx, policy := range spd.PolicyEntries {
+		if policy.SaIndex == "" {
+			return kvs.NewInvalidValueError(ErrSPDWithoutSA,
+				fmt.Sprintf("policy_entries[%d].sa_index", idx))
 		}
 	}
-	return true
+
+	return nil
 }
 
 // Add adds a new IPSec security policy database.
 func (d *IPSecSPDDescriptor) Add(key string, spd *ipsec.SecurityPolicyDatabase) (metadata *idxvpp2.OnlyIndex, err error) {
-	// validate the configuration first
-	err = d.validateSPDConfig(spd)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// allocate new SPD ID
 	spdIdx := d.spdIDSeq
 	d.spdIDSeq++
@@ -182,30 +166,18 @@ func (d *IPSecSPDDescriptor) Delete(key string, spd *ipsec.SecurityPolicyDatabas
 	return err
 }
 
-// ModifyWithRecreate always returns false
-func (d *IPSecSPDDescriptor) ModifyWithRecreate(key string, oldSPD, newSPD *ipsec.SecurityPolicyDatabase, metadata *idxvpp2.OnlyIndex) bool {
-	return false
-}
-
-// Modify only validates new config since there is nothing to modify in base SPD.
+// Modify is NOOP since there is nothing to modify in base SPD.
 func (d *IPSecSPDDescriptor) Modify(key string, oldSPD, newSPD *ipsec.SecurityPolicyDatabase, oldMetadata *idxvpp2.OnlyIndex) (newMetadata *idxvpp2.OnlyIndex, err error) {
-	// validate the new configuration
-	err = d.validateSPDConfig(newSPD)
-	if err != nil {
-		d.log.Error(err)
-		return oldMetadata, err
-	}
-
 	return oldMetadata, nil
 }
 
 // DerivedValues derives ipsec.SecurityPolicyDatabase_Interface for every interface assigned
 // assigned to the SPD and ipsec.SecurityPolicyDatabase_PolicyEntry for every policy entry
 // assigned to the SPD
-func (d *IPSecSPDDescriptor) DerivedValues(key string, spd *ipsec.SecurityPolicyDatabase) (derValues []scheduler.KeyValuePair) {
+func (d *IPSecSPDDescriptor) DerivedValues(key string, spd *ipsec.SecurityPolicyDatabase) (derValues []kvs.KeyValuePair) {
 	// SPD interfaces
 	for _, spdIface := range spd.Interfaces {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   ipsec.SPDInterfaceKey(spd.Index, spdIface.Name),
 			Value: spdIface,
 		})
@@ -213,7 +185,7 @@ func (d *IPSecSPDDescriptor) DerivedValues(key string, spd *ipsec.SecurityPolicy
 
 	// SPD policy entries
 	for _, spdPe := range spd.PolicyEntries {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   ipsec.SPDPolicyKey(spd.Index, spdPe.SaIndex),
 			Value: spdPe,
 		})
@@ -239,30 +211,11 @@ func (d *IPSecSPDDescriptor) Dump(correlate []adapter.SPDKVWithMetadata) (dump [
 			Key:      ipsec.SPDKey(spd.Spd.Index),
 			Value:    spd.Spd,
 			Metadata: &idxvpp2.OnlyIndex{Index: uint32(spdIdx)},
-			Origin:   scheduler.FromNB,
+			Origin:   kvs.FromNB,
 		})
 	}
 
 	return dump, nil
-}
-
-// validateSPDConfig validates VPP IPSec security policy database configuration.
-func (d *IPSecSPDDescriptor) validateSPDConfig(spd *ipsec.SecurityPolicyDatabase) error {
-	if spd.Index == "" {
-		return ErrIPSecSPDWithoutIndex
-	}
-	if _, err := strconv.Atoi(spd.Index); err != nil {
-		return ErrIPSecSPDInvalidIndex
-	}
-
-	// check list of policies for security associations
-	for _, policy := range spd.PolicyEntries {
-		if policy.SaIndex == "" {
-			return ErrSPDWithoutSA
-		}
-	}
-
-	return nil
 }
 
 // calculateInterfacesDiff compares two sets of SPD interfaces entries.

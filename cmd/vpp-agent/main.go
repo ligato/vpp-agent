@@ -23,7 +23,7 @@ import (
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
 	log "github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/app/v2"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app/v2"
 )
 
 const logo = `                                      __

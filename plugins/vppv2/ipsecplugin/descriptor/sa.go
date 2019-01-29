@@ -16,15 +16,13 @@ package descriptor
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/go-errors/errors"
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/ipsec"
 )
 
 const (
@@ -63,28 +61,17 @@ func NewIPSecSADescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.PluginL
 func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 	return &adapter.SADescriptor{
 		Name:               SADescriptorName,
-		KeySelector:        d.IsIPSecSAKey,
-		ValueTypeName:      proto.MessageName(&ipsec.SecurityAssociation{}),
-		KeyLabel:           d.IPSecSAIndexFromKey,
+		NBKeyPrefix:        ipsec.ModelSecurityAssociation.KeyPrefix(),
+		ValueTypeName:      ipsec.ModelSecurityAssociation.ProtoName(),
+		KeySelector:        ipsec.ModelSecurityAssociation.IsKeyValid,
+		KeyLabel:           ipsec.ModelSecurityAssociation.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSAs,
-		NBKeyPrefix:        ipsec.PrefixIPSecSA,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		Dump:               d.Dump,
 	}
-}
-
-// IsIPSecSAKey returns true if the key is identifying VPP security association configuration.
-func (d *IPSecSADescriptor) IsIPSecSAKey(key string) bool {
-	return strings.HasPrefix(key, ipsec.PrefixIPSecSA)
-}
-
-// IPSecSAIndexFromKey returns VPP security association name from the key.
-func (d *IPSecSADescriptor) IPSecSAIndexFromKey(key string) string {
-	index, _ := ipsec.ParseSAIndexFromKey(key)
-	return index
 }
 
 // EquivalentIPSecSAs is case-insensitive comparison function for
@@ -104,29 +91,20 @@ func (d *IPSecSADescriptor) EquivalentIPSecSAs(key string, oldSA, newSA *ipsec.S
 		oldSA.EnableUdpEncap == newSA.EnableUdpEncap
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *IPSecSADescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrSAWithoutIndex,
-		ErrSAInvalidIndex,
+// Validate validates VPP security association configuration.
+func (d *IPSecSADescriptor) Validate(key string, sa *ipsec.SecurityAssociation) error {
+	if sa.Index == "" {
+		return kvs.NewInvalidValueError(ErrSAWithoutIndex, "index")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
-		}
+	if _, err := strconv.Atoi(sa.Index); err != nil {
+		return kvs.NewInvalidValueError(ErrSAInvalidIndex, "index")
 	}
-	return true
+
+	return nil
 }
 
 // Add adds a new security association pair.
 func (d *IPSecSADescriptor) Add(key string, sa *ipsec.SecurityAssociation) (metadata interface{}, err error) {
-	// validate the configuration first
-	err = d.validateSAConfig(sa)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// add security association
 	err = d.ipSecHandler.AddSA(sa)
 	if err != nil {
@@ -150,18 +128,6 @@ func (d *IPSecSADescriptor) ModifyWithRecreate(key string, oldSA, newSA *ipsec.S
 	return true
 }
 
-// validateSAConfig validates VPP security association configuration.
-func (d *IPSecSADescriptor) validateSAConfig(sa *ipsec.SecurityAssociation) error {
-	if sa.Index == "" {
-		return ErrSAWithoutIndex
-	}
-	if _, err := strconv.Atoi(sa.Index); err != nil {
-		return ErrSAInvalidIndex
-	}
-
-	return nil
-}
-
 // Dump returns all configured VPP security associations.
 func (d *IPSecSADescriptor) Dump(correlate []adapter.SAKVWithMetadata) (dump []adapter.SAKVWithMetadata, err error) {
 	// dump security associations
@@ -175,7 +141,7 @@ func (d *IPSecSADescriptor) Dump(correlate []adapter.SAKVWithMetadata) (dump []a
 			Key:      ipsec.SAKey(sa.Sa.Index),
 			Value:    sa.Sa,
 			Metadata: sa.Meta,
-			Origin:   scheduler.FromNB,
+			Origin:   kvs.FromNB,
 		})
 	}
 

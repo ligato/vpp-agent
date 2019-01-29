@@ -19,17 +19,16 @@ import (
 	"net"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	"github.com/ligato/vpp-agent/idxvpp2"
-	scheduler "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/pkg/idxvpp2"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	vpp_ifdescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vppv2/model/l2"
 )
 
 const (
@@ -77,35 +76,22 @@ func NewBridgeDomainDescriptor(bdHandler vppcalls.BridgeDomainVppAPI, log loggin
 func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor {
 	return &adapter.BridgeDomainDescriptor{
 		Name:               BridgeDomainDescriptorName,
-		KeySelector:        d.IsBridgeDomainKey,
-		ValueTypeName:      proto.MessageName(&l2.BridgeDomain{}),
-		KeyLabel:           d.BridgeDomainNameFromKey,
+		NBKeyPrefix:        l2.ModelBridgeDomain.KeyPrefix(),
+		ValueTypeName:      l2.ModelBridgeDomain.ProtoName(),
+		KeySelector:        l2.ModelBridgeDomain.IsKeyValid,
+		KeyLabel:           l2.ModelBridgeDomain.StripKeyPrefix,
 		ValueComparator:    d.EquivalentBridgeDomains,
-		NBKeyPrefix:        l2.BDPrefix,
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
+		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
 		Modify:             d.Modify,
 		ModifyWithRecreate: d.ModifyWithRecreate,
-		IsRetriableFailure: d.IsRetriableFailure,
 		DerivedValues:      d.DerivedValues,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
-}
-
-// IsBridgeDomainKey returns true if the key is identifying VPP bridge domain
-// configuration.
-func (d *BridgeDomainDescriptor) IsBridgeDomainKey(key string) bool {
-	_, isBDKey := l2.ParseBDNameFromKey(key)
-	return isBDKey
-}
-
-// BridgeDomainNameFromKey returns VPP bridge domain name from the key.
-func (d *BridgeDomainDescriptor) BridgeDomainNameFromKey(key string) string {
-	name, _ := l2.ParseBDNameFromKey(key)
-	return name
 }
 
 // EquivalentBridgeDomains is case-insensitive comparison function for
@@ -126,29 +112,28 @@ func (d *BridgeDomainDescriptor) MetadataFactory() idxmap.NamedMappingRW {
 	return idxvpp2.NewNameToIndex(d.log, "vpp-bd-index", nil)
 }
 
-// IsRetriableFailure returns <false> for errors related to invalid configuration.
-func (d *BridgeDomainDescriptor) IsRetriableFailure(err error) bool {
-	nonRetriable := []error{
-		ErrBridgeDomainWithoutName,
-		ErrBridgeDomainWithMultipleBVI,
+// Validate validates VPP bridge domain configuration.
+func (d *BridgeDomainDescriptor) Validate(key string, bd *l2.BridgeDomain) error {
+	if bd.Name == "" {
+		return kvs.NewInvalidValueError(ErrBridgeDomainWithoutName, "name")
 	}
-	for _, nonRetriableErr := range nonRetriable {
-		if err == nonRetriableErr {
-			return false
+
+	// check that BD has defined at most one BVI
+	var hasBVI bool
+	for _, bdIface := range bd.Interfaces {
+		if bdIface.BridgedVirtualInterface {
+			if hasBVI {
+				return kvs.NewInvalidValueError(ErrBridgeDomainWithMultipleBVI,
+					"interfaces.bridged_virtual_interface")
+			}
+			hasBVI = true
 		}
 	}
-	return true
+	return nil
 }
 
 // Add adds new bridge domain.
 func (d *BridgeDomainDescriptor) Add(key string, bd *l2.BridgeDomain) (metadata *idxvpp2.OnlyIndex, err error) {
-	// validate the configuration first
-	err = d.validateBridgeDomainConfig(bd)
-	if err != nil {
-		d.log.Error(err)
-		return nil, err
-	}
-
 	// allocate new bridge domain ID
 	bdIdx := d.bdIDSeq
 	d.bdIDSeq++
@@ -192,13 +177,6 @@ func (d *BridgeDomainDescriptor) ModifyWithRecreate(key string, oldBD, newBD *l2
 
 // Modify is able to change ARP termination entries.
 func (d *BridgeDomainDescriptor) Modify(key string, oldBD, newBD *l2.BridgeDomain, oldMetadata *idxvpp2.OnlyIndex) (newMetadata *idxvpp2.OnlyIndex, err error) {
-	// validate the new configuration first
-	err = d.validateBridgeDomainConfig(newBD)
-	if err != nil {
-		d.log.Error(err)
-		return oldMetadata, err
-	}
-
 	// update ARP termination entries
 	bdIdx := oldMetadata.Index
 	obsoleteARPs, newARPs := calculateARPDiff(oldBD.GetArpTerminationTable(), newBD.GetArpTerminationTable())
@@ -220,10 +198,10 @@ func (d *BridgeDomainDescriptor) Modify(key string, oldBD, newBD *l2.BridgeDomai
 
 // DerivedValues derives l2.BridgeDomain_Interface for every interface assigned
 // to the bridge domain.
-func (d *BridgeDomainDescriptor) DerivedValues(key string, bd *l2.BridgeDomain) (derValues []scheduler.KeyValuePair) {
+func (d *BridgeDomainDescriptor) DerivedValues(key string, bd *l2.BridgeDomain) (derValues []kvs.KeyValuePair) {
 	// BD interfaces
 	for _, bdIface := range bd.Interfaces {
-		derValues = append(derValues, scheduler.KeyValuePair{
+		derValues = append(derValues, kvs.KeyValuePair{
 			Key:   l2.BDInterfaceKey(bd.Name, bdIface.Name),
 			Value: bdIface,
 		})
@@ -262,7 +240,7 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 			Key:      l2.BridgeDomainKey(bd.Bd.Name),
 			Value:    bd.Bd,
 			Metadata: &idxvpp2.OnlyIndex{Index: bd.Meta.BdID},
-			Origin:   scheduler.FromNB,
+			Origin:   kvs.FromNB,
 		})
 	}
 
@@ -270,25 +248,6 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 	d.bdIDSeq = bdIDSeq
 
 	return dump, nil
-}
-
-// validateBridgeDomainConfig validates VPP bridge domain configuration.
-func (d *BridgeDomainDescriptor) validateBridgeDomainConfig(bd *l2.BridgeDomain) error {
-	if bd.Name == "" {
-		return ErrBridgeDomainWithoutName
-	}
-
-	// check that BD has defined at most one BVI
-	var hasBVI bool
-	for _, bdIface := range bd.Interfaces {
-		if bdIface.BridgedVirtualInterface {
-			if hasBVI {
-				return ErrBridgeDomainWithMultipleBVI
-			}
-			hasBVI = true
-		}
-	}
-	return nil
 }
 
 // equalBDParameters compares all base bridge domain parameters for equality.
