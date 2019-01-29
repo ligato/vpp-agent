@@ -264,20 +264,25 @@ func (*MemclntCreateReply) GetMessageType() api.MessageType {
 //	    "u64",
 //	    "handle"
 //	],
+//	[
+//	    "u8",
+//	    "do_cleanup"
+//	],
 //	{
-//	    "crc": "0x73240f13"
+//	    "crc": "0x4dd351e9"
 //	}
 //
 type MemclntDelete struct {
-	Index  uint32
-	Handle uint64
+	Index     uint32
+	Handle    uint64
+	DoCleanup uint8
 }
 
 func (*MemclntDelete) GetMessageName() string {
 	return "memclnt_delete"
 }
 func (*MemclntDelete) GetCrcString() string {
-	return "73240f13"
+	return "4dd351e9"
 }
 func (*MemclntDelete) GetMessageType() api.MessageType {
 	return api.OtherMessage

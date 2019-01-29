@@ -217,7 +217,7 @@ func (h *PuntVppHandler) handlePuntRedirect(punt *punt.IPRedirect, isIPv4, isAdd
 		h.log.Debugf("IP punt redirect next hop IP address %s is defined with mask, removing it")
 		nextHopStr = ipParts[0]
 	}
-	
+
 	var ipAddress [16]byte
 	parsedNh := net.ParseIP(nextHopStr)
 

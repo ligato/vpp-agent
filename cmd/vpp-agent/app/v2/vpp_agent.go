@@ -94,7 +94,6 @@ func New() *VPPAgent {
 		etcdDataSync,
 		redisDataSync,
 		consulDataSync,
-		redisDataSync,
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 
