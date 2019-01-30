@@ -242,6 +242,12 @@ func (d *InterfaceDescriptor) Add(key string, intf *interfaces.Interface) (metad
 	// fill the metadata
 	metadata = &ifaceidx.IfaceMetadata{
 		SwIfIndex:     ifIdx,
+		DPDKTag:       func() string {
+			if intf.Type == interfaces.Interface_DPDK && intf.GetDpdk() != nil {
+				return intf.GetDpdk().CustomTag
+			}
+			return ""
+		}(),
 		Vrf:           intf.Vrf,
 		IPAddresses:   intf.GetIpAddresses(),
 		TAPHostIfName: tapHostIfName,
@@ -568,6 +574,7 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 		// add interface record into the dump
 		metadata := &ifaceidx.IfaceMetadata{
 			SwIfIndex:     ifIdx,
+			DPDKTag:       intf.Meta.Tag,
 			IPAddresses:   intf.Interface.IpAddresses,
 			TAPHostIfName: tapHostIfName,
 		}
