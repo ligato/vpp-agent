@@ -39,7 +39,7 @@ func ExtractProtos(from ...interface{}) (protos []proto.Message) {
 						protos = append(protos, msg)
 					}
 				}
-			} else {
+			} else if field.Kind() == reflect.Ptr && !field.IsNil() {
 				if msg, ok := field.Interface().(proto.Message); ok {
 					protos = append(protos, msg)
 				}

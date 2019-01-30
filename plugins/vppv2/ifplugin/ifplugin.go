@@ -103,7 +103,7 @@ type IfPlugin struct {
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
-	GoVppmux  govppmux.StatsAPI
+	GoVppmux    govppmux.StatsAPI
 
 	/*	LinuxIfPlugin and NsPlugin deps are optional,
 		but they are required if AFPacket or TAP+TAP_TO_VPP interfaces are used. */
@@ -277,6 +277,7 @@ func (p *IfPlugin) GetDHCPIndex() idxmap.NamedMapping {
 	return p.dhcpIndex
 }
 
+// SetNotifyService sets notification callback for processing VPP notifications.
 func (p *IfPlugin) SetNotifyService(notify func(notification *vpp.Notification)) {
 	p.PushNotification = notify
 }
