@@ -484,7 +484,7 @@ func (s *Scheduler) postProcessTransaction(txn *transaction, executed kvs.Record
 
 	// delete removed values from the graph after the notifications have been sent
 	if removed.Length() > 0 {
-		graphW := s.graph.Write(false)
+		graphW := s.graph.Write(true)
 		for _, key := range removed.Iterate() {
 			graphW.DeleteNode(key)
 		}
