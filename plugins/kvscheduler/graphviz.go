@@ -2,10 +2,9 @@ package kvscheduler
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
-	//"log"
-	"errors"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,6 +17,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 	"github.com/unrolled/render"
 )
 
@@ -38,6 +38,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 		graphRead := s.graph.Read()
 		defer graphRead.Release()
 
+		var txn *kvs.RecordedTxn
 		timestamp := time.Now()
 
 		// parse optional *txn* argument
@@ -48,7 +49,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 				return
 			}
 
-			txn := s.GetRecordedTransaction(txnSeqNum)
+			txn = s.GetRecordedTransaction(txnSeqNum)
 			if txn == nil {
 				err := errors.New("transaction with such sequence number is not recorded")
 				s.logError(formatter.JSON(w, http.StatusNotFound, errorString{err.Error()}))
@@ -58,7 +59,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 		}
 
 		graphSnapshot := graphRead.GetSnapshot(timestamp)
-		output, err := s.renderDotOutput(graphSnapshot, timestamp)
+		output, err := s.renderDotOutput(graphSnapshot, txn)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -80,14 +81,21 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 	}
 }
 
-func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp time.Time) ([]byte, error) {
-	cluster := NewDotCluster("focus")
+func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.RecordedTxn) ([]byte, error) {
+	title := fmt.Sprintf("%d keys", len(graphNodes))
+	if txn != nil {
+		title += fmt.Sprintf(" - SeqNum: %d (%s)", txn.SeqNum, txn.Stop.Format(time.RFC822))
+	} else {
+		title += " - current"
+	}
+
+	cluster := NewDotCluster("nodes")
 	cluster.Attrs = dotAttrs{
 		"bgcolor":   "white",
-		"label":     "",
+		"label":     title,
 		"labelloc":  "t",
 		"labeljust": "c",
-		"fontsize":  "18",
+		"fontsize":  "15",
 		"tooltip":   "",
 	}
 
@@ -110,21 +118,18 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 
 	var processGraphNode = func(graphNode *graph.RecordedNode) *dotNode {
 		key := graphNode.Key
-
 		if n, ok := nodeMap[key]; ok {
 			return n
 		}
+
 		attrs := make(dotAttrs)
-
-		attrs["tooltip"] = fmt.Sprintf("[ %s ]\n%s", key, proto.MarshalTextString(graphNode.Value))
-
 		attrs["pad"] = "0.01"
 		attrs["margin"] = "0.01"
 
 		c := cluster
 
-		var descriptorName string
 		label := graphNode.Label
+		var descriptorName string
 		if descriptorFlag := graphNode.GetFlag(DescriptorFlagName); descriptorFlag != nil {
 			descriptorName = descriptorFlag.GetValue()
 		} else {
@@ -192,8 +197,12 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 		case kvs.ValueState_RETRYING:
 			attrs["fillcolor"] = "Deeppink"
 		}
-		//attrs["margin"] = "0.04,0.01"
-		//attrs["pad"] = "0.04"
+
+		value := graphNode.Value
+		if rec, ok := value.(*utils.RecordedProtoMessage); ok {
+			value = rec.Message
+		}
+		attrs["tooltip"] = fmt.Sprintf("[%s] %s\n-----\n%s", valueState, key, proto.MarshalTextString(value))
 
 		n := &dotNode{
 			ID:    key,
@@ -221,9 +230,10 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 				for _, dKey := range target.MatchingKeys.Iterate() {
 					dn := processGraphNode(getGraphNode(dKey))
 					dn.Attrs["fillcolor"] = "LightYellow"
+					dn.Attrs["color"] = "bisque4"
 					dn.Attrs["style"] = "rounded,filled"
 					attrs := make(dotAttrs)
-					attrs["color"] = "DarkKhaki"
+					attrs["color"] = "bisque4"
 					attrs["arrowhead"] = "invempty"
 					e := &dotEdge{
 						From:  n,
@@ -271,12 +281,12 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 	}
 
 	hostname, _ := os.Hostname()
-	title := fmt.Sprintf("KVScheduler Graph from %s: %d keys - generated %s on %s (PID: %d)",
-		timestamp.Format(time.RFC1123), len(graphNodes), time.Now().Format(time.RFC1123),
-		hostname, os.Getpid())
+	footer := fmt.Sprintf("KVScheduler Graph - generated at %s on %s (PID: %d)",
+		time.Now().Format(time.RFC1123), hostname, os.Getpid(),
+	)
 
 	dot := &dotGraph{
-		Title:   title,
+		Title:   footer,
 		Minlen:  minlen,
 		Cluster: cluster,
 		Nodes:   nodes,
@@ -332,8 +342,8 @@ const tmplGraph = `digraph kvscheduler {
 	ranksep=.5
 	//nodesep=.1
     label="{{.Title}}";
-	labelloc="t";
-    labeljust="l";
+	labelloc="b";
+    labeljust="c";
     fontsize="12";
 	fontname="Ubuntu"; 
     rankdir="LR";

@@ -17,8 +17,9 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/gogo/protobuf/proto"
 	"strings"
+
+	"github.com/gogo/protobuf/proto"
 )
 
 var (
@@ -54,9 +55,9 @@ var (
 // when value does not match expected type.
 func ErrInvalidValueType(key string, value proto.Message) error {
 	if key == "" {
-		return fmt.Errorf("value (%s) has invalid type", value.String())
+		return fmt.Errorf("value (%v) has invalid type", value)
 	}
-	return fmt.Errorf("value (%s) has invalid type for key: %s", value.String(), key)
+	return fmt.Errorf("value (%v) has invalid type for key: %s", value, key)
 }
 
 // ErrInvalidMetadataType is returned to scheduler by auto-generated descriptor adapter
@@ -132,7 +133,7 @@ type InvalidValueError struct {
 }
 
 // NewInvalidValueError is a constructor for invalid-value error.
-func NewInvalidValueError(err error, invalidFields... string) *InvalidValueError {
+func NewInvalidValueError(err error, invalidFields ...string) *InvalidValueError {
 	return &InvalidValueError{err: err, invalidFields: invalidFields}
 }
 

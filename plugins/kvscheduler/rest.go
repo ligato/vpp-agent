@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -26,10 +28,8 @@ import (
 
 	"github.com/ligato/cn-infra/rpc/rest"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
-	"net/url"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
-	"sort"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 )
 
 const (
@@ -194,7 +194,7 @@ func (s *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.HandlerF
 			if format == formatJSON {
 				s.logError(formatter.JSON(w, http.StatusOK, txn))
 			} else {
-				s.logError(formatter.Text(w, http.StatusOK, txn.StringWithOpts(false, true,0)))
+				s.logError(formatter.Text(w, http.StatusOK, txn.StringWithOpts(false, true, 0)))
 			}
 			return
 		}
@@ -223,7 +223,7 @@ func (s *Scheduler) txnHistoryGetHandler(formatter *render.Render) http.HandlerF
 		if format == formatJSON {
 			s.logError(formatter.JSON(w, http.StatusOK, txnHistory))
 		} else {
-			s.logError(formatter.Text(w, http.StatusOK, txnHistory.StringWithOpts(false, false,0)))
+			s.logError(formatter.Text(w, http.StatusOK, txnHistory.StringWithOpts(false, false, 0)))
 		}
 	}
 }
