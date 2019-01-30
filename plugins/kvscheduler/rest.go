@@ -347,7 +347,9 @@ func parseDumpAndStatusCommonArgs(args url.Values) (descriptor, keyPrefix string
 		err = errors.New("descriptor argument listed more than once")
 		return
 	}
-	descriptor = descriptors[0]
+	if withDescriptor {
+		descriptor = descriptors[0]
+	}
 
 	// parse optional *key-prefix* argument
 	keyPrefixes, withKeyPrefix := args[keyPrefixArg]
@@ -355,7 +357,9 @@ func parseDumpAndStatusCommonArgs(args url.Values) (descriptor, keyPrefix string
 		err = errors.New("key-prefix argument listed more than once")
 		return
 	}
-	keyPrefix = keyPrefixes[0]
+	if withKeyPrefix {
+		keyPrefix = keyPrefixes[0]
+	}
 	return
 }
 
