@@ -262,7 +262,7 @@ type KVScheduler interface {
 type Txn interface {
 	// SetValue changes (non-derived) value.
 	// If <value> is nil, the value will get deleted.
-	SetValue(key string, value proto.Message) Txn
+	SetValue(key string, value proto.Message, groupings []string) Txn
 
 	// Commit orders scheduler to execute enqueued operations.
 	// Operations with unmet dependencies will get postponed and possibly

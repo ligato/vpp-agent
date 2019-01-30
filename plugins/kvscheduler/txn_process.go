@@ -39,11 +39,12 @@ type transaction struct {
 
 // kvForTxn represents a new value for a given key to be applied in a transaction.
 type kvForTxn struct {
-	key      string
-	value    proto.Message
-	metadata kvs.Metadata
-	origin   kvs.ValueOrigin
-	isRevert bool
+	key       string
+	value     proto.Message
+	metadata  kvs.Metadata
+	origin    kvs.ValueOrigin
+	groupings []string
+	isRevert  bool
 }
 
 // nbTxn encapsulates data for NB transaction.
@@ -192,10 +193,11 @@ func (s *Scheduler) preProcessNBTransaction(txn *transaction) (skip bool) {
 			lastUpdate := getNodeLastUpdate(node)
 			txn.values = append(txn.values,
 				kvForTxn{
-					key:      node.GetKey(),
-					value:    lastUpdate.value,
-					origin:   kvs.FromNB,
-					isRevert: lastUpdate.revert,
+					key:       node.GetKey(),
+					value:     lastUpdate.value,
+					groupings: lastUpdate.groupings,
+					origin:    kvs.FromNB,
+					isRevert:  lastUpdate.revert,
 				})
 		}
 	}
@@ -264,10 +266,11 @@ func (s *Scheduler) preProcessRetryTxn(txn *transaction) (skip bool) {
 		}
 		txn.values = append(txn.values,
 			kvForTxn{
-				key:      key,
-				value:    lastUpdate.value,
-				origin:   kvs.FromNB,
-				isRevert: lastUpdate.revert,
+				key:       key,
+				value:     lastUpdate.value,
+				groupings: lastUpdate.groupings,
+				origin:    kvs.FromNB,
+				isRevert:  lastUpdate.revert,
 			})
 	}
 	skip = len(txn.values) == 0

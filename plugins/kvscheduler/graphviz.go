@@ -14,6 +14,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
+	"math/rand"
 
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
@@ -108,6 +109,13 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 		return nil
 	}
 
+	var generateLightColor = func() string {
+		r := rand.Intn(55)
+		g := rand.Intn(55)
+		b := rand.Intn(55)
+		return fmt.Sprintf("#%02x%02x%02x", 200+r, 200+g, 200+b)
+	}
+
 	var processGraphNode = func(graphNode *graph.RecordedNode) *dotNode {
 		key := graphNode.Key
 
@@ -119,6 +127,28 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 		//fmt.Printf("- key: %q\n", key)
 
 		c := cluster
+
+		if lastUpdateFlag := graphNode.GetFlag(LastUpdateFlagName); lastUpdateFlag != nil {
+			groupings := lastUpdateFlag.(*LastUpdateFlag).groupings
+			for _, grouping := range groupings {
+				if _, ok := c.Clusters[grouping]; !ok {
+					c.Clusters[grouping] = &dotCluster{
+						ID:       key,
+						Clusters: make(map[string]*dotCluster),
+						Attrs: dotAttrs{
+							"penwidth":  "0.8",
+							"fontsize":  "16",
+							"label":     fmt.Sprintf("[ %s ]", grouping),
+							"style":     "filled",
+							"fillcolor": generateLightColor(),
+							//"fontname":  "bold",
+							//"rank":      "sink",
+						},
+					}
+				}
+				c = c.Clusters[grouping]
+			}
+		}
 
 		var descriptorName string
 		label := graphNode.Label

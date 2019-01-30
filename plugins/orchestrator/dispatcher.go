@@ -267,10 +267,10 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []KeyValuePair) (kvErrs [
 		p.Log.Debugf(" - PUT: %q ", kv.Key)
 
 		if kv.Value == nil {
-			txn.SetValue(kv.Key, nil)
+			txn.SetValue(kv.Key, nil, nil)
 			p.store.Delete(kv.Key)
 		} else {
-			txn.SetValue(kv.Key, kv.Value)
+			txn.SetValue(kv.Key, kv.Value, nil)
 			p.store.Update(kv.Key, kv.Value)
 		}
 	}

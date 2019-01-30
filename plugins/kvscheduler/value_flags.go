@@ -55,6 +55,7 @@ type LastUpdateFlag struct {
 	txnSeqNum uint64
 	txnOp     kvs.TxnOperation
 	value     proto.Message
+	groupings []string
 
 	// updated only when the value content is being modified
 	revert bool

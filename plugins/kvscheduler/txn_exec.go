@@ -106,6 +106,7 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 						value:    kvPair.Value,
 						origin:   kvs.FromNB,
 						isRevert: true,
+						// TODO: groupings
 					},
 					baseKey: kvPair.Key,
 					dryRun:  dryRun,
@@ -178,6 +179,7 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 		txnSeqNum: args.txn.seqNum,
 		txnOp:     txnOp.Operation,
 		value:     args.kv.value,
+		groupings: args.kv.groupings,
 		revert:    args.kv.isRevert,
 	}
 	if args.txn.txnType == kvs.NBTransaction {
@@ -285,10 +287,11 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		var derivedVals []kvForTxn
 		for _, derivedNode := range getDerivedNodes(node) {
 			derivedVals = append(derivedVals, kvForTxn{
-				key:      derivedNode.GetKey(),
-				value:    nil, // delete
-				origin:   args.kv.origin,
-				isRevert: args.kv.isRevert,
+				key:       derivedNode.GetKey(),
+				value:     nil, // delete
+				origin:    args.kv.origin,
+				groupings: args.kv.groupings,
+				isRevert:  args.kv.isRevert,
 			})
 		}
 		derExecs, inheritedErr := s.applyDerived(derivedVals, args, false)
@@ -443,10 +446,11 @@ func (s *Scheduler) applyAdd(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *
 		var derivedVals []kvForTxn
 		for _, derivedVal := range derives {
 			derivedVals = append(derivedVals, kvForTxn{
-				key:      derivedVal.Key,
-				value:    derivedVal.Value,
-				origin:   args.kv.origin,
-				isRevert: args.kv.isRevert,
+				key:       derivedVal.Key,
+				value:     derivedVal.Value,
+				origin:    args.kv.origin,
+				groupings: args.kv.groupings,
+				isRevert:  args.kv.isRevert,
 			})
 		}
 		derExecs, inheritedErr := s.applyDerived(derivedVals, args, true)
@@ -596,10 +600,11 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		var derivedVals []kvForTxn
 		for _, derivedVal := range derives {
 			derivedVals = append(derivedVals, kvForTxn{
-				key:      derivedVal.Key,
-				value:    derivedVal.Value,
-				origin:   args.kv.origin,
-				isRevert: args.kv.isRevert,
+				key:       derivedVal.Key,
+				value:     derivedVal.Value,
+				origin:    args.kv.origin,
+				groupings: args.kv.groupings,
+				isRevert:  args.kv.isRevert,
 			})
 		}
 		derExecs, inheritedErr := s.applyDerived(derivedVals, args, true)
@@ -636,10 +641,11 @@ func (s *Scheduler) applyNewRelations(node graph.NodeRW, handler *descriptorHand
 	prevDerived.Subtract(getDerivedKeys(node))
 	for _, obsolete := range prevDerived.Iterate() {
 		obsoleteDerVals = append(obsoleteDerVals, kvForTxn{
-			key:      obsolete,
-			value:    nil, // delete
-			origin:   args.kv.origin,
-			isRevert: args.kv.isRevert,
+			key:       obsolete,
+			value:     nil, // delete
+			origin:    args.kv.origin,
+			groupings: args.kv.groupings,
+			isRevert:  args.kv.isRevert,
 		})
 	}
 	executed, err = s.applyDerived(obsoleteDerVals, args, false)
@@ -687,21 +693,24 @@ func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed 
 		if getNodeOrigin(depNode) != kvs.FromNB {
 			continue
 		}
+		var groupings []string
 		value := depNode.GetValue()
 		lastUpdate := getNodeLastUpdate(depNode)
 		if lastUpdate != nil {
 			// anything but state=FOUND
 			value = lastUpdate.value
+			groupings = lastUpdate.groupings
 		}
 		ops, _, _ := s.applyValue(
 			&applyValueArgs{
 				graphW: args.graphW,
 				txn:    args.txn,
 				kv: kvForTxn{
-					key:      depNode.GetKey(),
-					value:    value,
-					origin:   getNodeOrigin(depNode),
-					isRevert: args.kv.isRevert,
+					key:       depNode.GetKey(),
+					value:     value,
+					origin:    getNodeOrigin(depNode),
+					groupings: groupings,
+					isRevert:  args.kv.isRevert,
 				},
 				baseKey:   getNodeBaseKey(depNode),
 				isRetry:   args.isRetry,

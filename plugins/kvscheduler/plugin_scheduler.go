@@ -121,7 +121,12 @@ type Config struct {
 // SchedulerTxn implements transaction for the KV scheduler.
 type SchedulerTxn struct {
 	scheduler *Scheduler
-	values    map[string]proto.Message
+	values    map[string]txnValue
+}
+
+type txnValue struct {
+	value     proto.Message
+	groupings []string
 }
 
 // valStateWatcher represents one subscription for value state updates.
@@ -235,7 +240,7 @@ func (s *Scheduler) GetRegisteredNBKeyPrefixes() []string {
 func (s *Scheduler) StartNBTransaction() kvs.Txn {
 	txn := &SchedulerTxn{
 		scheduler: s,
-		values:    make(map[string]proto.Message),
+		values:    make(map[string]txnValue),
 	}
 	return txn
 }
@@ -380,8 +385,8 @@ func (s *Scheduler) DumpValuesByKeyPrefix(keyPrefix string, view kvs.View) (valu
 
 // SetValue changes (non-derived) value.
 // If <value> is nil, the value will get deleted.
-func (txn *SchedulerTxn) SetValue(key string, value proto.Message) kvs.Txn {
-	txn.values[key] = value
+func (txn *SchedulerTxn) SetValue(key string, value proto.Message, groupings []string) kvs.Txn {
+	txn.values[key] = txnValue{value: value, groupings: groupings}
 	return txn
 }
 
@@ -398,11 +403,12 @@ func (txn *SchedulerTxn) Commit(ctx context.Context) (txnSeqNum uint64, err erro
 	}
 
 	// collect values
-	for key, value := range txn.values {
+	for key, txnVal := range txn.values {
 		txnData.values = append(txnData.values, kvForTxn{
-			key:    key,
-			value:  value,
-			origin: kvs.FromNB,
+			key:       key,
+			value:     txnVal.value,
+			groupings: txnVal.groupings,
+			origin:    kvs.FromNB,
 		})
 	}
 
