@@ -29,7 +29,6 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
-	"github.com/ligato/vpp-agent/plugins/kvscheduler"
 	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
 	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
 	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
@@ -53,7 +52,6 @@ type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
 	Orchestrator *orchestrator.Plugin
-	Scheduler    *kvscheduler.Scheduler
 
 	ETCDDataSync   *kvdbsync.Plugin
 	ConsulDataSync *kvdbsync.Plugin
@@ -77,6 +75,7 @@ func New() *VPPAgent {
 	writers := datasync.KVProtoWriters{
 		etcdDataSync,
 		consulDataSync,
+		redisDataSync,
 	}
 	statuscheck.DefaultPlugin.Transport = writers
 
@@ -103,21 +102,21 @@ func New() *VPPAgent {
 
 	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
 	ifplugin.DefaultPlugin.PublishStatistics = writers
+	puntplugin.DefaultPlugin.PublishState = writers
 
 	vpp := DefaultVPP()
 	linux := DefaultLinux()
 
 	return &VPPAgent{
 		LogManager:       &logmanager.DefaultPlugin,
-		Scheduler:        &kvscheduler.DefaultPlugin,
+		Orchestrator:     &orchestrator.DefaultPlugin,
 		ETCDDataSync:     etcdDataSync,
 		ConsulDataSync:   consulDataSync,
 		RedisDataSync:    redisDataSync,
-		Orchestrator:     &orchestrator.DefaultPlugin,
-		RESTAPI:          &rest.DefaultPlugin,
 		VPP:              vpp,
 		Linux:            linux,
 		DataConfigurator: &configurator.DefaultPlugin,
+		RESTAPI:          &rest.DefaultPlugin,
 		Probe:            &probe.DefaultPlugin,
 		Telemetry:        &telemetry.DefaultPlugin,
 	}
@@ -147,11 +146,11 @@ func (VPPAgent) String() string {
 
 // VPP contains all VPP plugins.
 type VPP struct {
+	ACLPlugin   *aclplugin.ACLPlugin
 	IfPlugin    *ifplugin.IfPlugin
 	IPSecPlugin *ipsecplugin.IPSecPlugin
 	L2Plugin    *l2plugin.L2Plugin
 	L3Plugin    *l3plugin.L3Plugin
-	ACLPlugin   *aclplugin.ACLPlugin
 	NATPlugin   *natplugin.NATPlugin
 	PuntPlugin  *puntplugin.PuntPlugin
 	STNPlugin   *stnplugin.STNPlugin
@@ -159,11 +158,11 @@ type VPP struct {
 
 func DefaultVPP() VPP {
 	return VPP{
+		ACLPlugin:   &aclplugin.DefaultPlugin,
 		IfPlugin:    &ifplugin.DefaultPlugin,
 		IPSecPlugin: &ipsecplugin.DefaultPlugin,
 		L2Plugin:    &l2plugin.DefaultPlugin,
 		L3Plugin:    &l3plugin.DefaultPlugin,
-		ACLPlugin:   &aclplugin.DefaultPlugin,
 		NATPlugin:   &natplugin.DefaultPlugin,
 		PuntPlugin:  &puntplugin.DefaultPlugin,
 		STNPlugin:   &stnplugin.DefaultPlugin,

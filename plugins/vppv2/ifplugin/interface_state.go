@@ -71,8 +71,8 @@ type InterfaceStateUpdater struct {
 	swIfIndexes    ifaceidx.IfaceMetadataIndex
 	publishIfState func(notification *intf.InterfaceNotification)
 
-	ifState map[uint32]*intf.InterfaceState // swIfIndex to state data map
 	access  sync.Mutex                      // lock for the state data map
+	ifState map[uint32]*intf.InterfaceState // swIfIndex to state data map
 
 	goVppMux govppmux.StatsAPI
 

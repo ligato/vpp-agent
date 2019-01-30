@@ -55,6 +55,8 @@ type PuntVppHandler struct {
 	callsChannel api.Channel
 	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
+
+	RegisterSocketFn func(register bool, toHost *punt.ToHost, socketPath string)
 }
 
 // NewPuntVppHandler creates new instance of punt vppcalls handler

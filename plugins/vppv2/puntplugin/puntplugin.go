@@ -18,10 +18,15 @@
 package puntplugin
 
 import (
+	"strings"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/go-errors/errors"
+	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
+	"github.com/ligato/vpp-agent/api/models/vpp/punt"
+	"github.com/ligato/vpp-agent/pkg/models"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
@@ -48,10 +53,11 @@ type PuntPlugin struct {
 // Deps lists dependencies of the punt plugin.
 type Deps struct {
 	infra.PluginDeps
-	KVScheduler kvs.KVScheduler
-	GoVppmux    govppmux.API
-	IfPlugin    ifplugin.API
-	StatusCheck statuscheck.PluginStatusWriter // optional
+	KVScheduler  kvs.KVScheduler
+	GoVppmux     govppmux.API
+	IfPlugin     ifplugin.API
+	PublishState datasync.KeyProtoValWriter     // optional
+	StatusCheck  statuscheck.PluginStatusWriter // optional
 }
 
 // Init registers STN-related descriptors.
@@ -62,7 +68,26 @@ func (p *PuntPlugin) Init() (err error) {
 	}
 
 	// init punt handler
-	p.puntHandler = vppcalls.NewPuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	puntHandler := vppcalls.NewPuntVppHandler(p.vppCh, p.IfPlugin.GetInterfaceIndex(), p.Log)
+	// TODO: temporary workaround for publishing registered sockets
+	puntHandler.RegisterSocketFn = func(register bool, toHost *vpp_punt.ToHost, socketPath string) {
+		if p.PublishState == nil {
+			return
+		}
+		key := strings.Replace(models.Key(toHost), "config/", "status/", -1)
+		if register {
+			puntToHost := *toHost
+			puntToHost.SocketPath = socketPath
+			if err := p.PublishState.Put(key, &puntToHost); err != nil {
+				p.Log.Errorf("publishing registered socket failed: %v", err)
+			}
+		} else {
+			if err := p.PublishState.Put(key, nil); err != nil {
+				p.Log.Errorf("publishing unregistered socket failed: %v", err)
+			}
+		}
+	}
+	p.puntHandler = puntHandler
 
 	// init and register punt descriptor
 	p.toHostDescriptor = descriptor.NewPuntToHostDescriptor(p.puntHandler, p.Log)
