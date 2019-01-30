@@ -22,9 +22,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin/vppcalls"
+	binapi "github.com/ligato/vpp-binapi/binapi/nat"
 )
 
 func TestSetNat44Forwarding(t *testing.T) {

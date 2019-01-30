@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"errors"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // AddL2XConnect creates xConnect between two existing interfaces.

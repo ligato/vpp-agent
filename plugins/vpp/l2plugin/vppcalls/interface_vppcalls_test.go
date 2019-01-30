@@ -19,9 +19,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 	. "github.com/onsi/gomega"
 )
 

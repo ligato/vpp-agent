@@ -1,0 +1,124 @@
+{
+    "messages": [
+        [
+            "dhcp6_pd_client_enable_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "prefix_group",
+                64
+            ],
+            [
+                "u8",
+                "enable"
+            ],
+            {
+                "crc": "0xd2caf7ee"
+            }
+        ],
+        [
+            "dhcp6_pd_client_enable_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "ip6_add_del_address_using_prefix",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "prefix_group",
+                64
+            ],
+            [
+                "u8",
+                "address",
+                16
+            ],
+            [
+                "u8",
+                "prefix_length"
+            ],
+            [
+                "u8",
+                "is_add"
+            ],
+            {
+                "crc": "0x3216fd48"
+            }
+        ],
+        [
+            "ip6_add_del_address_using_prefix_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0xe7d7ed38",
+    "unions": [],
+    "services": {
+        "dhcp6_pd_client_enable_disable": {
+            "reply": "dhcp6_pd_client_enable_disable_reply"
+        },
+        "ip6_add_del_address_using_prefix": {
+            "reply": "ip6_add_del_address_using_prefix_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

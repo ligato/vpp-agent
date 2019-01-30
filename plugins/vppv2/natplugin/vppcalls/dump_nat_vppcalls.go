@@ -25,8 +25,8 @@ import (
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
-	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	bin_api "github.com/ligato/vpp-binapi/binapi/nat"
 )
 
 // DNATs sorted by tags
@@ -292,10 +292,10 @@ func (h *NatVppHandler) nat44StaticMappingLbDump() (entries stMappingMap, err er
 
 		// Add mapping into the map.
 		mapping := &nat.DNat44_StaticMapping{
-			ExternalPort: uint32(msg.ExternalPort),
-			LocalIps:     locals,
-			Protocol:     h.protocolNumberToNBValue(msg.Protocol),
-			TwiceNat:     h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
+			ExternalPort:    uint32(msg.ExternalPort),
+			LocalIps:        locals,
+			Protocol:        h.protocolNumberToNBValue(msg.Protocol),
+			TwiceNat:        h.getTwiceNatMode(msg.TwiceNat, msg.SelfTwiceNat),
 			SessionAffinity: msg.Affinity,
 		}
 		if !exIPAddress.IsUnspecified() {

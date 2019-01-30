@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 	. "github.com/onsi/gomega"
 )
 
@@ -71,8 +71,7 @@ func TestGetIPScanNeighbor(t *testing.T) {
 			defer ctx.TeardownTestCtx()
 
 			ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-				Reply:  []byte(test.cliReply),
-				Length: uint32(len(test.cliReply)),
+				Reply: test.cliReply,
 			})
 
 			handler := NewIPNeighVppHandler(ctx.MockChannel, nil)

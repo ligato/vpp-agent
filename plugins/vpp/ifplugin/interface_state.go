@@ -27,10 +27,10 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stats"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/interfaces"
+	//"github.com/ligato/vpp-binapi/binapi/stats"
 )
 
 // counterType is the basic counter type - contains only packet statistics.
@@ -135,7 +135,7 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 		return errors.Errorf("failed to subscribe VPP notification (sw_interface_event): %v", err)
 	}
 
-	// subscribe for receiving VnetInterfaceSimpleCounters notifications
+	/*// subscribe for receiving VnetInterfaceSimpleCounters notifications
 	if c.vppCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &stats.VnetInterfaceSimpleCounters{}); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_simple_counters): %v", err)
 	}
@@ -143,7 +143,7 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	// subscribe for receiving VnetInterfaceCombinedCounters notifications
 	if c.vppCombinedCountersSubs, err = c.vppCh.SubscribeNotification(c.notifChan, &stats.VnetInterfaceCombinedCounters{}); err != nil {
 		return errors.Errorf("failed to subscribe VPP notification (vnet_interface_combined_counters): %v", err)
-	}
+	}*/
 
 	wantIfEventsReply := &interfaces.WantInterfaceEventsReply{}
 	// enable interface state notifications from VPP
@@ -158,7 +158,7 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 		return errors.Errorf("%s returned %d", wantIfEventsReply.GetMessageName(), wantIfEventsReply.Retval)
 	}
 
-	wantStatsReply := &stats.WantStatsReply{}
+	/*wantStatsReply := &stats.WantStatsReply{}
 	// enable interface counters notifications from VPP
 	err = c.vppCh.SendRequest(&stats.WantStats{
 		PID:           uint32(os.Getpid()),
@@ -169,7 +169,7 @@ func (c *InterfaceStateUpdater) subscribeVPPNotifications() error {
 	}
 	if wantStatsReply.Retval != 0 {
 		return errors.Errorf("%s returned %d", wantStatsReply.GetMessageName(), wantStatsReply.Retval)
-	}
+	}*/
 
 	return nil
 }
@@ -220,10 +220,10 @@ func (c *InterfaceStateUpdater) watchVPPNotifications(ctx context.Context) {
 			switch notif := msg.(type) {
 			case *interfaces.SwInterfaceEvent:
 				c.processIfStateNotification(notif)
-			case *stats.VnetInterfaceSimpleCounters:
+			/*case *stats.VnetInterfaceSimpleCounters:
 				c.processIfCounterNotification(notif)
 			case *stats.VnetInterfaceCombinedCounters:
-				c.processIfCombinedCounterNotification(notif)
+				c.processIfCombinedCounterNotification(notif)*/
 			case *interfaces.SwInterfaceDetails:
 				c.updateIfStateDetails(notif)
 			default:
@@ -329,7 +329,7 @@ func (c *InterfaceStateUpdater) updateIfStateFlags(vppMsg *interfaces.SwInterfac
 }
 
 // processIfCounterNotification processes a VPP (simple) counter message.
-func (c *InterfaceStateUpdater) processIfCounterNotification(counter *stats.VnetInterfaceSimpleCounters) {
+/*func (c *InterfaceStateUpdater) processIfCounterNotification(counter *stats.VnetInterfaceSimpleCounters) {
 	c.access.Lock()
 	defer c.access.Unlock()
 
@@ -396,7 +396,7 @@ func (c *InterfaceStateUpdater) processIfCombinedCounterNotification(counter *st
 				Type: intf.InterfaceNotification_UPDOWN, State: counter})
 		}
 	}
-}
+}*/
 
 // updateIfStateDetails updates the interface state data in memory from provided VPP details message.
 func (c *InterfaceStateUpdater) updateIfStateDetails(ifDetails *interfaces.SwInterfaceDetails) {

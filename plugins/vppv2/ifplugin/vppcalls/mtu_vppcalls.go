@@ -15,7 +15,7 @@
 package vppcalls
 
 import (
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/interfaces"
 )
 
 // SetInterfaceMtu implements interface handler.

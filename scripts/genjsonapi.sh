@@ -3,7 +3,7 @@
 VPPDIR=${VPPDIR:-/opt/vpp}
 APIDIR=${APIDIR:-/usr/share/vpp/api}
 
-[ -d "${VPPDIR}" ] || {
+[[ -d "${VPPDIR}" ]] || {
     echo >&2 "vpp directory not found at: ${VPPDIR}";
     exit 1;
 }

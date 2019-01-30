@@ -1,0 +1,58 @@
+{
+    "messages": [
+        [
+            "sample_macswap_enable_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "enable_disable"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x57298519"
+            }
+        ],
+        [
+            "sample_macswap_enable_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0x723a38e1",
+    "unions": [],
+    "services": {
+        "sample_macswap_enable_disable": {
+            "reply": "sample_macswap_enable_disable_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

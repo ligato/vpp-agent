@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/ligato/vpp-binapi/binapi/ip"
 )
 
 // SetIPScanNeighbor implements ip neigh  handler.

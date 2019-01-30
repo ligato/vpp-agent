@@ -19,7 +19,7 @@ import (
 	"net"
 
 	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // AddL2FIB creates L2 FIB table entry.

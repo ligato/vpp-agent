@@ -17,7 +17,7 @@ package vppcalls
 import (
 	"fmt"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
+	"github.com/ligato/vpp-binapi/binapi/ip"
 )
 
 // EnableProxyArpInterface implements proxy arp handler.

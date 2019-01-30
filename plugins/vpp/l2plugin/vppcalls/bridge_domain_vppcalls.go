@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"fmt"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // VppAddBridgeDomain implements bridge domain handler.

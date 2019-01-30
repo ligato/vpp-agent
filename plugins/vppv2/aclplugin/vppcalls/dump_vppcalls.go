@@ -22,7 +22,7 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
+	acl_api "github.com/ligato/vpp-binapi/binapi/acl"
 )
 
 // Protocol types that can occur in ACLs

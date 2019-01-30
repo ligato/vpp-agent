@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:08eb037bd34c7d0e9b50cbd3d8dff5f16481af15e5d0d440e4daa52772e9a834"
+  digest = "1:87a841909b199a922fb266482fcebc6cebf3af67f77a7eec4a55bc4f62538bbe"
   name = "git.fd.io/govpp.git"
   packages = [
     "adapter",
@@ -11,7 +11,6 @@
     "adapter/mock/binapi",
     "adapter/vppapiclient",
     "api",
-    "cmd/binapi-generator",
     "codec",
     "core",
   ]
@@ -58,14 +57,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ec2d85f88fafc85b18d543d3435dbec6a4f895017ce73d45ae7c7fff2b57c29a"
-  name = "github.com/bennyscetbun/jsongo"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a97f4e906f8da60776250125ca8531adfd8ec44f"
-
-[[projects]]
-  branch = "master"
   digest = "1:5bb36304653e73c2ced864d49c9f344e7141a7ceef852442edcea212094ebc3c"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
@@ -98,14 +89,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1ed8f94f16010f9e1a419a818ec8ed5765d04561e6bfcc872e3a5a16fbae08b2"
-  name = "github.com/containerd/console"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "c12b1e7919c14469339a5d38f2f8ed9b64a9de23"
-
-[[projects]]
-  branch = "master"
   digest = "1:fc8dbcc2a5de7c093e167828ebbdf551641761d2ad75431d3a167d467a264115"
   name = "github.com/containerd/continuity"
   packages = ["pathdriver"]
@@ -128,34 +111,6 @@
   pruneopts = "UT"
   revision = "fca8add78a9d926166eb739b8e4a124434025ba3"
   version = "v3.3.9"
-
-[[projects]]
-  digest = "1:85968a9e07d94b5f3d15993b9884ab5fcc41c8b7b6418df8b6a3baa387bb8d68"
-  name = "github.com/coreos/go-systemd"
-  packages = [
-    "activation",
-    "dbus",
-    "util",
-  ]
-  pruneopts = "UT"
-  revision = "39ca1b05acc7ad1220e09f133283b8859a8b71ab"
-  version = "v17"
-
-[[projects]]
-  digest = "1:6e2ff82d2fe11ee35ec8dceb4346b8144a761f1c8655592c4ebe99a92fcec327"
-  name = "github.com/coreos/pkg"
-  packages = ["dlopen"]
-  pruneopts = "UT"
-  revision = "97fdf19511ea361ae1c100dd393cc47f8dcfa1e1"
-  version = "v4"
-
-[[projects]]
-  digest = "1:ec52d81d56e55d307da2d3dfc97ab952f9cec61d7df839ba5dd464ec08f9759e"
-  name = "github.com/cyphar/filepath-securejoin"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "06bda8370f45268db985f7af15732444d94ed51c"
-  version = "v0.2.1"
 
 [[projects]]
   digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
@@ -326,14 +281,6 @@
   pruneopts = "UT"
   revision = "480db94d33e6088e08d628833b6c0705451d24bb"
   version = "v6.13.2"
-
-[[projects]]
-  digest = "1:57fa4c058c21ce25d0b7272518dd746065117abf6cc706158b0d361202024520"
-  name = "github.com/godbus/dbus"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a389bdde4dd695d414e47b755e95e72b7826432c"
-  version = "v4.1.0"
 
 [[projects]]
   digest = "1:3fdbd53962bb796a751552e6be1fb3dbd293d6d5851c0c48f611a82480769d7c"
@@ -523,6 +470,35 @@
   revision = "7332c57ac284a7aa1778ace0005ddaf2552698d5"
 
 [[projects]]
+  branch = "stable/1901"
+  digest = "1:5f04f7c8fbd786f2c9472f956a303302189250dc9ed15b91cd2ea5d9b44b4370"
+  name = "github.com/ligato/vpp-binapi"
+  packages = [
+    "binapi/acl",
+    "binapi/af_packet",
+    "binapi/bfd",
+    "binapi/dhcp",
+    "binapi/interfaces",
+    "binapi/ip",
+    "binapi/ipsec",
+    "binapi/l2",
+    "binapi/memclnt",
+    "binapi/memif",
+    "binapi/nat",
+    "binapi/punt",
+    "binapi/session",
+    "binapi/sr",
+    "binapi/stn",
+    "binapi/tap",
+    "binapi/tapv2",
+    "binapi/vmxnet3",
+    "binapi/vpe",
+    "binapi/vxlan",
+  ]
+  pruneopts = "T"
+  revision = "4ed8652a9a577f276ba93e29bdf3b769fec851c2"
+
+[[projects]]
   branch = "master"
   digest = "1:7616dd8d9ddca4d4d8aa0e3793f66015c8c8bf9a3f2387be6be59347f43a75c0"
   name = "github.com/logrusorgru/aurora.git"
@@ -561,14 +537,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "f15292f7a699fcc1a38a80977f80a046874ba8ac"
-
-[[projects]]
-  branch = "master"
-  digest = "1:a8fbf0fec8d03cb034316610ec25ad82d577ec709a4068bb2d139cf5c744ef56"
-  name = "github.com/mrunalp/fileutils"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "7d4729fb36185a7c1719923406c9d40e54fb93c7"
 
 [[projects]]
   digest = "1:6221a3a452964b1ff30efdc22209b124d54d04373e5993264d3fa9b13da0659d"
@@ -619,51 +587,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:47b264080750861f49f1a151972f9e3bb57fef9f6601ad22ac08dcb8a4b3af6f"
+  digest = "1:e1945a9a8aff7a8504d8e3143e40bc891ccadf9ba1b2f615e8227729ce828c34"
   name = "github.com/opencontainers/runc"
-  packages = [
-    ".",
-    "libcontainer",
-    "libcontainer/apparmor",
-    "libcontainer/cgroups",
-    "libcontainer/cgroups/fs",
-    "libcontainer/cgroups/systemd",
-    "libcontainer/configs",
-    "libcontainer/configs/validate",
-    "libcontainer/criurpc",
-    "libcontainer/intelrdt",
-    "libcontainer/keys",
-    "libcontainer/mount",
-    "libcontainer/nsenter",
-    "libcontainer/seccomp",
-    "libcontainer/specconv",
-    "libcontainer/stacktrace",
-    "libcontainer/system",
-    "libcontainer/user",
-    "libcontainer/utils",
-  ]
+  packages = ["libcontainer/user"]
   pruneopts = "UT"
   revision = "4fc53a81fb7c994640722ac585fa9ca548971871"
   version = "v1.0.0-rc5"
-
-[[projects]]
-  digest = "1:57234a321bf1f8f98a8a9a5122a2404cc60d0800516f4ab7a7b2375e4b2d19ea"
-  name = "github.com/opencontainers/runtime-spec"
-  packages = ["specs-go"]
-  pruneopts = "UT"
-  revision = "4e3b9264a330d094b0386c3703c5f379119711e8"
-  version = "v1.0.1"
-
-[[projects]]
-  digest = "1:5c65c485fa22fdfd6937db07aaf879904a4745770ee416d8d1f2a1434dc2d8ce"
-  name = "github.com/opencontainers/selinux"
-  packages = [
-    "go-selinux",
-    "go-selinux/label",
-  ]
-  pruneopts = "UT"
-  revision = "ba1aefe8057f1d0cfb8e88d0ec1dc85925ef987d"
-  version = "v1.0.0-rc1"
 
 [[projects]]
   digest = "1:5e73b34a27d827212102605789de00bd411b2e434812133c83935fe9897c75e1"
@@ -753,14 +682,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:76b02b3f516299ddfed21a4e7ce26cda0b9a57f14575bfe4aa2d644ea0e8e24c"
-  name = "github.com/seccomp/libseccomp-golang"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "e3496e3a417d1dc9ecdceca5af2513271fed37a0"
-  version = "v0.9.0"
-
-[[projects]]
   digest = "1:606e395bc6f4011ae992e7ae0c613839d20ea097b8a9468e1683b22cefd8fd77"
   name = "github.com/sirupsen/logrus"
   packages = [
@@ -788,14 +709,6 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e865a1cd94806d1bb0eaa0bffba2ccb5e25ac42e1f55328c83d5e3399c9961a4"
-  name = "github.com/syndtr/gocapability"
-  packages = ["capability"]
-  pruneopts = "UT"
-  revision = "33e07d32887e1e06b7c025f27ce52f62c7990bc0"
-
-[[projects]]
   digest = "1:eaa6698f44de8f2977e93c9b946e60a8af75f565058658aad2df8032b55c84e5"
   name = "github.com/tinylib/msgp"
   packages = ["msgp"]
@@ -810,14 +723,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "65450fb6b2d3595beca39f969c411db8f8d5c806"
-
-[[projects]]
-  digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
-  name = "github.com/urfave/cli"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
-  version = "v1.20.0"
 
 [[projects]]
   branch = "master"
@@ -974,7 +879,6 @@
     "git.fd.io/govpp.git/adapter/mock",
     "git.fd.io/govpp.git/adapter/vppapiclient",
     "git.fd.io/govpp.git/api",
-    "git.fd.io/govpp.git/cmd/binapi-generator",
     "git.fd.io/govpp.git/core",
     "github.com/buger/goterm",
     "github.com/elazarl/go-bindata-assetfs",
@@ -1020,11 +924,29 @@
     "github.com/ligato/cn-infra/servicelabel",
     "github.com/ligato/cn-infra/utils/addrs",
     "github.com/ligato/cn-infra/utils/safeclose",
+    "github.com/ligato/vpp-binapi/binapi/acl",
+    "github.com/ligato/vpp-binapi/binapi/af_packet",
+    "github.com/ligato/vpp-binapi/binapi/bfd",
+    "github.com/ligato/vpp-binapi/binapi/dhcp",
+    "github.com/ligato/vpp-binapi/binapi/interfaces",
+    "github.com/ligato/vpp-binapi/binapi/ip",
+    "github.com/ligato/vpp-binapi/binapi/ipsec",
+    "github.com/ligato/vpp-binapi/binapi/l2",
+    "github.com/ligato/vpp-binapi/binapi/memclnt",
+    "github.com/ligato/vpp-binapi/binapi/memif",
+    "github.com/ligato/vpp-binapi/binapi/nat",
+    "github.com/ligato/vpp-binapi/binapi/punt",
+    "github.com/ligato/vpp-binapi/binapi/session",
+    "github.com/ligato/vpp-binapi/binapi/sr",
+    "github.com/ligato/vpp-binapi/binapi/stn",
+    "github.com/ligato/vpp-binapi/binapi/tap",
+    "github.com/ligato/vpp-binapi/binapi/tapv2",
+    "github.com/ligato/vpp-binapi/binapi/vmxnet3",
+    "github.com/ligato/vpp-binapi/binapi/vpe",
+    "github.com/ligato/vpp-binapi/binapi/vxlan",
     "github.com/logrusorgru/aurora.git",
-    "github.com/lunixbochs/struc",
     "github.com/namsral/flag",
     "github.com/onsi/gomega",
-    "github.com/opencontainers/runc",
     "github.com/pkg/errors",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",

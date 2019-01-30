@@ -1,0 +1,270 @@
+{
+    "messages": [
+        [
+            "pot_profile_add",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "id"
+            ],
+            [
+                "u8",
+                "validator"
+            ],
+            [
+                "u64",
+                "secret_key"
+            ],
+            [
+                "u64",
+                "secret_share"
+            ],
+            [
+                "u64",
+                "prime"
+            ],
+            [
+                "u8",
+                "max_bits"
+            ],
+            [
+                "u64",
+                "lpc"
+            ],
+            [
+                "u64",
+                "polynomial_public"
+            ],
+            [
+                "u8",
+                "list_name_len"
+            ],
+            [
+                "u8",
+                "list_name",
+                0,
+                "list_name_len"
+            ],
+            {
+                "crc": "0xe8f1d058"
+            }
+        ],
+        [
+            "pot_profile_add_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "pot_profile_activate",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "id"
+            ],
+            [
+                "u8",
+                "list_name_len"
+            ],
+            [
+                "u8",
+                "list_name",
+                0,
+                "list_name_len"
+            ],
+            {
+                "crc": "0xeeada566"
+            }
+        ],
+        [
+            "pot_profile_activate_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "pot_profile_del",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "list_name_len"
+            ],
+            [
+                "u8",
+                "list_name",
+                0,
+                "list_name_len"
+            ],
+            {
+                "crc": "0xbb100832"
+            }
+        ],
+        [
+            "pot_profile_del_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "pot_profile_show_config_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "id"
+            ],
+            {
+                "crc": "0x005b7d59"
+            }
+        ],
+        [
+            "pot_profile_show_config_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u8",
+                "id"
+            ],
+            [
+                "u8",
+                "validator"
+            ],
+            [
+                "u64",
+                "secret_key"
+            ],
+            [
+                "u64",
+                "secret_share"
+            ],
+            [
+                "u64",
+                "prime"
+            ],
+            [
+                "u64",
+                "bit_mask"
+            ],
+            [
+                "u64",
+                "lpc"
+            ],
+            [
+                "u64",
+                "polynomial_public"
+            ],
+            {
+                "crc": "0xb7ce0618"
+            }
+        ]
+    ],
+    "vl_api_version": "0x6858f477",
+    "unions": [],
+    "services": {
+        "pot_profile_show_config_dump": {
+            "reply": "pot_profile_show_config_details",
+            "stream": true
+        },
+        "pot_profile_add": {
+            "reply": "pot_profile_add_reply"
+        },
+        "pot_profile_activate": {
+            "reply": "pot_profile_activate_reply"
+        },
+        "pot_profile_del": {
+            "reply": "pot_profile_del_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

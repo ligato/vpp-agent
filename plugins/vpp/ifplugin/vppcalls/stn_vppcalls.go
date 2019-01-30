@@ -19,7 +19,7 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	"github.com/ligato/vpp-binapi/binapi/stn"
 )
 
 // StnRule represents stn rule entry

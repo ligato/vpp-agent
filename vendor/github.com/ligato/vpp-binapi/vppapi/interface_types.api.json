@@ -1,0 +1,13 @@
+{
+    "messages": [],
+    "vl_api_version": "0xfa73ea25",
+    "unions": [],
+    "services": {},
+    "enums": [],
+    "types": [],
+    "aliases": {
+        "interface_index": {
+            "type": "u32"
+        }
+    }
+}

@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-errors/errors"
 
-	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	ipsecapi "github.com/ligato/vpp-binapi/binapi/ipsec"
 )
 
 // IPSecSaDetails holds security association with VPP metadata

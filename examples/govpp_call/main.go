@@ -15,6 +15,7 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
@@ -26,9 +27,8 @@ import (
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/vpp"
-	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"log"
+	l2Api "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // *************************************************************************

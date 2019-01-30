@@ -20,8 +20,8 @@ import (
 	"net"
 	"strings"
 
-	bin_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	bin_api "github.com/ligato/vpp-binapi/binapi/nat"
 )
 
 // Nat44Details contains all configuration available for network address translation.

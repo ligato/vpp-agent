@@ -1,0 +1,327 @@
+{
+    "messages": [
+        [
+            "vxlan_gpe_ioam_enable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u16",
+                "id"
+            ],
+            [
+                "u8",
+                "trace_ppc"
+            ],
+            [
+                "u8",
+                "pow_enable"
+            ],
+            [
+                "u8",
+                "trace_enable"
+            ],
+            {
+                "crc": "0x7727876d"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_enable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u16",
+                "id"
+            ],
+            {
+                "crc": "0x6b16a45e"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_vni_enable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "vni"
+            ],
+            [
+                "u8",
+                "local",
+                16
+            ],
+            [
+                "u8",
+                "remote",
+                16
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            {
+                "crc": "0x6d93fc5d"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_vni_enable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_vni_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "vni"
+            ],
+            [
+                "u8",
+                "local",
+                16
+            ],
+            [
+                "u8",
+                "remote",
+                16
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            {
+                "crc": "0x6d93fc5d"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_vni_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_transit_enable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "outer_fib_index"
+            ],
+            [
+                "u8",
+                "dst_addr",
+                16
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            {
+                "crc": "0x7c6ff202"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_transit_enable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_transit_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "outer_fib_index"
+            ],
+            [
+                "u8",
+                "dst_addr",
+                16
+            ],
+            [
+                "u8",
+                "is_ipv6"
+            ],
+            {
+                "crc": "0x7c6ff202"
+            }
+        ],
+        [
+            "vxlan_gpe_ioam_transit_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0xa8c77163",
+    "unions": [],
+    "services": {
+        "vxlan_gpe_ioam_enable": {
+            "reply": "vxlan_gpe_ioam_enable_reply"
+        },
+        "vxlan_gpe_ioam_disable": {
+            "reply": "vxlan_gpe_ioam_disable_reply"
+        },
+        "vxlan_gpe_ioam_transit_enable": {
+            "reply": "vxlan_gpe_ioam_transit_enable_reply"
+        },
+        "vxlan_gpe_ioam_transit_disable": {
+            "reply": "vxlan_gpe_ioam_transit_disable_reply"
+        },
+        "vxlan_gpe_ioam_vni_enable": {
+            "reply": "vxlan_gpe_ioam_vni_enable_reply"
+        },
+        "vxlan_gpe_ioam_vni_disable": {
+            "reply": "vxlan_gpe_ioam_vni_disable_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

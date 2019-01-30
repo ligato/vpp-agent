@@ -1,0 +1,130 @@
+{
+    "messages": [
+        [
+            "lldp_config",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "system_name",
+                256
+            ],
+            [
+                "u32",
+                "tx_hold"
+            ],
+            [
+                "u32",
+                "tx_interval"
+            ],
+            {
+                "crc": "0x2410286f"
+            }
+        ],
+        [
+            "lldp_config_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "sw_interface_set_lldp",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "port_desc",
+                256
+            ],
+            [
+                "u8",
+                "mgmt_ip4",
+                4
+            ],
+            [
+                "u8",
+                "mgmt_ip6",
+                16
+            ],
+            [
+                "u8",
+                "mgmt_oid",
+                128
+            ],
+            [
+                "u8",
+                "enable"
+            ],
+            {
+                "crc": "0x2d85d156"
+            }
+        ],
+        [
+            "sw_interface_set_lldp_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0x904772fa",
+    "unions": [],
+    "services": {
+        "lldp_config": {
+            "reply": "lldp_config_reply"
+        },
+        "sw_interface_set_lldp": {
+            "reply": "sw_interface_set_lldp_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

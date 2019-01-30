@@ -20,8 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 func TestAddInterfaceToBridgeDomain(t *testing.T) {

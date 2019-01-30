@@ -1,0 +1,54 @@
+{
+    "messages": [
+        [
+            "cdp_enable_disable",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "enable_disable"
+            ],
+            {
+                "crc": "0x4eec6097"
+            }
+        ],
+        [
+            "cdp_enable_disable_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0x1b8d20f5",
+    "unions": [],
+    "services": {
+        "cdp_enable_disable": {
+            "reply": "cdp_enable_disable_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

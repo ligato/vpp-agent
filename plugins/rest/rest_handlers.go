@@ -25,8 +25,8 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/vpp-agent/plugins/govppmux/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/rest/resturl"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 	"github.com/unrolled/render"
 )
 
@@ -300,8 +300,7 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 		defer ch.Close()
 
 		r := &vpe.CliInband{
-			Length: uint32(len(command)),
-			Cmd:    []byte(command),
+			Cmd: command,
 		}
 		reply := &vpe.CliInbandReply{}
 		err = ch.SendRequest(r).ReceiveReply(reply)
@@ -322,20 +321,19 @@ func (p *Plugin) commandHandler(formatter *render.Render) http.HandlerFunc {
 	}
 }
 
-func (p *Plugin) sendCommand(ch govppapi.Channel, command string) ([]byte, error) {
+func (p *Plugin) sendCommand(ch govppapi.Channel, command string) (string, error) {
 	r := &vpe.CliInband{
-		Length: uint32(len(command)),
-		Cmd:    []byte(command),
+		Cmd: command,
 	}
 
 	reply := &vpe.CliInbandReply{}
 	if err := ch.SendRequest(r).ReceiveReply(reply); err != nil {
-		return nil, fmt.Errorf("sending request failed: %v", err)
+		return "", fmt.Errorf("sending request failed: %v", err)
 	} else if reply.Retval > 0 {
-		return nil, fmt.Errorf("request returned error code: %v", reply.Retval)
+		return "", fmt.Errorf("request returned error code: %v", reply.Retval)
 	}
 
-	return reply.Reply[:reply.Length], nil
+	return reply.Reply, nil
 }
 
 // telemetryHandler - returns various telemetry data

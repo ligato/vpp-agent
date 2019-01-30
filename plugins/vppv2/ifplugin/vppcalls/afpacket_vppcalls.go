@@ -18,7 +18,7 @@ import (
 	"net"
 
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
+	"github.com/ligato/vpp-binapi/binapi/af_packet"
 )
 
 // AddAfPacketInterface implements AfPacket handler.

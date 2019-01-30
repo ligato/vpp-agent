@@ -4,12 +4,14 @@
 # for detailed Gopkg.toml documentation.
 
 required = [
-    "git.fd.io/govpp.git/cmd/binapi-generator",
-    "github.com/gogo/protobuf/protoc-gen-gogo",
-    "github.com/opencontainers/runc"
+    "github.com/gogo/protobuf/protoc-gen-gogo"
 ]
 
 # Constraints
+
+[[constraint]]
+  branch = "stable/1901"
+  name = "github.com/ligato/vpp-binapi"
 
 [[constraint]]
   branch = "dev"
@@ -75,10 +77,6 @@ required = [
   name = "google.golang.org/grpc"
   version = "1.14.0"
 
-[[constraint]]
-  name = "github.com/opencontainers/runc"
-  version = "v1.0.0-rc5"
-
 # Overrides
 
 [[override]]
@@ -102,6 +100,10 @@ required = [
 [prune]
   go-tests = true
   unused-packages = true
+
+  [[prune.project]]
+    name = "github.com/ligato/vpp-binapi"
+    unused-packages = false
 
   [[prune.project]]
     name = "github.com/ligato/cn-infra"

@@ -19,9 +19,9 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
-	acl_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/acl"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	acl_api "github.com/ligato/vpp-binapi/binapi/acl"
 	. "github.com/onsi/gomega"
 )
 

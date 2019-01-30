@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"net"
 
-	stnapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/stn"
+	stnapi "github.com/ligato/vpp-binapi/binapi/stn"
 )
 
 // StnDetails contains proto-modelled STN data and vpp specific metadata

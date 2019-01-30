@@ -126,26 +126,30 @@ func (d *PuntToHostDescriptor) Add(key string, punt *punt.ToHost) (metadata inte
 	err = d.puntHandler.RegisterPuntSocket(punt)
 	if err != nil {
 		d.log.Error(err)
+		return nil, err
 	}
 
-	return nil, err
+	return nil, nil
 }
 
 // Delete removes VPP punt configuration.
 func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata interface{}) error {
 	if punt.SocketPath == "" {
-		// TODO punt delete does not work for non-socket
-		d.log.Warn("Punt delete is not supported by the VPP")
-		return nil
+		err := d.puntHandler.DeletePunt(punt)
+		if err != nil {
+			d.log.Error(err)
+		}
+		return err
 	}
 
 	// deregister punt to socket
 	err := d.puntHandler.DeregisterPuntSocket(punt)
 	if err != nil {
 		d.log.Error(err)
+		return err
 	}
 
-	return err
+	return nil
 }
 
 // Dump returns all configured VPP punt to host entries.
@@ -153,8 +157,9 @@ func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata
 	// TODO dump for punt and punt socket register missing in api
 	d.log.Info("Dump punt/socket register is not supported by the VPP")
 
-	socks, err := d.puntHandler.DumpPuntRegisteredSockets()
+	socks, err := d.puntHandler.DumpRegisteredPuntSockets()
 	if err != nil {
+		d.log.Error(err)
 		return nil, err
 	}
 

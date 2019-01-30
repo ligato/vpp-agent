@@ -13,20 +13,15 @@ ARG VPP_COMMIT
 
 RUN git clone ${VPP_REPO_URL} /opt/vpp \
  && cd /opt/vpp \
- && git checkout ${VPP_COMMIT}
+ && git checkout -q ${VPP_COMMIT}
 
 COPY scripts/genjsonapi.sh /opt/genjsonapi.sh
-RUN /opt/genjsonapi.sh
+RUN APIDIR=/usr/share/vpp/api /opt/genjsonapi.sh
 
 WORKDIR /go/src/github.com/ligato/vpp-agent
+COPY vendor/github.com/ligato/vpp-binapi/vppapi vppapi
 
-COPY plugins/vpp/binapi plugins/vpp/binapi
-COPY vendor vendor
-COPY Makefile vpp.env ./
-
-RUN cp -r plugins/vpp/binapi /tmp/orig_binapi \
- && make generate-binapi \
- && diff -r plugins/vpp/binapi /tmp/orig_binapi
+RUN diff -r vppapi /usr/share/vpp/api
 
 FROM ${BASE_IMG} as dev-stage
 

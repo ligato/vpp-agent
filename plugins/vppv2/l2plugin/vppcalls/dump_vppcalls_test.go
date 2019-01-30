@@ -20,11 +20,11 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	l2nb "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/pkg/idxvpp2"
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin/vppcalls"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 	. "github.com/onsi/gomega"
 )
 
@@ -145,7 +145,7 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 				BdID:       5,
 				IsIPv6:     0,
 				IPAddress:  []byte{192, 168, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				MacAddress: []byte{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
+				MacAddress: l2ba.MacAddress{0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA},
 			},
 		},
 		{

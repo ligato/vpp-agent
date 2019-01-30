@@ -20,7 +20,7 @@ import (
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/pkg/errors"
 
-	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/stn"
+	api "github.com/ligato/vpp-binapi/binapi/stn"
 )
 
 // StnDetails contains a proto-modelled STN data and VPP specific metadata

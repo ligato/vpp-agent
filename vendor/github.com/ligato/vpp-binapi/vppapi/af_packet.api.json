@@ -1,0 +1,204 @@
+{
+    "messages": [
+        [
+            "af_packet_create",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "host_if_name",
+                64
+            ],
+            [
+                "u8",
+                "hw_addr",
+                6
+            ],
+            [
+                "u8",
+                "use_random_hw_addr"
+            ],
+            {
+                "crc": "0x6d5d30d6"
+            }
+        ],
+        [
+            "af_packet_create_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "af_packet_delete",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "host_if_name",
+                64
+            ],
+            {
+                "crc": "0x3efceda3"
+            }
+        ],
+        [
+            "af_packet_delete_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "af_packet_set_l4_cksum_offload",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u8",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "set"
+            ],
+            {
+                "crc": "0x86538585"
+            }
+        ],
+        [
+            "af_packet_set_l4_cksum_offload_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "af_packet_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            {
+                "crc": "0x51077d14"
+            }
+        ],
+        [
+            "af_packet_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u8",
+                "host_if_name",
+                64
+            ],
+            {
+                "crc": "0x057205fa"
+            }
+        ]
+    ],
+    "vl_api_version": "0x206563c",
+    "unions": [],
+    "services": {
+        "af_packet_dump": {
+            "reply": "af_packet_details",
+            "stream": true
+        },
+        "af_packet_set_l4_cksum_offload": {
+            "reply": "af_packet_set_l4_cksum_offload_reply"
+        },
+        "af_packet_delete": {
+            "reply": "af_packet_delete_reply"
+        },
+        "af_packet_create": {
+            "reply": "af_packet_create_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

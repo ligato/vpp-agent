@@ -1,0 +1,138 @@
+{
+    "messages": [
+        [
+            "ipsec_gre_add_del_tunnel",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "local_sa_id"
+            ],
+            [
+                "u32",
+                "remote_sa_id"
+            ],
+            [
+                "u8",
+                "is_add"
+            ],
+            [
+                "u8",
+                "src_address",
+                4
+            ],
+            [
+                "u8",
+                "dst_address",
+                4
+            ],
+            {
+                "crc": "0x7e5816c1"
+            }
+        ],
+        [
+            "ipsec_gre_add_del_tunnel_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "ipsec_gre_tunnel_dump",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "ipsec_gre_tunnel_details",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u32",
+                "local_sa_id"
+            ],
+            [
+                "u32",
+                "remote_sa_id"
+            ],
+            [
+                "u8",
+                "src_address",
+                4
+            ],
+            [
+                "u8",
+                "dst_address",
+                4
+            ],
+            {
+                "crc": "0xc3dc9bb1"
+            }
+        ]
+    ],
+    "vl_api_version": "0x54e103fe",
+    "unions": [],
+    "services": {
+        "ipsec_gre_tunnel_dump": {
+            "reply": "ipsec_gre_tunnel_details",
+            "stream": true
+        },
+        "ipsec_gre_add_del_tunnel": {
+            "reply": "ipsec_gre_add_del_tunnel_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

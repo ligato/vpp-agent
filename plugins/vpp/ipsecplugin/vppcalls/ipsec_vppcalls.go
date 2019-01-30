@@ -20,8 +20,8 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
-	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	ipsec_api "github.com/ligato/vpp-binapi/binapi/ipsec"
 )
 
 func (h *IPSecVppHandler) tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool) (uint32, error) {

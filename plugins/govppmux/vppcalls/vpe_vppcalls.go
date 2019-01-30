@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memclnt"
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
+	"github.com/ligato/vpp-binapi/binapi/memclnt"
+	"github.com/ligato/vpp-binapi/binapi/vpe"
 )
 
 // VpeInfo contains information about VPP connection and process.
@@ -97,30 +97,29 @@ func GetVersionInfo(vppChan govppapi.Channel) (*VersionInfo, error) {
 	}
 
 	info := &VersionInfo{
-		Program:        string(cleanBytes(reply.Program)),
-		Version:        string(cleanBytes(reply.Version)),
-		BuildDate:      string(cleanBytes(reply.BuildDate)),
-		BuildDirectory: string(cleanBytes(reply.BuildDirectory)),
+		Program:        reply.Program,
+		Version:        reply.Version,
+		BuildDate:      reply.BuildDate,
+		BuildDirectory: reply.BuildDirectory,
 	}
 
 	return info, nil
 }
 
 // RunCliCommand executes CLI command and returns output
-func RunCliCommand(vppChan govppapi.Channel, cmd string) ([]byte, error) {
+func RunCliCommand(vppChan govppapi.Channel, cmd string) (string, error) {
 	req := &vpe.CliInband{
-		Cmd:    []byte(cmd),
-		Length: uint32(len(cmd)),
+		Cmd: cmd,
 	}
 	reply := &vpe.CliInbandReply{}
 
 	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
-		return nil, err
+		return "", err
 	} else if reply.Retval != 0 {
-		return nil, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
+		return "", fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.Reply[:reply.Length], nil
+	return reply.Reply, nil
 }
 
 // MemoryInfo contains values returned from 'show memory'

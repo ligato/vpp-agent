@@ -1,0 +1,117 @@
+{
+    "messages": [
+        [
+            "avf_create",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "pci_addr"
+            ],
+            [
+                "i32",
+                "enable_elog"
+            ],
+            [
+                "u16",
+                "rxq_num"
+            ],
+            [
+                "u16",
+                "rxq_size"
+            ],
+            [
+                "u16",
+                "txq_size"
+            ],
+            {
+                "crc": "0xdaab8ae2"
+            }
+        ],
+        [
+            "avf_create_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0xfda5941f"
+            }
+        ],
+        [
+            "avf_delete",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            {
+                "crc": "0x529cb13f"
+            }
+        ],
+        [
+            "avf_delete_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0x71cc3938",
+    "unions": [],
+    "services": {
+        "avf_create": {
+            "reply": "avf_create_reply"
+        },
+        "avf_delete": {
+            "reply": "avf_delete_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

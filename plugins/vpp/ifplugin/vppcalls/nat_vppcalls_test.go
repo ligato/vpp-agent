@@ -19,9 +19,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	natapi "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-binapi/binapi/nat"
 	. "github.com/onsi/gomega"
 )
 

@@ -19,9 +19,10 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/nat"
-	nat2 "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
 	"math"
+
+	nat2 "github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	"github.com/ligato/vpp-binapi/binapi/nat"
 )
 
 // Num protocol representation
@@ -240,9 +241,9 @@ func (h *NatVppHandler) handleNat44StaticMappingLb(ctx *StaticMappingLbContext, 
 	}
 
 	req := &nat.Nat44AddDelLbStaticMapping{
-		Tag:          []byte(ctx.Tag),
-		Locals:       localAddrPorts,
-		LocalNum:     uint8(len(localAddrPorts)),
+		Tag:    []byte(ctx.Tag),
+		Locals: localAddrPorts,
+		//LocalNum:     uint8(len(localAddrPorts)),
 		ExternalAddr: ctx.ExternalIP,
 		ExternalPort: ctx.ExternalPort,
 		Protocol:     ctx.Protocol,

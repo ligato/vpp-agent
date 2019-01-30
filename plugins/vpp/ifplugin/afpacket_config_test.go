@@ -21,13 +21,13 @@ import (
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/ligato/vpp-agent/pkg/idxvpp/nametoidx"
-	ap_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/af_packet"
-	if_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
+	ap_api "github.com/ligato/vpp-binapi/binapi/af_packet"
+	if_api "github.com/ligato/vpp-binapi/binapi/interfaces"
 	. "github.com/onsi/gomega"
 )
 

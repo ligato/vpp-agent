@@ -1,0 +1,185 @@
+{
+    "messages": [
+        [
+            "sw_interface_set_dpdk_hqos_pipe",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u32",
+                "subport"
+            ],
+            [
+                "u32",
+                "pipe"
+            ],
+            [
+                "u32",
+                "profile"
+            ],
+            {
+                "crc": "0xe1a97ae7"
+            }
+        ],
+        [
+            "sw_interface_set_dpdk_hqos_pipe_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "sw_interface_set_dpdk_hqos_subport",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u32",
+                "subport"
+            ],
+            [
+                "u32",
+                "tb_rate"
+            ],
+            [
+                "u32",
+                "tb_size"
+            ],
+            [
+                "u32",
+                "tc_rate",
+                4
+            ],
+            [
+                "u32",
+                "tc_period"
+            ],
+            {
+                "crc": "0xd2fb6ca6"
+            }
+        ],
+        [
+            "sw_interface_set_dpdk_hqos_subport_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ],
+        [
+            "sw_interface_set_dpdk_hqos_tctbl",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "client_index"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "u32",
+                "sw_if_index"
+            ],
+            [
+                "u32",
+                "entry"
+            ],
+            [
+                "u32",
+                "tc"
+            ],
+            [
+                "u32",
+                "queue"
+            ],
+            {
+                "crc": "0x242bc69e"
+            }
+        ],
+        [
+            "sw_interface_set_dpdk_hqos_tctbl_reply",
+            [
+                "u16",
+                "_vl_msg_id"
+            ],
+            [
+                "u32",
+                "context"
+            ],
+            [
+                "i32",
+                "retval"
+            ],
+            {
+                "crc": "0xe8d4e804"
+            }
+        ]
+    ],
+    "vl_api_version": "0x5b64184b",
+    "unions": [],
+    "services": {
+        "sw_interface_set_dpdk_hqos_pipe": {
+            "reply": "sw_interface_set_dpdk_hqos_pipe_reply"
+        },
+        "sw_interface_set_dpdk_hqos_tctbl": {
+            "reply": "sw_interface_set_dpdk_hqos_tctbl_reply"
+        },
+        "sw_interface_set_dpdk_hqos_subport": {
+            "reply": "sw_interface_set_dpdk_hqos_subport_reply"
+        }
+    },
+    "enums": [],
+    "types": [],
+    "aliases": {}
+}

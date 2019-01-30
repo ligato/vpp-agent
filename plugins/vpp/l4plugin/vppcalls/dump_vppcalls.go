@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/session"
+	"github.com/ligato/vpp-binapi/binapi/session"
 )
 
 // SessionDetails represents session details.

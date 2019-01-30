@@ -17,7 +17,7 @@ package vppcalls_test
 import (
 	"testing"
 
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/dhcp"
+	"github.com/ligato/vpp-binapi/binapi/dhcp"
 	. "github.com/onsi/gomega"
 )
 

@@ -20,8 +20,8 @@ import (
 
 	"github.com/go-errors/errors"
 
-	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	l2nb "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	l2ba "github.com/ligato/vpp-binapi/binapi/l2"
 )
 
 // BridgeDomainDetails is the wrapper structure for the bridge domain northbound API structure.
@@ -153,7 +153,7 @@ func (h *BridgeDomainVppHandler) dumpBridgeDomainMacTable() (map[uint32][]*l2nb.
 		} else {
 			arpEntry.IpAddress = ipAddr[:4].To4().String()
 		}
-		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress).String()
+		arpEntry.PhysAddress = net.HardwareAddr(msg.MacAddress[:]).String()
 
 		// Add ARP entry to result map
 		arpEntries, ok := bdArpTable[msg.BdID]
