@@ -15,6 +15,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/unrolled/render"
@@ -63,7 +64,10 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		//fmt.Printf("DOT:\n%s\n", output)
+		if format := req.FormValue("format"); format == "dot" {
+			w.Write(output)
+			return
+		}
 
 		img, err := dotToImage("", "svg", output)
 		if err != nil {
@@ -71,7 +75,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		//log.Println("serving file:", img)
+		s.Log.Debug("serving graph image from:", img)
 		http.ServeFile(w, req, img)
 	}
 }
@@ -86,10 +90,6 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 		"fontsize":  "18",
 		"tooltip":   "",
 	}
-	/*if focusPkg != nil {
-		cluster.Attrs["bgcolor"] = "#e6ecfa"
-		cluster.Attrs["label"] = focusPkg.Name
-	}*/
 
 	var (
 		nodes []*dotNode
@@ -116,7 +116,10 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 		}
 		attrs := make(dotAttrs)
 
-		//fmt.Printf("- key: %q\n", key)
+		attrs["tooltip"] = fmt.Sprintf("[ %s ]\n%s", key, proto.MarshalTextString(graphNode.Value))
+
+		attrs["pad"] = "0.01"
+		attrs["margin"] = "0.01"
 
 		c := cluster
 
@@ -148,11 +151,9 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 					Attrs: dotAttrs{
 						"penwidth":  "0.8",
 						"fontsize":  "16",
-						"label":     fmt.Sprintf("[ %s ]", descriptorName),
+						"label":     fmt.Sprintf("< %s >", descriptorName),
 						"style":     "filled",
 						"fillcolor": "#e6ecfa",
-						//"fontname":  "bold",
-						//"rank":      "sink",
 					},
 				}
 			}
@@ -191,6 +192,8 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 		case kvs.ValueState_RETRYING:
 			attrs["fillcolor"] = "Deeppink"
 		}
+		//attrs["margin"] = "0.04,0.01"
+		//attrs["pad"] = "0.04"
 
 		n := &dotNode{
 			ID:    key,
@@ -279,8 +282,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 		Nodes:   nodes,
 		Edges:   edges,
 		Options: map[string]string{
-			"minlen":  fmt.Sprint(minlen),
-			"nodesep": fmt.Sprint(nodesep),
+			"minlen": fmt.Sprint(minlen),
 		},
 	}
 
@@ -293,8 +295,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 }
 
 var (
-	minlen  uint    = 1
-	nodesep float64 = 1
+	minlen uint = 1
 )
 
 // location of dot executable for converting from .dot to .svg
@@ -339,11 +340,11 @@ const tmplGraph = `digraph kvscheduler {
     bgcolor="lightgray";
     style="solid";
     penwidth="1";
-    pad="0.05";
+    pad="0.04";
     nodesep="{{.Options.nodesep}}";
 	ordering="out";
 
-    node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.05,0.0"];
+    node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
     edge [minlen="{{.Options.minlen}}"]
 
     {{template "cluster" .Cluster}}

@@ -102,7 +102,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 		if !ableToDump || err != nil {
 			if err != nil {
 				s.Log.WithField("descriptor", descriptor.Name).
-					Error("failed to dump values, refresh for the descriptor will be skipped")
+					Errorf("failed to dump values (skipping descriptor refresh): %s", err)
 			}
 			s.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
 			continue
