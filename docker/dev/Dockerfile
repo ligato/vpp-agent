@@ -33,7 +33,7 @@ FROM ${BASE_IMG} as dev-stage
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     autoconf automake build-essential ca-certificates curl gdb git \
-    inetutils-traceroute iproute2 ipsec-tools iputils-ping \
+    graphviz inetutils-traceroute iproute2 ipsec-tools iputils-ping \
     libapr1 libmbedcrypto1 libmbedtls10 libmbedx509-0 libtool \
     make mc nano netcat python software-properties-common sudo supervisor \
     telnet unzip wget python-cffi \

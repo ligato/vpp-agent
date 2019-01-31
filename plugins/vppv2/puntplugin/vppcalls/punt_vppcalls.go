@@ -142,6 +142,10 @@ func (h *PuntVppHandler) registerPuntWithSocket(punt *punt.ToHost, isIPv4 bool) 
 	p.SocketPath = strings.SplitN(string(reply.Pathname), "\x00", 2)[0]
 	socketPathMap[punt.Port] = &p
 
+	if h.RegisterSocketFn != nil {
+		h.RegisterSocketFn(true, punt, p.SocketPath)
+	}
+
 	return nil
 }
 
@@ -165,6 +169,11 @@ func (h *PuntVppHandler) unregisterPuntWithSocket(punt *punt.ToHost, isIPv4 bool
 		return err
 	}
 
+	if h.RegisterSocketFn != nil {
+		if p, ok := socketPathMap[punt.Port]; ok {
+			h.RegisterSocketFn(false, punt, p.SocketPath)
+		}
+	}
 	delete(socketPathMap, punt.Port)
 
 	return nil

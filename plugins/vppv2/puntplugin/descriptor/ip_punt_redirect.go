@@ -28,10 +28,10 @@ import (
 
 const (
 	// IPRedirectDescriptorName is the name of the descriptor for the VPP punt to host/socket
-	IPRedirectDescriptorName = "vpp-punt-ip-redirect"
+	IPRedirectDescriptorName = "vpp-punt-ipredirect"
 
 	// dependency labels
-	ipRedirectTxInterfaceDep = "ip-redirect-tx-interface-exists"
+	ipRedirectTxInterfaceDep = "tx-interface-exists"
 )
 
 // A list of non-retriable errors:
@@ -56,7 +56,7 @@ type IPRedirectDescriptor struct {
 // NewIPRedirectDescriptor creates a new instance of the punt to host descriptor.
 func NewIPRedirectDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.LoggerFactory) *IPRedirectDescriptor {
 	return &IPRedirectDescriptor{
-		log:         log.NewLogger("punt-ip-redirect--descriptor"),
+		log:         log.NewLogger("punt-ipredirect-descriptor"),
 		puntHandler: puntHandler,
 	}
 }

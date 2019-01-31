@@ -26,7 +26,7 @@ type PuntDetails struct {
 }
 
 // FIXME: temporary solutions for providing data in dump
-var socketPathMap = map[uint32]*vpp.PuntToHost{}
+var socketPathMap = make(map[uint32]*vpp.PuntToHost)
 
 // DumpPuntRegisteredSockets returns punt to host via registered socket entries
 // TODO since the binary API is not available, all data are read from local cache for now

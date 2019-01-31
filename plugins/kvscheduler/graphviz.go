@@ -2,10 +2,9 @@ package kvscheduler
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
-	//"log"
-	"errors"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,8 +14,10 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
+	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
 	"github.com/unrolled/render"
 )
 
@@ -38,6 +39,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 		graphRead := s.graph.Read()
 		defer graphRead.Release()
 
+		var txn *kvs.RecordedTxn
 		timestamp := time.Now()
 
 		// parse optional *txn* argument
@@ -48,7 +50,7 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 				return
 			}
 
-			txn := s.GetRecordedTransaction(txnSeqNum)
+			txn = s.GetRecordedTransaction(txnSeqNum)
 			if txn == nil {
 				err := errors.New("transaction with such sequence number is not recorded")
 				s.logError(formatter.JSON(w, http.StatusNotFound, errorString{err.Error()}))
@@ -58,13 +60,16 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 		}
 
 		graphSnapshot := graphRead.GetSnapshot(timestamp)
-		output, err := s.renderDotOutput(graphSnapshot, timestamp)
+		output, err := s.renderDotOutput(graphSnapshot, txn)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		//fmt.Printf("DOT:\n%s\n", output)
+		if format := req.FormValue("format"); format == "dot" {
+			w.Write(output)
+			return
+		}
 
 		img, err := dotToImage("", "svg", output)
 		if err != nil {
@@ -72,25 +77,28 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 			return
 		}
 
-		//log.Println("serving file:", img)
+		s.Log.Debug("serving graph image from:", img)
 		http.ServeFile(w, req, img)
 	}
 }
 
-func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp time.Time) ([]byte, error) {
-	cluster := NewDotCluster("focus")
+func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.RecordedTxn) ([]byte, error) {
+	title := fmt.Sprintf("%d keys", len(graphNodes))
+	if txn != nil {
+		title += fmt.Sprintf(" - SeqNum: %d (%s)", txn.SeqNum, txn.Stop.Format(time.RFC822))
+	} else {
+		title += " - current"
+	}
+
+	cluster := NewDotCluster("nodes")
 	cluster.Attrs = dotAttrs{
 		"bgcolor":   "white",
-		"label":     "",
+		"label":     title,
 		"labelloc":  "t",
 		"labeljust": "c",
-		"fontsize":  "18",
+		"fontsize":  "15",
 		"tooltip":   "",
 	}
-	/*if focusPkg != nil {
-		cluster.Attrs["bgcolor"] = "#e6ecfa"
-		cluster.Attrs["label"] = focusPkg.Name
-	}*/
 
 	var (
 		nodes []*dotNode
@@ -111,18 +119,18 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 
 	var processGraphNode = func(graphNode *graph.RecordedNode) *dotNode {
 		key := graphNode.Key
-
 		if n, ok := nodeMap[key]; ok {
 			return n
 		}
-		attrs := make(dotAttrs)
 
-		//fmt.Printf("- key: %q\n", key)
+		attrs := make(dotAttrs)
+		attrs["pad"] = "0.01"
+		attrs["margin"] = "0.01"
 
 		c := cluster
 
-		var descriptorName string
 		label := graphNode.Label
+		var descriptorName string
 		if descriptorFlag := graphNode.GetFlag(DescriptorFlagName); descriptorFlag != nil {
 			descriptorName = descriptorFlag.GetValue()
 		} else {
@@ -149,11 +157,9 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 					Attrs: dotAttrs{
 						"penwidth":  "0.8",
 						"fontsize":  "16",
-						"label":     fmt.Sprintf("[ %s ]", descriptorName),
+						"label":     fmt.Sprintf("< %s >", descriptorName),
 						"style":     "filled",
 						"fillcolor": "#e6ecfa",
-						//"fontname":  "bold",
-						//"rank":      "sink",
 					},
 				}
 			}
@@ -193,6 +199,12 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 			attrs["fillcolor"] = "Deeppink"
 		}
 
+		value := graphNode.Value
+		if rec, ok := value.(*utils.RecordedProtoMessage); ok {
+			value = rec.Message
+		}
+		attrs["tooltip"] = fmt.Sprintf("[%s] %s\n-----\n%s", valueState, key, proto.MarshalTextString(value))
+
 		n := &dotNode{
 			ID:    key,
 			Attrs: attrs,
@@ -219,9 +231,10 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 				for _, dKey := range target.MatchingKeys.Iterate() {
 					dn := processGraphNode(getGraphNode(dKey))
 					dn.Attrs["fillcolor"] = "LightYellow"
+					dn.Attrs["color"] = "bisque4"
 					dn.Attrs["style"] = "rounded,filled"
 					attrs := make(dotAttrs)
-					attrs["color"] = "DarkKhaki"
+					attrs["color"] = "bisque4"
 					attrs["arrowhead"] = "invempty"
 					e := &dotEdge{
 						From:  n,
@@ -272,19 +285,18 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 	}
 
 	hostname, _ := os.Hostname()
-	title := fmt.Sprintf("KVScheduler Graph from %s: %d keys - generated %s on %s (PID: %d)",
-		timestamp.Format(time.RFC1123), len(graphNodes), time.Now().Format(time.RFC1123),
-		hostname, os.Getpid())
+	footer := fmt.Sprintf("KVScheduler Graph - generated at %s on %s (PID: %d)",
+		time.Now().Format(time.RFC1123), hostname, os.Getpid(),
+	)
 
 	dot := &dotGraph{
-		Title:   title,
+		Title:   footer,
 		Minlen:  minlen,
 		Cluster: cluster,
 		Nodes:   nodes,
 		Edges:   edges,
 		Options: map[string]string{
-			"minlen":  fmt.Sprint(minlen),
-			"nodesep": fmt.Sprint(nodesep),
+			"minlen": fmt.Sprint(minlen),
 		},
 	}
 
@@ -297,8 +309,7 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 }
 
 var (
-	minlen  uint    = 1
-	nodesep float64 = 1
+	minlen uint = 1
 )
 
 // location of dot executable for converting from .dot to .svg
@@ -335,19 +346,19 @@ const tmplGraph = `digraph kvscheduler {
 	ranksep=.5
 	//nodesep=.1
     label="{{.Title}}";
-	labelloc="t";
-    labeljust="l";
+	labelloc="b";
+    labeljust="c";
     fontsize="12";
 	fontname="Ubuntu"; 
     rankdir="LR";
     bgcolor="lightgray";
     style="solid";
     penwidth="1";
-    pad="0.05";
+    pad="0.04";
     nodesep="{{.Options.nodesep}}";
 	ordering="out";
 
-    node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.05,0.0"];
+    node [shape="box" style="filled" fontname="Ubuntu" fillcolor="honeydew" penwidth="1.0" margin="0.03,0.0"];
     edge [minlen="{{.Options.minlen}}"]
 
     {{template "cluster" .Cluster}}
