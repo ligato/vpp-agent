@@ -70,7 +70,6 @@ func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dump:               d.Dump,
 	}
 }
@@ -167,9 +166,4 @@ func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata
 	}
 
 	return dump, nil
-}
-
-// ModifyWithRecreate always returns true - punt entries are always modified via re-creation.
-func (d *PuntToHostDescriptor) ModifyWithRecreate(key string, oldPunt, newPunt *punt.ToHost, metadata interface{}) bool {
-	return true
 }

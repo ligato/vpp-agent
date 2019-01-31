@@ -46,21 +46,27 @@ func (h *descriptorHandler) add(key string, value proto.Message) (metadata kvs.M
 	return h.descriptor.Add(key, value)
 }
 
-// modify returns ErrUnimplementedModify if Modify is not provided.
+// modify is not called if Modify is not provided (modifyWithRecreate() returns true).
 func (h *descriptorHandler) modify(key string, oldValue, newValue proto.Message, oldMetadata kvs.Metadata) (newMetadata kvs.Metadata, err error) {
 	if h.descriptor == nil {
 		return oldMetadata, nil
 	}
-	if h.descriptor.Modify == nil {
-		return oldMetadata, kvs.ErrUnimplementedModify
-	}
 	return h.descriptor.Modify(key, oldValue, newValue, oldMetadata)
 }
 
-// modifyWithRecreate by default assumes any change can be applied using Modify without
-// re-creation.
+// modifyWithRecreate either forwards the call to ModifyWithRecreate if defined
+// by the descriptor, or decides based on the availability of the Modify operation.
 func (h *descriptorHandler) modifyWithRecreate(key string, oldValue, newValue proto.Message, metadata kvs.Metadata) bool {
-	if h.descriptor == nil || h.descriptor.ModifyWithRecreate == nil {
+	if h.descriptor == nil {
+		return false
+	}
+	if h.descriptor.Modify == nil {
+		// without Modify, re-creation is the only way
+		return true
+	}
+	if h.descriptor.ModifyWithRecreate == nil {
+		// by default it is assumed that any change can be applied using Modify without
+		// re-creation
 		return false
 	}
 	return h.descriptor.ModifyWithRecreate(key, oldValue, newValue, metadata)
@@ -82,7 +88,7 @@ func (h *descriptorHandler) delete(key string, value proto.Message, metadata kvs
 // can be potentially fixed by retry.
 func (h *descriptorHandler) isRetriableFailure(err error) bool {
 	// first check for errors returned by the handler itself
-	handlerErrs := []error{kvs.ErrUnimplementedAdd, kvs.ErrUnimplementedModify, kvs.ErrUnimplementedDelete}
+	handlerErrs := []error{kvs.ErrUnimplementedAdd, kvs.ErrUnimplementedDelete}
 	for _, handlerError := range handlerErrs {
 		if err == handlerError {
 			return false

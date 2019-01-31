@@ -61,7 +61,6 @@ func (d *SPDInterfaceDescriptor) GetDescriptor() *adapter.SPDInterfaceDescriptor
 		ValueTypeName:      proto.MessageName(&ipsec.SecurityPolicyDatabase{}),
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 	}
 }
@@ -126,11 +125,6 @@ func (d *SPDInterfaceDescriptor) Delete(key string, spdIf *ipsec.SecurityPolicyD
 
 	}
 	return nil
-}
-
-// ModifyWithRecreate returns always true
-func (d *SPDInterfaceDescriptor) ModifyWithRecreate(key string, oldSPDIface, newSPDIface *ipsec.SecurityPolicyDatabase_Interface, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies lists the interface as the only dependency for the binding.

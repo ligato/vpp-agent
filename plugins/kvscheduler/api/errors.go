@@ -44,10 +44,6 @@ var (
 	// ErrUnimplementedDelete is returned when NB transaction attempts to Delete value
 	// for which there is a descriptor, but Delete operation is not implemented.
 	ErrUnimplementedDelete = errors.New("Delete operation is not implemented")
-
-	// ErrUnimplementedModify is returned when NB transaction attempts to Modify value
-	// for which there is a descriptor, but Modify operation is not implemented.
-	ErrUnimplementedModify = errors.New("Modify operation is not implemented")
 )
 
 // ErrInvalidValueType is returned to scheduler by auto-generated descriptor adapter

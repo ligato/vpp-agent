@@ -72,7 +72,6 @@ func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{ifDescriptor.InterfaceDescriptorName},
@@ -116,11 +115,6 @@ func (d *STNDescriptor) Delete(key string, stn *stn.Rule, metadata interface{}) 
 		d.log.Error(err)
 	}
 	return err
-}
-
-// ModifyWithRecreate always returns true - STN rules are always modified via re-creation.
-func (d *STNDescriptor) ModifyWithRecreate(key string, oldSTN, newSTN *stn.Rule, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies for STN rule are represented by interface

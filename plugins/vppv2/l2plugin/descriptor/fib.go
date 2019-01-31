@@ -79,7 +79,6 @@ func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName, BridgeDomainDescriptorName},
@@ -137,11 +136,6 @@ func (d *FIBDescriptor) Delete(key string, fib *l2.FIBEntry, metadata interface{
 		d.log.Error(err)
 	}
 	return err
-}
-
-// ModifyWithRecreate always returns true - L2 FIBs are modified via re-creation.
-func (d *FIBDescriptor) ModifyWithRecreate(key string, oldFIB, newFIB *l2.FIBEntry, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies for FIBs are:

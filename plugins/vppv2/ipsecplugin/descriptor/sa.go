@@ -69,7 +69,6 @@ func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dump:               d.Dump,
 	}
 }
@@ -121,11 +120,6 @@ func (d *IPSecSADescriptor) Delete(key string, sa *ipsec.SecurityAssociation, me
 		d.log.Error(err)
 	}
 	return err
-}
-
-// ModifyWithRecreate always returns true - security associations are modified via re-creation.
-func (d *IPSecSADescriptor) ModifyWithRecreate(key string, oldSA, newSA *ipsec.SecurityAssociation, metadata interface{}) bool {
-	return true
 }
 
 // Dump returns all configured VPP security associations.

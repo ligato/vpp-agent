@@ -70,7 +70,6 @@ func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
@@ -103,11 +102,6 @@ func (d *XConnectDescriptor) Delete(key string, xc *l2.XConnectPair, metadata in
 		d.log.Error(err)
 	}
 	return err
-}
-
-// ModifyWithRecreate always returns true - xConnect pairs are modified via re-creation.
-func (d *XConnectDescriptor) ModifyWithRecreate(key string, oldXC, newXC *l2.XConnectPair, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies lists both Rx and Tx interface as dependencies.

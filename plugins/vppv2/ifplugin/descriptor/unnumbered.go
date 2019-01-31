@@ -61,7 +61,6 @@ func (d *UnnumberedIfDescriptor) GetDescriptor() *adapter.UnnumberedDescriptor {
 		ValueTypeName:      proto.MessageName(&interfaces.Interface_Unnumbered{}),
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 	}
 }
@@ -136,12 +135,6 @@ func (d *UnnumberedIfDescriptor) Delete(key string, unIntf *interfaces.Interface
 	}
 
 	return err
-}
-
-// ModifyWithRecreate returns always true so that the link to interface with IP
-// address is reconfigured with UnsetUnnumberedIP followed by SetUnnumberedIP for the new interface.
-func (d *UnnumberedIfDescriptor) ModifyWithRecreate(key string, oldUnIntf, newUnIntf *interfaces.Interface_Unnumbered, oldMetadata interface{}) bool {
-	return true
 }
 
 // Dependencies lists dependencies for an unnumbered VPP interface.

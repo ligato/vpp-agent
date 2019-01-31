@@ -74,7 +74,6 @@ func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor
 		Validate:           d.Validate,
 		Add:                d.Add,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 		Dump:               d.Dump,
 	}
@@ -134,11 +133,6 @@ func (d *IPRedirectDescriptor) Dump(correlate []adapter.IPPuntRedirectKVWithMeta
 	// TODO dump for IP redirect missing in api
 	d.log.Info("Dump IP punt redirect is not supported by the VPP")
 	return []adapter.IPPuntRedirectKVWithMetadata{}, nil
-}
-
-// ModifyWithRecreate always returns true - IP punt redirect entries are always modified via re-creation.
-func (d *IPRedirectDescriptor) ModifyWithRecreate(key string, oldIPRedirect, newIPRedirect *punt.IPRedirect, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies for IP punt redirect are represented by tx interface
