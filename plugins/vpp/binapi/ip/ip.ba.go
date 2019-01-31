@@ -6,7 +6,7 @@
 
  It contains following objects:
 	 91 messages
-	 10 types
+	 11 types
 	  3 aliases
 	  1 enum
 	  1 union
@@ -580,6 +580,33 @@ func (*FibPath) GetTypeName() string {
 }
 func (*FibPath) GetCrcString() string {
 	return "ba7a81f0"
+}
+
+// MfibPath represents VPP binary API type 'mfib_path':
+//
+//	"mfib_path",
+//	[
+//	    "vl_api_fib_path_t",
+//	    "path"
+//	],
+//	[
+//	    "u32",
+//	    "itf_flags"
+//	],
+//	{
+//	    "crc": "0x4ba77d32"
+//	}
+//
+type MfibPath struct {
+	Path     FibPath
+	ItfFlags uint32
+}
+
+func (*MfibPath) GetTypeName() string {
+	return "mfib_path"
+}
+func (*MfibPath) GetCrcString() string {
+	return "4ba77d32"
 }
 
 // PuntRedirect represents VPP binary API type 'punt_redirect':
@@ -2354,13 +2381,13 @@ func (*IPMfibDump) GetMessageType() api.MessageType {
 //	    "stats_index"
 //	],
 //	[
-//	    "vl_api_fib_path_t",
+//	    "vl_api_mfib_path_t",
 //	    "path",
 //	    0,
 //	    "count"
 //	],
 //	{
-//	    "crc": "0x21329a12"
+//	    "crc": "0x61faa26f"
 //	}
 //
 type IPMfibDetails struct {
@@ -2372,14 +2399,14 @@ type IPMfibDetails struct {
 	SrcAddress    []byte `struc:"[4]byte"`
 	Count         uint32 `struc:"sizeof=Path"`
 	StatsIndex    uint32
-	Path          []FibPath
+	Path          []MfibPath
 }
 
 func (*IPMfibDetails) GetMessageName() string {
 	return "ip_mfib_details"
 }
 func (*IPMfibDetails) GetCrcString() string {
-	return "21329a12"
+	return "61faa26f"
 }
 func (*IPMfibDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -2450,13 +2477,13 @@ func (*IP6MfibDump) GetMessageType() api.MessageType {
 //	    "count"
 //	],
 //	[
-//	    "vl_api_fib_path_t",
+//	    "vl_api_mfib_path_t",
 //	    "path",
 //	    0,
 //	    "count"
 //	],
 //	{
-//	    "crc": "0xe02dcb4b"
+//	    "crc": "0x738c546e"
 //	}
 //
 type IP6MfibDetails struct {
@@ -2465,14 +2492,14 @@ type IP6MfibDetails struct {
 	GrpAddress    []byte `struc:"[16]byte"`
 	SrcAddress    []byte `struc:"[16]byte"`
 	Count         uint32 `struc:"sizeof=Path"`
-	Path          []FibPath
+	Path          []MfibPath
 }
 
 func (*IP6MfibDetails) GetMessageName() string {
 	return "ip6_mfib_details"
 }
 func (*IP6MfibDetails) GetCrcString() string {
-	return "e02dcb4b"
+	return "738c546e"
 }
 func (*IP6MfibDetails) GetMessageType() api.MessageType {
 	return api.ReplyMessage
