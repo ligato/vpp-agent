@@ -71,21 +71,33 @@ func (p *IPSecPlugin) Init() (err error) {
 	// init and register security policy database descriptor
 	p.spdDescriptor = descriptor.NewIPSecSPDDescriptor(p.ipSecHandler, p.Log)
 	spdDescriptor := adapter.NewSPDDescriptor(p.spdDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(spdDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(spdDescriptor)
+	if err != nil {
+		return err
+	}
 
 	// init and register security association descriptor
 	p.saDescriptor = descriptor.NewIPSecSADescriptor(p.ipSecHandler, p.Log)
 	saDescriptor := adapter.NewSADescriptor(p.saDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(saDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(saDescriptor)
+	if err != nil {
+		return err
+	}
 
 	// init & register other descriptors for derived types
 	p.spdIfDescriptor = descriptor.NewSPDInterfaceDescriptor(p.ipSecHandler, p.Log)
 	spdIfDescriptor := adapter.NewSPDInterfaceDescriptor(p.spdIfDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(spdIfDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(spdIfDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.spdPolicyDescriptor = descriptor.NewSPDPolicyDescriptor(p.ipSecHandler, p.Log)
 	spdPolicyDescriptor := adapter.NewSPDPolicyDescriptor(p.spdPolicyDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(spdPolicyDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(spdPolicyDescriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

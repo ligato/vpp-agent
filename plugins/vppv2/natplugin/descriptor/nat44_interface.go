@@ -57,9 +57,8 @@ func (d *NAT44InterfaceDescriptor) GetDescriptor() *adapter.NAT44InterfaceDescri
 		Name:               NAT44InterfaceDescriptorName,
 		KeySelector:        d.IsNAT44InterfaceKey,
 		ValueTypeName:      proto.MessageName(&nat.Nat44Global_Interface{}),
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 	}
 }
@@ -71,8 +70,8 @@ func (d *NAT44InterfaceDescriptor) IsNAT44InterfaceKey(key string) bool {
 	return isNATIfaceKey
 }
 
-// Add enables NAT44 for an interface.
-func (d *NAT44InterfaceDescriptor) Add(key string, natIface *nat.Nat44Global_Interface) (metadata interface{}, err error) {
+// Create enables NAT44 for an interface.
+func (d *NAT44InterfaceDescriptor) Create(key string, natIface *nat.Nat44Global_Interface) (metadata interface{}, err error) {
 	err = d.natHandler.EnableNat44Interface(natIface.Name, natIface.IsInside, natIface.OutputFeature)
 	if err != nil {
 		d.log.Error(err)
@@ -91,11 +90,6 @@ func (d *NAT44InterfaceDescriptor) Delete(key string, natIface *nat.Nat44Global_
 
 	}
 	return nil
-}
-
-// ModifyWithRecreate returns always true - a change in OUTPUT is always performed via Delete+Add.
-func (d *NAT44InterfaceDescriptor) ModifyWithRecreate(key string, oldNATIface, newNATIface *nat.Nat44Global_Interface, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies lists the interface as the only dependency.

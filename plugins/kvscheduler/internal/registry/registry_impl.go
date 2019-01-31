@@ -30,7 +30,7 @@ const (
 // registry is an implementation of Registry for descriptors.
 type registry struct {
 	descriptors      map[string]*KVDescriptor // descriptor name -> descriptor
-	descriptorList   []*KVDescriptor          // ordered by dump dependencies
+	descriptorList   []*KVDescriptor          // ordered by retrieve dependencies
 	upToDateDescList bool                     // true if descriptorList is in sync with descriptors
 	keyToCacheEntry  map[string]*list.Element // key -> cache entry
 	keyCache         *list.List               // doubly linked list of cached entries key->descriptor
@@ -63,12 +63,12 @@ func (reg *registry) GetAllDescriptors() (descriptors []*KVDescriptor) {
 		return reg.descriptorList
 	}
 
-	// collect descriptor dump dependencies
+	// collect descriptor retrieve dependencies
 	deps := make(map[string]utils.KeySet)
 	descNames := utils.NewMapBasedKeySet()
 	for _, descriptor := range reg.descriptors {
 		descNames.Add(descriptor.Name)
-		deps[descriptor.Name] = utils.NewMapBasedKeySet(descriptor.DumpDependencies...)
+		deps[descriptor.Name] = utils.NewMapBasedKeySet(descriptor.RetrieveDependencies...)
 	}
 
 	// order topologically respecting dependencies.

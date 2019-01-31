@@ -20,24 +20,24 @@ type STNKVWithMetadata struct {
 ////////// type-safe Descriptor structure //////////
 
 type STNDescriptor struct {
-	Name               string
-	KeySelector        KeySelector
-	ValueTypeName      string
-	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *vpp_stn.Rule) bool
-	NBKeyPrefix        string
-	WithMetadata       bool
-	MetadataMapFactory MetadataMapFactory
-	Validate           func(key string, value *vpp_stn.Rule) error
-	Add                func(key string, value *vpp_stn.Rule) (metadata interface{}, err error)
-	Delete             func(key string, value *vpp_stn.Rule, metadata interface{}) error
-	Modify             func(key string, oldValue, newValue *vpp_stn.Rule, oldMetadata interface{}) (newMetadata interface{}, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *vpp_stn.Rule, metadata interface{}) bool
-	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *vpp_stn.Rule) []Dependency
-	DerivedValues      func(key string, value *vpp_stn.Rule) []KeyValuePair
-	Dump               func(correlate []STNKVWithMetadata) ([]STNKVWithMetadata, error)
-	DumpDependencies   []string /* descriptor name */
+	Name                 string
+	KeySelector          KeySelector
+	ValueTypeName        string
+	KeyLabel             func(key string) string
+	ValueComparator      func(key string, oldValue, newValue *vpp_stn.Rule) bool
+	NBKeyPrefix          string
+	WithMetadata         bool
+	MetadataMapFactory   MetadataMapFactory
+	Validate             func(key string, value *vpp_stn.Rule) error
+	Create               func(key string, value *vpp_stn.Rule) (metadata interface{}, err error)
+	Delete               func(key string, value *vpp_stn.Rule, metadata interface{}) error
+	Update               func(key string, oldValue, newValue *vpp_stn.Rule, oldMetadata interface{}) (newMetadata interface{}, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_stn.Rule, metadata interface{}) bool
+	Retrieve             func(correlate []STNKVWithMetadata) ([]STNKVWithMetadata, error)
+	IsRetriableFailure   func(err error) bool
+	DerivedValues        func(key string, value *vpp_stn.Rule) []KeyValuePair
+	Dependencies         func(key string, value *vpp_stn.Rule) []Dependency
+	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
@@ -49,15 +49,15 @@ type STNDescriptorAdapter struct {
 func NewSTNDescriptor(typedDescriptor *STNDescriptor) *KVDescriptor {
 	adapter := &STNDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
-		Name:               typedDescriptor.Name,
-		KeySelector:        typedDescriptor.KeySelector,
-		ValueTypeName:      typedDescriptor.ValueTypeName,
-		KeyLabel:           typedDescriptor.KeyLabel,
-		NBKeyPrefix:        typedDescriptor.NBKeyPrefix,
-		WithMetadata:       typedDescriptor.WithMetadata,
-		MetadataMapFactory: typedDescriptor.MetadataMapFactory,
-		IsRetriableFailure: typedDescriptor.IsRetriableFailure,
-		DumpDependencies:   typedDescriptor.DumpDependencies,
+		Name:                 typedDescriptor.Name,
+		KeySelector:          typedDescriptor.KeySelector,
+		ValueTypeName:        typedDescriptor.ValueTypeName,
+		KeyLabel:             typedDescriptor.KeyLabel,
+		NBKeyPrefix:          typedDescriptor.NBKeyPrefix,
+		WithMetadata:         typedDescriptor.WithMetadata,
+		MetadataMapFactory:   typedDescriptor.MetadataMapFactory,
+		IsRetriableFailure:   typedDescriptor.IsRetriableFailure,
+		RetrieveDependencies: typedDescriptor.RetrieveDependencies,
 	}
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
@@ -65,26 +65,26 @@ func NewSTNDescriptor(typedDescriptor *STNDescriptor) *KVDescriptor {
 	if typedDescriptor.Validate != nil {
 		descriptor.Validate = adapter.Validate
 	}
-	if typedDescriptor.Add != nil {
-		descriptor.Add = adapter.Add
+	if typedDescriptor.Create != nil {
+		descriptor.Create = adapter.Create
 	}
 	if typedDescriptor.Delete != nil {
 		descriptor.Delete = adapter.Delete
 	}
-	if typedDescriptor.Modify != nil {
-		descriptor.Modify = adapter.Modify
+	if typedDescriptor.Update != nil {
+		descriptor.Update = adapter.Update
 	}
-	if typedDescriptor.ModifyWithRecreate != nil {
-		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
+	if typedDescriptor.UpdateWithRecreate != nil {
+		descriptor.UpdateWithRecreate = adapter.UpdateWithRecreate
+	}
+	if typedDescriptor.Retrieve != nil {
+		descriptor.Retrieve = adapter.Retrieve
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
 	}
 	if typedDescriptor.DerivedValues != nil {
 		descriptor.DerivedValues = adapter.DerivedValues
-	}
-	if typedDescriptor.Dump != nil {
-		descriptor.Dump = adapter.Dump
 	}
 	return descriptor
 }
@@ -106,15 +106,15 @@ func (da *STNDescriptorAdapter) Validate(key string, value proto.Message) (err e
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *STNDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
+func (da *STNDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
 	typedValue, err := castSTNValue(key, value)
 	if err != nil {
 		return nil, err
 	}
-	return da.descriptor.Add(key, typedValue)
+	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *STNDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+func (da *STNDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
 	oldTypedValue, err := castSTNValue(key, oldValue)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (da *STNDescriptorAdapter) Modify(key string, oldValue, newValue proto.Mess
 	if err != nil {
 		return nil, err
 	}
-	return da.descriptor.Modify(key, oldTypedValue, newTypedValue, typedOldMetadata)
+	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
 func (da *STNDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
@@ -142,7 +142,7 @@ func (da *STNDescriptorAdapter) Delete(key string, value proto.Message, metadata
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *STNDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+func (da *STNDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
 	oldTypedValue, err := castSTNValue(key, oldValue)
 	if err != nil {
 		return true
@@ -155,26 +155,10 @@ func (da *STNDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValu
 	if err != nil {
 		return true
 	}
-	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
+	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *STNDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castSTNValue(key, value)
-	if err != nil {
-		return nil
-	}
-	return da.descriptor.Dependencies(key, typedValue)
-}
-
-func (da *STNDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castSTNValue(key, value)
-	if err != nil {
-		return nil
-	}
-	return da.descriptor.DerivedValues(key, typedValue)
-}
-
-func (da *STNDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+func (da *STNDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
 	var correlateWithType []STNKVWithMetadata
 	for _, kvpair := range correlate {
 		typedValue, err := castSTNValue(kvpair.Key, kvpair.Value)
@@ -194,21 +178,37 @@ func (da *STNDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetada
 			})
 	}
 
-	typedDump, err := da.descriptor.Dump(correlateWithType)
+	typedValues, err := da.descriptor.Retrieve(correlateWithType)
 	if err != nil {
 		return nil, err
 	}
-	var dump []KVWithMetadata
-	for _, typedKVWithMetadata := range typedDump {
+	var values []KVWithMetadata
+	for _, typedKVWithMetadata := range typedValues {
 		kvWithMetadata := KVWithMetadata{
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
 		}
 		kvWithMetadata.Value = typedKVWithMetadata.Value
-		dump = append(dump, kvWithMetadata)
+		values = append(values, kvWithMetadata)
 	}
-	return dump, err
+	return values, err
+}
+
+func (da *STNDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castSTNValue(key, value)
+	if err != nil {
+		return nil
+	}
+	return da.descriptor.DerivedValues(key, typedValue)
+}
+
+func (da *STNDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castSTNValue(key, value)
+	if err != nil {
+		return nil
+	}
+	return da.descriptor.Dependencies(key, typedValue)
 }
 
 ////////// Helper methods //////////

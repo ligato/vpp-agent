@@ -58,9 +58,8 @@ func (d *SPDPolicyDescriptor) GetDescriptor() *adapter.SPDPolicyDescriptor {
 		Name:               SPDPolicyDescriptorName,
 		KeySelector:        d.IsSPDPolicyKey,
 		ValueTypeName:      proto.MessageName(&ipsec.SecurityPolicyDatabase{}),
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 	}
 }
@@ -72,8 +71,8 @@ func (d *SPDPolicyDescriptor) IsSPDPolicyKey(key string) bool {
 	return isSPDPolicyKey
 }
 
-// Add puts policy into security policy database.
-func (d *SPDPolicyDescriptor) Add(key string, policy *ipsec.SecurityPolicyDatabase_PolicyEntry) (metadata interface{}, err error) {
+// Create puts policy into security policy database.
+func (d *SPDPolicyDescriptor) Create(key string, policy *ipsec.SecurityPolicyDatabase_PolicyEntry) (metadata interface{}, err error) {
 	// get security policy database index
 	spdIdx, saIndex, isSPDPolicyKey := ipsec.ParseSPDPolicyKey(key)
 	if !isSPDPolicyKey {
@@ -141,11 +140,6 @@ func (d *SPDPolicyDescriptor) Delete(key string, policy *ipsec.SecurityPolicyDat
 
 	}
 	return nil
-}
-
-// ModifyWithRecreate returns always true
-func (d *SPDPolicyDescriptor) ModifyWithRecreate(key string, oldSPDPolicy, newSPDPolicy *ipsec.SecurityPolicyDatabase_PolicyEntry, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies lists the security association as the only dependency for the binding.

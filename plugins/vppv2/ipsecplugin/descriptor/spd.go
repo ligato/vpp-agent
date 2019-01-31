@@ -78,21 +78,20 @@ func NewIPSecSPDDescriptor(ipSecHandler vppcalls.IPSecVppAPI, log logging.Plugin
 // the KVScheduler.
 func (d *IPSecSPDDescriptor) GetDescriptor() *adapter.SPDDescriptor {
 	return &adapter.SPDDescriptor{
-		Name:               IPSecSPDDescriptorName,
-		NBKeyPrefix:        ipsec.ModelSecurityPolicyDatabase.KeyPrefix(),
-		ValueTypeName:      ipsec.ModelSecurityPolicyDatabase.ProtoName(),
-		KeySelector:        ipsec.ModelSecurityPolicyDatabase.IsKeyValid,
-		KeyLabel:           ipsec.ModelSecurityPolicyDatabase.StripKeyPrefix,
-		ValueComparator:    d.EquivalentIPSecSPDs,
-		WithMetadata:       true,
-		MetadataMapFactory: d.MetadataFactory,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Modify:             d.Modify,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{vppIfDescriptor.InterfaceDescriptorName},
+		Name:                 IPSecSPDDescriptorName,
+		NBKeyPrefix:          ipsec.ModelSecurityPolicyDatabase.KeyPrefix(),
+		ValueTypeName:        ipsec.ModelSecurityPolicyDatabase.ProtoName(),
+		KeySelector:          ipsec.ModelSecurityPolicyDatabase.IsKeyValid,
+		KeyLabel:             ipsec.ModelSecurityPolicyDatabase.StripKeyPrefix,
+		ValueComparator:      d.EquivalentIPSecSPDs,
+		WithMetadata:         true,
+		MetadataMapFactory:   d.MetadataFactory,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
+		DerivedValues:        d.DerivedValues,
+		RetrieveDependencies: []string{vppIfDescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -136,8 +135,8 @@ func (d *IPSecSPDDescriptor) Validate(key string, spd *ipsec.SecurityPolicyDatab
 	return nil
 }
 
-// Add adds a new IPSec security policy database.
-func (d *IPSecSPDDescriptor) Add(key string, spd *ipsec.SecurityPolicyDatabase) (metadata *idxvpp2.OnlyIndex, err error) {
+// Create adds a new IPSec security policy database.
+func (d *IPSecSPDDescriptor) Create(key string, spd *ipsec.SecurityPolicyDatabase) (metadata *idxvpp2.OnlyIndex, err error) {
 	// allocate new SPD ID
 	spdIdx := d.spdIDSeq
 	d.spdIDSeq++
@@ -166,9 +165,28 @@ func (d *IPSecSPDDescriptor) Delete(key string, spd *ipsec.SecurityPolicyDatabas
 	return err
 }
 
-// Modify is NOOP since there is nothing to modify in base SPD.
-func (d *IPSecSPDDescriptor) Modify(key string, oldSPD, newSPD *ipsec.SecurityPolicyDatabase, oldMetadata *idxvpp2.OnlyIndex) (newMetadata *idxvpp2.OnlyIndex, err error) {
-	return oldMetadata, nil
+// Retrieve returns all configured VPP security policy databases.
+func (d *IPSecSPDDescriptor) Retrieve(correlate []adapter.SPDKVWithMetadata) (dump []adapter.SPDKVWithMetadata, err error) {
+	// dump security policy associations
+	spds, err := d.ipSecHandler.DumpIPSecSPD()
+	if err != nil {
+		d.log.Error(err)
+		return dump, err
+	}
+	for _, spd := range spds {
+		spdIdx, err := strconv.Atoi(spd.Spd.Index)
+		if err != nil {
+			return dump, err
+		}
+		dump = append(dump, adapter.SPDKVWithMetadata{
+			Key:      ipsec.SPDKey(spd.Spd.Index),
+			Value:    spd.Spd,
+			Metadata: &idxvpp2.OnlyIndex{Index: uint32(spdIdx)},
+			Origin:   kvs.FromNB,
+		})
+	}
+
+	return dump, nil
 }
 
 // DerivedValues derives ipsec.SecurityPolicyDatabase_Interface for every interface assigned
@@ -192,30 +210,6 @@ func (d *IPSecSPDDescriptor) DerivedValues(key string, spd *ipsec.SecurityPolicy
 	}
 
 	return derValues
-}
-
-// Dump returns all configured VPP security policy databases.
-func (d *IPSecSPDDescriptor) Dump(correlate []adapter.SPDKVWithMetadata) (dump []adapter.SPDKVWithMetadata, err error) {
-	// dump security policy associations
-	spds, err := d.ipSecHandler.DumpIPSecSPD()
-	if err != nil {
-		d.log.Error(err)
-		return dump, err
-	}
-	for _, spd := range spds {
-		spdIdx, err := strconv.Atoi(spd.Spd.Index)
-		if err != nil {
-			return dump, err
-		}
-		dump = append(dump, adapter.SPDKVWithMetadata{
-			Key:      ipsec.SPDKey(spd.Spd.Index),
-			Value:    spd.Spd,
-			Metadata: &idxvpp2.OnlyIndex{Index: uint32(spdIdx)},
-			Origin:   kvs.FromNB,
-		})
-	}
-
-	return dump, nil
 }
 
 // calculateInterfacesDiff compares two sets of SPD interfaces entries.

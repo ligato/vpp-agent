@@ -379,7 +379,7 @@ func (s *Scheduler) dumpGetHandler(formatter *render.Render) http.HandlerFunc {
 			s.txnLock.Lock()
 			defer s.txnLock.Unlock()
 			index := dumpIndex{Views: []string{
-				kvs.SBView.String(), kvs.NBView.String(), kvs.InternalView.String()}}
+				kvs.SBView.String(), kvs.NBView.String(), kvs.CachedView.String()}}
 			for _, descriptor := range s.registry.GetAllDescriptors() {
 				index.Descriptors = append(index.Descriptors, descriptor.Name)
 				index.KeyPrefixes = append(index.KeyPrefixes, descriptor.NBKeyPrefix)
@@ -396,8 +396,8 @@ func (s *Scheduler) dumpGetHandler(formatter *render.Render) http.HandlerFunc {
 				view = kvs.SBView
 			case kvs.NBView.String():
 				view = kvs.NBView
-			case kvs.InternalView.String():
-				view = kvs.InternalView
+			case kvs.CachedView.String():
+				view = kvs.CachedView
 			default:
 				err := errors.New("unrecognized system view")
 				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))

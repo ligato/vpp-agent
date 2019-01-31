@@ -17,10 +17,10 @@ package descriptor
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	stn "github.com/ligato/vpp-agent/api/models/vpp/stn"
 	"github.com/ligato/vpp-agent/pkg/models"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
-	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	ifDescriptor "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin/descriptor"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/descriptor/adapter"
 	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin/vppcalls"
@@ -63,19 +63,18 @@ func NewSTNDescriptor(stnHandler vppcalls.StnVppAPI, log logging.PluginLogger) *
 // the KVScheduler.
 func (d *STNDescriptor) GetDescriptor() *adapter.STNDescriptor {
 	return &adapter.STNDescriptor{
-		Name:               STNDescriptorName,
-		NBKeyPrefix:        stn.ModelRule.KeyPrefix(),
-		ValueTypeName:      stn.ModelRule.ProtoName(),
-		KeySelector:        stn.ModelRule.IsKeyValid,
-		KeyLabel:           stn.ModelRule.StripKeyPrefix,
-		ValueComparator:    d.EquivalentSTNs,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		Dependencies:       d.Dependencies,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{ifDescriptor.InterfaceDescriptorName},
+		Name:                 STNDescriptorName,
+		NBKeyPrefix:          stn.ModelRule.KeyPrefix(),
+		ValueTypeName:        stn.ModelRule.ProtoName(),
+		KeySelector:          stn.ModelRule.IsKeyValid,
+		KeyLabel:             stn.ModelRule.StripKeyPrefix,
+		ValueComparator:      d.EquivalentSTNs,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
+		Dependencies:         d.Dependencies,
+		RetrieveDependencies: []string{ifDescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -99,8 +98,8 @@ func (d *STNDescriptor) Validate(key string, stn *stn.Rule) error {
 	return nil
 }
 
-// Add adds new STN rule.
-func (d *STNDescriptor) Add(key string, stn *stn.Rule) (metadata interface{}, err error) {
+// Create adds new STN rule.
+func (d *STNDescriptor) Create(key string, stn *stn.Rule) (metadata interface{}, err error) {
 	// add STN rule
 	err = d.stnHandler.AddSTNRule(stn)
 	if err != nil {
@@ -118,11 +117,6 @@ func (d *STNDescriptor) Delete(key string, stn *stn.Rule, metadata interface{}) 
 	return err
 }
 
-// ModifyWithRecreate always returns true - STN rules are always modified via re-creation.
-func (d *STNDescriptor) ModifyWithRecreate(key string, oldSTN, newSTN *stn.Rule, metadata interface{}) bool {
-	return true
-}
-
 // Dependencies for STN rule are represented by interface
 func (d *STNDescriptor) Dependencies(key string, stn *stn.Rule) (dependencies []kvs.Dependency) {
 	dependencies = append(dependencies, kvs.Dependency{
@@ -132,20 +126,20 @@ func (d *STNDescriptor) Dependencies(key string, stn *stn.Rule) (dependencies []
 	return dependencies
 }
 
-// Dump returns all configured VPP STN rules.
-func (d *STNDescriptor) Dump(correlate []adapter.STNKVWithMetadata) (dump []adapter.STNKVWithMetadata, err error) {
+// Retrieve returns all configured VPP STN rules.
+func (d *STNDescriptor) Retrieve(correlate []adapter.STNKVWithMetadata) (retrieved []adapter.STNKVWithMetadata, err error) {
 	stnRules, err := d.stnHandler.DumpSTNRules()
 	if err != nil {
 		d.log.Error(err)
-		return dump, err
+		return retrieved, err
 	}
 	for _, stnRule := range stnRules {
-		dump = append(dump, adapter.STNKVWithMetadata{
+		retrieved = append(retrieved, adapter.STNKVWithMetadata{
 			Key:    models.Key(stnRule.Rule), //stn.Key(stnRule.Rule.Interface, stnRule.Rule.IpAddress),
 			Value:  stnRule.Rule,
 			Origin: kvs.FromNB, // all STN rules are configured from NB
 		})
 	}
 
-	return dump, nil
+	return retrieved, nil
 }

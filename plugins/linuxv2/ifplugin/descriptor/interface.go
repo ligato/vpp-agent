@@ -61,11 +61,11 @@ const (
 	// suffix attached to logical names of duplicate VETH interfaces
 	vethDuplicateSuffix = "-DUPLICATE"
 
-	// suffix attached to logical names of VETH interfaces with peers not found by Dump
+	// suffix attached to logical names of VETH interfaces with peers not found by Retrieve
 	vethMissingPeerSuffix = "-MISSING_PEER"
 
 	// minimum number of namespaces to be given to a single Go routine for processing
-	// in the Dump operation
+	// in the Retrieve operation
 	minWorkForGoRoutine = 3
 )
 
@@ -109,8 +109,8 @@ type InterfaceDescriptor struct {
 	vppIfPlugin  VPPIfPluginAPI
 	scheduler    kvs.KVScheduler
 
-	// parallelization of the Dump operation
-	dumpGoRoutinesCnt int
+	// parallelization of the Retrieve operation
+	goRoutinesCnt int
 }
 
 // VPPIfPluginAPI is defined here to avoid import cycles.
@@ -123,16 +123,16 @@ type VPPIfPluginAPI interface {
 // NewInterfaceDescriptor creates a new instance of the Interface descriptor.
 func NewInterfaceDescriptor(
 	scheduler kvs.KVScheduler, serviceLabel servicelabel.ReaderAPI, nsPlugin nsplugin.API,
-	vppIfPlugin VPPIfPluginAPI, ifHandler iflinuxcalls.NetlinkAPI, log logging.PluginLogger, dumpGoRoutinesCnt int) *InterfaceDescriptor {
+	vppIfPlugin VPPIfPluginAPI, ifHandler iflinuxcalls.NetlinkAPI, log logging.PluginLogger, goRoutinesCnt int) *InterfaceDescriptor {
 
 	return &InterfaceDescriptor{
-		scheduler:         scheduler,
-		ifHandler:         ifHandler,
-		nsPlugin:          nsPlugin,
-		vppIfPlugin:       vppIfPlugin,
-		serviceLabel:      serviceLabel,
-		dumpGoRoutinesCnt: dumpGoRoutinesCnt,
-		log:               log.NewLogger("if-descriptor"),
+		scheduler:     scheduler,
+		ifHandler:     ifHandler,
+		nsPlugin:      nsPlugin,
+		vppIfPlugin:   vppIfPlugin,
+		serviceLabel:  serviceLabel,
+		goRoutinesCnt: goRoutinesCnt,
+		log:           log.NewLogger("if-descriptor"),
 	}
 }
 
@@ -140,23 +140,23 @@ func NewInterfaceDescriptor(
 // the KVScheduler.
 func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 	return &adapter.InterfaceDescriptor{
-		Name:               InterfaceDescriptorName,
-		NBKeyPrefix:        interfaces.ModelInterface.KeyPrefix(),
-		ValueTypeName:      interfaces.ModelInterface.ProtoName(),
-		KeySelector:        interfaces.ModelInterface.IsKeyValid,
-		KeyLabel:           interfaces.ModelInterface.StripKeyPrefix,
-		ValueComparator:    d.EquivalentInterfaces,
-		WithMetadata:       true,
-		MetadataMapFactory: d.MetadataFactory,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Modify:             d.Modify,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		Dependencies:       d.Dependencies,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{nsdescriptor.MicroserviceDescriptorName},
+		Name:                 InterfaceDescriptorName,
+		NBKeyPrefix:          interfaces.ModelInterface.KeyPrefix(),
+		ValueTypeName:        interfaces.ModelInterface.ProtoName(),
+		KeySelector:          interfaces.ModelInterface.IsKeyValid,
+		KeyLabel:             interfaces.ModelInterface.StripKeyPrefix,
+		ValueComparator:      d.EquivalentInterfaces,
+		WithMetadata:         true,
+		MetadataMapFactory:   d.MetadataFactory,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Update:               d.Update,
+		UpdateWithRecreate:   d.UpdateWithRecreate,
+		Retrieve:             d.Retrieve,
+		DerivedValues:        d.DerivedValues,
+		Dependencies:         d.Dependencies,
+		RetrieveDependencies: []string{nsdescriptor.MicroserviceDescriptorName},
 	}
 }
 
@@ -254,8 +254,8 @@ func (d *InterfaceDescriptor) Validate(key string, linuxIf *interfaces.Interface
 	return nil
 }
 
-// Add creates VETH or configures TAP interface.
-func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
+// Create creates VETH or configures TAP interface.
+func (d *InterfaceDescriptor) Create(key string, linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 	// move to the default namespace
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 	revert1, err := d.nsPlugin.SwitchToNamespace(nsCtx, nil)
@@ -268,9 +268,9 @@ func (d *InterfaceDescriptor) Add(key string, linuxIf *interfaces.Interface) (me
 	// create interface based on its type
 	switch linuxIf.Type {
 	case interfaces.Interface_VETH:
-		metadata, err = d.addVETH(nsCtx, key, linuxIf)
+		metadata, err = d.createVETH(nsCtx, key, linuxIf)
 	case interfaces.Interface_TAP_TO_VPP:
-		metadata, err = d.addTAPToVPP(nsCtx, key, linuxIf)
+		metadata, err = d.createTAPToVPP(nsCtx, key, linuxIf)
 	default:
 		return nil, ErrUnsupportedLinuxInterfaceType
 	}
@@ -396,8 +396,8 @@ func (d *InterfaceDescriptor) Delete(key string, linuxIf *interfaces.Interface, 
 	return err
 }
 
-// Modify is able to change Type-unspecific attributes.
-func (d *InterfaceDescriptor) Modify(key string, oldLinuxIf, newLinuxIf *interfaces.Interface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error) {
+// Update is able to change Type-unspecific attributes.
+func (d *InterfaceDescriptor) Update(key string, oldLinuxIf, newLinuxIf *interfaces.Interface, oldMetadata *ifaceidx.LinuxIfMetadata) (newMetadata *ifaceidx.LinuxIfMetadata, err error) {
 	oldHostName := getHostIfName(oldLinuxIf)
 	newHostName := getHostIfName(newLinuxIf)
 
@@ -523,8 +523,8 @@ func (d *InterfaceDescriptor) Modify(key string, oldLinuxIf, newLinuxIf *interfa
 	return oldMetadata, nil
 }
 
-// ModifyWithRecreate returns true if Type or Type-specific attributes are different.
-func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldLinuxIf, newLinuxIf *interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) bool {
+// UpdateWithRecreate returns true if Type or Type-specific attributes are different.
+func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldLinuxIf, newLinuxIf *interfaces.Interface, metadata *ifaceidx.LinuxIfMetadata) bool {
 	if oldLinuxIf.Type != newLinuxIf.Type {
 		return true
 	}
@@ -592,20 +592,20 @@ func (d *InterfaceDescriptor) DerivedValues(key string, linuxIf *interfaces.Inte
 	return derValues
 }
 
-// ifaceDump is used as the return value sent via channel by dumpInterfaces().
-type ifaceDump struct {
+// retrievedIfaces is used as the return value sent via channel by retrieveInterfaces().
+type retrievedIfaces struct {
 	interfaces []adapter.InterfaceKVWithMetadata
 	err        error
 }
 
-// Dump returns all Linux interfaces managed by this agent, attached to the default namespace
+// Retrieve returns all Linux interfaces managed by this agent, attached to the default namespace
 // or to one of the configured non-default namespaces.
-func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) ([]adapter.InterfaceKVWithMetadata, error) {
-	nsList := []*namespace.NetNamespace{nil}        // nil = default namespace, which always should be dumped
+func (d *InterfaceDescriptor) Retrieve(correlate []adapter.InterfaceKVWithMetadata) ([]adapter.InterfaceKVWithMetadata, error) {
+	nsList := []*namespace.NetNamespace{nil}        // nil = default namespace, which always should be listed for interfaces
 	ifCfg := make(map[string]*interfaces.Interface) // interface logical name -> interface config (as expected by correlate)
 
 	// process interfaces for correlation to get:
-	//  - the set of namespaces to dump
+	//  - the set of namespaces to list for interfaces
 	//  - mapping between interface name and the configuration for correlation
 	// beware: the same namespace can have multiple different references (e.g. integration of Contiv with SFC)
 	for _, kv := range correlate {
@@ -627,34 +627,34 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 	if goRoutinesCnt == 0 {
 		goRoutinesCnt = 1
 	}
-	if goRoutinesCnt > d.dumpGoRoutinesCnt {
-		goRoutinesCnt = d.dumpGoRoutinesCnt
+	if goRoutinesCnt > d.goRoutinesCnt {
+		goRoutinesCnt = d.goRoutinesCnt
 	}
-	dumpCh := make(chan ifaceDump, goRoutinesCnt)
+	ch := make(chan retrievedIfaces, goRoutinesCnt)
 
-	// invoke multiple go routines for more efficient parallel dumping
+	// invoke multiple go routines for more efficient parallel interface retrieval
 	for idx := 0; idx < goRoutinesCnt; idx++ {
 		if goRoutinesCnt > 1 {
-			go d.dumpInterfaces(nsList, idx, goRoutinesCnt, dumpCh)
+			go d.retrieveInterfaces(nsList, idx, goRoutinesCnt, ch)
 		} else {
-			d.dumpInterfaces(nsList, idx, goRoutinesCnt, dumpCh)
+			d.retrieveInterfaces(nsList, idx, goRoutinesCnt, ch)
 		}
 	}
 
 	// receive results from the go routines
-	ifDump := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface dump
-	indexes := make(map[int]struct{})                          // already dumped interfaces by their Linux indexes
+	ifaces := make(map[string]adapter.InterfaceKVWithMetadata) // interface logical name -> interface data
+	indexes := make(map[int]struct{})                          // already retrieved interfaces by their Linux indexes
 	for idx := 0; idx < goRoutinesCnt; idx++ {
-		dump := <-dumpCh
-		if dump.err != nil {
-			return nil, dump.err
+		retrieved := <-ch
+		if retrieved.err != nil {
+			return nil, retrieved.err
 		}
-		for _, kv := range dump.interfaces {
-			// skip if this interface was already dumped and this is not the expected
+		for _, kv := range retrieved.interfaces {
+			// skip if this interface was already retrieved and this is not the expected
 			// namespace from correlation - remember, the same namespace may have
 			// multiple different references
 			rewrite := false
-			if _, dumped := indexes[kv.Metadata.LinuxIfIndex]; dumped {
+			if _, alreadyRetrieved := indexes[kv.Metadata.LinuxIfIndex]; alreadyRetrieved {
 				if expCfg, hasExpCfg := ifCfg[kv.Value.Name]; hasExpCfg {
 					if proto.Equal(expCfg.Namespace, kv.Value.Namespace) {
 						rewrite = true
@@ -668,11 +668,11 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 
 			// test for duplicity of VETH logical names
 			if kv.Value.Type == interfaces.Interface_VETH {
-				if _, duplicate := ifDump[kv.Value.Name]; duplicate && !rewrite {
+				if _, duplicate := ifaces[kv.Value.Name]; duplicate && !rewrite {
 					// add suffix to the duplicate to make its logical name unique
 					// (and not configured by NB so that it will get removed)
 					dupIndex := 1
-					for intf2 := range ifDump {
+					for intf2 := range ifaces {
 						if strings.HasPrefix(intf2, kv.Value.Name+vethDuplicateSuffix) {
 							dupIndex++
 						}
@@ -681,18 +681,18 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 					kv.Key = interfaces.InterfaceKey(kv.Value.Name)
 				}
 			}
-			ifDump[kv.Value.Name] = kv
+			ifaces[kv.Value.Name] = kv
 		}
 	}
 
 	// first collect VETHs with duplicate logical names
-	var dump []adapter.InterfaceKVWithMetadata
-	for ifName, kv := range ifDump {
+	var values []adapter.InterfaceKVWithMetadata
+	for ifName, kv := range ifaces {
 		if kv.Value.Type == interfaces.Interface_VETH {
 			isDuplicate := strings.Contains(ifName, vethDuplicateSuffix)
-			// first interface dumped from the set of duplicate VETHs still
+			// first interface retrieved from the set of duplicate VETHs still
 			// does not have the vethDuplicateSuffix appended to the name
-			_, hasDuplicate := ifDump[ifName+vethDuplicateSuffix+"1"]
+			_, hasDuplicate := ifaces[ifName+vethDuplicateSuffix+"1"]
 			if hasDuplicate {
 				kv.Value.Name = ifName + vethDuplicateSuffix + "0"
 				kv.Key = interfaces.InterfaceKey(kv.Value.Name)
@@ -701,17 +701,17 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				// clear peer reference so that Delete removes the VETH-end
 				// as standalone
 				kv.Value.Link = &interfaces.Interface_Veth{}
-				delete(ifDump, ifName)
-				dump = append(dump, kv)
+				delete(ifaces, ifName)
+				values = append(values, kv)
 			}
 		}
 	}
 
 	// next collect VETHs with missing peer
-	for ifName, kv := range ifDump {
+	for ifName, kv := range ifaces {
 		if kv.Value.Type == interfaces.Interface_VETH {
-			peer, dumped := ifDump[kv.Value.GetVeth().GetPeerIfName()]
-			if !dumped || peer.Value.GetVeth().GetPeerIfName() != kv.Value.Name {
+			peer, retrieved := ifaces[kv.Value.GetVeth().GetPeerIfName()]
+			if !retrieved || peer.Value.GetVeth().GetPeerIfName() != kv.Value.Name {
 				// append vethMissingPeerSuffix to the logical name so that VETH
 				// will get removed during resync
 				kv.Value.Name = ifName + vethMissingPeerSuffix
@@ -719,24 +719,24 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 				// clear peer reference so that Delete removes the VETH-end
 				// as standalone
 				kv.Value.Link = &interfaces.Interface_Veth{}
-				delete(ifDump, ifName)
-				dump = append(dump, kv)
+				delete(ifaces, ifName)
+				values = append(values, kv)
 			}
 		}
 	}
 
 	// finally collect AUTO-TAPs and valid VETHs
-	for _, kv := range ifDump {
-		dump = append(dump, kv)
+	for _, kv := range ifaces {
+		values = append(values, kv)
 	}
 
-	return dump, nil
+	return values, nil
 }
 
-// dumpInterfaces is run by a separate go routine to dump all interfaces present
-// in every <goRoutineIdx>-th network namespace from the list.
-func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, goRoutineIdx, goRoutinesCnt int, dumpCh chan<- ifaceDump) {
-	var dump ifaceDump
+// retrieveInterfaces is run by a separate go routine to retrieve all interfaces
+// present in every <goRoutineIdx>-th network namespace from the list.
+func (d *InterfaceDescriptor) retrieveInterfaces(nsList []*namespace.NetNamespace, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedIfaces) {
+	var retrieved retrievedIfaces
 	agentPrefix := d.serviceLabel.GetAgentPrefix()
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 
@@ -748,7 +748,7 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 			d.log.WithFields(logging.Fields{
 				"err":       err,
 				"namespace": nsRef,
-			}).Warn("Failed to dump namespace")
+			}).Warn("Failed to retrieve interfaces from the namespace")
 			continue // continue with the next namespace
 		}
 
@@ -757,12 +757,12 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 		if err != nil {
 			// switch back to the default namespace before returning error
 			revert()
-			dump.err = err
-			d.log.Error(dump.err)
+			retrieved.err = err
+			d.log.Error(retrieved.err)
 			break
 		}
 
-		// dump every interface managed by this agent
+		// retrieve every interface managed by this agent
 		for _, link := range links {
 			intf := &interfaces.Interface{
 				Namespace:   nsRef,
@@ -806,7 +806,7 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 				continue
 			}
 
-			// dump interface status
+			// read interface status
 			intf.Enabled, err = d.ifHandler.IsInterfaceUp(link.Attrs().Name)
 			if err != nil {
 				d.log.WithFields(logging.Fields{
@@ -816,7 +816,7 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 				}).Warn("Failed to read interface status")
 			}
 
-			// dump assigned IP addresses
+			// read assigned IP addresses
 			addressList, err := d.ifHandler.GetAddressList(link.Attrs().Name)
 			if err != nil {
 				d.log.WithFields(logging.Fields{
@@ -835,7 +835,7 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 				intf.IpAddresses = append(intf.IpAddresses, addrStr)
 			}
 
-			// dump checksum offloading
+			// read checksum offloading
 			if intf.Type == interfaces.Interface_VETH {
 				rxOn, txOn, err := d.ifHandler.GetChecksumOffloading(link.Attrs().Name)
 				if err != nil {
@@ -854,8 +854,8 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 				}
 			}
 
-			// build key-value pair for the dumped interface
-			dump.interfaces = append(dump.interfaces, adapter.InterfaceKVWithMetadata{
+			// build key-value pair for the retrieved interface
+			retrieved.interfaces = append(retrieved.interfaces, adapter.InterfaceKVWithMetadata{
 				//Key:    interfaces.InterfaceKey(intf.Name),
 				Key:    models.Key(intf),
 				Value:  intf,
@@ -872,7 +872,7 @@ func (d *InterfaceDescriptor) dumpInterfaces(nsList []*namespace.NetNamespace, g
 		revert()
 	}
 
-	dumpCh <- dump
+	ch <- retrieved
 }
 
 // setInterfaceNamespace moves linux interface from the current to the desired

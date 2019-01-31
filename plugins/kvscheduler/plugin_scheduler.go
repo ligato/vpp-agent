@@ -76,7 +76,7 @@ type Scheduler struct {
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 
-	// in-memory representation of all added+pending kv-pair and their dependencies
+	// in-memory representation of all created+pending kv-pairs and their dependencies
 	graph graph.Graph
 
 	// registry for descriptors
@@ -204,7 +204,9 @@ func (s *Scheduler) Close() error {
 // keys. It should be called in the Init phase of agent plugins.
 // Every key-value pair must have at most one descriptor associated with it
 // (none for derived values expressing properties).
-func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) {
+func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) error {
+	// TODO: validate descriptor
+
 	s.registry.RegisterDescriptor(descriptor)
 	if descriptor.NBKeyPrefix != "" {
 		s.keyPrefixes = append(s.keyPrefixes, descriptor.NBKeyPrefix)
@@ -222,6 +224,7 @@ func (s *Scheduler) RegisterKVDescriptor(descriptor *kvs.KVDescriptor) {
 		graphW.Save()
 		graphW.Release()
 	}
+	return nil
 }
 
 // GetRegisteredNBKeyPrefixes returns a list of key prefixes from NB with values
@@ -293,9 +296,10 @@ func (s *Scheduler) WatchValueStatus(channel chan<- *kvs.BaseValueStatus, keySel
 	})
 }
 
-// DumpValuesByDescriptor dumps values associated with the given descriptor
-// as viewed from either NB (what was requested to be applied), SB (what is
-// actually applied) or from the inside (what kvscheduler's current view of SB is).
+// DumpValuesByDescriptor dumps values associated with the given
+// descriptor as viewed from either NB (what was requested to be applied),
+// SB (what is actually applied) or from the inside (what kvscheduler's
+// cached view of SB is).
 func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (values []kvs.KVWithMetadata, err error) {
 	if view == kvs.SBView {
 		// pause transaction processing
@@ -307,7 +311,7 @@ func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (va
 	defer graphR.Release()
 
 	if view == kvs.NBView {
-		// dump the requested state
+		// return the intended state
 		var kvPairs []kvs.KVWithMetadata
 		nbNodes := graphR.GetNodes(nil,
 			graph.WithFlags(&DescriptorFlag{descriptor}),
@@ -328,30 +332,30 @@ func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (va
 		return kvPairs, nil
 	}
 
-	/* internal/SB: */
+	/* Cached/SB: */
 
-	// dump from the in-memory graph first (for SB Dump it is used for correlation)
+	// retrieve from the in-memory graph first (for Retrieve it is used for correlation)
 	inMemNodes := nodesToKVPairsWithMetadata(
 		graphR.GetNodes(nil, correlateValsSelectors(descriptor)...))
 
-	if view == kvs.InternalView {
+	if view == kvs.CachedView {
 		// return the scheduler's view of SB for the given descriptor
 		return inMemNodes, nil
 	}
 
-	// obtain Dump handler from the descriptor
+	// obtain Retrieve handler from the descriptor
 	kvDescriptor := s.registry.GetDescriptor(descriptor)
 	if kvDescriptor == nil {
 		err = errors.New("descriptor is not registered")
 		return
 	}
-	if kvDescriptor.Dump == nil {
-		err = errors.New("descriptor does not support Dump operation")
+	if kvDescriptor.Retrieve == nil {
+		err = errors.New("descriptor does not support Retrieve operation")
 		return
 	}
 
-	// dump the state directly from SB via descriptor
-	values, err = kvDescriptor.Dump(inMemNodes)
+	// retrieve the state directly from SB via descriptor
+	values, err = kvDescriptor.Retrieve(inMemNodes)
 	return
 }
 
@@ -367,8 +371,8 @@ func (s *Scheduler) getDescriptorForKeyPrefix(keyPrefix string) string {
 	return descriptorName
 }
 
-// DumpValuesByKeyPrefix like DumpValuesByDescriptor returns dump of values,
-// but the descriptor is selected based on the common key prefix.
+// DumpValuesByKeyPrefix like DumpValuesByDescriptor returns a dump of values,
+// but the descriptor is selected based on the key prefix.
 func (s *Scheduler) DumpValuesByKeyPrefix(keyPrefix string, view kvs.View) (values []kvs.KVWithMetadata, err error) {
 	descriptorName := s.getDescriptorForKeyPrefix(keyPrefix)
 	if descriptorName == "" {

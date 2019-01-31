@@ -116,7 +116,7 @@ func (d *MicroserviceDescriptor) GetDescriptor() *kvs.KVDescriptor {
 	return &kvs.KVDescriptor{
 		Name:        MicroserviceDescriptorName,
 		KeySelector: d.IsMicroserviceKey,
-		Dump:        d.Dump,
+		Retrieve:    d.Retrieve,
 	}
 }
 
@@ -125,8 +125,8 @@ func (d *MicroserviceDescriptor) IsMicroserviceKey(key string) bool {
 	return strings.HasPrefix(key, nsmodel.MicroserviceKeyPrefix)
 }
 
-// Dump returns key with empty value for every currently existing microservice.
-func (d *MicroserviceDescriptor) Dump(correlate []kvs.KVWithMetadata) (dump []kvs.KVWithMetadata, err error) {
+// Retrieve returns key with empty value for every currently existing microservice.
+func (d *MicroserviceDescriptor) Retrieve(correlate []kvs.KVWithMetadata) (values []kvs.KVWithMetadata, err error) {
 	// wait until microservice state data are in-sync with the docker
 	d.msStateLock.Lock()
 	if !d.msStateInSync {
@@ -135,14 +135,14 @@ func (d *MicroserviceDescriptor) Dump(correlate []kvs.KVWithMetadata) (dump []kv
 	defer d.msStateLock.Unlock()
 
 	for msLabel := range d.microServiceByLabel {
-		dump = append(dump, kvs.KVWithMetadata{
+		values = append(values, kvs.KVWithMetadata{
 			Key:    nsmodel.MicroserviceKey(msLabel),
 			Value:  &prototypes.Empty{},
 			Origin: kvs.FromSB,
 		})
 	}
 
-	return dump, nil
+	return values, nil
 }
 
 // StartTracker starts microservice tracker,

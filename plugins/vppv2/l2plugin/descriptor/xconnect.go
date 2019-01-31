@@ -62,18 +62,17 @@ func NewXConnectDescriptor(xcHandler vppcalls.XConnectVppAPI, log logging.Plugin
 // the KVScheduler.
 func (d *XConnectDescriptor) GetDescriptor() *adapter.XConnectDescriptor {
 	return &adapter.XConnectDescriptor{
-		Name:               XConnectDescriptorName,
-		NBKeyPrefix:        l2.ModelXConnectPair.KeyPrefix(),
-		ValueTypeName:      l2.ModelXConnectPair.ProtoName(),
-		KeySelector:        l2.ModelXConnectPair.IsKeyValid,
-		KeyLabel:           l2.ModelXConnectPair.StripKeyPrefix,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		Dependencies:       d.Dependencies,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
+		Name:                 XConnectDescriptorName,
+		NBKeyPrefix:          l2.ModelXConnectPair.KeyPrefix(),
+		ValueTypeName:        l2.ModelXConnectPair.ProtoName(),
+		KeySelector:          l2.ModelXConnectPair.IsKeyValid,
+		KeyLabel:             l2.ModelXConnectPair.StripKeyPrefix,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
+		Dependencies:         d.Dependencies,
+		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -86,8 +85,8 @@ func (d *XConnectDescriptor) Validate(key string, xc *l2.XConnectPair) error {
 	return nil
 }
 
-// Add adds new xConnect pair.
-func (d *XConnectDescriptor) Add(key string, xc *l2.XConnectPair) (metadata interface{}, err error) {
+// Create adds new xConnect pair.
+func (d *XConnectDescriptor) Create(key string, xc *l2.XConnectPair) (metadata interface{}, err error) {
 	// add xConnect pair
 	err = d.xcHandler.AddL2XConnect(xc.ReceiveInterface, xc.TransmitInterface)
 	if err != nil {
@@ -105,9 +104,22 @@ func (d *XConnectDescriptor) Delete(key string, xc *l2.XConnectPair, metadata in
 	return err
 }
 
-// ModifyWithRecreate always returns true - xConnect pairs are modified via re-creation.
-func (d *XConnectDescriptor) ModifyWithRecreate(key string, oldXC, newXC *l2.XConnectPair, metadata interface{}) bool {
-	return true
+// Retrieve returns all configured VPP xConnect pairs.
+func (d *XConnectDescriptor) Retrieve(correlate []adapter.XConnectKVWithMetadata) (retrieved []adapter.XConnectKVWithMetadata, err error) {
+	xConnectPairs, err := d.xcHandler.DumpXConnectPairs()
+	if err != nil {
+		d.log.Error(err)
+		return retrieved, err
+	}
+
+	for _, xc := range xConnectPairs {
+		retrieved = append(retrieved, adapter.XConnectKVWithMetadata{
+			Key:    l2.XConnectKey(xc.Xc.ReceiveInterface),
+			Value:  xc.Xc,
+			Origin: kvs.FromNB,
+		})
+	}
+	return retrieved, nil
 }
 
 // Dependencies lists both Rx and Tx interface as dependencies.
@@ -122,22 +134,4 @@ func (d *XConnectDescriptor) Dependencies(key string, xc *l2.XConnectPair) []kvs
 			Key:   interfaces.InterfaceKey(xc.TransmitInterface),
 		},
 	}
-}
-
-// Dump returns all configured VPP xConnect pairs.
-func (d *XConnectDescriptor) Dump(correlate []adapter.XConnectKVWithMetadata) (dump []adapter.XConnectKVWithMetadata, err error) {
-	xConnectPairs, err := d.xcHandler.DumpXConnectPairs()
-	if err != nil {
-		d.log.Error(err)
-		return dump, err
-	}
-
-	for _, xc := range xConnectPairs {
-		dump = append(dump, adapter.XConnectKVWithMetadata{
-			Key:    l2.XConnectKey(xc.Xc.ReceiveInterface),
-			Value:  xc.Xc,
-			Origin: kvs.FromNB,
-		})
-	}
-	return dump, nil
 }

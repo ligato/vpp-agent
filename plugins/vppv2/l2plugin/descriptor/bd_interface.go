@@ -62,9 +62,8 @@ func (d *BDInterfaceDescriptor) GetDescriptor() *adapter.BDInterfaceDescriptor {
 		Name:               BDInterfaceDescriptorName,
 		KeySelector:        d.IsBDInterfaceKey,
 		ValueTypeName:      proto.MessageName(&l2.BridgeDomain_Interface{}),
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
 		Dependencies:       d.Dependencies,
 	}
 }
@@ -76,8 +75,8 @@ func (d *BDInterfaceDescriptor) IsBDInterfaceKey(key string) bool {
 	return isBDIfaceKey
 }
 
-// Add puts interface into bridge domain.
-func (d *BDInterfaceDescriptor) Add(key string, bdIface *l2.BridgeDomain_Interface) (metadata interface{}, err error) {
+// Create puts interface into bridge domain.
+func (d *BDInterfaceDescriptor) Create(key string, bdIface *l2.BridgeDomain_Interface) (metadata interface{}, err error) {
 	// get bridge domain index
 	bdName, _, _ := l2.ParseBDInterfaceKey(key)
 	bdMeta, found := d.bdIndex.LookupByName(bdName)
@@ -115,12 +114,6 @@ func (d *BDInterfaceDescriptor) Delete(key string, bdIface *l2.BridgeDomain_Inte
 
 	}
 	return nil
-}
-
-// ModifyWithRecreate returns always true - a change in BVI or SHG is always performed
-// via Delete+Add.
-func (d *BDInterfaceDescriptor) ModifyWithRecreate(key string, oldBDIface, newBDIface *l2.BridgeDomain_Interface, metadata interface{}) bool {
-	return true
 }
 
 // Dependencies lists the interface as the only dependency for the binding.

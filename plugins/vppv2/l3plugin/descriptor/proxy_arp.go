@@ -55,17 +55,17 @@ func NewProxyArpDescriptor(scheduler kvs.KVScheduler,
 // the KVScheduler.
 func (d *ProxyArpDescriptor) GetDescriptor() *adapter.ProxyARPDescriptor {
 	return &adapter.ProxyARPDescriptor{
-		Name:               ProxyArpDescriptorName,
-		NBKeyPrefix:        l3.ModelProxyARP.KeyPrefix(),
-		ValueTypeName:      l3.ModelProxyARP.ProtoName(),
-		KeySelector:        l3.ModelProxyARP.IsKeyValid,
-		ValueComparator:    d.EquivalentProxyArps,
-		Add:                d.Add,
-		Modify:             d.Modify,
-		Delete:             d.Delete,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
+		Name:                 ProxyArpDescriptorName,
+		NBKeyPrefix:          l3.ModelProxyARP.KeyPrefix(),
+		ValueTypeName:        l3.ModelProxyARP.ProtoName(),
+		KeySelector:          l3.ModelProxyARP.IsKeyValid,
+		ValueComparator:      d.EquivalentProxyArps,
+		Create:               d.Create,
+		Update:               d.Update,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
+		DerivedValues:        d.DerivedValues,
+		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -90,8 +90,8 @@ func (d *ProxyArpDescriptor) EquivalentProxyArps(key string, oldValue, newValue 
 	return len(toAdd) == 0 && len(toDelete) == 0
 }
 
-// Add adds VPP Proxy ARP.
-func (d *ProxyArpDescriptor) Add(key string, value *l3.ProxyARP) (metadata interface{}, err error) {
+// Create adds VPP Proxy ARP.
+func (d *ProxyArpDescriptor) Create(key string, value *l3.ProxyARP) (metadata interface{}, err error) {
 	for _, proxyArpRange := range value.Ranges {
 		// Prune addresses
 		firstIP := pruneIP(proxyArpRange.FirstIpAddr)
@@ -107,8 +107,8 @@ func (d *ProxyArpDescriptor) Add(key string, value *l3.ProxyARP) (metadata inter
 	return nil, nil
 }
 
-// Modify modifies VPP Proxy ARP.
-func (d *ProxyArpDescriptor) Modify(key string, oldValue, newValue *l3.ProxyARP, oldMetadata interface{}) (newMetadata interface{}, err error) {
+// Update modifies VPP Proxy ARP.
+func (d *ProxyArpDescriptor) Update(key string, oldValue, newValue *l3.ProxyARP, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	toAdd, toDelete := calculateRngDiff(newValue.Ranges, oldValue.Ranges)
 	// Remove old ranges
 	for _, proxyArpRange := range toDelete {
@@ -157,9 +157,9 @@ func (d *ProxyArpDescriptor) Delete(key string, value *l3.ProxyARP, metadata int
 	return nil
 }
 
-// Dump retrieves VPP Proxy ARP configuration.
-func (d *ProxyArpDescriptor) Dump(correlate []adapter.ProxyARPKVWithMetadata) (
-	dump []adapter.ProxyARPKVWithMetadata, err error) {
+// Retrieve returns VPP Proxy ARP configuration.
+func (d *ProxyArpDescriptor) Retrieve(correlate []adapter.ProxyARPKVWithMetadata) (
+	retrieved []adapter.ProxyARPKVWithMetadata, err error) {
 
 	// Retrieve VPP configuration
 	rangesDetails, err := d.proxyArpHandler.DumpProxyArpRanges()
@@ -179,13 +179,13 @@ func (d *ProxyArpDescriptor) Dump(correlate []adapter.ProxyARPKVWithMetadata) (
 		proxyArp.Interfaces = append(proxyArp.Interfaces, ifaceDetail.Interface)
 	}
 
-	dump = append(dump, adapter.ProxyARPKVWithMetadata{
+	retrieved = append(retrieved, adapter.ProxyARPKVWithMetadata{
 		Key:    models.Key(proxyArp),
 		Value:  proxyArp,
 		Origin: kvs.UnknownOrigin,
 	})
 
-	return dump, nil
+	return retrieved, nil
 }
 
 // Remove IP mask if set

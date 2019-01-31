@@ -74,7 +74,10 @@ func (p *ACLPlugin) Init() error {
 	// init & register descriptors
 	p.aclDescriptor = descriptor.NewACLDescriptor(p.aclHandler, p.IfPlugin, p.Log)
 	aclDescriptor := adapter.NewACLDescriptor(p.aclDescriptor.GetDescriptor())
-	p.Scheduler.RegisterKVDescriptor(aclDescriptor)
+	err = p.Scheduler.RegisterKVDescriptor(aclDescriptor)
+	if err != nil {
+		return err
+	}
 
 	// obtain read-only references to index maps
 	var withIndex bool
@@ -86,7 +89,10 @@ func (p *ACLPlugin) Init() error {
 
 	p.aclInterfaceDescriptor = descriptor.NewACLToInterfaceDescriptor(p.aclIndex, p.aclHandler, p.Log)
 	aclInterfaceDescriptor := p.aclInterfaceDescriptor.GetDescriptor()
-	p.Scheduler.RegisterKVDescriptor(aclInterfaceDescriptor)
+	err = p.Scheduler.RegisterKVDescriptor(aclInterfaceDescriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -38,17 +38,13 @@ var (
 	// ErrTxnQueueFull is returned when the queue of pending transactions is full.
 	ErrTxnQueueFull = errors.New("transaction queue is full")
 
-	// ErrUnimplementedAdd is returned when NB transaction attempts to Add value
-	// for which there is a descriptor, but Add operation is not implemented.
-	ErrUnimplementedAdd = errors.New("Add operation is not implemented")
+	// ErrUnimplementedCreate is returned when NB transaction attempts to Create value
+	// for which there is a descriptor, but Create operation is not implemented.
+	ErrUnimplementedCreate = errors.New("operation Create is not implemented")
 
 	// ErrUnimplementedDelete is returned when NB transaction attempts to Delete value
 	// for which there is a descriptor, but Delete operation is not implemented.
-	ErrUnimplementedDelete = errors.New("Delete operation is not implemented")
-
-	// ErrUnimplementedModify is returned when NB transaction attempts to Modify value
-	// for which there is a descriptor, but Modify operation is not implemented.
-	ErrUnimplementedModify = errors.New("Modify operation is not implemented")
+	ErrUnimplementedDelete = errors.New("operation Delete is not implemented")
 )
 
 // ErrInvalidValueType is returned to scheduler by auto-generated descriptor adapter

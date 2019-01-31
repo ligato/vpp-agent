@@ -42,7 +42,7 @@ func (d *ACLToInterfaceDescriptor) GetDescriptor() *kvs.KVDescriptor {
 	return &kvs.KVDescriptor{
 		Name:         ACLToInterfaceDescriptorName,
 		KeySelector:  d.IsACLInterfaceKey,
-		Add:          d.Add,
+		Create:       d.Create,
 		Delete:       d.Delete,
 		Dependencies: d.Dependencies,
 	}
@@ -54,8 +54,8 @@ func (d *ACLToInterfaceDescriptor) IsACLInterfaceKey(key string) bool {
 	return isACLToInterfaceKey
 }
 
-// Add binds interface to ACL.
-func (d *ACLToInterfaceDescriptor) Add(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
+// Create binds interface to ACL.
+func (d *ACLToInterfaceDescriptor) Create(key string, emptyVal proto.Message) (metadata kvs.Metadata, err error) {
 	aclName, ifName, flow, _ := acl.ParseACLToInterfaceKey(key)
 
 	aclMeta, found := d.aclIndex.LookupByName(aclName)

@@ -95,7 +95,7 @@ func (s *Scheduler) consumeTransactions() {
 //	1. Pre-processing: transaction parameters are initialized, retry operations
 //     are filtered from the obsolete ones and for the resync the graph is refreshed
 //  2. Simulation: simulating transaction without actually executing any of the
-//     Add/Delete/Modify operations in order to obtain the "execution plan"
+//     Create/Delete/Update operations in order to obtain the "execution plan"
 //  3. Pre-recording: logging transaction arguments + plan before execution to
 //     persist some information in case there is a crash during execution
 //  4. Execution: executing the transaction, collecting errors

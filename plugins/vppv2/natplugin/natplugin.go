@@ -73,15 +73,24 @@ func (p *NATPlugin) Init() error {
 	// init and register descriptors
 	p.nat44GlobalDescriptor = descriptor.NewNAT44GlobalDescriptor(p.natHandler, p.Log)
 	nat44GlobalDescriptor := adapter.NewNAT44GlobalDescriptor(p.nat44GlobalDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(nat44GlobalDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(nat44GlobalDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.nat44IfaceDescriptor = descriptor.NewNAT44InterfaceDescriptor(p.natHandler, p.Log)
 	nat44IfaceDescriptor := adapter.NewNAT44InterfaceDescriptor(p.nat44IfaceDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(nat44IfaceDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(nat44IfaceDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.dnat44Descriptor = descriptor.NewDNAT44Descriptor(p.natHandler, p.Log)
 	dnat44Descriptor := adapter.NewDNAT44Descriptor(p.dnat44Descriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(dnat44Descriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(dnat44Descriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

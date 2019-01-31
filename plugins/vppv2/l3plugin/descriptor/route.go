@@ -62,19 +62,16 @@ func NewRouteDescriptor(
 // the KVScheduler.
 func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 	return &adapter.RouteDescriptor{
-		Name:            RouteDescriptorName,
-		NBKeyPrefix:     l3.ModelRoute.KeyPrefix(),
-		ValueTypeName:   l3.ModelRoute.ProtoName(),
-		KeySelector:     l3.ModelRoute.IsKeyValid,
-		ValueComparator: d.EquivalentRoutes,
-		Add:             d.Add,
-		Delete:          d.Delete,
-		ModifyWithRecreate: func(key string, oldValue, newValue *l3.Route, metadata interface{}) bool {
-			return true
-		},
-		Dependencies:     d.Dependencies,
-		Dump:             d.Dump,
-		DumpDependencies: []string{ifdescriptor.InterfaceDescriptorName},
+		Name:                 RouteDescriptorName,
+		NBKeyPrefix:          l3.ModelRoute.KeyPrefix(),
+		ValueTypeName:        l3.ModelRoute.ProtoName(),
+		KeySelector:          l3.ModelRoute.IsKeyValid,
+		ValueComparator:      d.EquivalentRoutes,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
+		Dependencies:         d.Dependencies,
+		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -102,8 +99,8 @@ func (d *RouteDescriptor) EquivalentRoutes(key string, oldRoute, newRoute *l3.Ro
 	return true
 }
 
-// Add adds VPP static route.
-func (d *RouteDescriptor) Add(key string, route *l3.Route) (metadata interface{}, err error) {
+// Create adds VPP static route.
+func (d *RouteDescriptor) Create(key string, route *l3.Route) (metadata interface{}, err error) {
 	if err = validateRoute(route); err != nil {
 		return nil, err
 	}
@@ -137,6 +134,27 @@ func (d *RouteDescriptor) Delete(key string, route *l3.Route, metadata interface
 	return nil
 }
 
+// Retrieve returns all routes associated with interfaces managed by this agent.
+func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) (
+	retrieved []adapter.RouteKVWithMetadata, err error,
+) {
+	// Retrieve VPP route configuration
+	Routes, err := d.routeHandler.DumpRoutes()
+	if err != nil {
+		return nil, errors.Errorf("failed to dump VPP routes: %v", err)
+	}
+
+	for _, Route := range Routes {
+		retrieved = append(retrieved, adapter.RouteKVWithMetadata{
+			Key:    l3.RouteKey(Route.Route.VrfId, Route.Route.DstNetwork, Route.Route.NextHopAddr),
+			Value:  Route.Route,
+			Origin: kvs.UnknownOrigin,
+		})
+	}
+
+	return retrieved, nil
+}
+
 // Dependencies lists dependencies for a VPP route.
 func (d *RouteDescriptor) Dependencies(key string, route *l3.Route) []kvs.Dependency {
 	var dependencies []kvs.Dependency
@@ -149,27 +167,6 @@ func (d *RouteDescriptor) Dependencies(key string, route *l3.Route) []kvs.Depend
 	}
 	// TODO: perhaps check GW routability
 	return dependencies
-}
-
-// Dump returns all routes associated with interfaces managed by this agent.
-func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) (
-	dump []adapter.RouteKVWithMetadata, err error,
-) {
-	// Retrieve VPP route configuration
-	Routes, err := d.routeHandler.DumpRoutes()
-	if err != nil {
-		return nil, errors.Errorf("failed to dump VPP routes: %v", err)
-	}
-
-	for _, Route := range Routes {
-		dump = append(dump, adapter.RouteKVWithMetadata{
-			Key:    l3.RouteKey(Route.Route.VrfId, Route.Route.DstNetwork, Route.Route.NextHopAddr),
-			Value:  Route.Route,
-			Origin: kvs.UnknownOrigin,
-		})
-	}
-
-	return dump, nil
 }
 
 // equalAddrs compares two IP addresses for equality.

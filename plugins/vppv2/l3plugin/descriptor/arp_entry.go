@@ -57,20 +57,17 @@ func NewArpDescriptor(scheduler kvs.KVScheduler,
 // the KVScheduler.
 func (d *ArpDescriptor) GetDescriptor() *adapter.ARPEntryDescriptor {
 	return &adapter.ARPEntryDescriptor{
-		Name:            ArpDescriptorName,
-		NBKeyPrefix:     l3.ModelARPEntry.KeyPrefix(),
-		ValueTypeName:   l3.ModelARPEntry.ProtoName(),
-		KeySelector:     l3.ModelARPEntry.IsKeyValid,
-		KeyLabel:        l3.ModelARPEntry.StripKeyPrefix,
-		ValueComparator: d.EquivalentArps,
-		Add:             d.Add,
-		Delete:          d.Delete,
-		ModifyWithRecreate: func(key string, oldValue, newValue *l3.ARPEntry, metadata interface{}) bool {
-			return true
-		},
-		Dependencies:       d.Dependencies,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
+		Name:                 ArpDescriptorName,
+		NBKeyPrefix:          l3.ModelARPEntry.KeyPrefix(),
+		ValueTypeName:        l3.ModelARPEntry.ProtoName(),
+		KeySelector:          l3.ModelARPEntry.IsKeyValid,
+		KeyLabel:             l3.ModelARPEntry.StripKeyPrefix,
+		ValueComparator:      d.EquivalentArps,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
+		Dependencies:         d.Dependencies,
+		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -79,8 +76,8 @@ func (d *ArpDescriptor) EquivalentArps(key string, oldArp, newArp *l3.ARPEntry) 
 	return proto.Equal(oldArp, newArp)
 }
 
-// Add adds VPP ARP entry.
-func (d *ArpDescriptor) Add(key string, arp *l3.ARPEntry) (interface{}, error) {
+// Create adds VPP ARP entry.
+func (d *ArpDescriptor) Create(key string, arp *l3.ARPEntry) (interface{}, error) {
 	if err := d.arpHandler.VppAddArp(arp); err != nil {
 		return nil, err
 	}
@@ -95,6 +92,27 @@ func (d *ArpDescriptor) Delete(key string, arp *l3.ARPEntry, metadata interface{
 	return nil
 }
 
+// Retrieve returns all ARP entries associated with interfaces managed by this agent.
+func (d *ArpDescriptor) Retrieve(correlate []adapter.ARPEntryKVWithMetadata) (
+	retrieved []adapter.ARPEntryKVWithMetadata, err error,
+) {
+	// Retrieve VPP ARP entries.
+	arpEntries, err := d.arpHandler.DumpArpEntries()
+	if err != nil {
+		return nil, errors.Errorf("failed to dump VPP arps: %v", err)
+	}
+
+	for _, arp := range arpEntries {
+		retrieved = append(retrieved, adapter.ARPEntryKVWithMetadata{
+			Key:    l3.ArpEntryKey(arp.Arp.Interface, arp.Arp.IpAddress),
+			Value:  arp.Arp,
+			Origin: kvs.UnknownOrigin,
+		})
+	}
+
+	return retrieved, nil
+}
+
 // Dependencies lists dependencies for a VPP ARP entry.
 func (d *ArpDescriptor) Dependencies(key string, arp *l3.ARPEntry) (deps []kvs.Dependency) {
 	// the outgoing interface must exist
@@ -105,25 +123,4 @@ func (d *ArpDescriptor) Dependencies(key string, arp *l3.ARPEntry) (deps []kvs.D
 		})
 	}
 	return deps
-}
-
-// Dump returns all ARP entries associated with interfaces managed by this agent.
-func (d *ArpDescriptor) Dump(correlate []adapter.ARPEntryKVWithMetadata) (
-	dump []adapter.ARPEntryKVWithMetadata, err error,
-) {
-	// Retrieve VPP ARP entries.
-	arpEntries, err := d.arpHandler.DumpArpEntries()
-	if err != nil {
-		return nil, errors.Errorf("failed to dump VPP arps: %v", err)
-	}
-
-	for _, arp := range arpEntries {
-		dump = append(dump, adapter.ARPEntryKVWithMetadata{
-			Key:    l3.ArpEntryKey(arp.Arp.Interface, arp.Arp.IpAddress),
-			Value:  arp.Arp,
-			Origin: kvs.UnknownOrigin,
-		})
-	}
-
-	return dump, nil
 }

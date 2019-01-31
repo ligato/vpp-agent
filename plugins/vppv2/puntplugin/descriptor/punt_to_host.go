@@ -61,17 +61,16 @@ func NewPuntToHostDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 // the KVScheduler.
 func (d *PuntToHostDescriptor) GetDescriptor() *adapter.PuntToHostDescriptor {
 	return &adapter.PuntToHostDescriptor{
-		Name:               PuntToHostDescriptorName,
-		NBKeyPrefix:        punt.ModelToHost.KeyPrefix(),
-		ValueTypeName:      punt.ModelToHost.ProtoName(),
-		KeySelector:        punt.ModelToHost.IsKeyValid,
-		KeyLabel:           punt.ModelToHost.StripKeyPrefix,
-		ValueComparator:    d.EquivalentPuntToHost,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		Dump:               d.Dump,
+		Name:            PuntToHostDescriptorName,
+		NBKeyPrefix:     punt.ModelToHost.KeyPrefix(),
+		ValueTypeName:   punt.ModelToHost.ProtoName(),
+		KeySelector:     punt.ModelToHost.IsKeyValid,
+		KeyLabel:        punt.ModelToHost.StripKeyPrefix,
+		ValueComparator: d.EquivalentPuntToHost,
+		Validate:        d.Validate,
+		Create:          d.Create,
+		Delete:          d.Delete,
+		Retrieve:        d.Retrieve,
 	}
 }
 
@@ -111,8 +110,8 @@ func (d *PuntToHostDescriptor) Validate(key string, puntCfg *punt.ToHost) error 
 	return nil
 }
 
-// Add adds new punt to host entry or registers new punt to unix domain socket.
-func (d *PuntToHostDescriptor) Add(key string, punt *punt.ToHost) (metadata interface{}, err error) {
+// Create adds new punt to host entry or registers new punt to unix domain socket.
+func (d *PuntToHostDescriptor) Create(key string, punt *punt.ToHost) (metadata interface{}, err error) {
 	// add punt to host
 	if punt.SocketPath == "" {
 		err = d.puntHandler.AddPunt(punt)
@@ -148,8 +147,8 @@ func (d *PuntToHostDescriptor) Delete(key string, punt *punt.ToHost, metadata in
 	return err
 }
 
-// Dump returns all configured VPP punt to host entries.
-func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata) (dump []adapter.PuntToHostKVWithMetadata, err error) {
+// Retrieve returns all configured VPP punt to host entries.
+func (d *PuntToHostDescriptor) Retrieve(correlate []adapter.PuntToHostKVWithMetadata) (retrieved []adapter.PuntToHostKVWithMetadata, err error) {
 	// TODO dump for punt and punt socket register missing in api
 	d.log.Info("Dump punt/socket register is not supported by the VPP")
 
@@ -159,17 +158,12 @@ func (d *PuntToHostDescriptor) Dump(correlate []adapter.PuntToHostKVWithMetadata
 	}
 
 	for _, punt := range socks {
-		dump = append(dump, adapter.PuntToHostKVWithMetadata{
+		retrieved = append(retrieved, adapter.PuntToHostKVWithMetadata{
 			Key:    models.Key(punt.PuntData),
 			Value:  punt.PuntData,
 			Origin: kvs.FromNB,
 		})
 	}
 
-	return dump, nil
-}
-
-// ModifyWithRecreate always returns true - punt entries are always modified via re-creation.
-func (d *PuntToHostDescriptor) ModifyWithRecreate(key string, oldPunt, newPunt *punt.ToHost, metadata interface{}) bool {
-	return true
+	return retrieved, nil
 }

@@ -75,22 +75,22 @@ func NewBridgeDomainDescriptor(bdHandler vppcalls.BridgeDomainVppAPI, log loggin
 // the KVScheduler.
 func (d *BridgeDomainDescriptor) GetDescriptor() *adapter.BridgeDomainDescriptor {
 	return &adapter.BridgeDomainDescriptor{
-		Name:               BridgeDomainDescriptorName,
-		NBKeyPrefix:        l2.ModelBridgeDomain.KeyPrefix(),
-		ValueTypeName:      l2.ModelBridgeDomain.ProtoName(),
-		KeySelector:        l2.ModelBridgeDomain.IsKeyValid,
-		KeyLabel:           l2.ModelBridgeDomain.StripKeyPrefix,
-		ValueComparator:    d.EquivalentBridgeDomains,
-		WithMetadata:       true,
-		MetadataMapFactory: d.MetadataFactory,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Modify:             d.Modify,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
+		Name:                 BridgeDomainDescriptorName,
+		NBKeyPrefix:          l2.ModelBridgeDomain.KeyPrefix(),
+		ValueTypeName:        l2.ModelBridgeDomain.ProtoName(),
+		KeySelector:          l2.ModelBridgeDomain.IsKeyValid,
+		KeyLabel:             l2.ModelBridgeDomain.StripKeyPrefix,
+		ValueComparator:      d.EquivalentBridgeDomains,
+		WithMetadata:         true,
+		MetadataMapFactory:   d.MetadataFactory,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Update:               d.Update,
+		UpdateWithRecreate:   d.UpdateWithRecreate,
+		Retrieve:             d.Retrieve,
+		DerivedValues:        d.DerivedValues,
+		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -132,8 +132,8 @@ func (d *BridgeDomainDescriptor) Validate(key string, bd *l2.BridgeDomain) error
 	return nil
 }
 
-// Add adds new bridge domain.
-func (d *BridgeDomainDescriptor) Add(key string, bd *l2.BridgeDomain) (metadata *idxvpp2.OnlyIndex, err error) {
+// Create adds new bridge domain.
+func (d *BridgeDomainDescriptor) Create(key string, bd *l2.BridgeDomain) (metadata *idxvpp2.OnlyIndex, err error) {
 	// allocate new bridge domain ID
 	bdIdx := d.bdIDSeq
 	d.bdIDSeq++
@@ -170,13 +170,13 @@ func (d *BridgeDomainDescriptor) Delete(key string, bd *l2.BridgeDomain, metadat
 	return err
 }
 
-// ModifyWithRecreate returns true if bridge domain base parameters are different.
-func (d *BridgeDomainDescriptor) ModifyWithRecreate(key string, oldBD, newBD *l2.BridgeDomain, metadata *idxvpp2.OnlyIndex) bool {
+// UpdateWithRecreate returns true if bridge domain base parameters are different.
+func (d *BridgeDomainDescriptor) UpdateWithRecreate(key string, oldBD, newBD *l2.BridgeDomain, metadata *idxvpp2.OnlyIndex) bool {
 	return !equalBDParameters(oldBD, newBD)
 }
 
-// Modify is able to change ARP termination entries.
-func (d *BridgeDomainDescriptor) Modify(key string, oldBD, newBD *l2.BridgeDomain, oldMetadata *idxvpp2.OnlyIndex) (newMetadata *idxvpp2.OnlyIndex, err error) {
+// Update is able to change ARP termination entries.
+func (d *BridgeDomainDescriptor) Update(key string, oldBD, newBD *l2.BridgeDomain, oldMetadata *idxvpp2.OnlyIndex) (newMetadata *idxvpp2.OnlyIndex, err error) {
 	// update ARP termination entries
 	bdIdx := oldMetadata.Index
 	obsoleteARPs, newARPs := calculateARPDiff(oldBD.GetArpTerminationTable(), newBD.GetArpTerminationTable())
@@ -196,21 +196,8 @@ func (d *BridgeDomainDescriptor) Modify(key string, oldBD, newBD *l2.BridgeDomai
 	return oldMetadata, nil
 }
 
-// DerivedValues derives l2.BridgeDomain_Interface for every interface assigned
-// to the bridge domain.
-func (d *BridgeDomainDescriptor) DerivedValues(key string, bd *l2.BridgeDomain) (derValues []kvs.KeyValuePair) {
-	// BD interfaces
-	for _, bdIface := range bd.Interfaces {
-		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   l2.BDInterfaceKey(bd.Name, bdIface.Name),
-			Value: bdIface,
-		})
-	}
-	return derValues
-}
-
-// Dump returns all configured VPP bridge domains.
-func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMetadata) (dump []adapter.BridgeDomainKVWithMetadata, err error) {
+// Retrieve returns all configured VPP bridge domains.
+func (d *BridgeDomainDescriptor) Retrieve(correlate []adapter.BridgeDomainKVWithMetadata) (retrieved []adapter.BridgeDomainKVWithMetadata, err error) {
 	// d.bdIDSeq will be refreshed
 	var bdIDSeq uint32 = 1
 
@@ -221,7 +208,7 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 	bridgeDomains, err := d.bdHandler.DumpBridgeDomains()
 	if err != nil {
 		d.log.Error(err)
-		return dump, err
+		return retrieved, err
 	}
 	for _, bd := range bridgeDomains {
 		// make sure that bdIDSeq is larger than any of the existing indexes
@@ -236,7 +223,7 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 			untaggedSeq++
 		}
 
-		dump = append(dump, adapter.BridgeDomainKVWithMetadata{
+		retrieved = append(retrieved, adapter.BridgeDomainKVWithMetadata{
 			Key:      l2.BridgeDomainKey(bd.Bd.Name),
 			Value:    bd.Bd,
 			Metadata: &idxvpp2.OnlyIndex{Index: bd.Meta.BdID},
@@ -247,7 +234,20 @@ func (d *BridgeDomainDescriptor) Dump(correlate []adapter.BridgeDomainKVWithMeta
 	// update d.bdIDSeq
 	d.bdIDSeq = bdIDSeq
 
-	return dump, nil
+	return retrieved, nil
+}
+
+// DerivedValues derives l2.BridgeDomain_Interface for every interface assigned
+// to the bridge domain.
+func (d *BridgeDomainDescriptor) DerivedValues(key string, bd *l2.BridgeDomain) (derValues []kvs.KeyValuePair) {
+	// BD interfaces
+	for _, bdIface := range bd.Interfaces {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   l2.BDInterfaceKey(bd.Name, bdIface.Name),
+			Value: bdIface,
+		})
+	}
+	return derValues
 }
 
 // equalBDParameters compares all base bridge domain parameters for equality.

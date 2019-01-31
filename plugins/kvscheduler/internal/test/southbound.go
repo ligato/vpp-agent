@@ -37,24 +37,24 @@ type MockSouthbound struct {
 type MockOpType int
 
 const (
-	// MockAdd is a mock Add operation.
-	MockAdd MockOpType = iota
-	// MockModify is a mock Modify operation.
-	MockModify
+	// MockCreate is a mock Create operation.
+	MockCreate MockOpType = iota
+	// MockUpdate is a mock Update operation.
+	MockUpdate
 	// MockDelete is a mock Delete operation.
 	MockDelete
-	// MockDump is a mock Dump operation.
-	MockDump
+	// MockRetrieve is a mock Retrieve operation.
+	MockRetrieve
 )
 
 // MockOperation is used in UTs to remember executed descriptor operations.
 type MockOperation struct {
-	OpType        MockOpType
-	Descriptor    string
-	Key           string
-	Value         proto.Message
-	Err           error
-	CorrelateDump []KVWithMetadata
+	OpType            MockOpType
+	Descriptor        string
+	Key               string
+	Value             proto.Message
+	Err               error
+	CorrelateRetrieve []KVWithMetadata
 }
 
 // plannedError is used to simulate error situation.
@@ -90,7 +90,7 @@ func (ms *MockSouthbound) PlanError(key string, err error, afterErrClb func()) {
 	ms.plannedErrors[key] = append(ms.plannedErrors[key], plannedError{err: err, afterErrClb: afterErrClb})
 }
 
-// SetValue is used in UTs to prepare the state of SB for the next Dump.
+// SetValue is used in UTs to prepare the state of SB for the next Retrieve.
 func (ms *MockSouthbound) SetValue(key string, value proto.Message, metadata Metadata, origin ValueOrigin, isDerived bool) {
 	ms.Lock()
 	defer ms.Unlock()
@@ -168,18 +168,18 @@ func (ms *MockSouthbound) registerKeyWithInvalidData(key string) {
 	ms.invalidKeyData[key] = struct{}{}
 }
 
-// dump returns non-derived values under the given selector.
+// retrieve returns non-derived values under the given selector.
 // Used by MockDescriptor.
-func (ms *MockSouthbound) dump(descriptor string, correlate []KVWithMetadata, selector KeySelector) ([]KVWithMetadata, error) {
+func (ms *MockSouthbound) retrieve(descriptor string, correlate []KVWithMetadata, selector KeySelector) ([]KVWithMetadata, error) {
 	ms.Lock()
 	defer ms.Unlock()
 
-	var dump []KVWithMetadata
+	var values []KVWithMetadata
 	for _, kv := range ms.values {
 		if ms.isKeyDerived(kv.Key) || !selector(kv.Key) {
 			continue
 		}
-		dump = append(dump, KVWithMetadata{
+		values = append(values, KVWithMetadata{
 			Key:      kv.Key,
 			Value:    kv.Value,
 			Metadata: kv.Metadata,
@@ -188,11 +188,11 @@ func (ms *MockSouthbound) dump(descriptor string, correlate []KVWithMetadata, se
 	}
 
 	ms.opHistory = append(ms.opHistory, MockOperation{
-		OpType:        MockDump,
-		Descriptor:    descriptor,
-		CorrelateDump: correlate,
+		OpType:            MockRetrieve,
+		Descriptor:        descriptor,
+		CorrelateRetrieve: correlate,
 	})
-	return dump, nil
+	return values, nil
 }
 
 // executeChange is used by MockDescriptor to simulate execution of a operation in SB.

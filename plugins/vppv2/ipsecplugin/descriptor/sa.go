@@ -67,10 +67,9 @@ func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 		KeyLabel:           ipsec.ModelSecurityAssociation.StripKeyPrefix,
 		ValueComparator:    d.EquivalentIPSecSAs,
 		Validate:           d.Validate,
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		Dump:               d.Dump,
+		Retrieve:           d.Retrieve,
 	}
 }
 
@@ -103,8 +102,8 @@ func (d *IPSecSADescriptor) Validate(key string, sa *ipsec.SecurityAssociation) 
 	return nil
 }
 
-// Add adds a new security association pair.
-func (d *IPSecSADescriptor) Add(key string, sa *ipsec.SecurityAssociation) (metadata interface{}, err error) {
+// Create adds a new security association pair.
+func (d *IPSecSADescriptor) Create(key string, sa *ipsec.SecurityAssociation) (metadata interface{}, err error) {
 	// add security association
 	err = d.ipSecHandler.AddSA(sa)
 	if err != nil {
@@ -123,13 +122,8 @@ func (d *IPSecSADescriptor) Delete(key string, sa *ipsec.SecurityAssociation, me
 	return err
 }
 
-// ModifyWithRecreate always returns true - security associations are modified via re-creation.
-func (d *IPSecSADescriptor) ModifyWithRecreate(key string, oldSA, newSA *ipsec.SecurityAssociation, metadata interface{}) bool {
-	return true
-}
-
-// Dump returns all configured VPP security associations.
-func (d *IPSecSADescriptor) Dump(correlate []adapter.SAKVWithMetadata) (dump []adapter.SAKVWithMetadata, err error) {
+// Retrieve returns all configured VPP security associations.
+func (d *IPSecSADescriptor) Retrieve(correlate []adapter.SAKVWithMetadata) (dump []adapter.SAKVWithMetadata, err error) {
 	// dump security associations
 	sas, err := d.ipSecHandler.DumpIPSecSA()
 	if err != nil {

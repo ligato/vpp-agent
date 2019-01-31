@@ -45,9 +45,9 @@ const (
 func (t TxnType) String() string {
 	switch t {
 	case SBNotification:
-		return "SB notification"
+		return "SB Notification"
 	case NBTransaction:
-		return "NB transaction"
+		return "NB Transaction"
 	case RetryFailedOps:
 		return "RETRY"
 	}
@@ -304,14 +304,14 @@ func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) str
 	}
 
 	str += indent2 + fmt.Sprintf("- key: %s\n", op.Key)
-	if op.Operation == TxnOperation_MODIFY {
+	if op.Operation == TxnOperation_UPDATE {
 		str += indent2 + fmt.Sprintf("- prev-value: %s \n", utils.ProtoToString(op.PrevValue))
 		str += indent2 + fmt.Sprintf("- new-value: %s \n", utils.ProtoToString(op.NewValue))
 	}
 	if op.Operation == TxnOperation_DELETE {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.PrevValue))
 	}
-	if op.Operation == TxnOperation_ADD {
+	if op.Operation == TxnOperation_CREATE {
 		str += indent2 + fmt.Sprintf("- value: %s \n", utils.ProtoToString(op.NewValue))
 	}
 	if op.PrevErr != nil {
