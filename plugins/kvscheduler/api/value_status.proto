@@ -18,7 +18,7 @@ enum ValueState {
 
     // ValueState_REMOVED is assigned to NB value after it was removed or when
     // it is being re-created. The state is only temporary: for re-create, the
-    // value transits to whatever state the following Add operation produces,
+    // value transits to whatever state the following Create operation produces,
     // and delete values are removed from the graph (go to the NONEXISTENT state)
     // immediately after the notification about the state change is sent.
     REMOVED = 3;
@@ -27,10 +27,11 @@ enum ValueState {
     CONFIGURED = 4;
 
     // ValueState_RETRIEVED marks value not managed by NB, instead created
-    // automatically or externally in SB.
+    // automatically or externally in SB. The KVScheduler learns about the value
+    // either using Retrieve() or through a SB notification.
     RETRIEVED = 5;
 
-    // ValueState_FOUND marks NB value that was found (=dumped) by refresh
+    // ValueState_FOUND marks NB value that was found (=retrieved) by refresh
     // but not actually configured by the agent.
     FOUND = 6;
 
@@ -63,8 +64,8 @@ enum ValueState {
 enum TxnOperation {
     UNDEFINED = 0;
     VALIDATE = 1;
-    ADD = 2;
-    MODIFY = 3;
+    CREATE = 2;
+    UPDATE = 3;
     DELETE = 4;
 }
 

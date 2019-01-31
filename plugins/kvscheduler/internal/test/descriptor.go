@@ -26,14 +26,14 @@ import (
 type WithoutOp int
 
 const (
-	// WithoutAdd tells MockDescriptor to leave Add as nil.
-	WithoutAdd WithoutOp = iota
-	// WithoutModify tells MockDescriptor to leave Modify as nil.
-	WithoutModify
+	// WithoutCreate tells MockDescriptor to leave Create as nil.
+	WithoutCreate WithoutOp = iota
+	// WithoutUpdate tells MockDescriptor to leave Update as nil.
+	WithoutUpdate
 	// WithoutDelete tells MockDescriptor to leave Delete as nil.
 	WithoutDelete
-	// WithoutDump tells MockDescriptor to leave Dump as nil.
-	WithoutDump
+	// WithoutRetrieve tells MockDescriptor to leave Retrieve as nil.
+	WithoutRetrieve
 )
 
 // mockDescriptor implements KVDescriptor for UTs.
@@ -51,18 +51,18 @@ func NewMockDescriptor(args *KVDescriptor, sb *MockSouthbound, firstFreeIndex in
 		sb:        sb,
 	}
 	descriptor := &KVDescriptor{
-		Name:               args.Name,
-		KeySelector:        args.KeySelector,
-		ValueTypeName:      args.ValueTypeName,
-		ValueComparator:    args.ValueComparator,
-		KeyLabel:           args.KeyLabel,
-		NBKeyPrefix:        args.NBKeyPrefix,
-		WithMetadata:       args.WithMetadata,
-		Validate:           args.Validate,
-		IsRetriableFailure: args.IsRetriableFailure,
-		ModifyWithRecreate: args.ModifyWithRecreate,
-		Dependencies:       args.Dependencies,
-		DumpDependencies:   args.DumpDependencies,
+		Name:                 args.Name,
+		KeySelector:          args.KeySelector,
+		ValueTypeName:        args.ValueTypeName,
+		ValueComparator:      args.ValueComparator,
+		KeyLabel:             args.KeyLabel,
+		NBKeyPrefix:          args.NBKeyPrefix,
+		WithMetadata:         args.WithMetadata,
+		Validate:             args.Validate,
+		IsRetriableFailure:   args.IsRetriableFailure,
+		UpdateWithRecreate:   args.UpdateWithRecreate,
+		Dependencies:         args.Dependencies,
+		RetrieveDependencies: args.RetrieveDependencies,
 	}
 	if args.WithMetadata {
 		descriptor.MetadataMapFactory = func() idxmap.NamedMappingRW {
@@ -81,17 +81,17 @@ func NewMockDescriptor(args *KVDescriptor, sb *MockSouthbound, firstFreeIndex in
 	for _, withoutOp := range withoutOps {
 		withoutMap[withoutOp] = struct{}{}
 	}
-	if _, withoutAdd := withoutMap[WithoutAdd]; !withoutAdd {
-		descriptor.Add = mock.Add
+	if _, withoutCreate := withoutMap[WithoutCreate]; !withoutCreate {
+		descriptor.Create = mock.Create
 	}
 	if _, withoutDelete := withoutMap[WithoutDelete]; !withoutDelete {
 		descriptor.Delete = mock.Delete
 	}
-	if _, withoutModify := withoutMap[WithoutModify]; !withoutModify {
-		descriptor.Modify = mock.Modify
+	if _, withoutUpdate := withoutMap[WithoutUpdate]; !withoutUpdate {
+		descriptor.Update = mock.Update
 	}
-	if _, withoutDump := withoutMap[WithoutDump]; !withoutDump {
-		descriptor.Dump = mock.Dump
+	if _, withoutRetrieve := withoutMap[WithoutRetrieve]; !withoutRetrieve {
+		descriptor.Retrieve = mock.Retrieve
 	}
 	return descriptor
 }
@@ -111,8 +111,8 @@ func (md *mockDescriptor) equalValues(key string, v1, v2 proto.Message) bool {
 	return proto.Equal(v1, v2)
 }
 
-// Add executes add operation in the mock SB.
-func (md *mockDescriptor) Add(key string, value proto.Message) (metadata Metadata, err error) {
+// Create executes create operation in the mock SB.
+func (md *mockDescriptor) Create(key string, value proto.Message) (metadata Metadata, err error) {
 	md.validateKey(key, md.args.KeySelector(key))
 	withMeta := md.sb != nil && md.args.WithMetadata && !md.sb.isKeyDerived(key)
 	if withMeta {
@@ -120,7 +120,7 @@ func (md *mockDescriptor) Add(key string, value proto.Message) (metadata Metadat
 	}
 	if md.sb != nil {
 		md.validateKey(key, md.sb.GetValue(key) == nil)
-		err = md.sb.executeChange(md.args.Name, MockAdd, key, value, metadata)
+		err = md.sb.executeChange(md.args.Name, MockCreate, key, value, metadata)
 	}
 	if err == nil && withMeta {
 		md.nextIndex++
@@ -146,8 +146,8 @@ func (md *mockDescriptor) Delete(key string, value proto.Message, metadata Metad
 	return err
 }
 
-// Modify executes modify operation in the mock SB.
-func (md *mockDescriptor) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+// Update executes update operation in the mock SB.
+func (md *mockDescriptor) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
 	md.validateKey(key, md.args.KeySelector(key))
 	newMetadata = oldMetadata
 	if md.sb != nil {
@@ -160,7 +160,7 @@ func (md *mockDescriptor) Modify(key string, oldValue, newValue proto.Message, o
 			md.validateKey(key, kv.Value == oldValue)
 		}
 		md.validateKey(key, kv.Metadata == oldMetadata)
-		err = md.sb.executeChange(md.args.Name, MockModify, key, newValue, newMetadata)
+		err = md.sb.executeChange(md.args.Name, MockUpdate, key, newValue, newMetadata)
 	}
 	return newMetadata, err
 }
@@ -180,10 +180,10 @@ func (md *mockDescriptor) DerivedValues(key string, value proto.Message) []KeyVa
 	return nil
 }
 
-// Dump returns non-derived values currently set in the mock SB.
-func (md *mockDescriptor) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+// Retrieve returns non-derived values currently set in the mock SB.
+func (md *mockDescriptor) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
 	if md.sb == nil {
 		return nil, nil
 	}
-	return md.sb.dump(md.args.Name, correlate, md.args.KeySelector)
+	return md.sb.retrieve(md.args.Name, correlate, md.args.KeySelector)
 }

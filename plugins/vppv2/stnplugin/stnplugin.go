@@ -65,7 +65,10 @@ func (p *STNPlugin) Init() (err error) {
 	// init and register STN descriptor
 	p.stnDescriptor = descriptor.NewSTNDescriptor(p.stnHandler, p.Log)
 	stnDescriptor := adapter.NewSTNDescriptor(p.stnDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(stnDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(stnDescriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

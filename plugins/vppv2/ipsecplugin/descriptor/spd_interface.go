@@ -59,7 +59,7 @@ func (d *SPDInterfaceDescriptor) GetDescriptor() *adapter.SPDInterfaceDescriptor
 		Name:               SPDInterfaceDescriptorName,
 		KeySelector:        d.IsSPDInterfaceKey,
 		ValueTypeName:      proto.MessageName(&ipsec.SecurityPolicyDatabase{}),
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
 		Dependencies:       d.Dependencies,
 	}
@@ -72,8 +72,8 @@ func (d *SPDInterfaceDescriptor) IsSPDInterfaceKey(key string) bool {
 	return isSPDIfaceKey
 }
 
-// Add puts interface into security policy database.
-func (d *SPDInterfaceDescriptor) Add(key string, spdIf *ipsec.SecurityPolicyDatabase_Interface) (metadata interface{}, err error) {
+// Create puts interface into security policy database.
+func (d *SPDInterfaceDescriptor) Create(key string, spdIf *ipsec.SecurityPolicyDatabase_Interface) (metadata interface{}, err error) {
 	// get security policy database index
 	spdIdx, _, isSPDIfKey := ipsec.ParseSPDInterfaceKey(key)
 	if !isSPDIfKey {

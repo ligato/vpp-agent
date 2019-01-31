@@ -25,9 +25,9 @@ import (
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
-// addTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace
+// createTAPToVPP moves Linux-side of the VPP-TAP interface to the destination namespace
 // and sets the requested host name, IP addresses, etc.
-func (d *InterfaceDescriptor) addTAPToVPP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
+func (d *InterfaceDescriptor) createTAPToVPP(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
 	linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 
 	// determine TAP interface name as set by VPP ifplugin

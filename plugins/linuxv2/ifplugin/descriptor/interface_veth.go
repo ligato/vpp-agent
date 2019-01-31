@@ -24,9 +24,9 @@ import (
 	nslinuxcalls "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin/linuxcalls"
 )
 
-// addVETH creates a new VETH pair if neither of VETH-ends are configured, or just
+// createVETH creates a new VETH pair if neither of VETH-ends are configured, or just
 // applies configuration to the unfinished VETH-end with a temporary host name.
-func (d *InterfaceDescriptor) addVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
+func (d *InterfaceDescriptor) createVETH(nsCtx nslinuxcalls.NamespaceMgmtCtx, key string,
 	linuxIf *interfaces.Interface) (metadata *ifaceidx.LinuxIfMetadata, err error) {
 
 	// determine host/logical/temporary interface names

@@ -87,18 +87,18 @@ func NewNAT44GlobalDescriptor(natHandler vppcalls.NatVppAPI, log logging.PluginL
 // the KVScheduler.
 func (d *NAT44GlobalDescriptor) GetDescriptor() *adapter.NAT44GlobalDescriptor {
 	return &adapter.NAT44GlobalDescriptor{
-		Name:               NAT44GlobalDescriptorName,
-		NBKeyPrefix:        nat.ModelNat44Global.KeyPrefix(),
-		ValueTypeName:      nat.ModelNat44Global.ProtoName(),
-		KeySelector:        nat.ModelNat44Global.IsKeyValid,
-		ValueComparator:    d.EquivalentNAT44Global,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Modify:             d.Modify,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName},
+		Name:                 NAT44GlobalDescriptorName,
+		NBKeyPrefix:          nat.ModelNat44Global.KeyPrefix(),
+		ValueTypeName:        nat.ModelNat44Global.ProtoName(),
+		KeySelector:          nat.ModelNat44Global.IsKeyValid,
+		ValueComparator:      d.EquivalentNAT44Global,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Update:               d.Update,
+		Retrieve:             d.Retrieve,
+		DerivedValues:        d.DerivedValues,
+		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -171,19 +171,19 @@ func (d *NAT44GlobalDescriptor) Validate(key string, globalCfg *nat.Nat44Global)
 	return nil
 }
 
-// Add applies NAT44 global options.
-func (d *NAT44GlobalDescriptor) Add(key string, globalCfg *nat.Nat44Global) (metadata interface{}, err error) {
-	return d.Modify(key, defaultGlobalCfg, globalCfg, nil)
+// Create applies NAT44 global options.
+func (d *NAT44GlobalDescriptor) Create(key string, globalCfg *nat.Nat44Global) (metadata interface{}, err error) {
+	return d.Update(key, defaultGlobalCfg, globalCfg, nil)
 }
 
 // Delete sets NAT44 global options back to the defaults.
 func (d *NAT44GlobalDescriptor) Delete(key string, globalCfg *nat.Nat44Global, metadata interface{}) error {
-	_, err := d.Modify(key, globalCfg, defaultGlobalCfg, metadata)
+	_, err := d.Update(key, globalCfg, defaultGlobalCfg, metadata)
 	return err
 }
 
-// Modify updates NAT44 global options.
-func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *nat.Nat44Global, oldMetadata interface{}) (newMetadata interface{}, err error) {
+// Update updates NAT44 global options.
+func (d *NAT44GlobalDescriptor) Update(key string, oldGlobalCfg, newGlobalCfg *nat.Nat44Global, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	// update forwarding
 	if oldGlobalCfg.Forwarding != newGlobalCfg.Forwarding {
 		if err = d.natHandler.SetNat44Forwarding(newGlobalCfg.Forwarding); err != nil {
@@ -224,20 +224,8 @@ func (d *NAT44GlobalDescriptor) Modify(key string, oldGlobalCfg, newGlobalCfg *n
 	return nil, nil
 }
 
-// DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration.
-func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []kvs.KeyValuePair) {
-	// NAT interfaces
-	for _, natIface := range globalCfg.NatInterfaces {
-		derValues = append(derValues, kvs.KeyValuePair{
-			Key:   nat.InterfaceNAT44Key(natIface.Name, natIface.IsInside),
-			Value: natIface,
-		})
-	}
-	return derValues
-}
-
-// Dump returns the current NAT44 global configuration.
-func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetadata) ([]adapter.NAT44GlobalKVWithMetadata, error) {
+// Retrieve returns the current NAT44 global configuration.
+func (d *NAT44GlobalDescriptor) Retrieve(correlate []adapter.NAT44GlobalKVWithMetadata) ([]adapter.NAT44GlobalKVWithMetadata, error) {
 	globalCfg, err := d.natHandler.Nat44GlobalConfigDump()
 	if err != nil {
 		d.log.Error(err)
@@ -249,13 +237,25 @@ func (d *NAT44GlobalDescriptor) Dump(correlate []adapter.NAT44GlobalKVWithMetada
 		origin = kvs.FromSB
 	}
 
-	dump := []adapter.NAT44GlobalKVWithMetadata{{
+	retrieved := []adapter.NAT44GlobalKVWithMetadata{{
 		Key:    models.Key(globalCfg),
 		Value:  globalCfg,
 		Origin: origin,
 	}}
 
-	return dump, nil
+	return retrieved, nil
+}
+
+// DerivedValues derives nat.NatInterface for every interface with assigned NAT configuration.
+func (d *NAT44GlobalDescriptor) DerivedValues(key string, globalCfg *nat.Nat44Global) (derValues []kvs.KeyValuePair) {
+	// NAT interfaces
+	for _, natIface := range globalCfg.NatInterfaces {
+		derValues = append(derValues, kvs.KeyValuePair{
+			Key:   nat.InterfaceNAT44Key(natIface.Name, natIface.IsInside),
+			Value: natIface,
+		})
+	}
+	return derValues
 }
 
 // natIface accumulates NAT interface configuration for validation purposes.

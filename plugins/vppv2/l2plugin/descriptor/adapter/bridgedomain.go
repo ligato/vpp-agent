@@ -21,24 +21,24 @@ type BridgeDomainKVWithMetadata struct {
 ////////// type-safe Descriptor structure //////////
 
 type BridgeDomainDescriptor struct {
-	Name               string
-	KeySelector        KeySelector
-	ValueTypeName      string
-	KeyLabel           func(key string) string
-	ValueComparator    func(key string, oldValue, newValue *vpp_l2.BridgeDomain) bool
-	NBKeyPrefix        string
-	WithMetadata       bool
-	MetadataMapFactory MetadataMapFactory
-	Validate           func(key string, value *vpp_l2.BridgeDomain) error
-	Add                func(key string, value *vpp_l2.BridgeDomain) (metadata *idxvpp2.OnlyIndex, err error)
-	Delete             func(key string, value *vpp_l2.BridgeDomain, metadata *idxvpp2.OnlyIndex) error
-	Modify             func(key string, oldValue, newValue *vpp_l2.BridgeDomain, oldMetadata *idxvpp2.OnlyIndex) (newMetadata *idxvpp2.OnlyIndex, err error)
-	ModifyWithRecreate func(key string, oldValue, newValue *vpp_l2.BridgeDomain, metadata *idxvpp2.OnlyIndex) bool
-	IsRetriableFailure func(err error) bool
-	Dependencies       func(key string, value *vpp_l2.BridgeDomain) []Dependency
-	DerivedValues      func(key string, value *vpp_l2.BridgeDomain) []KeyValuePair
-	Dump               func(correlate []BridgeDomainKVWithMetadata) ([]BridgeDomainKVWithMetadata, error)
-	DumpDependencies   []string /* descriptor name */
+	Name                 string
+	KeySelector          KeySelector
+	ValueTypeName        string
+	KeyLabel             func(key string) string
+	ValueComparator      func(key string, oldValue, newValue *vpp_l2.BridgeDomain) bool
+	NBKeyPrefix          string
+	WithMetadata         bool
+	MetadataMapFactory   MetadataMapFactory
+	Validate             func(key string, value *vpp_l2.BridgeDomain) error
+	Create               func(key string, value *vpp_l2.BridgeDomain) (metadata *idxvpp2.OnlyIndex, err error)
+	Delete               func(key string, value *vpp_l2.BridgeDomain, metadata *idxvpp2.OnlyIndex) error
+	Update               func(key string, oldValue, newValue *vpp_l2.BridgeDomain, oldMetadata *idxvpp2.OnlyIndex) (newMetadata *idxvpp2.OnlyIndex, err error)
+	UpdateWithRecreate   func(key string, oldValue, newValue *vpp_l2.BridgeDomain, metadata *idxvpp2.OnlyIndex) bool
+	Retrieve             func(correlate []BridgeDomainKVWithMetadata) ([]BridgeDomainKVWithMetadata, error)
+	IsRetriableFailure   func(err error) bool
+	DerivedValues        func(key string, value *vpp_l2.BridgeDomain) []KeyValuePair
+	Dependencies         func(key string, value *vpp_l2.BridgeDomain) []Dependency
+	RetrieveDependencies []string /* descriptor name */
 }
 
 ////////// Descriptor adapter //////////
@@ -50,15 +50,15 @@ type BridgeDomainDescriptorAdapter struct {
 func NewBridgeDomainDescriptor(typedDescriptor *BridgeDomainDescriptor) *KVDescriptor {
 	adapter := &BridgeDomainDescriptorAdapter{descriptor: typedDescriptor}
 	descriptor := &KVDescriptor{
-		Name:               typedDescriptor.Name,
-		KeySelector:        typedDescriptor.KeySelector,
-		ValueTypeName:      typedDescriptor.ValueTypeName,
-		KeyLabel:           typedDescriptor.KeyLabel,
-		NBKeyPrefix:        typedDescriptor.NBKeyPrefix,
-		WithMetadata:       typedDescriptor.WithMetadata,
-		MetadataMapFactory: typedDescriptor.MetadataMapFactory,
-		IsRetriableFailure: typedDescriptor.IsRetriableFailure,
-		DumpDependencies:   typedDescriptor.DumpDependencies,
+		Name:                 typedDescriptor.Name,
+		KeySelector:          typedDescriptor.KeySelector,
+		ValueTypeName:        typedDescriptor.ValueTypeName,
+		KeyLabel:             typedDescriptor.KeyLabel,
+		NBKeyPrefix:          typedDescriptor.NBKeyPrefix,
+		WithMetadata:         typedDescriptor.WithMetadata,
+		MetadataMapFactory:   typedDescriptor.MetadataMapFactory,
+		IsRetriableFailure:   typedDescriptor.IsRetriableFailure,
+		RetrieveDependencies: typedDescriptor.RetrieveDependencies,
 	}
 	if typedDescriptor.ValueComparator != nil {
 		descriptor.ValueComparator = adapter.ValueComparator
@@ -66,26 +66,26 @@ func NewBridgeDomainDescriptor(typedDescriptor *BridgeDomainDescriptor) *KVDescr
 	if typedDescriptor.Validate != nil {
 		descriptor.Validate = adapter.Validate
 	}
-	if typedDescriptor.Add != nil {
-		descriptor.Add = adapter.Add
+	if typedDescriptor.Create != nil {
+		descriptor.Create = adapter.Create
 	}
 	if typedDescriptor.Delete != nil {
 		descriptor.Delete = adapter.Delete
 	}
-	if typedDescriptor.Modify != nil {
-		descriptor.Modify = adapter.Modify
+	if typedDescriptor.Update != nil {
+		descriptor.Update = adapter.Update
 	}
-	if typedDescriptor.ModifyWithRecreate != nil {
-		descriptor.ModifyWithRecreate = adapter.ModifyWithRecreate
+	if typedDescriptor.UpdateWithRecreate != nil {
+		descriptor.UpdateWithRecreate = adapter.UpdateWithRecreate
+	}
+	if typedDescriptor.Retrieve != nil {
+		descriptor.Retrieve = adapter.Retrieve
 	}
 	if typedDescriptor.Dependencies != nil {
 		descriptor.Dependencies = adapter.Dependencies
 	}
 	if typedDescriptor.DerivedValues != nil {
 		descriptor.DerivedValues = adapter.DerivedValues
-	}
-	if typedDescriptor.Dump != nil {
-		descriptor.Dump = adapter.Dump
 	}
 	return descriptor
 }
@@ -107,15 +107,15 @@ func (da *BridgeDomainDescriptorAdapter) Validate(key string, value proto.Messag
 	return da.descriptor.Validate(key, typedValue)
 }
 
-func (da *BridgeDomainDescriptorAdapter) Add(key string, value proto.Message) (metadata Metadata, err error) {
+func (da *BridgeDomainDescriptorAdapter) Create(key string, value proto.Message) (metadata Metadata, err error) {
 	typedValue, err := castBridgeDomainValue(key, value)
 	if err != nil {
 		return nil, err
 	}
-	return da.descriptor.Add(key, typedValue)
+	return da.descriptor.Create(key, typedValue)
 }
 
-func (da *BridgeDomainDescriptorAdapter) Modify(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
+func (da *BridgeDomainDescriptorAdapter) Update(key string, oldValue, newValue proto.Message, oldMetadata Metadata) (newMetadata Metadata, err error) {
 	oldTypedValue, err := castBridgeDomainValue(key, oldValue)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (da *BridgeDomainDescriptorAdapter) Modify(key string, oldValue, newValue p
 	if err != nil {
 		return nil, err
 	}
-	return da.descriptor.Modify(key, oldTypedValue, newTypedValue, typedOldMetadata)
+	return da.descriptor.Update(key, oldTypedValue, newTypedValue, typedOldMetadata)
 }
 
 func (da *BridgeDomainDescriptorAdapter) Delete(key string, value proto.Message, metadata Metadata) error {
@@ -143,7 +143,7 @@ func (da *BridgeDomainDescriptorAdapter) Delete(key string, value proto.Message,
 	return da.descriptor.Delete(key, typedValue, typedMetadata)
 }
 
-func (da *BridgeDomainDescriptorAdapter) ModifyWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
+func (da *BridgeDomainDescriptorAdapter) UpdateWithRecreate(key string, oldValue, newValue proto.Message, metadata Metadata) bool {
 	oldTypedValue, err := castBridgeDomainValue(key, oldValue)
 	if err != nil {
 		return true
@@ -156,26 +156,10 @@ func (da *BridgeDomainDescriptorAdapter) ModifyWithRecreate(key string, oldValue
 	if err != nil {
 		return true
 	}
-	return da.descriptor.ModifyWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
+	return da.descriptor.UpdateWithRecreate(key, oldTypedValue, newTypedValue, typedMetadata)
 }
 
-func (da *BridgeDomainDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
-	typedValue, err := castBridgeDomainValue(key, value)
-	if err != nil {
-		return nil
-	}
-	return da.descriptor.Dependencies(key, typedValue)
-}
-
-func (da *BridgeDomainDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
-	typedValue, err := castBridgeDomainValue(key, value)
-	if err != nil {
-		return nil
-	}
-	return da.descriptor.DerivedValues(key, typedValue)
-}
-
-func (da *BridgeDomainDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
+func (da *BridgeDomainDescriptorAdapter) Retrieve(correlate []KVWithMetadata) ([]KVWithMetadata, error) {
 	var correlateWithType []BridgeDomainKVWithMetadata
 	for _, kvpair := range correlate {
 		typedValue, err := castBridgeDomainValue(kvpair.Key, kvpair.Value)
@@ -195,21 +179,37 @@ func (da *BridgeDomainDescriptorAdapter) Dump(correlate []KVWithMetadata) ([]KVW
 			})
 	}
 
-	typedDump, err := da.descriptor.Dump(correlateWithType)
+	typedValues, err := da.descriptor.Retrieve(correlateWithType)
 	if err != nil {
 		return nil, err
 	}
-	var dump []KVWithMetadata
-	for _, typedKVWithMetadata := range typedDump {
+	var values []KVWithMetadata
+	for _, typedKVWithMetadata := range typedValues {
 		kvWithMetadata := KVWithMetadata{
 			Key:      typedKVWithMetadata.Key,
 			Metadata: typedKVWithMetadata.Metadata,
 			Origin:   typedKVWithMetadata.Origin,
 		}
 		kvWithMetadata.Value = typedKVWithMetadata.Value
-		dump = append(dump, kvWithMetadata)
+		values = append(values, kvWithMetadata)
 	}
-	return dump, err
+	return values, err
+}
+
+func (da *BridgeDomainDescriptorAdapter) DerivedValues(key string, value proto.Message) []KeyValuePair {
+	typedValue, err := castBridgeDomainValue(key, value)
+	if err != nil {
+		return nil
+	}
+	return da.descriptor.DerivedValues(key, typedValue)
+}
+
+func (da *BridgeDomainDescriptorAdapter) Dependencies(key string, value proto.Message) []Dependency {
+	typedValue, err := castBridgeDomainValue(key, value)
+	if err != nil {
+		return nil
+	}
+	return da.descriptor.Dependencies(key, typedValue)
 }
 
 ////////// Helper methods //////////

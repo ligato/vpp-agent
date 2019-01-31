@@ -62,7 +62,7 @@ func (d *BDInterfaceDescriptor) GetDescriptor() *adapter.BDInterfaceDescriptor {
 		Name:               BDInterfaceDescriptorName,
 		KeySelector:        d.IsBDInterfaceKey,
 		ValueTypeName:      proto.MessageName(&l2.BridgeDomain_Interface{}),
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
 		Dependencies:       d.Dependencies,
 	}
@@ -75,8 +75,8 @@ func (d *BDInterfaceDescriptor) IsBDInterfaceKey(key string) bool {
 	return isBDIfaceKey
 }
 
-// Add puts interface into bridge domain.
-func (d *BDInterfaceDescriptor) Add(key string, bdIface *l2.BridgeDomain_Interface) (metadata interface{}, err error) {
+// Create puts interface into bridge domain.
+func (d *BDInterfaceDescriptor) Create(key string, bdIface *l2.BridgeDomain_Interface) (metadata interface{}, err error) {
 	// get bridge domain index
 	bdName, _, _ := l2.ParseBDInterfaceKey(key)
 	bdMeta, found := d.bdIndex.LookupByName(bdName)

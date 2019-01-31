@@ -44,7 +44,7 @@ type applyValueArgs struct {
 }
 
 // executeTransaction executes pre-processed transaction.
-// If <dry-run> is enabled, Validate/Add/Delete/Modify operations will not be executed
+// If <dry-run> is enabled, Validate/Create/Delete/Update operations will not be executed
 // and the graph will be returned to its original state at the end.
 func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed kvs.RecordedTxnOps) {
 	if s.logGraphWalk {
@@ -115,7 +115,7 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 		}
 	}
 
-	// get rid of uninteresting intermediate pending Add/Delete operations
+	// get rid of uninteresting intermediate pending Create/Delete operations
 	executed = s.compressTxnOps(executed)
 
 	graphW.Release()
@@ -161,9 +161,9 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	} else if args.kv.value == nil {
 		txnOp.Operation = kvs.TxnOperation_DELETE
 	} else if node.GetValue() == nil || !isNodeAvailable(node) {
-		txnOp.Operation = kvs.TxnOperation_ADD
+		txnOp.Operation = kvs.TxnOperation_CREATE
 	} else {
-		txnOp.Operation = kvs.TxnOperation_MODIFY
+		txnOp.Operation = kvs.TxnOperation_UPDATE
 	}
 
 	// remaining txnOp attributes to fill:
@@ -203,10 +203,10 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	switch txnOp.Operation {
 	case kvs.TxnOperation_DELETE:
 		executed, err = s.applyDelete(node, txnOp, args, args.isUpdate)
-	case kvs.TxnOperation_ADD:
-		executed, err = s.applyAdd(node, txnOp, args)
-	case kvs.TxnOperation_MODIFY:
-		executed, err = s.applyModify(node, txnOp, args)
+	case kvs.TxnOperation_CREATE:
+		executed, err = s.applyCreate(node, txnOp, args)
+	case kvs.TxnOperation_UPDATE:
+		executed, err = s.applyUpdate(node, txnOp, args)
 	}
 
 	// detect value state changes
@@ -319,10 +319,10 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	return
 }
 
-// applyAdd adds new value which previously didn't exist or was unavailable.
-func (s *Scheduler) applyAdd(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *applyValueArgs) (executed kvs.RecordedTxnOps, err error) {
+// applyCreate creates new value which previously didn't exist or was unavailable.
+func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *applyValueArgs) (executed kvs.RecordedTxnOps, err error) {
 	if s.logGraphWalk {
-		endLog := s.logNodeVisit("applyAdd", args)
+		endLog := s.logNodeVisit("applyCreate", args)
 		defer endLog()
 	}
 	if !args.dryRun {
@@ -395,19 +395,19 @@ func (s *Scheduler) applyAdd(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *
 		return kvs.RecordedTxnOps{txnOp}, nil
 	}
 
-	// execute add operation
+	// execute Create operation
 	if !args.dryRun && descriptor != nil {
 		var metadata interface{}
 
 		if args.kv.origin != kvs.FromSB {
-			metadata, err = handler.add(node.GetKey(), node.GetValue())
+			metadata, err = handler.create(node.GetKey(), node.GetValue())
 		} else {
-			// already added in SB
+			// already created in SB
 			metadata = args.kv.metadata
 		}
 
 		if err != nil {
-			// add failed => assume the value is unavailable
+			// create failed => assume the value is unavailable
 			node.SetFlags(&UnavailValueFlag{})
 			retriableErr := handler.isRetriableFailure(err)
 			txnOp.NewErr = err
@@ -458,10 +458,10 @@ func (s *Scheduler) applyAdd(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *
 	return
 }
 
-// applyModify applies new value to existing non-pending value.
-func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *applyValueArgs) (executed kvs.RecordedTxnOps, err error) {
+// applyUpdate applies new value to existing non-pending value.
+func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, args *applyValueArgs) (executed kvs.RecordedTxnOps, err error) {
 	if s.logGraphWalk {
-		endLog := s.logNodeVisit("applyModify", args)
+		endLog := s.logNodeVisit("applyUpdate", args)
 		defer endLog()
 	}
 	if !args.dryRun {
@@ -491,18 +491,18 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// re-create the value if required by the descriptor
 	recreate := !equivalent &&
 		args.kv.origin != kvs.FromSB &&
-		handler.modifyWithRecreate(args.kv.key, node.GetValue(), args.kv.value, node.GetMetadata())
+		handler.updateWithRecreate(args.kv.key, node.GetValue(), args.kv.value, node.GetMetadata())
 
 	if recreate {
-		// record operation as two - delete followed by add
+		// record operation as two - delete followed by create
 		delOp := s.preRecordTxnOp(args, node)
 		delOp.Operation = kvs.TxnOperation_DELETE
 		delOp.NewValue = nil
 		delOp.IsRecreate = true
-		addOp := s.preRecordTxnOp(args, node)
-		addOp.Operation = kvs.TxnOperation_ADD
-		addOp.PrevValue = nil
-		addOp.IsRecreate = true
+		createOp := s.preRecordTxnOp(args, node)
+		createOp.Operation = kvs.TxnOperation_CREATE
+		createOp.PrevValue = nil
+		createOp.IsRecreate = true
 		// remove obsolete value
 		delExec, inheritedErr := s.applyDelete(node, delOp, args, false)
 		executed = append(executed, delExec...)
@@ -510,9 +510,9 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 			err = inheritedErr
 			return
 		}
-		// add the new revision of the value
-		addExec, inheritedErr := s.applyAdd(node, addOp, args)
-		executed = append(executed, addExec...)
+		// create the new revision of the value
+		createExec, inheritedErr := s.applyCreate(node, createOp, args)
+		executed = append(executed, createExec...)
 		err = inheritedErr
 		return
 	}
@@ -539,13 +539,13 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 		return
 	}
 
-	// execute modify operation
+	// execute update operation
 	if !args.dryRun && !equivalent && descriptor != nil {
 		var newMetadata interface{}
 
-		// call Modify handler
+		// call Update handler
 		if args.kv.origin != kvs.FromSB {
-			newMetadata, err = handler.modify(node.GetKey(), prevValue, node.GetValue(), node.GetMetadata())
+			newMetadata, err = handler.update(node.GetKey(), prevValue, node.GetValue(), node.GetMetadata())
 		} else {
 			// already modified in SB
 			newMetadata = args.kv.metadata
@@ -592,7 +592,7 @@ func (s *Scheduler) applyModify(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	if !args.isDerived {
-		// modify/add derived values
+		// update/create derived values
 		var derivedVals []kvForTxn
 		for _, derivedVal := range derives {
 			derivedVals = append(derivedVals, kvForTxn{
@@ -717,29 +717,29 @@ func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed 
 
 // determineUpdateOperation determines if the value needs update and what operation to execute.
 func (s *Scheduler) determineUpdateOperation(node graph.NodeRW, txnOp *kvs.RecordedTxnOp) {
-	// add node if dependencies are now all met
+	// create node if dependencies are now all met
 	if !isNodeAvailable(node) {
 		if !isNodeReady(node) {
 			// nothing to do
 			return
 		}
-		txnOp.Operation = kvs.TxnOperation_ADD
+		txnOp.Operation = kvs.TxnOperation_CREATE
 	} else if !isNodeReady(node) {
 		// node should not be available anymore
 		txnOp.Operation = kvs.TxnOperation_DELETE
 	}
 }
 
-// compressTxnOps removes uninteresting intermediate pending Add/Delete operations.
+// compressTxnOps removes uninteresting intermediate pending Create/Delete operations.
 func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnOps {
-	// compress Add operations
+	// compress Create operations
 	compressed := make(kvs.RecordedTxnOps, 0, len(executed))
 	for i, op := range executed {
 		compressedOp := false
-		if op.Operation == kvs.TxnOperation_ADD && op.NewState == kvs.ValueState_PENDING {
+		if op.Operation == kvs.TxnOperation_CREATE && op.NewState == kvs.ValueState_PENDING {
 			for j := i + 1; j < len(executed); j++ {
 				if executed[j].Key == op.Key {
-					if executed[j].Operation == kvs.TxnOperation_ADD {
+					if executed[j].Operation == kvs.TxnOperation_CREATE {
 						// compress
 						compressedOp = true
 						executed[j].PrevValue = op.PrevValue

@@ -21,9 +21,9 @@ import (
 // orderValuesByOp orders values by operations (in average should yield the shortest
 // sequence of operations):
 //  1. delete
-//  2. modify with re-create
-//  3. add
-//  4. modify
+//  2. update with re-create
+//  3. create
+//  4. update
 func (s *Scheduler) orderValuesByOp(values []kvForTxn) []kvForTxn {
 	graphR := s.graph.Read()
 	defer graphR.Release()
@@ -35,7 +35,7 @@ func (s *Scheduler) orderValuesByOp(values []kvForTxn) []kvForTxn {
 	})
 
 	// sort values by operations
-	var delete, recreate, add, modify []kvForTxn
+	var delete, recreate, create, update []kvForTxn
 	for _, kv := range values {
 		descriptor := s.registry.GetDescriptorForKey(kv.key)
 		handler := &descriptorHandler{descriptor}
@@ -46,20 +46,20 @@ func (s *Scheduler) orderValuesByOp(values []kvForTxn) []kvForTxn {
 			continue
 		}
 		if node == nil || node.GetFlag(UnavailValueFlagName) != nil {
-			add = append(add, kv)
+			create = append(create, kv)
 			continue
 		}
-		if handler.modifyWithRecreate(kv.key, node.GetValue(), kv.value, node.GetMetadata()) {
+		if handler.updateWithRecreate(kv.key, node.GetValue(), kv.value, node.GetMetadata()) {
 			recreate = append(recreate, kv)
 		} else {
-			modify = append(modify, kv)
+			update = append(update, kv)
 		}
 	}
 
 	ordered := make([]kvForTxn, 0, len(values))
 	ordered = append(ordered, delete...)
 	ordered = append(ordered, recreate...)
-	ordered = append(ordered, add...)
-	ordered = append(ordered, modify...)
+	ordered = append(ordered, create...)
+	ordered = append(ordered, update...)
 	return ordered
 }

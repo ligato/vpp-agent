@@ -76,12 +76,12 @@ func (d *FIBDescriptor) GetDescriptor() *adapter.FIBDescriptor {
 		KeyLabel:        l2.ModelFIBEntry.StripKeyPrefix,
 		ValueComparator: d.EquivalentFIBs,
 		// NB keys already covered by the prefix for bridge domains
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Dependencies:       d.Dependencies,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{vpp_ifdescriptor.InterfaceDescriptorName, BridgeDomainDescriptorName},
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Retrieve:             d.Retrieve,
+		Dependencies:         d.Dependencies,
+		RetrieveDependencies: []string{vpp_ifdescriptor.InterfaceDescriptorName, BridgeDomainDescriptorName},
 	}
 }
 
@@ -119,8 +119,8 @@ func (d *FIBDescriptor) Validate(key string, fib *l2.FIBEntry) error {
 	return nil
 }
 
-// Add adds new L2 FIB.
-func (d *FIBDescriptor) Add(key string, fib *l2.FIBEntry) (metadata interface{}, err error) {
+// Create adds new L2 FIB.
+func (d *FIBDescriptor) Create(key string, fib *l2.FIBEntry) (metadata interface{}, err error) {
 	// add L2 FIB
 	err = d.fibHandler.AddL2FIB(fib)
 	if err != nil {
@@ -136,6 +136,24 @@ func (d *FIBDescriptor) Delete(key string, fib *l2.FIBEntry, metadata interface{
 		d.log.Error(err)
 	}
 	return err
+}
+
+// Retrieve returns all configured VPP L2 FIBs.
+func (d *FIBDescriptor) Retrieve(correlate []adapter.FIBKVWithMetadata) (retrieved []adapter.FIBKVWithMetadata, err error) {
+	fibs, err := d.fibHandler.DumpL2FIBs()
+	if err != nil {
+		d.log.Error(err)
+		return retrieved, err
+	}
+	for _, fib := range fibs {
+		retrieved = append(retrieved, adapter.FIBKVWithMetadata{
+			Key:    l2.FIBKey(fib.Fib.BridgeDomain, fib.Fib.PhysAddress),
+			Value:  fib.Fib,
+			Origin: kvs.UnknownOrigin, // there can be automatically created FIBs
+		})
+	}
+
+	return retrieved, nil
 }
 
 // Dependencies for FIBs are:
@@ -154,22 +172,4 @@ func (d *FIBDescriptor) Dependencies(key string, fib *l2.FIBEntry) (dependencies
 		})
 	}
 	return dependencies
-}
-
-// Dump returns all configured VPP L2 FIBs.
-func (d *FIBDescriptor) Dump(correlate []adapter.FIBKVWithMetadata) (dump []adapter.FIBKVWithMetadata, err error) {
-	fibs, err := d.fibHandler.DumpL2FIBs()
-	if err != nil {
-		d.log.Error(err)
-		return dump, err
-	}
-	for _, fib := range fibs {
-		dump = append(dump, adapter.FIBKVWithMetadata{
-			Key:    l2.FIBKey(fib.Fib.BridgeDomain, fib.Fib.PhysAddress),
-			Value:  fib.Fib,
-			Origin: kvs.UnknownOrigin, // there can be automatically created FIBs
-		})
-	}
-
-	return dump, nil
 }

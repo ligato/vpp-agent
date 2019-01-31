@@ -72,13 +72,13 @@ func (d *ACLDescriptor) GetDescriptor() *adapter.ACLDescriptor {
 		MetadataMapFactory: func() idxmap.NamedMappingRW {
 			return aclidx.NewACLIndex(d.log, "vpp-acl-index")
 		},
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Modify:             d.Modify,
-		ModifyWithRecreate: d.ModifyWithRecreate,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Update:               d.Update,
+		UpdateWithRecreate:   d.UpdateWithRecreate,
+		Retrieve:             d.Retrieve,
+		DerivedValues:        d.DerivedValues,
+		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -128,8 +128,8 @@ func (d *ACLDescriptor) validateRules(aclName string, rules []*acl.ACL_Rule) ([]
 	}
 }
 
-// Add configures ACL
-func (d *ACLDescriptor) Add(key string, acl *acl.ACL) (metadata *aclidx.ACLMetadata, err error) {
+// Create configures ACL
+func (d *ACLDescriptor) Create(key string, acl *acl.ACL) (metadata *aclidx.ACLMetadata, err error) {
 	if len(acl.Rules) == 0 {
 		return nil, errors.Errorf("failed to configure ACL %s, no rules to set", acl.Name)
 	}
@@ -175,8 +175,8 @@ func (d *ACLDescriptor) Delete(key string, acl *acl.ACL, metadata *aclidx.ACLMet
 	return nil
 }
 
-// Modify modifies ACL
-func (d *ACLDescriptor) Modify(key string, oldACL, newACL *acl.ACL, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error) {
+// Update modifies ACL
+func (d *ACLDescriptor) Update(key string, oldACL, newACL *acl.ACL, oldMetadata *aclidx.ACLMetadata) (newMetadata *aclidx.ACLMetadata, err error) {
 	// Validate rules.
 	rules, isL2MacIP := d.validateRules(newACL.Name, newACL.Rules)
 
@@ -201,8 +201,8 @@ func (d *ACLDescriptor) Modify(key string, oldACL, newACL *acl.ACL, oldMetadata 
 	return newMetadata, nil
 }
 
-// ModifyWithRecreate checks if modification requires recreation
-func (d *ACLDescriptor) ModifyWithRecreate(key string, oldACL, newACL *acl.ACL, metadata *aclidx.ACLMetadata) bool {
+// UpdateWithRecreate checks if modification requires recreation
+func (d *ACLDescriptor) UpdateWithRecreate(key string, oldACL, newACL *acl.ACL, metadata *aclidx.ACLMetadata) bool {
 	var hasL2 bool
 	for _, rule := range oldACL.Rules {
 		if rule.GetMacipRule() != nil {
@@ -231,9 +231,9 @@ func (d *ACLDescriptor) DerivedValues(key string, value *acl.ACL) (derived []api
 	return derived
 }
 
-// Dump returns list of dumped ACLs with metadata
-func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (
-	dump []adapter.ACLKVWithMetadata, err error,
+// Retrieve returns list of configured ACLs with metadata.
+func (d *ACLDescriptor) Retrieve(correlate []adapter.ACLKVWithMetadata) (
+	acls []adapter.ACLKVWithMetadata, err error,
 ) {
 	// Retrieve VPP configuration.
 	ipACLs, err := d.aclHandler.DumpACL()
@@ -246,7 +246,7 @@ func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (
 	}
 
 	for _, ipACL := range ipACLs {
-		dump = append(dump, adapter.ACLKVWithMetadata{
+		acls = append(acls, adapter.ACLKVWithMetadata{
 			Key:   acl.Key(ipACL.ACL.Name),
 			Value: ipACL.ACL,
 			Metadata: &aclidx.ACLMetadata{
@@ -256,7 +256,7 @@ func (d *ACLDescriptor) Dump(correlate []adapter.ACLKVWithMetadata) (
 		})
 	}
 	for _, macipACL := range macipACLs {
-		dump = append(dump, adapter.ACLKVWithMetadata{
+		acls = append(acls, adapter.ACLKVWithMetadata{
 			Key:   acl.Key(macipACL.ACL.Name),
 			Value: macipACL.ACL,
 			Metadata: &aclidx.ACLMetadata{

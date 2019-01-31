@@ -61,17 +61,14 @@ func (d *ProxyArpInterfaceDescriptor) GetDescriptor() *adapter.ProxyARPInterface
 			return isProxyARPInterfaceKey
 		},
 		ValueTypeName: proto.MessageName(&l3.ProxyARP_Interface{}),
-		Add:           d.Add,
+		Create:        d.Create,
 		Delete:        d.Delete,
-		ModifyWithRecreate: func(key string, oldValue, newValue *l3.ProxyARP_Interface, metadata interface{}) bool {
-			return true
-		},
-		Dependencies: d.Dependencies,
+		Dependencies:  d.Dependencies,
 	}
 }
 
-// Add enables VPP Proxy ARP for interface.
-func (d *ProxyArpInterfaceDescriptor) Add(key string, value *l3.ProxyARP_Interface) (metadata interface{}, err error) {
+// Create enables VPP Proxy ARP for interface.
+func (d *ProxyArpInterfaceDescriptor) Create(key string, value *l3.ProxyARP_Interface) (metadata interface{}, err error) {
 	if err := d.proxyArpHandler.EnableProxyArpInterface(value.Name); err != nil {
 		return nil, errors.Errorf("failed to enable proxy ARP for interface %s: %v", value.Name, err)
 	}

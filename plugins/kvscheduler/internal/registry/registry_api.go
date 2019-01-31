@@ -24,7 +24,7 @@ type Registry interface {
 	// RegisterDescriptor add new descriptor into the registry.
 	RegisterDescriptor(descriptor *KVDescriptor)
 
-	// GetAllDescriptors returns all registered descriptors ordered by dump-dependencies.
+	// GetAllDescriptors returns all registered descriptors ordered by retrieve-dependencies.
 	GetAllDescriptors() []*KVDescriptor
 
 	// GetDescriptor returns descriptor with the given name.

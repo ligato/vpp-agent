@@ -83,22 +83,22 @@ type RouteDescriptor struct {
 	nsPlugin  nsplugin.API
 	scheduler kvs.KVScheduler
 
-	// parallelization of the Dump operation
-	dumpGoRoutinesCnt int
+	// parallelization of the Retrieve operation
+	goRoutinesCnt int
 }
 
 // NewRouteDescriptor creates a new instance of the Route descriptor.
 func NewRouteDescriptor(
 	scheduler kvs.KVScheduler, ifPlugin ifplugin.API, nsPlugin nsplugin.API,
-	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger, dumpGoRoutinesCnt int) *RouteDescriptor {
+	l3Handler l3linuxcalls.NetlinkAPI, log logging.PluginLogger, goRoutinesCnt int) *RouteDescriptor {
 
 	return &RouteDescriptor{
-		scheduler:         scheduler,
-		l3Handler:         l3Handler,
-		ifPlugin:          ifPlugin,
-		nsPlugin:          nsPlugin,
-		dumpGoRoutinesCnt: dumpGoRoutinesCnt,
-		log:               log.NewLogger("route-descriptor"),
+		scheduler:     scheduler,
+		l3Handler:     l3Handler,
+		ifPlugin:      ifPlugin,
+		nsPlugin:      nsPlugin,
+		goRoutinesCnt: goRoutinesCnt,
+		log:           log.NewLogger("route-descriptor"),
 	}
 }
 
@@ -106,20 +106,20 @@ func NewRouteDescriptor(
 // the KVScheduler.
 func (d *RouteDescriptor) GetDescriptor() *adapter.RouteDescriptor {
 	return &adapter.RouteDescriptor{
-		Name:               RouteDescriptorName,
-		NBKeyPrefix:        linux_l3.ModelRoute.KeyPrefix(),
-		ValueTypeName:      linux_l3.ModelRoute.ProtoName(),
-		KeySelector:        linux_l3.ModelRoute.IsKeyValid,
-		KeyLabel:           linux_l3.ModelRoute.StripKeyPrefix,
-		ValueComparator:    d.EquivalentRoutes,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Modify:             d.Modify,
-		Dependencies:       d.Dependencies,
-		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
-		DumpDependencies:   []string{ifdescriptor.InterfaceDescriptorName},
+		Name:                 RouteDescriptorName,
+		NBKeyPrefix:          linux_l3.ModelRoute.KeyPrefix(),
+		ValueTypeName:        linux_l3.ModelRoute.ProtoName(),
+		KeySelector:          linux_l3.ModelRoute.IsKeyValid,
+		KeyLabel:             linux_l3.ModelRoute.StripKeyPrefix,
+		ValueComparator:      d.EquivalentRoutes,
+		Validate:             d.Validate,
+		Create:               d.Create,
+		Delete:               d.Delete,
+		Update:               d.Update,
+		Retrieve:             d.Retrieve,
+		DerivedValues:        d.DerivedValues,
+		Dependencies:         d.Dependencies,
+		RetrieveDependencies: []string{ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -153,8 +153,8 @@ func (d *RouteDescriptor) Validate(key string, route *linux_l3.Route) (err error
 	return nil
 }
 
-// Add adds Linux route.
-func (d *RouteDescriptor) Add(key string, route *linux_l3.Route) (metadata interface{}, err error) {
+// Create adds Linux route.
+func (d *RouteDescriptor) Create(key string, route *linux_l3.Route) (metadata interface{}, err error) {
 	err = d.updateRoute(route, "add", d.l3Handler.AddRoute)
 	return nil, err
 }
@@ -164,8 +164,8 @@ func (d *RouteDescriptor) Delete(key string, route *linux_l3.Route, metadata int
 	return d.updateRoute(route, "delete", d.l3Handler.DelRoute)
 }
 
-// Modify is able to change route scope, metric and GW address.
-func (d *RouteDescriptor) Modify(key string, oldRoute, newRoute *linux_l3.Route, oldMetadata interface{}) (newMetadata interface{}, err error) {
+// Update is able to change route scope, metric and GW address.
+func (d *RouteDescriptor) Update(key string, oldRoute, newRoute *linux_l3.Route, oldMetadata interface{}) (newMetadata interface{}, err error) {
 	err = d.updateRoute(newRoute, "modify", d.l3Handler.ReplaceRoute)
 	return nil, err
 }
@@ -286,50 +286,50 @@ func (d *RouteDescriptor) DerivedValues(key string, route *linux_l3.Route) (derV
 	return derValues
 }
 
-// routeDump is used as the return value sent via channel by dumpRoutes().
-type routeDump struct {
+// retrievedRoutes is used as the return value sent via channel by retrieveRoutes().
+type retrievedRoutes struct {
 	routes []adapter.RouteKVWithMetadata
 	err    error
 }
 
-// Dump returns all routes associated with interfaces managed by this agent.
-func (d *RouteDescriptor) Dump(correlate []adapter.RouteKVWithMetadata) ([]adapter.RouteKVWithMetadata, error) {
-	var dump []adapter.RouteKVWithMetadata
+// Retrieve returns all routes associated with interfaces managed by this agent.
+func (d *RouteDescriptor) Retrieve(correlate []adapter.RouteKVWithMetadata) ([]adapter.RouteKVWithMetadata, error) {
+	var values []adapter.RouteKVWithMetadata
 	interfaces := d.ifPlugin.GetInterfaceIndex().ListAllInterfaces()
 	goRoutinesCnt := len(interfaces) / minWorkForGoRoutine
 	if goRoutinesCnt == 0 {
 		goRoutinesCnt = 1
 	}
-	if goRoutinesCnt > d.dumpGoRoutinesCnt {
-		goRoutinesCnt = d.dumpGoRoutinesCnt
+	if goRoutinesCnt > d.goRoutinesCnt {
+		goRoutinesCnt = d.goRoutinesCnt
 	}
-	dumpCh := make(chan routeDump, goRoutinesCnt)
+	ch := make(chan retrievedRoutes, goRoutinesCnt)
 
-	// invoke multiple go routines for more efficient parallel dumping
+	// invoke multiple go routines for more efficient parallel route retrieval
 	for idx := 0; idx < goRoutinesCnt; idx++ {
 		if goRoutinesCnt > 1 {
-			go d.dumpRoutes(interfaces, idx, goRoutinesCnt, dumpCh)
+			go d.retrieveRoutes(interfaces, idx, goRoutinesCnt, ch)
 		} else {
-			d.dumpRoutes(interfaces, idx, goRoutinesCnt, dumpCh)
+			d.retrieveRoutes(interfaces, idx, goRoutinesCnt, ch)
 		}
 	}
 
 	// collect results from the go routines
 	for idx := 0; idx < goRoutinesCnt; idx++ {
-		routeDump := <-dumpCh
-		if routeDump.err != nil {
-			return dump, routeDump.err
+		retrieved := <-ch
+		if retrieved.err != nil {
+			return values, retrieved.err
 		}
-		dump = append(dump, routeDump.routes...)
+		values = append(values, retrieved.routes...)
 	}
 
-	return dump, nil
+	return values, nil
 }
 
-// dumpRoutes is run by a separate go routine to dump all routes entries associated
-// with every <goRoutineIdx>-th interface.
-func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutinesCnt int, dumpCh chan<- routeDump) {
-	var dump routeDump
+// retrieveRoutes is run by a separate go routine to retrieve all routes entries
+// associated with every <goRoutineIdx>-th interface.
+func (d *RouteDescriptor) retrieveRoutes(interfaces []string, goRoutineIdx, goRoutinesCnt int, ch chan<- retrievedRoutes) {
+	var retrieved retrievedRoutes
 	ifMetaIdx := d.ifPlugin.GetInterfaceIndex()
 	nsCtx := nslinuxcalls.NewNamespaceMgmtCtx()
 
@@ -338,8 +338,8 @@ func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutin
 		// get interface metadata
 		ifMeta, found := ifMetaIdx.LookupByName(ifName)
 		if !found || ifMeta == nil {
-			dump.err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
-			d.log.Error(dump.err)
+			retrieved.err = errors.Errorf("failed to obtain metadata for interface %s", ifName)
+			d.log.Error(retrieved.err)
 			break
 		}
 
@@ -350,7 +350,7 @@ func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutin
 			d.log.WithFields(logging.Fields{
 				"err":       err,
 				"namespace": ifMeta.Namespace,
-			}).Warn("Failed to dump namespace")
+			}).Warn("Failed to retrieve routes from the namespace")
 			continue
 		}
 
@@ -358,8 +358,8 @@ func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutin
 		v4Routes, v6Routes, err := d.l3Handler.GetRoutes(ifMeta.LinuxIfIndex)
 		revertNs()
 		if err != nil {
-			dump.err = err
-			d.log.Error(dump.err)
+			retrieved.err = err
+			d.log.Error(retrieved.err)
 			break
 		}
 
@@ -387,7 +387,7 @@ func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutin
 				// route not configured by the agent
 				continue
 			}
-			dump.routes = append(dump.routes, adapter.RouteKVWithMetadata{
+			retrieved.routes = append(retrieved.routes, adapter.RouteKVWithMetadata{
 				Key: linux_l3.RouteKey(dstNet, ifName),
 				Value: &linux_l3.Route{
 					OutgoingInterface: ifName,
@@ -401,7 +401,7 @@ func (d *RouteDescriptor) dumpRoutes(interfaces []string, goRoutineIdx, goRoutin
 		}
 	}
 
-	dumpCh <- dump
+	ch <- retrieved
 }
 
 // rtScopeFromNBToNetlink convert Route scope from NB configuration

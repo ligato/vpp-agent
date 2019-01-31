@@ -61,23 +61,23 @@ func TestRegistry(t *testing.T) {
 
 	descriptor1 := NewMockDescriptor(
 		&KVDescriptor{
-			Name:             descriptor1Name,
-			KeySelector:      prefixSelector(prefixA),
-			DumpDependencies: []string{descriptor2Name},
+			Name:                 descriptor1Name,
+			KeySelector:          prefixSelector(prefixA),
+			RetrieveDependencies: []string{descriptor2Name},
 		}, nil, 0)
 
 	descriptor2 := NewMockDescriptor(
 		&KVDescriptor{
-			Name:             descriptor2Name,
-			KeySelector:      prefixSelector(prefixB),
-			DumpDependencies: []string{descriptor3Name},
+			Name:                 descriptor2Name,
+			KeySelector:          prefixSelector(prefixB),
+			RetrieveDependencies: []string{descriptor3Name},
 		}, nil, 0)
 
 	descriptor3 := NewMockDescriptor(
 		&KVDescriptor{
-			Name:             descriptor3Name,
-			KeySelector:      prefixSelector(prefixC),
-			DumpDependencies: []string{descriptor4Name},
+			Name:                 descriptor3Name,
+			KeySelector:          prefixSelector(prefixC),
+			RetrieveDependencies: []string{descriptor4Name},
 		}, nil, 0)
 
 	descriptor4 := NewMockDescriptor(

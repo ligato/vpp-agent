@@ -30,8 +30,8 @@ import (
 
 const (
 	// by default, at most 10 go routines will split the configured namespaces
-	// to execute the Dump operation in parallel.
-	defaultDumpGoRoutinesCnt = 10
+	// to execute the Retrieve operation in parallel.
+	defaultGoRoutinesCnt = 10
 )
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
@@ -59,8 +59,8 @@ type Deps struct {
 
 // Config holds the l3plugin configuration.
 type Config struct {
-	Disabled          bool `json:"disabled"`
-	DumpGoRoutinesCnt int  `json:"dump-go-routines-count"`
+	Disabled      bool `json:"disabled"`
+	GoRoutinesCnt int  `json:"go-routines-count"`
 }
 
 // Init initializes and registers descriptors for Linux ARPs and Routes.
@@ -82,13 +82,19 @@ func (p *L3Plugin) Init() error {
 
 	// init & register descriptors
 	arpDescriptor := adapter.NewARPDescriptor(descriptor.NewARPDescriptor(
-		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.GoRoutinesCnt).GetDescriptor())
 
 	routeDescriptor := adapter.NewRouteDescriptor(descriptor.NewRouteDescriptor(
-		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.DumpGoRoutinesCnt).GetDescriptor())
+		p.KVScheduler, p.IfPlugin, p.NsPlugin, p.l3Handler, p.Log, config.GoRoutinesCnt).GetDescriptor())
 
-	p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
-	p.Deps.KVScheduler.RegisterKVDescriptor(routeDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
+	if err != nil {
+		return err
+	}
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(routeDescriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -102,7 +108,7 @@ func (p *L3Plugin) Close() error {
 func (p *L3Plugin) retrieveConfig() (*Config, error) {
 	config := &Config{
 		// default configuration
-		DumpGoRoutinesCnt: defaultDumpGoRoutinesCnt,
+		GoRoutinesCnt: defaultGoRoutinesCnt,
 	}
 	found, err := p.Cfg.LoadValue(config)
 	if !found {

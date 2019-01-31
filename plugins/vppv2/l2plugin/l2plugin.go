@@ -78,7 +78,10 @@ func (p *L2Plugin) Init() (err error) {
 	// init and register bridge domain descriptor
 	p.bdDescriptor = descriptor.NewBridgeDomainDescriptor(p.bdHandler, p.Log)
 	bdDescriptor := adapter.NewBridgeDomainDescriptor(p.bdDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(bdDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(bdDescriptor)
+	if err != nil {
+		return err
+	}
 
 	// obtain read-only references to BD index map
 	var withIndex bool
@@ -95,15 +98,24 @@ func (p *L2Plugin) Init() (err error) {
 	// init & register descriptors
 	p.bdIfaceDescriptor = descriptor.NewBDInterfaceDescriptor(p.bdIndex, p.bdHandler, p.Log)
 	bdIfaceDescriptor := adapter.NewBDInterfaceDescriptor(p.bdIfaceDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(bdIfaceDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(bdIfaceDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.fibDescriptor = descriptor.NewFIBDescriptor(p.fibHandler, p.Log)
 	fibDescriptor := adapter.NewFIBDescriptor(p.fibDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(fibDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(fibDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.xcDescriptor = descriptor.NewXConnectDescriptor(p.xCHandler, p.Log)
 	xcDescriptor := adapter.NewXConnectDescriptor(p.xcDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(xcDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(xcDescriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

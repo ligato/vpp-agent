@@ -101,7 +101,10 @@ func (p *NsPlugin) Init() error {
 	if err != nil {
 		return err
 	}
-	p.KVScheduler.RegisterKVDescriptor(p.msDescriptor.GetDescriptor())
+	err = p.KVScheduler.RegisterKVDescriptor(p.msDescriptor.GetDescriptor())
+	if err != nil {
+		return err
+	}
 	p.msDescriptor.StartTracker()
 
 	p.Log.Infof("Namespace plugin initialized")

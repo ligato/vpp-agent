@@ -32,8 +32,8 @@ import (
 
 const (
 	// by default, at most 10 go routines will split the configured namespaces
-	// to execute the Dump operation in parallel.
-	defaultDumpGoRoutinesCnt = 10
+	// to execute the Retrieve operation in parallel.
+	defaultGoRoutinesCnt = 10
 )
 
 // IfPlugin configures Linux VETH and TAP interfaces using Netlink API.
@@ -65,8 +65,8 @@ type Deps struct {
 
 // Config holds the ifplugin configuration.
 type Config struct {
-	Disabled          bool `json:"disabled"`
-	DumpGoRoutinesCnt int  `json:"dump-go-routines-count"`
+	Disabled      bool `json:"disabled"`
+	GoRoutinesCnt int  `json:"go-routines-count"`
 }
 
 // Init registers interface-related descriptors and starts watching of the default
@@ -89,12 +89,18 @@ func (p *IfPlugin) Init() error {
 
 	// init & register descriptors
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.KVScheduler,
-		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log, config.DumpGoRoutinesCnt)
+		p.ServiceLabel, p.NsPlugin, p.VppIfPlugin, p.ifHandler, p.Log, config.GoRoutinesCnt)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
-	p.Deps.KVScheduler.RegisterKVDescriptor(ifDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(ifDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.ifWatcher = descriptor.NewInterfaceWatcher(p.KVScheduler, p.ifHandler, p.Log)
-	p.Deps.KVScheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(p.ifWatcher.GetDescriptor())
+	if err != nil {
+		return err
+	}
 
 	// obtain read-only reference to index map
 	var withIndex bool
@@ -131,7 +137,7 @@ func (p *IfPlugin) GetInterfaceIndex() ifaceidx.LinuxIfMetadataIndex {
 func (p *IfPlugin) retrieveConfig() (*Config, error) {
 	config := &Config{
 		// default configuration
-		DumpGoRoutinesCnt: defaultDumpGoRoutinesCnt,
+		GoRoutinesCnt: defaultGoRoutinesCnt,
 	}
 	found, err := p.Cfg.LoadValue(config)
 	if !found {

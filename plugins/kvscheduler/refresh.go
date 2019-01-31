@@ -37,7 +37,7 @@ type resyncData struct {
 }
 
 // refreshGraph updates all/some values in the graph to their *real* state
-// using the Dump methods from descriptors.
+// using the Retrieve methods from descriptors.
 func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyncData *resyncData, verbose bool) {
 	if s.logGraphWalk {
 		keysToRefresh := "<ALL>"
@@ -50,7 +50,7 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 	}
 	refreshedKeys := utils.NewMapBasedKeySet()
 
-	// iterate over all descriptors, in order given by dump dependencies
+	// iterate over all descriptors, in order given by retrieve dependencies
 	for _, descriptor := range s.registry.GetAllDescriptors() {
 		handler := &descriptorHandler{descriptor}
 
@@ -95,30 +95,30 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 			correlate = nodesToKVPairsWithMetadata(prevAvailNodes)
 		}
 
-		// execute Dump operation
-		dump, ableToDump, err := handler.dump(correlate)
+		// execute Retrieve operation
+		retrieved, ableToRetrieve, err := handler.retrieve(correlate)
 
-		// mark un-dumpable as refreshed
-		if !ableToDump || err != nil {
+		// mark un-retrievable as refreshed
+		if !ableToRetrieve || err != nil {
 			if err != nil {
 				s.Log.WithField("descriptor", descriptor.Name).
-					Error("failed to dump values, refresh for the descriptor will be skipped")
+					Error("failed to retrieve values, refresh for the descriptor will be skipped")
 			}
 			s.skipRefresh(graphW, descriptor.Name, nil, refreshedKeys)
 			continue
 		} else if verbose {
 			plural := "s"
-			if len(dump) == 1 {
+			if len(retrieved) == 1 {
 				plural = ""
 			}
 
-			var dumpList string
-			for _, d := range dump {
-				dumpList += fmt.Sprintf("\n - %+v", d)
+			var log string
+			for _, value := range retrieved {
+				log += fmt.Sprintf("\n - %+v", value)
 			}
 
-			s.Log.Debugf("Descriptor %s dumped %d item%s: %v",
-				descriptor.Name, len(dump), plural, dumpList)
+			s.Log.Debugf("Descriptor %s retrieved %d item%s: %v",
+				descriptor.Name, len(retrieved), plural, log)
 
 		}
 
@@ -127,48 +127,48 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 			s.skipRefresh(graphW, descriptor.Name, keys, refreshedKeys)
 		}
 
-		// process dumped kv-pairs
-		for _, dumpedKV := range dump {
+		// process retrieved kv-pairs
+		for _, retrievedKV := range retrieved {
 			if keys != nil && keys.Length() > 0 {
 				// do no touch values that aren't meant to be refreshed
-				if toRefresh := keys.Has(dumpedKV.Key); !toRefresh {
+				if toRefresh := keys.Has(retrievedKV.Key); !toRefresh {
 					continue
 				}
 			}
-			if !s.validDumpedKV(dumpedKV, descriptor, refreshedKeys) {
+			if !s.validRetrievedKV(retrievedKV, descriptor, refreshedKeys) {
 				continue
 			}
 
 			// 1st attempt to determine value origin
-			if dumpedKV.Origin == kvs.UnknownOrigin {
+			if retrievedKV.Origin == kvs.UnknownOrigin {
 				// determine value origin based on the values for correlation
 				for _, kv := range correlate {
-					if kv.Key == dumpedKV.Key {
-						dumpedKV.Origin = kv.Origin
+					if kv.Key == retrievedKV.Key {
+						retrievedKV.Origin = kv.Origin
 						break
 					}
 				}
 			}
 
 			// 2nd attempt to determine value origin
-			if dumpedKV.Origin == kvs.UnknownOrigin {
+			if retrievedKV.Origin == kvs.UnknownOrigin {
 				// determine value origin based on the last revision
-				timeline := graphW.GetNodeTimeline(dumpedKV.Key)
+				timeline := graphW.GetNodeTimeline(retrievedKV.Key)
 				if len(timeline) > 0 {
 					lastRev := timeline[len(timeline)-1]
 					valueStateFlag := lastRev.Flags.GetFlag(ValueStateFlagName)
 					valueState := valueStateFlag.(*ValueStateFlag).valueState
-					dumpedKV.Origin = valueStateToOrigin(valueState)
+					retrievedKV.Origin = valueStateToOrigin(valueState)
 				}
 			}
 
-			if dumpedKV.Origin == kvs.UnknownOrigin {
+			if retrievedKV.Origin == kvs.UnknownOrigin {
 				// will assume this is from SB
-				dumpedKV.Origin = kvs.FromSB
+				retrievedKV.Origin = kvs.FromSB
 			}
 
 			// refresh node that represents this kv-pair
-			s.refreshValue(graphW, dumpedKV, handler, refreshedKeys, 2)
+			s.refreshValue(graphW, retrievedKV, handler, refreshedKeys, 2)
 		}
 
 		// unset the metadata from base NB values that do not actually exists
@@ -184,8 +184,8 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 			}
 		}
 
-		// in-progress save to expose changes in the metadata for dumps of the following
-		// descriptors
+		// in-progress save to expose changes in the metadata for Retrieve-s
+		// of the following descriptors
 		graphW.Save()
 	}
 
@@ -202,25 +202,25 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 	}
 }
 
-// refreshValue refreshes node that represents the given dumped key-value pair.
-func (s *Scheduler) refreshValue(graphW graph.RWAccess, dumpedKV kvs.KVWithMetadata,
+// refreshValue refreshes node that represents the given retrieved key-value pair.
+func (s *Scheduler) refreshValue(graphW graph.RWAccess, retrievedKV kvs.KVWithMetadata,
 	handler *descriptorHandler, refreshed utils.KeySet, indent int) {
 	if s.logGraphWalk {
 		indentStr := strings.Repeat(" ", indent)
-		msg := fmt.Sprintf("refreshValue (key=%s)", dumpedKV.Key)
+		msg := fmt.Sprintf("refreshValue (key=%s)", retrievedKV.Key)
 		fmt.Printf("%s%s %s\n", indentStr, nodeVisitBeginMark, msg)
 		defer fmt.Printf("%s%s %s\n", indentStr, nodeVisitEndMark, msg)
 	}
 
 	// refresh node that represents this kv-pair
-	node := graphW.SetNode(dumpedKV.Key)
+	node := graphW.SetNode(retrievedKV.Key)
 	node.SetLabel(handler.keyLabel(node.GetKey()))
-	node.SetValue(dumpedKV.Value)
+	node.SetValue(retrievedKV.Value)
 	if handler.descriptor.WithMetadata {
 		node.SetMetadataMap(handler.descriptor.Name)
-		node.SetMetadata(dumpedKV.Metadata)
+		node.SetMetadata(retrievedKV.Metadata)
 	}
-	s.refreshAvailNode(graphW, node, dumpedKV.Origin, false, node.GetKey(), refreshed, indent+2)
+	s.refreshAvailNode(graphW, node, retrievedKV.Origin, false, node.GetKey(), refreshed, indent+2)
 
 	// determine the set of unavailable derived values
 	obsolete := getDerivedKeys(node)
@@ -248,14 +248,14 @@ func (s *Scheduler) refreshValue(graphW graph.RWAccess, dumpedKV kvs.KVWithMetad
 			derNode.SetValue(kv.Value)
 			dependencies := derHandler.dependencies(derNode.GetKey(), derNode.GetValue())
 			derNode.SetTargets(constructTargets(dependencies, nil))
-			s.refreshAvailNode(graphW, derNode, dumpedKV.Origin, true, node.GetKey(), refreshed, indent+2)
+			s.refreshAvailNode(graphW, derNode, retrievedKV.Origin, true, node.GetKey(), refreshed, indent+2)
 		} else {
 			s.refreshUnavailNode(graphW, derNode, refreshed, indent+2)
 		}
 	}
 }
 
-// refreshAvailNode refreshes state of a node whose value was returned by Dump.
+// refreshAvailNode refreshes state of a node whose value was returned by Retrieve.
 func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	origin kvs.ValueOrigin, derived bool, baseKey string, refreshed utils.KeySet, indent int) {
 	if s.logGraphWalk {
@@ -267,7 +267,7 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 
 	// validate first
 	descriptor := s.registry.GetDescriptorForKey(node.GetKey()) // nil for properties
-	if derived && !s.validDumpedDerivedKV(node, descriptor, refreshed) {
+	if derived && !s.validRetrievedDerivedKV(node, descriptor, refreshed) {
 		graphW.DeleteNode(node.GetKey())
 		return
 	}
@@ -336,7 +336,7 @@ func (s *Scheduler) refreshUnavailNode(graphW graph.RWAccess, node graph.Node, r
 
 	// update state
 	if state == kvs.ValueState_UNIMPLEMENTED {
-		// it is expected that unimplemented value is not dumped
+		// it is expected that unimplemented value is not retrieved
 		return
 	}
 	if state == kvs.ValueState_CONFIGURED {
@@ -496,26 +496,26 @@ func dumpGraph(g graph.RWAccess) string {
 	return buf.String()
 }
 
-// validDumpedKV verifies validity of a dumped KV-pair.
-func (s *Scheduler) validDumpedKV(kv kvs.KVWithMetadata, descriptor *kvs.KVDescriptor, refreshed utils.KeySet) bool {
+// validRetrievedKV verifies validity of a retrieved KV-pair.
+func (s *Scheduler) validRetrievedKV(kv kvs.KVWithMetadata, descriptor *kvs.KVDescriptor, refreshed utils.KeySet) bool {
 	if kv.Key == "" {
 		s.Log.WithFields(logging.Fields{
 			"descriptor": descriptor.Name,
-		}).Warn("Descriptor dumped value with empty key")
+		}).Warn("Descriptor retrieved value with empty key")
 		return false
 	}
-	if alreadyDumped := refreshed.Has(kv.Key); alreadyDumped {
+	if alreadyRetrieved := refreshed.Has(kv.Key); alreadyRetrieved {
 		s.Log.WithFields(logging.Fields{
 			"descriptor": descriptor.Name,
 			"key":        kv.Key,
-		}).Warn("The same value was dumped more than once")
+		}).Warn("The same value was retrieved more than once")
 		return false
 	}
 	if kv.Value == nil {
 		s.Log.WithFields(logging.Fields{
 			"descriptor": descriptor.Name,
 			"key":        kv.Key,
-		}).Warn("Descriptor dumped nil value")
+		}).Warn("Descriptor retrieved nil value")
 		return false
 	}
 	if !descriptor.KeySelector(kv.Key) {
@@ -523,14 +523,14 @@ func (s *Scheduler) validDumpedKV(kv kvs.KVWithMetadata, descriptor *kvs.KVDescr
 			"descriptor": descriptor.Name,
 			"key":        kv.Key,
 			"value":      kv.Value,
-		}).Warn("Descriptor dumped value outside of its key space")
+		}).Warn("Descriptor retrieved value outside of its key space")
 		return false
 	}
 	return true
 }
 
-// validDumpedKV verifies validity of a KV-pair derived from a dumped value.
-func (s *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor *kvs.KVDescriptor, refreshed utils.KeySet) bool {
+// validRetrievedDerivedKV verifies validity of a KV-pair derived from a retrieved value.
+func (s *Scheduler) validRetrievedDerivedKV(node graph.Node, descriptor *kvs.KVDescriptor, refreshed utils.KeySet) bool {
 	descriptorName := "<NONE>"
 	if descriptor != nil {
 		descriptorName = descriptor.Name
@@ -542,12 +542,12 @@ func (s *Scheduler) validDumpedDerivedKV(node graph.Node, descriptor *kvs.KVDesc
 		}).Warn("Derived nil value")
 		return false
 	}
-	if alreadyDumped := refreshed.Has(node.GetKey()); alreadyDumped {
+	if alreadyRetrieved := refreshed.Has(node.GetKey()); alreadyRetrieved {
 		s.Log.WithFields(logging.Fields{
 			"descriptor": descriptorName,
 			"key":        node.GetKey(),
-		}).Warn("The same value was dumped more than once")
-		// return true -> let's overwrite invalidly dumped derived value
+		}).Warn("The same value was retrieved more than once")
+		// return true -> let's overwrite invalidly retrieved derived value
 	}
 	return true
 }

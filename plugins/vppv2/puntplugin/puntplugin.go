@@ -67,12 +67,18 @@ func (p *PuntPlugin) Init() (err error) {
 	// init and register punt descriptor
 	p.toHostDescriptor = descriptor.NewPuntToHostDescriptor(p.puntHandler, p.Log)
 	toHostDescriptor := adapter.NewPuntToHostDescriptor(p.toHostDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(toHostDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(toHostDescriptor)
+	if err != nil {
+		return err
+	}
 
 	// init and register IP punt redirect
 	p.ipRedirectDescriptor = descriptor.NewIPRedirectDescriptor(p.puntHandler, p.Log)
 	ipRedirectDescriptor := adapter.NewIPPuntRedirectDescriptor(p.ipRedirectDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(ipRedirectDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(ipRedirectDescriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

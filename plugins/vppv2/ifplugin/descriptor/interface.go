@@ -59,7 +59,7 @@ const (
 	untaggedIfPreffix = "UNTAGGED-"
 
 	// suffix attached to logical names of dumped TAP interfaces with Linux side
-	// not found by Dump of Linux-ifplugin
+	// not found by Retrieve of Linux-ifplugin
 	tapMissingLinuxSideSuffix = "-MISSING_LINUX_SIDE"
 
 	// suffix attached to logical names of dumped AF-PACKET interfaces connected
@@ -170,15 +170,15 @@ func (d *InterfaceDescriptor) GetDescriptor() *adapter.InterfaceDescriptor {
 		WithMetadata:       true,
 		MetadataMapFactory: d.MetadataFactory,
 		Validate:           d.Validate,
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
-		Modify:             d.Modify,
-		ModifyWithRecreate: d.ModifyWithRecreate,
+		Update:             d.Update,
+		UpdateWithRecreate: d.UpdateWithRecreate,
+		Retrieve:           d.Retrieve,
 		Dependencies:       d.Dependencies,
 		DerivedValues:      d.DerivedValues,
-		Dump:               d.Dump,
 		// If Linux-IfPlugin is loaded, dump it first.
-		DumpDependencies: []string{linux_ifdescriptor.InterfaceDescriptorName},
+		RetrieveDependencies: []string{linux_ifdescriptor.InterfaceDescriptorName},
 	}
 }
 
@@ -387,9 +387,9 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	return nil
 }
 
-// ModifyWithRecreate returns true if Type, VRF (or VRF IP version) or Type-specific
+// UpdateWithRecreate returns true if Type, VRF (or VRF IP version) or Type-specific
 // attributes are different.
-func (d *InterfaceDescriptor) ModifyWithRecreate(key string, oldIntf, newIntf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool {
+func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool {
 	if oldIntf.Type != newIntf.Type ||
 		oldIntf.Vrf != newIntf.Vrf {
 		return true

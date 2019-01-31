@@ -59,7 +59,7 @@ func (d *UnnumberedIfDescriptor) GetDescriptor() *adapter.UnnumberedDescriptor {
 		Name:               UnnumberedIfDescriptorName,
 		KeySelector:        d.IsUnnumberedInterfaceKey,
 		ValueTypeName:      proto.MessageName(&interfaces.Interface_Unnumbered{}),
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
 		Dependencies:       d.Dependencies,
 	}
@@ -78,8 +78,8 @@ func (d *UnnumberedIfDescriptor) IsUnnumberedInterfaceKey(key string) bool {
 	return isValid
 }
 
-// Add sets interface as unnumbered.
-func (d *UnnumberedIfDescriptor) Add(key string, unIntf *interfaces.Interface_Unnumbered) (metadata interface{}, err error) {
+// Create sets interface as unnumbered.
+func (d *UnnumberedIfDescriptor) Create(key string, unIntf *interfaces.Interface_Unnumbered) (metadata interface{}, err error) {
 	ifName, _ := interfaces.ParseNameFromUnnumberedKey(key)
 
 	ifMeta, found := d.ifIndex.LookupByName(ifName)

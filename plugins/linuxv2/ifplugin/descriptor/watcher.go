@@ -93,7 +93,7 @@ func (w *InterfaceWatcher) GetDescriptor() *kvs.KVDescriptor {
 	return &kvs.KVDescriptor{
 		Name:        InterfaceWatcherName,
 		KeySelector: w.IsLinuxInterfaceNotification,
-		Dump:        w.Dump,
+		Retrieve:    w.Retrieve,
 	}
 }
 
@@ -103,9 +103,9 @@ func (w *InterfaceWatcher) IsLinuxInterfaceNotification(key string) bool {
 	return strings.HasPrefix(key, ifmodel.InterfaceHostNameKeyPrefix)
 }
 
-// Dump returns key with empty value for every currently existing Linux interface
+// Retrieve returns key with empty value for every currently existing Linux interface
 // in the default network namespace.
-func (w *InterfaceWatcher) Dump(correlate []kvs.KVWithMetadata) (dump []kvs.KVWithMetadata, err error) {
+func (w *InterfaceWatcher) Retrieve(correlate []kvs.KVWithMetadata) (values []kvs.KVWithMetadata, err error) {
 	// wait until the set of interfaces is in-sync with the Linux network stack
 	w.ifacesMu.Lock()
 	if !w.intfsInSync {
@@ -114,14 +114,14 @@ func (w *InterfaceWatcher) Dump(correlate []kvs.KVWithMetadata) (dump []kvs.KVWi
 	defer w.ifacesMu.Unlock()
 
 	for ifName := range w.ifaces {
-		dump = append(dump, kvs.KVWithMetadata{
+		values = append(values, kvs.KVWithMetadata{
 			Key:    ifmodel.InterfaceHostNameKey(ifName),
 			Value:  &prototypes.Empty{},
 			Origin: kvs.FromSB,
 		})
 	}
 
-	return dump, nil
+	return values, nil
 }
 
 // StartWatching starts interface watching.

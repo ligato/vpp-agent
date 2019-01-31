@@ -82,23 +82,38 @@ func (p *L3Plugin) Init() error {
 	// init & register descriptors
 	p.routeDescriptor = descriptor.NewRouteDescriptor(p.routeHandler, p.Log)
 	routeDescriptor := adapter.NewRouteDescriptor(p.routeDescriptor.GetDescriptor())
-	p.Deps.KVScheduler.RegisterKVDescriptor(routeDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(routeDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.arpDescriptor = descriptor.NewArpDescriptor(p.KVScheduler, p.arpandler, p.Log)
 	arpDescriptor := adapter.NewARPEntryDescriptor(p.arpDescriptor.GetDescriptor())
-	p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(arpDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.proxyArpDescriptor = descriptor.NewProxyArpDescriptor(p.KVScheduler, p.proxyArpHandler, p.Log)
 	proxyArpDescriptor := adapter.NewProxyARPDescriptor(p.proxyArpDescriptor.GetDescriptor())
-	p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.proxyArpIfaceDescriptor = descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.proxyArpHandler, p.Log)
 	proxyArpIfaceDescriptor := adapter.NewProxyARPInterfaceDescriptor(p.proxyArpIfaceDescriptor.GetDescriptor())
-	p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpIfaceDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(proxyArpIfaceDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.ipScanNeighborDescriptor = descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.ipNeigh, p.Log)
 	ipScanNeighborDescriptor := adapter.NewIPScanNeighborDescriptor(p.ipScanNeighborDescriptor.GetDescriptor())
-	p.Deps.KVScheduler.RegisterKVDescriptor(ipScanNeighborDescriptor)
+	err = p.Deps.KVScheduler.RegisterKVDescriptor(ipScanNeighborDescriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -57,7 +57,7 @@ func (d *NAT44InterfaceDescriptor) GetDescriptor() *adapter.NAT44InterfaceDescri
 		Name:               NAT44InterfaceDescriptorName,
 		KeySelector:        d.IsNAT44InterfaceKey,
 		ValueTypeName:      proto.MessageName(&nat.Nat44Global_Interface{}),
-		Add:                d.Add,
+		Create:             d.Create,
 		Delete:             d.Delete,
 		Dependencies:       d.Dependencies,
 	}
@@ -70,8 +70,8 @@ func (d *NAT44InterfaceDescriptor) IsNAT44InterfaceKey(key string) bool {
 	return isNATIfaceKey
 }
 
-// Add enables NAT44 for an interface.
-func (d *NAT44InterfaceDescriptor) Add(key string, natIface *nat.Nat44Global_Interface) (metadata interface{}, err error) {
+// Create enables NAT44 for an interface.
+func (d *NAT44InterfaceDescriptor) Create(key string, natIface *nat.Nat44Global_Interface) (metadata interface{}, err error) {
 	err = d.natHandler.EnableNat44Interface(natIface.Name, natIface.IsInside, natIface.OutputFeature)
 	if err != nil {
 		d.log.Error(err)

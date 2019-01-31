@@ -155,15 +155,24 @@ func (p *IfPlugin) Init() error {
 	p.ifDescriptor = descriptor.NewInterfaceDescriptor(p.ifHandler, p.defaultMtu,
 		p.linuxIfHandler, p.LinuxIfPlugin, p.NsPlugin, p.Log)
 	ifDescriptor := adapter.NewInterfaceDescriptor(p.ifDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(ifDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(ifDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.unIfDescriptor = descriptor.NewUnnumberedIfDescriptor(p.ifHandler, p.Log)
 	unIfDescriptor := adapter.NewUnnumberedDescriptor(p.unIfDescriptor.GetDescriptor())
-	p.KVScheduler.RegisterKVDescriptor(unIfDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(unIfDescriptor)
+	if err != nil {
+		return err
+	}
 
 	p.dhcpDescriptor = descriptor.NewDHCPDescriptor(p.KVScheduler, p.ifHandler, p.Log)
 	dhcpDescriptor := p.dhcpDescriptor.GetDescriptor()
-	p.KVScheduler.RegisterKVDescriptor(dhcpDescriptor)
+	err = p.KVScheduler.RegisterKVDescriptor(dhcpDescriptor)
+	if err != nil {
+		return err
+	}
 
 	// obtain read-only references to index maps
 	var withIndex bool

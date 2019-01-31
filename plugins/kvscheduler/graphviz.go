@@ -27,8 +27,9 @@ const (
 )
 
 type depNode struct {
-	node  *dotNode
-	label string
+	node      *dotNode
+	label     string
+	satisfied bool
 }
 
 func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
@@ -251,12 +252,15 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, timestamp 
 				}
 				for _, dKey := range target.MatchingKeys.Iterate() {
 					dn := processGraphNode(getGraphNode(dKey))
-					deps = append(deps, depNode{node: dn, label: target.Label})
+					deps = append(deps, depNode{node: dn, label: target.Label, satisfied: true})
 				}
 			}
 			for _, d := range deps {
 				attrs := make(dotAttrs)
 				attrs["tooltip"] = d.label
+				if !d.satisfied {
+					attrs["color"] = "Red"
+				}
 				e := &dotEdge{
 					From:  n,
 					To:    d.node,

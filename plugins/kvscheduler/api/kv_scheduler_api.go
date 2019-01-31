@@ -34,15 +34,15 @@ type KeyValuePair struct {
 
 	// Value may represent some object, action or property.
 	//
-	// Value can be added either via northbound transaction (NB-value,
+	// Value can be created either via northbound transaction (NB-value,
 	// ValueOrigin = FromNB) or pushed (as already created) through SB notification
 	// (SB-value, ValueOrigin = FromSB). Values from NB take priority as they
 	// overwrite existing SB values (via Modify operation), whereas notifications
-	// for existing NB values are ignored. For values returned by Dump with unknown
+	// for existing NB values are ignored. For values retrieved with unknown
 	// origin the scheduler reviews the value's history to determine where it came
 	// from.
 	//
-	// For descriptors the values are mutable objects - Add, Modify and Delete
+	// For descriptors the values are mutable objects - Create, Update and Delete
 	// methods should reflect the value content without changing it.
 	// To add and maintain extra (runtime) attributes alongside the value, descriptor
 	// can use the value metadata.
@@ -52,11 +52,11 @@ type KeyValuePair struct {
 // Metadata are extra information carried alongside non-derived (base) value
 // that descriptor may use for runtime attributes, secondary lookups, etc. This
 // data are opaque for the scheduler and fully owned by the descriptor.
-// Descriptor is supposed to create/edit (and use) metadata inside the Add,
-// Modify, Delete methods and return the latest state in the dump.
+// Descriptor is supposed to create/edit (and use) metadata inside the Create,
+// Update, Delete methods and return the latest state with Retrieve.
 // Metadata, however, should not be used to determine the list of derived values
 // and dependencies for a value - this needs to be fixed for a given value
-// (Modify is effectively replace) and known even before the value is added.
+// (Update is effectively replace) and known even before the value is created.
 //
 // The only way how scheduler can learn anything from metadata, is if MetadataMap
 // is enabled by descriptor (using WithMetadata method) and a custom NamedMapping
@@ -81,11 +81,11 @@ type KVWithMetadata struct {
 }
 
 // View chooses from which point of view to look at the key-value space when
-// dumping values.
+// retrieving values.
 type View int
 
 const (
-	// SBView means to look directly into SB via Dump methods of descriptors
+	// SBView means to look directly into SB via Retrieve methods of descriptors
 	// to learn the real and up-to-date state of the system.
 	SBView View = iota
 
@@ -93,8 +93,8 @@ const (
 	// what key-values were requested and are assumed by NB to be applied.
 	NBView
 
-	// InternalView means to obtain the kvscheduler's current view of SB.
-	InternalView
+	// CachedView means to obtain the kvscheduler's current view of SB.
+	CachedView
 )
 
 // String converts View to string.
@@ -105,14 +105,14 @@ func (v View) String() string {
 	case NBView:
 		return "NB"
 	default:
-		return "internal"
+		return "cached"
 	}
 }
 
 // KVScheduler synchronizes the *desired* system state described by northbound
 // (NB) components via transactions with the *actual* state of the southbound (SB).
 // The  system state is represented as a set of inter-dependent key-value pairs
-// that can be added, modified, deleted from within NB transactions or be notified
+// that can be created, updated, deleted from within NB transactions or be notified
 // about via notifications from the SB plane.
 // The scheduling basically implements "state reconciliation" - periodically and
 // on any change the scheduler attempts to update every value which has satisfied
@@ -121,7 +121,7 @@ func (v View) String() string {
 // For the scheduler, the key-value pairs are just abstract items that need
 // to be managed in a synchronized fashion according to the described relations.
 // It is up to the SB components to assign actual meaning to the individual
-// values (via methods Add, Delete & Modify of the KVDescriptor).
+// values via provided implementations for CRUD operations.
 //
 // The idea behind scheduler is based on the Mediator pattern - SB components
 // do not communicate directly, but instead interact through the mediator.
@@ -133,13 +133,13 @@ func (v View) String() string {
 // respected by the scheduling algorithm:
 //   -> A depends on B:
 //          - A cannot exist without B
-//          - request to add A without B existing must be postponed by storing
+//          - request to create A without B existing must be postponed by storing
 //            A into the cache of values with unmet dependencies (a.k.a. pending)
 //          - if B is to be removed and A exists, A must be removed first
 //            and cached in case B is restored in the future
 //          - Note: values pushed from SB are not checked for dependencies
 //   -> B is derived from A:
-//          - value B is not added directly (by NB or SB) but gets derived
+//          - value B is not created directly (by NB or SB) but gets derived
 //            from base value A (using the DerivedValues() method of the base
 //            value's descriptor)
 //          - derived value exists only as long as its base does and gets removed
@@ -151,13 +151,13 @@ func (v View) String() string {
 //
 // Every key-value pair must have at most one descriptor associated with it.
 // Base NB value without descriptor is considered unimplemented and will never
-// be added.
+// be created.
 // On the other hand, derived value is allowed to have no descriptor associated
 // with it. Typically, properties of base values are implemented as derived
 // (often empty) values without attached SB operations, used as targets for
 // dependencies.
 //
-// For descriptors the values are mutable objects - Add, Modify and Delete
+// For descriptors the values are mutable objects - Create, Update and Delete
 // methods should reflect the value content without changing it.
 // To add and maintain extra (runtime) attributes alongside the value, scheduler
 // allows descriptors to append metadata - of any type - to each created
@@ -182,21 +182,21 @@ func (v View) String() string {
 //     key
 //   - retry for previously failed actions
 //   - transaction reverting
-//   - exposing history of actions, errors and pending values over the REST
+//   - exposing history of actions, errors and past value revisions over the REST
 //     interface
 //   - clearly describing the sequence of actions to be executed and postponed
 //     in the log file
-//   - TBD: transaction execution tracing (using "runtime/trace" package)
-//   - TBD: consider exposing the current config as a plotted graph (returned via
-//          REST) with values as nodes (colored to distinguish cached from added
-//          ones, derived from base, etc.) and dependencies as edges (unsatisfied
-//          marked with red color).
+//   - allows to print verbose log messages describing graph traversal during
+//     transactions for debugging purposes
+//   - exposing graph snapshot, in the present state or after a given transaction,
+//     as a plotted graph (returned via REST) with values as nodes (colored to
+//     distinguish various value states) and dependencies/derivations as edges.
 type KVScheduler interface {
 	// RegisterKVDescriptor registers descriptor for a set of selected
 	// keys. It should be called in the Init phase of agent plugins.
 	// Every key-value pair must have at most one descriptor associated with it
 	// (none for derived values expressing properties).
-	RegisterKVDescriptor(descriptor *KVDescriptor)
+	RegisterKVDescriptor(descriptor *KVDescriptor) error
 
 	// GetRegisteredNBKeyPrefixes returns a list of key prefixes from NB with values
 	// described by registered descriptors and therefore managed by the scheduler.
@@ -215,7 +215,7 @@ type KVScheduler interface {
 	//
 	// Pass <value> as nil if the value was removed, non-nil otherwise.
 	//
-	// Values pushed from SB do not trigger Add/Modify/Delete operations
+	// Values pushed from SB do not trigger Create/Update/Delete operations
 	// on the descriptors - the change has already happened in SB - only
 	// dependencies and derived values are updated.
 	//
@@ -247,13 +247,14 @@ type KVScheduler interface {
 	// by the sequence number.
 	GetRecordedTransaction(SeqNum uint64) (txn *RecordedTxn)
 
-	// DumpValuesByDescriptor dumps values associated with the given descriptor
-	// as viewed from either NB (what was requested to be applied), SB (what is
-	// actually applied) or from the inside (what kvscheduler's current view of SB is).
+	// DumpValuesByDescriptor dumps values associated with the given
+	// descriptor as viewed from either NB (what was requested to be applied),
+	// SB (what is actually applied) or from the inside (what kvscheduler's
+	// cached view of SB is).
 	DumpValuesByDescriptor(descriptor string, view View) (kvs []KVWithMetadata, err error)
 
-	// DumpValuesByKeyPrefix like DumpValuesByDescriptor returns dump of values,
-	// but the descriptor is selected based on the common key prefix.
+	// DumpValuesByKeyPrefix like DumpValuesByDescriptor returns a dump of values,
+	// but the descriptor is selected based on the key prefix.
 	DumpValuesByKeyPrefix(keyPrefix string, view View) (kvs []KVWithMetadata, err error)
 }
 

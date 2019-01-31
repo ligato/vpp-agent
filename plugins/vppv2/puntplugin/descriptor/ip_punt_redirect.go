@@ -65,17 +65,17 @@ func NewIPRedirectDescriptor(puntHandler vppcalls.PuntVppAPI, log logging.Logger
 // the KVScheduler.
 func (d *IPRedirectDescriptor) GetDescriptor() *adapter.IPPuntRedirectDescriptor {
 	return &adapter.IPPuntRedirectDescriptor{
-		Name:               IPRedirectDescriptorName,
-		NBKeyPrefix:        punt.ModelIPRedirect.KeyPrefix(),
-		ValueTypeName:      punt.ModelIPRedirect.ProtoName(),
-		KeySelector:        punt.ModelIPRedirect.IsKeyValid,
-		KeyLabel:           punt.ModelIPRedirect.StripKeyPrefix,
-		ValueComparator:    d.EquivalentIPRedirect,
-		Validate:           d.Validate,
-		Add:                d.Add,
-		Delete:             d.Delete,
-		Dependencies:       d.Dependencies,
-		Dump:               d.Dump,
+		Name:            IPRedirectDescriptorName,
+		NBKeyPrefix:     punt.ModelIPRedirect.KeyPrefix(),
+		ValueTypeName:   punt.ModelIPRedirect.ProtoName(),
+		KeySelector:     punt.ModelIPRedirect.IsKeyValid,
+		KeyLabel:        punt.ModelIPRedirect.StripKeyPrefix,
+		ValueComparator: d.EquivalentIPRedirect,
+		Validate:        d.Validate,
+		Create:          d.Create,
+		Delete:          d.Delete,
+		Retrieve:        d.Retrieve,
+		Dependencies:    d.Dependencies,
 	}
 }
 
@@ -109,8 +109,8 @@ func (d *IPRedirectDescriptor) Validate(key string, redirect *punt.IPRedirect) e
 	return nil
 }
 
-// Add adds new IP punt redirect entry.
-func (d *IPRedirectDescriptor) Add(key string, redirect *punt.IPRedirect) (metadata interface{}, err error) {
+// Create adds new IP punt redirect entry.
+func (d *IPRedirectDescriptor) Create(key string, redirect *punt.IPRedirect) (metadata interface{}, err error) {
 	// add Punt to host/socket
 	err = d.puntHandler.AddPuntRedirect(redirect)
 	if err != nil {
@@ -128,8 +128,8 @@ func (d *IPRedirectDescriptor) Delete(key string, redirect *punt.IPRedirect, met
 	return err
 }
 
-// Dump returns all configured VPP punt to host entries.
-func (d *IPRedirectDescriptor) Dump(correlate []adapter.IPPuntRedirectKVWithMetadata) (dump []adapter.IPPuntRedirectKVWithMetadata, err error) {
+// Retrieve returns all configured VPP punt to host entries.
+func (d *IPRedirectDescriptor) Retrieve(correlate []adapter.IPPuntRedirectKVWithMetadata) (dump []adapter.IPPuntRedirectKVWithMetadata, err error) {
 	// TODO dump for IP redirect missing in api
 	d.log.Info("Dump IP punt redirect is not supported by the VPP")
 	return []adapter.IPPuntRedirectKVWithMetadata{}, nil
@@ -143,5 +143,3 @@ func (d *IPRedirectDescriptor) Dependencies(key string, redirect *punt.IPRedirec
 	})
 	return dependencies
 }
-
-
