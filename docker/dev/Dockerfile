@@ -71,12 +71,12 @@ RUN set -eux; \
         make vpp_configure_args_vpp='--disable-japi' build-release pkg-deb; \
     fi; \
     cd build-root; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb; \
+    dpkg -i vpp_*.deb vpp-dev_*.deb libvppinfra*.deb vpp-plugin-core*.deb vpp-dbg_*.deb; \
     rm -rf .ccache /var/lib/apt/lists/*; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
 # install Go
-ENV GOLANG_VERSION 1.11.1
+ENV GOLANG_VERSION 1.11.5
 ARG GOLANG_OS_ARCH=linux-amd64
 RUN wget -O go.tgz "https://golang.org/dl/go${GOLANG_VERSION}.${GOLANG_OS_ARCH}.tar.gz" \
  && tar -C /usr/local -xzf go.tgz \
@@ -86,6 +86,9 @@ ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
  && chmod -R 777 "$GOPATH"
+
+# install debugger
+RUN go get -u github.com/go-delve/delve/cmd/dlv
 
 # copy configs
 COPY \
