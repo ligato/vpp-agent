@@ -15,10 +15,10 @@
 package kvscheduler
 
 import (
+	"github.com/gogo/protobuf/proto"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
-	"github.com/gogo/protobuf/proto"
 )
 
 func nodesToKVPairsWithMetadata(nodes []graph.Node) (kvPairs []kvs.KVWithMetadata) {
@@ -140,7 +140,7 @@ func getValueStatus(node graph.Node, key string) *kvs.BaseValueStatus {
 func nbBaseValsSelectors() []graph.FlagSelector {
 	return []graph.FlagSelector{
 		graph.WithoutFlags(&DerivedFlag{}),
-		graph.WithoutFlags(&ValueStateFlag{kvs.ValueState_RETRIEVED}),
+		graph.WithoutFlags(&ValueStateFlag{kvs.ValueState_OBTAINED}),
 	}
 }
 
@@ -148,7 +148,7 @@ func nbBaseValsSelectors() []graph.FlagSelector {
 func sbBaseValsSelectors() []graph.FlagSelector {
 	return []graph.FlagSelector{
 		graph.WithoutFlags(&DerivedFlag{}),
-		graph.WithFlags(&ValueStateFlag{kvs.ValueState_RETRIEVED}),
+		graph.WithFlags(&ValueStateFlag{kvs.ValueState_OBTAINED}),
 	}
 }
 
@@ -176,7 +176,7 @@ func valueStateToOrigin(state kvs.ValueState) kvs.ValueOrigin {
 	switch state {
 	case kvs.ValueState_NONEXISTENT:
 		return kvs.UnknownOrigin
-	case kvs.ValueState_RETRIEVED:
+	case kvs.ValueState_OBTAINED:
 		return kvs.FromSB
 	}
 	return kvs.FromNB
@@ -232,7 +232,7 @@ func getNodeLastAppliedValue(node graph.Node) proto.Message {
 
 // getNodeLastOperation returns last operation executed over the given node.
 func getNodeLastOperation(node graph.Node) kvs.TxnOperation {
-	if node != nil && getNodeState(node) != kvs.ValueState_RETRIEVED {
+	if node != nil && getNodeState(node) != kvs.ValueState_OBTAINED {
 		lastUpdate := getNodeLastUpdate(node)
 		if lastUpdate != nil {
 			return lastUpdate.txnOp
@@ -299,6 +299,10 @@ func isNodeReadyRec(node graph.Node, depth int, visited map[string]int) (ready b
 	for _, targets := range node.GetTargets(DependencyRelation) {
 		satisfied := false
 		for _, target := range targets.Nodes {
+			if getNodeState(target) == kvs.ValueState_REMOVED {
+				// do not consider values that are (being) removed
+				continue
+			}
 			if isNodeAvailable(target) {
 				satisfied = true
 			}

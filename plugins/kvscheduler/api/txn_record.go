@@ -224,12 +224,12 @@ func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) str
 		flags = append(flags, "RECREATE")
 	}
 	// value state transition
-	//  -> RETRIEVED
-	if op.NewState == ValueState_RETRIEVED {
-		flags = append(flags, "RETRIEVED")
+	//  -> OBTAINED
+	if op.NewState == ValueState_OBTAINED {
+		flags = append(flags, "OBTAINED")
 	}
-	if op.PrevState == ValueState_RETRIEVED && op.PrevState != op.NewState {
-		flags = append(flags, "WAS-RETRIEVED")
+	if op.PrevState == ValueState_OBTAINED && op.PrevState != op.NewState {
+		flags = append(flags, "WAS-OBTAINED")
 	}
 	//  -> UNIMPLEMENTED
 	if op.NewState == ValueState_UNIMPLEMENTED {
@@ -249,9 +249,9 @@ func (op *RecordedTxnOp) StringWithOpts(index int, verbose bool, indent int) str
 			flags = append(flags, "WAS-MISSING")
 		}
 	}
-	//  -> FOUND
-	if op.PrevState == ValueState_FOUND {
-		flags = append(flags, "FOUND")
+	//  -> DISCOVERED
+	if op.PrevState == ValueState_DISCOVERED {
+		flags = append(flags, "DISCOVERED")
 	}
 	//  -> PENDING
 	if op.PrevState == ValueState_PENDING {
