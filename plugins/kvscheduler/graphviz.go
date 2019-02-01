@@ -84,8 +84,14 @@ func (s *Scheduler) dotGraphHandler(formatter *render.Render) http.HandlerFunc {
 
 func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.RecordedTxn) ([]byte, error) {
 	title := fmt.Sprintf("%d keys", len(graphNodes))
+	updatedKeys := utils.NewMapBasedKeySet()
+	graphTimestamp := time.Now()
 	if txn != nil {
-		title += fmt.Sprintf(" - SeqNum: %d (%s)", txn.SeqNum, txn.Stop.Format(time.RFC822))
+		graphTimestamp = txn.Stop
+		title += fmt.Sprintf(" - SeqNum: %d (%s)", txn.SeqNum, graphTimestamp.Format(time.RFC822))
+		for _, op := range txn.Executed {
+			updatedKeys.Add(op.Key)
+		}
 	} else {
 		title += " - current"
 	}
@@ -99,6 +105,11 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 		"fontsize":  "15",
 		"tooltip":   "",
 	}
+
+	// TODO: how to link transaction recording inside of the main cluster title (SeqNum: %d)?
+	//if txn != nil {
+	//	cluster.Attrs["href"] = fmt.Sprintf(txnHistoryURL + "?seq-num=%d", txn.SeqNum)
+	//}
 
 	var (
 		nodes []*dotNode
@@ -126,6 +137,12 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 		attrs := make(dotAttrs)
 		attrs["pad"] = "0.01"
 		attrs["margin"] = "0.01"
+		attrs["href"] = fmt.Sprintf(keyTimelineURL+"?key=%s&amp;time=%d", key, graphTimestamp.UnixNano())
+
+		if updatedKeys.Has(key) {
+			attrs["penwidth"] = "2"
+			attrs["color"] = "Gold"
+		}
 
 		c := cluster
 

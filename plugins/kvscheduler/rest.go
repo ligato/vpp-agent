@@ -79,7 +79,7 @@ const (
 	prefixArg = "prefix"
 
 	// time is the name of the argument used to define point in time for a graph snapshot
-	// to retrieve.
+	// to retrieve. Value = number of nanoseconds since the start of the epoch.
 	timeArg = "time"
 
 	// downstreamResyncURL is URL used to trigger downstream-resync.
@@ -233,12 +233,35 @@ func (s *Scheduler) keyTimelineGetHandler(formatter *render.Render) http.Handler
 	return func(w http.ResponseWriter, req *http.Request) {
 		args := req.URL.Query()
 
+		// parse optional *time* argument
+		var timeVal time.Time
+		if timeStr, withTime := args[timeArg]; withTime && len(timeStr) == 1 {
+			var err error
+			timeVal, err = stringToTime(timeStr[0])
+			if err != nil {
+				s.logError(formatter.JSON(w, http.StatusInternalServerError, errorString{err.Error()}))
+				return
+			}
+		}
+
 		// parse mandatory *key* argument
 		if keys, withKey := args[keyArg]; withKey && len(keys) == 1 {
 			graphR := s.graph.Read()
 			defer graphR.Release()
 
 			timeline := graphR.GetNodeTimeline(keys[0])
+			if !timeVal.IsZero() {
+				var nodeRecord *graph.RecordedNode
+				for _, record := range timeline {
+					if record.Since.Before(timeVal) &&
+						(record.Until.IsZero() || record.Until.After(timeVal)) {
+						nodeRecord = record
+						break
+					}
+				}
+				s.logError(formatter.JSON(w, http.StatusOK, nodeRecord))
+				return
+			}
 			s.logError(formatter.JSON(w, http.StatusOK, timeline))
 			return
 		}
@@ -474,9 +497,9 @@ func (s *Scheduler) logError(err error) {
 
 // stringToTime converts Unix timestamp from string to time.Time.
 func stringToTime(s string) (time.Time, error) {
-	sec, err := strconv.ParseInt(s, 10, 64)
+	nsec, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return time.Unix(sec, 0), nil
+	return time.Unix(0, nsec), nil
 }
