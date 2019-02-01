@@ -15,11 +15,11 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -51,18 +51,18 @@ var (
 // when value does not match expected type.
 func ErrInvalidValueType(key string, value proto.Message) error {
 	if key == "" {
-		return fmt.Errorf("value (%v) has invalid type", value)
+		return errors.Errorf("value (%v) has invalid type", value)
 	}
-	return fmt.Errorf("value (%v) has invalid type for key: %s", value, key)
+	return errors.Errorf("value (%v) has invalid type for key: %s", value, key)
 }
 
 // ErrInvalidMetadataType is returned to scheduler by auto-generated descriptor adapter
 // when value metadata does not match expected type.
 func ErrInvalidMetadataType(key string) error {
 	if key == "" {
-		return errors.New("metadata has invalid type")
+		return errors.Errorf("metadata has invalid type")
 	}
-	return fmt.Errorf("metadata has invalid type for key: %s", key)
+	return errors.Errorf("metadata has invalid type for key: %s", key)
 }
 
 /****************************** Transaction Error *****************************/
@@ -91,10 +91,11 @@ func (e *TransactionError) Error() string {
 	if len(e.kvErrors) > 0 {
 		var kvErrMsgs []string
 		for _, kvError := range e.kvErrors {
-			kvErrMsgs = append(kvErrMsgs,
-				fmt.Sprintf("%s (%v): %v", kvError.Key, kvError.TxnOperation, kvError.Error))
+			kvErrMsgs = append(kvErrMsgs, fmt.Sprintf(
+				"%s (%v): %v", kvError.Key, kvError.TxnOperation, kvError.Error,
+			))
 		}
-		return fmt.Sprintf("failed key-value pairs: [%s]", strings.Join(kvErrMsgs, ", "))
+		return fmt.Sprintf("KeyErrors: [%s]", strings.Join(kvErrMsgs, ", "))
 	}
 	return ""
 }

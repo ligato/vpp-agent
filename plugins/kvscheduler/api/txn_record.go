@@ -169,7 +169,7 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 				continue
 			}
 			str += indent3 + fmt.Sprintf("- key: %s\n", kv.Key)
-			str += indent3 + fmt.Sprintf("  value: %s\n", utils.ProtoToString(kv.Value))
+			str += indent3 + fmt.Sprintf("  val: %s\n", utils.ProtoToString(kv.Value))
 		}
 
 	printOps:
@@ -182,8 +182,10 @@ func (txn *RecordedTxn) StringWithOpts(resultOnly, verbose bool, indent int) str
 		if len(txn.Executed) == 0 {
 			str += indent1 + "* executed operations:\n"
 		} else {
-			str += indent1 + fmt.Sprintf("* executed operations (%s - %s, duration = %s):\n",
-				txn.Start.String(), txn.Stop.String(), txn.Stop.Sub(txn.Start).String())
+			str += indent1 + fmt.Sprintf("* executed operations (%s -> %s, dur: %s):\n",
+				txn.Start.Round(time.Millisecond),
+				txn.Stop.Round(time.Millisecond),
+				txn.Stop.Sub(txn.Start).Round(time.Millisecond))
 		}
 		str += txn.Executed.StringWithOpts(verbose, indent+4)
 	}
