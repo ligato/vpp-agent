@@ -112,13 +112,18 @@ func (s *Scheduler) refreshGraph(graphW graph.RWAccess, keys utils.KeySet, resyn
 				plural = ""
 			}
 
-			var log string
-			for _, value := range retrieved {
-				log += fmt.Sprintf("\n - %+v", value)
+			var list strings.Builder
+			for i, d := range retrieved {
+				num := fmt.Sprintf("%d.", i+1)
+				list.WriteString(fmt.Sprintf("\n - %3s %q -> %v [%s]",
+					num, d.Key, utils.ProtoToString(d.Value), d.Origin))
+				if d.Metadata != nil {
+					list.WriteString(fmt.Sprintf(" Metadata: %+v", d.Metadata))
+				}
 			}
 
-			s.Log.Debugf("Descriptor %s retrieved %d item%s: %v",
-				descriptor.Name, len(retrieved), plural, log)
+			s.Log.Debugf("%s descriptor retrieved %d item%s: %v",
+				descriptor.Name, len(retrieved), plural, list.String())
 
 		}
 

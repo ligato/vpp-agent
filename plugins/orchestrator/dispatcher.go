@@ -15,6 +15,7 @@
 package orchestrator
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,8 +25,8 @@ import (
 	"golang.org/x/net/context"
 
 	api "github.com/ligato/vpp-agent/api/genericmanager"
-	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/pkg/models"
+	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
 // Plugin implements sync service for GRPC.
@@ -126,7 +127,7 @@ func (p *Plugin) watchEvents() {
 			var err error
 			var kvPairs []KeyValuePair
 			for _, x := range e.GetChanges() {
-				kv := KeyValuePair{Key:  x.GetKey()}
+				kv := KeyValuePair{Key: x.GetKey()}
 				if x.GetChangeType() != datasync.Delete {
 					kv.Value, err = models.UnmarshalLazyValue(kv.Key, x)
 					if err != nil {
@@ -173,16 +174,18 @@ func (p *Plugin) watchEvents() {
 
 			n := 0
 			for prefix, iter := range e.GetValues() {
-				var err error
 				var keyVals []datasync.KeyVal
 				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
-					kv := KeyValuePair{Key: x.GetKey()}
-					kv.Value, err = models.UnmarshalLazyValue(kv.Key, x)
+					key := x.GetKey()
+					val, err := models.UnmarshalLazyValue(key, x)
 					if err != nil {
 						p.Log.Error(err)
 						continue
 					}
-					kvPairs = append(kvPairs, kv)
+					kvPairs = append(kvPairs, KeyValuePair{
+						Key:   key,
+						Value: val,
+					})
 					p.Log.Debugf(" -- key: %s", x.GetKey())
 					keyVals = append(keyVals, x)
 					n++
@@ -260,11 +263,10 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []KeyValuePair) (kvErrs [
 
 	for _, kv := range kvPairs {
 		if kv.Value == nil {
-			p.Log.Debugf(" - DELETE: %q", 	kv.Key)
+			p.Log.Debugf(" - DELETE: %q", kv.Key)
 		} else {
-
+			p.Log.Debugf(" - PUT: %q ", kv.Key)
 		}
-		p.Log.Debugf(" - PUT: %q ", kv.Key)
 
 		if kv.Value == nil {
 			txn.SetValue(kv.Key, nil)
@@ -279,12 +281,17 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []KeyValuePair) (kvErrs [
 	if err != nil {
 		if txErr, ok := err.(*kvs.TransactionError); ok && len(txErr.GetKVErrors()) > 0 {
 			kvErrs = txErr.GetKVErrors()
-			p.Log.Errorf("Transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
+			var errInfo = ""
+			for i, kvErr := range kvErrs {
+				errInfo += fmt.Sprintf(" - %d. error (%s) %s - %+s\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
+			}
+			p.Log.Errorf("Transaction #%d finished with %d errors", seqID, len(kvErrs))
+			fmt.Println(errInfo)
 		} else {
-			p.Log.Errorf("Transaction %d failed: %v", seqID, err)
+			p.Log.Errorf("Transaction #%d failed: %v", seqID, err)
 		}
 	} else {
-		p.Log.Infof("Transaction %d successful!", seqID)
+		p.Log.Infof("Transaction #%d successful!", seqID)
 		return kvErrs, err
 	}
 
