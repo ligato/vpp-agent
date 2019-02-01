@@ -20,15 +20,18 @@ import (
 )
 
 // ProtoToString converts proto message to string.
-func ProtoToString(message proto.Message) string {
-	if message == nil {
+func ProtoToString(msg proto.Message) string {
+	if msg == nil {
 		return "<NIL>"
 	}
-	if _, isEmpty := message.(*prototypes.Empty); isEmpty {
+	if recProto, wrapped := msg.(*RecordedProtoMessage); wrapped {
+		msg = recProto.Message
+	}
+	if _, isEmpty := msg.(*prototypes.Empty); isEmpty {
 		return "<EMPTY>"
 	}
 	// wrap with curly braces, it is easier to read
-	return "{ " + message.String() + " }"
+	return "{ " + msg.String() + " }"
 }
 
 // ErrorToString converts error to string.
