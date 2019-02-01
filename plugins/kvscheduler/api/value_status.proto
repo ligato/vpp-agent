@@ -26,14 +26,14 @@ enum ValueState {
     // ValueState_CONFIGURED marks value defined by NB and successfully configured.
     CONFIGURED = 4;
 
-    // ValueState_RETRIEVED marks value not managed by NB, instead created
+    // ValueState_OBTAINED marks value not managed by NB, instead created
     // automatically or externally in SB. The KVScheduler learns about the value
     // either using Retrieve() or through a SB notification.
-    RETRIEVED = 5;
+    OBTAINED = 5;
 
-    // ValueState_FOUND marks NB value that was found (=retrieved) by refresh
-    // but not actually configured by the agent.
-    FOUND = 6;
+    // ValueState_DISCOVERED marks NB value that was found (=retrieved) by refresh
+    // but not actually configured by the agent in this run.
+    DISCOVERED = 6;
 
     // ValueState_PENDING represents (NB) value that cannot be configured yet
     // due to missing dependencies.

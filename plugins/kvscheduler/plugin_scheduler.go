@@ -315,7 +315,7 @@ func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (va
 		var kvPairs []kvs.KVWithMetadata
 		nbNodes := graphR.GetNodes(nil,
 			graph.WithFlags(&DescriptorFlag{descriptor}),
-			graph.WithoutFlags(&DerivedFlag{}, &ValueStateFlag{kvs.ValueState_RETRIEVED}))
+			graph.WithoutFlags(&DerivedFlag{}, &ValueStateFlag{kvs.ValueState_OBTAINED}))
 
 		for _, node := range nbNodes {
 			lastUpdate := getNodeLastUpdate(node)

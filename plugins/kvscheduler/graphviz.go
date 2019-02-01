@@ -200,9 +200,9 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 			attrs["fillcolor"] = "Black"
 			attrs["style"] = "dashed,filled"
 		// case kvs.ValueState_CONFIGURED // leave default
-		case kvs.ValueState_RETRIEVED:
+		case kvs.ValueState_OBTAINED:
 			attrs["fillcolor"] = "LightCyan"
-		case kvs.ValueState_FOUND:
+		case kvs.ValueState_DISCOVERED:
 			attrs["fillcolor"] = "Lime"
 		case kvs.ValueState_PENDING:
 			attrs["style"] = "dashed,filled"

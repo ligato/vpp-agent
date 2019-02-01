@@ -15,14 +15,17 @@
 package kvscheduler
 
 import (
-	"sort"
-
 	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/gogo/protobuf/proto"
+
 	"github.com/ligato/cn-infra/logging"
+
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/graph"
 	"github.com/ligato/vpp-agent/plugins/kvscheduler/internal/utils"
-	"strings"
 )
 
 // applyValueArgs collects all arguments to applyValue method.
@@ -36,10 +39,11 @@ type applyValueArgs struct {
 	dryRun  bool
 
 	// set inside of the recursive chain of applyValue-s
-	isUpdate  bool
-	isDerived bool
+	isDepUpdate bool
+	isDerived   bool
 
 	// handling of dependency cycles
+	depth  int
 	branch utils.KeySet
 }
 
@@ -125,16 +129,18 @@ func (s *Scheduler) executeTransaction(txn *transaction, dryRun bool) (executed 
 // applyValue applies new value received from NB or SB.
 // It returns the list of executed operations.
 func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOps, prevValue kvs.KeyValuePair, err error) {
-	if s.logGraphWalk {
-		endLog := s.logNodeVisit("applyValue", args)
-		defer endLog()
-	}
 	// dependency cycle detection
 	if cycle := args.branch.Has(args.kv.key); cycle {
 		return executed, prevValue, err
 	}
 	args.branch.Add(args.kv.key)
 	defer args.branch.Del(args.kv.key)
+
+	// verbose logging
+	if s.logGraphWalk {
+		endLog := s.logNodeVisit("applyValue", args)
+		defer endLog()
+	}
 
 	// create new revision of the node for the given key-value pair
 	node := args.graphW.SetNode(args.kv.key)
@@ -152,8 +158,8 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	txnOp := s.preRecordTxnOp(args, node)
 
 	// determine the operation type
-	if args.isUpdate {
-		s.determineUpdateOperation(node, txnOp)
+	if args.isDepUpdate {
+		s.determineDepUpdateOperation(node, txnOp)
 		if txnOp.Operation == kvs.TxnOperation_UNDEFINED {
 			// nothing needs to be updated
 			return
@@ -202,7 +208,7 @@ func (s *Scheduler) applyValue(args *applyValueArgs) (executed kvs.RecordedTxnOp
 	// run selected operation
 	switch txnOp.Operation {
 	case kvs.TxnOperation_DELETE:
-		executed, err = s.applyDelete(node, txnOp, args, args.isUpdate)
+		executed, err = s.applyDelete(node, txnOp, args, args.isDepUpdate)
 	case kvs.TxnOperation_CREATE:
 		executed, err = s.applyCreate(node, txnOp, args)
 	case kvs.TxnOperation_UPDATE:
@@ -279,6 +285,10 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// already mark as unavailable so that other nodes will not view it as satisfied
 	// dependency during removal
 	node.SetFlags(&UnavailValueFlag{})
+	if !pending {
+		// state may still change if delete fails
+		s.updateNodeState(node, kvs.ValueState_REMOVED, args)
+	}
 
 	// remove derived values
 	if !args.isDerived {
@@ -300,7 +310,7 @@ func (s *Scheduler) applyDelete(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// update values that depend on this kv-pair
-	executed = append(executed, s.runUpdates(node, args)...)
+	executed = append(executed, s.runDepUpdates(node, args)...)
 
 	// execute delete operation
 	descriptor := s.registry.GetDescriptorForKey(node.GetKey())
@@ -425,7 +435,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// finalize node and save before going to derived values + dependencies
 	node.DelFlags(ErrorFlagName, UnavailValueFlagName)
 	if args.kv.origin == kvs.FromSB {
-		txnOp.NewState = kvs.ValueState_RETRIEVED
+		txnOp.NewState = kvs.ValueState_OBTAINED
 	} else {
 		txnOp.NewState = kvs.ValueState_CONFIGURED
 	}
@@ -436,7 +446,7 @@ func (s *Scheduler) applyCreate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	}
 
 	// update values that depend on this kv-pair
-	executed = append(executed, s.runUpdates(node, args)...)
+	executed = append(executed, s.runDepUpdates(node, args)...)
 
 	// created derived values
 	if !args.isDerived {
@@ -568,7 +578,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	// finalize node and save before going to new/modified derived values + dependencies
 	node.DelFlags(ErrorFlagName, UnavailValueFlagName)
 	if args.kv.origin == kvs.FromSB {
-		txnOp.NewState = kvs.ValueState_RETRIEVED
+		txnOp.NewState = kvs.ValueState_OBTAINED
 	} else {
 		txnOp.NewState = kvs.ValueState_CONFIGURED
 	}
@@ -578,7 +588,7 @@ func (s *Scheduler) applyUpdate(node graph.NodeRW, txnOp *kvs.RecordedTxnOp, arg
 	if !equivalent || txnOp.PrevState != txnOp.NewState {
 		// do not record transition if it only confirms that the value is in sync
 		confirmsInSync := equivalent &&
-			txnOp.PrevState == kvs.ValueState_FOUND &&
+			txnOp.PrevState == kvs.ValueState_DISCOVERED &&
 			txnOp.NewState == kvs.ValueState_CONFIGURED
 		if !confirmsInSync {
 			txnOp.NOOP = equivalent
@@ -667,6 +677,7 @@ func (s *Scheduler) applyDerived(derivedVals []kvForTxn, args *applyValueArgs, c
 				dryRun:    args.dryRun,
 				isDerived: true, // <- is derived
 				branch:    args.branch,
+				depth:     args.depth,
 			})
 		if err != nil {
 			wasErr = err
@@ -676,8 +687,8 @@ func (s *Scheduler) applyDerived(derivedVals []kvForTxn, args *applyValueArgs, c
 	return executed, wasErr
 }
 
-// runUpdates triggers updates on all nodes that depend on the given node.
-func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed kvs.RecordedTxnOps) {
+// runDepUpdates triggers dependency updates on all nodes that depend on the given node.
+func (s *Scheduler) runDepUpdates(node graph.Node, args *applyValueArgs) (executed kvs.RecordedTxnOps) {
 	depNodes := node.GetSources(DependencyRelation)
 
 	// order depNodes by key (just for deterministic behaviour which simplifies testing)
@@ -687,11 +698,12 @@ func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed 
 		if getNodeOrigin(depNode) != kvs.FromNB {
 			continue
 		}
-		value := depNode.GetValue()
-		lastUpdate := getNodeLastUpdate(depNode)
-		if lastUpdate != nil {
-			// anything but state=FOUND
+		var value proto.Message
+		if lastUpdate := getNodeLastUpdate(depNode); lastUpdate != nil {
 			value = lastUpdate.value
+		} else {
+			// state=DISCOVERED
+			value = depNode.GetValue()
 		}
 		ops, _, _ := s.applyValue(
 			&applyValueArgs{
@@ -703,20 +715,22 @@ func (s *Scheduler) runUpdates(node graph.Node, args *applyValueArgs) (executed 
 					origin:   getNodeOrigin(depNode),
 					isRevert: args.kv.isRevert,
 				},
-				baseKey:   getNodeBaseKey(depNode),
-				isRetry:   args.isRetry,
-				dryRun:    args.dryRun,
-				isDerived: isNodeDerived(depNode),
-				isUpdate:  true, // <- update
-				branch:    args.branch,
+				baseKey:     getNodeBaseKey(depNode),
+				isRetry:     args.isRetry,
+				dryRun:      args.dryRun,
+				isDerived:   isNodeDerived(depNode),
+				isDepUpdate: true, // <- dependency update
+				branch:      args.branch,
+				depth:       args.depth,
 			})
 		executed = append(executed, ops...)
 	}
 	return executed
 }
 
-// determineUpdateOperation determines if the value needs update and what operation to execute.
-func (s *Scheduler) determineUpdateOperation(node graph.NodeRW, txnOp *kvs.RecordedTxnOp) {
+// determineDepUpdateOperation determines if the value needs update wrt. dependencies
+// and what operation to execute.
+func (s *Scheduler) determineDepUpdateOperation(node graph.NodeRW, txnOp *kvs.RecordedTxnOp) {
 	// create node if dependencies are now all met
 	if !isNodeAvailable(node) {
 		if !isNodeReady(node) {
@@ -787,8 +801,8 @@ func (s *Scheduler) compressTxnOps(executed kvs.RecordedTxnOps) kvs.RecordedTxnO
 func (s *Scheduler) updateNodeState(node graph.NodeRW, newState kvs.ValueState, args *applyValueArgs) {
 	if getNodeState(node) != newState {
 		if s.logGraphWalk {
-			indent := strings.Repeat(" ", args.branch.Length()*2)
-			fmt.Printf("%s  -> change value state from %v to %v\n", indent, getNodeState(node), newState)
+			indent := strings.Repeat(" ", (args.depth+1)*2)
+			fmt.Printf("%s-> change value state from %v to %v\n", indent, getNodeState(node), newState)
 		}
 		node.SetFlags(&ValueStateFlag{valueState: newState})
 	}
@@ -824,10 +838,17 @@ func (s *Scheduler) markFailedValue(node graph.NodeRW, args *applyValueArgs, err
 }
 
 func (s *Scheduler) logNodeVisit(operation string, args *applyValueArgs) func() {
-	msg := fmt.Sprintf("%s (key=%s, isDepUpdate=%t)", operation, args.kv.key, args.isUpdate)
-	indent := strings.Repeat(" ", args.branch.Length()*2)
+	var msg string
+	if args.isDepUpdate {
+		msg = fmt.Sprintf("%s (key = %s, dep-update)", operation, args.kv.key)
+	} else {
+		msg = fmt.Sprintf("%s (key = %s)", operation, args.kv.key)
+	}
+	args.depth++
+	indent := strings.Repeat(" ", args.depth*2)
 	fmt.Printf("%s%s %s\n", indent, nodeVisitBeginMark, msg)
 	return func() {
+		args.depth--
 		fmt.Printf("%s%s %s\n", indent, nodeVisitEndMark, msg)
 	}
 }

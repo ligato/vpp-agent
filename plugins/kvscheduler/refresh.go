@@ -265,7 +265,11 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	origin kvs.ValueOrigin, derived bool, baseKey string, refreshed utils.KeySet, indent int) {
 	if s.logGraphWalk {
 		indentStr := strings.Repeat(" ", indent)
-		msg := fmt.Sprintf("refreshAvailNode (key=%s, isDerived=%t)", node.GetKey(), derived)
+		var derivedMark string
+		if derived {
+			derivedMark = ", is-derived"
+		}
+		msg := fmt.Sprintf("refreshAvailNode (key=%s%s)", node.GetKey(), derivedMark)
 		fmt.Printf("%s%s %s\n", indentStr, nodeVisitBeginMark, msg)
 		defer fmt.Printf("%s%s %s\n", indentStr, nodeVisitEndMark, msg)
 	}
@@ -288,9 +292,9 @@ func (s *Scheduler) refreshAvailNode(graphW graph.RWAccess, node graph.NodeRW,
 	if getNodeState(node) == kvs.ValueState_NONEXISTENT {
 		// newly found node
 		if origin == kvs.FromSB {
-			s.refreshNodeState(node, kvs.ValueState_RETRIEVED, indent)
+			s.refreshNodeState(node, kvs.ValueState_OBTAINED, indent)
 		} else {
-			s.refreshNodeState(node, kvs.ValueState_FOUND, indent)
+			s.refreshNodeState(node, kvs.ValueState_DISCOVERED, indent)
 		}
 	}
 	if getNodeState(node) == kvs.ValueState_PENDING {
@@ -327,7 +331,7 @@ func (s *Scheduler) refreshUnavailNode(graphW graph.RWAccess, node graph.Node, r
 		s.updatedStates.Add(getNodeBaseKey(node))
 	}
 	state := getNodeState(node)
-	if getNodeOrigin(node) == kvs.FromSB || state == kvs.ValueState_FOUND {
+	if getNodeOrigin(node) == kvs.FromSB || state == kvs.ValueState_DISCOVERED {
 		// just remove from the graph
 		graphW.DeleteNode(node.GetKey())
 		return

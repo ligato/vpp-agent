@@ -50,7 +50,7 @@ const (
 
 // LastUpdateFlag is set to remember the last transaction which has
 // changed/updated the value.
-// Not set to values just discovered by refresh (state = FOUND).
+// Not set to values just discovered by refresh (state = DISCOVERED).
 type LastUpdateFlag struct {
 	txnSeqNum uint64
 	txnOp     kvs.TxnOperation
