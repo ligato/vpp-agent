@@ -578,7 +578,6 @@ func (d *InterfaceDescriptor) Dump(correlate []adapter.InterfaceKVWithMetadata) 
 			IPAddresses:   intf.Interface.IpAddresses,
 			TAPHostIfName: tapHostIfName,
 		}
-		d.log.Warnf("intf: %v", intf)
 		dump = append(dump, adapter.InterfaceKVWithMetadata{
 			Key:      models.Key(intf.Interface),
 			Value:    intf.Interface,
