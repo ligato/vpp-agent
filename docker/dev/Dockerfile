@@ -33,10 +33,10 @@ FROM ${BASE_IMG} as dev-stage
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     autoconf automake build-essential ca-certificates curl gdb git \
-    inetutils-traceroute iproute2 ipsec-tools iputils-ping \
+    graphviz inetutils-traceroute iproute2 ipsec-tools iputils-ping \
     libapr1 libmbedcrypto1 libmbedtls10 libmbedx509-0 libtool \
     make mc nano netcat python software-properties-common sudo supervisor \
-    telnet unzip wget \
+    telnet unzip wget python-cffi \
  && rm -rf /var/lib/apt/lists/*
 
 # install Protobuf
@@ -71,7 +71,7 @@ RUN set -eux; \
         make vpp_configure_args_vpp='--disable-japi' build-release pkg-deb; \
     fi; \
     cd build-root; \
-    dpkg -i vpp_*.deb vpp-dev_*.deb libvppinfra*.deb vpp-plugin-core*.deb vpp-dbg_*.deb; \
+    dpkg -i vpp_*.deb vpp-dev_*.deb vpp-lib_*.deb vpp-plugins_*.deb vpp-dbg_*.deb vpp-api-python_*.deb; \
     rm -rf .ccache /var/lib/apt/lists/*; \
     find . -type f -name '*.o' -exec rm -rf '{}' \;
 
@@ -94,7 +94,6 @@ RUN go get -u github.com/go-delve/delve/cmd/dlv
 COPY \
     docker/dev/etcd.conf \
     docker/dev/kafka.conf \
-    docker/dev/govpp.conf \
     docker/dev/vpp-plugin.conf \
     docker/dev/linux-plugin.conf \
     docker/dev/logs.conf \

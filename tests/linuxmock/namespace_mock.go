@@ -1,9 +1,9 @@
 package linuxmock
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/linux/model/l3"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	interfaces "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	l3 "github.com/ligato/vpp-agent/api/models/linux/l3"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
 	"github.com/vishvananda/netns"
 )
 

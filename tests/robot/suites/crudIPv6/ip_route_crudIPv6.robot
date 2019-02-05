@@ -68,24 +68,24 @@ Add VRF Table In Background While Creating Interface Memif
     Then IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     # this will transfer interface to newly-in-background-created non default vrf table
     Then Create Master memif0 on agent_vpp_1 with VRF 2, IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    Then IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to other newly-in-background-created non default vrf table
     Then Create Master memif0 on agent_vpp_1 with VRF 1, IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    Then IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will remove non default vrf table in background - N/A
     # Then IP6 Fib Table 2 On agent_vpp_1 Should Be Empty - N/A
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to existing non default vrf table
     Then Create Master memif0 on agent_vpp_1 with VRF 2, IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
-    Then IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to default vrf table
     Then Create Master memif0 on agent_vpp_1 with IP ${IP1}, MAC 02:f1:be:90:00:00, key 1 and m0.sock socket
     # 10 nov 2017 this will fail for memif - reason is that Create Master memif0 does not transfer interface to the VRF table 0
-    Then IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # 10 nov 2017 this will fail for memif - reason is that Create Master memif0 does not transfer interface to the VRF table 0
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
@@ -102,23 +102,23 @@ Add VRF Table In Background While Creating Interface Tap
     Then IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     # this will transfer interface to newly-in-background-created non default vrf table
     Then Create Tap Interface tap0 On agent_vpp_1 With Vrf 2, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Then IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to other newly-in-background-created non default vrf table
     Then Create Tap Interface tap0 On agent_vpp_1 With Vrf 1, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Then IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 1 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will remove non default vrf table in background - N/A
     # Then IP6 Fib Table 2 On agent_vpp_1 Should Be Empty - N/A
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to existing non default vrf table
     Then Create Tap Interface tap0 On agent_vpp_1 With Vrf 2, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Then IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 2 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 0 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     # this will transfer interface to default vrf table
     Then Create Tap Interface tap0 On agent_vpp_1 With Vrf 0, IP ${IP1}, MAC 02:f1:be:90:00:00 And HostIfName linux_tap0
-    Then IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
+    Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    IP6 Fib Table 0 On agent_vpp_1 Should Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 1 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
     Then IP6 Fib Table 2 On agent_vpp_1 Should Not Contain Route With IP ${IP1}/128
 

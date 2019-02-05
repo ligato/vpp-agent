@@ -16,7 +16,7 @@ Test Setup        TestSetup
 Test Teardown     TestTeardown
 
 *** Variables ***
-${REPLY_DATA_FOLDER}            replyACL
+${REPLY_DATA_FOLDER}            ${CURDIR}/replyACL
 ${VARIABLES}=       common
 ${ENV}=             common
 ${api_handler}=     215
@@ -76,7 +76,6 @@ Add ACL2_TCP
 
 Check ACL2 is created and ACL1 still Configured
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check ACL Reply    agent_vpp_1    ${ACL2_NAME}   ${REPLY_DATA_FOLDER}/reply_acl2IPv6_tcp.txt    ${REPLY_DATA_FOLDER}/reply_acl2IPv6_tcp_term.txt
-
 
 
 Update ACL1

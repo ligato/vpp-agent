@@ -213,16 +213,8 @@ func (*ApplicationAttach) GetMessageType() api.MessageType {
 //	    "segment_name",
 //	    128
 //	],
-//	[
-//	    "u32",
-//	    "app_index"
-//	],
-//	[
-//	    "u64",
-//	    "segment_handle"
-//	],
 //	{
-//	    "crc": "0x581866e8"
+//	    "crc": "0x8d501943"
 //	}
 //
 type ApplicationAttachReply struct {
@@ -233,15 +225,13 @@ type ApplicationAttachReply struct {
 	SegmentSize          uint32
 	SegmentNameLength    uint8
 	SegmentName          []byte `struc:"[128]byte"`
-	AppIndex             uint32
-	SegmentHandle        uint64
 }
 
 func (*ApplicationAttachReply) GetMessageName() string {
 	return "application_attach_reply"
 }
 func (*ApplicationAttachReply) GetCrcString() string {
-	return "581866e8"
+	return "8d501943"
 }
 func (*ApplicationAttachReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -503,26 +493,21 @@ func (*ApplicationDetachReply) GetMessageType() api.MessageType {
 //	    "segment_name",
 //	    128
 //	],
-//	[
-//	    "u64",
-//	    "segment_handle"
-//	],
 //	{
-//	    "crc": "0xdc2d630b"
+//	    "crc": "0x2b743078"
 //	}
 //
 type MapAnotherSegment struct {
-	FdFlags       uint8
-	SegmentSize   uint32
-	SegmentName   []byte `struc:"[128]byte"`
-	SegmentHandle uint64
+	FdFlags     uint8
+	SegmentSize uint32
+	SegmentName []byte `struc:"[128]byte"`
 }
 
 func (*MapAnotherSegment) GetMessageName() string {
 	return "map_another_segment"
 }
 func (*MapAnotherSegment) GetCrcString() string {
-	return "dc2d630b"
+	return "2b743078"
 }
 func (*MapAnotherSegment) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -577,22 +562,23 @@ func (*MapAnotherSegmentReply) GetMessageType() api.MessageType {
 //	    "context"
 //	],
 //	[
-//	    "u64",
-//	    "segment_handle"
+//	    "u8",
+//	    "segment_name",
+//	    128
 //	],
 //	{
-//	    "crc": "0xf77096f6"
+//	    "crc": "0x15ffd8c6"
 //	}
 //
 type UnmapSegment struct {
-	SegmentHandle uint64
+	SegmentName []byte `struc:"[128]byte"`
 }
 
 func (*UnmapSegment) GetMessageName() string {
 	return "unmap_segment"
 }
 func (*UnmapSegment) GetCrcString() string {
-	return "f77096f6"
+	return "15ffd8c6"
 }
 func (*UnmapSegment) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1738,7 +1724,7 @@ func (*AppCutThroughRegistrationAddReply) GetMessageType() api.MessageType {
 //	],
 //	[
 //	    "u32",
-//	    "app_index"
+//	    "app_api_index"
 //	],
 //	[
 //	    "u32",
@@ -1749,20 +1735,20 @@ func (*AppCutThroughRegistrationAddReply) GetMessageType() api.MessageType {
 //	    "is_add"
 //	],
 //	{
-//	    "crc": "0x6d2b2279"
+//	    "crc": "0x8cd304f4"
 //	}
 //
 type AppWorkerAddDel struct {
-	AppIndex uint32
-	WrkIndex uint32
-	IsAdd    uint8
+	AppAPIIndex uint32
+	WrkIndex    uint32
+	IsAdd       uint8
 }
 
 func (*AppWorkerAddDel) GetMessageName() string {
 	return "app_worker_add_del"
 }
 func (*AppWorkerAddDel) GetCrcString() string {
-	return "6d2b2279"
+	return "8cd304f4"
 }
 func (*AppWorkerAddDel) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -1809,15 +1795,11 @@ func (*AppWorkerAddDel) GetMessageType() api.MessageType {
 //	    128
 //	],
 //	[
-//	    "u64",
-//	    "segment_handle"
-//	],
-//	[
 //	    "u8",
 //	    "is_add"
 //	],
 //	{
-//	    "crc": "0x56b21abc"
+//	    "crc": "0xd5297212"
 //	}
 //
 type AppWorkerAddDelReply struct {
@@ -1828,7 +1810,6 @@ type AppWorkerAddDelReply struct {
 	FdFlags              uint8
 	SegmentNameLength    uint8
 	SegmentName          []byte `struc:"[128]byte"`
-	SegmentHandle        uint64
 	IsAdd                uint8
 }
 
@@ -1836,7 +1817,7 @@ func (*AppWorkerAddDelReply) GetMessageName() string {
 	return "app_worker_add_del_reply"
 }
 func (*AppWorkerAddDelReply) GetCrcString() string {
-	return "56b21abc"
+	return "d5297212"
 }
 func (*AppWorkerAddDelReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage

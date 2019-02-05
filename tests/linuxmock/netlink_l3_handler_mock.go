@@ -15,7 +15,7 @@
 package linuxmock
 
 import (
-	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/linuxcalls"
+	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
 	"github.com/vishvananda/netlink"
 )
 

@@ -34,7 +34,7 @@ type StatsAPI interface {
 
 	// ListStats returns all stats names present on the VPP. Patterns can be used as a prefix
 	// to filter the output
-	ListStats(patterns... string) ([]string, error)
+	ListStats(patterns ...string) ([]string, error)
 
 	// ListStats returns all stats names, types and values from the VPP. Patterns can be used as a prefix
 	// to filter the output. Stats are divided between workers. Example:
@@ -48,7 +48,7 @@ type StatsAPI interface {
 	// 20 for sw_if_index 1
 	// 40 for sw_if_index 2 (sum of stats from all workers)
 	//
-	DumpStats(patterns... string) ([]*adapter.StatEntry, error)
+	DumpStats(patterns ...string) ([]*adapter.StatEntry, error)
 }
 
 // API for other plugins to get connectivity to VPP.
@@ -69,5 +69,3 @@ type API interface {
 	//      ch.SendRequest(req).ReceiveReply
 	NewAPIChannelBuffered(reqChanBufSize, replyChanBufSize int) (govppapi.Channel, error)
 }
-
-

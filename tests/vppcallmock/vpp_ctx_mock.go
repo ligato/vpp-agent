@@ -45,7 +45,7 @@ func SetupTestCtx(t *testing.T) *TestCtx {
 	RegisterTestingT(t)
 
 	ctx := &TestCtx{
-		MockVpp: mock.NewVppAdapter(),
+		MockVpp:   mock.NewVppAdapter(),
 		MockStats: mock.NewStatsAdapter(),
 	}
 
@@ -141,6 +141,9 @@ func (ctx *TestCtx) MockReplies(dataList []*HandleReplies) {
 					for _, msg := range dataMock.Messages {
 						ctx.MockVpp.MockReply(msg)
 					}
+					return nil, 0, false
+				}
+				if dataMock.Message == nil {
 					return nil, 0, false
 				}
 				msgID, err := ctx.MockVpp.GetMsgID(dataMock.Message.GetMessageName(), dataMock.Message.GetCrcString())

@@ -4,7 +4,8 @@ Library      OperatingSystem
 Resource     ../../variables/${VARIABLES}_variables.robot
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crud     IPv6
+# not implemented in v2
+Force Tags        crud     IPv6     ExpectedFailure
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 

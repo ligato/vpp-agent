@@ -199,7 +199,12 @@ func (h *Handle) xfrmPolicyGetOrDelete(policy *XfrmPolicy, nlProto int) (*XfrmPo
 		return nil, err
 	}
 
-	return parseXfrmPolicy(msgs[0], FAMILY_ALL)
+	p, err := parseXfrmPolicy(msgs[0], FAMILY_ALL)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
 }
 
 func parseXfrmPolicy(m []byte, family int) (*XfrmPolicy, error) {

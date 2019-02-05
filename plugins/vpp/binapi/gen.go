@@ -20,6 +20,7 @@
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ip.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/ipsec.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/l2.api.json --output-dir=.
+//go:generate binapi-generator --input-file=/usr/share/vpp/api/memclnt.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/memif.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/nat.api.json --output-dir=.
 //go:generate binapi-generator --input-file=/usr/share/vpp/api/punt.api.json --output-dir=.

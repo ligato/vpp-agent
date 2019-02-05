@@ -283,10 +283,11 @@
   revision = "a84ce58083d3d907fb0d94290d088a1fcd9cd858"
 
 [[projects]]
-  digest = "1:9b56c3d59d7899c60a02f4d0e8592fe70b19f3b6b47553849b20fe63a62efe66"
+  digest = "1:c30185d83c2a351bf3b21e7784d3c9b84281d56d0958959c2a6cd8a47f422c49"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
+    "jsonpb",
     "plugin/compare",
     "plugin/defaultcheck",
     "plugin/description",
@@ -310,6 +311,8 @@
     "protoc-gen-gogo/generator/internal/remap",
     "protoc-gen-gogo/grpc",
     "protoc-gen-gogo/plugin",
+    "sortkeys",
+    "types",
     "vanity",
     "vanity/command",
   ]
@@ -562,7 +565,7 @@
   version = "v1.7.4-pre"
 
 [[projects]]
-  digest = "1:7a137fb7718928e473b7d805434ae563ec41790d3d227cdc64e8b14d1cab8a1f"
+  digest = "1:ab54eea8d482272009e9e4af07d4d9b5236c27b4d8c54a3f2c99d163be883eca"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
@@ -579,8 +582,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "65fb64232476ad9046e57c26cd0bff3d3a8dc6cd"
-  version = "v1.4.3"
+  revision = "7615b9433f86a8bdf29709bf288bc4fd0636a369"
+  version = "v1.4.2"
 
 [[projects]]
   branch = "master"
@@ -802,7 +805,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8b5682a2f0d3f944f12b9e87aeb6bbf451b55665ff6b87999c999b2240c390e9"
+  digest = "1:e079952a2887460a817db9c839b5a2be954c9f786ffa5d647be6c5fb2ac388e0"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -817,7 +820,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "610586996380ceef02dd726cc09df7e00a3f8e56"
+  revision = "c10e9556a7bc0e7c942242b606f0acf024ad5d6a"
 
 [[projects]]
   branch = "master"
@@ -958,6 +961,7 @@
     "github.com/ghodss/yaml",
     "github.com/go-redis/redis",
     "github.com/gocql/gocql",
+    "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/protoc-gen-gogo",
     "github.com/gorilla/mux",

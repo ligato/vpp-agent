@@ -44,17 +44,35 @@ Create Bridge Domain ${name} Without Autolearn On ${node} With Interfaces ${inte
 Create Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vrf Id ${id}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/static_route.json
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
+    ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/${next_hop}
     ${out}=         Put Json    ${uri}   ${data}
 
 Create Route On ${node} With IP ${ip}/${prefix} With Next Hop VRF ${next_hop_vrf} From Vrf Id ${id} And Type ${type}
     ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/route_to_other_vrf.json
     ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}
+    ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/${AGENT_VER}/route/vrf/${id}/dst/${ip}/${prefix}/gw/
     ${out}=         Put Json    ${uri}   ${data}
 
-Delete IPsec On ${node} With Prefix ${prefix} And Name ${name}
-    Delete IPsec    ${node}    ${prefix}    ${name}
+Create DNat On ${node} With Name ${name} Local IP ${local_ip} Local Port ${local_port} External IP ${ext_ip} External Interface ${ext_int} External Port ${ext_port} Vrf Id ${id}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/nat-dnat.json
+    ${data}=        replace variables           ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/nat/${AGENT_VER}/dnat44/${name}
+    ${out}=         Put Json    ${uri}   ${data}
+
+Create Interface GlobalNat On ${node} With First IP ${int_ip_1} On Inteface ${interface_1} And Second IP ${int_ip_2} On Interface ${interface_2} Vrf Id ${id} Config File ${nat_global_conf}
+    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/${nat_global_conf}
+    ${data}=        replace variables           ${data}
+    ${uri}=         Set Variable                /vnf-agent/${node}/config/vpp/nat/${AGENT_VER}/nat44-global
+    ${out}=         Put Json    ${uri}   ${data}
+
+Remove DNat On ${node} With Name ${name}
+    Delete Dnat    ${node}    ${name}
+
+Remove Global Nat On ${node}
+    Delete Nat Global   ${node}
+
+Delete IPsec On ${node} With Prefix ${prefix} And Index ${index}
+    Delete IPsec    ${node}    ${prefix}    ${index}
 
 Create VXLan ${name} From ${src_ip} To ${dst_ip} With Vni ${vni} On ${node}
     Put VXLan Interface    ${node}    ${name}    ${src_ip}    ${dst_ip}    ${vni}
@@ -90,11 +108,13 @@ IP Fib Table ${id} On ${node} Should Not Be Empty
 
 IP Fib Table ${id} On ${node} Should Contain Route With IP ${ip}/${prefix}
     ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
-    Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+    Should Match Regexp        ${out}    ${ip}\/${prefix}\r\r\n\ \ \unicast\-ip4-chain\r\r\n\ \ \
+    #Should Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
 IP Fib Table ${id} On ${node} Should Not Contain Route With IP ${ip}/${prefix}
     ${out}=    vpp_term: Show IP Fib Table    ${node}   ${id}
-    Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
+    Should Not Match Regexp    ${out}  ${ip}\/${prefix}\r\r\n\ \ \unicast\-ip4-chain\r\r\n\ \ \
+    #Should Not Match Regexp        ${out}  ${ip}\\/${prefix}\\s*unicast\\-ip4-chain\\s*\\[\\@0\\]:\\ dpo-load-balance:\\ \\[proto:ip4\\ index:\\d+\\ buckets:\\d+\\ uRPF:\\d+\\ to:\\[0:0\\]\\]
 
 IP6 Fib Table ${id} On ${node} Should Contain Route With IP ${ip}/${prefix}
     ${out}=    vpp_term: Show IP6 Fib Table    ${node}   ${id}
@@ -116,9 +136,3 @@ Show Interfaces On ${node}
 
 Show Interfaces Address On ${node}
     ${out}=   vpp_term: Show Interfaces Address    ${node}
-
-Create Linux Route On ${node} With IP ${ip}/${prefix} With Next Hop ${next_hop} And Vrf Id ${id}
-    ${data}=        OperatingSystem.Get File    ${CURDIR}/../../robot/resources/linux_static_route.json
-    ${data}=        replace variables           ${data}
-    ${uri}=         Set Variable                /vnf-agent/${node}/vpp/config/v1/vrf/${id}/fib/${ip}/${prefix}/${next_hop}
-    ${out}=         Put Json    ${uri}   ${data}

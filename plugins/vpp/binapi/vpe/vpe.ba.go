@@ -219,23 +219,29 @@ func (*Cli) GetMessageType() api.MessageType {
 //	    "context"
 //	],
 //	[
-//	    "string",
-//	    "cmd"
+//	    "u32",
+//	    "length"
+//	],
+//	[
+//	    "u8",
+//	    "cmd",
+//	    0,
+//	    "length"
 //	],
 //	{
-//	    "crc": "0xb1ad59b3"
+//	    "crc": "0x74e00a49"
 //	}
 //
 type CliInband struct {
-	XXX_CmdLen uint32 `struc:"sizeof=Cmd"`
-	Cmd        string
+	Length uint32 `struc:"sizeof=Cmd"`
+	Cmd    []byte
 }
 
 func (*CliInband) GetMessageName() string {
 	return "cli_inband"
 }
 func (*CliInband) GetCrcString() string {
-	return "b1ad59b3"
+	return "74e00a49"
 }
 func (*CliInband) GetMessageType() api.MessageType {
 	return api.RequestMessage
@@ -295,24 +301,30 @@ func (*CliReply) GetMessageType() api.MessageType {
 //	    "retval"
 //	],
 //	[
-//	    "string",
-//	    "reply"
+//	    "u32",
+//	    "length"
+//	],
+//	[
+//	    "u8",
+//	    "reply",
+//	    0,
+//	    "length"
 //	],
 //	{
-//	    "crc": "0x6d3c80a4"
+//	    "crc": "0x1f22bbb8"
 //	}
 //
 type CliInbandReply struct {
-	Retval       int32
-	XXX_ReplyLen uint32 `struc:"sizeof=Reply"`
-	Reply        string
+	Retval int32
+	Length uint32 `struc:"sizeof=Reply"`
+	Reply  []byte
 }
 
 func (*CliInbandReply) GetMessageName() string {
 	return "cli_inband_reply"
 }
 func (*CliInbandReply) GetCrcString() string {
-	return "6d3c80a4"
+	return "1f22bbb8"
 }
 func (*CliInbandReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
@@ -523,42 +535,42 @@ func (*ShowVersion) GetMessageType() api.MessageType {
 //	    "retval"
 //	],
 //	[
-//	    "string",
-//	    "program"
+//	    "u8",
+//	    "program",
+//	    32
 //	],
 //	[
-//	    "string",
-//	    "version"
+//	    "u8",
+//	    "version",
+//	    32
 //	],
 //	[
-//	    "string",
-//	    "build_date"
+//	    "u8",
+//	    "build_date",
+//	    32
 //	],
 //	[
-//	    "string",
-//	    "build_directory"
+//	    "u8",
+//	    "build_directory",
+//	    256
 //	],
 //	{
-//	    "crc": "0xb9bcf6df"
+//	    "crc": "0x8b5a13b4"
 //	}
 //
 type ShowVersionReply struct {
-	Retval                int32
-	XXX_ProgramLen        uint32 `struc:"sizeof=Program"`
-	Program               string
-	XXX_VersionLen        uint32 `struc:"sizeof=Version"`
-	Version               string
-	XXX_BuildDateLen      uint32 `struc:"sizeof=BuildDate"`
-	BuildDate             string
-	XXX_BuildDirectoryLen uint32 `struc:"sizeof=BuildDirectory"`
-	BuildDirectory        string
+	Retval         int32
+	Program        []byte `struc:"[32]byte"`
+	Version        []byte `struc:"[32]byte"`
+	BuildDate      []byte `struc:"[32]byte"`
+	BuildDirectory []byte `struc:"[256]byte"`
 }
 
 func (*ShowVersionReply) GetMessageName() string {
 	return "show_version_reply"
 }
 func (*ShowVersionReply) GetCrcString() string {
-	return "b9bcf6df"
+	return "8b5a13b4"
 }
 func (*ShowVersionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
