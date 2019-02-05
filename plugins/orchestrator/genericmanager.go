@@ -27,8 +27,8 @@ import (
 )
 
 type genericManagerSvc struct {
-	log  logging.Logger
-	orch *Plugin
+	log      logging.Logger
+	dispatch Dispatcher
 }
 
 func (s *genericManagerSvc) Capabilities(ctx context.Context, req *api.CapabilitiesRequest) (*api.CapabilitiesResponse, error) {
@@ -52,7 +52,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 	}
 
 	var ops = make(map[string]api.UpdateResult_Operation)
-	var kvPairs []KeyValuePair
+	var kvPairs []KeyVal
 
 	for _, update := range req.Updates {
 		item := update.Item
@@ -85,13 +85,14 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 		} else {
 			return nil, status.Error(codes.InvalidArgument, "ProtoItem has no key or val defined.")
 		}
-		kvPairs = append(kvPairs, KeyValuePair{
-			Key:   key,
-			Value: val,
+		kvPairs = append(kvPairs, KeyVal{
+			Key: key,
+			Val: val,
 		})
 	}
 
-	kvErrs, err := s.orch.PushData(ctx, kvPairs)
+	ctx = DataSrcContext(ctx, "grpc")
+	kvErrs, err := s.dispatch.PushData(ctx, kvPairs)
 	if err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
@@ -129,7 +130,7 @@ func (s *genericManagerSvc) SetConfig(ctx context.Context, req *api.SetConfigReq
 func (s *genericManagerSvc) GetConfig(context.Context, *api.GetConfigRequest) (*api.GetConfigResponse, error) {
 	var items []*api.GetConfigResponse_ConfigItem
 
-	for _, data := range s.orch.ListData() {
+	for _, data := range s.dispatch.ListData() {
 		item, err := models.MarshalItem(data)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -143,9 +144,9 @@ func (s *genericManagerSvc) GetConfig(context.Context, *api.GetConfigRequest) (*
 }
 
 func (s *genericManagerSvc) DumpState(context.Context, *api.DumpStateRequest) (*api.DumpStateResponse, error) {
-	panic("implement me")
+	return nil, status.Error(codes.Unimplemented, "Not implemented yet")
 }
 
 func (s *genericManagerSvc) Subscribe(req *api.SubscribeRequest, server api.GenericManager_SubscribeServer) error {
-	panic("implement me")
+	return status.Error(codes.Unimplemented, "Not implemented yet")
 }

@@ -52,7 +52,7 @@ type Plugin struct {
 type Deps struct {
 	infra.PluginDeps
 	GRPCServer  grpc.Server
-	Orch        *orchestrator.Plugin
+	Dispatch    orchestrator.Dispatcher
 	GoVppmux    govppmux.TraceAPI
 	VPPIfPlugin ifplugin.API
 	VPPL2Plugin *l2plugin.L2Plugin
@@ -62,7 +62,7 @@ type Deps struct {
 func (p *Plugin) Init() error {
 	p.configurator.log = p.Log.NewLogger("configurator")
 	p.configurator.notifyService.log = p.Log.NewLogger("configurator-notify")
-	p.configurator.dispatch = p.Orch
+	p.configurator.dispatch = p.Dispatch
 
 	if err := p.initHandlers(); err != nil {
 		return err

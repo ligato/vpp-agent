@@ -21,9 +21,10 @@ type configuratorServer struct {
 	notifyService
 
 	log      logging.Logger
-	dispatch *orchestrator.Plugin
+	dispatch orchestrator.Dispatcher
 }
 
+// Get retrieves actual configuration data.
 func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetResponse, error) {
 	config := newConfig()
 
@@ -36,16 +37,16 @@ func (svc *configuratorServer) Get(context.Context, *rpc.GetRequest) (*rpc.GetRe
 func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateRequest) (*rpc.UpdateResponse, error) {
 	protos := util.ExtractProtos(req.Update.VppConfig, req.Update.LinuxConfig)
 
-	var kvPairs []orchestrator.KeyValuePair
+	var kvPairs []orchestrator.KeyVal
 	for _, p := range protos {
 		key, err := models.GetKey(p)
 		if err != nil {
 			svc.log.Debug("models.GetKey failed: %s", err)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		kvPairs = append(kvPairs, orchestrator.KeyValuePair{
-			Key:   key,
-			Value: p,
+		kvPairs = append(kvPairs, orchestrator.KeyVal{
+			Key: key,
+			Val: p,
 		})
 	}
 
@@ -53,6 +54,7 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 		ctx = kvs.WithResync(ctx, kvs.FullResync, true)
 	}
 
+	ctx = orchestrator.DataSrcContext(ctx, "grpc")
 	if _, err := svc.dispatch.PushData(ctx, kvPairs); err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()
@@ -65,19 +67,20 @@ func (svc *configuratorServer) Update(ctx context.Context, req *rpc.UpdateReques
 func (svc *configuratorServer) Delete(ctx context.Context, req *rpc.DeleteRequest) (*rpc.DeleteResponse, error) {
 	protos := util.ExtractProtos(req.Delete.VppConfig, req.Delete.LinuxConfig)
 
-	var kvPairs []orchestrator.KeyValuePair
+	var kvPairs []orchestrator.KeyVal
 	for _, p := range protos {
 		key, err := models.GetKey(p)
 		if err != nil {
 			svc.log.Debug("models.GetKey failed: %s", err)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		kvPairs = append(kvPairs, orchestrator.KeyValuePair{
-			Key:   key,
-			Value: nil,
+		kvPairs = append(kvPairs, orchestrator.KeyVal{
+			Key: key,
+			Val: nil,
 		})
 	}
 
+	ctx = orchestrator.DataSrcContext(ctx, "grpc")
 	if _, err := svc.dispatch.PushData(ctx, kvPairs); err != nil {
 		st := status.New(codes.FailedPrecondition, err.Error())
 		return nil, st.Err()

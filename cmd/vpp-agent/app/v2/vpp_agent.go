@@ -60,10 +60,10 @@ type VPPAgent struct {
 	VPP
 	Linux
 
-	DataConfigurator *configurator.Plugin
-	RESTAPI          *rest.Plugin
-	Probe            *probe.Plugin
-	Telemetry        *telemetry.Plugin
+	Configurator *configurator.Plugin
+	RESTAPI      *rest.Plugin
+	Probe        *probe.Plugin
+	Telemetry    *telemetry.Plugin
 }
 
 // New creates new VPPAgent instance.
@@ -108,17 +108,17 @@ func New() *VPPAgent {
 	linux := DefaultLinux()
 
 	return &VPPAgent{
-		LogManager:       &logmanager.DefaultPlugin,
-		Orchestrator:     &orchestrator.DefaultPlugin,
-		ETCDDataSync:     etcdDataSync,
-		ConsulDataSync:   consulDataSync,
-		RedisDataSync:    redisDataSync,
-		VPP:              vpp,
-		Linux:            linux,
-		DataConfigurator: &configurator.DefaultPlugin,
-		RESTAPI:          &rest.DefaultPlugin,
-		Probe:            &probe.DefaultPlugin,
-		Telemetry:        &telemetry.DefaultPlugin,
+		LogManager:     &logmanager.DefaultPlugin,
+		Orchestrator:   &orchestrator.DefaultPlugin,
+		ETCDDataSync:   etcdDataSync,
+		ConsulDataSync: consulDataSync,
+		RedisDataSync:  redisDataSync,
+		VPP:            vpp,
+		Linux:          linux,
+		Configurator:   &configurator.DefaultPlugin,
+		RESTAPI:        &rest.DefaultPlugin,
+		Probe:          &probe.DefaultPlugin,
+		Telemetry:      &telemetry.DefaultPlugin,
 	}
 }
 
@@ -131,6 +131,7 @@ func (VPPAgent) Init() error {
 func (VPPAgent) AfterInit() error {
 	// manually start resync after all plugins started
 	resync.DefaultPlugin.DoResync()
+	//orchestrator.DefaultPlugin.InitialSync()
 	return nil
 }
 
