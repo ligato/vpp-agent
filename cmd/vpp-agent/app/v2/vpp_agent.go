@@ -19,6 +19,7 @@ import (
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/datasync/msgsync"
+	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval/consul"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/redis"
@@ -129,8 +130,8 @@ func (VPPAgent) Init() error {
 // AfterInit executes resync.
 func (VPPAgent) AfterInit() error {
 	// manually start resync after all plugins started
-	//resync.DefaultPlugin.DoResync()
-	orchestrator.DefaultPlugin.InitialSync()
+	resync.DefaultPlugin.DoResync()
+	//orchestrator.DefaultPlugin.InitialSync()
 	return nil
 }
 

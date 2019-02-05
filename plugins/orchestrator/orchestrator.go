@@ -103,6 +103,7 @@ func (p *Plugin) AfterInit() (err error) {
 
 // InitialSync will start initial synchronization with downstream.
 func (p *Plugin) InitialSync() {
+	// FIXME: KVScheduler needs to have some type of sync that only refreshes state from SB
 	p.Log.Debugf("starting initial sync")
 	txn := p.KVScheduler.StartNBTransaction()
 	ctx := kvs.WithResync(context.Background(), kvs.DownstreamResync, true)
