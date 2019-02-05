@@ -18,262 +18,82 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/rpc/grpc"
+	"github.com/ligato/cn-infra/logging"
 	"golang.org/x/net/context"
 
-	api "github.com/ligato/vpp-agent/api/genericmanager"
-	"github.com/ligato/vpp-agent/pkg/models"
+	"github.com/gogo/protobuf/proto"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 )
 
-// Plugin implements sync service for GRPC.
-type Plugin struct {
-	Deps
+// KeyVal associates value with its key.
+type KeyVal struct {
+	Key string
+	Val proto.Message
+}
 
-	manager *genericManagerSvc
+// KVPairs represents key-value pairs.
+type KVPairs map[string]proto.Message
 
-	// datasync channels
-	changeChan   chan datasync.ChangeEvent
-	resyncChan   chan datasync.ResyncEvent
-	watchDataReg datasync.WatchRegistration
+type Dispatcher interface {
+	ListData() KVPairs
+	PushData(context.Context, []KeyVal) ([]kvs.KeyWithError, error)
+}
 
+type dispatcher struct {
+	log   logging.Logger
+	kvs   kvs.KVScheduler
 	mu    sync.Mutex
 	store *memStore
 }
 
-// Deps represents dependencies for the plugin.
-type Deps struct {
-	infra.PluginDeps
-
-	GRPC        grpc.Server
-	KVScheduler kvs.KVScheduler
-	Watcher     datasync.KeyValProtoWatcher
-}
-
-// Init registers the service to GRPC server.
-func (p *Plugin) Init() error {
-	p.store = newMemStore()
-
-	// initialize datasync channels
-	p.resyncChan = make(chan datasync.ResyncEvent)
-	p.changeChan = make(chan datasync.ChangeEvent)
-
-	// register grpc service
-	p.manager = &genericManagerSvc{
-		log:  p.Log,
-		orch: p,
-	}
-
-	if grpcServer := p.GRPC.GetServer(); grpcServer != nil {
-		api.RegisterGenericManagerServer(grpcServer, p.manager)
-	} else {
-		p.Log.Infof("grpc server not available")
-	}
-
-	return nil
-}
-
-// AfterInit subscribes to known NB prefixes.
-func (p *Plugin) AfterInit() (err error) {
-	go p.watchEvents()
-
-	nbPrefixes := p.KVScheduler.GetRegisteredNBKeyPrefixes()
-	if len(nbPrefixes) > 0 {
-		p.Log.Infof("starting watch for %d NB prefixes", len(nbPrefixes))
-	} else {
-		p.Log.Warnf("no NB prefixes found")
-	}
-
-	var prefixes []string
-	for _, prefix := range nbPrefixes {
-		//prefix = path.Join("config", prefix)
-		p.Log.Debugf("- watching NB prefix: %s", prefix)
-		prefixes = append(prefixes, prefix)
-	}
-
-	p.watchDataReg, err = p.Watcher.Watch(p.PluginName.String(),
-		p.changeChan, p.resyncChan, prefixes...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Plugin) watchEvents() {
-	for {
-		select {
-		case e := <-p.changeChan:
-			p.Log.Debugf("=> received CHANGE event (%v changes)", len(e.GetChanges()))
-
-			/*var kvPairs []kvs.KeyValuePair
-			for _, x := range e.GetChanges() {
-				p.Log.Debugf(" - %v: %q (rev: %v)",
-					x.GetChangeType(), x.GetKey(), x.GetRevision())
-
-				var val proto.Message
-				if x.GetChangeType() != datasync.Delete {
-					val = x.G
-				}
-
-				kvPairs = append(kvPairs, ProtoWatchResp{
-					Key:   x.GetKey(),
-					Val: val,
-				})
-			}*/
-			var err error
-			var kvPairs []KeyValuePair
-			for _, x := range e.GetChanges() {
-				kv := KeyValuePair{Key: x.GetKey()}
-				if x.GetChangeType() != datasync.Delete {
-					kv.Value, err = models.UnmarshalLazyValue(kv.Key, x)
-					if err != nil {
-						p.Log.Error(err)
-						continue
-					}
-				}
-				kvPairs = append(kvPairs, kv)
-			}
-
-			ctx := context.Background()
-			ctx = kvs.WithRetryDefault(ctx)
-			_, err = p.PushData(ctx, kvPairs)
-			e.Done(err)
-
-			/*txn := p.KVScheduler.StartNBTransaction()
-			for _, x := range e.GetChanges() {
-				p.Log.Debugf(" - %v: %q (rev: %v)",
-					x.GetChangeType(), x.GetKey(), x.GetRevision())
-				if x.GetChangeType() == datasync.Delete {
-					txn.SetValue(x.GetKey(), nil)
-				} else {
-					txn.SetValue(x.GetKey(), x)
-				}
-			}
-
-			ctx := context.Background()
-			//ctx = kvs.WithRetry(ctx, time.Second, true)
-
-			kvErrs, err := txn.Commit(ctx)
-			if err != nil {
-				p.Log.Errorf("transaction failed: %v", err)
-			} else if len(kvErrs) > 0 {
-				p.Log.Warnf("transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
-			} else {
-				p.Log.Infof("transaction successful")
-			}
-			e.Done(err)*/
-
-		case e := <-p.resyncChan:
-			p.Log.Debugf("=> received RESYNC event (%v prefixes)", len(e.GetValues()))
-
-			var kvPairs []KeyValuePair
-
-			n := 0
-			for prefix, iter := range e.GetValues() {
-				var keyVals []datasync.KeyVal
-				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
-					key := x.GetKey()
-					val, err := models.UnmarshalLazyValue(key, x)
-					if err != nil {
-						p.Log.Error(err)
-						continue
-					}
-					kvPairs = append(kvPairs, KeyValuePair{
-						Key:   key,
-						Value: val,
-					})
-					p.Log.Debugf(" -- key: %s", x.GetKey())
-					keyVals = append(keyVals, x)
-					n++
-				}
-				if len(keyVals) > 0 {
-					p.Log.Debugf("- %q (%v items)", prefix, len(keyVals))
-				} else {
-					p.Log.Debugf("- %q (no items)", prefix)
-				}
-				for _, x := range keyVals {
-					p.Log.Debugf("\t - %q: (rev: %v)", x.GetKey(), x.GetRevision())
-				}
-			}
-			p.Log.Debugf("Resync with %d items", n)
-
-			ctx := context.Background()
-			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
-			ctx = kvs.WithRetryDefault(ctx)
-			_, err := p.PushData(ctx, kvPairs)
-			e.Done(err)
-
-			/*n := 0
-			txn := p.KVScheduler.StartNBTransaction()
-			for prefix, iter := range e.GetValues() {
-				var keyVals []datasync.KeyVal
-				for x, done := iter.GetNext(); !done; x, done = iter.GetNext() {
-					keyVals = append(keyVals, x)
-					txn.SetValue(x.GetKey(), x)
-					n++
-				}
-				if len(keyVals) > 0 {
-					p.Log.Debugf(" - Resync: %q (%v items)", prefix, len(keyVals))
-				} else {
-					p.Log.Debugf(" - Resync: %q", prefix)
-				}
-				for _, x := range keyVals {
-					p.Log.Debugf("\t - %q: (rev: %v)", x.GetKey(), x.GetRevision())
-				}
-			}
-			p.Log.Debugf("Resyncing %d items", n)
-
-			ctx := context.Background()
-			//ctx = kvs.WithRetry(ctx, time.Second, true)
-			ctx = kvs.WithResync(ctx, kvs.FullResync, true)
-
-			kvErrs, err := txn.Commit(ctx)
-			if err != nil {
-				p.Log.Errorf("transaction failed: %v", err)
-			} else if len(kvErrs) > 0 {
-				p.Log.Warnf("transaction finished with %d errors: %+v", len(kvErrs), kvErrs)
-			} else {
-				p.Log.Infof("transaction successful")
-			}
-			e.Done(err)*/
-		}
-	}
-}
-
-func (p *Plugin) ListData() map[string]proto.Message {
+// ListData retrieves actual data.
+func (p *dispatcher) ListData() KVPairs {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.store.db
+
+	return p.store.ListAll()
 }
 
-// PushData ...
-func (p *Plugin) PushData(ctx context.Context, kvPairs []KeyValuePair) (kvErrs []kvs.KeyWithError, err error) {
+// PushData updates actual data.
+func (p *dispatcher) PushData(ctx context.Context, kvPairs []KeyVal) (kvErrs []kvs.KeyWithError, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
+	dataSrc, ok := DataSrcFromContext(ctx)
+	if !ok {
+		dataSrc = "global"
+	}
+
+	p.log.Debugf("Pushing data with %d KV pairs (source: %s)", len(kvPairs), dataSrc)
+
+	txn := p.kvs.StartNBTransaction()
 
 	if typ, _ := kvs.IsResync(ctx); typ == kvs.FullResync {
-		p.store.Reset()
-	}
-
-	txn := p.KVScheduler.StartNBTransaction()
-
-	for _, kv := range kvPairs {
-		if kv.Value == nil {
-			p.Log.Debugf(" - DELETE: %q", kv.Key)
-		} else {
-			p.Log.Debugf(" - PUT: %q ", kv.Key)
+		p.store.Reset(dataSrc)
+		for _, kv := range kvPairs {
+			if kv.Val == nil {
+				p.log.Debugf(" - PUT: %q (skipped nil value)", kv.Key)
+				continue
+			}
+			p.log.Debugf(" - PUT: %q ", kv.Key)
+			p.store.Update(dataSrc, kv.Key, kv.Val)
 		}
-
-		if kv.Value == nil {
-			txn.SetValue(kv.Key, nil)
-			p.store.Delete(kv.Key)
-		} else {
-			txn.SetValue(kv.Key, kv.Value)
-			p.store.Update(kv.Key, kv.Value)
+		allPairs := p.store.ListAll()
+		p.log.Debugf("will resync %d pairs", len(allPairs))
+		for k, v := range allPairs {
+			txn.SetValue(k, v)
+		}
+	} else {
+		for _, kv := range kvPairs {
+			if kv.Val == nil {
+				p.log.Debugf(" - DELETE: %q", kv.Key)
+				txn.SetValue(kv.Key, nil)
+				p.store.Delete(dataSrc, kv.Key)
+			} else {
+				p.log.Debugf(" - UPDATE: %q ", kv.Key)
+				txn.SetValue(kv.Key, kv.Val)
+				p.store.Update(dataSrc, kv.Key, kv.Val)
+			}
 		}
 	}
 
@@ -283,23 +103,30 @@ func (p *Plugin) PushData(ctx context.Context, kvPairs []KeyValuePair) (kvErrs [
 			kvErrs = txErr.GetKVErrors()
 			var errInfo = ""
 			for i, kvErr := range kvErrs {
-				errInfo += fmt.Sprintf(" - %d. error (%s) %s - %+s\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
+				errInfo += fmt.Sprintf(" - %d. error (%s) %s - %+v\n", i+1, kvErr.TxnOperation, kvErr.Key, kvErr.Error)
 			}
-			p.Log.Errorf("Transaction #%d finished with %d errors", seqID, len(kvErrs))
+			p.log.Errorf("Transaction #%d finished with %d errors", seqID, len(kvErrs))
 			fmt.Println(errInfo)
 		} else {
-			p.Log.Errorf("Transaction #%d failed: %v", seqID, err)
+			p.log.Errorf("Transaction #%d failed: %v", seqID, err)
 		}
 	} else {
-		p.Log.Infof("Transaction #%d successful!", seqID)
+		p.log.Infof("Transaction #%d successful!", seqID)
 		return kvErrs, err
 	}
 
 	return nil, nil
 }
 
-// KeyValuePair associates value with its key.
-type KeyValuePair struct {
-	Key   string
-	Value proto.Message
+type dataSrcKeyT string
+
+var dataSrcKey = dataSrcKeyT("dataSrc")
+
+func DataSrcContext(ctx context.Context, dataSrc string) context.Context {
+	return context.WithValue(ctx, dataSrcKey, dataSrc)
+}
+
+func DataSrcFromContext(ctx context.Context) (dataSrc string, ok bool) {
+	dataSrc, ok = ctx.Value(dataSrcKey).(string)
+	return
 }

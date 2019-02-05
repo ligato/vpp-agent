@@ -31,7 +31,7 @@ func NewPlugin(opts ...Option) *Plugin {
 
 	p.PluginName = "configurator"
 	p.GRPCServer = &grpc.DefaultPlugin
-	p.Orch = &orchestrator.DefaultPlugin
+	p.Dispatch = &orchestrator.DefaultPlugin
 	p.GoVppmux = &govppmux.DefaultPlugin
 	p.VPPIfPlugin = &ifplugin.DefaultPlugin
 	p.VPPL2Plugin = &l2plugin.DefaultPlugin

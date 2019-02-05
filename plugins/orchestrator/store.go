@@ -14,26 +14,70 @@
 
 package orchestrator
 
-import "github.com/gogo/protobuf/proto"
+import (
+	"sort"
+
+	"github.com/gogo/protobuf/proto"
+)
+
+// KVDB describes interface for key-value store.
+/*type KVDB interface {
+	Reset(dataSrc string)
+	ListAll() KVPairs
+	List(dataSrc string) KVPairs
+	Update(dataSrc, key string, val proto.Message)
+	Delete(dataSrc, key string)
+}*/
 
 type memStore struct {
-	db map[string]proto.Message
+	db map[string]KVPairs
 }
 
 func newMemStore() *memStore {
 	return &memStore{
-		db: map[string]proto.Message{},
+		db: make(map[string]KVPairs),
 	}
 }
 
-func (s *memStore) Reset() {
-	s.db = map[string]proto.Message{}
+// Reset clears all key-value data.
+func (s *memStore) Reset(dataSrc string) {
+	delete(s.db, dataSrc)
 }
 
-func (s *memStore) Delete(key string) {
-	delete(s.db, key)
+// List lists actual key-value pairs.
+func (s *memStore) ListAll() KVPairs {
+	var dataSrcs []string
+	for dataSrc := range s.db {
+		dataSrcs = append(dataSrcs, dataSrc)
+	}
+	sort.Strings(dataSrcs)
+	pairs := make(KVPairs)
+	for _, dataSrc := range dataSrcs {
+		for k, v := range s.List(dataSrc) {
+			pairs[k] = v
+		}
+	}
+	return pairs
 }
 
-func (s *memStore) Update(key string, val proto.Message) {
-	s.db[key] = val
+// List lists actual key-value pairs.
+func (s *memStore) List(dataSrc string) KVPairs {
+	pairs := make(KVPairs, len(s.db[dataSrc]))
+	for k, v := range s.db[dataSrc] {
+		pairs[k] = v
+	}
+	return pairs
+}
+
+// Delete deletes value stored under given key.
+func (s *memStore) Delete(dataSrc, key string) {
+	delete(s.db[dataSrc], key)
+}
+
+// Update updates value stored under key with given value.
+func (s *memStore) Update(dataSrc, key string, val proto.Message) {
+	if _, ok := s.db[dataSrc]; !ok {
+		s.db[dataSrc] = make(KVPairs)
+	}
+	s.db[dataSrc][key] = val
 }
