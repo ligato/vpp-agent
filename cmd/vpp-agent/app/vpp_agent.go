@@ -29,20 +29,20 @@ import (
 	"github.com/ligato/cn-infra/messaging/kafka"
 
 	"github.com/ligato/vpp-agent/plugins/configurator"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
-	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	"github.com/ligato/vpp-agent/plugins/restv2"
+	"github.com/ligato/vpp-agent/plugins/restapi"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
-	"github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ipsecplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/natplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/puntplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/stnplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/natplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin"
 )
 
 // VPPAgent defines plugins which will be loaded and their order.
@@ -64,7 +64,7 @@ type VPPAgent struct {
 	RedisDataSync  *kvdbsync.Plugin
 
 	Configurator *configurator.Plugin
-	RESTAPI      *rest.Plugin
+	RESTAPI      *restapi.Plugin
 	Probe        *probe.Plugin
 	Telemetry    *telemetry.Plugin
 }
@@ -98,14 +98,14 @@ func New() *VPPAgent {
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 
+	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
+	ifplugin.DefaultPlugin.PublishStatistics = writers
+	puntplugin.DefaultPlugin.PublishState = writers
+
 	// connect IfPlugins for Linux & VPP
 	linux_ifplugin.DefaultPlugin.VppIfPlugin = &ifplugin.DefaultPlugin
 	ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
 	ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
-
-	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
-	ifplugin.DefaultPlugin.PublishStatistics = writers
-	puntplugin.DefaultPlugin.PublishState = writers
 
 	vpp := DefaultVPP()
 	linux := DefaultLinux()
@@ -119,7 +119,7 @@ func New() *VPPAgent {
 		VPP:            vpp,
 		Linux:          linux,
 		Configurator:   &configurator.DefaultPlugin,
-		RESTAPI:        &rest.DefaultPlugin,
+		RESTAPI:        &restapi.DefaultPlugin,
 		Probe:          &probe.DefaultPlugin,
 		Telemetry:      &telemetry.DefaultPlugin,
 	}

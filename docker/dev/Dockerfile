@@ -88,7 +88,9 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" \
  && chmod -R 777 "$GOPATH"
 
 # install debugger
-RUN go get -u github.com/go-delve/delve/cmd/dlv
+RUN \
+	go get -u github.com/go-delve/delve/cmd/dlv && dlv version; \
+	curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && dep version;
 
 # copy configs
 COPY \

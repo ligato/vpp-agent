@@ -28,11 +28,11 @@ import (
 	"github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/api/models/vpp/nat"
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
-	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	vpp_natplugin "github.com/ligato/vpp-agent/plugins/vppv2/natplugin"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	vpp_natplugin "github.com/ligato/vpp-agent/plugins/vpp/natplugin"
 )
 
 /*

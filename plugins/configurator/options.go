@@ -18,8 +18,8 @@ import (
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 )
 
 // DefaultPlugin is default instance of Plugin

@@ -30,10 +30,10 @@ import (
 	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	localclient2 "github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/namsral/flag"
 )
 
