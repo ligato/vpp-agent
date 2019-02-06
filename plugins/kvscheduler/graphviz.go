@@ -183,12 +183,15 @@ func (s *Scheduler) renderDotOutput(graphNodes []*graph.RecordedNode, txn *kvs.R
 			c = c.Clusters[descriptorName]
 		}
 
-		valueState := kvs.ValueState_MISSING // missing dependencies
+		var valueState kvs.ValueState
 		stateFlag := graphNode.GetFlag(ValueStateFlagName)
 		if stateFlag != nil {
 			valueState = stateFlag.(*ValueStateFlag).valueState
 		}
 		switch valueState {
+		case kvs.ValueState_NONEXISTENT:
+			attrs["fontcolor"] = "White"
+			attrs["fillcolor"] = "Black"
 		case kvs.ValueState_MISSING:
 			attrs["fillcolor"] = "Dimgray"
 			attrs["style"] = "dashed,filled"
