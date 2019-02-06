@@ -16,6 +16,7 @@
 
 package linuxcalls
 
+/*
 import (
 	"net"
 
@@ -127,3 +128,4 @@ func InterfaceExists(ifName string) (bool, error) {
 func GetVethPeerName(ifName string) (string, error) {
 	return "", nil
 }
+*/

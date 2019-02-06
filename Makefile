@@ -119,8 +119,6 @@ get-proto-generators:
 # Generate proto models
 generate-proto: get-proto-generators
 	@echo "=> generating proto"
-	cd plugins/linux/model && go generate
-	cd plugins/vpp/model && go generate
 	./scripts/genprotos.sh
 
 # Get generator tools
