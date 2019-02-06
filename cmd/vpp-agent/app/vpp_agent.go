@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package appv2
+package app
 
 import (
 	"github.com/ligato/cn-infra/datasync"
@@ -51,14 +51,17 @@ import (
 type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
+	// VPP & Linux are first to ensure that
+	// all their descriptors are regitered to KVScheduler
+	// before orchestrator that starts watch for their NB key prefixes.
+	VPP
+	Linux
+
 	Orchestrator *orchestrator.Plugin
 
 	ETCDDataSync   *kvdbsync.Plugin
 	ConsulDataSync *kvdbsync.Plugin
 	RedisDataSync  *kvdbsync.Plugin
-
-	VPP
-	Linux
 
 	Configurator *configurator.Plugin
 	RESTAPI      *rest.Plugin

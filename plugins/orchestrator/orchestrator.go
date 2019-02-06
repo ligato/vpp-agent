@@ -48,16 +48,12 @@ type Deps struct {
 }
 
 // Init registers the service to GRPC server.
-func (p *Plugin) Init() error {
+func (p *Plugin) Init() (err error) {
 	p.dispatcher = &dispatcher{
 		log:   p.Log.NewLogger("dispatcher"),
 		store: newMemStore(),
 		kvs:   p.KVScheduler,
 	}
-
-	// initialize datasync channels
-	p.resyncChan = make(chan datasync.ResyncEvent)
-	p.changeChan = make(chan datasync.ChangeEvent)
 
 	// register grpc service
 	p.manager = &genericManagerSvc{
@@ -71,18 +67,11 @@ func (p *Plugin) Init() error {
 		p.log.Infof("grpc server not available")
 	}
 
-	return nil
-}
-
-// AfterInit subscribes to known NB prefixes.
-func (p *Plugin) AfterInit() (err error) {
-	go p.watchEvents()
-
 	nbPrefixes := p.kvs.GetRegisteredNBKeyPrefixes()
 	if len(nbPrefixes) > 0 {
-		p.log.Infof("watch starting for %d registered NB prefixes", len(nbPrefixes))
+		p.log.Infof("Watch starting for %d registered NB prefixes", len(nbPrefixes))
 	} else {
-		p.log.Warnf("no registered NB prefixes found in KVScheduler")
+		p.log.Warnf("No registered NB prefixes found in KVScheduler (ensure that all KVDescriptors are registered before this)")
 	}
 
 	var prefixes []string
@@ -92,11 +81,22 @@ func (p *Plugin) AfterInit() (err error) {
 		prefixes = append(prefixes, prefix)
 	}
 
+	// initialize datasync channels
+	p.resyncChan = make(chan datasync.ResyncEvent)
+	p.changeChan = make(chan datasync.ChangeEvent)
+
 	p.watchDataReg, err = p.Watcher.Watch(p.PluginName.String(),
 		p.changeChan, p.resyncChan, prefixes...)
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// AfterInit subscribes to known NB prefixes.
+func (p *Plugin) AfterInit() (err error) {
+	go p.watchEvents()
 
 	return nil
 }
