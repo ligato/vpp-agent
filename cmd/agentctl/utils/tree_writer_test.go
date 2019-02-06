@@ -14,6 +14,7 @@
 
 package utils_test
 
+/*
 import (
 	"fmt"
 	"testing"
@@ -69,3 +70,4 @@ func getPrefix(level int) string {
 	}
 	return fmt.Sprintf("%d^@%s", level, prefix)
 }
+*/

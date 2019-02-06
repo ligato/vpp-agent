@@ -15,24 +15,25 @@
 package main
 
 import (
+	"log"
+
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/datasync/resync"
 	"github.com/ligato/cn-infra/db/keyval/etcd"
 	"github.com/ligato/cn-infra/db/keyval/redis"
 	"github.com/ligato/cn-infra/db/sql/cassandra"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
-	"log"
 )
 
 func main() {
-	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
 
-	// Start simple agent with connector plugins
-	a := agent.NewAgent(
-		agent.AllPlugins(&etcd.DefaultPlugin, &redis.DefaultPlugin, &cassandra.DefaultPlugin,
-			&resync.DefaultPlugin),
-	)
+	// Create agent with connector plugins
+	a := agent.NewAgent(agent.AllPlugins(
+		&etcd.DefaultPlugin,
+		&redis.DefaultPlugin,
+		&cassandra.DefaultPlugin,
+		&resync.DefaultPlugin,
+	))
+
 	if err := a.Run(); err != nil {
 		log.Fatal(err)
 	}

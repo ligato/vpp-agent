@@ -14,6 +14,7 @@
 
 package utils_test
 
+/*
 import (
 	"testing"
 
@@ -152,3 +153,4 @@ func Test10ParseKeyVrf(t *testing.T) {
 	gomega.Expect(dataType).To(gomega.BeEquivalentTo(l3.VrfPrefix))
 	gomega.Expect(params).To(gomega.BeEquivalentTo("vrf1"))
 }
+*/

@@ -2,15 +2,23 @@
 
 
 [[projects]]
-  digest = "1:b6957a1836b6d7e51e5a71391f5c08fa5d866f57e4ac425fa5f183d518a5657b"
+  digest = "1:ed77032e4241e3b8329c9304d66452ed196e795876e14be677a546f36b94e67a"
+  name = "github.com/DataDog/zstd"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7161f8c63c045cbc7ca051dcc969dd0e4054de2"
+  version = "v1.3.5"
+
+[[projects]]
+  digest = "1:49eb5d6ac71a788f1f15331e7cd87286b92951fdf758f418e12f22ac8dd27af1"
   name = "github.com/Shopify/sarama"
   packages = [
     ".",
     "mocks",
   ]
   pruneopts = "UT"
-  revision = "ec843464b50d4c8b56403ec9d589cf41ea30e722"
-  version = "v1.19.0"
+  revision = "879f631812a30a580659e8035e7cda9994bb99ac"
+  version = "v1.20.0"
 
 [[projects]]
   digest = "1:cf8e4e10e49fef1330e60c780258ea3c1471747f62e52e52c7e96307a1fea34b"
@@ -283,7 +291,7 @@
   revision = "a84ce58083d3d907fb0d94290d088a1fcd9cd858"
 
 [[projects]]
-  digest = "1:c30185d83c2a351bf3b21e7784d3c9b84281d56d0958959c2a6cd8a47f422c49"
+  digest = "1:a4e6cb9d433cdd86e8b80f65e0578d5fc13bfb1bbd18daefda89539675c71ccb"
   name = "github.com/gogo/protobuf"
   packages = [
     "gogoproto",
@@ -317,8 +325,8 @@
     "vanity/command",
   ]
   pruneopts = "UT"
-  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
-  version = "v1.1.1"
+  revision = "4cbf7e384e768b4e01799441fdf2a706a5635ae7"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:9d6dc4d6de69b330d0de86494d6db90c09848c003d5db748f40c925f865c8534"
@@ -388,9 +396,13 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:1168584a5881d371e96cb0e66ef6db71d7cef0856cc7f311490bc856627f8328"
+  digest = "1:a93a4de7b00fb9cc952bc0483e9a32cd273adbbd7f3282bfe89656b2f88fb08c"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
-  packages = ["."]
+  packages = [
+    ".",
+    "auth",
+    "util/metautils",
+  ]
   pruneopts = "UT"
   revision = "c250d6563d4d4c20252cd865923440e829844f4e"
   version = "v1.0.0"
@@ -565,7 +577,7 @@
   version = "v1.7.4-pre"
 
 [[projects]]
-  digest = "1:ab54eea8d482272009e9e4af07d4d9b5236c27b4d8c54a3f2c99d163be883eca"
+  digest = "1:7a137fb7718928e473b7d805434ae563ec41790d3d227cdc64e8b14d1cab8a1f"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
@@ -582,8 +594,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "7615b9433f86a8bdf29709bf288bc4fd0636a369"
-  version = "v1.4.2"
+  revision = "65fb64232476ad9046e57c26cd0bff3d3a8dc6cd"
+  version = "v1.4.3"
 
 [[projects]]
   branch = "master"
@@ -681,15 +693,15 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:d567a75ca7997f273776fc257f338d329c2e5877a8105ff8bd0234f75d45d4c0"
+  digest = "1:30520eb80678eddf5a5cc350ba4ffb4d8b6838d9f89a7e60efe7f5e30f2f9c18"
   name = "github.com/sirupsen/logrus"
   packages = [
     ".",
     "hooks/syslog",
   ]
   pruneopts = "UT"
-  revision = "bcd833dfe83d3cebad139e4a29ed79cb2318bf95"
-  version = "v1.2.0"
+  revision = "e1e72e9de974bd926e5c56f83753fba2df402ce5"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:30e06e6d62a1d694e3cdbff29d8a9a96022e05a487d0c6eaf0ef898965ef28fb"
@@ -805,7 +817,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e079952a2887460a817db9c839b5a2be954c9f786ffa5d647be6c5fb2ac388e0"
+  digest = "1:22cc09a0a3e3e7826986266cd4efca3b31b784cde07b0e5f2eacc5799d2ac5aa"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -820,7 +832,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "c10e9556a7bc0e7c942242b606f0acf024ad5d6a"
+  revision = "be88a9aa50a10f9e7a47479f127468a474701f09"
 
 [[projects]]
   branch = "master"
@@ -965,6 +977,7 @@
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/protoc-gen-gogo",
     "github.com/gorilla/mux",
+    "github.com/grpc-ecosystem/go-grpc-middleware/auth",
     "github.com/grpc-ecosystem/grpc-gateway/runtime",
     "github.com/hashicorp/consul/api",
     "github.com/hashicorp/consul/testutil",
@@ -983,8 +996,12 @@
     "golang.org/x/crypto/bcrypt",
     "golang.org/x/net/context",
     "google.golang.org/grpc",
+    "google.golang.org/grpc/codes",
+    "google.golang.org/grpc/credentials",
     "google.golang.org/grpc/examples/helloworld/helloworld",
-    "google.golang.org/grpc/grpclog",
+    "google.golang.org/grpc/metadata",
+    "google.golang.org/grpc/peer",
+    "google.golang.org/grpc/status",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

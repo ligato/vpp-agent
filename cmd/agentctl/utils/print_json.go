@@ -16,16 +16,11 @@ package utils
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
-
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	/*"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
-	"github.com/logrusorgru/aurora.git"
-)
+	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"*/)
 
 const (
 	// IfConfig labels used by json formatter
@@ -62,7 +57,7 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 			continue
 		}
 
-		vd, _ := ed[key]
+		/*vd, _ := ed[key]
 		// Obtain raw data.
 		ifaceConfDataRoot, ifaceConfKeys := getInterfaceConfigData(vd.Interfaces)
 		ifaceStateDataRoot, ifaceStateKeys := getInterfaceStateData(vd.Interfaces)
@@ -126,7 +121,7 @@ func (ed EtcdDump) PrintDataAsJSON(filter []string) (*bytes.Buffer, error) {
 		if string(jsL3FIBData) != emptyJSON {
 			printLabel(buffer, key+": - "+L3FibConfig+"\n", indent, l3FibKeys)
 			fmt.Fprintf(buffer, "%s\n", jsL3FIBData)
-		}
+		}*/
 
 	}
 
@@ -168,6 +163,7 @@ func isNotInFilter(key string, filter []string) bool {
 	return true
 }
 
+/*
 // Get interface config data and create full interface config proto structure.
 func getInterfaceConfigData(interfaceData map[string]InterfaceWithMD) (*interfaces.Interfaces, []string) {
 	// Config data
@@ -290,3 +286,4 @@ func printLabel(buffer *bytes.Buffer, label string, prefix string, keyset []stri
 	}
 	fmt.Fprintf(buffer, ub)
 }
+*/

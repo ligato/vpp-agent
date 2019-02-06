@@ -94,11 +94,11 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Orchestrator  *orchestrator.Plugin
 	LinuxIfPlugin *linux_ifplugin.IfPlugin
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
 	VPPNATPlugin  *vpp_natplugin.NATPlugin
+	Orchestrator  *orchestrator.Plugin
 }
 
 // String returns plugin name

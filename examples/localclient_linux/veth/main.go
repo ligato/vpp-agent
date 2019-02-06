@@ -22,16 +22,18 @@ import (
 	"log"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	localclient2 "github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/linux"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/namespace"
+	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	localclient2 "github.com/ligato/vpp-agent/clientv2/linux/localclient"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linuxv2/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
 	"github.com/namsral/flag"
 )
 
@@ -103,31 +105,21 @@ const PluginName = "veth-example"
 
 // Start Agent plugins selected for this example.
 func main() {
-	//Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
-	// Prepare all the dependencies for example plugin
-	watcher := datasync.KVProtoWatchers{
-		local.Get(),
-	}
-	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Watcher = watcher
-	}))
-	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
-		deps.VPP = vppPlugin
-		deps.Watcher = watcher
-	}))
-	vppPlugin.Deps.Linux = linuxPlugin
+	// Set inter-dependency between VPP & Linux plugins
+	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	vpp_ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
+	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
-	var watchEventsMutex sync.Mutex
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
-	linuxPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+	// Init close channel to stop the example.
+	exampleFinished := make(chan struct{})
 
 	// Inject dependencies to example plugin
 	ep := &VethExamplePlugin{
-		Log: logging.DefaultLogger,
+		Log:          logging.DefaultLogger,
+		VPP:          app.DefaultVPP(),
+		Linux:        app.DefaultLinux(),
+		Orchestrator: &orchestrator.DefaultPlugin,
 	}
-	ep.Deps.VPP = vppPlugin
-	ep.Deps.Linux = linuxPlugin
 
 	// Start Agent
 	a := agent.NewAgent(
@@ -153,60 +145,61 @@ func closeExample(message string, exampleFinished chan struct{}) {
 // VethExamplePlugin uses localclient to transport example veth and af-packet
 // configuration to linuxplugin, eventually VPP plugins
 type VethExamplePlugin struct {
-	Deps
+	Log logging.Logger
+	app.VPP
+	app.Linux
+	Orchestrator *orchestrator.Plugin
 
-	Log    logging.Logger
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
 }
 
-// Deps is example plugin dependencies. Keep order of fields.
-type Deps struct {
-	VPP   *vpp.Plugin
-	Linux *linux.Plugin
-}
-
 // String returns plugin name
-func (plugin *VethExamplePlugin) String() string {
+func (p *VethExamplePlugin) String() string {
 	return PluginName
 }
 
 // Init initializes example plugin.
-func (plugin *VethExamplePlugin) Init() error {
+func (p *VethExamplePlugin) Init() error {
 	// Logger
-	plugin.Log = logrus.DefaultLogger()
-	plugin.Log.SetLevel(logging.DebugLevel)
-	plugin.Log.Info("Initializing Veth example")
+	p.Log = logrus.DefaultLogger()
+	p.Log.SetLevel(logging.DebugLevel)
+	p.Log.Info("Initializing Veth example")
 
 	// Flags
 	flag.Parse()
-	plugin.Log.Infof("Timeout between create and modify set to %d", *timeout)
+	p.Log.Infof("Timeout between create and modify set to %d", *timeout)
 
+	p.Log.Info("Veth example initialization done")
+	return nil
+}
+
+// AfterInit initializes example plugin.
+func (p *VethExamplePlugin) AfterInit() error {
 	// Apply initial Linux/VPP configuration.
-	plugin.putInitialData()
+	p.putInitialData()
 
 	// Schedule reconfiguration.
 	var ctx context.Context
-	ctx, plugin.cancel = context.WithCancel(context.Background())
-	plugin.wg.Add(1)
-	go plugin.putModifiedData(ctx, *timeout)
+	ctx, p.cancel = context.WithCancel(context.Background())
+	p.wg.Add(1)
+	go p.putModifiedData(ctx, *timeout)
 
-	plugin.Log.Info("Veth example initialization done")
 	return nil
 }
 
 // Close cleans up the resources.
-func (plugin *VethExamplePlugin) Close() error {
-	plugin.cancel()
-	plugin.wg.Wait()
+func (p *VethExamplePlugin) Close() error {
+	p.cancel()
+	p.wg.Wait()
 
-	plugin.Log.Info("Closed Veth plugin")
+	p.Log.Info("Closed Veth plugin")
 	return nil
 }
 
 // Configure initial data
-func (plugin *VethExamplePlugin) putInitialData() {
-	plugin.Log.Infof("Applying initial configuration")
+func (p *VethExamplePlugin) putInitialData() {
+	p.Log.Infof("Applying initial configuration")
 	err := localclient2.DataResyncRequest(PluginName).
 		LinuxInterface(initialVeth11()).
 		LinuxInterface(initialVeth12()).
@@ -214,17 +207,17 @@ func (plugin *VethExamplePlugin) putInitialData() {
 		BD(bridgeDomain()).
 		Send().ReceiveReply()
 	if err != nil {
-		plugin.Log.Errorf("Initial configuration failed: %v", err)
+		p.Log.Errorf("Initial configuration failed: %v", err)
 	} else {
-		plugin.Log.Info("Initial configuration successful")
+		p.Log.Info("Initial configuration successful")
 	}
 }
 
 // Configure modified data
-func (plugin *VethExamplePlugin) putModifiedData(ctx context.Context, timeout int) {
+func (p *VethExamplePlugin) putModifiedData(ctx context.Context, timeout int) {
 	select {
 	case <-time.After(time.Duration(timeout) * time.Second):
-		plugin.Log.Infof("Applying modified configuration")
+		p.Log.Infof("Applying modified configuration")
 		// Simulate configuration change after timeout
 		err := localclient2.DataChangeRequest(PluginName).
 			Put().
@@ -235,122 +228,126 @@ func (plugin *VethExamplePlugin) putModifiedData(ctx context.Context, timeout in
 			VppInterface(afPacket2()).
 			Send().ReceiveReply()
 		if err != nil {
-			plugin.Log.Errorf("Modified configuration failed: %v", err)
+			p.Log.Errorf("Modified configuration failed: %v", err)
 		} else {
-			plugin.Log.Info("Modified configuration successful")
+			p.Log.Info("Modified configuration successful")
 		}
 	case <-ctx.Done():
 		// Cancel the scheduled re-configuration.
-		plugin.Log.Info("Modification of configuration canceled")
+		p.Log.Info("Modification of configuration canceled")
 	}
-	plugin.wg.Done()
+	p.wg.Done()
 }
 
 /* Example Data */
 
-func initialVeth11() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func initialVeth11() *linux_intf.Interface {
+	return &linux_intf.Interface{
 		Name:    "veth11",
-		Type:    linux_intf.LinuxInterfaces_VETH,
+		Type:    linux_intf.Interface_VETH,
 		Enabled: true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth12",
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth12"},
 		},
 	}
 }
 
-func modifiedVeth11() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func modifiedVeth11() *linux_intf.Interface {
+	return &linux_intf.Interface{
 		Name:    "veth11",
-		Type:    linux_intf.LinuxInterfaces_VETH,
+		Type:    linux_intf.Interface_VETH,
 		Enabled: true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth12",
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth12"},
 		},
 		Mtu: 1000,
 	}
 }
 
-func initialVeth12() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func initialVeth12() *linux_intf.Interface {
+	return &linux_intf.Interface{
 		Name:    "veth12",
-		Type:    linux_intf.LinuxInterfaces_VETH,
+		Type:    linux_intf.Interface_VETH,
 		Enabled: true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth11",
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth11"},
 		},
 	}
 }
 
-func modifiedVeth12() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func modifiedVeth12() *linux_intf.Interface {
+	return &linux_intf.Interface{
 		Name:    "veth12",
-		Type:    linux_intf.LinuxInterfaces_VETH,
+		Type:    linux_intf.Interface_VETH,
 		Enabled: true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth11",
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth11"},
 		},
 		IpAddresses: []string{"10.0.0.1/24"},
 		PhysAddress: "D2:74:8C:12:67:D2",
-		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
-			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
-			Name: "ns1",
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns1",
+			Type:      linux_namespace.NetNamespace_NSID,
 		},
 	}
 }
 
-func veth21() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func veth21() *linux_intf.Interface {
+	return &linux_intf.Interface{
 		Name:    "veth21",
-		Type:    linux_intf.LinuxInterfaces_VETH,
+		Type:    linux_intf.Interface_VETH,
 		Enabled: true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth22",
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth22"},
 		},
 	}
 }
 
-func veth22() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func veth22() *linux_intf.Interface {
+	return &linux_intf.Interface{
 		Name:    "veth22",
-		Type:    linux_intf.LinuxInterfaces_VETH,
+		Type:    linux_intf.Interface_VETH,
 		Enabled: true,
-		Veth: &linux_intf.LinuxInterfaces_Interface_Veth{
-			PeerIfName: "veth21",
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth21"},
 		},
 		IpAddresses: []string{"10.0.0.2/24"},
 		PhysAddress: "92:C7:42:67:AB:CD",
-		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
-			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
-			Name: "ns2",
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns2",
+			Type:      linux_namespace.NetNamespace_NSID,
 		},
 	}
 }
 
-func afPacket1() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func afPacket1() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:    "afpacket1",
-		Type:    vpp_intf.InterfaceType_AF_PACKET_INTERFACE,
+		Type:    vpp_intf.Interface_AF_PACKET,
 		Enabled: true,
-		Afpacket: &vpp_intf.Interfaces_Interface_Afpacket{
-			HostIfName: "veth11",
+		Link: &vpp_intf.Interface_Afpacket{
+			Afpacket: &vpp_intf.AfpacketLink{
+				HostIfName: "veth11",
+			},
 		},
 	}
 }
 
-func afPacket2() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func afPacket2() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:    "afpacket2",
-		Type:    vpp_intf.InterfaceType_AF_PACKET_INTERFACE,
+		Type:    vpp_intf.Interface_AF_PACKET,
 		Enabled: true,
-		Afpacket: &vpp_intf.Interfaces_Interface_Afpacket{
-			HostIfName: "veth21",
+		Link: &vpp_intf.Interface_Afpacket{
+			Afpacket: &vpp_intf.AfpacketLink{
+				HostIfName: "veth21",
+			},
 		},
 	}
 }
 
-func bridgeDomain() *vpp_l2.BridgeDomains_BridgeDomain {
-	return &vpp_l2.BridgeDomains_BridgeDomain{
+func bridgeDomain() *vpp_l2.BridgeDomain {
+	return &vpp_l2.BridgeDomain{
 		Name:                "br1",
 		Flood:               true,
 		UnknownUnicastFlood: true,
@@ -358,7 +355,7 @@ func bridgeDomain() *vpp_l2.BridgeDomains_BridgeDomain {
 		Learn:               true,
 		ArpTermination:      false,
 		MacAge:              0, /* means disable aging */
-		Interfaces: []*vpp_l2.BridgeDomains_BridgeDomain_Interfaces{
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
 			{
 				Name: "afpacket1",
 				BridgedVirtualInterface: false,

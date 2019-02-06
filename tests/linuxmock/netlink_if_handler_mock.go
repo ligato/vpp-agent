@@ -14,14 +14,7 @@
 
 package linuxmock
 
-import (
-	"net"
-
-	"github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin/linuxcalls"
-
-	"github.com/vishvananda/netlink"
-)
-
+/*
 // IfNetlinkHandlerMock allows to mock netlink-related methods
 type IfNetlinkHandlerMock struct {
 	responses []*WhenIfResp
@@ -108,7 +101,7 @@ func (mock *IfNetlinkHandlerMock) addCalled(name string, params ...interface{}) 
 	mock.calls = append(mock.calls, &called{methodName: name, params: params})
 }
 
-/* Mocked netlink handler methods */
+// Mocked netlink handler methods
 
 // AddVethInterfacePair implements NetlinkAPI.
 func (mock *IfNetlinkHandlerMock) AddVethInterfacePair(ifName, peerIfName string) error {
@@ -313,3 +306,4 @@ func (mock *IfNetlinkHandlerMock) DumpInterfaces() ([]*linuxcalls.LinuxInterface
 func (mock *IfNetlinkHandlerMock) DumpInterfaceStatistics() ([]*linuxcalls.LinuxInterfaceStatistics, error) {
 	return nil, nil
 }
+*/

@@ -38,7 +38,7 @@ type Plugin struct {
 	// Plugin is disabled if there is no config file available
 	disabled bool
 	// Bolt DB encapsulation
-	client *Client
+	boltClient *Client
 	// Read/Write proto modelled data
 	protoWrapper *kvproto.ProtoWrapper
 }
@@ -61,20 +61,6 @@ func (p *Plugin) OnConnect(callback func() error) {
 	}
 }
 
-func (p *Plugin) getConfig() (*Config, error) {
-	var cfg Config
-	found, err := p.Cfg.LoadValue(&cfg)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		p.Log.Info("Bolt config not found, skip loading this plugin")
-		p.disabled = true
-		return nil, nil
-	}
-	return &cfg, nil
-}
-
 // Init initializes Bolt plugin.
 func (p *Plugin) Init() (err error) {
 	if p.Config == nil {
@@ -84,13 +70,13 @@ func (p *Plugin) Init() (err error) {
 		}
 	}
 
-	p.client, err = NewClient(p.Config)
+	p.boltClient, err = NewClient(p.Config)
 	if err != nil {
 		p.Log.Errorf("Err: %v", err)
 		return err
 	}
 
-	p.protoWrapper = kvproto.NewProtoWrapper(p.client, &keyval.SerializerJSON{})
+	p.protoWrapper = kvproto.NewProtoWrapper(p.boltClient, &keyval.SerializerJSON{})
 
 	p.Log.Infof("BoltDB started with: %v", p.Config.DbPath)
 
@@ -99,8 +85,8 @@ func (p *Plugin) Init() (err error) {
 
 // Close closes the Bolt client.
 func (p *Plugin) Close() error {
-	if p.client != nil {
-		p.client.Close()
+	if p.boltClient != nil {
+		return p.boltClient.Close()
 	}
 	return nil
 }
@@ -113,4 +99,18 @@ func (p *Plugin) NewBroker(keyPrefix string) keyval.ProtoBroker {
 // NewWatcher creates new instance of prefixed broker that provides API with arguments of type proto.Message.
 func (p *Plugin) NewWatcher(keyPrefix string) keyval.ProtoWatcher {
 	return p.protoWrapper.NewWatcher(keyPrefix)
+}
+
+func (p *Plugin) getConfig() (*Config, error) {
+	var cfg Config
+	found, err := p.Cfg.LoadValue(&cfg)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		p.Log.Info("Bolt config not found, skip loading this plugin")
+		p.disabled = true
+		return nil, nil
+	}
+	return &cfg, nil
 }

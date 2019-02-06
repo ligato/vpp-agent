@@ -37,7 +37,7 @@ const (
 	// Started means that the Resync has started.
 	Started Status = "Started"
 	// NotActive means that Resync has not started yet or it has been finished.
-	NotActive = "NotActive"
+	NotActive Status = "NotActive"
 )
 
 // StatusEvent is the base type that will be propagated to the channel.

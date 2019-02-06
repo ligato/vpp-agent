@@ -15,15 +15,17 @@
 package grpc
 
 import (
+	"crypto/tls"
 	"io"
 	"net/http"
 	"strconv"
 
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/unrolled/render"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/credentials"
 )
 
 // Plugin maintains the GRPC netListener (see Init, AfterInit, Close methods)
@@ -38,6 +40,9 @@ type Plugin struct {
 	netListener io.Closer
 	// Plugin availability flag
 	disabled bool
+
+	tlsConfig *tls.Config
+	auther    *Authenticator
 }
 
 // Deps is a list of injected dependencies of the GRPC plugin.
@@ -59,8 +64,17 @@ func (p *Plugin) Init() (err error) {
 	// Prepare GRPC server
 	if p.grpcServer == nil {
 		opts := p.Config.getGrpcOptions()
+		if p.tlsConfig != nil {
+			opts = append(opts, grpc.Creds(credentials.NewTLS(p.tlsConfig)))
+		}
+		if p.auther != nil {
+			p.Log.Info("Token authentication for gRPC enabled")
+			opts = append(opts, grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(p.auther.Authenticate)))
+			opts = append(opts, grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(p.auther.Authenticate)))
+		}
 		p.grpcServer = grpc.NewServer(opts...)
-		grpclog.SetLogger(p.Log.NewLogger("grpc-server"))
+
+		//grpclog.SetLogger(p.Log.NewLogger("grpc-server"))
 	}
 
 	return nil

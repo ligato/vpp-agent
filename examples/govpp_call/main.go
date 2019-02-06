@@ -15,20 +15,18 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/utils/safeclose"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
 	"github.com/ligato/vpp-agent/plugins/govppmux"
-	"github.com/ligato/vpp-agent/plugins/vpp"
 	l2Api "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"log"
 )
 
 // *************************************************************************
@@ -47,22 +45,15 @@ import (
 // required for the example are initialized. Agent is instantiated with generic plugins (etcd, Kafka, Status check,
 // HTTP and Log), and GOVPP, and resync plugin, and example plugin which demonstrates GOVPP call functionality.
 func main() {
-	//Init close channel to stop the example.
-	closeChannel := make(chan struct{}, 1)
-	// Prepare all the dependencies for example plugin
-	watcher := datasync.KVProtoWatchers{
-		local.Get(),
-	}
-	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Watcher = watcher
-	}))
+	// Init close channel to stop the example.
+	closeChannel := make(chan struct{})
 
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{
 		Log:          logrus.DefaultLogger(),
 		closeChannel: closeChannel,
 	}
-	ep.Deps.VPP = vppPlugin
+	ep.Deps.VPP = app.DefaultVPP()
 	ep.Deps.GoVppMux = &govppmux.DefaultPlugin
 
 	// Start Agent
@@ -92,7 +83,7 @@ type ExamplePlugin struct {
 // Deps is example plugin dependencies.
 type Deps struct {
 	GoVppMux *govppmux.Plugin
-	VPP      *vpp.Plugin
+	VPP      app.VPP
 }
 
 // Init members of plugin.
@@ -102,8 +93,6 @@ func (plugin *ExamplePlugin) Init() (err error) {
 	plugin.vppChannel, err = plugin.Deps.GoVppMux.NewAPIChannel()
 
 	plugin.Log.Info("Default plugin plugin ready")
-
-	plugin.VPP.DisableResync(l2.BdPrefix)
 
 	// Make VPP call
 	go plugin.VppCall()
@@ -168,38 +157,34 @@ func (plugin *ExamplePlugin) VppCall() {
 }
 
 // Auxiliary function to build bridge domain data
-func buildData(name string) *l2.BridgeDomains {
-	return &l2.BridgeDomains{
-		BridgeDomains: []*l2.BridgeDomains_BridgeDomain{
+func buildData(name string) *l2.BridgeDomain {
+	return &l2.BridgeDomain{
+		Name:                name,
+		Flood:               false,
+		UnknownUnicastFlood: true,
+		Forward:             true,
+		Learn:               true,
+		ArpTermination:      true,
+		MacAge:              0,
+		Interfaces: []*l2.BridgeDomain_Interface{
 			{
-				Name:                name,
-				Flood:               false,
-				UnknownUnicastFlood: true,
-				Forward:             true,
-				Learn:               true,
-				ArpTermination:      true,
-				MacAge:              0,
-				Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
-					{
-						Name: "memif1",
-					},
-				},
+				Name: "memif1",
 			},
 		},
 	}
 }
 
 // Auxiliary method to transform agent model data to binary api format
-func buildBinapiMessage(data *l2.BridgeDomains, id uint32) *l2Api.BridgeDomainAddDel {
+func buildBinapiMessage(data *l2.BridgeDomain, id uint32) *l2Api.BridgeDomainAddDel {
 	req := &l2Api.BridgeDomainAddDel{}
 	req.IsAdd = 1
 	req.BdID = id
-	req.Flood = boolToInt(data.BridgeDomains[0].Flood)
-	req.UuFlood = boolToInt(data.BridgeDomains[0].UnknownUnicastFlood)
-	req.Forward = boolToInt(data.BridgeDomains[0].Forward)
-	req.Learn = boolToInt(data.BridgeDomains[0].Learn)
-	req.ArpTerm = boolToInt(data.BridgeDomains[0].ArpTermination)
-	req.MacAge = uint8(data.BridgeDomains[0].MacAge)
+	req.Flood = boolToInt(data.Flood)
+	req.UuFlood = boolToInt(data.UnknownUnicastFlood)
+	req.Forward = boolToInt(data.Forward)
+	req.Learn = boolToInt(data.Learn)
+	req.ArpTerm = boolToInt(data.ArpTermination)
+	req.MacAge = uint8(data.MacAge)
 
 	return req
 }

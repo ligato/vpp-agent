@@ -70,7 +70,7 @@ var validLoggerName = regexp.MustCompile(`^[a-zA-Z0-9.-]+$`).MatchString
 
 func checkLoggerName(name string) error {
 	if !validLoggerName(name) {
-		return fmt.Errorf("logger name can contain only alphanum characters, dash and comma")
+		return fmt.Errorf("invalid logger name: %q, allowed only alphanum characters, dash and comma", name)
 	}
 	return nil
 }

@@ -21,14 +21,13 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/nat"
+	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	nat "github.com/ligato/vpp-agent/api/models/vpp/nat"
+	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 	"github.com/namsral/flag"
 )
 
@@ -108,20 +107,15 @@ vpp#
 
 // Start Agent plugins selected for this example.
 func main() {
-	//Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
-	// Prepare all the dependencies for example plugin
-	watcher := datasync.KVProtoWatchers{
-		local.Get(),
-	}
-	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Watcher = watcher
-	}))
+	// Init close channel to stop the example.
+	exampleFinished := make(chan struct{})
 
 	// Inject dependencies to example plugin
-	ep := &NatExamplePlugin{}
-	ep.Deps.Log = logging.DefaultLogger
-	ep.Deps.VPP = vppPlugin
+	ep := &NatExamplePlugin{
+		Log:          logging.DefaultLogger,
+		VPP:          app.DefaultVPP(),
+		Orchestrator: &orchestrator.DefaultPlugin,
+	}
 
 	// Start Agent
 	a := agent.NewAgent(
@@ -147,62 +141,63 @@ func closeExample(message string, exampleFinished chan struct{}) {
 // NatExamplePlugin uses localclient to transport example global NAT and DNAT and af-packet
 // configuration to NAT VPP plugin
 type NatExamplePlugin struct {
-	Deps
+	Log logging.Logger
+	app.VPP
+	Orchestrator *orchestrator.Plugin
 
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
-}
-
-// Deps is example plugin dependencies.
-type Deps struct {
-	Log logging.Logger
-	VPP *vpp.Plugin
 }
 
 // PluginName represents name of plugin.
 const PluginName = "nat-example"
 
 // Init initializes example plugin.
-func (plugin *NatExamplePlugin) Init() error {
+func (p *NatExamplePlugin) Init() error {
 	// Logger
-	plugin.Log = logrus.DefaultLogger()
-	plugin.Log.SetLevel(logging.DebugLevel)
-	plugin.Log.Info("Initializing NAT44 example")
+	p.Log = logrus.DefaultLogger()
+	p.Log.SetLevel(logging.DebugLevel)
+	p.Log.Info("Initializing NAT44 example")
 
 	// Flags
 	flag.Parse()
-	plugin.Log.Infof("Timeout between configuring NAT global and DNAT set to %d", *timeout)
+	p.Log.Infof("Timeout between configuring NAT global and DNAT set to %d", *timeout)
 
+	p.Log.Info("NAT example initialization done")
+	return nil
+}
+
+// AfterInit initializes example plugin.
+func (p *NatExamplePlugin) AfterInit() error {
 	// Apply initial VPP configuration.
-	plugin.putGlobalConfig()
+	p.putGlobalConfig()
 
 	// Schedule reconfiguration.
 	var ctx context.Context
-	ctx, plugin.cancel = context.WithCancel(context.Background())
-	plugin.wg.Add(1)
-	go plugin.putDNAT(ctx, *timeout)
+	ctx, p.cancel = context.WithCancel(context.Background())
+	p.wg.Add(1)
+	go p.putDNAT(ctx, *timeout)
 
-	plugin.Log.Info("NAT example initialization done")
 	return nil
 }
 
 // Close cleans up the resources.
-func (plugin *NatExamplePlugin) Close() error {
-	plugin.cancel()
-	plugin.wg.Wait()
+func (p *NatExamplePlugin) Close() error {
+	p.cancel()
+	p.wg.Wait()
 
 	logrus.DefaultLogger().Info("Closed NAT example plugin")
 	return nil
 }
 
 // String returns plugin name
-func (plugin *NatExamplePlugin) String() string {
+func (p *NatExamplePlugin) String() string {
 	return PluginName
 }
 
 // Configure NAT44 Global config
-func (plugin *NatExamplePlugin) putGlobalConfig() {
-	plugin.Log.Infof("Applying NAT44 global configuration")
+func (p *NatExamplePlugin) putGlobalConfig() {
+	p.Log.Infof("Applying NAT44 global configuration")
 	err := localclient.DataResyncRequest(PluginName).
 		Interface(interface1()).
 		Interface(interface2()).
@@ -210,85 +205,91 @@ func (plugin *NatExamplePlugin) putGlobalConfig() {
 		NAT44Global(globalNat()).
 		Send().ReceiveReply()
 	if err != nil {
-		plugin.Log.Errorf("NAT44 global configuration failed: %v", err)
+		p.Log.Errorf("NAT44 global configuration failed: %v", err)
 	} else {
-		plugin.Log.Info("NAT44 global configuration successful")
+		p.Log.Info("NAT44 global configuration successful")
 	}
 }
 
 // Configure DNAT
-func (plugin *NatExamplePlugin) putDNAT(ctx context.Context, timeout int) {
+func (p *NatExamplePlugin) putDNAT(ctx context.Context, timeout int) {
 	select {
 	case <-time.After(time.Duration(timeout) * time.Second):
-		plugin.Log.Infof("Applying DNAT configuration")
+		p.Log.Infof("Applying DNAT configuration")
 		err := localclient.DataChangeRequest(PluginName).
 			Put().
-			NAT44DNat(dNat()).
+			DNAT44(dNat()).
 			Send().ReceiveReply()
 		if err != nil {
-			plugin.Log.Errorf("DNAT configuration failed: %v", err)
+			p.Log.Errorf("DNAT configuration failed: %v", err)
 		} else {
-			plugin.Log.Info("DNAT configuration successful")
+			p.Log.Info("DNAT configuration successful")
 		}
 	case <-ctx.Done():
 		// Cancel the scheduled DNAT configuration.
-		plugin.Log.Info("DNAT configuration canceled")
+		p.Log.Info("DNAT configuration canceled")
 	}
-	plugin.wg.Done()
+	p.wg.Done()
 }
 
 /* Example Data */
 
-func interface1() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func interface1() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:    "memif1",
-		Type:    vpp_intf.InterfaceType_MEMORY_INTERFACE,
+		Type:    vpp_intf.Interface_MEMIF,
 		Enabled: true,
 		Mtu:     1478,
 		IpAddresses: []string{
 			"172.125.40.1/24",
 		},
-		Memif: &vpp_intf.Interfaces_Interface_Memif{
-			Id:             1,
-			Secret:         "secret1",
-			Master:         false,
-			SocketFilename: "/tmp/memif1.sock",
+		Link: &vpp_intf.Interface_Memif{
+			Memif: &vpp_intf.MemifLink{
+				Id:             1,
+				Secret:         "secret1",
+				Master:         false,
+				SocketFilename: "/tmp/memif1.sock",
+			},
 		},
 	}
 }
 
-func interface2() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func interface2() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:    "memif2",
-		Type:    vpp_intf.InterfaceType_MEMORY_INTERFACE,
+		Type:    vpp_intf.Interface_MEMIF,
 		Enabled: true,
 		Mtu:     1478,
 		IpAddresses: []string{
 			"192.47.21.1/24",
 		},
-		Memif: &vpp_intf.Interfaces_Interface_Memif{
-			Id:             2,
-			Secret:         "secret2",
-			Master:         false,
-			SocketFilename: "/tmp/memif1.sock",
+		Link: &vpp_intf.Interface_Memif{
+			Memif: &vpp_intf.MemifLink{
+				Id:             2,
+				Secret:         "secret2",
+				Master:         false,
+				SocketFilename: "/tmp/memif1.sock",
+			},
 		},
 	}
 }
 
-func interface3() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func interface3() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:    "memif3",
-		Type:    vpp_intf.InterfaceType_MEMORY_INTERFACE,
+		Type:    vpp_intf.Interface_MEMIF,
 		Enabled: true,
 		Mtu:     1478,
 		IpAddresses: []string{
 			"94.18.21.1/24",
 		},
-		Memif: &vpp_intf.Interfaces_Interface_Memif{
-			Id:             3,
-			Secret:         "secret3",
-			Master:         false,
-			SocketFilename: "/tmp/memif1.sock",
+		Link: &vpp_intf.Interface_Memif{
+			Memif: &vpp_intf.MemifLink{
+				Id:             3,
+				Secret:         "secret3",
+				Master:         false,
+				SocketFilename: "/tmp/memif1.sock",
+			},
 		},
 	}
 }
@@ -296,7 +297,7 @@ func interface3() *vpp_intf.Interfaces_Interface {
 func globalNat() *nat.Nat44Global {
 	return &nat.Nat44Global{
 		Forwarding: false,
-		NatInterfaces: []*nat.Nat44Global_NatInterface{
+		NatInterfaces: []*nat.Nat44Global_Interface{
 			{
 				Name:          "memif1",
 				IsInside:      false,
@@ -313,38 +314,38 @@ func globalNat() *nat.Nat44Global {
 				OutputFeature: false,
 			},
 		},
-		AddressPools: []*nat.Nat44Global_AddressPool{
+		AddressPool: []*nat.Nat44Global_Address{
 			{
-				VrfId:           0,
-				FirstSrcAddress: "192.168.0.1",
-				TwiceNat:        false,
+				VrfId:    0,
+				Address:  "192.168.0.1",
+				TwiceNat: false,
 			},
 			{
-				VrfId:           0,
-				FirstSrcAddress: "175.124.0.1",
-				LastSrcAddress:  "175.124.0.3",
-				TwiceNat:        false,
+				VrfId:   0,
+				Address: "175.124.0.1",
+				//LastSrcAddress:  "175.124.0.3",
+				TwiceNat: false,
 			},
 			{
-				VrfId:           0,
-				FirstSrcAddress: "10.10.0.1",
-				LastSrcAddress:  "10.10.0.2",
-				TwiceNat:        false,
+				VrfId:   0,
+				Address: "10.10.0.1",
+				//LastSrcAddress:  "10.10.0.2",
+				TwiceNat: false,
 			},
 		},
 	}
 }
 
-func dNat() *nat.Nat44DNat_DNatConfig {
-	return &nat.Nat44DNat_DNatConfig{
+func dNat() *nat.DNat44 {
+	return &nat.DNat44{
 		Label: "dnat1",
-		StMappings: []*nat.Nat44DNat_DNatConfig_StaticMapping{
+		StMappings: []*nat.DNat44_StaticMapping{
 			{
 				// DNAT static mapping with load balancer (multiple local addresses)
 				ExternalInterface: "memif1",
 				ExternalIp:        "192.168.0.1",
 				ExternalPort:      8989,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
+				LocalIps: []*nat.DNat44_StaticMapping_LocalIP{
 					{
 						VrfId:       0,
 						LocalIp:     "172.124.0.2",
@@ -359,14 +360,14 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 					},
 				},
 				Protocol: 1,
-				TwiceNat: nat.TwiceNatMode_ENABLED,
+				//TwiceNat: nat.DNat44_StaticMapping_ENABLED,
 			},
 			{
 				// DNAT static mapping without load balancer (single local address)
 				ExternalInterface: "memif2",
 				ExternalIp:        "192.168.0.2",
 				ExternalPort:      8989,
-				LocalIps: []*nat.Nat44DNat_DNatConfig_StaticMapping_LocalIP{
+				LocalIps: []*nat.DNat44_StaticMapping_LocalIP{
 					{
 						VrfId:       0,
 						LocalIp:     "172.124.0.3",
@@ -375,10 +376,10 @@ func dNat() *nat.Nat44DNat_DNatConfig {
 					},
 				},
 				Protocol: 1,
-				TwiceNat: nat.TwiceNatMode_ENABLED,
+				//TwiceNat: nat.DNat44_StaticMapping_ENABLED,
 			},
 		},
-		IdMappings: []*nat.Nat44DNat_DNatConfig_IdentityMapping{
+		IdMappings: []*nat.DNat44_IdentityMapping{
 			{
 				VrfId:     0,
 				IpAddress: "10.10.0.1",

@@ -70,8 +70,12 @@ func (p *Plugin) Init() (err error) {
 	}
 	p.protoWrapper = kvproto.NewProtoWrapper(p.connection, &keyval.SerializerJSON{})
 
-	// Register for providing status reports (polling mode)
-	if p.StatusCheck != nil {
+	return nil
+}
+
+// AfterInit registers redis to status check if required
+func (p *Plugin) AfterInit() error {
+	if p.StatusCheck != nil && !p.disabled {
 		p.StatusCheck.Register(p.PluginName, func() (statuscheck.PluginState, error) {
 			_, _, err := p.NewBroker("/").GetValue(healthCheckProbeKey, nil)
 			if err == nil {
@@ -79,8 +83,7 @@ func (p *Plugin) Init() (err error) {
 			}
 			return statuscheck.Error, err
 		})
-	} else {
-		p.Log.Warnf("Unable to start status check for redis")
+		p.Log.Infof("Status check for %s was started", p.PluginName)
 	}
 
 	return nil

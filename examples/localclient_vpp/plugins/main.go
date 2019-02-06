@@ -23,16 +23,15 @@ import (
 	"log"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/clientv1/vpp/localclient"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/acl"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	acl "github.com/ligato/vpp-agent/api/models/vpp/acl"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
+	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )
 
 // init sets the default logging level.
@@ -47,22 +46,15 @@ func init() {
 
 // Start Agent plugins selected for this example.
 func main() {
-	//Init close channel to stop the example.
-	exampleFinished := make(chan struct{}, 1)
-	// Prepare all the dependencies for example plugin
-	watcher := datasync.KVProtoWatchers{
-		local.Get(),
-	}
-	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Watcher = watcher
-	}))
-
-	var watchEventsMutex sync.Mutex
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+	// Init close channel to stop the example.
+	exampleFinished := make(chan struct{})
 
 	// Inject dependencies to example plugin
-	ep := &ExamplePlugin{}
-	ep.Deps.VPP = vppPlugin
+	ep := &ExamplePlugin{
+		Log:          logging.DefaultLogger,
+		VPP:          app.DefaultVPP(),
+		Orchestrator: &orchestrator.DefaultPlugin,
+	}
 
 	// Start Agent
 	a := agent.NewAgent(
@@ -89,51 +81,58 @@ func closeExample(message string, exampleFinished chan struct{}) {
 
 // ExamplePlugin demonstrates the use of the localclient to locally transport example configuration into the default VPP plugins.
 type ExamplePlugin struct {
-	Deps
+	Log logging.Logger
+	app.VPP
+	Orchestrator *orchestrator.Plugin
 
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
-}
-
-// Deps is example plugin dependencies.
-type Deps struct {
-	VPP *vpp.Plugin
 }
 
 // PluginName represents name of plugin.
 const PluginName = "plugin-example"
 
 // Init initializes example plugin.
-func (plugin *ExamplePlugin) Init() error {
-	// Apply initial VPP configuration.
-	plugin.resyncVPP()
-
-	// Schedule reconfiguration.
-	var ctx context.Context
-	ctx, plugin.cancel = context.WithCancel(context.Background())
-	plugin.wg.Add(1)
-	go plugin.reconfigureVPP(ctx)
+func (p *ExamplePlugin) Init() error {
+	// Logger
+	p.Log = logrus.DefaultLogger()
+	p.Log.SetLevel(logging.DebugLevel)
+	p.Log.Info("Initializing VPP example")
 
 	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return nil
 }
 
+// AfterInit initializes example plugin.
+func (p *ExamplePlugin) AfterInit() error {
+	// Apply initial VPP configuration.
+	p.resyncVPP()
+
+	// Schedule reconfiguration.
+	var ctx context.Context
+	ctx, p.cancel = context.WithCancel(context.Background())
+	p.wg.Add(1)
+	go p.reconfigureVPP(ctx)
+
+	return nil
+}
+
 // Close cleans up the resources.
-func (plugin *ExamplePlugin) Close() error {
-	plugin.cancel()
-	plugin.wg.Wait()
+func (p *ExamplePlugin) Close() error {
+	p.cancel()
+	p.wg.Wait()
 
 	logrus.DefaultLogger().Info("Closed example plugin")
 	return nil
 }
 
 // String returns plugin name
-func (plugin *ExamplePlugin) String() string {
+func (p *ExamplePlugin) String() string {
 	return PluginName
 }
 
 // resyncVPP propagates snapshot of the whole initial configuration to VPP plugins.
-func (plugin *ExamplePlugin) resyncVPP() {
+func (p *ExamplePlugin) resyncVPP() {
 	err := localclient.DataResyncRequest(PluginName).
 		Interface(&memif1AsMaster).
 		Interface(&tap1Disabled).
@@ -148,7 +147,7 @@ func (plugin *ExamplePlugin) resyncVPP() {
 }
 
 // reconfigureVPP simulates a set of changes in the configuration related to VPP plugins.
-func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
+func (p *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 	select {
 	case <-time.After(15 * time.Second):
 		// Simulate configuration change exactly 15seconds after resync.
@@ -173,7 +172,7 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 		// cancel the scheduled re-configuration
 		logrus.DefaultLogger().Info("Planned VPP re-configuration was canceled")
 	}
-	plugin.wg.Done()
+	p.wg.Done()
 }
 
 /*************************
@@ -220,115 +219,125 @@ func (plugin *ExamplePlugin) reconfigureVPP(ctx context.Context) {
 
 var (
 	// memif1AsMaster is an example of a memory interface configuration. (Master=true, with IPv4 address).
-	memif1AsMaster = interfaces.Interfaces_Interface{
-		Name:    "memif1",
-		Type:    interfaces.InterfaceType_MEMORY_INTERFACE,
-		Enabled: true,
-		Memif: &interfaces.Interfaces_Interface_Memif{
-			Id:             1,
-			Master:         true,
-			SocketFilename: "/tmp/memif1.sock",
-		},
+	memif1AsMaster = interfaces.Interface{
+		Name:        "memif1",
+		Type:        interfaces.Interface_MEMIF,
+		Enabled:     true,
 		Mtu:         1500,
 		IpAddresses: []string{"192.168.1.1/24"},
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             1,
+				Master:         true,
+				SocketFilename: "/tmp/memif1.sock",
+			},
+		},
 	}
 
 	// memif1AsSlave is the original memif1 turned into slave and stripped of the IP address.
-	memif1AsSlave = interfaces.Interfaces_Interface{
+	memif1AsSlave = interfaces.Interface{
 		Name:    "memif1",
-		Type:    interfaces.InterfaceType_MEMORY_INTERFACE,
+		Type:    interfaces.Interface_MEMIF,
 		Enabled: true,
-		Memif: &interfaces.Interfaces_Interface_Memif{
-			Id:             1,
-			Master:         false,
-			SocketFilename: "/tmp/memif1.sock",
+		Mtu:     1500,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             1,
+				Master:         false,
+				SocketFilename: "/tmp/memif1.sock",
+			},
 		},
-		Mtu: 1500,
 	}
 
 	// Memif2 is a slave memif without IP address and to be xconnected with memif1.
-	memif2 = interfaces.Interfaces_Interface{
+	memif2 = interfaces.Interface{
 		Name:    "memif2",
-		Type:    interfaces.InterfaceType_MEMORY_INTERFACE,
+		Type:    interfaces.Interface_MEMIF,
 		Enabled: true,
-		Memif: &interfaces.Interfaces_Interface_Memif{
-			Id:             2,
-			Master:         false,
-			SocketFilename: "/tmp/memif2.sock",
+		Mtu:     1500,
+		Link: &interfaces.Interface_Memif{
+			Memif: &interfaces.MemifLink{
+				Id:             2,
+				Master:         false,
+				SocketFilename: "/tmp/memif2.sock",
+			},
 		},
-		Mtu: 1500,
 	}
+
 	// XConMemif1ToMemif2 defines xconnect between memifs.
-	XConMemif1ToMemif2 = l2.XConnectPairs_XConnectPair{
+	XConMemif1ToMemif2 = l2.XConnectPair{
 		ReceiveInterface:  memif1AsSlave.Name,
 		TransmitInterface: memif2.Name,
 	}
 
 	// tap1Disabled is a disabled tap interface.
-	tap1Disabled = interfaces.Interfaces_Interface{
+	tap1Disabled = interfaces.Interface{
 		Name:    "tap1",
-		Type:    interfaces.InterfaceType_TAP_INTERFACE,
+		Type:    interfaces.Interface_TAP,
 		Enabled: false,
-		Tap: &interfaces.Interfaces_Interface_Tap{
-			HostIfName: "linux-tap1",
+		Link: &interfaces.Interface_Tap{
+			Tap: &interfaces.TapLink{
+				Version:    2,
+				HostIfName: "linux-tap1",
+			},
 		},
 		Mtu: 1500,
 	}
 
 	// tap1Enabled is an enabled tap1 interface.
-	tap1Enabled = interfaces.Interfaces_Interface{
+	tap1Enabled = interfaces.Interface{
 		Name:    "tap1",
-		Type:    interfaces.InterfaceType_TAP_INTERFACE,
+		Type:    interfaces.Interface_TAP,
 		Enabled: true,
-		Tap: &interfaces.Interfaces_Interface_Tap{
-			HostIfName: "linux-tap1",
+		Link: &interfaces.Interface_Tap{
+			Tap: &interfaces.TapLink{
+				Version:    2,
+				HostIfName: "linux-tap1",
+			},
 		},
 		Mtu: 1500,
 	}
 
-	acl1 = acl.AccessLists_Acl{
-		AclName: "acl1",
-		Rules: []*acl.AccessLists_Acl_Rule{
+	acl1 = acl.ACL{
+		Name: "acl1",
+		Rules: []*acl.ACL_Rule{
 			{
-				RuleName:  "rule1",
-				AclAction: acl.AclAction_DENY,
-				Match: &acl.AccessLists_Acl_Rule_Match{
-					IpRule: &acl.AccessLists_Acl_Rule_Match_IpRule{
-						Ip: &acl.AccessLists_Acl_Rule_Match_IpRule_Ip{
-							DestinationNetwork: "10.1.1.0/24",
-							SourceNetwork:      "10.1.2.0/24",
+				Action: acl.ACL_Rule_DENY,
+				IpRule: &acl.ACL_Rule_IpRule{
+					Ip: &acl.ACL_Rule_IpRule_Ip{
+						DestinationNetwork: "10.1.1.0/24",
+						SourceNetwork:      "10.1.2.0/24",
+					},
+					Tcp: &acl.ACL_Rule_IpRule_Tcp{
+						DestinationPortRange: &acl.ACL_Rule_IpRule_PortRange{
+							LowerPort: 50,
+							UpperPort: 150,
 						},
-						Tcp: &acl.AccessLists_Acl_Rule_Match_IpRule_Tcp{
-							DestinationPortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
-								LowerPort: 50,
-								UpperPort: 150,
-							},
-							SourcePortRange: &acl.AccessLists_Acl_Rule_Match_IpRule_PortRange{
-								LowerPort: 1000,
-								UpperPort: 2000,
-							},
+						SourcePortRange: &acl.ACL_Rule_IpRule_PortRange{
+							LowerPort: 1000,
+							UpperPort: 2000,
 						},
 					},
 				},
 			},
 		},
-		Interfaces: &acl.AccessLists_Acl_Interfaces{
+		Interfaces: &acl.ACL_Interfaces{
 			Egress: []string{"tap1"},
 		},
 	}
 
 	// loopback1 is an example of a loopback interface configuration (without IP address assigned).
-	loopback1 = interfaces.Interfaces_Interface{
+	loopback1 = interfaces.Interface{
 		Name:    "loopback1",
-		Type:    interfaces.InterfaceType_SOFTWARE_LOOPBACK,
+		Type:    interfaces.Interface_SOFTWARE_LOOPBACK,
 		Enabled: true,
 		Mtu:     1500,
 	}
 
 	// loopback1WithAddr extends loopback1 definition with an IP address.
-	loopback1WithAddr = interfaces.Interfaces_Interface{
+	loopback1WithAddr = interfaces.Interface{
 		Name:        "loopback1",
-		Type:        interfaces.InterfaceType_SOFTWARE_LOOPBACK,
+		Type:        interfaces.Interface_SOFTWARE_LOOPBACK,
 		Enabled:     true,
 		Mtu:         1500,
 		IpAddresses: []string{"10.0.0.1/24"},
@@ -336,7 +345,7 @@ var (
 
 	// BDLoopback1ToTap1 is a bridge domain with tap1 and loopback1 interfaces in it.
 	// Loopback is set to be BVI.
-	BDLoopback1ToTap1 = l2.BridgeDomains_BridgeDomain{
+	BDLoopback1ToTap1 = l2.BridgeDomain{
 		Name:                "br1",
 		Flood:               false,
 		UnknownUnicastFlood: false,
@@ -344,7 +353,7 @@ var (
 		Learn:               true,
 		ArpTermination:      false,
 		MacAge:              0, /* means disable aging */
-		Interfaces: []*l2.BridgeDomains_BridgeDomain_Interfaces{
+		Interfaces: []*l2.BridgeDomain_Interface{
 			{
 				Name: "loopback1",
 				BridgedVirtualInterface: true,
@@ -356,10 +365,9 @@ var (
 	}
 
 	// routeThroughMemif1 is an example route configuration with memif1 being the next hop.
-	routeThroughMemif1 = l3.StaticRoutes_Route{
-		Description: "Description",
+	routeThroughMemif1 = l3.Route{
 		VrfId:       0,
-		DstIpAddr:   "192.168.2.1/32",
+		DstNetwork:  "192.168.2.1/32",
 		NextHopAddr: "192.168.1.1", // Memif1AsMaster
 		Weight:      5,
 	}

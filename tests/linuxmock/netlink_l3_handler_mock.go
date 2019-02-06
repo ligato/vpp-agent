@@ -14,11 +14,7 @@
 
 package linuxmock
 
-import (
-	"github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin/linuxcalls"
-	"github.com/vishvananda/netlink"
-)
-
+/*
 // L3NetlinkHandlerMock allows to mock netlink-related methods
 type L3NetlinkHandlerMock struct {
 	responses []*WhenL3Resp
@@ -78,7 +74,7 @@ func (mock *L3NetlinkHandlerMock) getReturnValues(name string) (response []inter
 	return
 }
 
-/* Mocked netlink handler methods */
+// Mocked netlink handler methods
 
 // AddArpEntry implements NetlinkAPI.
 func (mock *L3NetlinkHandlerMock) AddArpEntry(name string, arpEntry *netlink.Neigh) error {
@@ -175,3 +171,4 @@ func (mock *L3NetlinkHandlerMock) DumpArpEntries() ([]*linuxcalls.LinuxArpDetail
 func (mock *L3NetlinkHandlerMock) DumpRoutes() ([]*linuxcalls.LinuxRouteDetails, error) {
 	return nil, nil
 }
+*/
