@@ -138,12 +138,12 @@ At first create route and after that create inteface in namespace 3
     Ping6 in namespace    node=agent_vpp_1    namespace=ns3    ip=${VETH_IP2}
 
     # this does not work
-    # https://serverfault.com/questions/568839/linux-network-namespaces-ping-fails-on-specific-veth
-    # https://unix.stackexchange.com/questions/391193/how-to-forward-traffic-between-linux-network-namespaces
+    # https://serverfault.com/questions/568839/linux-network-namespaces-ping-fails-on-specific-veth
+    # https://unix.stackexchange.com/questions/391193/how-to-forward-traffic-between-linux-network-namespaces
     #Ping6 in namespace    node=agent_vpp_1    namespace=ns3    ip=192.168.22.1
 
     # routy sa zalozia po uspesnom pingu zo ns3 ?! or ping fails
-    # Ping6 in namespace    node=agent_vpp_1    namespace=ns1    ip=192.169.22.3
+    # Ping6 in namespace    node=agent_vpp_1    namespace=ns1    ip=192.169.22.3
 
 Check linux Routes On VPP1
     Wait Until Keyword Succeeds   ${WAIT_TIMEOUT}   ${SYNC_SLEEP}    Check Linux Routes IPv6    node=agent_vpp_1    namespace=ns1    ip=${VETH_IP5}
@@ -245,3 +245,4 @@ TestSetup
 
 TestTeardown
     Make Datastore Snapshots    ${TEST_NAME}_test_teardown
+    

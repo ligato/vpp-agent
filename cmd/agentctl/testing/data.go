@@ -14,6 +14,7 @@
 
 package testing
 
+/*
 import (
 	"strconv"
 
@@ -176,3 +177,4 @@ func JSONData() utils.EtcdDump {
 
 	return etcdDump
 }
+*/

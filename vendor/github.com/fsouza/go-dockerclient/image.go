@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -557,7 +558,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	})
 }
 
-func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
+func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) interface{} {
 	if c.serverAPIVersion == nil {
 		c.checkAPIVersion()
 	}
@@ -609,18 +610,24 @@ func isURL(u string) bool {
 	return p.Scheme == "http" || p.Scheme == "https"
 }
 
-func headersWithAuth(auths ...registryAuth) (map[string]string, error) {
+func headersWithAuth(auths ...interface{}) (map[string]string, error) {
 	var headers = make(map[string]string)
 
 	for _, auth := range auths {
-		if auth.isEmpty() {
-			continue
+		switch auth.(type) {
+		case AuthConfiguration:
+			var buf bytes.Buffer
+			if err := json.NewEncoder(&buf).Encode(auth); err != nil {
+				return nil, err
+			}
+			headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+		case AuthConfigurations, AuthConfigurations119:
+			var buf bytes.Buffer
+			if err := json.NewEncoder(&buf).Encode(auth); err != nil {
+				return nil, err
+			}
+			headers["X-Registry-Config"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 		}
-		data, err := json.Marshal(auth)
-		if err != nil {
-			return nil, err
-		}
-		headers[auth.headerKey()] = base64.URLEncoding.EncodeToString(data)
 	}
 
 	return headers, nil

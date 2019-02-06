@@ -275,22 +275,15 @@ func NewRtAttr(attrType int, data []byte) *RtAttr {
 	}
 }
 
-// NewRtAttrChild adds an RtAttr as a child to the parent and returns the new attribute
-//
-// Deprecated: Use AddRtAttr() on the parent object
+// Create a new RtAttr obj anc add it as a child of an existing object
 func NewRtAttrChild(parent *RtAttr, attrType int, data []byte) *RtAttr {
-	return parent.AddRtAttr(attrType, data)
-}
-
-// AddRtAttr adds an RtAttr as a child and returns the new attribute
-func (a *RtAttr) AddRtAttr(attrType int, data []byte) *RtAttr {
 	attr := NewRtAttr(attrType, data)
-	a.children = append(a.children, attr)
+	parent.children = append(parent.children, attr)
 	return attr
 }
 
-// AddChild adds an existing NetlinkRequestData as a child.
-func (a *RtAttr) AddChild(attr NetlinkRequestData) {
+// AddChild adds an existing RtAttr as a child.
+func (a *RtAttr) AddChild(attr *RtAttr) {
 	a.children = append(a.children, attr)
 }
 
@@ -371,12 +364,16 @@ func (req *NetlinkRequest) Serialize() []byte {
 }
 
 func (req *NetlinkRequest) AddData(data NetlinkRequestData) {
-	req.Data = append(req.Data, data)
+	if data != nil {
+		req.Data = append(req.Data, data)
+	}
 }
 
 // AddRawData adds raw bytes to the end of the NetlinkRequest object during serialization
 func (req *NetlinkRequest) AddRawData(data []byte) {
-	req.RawData = append(req.RawData, data...)
+	if data != nil {
+		req.RawData = append(req.RawData, data...)
+	}
 }
 
 // Execute the request against a the given sockType.

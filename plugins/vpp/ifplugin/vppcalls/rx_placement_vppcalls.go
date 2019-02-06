@@ -15,26 +15,22 @@
 package vppcalls
 
 import (
-	"fmt"
-
-	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	binapi_interface "github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 )
 
 // SetRxPlacement implements interface handler.
-func (h *IfVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *intf.Interfaces_Interface_RxPlacementSettings) error {
-	req := &interfaces.SwInterfaceSetRxPlacement{
+func (h *IfVppHandler) SetRxPlacement(ifIdx uint32, rxPlacement *interfaces.Interface_RxPlacementSettings) error {
+	req := &binapi_interface.SwInterfaceSetRxPlacement{
 		SwIfIndex: ifIdx,
 		QueueID:   rxPlacement.Queue,
 		WorkerID:  rxPlacement.Worker,
 		IsMain:    boolToUint(rxPlacement.IsMain),
 	}
-	reply := &interfaces.SwInterfaceSetRxPlacementReply{}
+	reply := &binapi_interface.SwInterfaceSetRxPlacementReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

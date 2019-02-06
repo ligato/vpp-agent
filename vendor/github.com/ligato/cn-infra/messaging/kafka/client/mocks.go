@@ -176,6 +176,10 @@ func (cl *saramaClientMock) InSyncReplicas(topic string, partitionID int32) ([]i
 	return nil, nil
 }
 
+func (cl *saramaClientMock) InitProducerID() (*sarama.InitProducerIDResponse, error) {
+	return nil, nil
+}
+
 func (cl *saramaClientMock) Close() error {
 	return nil
 }

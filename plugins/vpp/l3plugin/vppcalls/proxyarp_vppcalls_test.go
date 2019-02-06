@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
@@ -28,25 +27,27 @@ import (
 
 // Test enable/disable proxy arp
 func TestProxyArp(t *testing.T) {
-	ctx, arpHandler, pArpHandler := pArpTestSetup(t)
+	ctx, ifIndexes, _, pArpHandler := pArpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
+	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
-	err := pArpHandler.EnableProxyArpInterface(0)
+	err := pArpHandler.EnableProxyArpInterface("if1")
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{})
-	err = pArpHandler.DisableProxyArpInterface(0)
+	err = pArpHandler.DisableProxyArpInterface("if1")
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpIntfcEnableDisableReply{Retval: 1})
-	err = arpHandler.VppAddArp(&arpEntries[0])
-	Expect(err).To(Not(BeNil()))
+	err = pArpHandler.DisableProxyArpInterface("if1")
+	Expect(err).NotTo(BeNil())
 }
 
 // Test add/delete ip range for proxy arp
 func TestProxyArpRange(t *testing.T) {
-	ctx, _, pArpHandler := pArpTestSetup(t)
+	ctx, _, _, pArpHandler := pArpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&ip.ProxyArpAddDelReply{})
@@ -62,11 +63,11 @@ func TestProxyArpRange(t *testing.T) {
 	Expect(err).To(Not(BeNil()))
 }
 
-func pArpTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
+func pArpTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI, vppcalls.ProxyArpVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "proxy-arp-if-idx", nil))
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	arpHandler := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log)
 	pArpHandler := vppcalls.NewProxyArpVppHandler(ctx.MockChannel, ifIndexes, log)
-	return ctx, arpHandler, pArpHandler
+	return ctx, ifIndexes, arpHandler, pArpHandler
 }

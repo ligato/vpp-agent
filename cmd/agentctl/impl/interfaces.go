@@ -21,8 +21,8 @@ import (
 	"errors"
 	"os"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/cmd/agentctl/utils"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	"github.com/spf13/cobra"
 )
 
@@ -41,38 +41,39 @@ type IfaceCommonFields struct {
 var ifCommonFields IfaceCommonFields
 
 // PutAfPkt creates an Af-packet type interface.
-func PutAfPkt(endpoints []string, label string, flags *interfaces.Interfaces_Interface_Afpacket) {
+func PutAfPkt(endpoints []string, label string, flags *interfaces.AfpacketLink) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
-	processCommonIfFlags(found, interfaces.InterfaceType_AF_PACKET_INTERFACE, ifc)
+	processCommonIfFlags(found, interfaces.Interface_AF_PACKET, ifc)
 
 	// Process Af-Packet specific flags.
-	if flags.HostIfName != "" {
+	/*if flags.HostIfName != "" {
 		if ifc.Afpacket == nil {
-			ifc.Afpacket = &interfaces.Interfaces_Interface_Afpacket{}
+			ifc.Afpacket = &interfaces.AfpacketLink{}
 		}
 		ifc.Afpacket.HostIfName = flags.HostIfName
-	}
+	}*/
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
 // PutEthernet creates an ethernet type interface.
 func PutEthernet(endpoints []string, label string) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
-	processCommonIfFlags(found, interfaces.InterfaceType_ETHERNET_CSMACD, ifc)
+	processCommonIfFlags(found, interfaces.Interface_DPDK, ifc)
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
 // PutLoopback creates a loopback type interface.
 func PutLoopback(endpoints []string, label string) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
-	processCommonIfFlags(found, interfaces.InterfaceType_SOFTWARE_LOOPBACK, ifc)
+	processCommonIfFlags(found, interfaces.Interface_SOFTWARE_LOOPBACK, ifc)
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
 
+/*
 // PutMemif creates a memif type interface.
-func PutMemif(endpoints []string, label string, flags *interfaces.Interfaces_Interface_Memif) {
+func PutMemif(endpoints []string, label string, flags *interfaces.MemifLink) {
 	found, key, ifc, db := utils.GetInterfaceKeyAndValue(endpoints, label, ifCommonFields.Name)
-	processCommonIfFlags(found, interfaces.InterfaceType_MEMORY_INTERFACE, ifc)
+	processCommonIfFlags(found, interfaces.Interface_MEMIF, ifc)
 
 	// Process MEMIF-specific flags.
 	if utils.IsFlagPresent(utils.MemifMaster) {
@@ -173,7 +174,7 @@ func PutVxLan(endpoints []string, label string, flags *interfaces.Interfaces_Int
 	}
 	utils.WriteInterfaceToDb(db, key, ifc)
 }
-
+*/
 // IfJSONPut creates an interface according to json configuration.
 func IfJSONPut(endpoints []string, label string) {
 	bio := bufio.NewReader(os.Stdin)
@@ -181,7 +182,7 @@ func IfJSONPut(endpoints []string, label string) {
 	buf.ReadFrom(bio)
 	input := buf.Bytes()
 
-	ifc := &interfaces.Interfaces_Interface{}
+	ifc := &interfaces.Interface{}
 	err := json.Unmarshal(input, ifc)
 	if err != nil {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Invalid json, error "+err.Error()))
@@ -219,25 +220,25 @@ func AddCommonIfPutFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&ifCommonFields.Ipv6Addrs, "ipv6-addr", nil, "Comma-separated list of IPv6 addresses in CIDR format, e.g. 2001:cdba::3257:9652/48")
 }
 
-func processCommonIfFlags(found bool, ifType interfaces.InterfaceType, ifc *interfaces.Interfaces_Interface) *interfaces.Interfaces_Interface {
+func processCommonIfFlags(found bool, ifType interfaces.Interface_Type, ifc *interfaces.Interface) *interfaces.Interface {
 
 	if found && ifc.Type != ifType {
 		utils.ExitWithError(utils.ExitInvalidInput, errors.New("Bad type for interface '"+ifCommonFields.Name+
 			"'. Interface with this name but a different type already exists."))
 	}
 
-	if ifType == interfaces.InterfaceType_TAP_INTERFACE {
+	/*if ifType == interfaces.InterfaceType_TAP_INTERFACE {
 		ifc.Tap = &interfaces.Interfaces_Interface_Tap{HostIfName: ifCommonFields.Name}
-	}
+	}*/
 
 	// Set in case interface is empty.
 	ifc.Name = ifCommonFields.Name
 	ifc.Type = ifType
 	ifc.Enabled = ifCommonFields.Enabled
 
-	if ifCommonFields.Desc != "" {
+	/*if ifCommonFields.Desc != "" {
 		ifc.Description = ifCommonFields.Desc
-	}
+	}*/
 	if ifCommonFields.PhysAddr != "" {
 		utils.ValidatePhyAddr(ifCommonFields.PhysAddr)
 		ifc.PhysAddress = ifCommonFields.PhysAddr

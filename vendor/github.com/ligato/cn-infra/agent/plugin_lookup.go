@@ -15,6 +15,7 @@
 package agent
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -104,43 +105,50 @@ func findPlugins(val reflect.Value, uniqueness map[infra.Plugin]struct{}, x ...i
 
 		logf("-> field %d: %v - %v (%v)", i, field.Name, field.Type, fieldVal.Kind())
 
-		var fieldPlug infra.Plugin
-
-		plug, implementsPlugin := isFieldPlugin(field, fieldVal)
-		if implementsPlugin {
-			if plug == nil {
-				logf(" - found nil plugin: %v", field.Name)
-				continue
-			}
-
-			_, found := uniqueness[plug]
-			if found {
-				logf(" - found duplicate plugin: %v %v", field.Name, field.Type)
-				continue
-			}
-
-			// TODO: perhaps add regexp for validation of plugin name
-
-			uniqueness[plug] = struct{}{}
-			fieldPlug = plug
-
-			logf(" + FOUND PLUGIN: %v - %v (%v)", plug.String(), field.Name, field.Type)
+		// transform field to list of values if it is slice or array
+		fieldVals, isList := getFieldValues(field, fieldVal)
+		if isList {
+			logf(" - found list: %v", field.Name)
 		}
 
-		// do recursive inspection only for plugins and fields Deps
-		if fieldPlug != nil || (field.Anonymous && fieldVal.Kind() == reflect.Struct) {
-			// try to inspect structure recursively
-			l, err := findPlugins(fieldVal, uniqueness, n+1)
-			if err != nil {
-				logf(" - Bad field: %v %v", field.Name, err)
-				continue
-			}
-			//logf(" - listed %v plugins from %v (%v)", len(l), field.Name, field.Type)
-			res = append(res, l...)
-		}
+		for _, entry := range fieldVals {
+			var fieldPlug infra.Plugin
+			plug, implementsPlugin := isFieldPlugin(entry.fieldVal)
+			if implementsPlugin {
+				if plug == nil {
+					logf(" - found nil plugin: %v", entry.fieldName)
+					continue
+				}
 
-		if fieldPlug != nil {
-			res = append(res, fieldPlug)
+				_, found := uniqueness[plug]
+				if found {
+					logf(" - found duplicate plugin: %v %v", entry.fieldName, field.Type)
+					continue
+				}
+
+				// TODO: perhaps add regexp for validation of plugin name
+
+				uniqueness[plug] = struct{}{}
+				fieldPlug = plug
+
+				logf(" + FOUND PLUGIN: %v - %v (%v)", plug.String(), entry.fieldName, field.Type)
+			}
+
+			// do recursive inspection only for plugins and fields Deps
+			if fieldPlug != nil || (field.Anonymous && entry.fieldVal.Kind() == reflect.Struct) {
+				// try to inspect structure recursively
+				l, err := findPlugins(entry.fieldVal, uniqueness, n+1)
+				if err != nil {
+					logf(" - Bad field: %v %v", entry.fieldName, err)
+					continue
+				}
+				//logf(" - listed %v plugins from %v (%v)", len(l), field.Name, field.Type)
+				res = append(res, l...)
+			}
+
+			if fieldPlug != nil {
+				res = append(res, fieldPlug)
+			}
 		}
 	}
 
@@ -149,9 +157,42 @@ func findPlugins(val reflect.Value, uniqueness map[infra.Plugin]struct{}, x ...i
 	return res, nil
 }
 
+type fieldValEntry struct {
+	fieldName string
+	fieldVal  reflect.Value
+}
+
+func getFieldValues(field reflect.StructField, fieldVal reflect.Value) ([]*fieldValEntry, bool) {
+	var fieldVals []*fieldValEntry
+
+	kind := fieldVal.Kind()
+	if kind == reflect.Slice || kind == reflect.Array {
+		for i := 0; i < fieldVal.Len(); i++ {
+			entryName := fmt.Sprintf("%s[%d]", field.Name, i)
+			fieldVals = append(fieldVals, &fieldValEntry{entryName, fieldVal.Index(i)})
+		}
+		return fieldVals, true
+	}
+
+	// underlying list
+	typ := reflect.ValueOf(fieldVal.Interface()).Kind()
+	if typ == reflect.Slice || typ == reflect.Array {
+		fieldValSlice := reflect.ValueOf(fieldVal.Interface())
+		for i := 0; i < fieldValSlice.Len(); i++ {
+			entryName := fmt.Sprintf("%s[%d]", field.Name, i)
+			fieldVals = append(fieldVals, &fieldValEntry{entryName, fieldValSlice.Index(i)})
+		}
+		return fieldVals, true
+	}
+
+	// not a list (single entry)
+	fieldVals = append(fieldVals, &fieldValEntry{field.Name, fieldVal})
+	return fieldVals, false
+}
+
 var pluginType = reflect.TypeOf((*infra.Plugin)(nil)).Elem()
 
-func isFieldPlugin(field reflect.StructField, fieldVal reflect.Value) (infra.Plugin, bool) {
+func isFieldPlugin(fieldVal reflect.Value) (infra.Plugin, bool) {
 	//logrus.DefaultLogger().Debugf(" - is field plugin: %v (%v) %v", field.Type, fieldVal.Kind(), fieldVal)
 
 	switch fieldVal.Kind() {

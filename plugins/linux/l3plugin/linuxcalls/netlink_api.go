@@ -15,71 +15,54 @@
 package linuxcalls
 
 import (
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/linux/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/linux/l3plugin/l3idx"
-	"github.com/ligato/vpp-agent/plugins/linux/nsplugin"
 	"github.com/vishvananda/netlink"
 )
 
-// NetlinkAPI interface covers all methods inside linux calls package needed to manage linux ARP entries and routes.
+// NetlinkAPI interface covers all methods inside linux calls package needed
+// to manage linux ARP entries and routes.
 type NetlinkAPI interface {
 	NetlinkAPIWrite
 	NetlinkAPIRead
 }
 
-// NetlinkAPIWrite interface covers write methods inside linux calls package needed to manage linux ARP entries and routes.
+// NetlinkAPIWrite interface covers write methods inside linux calls package
+// needed to manage linux ARP entries and routes.
 type NetlinkAPIWrite interface {
 	/* ARP */
-	// AddArpEntry configures new linux ARP entry
-	AddArpEntry(name string, arpEntry *netlink.Neigh) error
-	// SetArpEntry modifies existing linux ARP entry
-	SetArpEntry(name string, arpEntry *netlink.Neigh) error
-	// DelArpEntry removes linux ARP entry
-	DelArpEntry(name string, arpEntry *netlink.Neigh) error
+	// SetARPEntry adds/modifies existing linux ARP entry.
+	SetARPEntry(arpEntry *netlink.Neigh) error
+	// DelARPEntry removes linux ARP entry.
+	DelARPEntry(arpEntry *netlink.Neigh) error
+
 	/* Routes */
-	// AddStaticRoute adds new linux static route
-	AddStaticRoute(name string, route *netlink.Route) error
-	// ReplaceStaticRoute changes existing linux static route
-	ReplaceStaticRoute(name string, route *netlink.Route) error
-	// DelStaticRoute removes linux static route
-	DelStaticRoute(name string, route *netlink.Route) error
+	// AddRoute adds new linux static route.
+	AddRoute(route *netlink.Route) error
+	// ReplaceRoute changes existing linux static route.
+	ReplaceRoute(route *netlink.Route) error
+	// DelRoute removes linux static route.
+	DelRoute(route *netlink.Route) error
 }
 
-// NetlinkAPIRead interface covers read methods inside linux calls package needed to manage linux ARP entries and routes.
+// NetlinkAPIRead interface covers read methods inside linux calls package
+// needed to manage linux ARP entries and routes.
 type NetlinkAPIRead interface {
-	/* ARP */
-	// GetArpEntries returns all configured ARP entries from current namespace in raw netlink format. Possible to
-	// filter by interface and IP family.
-	GetArpEntries(interfaceIdx int, family int) ([]netlink.Neigh, error)
-	// DumpArpEntries returns all configured ARP entries known to VPP agent from all known namespaces
-	// in proto-modelled format
-	DumpArpEntries() ([]*LinuxArpDetails, error)
-	/* Routes */
-	// GetStaticRoutes reads all linux routes from current namespace. Possible to filter by interface and IP family.
-	GetStaticRoutes(link netlink.Link, family int) ([]netlink.Route, error)
-	// DumpRoutes returns all configured routes entries known to VPP agent from all known namespaces
-	// in proto-modelled format
-	DumpRoutes() ([]*LinuxRouteDetails, error)
+	// GetARPEntries reads all configured static ARP entries for given interface.
+	// <interfaceIdx> works as filter, if set to zero, all arp entries in the namespace
+	// are returned.
+	GetARPEntries(interfaceIdx int) ([]netlink.Neigh, error)
+
+	// GetRoutes reads all configured static routes with the given outgoing
+	// interface.
+	// <interfaceIdx> works as filter, if set to zero, all routes in the namespace
+	// are returned.
+	GetRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error)
 }
 
-// NetLinkHandler is accessor for netlink methods
+// NetLinkHandler is accessor for Netlink methods.
 type NetLinkHandler struct {
-	nsHandler    nsplugin.NamespaceAPI
-	ifIndexes    ifaceidx.LinuxIfIndex
-	arpIndexes   l3idx.LinuxARPIndex
-	routeIndexes l3idx.LinuxRouteIndex
-	log          logging.Logger
 }
 
-// NewNetLinkHandler creates new instance of netlink handler
-func NewNetLinkHandler(nsHandler nsplugin.NamespaceAPI, ifIndexes ifaceidx.LinuxIfIndex, arpIndexes l3idx.LinuxARPIndex, routeIndexes l3idx.LinuxRouteIndex,
-	log logging.Logger) *NetLinkHandler {
-	return &NetLinkHandler{
-		nsHandler:    nsHandler,
-		ifIndexes:    ifIndexes,
-		arpIndexes:   arpIndexes,
-		routeIndexes: routeIndexes,
-		log:          log,
-	}
+// NewNetLinkHandler creates new instance of Netlink handler.
+func NewNetLinkHandler() *NetLinkHandler {
+	return &NetLinkHandler{}
 }

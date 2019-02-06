@@ -17,9 +17,9 @@ package vppcalls_test
 import (
 	"testing"
 
+	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
-	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -32,7 +32,7 @@ func TestAddVmxNet3Interface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddVmxNet3("vmxnet3-face/be/1c/4", &ifModel.Interfaces_Interface_VmxNet3{
+	swIfIdx, err := ifHandler.AddVmxNet3("vmxnet3-face/be/1c/4", &ifModel.VmxNet3Link{
 		EnableElog: true,
 		RxqSize:    2048,
 		TxqSize:    512,
@@ -88,7 +88,7 @@ func TestDelVmxNet3Interface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	err := ifHandler.DelVmxNet3("vmxnet3-a/14/19/1e", 1)
+	err := ifHandler.DeleteVmxNet3("vmxnet3-a/14/19/1e", 1)
 	Expect(err).To(BeNil())
 	var msgCheck bool
 	for _, msg := range ctx.MockChannel.Msgs {
@@ -109,6 +109,6 @@ func TestDelVmxNet3InterfaceRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.DelVmxNet3("vmxnet3-a/14/19/1e", 1)
+	err := ifHandler.DeleteVmxNet3("vmxnet3-a/14/19/1e", 1)
 	Expect(err).ToNot(BeNil())
 }

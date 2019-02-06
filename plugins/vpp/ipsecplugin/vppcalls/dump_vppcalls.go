@@ -21,13 +21,13 @@ import (
 
 	"github.com/go-errors/errors"
 
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	ipsecapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
 // IPSecSaDetails holds security association with VPP metadata
 type IPSecSaDetails struct {
-	Sa   *ipsec.SecurityAssociations_SA
+	Sa   *ipsec.SecurityAssociation
 	Meta *IPSecSaMeta
 }
 
@@ -73,12 +73,13 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDe
 			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
 		}
 
-		sa := &ipsec.SecurityAssociations_SA{
+		sa := &ipsec.SecurityAssociation{
+			Index:          strconv.Itoa(int(saData.SaID)),
 			Spi:            saData.Spi,
-			Protocol:       ipsec.SecurityAssociations_SA_IPSecProtocol(saData.Protocol),
-			CryptoAlg:      ipsec.CryptoAlgorithm(saData.CryptoAlg),
+			Protocol:       ipsec.SecurityAssociation_IPSecProtocol(saData.Protocol),
+			CryptoAlg:      ipsec.SecurityAssociation_CryptoAlg(saData.CryptoAlg),
 			CryptoKey:      hex.EncodeToString(saData.CryptoKey[:saData.CryptoKeyLen]),
-			IntegAlg:       ipsec.IntegAlgorithm(saData.IntegAlg),
+			IntegAlg:       ipsec.SecurityAssociation_IntegAlg(saData.IntegAlg),
 			IntegKey:       hex.EncodeToString(saData.IntegKey[:saData.IntegKeyLen]),
 			UseEsn:         uintToBool(saData.UseEsn),
 			UseAntiReplay:  uintToBool(saData.UseAntiReplay),
@@ -106,100 +107,16 @@ func (h *IPSecVppHandler) DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDe
 	return saList, nil
 }
 
-// IPSecTunnelInterfaceDetails hold a list of tunnel interfaces with name/index map as metadata
-type IPSecTunnelInterfaceDetails struct {
-	Tunnel *ipsec.TunnelInterfaces_Tunnel
-	Meta   *IPSecTunnelMeta
-}
-
-// IPSecTunnelMeta contains map of name/index pairs
-type IPSecTunnelMeta struct {
-	SwIfIndex uint32
-}
-
-// DumpIPSecTunnelInterfaces implements IPSec handler.
-func (h *IPSecVppHandler) DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error) {
-	saDetails, err := h.dumpSecurityAssociations(^uint32(0))
-	if err != nil {
-		return nil, err
-	}
-
-	// Every tunnel interface is returned in two API calls. To reconstruct the correct proto-modelled data,
-	// first appearance is stored, and when the second part arrives, data are completed and stored.
-	tunnelParts := make(map[uint32]*ipsecapi.IpsecSaDetails)
-
-	for _, saData := range saDetails {
-		// Skip non-tunnel security associations
-		if saData.SwIfIndex == ^uint32(0) {
-			continue
-		}
-
-		// Interface
-		ifName, ifData, found := h.ifIndexes.LookupName(saData.SwIfIndex)
-		if !found {
-			h.log.Warnf("IPSec SA dump: interface name not found for %d", saData.SwIfIndex)
-			continue
-		}
-		if ifData == nil {
-			h.log.Warnf("IPSec SA dump: interface %s has no metadata", ifName)
-			continue
-		}
-
-		// First appearance is stored in the map, the second one is used in configuration.
-		firstSaData, ok := tunnelParts[saData.SwIfIndex]
-		if !ok {
-			tunnelParts[saData.SwIfIndex] = saData
-			h.log.Debugf("first part of IPSec tunnel interface %d (name %s) stored", saData.SwIfIndex, ifName)
-			continue
-		}
-
-		// Addresses
-		var tunnelSrcAddrStr, tunnelDstAddrStr string
-		if uintToBool(saData.IsTunnelIP6) {
-			var tunnelSrcAddr, tunnelDstAddr net.IP = saData.TunnelSrcAddr, saData.TunnelDstAddr
-			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
-		} else {
-			var tunnelSrcAddr, tunnelDstAddr net.IP = saData.TunnelSrcAddr[:4], saData.TunnelDstAddr[:4]
-			tunnelSrcAddrStr, tunnelDstAddrStr = tunnelSrcAddr.String(), tunnelDstAddr.String()
-		}
-
-		// Prepare tunnel interface data
-		tunnel := &ipsec.TunnelInterfaces_Tunnel{
-			Name:        ifName,
-			Esn:         uintToBool(saData.UseEsn),
-			AntiReplay:  uintToBool(saData.UseAntiReplay),
-			LocalIp:     tunnelSrcAddrStr,
-			RemoteIp:    tunnelDstAddrStr,
-			LocalSpi:    saData.Spi,
-			RemoteSpi:   firstSaData.Spi, // Fill remote SPI from stored SA data
-			CryptoAlg:   ipsec.CryptoAlgorithm(saData.CryptoAlg),
-			IntegAlg:    ipsec.IntegAlgorithm(saData.IntegAlg),
-			Enabled:     ifData.Enabled,
-			IpAddresses: ifData.IpAddresses,
-			Vrf:         ifData.Vrf,
-		}
-		tun = append(tun, &IPSecTunnelInterfaceDetails{
-			Tunnel: tunnel,
-			Meta: &IPSecTunnelMeta{
-				SwIfIndex: saData.SwIfIndex,
-			},
-		})
-	}
-
-	return tun, nil
-}
-
 // IPSecSpdDetails represents IPSec policy databases with particular metadata
 type IPSecSpdDetails struct {
-	Spd         *ipsec.SecurityPolicyDatabases_SPD
-	PolicyMeta  map[string]*SpdMeta // SA-generated name is a key
+	Spd         *ipsec.SecurityPolicyDatabase
+	PolicyMeta  map[string]*SpdMeta // SA index name is a key
 	NumPolicies uint32
 }
 
 // SpdMeta hold VPP-specific data related to SPD
 type SpdMeta struct {
 	SaID    uint32
-	SpdID   uint32
 	Policy  uint8
 	Bytes   uint64
 	Packets uint64
@@ -209,16 +126,20 @@ type SpdMeta struct {
 func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error) {
 	metadata := make(map[string]*SpdMeta)
 
+	// TODO dump IPSec SPD interfaces is not available in current VPP version
+
 	// Get all VPP SPD indexes
 	spdIndexes, err := h.dumpSpdIndexes()
 	if err != nil {
 		return nil, errors.Errorf("failed to dump SPD indexes: %v", err)
 	}
 	for spdIdx, numPolicies := range spdIndexes {
-		spd := &ipsec.SecurityPolicyDatabases_SPD{}
+		spd := &ipsec.SecurityPolicyDatabase{
+			Index: strconv.Itoa(spdIdx),
+		}
 
 		req := &ipsecapi.IpsecSpdDump{
-			SpdID: spdIdx,
+			SpdID: uint32(spdIdx),
 			SaID:  ^uint32(0),
 		}
 		requestCtx := h.callsChannel.SendMultiRequest(req)
@@ -232,10 +153,6 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
 			if err != nil {
 				return nil, err
 			}
-
-			// Security association name, to distinguish metadata. Generated name points to SA, so the name can be
-			// the same as for other policies.
-			saGenName := "sa-id-" + strconv.Itoa(int(spdDetails.SaID))
 
 			// Addresses
 			var remoteStartAddrStr, remoteStopAddrStr, localStartAddrStr, localStopAddrStr string
@@ -252,8 +169,8 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
 			}
 
 			// Prepare policy entry and put to the SPD
-			policyEntry := &ipsec.SecurityPolicyDatabases_SPD_PolicyEntry{
-				Sa:              saGenName,
+			policyEntry := &ipsec.SecurityPolicyDatabase_PolicyEntry{
+				SaIndex:         strconv.Itoa(int(spdDetails.SaID)),
 				Priority:        spdDetails.Priority,
 				IsOutbound:      uintToBool(spdDetails.IsOutbound),
 				RemoteAddrStart: remoteStartAddrStr,
@@ -262,21 +179,21 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
 				LocalAddrStop:   localStopAddrStr,
 				Protocol:        uint32(spdDetails.Protocol),
 				RemotePortStart: uint32(spdDetails.RemoteStartPort),
-				RemotePortStop:  uint32(spdDetails.RemoteStopPort),
+				RemotePortStop:  resetPort(spdDetails.RemoteStopPort),
 				LocalPortStart:  uint32(spdDetails.LocalStartPort),
-				LocalPortStop:   uint32(spdDetails.LocalStopPort),
+				LocalPortStop:   resetPort(spdDetails.LocalStopPort),
+				Action:          ipsec.SecurityPolicyDatabase_PolicyEntry_Action(spdDetails.Policy),
 			}
 			spd.PolicyEntries = append(spd.PolicyEntries, policyEntry)
 
 			// Prepare meta and put to the metadata map
 			meta := &SpdMeta{
-				SpdID:   spdDetails.SpdID,
 				SaID:    spdDetails.SaID,
 				Policy:  spdDetails.Policy,
 				Bytes:   spdDetails.Bytes,
 				Packets: spdDetails.Packets,
 			}
-			metadata[saGenName] = meta
+			metadata[strconv.Itoa(int(spdDetails.SaID))] = meta
 		}
 		// Store SPD in list
 		spdList = append(spdList, &IPSecSpdDetails{
@@ -290,9 +207,9 @@ func (h *IPSecVppHandler) DumpIPSecSPD() (spdList []*IPSecSpdDetails, err error)
 }
 
 // Get all indexes of SPD configured on the VPP
-func (h *IPSecVppHandler) dumpSpdIndexes() (map[uint32]uint32, error) {
+func (h *IPSecVppHandler) dumpSpdIndexes() (map[int]uint32, error) {
 	// SPD index to number of policies
-	spdIndexes := make(map[uint32]uint32)
+	spdIndexes := make(map[int]uint32)
 
 	req := &ipsecapi.IpsecSpdsDump{}
 	reqCtx := h.callsChannel.SendMultiRequest(req)
@@ -307,7 +224,7 @@ func (h *IPSecVppHandler) dumpSpdIndexes() (map[uint32]uint32, error) {
 			return nil, err
 		}
 
-		spdIndexes[spdDetails.SpdID] = spdDetails.Npolicies
+		spdIndexes[int(spdDetails.SpdID)] = spdDetails.Npolicies
 	}
 
 	return spdIndexes, nil
@@ -334,6 +251,14 @@ func (h *IPSecVppHandler) dumpSecurityAssociations(saID uint32) (saList []*ipsec
 	}
 
 	return saList, nil
+}
+
+// ResetPort returns 0 if stop port has maximum value (default VPP value if stop port is not defined)
+func resetPort(port uint16) uint32 {
+	if port == ^uint16(0) {
+		return 0
+	}
+	return uint32(port)
 }
 
 func uintToBool(input uint8) bool {

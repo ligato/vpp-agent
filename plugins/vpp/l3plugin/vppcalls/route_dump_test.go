@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
@@ -29,23 +28,23 @@ import (
 // Test dumping routes
 func TestDumpStaticRoutes(t *testing.T) {
 	ctx := vppcallmock.SetupTestCtx(t)
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(logrus.DefaultLogger(), "rt-dump-if-idx", nil))
-	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())
 	defer ctx.TeardownTestCtx()
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
+	l3handler := NewRouteVppHandler(ctx.MockChannel, ifIndexes, logrus.DefaultLogger())
 
-	ifIndexes.RegisterName("if1", 2, nil)
-	ifIndexes.RegisterName("if2", 3, nil)
+	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+	ifIndexes.Put("if2", &ifaceidx.IfaceMetadata{SwIfIndex: 2})
 
 	ctx.MockVpp.MockReply(&ip.IPFibDetails{
-		Path: []ip.FibPath{{SwIfIndex: 3}},
-	})
-	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
-	ctx.MockVpp.MockReply(&ip.IP6FibDetails{
 		Path: []ip.FibPath{{SwIfIndex: 2}},
 	})
 	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
+	ctx.MockVpp.MockReply(&ip.IP6FibDetails{
+		Path: []ip.FibPath{{SwIfIndex: 1}},
+	})
+	ctx.MockVpp.MockReply(&vpe.ControlPingReply{})
 
-	rtDetails, err := l3handler.DumpStaticRoutes()
+	rtDetails, err := l3handler.DumpRoutes()
 	Expect(err).To(Succeed())
 	Expect(rtDetails).To(HaveLen(2))
 	Expect(rtDetails[0].Route.OutgoingInterface).To(Equal("if2"))

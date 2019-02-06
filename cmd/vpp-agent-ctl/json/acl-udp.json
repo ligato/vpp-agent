@@ -1,5 +1,5 @@
 {
-    "acl_name": "acl1",
+    "name": "acl1",
     "interfaces": {
         "egress": [
             "tap1",
@@ -12,22 +12,20 @@
     },
     "rules": [
         {
-            "acl_action": 1,
-            "match": {
-                "ip_rule": {
-                    "ip": {
-                        "destination_network": "",
-                        "source_network": "192.168.1.2/32"
+            "action": 1,
+            "ip_rule": {
+                "ip": {
+                    "destination_network": "",
+                    "source_network": "192.168.1.2/32"
+                },
+                "udp": {
+                    "destination_port_range": {
+                        "lower_port": 1150,
+                        "upper_port": 1250
                     },
-                    "udp": {
-                        "destination_port_range": {
-                            "lower_port": 1150,
-                            "upper_port": 1250
-                        },
-                        "source_port_range": {
-                            "lower_port": 150,
-                            "upper_port": 250
-                        }
+                    "source_port_range": {
+                        "lower_port": 150,
+                        "upper_port": 250
                     }
                 }
             }

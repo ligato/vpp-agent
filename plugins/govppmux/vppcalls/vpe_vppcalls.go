@@ -22,8 +22,60 @@ import (
 	"strings"
 
 	govppapi "git.fd.io/govpp.git/api"
+	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memclnt"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vpe"
 )
+
+// VpeInfo contains information about VPP connection and process.
+type VpeInfo struct {
+	PID            uint32
+	ClientIdx      uint32
+	ModuleVersions map[string]ModuleVersion
+}
+
+type ModuleVersion struct {
+	Name  string
+	Major uint32
+	Minor uint32
+	Patch uint32
+}
+
+// GetVpeInfo retrieves vpe information.
+func GetVpeInfo(vppChan govppapi.Channel) (*VpeInfo, error) {
+	req := &vpe.ControlPing{}
+	reply := &vpe.ControlPingReply{}
+
+	if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+		return nil, err
+	}
+
+	info := &VpeInfo{
+		PID:            reply.VpePID,
+		ClientIdx:      reply.ClientIndex,
+		ModuleVersions: make(map[string]ModuleVersion),
+	}
+
+	{
+		req := &memclnt.APIVersions{}
+		reply := &memclnt.APIVersionsReply{}
+
+		if err := vppChan.SendRequest(req).ReceiveReply(reply); err != nil {
+			return nil, err
+		}
+
+		for _, v := range reply.APIVersions {
+			name := string(cleanBytes(v.Name))
+			info.ModuleVersions[name] = ModuleVersion{
+				Name:  name,
+				Major: v.Major,
+				Minor: v.Minor,
+				Patch: v.Patch,
+			}
+		}
+	}
+
+	return info, nil
+}
 
 // VersionInfo contains values returned from ShowVersion
 type VersionInfo struct {
@@ -45,10 +97,10 @@ func GetVersionInfo(vppChan govppapi.Channel) (*VersionInfo, error) {
 	}
 
 	info := &VersionInfo{
-		Program:        reply.Program,
-		Version:        reply.Version,
-		BuildDate:      reply.BuildDate,
-		BuildDirectory: reply.BuildDirectory,
+		Program:        string(cleanBytes(reply.Program)),
+		Version:        string(cleanBytes(reply.Version)),
+		BuildDate:      string(cleanBytes(reply.BuildDate)),
+		BuildDirectory: string(cleanBytes(reply.BuildDirectory)),
 	}
 
 	return info, nil
@@ -57,7 +109,8 @@ func GetVersionInfo(vppChan govppapi.Channel) (*VersionInfo, error) {
 // RunCliCommand executes CLI command and returns output
 func RunCliCommand(vppChan govppapi.Channel, cmd string) (string, error) {
 	req := &vpe.CliInband{
-		Cmd: cmd,
+		Cmd:    []byte(cmd),
+		Length: uint32(len(cmd)),
 	}
 	reply := &vpe.CliInbandReply{}
 
@@ -67,7 +120,7 @@ func RunCliCommand(vppChan govppapi.Channel, cmd string) (string, error) {
 		return "", fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
-	return reply.Reply, nil
+	return string(cleanBytes(reply.Reply)), nil
 }
 
 // MemoryInfo contains values returned from 'show memory'
@@ -266,7 +319,7 @@ func GetRuntimeInfo(vppChan govppapi.Channel) (*RuntimeInfo, error) {
 			VectorRatesPunt:     strToFloat64(fields[10]),
 		}
 
-		itemMatches := runtimeItemsRe.FindAllStringSubmatch(string(fields[11]), -1)
+		itemMatches := runtimeItemsRe.FindAllStringSubmatch(fields[11], -1)
 		for _, matches := range itemMatches {
 			fields := matches[1:]
 			if len(fields) != 7 {

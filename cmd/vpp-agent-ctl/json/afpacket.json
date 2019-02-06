@@ -9,5 +9,5 @@
     ],
     "name": "afpacket1",
     "phys_address": "b4:e6:1c:a1:0d:31",
-    "type": 4
+    "type": "AF_PACKET"
 }

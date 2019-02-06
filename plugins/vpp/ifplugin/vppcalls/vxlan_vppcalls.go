@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"net"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vxlan"
-	intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
-func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
+func (h *IfVppHandler) addDelVxLanTunnel(vxLan *interfaces.VxlanLink, vrf, multicastIf uint32, isAdd bool) (swIdx uint32, err error) {
 	req := &vxlan.VxlanAddDelTunnel{
 		IsAdd:          boolToUint(isAdd),
 		Vni:            vxLan.Vni,
@@ -48,7 +48,7 @@ func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan,
 	req.SrcAddress = []byte(srcAddr)
 	req.DstAddress = []byte(dstAddr)
 
-	// Before the VxLAN call, create a VRF table if needed (a temporary fix to solve the creation of the VRF table for a VxLAN)
+	// before the VxLAN is added, create a VRF table if needed
 	if req.IsIPv6 == 1 {
 		if err := h.CreateVrfIPv6(vrf); err != nil {
 			return 0, err
@@ -58,19 +58,16 @@ func (h *IfVppHandler) addDelVxLanTunnel(vxLan *intf.Interfaces_Interface_Vxlan,
 			return 0, err
 		}
 	}
-
 	reply := &vxlan.VxlanAddDelTunnelReply{}
 	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return reply.SwIfIndex, nil
 }
 
 // AddVxLanTunnel implements VxLan handler.
-func (h *IfVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *intf.Interfaces_Interface_Vxlan) (swIndex uint32, err error) {
+func (h *IfVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vxLan *interfaces.VxlanLink) (swIndex uint32, err error) {
 	swIfIdx, err := h.addDelVxLanTunnel(vxLan, vrf, multicastIf, true)
 	if err != nil {
 		return 0, err
@@ -79,7 +76,7 @@ func (h *IfVppHandler) AddVxLanTunnel(ifName string, vrf, multicastIf uint32, vx
 }
 
 // DeleteVxLanTunnel implements VxLan handler.
-func (h *IfVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *intf.Interfaces_Interface_Vxlan) error {
+func (h *IfVppHandler) DeleteVxLanTunnel(ifName string, idx, vrf uint32, vxLan *interfaces.VxlanLink) error {
 	// Multicast does not need to be set
 	if _, err := h.addDelVxLanTunnel(vxLan, vrf, 0, false); err != nil {
 		return err

@@ -1,19 +1,15 @@
 package redis
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/go-redis/redis/internal"
 	"github.com/go-redis/redis/internal/pool"
-	"github.com/go-redis/redis/internal/proto"
 )
 
-var errPingTimeout = errors.New("redis: ping timeout")
-
-// PubSub implements Pub/Sub commands bas described in
+// PubSub implements Pub/Sub commands as described in
 // http://redis.io/topics/pubsub. Message receiving is NOT safe
 // for concurrent use by multiple goroutines.
 //
@@ -50,16 +46,14 @@ func (c *PubSub) conn() (*pool.Conn, error) {
 	return cn, err
 }
 
-func (c *PubSub) _conn(newChannels []string) (*pool.Conn, error) {
+func (c *PubSub) _conn(channels []string) (*pool.Conn, error) {
 	if c.closed {
 		return nil, pool.ErrClosed
 	}
+
 	if c.cn != nil {
 		return c.cn, nil
 	}
-
-	channels := mapKeys(c.channels)
-	channels = append(channels, newChannels...)
 
 	cn, err := c.newConn(channels)
 	if err != nil {
@@ -75,24 +69,20 @@ func (c *PubSub) _conn(newChannels []string) (*pool.Conn, error) {
 	return cn, nil
 }
 
-func (c *PubSub) writeCmd(cn *pool.Conn, cmd Cmder) error {
-	return cn.WithWriter(c.opt.WriteTimeout, func(wr *proto.Writer) error {
-		return writeCmd(wr, cmd)
-	})
-}
-
 func (c *PubSub) resubscribe(cn *pool.Conn) error {
 	var firstErr error
 
 	if len(c.channels) > 0 {
-		err := c._subscribe(cn, "subscribe", mapKeys(c.channels))
+		channels := mapKeys(c.channels)
+		err := c._subscribe(cn, "subscribe", channels...)
 		if err != nil && firstErr == nil {
 			firstErr = err
 		}
 	}
 
 	if len(c.patterns) > 0 {
-		err := c._subscribe(cn, "psubscribe", mapKeys(c.patterns))
+		patterns := mapKeys(c.patterns)
+		err := c._subscribe(cn, "psubscribe", patterns...)
 		if err != nil && firstErr == nil {
 			firstErr = err
 		}
@@ -111,48 +101,51 @@ func mapKeys(m map[string]struct{}) []string {
 	return s
 }
 
-func (c *PubSub) _subscribe(
-	cn *pool.Conn, redisCmd string, channels []string,
-) error {
-	args := make([]interface{}, 0, 1+len(channels))
-	args = append(args, redisCmd)
-	for _, channel := range channels {
-		args = append(args, channel)
+func (c *PubSub) _subscribe(cn *pool.Conn, redisCmd string, channels ...string) error {
+	args := make([]interface{}, 1+len(channels))
+	args[0] = redisCmd
+	for i, channel := range channels {
+		args[1+i] = channel
 	}
 	cmd := NewSliceCmd(args...)
-	return c.writeCmd(cn, cmd)
+
+	cn.SetWriteTimeout(c.opt.WriteTimeout)
+	return writeCmd(cn, cmd)
 }
 
-func (c *PubSub) releaseConn(cn *pool.Conn, err error, allowTimeout bool) {
+func (c *PubSub) releaseConn(cn *pool.Conn, err error) {
 	c.mu.Lock()
-	c._releaseConn(cn, err, allowTimeout)
+	c._releaseConn(cn, err)
 	c.mu.Unlock()
 }
 
-func (c *PubSub) _releaseConn(cn *pool.Conn, err error, allowTimeout bool) {
+func (c *PubSub) _releaseConn(cn *pool.Conn, err error) {
 	if c.cn != cn {
 		return
 	}
-	if internal.IsBadConn(err, allowTimeout) {
-		c._reconnect(err)
+	if internal.IsBadConn(err, true) {
+		c._reconnect()
 	}
 }
 
-func (c *PubSub) _reconnect(reason error) {
-	_ = c._closeTheCn(reason)
-	_, _ = c._conn(nil)
-}
-
-func (c *PubSub) _closeTheCn(reason error) error {
-	if c.cn == nil {
-		return nil
+func (c *PubSub) _closeTheCn() error {
+	var err error
+	if c.cn != nil {
+		err = c.closeConn(c.cn)
+		c.cn = nil
 	}
-	if !c.closed {
-		internal.Logf("redis: discarding bad PubSub connection: %s", reason)
-	}
-	err := c.closeConn(c.cn)
-	c.cn = nil
 	return err
+}
+
+func (c *PubSub) reconnect() {
+	c.mu.Lock()
+	c._reconnect()
+	c.mu.Unlock()
+}
+
+func (c *PubSub) _reconnect() {
+	_ = c._closeTheCn()
+	_, _ = c._conn(nil)
 }
 
 func (c *PubSub) Close() error {
@@ -165,7 +158,7 @@ func (c *PubSub) Close() error {
 	c.closed = true
 	close(c.exit)
 
-	err := c._closeTheCn(pool.ErrClosed)
+	err := c._closeTheCn()
 	return err
 }
 
@@ -179,8 +172,8 @@ func (c *PubSub) Subscribe(channels ...string) error {
 	if c.channels == nil {
 		c.channels = make(map[string]struct{})
 	}
-	for _, s := range channels {
-		c.channels[s] = struct{}{}
+	for _, channel := range channels {
+		c.channels[channel] = struct{}{}
 	}
 	return err
 }
@@ -195,8 +188,8 @@ func (c *PubSub) PSubscribe(patterns ...string) error {
 	if c.patterns == nil {
 		c.patterns = make(map[string]struct{})
 	}
-	for _, s := range patterns {
-		c.patterns[s] = struct{}{}
+	for _, pattern := range patterns {
+		c.patterns[pattern] = struct{}{}
 	}
 	return err
 }
@@ -207,10 +200,10 @@ func (c *PubSub) Unsubscribe(channels ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	err := c.subscribe("unsubscribe", channels...)
 	for _, channel := range channels {
 		delete(c.channels, channel)
 	}
-	err := c.subscribe("unsubscribe", channels...)
 	return err
 }
 
@@ -220,10 +213,10 @@ func (c *PubSub) PUnsubscribe(patterns ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	err := c.subscribe("punsubscribe", patterns...)
 	for _, pattern := range patterns {
 		delete(c.patterns, pattern)
 	}
-	err := c.subscribe("punsubscribe", patterns...)
 	return err
 }
 
@@ -233,8 +226,8 @@ func (c *PubSub) subscribe(redisCmd string, channels ...string) error {
 		return err
 	}
 
-	err = c._subscribe(cn, redisCmd, channels)
-	c._releaseConn(cn, err, false)
+	err = c._subscribe(cn, redisCmd, channels...)
+	c._releaseConn(cn, err)
 	return err
 }
 
@@ -250,8 +243,9 @@ func (c *PubSub) Ping(payload ...string) error {
 		return err
 	}
 
-	err = c.writeCmd(cn, cmd)
-	c.releaseConn(cn, err, false)
+	cn.SetWriteTimeout(c.opt.WriteTimeout)
+	err = writeCmd(cn, cmd)
+	c.releaseConn(cn, err)
 	return err
 }
 
@@ -342,11 +336,9 @@ func (c *PubSub) ReceiveTimeout(timeout time.Duration) (interface{}, error) {
 		return nil, err
 	}
 
-	err = cn.WithReader(timeout, func(rd *proto.Reader) error {
-		return c.cmd.readReply(rd)
-	})
-
-	c.releaseConn(cn, err, timeout > 0)
+	cn.SetReadTimeout(timeout)
+	err = c.cmd.readReply(cn)
+	c.releaseConn(cn, err)
 	if err != nil {
 		return nil, err
 	}
@@ -440,26 +432,21 @@ func (c *PubSub) initChannel() {
 		timer := time.NewTimer(timeout)
 		timer.Stop()
 
-		healthy := true
+		var hasPing bool
 		for {
 			timer.Reset(timeout)
 			select {
 			case <-c.ping:
-				healthy = true
+				hasPing = true
 				if !timer.Stop() {
 					<-timer.C
 				}
 			case <-timer.C:
-				pingErr := c.Ping()
-				if healthy {
-					healthy = false
+				if hasPing {
+					hasPing = false
+					_ = c.Ping()
 				} else {
-					if pingErr == nil {
-						pingErr = errPingTimeout
-					}
-					c.mu.Lock()
-					c._reconnect(pingErr)
-					c.mu.Unlock()
+					c.reconnect()
 				}
 			case <-c.exit:
 				return

@@ -8,7 +8,7 @@ Resource     ../../variables/${VARIABLES}_variables.robot
 
 Resource     ../../libraries/all_libs.robot
 
-Force Tags        crud     IPv4    ExpectedFailure
+Force Tags        crud     IPv4
 Suite Setup       Testsuite Setup
 Suite Teardown    Testsuite Teardown
 Test Setup        TestSetup
@@ -24,7 +24,7 @@ ${MAC_TAP1_2}=       22:21:21:11:11:11
 ${MAC_TAP2}=         22:21:21:22:22:22
 ${IP_TAP1}=          20.20.1.1
 ${IP_TAP1_2}=        21.20.1.1
-${IP_TAP2}=          20.20.1.2
+${IP_TAP2}=          30.20.1.2
 ${PREFIX}=           24
 ${MTU}=              4800
 ${UP_STATE}=         up

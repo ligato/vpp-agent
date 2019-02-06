@@ -788,7 +788,6 @@ type HostConfig struct {
 	IOMaximumIOps        int64                  `json:"IOMaximumIOps,omitempty" yaml:"IOMaximumIOps,omitempty"`
 	Mounts               []HostMount            `json:"Mounts,omitempty" yaml:"Mounts,omitempty" toml:"Mounts,omitempty"`
 	Init                 bool                   `json:",omitempty" yaml:",omitempty"`
-	Runtime              string                 `json:"Runtime,omitempty" yaml:"Runtime,omitempty" toml:"Runtime,omitempty"`
 }
 
 // NetworkingConfig represents the container's networking configuration for each of its interfaces

@@ -21,16 +21,18 @@ import (
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/clientv1/linux/localclient"
-	"github.com/ligato/vpp-agent/plugins/linux"
-	linux_intf "github.com/ligato/vpp-agent/plugins/linux/model/interfaces"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-	vpp_intf "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
-	vpp_l2 "github.com/ligato/vpp-agent/plugins/vpp/model/l2"
+	linux_intf "github.com/ligato/vpp-agent/api/models/linux/interfaces"
+	"github.com/ligato/vpp-agent/api/models/linux/namespace"
+	vpp_intf "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
+	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
+	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent/app"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 	"github.com/namsral/flag"
 )
 
@@ -65,7 +67,7 @@ var (
 // Modify sets IP address for tap1, moves linux host to namespace ns1 and configures second TAP interface with linux
 // host in namespace ns2
 /************************************************
- * Initial Data                                 *
+ * Modified Data                                *
  *                                              *
  *  +----------------------------------------+  *
  *  |       +-- Bridge Domain --+            |  *
@@ -90,31 +92,21 @@ var (
 
 // Start Agent plugins selected for this example.
 func main() {
-	//Init close channel to stop the example.
-	exampleFinished := make(chan struct{})
-	// Prepare all the dependencies for example plugin
-	watcher := datasync.KVProtoWatchers{
-		local.Get(),
-	}
-	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Watcher = watcher
-	}))
-	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
-		deps.VPP = vppPlugin
-		deps.Watcher = watcher
-	}))
-	vppPlugin.Deps.Linux = linuxPlugin
+	// Set inter-dependency between VPP & Linux plugins
+	vpp_ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	vpp_ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
+	linux_ifplugin.DefaultPlugin.VppIfPlugin = &vpp_ifplugin.DefaultPlugin
 
-	var watchEventsMutex sync.Mutex
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
-	linuxPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+	// Init close channel to stop the example.
+	exampleFinished := make(chan struct{})
 
 	// Inject dependencies to example plugin
 	ep := &TapExamplePlugin{
-		Log: logging.DefaultLogger,
+		Log:          logging.DefaultLogger,
+		VPP:          app.DefaultVPP(),
+		Linux:        app.DefaultLinux(),
+		Orchestrator: &orchestrator.DefaultPlugin,
 	}
-	ep.Deps.VPP = vppPlugin
-	ep.Deps.Linux = linuxPlugin
 
 	// Start Agent
 	a := agent.NewAgent(
@@ -122,7 +114,7 @@ func main() {
 		agent.QuitOnClose(exampleFinished),
 	)
 	if err := a.Run(); err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 
 	go closeExample("localhost example finished", exampleFinished)
@@ -140,80 +132,81 @@ func closeExample(message string, exampleFinished chan struct{}) {
 // TapExamplePlugin uses localclient to transport example tap and its linux end
 // configuration to linuxplugin or VPP plugins
 type TapExamplePlugin struct {
-	Deps
+	Log logging.Logger
+	app.VPP
+	app.Linux
+	Orchestrator *orchestrator.Plugin
 
-	Log    logging.Logger
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
-}
-
-// Deps is example plugin dependencies. Keep order of fields.
-type Deps struct {
-	VPP   *vpp.Plugin
-	Linux *linux.Plugin
 }
 
 // PluginName represents name of plugin.
 const PluginName = "tap-example"
 
 // Init initializes example plugin.
-func (plugin *TapExamplePlugin) Init() error {
+func (p *TapExamplePlugin) Init() error {
 	// Logger
-	plugin.Log = logrus.DefaultLogger()
-	plugin.Log.SetLevel(logging.DebugLevel)
-	plugin.Log.Info("Initializing Tap example")
+	p.Log = logrus.DefaultLogger()
+	p.Log.SetLevel(logging.DebugLevel)
+	p.Log.Info("Initializing Tap example")
 
 	// Flags
 	flag.Parse()
-	plugin.Log.Infof("Timeout between create and modify set to %d", *timeout)
+	p.Log.Infof("Timeout between create and modify set to %d", *timeout)
 
+	p.Log.Info("Tap example initialization done")
+	return nil
+}
+
+// AfterInit initializes example plugin.
+func (p *TapExamplePlugin) AfterInit() error {
 	// Apply initial Linux/VPP configuration.
-	plugin.putInitialData()
+	p.putInitialData()
 
 	// Schedule reconfiguration.
 	var ctx context.Context
-	ctx, plugin.cancel = context.WithCancel(context.Background())
-	plugin.wg.Add(1)
-	go plugin.putModifiedData(ctx, *timeout)
+	ctx, p.cancel = context.WithCancel(context.Background())
+	p.wg.Add(1)
+	go p.putModifiedData(ctx, *timeout)
 
-	plugin.Log.Info("Tap example initialization done")
 	return nil
 }
 
 // Close cleans up the resources.
-func (plugin *TapExamplePlugin) Close() error {
-	plugin.cancel()
-	plugin.wg.Wait()
+func (p *TapExamplePlugin) Close() error {
+	p.cancel()
+	p.wg.Wait()
 
-	plugin.Log.Info("Closed Tap plugin")
+	p.Log.Info("Closed Tap plugin")
 	return nil
 }
 
 // String returns plugin name
-func (plugin *TapExamplePlugin) String() string {
+func (p *TapExamplePlugin) String() string {
 	return PluginName
 }
 
 // Configure initial data
-func (plugin *TapExamplePlugin) putInitialData() {
-	plugin.Log.Infof("Applying initial configuration")
+func (p *TapExamplePlugin) putInitialData() {
+	p.Log.Infof("Applying initial configuration")
 	err := localclient.DataResyncRequest(PluginName).
 		VppInterface(initialTap1()).
 		LinuxInterface(initialLinuxTap1()).
 		BD(bridgeDomain()).
 		Send().ReceiveReply()
 	if err != nil {
-		plugin.Log.Errorf("Initial configuration failed: %v", err)
+		p.Log.Errorf("Initial configuration failed: %v", err)
 	} else {
-		plugin.Log.Info("Initial configuration successful")
+		p.Log.Info("Initial configuration successful")
 	}
 }
 
 // Configure modified data
-func (plugin *TapExamplePlugin) putModifiedData(ctx context.Context, timeout int) {
+func (p *TapExamplePlugin) putModifiedData(ctx context.Context, timeout int) {
 	select {
 	case <-time.After(time.Duration(timeout) * time.Second):
-		plugin.Log.Infof("Applying modified configuration")
+		p.Log.Infof("Applying modified configuration")
 		// Simulate configuration change after timeout
 		err := localclient.DataChangeRequest(PluginName).
 			Put().
@@ -223,112 +216,134 @@ func (plugin *TapExamplePlugin) putModifiedData(ctx context.Context, timeout int
 			LinuxInterface(linuxTap2()).
 			Send().ReceiveReply()
 		if err != nil {
-			plugin.Log.Errorf("Modified configuration failed: %v", err)
+			p.Log.Errorf("Modified configuration failed: %v", err)
 		} else {
-			plugin.Log.Info("Modified configuration successful")
+			p.Log.Info("Modified configuration successful")
 		}
 	case <-ctx.Done():
 		// Cancel the scheduled re-configuration.
-		plugin.Log.Info("Modification of configuration canceled")
+		p.Log.Info("Modification of configuration canceled")
 	}
-	plugin.wg.Done()
+	p.wg.Done()
 }
 
 /* Example Data */
 
-func initialTap1() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func initialTap1() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:    "tap1",
-		Type:    vpp_intf.InterfaceType_TAP_INTERFACE,
+		Type:    vpp_intf.Interface_TAP,
 		Enabled: true,
-		Tap: &vpp_intf.Interfaces_Interface_Tap{
-			HostIfName: "linux-tap1",
+		Link: &vpp_intf.Interface_Tap{
+			Tap: &vpp_intf.TapLink{
+				Version: 2,
+			},
 		},
 	}
 }
 
-func modifiedTap1() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func modifiedTap1() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:        "tap1",
-		Type:        vpp_intf.InterfaceType_TAP_INTERFACE,
+		Type:        vpp_intf.Interface_TAP,
 		Enabled:     true,
 		PhysAddress: "12:E4:0E:D5:BC:DC",
 		IpAddresses: []string{
 			"10.0.0.11/24",
 		},
-		Tap: &vpp_intf.Interfaces_Interface_Tap{
-			HostIfName: "linux-tap1",
+		Link: &vpp_intf.Interface_Tap{
+			Tap: &vpp_intf.TapLink{
+				Version: 2,
+			},
 		},
 	}
 }
 
-func tap2() *vpp_intf.Interfaces_Interface {
-	return &vpp_intf.Interfaces_Interface{
+func tap2() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
 		Name:        "tap2",
-		Type:        vpp_intf.InterfaceType_TAP_INTERFACE,
+		Type:        vpp_intf.Interface_TAP,
 		Enabled:     true,
 		PhysAddress: "D5:BC:DC:12:E4:0E",
 		IpAddresses: []string{
 			"20.0.0.11/24",
 		},
-		Tap: &vpp_intf.Interfaces_Interface_Tap{
-			HostIfName: "linux-tap2",
+		Link: &vpp_intf.Interface_Tap{
+			Tap: &vpp_intf.TapLink{
+				Version: 2,
+			},
 		},
 	}
 }
 
-func initialLinuxTap1() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
-
+func initialLinuxTap1() *linux_intf.Interface {
+	return &linux_intf.Interface{
 		Name:        "linux-tap1",
-		Type:        linux_intf.LinuxInterfaces_AUTO_TAP,
+		Type:        linux_intf.Interface_TAP_TO_VPP,
 		Enabled:     true,
-		PhysAddress: "BC:FE:E9:5E:07:04",
-		Mtu:         1500,
+		PhysAddress: "88:88:88:88:88:88",
 		IpAddresses: []string{
-			"10.0.0.12/24",
+			"10.0.0.2/24",
+		},
+		HostIfName: "tap_to_vpp1",
+		Link: &linux_intf.Interface_Tap{
+			Tap: &linux_intf.TapLink{
+				VppTapIfName: "tap1",
+			},
 		},
 	}
 }
 
-func modifiedLinuxTap1() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func modifiedLinuxTap1() *linux_intf.Interface {
+	return &linux_intf.Interface{
 
 		Name:        "linux-tap1",
-		Type:        linux_intf.LinuxInterfaces_AUTO_TAP,
+		Type:        linux_intf.Interface_TAP_TO_VPP,
 		Enabled:     true,
 		PhysAddress: "BC:FE:E9:5E:07:04",
-		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
-			Name: "ns1",
-			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns1",
+			Type:      linux_namespace.NetNamespace_NSID,
 		},
 		Mtu: 1500,
 		IpAddresses: []string{
 			"10.0.0.12/24",
 		},
+		HostIfName: "tap_to_vpp1",
+		Link: &linux_intf.Interface_Tap{
+			Tap: &linux_intf.TapLink{
+				VppTapIfName: "tap1",
+			},
+		},
 	}
 }
 
-func linuxTap2() *linux_intf.LinuxInterfaces_Interface {
-	return &linux_intf.LinuxInterfaces_Interface{
+func linuxTap2() *linux_intf.Interface {
+	return &linux_intf.Interface{
 
 		Name:        "linux-tap2",
-		Type:        linux_intf.LinuxInterfaces_AUTO_TAP,
+		Type:        linux_intf.Interface_TAP_TO_VPP,
 		Enabled:     true,
 		PhysAddress: "5E:07:04:BC:FE:E9",
-		Namespace: &linux_intf.LinuxInterfaces_Interface_Namespace{
-			Name: "ns2",
-			Type: linux_intf.LinuxInterfaces_Interface_Namespace_NAMED_NS,
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns2",
+			Type:      linux_namespace.NetNamespace_NSID,
 		},
 		Mtu: 1500,
 		IpAddresses: []string{
 			"20.0.0.12/24",
 		},
+		HostIfName: "tap_to_vpp2",
+		Link: &linux_intf.Interface_Tap{
+			Tap: &linux_intf.TapLink{
+				VppTapIfName: "tap2",
+			},
+		},
 	}
 }
 
-func bridgeDomain() *vpp_l2.BridgeDomains_BridgeDomain {
-	return &vpp_l2.BridgeDomains_BridgeDomain{
+func bridgeDomain() *vpp_l2.BridgeDomain {
+	return &vpp_l2.BridgeDomain{
 		Name:                "br1",
 		Flood:               true,
 		UnknownUnicastFlood: true,
@@ -336,7 +351,7 @@ func bridgeDomain() *vpp_l2.BridgeDomains_BridgeDomain {
 		Learn:               true,
 		ArpTermination:      false,
 		MacAge:              0, /* means disable aging */
-		Interfaces: []*vpp_l2.BridgeDomains_BridgeDomain_Interfaces{
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
 			{
 				Name: "tap1",
 				BridgedVirtualInterface: false,

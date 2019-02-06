@@ -29,6 +29,11 @@ build: cmd examples
 clean: clean-cmd clean-examples
 
 # Install commands
+agent:
+	@echo "=> installing agent ${VERSION}"
+	@go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
+
+# Install commands
 install:
 	@echo "=> installing commands ${VERSION}"
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
@@ -38,13 +43,13 @@ install:
 # Build commands
 cmd:
 	@echo "=> building commands ${VERSION}"
-	cd cmd/vpp-agent 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd cmd/vpp-agent-ctl	&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd cmd/agentctl 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/vpp-agent 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/vpp-agent-ctl	&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/agentctl 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean commands
 clean-cmd:
-	@echo "=> cleaning binaries"
+	@echo "=> cleaning command binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
 	rm -f ./cmd/vpp-agent-ctl/vpp-agent-ctl
 	rm -f ./cmd/agentctl/agentctl
@@ -52,34 +57,38 @@ clean-cmd:
 # Build examples
 examples:
 	@echo "=> building examples"
-	cd examples/govpp_call 		    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_bd_cache 	    	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_iface_cache     	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_mapping_lookup  	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_mapping_watcher     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_veth_cache			&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_linux/tap 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_linux/veth 	&& go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_vpp/nat     && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_vpp/plugins && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/grpc_vpp/remote_client  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/grpc_vpp/notifications  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/custom_model	    	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/govpp_call 		    	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/remote_client   && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/notifications   && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/acl			 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/interconnect && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/l2           && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/acl          && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/nat          && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/vpp-l3       && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/tap 	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/veth 	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/nat      && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/plugins	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean examples
 clean-examples:
 	@echo "=> cleaning examples"
-	rm -f examples/govpp_call/govpp_call
-	rm -f examples/idx_bd_cache/idx_bd_cache
-	rm -f examples/idx_iface_cache/idx_iface_cache
-	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
-	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-	rm -f examples/idx_veth_cache/idx_veth_cache
-	rm -f examples/localclient_linux/tap/tap
-	rm -f examples/localclient_linux/veth/veth
-	rm -f examples/localclient_vpp/nat/nat
-	rm -f examples/localclient_vpp/plugins/plugins
-	rm -f examples/grpc_vpp/notifications/notifications
-	rm -f examples/grpc_vpp/remote_client/remote_client
+	cd examples/custom_model	    		&& go clean
+	cd examples/govpp_call 		    		&& go clean
+	cd examples/grpc_vpp/remote_client 		&& go clean
+	cd examples/grpc_vpp/notifications		&& go clean
+	cd examples/kvscheduler/acl 			&& go clean
+	cd examples/kvscheduler/interconnect 	&& go clean
+	cd examples/kvscheduler/l2 				&& go clean
+	cd examples/kvscheduler/acl 			&& go clean
+	cd examples/kvscheduler/nat 			&& go clean
+	cd examples/kvscheduler/vpp-l3 			&& go clean
+	cd examples/localclient_linux/tap 	 	&& go clean
+	cd examples/localclient_linux/veth 	 	&& go clean
+	cd examples/localclient_vpp/nat      	&& go clean
+	cd examples/localclient_vpp/plugins	 	&& go clean
 
 # Run tests
 test:
@@ -101,21 +110,22 @@ test-cover-xml: test-cover
 	@echo "=> coverage report generated into ${COVER_DIR}/coverage.xml"
 
 # Code generation
-generate: generate-proto generate-binapi
+generate: generate-proto generate-binapi generate-desc-adapters
 
 # Get generator tools
 get-proto-generators:
-	go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
+	@go install ./vendor/github.com/gogo/protobuf/protoc-gen-gogo
 
 # Generate proto models
 generate-proto: get-proto-generators
 	@echo "=> generating proto"
 	cd plugins/linux/model && go generate
 	cd plugins/vpp/model && go generate
+	./scripts/genprotos.sh
 
 # Get generator tools
 get-binapi-generators:
-	go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
+	@go install ./vendor/git.fd.io/govpp.git/cmd/binapi-generator
 
 # Generate binary api
 generate-binapi: get-binapi-generators
@@ -123,6 +133,25 @@ generate-binapi: get-binapi-generators
 	cd plugins/vpp/binapi && go generate
 	@echo "=> applying fix patches"
 	find plugins/vpp/binapi -maxdepth 1 -type f -name '*.patch' -exec patch --no-backup-if-mismatch -p1 -i {} \;
+	@echo
+
+get-desc-adapter-generator:
+	@go install ./plugins/kvscheduler/descriptor-adapter
+
+generate-desc-adapters: get-desc-adapter-generator
+	@echo "=> generating descriptor adapters"
+	cd plugins/linuxv2/ifplugin && go generate
+	cd plugins/linuxv2/l3plugin && go generate
+	cd plugins/vppv2/aclplugin && go generate
+	cd plugins/vppv2/ifplugin && go generate
+	cd plugins/vppv2/ipsecplugin && go generate
+	cd plugins/vppv2/l2plugin && go generate
+	cd plugins/vppv2/l3plugin && go generate
+	cd plugins/vppv2/natplugin && go generate
+	cd plugins/vppv2/puntplugin && go generate
+	cd plugins/vppv2/stnplugin && go generate
+	cd plugins/vppv2/puntplugin && go generate
+	@echo
 
 verify-binapi:
 	@echo "=> verifying binary api"

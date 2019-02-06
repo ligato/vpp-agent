@@ -1,12 +1,13 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"log"
 
 	"github.com/ligato/cn-infra/agent"
+	"github.com/ligato/cn-infra/examples/grpc-plugin/insecure"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/logging/logrus"
 	"github.com/ligato/cn-infra/rpc/grpc"
 	"github.com/ligato/cn-infra/rpc/rest"
 	"golang.org/x/net/context"
@@ -22,11 +23,25 @@ import (
 const PluginName = "myPlugin"
 
 func main() {
+	grpcPlug := grpc.NewPlugin(
+		grpc.UseHTTP(&rest.DefaultPlugin),
+		grpc.UseConf(grpc.Config{
+			Endpoint: "localhost:9111",
+		}),
+		grpc.UseAuth(&grpc.Authenticator{
+			Username: "testuser",
+			Password: "testpwd",
+			Token:    "testtoken",
+		}),
+		grpc.UseTLS(&tls.Config{
+			Certificates: []tls.Certificate{insecure.Cert},
+			ClientCAs:    insecure.CertPool,
+			ClientAuth:   tls.VerifyClientCertIfGiven,
+		}),
+	)
 	p := &ExamplePlugin{
-		GRPC: grpc.NewPlugin(
-			grpc.UseHTTP(&rest.DefaultPlugin),
-		),
-		Log: logging.ForPlugin(PluginName),
+		GRPC: grpcPlug,
+		Log:  logging.ForPlugin(PluginName),
 	}
 
 	a := agent.NewAgent(agent.AllPlugins(p))
@@ -43,21 +58,21 @@ type ExamplePlugin struct {
 }
 
 // String return name of the plugin.
-func (plugin *ExamplePlugin) String() string {
+func (p *ExamplePlugin) String() string {
 	return PluginName
 }
 
 // Init demonstrates the usage of PluginLogger API.
-func (plugin *ExamplePlugin) Init() error {
-	plugin.Log.Info("Registering greeter")
+func (p *ExamplePlugin) Init() error {
+	p.Log.Info("Registering greeter")
 
-	helloworld.RegisterGreeterServer(plugin.GRPC.GetServer(), &GreeterService{})
+	helloworld.RegisterGreeterServer(p.GRPC.GetServer(), &GreeterService{})
 
 	return nil
 }
 
 // Close closes the plugin.
-func (plugin *ExamplePlugin) Close() error {
+func (p *ExamplePlugin) Close() error {
 	return nil
 }
 
@@ -70,7 +85,8 @@ func (*GreeterService) SayHello(ctx context.Context, request *helloworld.HelloRe
 	if request.Name == "" {
 		return nil, errors.New("not filled name in the request")
 	}
-	logrus.DefaultLogger().Infof("greeting client: %v", request.Name)
 
-	return &helloworld.HelloReply{Message: "hello " + request.Name}, nil
+	logging.Infof("Greeting client: %v", request.Name)
+
+	return &helloworld.HelloReply{Message: "Greetings " + request.Name}, nil
 }

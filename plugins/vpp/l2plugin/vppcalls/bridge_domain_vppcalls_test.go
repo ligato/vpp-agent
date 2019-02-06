@@ -18,11 +18,10 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 	"github.com/ligato/vpp-agent/tests/vppcallmock"
 	. "github.com/onsi/gomega"
 )
@@ -33,7 +32,7 @@ const (
 )
 
 // Input test data for creating bridge domain
-var createTestDataInBD *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
+var createTestDataInBD *l2.BridgeDomain = &l2.BridgeDomain{
 	Name:                dummyBridgeDomainName,
 	Flood:               true,
 	UnknownUnicastFlood: true,
@@ -57,7 +56,7 @@ var createTestDataOutBD *l2ba.BridgeDomainAddDel = &l2ba.BridgeDomainAddDel{
 }
 
 // Input test data for updating bridge domain
-var updateTestDataInBd *l2.BridgeDomains_BridgeDomain = &l2.BridgeDomains_BridgeDomain{
+var updateTestDataInBd *l2.BridgeDomain = &l2.BridgeDomain{
 	Name:                dummyBridgeDomainName,
 	Flood:               false,
 	UnknownUnicastFlood: false,
@@ -90,7 +89,7 @@ func TestVppAddBridgeDomain(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	err := bdHandler.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD)
+	err := bdHandler.AddBridgeDomain(dummyBridgeDomain, createTestDataInBD)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(createTestDataOutBD))
@@ -103,10 +102,10 @@ func TestVppAddBridgeDomainError(t *testing.T) {
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{Retval: 1})
 	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2Bridge{})
 
-	err := bdHandler.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD)
+	err := bdHandler.AddBridgeDomain(dummyBridgeDomain, createTestDataInBD)
 	Expect(err).Should(HaveOccurred())
 
-	err = bdHandler.VppAddBridgeDomain(dummyBridgeDomain, createTestDataInBD)
+	err = bdHandler.AddBridgeDomain(dummyBridgeDomain, createTestDataInBD)
 	Expect(err).Should(HaveOccurred())
 }
 
@@ -115,7 +114,7 @@ func TestVppDeleteBridgeDomain(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
-	err := bdHandler.VppDeleteBridgeDomain(dummyBridgeDomain)
+	err := bdHandler.DeleteBridgeDomain(dummyBridgeDomain)
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(deleteTestDataOutBd))
@@ -128,17 +127,17 @@ func TestVppDeleteBridgeDomainError(t *testing.T) {
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{Retval: 1})
 	ctx.MockVpp.MockReply(&l2ba.SwInterfaceSetL2Bridge{})
 
-	err := bdHandler.VppDeleteBridgeDomain(dummyBridgeDomain)
+	err := bdHandler.DeleteBridgeDomain(dummyBridgeDomain)
 	Expect(err).Should(HaveOccurred())
 
-	err = bdHandler.VppDeleteBridgeDomain(dummyBridgeDomain)
+	err = bdHandler.DeleteBridgeDomain(dummyBridgeDomain)
 	Expect(err).Should(HaveOccurred())
 }
 
-func bdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BridgeDomainVppAPI, ifaceidx.SwIfIndexRW) {
+func bdTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.BridgeDomainVppAPI, ifaceidx.IfaceMetadataIndexRW) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifIndex := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "bd-test-ifidx", nil))
+	ifIndex := ifaceidx.NewIfaceIndex(log, "bd-test-ifidx")
 	bdHandler := vppcalls.NewBridgeDomainVppHandler(ctx.MockChannel, ifIndex, log)
 	return ctx, bdHandler, ifIndex
 }

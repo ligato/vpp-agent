@@ -20,22 +20,36 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// AddStaticRoute creates the new static route
-func (h *NetLinkHandler) AddStaticRoute(name string, route *netlink.Route) error {
+// AddRoute creates the new static route
+func (h *NetLinkHandler) AddRoute(route *netlink.Route) error {
 	return netlink.RouteAdd(route)
 }
 
-// ReplaceStaticRoute removes the static route
-func (h *NetLinkHandler) ReplaceStaticRoute(name string, route *netlink.Route) error {
+// ReplaceRoute removes the static route
+func (h *NetLinkHandler) ReplaceRoute(route *netlink.Route) error {
 	return netlink.RouteReplace(route)
 }
 
-// DelStaticRoute removes the static route
-func (h *NetLinkHandler) DelStaticRoute(name string, route *netlink.Route) error {
+// DelRoute removes the static route
+func (h *NetLinkHandler) DelRoute(route *netlink.Route) error {
 	return netlink.RouteDel(route)
 }
 
-// GetStaticRoutes reads linux routes. Possible to filter by interface and IP family.
-func (h *NetLinkHandler) GetStaticRoutes(link netlink.Link, family int) ([]netlink.Route, error) {
-	return netlink.RouteList(link, family)
+// GetRoutes reads all configured static routes with the given outgoing
+// interface.
+// <interfaceIdx> works as filter, if set to zero, all routes in the namespace
+// are returned.
+func (h *NetLinkHandler) GetRoutes(interfaceIdx int) (v4Routes, v6Routes []netlink.Route, err error) {
+	var link netlink.Link
+	if interfaceIdx != 0 {
+		// netlink.RouteList reads only link index
+		link = &netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Index: interfaceIdx}}
+	}
+
+	v4Routes, err = netlink.RouteList(link, netlink.FAMILY_V4)
+	if err != nil {
+		return
+	}
+	v6Routes, err = netlink.RouteList(link, netlink.FAMILY_V6)
+	return
 }

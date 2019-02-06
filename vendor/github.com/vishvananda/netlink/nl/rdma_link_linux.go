@@ -10,7 +10,6 @@ const (
 
 const (
 	RDMA_NLDEV_CMD_GET = 1
-	RDMA_NLDEV_CMD_SET = 2
 )
 
 const (

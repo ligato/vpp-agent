@@ -33,7 +33,7 @@ vpp_term: Issue Command
     \    Run Keyword If      '${result}'=='FAIL'      Append To List    ${failed_it}    ${it_num}
     \    Run Keyword If      '${result}'=='FAIL'      Log  Warning, no match found #vpp console output!	WARN
     \    Exit For Loop If    '${result}'=='PASS'
-    Should Be Empty  ${failed_it}  msg='Fail in this checks ${failed_it}'
+    Run Keyword And Ignore Error  Should Be Empty  ${failed_it}  msg='Fail in this checks ${failed_it}'
 #    ${out}=            Write To Machine Until String    ${node}_term    ${command}    ${${node}_VPP_TERM_PROMPT}    delay=${delay}
 ##    Should Contain     ${out}             ${${node}_VPP_TERM_PROMPT}
     [Return]           ${out}
@@ -45,13 +45,7 @@ vpp_term: Exit VPP Terminal
     ${out}=            Write To Machine   ${node}_term    ${command}
     [Return]           ${out}
 
-vpp_term: Show Interfaces
-    [Arguments]        ${node}    ${interface}=${EMPTY}
-    [Documentation]    Show interfaces through vpp terminal
-    ${out}=            vpp_term: Issue Command  ${node}   sh int ${interface}
-    [Return]           ${out}
-
-vpp_term: Show Vpp Logging
+vppp_term: Show Vpp Logging
     [Arguments]        ${node}
     [Documentation]    Show interfaces through vpp terminal
     ${out}=            vpp_term: Issue Command  ${node}   sh logging
@@ -61,6 +55,12 @@ vpp_term: Show Runtime
     [Arguments]        ${node}
     [Documentation]    Show runtime through vpp terminal
     ${out}=            vpp_term: Issue Command  ${node}   show runtime
+    [Return]           ${out}
+
+vpp_term: Show Interfaces
+    [Arguments]        ${node}    ${interface}=${EMPTY}
+    [Documentation]    Show interfaces through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   sh int ${interface}
     [Return]           ${out}
 
 vpp_term: Show Interfaces Address
@@ -417,6 +417,44 @@ vpp_term: Show Local SIDs
     [Arguments]        ${node}
     [Documentation]    Show locasids through vpp terminal
     ${out}=            vpp_term: Issue Command  ${node}   sh sr localsids
+    [Return]           ${out}
+
+vpp_term: Check DNAT exists
+    [Arguments]        ${node}     ${dnat_file}    #${interface}    ${address}
+    [Documentation]    Checking if specified dnat exists
+    ${localsidsStr}=   vpp_term: Show DNAT Static Mapping    ${node}
+    Create File        /tmp/dnat_config_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=   OperatingSystem.Get File    /tmp/dnat_config_output.txt
+    ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
+    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/${dnat_file}
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Should Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Show DNAT Static Mapping
+    [Arguments]        ${node}
+    [Documentation]    Show locasids through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   sh nat44 static mappings
+    [Return]           ${out}
+
+vpp_term: Check DNAT Global exists
+    [Arguments]        ${node}     ${dnat_file}    #${interface}    ${address}
+    [Documentation]    Checking if specified dnat exists
+    ${localsidsStr}=   vpp_term: Show DNAT Global Config    ${node}
+    Create File        /tmp/dnat_config_output.txt    ${localsidsStr}   #FIXME remove dirty trick with saving string to file just to be able to match substring in string
+    ${localsidsStr}=   OperatingSystem.Get File    /tmp/dnat_config_output.txt
+    ${localsidsStr}=   Basic_Operations.Replace_Rn_N   ${localsidsStr}    #FIX for BUG with New Line
+    ${localsidsStr}=   Convert To Lowercase    ${localsidsStr}
+    ${matchdata}=      OperatingSystem.Get File    ${CURDIR}/../suites/crud/test_data/${dnat_file}
+    ${matchdata}=      Replace Variables           ${matchdata}
+    ${matchdata}=      Convert To Lowercase    ${matchdata}
+    Should Contain    ${localsidsStr}    ${matchdata}
+
+vpp_term: Show DNAT Global Config
+    [Arguments]        ${node}
+    [Documentation]    Show locasids through vpp terminal
+    ${out}=            vpp_term: Issue Command  ${node}   sh nat44 interfaces
     [Return]           ${out}
 
 vpp_term: Check Local SID Deleted

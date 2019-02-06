@@ -15,48 +15,34 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net"
-	"os"
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
-	"github.com/ligato/cn-infra/logging"
+	"github.com/ligato/cn-infra/infra"
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/rpc"
 	"github.com/namsral/flag"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-)
 
-const (
-	defaultAddress = "localhost:9111"
-	defaultSocket  = "tcp"
-	requestPeriod  = 3
+	"github.com/ligato/vpp-agent/api/configurator"
 )
 
 var (
-	address    = defaultAddress
-	socketType string
-	reqPer     = requestPeriod
+	address    = flag.String("address", "localhost:9111", "address of GRPC server")
+	socketType = flag.String("socket-type", "tcp", "[tcp, tcp4, tcp6, unix, unixpacket]")
+	reqPer     = flag.Int("request-period", 3, "notification request period in seconds")
 )
-
-// init sets the default logging level
-func init() {
-	logrus.DefaultLogger().SetOutput(os.Stdout)
-	logrus.DefaultLogger().SetLevel(logging.DebugLevel)
-}
 
 // Start Agent plugins selected for this example.
 func main() {
-	flag.StringVar(&address, "address", defaultAddress, "address of GRPC server")
-	flag.StringVar(&socketType, "socket-type", defaultSocket, "[tcp, tcp4, tcp6, unix, unixpacket]")
-	flag.IntVar(&reqPer, "request-period", requestPeriod, "notification request period in seconds")
-
 	// Inject dependencies to example plugin
 	ep := &ExamplePlugin{}
+	ep.SetName("remote-client-example")
+	ep.Setup()
+
 	// Start Agent
 	a := agent.NewAgent(
 		agent.AllPlugins(ep),
@@ -66,71 +52,56 @@ func main() {
 	}
 }
 
-// PluginName represents name of plugin.
-const PluginName = "grpc-notification-example"
-
 // ExamplePlugin demonstrates the use of grpc to watch on VPP notifications using vpp-agent.
 type ExamplePlugin struct {
+	infra.PluginDeps
+
 	conn *grpc.ClientConn
 }
 
 // Init initializes example plugin.
-func (plugin *ExamplePlugin) Init() (err error) {
+func (p *ExamplePlugin) Init() (err error) {
 	// Set up connection to the server.
-	switch socketType {
-	case "tcp", "tcp4", "tcp6", "unix", "unixpacket":
-		plugin.conn, err = grpc.Dial("unix", grpc.WithInsecure(),
-			grpc.WithDialer(dialer(socketType, address, 2*time.Second)))
-	default:
-		return fmt.Errorf("unknown gRPC socket type: %s", socketType)
-	}
+	p.conn, err = grpc.Dial("unix",
+		grpc.WithInsecure(),
+		grpc.WithDialer(dialer(*socketType, *address, 2*time.Second)))
 
 	if err != nil {
 		return err
 	}
 
+	client := configurator.NewConfiguratorClient(p.conn)
+
 	// Start notification watcher.
-	go plugin.watchNotifications()
+	go p.watchNotifications(client)
 
 	logrus.DefaultLogger().Info("Initialization of the example plugin has completed")
 	return err
 }
 
-// Close does nothing
-func (plugin *ExamplePlugin) Close() error {
-	return nil
-}
-
-// String returns plugin name
-func (plugin *ExamplePlugin) String() string {
-	return PluginName
-}
-
 // Get is an implementation of client-side statistics streaming.
-func (plugin *ExamplePlugin) watchNotifications() {
-	var nextIdx uint32 = 1
+func (p *ExamplePlugin) watchNotifications(client configurator.ConfiguratorClient) {
+	var nextIdx uint32
 
+	logrus.DefaultLogger().Info("Watching..")
 	for {
-		// Get client for notification service
-		client := rpc.NewNotificationServiceClient(plugin.conn)
 		// Prepare request with the initial index
-		request := &rpc.NotificationRequest{
+		request := &configurator.NotificationRequest{
 			Idx: nextIdx,
 		}
 		// Get stream object
-		stream, err := client.Get(context.Background(), request)
+		stream, err := client.Notify(context.Background(), request)
 		if err != nil {
 			logrus.DefaultLogger().Error(err)
 			return
 		}
 		// Receive all message from the stream
-		logrus.DefaultLogger().Info("Sending request ... ")
 		var recvNotifs int
 		for {
 			notif, err := stream.Recv()
 			if err == io.EOF {
 				if recvNotifs == 0 {
-					logrus.DefaultLogger().Info("No new notifications")
+					//logrus.DefaultLogger().Info("No new notifications")
 				} else {
 					logrus.DefaultLogger().Infof("%d new notifications received", recvNotifs)
 				}
@@ -141,14 +112,14 @@ func (plugin *ExamplePlugin) watchNotifications() {
 				return
 			}
 
-			logrus.DefaultLogger().Infof("(IDX: %d) Received notif: %v",
-				notif.NextIdx-1, notif.NIf)
+			logrus.DefaultLogger().Infof("Notification[%d]: %v",
+				notif.NextIdx-1, notif.Notification)
 			nextIdx = notif.NextIdx
 			recvNotifs++
 		}
 
 		// Wait till next request
-		time.Sleep(time.Duration(reqPer) * time.Second)
+		time.Sleep(time.Duration(*reqPer) * time.Second)
 	}
 }
 

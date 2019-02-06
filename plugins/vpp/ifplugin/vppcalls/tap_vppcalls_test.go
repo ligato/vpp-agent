@@ -17,10 +17,10 @@ package vppcalls_test
 import (
 	"testing"
 
+	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
-	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -33,10 +33,9 @@ func TestAddTapInterface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interfaces_Interface_Tap{
+	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    1,
 		HostIfName: "hostIf",
-		Namespace:  "ns1",
 		RxRingSize: 1,
 		TxRingSize: 1,
 	})
@@ -63,10 +62,9 @@ func TestAddTapInterfaceV2(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interfaces_Interface_Tap{
+	swIfIdx, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    2,
 		HostIfName: "hostIf",
-		Namespace:  "ns1",
 		RxRingSize: 1,
 		TxRingSize: 1,
 	})
@@ -78,7 +76,6 @@ func TestAddTapInterfaceV2(t *testing.T) {
 		if ok {
 			Expect(vppMsg.UseRandomMac).To(BeEquivalentTo(1))
 			Expect(vppMsg.HostIfName).To(BeEquivalentTo([]byte("hostIf")))
-			Expect(vppMsg.HostNamespace).To(BeEquivalentTo([]byte("ns1")))
 			msgCheck = true
 		}
 	}
@@ -105,10 +102,9 @@ func TestAddTapInterfaceError(t *testing.T) {
 	ctx.MockVpp.MockReply(&tap.TapConnect{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interfaces_Interface_Tap{
+	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    1,
 		HostIfName: "hostIf",
-		Namespace:  "ns1",
 		RxRingSize: 1,
 		TxRingSize: 1,
 	})
@@ -124,10 +120,9 @@ func TestAddTapInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.Interfaces_Interface_Tap{
+	_, err := ifHandler.AddTapInterface("tapIf", &ifModel.TapLink{
 		Version:    1,
 		HostIfName: "hostIf",
-		Namespace:  "ns1",
 		RxRingSize: 1,
 		TxRingSize: 1,
 	})

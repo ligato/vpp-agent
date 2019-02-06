@@ -18,12 +18,12 @@ import (
 	"fmt"
 
 	"github.com/go-errors/errors"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/vmxnet3"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // AddVmxNet3 implements interface handler
-func (h *IfVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.Interfaces_Interface_VmxNet3) (swIdx uint32, err error) {
+func (h *IfVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.VmxNet3Link) (swIdx uint32, err error) {
 	var pci uint32
 	pci, err = derivePCI(ifName)
 	if err != nil {
@@ -50,8 +50,8 @@ func (h *IfVppHandler) AddVmxNet3(ifName string, vmxNet3 *interfaces.Interfaces_
 	return reply.SwIfIndex, h.SetInterfaceTag(ifName, reply.SwIfIndex)
 }
 
-// DelVmxNet3 implements interface handler
-func (h *IfVppHandler) DelVmxNet3(ifName string, ifIdx uint32) error {
+// DeleteVmxNet3 implements interface handler
+func (h *IfVppHandler) DeleteVmxNet3(ifName string, ifIdx uint32) error {
 	req := &vmxnet3.Vmxnet3Delete{
 		SwIfIndex: ifIdx,
 	}

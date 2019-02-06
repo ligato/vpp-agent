@@ -1,129 +1,136 @@
-// Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2018 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package aclidx
 
 import (
-	"github.com/ligato/vpp-agent/idxvpp"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
-	acl_model "github.com/ligato/vpp-agent/plugins/vpp/model/acl"
+	"time"
+
+	"github.com/ligato/cn-infra/idxmap"
+	"github.com/ligato/cn-infra/logging"
+
+	"github.com/ligato/vpp-agent/pkg/idxvpp"
 )
 
-// ACLIndex provides read-only access to mapping between ACL indices (used internally in VPP)
+// ACLMetadataIndex provides read-only access to mapping between ACL indices (used internally in VPP)
 // and ACL names.
-type ACLIndex interface {
-	// GetMapping returns internal read-only mapping with metadata.
-	GetMapping() idxvpp.NameToIdxRW
-
+type ACLMetadataIndex interface {
 	// LookupIdx looks up previously stored item identified by index in mapping.
-	LookupIdx(name string) (idx uint32, metadata *acl_model.AccessLists_Acl, exists bool)
+	LookupByName(name string) (metadata *ACLMetadata, exists bool)
 
 	// LookupName looks up previously stored item identified by name in mapping.
-	LookupName(idx uint32) (name string, metadata *acl_model.AccessLists_Acl, exists bool)
+	LookupByIndex(idx uint32) (name string, metadata *ACLMetadata, exists bool)
 
-	// WatchNameToIdx allows to subscribe for watching changes in aclIndex mapping.
-	WatchNameToIdx(subscriber string, pluginChannel chan IdxDto)
+	// WatchAcls
+	WatchAcls(subscriber string, channel chan<- ACLMetadataDto)
 }
 
-// ACLIndexRW is mapping between ACL indices (used internally in VPP) and ACL names.
-type ACLIndexRW interface {
-	ACLIndex
-
-	// RegisterName adds a new item into name-to-index mapping.
-	RegisterName(name string, idx uint32, ifMeta *acl_model.AccessLists_Acl)
-
-	// UnregisterName removes an item identified by name from mapping.
-	UnregisterName(name string) (idx uint32, metadata *acl_model.AccessLists_Acl, exists bool)
-
-	// Clear removes all ACL entries from the mapping.
-	Clear()
+// ACLMetadataIndexRW is mapping between ACL indices (used internally in VPP) and ACL names.
+type ACLMetadataIndexRW interface {
+	ACLMetadataIndex
+	idxmap.NamedMappingRW
 }
 
-// aclIndex is type-safe implementation of mapping between ACL index and name. It holds metadata
-// of type *AccessLists_Acl as well.
-type aclIndex struct {
-	mapping idxvpp.NameToIdxRW
+// ACLMetadata represents metadata for ACL.
+type ACLMetadata struct {
+	Index uint32
+	L2    bool
 }
 
-// IdxDto represents an item sent through watch channel in aclIndex.
-// In contrast to NameToIdxDto, it contains typed metadata.
-type IdxDto struct {
-	idxvpp.NameToIdxDtoWithoutMeta
-	Metadata *acl_model.AccessLists_Acl
+// GetIndex returns index of the ACL.
+func (m *ACLMetadata) GetIndex() uint32 {
+	return m.Index
 }
 
-// NewACLIndex creates new instance of aclIndex.
-func NewACLIndex(mapping idxvpp.NameToIdxRW) ACLIndexRW {
-	return &aclIndex{mapping: mapping}
+// ACLMetadataDto represents an item sent through watch channel in aclIndex.
+type ACLMetadataDto struct {
+	idxmap.NamedMappingEvent
+	Metadata *ACLMetadata
 }
 
-// GetMapping returns internal read-only mapping. It is used in tests to inspect the content of the aclIndex.
-func (acl *aclIndex) GetMapping() idxvpp.NameToIdxRW {
-	return acl.mapping
+type aclMetadataIndex struct {
+	idxmap.NamedMappingRW
+
+	log         logging.Logger
+	nameToIndex idxvpp.NameToIndex
 }
 
-// RegisterName adds new item into name-to-index mapping.
-func (acl *aclIndex) RegisterName(name string, idx uint32, ifMeta *acl_model.AccessLists_Acl) {
-	acl.mapping.RegisterName(name, idx, ifMeta)
-}
-
-// UnregisterName removes an item identified by name from mapping.
-func (acl *aclIndex) UnregisterName(name string) (idx uint32, metadata *acl_model.AccessLists_Acl, exists bool) {
-	idx, meta, exists := acl.mapping.UnregisterName(name)
-	return idx, acl.castMetadata(meta), exists
-}
-
-// Clear removes all ACL entries from the cache.
-func (acl *aclIndex) Clear() {
-	acl.mapping.Clear()
-}
-
-// LookupIdx looks up previously stored item identified by index in mapping.
-func (acl *aclIndex) LookupIdx(name string) (idx uint32, metadata *acl_model.AccessLists_Acl, exists bool) {
-	idx, meta, exists := acl.mapping.LookupIdx(name)
-	if exists {
-		metadata = acl.castMetadata(meta)
+// NewACLIndex creates new instance of aclMetadataIndex.
+func NewACLIndex(logger logging.Logger, title string) ACLMetadataIndexRW {
+	mapping := idxvpp.NewNameToIndex(logger, title, indexMetadata)
+	return &aclMetadataIndex{
+		NamedMappingRW: mapping,
+		log:            logger,
+		nameToIndex:    mapping,
 	}
-	return idx, metadata, exists
 }
 
-// LookupName looks up previously stored item identified by name in mapping.
-func (acl *aclIndex) LookupName(idx uint32) (name string, metadata *acl_model.AccessLists_Acl, exists bool) {
-	name, meta, exists := acl.mapping.LookupName(idx)
-	if exists {
-		metadata = acl.castMetadata(meta)
-	}
-	return name, metadata, exists
-}
-
-func (acl *aclIndex) castMetadata(meta interface{}) *acl_model.AccessLists_Acl {
-	if ifMeta, ok := meta.(*acl_model.AccessLists_Acl); ok {
-		return ifMeta
-	}
-	return nil
-}
-
-// WatchNameToIdx allows to subscribe for watching changes in swIfIndex mapping.
-func (acl *aclIndex) WatchNameToIdx(subscriber string, pluginChannel chan IdxDto) {
-	ch := make(chan idxvpp.NameToIdxDto)
-	acl.mapping.Watch(subscriber, nametoidx.ToChan(ch))
-	go func() {
-		for c := range ch {
-			pluginChannel <- IdxDto{
-				NameToIdxDtoWithoutMeta: c.NameToIdxDtoWithoutMeta,
-				Metadata:                acl.castMetadata(c.Metadata),
-			}
+// LookupByName looks up previously stored item identified by index in mapping.
+func (aclIdx *aclMetadataIndex) LookupByName(name string) (metadata *ACLMetadata, exists bool) {
+	meta, found := aclIdx.GetValue(name)
+	if found {
+		if typedMeta, ok := meta.(*ACLMetadata); ok {
+			return typedMeta, found
 		}
-	}()
+	}
+	return nil, false
+}
+
+// LookupByIndex looks up previously stored item identified by name in mapping.
+func (aclIdx *aclMetadataIndex) LookupByIndex(idx uint32) (name string, metadata *ACLMetadata, exists bool) {
+	var item idxvpp.WithIndex
+	name, item, exists = aclIdx.nameToIndex.LookupByIndex(idx)
+	if exists {
+		var isIfaceMeta bool
+		metadata, isIfaceMeta = item.(*ACLMetadata)
+		if !isIfaceMeta {
+			exists = false
+		}
+	}
+	return
+}
+
+// WatchAcls ...
+func (aclIdx *aclMetadataIndex) WatchAcls(subscriber string, channel chan<- ACLMetadataDto) {
+	watcher := func(dto idxmap.NamedMappingGenericEvent) {
+		typedMeta, ok := dto.Value.(*ACLMetadata)
+		if !ok {
+			return
+		}
+		msg := ACLMetadataDto{
+			NamedMappingEvent: dto.NamedMappingEvent,
+			Metadata:          typedMeta,
+		}
+		select {
+		case channel <- msg:
+		case <-time.After(idxmap.DefaultNotifTimeout):
+			aclIdx.log.Warn("Unable to deliver notification")
+		}
+	}
+	if err := aclIdx.Watch(subscriber, watcher); err != nil {
+		aclIdx.log.Error(err)
+	}
+}
+
+// indexMetadata is an index function used for ACL metadata.
+func indexMetadata(metaData interface{}) map[string][]string {
+	indexes := make(map[string][]string)
+
+	ifMeta, ok := metaData.(*ACLMetadata)
+	if !ok || ifMeta == nil {
+		return indexes
+	}
+
+	return indexes
 }

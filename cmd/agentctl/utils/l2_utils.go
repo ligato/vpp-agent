@@ -14,6 +14,7 @@
 
 package utils
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -103,3 +104,4 @@ func validateBdIdentifiers(label string, name string) {
 		ExitWithError(ExitInvalidInput, errors.New("Missing bridge domain name"))
 	}
 }
+*/

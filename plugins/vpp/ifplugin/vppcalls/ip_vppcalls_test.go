@@ -82,6 +82,7 @@ func TestAddInterfaceIPError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
+	Expect(err).To(BeNil())
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddress{})
 
 	err = ifHandler.AddInterfaceIP(1, ipNet)
@@ -94,6 +95,7 @@ func TestAddInterfaceIPRetval(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
+	Expect(err).To(BeNil())
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{
 		Retval: 1,
 	})
@@ -163,6 +165,7 @@ func TestDelInterfaceIPError(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
+	Expect(err).To(BeNil())
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddress{})
 
 	err = ifHandler.DelInterfaceIP(1, ipNet)
@@ -175,6 +178,7 @@ func TestDelInterfaceIPRetval(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	_, ipNet, err := net.ParseCIDR("10.0.0.1/24")
+	Expect(err).To(BeNil())
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceAddDelAddressReply{
 		Retval: 1,
 	})

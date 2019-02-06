@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/ligato/cn-infra/logging/logrus"
-	"github.com/ligato/vpp-agent/idxvpp/nametoidx"
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin/vppcalls"
@@ -26,61 +26,65 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var arpEntries = []vppcalls.ArpEntry{
+var arpEntries = []*l3.ARPEntry{
 	{
-		Interface:  1,
-		IPAddress:  []byte{192, 168, 10, 21},
-		MacAddress: "59:6C:45:59:8E:BD",
-		Static:     true,
+		Interface:   "if1",
+		IpAddress:   "192.168.10.21",
+		PhysAddress: "59:6C:45:59:8E:BD",
+		Static:      true,
 	},
 	{
-		Interface:  1,
-		IPAddress:  []byte{192, 168, 10, 22},
-		MacAddress: "6C:45:59:59:8E:BD",
-		Static:     false,
+		Interface:   "if1",
+		IpAddress:   "192.168.10.22",
+		PhysAddress: "6C:45:59:59:8E:BD",
+		Static:      false,
 	},
 	{
-		Interface:  1,
-		IPAddress:  []byte{0xde, 0xad, 0, 0, 0, 0, 0, 0, 0xde, 0xad, 0, 0, 0, 0, 0, 1},
-		MacAddress: "8E:BD:6C:45:59:59",
-		Static:     false,
+		Interface:   "if1",
+		IpAddress:   "dead::1",
+		PhysAddress: "8E:BD:6C:45:59:59",
+		Static:      false,
 	},
 }
 
 // Test adding of ARP
 func TestAddArp(t *testing.T) {
-	ctx, arpHandler := arpTestSetup(t)
+	ctx, ifIndexes, arpHandler := arpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
+	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err := arpHandler.VppAddArp(&arpEntries[0])
+	err := arpHandler.VppAddArp(arpEntries[0])
 	Expect(err).To(Succeed())
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err = arpHandler.VppAddArp(&arpEntries[1])
+	err = arpHandler.VppAddArp(arpEntries[1])
 	Expect(err).To(Succeed())
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err = arpHandler.VppAddArp(&arpEntries[2])
+	err = arpHandler.VppAddArp(arpEntries[2])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{Retval: 1})
-	err = arpHandler.VppAddArp(&arpEntries[0])
-	Expect(err).To(Not(BeNil()))
+	err = arpHandler.VppAddArp(arpEntries[0])
+	Expect(err).NotTo(BeNil())
 }
 
 // Test deleting of ARP
 func TestDelArp(t *testing.T) {
-	ctx, arpHandler := arpTestSetup(t)
+	ctx, ifIndexes, arpHandler := arpTestSetup(t)
 	defer ctx.TeardownTestCtx()
 
+	ifIndexes.Put("if1", &ifaceidx.IfaceMetadata{SwIfIndex: 1})
+
 	ctx.MockVpp.MockReply(&ip.IPNeighborAddDelReply{})
-	err := arpHandler.VppDelArp(&arpEntries[0])
+	err := arpHandler.VppDelArp(arpEntries[0])
 	Expect(err).To(Succeed())
 }
 
-func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, vppcalls.ArpVppAPI) {
+func arpTestSetup(t *testing.T) (*vppcallmock.TestCtx, ifaceidx.IfaceMetadataIndexRW, vppcalls.ArpVppAPI) {
 	ctx := vppcallmock.SetupTestCtx(t)
 	log := logrus.NewLogger("test-log")
-	ifIndexes := ifaceidx.NewSwIfIndex(nametoidx.NewNameToIdx(log, "arp-if-idx", nil))
+	ifIndexes := ifaceidx.NewIfaceIndex(logrus.NewLogger("test"), "test")
 	arpHandler := vppcalls.NewArpVppHandler(ctx.MockChannel, ifIndexes, log)
-	return ctx, arpHandler
+	return ctx, ifIndexes, arpHandler
 }

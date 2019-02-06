@@ -28,6 +28,7 @@ type Stats struct {
 	Timeouts uint32 // number of times a wait timeout occurred
 
 	TotalConns uint32 // number of total connections in the pool
+	FreeConns  uint32 // deprecated - use IdleConns
 	IdleConns  uint32 // number of idle connections in the pool
 	StaleConns uint32 // number of stale connections removed from the pool
 }
@@ -52,8 +53,6 @@ type Options struct {
 	OnClose func(*Conn) error
 
 	PoolSize           int
-	MinIdleConns       int
-	MaxConnAge         time.Duration
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
@@ -64,16 +63,16 @@ type ConnPool struct {
 
 	dialErrorsNum uint32 // atomic
 
-	lastDialErrorMu sync.RWMutex
 	lastDialError   error
+	lastDialErrorMu sync.RWMutex
 
 	queue chan struct{}
 
-	connsMu      sync.Mutex
-	conns        []*Conn
-	idleConns    []*Conn
-	poolSize     int
-	idleConnsLen int
+	connsMu sync.Mutex
+	conns   []*Conn
+
+	idleConnsMu sync.RWMutex
+	idleConns   []*Conn
 
 	stats Stats
 
@@ -91,10 +90,6 @@ func NewConnPool(opt *Options) *ConnPool {
 		idleConns: make([]*Conn, 0, opt.PoolSize),
 	}
 
-	for i := 0; i < opt.MinIdleConns; i++ {
-		p.checkMinIdleConns()
-	}
-
 	if opt.IdleTimeout > 0 && opt.IdleCheckFrequency > 0 {
 		go p.reaper(opt.IdleCheckFrequency)
 	}
@@ -102,53 +97,19 @@ func NewConnPool(opt *Options) *ConnPool {
 	return p
 }
 
-func (p *ConnPool) checkMinIdleConns() {
-	if p.opt.MinIdleConns == 0 {
-		return
-	}
-	if p.poolSize < p.opt.PoolSize && p.idleConnsLen < p.opt.MinIdleConns {
-		p.poolSize++
-		p.idleConnsLen++
-		go p.addIdleConn()
-	}
-}
-
-func (p *ConnPool) addIdleConn() {
-	cn, err := p.newConn(true)
-	if err != nil {
-		return
-	}
-
-	p.connsMu.Lock()
-	p.conns = append(p.conns, cn)
-	p.idleConns = append(p.idleConns, cn)
-	p.connsMu.Unlock()
-}
-
 func (p *ConnPool) NewConn() (*Conn, error) {
-	return p._NewConn(false)
-}
-
-func (p *ConnPool) _NewConn(pooled bool) (*Conn, error) {
-	cn, err := p.newConn(pooled)
+	cn, err := p.newConn()
 	if err != nil {
 		return nil, err
 	}
 
 	p.connsMu.Lock()
 	p.conns = append(p.conns, cn)
-	if pooled {
-		if p.poolSize < p.opt.PoolSize {
-			p.poolSize++
-		} else {
-			cn.pooled = false
-		}
-	}
 	p.connsMu.Unlock()
 	return cn, nil
 }
 
-func (p *ConnPool) newConn(pooled bool) (*Conn, error) {
+func (p *ConnPool) newConn() (*Conn, error) {
 	if p.closed() {
 		return nil, ErrClosed
 	}
@@ -166,9 +127,7 @@ func (p *ConnPool) newConn(pooled bool) (*Conn, error) {
 		return nil, err
 	}
 
-	cn := NewConn(netConn)
-	cn.pooled = pooled
-	return cn, nil
+	return NewConn(netConn), nil
 }
 
 func (p *ConnPool) tryDial() {
@@ -215,16 +174,16 @@ func (p *ConnPool) Get() (*Conn, error) {
 	}
 
 	for {
-		p.connsMu.Lock()
+		p.idleConnsMu.Lock()
 		cn := p.popIdle()
-		p.connsMu.Unlock()
+		p.idleConnsMu.Unlock()
 
 		if cn == nil {
 			break
 		}
 
-		if p.isStaleConn(cn) {
-			_ = p.CloseConn(cn)
+		if cn.IsStale(p.opt.IdleTimeout) {
+			p.CloseConn(cn)
 			continue
 		}
 
@@ -234,7 +193,7 @@ func (p *ConnPool) Get() (*Conn, error) {
 
 	atomic.AddUint32(&p.stats.Misses, 1)
 
-	newcn, err := p._NewConn(true)
+	newcn, err := p.NewConn()
 	if err != nil {
 		p.freeTurn()
 		return nil, err
@@ -282,21 +241,21 @@ func (p *ConnPool) popIdle() *Conn {
 	idx := len(p.idleConns) - 1
 	cn := p.idleConns[idx]
 	p.idleConns = p.idleConns[:idx]
-	p.idleConnsLen--
-	p.checkMinIdleConns()
+
 	return cn
 }
 
 func (p *ConnPool) Put(cn *Conn) {
-	if !cn.pooled {
+	buf := cn.Rd.PeekBuffered()
+	if buf != nil {
+		internal.Logf("connection has unread data: %.100q", buf)
 		p.Remove(cn)
 		return
 	}
 
-	p.connsMu.Lock()
+	p.idleConnsMu.Lock()
 	p.idleConns = append(p.idleConns, cn)
-	p.idleConnsLen++
-	p.connsMu.Unlock()
+	p.idleConnsMu.Unlock()
 	p.freeTurn()
 }
 
@@ -316,10 +275,6 @@ func (p *ConnPool) removeConn(cn *Conn) {
 	for i, c := range p.conns {
 		if c == cn {
 			p.conns = append(p.conns[:i], p.conns[i+1:]...)
-			if cn.pooled {
-				p.poolSize--
-				p.checkMinIdleConns()
-			}
 			break
 		}
 	}
@@ -336,17 +291,17 @@ func (p *ConnPool) closeConn(cn *Conn) error {
 // Len returns total number of connections.
 func (p *ConnPool) Len() int {
 	p.connsMu.Lock()
-	n := len(p.conns)
+	l := len(p.conns)
 	p.connsMu.Unlock()
-	return n
+	return l
 }
 
-// IdleLen returns number of idle connections.
+// FreeLen returns number of idle connections.
 func (p *ConnPool) IdleLen() int {
-	p.connsMu.Lock()
-	n := p.idleConnsLen
-	p.connsMu.Unlock()
-	return n
+	p.idleConnsMu.RLock()
+	l := len(p.idleConns)
+	p.idleConnsMu.RUnlock()
+	return l
 }
 
 func (p *ConnPool) Stats() *Stats {
@@ -357,6 +312,7 @@ func (p *ConnPool) Stats() *Stats {
 		Timeouts: atomic.LoadUint32(&p.stats.Timeouts),
 
 		TotalConns: uint32(p.Len()),
+		FreeConns:  uint32(idleLen),
 		IdleConns:  uint32(idleLen),
 		StaleConns: atomic.LoadUint32(&p.stats.StaleConns),
 	}
@@ -393,10 +349,11 @@ func (p *ConnPool) Close() error {
 		}
 	}
 	p.conns = nil
-	p.poolSize = 0
-	p.idleConns = nil
-	p.idleConnsLen = 0
 	p.connsMu.Unlock()
+
+	p.idleConnsMu.Lock()
+	p.idleConns = nil
+	p.idleConnsMu.Unlock()
 
 	return firstErr
 }
@@ -407,12 +364,11 @@ func (p *ConnPool) reapStaleConn() *Conn {
 	}
 
 	cn := p.idleConns[0]
-	if !p.isStaleConn(cn) {
+	if !cn.IsStale(p.opt.IdleTimeout) {
 		return nil
 	}
 
 	p.idleConns = append(p.idleConns[:0], p.idleConns[1:]...)
-	p.idleConnsLen--
 
 	return cn
 }
@@ -422,9 +378,9 @@ func (p *ConnPool) ReapStaleConns() (int, error) {
 	for {
 		p.getTurn()
 
-		p.connsMu.Lock()
+		p.idleConnsMu.Lock()
 		cn := p.reapStaleConn()
-		p.connsMu.Unlock()
+		p.idleConnsMu.Unlock()
 
 		if cn != nil {
 			p.removeConn(cn)
@@ -457,20 +413,4 @@ func (p *ConnPool) reaper(frequency time.Duration) {
 		}
 		atomic.AddUint32(&p.stats.StaleConns, uint32(n))
 	}
-}
-
-func (p *ConnPool) isStaleConn(cn *Conn) bool {
-	if p.opt.IdleTimeout == 0 && p.opt.MaxConnAge == 0 {
-		return false
-	}
-
-	now := time.Now()
-	if p.opt.IdleTimeout > 0 && now.Sub(cn.UsedAt()) >= p.opt.IdleTimeout {
-		return true
-	}
-	if p.opt.MaxConnAge > 0 && now.Sub(cn.InitedAt) >= p.opt.MaxConnAge {
-		return true
-	}
-
-	return false
 }

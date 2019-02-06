@@ -1,5 +1,5 @@
 {
-  "name":"sa20",
+  "index":"20",
   "spi": 1000,
   "protocol": 1,
   "crypto_alg": 1,

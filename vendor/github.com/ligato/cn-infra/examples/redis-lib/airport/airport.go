@@ -146,9 +146,9 @@ type Airport struct {
 	hangarWatcher    keyval.ProtoWatcher
 
 	// watch channels
-	arrivalChan   chan keyval.ProtoWatchResp
-	departureChan chan keyval.ProtoWatchResp
-	hangarChan    chan keyval.ProtoWatchResp
+	arrivalChan   chan datasync.ProtoWatchResp
+	departureChan chan datasync.ProtoWatchResp
+	hangarChan    chan datasync.ProtoWatchResp
 	runwayChan    chan flight.Info
 
 	// other
@@ -229,15 +229,15 @@ func (a *Airport) init(config interface{}, doneChan chan struct{}) (err error) {
 	a.cleanUp(false)
 
 	// start watchers
-	a.arrivalChan = make(chan keyval.ProtoWatchResp, flightSlots)
+	a.arrivalChan = make(chan datasync.ProtoWatchResp, flightSlots)
 	if err := a.arrivalWatcher.Watch(keyval.ToChanProto(a.arrivalChan), nil, ""); err != nil {
 		return fmt.Errorf("failed to start 'arrival' watcher: %v", err)
 	}
-	a.departureChan = make(chan keyval.ProtoWatchResp, flightSlots)
+	a.departureChan = make(chan datasync.ProtoWatchResp, flightSlots)
 	if err := a.departureWatcher.Watch(keyval.ToChanProto(a.departureChan), nil, ""); err != nil {
 		return fmt.Errorf("failed to start 'departure' watcher: %v", err)
 	}
-	a.hangarChan = make(chan keyval.ProtoWatchResp, hangarSlots)
+	a.hangarChan = make(chan datasync.ProtoWatchResp, hangarSlots)
 	if err := a.hangarWatcher.Watch(keyval.ToChanProto(a.hangarChan), nil, ""); err != nil {
 		return fmt.Errorf("failed to start 'hangar' watcher: %v", err)
 	}

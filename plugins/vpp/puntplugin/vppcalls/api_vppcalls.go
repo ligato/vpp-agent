@@ -17,8 +17,8 @@ package vppcalls
 import (
 	"git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/punt"
-	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin/puntidx"
+	punt "github.com/ligato/vpp-agent/api/models/vpp/punt"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
 )
 
 // PuntVppAPI provides methods for managing VPP punt configuration.
@@ -29,35 +29,41 @@ type PuntVppAPI interface {
 
 // PuntVPPWrite provides write methods for punt
 type PuntVPPWrite interface {
+	// AddPunt configures new punt to the host from the VPP
+	AddPunt(punt *punt.ToHost) error
+	// DeletePunt removes or unregisters punt entry
+	DeletePunt(punt *punt.ToHost) error
 	// RegisterPuntSocket registers new punt to unix domain socket entry
-	RegisterPuntSocket(puntCfg *punt.Punt) ([]byte, error)
+	RegisterPuntSocket(puntCfg *punt.ToHost) error
 	// DeregisterPuntSocket removes existing punt to socket registration
-	DeregisterPuntSocket(puntCfg *punt.Punt) error
-	// RegisterPuntSocketIPv6 registers new IPv6 punt to unix domain socket entry
-	RegisterPuntSocketIPv6(puntCfg *punt.Punt) ([]byte, error)
-	// DeregisterPuntSocketIPv6 removes existing IPv6 punt to socket registration
-	DeregisterPuntSocketIPv6(puntCfg *punt.Punt) error
+	DeregisterPuntSocket(puntCfg *punt.ToHost) error
+	// AddPuntRedirect adds new punt IP redirect entry
+	AddPuntRedirect(punt *punt.IPRedirect) error
+	// DeletePuntRedirect removes existing redirect entry
+	DeletePuntRedirect(punt *punt.IPRedirect) error
 }
 
 // PuntVPPRead provides read methods for punt
 type PuntVPPRead interface {
 	// DumpPuntRegisteredSockets returns all punt socket registrations known to the VPP agent
 	// TODO since the API to dump sockets is missing, the method works only with the entries in local cache
-	DumpPuntRegisteredSockets() (punts []*PuntDetails)
+	DumpPuntRegisteredSockets() ([]*PuntDetails, error)
 }
 
 // PuntVppHandler is accessor for punt-related vppcalls methods.
 type PuntVppHandler struct {
 	callsChannel api.Channel
-	mapping      puntidx.PuntIndex
+	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
+
+	RegisterSocketFn func(register bool, toHost *punt.ToHost, socketPath string)
 }
 
 // NewPuntVppHandler creates new instance of punt vppcalls handler
-func NewPuntVppHandler(callsChan api.Channel, mapping puntidx.PuntIndex, log logging.Logger) *PuntVppHandler {
+func NewPuntVppHandler(callsChan api.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *PuntVppHandler {
 	return &PuntVppHandler{
 		callsChannel: callsChan,
-		mapping:      mapping,
+		ifIndexes:    ifIndexes,
 		log:          log,
 	}
 }

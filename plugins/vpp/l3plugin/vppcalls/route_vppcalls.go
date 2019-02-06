@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+//  Copyright (c) 2018 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package vppcalls
 
@@ -19,9 +19,9 @@ import (
 	"net"
 
 	"github.com/ligato/cn-infra/utils/addrs"
+	"github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	ifvppcalls "github.com/ligato/vpp-agent/plugins/vpp/ifplugin/vppcalls"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -39,7 +39,7 @@ const (
 )
 
 // vppAddDelRoute adds or removes route, according to provided input. Every route has to contain VRF ID (default is 0).
-func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32, delete bool) error {
+func (h *RouteHandler) vppAddDelRoute(route *vpp_l3.Route, rtIfIdx uint32, delete bool) error {
 	req := &ip.IPAddDelRoute{}
 	if delete {
 		req.IsAdd = 0
@@ -48,7 +48,7 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint
 	}
 
 	// Destination address (route set identifier)
-	parsedDstIP, isIpv6, err := addrs.ParseIPWithPrefix(route.DstIpAddr)
+	parsedDstIP, isIpv6, err := addrs.ParseIPWithPrefix(route.DstNetwork)
 	if err != nil {
 		return err
 	}
@@ -73,10 +73,10 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint
 
 	// VRF/Other route parameters based on type
 	req.TableID = route.VrfId
-	if route.Type == l3.StaticRoutes_Route_INTER_VRF {
+	if route.Type == vpp_l3.Route_INTER_VRF {
 		req.NextHopSwIfIndex = rtIfIdx
 		req.NextHopTableID = route.ViaVrfId
-	} else if route.Type == l3.StaticRoutes_Route_DROP {
+	} else if route.Type == vpp_l3.Route_DROP {
 		req.IsDrop = 1
 	} else {
 		req.NextHopSwIfIndex = rtIfIdx
@@ -91,46 +91,143 @@ func (h *RouteHandler) vppAddDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
 	}
-	if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
 
 	return nil
 }
 
 // VppAddRoute implements route handler.
-func (h *RouteHandler) VppAddRoute(ifHandler ifvppcalls.IfVppWrite, route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
+func (h *RouteHandler) VppAddRoute(route *vpp_l3.Route) error {
 	// Evaluate route IP version
-	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstIpAddr)
+	_, isIPv6, err := addrs.ParseIPWithPrefix(route.DstNetwork)
 	if err != nil {
 		return err
 	}
 
-	if isIPv6 {
-		// Configure IPv6 VRF
-		if err := ifHandler.CreateVrfIPv6(route.VrfId); err != nil {
+	// Configure IPv6 VRF
+	if err := h.createVrfIfNeeded(route.VrfId, isIPv6); err != nil {
+		return err
+	}
+	if route.Type == vpp_l3.Route_INTER_VRF {
+		if err := h.createVrfIfNeeded(route.ViaVrfId, isIPv6); err != nil {
 			return err
-		}
-		if route.Type == l3.StaticRoutes_Route_INTER_VRF {
-			if err := ifHandler.CreateVrfIPv6(route.ViaVrfId); err != nil {
-				return err
-			}
-		}
-	} else {
-		// Configure IPv4 VRF
-		if err := ifHandler.CreateVrf(route.VrfId); err != nil {
-			return err
-		}
-		if route.Type == l3.StaticRoutes_Route_INTER_VRF {
-			if err := ifHandler.CreateVrf(route.ViaVrfId); err != nil {
-				return err
-			}
 		}
 	}
-	return h.vppAddDelRoute(route, rtIfIdx, false)
+
+	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
+	if err != nil {
+		return err
+	}
+
+	return h.vppAddDelRoute(route, swIfIdx, false)
 }
 
 // VppDelRoute implements route handler.
-func (h *RouteHandler) VppDelRoute(route *l3.StaticRoutes_Route, rtIfIdx uint32) error {
-	return h.vppAddDelRoute(route, rtIfIdx, true)
+func (h *RouteHandler) VppDelRoute(route *vpp_l3.Route) error {
+	swIfIdx, err := h.getRouteSwIfIndex(route.OutgoingInterface)
+	if err != nil {
+		return err
+	}
+
+	return h.vppAddDelRoute(route, swIfIdx, true)
+}
+
+func (h *RouteHandler) getRouteSwIfIndex(ifName string) (swIfIdx uint32, err error) {
+	swIfIdx = NextHopOutgoingIfUnset
+	if ifName != "" {
+		meta, found := h.ifIndexes.LookupByName(ifName)
+		if !found {
+			return 0, errors.Errorf("interface %s not found", ifName)
+		}
+		swIfIdx = meta.SwIfIndex
+	}
+	return
+}
+
+// New VRF with provided ID for IPv4 or IPv6 will be created if missing.
+func (h *RouteHandler) createVrfIfNeeded(vrfID uint32, isIPv6 bool) error {
+	// Zero VRF exists by default
+	if vrfID == 0 {
+		return nil
+	}
+
+	// Get all VRFs for IPv4 or IPv6
+	var exists bool
+	if isIPv6 {
+		ipv6Tables, err := h.dumpVrfTablesIPv6()
+		if err != nil {
+			return fmt.Errorf("dumping IPv6 VRF tables failed: %v", err)
+		}
+		_, exists = ipv6Tables[vrfID]
+	} else {
+		tables, err := h.dumpVrfTables()
+		if err != nil {
+			return fmt.Errorf("dumping IPv4 VRF tables failed: %v", err)
+		}
+		_, exists = tables[vrfID]
+	}
+	// Create new VRF if needed
+	if !exists {
+		h.log.Debugf("VRF table %d does not exists and will be created", vrfID)
+		return h.vppAddIPTable(vrfID, isIPv6)
+	}
+
+	return nil
+}
+
+// Returns all IPv4 VRF tables
+func (h *RouteHandler) dumpVrfTables() (map[uint32][]*ip.IPFibDetails, error) {
+	fibs := map[uint32][]*ip.IPFibDetails{}
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IPFibDump{})
+	for {
+		fibDetails := &ip.IPFibDetails{}
+		stop, err := reqCtx.ReceiveReply(fibDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tableID := fibDetails.TableID
+		fibs[tableID] = append(fibs[tableID], fibDetails)
+	}
+
+	return fibs, nil
+}
+
+// Returns all IPv6 VRF tables
+func (h *RouteHandler) dumpVrfTablesIPv6() (map[uint32][]*ip.IP6FibDetails, error) {
+	fibs := map[uint32][]*ip.IP6FibDetails{}
+	reqCtx := h.callsChannel.SendMultiRequest(&ip.IP6FibDump{})
+	for {
+		fibDetails := &ip.IP6FibDetails{}
+		stop, err := reqCtx.ReceiveReply(fibDetails)
+		if stop {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tableID := fibDetails.TableID
+		fibs[tableID] = append(fibs[tableID], fibDetails)
+	}
+
+	return fibs, nil
+}
+
+// Creates new VRF table with provided ID and for desired IP version
+func (h *RouteHandler) vppAddIPTable(vrfID uint32, isIPv6 bool) error {
+	req := &ip.IPTableAddDel{
+		TableID: vrfID,
+		IsIPv6:  boolToUint(isIPv6),
+		IsAdd:   1,
+	}
+	reply := &ip.IPTableAddDelReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	return nil
 }

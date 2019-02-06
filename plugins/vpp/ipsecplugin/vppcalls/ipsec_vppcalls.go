@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,129 +16,80 @@ package vppcalls
 
 import (
 	"encoding/hex"
-	"fmt"
 	"net"
+	"strconv"
+
+	"github.com/go-errors/errors"
 
 	"github.com/ligato/cn-infra/utils/addrs"
-	ipsec_api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
+	api "github.com/ligato/vpp-agent/plugins/vpp/binapi/ipsec"
 )
-
-func (h *IPSecVppHandler) tunnelIfAddDel(tunnel *ipsec.TunnelInterfaces_Tunnel, isAdd bool) (uint32, error) {
-	localCryptoKey, err := hex.DecodeString(tunnel.LocalCryptoKey)
-	if err != nil {
-		return 0, err
-	}
-	remoteCryptoKey, err := hex.DecodeString(tunnel.RemoteCryptoKey)
-	if err != nil {
-		return 0, err
-	}
-	localIntegKey, err := hex.DecodeString(tunnel.LocalIntegKey)
-	if err != nil {
-		return 0, err
-	}
-	remoteIntegKey, err := hex.DecodeString(tunnel.RemoteIntegKey)
-	if err != nil {
-		return 0, err
-	}
-
-	req := &ipsec_api.IpsecTunnelIfAddDel{
-		IsAdd:              boolToUint(isAdd),
-		Esn:                boolToUint(tunnel.Esn),
-		AntiReplay:         boolToUint(tunnel.AntiReplay),
-		LocalIP:            net.ParseIP(tunnel.LocalIp).To4(),
-		RemoteIP:           net.ParseIP(tunnel.RemoteIp).To4(),
-		LocalSpi:           tunnel.LocalSpi,
-		RemoteSpi:          tunnel.RemoteSpi,
-		CryptoAlg:          uint8(tunnel.CryptoAlg),
-		LocalCryptoKey:     localCryptoKey,
-		LocalCryptoKeyLen:  uint8(len(localCryptoKey)),
-		RemoteCryptoKey:    remoteCryptoKey,
-		RemoteCryptoKeyLen: uint8(len(remoteCryptoKey)),
-		IntegAlg:           uint8(tunnel.IntegAlg),
-		LocalIntegKey:      localIntegKey,
-		LocalIntegKeyLen:   uint8(len(localIntegKey)),
-		RemoteIntegKey:     remoteIntegKey,
-		RemoteIntegKeyLen:  uint8(len(remoteIntegKey)),
-	}
-	reply := &ipsec_api.IpsecTunnelIfAddDelReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return 0, err
-	} else if reply.Retval != 0 {
-		return 0, fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
-
-	return reply.SwIfIndex, nil
-}
-
-// AddTunnelInterface implements IPSec handler.
-func (h *IPSecVppHandler) AddTunnelInterface(tunnel *ipsec.TunnelInterfaces_Tunnel) (uint32, error) {
-	return h.tunnelIfAddDel(tunnel, true)
-}
-
-// DelTunnelInterface implements IPSec handler.
-func (h *IPSecVppHandler) DelTunnelInterface(ifIdx uint32, tunnel *ipsec.TunnelInterfaces_Tunnel) error {
-	// Note: ifIdx is not used now, tunnel shiould be matched based on paramters
-	_, err := h.tunnelIfAddDel(tunnel, false)
-	return err
-}
-
-func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
-	req := &ipsec_api.IpsecSpdAddDel{
-		IsAdd: boolToUint(isAdd),
-		SpdID: spdID,
-	}
-	reply := &ipsec_api.IpsecSpdAddDelReply{}
-
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
-		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
-	}
-
-	return nil
-}
 
 // AddSPD implements IPSec handler.
 func (h *IPSecVppHandler) AddSPD(spdID uint32) error {
 	return h.spdAddDel(spdID, true)
 }
 
-// DelSPD implements IPSec handler.
-func (h *IPSecVppHandler) DelSPD(spdID uint32) error {
+// DeleteSPD implements IPSec handler.
+func (h *IPSecVppHandler) DeleteSPD(spdID uint32) error {
 	return h.spdAddDel(spdID, false)
 }
 
-func (h *IPSecVppHandler) interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool) error {
-	req := &ipsec_api.IpsecInterfaceAddDelSpd{
-		IsAdd:     boolToUint(isAdd),
-		SwIfIndex: swIfIdx,
-		SpdID:     spdID,
+// AddSPDEntry implements IPSec handler.
+func (h *IPSecVppHandler) AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error {
+	return h.spdAddDelEntry(spdID, saID, spd, true)
+}
+
+// DeleteSPDEntry implements IPSec handler.
+func (h *IPSecVppHandler) DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error {
+	return h.spdAddDelEntry(spdID, saID, spd, false)
+}
+
+// AddSPDInterface implements IPSec handler.
+func (h *IPSecVppHandler) AddSPDInterface(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
+	ifaceMeta, found := h.ifIndexes.LookupByName(ifaceCfg.Name)
+	if !found {
+		return errors.New("failed to get interface metadata")
 	}
-	reply := &ipsec_api.IpsecInterfaceAddDelSpdReply{}
+	return h.interfaceAddDelSpd(spdID, ifaceMeta.SwIfIndex, true)
+}
+
+// DeleteSPDInterface implements IPSec handler.
+func (h *IPSecVppHandler) DeleteSPDInterface(spdID uint32, ifaceCfg *ipsec.SecurityPolicyDatabase_Interface) error {
+	ifaceMeta, found := h.ifIndexes.LookupByName(ifaceCfg.Name)
+	if !found {
+		return errors.New("failed to get interface metadata")
+	}
+	return h.interfaceAddDelSpd(spdID, ifaceMeta.SwIfIndex, false)
+}
+
+// AddSA implements IPSec handler.
+func (h *IPSecVppHandler) AddSA(sa *ipsec.SecurityAssociation) error {
+	return h.sadAddDelEntry(sa, true)
+}
+
+// DeleteSA implements IPSec handler.
+func (h *IPSecVppHandler) DeleteSA(sa *ipsec.SecurityAssociation) error {
+	return h.sadAddDelEntry(sa, false)
+}
+
+func (h *IPSecVppHandler) spdAddDel(spdID uint32, isAdd bool) error {
+	req := &api.IpsecSpdAddDel{
+		IsAdd: boolToUint(isAdd),
+		SpdID: spdID,
+	}
+	reply := &api.IpsecSpdAddDelReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-// InterfaceAddSPD implements IPSec handler.
-func (h *IPSecVppHandler) InterfaceAddSPD(spdID, swIfIdx uint32) error {
-	return h.interfaceAddDelSpd(spdID, swIfIdx, true)
-}
-
-// InterfaceDelSPD implements IPSec handler.
-func (h *IPSecVppHandler) InterfaceDelSPD(spdID, swIfIdx uint32) error {
-	return h.interfaceAddDelSpd(spdID, swIfIdx, false)
-}
-
-func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry, isAdd bool) error {
-	req := &ipsec_api.IpsecSpdAddDelEntry{
+func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry, isAdd bool) error {
+	req := &api.IpsecSpdAddDelEntry{
 		IsAdd:           boolToUint(isAdd),
 		SpdID:           spdID,
 		Priority:        spd.Priority,
@@ -181,28 +132,31 @@ func (h *IPSecVppHandler) spdAddDelEntry(spdID, saID uint32, spd *ipsec.Security
 		req.LocalAddressStart = net.ParseIP("0.0.0.0").To4()
 		req.LocalAddressStop = net.ParseIP("255.255.255.255").To4()
 	}
-	reply := &ipsec_api.IpsecSpdAddDelEntryReply{}
+	reply := &api.IpsecSpdAddDelEntryReply{}
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-// AddSPDEntry implements IPSec handler.
-func (h *IPSecVppHandler) AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry) error {
-	return h.spdAddDelEntry(spdID, saID, spd, true)
+func (h *IPSecVppHandler) interfaceAddDelSpd(spdID, swIfIdx uint32, isAdd bool) error {
+	req := &api.IpsecInterfaceAddDelSpd{
+		IsAdd:     boolToUint(isAdd),
+		SwIfIndex: swIfIdx,
+		SpdID:     spdID,
+	}
+	reply := &api.IpsecInterfaceAddDelSpdReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// DelSPDEntry implements IPSec handler.
-func (h *IPSecVppHandler) DelSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry) error {
-	return h.spdAddDelEntry(spdID, saID, spd, false)
-}
-
-func (h *IPSecVppHandler) sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociations_SA, isAdd bool) error {
+func (h *IPSecVppHandler) sadAddDelEntry(sa *ipsec.SecurityAssociation, isAdd bool) error {
 	cryptoKey, err := hex.DecodeString(sa.CryptoKey)
 	if err != nil {
 		return err
@@ -212,9 +166,14 @@ func (h *IPSecVppHandler) sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociat
 		return err
 	}
 
-	req := &ipsec_api.IpsecSadAddDelEntry{
+	saID, err := strconv.Atoi(sa.Index)
+	if err != nil {
+		return err
+	}
+
+	req := &api.IpsecSadAddDelEntry{
 		IsAdd:                     boolToUint(isAdd),
-		SadID:                     saID,
+		SadID:                     uint32(saID),
 		Spi:                       sa.Spi,
 		Protocol:                  uint8(sa.Protocol),
 		CryptoAlgorithm:           uint8(sa.CryptoAlg),
@@ -243,25 +202,13 @@ func (h *IPSecVppHandler) sadAddDelEntry(saID uint32, sa *ipsec.SecurityAssociat
 			req.TunnelDstAddress = net.ParseIP(sa.TunnelDstAddr).To4()
 		}
 	}
-	reply := &ipsec_api.IpsecSadAddDelEntryReply{}
+	reply := &api.IpsecSadAddDelEntryReply{}
 
-	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+	if err = h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
-}
-
-// AddSAEntry implements IPSec handler.
-func (h *IPSecVppHandler) AddSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA) error {
-	return h.sadAddDelEntry(saID, sa, true)
-}
-
-// DelSAEntry implements IPSec handler.
-func (h *IPSecVppHandler) DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA) error {
-	return h.sadAddDelEntry(saID, sa, false)
 }
 
 func boolToUint(value bool) uint8 {
