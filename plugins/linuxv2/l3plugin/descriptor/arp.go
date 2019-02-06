@@ -39,7 +39,8 @@ const (
 	ARPDescriptorName = "linux-arp"
 
 	// dependency labels
-	arpInterfaceDep = "interface-exists"
+	arpInterfaceDep   = "interface-is-up"
+	arpInterfaceIPDep = "interface-has-ip-address"
 
 	// minimum number of interfaces to be given to a single Go routine for processing
 	// in the Retrieve operation
@@ -229,12 +230,20 @@ func (d *ARPDescriptor) updateARPEntry(arp *l3.ARPEntry, actionName string, acti
 
 // Dependencies lists dependencies for a Linux ARP entry.
 func (d *ARPDescriptor) Dependencies(key string, arp *l3.ARPEntry) []kvs.Dependency {
-	// the associated interface must exist and be UP
+	// the associated interface must exist, but also must be UP and have at least
+	// one IP address assigned (to be in the L3 mode)
 	if arp.Interface != "" {
 		return []kvs.Dependency{
 			{
 				Label: arpInterfaceDep,
 				Key:   ifmodel.InterfaceStateKey(arp.Interface, true),
+			},
+			{
+				Label: arpInterfaceIPDep,
+				AnyOf: func(key string) bool {
+					ifName, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+					return isAddrKey && ifName == arp.Interface
+				},
 			},
 		}
 	}
