@@ -46,8 +46,9 @@ const (
 	ipv6AddrAny = "::"
 
 	// dependency labels
-	routeOutInterfaceDep   = "outgoing-interface-exists"
-	routeGwReachabilityDep = "gw-reachable"
+	routeOutInterfaceDep       = "outgoing-interface-is-up"
+	routeOutInterfaceIPAddrDep = "outgoing-interface-has-ip-address"
+	routeGwReachabilityDep     = "gw-reachable"
 )
 
 // A list of non-retriable errors:
@@ -268,6 +269,17 @@ func (d *RouteDescriptor) Dependencies(key string, route *linux_l3.Route) []kvs.
 					return true
 				}
 				return false
+			},
+		})
+	} else if route.OutgoingInterface != "" {
+		// route also requires the interface to be in the L3 mode (have at least one
+		// IP address assigned) - we set this only for routes without GW and other
+		// routes will inherit this dependency transitively through GW-reachability dep.
+		dependencies = append(dependencies, kvs.Dependency{
+			Label: routeOutInterfaceIPAddrDep,
+			AnyOf: func(key string) bool {
+				ifName, _, isAddrKey := ifmodel.ParseInterfaceAddressKey(key)
+				return isAddrKey && ifName == route.OutgoingInterface
 			},
 		})
 	}
