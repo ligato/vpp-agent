@@ -43,9 +43,9 @@ install:
 # Build commands
 cmd:
 	@echo "=> building commands ${VERSION}"
-	cd cmd/vpp-agent 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd cmd/vpp-agent-ctl	&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd cmd/agentctl 		&& go build -i -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/vpp-agent 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/vpp-agent-ctl	&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/agentctl 		&& go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean commands
 clean-cmd:
@@ -57,40 +57,38 @@ clean-cmd:
 # Build examples
 examples:
 	@echo "=> building examples"
-	cd examples/govpp_call 		    	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_bd_cache 	    	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_iface_cache     	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_mapping_lookup  	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_mapping_watcher      && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/idx_veth_cache			 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_linux/tap 	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_linux/veth 	 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_vpp/nat      && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/localclient_vpp/plugins  && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/grpc_vpp/remote_client   && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/grpc_vpp/notifications   && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/kvscheduler/acl			 && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/kvscheduler/interconnect && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/kvscheduler/l2           && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/kvscheduler/acl          && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/kvscheduler/nat          && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
-	cd examples/kvscheduler/vpp-l3       && go build -i -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/custom_model	    	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/govpp_call 		    	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/remote_client   && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/grpc_vpp/notifications   && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/acl			 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/interconnect && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/l2           && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/acl          && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/nat          && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/kvscheduler/vpp-l3       && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/tap 	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_linux/veth 	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/nat      && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd examples/localclient_vpp/plugins	 && go build -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 # Clean examples
 clean-examples:
 	@echo "=> cleaning examples"
-	rm -f examples/govpp_call/govpp_call
-	rm -f examples/idx_bd_cache/idx_bd_cache
-	rm -f examples/idx_iface_cache/idx_iface_cache
-	rm -f examples/idx_mapping_lookup/idx_mapping_lookup
-	rm -f examples/idx_mapping_watcher/idx_mapping_watcher
-	rm -f examples/idx_veth_cache/idx_veth_cache
-	rm -f examples/localclient_linux/tap/tap
-	rm -f examples/localclient_linux/veth/veth
-	rm -f examples/localclient_vpp/nat/nat
-	rm -f examples/localclient_vpp/plugins/plugins
-	rm -f examples/grpc_vpp/notifications/notifications
-	rm -f examples/grpc_vpp/remote_client/remote_client
+	cd examples/custom_model	    		&& go clean
+	cd examples/govpp_call 		    		&& go clean
+	cd examples/grpc_vpp/remote_client 		&& go clean
+	cd examples/grpc_vpp/notifications		&& go clean
+	cd examples/kvscheduler/acl 			&& go clean
+	cd examples/kvscheduler/interconnect 	&& go clean
+	cd examples/kvscheduler/l2 				&& go clean
+	cd examples/kvscheduler/acl 			&& go clean
+	cd examples/kvscheduler/nat 			&& go clean
+	cd examples/kvscheduler/vpp-l3 			&& go clean
+	cd examples/localclient_linux/tap 	 	&& go clean
+	cd examples/localclient_linux/veth 	 	&& go clean
+	cd examples/localclient_vpp/nat      	&& go clean
+	cd examples/localclient_vpp/plugins	 	&& go clean
 
 # Run tests
 test:

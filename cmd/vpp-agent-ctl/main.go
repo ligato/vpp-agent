@@ -24,7 +24,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ligato/vpp-agent/cmd/vpp-agent-ctlv2/data"
+	"github.com/ligato/vpp-agent/cmd/vpp-agent-ctl/data"
 	"github.com/namsral/flag"
 
 	"github.com/ligato/cn-infra/logging/logrus"
