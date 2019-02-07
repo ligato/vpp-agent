@@ -39,23 +39,12 @@ const (
 	baseValue4 = "base-value4"
 )
 
+
+type DumpFnc func(string, View) ([]KVWithMetadata, error)
+
 func prefixSelector(prefix string) func(key string) bool {
 	return func(key string) bool {
 		return strings.HasPrefix(key, prefix)
-	}
-}
-
-func checkValues(received, expected []KeyValuePair) {
-	Expect(len(received)).To(Equal(len(expected)))
-	for _, kv := range expected {
-		found := false
-		for _, kv2 := range received {
-			if kv2.Key == kv.Key {
-				Expect(proto.Equal(kv2.Value, kv.Value)).To(BeTrue())
-				found = true
-			}
-		}
-		Expect(found).To(BeTrue())
 	}
 }
 
@@ -108,7 +97,7 @@ func checkTxnOperations(recorded, expected RecordedTxnOps) {
 	}
 }
 
-func checkValuesForCorrelation(received, expected []KVWithMetadata) {
+func checkValues(received, expected []KVWithMetadata) {
 	Expect(received).To(HaveLen(len(expected)))
 	for _, kv := range expected {
 		found := false
@@ -129,4 +118,46 @@ func checkValuesForCorrelation(received, expected []KVWithMetadata) {
 		}
 		Expect(found).To(BeTrue())
 	}
+}
+
+func checkBaseValueStatus(received, expected *BaseValueStatus) {
+	checkValueStatus(received.Value, expected.Value)
+	Expect(received.DerivedValues).To(HaveLen(len(expected.DerivedValues)))
+	for _, expDer := range expected.DerivedValues {
+		found := false
+		for _, recvDer := range received.DerivedValues {
+			if expDer.Key == recvDer.Key {
+				checkValueStatus(recvDer, expDer)
+				found = true
+				break
+			}
+		}
+		Expect(found).To(BeTrue())
+	}
+}
+
+func checkValueStatus(received, expected *ValueStatus) {
+	Expect(received.Error).To(BeEquivalentTo(expected.Error))
+	Expect(received.State).To(BeEquivalentTo(expected.State))
+	Expect(received.LastOperation).To(BeEquivalentTo(expected.LastOperation))
+	Expect(equalStringArrays(received.Details, expected.Details)).To(BeTrue())
+}
+
+func equalStringArrays(sa1, sa2 []string) bool {
+	if len(sa1) != len(sa2) {
+		return false
+	}
+	for _, s1 := range sa1 {
+		found := false
+		for _, s2 := range sa2 {
+			if s1 == s2 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
