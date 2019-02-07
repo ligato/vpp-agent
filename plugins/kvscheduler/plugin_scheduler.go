@@ -324,9 +324,10 @@ func (s *Scheduler) DumpValuesByDescriptor(descriptor string, view kvs.View) (va
 				continue
 			}
 			kvPairs = append(kvPairs, kvs.KVWithMetadata{
-				Key:    node.GetKey(),
-				Value:  lastUpdate.value,
-				Origin: kvs.FromNB,
+				Key:      node.GetKey(),
+				Value:    lastUpdate.value,
+				Origin:   kvs.FromNB,
+				Metadata: node.GetMetadata(),
 			})
 		}
 		return kvPairs, nil

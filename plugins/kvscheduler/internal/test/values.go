@@ -19,40 +19,9 @@ package test
 import (
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/ligato/cn-infra/datasync"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	. "github.com/ligato/vpp-agent/plugins/kvscheduler/internal/test/model"
 )
-
-// LazyArrayValue implements datasync.LazyValue for ArrayValue.
-type LazyArrayValue struct {
-	items []string
-}
-
-// LazyStringValue implements datasync.LazyValue for StringValue.
-type LazyStringValue struct {
-	value string
-}
-
-// GetValue unmarshalls ArrayValue into the given proto.Message.
-func (lav *LazyArrayValue) GetValue(value proto.Message) error {
-	av := NewArrayValue(lav.items...)
-	tmp, err := proto.Marshal(av)
-	if err != nil {
-		return err
-	}
-	return proto.Unmarshal(tmp, value)
-}
-
-// GetValue unmarshalls StringValue into the given proto.Message.
-func (lsv *LazyStringValue) GetValue(value proto.Message) error {
-	sv := NewStringValue(lsv.value)
-	tmp, err := proto.Marshal(sv)
-	if err != nil {
-		return err
-	}
-	return proto.Unmarshal(tmp, value)
-}
 
 // NewStringValue creates a new instance of StringValue.
 func NewStringValue(str string) proto.Message {
@@ -62,18 +31,6 @@ func NewStringValue(str string) proto.Message {
 // NewArrayValue creates a new instance of ArrayValue.
 func NewArrayValue(items ...string) proto.Message {
 	return &ArrayValue{Items: items}
-}
-
-// NewLazyStringValue creates a new instance of lazy (marshalled) StringValue.
-func NewLazyStringValue(str string) datasync.LazyValue {
-	return &LazyStringValue{value: str}
-}
-
-// NewLazyArrayValue creates a new instance of lazy (marshalled) ArrayValue.
-func NewLazyArrayValue(items ...string) datasync.LazyValue {
-	return &LazyArrayValue{
-		items: items,
-	}
 }
 
 // StringValueComparator is (a custom) KVDescriptor.ValueComparator for string values.
