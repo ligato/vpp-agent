@@ -24,7 +24,7 @@ import (
 	"bytes"
 
 	"github.com/ligato/cn-infra/health/statuscheck/model/status"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/logrusorgru/aurora.git"
 )
 
@@ -403,12 +403,12 @@ func setOsColor(arg status.OperationalState) string {
 	}
 }
 
-func setStsColor(kind string, arg interfaces.InterfacesState_Interface_Status) string {
+func setStsColor(kind string, arg interfaces.InterfaceState_Status) string {
 	sts := fmt.Sprintf("%s-%s", kind, arg)
 	switch arg {
-	case interfaces.InterfacesState_Interface_UP:
+	case interfaces.InterfaceState_UP:
 		return setGreen(sts)
-	case interfaces.InterfacesState_Interface_DOWN:
+	case interfaces.InterfaceState_DOWN:
 		return setRed(sts)
 	default:
 		return sts

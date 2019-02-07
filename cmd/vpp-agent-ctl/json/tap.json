@@ -5,9 +5,9 @@
     "enabled": true,
     "mtu": 1500,
     "ip_addresses": [
-        "192.168.1.1/24"
+        "192.168.25.3/24"
     ],
     "name": "tap1",
-    "phys_address": "06:9e:df:66:54:47",
-    "type": 3
+    "phys_address": "7C:4E:E7:8A:63:68",
+    "type": "TAP"
 }

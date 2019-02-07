@@ -25,8 +25,8 @@ import (
 	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/clientv2/vpp/localclient"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vppv2/aclplugin"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
+	vpp_aclplugin "github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
 )
 
 /*
@@ -51,9 +51,9 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Orchestrator *orchestrator.Plugin
 	VPPIfPlugin  *vpp_ifplugin.IfPlugin
 	VPPACLPlugin *vpp_aclplugin.ACLPlugin
+	Orchestrator *orchestrator.Plugin
 }
 
 // String returns plugin name

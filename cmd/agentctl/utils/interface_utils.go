@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/ligato/cn-infra/db/keyval"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 )
 
 // Interface flag names
@@ -43,14 +43,14 @@ const (
 )
 
 // WriteInterfaceToDb validates and writes interface to the etcd.
-func WriteInterfaceToDb(db keyval.ProtoBroker, key string, ifc *interfaces.Interfaces_Interface) {
+func WriteInterfaceToDb(db keyval.ProtoBroker, key string, ifc *interfaces.Interface) {
 	validateInterface(ifc)
 	db.Put(key, ifc)
 }
 
 // GetInterfaceKeyAndValue returns true if an interface with the specified name
 // was found together with the interface key, and data, and data broker.
-func GetInterfaceKeyAndValue(endpoints []string, label string, ifName string) (bool, string, *interfaces.Interfaces_Interface, keyval.ProtoBroker) {
+func GetInterfaceKeyAndValue(endpoints []string, label string, ifName string) (bool, string, *interfaces.Interface, keyval.ProtoBroker) {
 	validateIfIdentifiers(label, ifName)
 	db, err := GetDbForOneAgent(endpoints, label)
 	if err != nil {
@@ -58,7 +58,7 @@ func GetInterfaceKeyAndValue(endpoints []string, label string, ifName string) (b
 	}
 
 	key := interfaces.InterfaceKey(ifName)
-	ifc := &interfaces.Interfaces_Interface{}
+	ifc := &interfaces.Interface{}
 
 	found, _, err := db.GetValue(key, ifc)
 	if err != nil {
@@ -143,7 +143,7 @@ func ValidateIpv6Addr(ipv6Addr string) bool {
 	return match
 }
 
-func validateInterface(ifc *interfaces.Interfaces_Interface) {
+func validateInterface(ifc *interfaces.Interface) {
 	fmt.Printf("Validating interface\n ifc: %+v\n", ifc)
 }
 

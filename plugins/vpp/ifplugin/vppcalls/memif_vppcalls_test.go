@@ -17,9 +17,9 @@ package vppcalls_test
 import (
 	"testing"
 
+	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/memif"
-	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -32,9 +32,9 @@ func TestAddMasterMemifInterface(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interfaces_Interface_Memif_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: true,
 	}, 5)
@@ -66,9 +66,9 @@ func TestAddMasterMemifInterfaceAsSlave(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	swIfIdx, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interfaces_Interface_Memif_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)
@@ -93,9 +93,9 @@ func TestAddMasterMemifInterfaceError(t *testing.T) {
 	ctx.MockVpp.MockReply(&memif.MemifCreate{})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	_, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interfaces_Interface_Memif_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)
@@ -112,9 +112,9 @@ func TestAddMasterMemifInterfaceRetval(t *testing.T) {
 	})
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceTagAddDelReply{})
 
-	_, err := ifHandler.AddMemifInterface("memif", &ifModel.Interfaces_Interface_Memif{
+	_, err := ifHandler.AddMemifInterface("memif", &ifModel.MemifLink{
 		Id:     1,
-		Mode:   ifModel.Interfaces_Interface_Memif_IP,
+		Mode:   ifModel.MemifLink_IP,
 		Secret: "secret",
 		Master: false,
 	}, 5)

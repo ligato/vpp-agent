@@ -92,29 +92,23 @@ func (p *Plugin) Init() (err error) {
 		p.session = gockle.NewSession(session)
 	}
 
-	// Register for providing status reports (polling mode)
-	if p.StatusCheck != nil {
-		if p.session != nil {
-			p.StatusCheck.Register(p.PluginName, func() (statuscheck.PluginState, error) {
-				broker := p.NewBroker()
-				err := broker.Exec(`select keyspace_name from system_schema.keyspaces`)
-				if err == nil {
-					return statuscheck.OK, nil
-				}
-				return statuscheck.Error, err
-			})
-		} else {
-			p.Log.Warnf("Cassandra connection not available")
-		}
-	} else {
-		p.Log.Warnf("Unable to start status check for Cassandra")
-	}
-
 	return nil
 }
 
-// AfterInit is called by the Agent Core after all plugins have been initialized.
+// AfterInit registers Cassandra to status check.
 func (p *Plugin) AfterInit() error {
+	if p.StatusCheck != nil && p.session != nil {
+		p.StatusCheck.Register(p.PluginName, func() (statuscheck.PluginState, error) {
+			broker := p.NewBroker()
+			err := broker.Exec(`select keyspace_name from system_schema.keyspaces`)
+			if err == nil {
+				return statuscheck.OK, nil
+			}
+			return statuscheck.Error, err
+		})
+		p.Log.Warnf("Status check for %s was started", p.PluginName)
+	}
+
 	return nil
 }
 

@@ -6,14 +6,16 @@
         "2001:842:0:0:0:ff00:13c7:1245/48"
     ],
     "namespace": {
-        "name": "ns2",
-        "type": 2
+        "reference": "ns2",
+        "type": 1
     },
     "name": "veth2",
     "host_if_name": "veth2Name",
     "phys_address": "92:c7:42:67:ab:cd",
     "type": 0,
-    "veth": {
-        "peer_if_name": "veth1"
+    "link": {
+        "veth": {
+            "peer_if_name": "veth1"
+        }
     }
 }

@@ -3,14 +3,14 @@ package configurator
 import (
 	"github.com/gogo/status"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/vpp-agent/api/models/linux"
-	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/ligato/vpp-agent/pkg/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	rpc "github.com/ligato/vpp-agent/api/configurator"
+	"github.com/ligato/vpp-agent/api/models/linux"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/ligato/vpp-agent/pkg/models"
+	"github.com/ligato/vpp-agent/pkg/util"
 	kvs "github.com/ligato/vpp-agent/plugins/kvscheduler/api"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
 )

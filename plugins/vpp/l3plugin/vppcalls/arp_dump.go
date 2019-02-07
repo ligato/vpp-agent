@@ -1,16 +1,16 @@
-// Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2018 Cisco and/or its affiliates.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at:
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 package vppcalls
 
@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"net"
 
+	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	l3binapi "github.com/ligato/vpp-agent/plugins/vpp/binapi/ip"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l3"
 )
 
 // ArpDetails holds info about ARP entry as a proto model
 type ArpDetails struct {
-	Arp  *l3.ArpTable_ArpEntry
+	Arp  *l3.ARPEntry
 	Meta *ArpMeta
 }
 
@@ -52,24 +52,23 @@ func (h *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 		}
 
 		// ARP interface
-		ifName, _, exists := h.ifIndexes.LookupName(arpDetails.SwIfIndex)
+		ifName, _, exists := h.ifIndexes.LookupBySwIfIndex(arpDetails.SwIfIndex)
 		if !exists {
 			h.log.Warnf("ARP dump: interface name not found for index %d", arpDetails.SwIfIndex)
 		}
 		// IP & MAC address
-		var ip, mac string
-		if uintToBool(arpDetails.IsIPv6) {
+		var ip string
+		if arpDetails.IsIPv6 == 1 {
 			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress).To16().String())
 		} else {
 			ip = fmt.Sprintf("%s", net.IP(arpDetails.IPAddress[:4]).To4().String())
 		}
-		mac = net.HardwareAddr(arpDetails.MacAddress).String()
 
 		// ARP entry
-		arp := &l3.ArpTable_ArpEntry{
+		arp := &l3.ARPEntry{
 			Interface:   ifName,
 			IpAddress:   ip,
-			PhysAddress: mac,
+			PhysAddress: net.HardwareAddr(arpDetails.MacAddress).String(),
 			Static:      uintToBool(arpDetails.IsStatic),
 		}
 		// ARP meta
@@ -84,11 +83,4 @@ func (h *ArpVppHandler) DumpArpEntries() ([]*ArpDetails, error) {
 	}
 
 	return entries, nil
-}
-
-func uintToBool(value uint8) bool {
-	if value == 0 {
-		return false
-	}
-	return true
 }

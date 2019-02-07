@@ -15,14 +15,12 @@
 package vppcalls
 
 import (
-	"fmt"
-
+	l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	l2ba "github.com/ligato/vpp-agent/plugins/vpp/binapi/l2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/l2"
 )
 
-// VppAddBridgeDomain implements bridge domain handler.
-func (h *BridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomains_BridgeDomain) error {
+// AddBridgeDomain adds new bridge domain.
+func (h *BridgeDomainVppHandler) AddBridgeDomain(bdIdx uint32, bd *l2.BridgeDomain) error {
 	req := &l2ba.BridgeDomainAddDel{
 		IsAdd:   1,
 		BdID:    bdIdx,
@@ -38,15 +36,13 @@ func (h *BridgeDomainVppHandler) VppAddBridgeDomain(bdIdx uint32, bd *l2.BridgeD
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil
 }
 
-// VppDeleteBridgeDomain implements bridge domain handler.
-func (h *BridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error {
+// DeleteBridgeDomain removes existing bridge domain.
+func (h *BridgeDomainVppHandler) DeleteBridgeDomain(bdIdx uint32) error {
 	req := &l2ba.BridgeDomainAddDel{
 		IsAdd: 0,
 		BdID:  bdIdx,
@@ -55,8 +51,6 @@ func (h *BridgeDomainVppHandler) VppDeleteBridgeDomain(bdIdx uint32) error {
 
 	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
 		return err
-	} else if reply.Retval != 0 {
-		return fmt.Errorf("%s returned %d", reply.GetMessageName(), reply.Retval)
 	}
 
 	return nil

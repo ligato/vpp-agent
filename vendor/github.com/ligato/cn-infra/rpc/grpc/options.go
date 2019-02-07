@@ -15,6 +15,7 @@
 package grpc
 
 import (
+	"crypto/tls"
 	"fmt"
 
 	"github.com/ligato/cn-infra/config"
@@ -71,5 +72,19 @@ func UseDeps(cb func(*Deps)) Option {
 func UseHTTP(h rest.HTTPHandlers) Option {
 	return func(p *Plugin) {
 		p.Deps.HTTP = h
+	}
+}
+
+// UseAuth return Option that sets Authenticator.
+func UseAuth(a *Authenticator) Option {
+	return func(p *Plugin) {
+		p.auther = a
+	}
+}
+
+// UseTLS return Option that sets TLS config.
+func UseTLS(c *tls.Config) Option {
+	return func(p *Plugin) {
+		p.tlsConfig = c
 	}
 }

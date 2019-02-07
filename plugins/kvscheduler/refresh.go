@@ -394,7 +394,7 @@ func dumpGraph(g graph.RWAccess) string {
 	var buf strings.Builder
 	graphInfo := fmt.Sprintf("%d nodes", len(keys))
 	buf.WriteString("+======================================================================================================================+\n")
-	buf.WriteString(fmt.Sprintf("| GRAPH DUMP %105s |\n", graphInfo))
+	buf.WriteString(fmt.Sprintf("| GRAPH %105s |\n", graphInfo))
 	buf.WriteString("+======================================================================================================================+\n")
 	writeLine := func(left, right string) {
 		n := 115 - len(left)
@@ -497,7 +497,7 @@ func dumpGraph(g graph.RWAccess) string {
 		}
 
 		if i+1 != len(keys) {
-			buf.WriteString("+======================================================================================================================+\n")
+			buf.WriteString("+----------------------------------------------------------------------------------------------------------------------+\n")
 		}
 	}
 	buf.WriteString("+======================================================================================================================+\n")

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Cisco and/or its affiliates.
+// Copyright (c) 2018 Cisco and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@ package vppcalls
 import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
+	ipsec "github.com/ligato/vpp-agent/api/models/vpp/ipsec"
 	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin/ifaceidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin/ipsecidx"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/ipsec"
 )
 
 // IPSecVppAPI provides methods for creating and managing of a IPsec configuration
@@ -30,26 +29,22 @@ type IPSecVppAPI interface {
 
 // IPSecVppWrite provides write methods for IPsec
 type IPSecVppWrite interface {
-	// AddTunnelInterface adds tunnel interface
-	AddTunnelInterface(tunnel *ipsec.TunnelInterfaces_Tunnel) (uint32, error)
-	// DelTunnelInterface removes tunnel interface
-	DelTunnelInterface(ifIdx uint32, tunnel *ipsec.TunnelInterfaces_Tunnel) error
 	// AddSPD adds SPD to VPP via binary API
 	AddSPD(spdID uint32) error
 	// DelSPD deletes SPD from VPP via binary API
-	DelSPD(spdID uint32) error
+	DeleteSPD(spdID uint32) error
 	// InterfaceAddSPD adds SPD interface assignment to VPP via binary API
-	InterfaceAddSPD(spdID, swIfIdx uint32) error
+	AddSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
 	// InterfaceDelSPD deletes SPD interface assignment from VPP via binary API
-	InterfaceDelSPD(spdID, swIfIdx uint32) error
+	DeleteSPDInterface(spdID uint32, iface *ipsec.SecurityPolicyDatabase_Interface) error
 	// AddSPDEntry adds SPD policy entry to VPP via binary API
-	AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry) error
+	AddSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
 	// DelSPDEntry deletes SPD policy entry from VPP via binary API
-	DelSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabases_SPD_PolicyEntry) error
+	DeleteSPDEntry(spdID, saID uint32, spd *ipsec.SecurityPolicyDatabase_PolicyEntry) error
 	// AddSAEntry adds SA to VPP via binary API
-	AddSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA) error
+	AddSA(sa *ipsec.SecurityAssociation) error
 	// DelSAEntry deletes SA from VPP via binary API
-	DelSAEntry(saID uint32, sa *ipsec.SecurityAssociations_SA) error
+	DeleteSA(sa *ipsec.SecurityAssociation) error
 }
 
 // IPSecVPPRead provides read methods for IPSec
@@ -60,25 +55,20 @@ type IPSecVPPRead interface {
 	DumpIPSecSA() (saList []*IPSecSaDetails, err error)
 	// DumpIPSecSAWithIndex returns a security association with provided index
 	DumpIPSecSAWithIndex(saID uint32) (saList []*IPSecSaDetails, err error)
-	// DumpIPSecTunnelInterfaces returns a list of configured IPSec tunnel interfaces
-	DumpIPSecTunnelInterfaces() (tun []*IPSecTunnelInterfaceDetails, err error)
 }
 
-// IPSecVppHandler is accessor for IPsec-related vppcalls methods
+// IPSecVppHandler is accessor for IPSec-related vppcalls methods
 type IPSecVppHandler struct {
 	callsChannel govppapi.Channel
-	ifIndexes    ifaceidx.SwIfIndex
-	spdIndexes   ipsecidx.SPDIndex // TODO workaround in order to be able to dump at least spds configurator knows about
+	ifIndexes    ifaceidx.IfaceMetadataIndex
 	log          logging.Logger
 }
 
-// NewIPsecVppHandler creates new instance of IPsec vppcalls handler
-func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.SwIfIndex, spdIndexes ipsecidx.SPDIndex,
-	log logging.Logger) *IPSecVppHandler {
+// NewIPsecVppHandler creates new instance of IPSec vppcalls handler
+func NewIPsecVppHandler(callsChan govppapi.Channel, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *IPSecVppHandler {
 	return &IPSecVppHandler{
 		callsChannel: callsChan,
 		ifIndexes:    ifIndexes,
-		spdIndexes:   spdIndexes,
 		log:          log,
 	}
 }

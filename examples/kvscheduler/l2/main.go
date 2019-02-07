@@ -26,11 +26,11 @@ import (
 	vpp_interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	vpp_l2 "github.com/ligato/vpp-agent/api/models/vpp/l2"
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
-	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linuxv2/ifplugin"
-	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linuxv2/l3plugin"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	vpp_l2plugin "github.com/ligato/vpp-agent/plugins/vppv2/l2plugin"
+	vpp_ifplugin "github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	vpp_l2plugin "github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
 )
 
 /*
@@ -61,11 +61,11 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Orchestrator  *orchestrator.Plugin
 	LinuxIfPlugin *linux_ifplugin.IfPlugin
 	LinuxL3Plugin *linux_l3plugin.L3Plugin
 	VPPIfPlugin   *vpp_ifplugin.IfPlugin
 	VPPL2Plugin   *vpp_l2plugin.L2Plugin
+	Orchestrator  *orchestrator.Plugin
 }
 
 // String returns plugin name

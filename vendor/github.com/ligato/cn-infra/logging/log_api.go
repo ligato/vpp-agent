@@ -30,6 +30,96 @@ var (
 	DefaultRegistry Registry
 )
 
+// Debug is for logging with default logger.
+func Debug(args ...interface{}) { DefaultLogger.Debug(args...) }
+
+// Debugf is for logging with default logger.
+func Debugf(format string, args ...interface{}) { DefaultLogger.Debugf(format, args...) }
+
+// Info is for logging with default logger.
+func Info(args ...interface{}) { DefaultLogger.Info(args...) }
+
+// Infof is for logging with default logger.
+func Infof(format string, args ...interface{}) { DefaultLogger.Infof(format, args...) }
+
+// Warn is for logging with default logger.
+func Warn(args ...interface{}) { DefaultLogger.Warn(args...) }
+
+// Warnf is for logging with default logger.
+func Warnf(format string, args ...interface{}) { DefaultLogger.Warnf(format, args...) }
+
+// Error is for logging with default logger.
+func Error(args ...interface{}) { DefaultLogger.Error(args...) }
+
+// Errorf is for logging with default logger.
+func Errorf(format string, args ...interface{}) { DefaultLogger.Errorf(format, args...) }
+
+// LogWithLevel allows to log with different log levels
+type LogWithLevel interface {
+	Debug(args ...interface{})
+	Debugf(format string, args ...interface{})
+	Info(args ...interface{})
+	Infof(format string, args ...interface{})
+	Warn(args ...interface{})
+	Warnf(format string, args ...interface{})
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+
+	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
+	Fatalln(args ...interface{})
+	Panic(args ...interface{})
+	Panicf(format string, args ...interface{})
+	Print(v ...interface{})
+	Printf(format string, v ...interface{})
+	Println(v ...interface{})
+}
+
+// Logger provides logging capabilities
+type Logger interface {
+	// GetName returns the logger name
+	GetName() string
+	// SetLevel modifies the log level
+	SetLevel(level LogLevel)
+	// GetLevel returns currently set log level
+	GetLevel() LogLevel
+	// WithField creates one structured field
+	WithField(key string, value interface{}) LogWithLevel
+	// WithFields creates multiple structured fields
+	WithFields(fields Fields) LogWithLevel
+	// Add hook to send log to external address
+	AddHook(hook logrus.Hook)
+	// SetOutput sets output writer
+	SetOutput(out io.Writer)
+	// SetFormatter sets custom formatter
+	SetFormatter(formatter logrus.Formatter)
+
+	LogWithLevel
+}
+
+// LoggerFactory is API for the plugins that want to create their own loggers.
+type LoggerFactory interface {
+	NewLogger(name string) Logger
+}
+
+// Registry groups multiple Logger instances and allows to mange their log levels.
+type Registry interface {
+	// LoggerFactory allow to create new loggers
+	LoggerFactory
+	// List Loggers returns a map (loggerName => log level)
+	ListLoggers() map[string]string
+	// SetLevel modifies log level of selected logger in the registry
+	SetLevel(logger, level string) error
+	// GetLevel returns the currently set log level of the logger from registry
+	GetLevel(logger string) (string, error)
+	// Lookup returns a logger instance identified by name from registry
+	Lookup(loggerName string) (logger Logger, found bool)
+	// ClearRegistry removes all loggers except the default one from registry
+	ClearRegistry()
+	// HookConfigs stores hooks from log manager to be used for new loggers
+	AddHook(hook logrus.Hook)
+}
+
 // LogLevel represents severity of log record
 type LogLevel uint32
 
@@ -91,70 +181,30 @@ func ParseLogLevel(level string) LogLevel {
 // Fields is a type accepted by WithFields method. It can be used to instantiate map using shorter notation.
 type Fields map[string]interface{}
 
-// LogWithLevel allows to log with different log levels
-type LogWithLevel interface {
-	Debug(args ...interface{})
-	Debugf(format string, args ...interface{})
-	Info(args ...interface{})
-	Infof(format string, args ...interface{})
-	Warn(args ...interface{})
-	Warnf(format string, args ...interface{})
-	Error(args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
-	Fatalln(args ...interface{})
-	Panic(args ...interface{})
-	Panicf(format string, args ...interface{})
-
-	Print(v ...interface{})
-	Printf(format string, v ...interface{})
-	Println(v ...interface{})
+// ParentLogger provides logger with logger factory that creates loggers with prefix.
+type ParentLogger struct {
+	Logger
+	Prefix  string
+	Factory LoggerFactory
 }
 
-// Logger provides logging capabilities
-type Logger interface {
-	// GetName returns the logger name
-	GetName() string
-	// SetLevel modifies the log level
-	SetLevel(level LogLevel)
-	// GetLevel returns currently set log level
-	GetLevel() LogLevel
-	// WithField creates one structured field
-	WithField(key string, value interface{}) LogWithLevel
-	// WithFields creates multiple structured fields
-	WithFields(fields Fields) LogWithLevel
-	// Add hook to send log to external address
-	AddHook(hook logrus.Hook)
-	// SetOutput sets output writer
-	SetOutput(out io.Writer)
-	// SetFormatter sets custom formatter
-	SetFormatter(formatter logrus.Formatter)
-
-	LogWithLevel
+// NewParentLogger creates new parent logger with given LoggerFactory and name as prefix.
+func NewParentLogger(name string, factory LoggerFactory) *ParentLogger {
+	return &ParentLogger{
+		Logger:  factory.NewLogger(name),
+		Prefix:  name,
+		Factory: factory,
+	}
 }
 
-// LoggerFactory is API for the plugins that want to create their own loggers.
-type LoggerFactory interface {
-	NewLogger(name string) Logger
-}
-
-// Registry groups multiple Logger instances and allows to mange their log levels.
-type Registry interface {
-	// LoggerFactory allow to create new loggers
-	LoggerFactory
-	// List Loggers returns a map (loggerName => log level)
-	ListLoggers() map[string]string
-	// SetLevel modifies log level of selected logger in the registry
-	SetLevel(logger, level string) error
-	// GetLevel returns the currently set log level of the logger from registry
-	GetLevel(logger string) (string, error)
-	// Lookup returns a logger instance identified by name from registry
-	Lookup(loggerName string) (logger Logger, found bool)
-	// ClearRegistry removes all loggers except the default one from registry
-	ClearRegistry()
-	// HookConfigs stores hooks from log manager to be used for new loggers
-	AddHook(hook logrus.Hook)
+// NewLogger returns logger using name prefixed with prefix defined in parent logger.
+// If Factory is nil, DefaultRegistry is used.
+func (p *ParentLogger) NewLogger(name string) Logger {
+	factory := p.Factory
+	if factory == nil {
+		factory = DefaultRegistry
+	}
+	return factory.NewLogger(fmt.Sprintf("%s.%s", p.Prefix, name))
 }
 
 // PluginLogger is intended for:
@@ -181,30 +231,4 @@ func ForPlugin(name string) PluginLogger {
 		}
 	}
 	return NewParentLogger(name, DefaultRegistry)
-}
-
-// NewParentLogger creates new parent logger with given LoggerFactory and name as prefix.
-func NewParentLogger(name string, factory LoggerFactory) *ParentLogger {
-	return &ParentLogger{
-		Logger:  factory.NewLogger(name),
-		Prefix:  name,
-		Factory: factory,
-	}
-}
-
-// ParentLogger provides logger with logger factory that creates loggers with prefix.
-type ParentLogger struct {
-	Logger
-	Prefix  string
-	Factory LoggerFactory
-}
-
-// NewLogger returns logger using name prefixed with prefix defined in parent logger.
-// If Factory is nil, DefaultRegistry is used.
-func (p *ParentLogger) NewLogger(name string) Logger {
-	factory := p.Factory
-	if factory == nil {
-		factory = DefaultRegistry
-	}
-	return factory.NewLogger(fmt.Sprintf("%s.%s", p.Prefix, name))
 }

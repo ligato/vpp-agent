@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Cisco and/or its affiliates.
+//  Copyright (c) 2019 Cisco and/or its affiliates.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 package app
 
 import (
-	"sync"
-
 	"github.com/ligato/cn-infra/datasync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync"
 	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
@@ -29,11 +27,22 @@ import (
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/logging/logmanager"
 	"github.com/ligato/cn-infra/messaging/kafka"
-	"github.com/ligato/vpp-agent/plugins/linux"
-	"github.com/ligato/vpp-agent/plugins/rest"
+
+	"github.com/ligato/vpp-agent/plugins/configurator"
+	linux_ifplugin "github.com/ligato/vpp-agent/plugins/linux/ifplugin"
+	linux_l3plugin "github.com/ligato/vpp-agent/plugins/linux/l3plugin"
+	linux_nsplugin "github.com/ligato/vpp-agent/plugins/linux/nsplugin"
+	"github.com/ligato/vpp-agent/plugins/orchestrator"
+	"github.com/ligato/vpp-agent/plugins/restapi"
 	"github.com/ligato/vpp-agent/plugins/telemetry"
-	"github.com/ligato/vpp-agent/plugins/vpp"
-	"github.com/ligato/vpp-agent/plugins/vpp/rpc"
+	"github.com/ligato/vpp-agent/plugins/vpp/aclplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/ipsecplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l2plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/natplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/puntplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/stnplugin"
 )
 
 // VPPAgent defines plugins which will be loaded and their order.
@@ -42,17 +51,22 @@ import (
 type VPPAgent struct {
 	LogManager *logmanager.Plugin
 
+	// VPP & Linux are first to ensure that
+	// all their descriptors are regitered to KVScheduler
+	// before orchestrator that starts watch for their NB key prefixes.
+	VPP
+	Linux
+
+	Orchestrator *orchestrator.Plugin
+
 	ETCDDataSync   *kvdbsync.Plugin
 	ConsulDataSync *kvdbsync.Plugin
 	RedisDataSync  *kvdbsync.Plugin
 
-	VPP   *vpp.Plugin
-	Linux *linux.Plugin
-
-	GRPCService *rpc.Plugin
-	RESTAPI     *rest.Plugin
-	Probe       *probe.Plugin
-	Telemetry   *telemetry.Plugin
+	Configurator *configurator.Plugin
+	RESTAPI      *restapi.Plugin
+	Probe        *probe.Plugin
+	Telemetry    *telemetry.Plugin
 }
 
 // New creates new VPPAgent instance.
@@ -61,14 +75,10 @@ func New() *VPPAgent {
 	consulDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&consul.DefaultPlugin))
 	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&redis.DefaultPlugin))
 
-	watchers := datasync.KVProtoWatchers{
-		local.DefaultRegistry,
-		etcdDataSync,
-		consulDataSync,
-	}
 	writers := datasync.KVProtoWriters{
 		etcdDataSync,
 		consulDataSync,
+		redisDataSync,
 	}
 	statuscheck.DefaultPlugin.Transport = writers
 
@@ -79,40 +89,37 @@ func New() *VPPAgent {
 		}),
 	)
 
-	vppPlugin := vpp.NewPlugin(vpp.UseDeps(func(deps *vpp.Deps) {
-		deps.Publish = writers
-		deps.Watcher = watchers
-		deps.IfStatePub = ifStatePub
-		deps.DataSyncs = map[string]datasync.KeyProtoValWriter{
-			"etcd":  etcdDataSync,
-			"redis": redisDataSync,
-		}
-		deps.GRPCSvc = &rpc.DefaultPlugin
-	}))
-	linuxPlugin := linux.NewPlugin(linux.UseDeps(func(deps *linux.Deps) {
-		deps.VPP = vppPlugin
-		deps.Watcher = watchers
-	}))
-	vppPlugin.Deps.Linux = linuxPlugin
+	// Set watcher for KVScheduler.
+	watchers := datasync.KVProtoWatchers{
+		local.DefaultRegistry,
+		etcdDataSync,
+		consulDataSync,
+		redisDataSync,
+	}
+	orchestrator.DefaultPlugin.Watcher = watchers
 
-	var watchEventsMutex sync.Mutex
-	vppPlugin.Deps.WatchEventsMutex = &watchEventsMutex
-	linuxPlugin.Deps.WatchEventsMutex = &watchEventsMutex
+	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
+	ifplugin.DefaultPlugin.PublishStatistics = writers
+	puntplugin.DefaultPlugin.PublishState = writers
 
-	restPlugin := rest.NewPlugin(rest.UseDeps(func(deps *rest.Deps) {
-		deps.VPP = vppPlugin
-		deps.Linux = linuxPlugin
-	}))
+	// connect IfPlugins for Linux & VPP
+	linux_ifplugin.DefaultPlugin.VppIfPlugin = &ifplugin.DefaultPlugin
+	ifplugin.DefaultPlugin.LinuxIfPlugin = &linux_ifplugin.DefaultPlugin
+	ifplugin.DefaultPlugin.NsPlugin = &linux_nsplugin.DefaultPlugin
+
+	vpp := DefaultVPP()
+	linux := DefaultLinux()
 
 	return &VPPAgent{
 		LogManager:     &logmanager.DefaultPlugin,
+		Orchestrator:   &orchestrator.DefaultPlugin,
 		ETCDDataSync:   etcdDataSync,
 		ConsulDataSync: consulDataSync,
 		RedisDataSync:  redisDataSync,
-		VPP:            vppPlugin,
-		Linux:          linuxPlugin,
-		GRPCService:    &rpc.DefaultPlugin,
-		RESTAPI:        restPlugin,
+		VPP:            vpp,
+		Linux:          linux,
+		Configurator:   &configurator.DefaultPlugin,
+		RESTAPI:        &restapi.DefaultPlugin,
 		Probe:          &probe.DefaultPlugin,
 		Telemetry:      &telemetry.DefaultPlugin,
 	}
@@ -127,6 +134,7 @@ func (VPPAgent) Init() error {
 func (VPPAgent) AfterInit() error {
 	// manually start resync after all plugins started
 	resync.DefaultPlugin.DoResync()
+	//orchestrator.DefaultPlugin.InitialSync()
 	return nil
 }
 
@@ -138,4 +146,44 @@ func (VPPAgent) Close() error {
 // String returns name of the plugin.
 func (VPPAgent) String() string {
 	return "VPPAgent"
+}
+
+// VPP contains all VPP plugins.
+type VPP struct {
+	ACLPlugin   *aclplugin.ACLPlugin
+	IfPlugin    *ifplugin.IfPlugin
+	IPSecPlugin *ipsecplugin.IPSecPlugin
+	L2Plugin    *l2plugin.L2Plugin
+	L3Plugin    *l3plugin.L3Plugin
+	NATPlugin   *natplugin.NATPlugin
+	PuntPlugin  *puntplugin.PuntPlugin
+	STNPlugin   *stnplugin.STNPlugin
+}
+
+func DefaultVPP() VPP {
+	return VPP{
+		ACLPlugin:   &aclplugin.DefaultPlugin,
+		IfPlugin:    &ifplugin.DefaultPlugin,
+		IPSecPlugin: &ipsecplugin.DefaultPlugin,
+		L2Plugin:    &l2plugin.DefaultPlugin,
+		L3Plugin:    &l3plugin.DefaultPlugin,
+		NATPlugin:   &natplugin.DefaultPlugin,
+		PuntPlugin:  &puntplugin.DefaultPlugin,
+		STNPlugin:   &stnplugin.DefaultPlugin,
+	}
+}
+
+// Linux contains all Linux plugins.
+type Linux struct {
+	IfPlugin *linux_ifplugin.IfPlugin
+	L3Plugin *linux_l3plugin.L3Plugin
+	NSPlugin *linux_nsplugin.NsPlugin
+}
+
+func DefaultLinux() Linux {
+	return Linux{
+		IfPlugin: &linux_ifplugin.DefaultPlugin,
+		L3Plugin: &linux_l3plugin.DefaultPlugin,
+		NSPlugin: &linux_nsplugin.DefaultPlugin,
+	}
 }

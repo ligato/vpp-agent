@@ -38,8 +38,7 @@ func TestGetBuffers(t *testing.T) {
      0           replication-recycle           7        1024      0           0           0           0    
      0                       default           8        2048      0           0           0           0    `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply:  []byte(reply),
-		Length: uint32(len(reply)),
+		Reply: []byte(reply),
 	})
 
 	info, err := vppcalls.GetBuffersInfo(ctx.MockChannel)
@@ -136,8 +135,7 @@ Time 21.5, average vectors/node 0.00, last 128 main loops 0.00 per node 0.00
 unix-epoll-input                 polling          20563870               0               0          3.56e3            0.00
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply:  []byte(reply),
-		Length: uint32(len(reply)),
+		Reply: []byte(reply),
 	})
 
 	info, err := vppcalls.GetRuntimeInfo(ctx.MockChannel)
@@ -168,8 +166,7 @@ Thread 2 vpp_wk_1
 22991 objects, 19199k of 24937k used, 5196k free, 5168k reclaimed, 361k overhead, 1048572k capacity
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply:  []byte(reply),
-		Length: uint32(len(reply)),
+		Reply: []byte(reply),
 	})
 
 	info, err := vppcalls.GetMemory(ctx.MockChannel)
@@ -217,8 +214,7 @@ func TestGetNodeCounters(t *testing.T) {
          1                cdp-input               good cdp packets (processed)
 `
 	ctx.MockVpp.MockReply(&vpe.CliInbandReply{
-		Reply:  []byte(reply),
-		Length: uint32(len(reply)),
+		Reply: []byte(reply),
 	})
 
 	info, err := vppcalls.GetNodeCounters(ctx.MockChannel)

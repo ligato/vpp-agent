@@ -27,7 +27,7 @@ func TestVppAddArpTerminationTableEntry(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
 
-	err := bdHandler.VppAddArpTerminationTableEntry(
+	err := bdHandler.AddArpTerminationTableEntry(
 		4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 
 	Expect(err).ShouldNot(HaveOccurred())
@@ -46,7 +46,7 @@ func TestVppAddArpTerminationTableEntryIPv6(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
 
-	err := bdHandler.VppAddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "2001:db9::54")
+	err := bdHandler.AddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "2001:db9::54")
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
@@ -64,7 +64,7 @@ func TestVppRemoveArpTerminationTableEntry(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
 
-	err := bdHandler.VppRemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
+	err := bdHandler.RemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(ctx.MockChannel.Msg).To(Equal(&l2ba.BdIPMacAddDel{
@@ -82,10 +82,10 @@ func TestVppArpTerminationTableEntryMacError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
 
-	err := bdHandler.VppAddArpTerminationTableEntry(4, "in:va:li:d:ma:c", "192.168.4.4")
+	err := bdHandler.AddArpTerminationTableEntry(4, "in:va:li:d:ma:c", "192.168.4.4")
 	Expect(err).Should(HaveOccurred())
 
-	err = bdHandler.VppRemoveArpTerminationTableEntry(4, "in:va:li:d:ma:c", "192.168.4.4")
+	err = bdHandler.RemoveArpTerminationTableEntry(4, "in:va:li:d:ma:c", "192.168.4.4")
 	Expect(err).Should(HaveOccurred())
 }
 
@@ -95,10 +95,10 @@ func TestVppArpTerminationTableEntryIpError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&l2ba.BdIPMacAddDelReply{})
 
-	err := bdHandler.VppAddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "")
+	err := bdHandler.AddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "")
 	Expect(err).Should(HaveOccurred())
 
-	err = bdHandler.VppRemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "")
+	err = bdHandler.RemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "")
 	Expect(err).Should(HaveOccurred())
 }
 
@@ -110,11 +110,11 @@ func TestVppArpTerminationTableEntryError(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := bdHandler.VppAddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
+	err := bdHandler.AddArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 	Expect(err).Should(HaveOccurred())
 
 	ctx.MockVpp.MockReply(&l2ba.BridgeDomainAddDelReply{})
 
-	err = bdHandler.VppRemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
+	err = bdHandler.RemoveArpTerminationTableEntry(4, "FF:FF:FF:FF:FF:FF", "192.168.4.4")
 	Expect(err).Should(HaveOccurred())
 }

@@ -20,20 +20,21 @@ package main
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/ligato/cn-infra/agent"
 	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/process"
-	"github.com/ligato/cn-infra/process/status"
+	pm "github.com/ligato/cn-infra/processmanager"
+	"github.com/ligato/cn-infra/processmanager/status"
 	"github.com/pkg/errors"
 )
 
 const pluginName = "process-manager-example"
 
 func main() {
-	pmPlugin := process.DefaultPlugin
+	pmPlugin := pm.DefaultPlugin
 	example := &PMExample{
 		Log:      logging.ForPlugin(pluginName),
 		PM:       &pmPlugin,
@@ -52,7 +53,7 @@ func main() {
 // PMExample demonstrates the usage of the process manager plugin.
 type PMExample struct {
 	Log logging.PluginLogger
-	PM  process.API
+	PM  pm.ProcessManager
 
 	finished chan struct{}
 }
@@ -91,10 +92,11 @@ func (p *PMExample) advancedExample() error {
 	// process will be automatically terminated together with the parent. Option 'Detach' allows to detach
 	// the process from parent and keeps is running.
 	// Option 'Restarts' defines a number of automatic restarts if given process is terminated.
+	// 'Writer' sets standard output/error, so the process log will be visible in the example log
 	cmd := filepath.Join("../", "test-process", "test-process")
 	notifyChan := make(chan status.ProcessStatus)
-	pr := p.PM.NewProcess("test-pr", cmd, process.Args("-max-uptime=60"), process.Notify(notifyChan),
-		process.Detach(), process.Restarts(1))
+	pr := p.PM.NewProcess("test-pr", cmd, pm.Args("-max-uptime=60"), pm.Notify(notifyChan),
+		pm.Detach(), pm.Restarts(1), pm.Writer(os.Stdout, os.Stderr))
 
 	// Start the watcher as before and ensure the process is running
 	var state status.ProcessStatus
@@ -142,8 +144,8 @@ func (p *PMExample) advancedExample() error {
 	p.Log.Infof("Reattaching process...")
 	notifyChan = make(chan status.ProcessStatus)
 	go p.runWatcher("watcher-new", &state, notifyChan)
-	if pr, err = p.PM.AttachProcess("test-pr-attached", cmd, pid, process.Args("-max-uptime=60"), process.Notify(notifyChan),
-		process.Detach(), process.Restarts(1)); err != nil {
+	if pr, err = p.PM.AttachProcess("test-pr-attached", cmd, pid, pm.Args("-max-uptime=60"), pm.Notify(notifyChan),
+		pm.Detach(), pm.Restarts(1), pm.Writer(nil, nil)); err != nil {
 		return err
 	}
 	time.Sleep(2 * time.Second)
@@ -174,7 +176,7 @@ func (p *PMExample) advancedExample() error {
 	// Every process creates a status file within /proc/<pid>/status with a plenty of information about the process
 	// state, CPU or memory usage, etc. The process watcher periodically reads the status data for current state to
 	// propagate changes. To read status, use ReadStatus().
-	prStatus, err := pr.ReadStatus(pr.GetPid())
+	prStatus, err := pr.GetStatus(pr.GetPid())
 	if err != nil {
 		return err
 	}

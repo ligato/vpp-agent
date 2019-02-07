@@ -94,12 +94,6 @@ func (p *Plugin) Init() (err error) {
 	// Uses config file to establish connection with the database
 	p.connection, err = NewEtcdConnectionWithBytes(*etcdClientCfg, p.Log)
 
-	// Register for providing status reports (polling mode).
-	if p.StatusCheck != nil {
-		p.StatusCheck.Register(p.PluginName, p.statusCheckProbe)
-	} else {
-		p.Log.Warnf("Unable to start status check for etcd")
-	}
 	if err != nil && p.config.AllowDelayedStart {
 		// If the connection cannot be established during init, keep trying in another goroutine (if allowed) and
 		// end the init
@@ -115,6 +109,16 @@ func (p *Plugin) Init() (err error) {
 
 	// Mark p as connected at this point
 	p.connected = true
+
+	return nil
+}
+
+// AfterInit registers ETCD plugin to status check if needed
+func (p *Plugin) AfterInit() error {
+	if p.StatusCheck != nil && !p.disabled {
+		p.StatusCheck.Register(p.PluginName, p.statusCheckProbe)
+		p.Log.Infof("Status check for %s was started", p.PluginName)
+	}
 
 	return nil
 }

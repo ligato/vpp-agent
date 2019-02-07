@@ -17,8 +17,8 @@ package vppcalls_test
 import (
 	"testing"
 
+	ifModel "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/interfaces"
-	ifModel "github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -28,8 +28,8 @@ func TestSetRxMode(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxModeReply{})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
-		RxMode:       ifModel.RxModeType_DEFAULT,
+	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxModeSettings{
+		RxMode:       ifModel.Interface_RxModeSettings_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
 	})
@@ -49,8 +49,8 @@ func TestSetRxModeError(t *testing.T) {
 
 	ctx.MockVpp.MockReply(&interfaces.SwInterfaceSetRxMode{})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
-		RxMode:       ifModel.RxModeType_DEFAULT,
+	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxModeSettings{
+		RxMode:       ifModel.Interface_RxModeSettings_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
 	})
@@ -66,8 +66,8 @@ func TestSetRxModeRetval(t *testing.T) {
 		Retval: 1,
 	})
 
-	err := ifHandler.SetRxMode(1, &ifModel.Interfaces_Interface_RxModeSettings{
-		RxMode:       ifModel.RxModeType_DEFAULT,
+	err := ifHandler.SetRxMode(1, &ifModel.Interface_RxModeSettings{
+		RxMode:       ifModel.Interface_RxModeSettings_DEFAULT,
 		QueueId:      1,
 		QueueIdValid: 2,
 	})

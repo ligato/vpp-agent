@@ -18,13 +18,13 @@ import (
 	"errors"
 	"fmt"
 
+	interfaces "github.com/ligato/vpp-agent/api/models/vpp/interfaces"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tap"
 	"github.com/ligato/vpp-agent/plugins/vpp/binapi/tapv2"
-	"github.com/ligato/vpp-agent/plugins/vpp/model/interfaces"
 )
 
 // AddTapInterface implements interface handler.
-func (h *IfVppHandler) AddTapInterface(ifName string, tapIf *interfaces.Interfaces_Interface_Tap) (swIfIdx uint32, err error) {
+func (h *IfVppHandler) AddTapInterface(ifName string, tapIf *interfaces.TapLink) (swIfIdx uint32, err error) {
 	if tapIf == nil || tapIf.HostIfName == "" {
 		return 0, errors.New("host interface name was not provided for the TAP interface")
 	}
@@ -42,10 +42,6 @@ func (h *IfVppHandler) AddTapInterface(ifName string, tapIf *interfaces.Interfac
 			UseRandomMac:  1,
 			RxRingSz:      uint16(tapIf.RxRingSize),
 			TxRingSz:      uint16(tapIf.TxRingSize),
-		}
-		if tapIf.Namespace != "" {
-			req.HostNamespace = []byte(tapIf.Namespace)
-			req.HostNamespaceSet = 1
 		}
 
 		reply := &tapv2.TapCreateV2Reply{}

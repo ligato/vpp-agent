@@ -17,13 +17,14 @@
 package linuxcalls
 
 import (
-	"github.com/vishvananda/netlink"
 	"net"
+
+	"github.com/vishvananda/netlink"
 )
 
 // SetInterfaceMac calls LinkSetHardwareAddr netlink API.
-func (handler *NetLinkHandler) SetInterfaceMac(ifName string, macAddress string) error {
-	link, err := handler.GetLinkByName(ifName)
+func (h *NetLinkHandler) SetInterfaceMac(ifName string, macAddress string) error {
+	link, err := h.GetLinkByName(ifName)
 	if err != nil {
 		return err
 	}

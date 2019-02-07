@@ -25,8 +25,8 @@ import (
 	l3 "github.com/ligato/vpp-agent/api/models/vpp/l3"
 	"github.com/ligato/vpp-agent/clientv2/linux/localclient"
 	"github.com/ligato/vpp-agent/plugins/orchestrator"
-	"github.com/ligato/vpp-agent/plugins/vppv2/ifplugin"
-	"github.com/ligato/vpp-agent/plugins/vppv2/l3plugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/ifplugin"
+	"github.com/ligato/vpp-agent/plugins/vpp/l3plugin"
 )
 
 /*
@@ -51,9 +51,9 @@ func main() {
 // ExamplePlugin is the main plugin which
 // handles resync and changes in this example.
 type ExamplePlugin struct {
-	Orchestrator *orchestrator.Plugin
 	VPPIfPlugin  *ifplugin.IfPlugin
 	VPPL3Plugin  *l3plugin.L3Plugin
+	Orchestrator *orchestrator.Plugin
 }
 
 // String returns plugin name
