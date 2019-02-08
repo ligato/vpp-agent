@@ -1,0 +1,45 @@
+@startuml
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+skinparam SequenceMessageAlign center
+
+box "VPP Interfaces" #EEEEFF
+entity IM as "Interface Model"
+participant ID as "Interface Descriptor"
+end box
+participant KVS as "KVScheduler"
+participant ORCH as "Orchestrator"
+actor GRPC as "GRPC Client"
+
+ID -> KVS: **RegisterKVDescriptor**()
+activate KVS
+KVS --> ID: ok
+deactivate KVS
+
+== Resync Transaction #0 (configure interface //my-tap// through GRPC) ==
+
+GRPC -> ORCH: **Resync Txn** = [configure interface //my-tap//]
+activate ORCH
+ORCH -> IM: **GetKey**(//my-tap//)
+activate IM
+IM --> ORCH: key for //my-tap//
+deactivate IM
+ORCH -> KVS: **Resync Txn** = [apply value (interface) //my-tap//]
+activate KVS  #FFBBBB
+
+KVS -> KVS: **plan and execute transaction** (**COLLAPSED**)
+KVS -> ID: **Retrieve** values, **Create** //my-tap//, etc.
+ activate ID
+  ID --> KVS: retrieved values, feedback from CRUD operations, etc.
+ deactivate ID
+KVS --> ORCH: **value state updates**
+KVS --> ORCH: **txn error** (nil)
+deactivate KVS
+
+note over KVS: [[https://raw.githubusercontent.com/milanlenco/vpp-agent/kvs-docs/docs/kvscheduler/cfd/graph/interface_created.svg?sanitize=true Graph after transaction]]
+
+ORCH --> GRPC: **txn error** (nil)
+deactivate ORCH
+
+@enduml
