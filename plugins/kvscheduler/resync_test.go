@@ -748,9 +748,9 @@ func TestResyncWithNonEmptySB(t *testing.T) {
 	Expect(operation.Err).To(BeNil())
 
 	// check value dumps
-	// TODO: actual configuration (SBView) should probably not include baseValue2/item2,
-	//       but that means we would have to refresh the graph always after something
-	//       (base or derived value) is found to be pending
+	// TODO: actual configuration (when kept in-graph separately) will have to not include
+	//       baseValue2/item2, but that means we will have to refresh the graph
+	//       always after something (base or derived value) is found to be pending
 	expValues := []KVWithMetadata{
 		{Key: prefixA + baseValue1, Value: test.NewArrayValue("item2"), Origin: FromNB, Metadata: &test.OnlyInteger{Integer: 0}},
 		{Key: prefixA + baseValue2, Value: test.NewArrayValue("item1", "item2"), Origin: FromNB, Metadata: &test.OnlyInteger{Integer: 1}},

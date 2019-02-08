@@ -117,12 +117,12 @@ func (graph *graphR) GetFlagStats(flagName string, selector KeySelector) FlagSta
 		if selector != nil && !selector(key) {
 			continue
 		}
-		for /*idx*/_, record := range timeline {
+		for /*idx*/ _, record := range timeline {
 			if record.TargetUpdateOnly {
 				continue
 			}
 			if flag := record.Flags.GetFlag(flagName); flag != nil {
-				//fmt.Printf("Found flag %s in %dth record of %s\n", flagName, idx, record.Key)
+				//fmt.Printf("Found flag %s/%s in %dth record of %s\n", flagName, flag.GetValue(), idx, record.Key)
 				flagValue := flag.GetValue()
 				stats.TotalCount++
 				if _, hasValue := stats.PerValueCount[flagValue]; !hasValue {
