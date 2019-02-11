@@ -142,8 +142,8 @@
     "pkg/types",
   ]
   pruneopts = "UT"
-  revision = "27fc7e2296f506182f58ce846e48f36b34fe6842"
-  version = "v3.3.10"
+  revision = "d57e8b8d97adfc4a6c224fe116714bf1a1f3beb9"
+  version = "v3.3.12"
 
 [[projects]]
   digest = "1:be1b689cdb07159630a2232bc1c9750e4c1cfaf3ff07fd8afec78d018902e882"
